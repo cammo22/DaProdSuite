@@ -1,0 +1,23 @@
+# Base condivisa da tutti i servizi della suite.
+#
+# Qui va solo ciò che serve davvero a tutti. Le dipendenze specifiche di un
+# motore (diffusers per Dream, i pacchetti di ComfyUI per Musica e Foto, quelli
+# di SoulX per IoDigitale) stanno nel requirements del rispettivo servizio: così
+# chi installa solo il Visualizer non si porta dietro mezza libreria di computer
+# vision.
+#
+# torch NON è qui: si installa a parte con --torch-backend=auto, perché la wheel
+# giusta dipende dal driver CUDA della macchina.
+
+# Ogni servizio parla HTTP con lo shell ed espone /health e /shutdown.
+fastapi>=0.121.0
+uvicorn[standard]>=0.38.0
+websockets>=15.0
+python-multipart>=0.0.20
+
+# Scaricamento dei modelli: il comando `hf` serve per i repo HuggingFace interi.
+huggingface-hub[cli]>=0.36.0
+safetensors>=0.6.0
+
+# Lettura della VRAM per l'arbitro della GPU.
+nvidia-ml-py>=13.0

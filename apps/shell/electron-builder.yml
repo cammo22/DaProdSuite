@@ -1,0 +1,54 @@
+appId: it.daprod.suite
+productName: DaProd Suite
+copyright: DaProdProduzioni
+
+directories:
+  output: ../../installer
+  buildResources: build
+
+files:
+  - out/**
+  - package.json
+  # @daprod/ipc è un pacchetto del workspace: senza questo, electron-builder
+  # segue il symlink di pnpm e non lo impacchetta.
+  - "!node_modules/@daprod/ipc"
+  - node_modules/@daprod/ipc/dist/**
+  - node_modules/@daprod/ipc/package.json
+
+# Manifest e servizi Python non entrano nell'asar: devono restare file veri su
+# disco perché il processo Python li legga e li esegua.
+extraResources:
+  - from: ../../manifest
+    to: manifest
+  - from: ../../services
+    to: services
+    filter:
+      - "**/*"
+      - "!**/__pycache__/**"
+      - "!**/.venv/**"
+
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+  # electron-builder converte il PNG in .ico multi-risoluzione da solo.
+  icon: build/icon.png
+  artifactName: DaProdSuite-Setup-${version}.${ext}
+
+nsis:
+  # Un solo clic, per utente: niente UAC, niente scelta della cartella. La suite
+  # scrive comunque i suoi dati in %LOCALAPPDATA%, non serve Program Files.
+  oneClick: true
+  perMachine: false
+  runAfterFinish: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: DaProd Suite
+  # I modelli scaricati (decine di GB) e i risultati non si toccano mai.
+  deleteAppDataOnUninstall: false
+
+publish:
+  provider: github
+  owner: cammo22
+  repo: DaProdSuite
+  releaseType: release

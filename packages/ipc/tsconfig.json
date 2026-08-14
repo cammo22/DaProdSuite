@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    // CommonJS perché lo consumano il main e il preload di Electron.
+    // Il renderer ne importa solo i tipi (`import type`), che spariscono a runtime.
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "rootDir": "src",
+    "outDir": "dist"
+  },
+  "include": ["src"]
+}

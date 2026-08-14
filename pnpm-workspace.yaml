@@ -1,0 +1,10 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+
+# Script di post-installazione autorizzati. electron scarica il suo binario,
+# electron-winstaller serve a electron-builder per produrre l'installer NSIS:
+# senza questi due la compilazione non arriva in fondo.
+allowBuilds:
+  electron: true
+  electron-winstaller: true

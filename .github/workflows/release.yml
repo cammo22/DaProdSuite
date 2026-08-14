@@ -1,0 +1,41 @@
+name: Release
+
+# Si pubblica taggando: `git tag v1.2.3 && git push --tags`.
+# La CI compila su Windows e allega alla Release l'installer e il file latest.yml
+# che electron-updater legge per capire se c'è una versione nuova.
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Installa le dipendenze
+        run: pnpm install --frozen-lockfile
+
+      - name: Controllo dei tipi
+        run: pnpm run typecheck
+
+      - name: Compila e crea l'installer
+        run: pnpm run dist
+        env:
+          # electron-builder crea la Release e ci carica installer + latest.yml.
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

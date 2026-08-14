@@ -1,0 +1,349 @@
+/*
+  Aspetto dell'hub.
+
+  I colori d'accento non stanno qui: ogni app porta il suo (packages/ipc/apps.ts)
+  e la scheda lo riceve come variabile --accento. Così l'hub resta neutro e le sei
+  app restano riconoscibili a colpo d'occhio.
+*/
+
+:root {
+  --fondo: #0d0f14;
+  --fondo-alto: #151922;
+  --fondo-scheda: #171c26;
+  --bordo: #232a37;
+  --bordo-vivo: #313b4d;
+  --testo: #e8ecf4;
+  --testo-tenue: #8d97a9;
+  --testo-fioco: #5d6779;
+  --ok: #5cff9d;
+  --attesa: #ffc65c;
+  --errore: #ff6b6b;
+  --raggio: 14px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  background: var(--fondo);
+  color: var(--testo);
+  font-family: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  /* L'hub non scorre in orizzontale mai: le schede vanno a capo. */
+  overflow-x: hidden;
+}
+
+/* ------------------------------------------------------------------ testata */
+
+.testata {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 20px 28px;
+  border-bottom: 1px solid var(--bordo);
+  background: var(--fondo-alto);
+}
+
+.marchio {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.logo {
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  background: conic-gradient(from 210deg, #7c5cff, #ff5c8a, #ffa63d, #3ddbff, #5cff9d, #7c5cff);
+}
+
+.testata h1 {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+.versione {
+  margin: 0;
+  font-size: 12px;
+  color: var(--testo-fioco);
+}
+
+.aggiornamenti {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.stato-agg {
+  font-size: 13px;
+  color: var(--testo-tenue);
+}
+
+.stato-agg.novita {
+  color: var(--attesa);
+}
+
+.stato-agg.guasto {
+  color: var(--errore);
+}
+
+/* ------------------------------------------------------------------ griglia */
+
+main {
+  flex: 1;
+  overflow-y: auto;
+  padding: 28px;
+}
+
+/* ---------------------------------------------------------------- ambiente */
+
+.pannello-ambiente {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 16px 24px;
+  max-width: 1200px;
+  margin: 0 auto 22px;
+  padding: 20px 22px;
+  border: 1px solid var(--bordo-vivo);
+  border-radius: var(--raggio);
+  background: var(--fondo-scheda);
+  background-image: radial-gradient(
+    100% 100% at 0% 0%,
+    color-mix(in srgb, var(--attesa) 10%, transparent),
+    transparent 70%
+  );
+}
+
+/* Senza questo il pannello non sparisce mai: l'attributo `hidden` vale
+   display:none dal foglio di stile del browser, e la regola qui sopra lo batte. */
+.pannello-ambiente[hidden] {
+  display: none;
+}
+
+.pannello-ambiente h2 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 620;
+}
+
+.pannello-ambiente p {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--testo-tenue);
+}
+
+.pannello-ambiente .bottone {
+  background: var(--attesa);
+}
+
+.barra {
+  grid-column: 1 / -1;
+  height: 6px;
+  border-radius: 99px;
+  background: var(--bordo);
+  overflow: hidden;
+}
+
+.barra > span {
+  display: block;
+  height: 100%;
+  width: 0;
+  border-radius: 99px;
+  background: var(--attesa);
+  transition: width 0.3s ease;
+}
+
+.log {
+  grid-column: 1 / -1;
+  max-height: 150px;
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #0a0c11;
+  color: var(--testo-fioco);
+  font-family: "Cascadia Mono", "Consolas", monospace;
+  font-size: 11px;
+  line-height: 1.6;
+  /* Le righe di uv sono lunghe: si spezzano invece di far scorrere la pagina. */
+  white-space: pre-wrap;
+  word-break: break-all;
+  overflow-y: auto;
+}
+
+.griglia {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 18px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.scheda {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 20px;
+  border: 1px solid var(--bordo);
+  border-radius: var(--raggio);
+  background: var(--fondo-scheda);
+  /* Il colore dell'app entra come alone appena percettibile in alto. */
+  background-image: radial-gradient(
+    120% 80% at 0% 0%,
+    color-mix(in srgb, var(--accento) 12%, transparent),
+    transparent 60%
+  );
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.scheda:hover {
+  border-color: var(--bordo-vivo);
+  transform: translateY(-1px);
+}
+
+.scheda-testa {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.pallino {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  margin-top: 6px;
+  border-radius: 50%;
+  background: var(--accento);
+}
+
+.scheda h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 620;
+}
+
+.scheda p {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--testo-tenue);
+}
+
+.scheda-fondo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: auto;
+}
+
+.etichetta {
+  font-size: 12px;
+  color: var(--testo-fioco);
+}
+
+.etichetta.pronta {
+  color: var(--ok);
+}
+
+.etichetta.attesa {
+  color: var(--attesa);
+}
+
+.etichetta.guasto {
+  color: var(--errore);
+}
+
+/* ------------------------------------------------------------------ bottoni */
+
+.bottone {
+  padding: 8px 16px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: var(--accento, #7c5cff);
+  color: #0d0f14;
+  font: inherit;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: filter 0.15s ease;
+}
+
+.bottone:hover:not(:disabled) {
+  filter: brightness(1.12);
+}
+
+.bottone:disabled {
+  background: transparent;
+  border-color: var(--bordo-vivo);
+  color: var(--testo-fioco);
+  cursor: not-allowed;
+}
+
+.bottone.secondario {
+  background: transparent;
+  border-color: var(--bordo-vivo);
+  color: var(--testo);
+}
+
+.bottone.secondario:hover:not(:disabled) {
+  border-color: var(--testo-tenue);
+  filter: none;
+}
+
+/* -------------------------------------------------------------- piede pagina */
+
+.pieddi {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 12px 28px;
+  border-top: 1px solid var(--bordo);
+  background: var(--fondo-alto);
+  font-size: 12px;
+  color: var(--testo-fioco);
+}
+
+.spie {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.spia.guasto {
+  color: var(--errore);
+}
+
+.scorciatoie {
+  display: flex;
+  gap: 6px;
+}
+
+.collegamento {
+  padding: 4px 10px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--testo-tenue);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.collegamento:hover {
+  background: var(--bordo);
+  color: var(--testo);
+}

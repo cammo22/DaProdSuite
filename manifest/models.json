@@ -1,0 +1,147 @@
+{
+  "$comment": [
+    "Catalogo dei modelli della suite. Unica fonte di verità su cosa scaricare,",
+    "da dove e quanto pesa. URL e dimensioni vengono dagli script di setup già",
+    "collaudati dei singoli progetti (MinimaxMusica/setup.ps1, Flux/fluxapp/config.py,",
+    "AvatarParlante/SCARICA modelli.bat), non sono stime.",
+    "",
+    "Tre modi di scaricare, perché i modelli arrivano davvero in tre modi diversi:",
+    "  file     un singolo file da URL diretto, ripreso con Range se interrotto",
+    "  hf-repo  uno snapshot di un repo HuggingFace; 'include'/'exclude' sono i",
+    "           pattern passati a hf download, per non tirare giù quello che non serve",
+    "  ollama   gestito da Ollama, che va installato a parte",
+    "",
+    "'dir' è relativa a %LOCALAPPDATA%\\DaProdSuite\\models e segue la convenzione",
+    "delle cartelle di ComfyUI, così un solo extra_model_paths.yaml serve Musica e Foto."
+  ],
+  "version": 1,
+  "models": {
+    "minimax-music3-dit": {
+      "label": "MiniMax Music 3 — modello di diffusione (4 bit)",
+      "kind": "file",
+      "dir": "diffusion_models",
+      "file": "minimax_music3_dit_w4a8.safetensors",
+      "url": "https://huggingface.co/dummy9996/MiniMax-Music3-w4a8-bf16-comfyui/resolve/main/minimax_music3_dit_w4a8.safetensors",
+      "bytes": 1830722434
+    },
+    "minimax-music3-text-encoder": {
+      "label": "MiniMax Music 3 — text encoder Qwen2-7B potato (4 bit)",
+      "kind": "file",
+      "dir": "text_encoders",
+      "file": "minimax_music3_qwen2-7B_pruned_w4a8.safetensors",
+      "url": "https://huggingface.co/dummy9996/MiniMax-Music3-w4a8-bf16-comfyui/resolve/main/minimax_music3_qwen2-7B_pruned_w4a8.safetensors",
+      "bytes": 5908365751
+    },
+    "minimax-music3-vae": {
+      "label": "MiniMax Music 3 — VAE audio",
+      "kind": "file",
+      "dir": "vae",
+      "file": "minimax_music3_dav.safetensors",
+      "url": "https://huggingface.co/Comfy-Org/MiniMax-Music-3/resolve/main/vae/minimax_music3_dav.safetensors",
+      "bytes": 216696128
+    },
+
+    "anima-turbo": {
+      "label": "Anima Turbo — immagini (condiviso Musica/Foto)",
+      "kind": "file",
+      "dir": "diffusion_models",
+      "file": "anima-turbo-v1.0.safetensors",
+      "url": "https://huggingface.co/circlestone-labs/Anima/resolve/main/split_files/diffusion_models/anima-turbo-v1.0.safetensors",
+      "bytes": 4182230656
+    },
+    "qwen3-06b-base": {
+      "label": "Qwen3 0.6B base — text encoder di Anima",
+      "kind": "file",
+      "dir": "text_encoders",
+      "file": "qwen_3_06b_base.safetensors",
+      "url": "https://huggingface.co/circlestone-labs/Anima/resolve/main/split_files/text_encoders/qwen_3_06b_base.safetensors",
+      "bytes": 1192135096
+    },
+    "qwen-image-vae": {
+      "label": "Qwen Image VAE",
+      "kind": "file",
+      "dir": "vae",
+      "file": "qwen_image_vae.safetensors",
+      "url": "https://huggingface.co/circlestone-labs/Anima/resolve/main/split_files/vae/qwen_image_vae.safetensors",
+      "bytes": 253806246
+    },
+
+    "flux2-klein-q4ks": {
+      "label": "FLUX.2 Klein 9B — Q4_K_S (consigliato su 8 GB)",
+      "kind": "file",
+      "dir": "unet",
+      "file": "flux-2-klein-9b-Q4_K_S.gguf",
+      "url": "https://huggingface.co/unsloth/FLUX.2-klein-9B-GGUF/resolve/main/flux-2-klein-9b-Q4_K_S.gguf",
+      "bytes": 6260000000
+    },
+    "flux2-text-encoder": {
+      "label": "Qwen3-8B Q5_K_M — text encoder di FLUX.2",
+      "kind": "file",
+      "dir": "text_encoders",
+      "file": "Qwen3-8B-Q5_K_M.gguf",
+      "url": "https://huggingface.co/unsloth/Qwen3-8B-GGUF/resolve/main/Qwen3-8B-Q5_K_M.gguf",
+      "bytes": 5852000000
+    },
+    "flux2-vae": {
+      "label": "VAE di FLUX.2 (non quello di FLUX.1)",
+      "kind": "file",
+      "dir": "vae",
+      "file": "flux2-vae.safetensors",
+      "url": "https://huggingface.co/Comfy-Org/vae-text-encorder-for-flux-klein-9b/resolve/main/split_files/vae/flux2-vae.safetensors",
+      "bytes": 336213556
+    },
+
+    "sd-turbo": {
+      "label": "SD-Turbo — trasformazione in tempo reale",
+      "kind": "hf-repo",
+      "dir": "diffusers/sd-turbo",
+      "repo": "stabilityai/sd-turbo",
+      "bytes": 2600000000
+    },
+
+    "soulx-flashhead": {
+      "label": "SoulX-FlashHead 1.3B — avatar parlante",
+      "kind": "hf-repo",
+      "dir": "SoulX-FlashHead-1_3B",
+      "repo": "Soul-AILab/SoulX-FlashHead-1_3B",
+      "$comment": "Il repo contiene DUE modelli completi, Lite e Pro, da ~5,6 GB l'uno. Ne serve uno: 'exclude' tiene fuori Pro, che resta scaricabile come extra.",
+      "exclude": ["Model_Pro/*"],
+      "bytes": 8700000000
+    },
+    "soulx-flashhead-pro": {
+      "label": "SoulX-FlashHead Pro — qualità migliore, più lento",
+      "kind": "hf-repo",
+      "dir": "SoulX-FlashHead-1_3B",
+      "repo": "Soul-AILab/SoulX-FlashHead-1_3B",
+      "include": ["Model_Pro/*"],
+      "bytes": 5634000000
+    },
+    "leaptalk-weights": {
+      "label": "Pesi LeapTalk",
+      "kind": "hf-repo",
+      "dir": "leaptalk",
+      "repo": "z-rx/leaptalk",
+      "bytes": 387000000
+    },
+    "wav2vec2-base-960h": {
+      "label": "wav2vec2 — analisi audio per il lip-sync",
+      "kind": "hf-repo",
+      "dir": "wav2vec2-base-960h",
+      "repo": "facebook/wav2vec2-base-960h",
+      "bytes": 1138000000
+    },
+
+    "ollama-brain": {
+      "label": "Gemma 4 E4B — il cervello del Companion",
+      "kind": "ollama",
+      "tag": "gemma4:e4b-it-qat",
+      "bytes": 4400000000
+    },
+    "ollama-embed": {
+      "label": "nomic-embed-text — memoria semantica del Companion",
+      "kind": "ollama",
+      "tag": "nomic-embed-text",
+      "bytes": 274000000
+    }
+  }
+}

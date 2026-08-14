@@ -1,0 +1,33 @@
+node_modules/
+dist/
+out/
+*.tsbuildinfo
+
+# Prodotti della compilazione. Anteposta la barra: senza, `installer/` escluderebbe
+# anche una futura cartella `apps/qualcosa/installer`.
+/installer/
+
+# Ambiente Python, motori di terze parti e modelli. In esecuzione stanno in
+# %LOCALAPPDATA%\DaProdSuite; questi pattern sono una rete di sicurezza per
+# quando si lavora nella cartella del progetto.
+#
+# Tutti ancorati alla radice: `runtime/` senza barra iniziale escluderebbe anche
+# `packages/runtime/`, che è codice nostro e deve stare nel repo.
+/runtime/
+/engines/
+/models/
+/output/
+/logs/
+/tools/
+.venv/
+__pycache__/
+*.safetensors
+*.gguf
+*.ckpt
+*.pth
+
+*.log
+.DS_Store
+Thumbs.db
+.env
+.env.local

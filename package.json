@@ -1,0 +1,22 @@
+{
+  "name": "daprodsuite",
+  "version": "0.0.1",
+  "private": true,
+  "description": "La suite DaProd: sei app AI locali in un solo programma.",
+  "author": "DaProdProduzioni",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "pnpm run build && pnpm --filter @daprod/shell exec electron .",
+    "build": "pnpm --filter @daprod/ipc build && pnpm --filter @daprod/runtime build && pnpm --filter @daprod/shell build",
+    "dist": "pnpm run build && pnpm --filter @daprod/shell dist",
+    "typecheck": "pnpm -r typecheck"
+  },
+  "devDependencies": {
+    "typescript": "~5.9.3"
+  }
+}
+

@@ -1,0 +1,66 @@
+/**
+ * Ponte fra shell e interfaccia.
+ *
+ * Il renderer non ha Node né `ipcRenderer`: vede solo `window.daprod`, cioè
+ * esattamente i metodi dichiarati in SuiteApi. Aggiungere una capacità richiede
+ * di dichiararla nel contratto, registrarla nel main e esporla qui: tre punti,
+ * nessuno dei quali si può saltare per sbaglio.
+ */
+
+import { contextBridge, ipcRenderer } from "electron";
+import {
+  APP_LIST,
+  CHANNELS,
+  type AppId,
+  type AppState,
+  type GpuState,
+  type RuntimeState,
+  type SuiteApi,
+  type Unsubscribe,
+  type UpdateState,
+} from "@daprod/ipc";
+
+/** Iscrive un listener a un canale e restituisce come disiscriversi. */
+function subscribe<T>(channel: string, listener: (payload: T) => void): Unsubscribe {
+  const handler = (_event: unknown, payload: T) => listener(payload);
+  ipcRenderer.on(channel, handler);
+  return () => ipcRenderer.off(channel, handler);
+}
+
+const api: SuiteApi = {
+  catalog: APP_LIST,
+
+  suite: {
+    version: () => ipcRenderer.invoke(CHANNELS.suiteVersion),
+    revealPath: (kind) => ipcRenderer.invoke(CHANNELS.suiteRevealPath, kind),
+  },
+
+  apps: {
+    list: () => ipcRenderer.invoke(CHANNELS.appsList),
+    open: (id: AppId) => ipcRenderer.invoke(CHANNELS.appsOpen, id),
+    close: (id: AppId) => ipcRenderer.invoke(CHANNELS.appsClose, id),
+    install: (id: AppId) => ipcRenderer.invoke(CHANNELS.appsInstall, id),
+    onChanged: (listener) => subscribe<AppState[]>(CHANNELS.appsChanged, listener),
+  },
+
+  runtime: {
+    state: () => ipcRenderer.invoke(CHANNELS.runtimeState),
+    install: () => ipcRenderer.invoke(CHANNELS.runtimeInstall),
+    onChanged: (listener) => subscribe<RuntimeState>(CHANNELS.runtimeChanged, listener),
+  },
+
+  gpu: {
+    state: () => ipcRenderer.invoke(CHANNELS.gpuState),
+    onChanged: (listener) => subscribe<GpuState>(CHANNELS.gpuChanged, listener),
+  },
+
+  update: {
+    state: () => ipcRenderer.invoke(CHANNELS.updateState),
+    check: () => ipcRenderer.invoke(CHANNELS.updateCheck),
+    download: () => ipcRenderer.invoke(CHANNELS.updateDownload),
+    installAndRestart: () => ipcRenderer.invoke(CHANNELS.updateInstall),
+    onChanged: (listener) => subscribe<UpdateState>(CHANNELS.updateChanged, listener),
+  },
+};
+
+contextBridge.exposeInMainWorld("daprod", api);

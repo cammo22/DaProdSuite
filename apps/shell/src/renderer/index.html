@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'"
+    />
+    <title>DaProd Suite</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header class="testata">
+      <div class="marchio">
+        <span class="logo" aria-hidden="true"></span>
+        <div>
+          <h1>DaProd Suite</h1>
+          <p class="versione" id="versione">—</p>
+        </div>
+      </div>
+
+      <div class="aggiornamenti" id="aggiornamenti">
+        <span class="stato-agg" id="stato-agg">Controllo aggiornamenti…</span>
+        <button class="bottone secondario" id="btn-agg" hidden></button>
+      </div>
+    </header>
+
+    <main>
+      <!-- Senza ambiente Python cinque app su sette non partono: il pannello
+           compare finché non c'è, e sparisce quando è pronto. -->
+      <section class="pannello-ambiente" id="pannello-ambiente" hidden>
+        <div class="ambiente-testo">
+          <h2 id="ambiente-titolo">Manca l'ambiente Python</h2>
+          <p id="ambiente-dettaglio">
+            La suite installa una volta sola Python 3.12 e PyTorch con CUDA, condivisi da
+            tutte le app. Circa 4 GB, qualche minuto.
+          </p>
+        </div>
+        <button class="bottone" id="ambiente-azione">Installa l'ambiente</button>
+        <div class="barra" id="ambiente-barra" hidden><span id="ambiente-riempimento"></span></div>
+        <pre class="log" id="ambiente-log" hidden></pre>
+      </section>
+
+      <section class="griglia" id="griglia" aria-label="App della suite"></section>
+    </main>
+
+    <footer class="pieddi">
+      <div class="spie">
+        <span class="spia" id="spia-runtime">Ambiente: —</span>
+        <span class="spia" id="spia-gpu">GPU: —</span>
+      </div>
+      <div class="scorciatoie">
+        <button class="collegamento" data-apri="output">Risultati</button>
+        <button class="collegamento" data-apri="models">Modelli</button>
+        <button class="collegamento" data-apri="logs">Log</button>
+      </div>
+    </footer>
+
+    <script type="module" src="main.js"></script>
+  </body>
+</html>

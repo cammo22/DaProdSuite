@@ -1,0 +1,16 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    // Il renderer gira nel browser senza bundler: ESM puro, nessun import di
+    // pacchetti a runtime. Da @daprod/ipc prende solo i tipi.
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "types": [],
+    "outDir": "out/renderer",
+    "rootDir": "src/renderer",
+    "declaration": false,
+    "verbatimModuleSyntax": true
+  },
+  "include": ["src/renderer"]
+}
