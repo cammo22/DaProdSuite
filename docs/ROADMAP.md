@@ -66,7 +66,20 @@ Vedi [ACCESSO-REMOTO.md](ACCESSO-REMOTO.md).
 
 ## 0.6.0 — DaProdCinema
 
-La settima app: da una canzone al suo video musicale.
+La settima app: da una canzone al suo video musicale. **Due strade, non una.**
+
+### Strada breve: gli effetti del Visualizer diventano video
+
+Il Visualizer ha già undici preset WebGL che reagiscono all'audio in tempo reale.
+Registrarli su un brano e salvarne un video è la via più veloce a un video
+musicale: nessun modello, nessuna VRAM contesa, tempi di resa vicini al tempo
+reale, e il risultato è già coerente con il brano perché *nasce* dal suo suono.
+
+- [ ] Resa fuori schermo su un brano della libreria, a risoluzione e fps scelti
+- [ ] Cambio di preset sui punti di sezione del testo (`[Verse]`, `[Chorus]`…)
+- [ ] Esportazione con l'audio dentro, dritta in libreria
+
+### Strada lunga: le clip generate
 
 - [ ] Sliding window e overlap sopra i nodi MiniMax H3 di ComfyUI
 - [ ] Pianificazione per sezione — la struttura arriva dai tag del testo, non da
