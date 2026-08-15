@@ -34,6 +34,10 @@ extraResources:
   # finestre le caricano con loadFile da un percorso reale.
   - from: ../visualizer/dist
     to: apps/visualizer
+  # Musica non passa da Vite: è HTML, CSS e moduli ES senza dipendenze, quindi
+  # il sorgente è già la versione da spedire.
+  - from: ../musica
+    to: apps/musica
 
 win:
   target:

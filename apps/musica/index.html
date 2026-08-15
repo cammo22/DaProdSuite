@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!--
+  Cosa può caricare questa pagina, detto una volta sola.
+
+  `connect-src` con il motore dentro: l'interfaccia parla con ComfyUI su
+  127.0.0.1, in HTTP e in WebSocket, e senza queste due voci non partirebbe
+  niente. `media-src` e `img-src` con `daprod:` perché i brani e le copertine
+  sono file veri sul disco, serviti dallo schema della suite.
+
+  Lo stile in linea è ammesso — la pagina usa gli attributi `style=` per le
+  misure che non meritano una classe. Lo script no: quello sta solo nei moduli,
+  così una stringa arrivata dai metadati di un brano non può diventare codice.
+-->
+<meta http-equiv="Content-Security-Policy" content="
+  default-src 'self';
+  script-src 'self';
+  style-src 'self' 'unsafe-inline';
+  img-src 'self' daprod: http://127.0.0.1:8188 data: blob:;
+  media-src 'self' daprod: blob:;
+  connect-src 'self' http://127.0.0.1:8188 ws://127.0.0.1:8188;
+  object-src 'none';
+  base-uri 'none';
+">
+<title>DaProdMusica</title>
+<link rel="stylesheet" href="stile.css">
+</head>
+<body>
+
+<header>
+  <div class="logo">DaProd<span>Musica</span></div>
+  <nav>
+    <button data-scheda="crea" class="on">Crea</button>
+    <button data-scheda="costruttore">Stili</button>
+    <button data-scheda="immagini">Immagini</button>
+    <button data-scheda="libreria">Libreria <span class="pill" id="navLib">0</span></button>
+  </nav>
+  <div class="status">
+    <div class="mods" id="mods"></div>
+    <span class="dot" id="dot"></span><span id="statusTxt">connessione…</span>
+  </div>
+</header>
+
+<!-- ============================== CREA ============================== -->
+<section class="tab on" id="scheda-crea">
+ <div class="two">
+  <div>
+    <div class="panel">
+      <h2>Nuovo brano</h2>
+      <div class="field">
+        <label>Titolo <span style="float:right">facoltativo: se lo lasci vuoto lo ricavo dal testo</span></label>
+        <input id="titolo" placeholder="Es. Caffè e cornetto">
+      </div>
+      <label>Stile</label>
+      <div class="chips" id="presets"></div>
+      <textarea id="caption" rows="3" placeholder="3-4 generi, in inglese"></textarea>
+      <div class="hint"><b>Regola DaProd</b>: lo stile resta vago, <b>solo 3-4 generi</b>.
+        Strumenti, mood e BPM restringono il modello e fanno uscire sempre la stessa cosa.
+        Le descrizioni dettagliate in fondo alla lista seguono invece lo schema MiniMax, per quando
+        vuoi un risultato preciso.</div>
+    </div>
+
+    <div class="panel">
+      <h2>Testo <span class="right"><label class="switch"><input type="checkbox" id="instrumental"> strumentale</label></span></h2>
+      <div class="chips" id="tags"></div>
+      <textarea id="lyrics" rows="11" placeholder="[Verse]&#10;…"></textarea>
+      <div class="hint">Solo questi tag di sezione: sono gli unici che MiniMax Music 3 interpreta davvero.</div>
+    </div>
+
+    <div class="panel">
+      <h2>Parametri <span class="right"><button class="mini" id="toggleAdv">avanzati</button></span></h2>
+      <div class="field">
+        <label>Durata massima <span class="rangeval" id="durVal">60 s</span></label>
+        <input type="range" id="duration" min="15" max="300" step="5" value="60">
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>Formato</label>
+          <select id="format">
+            <option value="mp3">MP3 (V0)</option>
+            <option value="flac">FLAC (senza perdita)</option>
+            <option value="opus">Opus (192k)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Quanti brani</label>
+          <input type="number" id="batch" value="1" min="1" max="10">
+        </div>
+        <div class="field">
+          <label>Copertina</label>
+          <select id="coverStyleNew"></select>
+        </div>
+      </div>
+      <label class="switch"><input type="checkbox" id="autoCover" checked> Genera la copertina prima del brano (pochi secondi)</label>
+
+      <div id="avanzati" style="display:none; margin-top:14px">
+        <div class="row">
+          <div class="field">
+            <label>Passi <span class="rangeval" id="stepsVal">30</span></label>
+            <input type="range" id="steps" min="10" max="60" step="1" value="30">
+          </div>
+          <div class="field">
+            <label>CFG audio <span class="rangeval" id="cfgVal">1.7</span></label>
+            <input type="range" id="cfg" min="1" max="5" step="0.1" value="1.7">
+          </div>
+          <div class="field">
+            <label>CFG testo <span class="rangeval" id="cfgsVal">1.5</span></label>
+            <input type="range" id="cfg_scale" min="0" max="5" step="0.1" value="1.5">
+          </div>
+          <div class="field">
+            <label>Top-K <span class="rangeval" id="topkVal">50</span></label>
+            <input type="range" id="top_k" min="1" max="200" step="1" value="50">
+          </div>
+        </div>
+        <div class="row">
+          <div class="field">
+            <label>Seed struttura</label>
+            <div class="inline"><input type="number" id="seed_text" min="0"><button class="mini" id="dice1">&#127922;</button></div>
+          </div>
+          <div class="field">
+            <label>Seed resa audio</label>
+            <div class="inline"><input type="number" id="seed_audio" min="0"><button class="mini" id="dice2">&#127922;</button></div>
+          </div>
+        </div>
+        <label class="switch"><input type="checkbox" id="randomSeed" checked> Seed casuali a ogni brano</label>
+        <label class="switch" style="margin-top:8px"><input type="checkbox" id="tiled" checked> Decode a blocchi
+          <input type="number" id="tile" value="1536" min="256" max="4096" step="128" style="width:90px;padding:5px 9px;margin-left:6px">
+        </label>
+        <div class="hint">Un blocco da 1536 copre ~18 s: sotto non cambia niente, sopra tiene la VRAM bassa.
+          Il <b>seed struttura</b> decide melodia e voce (la parte lenta): cambiando solo il
+          <b>seed resa audio</b> il motore riusa la struttura dalla cache.</div>
+      </div>
+    </div>
+
+    <div style="margin-top:16px; display:flex; gap:10px">
+      <button class="btn wide" id="go">Crea</button>
+      <button class="btn wide cyan" id="goAudio" style="max-width:210px">Solo nuova resa</button>
+    </div>
+  </div>
+
+  <div>
+    <div class="panel sticky">
+      <h2>Sessione
+        <span class="right">
+          <button class="mini" id="stopBtn">interrompi</button>
+          <button class="mini danger" id="clearQueue">svuota coda</button>
+        </span>
+      </h2>
+      <div id="feed" class="tracks"></div>
+      <div id="error" class="err" style="display:none"></div>
+    </div>
+  </div>
+ </div>
+</section>
+
+<!-- =========================== COSTRUTTORE =========================== -->
+<section class="tab" id="scheda-costruttore">
+ <div class="two">
+  <div id="builderFields"></div>
+  <div>
+    <div class="panel sticky">
+      <h2>Anteprima dello stile</h2>
+      <div class="preview" id="b_preview"></div>
+      <div class="field" style="margin-top:14px">
+        <label>Nome dello stile</label>
+        <input id="b_name" placeholder="Es. Neo-soul notturno">
+      </div>
+      <button class="btn wide" id="b_save">Salva stile e usalo</button>
+      <div class="acts" style="margin-top:12px">
+        <button id="b_use">usa senza salvare</button>
+        <button id="b_copy">copia il testo</button>
+        <button id="b_load">leggi dalla descrizione</button>
+        <button class="del" id="b_clear">svuota</button>
+      </div>
+      <div class="hint">Ogni voce ha delle proposte da cliccare, ma puoi sempre scrivere di tuo: il campo
+        vince sulle proposte. Lascia vuoto quello che non ti interessa.</div>
+    </div>
+  </div>
+ </div>
+</section>
+
+<!-- ============================ IMMAGINI ============================ -->
+<section class="tab" id="scheda-immagini">
+ <div class="two">
+  <div class="panel">
+    <h2>Genera un'immagine</h2>
+    <div class="chips" id="imgPresets"></div>
+    <div class="field">
+      <label>Cosa vuoi vedere</label>
+      <textarea id="imgPrompt" rows="4" placeholder="Es. una vecchia automobile ferma su una strada vuota al tramonto"></textarea>
+      <div class="hint">Puoi scrivere in italiano: le parole chiave vengono tradotte in scena.
+        Se scrivi in inglese viene usato com'è.</div>
+    </div>
+    <div class="row">
+      <div class="field"><label>Estetica</label><select id="imgStyle"></select></div>
+      <div class="field">
+        <label>Formato</label>
+        <select id="imgSize">
+          <option value="1024x1024">Quadrato 1024</option>
+          <option value="1024x1536">Verticale</option>
+          <option value="1536x1024">Orizzontale</option>
+          <option value="768x768">Veloce 768</option>
+        </select>
+      </div>
+      <div class="field"><label>Quante</label><input type="number" id="imgCount" value="1" min="1" max="8"></div>
+    </div>
+    <button class="btn wide" id="imgGo">Genera</button>
+    <div id="imgError" class="err" style="display:none"></div>
+  </div>
+  <div class="panel">
+    <h2>Immagini <span id="imgCountLbl" style="color:var(--dim);text-transform:none"></span>
+      <span class="right"><button class="mini" id="imgRefresh">aggiorna</button></span>
+    </h2>
+    <div class="cards" id="imgCards"></div>
+  </div>
+ </div>
+</section>
+
+<!-- ============================ LIBRERIA ============================ -->
+<section class="tab" id="scheda-libreria">
+ <div class="two">
+  <div class="panel">
+    <h2>I tuoi brani <span id="libCount" style="color:var(--dim);text-transform:none"></span>
+      <span class="right"><button class="mini" id="refreshLib">aggiorna</button></span>
+    </h2>
+    <div id="libList" class="tracks" style="max-height:74vh;overflow:auto;padding-right:4px"></div>
+  </div>
+  <div class="panel detail sticky" id="detail"></div>
+ </div>
+</section>
+
+<input type="file" id="coverPicker" accept="image/*" style="display:none">
+
+<!-- ============================= LETTORE ============================= -->
+<footer class="player hidden" id="player">
+  <img class="pcover" id="pCover" alt="">
+  <div class="pnow"><div class="tt" id="pTitle">—</div><div class="tsub" id="pSub"></div></div>
+  <div class="pctrl">
+    <button id="pPrev" title="precedente">&#9198;</button>
+    <button class="play" id="pPlay" title="play/pausa">&#9654;</button>
+    <button id="pNext" title="successivo">&#9197;</button>
+  </div>
+  <div class="pseek">
+    <span id="pCur">0:00</span>
+    <input type="range" id="pSeek" min="0" max="1000" value="0">
+    <span id="pDur">0:00</span>
+  </div>
+  <div class="pvol">&#128266;<input type="range" id="pVol" min="0" max="100" value="90"></div>
+</footer>
+
+<script type="module" src="src/avvio.js"></script>
+</body>
+</html>

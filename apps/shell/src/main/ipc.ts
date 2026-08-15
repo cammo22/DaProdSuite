@@ -114,6 +114,20 @@ export function registerIpc(getHub: () => BrowserWindow | null): void {
     return true;
   });
 
+  ipcMain.handle(CHANNELS.libreriaRinomina, (_e, id: string, nome: string) =>
+    libreria.rinomina(id, String(nome ?? "")),
+  );
+
+  ipcMain.handle(CHANNELS.libreriaCopertina, (_e, id: string, dataUrl: string | null) =>
+    libreria.impostaCopertina(id, typeof dataUrl === "string" && dataUrl ? dataUrl : null),
+  );
+
+  ipcMain.handle(CHANNELS.libreriaMeta, (_e, id: string, meta: Record<string, unknown>) =>
+    libreria.scriviMeta(id, meta && typeof meta === "object" ? meta : {}),
+  );
+
+  ipcMain.handle(CHANNELS.libreriaElimina, (_e, id: string) => libreria.elimina(id));
+
   ipcMain.handle(
     CHANNELS.appInvia,
     (_e, destinazione: AppId, elementoId: string, intenzione: Intenzione) =>

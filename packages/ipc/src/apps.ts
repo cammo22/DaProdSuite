@@ -24,6 +24,12 @@ export interface AppService {
   /** Modulo Python da avviare, relativo alla cartella del servizio. */
   entry: string;
   /**
+   * Cartella del motore di terze parti sotto `engines/`, per chi ne guida uno.
+   * ComfyUI non sta nel repo (è GPL-3.0, la suite è MIT): viene scaricato lì, e
+   * il codice nostro in `services/` si limita ad avviarlo.
+   */
+  engine?: string;
+  /**
    * Quanto può metterci il primo avvio prima che /health risponda. I motori che
    * caricano pesi da disco sono lenti la prima volta.
    */
@@ -86,7 +92,8 @@ export const APPS: Record<AppId, AppDescriptor> = {
     service: {
       id: "comfy",
       port: 8188,
-      entry: "ComfyUI/main.py",
+      entry: "avvio.py",
+      engine: "ComfyUI",
       // Il primo avvio carica MiniMax Music 3 in VRAM: può volerci un minuto abbondante.
       healthTimeoutMs: 180_000,
     },
@@ -102,7 +109,8 @@ export const APPS: Record<AppId, AppDescriptor> = {
     service: {
       id: "comfy",
       port: 8188,
-      entry: "ComfyUI/main.py",
+      entry: "avvio.py",
+      engine: "ComfyUI",
       healthTimeoutMs: 180_000,
     },
     accent: "#ffa63d",
@@ -122,7 +130,8 @@ export const APPS: Record<AppId, AppDescriptor> = {
     service: {
       id: "comfy",
       port: 8188,
-      entry: "ComfyUI/main.py",
+      entry: "avvio.py",
+      engine: "ComfyUI",
       healthTimeoutMs: 180_000,
     },
     // Verificato: ComfyUI ha i nodi MiniMax H3 nativi (MiniMaxH3ImageToVideo,
