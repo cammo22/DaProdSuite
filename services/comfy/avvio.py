@@ -90,6 +90,37 @@ def nodi_di_terzi(motore: Path) -> Path:
     return motore.parent / "custom_nodes"
 
 
+def flag_velocita(scelta: str) -> list[str]:
+    """I flag che cambiano a seconda di quanto si vuole spingere il motore.
+
+    **normale** è quello che abbiamo provato. `--disable-dynamic-vram` c'è perché
+    i 5,5 GB del text encoder musicale devono stare *tutti* in VRAM: con il
+    caricamento dinamico i pesi arrivavano dalla CPU durante la cattura dei CUDA
+    graph e la generazione moriva con `cudaErrorStreamCaptureInvalidated`.
+
+    **spinta** toglie proprio quel flag, ed è il punto: dalla 0.33.1 il motore
+    rinuncia ai CUDA graph quando non può catturarli invece di morire, e i tre
+    quarti del tempo di un brano se ne vanno nella parte che quei graph
+    accelerano. In più accende `--fast` e, se è installata, FlashAttention.
+
+    Nessuna delle due è "giusta": una si è misurata, l'altra va misurata. Per
+    questo è un interruttore nell'hub e non una scelta scritta qui dentro.
+    """
+    if scelta != "spinta":
+        return ["--disable-dynamic-vram"]
+
+    flag = ["--fast"]
+    try:
+        import flash_attn  # noqa: F401
+
+        flag.append("--use-flash-attention")
+    except Exception:
+        # Non installata: il motore userebbe l'attenzione di PyTorch comunque, ma
+        # il flag lo farebbe uscire in avvio invece di ripiegare da solo.
+        pass
+    return flag
+
+
 def main() -> None:
     motore = _richiesta("DAPROD_MOTORE")
     modelli = _richiesta("DAPROD_MODELLI")
@@ -117,11 +148,11 @@ def main() -> None:
         "--port", str(porta),
         "--listen", "127.0.0.1",
         "--disable-auto-launch",
-        "--disable-dynamic-vram",
         "--enable-cors-header", "*",
         "--extra-model-paths-config", str(percorsi),
         "--output-directory", str(risultati),
         "--temp-directory", str(temporanei),
+        *flag_velocita(os.environ.get("DAPROD_VELOCITA", "normale")),
     ]
 
     # ComfyUI si aspetta di girare dalla propria cartella: legge percorsi

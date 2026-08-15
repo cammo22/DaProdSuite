@@ -28,6 +28,16 @@ Niente, per ora: tutto quello che c'era è uscito nella 0.1.0.
   video: quando finiva, il brano era già in libreria e nessuno se la prendeva
   più. Adesso lo ritrova.
 
+### Velocità: normale o spinta
+
+- **In fondo all'hub c'è un interruttore.** "Spinta" accende le tre cose che il
+  motore sa fare e non stavamo usando, prima fra tutte la memoria video dinamica:
+  è quella che riporta i CUDA graph sulla parte lenta della musica, dove se ne va
+  il **76%** del tempo di un brano. Vale dal prossimo avvio di un'app.
+- Non è una promessa, è una prova: se un brano muore o va più piano, si rimette
+  "normale". Quello che si sa e quello che si è solo misurato sta in
+  [docs/VELOCITA-MUSICA.md](docs/VELOCITA-MUSICA.md).
+
 ### In DaProdFoto si sceglie il modello
 
 - **Due modelli, non uno.** Sopra "Estetica" c'è un menu: **Anima**, veloce e già

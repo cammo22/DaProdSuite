@@ -13,7 +13,9 @@ import {
   type CosaResettare,
   type FiltroLibreria,
   type Intenzione,
+  type Velocita,
 } from "@daprod/ipc";
+import { impostaVelocita, impostazioni } from "./impostazioni";
 import { appManager } from "./app-manager";
 import { annulla, installaApp, installaModelli, scaricamenti } from "./scaricamenti";
 import { libreria } from "./libreria";
@@ -48,6 +50,13 @@ export function registerIpc(getHub: () => BrowserWindow | null): void {
   });
 
   ipcMain.handle(CHANNELS.appsAnnullaInstallazione, (_e, id: AppId) => annulla(id));
+
+  /* --------------------------------------------------------- impostazioni */
+
+  ipcMain.handle(CHANNELS.impostazioniLeggi, () => impostazioni());
+  ipcMain.handle(CHANNELS.impostazioniVelocita, (_e, scelta: Velocita) =>
+    impostaVelocita(scelta === "spinta" ? "spinta" : "normale"),
+  );
 
   /* -------------------------------------------------------------- runtime */
 

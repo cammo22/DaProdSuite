@@ -350,6 +350,25 @@ main {
   color: var(--errore);
 }
 
+/* La velocità dei motori sta fra le spie perché è la stessa cosa: si guarda di
+   sfuggita, si tocca di rado. */
+.spia.velocita {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  cursor: pointer;
+}
+
+.spia.velocita select {
+  font: inherit;
+  color: inherit;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 7px;
+  padding: 2px 6px;
+  cursor: pointer;
+}
+
 .scorciatoie {
   display: flex;
   gap: 6px;

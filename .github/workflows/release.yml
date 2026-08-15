@@ -45,6 +45,34 @@ jobs:
 
       - name: Crea l'installer
         run: pnpm run dist
+
+      # Il caricamento lo facciamo noi, un file alla volta e alla fine.
+      # electron-builder sa pubblicare da solo quando vede un tag, ma crea la
+      # Release *mentre* sta caricando: al primo tag vero i 95 MB dell'installer
+      # sono rimasti per strada e nella Release c'era solo la blockmap da 100 KB.
+      # `latest.yml` va caricato comunque: è il file che electron-updater legge
+      # per accorgersi che esiste una versione nuova.
+      - name: Pubblica la Release
+        shell: pwsh
         env:
-          # electron-builder crea la Release e ci carica installer + latest.yml.
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $tag = "${{ github.ref_name }}"
+          gh release view $tag *> $null
+          if ($LASTEXITCODE -ne 0) {
+            gh release create $tag --title $tag --notes "Cosa cambia per chi la usa: CHANGELOG.md"
+          }
+          $file = Get-ChildItem installer/*.exe, installer/latest.yml, installer/*.blockmap |
+            Select-Object -ExpandProperty FullName
+          gh release upload $tag $file --clobber
+
+      - name: Controlla che ci sia davvero tutto
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $nomi = gh release view "${{ github.ref_name }}" --json assets --jq '.assets[].name'
+          if (-not ($nomi -match '\.exe$') -or -not ($nomi -match 'latest\.yml')) {
+            throw "Nella Release mancano l'installer o latest.yml: $nomi"
+          }
+          Write-Host "Nella Release ci sono: $nomi"

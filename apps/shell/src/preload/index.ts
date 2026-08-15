@@ -51,6 +51,11 @@ const api: SuiteApi = {
     onChanged: (listener) => subscribe<RuntimeState>(CHANNELS.runtimeChanged, listener),
   },
 
+  impostazioni: {
+    leggi: () => ipcRenderer.invoke(CHANNELS.impostazioniLeggi),
+    velocita: (scelta) => ipcRenderer.invoke(CHANNELS.impostazioniVelocita, scelta),
+  },
+
   gpu: {
     state: () => ipcRenderer.invoke(CHANNELS.gpuState),
     onChanged: (listener) => subscribe<GpuState>(CHANNELS.gpuChanged, listener),

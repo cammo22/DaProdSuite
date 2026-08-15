@@ -6,7 +6,15 @@
  * limita a renderlo leggibile.
  */
 
-import type { AppId, AppState, GpuState, RuntimeState, UpdateState, VoceSpazio } from "@daprod/ipc";
+import type {
+  AppId,
+  AppState,
+  GpuState,
+  RuntimeState,
+  UpdateState,
+  Velocita,
+  VoceSpazio,
+} from "@daprod/ipc";
 
 const api = window.daprod;
 
@@ -305,6 +313,30 @@ function aggiornaSpiaGpu(stato: GpuState): void {
   }
 }
 
+/* --------------------------------------------------------------- velocità */
+
+/**
+ * Quanto spingere i motori.
+ *
+ * È un interruttore e non una scelta nostra perché non c'è una risposta giusta
+ * misurata: "spinta" riaccende i CUDA graph sulla parte lenta della musica — i
+ * tre quarti del tempo di un brano — ma su 8 GB può anche andare peggio o non
+ * entrarci. Si prova, si guardano i minuti, si tiene quella che vince.
+ */
+const selettoreVelocita = document.getElementById("velocita") as HTMLSelectElement;
+
+selettoreVelocita.addEventListener("change", () => {
+  const scelta = selettoreVelocita.value as Velocita;
+  void api.impostazioni.velocita(scelta).then(() => {
+    // I flag si passano alla riga di comando: un motore già acceso non li
+    // rilegge, e dirlo subito evita di misurare la stessa cosa due volte.
+    selettoreVelocita.title =
+      scelta === "spinta"
+        ? "Vale dalla prossima apertura di un'app. Se un brano muore o va più lento, rimetti normale."
+        : "Vale dalla prossima apertura di un'app.";
+  });
+});
+
 /* ------------------------------------------------------------------- avvio */
 
 for (const bottone of document.querySelectorAll<HTMLButtonElement>("[data-apri]")) {
@@ -328,6 +360,7 @@ void (async () => {
   aggiornaBarraAggiornamenti(await api.update.state());
   aggiornaSpiaRuntime(await api.runtime.state());
   aggiornaSpiaGpu(await api.gpu.state());
+  selettoreVelocita.value = (await api.impostazioni.leggi()).velocita;
 })();
 
 /* ------------------------------------------------------------------ spazio */

@@ -46,6 +46,26 @@ export interface AppState {
   error?: string;
 }
 
+/* -------------------------------------------------------------- impostazioni */
+
+/**
+ * Quanto spingere i motori.
+ *
+ * `normale` è quello che abbiamo provato: la suite avvia ComfyUI con i flag
+ * misurati, memoria video governata a mano, nessuna ottimizzazione sperimentale.
+ *
+ * `spinta` accende le tre cose che il motore sa fare e noi non usiamo — memoria
+ * video dinamica (che riporta i CUDA graph sulla parte lenta della musica),
+ * `--fast`, e FlashAttention se è installata. Vanno provate, non date per buone:
+ * il motore stesso le chiama "untested and potentially quality deteriorating",
+ * e su 8 GB una cosa che va più veloce può anche non entrarci più.
+ */
+export type Velocita = "normale" | "spinta";
+
+export interface Impostazioni {
+  velocita: Velocita;
+}
+
 /* ------------------------------------------------------------------- modelli */
 
 /**
@@ -207,6 +227,12 @@ export interface SuiteApi {
     onChanged(listener: (state: RuntimeState) => void): Unsubscribe;
   };
 
+  impostazioni: {
+    leggi(): Promise<Impostazioni>;
+    /** Cambia la velocità dei motori. Vale dal prossimo avvio del motore. */
+    velocita(scelta: Velocita): Promise<Impostazioni>;
+  };
+
   gpu: {
     state(): Promise<GpuState>;
     onChanged(listener: (state: GpuState) => void): Unsubscribe;
@@ -315,6 +341,9 @@ export const CHANNELS = {
   appsInstall: "apps:install",
   appsAnnullaInstallazione: "apps:annulla-installazione",
   appsChanged: "apps:changed",
+
+  impostazioniLeggi: "impostazioni:leggi",
+  impostazioniVelocita: "impostazioni:velocita",
 
   runtimeState: "runtime:state",
   runtimeInstall: "runtime:install",

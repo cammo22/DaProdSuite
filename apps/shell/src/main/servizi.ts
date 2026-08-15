@@ -15,6 +15,7 @@
 
 import { APPS, type AppId, type AppService } from "@daprod/ipc";
 import { ProcessSupervisor } from "./process-supervisor";
+import { impostazioni } from "./impostazioni";
 import { createLogger } from "./logging";
 import { libreria } from "./libreria";
 import { CACHE_DIR, ENGINES_DIR, MODELS_DIR, PYTHON_EXE, SERVICES_DIR } from "./paths";
@@ -200,6 +201,10 @@ function ambiente(id: AppId, servizio: AppService): NodeJS.ProcessEnv {
     // Senza questo lo stdout di Python arriva a blocchi da 8 KB: quando un
     // motore muore in avvio, il log si ferma prima della riga che spiega perché.
     PYTHONUNBUFFERED: "1",
+    // Quanto spingere: il motore la legge e ne ricava i propri flag. Passata
+    // come ambiente e non come argomento perché la ServiceConfig è uguale per
+    // tutti i motori e non deve sapere cosa significhi per ognuno.
+    DAPROD_VELOCITA: impostazioni().velocita,
     DAPROD_MODELLI: MODELS_DIR,
     DAPROD_RISULTATI: libreria.cartella(id),
     DAPROD_TEMPORANEI: temporanei,

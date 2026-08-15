@@ -99,6 +99,21 @@ Ma la correzione **spegne il CUDA graph** invece di farlo funzionare: con i
 nostri flag, il depth decoder gira senza. Cioè la parte lenta è lenta anche per
 questo.
 
+## 4-bis. L'interruttore, così le prove le può fare chiunque
+
+In fondo all'hub c'è **Velocità: normale / spinta**, e cambia i flag con cui
+parte il motore (`services/comfy/avvio.py`, `flag_velocita`).
+
+| | normale | spinta |
+|---|---|---|
+| `--disable-dynamic-vram` | sì | **no** — è il punto: senza, il motore può tornare a catturare i CUDA graph |
+| `--fast` | no | sì (`fp16_accumulation`, `cublas_ops`, autotune) |
+| `--use-flash-attention` | no | sì, **ma solo se `flash_attn` è installata**: altrimenti il flag farebbe morire il motore in avvio, e il codice se ne accorge da sé |
+
+Vale dal prossimo avvio di un'app, perché i flag stanno nella riga di comando.
+Se un brano muore o va più piano, si rimette normale: è una prova, non una
+promessa.
+
 ## 5. Le prove da fare, dalla più economica
 
 Nessuna di queste è scritta: sono misure, e vanno fatte sullo stesso brano, con
@@ -112,11 +127,35 @@ lo stesso seed e la stessa durata, leggendo i token/s che il log scrive da solo.
    precaricare i pesi prima di catturare (`prefetch_dynamic_vbars`), e se oggi
    regge, il CUDA graph del depth decoder si riaccende: è il modo CG di WanGP,
    gratis, senza scrivere niente.
-3. **`--use-sage-attention` e `--fast`**, come interruttore "Velocità: normale /
-   spinta". Sono flag già nel motore e non li stiamo usando.
-4. **Solo dopo**: la nostra decodifica accelerata sul modello da 7B. È il pezzo
-   grosso, e oggi non abbiamo nemmeno i mattoni — su questa macchina non ci sono
-   né Triton né FlashAttention2, e il log del motore lo dice a ogni avvio.
+3. **`--fast`**, che l'interruttore accende insieme al resto.
+4. **FlashAttention2**, che si può installare davvero — vedi qui sotto — ma da
+   sola non sposta i tre quarti del tempo: l'attenzione, quando generi **un**
+   token per volta con mille di contesto, è la parte piccola del conto.
+5. **Solo dopo**: la nostra decodifica accelerata sul modello da 7B.
+
+### FlashAttention2 e Triton: si possono installare
+
+Cercati per la nostra combinazione esatta — Windows, Python 3.12, torch 2.13,
+CUDA 13.0 — ed esistono tutti e due:
+
+- **FlashAttention2**: `flash_attn-2.8.3+cu130torch2.13-cp312-cp312-win_amd64.whl`,
+  228 MB, da [flash-attention-prebuild-wheels](https://github.com/mjun0812/flash-attention-prebuild-wheels).
+  Il motore ha già il flag `--use-flash-attention`, e l'interruttore lo accende
+  da sé quando la libreria c'è.
+- **Triton**: [triton-windows](https://github.com/woct0rdho/triton-windows), su
+  PyPI fino alla 3.7.1. Servirebbe a far comparire il backend `triton` di
+  comfy-kitchen, che oggi il log dichiara non disponibile a ogni avvio.
+
+**Ma attenzione a cosa aspettarsi da Triton**, prima di installarlo: nel log il
+backend **cuda** di comfy-kitchen è già disponibile e dichiara `w4a8_int8_linear`,
+`gemv_awq_w4a16`, `dequantize_w4a8_int8_weight` — cioè proprio le moltiplicazioni
+dai pesi quantizzati che il modo veloce di WanGP fa in Triton. Se quei kernel
+sono già quelli in uso, Triton non ha molto da aggiungere. È una cosa da
+guardare nel log prima di installare 200 MB.
+
+Vanno installati con `--no-deps`: sono ruote che dichiarano torch fra le
+dipendenze, e l'ambiente è **condiviso da quattro motori** — un torch sostituito
+con una wheel qualsiasi li rompe tutti insieme.
 
 ## 6. I kernel GGUF 1.07: non oggi
 
