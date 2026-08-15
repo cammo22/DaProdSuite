@@ -195,3 +195,27 @@ export const APPS: Record<AppId, AppDescriptor> = {
 };
 
 export const APP_LIST: AppDescriptor[] = APP_IDS.map((id) => APPS[id]);
+
+/**
+ * Modelli che non sono di nessuna app in particolare e servono a tutte.
+ *
+ * Nella suite **niente è di una scheda sola**: i modelli stanno in un'unica
+ * cartella e qualunque app può usare quello che c'è. Questo elenco è il caso
+ * limite di quella regola — roba che non ha senso legare a un'app, e che si
+ * installa insieme alla prima scheda che si installa.
+ *
+ * Il traduttore sta qui perché il problema che risolve non è di DaProdFoto: è di
+ * chiunque scriva una descrizione a un modello addestrato in inglese, e quindi
+ * anche di Musica, Cinema e Dream quando toccherà a loro.
+ *
+ * Le app senza modelli (il Visualizer) non lo prendono: non hanno niente da
+ * descrivere a nessuno.
+ */
+export const MODELLI_COMUNI: string[] = ["traduttore-it-en"];
+
+/** I modelli che servono davvero a quest'app: i suoi più quelli di tutti. */
+export function modelliRichiesti(id: AppId): string[] {
+  const app = APPS[id];
+  if (app.models.length === 0) return [];
+  return [...app.models, ...MODELLI_COMUNI];
+}

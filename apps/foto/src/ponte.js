@@ -105,6 +105,27 @@ export async function carica(blob, nome) {
   return esito.subfolder ? `${esito.subfolder}/${esito.name}` : esito.name;
 }
 
+/**
+ * Traduce in inglese quello che hai scritto in italiano.
+ *
+ * Torna sempre un testo usabile: se il traduttore non c'è o si rompe, torna
+ * l'originale con `tradotta: false`, e l'interfaccia lo dice. Un traduttore
+ * mancante non deve mai impedire di generare — al massimo si genera peggio.
+ */
+export async function traduci(testo) {
+  try {
+    const risposta = await fetch(`${motore}/daprod/traduci`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ testo }),
+    });
+    if (!risposta.ok) throw new Error(`HTTP ${risposta.status}`);
+    return await risposta.json();
+  } catch (e) {
+    return { tradotto: testo, originale: testo, tradotta: false, motivo: String(e.message || e) };
+  }
+}
+
 export async function modelliInVram() {
   try {
     return await (await fetch(`${motore}/daprod/modelli`, { cache: "no-store" })).json();

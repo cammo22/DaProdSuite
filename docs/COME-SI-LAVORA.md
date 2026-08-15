@@ -107,6 +107,13 @@ Sei passi, in quest'ordine. Nessuno è saltabile.
    un'altra app, **non duplicarlo**: metti lo stesso id in tutte e due. Si scarica
    una volta sola.
 
+   I byte devono essere **esatti**, non arrotondati: è confrontandoli che la
+   suite distingue un file scaricato da uno interrotto, e una stima per eccesso
+   fa risultare "mancante" per sempre un modello che c'è. Si prendono dal
+   `Content-Length` dell'URL, o per i repo dall'API di HuggingFace
+   (`https://huggingface.co/api/models/<repo>?blobs=true`) sommando solo i file
+   che passano `include`/`exclude`.
+
 3. **`apps/<id>/`** — l'interfaccia.
 
 4. **`services/<id>/`** — il motore, se serve, con `/health` e `/shutdown`.

@@ -25,9 +25,9 @@ Repo pubblico: **https://github.com/cammo22/DaProdSuite**
 | **Supervisore collegato all'apertura delle app** | fatto e provato |
 | **DaProdMusica nella suite** | fatto, brano generato dentro la suite, **da provare a lungo** |
 | **DaProdFoto nella suite** | fatto, immagine generata dall'app, **ritocco da provare** |
-| Scaricamento modelli, procedura guidata | **da fare** |
-| ComfyUI scaricato al primo avvio | **da fare**: oggi deve già essere in `engines/` |
-| Foto, Dream, Companion, IoDigitale | **da migrare** |
+| **Scaricamento automatico di modelli e motore** | fatto e provato, **da provare tu su una scheda intera** |
+| Procedura guidata al primo avvio | **da fare** |
+| Dream, Companion, IoDigitale | **da migrare** |
 
 Si lavora solo su `main`: i rami `suite-interconnessa` e `musica-nella-suite`
 sono stati uniti e cancellati, e con loro le PR #1 e #2.
@@ -113,14 +113,74 @@ come posizionamento, e il README va riscritto così. Due cose però restano:
 Quindi: fuori dal racconto pubblico, dentro nei file tecnici e in una riga di
 crediti. Se preferisci diversamente, dillo.
 
+## Com'è entrato lo scaricamento automatico
+
+Premere "Installa" su una scheda adesso fa tutto: ambiente Python se manca,
+motore se l'app ne guida uno, poi i modelli che le mancano, uno alla volta.
+Prima di questo la suite dava per scontato che trenta GB di pesi e ComfyUI
+fossero già sul disco, cioè funzionava su un computer solo — questo.
+
+Cinque pezzi, e valgono per tutte le app che verranno.
+
+**`packages/runtime/scarica.ts`** — un file grosso, ripreso da dove si era
+fermato. Si scrive accanto al definitivo un `.parte`, e al tentativo dopo si
+chiede al server solo il pezzo che manca con un'intestazione `Range`. Il nome
+definitivo arriva **solo** a file intero e della dimensione dichiarata: finché
+c'è un `.parte`, per la suite quel modello non esiste, e nessun motore ne
+caricherà mai metà.
+
+**`packages/runtime/hf.ts`** — i repo HuggingFace interi (SD-Turbo, SoulX), con
+`snapshot_download` dentro il Python condiviso. L'avanzamento non si legge dal
+loro output: si pesa la cartella ogni due secondi, che è lo stesso numero
+misurato dove non può mentire.
+
+**`packages/runtime/motore.ts`** — ComfyUI, dallo zip di una versione **fissata**
+(0.33.0), non dall'ultimo commit: la suite deve installare quello che abbiamo
+provato, non quello di stamattina. Niente `git clone`, perché chi installa
+dall'installer non ha per forza git. Poi le sue librerie entrano nell'ambiente
+condiviso, tolti i due pacchetti di esempi e documentazione dell'editor (che non
+apriamo mai) e torch (che c'è già, con la build CUDA giusta).
+
+**`apps/shell/src/main/scaricamenti.ts`** — l'orchestratore, che mette in fila le
+tre cose e le racconta all'hub. **L'avanzamento si conta in byte, non in file**:
+un'app con un modello da 5,9 GB e due da 200 MB, contata in file, resterebbe
+ferma a "1 di 3" per venti minuti e poi finirebbe in trenta secondi.
+
+**La scheda nell'hub** ha una barra col colore dell'app e il bottone diventa
+"Annulla". Quando non si sa quanto manca — l'ambiente Python, le librerie del
+motore — la barra scorre invece di restare ferma a zero.
+
+### Le due cose che si sono viste solo provando
+
+**Il comando `hf` non può esistere in questo ambiente.** `transformers`, che
+ComfyUI si porta dietro, pretende `huggingface-hub<1.0`; il comando `hf` nasce
+dalla 1.0 in poi. Erano compatibili solo perché l'ambiente era rimasto in uno
+stato incoerente, e la prima installazione automatica del motore lo ha rimesso a
+posto lasciando in giro un `hf.exe` che puntava a un modulo sparito. Adesso
+`base.txt` dichiara il tetto `<1.0` e si usa la libreria, che c'è in tutte e due
+le versioni. **Se un giorno l'ambiente si ricrea da zero, è normale che `hf` non
+ci sia: non serve più a nessuno.**
+
+**Tre modelli nel catalogo avevano dimensioni stimate.** I due FLUX e il VAE
+erano arrotondati, e `isModelPresent` confronta i byte *esatti*: scaricati bene,
+sarebbero risultati mancanti per sempre. Adesso i byte vengono tutti dal
+`Content-Length` vero o dall'API di HuggingFace. Stessa storia per SD-Turbo, che
+dichiarava 2,6 GB mentre il repo intero ne pesa 13: ora ha gli `include` che
+prendono solo la pipeline fp16, che è quello che serviva a Dream.
+
 ## Il prossimo passo
 
-**Lo scaricamento automatico**, che adesso è la cosa che blocca tutto il resto:
-ComfyUI e i modelli devono già essere sul disco, quindi oggi la suite funziona
-solo su questo PC. È l'ultimo pezzo del "git clone deve bastare", e senza di lui
-FLUX.2 Klein non si può installare nemmeno volendo.
+Adesso che i modelli si scaricano da soli, **FLUX.2 Klein in Foto si può fare**:
+era bloccato solo da questo. Servono il nodo ComfyUI-GGUF (che il motore non ha,
+e va installato come si installa ComfyUI) e la scelta del modello nell'interfaccia
+di Foto, con SD-Turbo che è già nel catalogo.
 
-Poi restano tre app da migrare: **Dream**, **Companion**, **IoDigitale**.
+Restano aperte anche le altre cose che avevi chiesto il 15: i pannelli veri per
+Risultati / Modelli / Log, "Mostra nella cartella" che dà errore, e il ritocco
+con Anima da verificare.
+
+Poi la procedura guidata al primo avvio, e tre app da migrare: **Dream**,
+**Companion**, **IoDigitale**.
 
 ### Com'è entrata DaProdFoto
 
@@ -180,6 +240,24 @@ finestra è coperta.
 scoprire un errore di sintassi solo aprendo la finestra:
 `.\apps\visualizer\node_modules\.bin\oxlint apps\musica`.
 
+**Per provare lo scaricamento senza aspettare 8 GB**, due comandi:
+
+- `node packages/runtime/scripts/prova-scaricamento.cjs` — scarica per davvero il
+  VAE di Anima in una cartella temporanea, lo interrompe a 20 MB e lo riprende.
+- `node apps/shell/scripts/prova-scaricamento-app.cjs` — preme "Installa" su
+  DaProdMusica per finta: annulla a metà, ripreme, e controlla stati, byte e
+  file. Fa scaricare solo i 216 MB del VAE di MiniMax, perché il resto entra
+  nella radice di prova come giunzione.
+
+Il secondo usa un trucco che vale anche per altro: il finto `electron` decide
+`app.getPath("appData")`, e siccome `paths.ts` costruisce tutto da lì, l'intera
+suite scrive in una cartella di prova invece che nella tua.
+
+**Non si possono aprire due suite insieme.** C'è il lock a istanza singola: se ne
+lanci una seconda, quella nuova esce subito e mette in primo piano la vecchia. Se
+stai provando del codice appena compilato e non cambia niente, è perché stai
+guardando l'istanza di prima.
+
 **Un ComfyUI acceso a mano blocca tutto.** La porta 8188 è fissa nel catalogo:
 se è occupata, `servizi.ts` lo dice subito invece di far aspettare tre minuti.
 Capita davvero — due motori di MinimaxMusica erano rimasti accesi dalla notte.
@@ -215,7 +293,9 @@ che passava da solo al brano dopo.
 | DaProdCinema | due strade: registrare gli effetti del Visualizer (breve) e le clip generate (lunga) |
 | Modelli | spostati dai vecchi progetti; MinimaxMusica e AvatarParlante ora sono archivio |
 | Mage-VL | **scartato**: non genera immagini, le comprende |
-| ComfyUI | scaricato al primo avvio, non nel repo: è GPL-3.0 e la suite è MIT |
+| ComfyUI | scaricato dalla suite, non nel repo: è GPL-3.0 e la suite è MIT |
+| ComfyUI | versione **fissata** (0.33.0) in `packages/runtime/src/motore.ts`: si aggiorna quando lo decidiamo noi e riproviamo i motori, non da sé |
+| huggingface-hub | tetto a `<1.0`, perché lo pretende `transformers`. Niente comando `hf`: si usa `snapshot_download` |
 | Copertine | generate con `PreviewImage`, quindi nei temporanei: se andassero in output la libreria si riempirebbe di copertine sciolte |
 | Lettore di Musica | a fine brano si ferma, non passa al successivo |
 
@@ -229,3 +309,8 @@ che passava da solo al brano dopo.
   "genero un'immagine qui, la mando a Musica come copertina di un brano".
 - **Il Visualizer**: aperto dalla suite, con il pannello "Brani generati". Va
   provato — soprattutto se "Ascolta" fa partire davvero il brano.
+- **Lo scaricamento**: provato a fondo sui 216 MB del VAE di MiniMax, annullato e
+  ripreso. Quello che non ha ancora visto nessuno è **una scheda intera da zero**
+  — cancella i modelli di una scheda dal pannello Spazio e ripremi Installa: sono
+  7,9 GB per Musica, 5,6 per Foto. È lì che si vede se la barra racconta la
+  verità per mezz'ora di fila.

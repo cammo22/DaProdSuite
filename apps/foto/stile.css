@@ -226,3 +226,24 @@ legend{font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var
 .ultime{display:grid; grid-template-columns:repeat(auto-fill,minmax(88px,1fr)); gap:8px; margin-top:12px}
 .ultime img{width:100%; aspect-ratio:1; object-fit:cover; border-radius:10px; cursor:zoom-in;
   border:1px solid var(--line); background:#0b0d13}
+
+/* --------------------------------------------------- trascinamento ------- */
+/* Compare solo mentre si tiene un file sopra la finestra. Copre tutto perché
+   il bersaglio è tutta la pagina: chiedere di centrare un riquadro è un modo
+   di far fallire un gesto che dovrebbe essere ovvio. */
+.velo-trascina{position:fixed; inset:0; z-index:80; display:flex;
+  align-items:center; justify-content:center; pointer-events:none;
+  background:rgba(6,7,11,.82); backdrop-filter:blur(6px)}
+.velo-trascina[hidden]{display:none}
+.velo-trascina span{padding:22px 34px; border-radius:16px; font-size:16px;
+  color:var(--txt); border:2px dashed var(--accent); background:rgba(0,0,0,.35)}
+
+/* La lingua: l'interruttore e la riga che dice cosa è stato mandato davvero.
+   Vedere la traduzione serve a dare la colpa alla parola giusta quando
+   l'immagine non è quella che avevi in testa. */
+.riga-traduci{display:flex; align-items:center; gap:8px; margin-top:10px;
+  font-size:13px; color:var(--dim); cursor:pointer}
+.riga-traduci input{accent-color:var(--accent); cursor:pointer}
+.tradotto{margin-top:8px; padding:8px 10px; border-radius:10px;
+  background:var(--panel2); border:1px solid var(--line); color:var(--txt)}
+.tradotto.guasto{color:var(--err); border-color:var(--err)}

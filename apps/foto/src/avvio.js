@@ -13,6 +13,9 @@ import { collegaRitocco } from "./ritocco.js";
 import { aggiornaGalleria, collegaGalleria } from "./galleria.js";
 import { collegaModelli } from "./modelli.js";
 import { collegaLente } from "./lente.js";
+import { collegaTrascinamento, eImmagine } from "./trascina.js";
+import { collegaTraduzione } from "./lingua.js";
+import { apriImmagine } from "./ritocco.js";
 import { collega } from "./ponte.js";
 
 document.querySelectorAll("nav button").forEach((b) => {
@@ -26,6 +29,20 @@ collegaRitocco();
 collegaGalleria();
 collegaComandiCoda();
 collegaModelli();
+collegaTraduzione();
+
+// Un'immagine trascinata dentro finisce nel ritocco, da qualunque scheda: è
+// l'unica cosa che in Foto si può fare con un'immagine che arriva da fuori.
+collegaTrascinamento(async (file) => {
+  const indirizzo = URL.createObjectURL(file);
+  try {
+    await apriImmagine(indirizzo);
+  } catch (e) {
+    mostraErrore(`Non sono riuscito ad aprire "${file.name}": ${e.message || e}`);
+  } finally {
+    URL.revokeObjectURL(indirizzo);
+  }
+}, eImmagine);
 
 // Un errore del motore arriva dalla coda, che non sa in quale scheda sei.
 ascolta("errore", (testo) => mostraErrore(testo));

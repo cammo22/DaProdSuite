@@ -72,15 +72,18 @@ Tutto in locale: nessun account, nessuna API, nessun dato che esce dal computer.
 
 ## A che punto siamo
 
-> **0.0.1 — le fondamenta ci sono, le app si stanno spostando dentro.**
+> **0.0.1 — le fondamenta ci sono, tre app sono dentro, e adesso si installa da sola.**
 >
 > Guscio, hub, installer, aggiornamenti automatici, arbitro della GPU e ambiente
-> Python condiviso: **fatti e provati**. Le sette app esistono come progetti
-> funzionanti e vengono migrate una alla volta, ognuna provata prima di passare
-> alla successiva. Nell'hub le schede non ancora migrate dicono «In arrivo», e lo
-> dicono sul serio.
+> Python condiviso: **fatti e provati**. **Visualizer, Musica e Foto** sono dentro
+> la suite e funzionano. Premere "Installa" su una scheda adesso scarica davvero
+> tutto quello che le serve, riprendendo da dove si era fermato se la rete cade.
+> Le altre quattro app esistono come progetti funzionanti e vengono migrate una
+> alla volta, ognuna provata prima di passare alla successiva: nell'hub le schede
+> non ancora migrate dicono «In arrivo», e lo dicono sul serio.
 
-Il percorso completo è in [docs/ROADMAP.md](docs/ROADMAP.md).
+Quello che cambia a ogni giro sta in [CHANGELOG.md](CHANGELOG.md), il percorso
+completo in [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ---
 
@@ -240,6 +243,7 @@ Il ragionamento completo è in
 
 | | |
 |---|---|
+| [CHANGELOG.md](CHANGELOG.md) | Cosa è cambiato, dall'ultima volta in giù |
 | [COME-SI-LAVORA.md](docs/COME-SI-LAVORA.md) | Regole della repo, versioni, come si aggiunge un'app |
 | [MODELLI-E-STRATEGIA.md](docs/MODELLI-E-STRATEGIA.md) | Quali modelli, quanto pesano, cosa si è compattato |
 | [VERIFICA-AMBIENTE-UNIFICATO.md](docs/VERIFICA-AMBIENTE-UNIFICATO.md) | La prova che i quattro motori girano su un solo torch |

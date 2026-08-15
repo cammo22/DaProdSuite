@@ -7,13 +7,18 @@
   Le stesse regole di DaProdMusica, per la stessa ragione: la pagina parla col
   motore su 127.0.0.1 in HTTP e WebSocket, mostra file veri del disco attraverso
   lo schema `daprod:` e non esegue mai script che non siano i suoi moduli.
+
+  `connect-src` comprende `daprod:` e `blob:` perché il ritocco non si limita a
+  *mostrare* un'immagine: la rilegge con `fetch` per ridisegnarla su misura del
+  VAE prima di dipingerci sopra. Senza, aprire una foto — dal disco o dalla
+  galleria — falliva senza dire niente.
 -->
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
   script-src 'self';
   style-src 'self' 'unsafe-inline';
   img-src 'self' daprod: http://127.0.0.1:8188 data: blob:;
-  connect-src 'self' http://127.0.0.1:8188 ws://127.0.0.1:8188;
+  connect-src 'self' daprod: blob: data: http://127.0.0.1:8188 ws://127.0.0.1:8188;
   object-src 'none';
   base-uri 'none';
 ">
@@ -43,8 +48,11 @@
       <h2>Cosa vuoi vedere</h2>
       <div class="chips" id="proposte"></div>
       <textarea id="prompt" rows="4" placeholder="Es. una vecchia automobile ferma su una strada vuota al tramonto"></textarea>
-      <div class="hint">Puoi scrivere in italiano: le parole chiave diventano scena.
-        Se scrivi in inglese viene usato com'è.</div>
+      <div class="hint">Scrivi in italiano: viene tradotto in inglese prima di
+        generare, perché è l'unica lingua che il modello capisce davvero.</div>
+      <label class="riga-traduci"><input type="checkbox" data-traduci checked>
+        Traduci in inglese prima di generare</label>
+      <div class="hint tradotto" id="tradottoCrea" hidden></div>
     </div>
 
     <div class="panel">
@@ -135,6 +143,9 @@
     <div class="panel sticky">
       <h2>Cosa deve diventare</h2>
       <textarea id="promptRitocco" rows="3" placeholder="Es. un cespuglio di fiori rossi"></textarea>
+      <label class="riga-traduci"><input type="checkbox" data-traduci checked>
+        Traduci in inglese prima di generare</label>
+      <div class="hint tradotto" id="tradottoRitocco" hidden></div>
       <div class="field" style="margin-top:12px">
         <label>Quanto cambiare <span class="rangeval" id="denoiseVal">0.75</span></label>
         <input type="range" id="denoise" min="0.2" max="1" step="0.05" value="0.75">

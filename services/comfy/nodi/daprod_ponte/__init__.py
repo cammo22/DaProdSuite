@@ -15,9 +15,11 @@ questo è l'unico modo che ComfyUI offre per far girare del codice proprio dentr
 al suo processo.
 """
 
+import asyncio
 import logging
 import os
 import threading
+from pathlib import Path
 
 from aiohttp import web
 
@@ -108,6 +110,100 @@ async def scarica(request):
             mm.current_loaded_models.remove(caricato)
     mm.soft_empty_cache(True)
     return web.json_response({"ok": True})
+
+
+"""Traduzione italiano → inglese.
+
+I modelli di immagini capiscono l'inglese: una descrizione in italiano dà
+un'immagine che non c'entra niente con quello che hai chiesto, e senza dire che
+non ha capito. Qui si traduce prima di generare, così si può scrivere in
+italiano.
+
+Sta dentro al motore per la stessa ragione dell'elenco della VRAM: qui c'è già
+un Python con torch e transformers acceso, e aggiungere un servizio a parte
+vorrebbe dire un secondo processo, una seconda porta e un secondo avvio da
+aspettare per 74 milioni di parametri.
+
+**In CPU, non in GPU.** Sono 330 MB di pesi: in VRAM toglierebbero spazio al
+modello che deve fare il lavoro vero, e su una scheda da 8 GB quello spazio è
+esattamente ciò che manca. In CPU la traduzione di una frase dura meno di un
+secondo, che è niente rispetto ai venti di una generazione.
+"""
+
+_traduttore = None
+_traduttore_rotto = None
+
+
+def _carica_traduttore():
+    """Carica il modello alla prima richiesta, non all'avvio del motore.
+
+    Chi genera solo in inglese non deve aspettare 330 MB che non userà mai, e
+    chi non ha scaricato il traduttore deve poter usare l'app lo stesso.
+    """
+    global _traduttore, _traduttore_rotto
+    if _traduttore is not None or _traduttore_rotto is not None:
+        return
+
+    cartella = Path(os.environ.get("DAPROD_MODELLI", "")) / "traduttore" / "opus-mt-it-en"
+    if not (cartella / "config.json").exists():
+        _traduttore_rotto = (
+            "Il traduttore non è installato. Scaricalo dall'hub, oppure scrivi in inglese."
+        )
+        return
+
+    try:
+        from transformers import MarianMTModel, MarianTokenizer
+
+        tokenizer = MarianTokenizer.from_pretrained(str(cartella))
+        modello = MarianMTModel.from_pretrained(str(cartella))
+        modello.eval()
+        _traduttore = (tokenizer, modello)
+        logging.info("[daprod] traduttore italiano→inglese pronto")
+    except Exception as exc:  # noqa: BLE001 — qualunque cosa vada storta, l'app deve restare in piedi
+        _traduttore_rotto = f"Il traduttore non si è caricato: {exc}"
+        logging.exception("[daprod] traduttore non caricato")
+
+
+@routes.post("/daprod/traduci")
+async def traduci(request):
+    """Da italiano a inglese. Torna sempre qualcosa di usabile.
+
+    Se il traduttore manca o si rompe, si risponde con il testo originale e il
+    motivo: meglio un'immagine generata da un prompt italiano che un errore che
+    blocca il lavoro.
+    """
+    dati = await request.json()
+    testo = (dati.get("testo") or "").strip()
+    if not testo:
+        return web.json_response({"tradotto": "", "originale": "", "tradotta": False})
+
+    _carica_traduttore()
+    if _traduttore is None:
+        return web.json_response(
+            {"tradotto": testo, "originale": testo, "tradotta": False, "motivo": _traduttore_rotto},
+            headers={"Cache-Control": "no-store"},
+        )
+
+    tokenizer, modello = _traduttore
+
+    def lavora():
+        import torch
+
+        with torch.no_grad():
+            # Le descrizioni possono essere lunghe: 512 token sono circa 2000
+            # caratteri, ben oltre quello che un prompt di immagine usa davvero.
+            ingresso = tokenizer([testo], return_tensors="pt", truncation=True, max_length=512)
+            uscita = modello.generate(**ingresso, max_new_tokens=512, num_beams=2)
+        return tokenizer.decode(uscita[0], skip_special_tokens=True)
+
+    # Fuori dal loop di aiohttp: mentre traduce, il motore deve continuare a
+    # rispondere a /health e alle richieste dell'interfaccia.
+    tradotto = await asyncio.get_running_loop().run_in_executor(None, lavora)
+
+    return web.json_response(
+        {"tradotto": tradotto, "originale": testo, "tradotta": True},
+        headers={"Cache-Control": "no-store"},
+    )
 
 
 # ComfyUI cerca queste due in ogni nodo: senza, si lamenta di un pacchetto rotto.

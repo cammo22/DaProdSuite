@@ -37,9 +37,11 @@ girano: la spunta arriva quando le hai provate a lungo tu.
 - [ ] **DaProdFoto** — Anima di base, FLUX.2 Klein come extra *(dentro con Anima:
       testo→immagine e ritocco con maschera. FLUX resta fuori finché non c'è lo
       scaricamento: vuole ComfyUI-GGUF e 12,4 GB)*
-- [ ] **ComfyUI scaricato al primo avvio** — oggi deve già essere in `engines/`,
-      ed è l'ultimo pezzo che manca a "git clone deve bastare"
-- [ ] Scaricamento dei modelli con ripresa e avanzamento
+- [x] **ComfyUI scaricato quando serve** — la versione è fissata (0.33.0), lo zip
+      arriva da GitHub e le sue librerie entrano nell'ambiente condiviso senza
+      toccare torch. Era l'ultimo pezzo che mancava a "git clone deve bastare"
+- [x] Scaricamento dei modelli con ripresa e avanzamento — *(provato: annullato a
+      metà, ripreso, arrivato intero; da provare tu su una scheda intera)*
 - [ ] Procedura guidata al primo avvio: scegli le app, ti dice quanti GB
 
 ## 0.2.0 — Le altre tre

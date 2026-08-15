@@ -16,6 +16,7 @@ import { el, mostraErrore, nascondiErrore, rnd, legaValore, mostraScheda } from 
 import { ascolta } from "./bus.js";
 import { MODELLO, componiPrompt, grafoRitocco } from "./grafi.js";
 import { aggiungiLavoro } from "./coda.js";
+import { inInglese } from "./lingua.js";
 import * as ponte from "./ponte.js";
 
 const LATO_MASSIMO = 1536;
@@ -172,9 +173,10 @@ export function collegaRitocco() {
       const base = await ponte.carica(await inBlob(sotto), "base.png");
       const maschera = await ponte.carica(await inBlob(mascheraPiena()), "maschera.png");
 
+      const inglese = await inInglese(testo, el.tradottoRitocco);
       const denoise = parseFloat(el.denoise.value);
       const parametri = {
-        prompt: componiPrompt(testo, el.estetica.value),
+        prompt: componiPrompt(inglese, el.estetica.value),
         negativo: el.negativo.value.trim(),
         seed: rnd(),
         passi: parseInt(el.passi.value),

@@ -10,6 +10,7 @@ for (const chiave of [
   "areaTela", "nessunaImmagine", "comandiPennello", "pennello", "pennelloVal",
   "scegliFile", "pulisciMaschera", "sceltaFile", "promptRitocco", "denoise",
   "denoiseVal", "rigenera", "erroreRitocco", "galleria", "conteggio", "aggiorna", "lente", "lenteImg", "lenteInfo",
+  "tradottoCrea", "tradottoRitocco",
 ]) {
   el[chiave] = $(chiave);
 }
