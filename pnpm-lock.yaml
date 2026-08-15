@@ -39,6 +39,9 @@ importers:
 
   apps/visualizer:
     devDependencies:
+      '@types/node':
+        specifier: ^22.18.0
+        version: 22.20.1
       '@types/react':
         specifier: ^19.2.17
         version: 19.2.18
@@ -50,7 +53,7 @@ importers:
         version: 0.185.4
       '@vitejs/plugin-react':
         specifier: ^6.0.3
-        version: 6.0.5(vite@8.2.1(@types/node@24.13.3)(jiti@2.7.0))
+        version: 6.0.5(vite@8.2.1(@types/node@22.20.1)(jiti@2.7.0))
       music-metadata:
         specifier: ^11.14.0
         version: 11.14.0(supports-color@7.2.0)
@@ -71,7 +74,7 @@ importers:
         version: 5.9.3
       vite:
         specifier: ^8.1.1
-        version: 8.2.1(@types/node@24.13.3)(jiti@2.7.0)
+        version: 8.2.1(@types/node@22.20.1)(jiti@2.7.0)
 
   packages/ipc:
     devDependencies:
@@ -1930,10 +1933,10 @@ snapshots:
 
   '@types/webxr@0.5.24': {}
 
-  '@vitejs/plugin-react@6.0.5(vite@8.2.1(@types/node@24.13.3)(jiti@2.7.0))':
+  '@vitejs/plugin-react@6.0.5(vite@8.2.1(@types/node@22.20.1)(jiti@2.7.0))':
     dependencies:
       '@rolldown/pluginutils': 1.0.1
-      vite: 8.2.1(@types/node@24.13.3)(jiti@2.7.0)
+      vite: 8.2.1(@types/node@22.20.1)(jiti@2.7.0)
 
   '@xmldom/xmldom@0.8.14': {}
 
@@ -3064,7 +3067,7 @@ snapshots:
 
   util-deprecate@1.0.2: {}
 
-  vite@8.2.1(@types/node@24.13.3)(jiti@2.7.0):
+  vite@8.2.1(@types/node@22.20.1)(jiti@2.7.0):
     dependencies:
       lightningcss: 1.33.0
       picomatch: 4.0.5
@@ -3072,7 +3075,7 @@ snapshots:
       rolldown: 1.2.4
       tinyglobby: 0.2.17
     optionalDependencies:
-      '@types/node': 24.13.3
+      '@types/node': 22.20.1
       fsevents: 2.3.3
       jiti: 2.7.0
 

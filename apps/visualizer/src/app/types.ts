@@ -32,7 +32,7 @@ export interface Notice {
   detail?: string
 }
 
-export type PanelName = 'none' | 'playlist' | 'presets' | 'settings'
+export type PanelName = 'none' | 'playlist' | 'presets' | 'settings' | 'libreria'
 
 export interface AppState {
   tracks: Track[]

@@ -128,6 +128,12 @@ export function PlayerOverlay(): JSX.Element {
               onClick={() => controller.togglePanel('playlist')}
             />
             <IconButton
+              icon="music"
+              label="Brani generati dalla suite"
+              active={panel === 'libreria'}
+              onClick={() => controller.togglePanel('libreria')}
+            />
+            <IconButton
               icon="presets"
               label={`Preset: ${presetName(presetId)}`}
               active={panel === 'presets'}

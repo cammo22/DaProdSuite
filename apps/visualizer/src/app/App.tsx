@@ -2,11 +2,13 @@ import { useEffect, useRef, type JSX } from 'react'
 import { NoticeStack } from '@/components/NoticeStack'
 import { EmptyScreen } from '@/features/player/EmptyScreen'
 import { PlayerOverlay } from '@/features/player/PlayerOverlay'
+import { LibreriaPanel } from '@/features/libreria/LibreriaPanel'
 import { PlaylistPanel } from '@/features/playlist/PlaylistPanel'
 import { PresetBar } from '@/features/presets/PresetBar'
 import { PresetPanel } from '@/features/presets/PresetPanel'
 import { SettingsPanel } from '@/features/settings/SettingsPanel'
 import { VisualizerCanvas } from '@/features/visualizer/VisualizerCanvas'
+import { allaConsegna, comeFileInIngresso } from '@/suite/bridge'
 import { selectPanel, useAppState, useController } from './hooks'
 import type { AppState } from './types'
 import { useFileDrop } from './useFileDrop'
@@ -38,6 +40,16 @@ export function App(): JSX.Element {
     const onChange = () => controller.noteFullscreen(document.fullscreenElement !== null)
     document.addEventListener('fullscreenchange', onChange)
     return () => document.removeEventListener('fullscreenchange', onChange)
+  }, [controller])
+
+  useEffect(() => {
+    // Un'altra app della suite ci manda un brano: entra in coda e parte.
+    // `riproduci` e' l'unica intenzione che il Visualizer sa onorare; le altre
+    // riguardano immagini e non lo toccano.
+    return allaConsegna((consegna) => {
+      if (consegna.intenzione !== 'riproduci' || consegna.elemento.tipo !== 'audio') return
+      void controller.addFiles([comeFileInIngresso(consegna.elemento)], { autoplay: true })
+    })
   }, [controller])
 
   useEffect(() => {
@@ -82,6 +94,7 @@ export function App(): JSX.Element {
       {panel === 'playlist' && <PlaylistPanel />}
       {panel === 'presets' && <PresetPanel />}
       {panel === 'settings' && <SettingsPanel />}
+      {panel === 'libreria' && <LibreriaPanel />}
 
       {dragging && hasTracks && (
         <div className="dpv-dropveil" aria-hidden="true">

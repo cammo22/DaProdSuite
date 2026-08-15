@@ -1288,3 +1288,83 @@
   backdrop-filter: blur(18px);
   font-size: 0.8rem;
 }
+
+/* ------------------------------------------------------ libreria della suite
+
+   I brani prodotti dalle altre app. Non è una seconda playlist: è una sorgente
+   da cui pescare, quindi la voce mostra copertina e provenienza e poi sparisce
+   dentro la coda normale. */
+
+.dpv-libreria {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dpv-libreria__voce {
+  display: grid;
+  grid-template-columns: 48px 1fr;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  border: 1px solid var(--dpv-line, #262b38);
+  border-radius: 12px;
+  background: var(--dpv-surface-2, #141822);
+}
+
+.dpv-libreria__copertina {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  overflow: hidden;
+  border-radius: 8px;
+  background: var(--dpv-surface-3, #1c2130);
+  color: var(--dpv-text-dim, #7b8598);
+  font-size: 20px;
+}
+
+.dpv-libreria__copertina img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.dpv-libreria__testo {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dpv-libreria__nome {
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dpv-libreria__dati {
+  color: var(--dpv-text-dim, #7b8598);
+  font-size: 12px;
+}
+
+/* Su tutta la riga sotto testo e copertina: con tre bottoni accanto al titolo,
+   sotto i 400px di larghezza il nome del brano sparirebbe. */
+.dpv-libreria__azioni {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  grid-column: 1 / -1;
+}
+
+.dpv-libreria__vuoto {
+  margin: 0;
+  padding: 20px 4px;
+  color: var(--dpv-text-dim, #7b8598);
+  font-size: 13px;
+  line-height: 1.6;
+}

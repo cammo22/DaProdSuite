@@ -2,6 +2,7 @@ import type { JSX } from 'react'
 import { useController } from '@/app/hooks'
 import { COMMON_FORMATS } from '@/audio/formats'
 import { Icon } from '@/components/Icon'
+import { dentroLaSuite } from '@/suite/bridge'
 
 /**
  * Schermata iniziale (02_UX_UI.md): logo, invito al trascinamento e formati.
@@ -42,6 +43,18 @@ export function EmptyScreen({ dragging }: { dragging: boolean }): JSX.Element {
           <Icon name="folder" size={18} />
           Aggiungi musica
         </button>
+
+        {/* Compare solo dentro la suite: da sola, la libreria non esiste. */}
+        {dentroLaSuite() && (
+          <button
+            type="button"
+            className="dpv-button"
+            onClick={() => controller.togglePanel('libreria')}
+          >
+            <Icon name="music" size={18} />
+            Brani generati dalla suite
+          </button>
+        )}
 
         <ul className="dpv-formats" aria-label="Formati supportati">
           {COMMON_FORMATS.map((format) => (
