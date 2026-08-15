@@ -31,10 +31,19 @@ jobs:
       - name: Installa le dipendenze
         run: pnpm install --frozen-lockfile
 
+      # Prima di controllare i tipi bisogna compilare i pacchetti del workspace:
+      # @daprod/ipc e @daprod/runtime si vedono da fuori attraverso il loro
+      # `dist/index.d.ts`, che su una copia appena clonata non esiste ancora.
+      # Al contrario, `tsc` dello shell non trova nemmeno i moduli e la release
+      # muore prima di cominciare — che è esattamente quello che è successo al
+      # primo tag mai pubblicato.
+      - name: Compila i pacchetti
+        run: pnpm run build
+
       - name: Controllo dei tipi
         run: pnpm run typecheck
 
-      - name: Compila e crea l'installer
+      - name: Crea l'installer
         run: pnpm run dist
         env:
           # electron-builder crea la Release e ci carica installer + latest.yml.
