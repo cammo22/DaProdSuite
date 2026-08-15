@@ -28,7 +28,8 @@ Repo pubblico: **https://github.com/cammo22/DaProdSuite**
 | ComfyUI scaricato al primo avvio | **da fare**: oggi deve già essere in `engines/` |
 | Foto, Dream, Companion, IoDigitale | **da migrare** |
 
-Il ramo `suite-interconnessa` è stato unito e cancellato: si lavora solo su `main`.
+Si lavora solo su `main`: i rami `suite-interconnessa` e `musica-nella-suite`
+sono stati uniti e cancellati, e con loro le PR #1 e #2.
 
 ## Com'è entrata DaProdMusica
 
@@ -62,11 +63,38 @@ quello che le serve è già comune.
 ## Il prossimo passo
 
 **DaProdFoto.** Gira sullo stesso ComfyUI già acceso da Musica, quindi il motore
-non va scritto: ci sono già `services/comfy` e il supervisore che lo accende. Il
-lavoro è l'interfaccia, i grafi di Anima e la scheda nel catalogo — che è già
-scritta, modelli compresi.
+non va scritto: ci sono già `services/comfy` e il supervisore che lo accende. La
+scheda nel catalogo è già scritta, modelli compresi.
 
-Prima però, due cose che si sono viste solo facendo girare Musica:
+Viene da **`Desktop\Flux`** (Flux Klein Studio), e tre quarti di quel progetto
+sono roba che la suite fa già:
+
+| Cosa c'è in Flux | Che fine fa |
+|---|---|
+| `fluxapp/setup_manager.py`, `downloader.py`, `comfy_server.py`, `comfy_client.py` | **si buttano**: ambiente, scaricamento e avvio di ComfyUI sono della suite |
+| `engine/ComfyUI` | si butta: è lo stesso motore che accende Musica |
+| `fluxapp/workflows.py` (143 righe) | diventa `apps/foto/src/grafi.js` |
+| `web/` (già tre file: `index.html`, `app.js`, `style.css`) | diventa `apps/foto/` |
+
+**Attenzione a una cosa che si vede solo leggendo `workflows.py`:** la strada
+FLUX.2 Klein usa `UnetLoaderGGUF` e `CLIPLoaderGGUF`, cioè il custom node
+**ComfyUI-GGUF**, che nel nostro motore non c'è. Anima invece gira su nodi core,
+e i suoi pesi sono già su disco perché li usa Musica per le copertine. Quindi:
+
+1. **Anima come base** — txt2img e inpaint con maschera, tutto con nodi core.
+   Funziona oggi, senza scaricare niente.
+2. **FLUX.2 Klein come extra** — servono ComfyUI-GGUF e 12,4 GB di pesi, e senza
+   lo scaricamento automatico non si può comunque installare. Si fa quando c'è
+   quello.
+
+**Sui grafi condivisi**: `apps/musica/src/grafi.js` ha già un grafo Anima, ma è
+quello delle copertine (10 passi, cfg 1.0, `PreviewImage`). Quello di Foto ha
+passi, cfg, formato, negativo e maschera. Sono parenti, non uguali: per ora ognuna
+ha il suo, e si promuovono a pacchetto condiviso quando li vorrà anche una terza
+app. Quello che *è* già condiviso, ed è la cosa che rischiava di divergere, sono i
+nomi dei file dei modelli: stanno in `manifest/models.json`.
+
+Restano poi le due cose viste facendo girare Musica:
 
 1. **ComfyUI va scaricato dalla suite.** Oggi deve già essere in
    `%LOCALAPPDATA%\DaProdSuite\engines\ComfyUI`, altrimenti l'app dice che manca
