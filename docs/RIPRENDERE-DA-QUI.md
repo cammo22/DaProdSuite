@@ -18,67 +18,94 @@ Repo pubblico: **https://github.com/cammo22/DaProdSuite**
 | Installer NSIS + aggiornamento da GitHub Releases | fatto, `.exe` da 95,4 MB costruito |
 | Ambiente Python condiviso | fatto: **4,05 GB** invece di 14,7 in quattro venv |
 | I quattro motori su torch 2.13 | verificati, IoDigitale compreso |
-| **DaProdVisualizer nella suite** | fatto, **da provare** |
+| DaProdVisualizer nella suite | fatto, **da provare** |
 | Libreria condivisa + scambio fra app | fatto e provato su un brano vero |
 | Spazio su disco per scheda, disinstalla, reset | fatto |
 | Modelli importati dai vecchi progetti | **30,29 GB spostati** |
+| **Supervisore collegato all'apertura delle app** | fatto e provato |
+| **DaProdMusica nella suite** | fatto, brano generato dentro la suite, **da provare a lungo** |
 | Scaricamento modelli, procedura guidata | **da fare** |
-| Musica, Foto, Dream, Companion, IoDigitale | **da migrare** |
+| ComfyUI scaricato al primo avvio | **da fare**: oggi deve già essere in `engines/` |
+| Foto, Dream, Companion, IoDigitale | **da migrare** |
 
-Ramo `suite-interconnessa`, PR **#1** aperta verso `main`. Il ramo esiste solo
-perché una PR non può andare da `main` a `main`: va unito e cancellato.
+Il ramo `suite-interconnessa` è stato unito e cancellato: si lavora solo su `main`.
+
+## Com'è entrata DaProdMusica
+
+Cinque pezzi, e nessuno dei cinque è solo suo — tre valgono per tutte le app che
+verranno.
+
+**`services/comfy/`** — `avvio.py` scrive a ogni avvio il file dei percorsi
+(modelli condivisi + i nodi nostri) e lancia ComfyUI con i flag misurati in
+MinimaxMusica. `nodi/daprod_ponte/` aggiunge a ComfyUI le due rotte che gli
+mancavano per rispettare il patto dei motori: `GET /health` e `POST /shutdown`.
+In più `/daprod/modelli` e `/daprod/scarica`, che sono l'unica cosa che *deve*
+stare dentro al motore, perché la VRAM la conosce solo lui.
+
+**`servizi.ts`** — il supervisore adesso viene chiamato: `app-manager.open()`
+accende il motore e aspetta `/health` **prima** di mostrare la finestra, e
+`close()` lo spegne solo se non serve a un'altra app. Vale per tutte e sei.
+
+**La libreria condivisa sa anche scrivere** — rinomina, copertina, metadati,
+elimina. Sostituisce `library_api.py`, che in MinimaxMusica era un custom node di
+ComfyUI: ora le stesse operazioni valgono per tutte le app e funzionano anche a
+motore spento.
+
+**`apps/musica/`** — il monolite da 75 KB spezzato in quattordici moduli ES.
+Niente impacchettatore: la pagina è caricata da `daprod://musica/`, un secondo
+uso dello schema della suite, perché da `file://` i moduli non si importano fra
+loro. È la strada per ogni app che non ha bisogno di Vite.
+
+**`apps/shell/src/main/apps/musica/`** — la finestra. Corta, perché quasi tutto
+quello che le serve è già comune.
 
 ## Il prossimo passo
 
-**DaProdMusica dentro la suite.** È la 0.1.0 della roadmap ed è quella che
-riempie la libreria che il Visualizer sa già leggere.
+**DaProdFoto.** Gira sullo stesso ComfyUI già acceso da Musica, quindi il motore
+non va scritto: ci sono già `services/comfy` e il supervisore che lo accende. Il
+lavoro è l'interfaccia, i grafi di Anima e la scheda nel catalogo — che è già
+scritta, modelli compresi.
 
-Cosa c'è già di pronto perché parta bene:
+Prima però, due cose che si sono viste solo facendo girare Musica:
 
-- l'ambiente Python funziona e ha già le dipendenze di ComfyUI installate
-- ComfyUI è in `%LOCALAPPDATA%\DaProdSuite\engines\ComfyUI` e **parte in 1 secondo**
-- i modelli di MiniMax sono già a posto e ComfyUI li vede da `extra_model_paths.yaml`
-- lo schema di migrazione è fissato dal Visualizer
-
-Il lavoro:
-
-1. `services/comfy/` — l'avvio di ComfyUI con i flag giusti, presi da
-   `MinimaxMusica/start.ps1`: `--disable-dynamic-vram`, `--enable-cors-header`,
-   `--output-directory` verso `output/musica`
-2. `apps/musica/` — `MinimaxMusica/app/index.html` (75 KB monolite) spezzato
-3. `apps/shell/src/main/apps/musica/` — finestra + avvio del servizio
-4. aggiungere `"musica"` a `MIGRATED` e a `FINESTRE` in `app-manager.ts`
-5. `library_api.py` va sostituito dalla libreria condivisa della suite
-
-⚠ **Il supervisore va collegato**: oggi `app-manager.open()` apre solo la
-finestra. Per le app con motore va avviato `ProcessSupervisor` prima, e la
-finestra dopo che `/health` risponde. Il codice del supervisore c'è ed è provato,
-ma non è ancora richiamato da nessuno.
+1. **ComfyUI va scaricato dalla suite.** Oggi deve già essere in
+   `%LOCALAPPDATA%\DaProdSuite\engines\ComfyUI`, altrimenti l'app dice che manca
+   e si ferma lì. È l'ultimo pezzo del "git clone deve bastare".
+2. **Lo scaricamento dei modelli**, che è già in roadmap per la 0.1.0.
 
 ## Cose da sapere che non si vedono dal codice
 
 **Prima di ogni commit**: `pnpm run build && pnpm run typecheck`.
 
 **Per provare un'app senza passare dall'hub**:
-`.\node_modules\.bin\electron.CMD . --apri visualizer` dalla cartella `apps/shell`.
+`.\node_modules\.bin\electron.CMD . --apri musica` dalla cartella `apps/shell`.
 
 **Per vedere una finestra**: `pwsh apps/shell/scripts/capture-window.ps1 -Titolo
-"DaProd Suite" -Out schermata.png`. Usa `PrintWindow`, funziona anche se la
+"DaProdMusica" -Out schermata.png`. Usa `PrintWindow`, funziona anche se la
 finestra è coperta.
+
+**I moduli di `apps/musica` non hanno un compilatore che li controlli.** Per non
+scoprire un errore di sintassi solo aprendo la finestra:
+`.\apps\visualizer\node_modules\.bin\oxlint apps\musica`.
+
+**Un ComfyUI acceso a mano blocca tutto.** La porta 8188 è fissa nel catalogo:
+se è occupata, `servizi.ts` lo dice subito invece di far aspettare tre minuti.
+Capita davvero — due motori di MinimaxMusica erano rimasti accesi dalla notte.
 
 **Per provare un modulo del main fuori da Electron**: si sostituisce il modulo
 `electron` con un finto tramite `Module._load`. Esempi funzionanti in
 `packages/runtime/scripts/prova-installazione.cjs`.
 
-**Non committare mai senza aver provato.** In questa sessione tre bug sono
-usciti solo guardando l'app girare: la CSP che citava ancora `dpv:` (avrebbe
-bloccato l'audio), `peso()` che restituiva 0 sui file (Musica e Foto risultavano
-non installate), SoulX contato due volte.
+**Non committare mai senza aver provato.** In questa sessione i difetti veri sono
+usciti solo guardando Cammo usare l'app: la copertina che compariva come secondo
+lavoro in coda e sembrava un doppione, il pannello del dettaglio appiccicato in
+alto che nascondeva i propri pulsanti sotto il bordo dello schermo, e il lettore
+che passava da solo al brano dopo.
 
 ## Regole di Cammo
 
-- **Solo `main`**, niente rami di prova. Si parte da 0.0.1 e il numero sale solo
-  quando si pubblica.
+- **Solo `main`**, niente rami di prova, **niente pull request**. Si parte da
+  0.0.1 e il numero sale solo quando si pubblica.
 - **Il codice da testare resta sul PC.** Si pubblica solo dopo il suo ok.
 - **Una app alla volta**: si porta dentro, la prova lui, si aggiusta, poi la
   successiva.
@@ -97,9 +124,13 @@ non installate), SoulX contato due volte.
 | Modelli | spostati dai vecchi progetti; MinimaxMusica e AvatarParlante ora sono archivio |
 | Mage-VL | **scartato**: non genera immagini, le comprende |
 | ComfyUI | scaricato al primo avvio, non nel repo: è GPL-3.0 e la suite è MIT |
+| Copertine | generate con `PreviewImage`, quindi nei temporanei: se andassero in output la libreria si riempirebbe di copertine sciolte |
+| Lettore di Musica | a fine brano si ferma, non passa al successivo |
 
 ## Cosa aspetta un giudizio di Cammo
 
+- **DaProdMusica**: un brano vero l'ha già fatto, con copertina, dentro la suite.
+  Restano da provare a lungo la libreria (rinomina, copertina da file, elimina),
+  la scheda Immagini e "apri nel Visualizer".
 - **Il Visualizer**: aperto dalla suite, con il pannello "Brani generati". Va
   provato — soprattutto se "Ascolta" fa partire davvero il brano.
-- **La PR #1**: da unire e cancellare il ramo.

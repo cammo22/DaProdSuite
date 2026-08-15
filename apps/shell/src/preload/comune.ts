@@ -33,6 +33,13 @@ export function esponiApiApp(io: AppId): void {
     libreria: {
       elenco: (filtro?: FiltroLibreria) => ipcRenderer.invoke(CHANNELS.libreriaElenco, filtro),
       mostraNellaCartella: (id: string) => ipcRenderer.invoke(CHANNELS.libreriaMostra, id),
+      rinomina: (id: string, nome: string) =>
+        ipcRenderer.invoke(CHANNELS.libreriaRinomina, id, nome),
+      copertina: (id: string, dataUrl: string | null) =>
+        ipcRenderer.invoke(CHANNELS.libreriaCopertina, id, dataUrl),
+      meta: (id: string, meta: Record<string, unknown>) =>
+        ipcRenderer.invoke(CHANNELS.libreriaMeta, id, meta),
+      elimina: (id: string) => ipcRenderer.invoke(CHANNELS.libreriaElimina, id),
       onCambiata: (listener) =>
         subscribe<ElementoLibreria[]>(CHANNELS.libreriaCambiata, listener),
     },

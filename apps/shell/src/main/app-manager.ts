@@ -21,7 +21,9 @@ import { libreria } from "./libreria";
 import { gpu } from "./gpu";
 import { runtime } from "./runtime";
 import { missingModelsGb } from "./models";
+import * as servizi from "./servizi";
 import * as visualizer from "./apps/visualizer";
+import * as musica from "./apps/musica";
 
 /**
  * Le app già portate dentro la suite.
@@ -29,7 +31,7 @@ import * as visualizer from "./apps/visualizer";
  * Un'app non elencata qui compare nell'hub disattivata, con scritto che non è
  * ancora inclusa — meglio di una scheda che sembra pronta e poi non apre niente.
  */
-const MIGRATED = new Set<AppId>(["visualizer"]);
+const MIGRATED = new Set<AppId>(["visualizer", "musica"]);
 
 interface Finestra {
   apri: (onClose: () => void) => void;
@@ -44,6 +46,11 @@ const FINESTRE: Partial<Record<AppId, Finestra>> = {
     apri: visualizer.apri,
     chiudi: visualizer.chiudi,
     laFinestra: visualizer.laFinestra,
+  },
+  musica: {
+    apri: musica.apri,
+    chiudi: musica.chiudi,
+    laFinestra: musica.laFinestra,
   },
 };
 
@@ -122,16 +129,27 @@ class AppManager extends EventEmitter {
     }
 
     try {
-      // L'avvio del servizio Python, per le app che ne hanno uno, si innesta qui
-      // prima di aprire la finestra.
+      // Il motore prima della finestra: aprirla mentre i pesi si caricano
+      // vorrebbe dire mostrare un'interfaccia che a ogni clic risponde "motore
+      // offline". `avvia` torna solo quando /health dice di sì, e per MiniMax
+      // Music 3 può essere più di un minuto.
+      await servizi.avvia(id, (motivo) => {
+        this.patch(id, { status: "in-errore", error: motivo });
+        FINESTRE[id]?.chiudi();
+        gpu.release(id);
+      });
+
       finestra.apri(() => {
         // Chiusa dall'utente con la X: lo stato deve tornare indietro da solo,
         // altrimenti l'hub resta a dire "attiva" per una finestra che non c'è.
-        gpu.release(id);
-        this.patch(id, { status: "pronta" });
+        void this.close(id);
       });
       this.patch(id, { status: "attiva" });
     } catch (err) {
+      // Se il motore non è partito la GPU resta prenotata a nome di un'app che
+      // non c'è, e la prossima non riuscirebbe più ad aprirsi.
+      await servizi.ferma(id).catch(() => {});
+      gpu.release(id);
       this.patch(id, {
         status: "in-errore",
         error: err instanceof Error ? err.message : String(err),
@@ -141,6 +159,9 @@ class AppManager extends EventEmitter {
 
   async close(id: AppId): Promise<void> {
     FINESTRE[id]?.chiudi();
+    // Il motore si spegne dopo la finestra e solo se non serve a un'altra app:
+    // sono i secondi in cui si liberano gli 8 GB di VRAM.
+    await servizi.ferma(id);
     gpu.release(id);
     if (MIGRATED.has(id)) this.patch(id, { status: "pronta", error: undefined });
   }

@@ -202,6 +202,25 @@ export interface ApiApp {
     elenco(filtro?: FiltroLibreria): Promise<ElementoLibreria[]>;
     /** Apre il file in Esplora risorse. */
     mostraNellaCartella(id: string): Promise<boolean>;
+
+    /**
+     * Rinomina il file sul disco. Torna l'elemento aggiornato: l'id è il
+     * percorso, quindi cambiando nome cambia anche quello.
+     */
+    rinomina(id: string, nome: string): Promise<ElementoLibreria | null>;
+
+    /**
+     * Mette la copertina accanto al file, o la toglie passando `null`.
+     * L'immagine va passata come data URL già ritagliata quadrata.
+     */
+    copertina(id: string, dataUrl: string | null): Promise<boolean>;
+
+    /** Scrive il `.json` di fianco: descrizione, testo, parametri, seed. */
+    meta(id: string, meta: Record<string, unknown>): Promise<boolean>;
+
+    /** Cancella il file, i suoi metadati e la sua copertina. Non si torna indietro. */
+    elimina(id: string): Promise<boolean>;
+
     /** Notifica quando qualcuno produce o cancella un risultato. */
     onCambiata(listener: (elementi: ElementoLibreria[]) => void): Unsubscribe;
   };
@@ -252,6 +271,10 @@ export const CHANNELS = {
 
   libreriaElenco: "libreria:elenco",
   libreriaMostra: "libreria:mostra",
+  libreriaRinomina: "libreria:rinomina",
+  libreriaCopertina: "libreria:copertina",
+  libreriaMeta: "libreria:meta",
+  libreriaElimina: "libreria:elimina",
   libreriaCambiata: "libreria:cambiata",
   appInvia: "app:invia",
   appConsegna: "app:consegna",

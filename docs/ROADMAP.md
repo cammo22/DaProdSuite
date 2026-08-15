@@ -26,11 +26,17 @@ metterle.
 
 ## 0.1.0 — Le prime app dentro
 
-Nell'ordine, dalla più semplice alla più delicata.
+Nell'ordine, dalla più semplice alla più delicata. Le prime due sono dentro e
+girano: la spunta arriva quando le hai provate a lungo tu.
 
 - [ ] **DaProdVisualizer** — nessun Python, valida lo schema delle finestre
-- [ ] **DaProdMusica** — primo motore su ComfyUI condiviso
+      *(dentro, da provare)*
+- [ ] **DaProdMusica** — primo motore su ComfyUI condiviso *(dentro, un brano
+      vero generato; con lei sono entrati il supervisore collegato, la libreria
+      che sa scrivere e lo schema `daprod://` per le app senza impacchettatore)*
 - [ ] **DaProdFoto** — Anima di base, FLUX.2 Klein come extra
+- [ ] **ComfyUI scaricato al primo avvio** — oggi deve già essere in `engines/`,
+      ed è l'ultimo pezzo che manca a "git clone deve bastare"
 - [ ] Scaricamento dei modelli con ripresa e avanzamento
 - [ ] Procedura guidata al primo avvio: scegli le app, ti dice quanti GB
 

@@ -2,8 +2,9 @@
 
 I motori Python della suite. Uno per cartella, avviati e sorvegliati dallo shell.
 
-Vuota per ora: i motori arrivano con la migrazione delle app (versione 0.1.0 in
-poi, vedi [../docs/ROADMAP.md](../docs/ROADMAP.md)).
+C'è il primo: `comfy/`, che serve DaProdMusica ed è pronto anche per Foto e
+Cinema. Gli altri arrivano con le rispettive app (vedi
+[../docs/ROADMAP.md](../docs/ROADMAP.md)).
 
 ## Il patto che ogni motore deve rispettare
 
@@ -22,7 +23,7 @@ gestire motori molto diversi fra loro.
 
 | Cartella | App servite | Da dove viene |
 |---|---|---|
-| `comfy/` | DaProdMusica, DaProdFoto, DaProdCinema | ComfyUI, scaricato al primo avvio |
+| `comfy/` ✅ | DaProdMusica, DaProdFoto, DaProdCinema | ComfyUI, scaricato al primo avvio |
 | `dream/` | DaProdDream | `DaProdDream/engine` |
 | `talk/` | DaProd IoDigitale | `AvatarParlante/LeapTalk`, solo l'inference |
 | `brain/` | DaProdCompanion | `DaProdCompanion/services/brain` |

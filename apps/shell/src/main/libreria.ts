@@ -18,13 +18,28 @@
  */
 
 import { EventEmitter } from "node:events";
-import { existsSync, mkdirSync, readFileSync, readdirSync, statSync } from "node:fs";
-import { basename, extname, join, relative } from "node:path";
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  readdirSync,
+  renameSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
+import { basename, dirname, extname, join, relative } from "node:path";
 import { APP_IDS, type AppId, type ElementoLibreria, type TipoElemento } from "@daprod/ipc";
 import { codificaUrl } from "./file-scheme";
 import { OUTPUT_DIR } from "./paths";
 
 const SUFFISSO_COPERTINA = ".cover.jpg";
+
+/** Cosa può stare nel nome di un file rinominato dall'utente. */
+const NOME_PULITO = /[^\p{L}\p{N} _.,()[\]&'-]+/gu;
+
+/** Una copertina più grande di così è un errore, non una copertina. */
+const COPERTINA_MAX_BYTE = 4_000_000;
 
 /** Estensione -> tipo. Quello che non è qui dentro non entra in libreria. */
 const TIPI: Record<string, TipoElemento> = {
@@ -83,13 +98,141 @@ class Libreria extends EventEmitter {
   }
 
   trova(id: string): ElementoLibreria | undefined {
-    return this.elenco().find((e) => e.id === id);
+    const daCache = this.elenco().find((e) => e.id === id);
+    if (daCache) return daCache;
+    // Un file appena scritto può essere più giovane della cache: un'app che
+    // rinomina il brano un istante dopo averlo generato lo cercherebbe invano.
+    return this.elenco(true).find((e) => e.id === id);
   }
 
   /** Da chiamare quando un'app scrive un risultato, per aggiornare subito l'indice. */
   segnalaNovita(): void {
     this.emit("cambiata", this.elenco(true));
   }
+
+  /* ------------------------------------------------------------- scrittura */
+  //
+  // Queste quattro sostituiscono `library_api.py` di MinimaxMusica, che faceva
+  // le stesse cose come custom node di ComfyUI. Stando qui valgono per tutte le
+  // app invece che per una, e continuano a funzionare anche a motore spento: il
+  // Visualizer, che di Python non ne ha, può rinominare un brano lo stesso.
+
+  /**
+   * Cambia il nome di un elemento, portandosi dietro metadati e copertina.
+   *
+   * Rinomina il file vero, non un'etichetta in un database: dopo, il brano si
+   * chiama così anche aprendo la cartella. Torna il nuovo elemento, perché
+   * l'id — che è il percorso — è cambiato.
+   */
+  rinomina(id: string, nome: string): ElementoLibreria | null {
+    const elemento = this.trova(id);
+    if (!elemento) return null;
+
+    const pulito = nome.replace(NOME_PULITO, "").trim().replace(/^\.+|\.+$/g, "").slice(0, 80);
+    if (!pulito) return null;
+
+    const cartella = dirname(elemento.percorso);
+    const estensione = extname(elemento.percorso);
+    let destinazione = join(cartella, pulito + estensione);
+
+    // Due brani con lo stesso titolo capitano spesso (stesso testo, resa
+    // diversa): il secondo diventa "titolo (2)" invece di cancellare il primo.
+    let n = 2;
+    while (
+      existsSync(destinazione) &&
+      destinazione.toLowerCase() !== elemento.percorso.toLowerCase()
+    ) {
+      destinazione = join(cartella, `${pulito} (${n})${estensione}`);
+      n += 1;
+    }
+
+    for (const [prima, dopo] of accompagnatori(elemento.percorso, destinazione)) {
+      if (existsSync(prima)) renameSync(prima, dopo);
+    }
+    renameSync(elemento.percorso, destinazione);
+
+    this.segnalaNovita();
+    return this.trova(relative(OUTPUT_DIR, destinazione).replace(/\\/g, "/")) ?? null;
+  }
+
+  /**
+   * Mette o toglie la copertina di un elemento.
+   *
+   * L'immagine arriva già ritagliata quadrata come data URL: il ritaglio lo fa
+   * la pagina con un canvas, che ce l'ha in casa. Farlo qui vorrebbe dire una
+   * libreria di immagini in più nello shell per una cosa che il browser sa fare.
+   */
+  impostaCopertina(id: string, dataUrl: string | null): boolean {
+    const elemento = this.trova(id);
+    if (!elemento) return false;
+
+    const copertina = senzaEstensione(elemento.percorso) + SUFFISSO_COPERTINA;
+
+    if (!dataUrl) {
+      if (existsSync(copertina)) rmSync(copertina);
+      this.segnalaNovita();
+      return true;
+    }
+
+    const virgola = dataUrl.indexOf(",");
+    const base64 = virgola >= 0 ? dataUrl.slice(virgola + 1) : dataUrl;
+    let dati: Buffer;
+    try {
+      dati = Buffer.from(base64, "base64");
+    } catch {
+      return false;
+    }
+    if (!dati.length || dati.length > COPERTINA_MAX_BYTE) return false;
+
+    writeFileSync(copertina, dati);
+    this.segnalaNovita();
+    return true;
+  }
+
+  /** Scrive il `.json` che accompagna un elemento: descrizione, testo, seed, parametri. */
+  scriviMeta(id: string, meta: Record<string, unknown>): boolean {
+    const elemento = this.trova(id);
+    if (!elemento) return false;
+
+    writeFileSync(
+      senzaEstensione(elemento.percorso) + ".json",
+      JSON.stringify(meta, null, 1),
+      "utf8",
+    );
+    this.segnalaNovita();
+    return true;
+  }
+
+  /** Cancella un elemento con i suoi metadati e la sua copertina. */
+  elimina(id: string): boolean {
+    const elemento = this.trova(id);
+    if (!elemento) return false;
+
+    for (const extra of [
+      senzaEstensione(elemento.percorso) + ".json",
+      senzaEstensione(elemento.percorso) + SUFFISSO_COPERTINA,
+    ]) {
+      if (existsSync(extra)) rmSync(extra);
+    }
+    rmSync(elemento.percorso);
+
+    this.segnalaNovita();
+    return true;
+  }
+}
+
+function senzaEstensione(percorso: string): string {
+  return percorso.slice(0, -extname(percorso).length);
+}
+
+/** I file che vivono accanto a un risultato e devono seguirlo quando si sposta. */
+function accompagnatori(prima: string, dopo: string): [string, string][] {
+  const a = senzaEstensione(prima);
+  const b = senzaEstensione(dopo);
+  return [
+    [a + ".json", b + ".json"],
+    [a + SUFFISSO_COPERTINA, b + SUFFISSO_COPERTINA],
+  ];
 }
 
 function raccogli(

@@ -13,9 +13,23 @@
  */
 
 import { net, protocol } from "electron";
+import { join, normalize, resolve, sep } from "node:path";
 import { pathToFileURL } from "node:url";
 
 export const SCHEMA = "daprod";
+
+/**
+ * L'host distingue i due usi dello schema:
+ *
+ *     daprod://file/C%3A%5Cmusica%5Cbrano.mp3     un file qualsiasi del disco
+ *     daprod://musica/src/avvio.js                la pagina di un'app
+ *
+ * Il secondo serve alle app scritte senza impacchettatore: caricate da `file://`
+ * ognuna è un'origine opaca diversa, e Chromium rifiuta gli `import` fra moduli.
+ * Da qui invece l'origine è `daprod://musica`, una sola per tutta l'app: i
+ * moduli si caricano, e `localStorage` resta suo e separato da quello delle altre.
+ */
+const interfacce = new Map<string, string>();
 
 /**
  * Va chiamata **prima** che l'app sia pronta: dopo, Electron ha già deciso i
@@ -45,7 +59,7 @@ export function gestisciSchema(): void {
   protocol.handle(SCHEMA, (request) => {
     let percorso: string;
     try {
-      percorso = decodificaUrl(request.url);
+      percorso = risolvi(request.url);
     } catch {
       return new Response("percorso non valido", { status: 400 });
     }
@@ -54,6 +68,39 @@ export function gestisciSchema(): void {
       bypassCustomProtocolHandlers: true,
     });
   });
+}
+
+/**
+ * Dichiara dove sta la pagina di un'app, così `daprod://<id>/...` la serve.
+ *
+ * Da chiamare quando si crea la finestra: prima non serve, e tenere l'elenco
+ * vuoto finché non si apre niente vuol dire che una pagina non può leggere la
+ * cartella di un'app che l'utente non ha aperto.
+ */
+export function serviInterfaccia(id: string, cartella: string): void {
+  interfacce.set(id, resolve(cartella));
+}
+
+/** L'indirizzo con cui si carica la pagina di un'app. */
+export function urlInterfaccia(id: string, file = "index.html"): string {
+  return `${SCHEMA}://${id}/${file}`;
+}
+
+function risolvi(url: string): string {
+  const parsed = new URL(url);
+  if (parsed.host === "file") return decodificaUrl(url);
+
+  const radice = interfacce.get(parsed.host);
+  if (!radice) throw new Error(`interfaccia "${parsed.host}" non registrata`);
+
+  const relativo = decodeURIComponent(parsed.pathname).replace(/^\/+/, "");
+  const percorso = normalize(join(radice, relativo));
+  // Un `..` nel percorso trasformerebbe la cartella dell'app in una finestra su
+  // tutto il disco: qui dentro si serve solo quello che sta sotto la radice.
+  if (percorso !== radice && !percorso.startsWith(radice + sep)) {
+    throw new Error("percorso fuori dalla cartella dell'app");
+  }
+  return percorso;
 }
 
 /** `daprod://file/C%3A%5Cmusica%5Cbrano.mp3` -> `C:\musica\brano.mp3` */
