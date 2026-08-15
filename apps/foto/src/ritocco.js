@@ -14,7 +14,7 @@
 
 import { el, mostraErrore, nascondiErrore, rnd, legaValore, mostraScheda } from "./dom.js";
 import { ascolta } from "./bus.js";
-import { componiPrompt, grafoRitocco } from "./grafi.js";
+import { MODELLO, componiPrompt, grafoRitocco } from "./grafi.js";
 import { aggiungiLavoro } from "./coda.js";
 import * as ponte from "./ponte.js";
 
@@ -186,6 +186,7 @@ export function collegaRitocco() {
 
       const id = await ponte.invia(grafoRitocco(parametri));
       aggiungiLavoro(id, `ritocco: ${testo}`, {
+        modello: MODELLO.nome,
         testo,
         prompt: parametri.prompt,
         ritocco: true,

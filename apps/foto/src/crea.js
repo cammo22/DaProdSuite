@@ -2,7 +2,7 @@
 
 import { el, escapeHtml, legaValore, mostraErrore, nascondiErrore, rnd } from "./dom.js";
 import { ESTETICHE, NEGATIVO, PROPOSTE } from "./dati/estetiche.js";
-import { componiPrompt, grafoImmagine } from "./grafi.js";
+import { MODELLO, componiPrompt, grafoImmagine } from "./grafi.js";
 import { aggiungiLavoro } from "./coda.js";
 import * as ponte from "./ponte.js";
 
@@ -63,6 +63,7 @@ export function collegaCrea() {
       try {
         const id = await ponte.invia(grafoImmagine(parametri));
         aggiungiLavoro(id, p.testo, {
+          modello: MODELLO.nome,
           testo: p.testo,
           estetica: p.estetica,
           prompt: parametri.prompt,

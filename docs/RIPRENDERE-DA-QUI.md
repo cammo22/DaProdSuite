@@ -61,6 +61,58 @@ loro. È la strada per ogni app che non ha bisogno di Vite.
 **`apps/shell/src/main/apps/musica/`** — la finestra. Corta, perché quasi tutto
 quello che le serve è già comune.
 
+## Quello che Cammo ha chiesto il 15 agosto, provando Foto
+
+In ordine di quanto sono grosse. Le prime tre sono già fatte.
+
+- [x] **Nei metadati di ogni immagine c'è il modello** con cui è nata, e si vede
+      nella galleria.
+- [x] **Cliccando un'immagine si apre a schermo intero** (Esc o un clic per
+      chiudere).
+- [x] **Le ultime immagini compaiono nella scheda Crea**, sotto la sessione:
+      quello che generi si vede dove l'hai chiesto.
+
+- [ ] **I pulsanti Risultati / Modelli / Log dell'hub devono aprire dei pannelli
+      veri, non Esplora risorse.** Oggi chiamano `shell.openPath`, che apre una
+      finestra di Windows dietro l'app e sembra non faccia niente. Vanno fatti
+      dentro la suite:
+      - **Risultati**: la galleria trasversale di *tutte* le app — audio,
+        immagini, video insieme. La libreria condivisa la sa già dare
+        (`libreria.cerca()` senza filtri): manca solo la pagina.
+      - **Modelli**: cosa c'è sul disco, quanto pesa, quali schede lo usano, e
+        cosa si può ancora scaricare. `manifest/models.json` ha già tutto.
+      - **Log**: le ultime righe di ogni servizio, lette da `logs/`.
+
+- [ ] **"Mostra nella cartella" in Foto dà errore.** Da riprodurre: il percorso
+      arriva da `libreria.trova(id)`, quindi il sospetto è un id che non combacia
+      più dopo un aggiornamento della libreria.
+
+- [ ] **In Foto si sceglie il modello**, e se non ce l'hai lo scarichi da lì.
+      Oggi Anima è cablata in `apps/foto/src/grafi.js`. Vanno aggiunti almeno
+      **FLUX.2 Klein** (vuole il nodo GGUF, vedi sotto) e **SD-Turbo**, che è già
+      nel catalogo perché lo usa DaProdDream. Dipende dallo scaricamento.
+
+- [ ] **Il ritocco con Anima: funziona davvero?** FLUX.2 Klein l'inpainting lo
+      fa (era la seconda scheda di Flux Klein Studio). Anima è un modello turbo
+      distillato, e i turbo con `denoise` basso spesso rendono male. **Da
+      verificare online e provando**, e in base a quello il pennello si accende o
+      si spegne a seconda del modello scelto: meglio un pulsante spento che uno
+      che dà risultati brutti.
+
+**Su come si racconta il progetto.** Cammo ha chiesto di non fare riferimento a
+ComfyUI e WanGP nella vetrina pubblica: la suite non è un guscio sopra quelli, è
+un'alternativa grafica per provare i modelli, sotto la nostra direzione. Giusto
+come posizionamento, e il README va riscritto così. Due cose però restano:
+
+1. **Nel codice il motore va chiamato col suo nome.** `services/comfy` avvia
+   ComfyUI e ne usa l'API: un file che non lo dice è un file che nessuno può
+   più mantenere.
+2. **ComfyUI è GPL-3.0.** Non lo ridistribuiamo — si scarica al primo avvio — ma
+   dire da qualche parte quale motore di terzi si usa è corretto e conviene.
+
+Quindi: fuori dal racconto pubblico, dentro nei file tecnici e in una riga di
+crediti. Se preferisci diversamente, dillo.
+
 ## Il prossimo passo
 
 **Lo scaricamento automatico**, che adesso è la cosa che blocca tutto il resto:

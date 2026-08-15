@@ -9,12 +9,28 @@
 
 import { el, escapeHtml, mostraScheda } from "./dom.js";
 import { annuncia, ascolta } from "./bus.js";
+import { mostraLente } from "./lente.js";
+import { stato } from "./stato.js";
+import { disegnaSessione, scordaDisegno } from "./coda.js";
 import * as ponte from "./ponte.js";
 
 let immagini = [];
 
+/** Come si racconta un'immagine in una riga: modello, estetica, quando. */
+export function descrivi(immagine) {
+  const meta = immagine.meta || {};
+  return [
+    meta.modello,
+    meta.ritocco ? "ritocco" : meta.estetica,
+    new Date(immagine.creato).toLocaleString("it-IT"),
+  ]
+    .filter(Boolean)
+    .join(" · ");
+}
+
 export async function aggiornaGalleria() {
   immagini = await ponte.immagini();
+  stato.immagini = immagini;
 
   el.navGal.textContent = immagini.length;
   el.conteggio.textContent = immagini.length ? `(${immagini.length})` : "";
@@ -24,16 +40,20 @@ export async function aggiornaGalleria() {
     : `<div class="empty">Ancora nessuna immagine. Vai su <b>Crea</b> e falla.</div>`;
 
   collega();
+
+  // La sessione mostra le stesse immagini: se non lo si dice, la striscia sotto
+  // i lavori resta a quelle di prima finché non cambia qualcos'altro.
+  scordaDisegno();
+  disegnaSessione();
 }
 
 function scheda(immagine) {
   const meta = immagine.meta || {};
-  const sotto = meta.ritocco ? "ritocco" : meta.estetica || "";
 
   return `<div class="card">
-    <img class="art" src="${escapeHtml(immagine.url)}" alt="" loading="lazy">
+    <img class="art" src="${escapeHtml(immagine.url)}" alt="" loading="lazy" data-lente="${escapeHtml(immagine.id)}">
     <div class="nm">${escapeHtml(meta.testo || immagine.nome)}</div>
-    <div class="sub">${escapeHtml(sotto)}${sotto ? " &middot; " : ""}${new Date(immagine.creato).toLocaleString("it-IT")}</div>
+    <div class="sub">${escapeHtml(descrivi(immagine))}</div>
     <div class="acts">
       <button data-ritocca="${escapeHtml(immagine.id)}">ritocca</button>
       <button data-copertina="${escapeHtml(immagine.id)}">a Musica</button>
@@ -48,6 +68,13 @@ function trova(id) {
 }
 
 function collega() {
+  el.galleria.querySelectorAll("[data-lente]").forEach((img) => {
+    img.onclick = () => {
+      const immagine = trova(img.dataset.lente);
+      if (immagine) mostraLente(immagine.url, `${immagine.meta?.testo ?? immagine.nome} — ${descrivi(immagine)}`);
+    };
+  });
+
   el.galleria.querySelectorAll("[data-ritocca]").forEach((b) => {
     b.onclick = () => {
       const immagine = trova(b.dataset.ritocca);

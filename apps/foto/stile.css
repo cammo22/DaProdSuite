@@ -208,3 +208,21 @@ legend{font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var
   text-align:center; color:var(--dim); font-size:13px}
 .pennello{display:flex; align-items:center; gap:12px; margin:12px 0}
 .pennello input[type=range]{flex:1}
+
+/* -------------------------------------------------------------- lente ---- */
+/* L'immagine a schermo intero: si guarda quello che si è appena fatto senza
+   uscire dall'app e senza aprire un altro programma. */
+.lente{position:fixed; inset:0; z-index:60; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; gap:14px; padding:28px;
+  background:rgba(6,7,11,.94); backdrop-filter:blur(8px); cursor:zoom-out}
+.lente[hidden]{display:none}
+.lente img{max-width:100%; max-height:calc(100vh - 110px); object-fit:contain;
+  border-radius:12px; box-shadow:0 20px 60px rgba(0,0,0,.6)}
+.lente .didascalia{color:var(--dim); font-size:13px; text-align:center; max-width:900px}
+.card .art{cursor:zoom-in}
+
+/* Le ultime immagini fatte, sotto la sessione: si vede il risultato senza
+   cambiare scheda. */
+.ultime{display:grid; grid-template-columns:repeat(auto-fill,minmax(88px,1fr)); gap:8px; margin-top:12px}
+.ultime img{width:100%; aspect-ratio:1; object-fit:cover; border-radius:10px; cursor:zoom-in;
+  border:1px solid var(--line); background:#0b0d13}

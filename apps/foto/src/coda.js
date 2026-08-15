@@ -9,6 +9,8 @@
 
 import { el, escapeHtml, fmtTime } from "./dom.js";
 import { annuncia } from "./bus.js";
+import { stato } from "./stato.js";
+import { mostraLente } from "./lente.js";
 import * as ponte from "./ponte.js";
 
 const lavori = new Map();
@@ -32,10 +34,23 @@ function togliLavoro(id) {
 
 export function disegnaSessione() {
   const attivi = ordine.map(lavoro).filter(Boolean);
+  // Le ultime fatte, qui sotto: quello che si è appena generato si vede dove lo
+  // si è chiesto, senza cambiare scheda per andarlo a cercare.
+  const ultime = stato.immagini.slice(0, 8);
 
-  const html = attivi.length
+  let html = attivi.length
     ? attivi.map(riquadro).join("")
     : `<div class="empty">Niente in lavorazione. Scrivi cosa vuoi vedere e premi <b>Genera</b>.</div>`;
+
+  if (ultime.length) {
+    html += `<div class="ultime">${ultime
+      .map(
+        (i) =>
+          `<img src="${escapeHtml(i.url)}" alt="" loading="lazy" data-lente="${escapeHtml(i.id)}"
+             title="${escapeHtml(i.meta?.testo ?? i.nome)}">`,
+      )
+      .join("")}</div>`;
+  }
 
   if (html === ultimoDisegno) return;
   ultimoDisegno = html;
@@ -44,6 +59,17 @@ export function disegnaSessione() {
   el.sessione.querySelectorAll("[data-annulla]").forEach((b) => {
     b.onclick = () => annulla(b.dataset.annulla);
   });
+  el.sessione.querySelectorAll("[data-lente]").forEach((img) => {
+    img.onclick = () => {
+      const immagine = stato.immagini.find((i) => i.id === img.dataset.lente);
+      if (immagine) mostraLente(immagine.url, immagine.meta?.testo ?? immagine.nome);
+    };
+  });
+}
+
+/** Forza il prossimo disegno anche se l'HTML non è cambiato. */
+export function scordaDisegno() {
+  ultimoDisegno = "";
 }
 
 function riquadro(l) {

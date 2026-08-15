@@ -14,11 +14,22 @@
 
 import { ESTETICHE, NEGATIVO } from "./dati/estetiche.js";
 
-const MODELLI = {
+/**
+ * Il modello con cui si genera.
+ *
+ * Uno solo per ora. Quando ce ne sarà più d'uno questo diventa un elenco e il
+ * nome finisce in un menu: intanto il `nome` viaggia già nei metadati di ogni
+ * immagine, così una foto fatta oggi resta riconoscibile quando ce ne saranno
+ * tre da cui scegliere.
+ */
+export const MODELLO = {
+  nome: "Anima",
   dit: "anima-turbo-v1.0.safetensors",
   txt: "qwen_3_06b_base.safetensors",
   vae: "qwen_image_vae.safetensors",
 };
+
+const MODELLI = MODELLO;
 
 /** I nodi che non cambiano fra il generare da zero e il rifare una zona. */
 function comuni(p) {

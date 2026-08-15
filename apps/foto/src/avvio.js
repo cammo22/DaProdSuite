@@ -12,6 +12,7 @@ import { collegaCrea } from "./crea.js";
 import { collegaRitocco } from "./ritocco.js";
 import { aggiornaGalleria, collegaGalleria } from "./galleria.js";
 import { collegaModelli } from "./modelli.js";
+import { collegaLente } from "./lente.js";
 import { collega } from "./ponte.js";
 
 document.querySelectorAll("nav button").forEach((b) => {
@@ -19,6 +20,7 @@ document.querySelectorAll("nav button").forEach((b) => {
 });
 suApertura("galleria", () => void aggiornaGalleria());
 
+collegaLente();
 collegaCrea();
 collegaRitocco();
 collegaGalleria();

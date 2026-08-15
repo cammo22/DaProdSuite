@@ -9,7 +9,7 @@ for (const chiave of [
   "sessione", "stop", "svuota", "mods", "dot", "statusTxt", "navGal",
   "areaTela", "nessunaImmagine", "comandiPennello", "pennello", "pennelloVal",
   "scegliFile", "pulisciMaschera", "sceltaFile", "promptRitocco", "denoise",
-  "denoiseVal", "rigenera", "erroreRitocco", "galleria", "conteggio", "aggiorna",
+  "denoiseVal", "rigenera", "erroreRitocco", "galleria", "conteggio", "aggiorna", "lente", "lenteImg", "lenteInfo",
 ]) {
   el[chiave] = $(chiave);
 }
