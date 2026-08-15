@@ -38,6 +38,8 @@ extraResources:
   # il sorgente è già la versione da spedire.
   - from: ../musica
     to: apps/musica
+  - from: ../foto
+    to: apps/foto
 
 win:
   target:

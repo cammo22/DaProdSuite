@@ -24,6 +24,7 @@ import { missingModelsGb } from "./models";
 import * as servizi from "./servizi";
 import * as visualizer from "./apps/visualizer";
 import * as musica from "./apps/musica";
+import * as foto from "./apps/foto";
 
 /**
  * Le app già portate dentro la suite.
@@ -31,7 +32,7 @@ import * as musica from "./apps/musica";
  * Un'app non elencata qui compare nell'hub disattivata, con scritto che non è
  * ancora inclusa — meglio di una scheda che sembra pronta e poi non apre niente.
  */
-const MIGRATED = new Set<AppId>(["visualizer", "musica"]);
+const MIGRATED = new Set<AppId>(["visualizer", "musica", "foto"]);
 
 interface Finestra {
   apri: (onClose: () => void) => void;
@@ -51,6 +52,11 @@ const FINESTRE: Partial<Record<AppId, Finestra>> = {
     apri: musica.apri,
     chiudi: musica.chiudi,
     laFinestra: musica.laFinestra,
+  },
+  foto: {
+    apri: foto.apri,
+    chiudi: foto.chiudi,
+    laFinestra: foto.laFinestra,
   },
 };
 

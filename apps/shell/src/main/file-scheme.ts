@@ -56,16 +56,32 @@ export function gestisciSchema(): void {
   if (gestito) return;
   gestito = true;
 
-  protocol.handle(SCHEMA, (request) => {
+  protocol.handle(SCHEMA, async (request) => {
     let percorso: string;
     try {
       percorso = risolvi(request.url);
     } catch {
       return new Response("percorso non valido", { status: 400 });
     }
-    return net.fetch(pathToFileURL(percorso).toString(), {
+
+    const risposta = await net.fetch(pathToFileURL(percorso).toString(), {
       headers: request.headers,
       bypassCustomProtocolHandlers: true,
+    });
+
+    // La pagina di un'app vive su `daprod://musica`, i suoi file su
+    // `daprod://file`: origini diverse, quindi leggerli con `fetch` è una
+    // richiesta incrociata e senza questa intestazione il browser la rifiuta.
+    // Serve a chi deve *elaborare* un file, non solo mostrarlo: ritagliare una
+    // copertina, aprire una foto nel ritocco. Aprire il varco non allarga
+    // niente — allo schema `daprod:` arrivano solo le nostre pagine.
+    const intestazioni = new Headers(risposta.headers);
+    intestazioni.set("Access-Control-Allow-Origin", "*");
+
+    return new Response(risposta.body, {
+      status: risposta.status,
+      statusText: risposta.statusText,
+      headers: intestazioni,
     });
   });
 }

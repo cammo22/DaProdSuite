@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!--
+  Le stesse regole di DaProdMusica, per la stessa ragione: la pagina parla col
+  motore su 127.0.0.1 in HTTP e WebSocket, mostra file veri del disco attraverso
+  lo schema `daprod:` e non esegue mai script che non siano i suoi moduli.
+-->
+<meta http-equiv="Content-Security-Policy" content="
+  default-src 'self';
+  script-src 'self';
+  style-src 'self' 'unsafe-inline';
+  img-src 'self' daprod: http://127.0.0.1:8188 data: blob:;
+  connect-src 'self' http://127.0.0.1:8188 ws://127.0.0.1:8188;
+  object-src 'none';
+  base-uri 'none';
+">
+<title>DaProdFoto</title>
+<link rel="stylesheet" href="stile.css">
+</head>
+<body>
+
+<header>
+  <div class="logo">DaProd<span>Foto</span></div>
+  <nav>
+    <button data-scheda="crea" class="on">Crea</button>
+    <button data-scheda="ritocco">Ritocco</button>
+    <button data-scheda="galleria">Galleria <span class="pill" id="navGal">0</span></button>
+  </nav>
+  <div class="status">
+    <div class="mods" id="mods"></div>
+    <span class="dot" id="dot"></span><span id="statusTxt">connessione…</span>
+  </div>
+</header>
+
+<!-- ============================== CREA ============================== -->
+<section class="tab on" id="scheda-crea">
+ <div class="two">
+  <div>
+    <div class="panel">
+      <h2>Cosa vuoi vedere</h2>
+      <div class="chips" id="proposte"></div>
+      <textarea id="prompt" rows="4" placeholder="Es. una vecchia automobile ferma su una strada vuota al tramonto"></textarea>
+      <div class="hint">Puoi scrivere in italiano: le parole chiave diventano scena.
+        Se scrivi in inglese viene usato com'è.</div>
+    </div>
+
+    <div class="panel">
+      <h2>Resa <span class="right"><button class="mini" id="toggleAdv">avanzati</button></span></h2>
+      <div class="row">
+        <div class="field"><label>Estetica</label><select id="estetica"></select></div>
+        <div class="field">
+          <label>Formato</label>
+          <select id="formato">
+            <option value="1024x1024">Quadrato 1024</option>
+            <option value="1024x1536">Verticale 2:3</option>
+            <option value="1536x1024">Orizzontale 3:2</option>
+            <option value="1152x896">Orizzontale 4:3</option>
+            <option value="768x768">Veloce 768</option>
+          </select>
+        </div>
+        <div class="field"><label>Quante</label><input type="number" id="quante" value="1" min="1" max="8"></div>
+      </div>
+
+      <div id="avanzati" style="display:none">
+        <div class="row">
+          <div class="field">
+            <label>Passi <span class="rangeval" id="passiVal">10</span></label>
+            <input type="range" id="passi" min="4" max="30" step="1" value="10">
+          </div>
+          <div class="field">
+            <label>CFG <span class="rangeval" id="cfgVal">1.0</span></label>
+            <input type="range" id="cfg" min="1" max="4" step="0.1" value="1.0">
+          </div>
+          <div class="field">
+            <label>Seed</label>
+            <div class="inline"><input type="number" id="seed" min="0"><button class="mini" id="dado">&#127922;</button></div>
+          </div>
+        </div>
+        <label class="switch"><input type="checkbox" id="seedCasuale" checked> Seed casuale a ogni immagine</label>
+        <div class="field" style="margin-top:14px">
+          <label>Cosa non vuoi vedere</label>
+          <textarea id="negativo" rows="2"></textarea>
+          <div class="hint">Anima lavora a CFG 1,0, e a quel valore il negativo viene ignorato dal
+            modello. Conta solo se alzi il CFG qui sopra.</div>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn wide" id="genera" style="margin-top:16px">Genera</button>
+    <div id="errore" class="err" style="display:none"></div>
+  </div>
+
+  <div>
+    <div class="panel sticky">
+      <h2>Sessione
+        <span class="right">
+          <button class="mini" id="stop">interrompi</button>
+          <button class="mini danger" id="svuota">svuota coda</button>
+        </span>
+      </h2>
+      <div id="sessione" class="tracks"></div>
+    </div>
+  </div>
+ </div>
+</section>
+
+<!-- ============================= RITOCCO ============================= -->
+<section class="tab" id="scheda-ritocco">
+ <div class="two">
+  <div class="panel">
+    <h2>Dipingi la zona da rifare
+      <span class="right">
+        <button class="mini" id="scegliFile">apri un'immagine</button>
+        <button class="mini" id="pulisciMaschera">pulisci</button>
+      </span>
+    </h2>
+    <div id="areaTela">
+      <div class="vuota" id="nessunaImmagine">
+        Apri un'immagine, o scegline una dalla Galleria con <b>ritocca</b>.<br>
+        Poi passa il pennello dove vuoi che rigeneri.
+      </div>
+    </div>
+    <div class="pennello" id="comandiPennello" style="display:none">
+      <label style="margin:0">Pennello</label>
+      <input type="range" id="pennello" min="8" max="220" step="2" value="60">
+      <span class="rangeval" id="pennelloVal">60 px</span>
+    </div>
+    <div id="erroreRitocco" class="err" style="display:none"></div>
+  </div>
+
+  <div>
+    <div class="panel sticky">
+      <h2>Cosa deve diventare</h2>
+      <textarea id="promptRitocco" rows="3" placeholder="Es. un cespuglio di fiori rossi"></textarea>
+      <div class="field" style="margin-top:12px">
+        <label>Quanto cambiare <span class="rangeval" id="denoiseVal">0.75</span></label>
+        <input type="range" id="denoise" min="0.2" max="1" step="0.05" value="0.75">
+        <div class="hint">Basso tiene la forma di quello che c'era, alto rifà da capo.</div>
+      </div>
+      <button class="btn wide" id="rigenera">Rigenera la zona</button>
+      <div class="hint">La zona dipinta viene rifatta, il resto dell'immagine resta identico.
+        Il risultato è un'immagine nuova: l'originale non si tocca.</div>
+    </div>
+  </div>
+ </div>
+</section>
+
+<!-- ============================= GALLERIA ============================= -->
+<section class="tab" id="scheda-galleria">
+  <div class="panel">
+    <h2>Le tue immagini <span id="conteggio" style="color:var(--dim);text-transform:none"></span>
+      <span class="right"><button class="mini" id="aggiorna">aggiorna</button></span>
+    </h2>
+    <div class="cards" id="galleria"></div>
+  </div>
+</section>
+
+<input type="file" id="sceltaFile" accept="image/*" style="display:none">
+
+<script type="module" src="src/avvio.js"></script>
+</body>
+</html>
