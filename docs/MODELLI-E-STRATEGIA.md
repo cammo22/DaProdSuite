@@ -14,7 +14,7 @@ Se installassimo tutto così com'è, con il manifest attuale:
 |---|---|---|
 | DaProdVisualizer | nessuno | — |
 | DaProdDream | SD-Turbo | 2,4 GB |
-| DaProdCompanion | Gemma 4 E4B + nomic-embed (via Ollama) | 4,4 GB |
+| DaProdCompanion | un modello a scelta, via LM Studio | 0 (li gestisce LM Studio) |
 | DaProdMusica | MiniMax Music 3 (DiT + encoder + VAE, tutti W4A8) | 7,4 GB |
 | DaProdFoto | FLUX.2 Klein Q4_K_S + Qwen3-8B + VAE **+** Anima + Qwen3 0.6B + VAE | 16,8 GB |
 | DaProd IoDigitale | SoulX-FlashHead + LeapTalk + wav2vec2 | 14,8 GB |
@@ -230,7 +230,7 @@ su CPU nello stesso modo.**
 | App | Su CPU Intel | Perché |
 |---|---|---|
 | Visualizer | **sì, già oggi** | non tocca la GPU |
-| Companion | **sì** | Ollama gira su CPU; con un modello piccolo è usabile |
+| Companion | **sì** | LM Studio gira su CPU; con un modello piccolo è usabile |
 | IoDigitale (parte parlata) | **sì** | ASR e LLM sono già GGUF, cioè llama.cpp, cioè CPU |
 | Musica | lentissimo | il decoder autoregressivo fa 25 passi per secondo di musica |
 | Foto | lento ma fattibile | un'immagine passa da secondi a minuti |

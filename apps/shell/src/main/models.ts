@@ -35,14 +35,22 @@ export interface HfRepoModel {
   bytes: number;
 }
 
-export interface OllamaModel {
+/**
+ * Modello gestito da LM Studio.
+ *
+ * La suite non lo scarica: LM Studio ha il suo archivio e la sua interfaccia.
+ * Quello che conta qui è se il server locale risponde e ha un modello caricato,
+ * quindi `bytes` è zero e non entra nel conto dei GB da scaricare.
+ */
+export interface LmStudioModel {
   label: string;
-  kind: "ollama";
-  tag: string;
+  kind: "lmstudio";
+  /** Quale modello consigliare all'utente se non ne ha uno adatto. */
+  suggerito: string;
   bytes: number;
 }
 
-export type ModelEntry = FileModel | HfRepoModel | OllamaModel;
+export type ModelEntry = FileModel | HfRepoModel | LmStudioModel;
 
 interface Manifest {
   version: number;
@@ -89,9 +97,10 @@ export function isModelPresent(id: string): boolean {
       if (!existsSync(dir)) return false;
       return dirSize(dir) >= entry.bytes * 0.95;
     }
-    case "ollama":
-      // Li gestisce Ollama, che ha il suo archivio: la verifica è la fase 2.
-      return false;
+    case "lmstudio":
+      // Non è un file su disco che possiamo cercare: la verifica è interrogare
+      // il server di LM Studio, e si fa quando si migra il Companion.
+      return true;
   }
 }
 

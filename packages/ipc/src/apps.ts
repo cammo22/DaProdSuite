@@ -159,7 +159,9 @@ export const APPS: Record<AppId, AppDescriptor> = {
       entry: "-m brain_service",
       healthTimeoutMs: 60_000,
     },
-    models: ["ollama-brain", "ollama-embed"],
+    // Conversazione e memoria passano da LM Studio, che espone un'API
+    // compatibile OpenAI su 127.0.0.1:1234. I modelli li gestisce lui.
+    models: ["lmstudio-cervello", "lmstudio-memoria"],
     gpuHeavy: false,
   },
   iodigitale: {

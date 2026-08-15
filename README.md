@@ -50,7 +50,7 @@ solo quello che è davvero diverso.
 | 🟠 | **DaProdFoto** | Immagini da prompt e ritocco con maschera | Anima Turbo · FLUX.2 Klein |
 | 🟪 | **DaProdCinema** | Da una canzone al suo video musicale, scena per scena | MiniMax H3 |
 | 🩵 | **DaProdDream** | Webcam, video o schermo trasformati in tempo reale | SD-Turbo |
-| 🟢 | **DaProdCompanion** | Un compagno sul desktop che ti ascolta e si ricorda di te | Gemma 4 via Ollama |
+| 🟢 | **DaProdCompanion** | Un compagno sul desktop che ti ascolta e si ricorda di te | un modello a scelta via LM Studio |
 | 🟥 | **DaProd IoDigitale** | Il tuo avatar parlante: gli scrivi, ti risponde in video | SoulX-FlashHead |
 
 ## A che punto siamo
@@ -275,7 +275,7 @@ La suite non addestra nulla: mette insieme il lavoro di altri e lo rende usabile
 | [Anima](https://huggingface.co/circlestone-labs/Anima) · [FLUX.2 Klein](https://huggingface.co/unsloth/FLUX.2-klein-9B-GGUF) | le immagini |
 | [SoulX-FlashHead](https://huggingface.co/Soul-AILab/SoulX-FlashHead-1_3B) | l'avatar parlante |
 | [SD-Turbo](https://huggingface.co/stabilityai/sd-turbo) | la trasformazione in tempo reale |
-| [Ollama](https://ollama.com) | il cervello del Companion |
+|  il cervello del Companion | il cervello del Companion |
 | [WanGP](https://github.com/deepbeepmeep/Wan2GP) | non è usato dalla suite, ma le sue tecniche di memoria sono state la scuola |
 
 I modelli mantengono ognuno la propria licenza: si scaricano dalle loro fonti, non

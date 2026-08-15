@@ -9,7 +9,8 @@
     "  file     un singolo file da URL diretto, ripreso con Range se interrotto",
     "  hf-repo  uno snapshot di un repo HuggingFace; 'include'/'exclude' sono i",
     "           pattern passati a hf download, per non tirare giù quello che non serve",
-    "  ollama   gestito da Ollama, che va installato a parte",
+    "  lmstudio gestito da LM Studio, che va installato a parte: la suite non",
+    "           scarica questi modelli, verifica solo che il server locale risponda",
     "",
     "'dir' è relativa a %LOCALAPPDATA%\\DaProdSuite\\models e segue la convenzione",
     "delle cartelle di ComfyUI, così un solo extra_model_paths.yaml serve Musica e Foto."
@@ -131,17 +132,18 @@
       "bytes": 1138000000
     },
 
-    "ollama-brain": {
-      "label": "Gemma 4 E4B — il cervello del Companion",
-      "kind": "ollama",
-      "tag": "gemma4:e4b-it-qat",
-      "bytes": 4400000000
+    "lmstudio-cervello": {
+      "label": "Il modello di conversazione del Companion",
+      "kind": "lmstudio",
+      "$comment": "I modelli li scarica e li carica LM Studio. La suite non li gestisce: controlla solo che il server locale risponda e che ci sia un modello caricato.",
+      "suggerito": "google/gemma-3-4b",
+      "bytes": 0
     },
-    "ollama-embed": {
-      "label": "nomic-embed-text — memoria semantica del Companion",
-      "kind": "ollama",
-      "tag": "nomic-embed-text",
-      "bytes": 274000000
+    "lmstudio-memoria": {
+      "label": "Il modello di embedding per la memoria del Companion",
+      "kind": "lmstudio",
+      "suggerito": "text-embedding-nomic-embed-text-v1.5",
+      "bytes": 0
     }
   }
 }
