@@ -245,6 +245,7 @@ Il ragionamento completo è in
 | [VERIFICA-AMBIENTE-UNIFICATO.md](docs/VERIFICA-AMBIENTE-UNIFICATO.md) | La prova che i quattro motori girano su un solo torch |
 | [ACCESSO-REMOTO.md](docs/ACCESSO-REMOTO.md) | QR, gateway, app Android |
 | [ROADMAP.md](docs/ROADMAP.md) | Dove si sta andando |
+| [RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md) | Stato del lavoro e prossimo passo, fra una sessione e l'altra |
 
 ## Sviluppo
 

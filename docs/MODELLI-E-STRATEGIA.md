@@ -265,29 +265,3 @@ Da sei card a **sette**:
 
 E le divisioni della suite tornano a coincidere con quelle della wiki: Musica,
 Foto, Cinema. Che è come dovrebbe essere.
-
-
----
-
-## 8. Mage-VL — dove sta, e dove non sta
-
-`microsoft/Mage-VL`, 5 miliardi di parametri (Mage-ViT + Qwen3-4B), in BF16.
-
-**Non genera immagini: le capisce.** Non è un'alternativa a FLUX.2 Klein o ad
-Anima — fa il lavoro opposto. Metterlo in DaProdFoto accanto a Klein come
-"secondo motore" non avrebbe senso: non produrrebbe niente.
-
-Quello che sa fare, e che alla suite serve davvero:
-
-| Dove | Cosa gli si chiede |
-|---|---|
-| **DaProdFoto** | gli dai un'immagine di riferimento e ti restituisce il prompt che la descrive, da riusare per generarne altre nello stesso stile |
-| **DaProdCinema** | commento in streaming su un video mentre scorre — è la sua funzione dichiarata, ed è esattamente ciò che serve per controllare se una clip generata rispetta il piano |
-| **Libreria** | descrive da solo i risultati, così la ricerca funziona su cosa c'è dentro e non sul nome del file |
-| **DaProdCompanion** | dargli gli occhi: guarda quello che guardi tu e ne parla |
-
-Il primo è quello che chiude il cerchio con la generazione: **da immagine a
-prompt** e poi di nuovo a immagine. È il modo in cui un modello che non genera
-niente rende migliore quello che genera.
-
-Non entra in nessuna scheda di default: è un extra a richiesta, come FLUX.
