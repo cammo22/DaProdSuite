@@ -138,8 +138,11 @@ async function creaBrano(p) {
   // lei il modello musicale ha già finito e le lascia il posto.
   await ponte.svuotaVram();
 
+  // `conCopertina` dice alla coda che dietro a questo brano ne arriva una: senza,
+  // il brano finito si porterebbe via il proprio lavoro e la copertina, che
+  // arriva dopo, non troverebbe più a chi attaccarsi.
   const idBrano = await ponte.invia(grafoBrano(p));
-  aggiungiLavoro(idBrano, p);
+  aggiungiLavoro(idBrano, p, { conCopertina: el.autoCover.checked });
 
   if (el.autoCover.checked) {
     const prompt = promptCopertina(p.titolo, p.lyrics, el.coverStyleNew.value);

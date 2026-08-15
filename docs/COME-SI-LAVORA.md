@@ -30,21 +30,29 @@ niente a mano.
 
 ## 2. Quando si pubblica
 
-**Pubblicare su GitHub è un aggiornamento serio, non un salvataggio.**
-
-Il ciclo è questo, e non si salta nessun passaggio:
+Il ciclo è questo:
 
 ```
 1.  si lavora sul PC              →  la copia locale può stare avanti quanto vuole
-2.  provi la versione a lungo     →  finché non ti convince, resta qui
-3.  dai l'ok                      →  solo tu
-4.  commit su main + tag          →  git tag v0.0.2 && git push --tags
+2.  commit su main                →  quando una cosa è finita e compila
+3.  push su GitHub                →  il lavoro sta al sicuro e si vede da fuori
+4.  tag                           →  git tag v0.1.0 && git push --tags
 5.  la CI compila e pubblica      →  Release con installer + latest.yml
 6.  chi ha la suite installata    →  vede l'aggiornamento e lo applica
 ```
 
-Il passaggio 3 è l'unico che conta: **senza il tuo ok non si commetta e non si
-pubblica niente.**
+**Chi decide.** Il 16 agosto 2026 Cammo ha delegato commit e pubblicazione: si
+committa e si pubblica quando una cosa è finita, senza chiedere ogni volta. In
+cambio due impegni, che sono la ragione della delega — vuole poter guardare
+GitHub e capire cosa è successo senza leggere il codice:
+
+- **Ogni pubblicazione passa dal [CHANGELOG](../CHANGELOG.md)**, scritto per chi
+  usa la suite e non per chi la scrive. Prima il changelog, poi la roadmap.
+- **Niente rami, niente pull request, un tag per versione.** La struttura resta
+  quella che si guarda in dieci secondi.
+
+Resta fermo che **quello che non funziona non si pubblica**: se una cosa non è
+stata provata, va detto — nel changelog o guardandolo in faccia.
 
 ### Versioni
 

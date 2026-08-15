@@ -5,9 +5,10 @@
  * Ce ne sono di tre specie — un brano, la sua copertina, un'immagine libera — e
  * la differenza sta tutta in cosa si fa quando finiscono.
  *
- * **La copertina va per prima.** Costa una ventina di secondi, la musica minuti:
- * mandarla avanti vuol dire che mentre il brano lavora hai già l'artwork davanti
- * invece di un rettangolo vuoto.
+ * **La copertina va per seconda**, dopo il brano: carica Anima, che occuperebbe
+ * la VRAM che serve al modello musicale. Vuol dire che quando è pronta il brano
+ * di solito è già finito e il suo lavoro non esiste più — per questo `finiti`
+ * tiene da parte l'id con cui è entrato in libreria, e la copertina lo ritrova.
  */
 
 import { el, escapeHtml, fmtTime, mostraErrore } from "./dom.js";
@@ -20,6 +21,15 @@ import * as ponte from "./ponte.js";
 const lavori = new Map();
 let ordine = [];
 let ultimoDisegno = "";
+
+/**
+ * Brani già finiti: id del lavoro → id con cui stanno in libreria.
+ *
+ * Serve solo alla copertina, che arriva dopo. Senza, un brano finito è un lavoro
+ * cancellato, e la copertina non ha più nessuno a cui attaccarsi: veniva
+ * generata davvero e poi buttata via, che è come non generarla.
+ */
+const finiti = new Map();
 
 const lavoro = (id) => lavori.get(id);
 const inCorso = () => ordine.map(lavoro).find((l) => l && l.stato === "in-corso");
@@ -234,8 +244,15 @@ async function concludi(l) {
         // sessione e verrà scritta accanto al file quando ci sarà un file.
         brano.copertinaUrl = ponte.vista(immagine);
         brano.copertinaFile = immagine;
-      } else if (l.bersaglio) {
-        await vestiBrano(l.bersaglio, immagine);
+      } else {
+        // Il caso normale da quando la copertina va per seconda: il brano è già
+        // in libreria. `bersaglio` è invece la copertina rifatta dalla scheda
+        // Libreria, che il brano ce l'ha da prima.
+        const bersaglio = l.bersaglio ?? (l.branoDi && finiti.get(l.branoDi));
+        if (bersaglio) {
+          await vestiBrano(bersaglio, immagine);
+          if (l.branoDi) finiti.delete(l.branoDi);
+        }
       }
     }
     togliLavoro(l.id);
@@ -253,6 +270,10 @@ async function concludi(l) {
         const rinominato = await ponte.rinomina(id, l.parametri.titolo);
         if (rinominato) id = rinominato.id;
       }
+      // Il nome definitivo ce l'ha adesso, e da adesso la copertina che sta
+      // ancora lavorando sa dove andare. Prima dei metadati di proposito: se
+      // qualcosa va storto lì, la copertina arriva lo stesso.
+      if (l.conCopertina && !l.copertinaFile) finiti.set(l.id, id);
       await ponte.scriviMeta(id, { ...l.parametri, secs: secondi, cached: l.daCache, ts: Date.now() });
       if (l.copertinaFile) await vestiBrano(id, l.copertinaFile);
     } catch {

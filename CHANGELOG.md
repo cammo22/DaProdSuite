@@ -12,6 +12,22 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ## Non ancora pubblicato
 
+Niente, per ora: tutto quello che c'era è uscito nella 0.1.0.
+
+---
+
+## 0.1.0 — Tre app dentro, e la suite si installa da sola
+
+*16 agosto 2026 — la prima versione pubblicata.*
+
+### Aggiustato: la copertina che non si vedeva
+
+- **La copertina generata insieme al brano non arrivava mai sul brano.** Veniva
+  disegnata davvero — il motore ci metteva dieci secondi — e poi buttata via.
+  Era nata mettendo la copertina *dopo* il brano per non contendergli la memoria
+  video: quando finiva, il brano era già in libreria e nessuno se la prendeva
+  più. Adesso lo ritrova.
+
 ### In DaProdFoto si sceglie il modello
 
 - **Due modelli, non uno.** Sopra "Estetica" c'è un menu: **Anima**, veloce e già
@@ -74,12 +90,11 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ### Aggiustato
 
-- **DaProdMusica moriva a metà brano** con un errore che non nominava la sua
-  causa (`'RVQDepthDecoder' object has no attribute '_v_block'`), a volte dopo
-  pochi secondi, a volte dopo quattro minuti di lavoro buttato. Era la copertina,
-  generata *prima* del brano: lasciava il suo modello nella scheda video e il
-  modello musicale ci entrava solo a metà. Adesso il brano parte per primo, con
-  la memoria video svuotata prima, e la copertina va in coda dietro.
+- **DaProdMusica moriva a metà brano**, a volte dopo pochi secondi, a volte dopo
+  quattro minuti di lavoro buttato. Adesso il brano parte per primo, con la
+  memoria video svuotata prima, e la copertina va in coda dietro — ma la causa
+  vera era un difetto del motore, corretto passando alla sua versione 0.33.1
+  (vedi qui sopra).
 - **Il ritocco di DaProdFoto non mostrava il risultato** dove stavi lavorando:
   compariva nella scheda Crea e in galleria. Adesso prende il posto
   dell'originale sulla tela, e ci si può dipingere sopra un'altra volta.
@@ -100,8 +115,8 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ## 0.0.1 — Le fondamenta
 
-La prima versione che sta in piedi. Non c'è ancora un'app dentro la suite, ma
-c'è tutto quello che serve per metterle.
+*Mai pubblicata: è rimasta sul PC.* Non c'era ancora un'app dentro la suite, ma
+c'era tutto quello che serve per metterle.
 
 - Guscio Electron con l'hub, sette schede, lo stato di ognuna
 - Arbitro della GPU: un solo motore pesante alla volta sugli 8 GB
