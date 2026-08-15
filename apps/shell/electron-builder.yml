@@ -15,17 +15,25 @@ files:
   - node_modules/@daprod/ipc/dist/**
   - node_modules/@daprod/ipc/package.json
 
-# Manifest e servizi Python non entrano nell'asar: devono restare file veri su
-# disco perché il processo Python li legga e li esegua.
+# Manifest, requirements e servizi Python non entrano nell'asar: devono restare
+# file veri su disco perché uv e il processo Python li leggano ed eseguano.
 extraResources:
   - from: ../../manifest
     to: manifest
+  # Senza questo, `paths.ts` cerca base.txt in resources/requirements e non lo
+  # trova: dalla versione installata l'ambiente Python non si creerebbe.
+  - from: ../../packages/runtime/requirements
+    to: requirements
   - from: ../../services
     to: services
     filter:
       - "**/*"
       - "!**/__pycache__/**"
       - "!**/.venv/**"
+  # Le interfacce delle app, già compilate da Vite. Fuori dall'asar perché le
+  # finestre le caricano con loadFile da un percorso reale.
+  - from: ../visualizer/dist
+    to: apps/visualizer
 
 win:
   target:

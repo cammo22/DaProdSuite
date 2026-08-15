@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "id": "daprod.cosmic-dust",
+  "name": "Polvere Cosmica",
+  "author": "DaProdVisualizer Team",
+  "version": "1.0.0",
+  "category": "Spazio",
+  "description": "Campo di particelle spaziali in rotazione lenta, con esplosioni sui transienti.",
+  "entry": "scene.ts",
+  "performance": "medium",
+  "minimumRenderer": "webgl2",
+  "parameters": {
+    "size": {
+      "type": "number",
+      "default": 1,
+      "min": 0.2,
+      "max": 3,
+      "label": "Dimensione"
+    },
+    "spin": {
+      "type": "number",
+      "default": 1,
+      "min": 0,
+      "max": 3,
+      "label": "Rotazione"
+    },
+    "spread": {
+      "type": "number",
+      "default": 1,
+      "min": 0.2,
+      "max": 2.5,
+      "label": "Ampiezza"
+    }
+  },
+  "audioMappings": [
+    {
+      "source": "onset",
+      "target": "burst",
+      "amount": 1,
+      "smoothing": 0.22
+    },
+    {
+      "source": "bass",
+      "target": "pulse",
+      "amount": 1,
+      "smoothing": 0.12
+    },
+    {
+      "source": "treble",
+      "target": "shimmer",
+      "amount": 1,
+      "smoothing": 0.07
+    }
+  ]
+}

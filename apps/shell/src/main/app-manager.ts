@@ -7,20 +7,45 @@
  */
 
 import { EventEmitter } from "node:events";
-import { APP_LIST, APPS, type AppId, type AppState } from "@daprod/ipc";
+import type { BrowserWindow } from "electron";
+import {
+  APP_LIST,
+  APPS,
+  CHANNELS,
+  type AppId,
+  type AppState,
+  type Consegna,
+  type Intenzione,
+} from "@daprod/ipc";
+import { libreria } from "./libreria";
 import { gpu } from "./gpu";
 import { runtime } from "./runtime";
 import { missingModelsGb } from "./models";
+import * as visualizer from "./apps/visualizer";
 
 /**
  * Le app già portate dentro la suite.
  *
- * Vuoto adesso: la fase 0 costruisce l'impalcatura (installer, aggiornamenti,
- * hub) e la migrazione vera è la fase 3. Un'app non elencata qui compare
- * nell'hub disattivata, con scritto che non è ancora inclusa — meglio di una
- * scheda che sembra pronta e poi non apre niente.
+ * Un'app non elencata qui compare nell'hub disattivata, con scritto che non è
+ * ancora inclusa — meglio di una scheda che sembra pronta e poi non apre niente.
  */
-const MIGRATED = new Set<AppId>([]);
+const MIGRATED = new Set<AppId>(["visualizer"]);
+
+interface Finestra {
+  apri: (onClose: () => void) => void;
+  chiudi: () => void;
+  /** La finestra viva, se c'è: serve per consegnarle elementi dalla libreria. */
+  laFinestra: () => BrowserWindow | null;
+}
+
+/** Come si apre, si chiude e si raggiunge ogni app migrata. */
+const FINESTRE: Partial<Record<AppId, Finestra>> = {
+  visualizer: {
+    apri: visualizer.apri,
+    chiudi: visualizer.chiudi,
+    laFinestra: visualizer.laFinestra,
+  },
+};
 
 class AppManager extends EventEmitter {
   private states = new Map<AppId, AppState>();
@@ -86,17 +111,87 @@ class AppManager extends EventEmitter {
     }
 
     this.patch(id, { status: "in-avvio", error: undefined });
-    // L'avvio del servizio e la finestra dell'app arrivano con la fase 3.
+
+    const finestra = FINESTRE[id];
+    if (!finestra) {
+      this.patch(id, {
+        status: "in-errore",
+        error: `Manca la finestra di ${descriptor.name}.`,
+      });
+      return;
+    }
+
+    try {
+      // L'avvio del servizio Python, per le app che ne hanno uno, si innesta qui
+      // prima di aprire la finestra.
+      finestra.apri(() => {
+        // Chiusa dall'utente con la X: lo stato deve tornare indietro da solo,
+        // altrimenti l'hub resta a dire "attiva" per una finestra che non c'è.
+        gpu.release(id);
+        this.patch(id, { status: "pronta" });
+      });
+      this.patch(id, { status: "attiva" });
+    } catch (err) {
+      this.patch(id, {
+        status: "in-errore",
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
   }
 
   async close(id: AppId): Promise<void> {
+    FINESTRE[id]?.chiudi();
     gpu.release(id);
-    this.patch(id, { status: "pronta", error: undefined });
+    if (MIGRATED.has(id)) this.patch(id, { status: "pronta", error: undefined });
   }
 
   /** Spegne tutto. Chiamata alla chiusura della suite e prima di un aggiornamento. */
   async closeAll(): Promise<void> {
     await Promise.all(APP_LIST.map((app) => this.close(app.id)));
+  }
+
+  /** Almeno un'app aperta: la suite non deve chiudersi mentre si sta lavorando. */
+  qualcunaAperta(): boolean {
+    return APP_LIST.some((app) => FINESTRE[app.id]?.laFinestra() !== null);
+  }
+
+  /**
+   * Manda un elemento della libreria a un'altra app.
+   *
+   * Se la destinazione è chiusa la apre e aspetta che la sua pagina sia pronta,
+   * altrimenti la consegna partirebbe verso un renderer che non ha ancora
+   * registrato l'ascoltatore e si perderebbe.
+   */
+  async consegna(
+    destinazione: AppId,
+    elementoId: string,
+    intenzione: Intenzione,
+    mittente?: AppId,
+  ): Promise<void> {
+    const elemento = libreria.trova(elementoId);
+    if (!elemento) throw new Error(`Elemento "${elementoId}" non più in libreria.`);
+
+    const finestra = FINESTRE[destinazione];
+    if (!finestra) {
+      throw new Error(`${APPS[destinazione].name} non è ancora nella suite.`);
+    }
+
+    const eraChiusa = finestra.laFinestra() === null;
+    if (eraChiusa) await this.open(destinazione);
+
+    const win = finestra.laFinestra();
+    if (!win) throw new Error(`Non sono riuscito ad aprire ${APPS[destinazione].name}.`);
+
+    const pacchetto: Consegna = { elemento, intenzione, mittente };
+    const invia = () => win.webContents.send(CHANNELS.appConsegna, pacchetto);
+
+    if (eraChiusa && win.webContents.isLoading()) {
+      win.webContents.once("did-finish-load", invia);
+    } else {
+      invia();
+    }
+
+    win.focus();
   }
 
   patch(id: AppId, partial: Partial<AppState>): void {

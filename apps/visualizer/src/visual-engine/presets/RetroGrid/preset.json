@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "id": "daprod.retro-grid",
+  "name": "Griglia Retro",
+  "author": "DaProdVisualizer Team",
+  "version": "1.0.0",
+  "category": "Retro",
+  "description": "Griglia anni 80 in prospettiva, sole sintetico e montagne che salgono sui bassi.",
+  "entry": "scene.ts",
+  "performance": "medium",
+  "minimumRenderer": "webgl2",
+  "parameters": {
+    "speed": {
+      "type": "number",
+      "default": 1,
+      "min": 0.1,
+      "max": 4,
+      "label": "Velocita'"
+    },
+    "sunSize": {
+      "type": "number",
+      "default": 0.42,
+      "min": 0.15,
+      "max": 0.8,
+      "label": "Sole"
+    },
+    "gridGlow": {
+      "type": "number",
+      "default": 0.7,
+      "min": 0,
+      "max": 1.5,
+      "label": "Bagliore griglia"
+    }
+  },
+  "audioMappings": [
+    {
+      "source": "bass",
+      "target": "rise",
+      "amount": 1,
+      "smoothing": 0.14
+    },
+    {
+      "source": "beat",
+      "target": "pulse",
+      "amount": 1,
+      "smoothing": 0.05
+    },
+    {
+      "source": "treble",
+      "target": "twinkle",
+      "amount": 1,
+      "smoothing": 0.09
+    }
+  ]
+}

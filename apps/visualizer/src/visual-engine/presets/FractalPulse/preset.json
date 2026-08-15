@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "id": "daprod.fractal-pulse",
+  "name": "Impulso Frattale",
+  "author": "DaProdVisualizer Team",
+  "version": "1.0.0",
+  "category": "Psichedelico",
+  "description": "Pattern pseudo-frattale caleidoscopico che zooma sul beat.",
+  "entry": "scene.ts",
+  "performance": "high",
+  "minimumRenderer": "webgl2",
+  "parameters": {
+    "fold": {
+      "type": "number",
+      "default": 0.86,
+      "min": 0.5,
+      "max": 1.3,
+      "label": "Piega"
+    },
+    "zoom": {
+      "type": "number",
+      "default": 1,
+      "min": 0.4,
+      "max": 2.5,
+      "label": "Zoom"
+    },
+    "glowAmount": {
+      "type": "number",
+      "default": 0.7,
+      "min": 0,
+      "max": 1.5,
+      "label": "Bagliore"
+    }
+  },
+  "audioMappings": [
+    {
+      "source": "beat",
+      "target": "punch",
+      "amount": 1,
+      "smoothing": 0.12
+    },
+    {
+      "source": "centroid",
+      "target": "drift",
+      "amount": 1,
+      "smoothing": 0.5
+    },
+    {
+      "source": "bass",
+      "target": "breathe",
+      "amount": 1,
+      "smoothing": 0.2
+    }
+  ]
+}

@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "id": "daprod.audio-bloom",
+  "name": "Corolla Sonora",
+  "author": "DaProdVisualizer Team",
+  "version": "1.0.0",
+  "category": "Astratto",
+  "description": "Corolle astratte con i petali comandati direttamente dalle bande FFT.",
+  "entry": "scene.ts",
+  "performance": "medium",
+  "minimumRenderer": "webgl2",
+  "parameters": {
+    "petals": {
+      "type": "number",
+      "default": 9,
+      "min": 3,
+      "max": 24,
+      "step": 1,
+      "label": "Petali"
+    },
+    "amount": {
+      "type": "number",
+      "default": 0.85,
+      "min": 0.1,
+      "max": 2,
+      "label": "Apertura"
+    },
+    "sway": {
+      "type": "number",
+      "default": 0.5,
+      "min": 0,
+      "max": 2,
+      "label": "Ondeggio"
+    }
+  },
+  "audioMappings": [
+    {
+      "source": "bass",
+      "target": "swell",
+      "amount": 1,
+      "smoothing": 0.13
+    },
+    {
+      "source": "beat",
+      "target": "bloomPulse",
+      "amount": 1,
+      "smoothing": 0.06
+    },
+    {
+      "source": "mid",
+      "target": "curl",
+      "amount": 1,
+      "smoothing": 0.16
+    }
+  ]
+}
