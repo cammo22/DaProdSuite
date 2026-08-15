@@ -12,8 +12,12 @@
   --ok:#34d399; --err:#f87171; --radius:16px; --player-h:78px;
 }
 *{box-sizing:border-box}
-html,body{margin:0;height:100%}
-body{
+/* `min-height` e non `height`: con l'altezza fissa al 100% il corpo finisce dove
+   finisce la prima schermata, e lo spazio riservato al lettore qui sotto si
+   sedeva lì invece che dopo il contenuto — così i pulsanti Crea, che stanno in
+   fondo alla pagina, restavano coperti dalla barra del lettore. */
+html{height:100%}
+body{margin:0; min-height:100%;
   background:radial-gradient(1100px 560px at 85% -12%, #1d1348 0%, transparent 62%),
              radial-gradient(900px 520px at -5% 105%, #052b3d 0%, transparent 58%), var(--bg);
   background-attachment:fixed;
