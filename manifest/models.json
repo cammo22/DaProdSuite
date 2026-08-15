@@ -92,6 +92,15 @@
       "bytes": 336213556
     },
 
+    "mage-vl": {
+      "label": "Mage-VL — capisce immagini e video",
+      "kind": "hf-repo",
+      "dir": "Mage-VL",
+      "repo": "microsoft/Mage-VL",
+      "$comment": "5B parametri (Mage-ViT + Qwen3-4B) in BF16. NON genera immagini: le comprende. Serve per descrivere un riferimento e ricavarne un prompt, e per commentare un video mentre scorre. Dimensione da verificare al primo scaricamento.",
+      "bytes": 10500000000
+    },
+
     "sd-turbo": {
       "label": "SD-Turbo — trasformazione in tempo reale",
       "kind": "hf-repo",

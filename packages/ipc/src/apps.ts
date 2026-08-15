@@ -110,7 +110,14 @@ export const APPS: Record<AppId, AppDescriptor> = {
     // Klein dà di più ma pesa 12,4 GB ed è al limite degli 8 GB di VRAM, quindi
     // è una scelta, non un obbligo.
     models: ["anima-turbo", "qwen3-06b-base", "qwen-image-vae"],
-    extraModels: ["flux2-klein-q4ks", "flux2-text-encoder", "flux2-vae"],
+    extraModels: [
+      "flux2-klein-q4ks",
+      "flux2-text-encoder",
+      "flux2-vae",
+      // Mage-VL non genera: legge un'immagine e ne ricava il prompt, da riusare
+      // per generarne altre nello stesso stile. Vedi docs/MODELLI-E-STRATEGIA § 8.
+      "mage-vl",
+    ],
     gpuHeavy: true,
   },
   cinema: {
