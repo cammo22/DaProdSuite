@@ -76,3 +76,6 @@ jobs:
             throw "Nella Release mancano l'installer o latest.yml: $nomi"
           }
           Write-Host "Nella Release ci sono: $nomi"
+          # Una Release in bozza non la vede nessuno e l'aggiornamento automatico
+          # non la trova: alla 0.1.0 è successo e si è dovuta pubblicare a mano.
+          gh release edit "${{ github.ref_name }}" --draft=false
