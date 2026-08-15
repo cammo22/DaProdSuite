@@ -1,11 +1,16 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
+import { esponiApiApp } from './comune'
 
 /**
  * Implementazione di `HostBridge` esposta su `window.daprodHost`.
  *
  * Il frontend non sa che sotto c'e' Electron: vede la stessa interfaccia che
  * `WebBridge` implementa nel browser, solo con le capacita' accese.
+ *
+ * Accanto a questo, `esponiApiApp` mette su `window.daprodSuite` la parte comune
+ * a tutte le app: la libreria dei risultati e lo scambio fra programmi.
  */
+esponiApiApp('visualizer')
 
 interface DescribedFile {
   name: string

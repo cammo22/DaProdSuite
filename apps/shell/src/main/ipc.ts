@@ -7,8 +7,9 @@
 
 import { BrowserWindow, ipcMain, shell } from "electron";
 import { app } from "electron";
-import { CHANNELS, type AppId } from "@daprod/ipc";
+import { CHANNELS, type AppId, type FiltroLibreria, type Intenzione } from "@daprod/ipc";
 import { appManager } from "./app-manager";
+import { libreria } from "./libreria";
 import { gpu } from "./gpu";
 import { runtime } from "./runtime";
 import { updater } from "./updater";
@@ -63,6 +64,27 @@ export function registerIpc(getHub: () => BrowserWindow | null): void {
     updater.installAndRestart();
   });
 
+  /* ------------------------------------------------------------- libreria */
+
+  ipcMain.handle(CHANNELS.libreriaElenco, (_e, filtro?: FiltroLibreria) =>
+    libreria.cerca(filtro ?? {}),
+  );
+
+  ipcMain.handle(CHANNELS.libreriaMostra, (_e, id: string) => {
+    const elemento = libreria.trova(id);
+    if (!elemento) return false;
+    shell.showItemInFolder(elemento.percorso);
+    return true;
+  });
+
+  ipcMain.handle(
+    CHANNELS.appInvia,
+    (_e, destinazione: AppId, elementoId: string, intenzione: Intenzione) =>
+      appManager.consegna(destinazione, elementoId, intenzione),
+  );
+
+  ipcMain.handle(CHANNELS.appChiudi, (_e, id: AppId) => appManager.close(id));
+
   /* ------------------------------------------------- notifiche al renderer */
 
   const send = (channel: string, payload: unknown) => {
@@ -74,4 +96,13 @@ export function registerIpc(getHub: () => BrowserWindow | null): void {
   runtime.on("changed", (state) => send(CHANNELS.runtimeChanged, state));
   gpu.on("changed", (state) => send(CHANNELS.gpuChanged, state));
   updater.on("changed", (state) => send(CHANNELS.updateChanged, state));
+
+  // La libreria interessa tutte le finestre, non solo l'hub: se DaProdMusica
+  // finisce un brano, il Visualizer aperto accanto deve vederlo comparire senza
+  // che l'utente lo ricarichi.
+  libreria.on("cambiata", (elementi) => {
+    for (const finestra of BrowserWindow.getAllWindows()) {
+      if (!finestra.isDestroyed()) finestra.webContents.send(CHANNELS.libreriaCambiata, elementi);
+    }
+  });
 }

@@ -7,7 +7,17 @@
  */
 
 import { EventEmitter } from "node:events";
-import { APP_LIST, APPS, type AppId, type AppState } from "@daprod/ipc";
+import type { BrowserWindow } from "electron";
+import {
+  APP_LIST,
+  APPS,
+  CHANNELS,
+  type AppId,
+  type AppState,
+  type Consegna,
+  type Intenzione,
+} from "@daprod/ipc";
+import { libreria } from "./libreria";
 import { gpu } from "./gpu";
 import { runtime } from "./runtime";
 import { missingModelsGb } from "./models";
@@ -21,11 +31,21 @@ import * as visualizer from "./apps/visualizer";
  */
 const MIGRATED = new Set<AppId>(["visualizer"]);
 
-/** Come si apre e si chiude ogni app migrata. */
-const FINESTRE: Partial<Record<AppId, { apri: (onClose: () => void) => void; chiudi: () => void }>> =
-  {
-    visualizer: { apri: visualizer.apri, chiudi: visualizer.chiudi },
-  };
+interface Finestra {
+  apri: (onClose: () => void) => void;
+  chiudi: () => void;
+  /** La finestra viva, se c'è: serve per consegnarle elementi dalla libreria. */
+  laFinestra: () => BrowserWindow | null;
+}
+
+/** Come si apre, si chiude e si raggiunge ogni app migrata. */
+const FINESTRE: Partial<Record<AppId, Finestra>> = {
+  visualizer: {
+    apri: visualizer.apri,
+    chiudi: visualizer.chiudi,
+    laFinestra: visualizer.laFinestra,
+  },
+};
 
 class AppManager extends EventEmitter {
   private states = new Map<AppId, AppState>();
@@ -128,6 +148,50 @@ class AppManager extends EventEmitter {
   /** Spegne tutto. Chiamata alla chiusura della suite e prima di un aggiornamento. */
   async closeAll(): Promise<void> {
     await Promise.all(APP_LIST.map((app) => this.close(app.id)));
+  }
+
+  /** Almeno un'app aperta: la suite non deve chiudersi mentre si sta lavorando. */
+  qualcunaAperta(): boolean {
+    return APP_LIST.some((app) => FINESTRE[app.id]?.laFinestra() !== null);
+  }
+
+  /**
+   * Manda un elemento della libreria a un'altra app.
+   *
+   * Se la destinazione è chiusa la apre e aspetta che la sua pagina sia pronta,
+   * altrimenti la consegna partirebbe verso un renderer che non ha ancora
+   * registrato l'ascoltatore e si perderebbe.
+   */
+  async consegna(
+    destinazione: AppId,
+    elementoId: string,
+    intenzione: Intenzione,
+    mittente?: AppId,
+  ): Promise<void> {
+    const elemento = libreria.trova(elementoId);
+    if (!elemento) throw new Error(`Elemento "${elementoId}" non più in libreria.`);
+
+    const finestra = FINESTRE[destinazione];
+    if (!finestra) {
+      throw new Error(`${APPS[destinazione].name} non è ancora nella suite.`);
+    }
+
+    const eraChiusa = finestra.laFinestra() === null;
+    if (eraChiusa) await this.open(destinazione);
+
+    const win = finestra.laFinestra();
+    if (!win) throw new Error(`Non sono riuscito ad aprire ${APPS[destinazione].name}.`);
+
+    const pacchetto: Consegna = { elemento, intenzione, mittente };
+    const invia = () => win.webContents.send(CHANNELS.appConsegna, pacchetto);
+
+    if (eraChiusa && win.webContents.isLoading()) {
+      win.webContents.once("did-finish-load", invia);
+    } else {
+      invia();
+    }
+
+    win.focus();
   }
 
   patch(id: AppId, partial: Partial<AppState>): void {

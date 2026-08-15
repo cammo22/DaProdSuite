@@ -7,6 +7,7 @@
  */
 
 import type { AppDescriptor, AppId } from "./apps";
+import type { Consegna, ElementoLibreria, FiltroLibreria, Intenzione } from "./libreria";
 
 /* ------------------------------------------------------------------ stato app */
 
@@ -138,6 +139,34 @@ export interface SuiteApi {
   };
 }
 
+/**
+ * Ciò che ogni finestra di app riceve, oltre al proprio ponte specifico.
+ *
+ * È la parte di suite che tutte le app condividono: la libreria dei risultati e
+ * il modo di passarsi le cose. Esposta come `window.daprodSuite`.
+ */
+export interface ApiApp {
+  /** Quale app è questa finestra. */
+  io: AppId;
+
+  libreria: {
+    elenco(filtro?: FiltroLibreria): Promise<ElementoLibreria[]>;
+    /** Apre il file in Esplora risorse. */
+    mostraNellaCartella(id: string): Promise<boolean>;
+    /** Notifica quando qualcuno produce o cancella un risultato. */
+    onCambiata(listener: (elementi: ElementoLibreria[]) => void): Unsubscribe;
+  };
+
+  /** Manda un elemento a un'altra app, aprendola se serve. */
+  invia(destinazione: AppId, elementoId: string, intenzione: Intenzione): Promise<void>;
+
+  /** Riceve gli elementi che le altre app mandano a questa. */
+  onConsegna(listener: (consegna: Consegna) => void): Unsubscribe;
+
+  /** Chiude questa finestra e torna all'hub. */
+  chiudi(): Promise<void>;
+}
+
 export type Unsubscribe = () => void;
 
 /**
@@ -166,4 +195,11 @@ export const CHANNELS = {
   updateDownload: "update:download",
   updateInstall: "update:install",
   updateChanged: "update:changed",
+
+  libreriaElenco: "libreria:elenco",
+  libreriaMostra: "libreria:mostra",
+  libreriaCambiata: "libreria:cambiata",
+  appInvia: "app:invia",
+  appConsegna: "app:consegna",
+  appChiudi: "app:chiudi",
 } as const;

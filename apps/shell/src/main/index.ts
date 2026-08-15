@@ -13,12 +13,13 @@ import { gpu } from "./gpu";
 import { registerIpc } from "./ipc";
 import { ensureDataDirs } from "./paths";
 import { updater } from "./updater";
-import { registerTrackScheme } from "./apps/visualizer/protocol";
+import { registraSchema } from "./file-scheme";
+import { creaTray, distruggiTray } from "./tray";
 
 // Gli schemi privilegiati vanno dichiarati prima che l'app sia pronta: dopo,
 // Electron ha già deciso i privilegi e la registrazione non ha effetto. Per
 // questo sta qui fuori e non dentro `start()`.
-registerTrackScheme();
+registraSchema();
 
 let hub: BrowserWindow | null = null;
 
@@ -48,6 +49,24 @@ async function start(): Promise<void> {
 
   gpu.startPolling();
   await appManager.refreshAll();
+
+  creaTray({
+    mostraHub: () => {
+      if (hub && !hub.isDestroyed()) {
+        if (hub.isMinimized()) hub.restore();
+        hub.focus();
+      } else {
+        createHub();
+      }
+    },
+    apriApp: (id) => void appManager.open(id),
+    appDisponibili: () =>
+      appManager
+        .list()
+        .filter((s) => s.status === "pronta" || s.status === "attiva")
+        .map((s) => s.id),
+    esci: () => app.quit(),
+  });
 
   // `electron . --apri visualizer` apre subito quell'app. Serve a provarne una
   // senza passare ogni volta dall'hub, ed è il modo in cui si controlla una
@@ -99,6 +118,9 @@ function createHub(): void {
 }
 
 app.on("window-all-closed", () => {
+  // Chiudere l'hub non deve chiudere le app: si lavora nel Visualizer mentre
+  // DaProdMusica genera, e l'hub è solo il punto di partenza. La suite esce
+  // quando non resta aperta nessuna finestra davvero.
   app.quit();
 });
 
@@ -109,6 +131,7 @@ app.on("before-quit", async (event) => {
     event.preventDefault();
     shuttingDown = true;
     gpu.stopPolling();
+    distruggiTray();
     await appManager.closeAll();
     app.quit();
   }

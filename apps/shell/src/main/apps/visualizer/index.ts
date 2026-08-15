@@ -16,7 +16,7 @@ import { closeSync, existsSync, fstatSync, openSync, readSync, statSync } from "
 import { basename, join } from "node:path";
 import { readBounds, writeState, readState } from "../../app-state";
 import { findFfmpeg, transcodeToWav } from "./ffmpeg";
-import { encodeTrackUrl, handleTrackScheme } from "./protocol";
+import { codificaUrl, gestisciSchema } from "../../file-scheme";
 
 /** Estensioni offerte dal dialogo file nativo. */
 const ESTENSIONI_AUDIO = [
@@ -48,7 +48,7 @@ export function apri(onClose: () => void): void {
   }
 
   registraCanali();
-  handleTrackScheme();
+  gestisciSchema();
 
   const bounds = readBounds("visualizer", PREDEFINITI);
 
@@ -114,7 +114,10 @@ export function chiudi(): void {
   finestra = null;
 }
 
-export const inEsecuzione = (): boolean => finestra !== null && !finestra.isDestroyed();
+/** La finestra viva, se c'è: serve allo shell per consegnarle elementi. */
+export function laFinestra(): BrowserWindow | null {
+  return finestra && !finestra.isDestroyed() ? finestra : null;
+}
 
 /* ------------------------------------------------------- ponte col renderer */
 
@@ -156,13 +159,13 @@ function registraCanali(): void {
   });
 
   ipcMain.handle("dpv:trackUrl", (_e, filePath: string) =>
-    typeof filePath === "string" && filePath ? encodeTrackUrl(filePath) : null,
+    typeof filePath === "string" && filePath ? codificaUrl(filePath) : null,
   );
 
   ipcMain.handle("dpv:prepareSource", async (_e, filePath: string) => {
     if (typeof filePath !== "string" || !filePath) return null;
     const convertito = await transcodeToWav(filePath);
-    return convertito ? encodeTrackUrl(convertito) : null;
+    return convertito ? codificaUrl(convertito) : null;
   });
 
   ipcMain.handle("dpv:readTagBytes", (_e, filePath: string) => {
@@ -220,3 +223,4 @@ function descrivi(filePath: string): FileDescritto | null {
     return null;
   }
 }
+
