@@ -11,7 +11,7 @@
   },
   "scripts": {
     "dev": "pnpm run build && pnpm --filter @daprod/shell exec electron .",
-    "build": "pnpm --filter @daprod/ipc build && pnpm --filter @daprod/runtime build && pnpm --filter @daprod/shell build",
+    "build": "pnpm --filter @daprod/ipc build && pnpm --filter @daprod/runtime build && pnpm --filter @daprod/visualizer build && pnpm --filter @daprod/shell build",
     "dist": "pnpm run build && pnpm --filter @daprod/shell dist",
     "typecheck": "pnpm -r typecheck"
   },
@@ -19,4 +19,5 @@
     "typescript": "~5.9.3"
   }
 }
+
 

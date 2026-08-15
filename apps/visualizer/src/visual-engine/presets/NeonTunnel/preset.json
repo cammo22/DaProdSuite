@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "id": "daprod.neon-tunnel",
+  "name": "Tunnel al Neon",
+  "author": "DaProdVisualizer Team",
+  "version": "1.2.0",
+  "category": "Geometrico",
+  "description": "Tunnel al neon a velocita' costante, con una bobina di Tesla che crepita al centro.",
+  "entry": "scene.ts",
+  "performance": "medium",
+  "minimumRenderer": "webgl2",
+  "parameters": {
+    "speed": {
+      "type": "number",
+      "default": 1,
+      "min": 0.1,
+      "max": 4,
+      "label": "Velocita'"
+    },
+    "bassReaction": {
+      "type": "number",
+      "default": 0.8,
+      "min": 0,
+      "max": 2,
+      "label": "Reazione bassi"
+    },
+    "glow": {
+      "type": "number",
+      "default": 0.6,
+      "min": 0,
+      "max": 1,
+      "label": "Bagliore"
+    },
+    "sparks": {
+      "type": "number",
+      "default": 1,
+      "min": 0,
+      "max": 2.5,
+      "label": "Particelle"
+    },
+    "bolts": {
+      "type": "number",
+      "default": 1,
+      "min": 0,
+      "max": 2.5,
+      "label": "Archi elettrici"
+    }
+  },
+  "audioMappings": [
+    {
+      "source": "bass",
+      "target": "tunnelScale",
+      "amount": 0.8,
+      "smoothing": 0.15
+    },
+    {
+      "source": "beat",
+      "target": "flash",
+      "amount": 1,
+      "smoothing": 0.04
+    },
+    {
+      "source": "treble",
+      "target": "sparkle",
+      "amount": 1,
+      "smoothing": 0.08
+    },
+    {
+      "source": "onset",
+      "target": "strike",
+      "amount": 1,
+      "smoothing": 0.07
+    }
+  ]
+}

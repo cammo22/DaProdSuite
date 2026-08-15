@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "id": "daprod.electric-storm",
+  "name": "Tempesta Elettrica",
+  "author": "DaProdVisualizer Team",
+  "version": "1.0.0",
+  "category": "Psichedelico",
+  "description": "Buio pieno, nuvole cariche, pioggia battente e scariche ramificate sul beat.",
+  "entry": "scene.ts",
+  "performance": "medium",
+  "minimumRenderer": "webgl2",
+  "parameters": {
+    "boltCount": {
+      "type": "number",
+      "default": 3,
+      "min": 1,
+      "max": 4,
+      "step": 1,
+      "label": "Scariche"
+    },
+    "rain": {
+      "type": "number",
+      "default": 1,
+      "min": 0,
+      "max": 2.5,
+      "label": "Pioggia"
+    },
+    "cloudGlow": {
+      "type": "number",
+      "default": 0.8,
+      "min": 0,
+      "max": 2,
+      "label": "Nuvole"
+    }
+  },
+  "audioMappings": [
+    {
+      "source": "bass",
+      "target": "charge",
+      "amount": 1,
+      "smoothing": 0.18
+    },
+    {
+      "source": "beat",
+      "target": "strike",
+      "amount": 1,
+      "smoothing": 0.05
+    },
+    {
+      "source": "treble",
+      "target": "sparkle",
+      "amount": 1,
+      "smoothing": 0.07
+    }
+  ]
+}

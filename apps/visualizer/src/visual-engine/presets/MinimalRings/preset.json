@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "id": "daprod.minimal-rings",
+  "name": "Occhio Rosso",
+  "author": "DaProdVisualizer Team",
+  "version": "2.0.0",
+  "category": "Minimal",
+  "description": "Un occhio rosso in una sala server: spie che lampeggiano e pacchetti di dati che corrono, come se una macchina stesse elaborando.",
+  "entry": "scene.ts",
+  "performance": "low",
+  "minimumRenderer": "webgl",
+  "parameters": {
+    "leds": {
+      "type": "number",
+      "default": 1,
+      "min": 0,
+      "max": 2,
+      "label": "Spie"
+    },
+    "activity": {
+      "type": "number",
+      "default": 1,
+      "min": 0,
+      "max": 2,
+      "label": "Attivita'"
+    },
+    "eye": {
+      "type": "number",
+      "default": 1,
+      "min": 0.2,
+      "max": 2,
+      "label": "Occhio"
+    }
+  },
+  "audioMappings": [
+    {
+      "source": "bass",
+      "target": "push",
+      "amount": 1,
+      "smoothing": 0.16
+    },
+    {
+      "source": "beat",
+      "target": "flash",
+      "amount": 1,
+      "smoothing": 0.08
+    },
+    {
+      "source": "rms",
+      "target": "level",
+      "amount": 1,
+      "smoothing": 0.25
+    }
+  ]
+}

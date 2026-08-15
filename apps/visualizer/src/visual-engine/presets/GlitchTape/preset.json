@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "id": "daprod.glitch-tape",
+  "name": "Nastro Rovinato",
+  "author": "DaProdVisualizer Team",
+  "version": "1.0.0",
+  "category": "Retro",
+  "description": "Nastro rovinato: barre di colore, righe che scivolano sui transienti e canali RGB sfasati.",
+  "entry": "scene.ts",
+  "performance": "low",
+  "minimumRenderer": "webgl2",
+  "parameters": {
+    "tear": {
+      "type": "number",
+      "default": 0.45,
+      "min": 0,
+      "max": 3,
+      "label": "Strappo"
+    },
+    "chroma": {
+      "type": "number",
+      "default": 1,
+      "min": 0,
+      "max": 3,
+      "label": "Sfasatura RGB"
+    },
+    "scanlines": {
+      "type": "number",
+      "default": 1,
+      "min": 0,
+      "max": 2,
+      "label": "Righe"
+    }
+  },
+  "audioMappings": [
+    {
+      "source": "onset",
+      "target": "rip",
+      "amount": 1,
+      "smoothing": 0.05
+    },
+    {
+      "source": "beat",
+      "target": "jump",
+      "amount": 1,
+      "smoothing": 0.08
+    },
+    {
+      "source": "bass",
+      "target": "warp",
+      "amount": 1,
+      "smoothing": 0.2
+    }
+  ]
+}

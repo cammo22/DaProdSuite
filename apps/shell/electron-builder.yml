@@ -30,6 +30,10 @@ extraResources:
       - "**/*"
       - "!**/__pycache__/**"
       - "!**/.venv/**"
+  # Le interfacce delle app, già compilate da Vite. Fuori dall'asar perché le
+  # finestre le caricano con loadFile da un percorso reale.
+  - from: ../visualizer/dist
+    to: apps/visualizer
 
 win:
   target:

@@ -1,0 +1,107 @@
+/*
+ * Design token centralizzati (02_UX_UI.md).
+ * Nessun componente deve scrivere colori letterali: sempre var(--dpv-*).
+ */
+
+:root {
+  /* --- Sfondi e superfici --- */
+  --dpv-bg: #06070c;
+  --dpv-bg-deep: #030409;
+  --dpv-surface: rgba(20, 23, 34, 0.72);
+  --dpv-surface-strong: rgba(26, 30, 44, 0.94);
+  --dpv-surface-raised: rgba(38, 43, 60, 0.78);
+  --dpv-surface-hover: rgba(56, 63, 86, 0.7);
+  --dpv-border: rgba(148, 163, 200, 0.16);
+  --dpv-border-strong: rgba(148, 163, 200, 0.3);
+
+  /* --- Accenti --- */
+  --dpv-accent: #4cc4ff;
+  --dpv-accent-soft: rgba(76, 196, 255, 0.16);
+  --dpv-accent-2: #b06bff;
+  --dpv-accent-3: #ff4ecd;
+  --dpv-accent-4: #34e5c4;
+  --dpv-danger: #ff5f6d;
+  --dpv-warning: #ffc457;
+
+  /* --- Testo --- */
+  --dpv-text: #f4f6fb;
+  --dpv-text-dim: #a6adc0;
+  --dpv-text-faint: #6f7688;
+
+  /* --- Forme --- */
+  --dpv-radius-s: 8px;
+  --dpv-radius-m: 12px;
+  --dpv-radius-l: 18px;
+  --dpv-radius-pill: 999px;
+
+  /* --- Profondita' --- */
+  --dpv-shadow-panel: 0 24px 60px rgba(0, 0, 0, 0.62);
+  --dpv-shadow-soft: 0 8px 24px rgba(0, 0, 0, 0.45);
+  --dpv-glow: 0 0 0 1px var(--dpv-accent-soft), 0 0 18px rgba(76, 196, 255, 0.35);
+
+  /* --- Tempi (150-250 ms da spec) --- */
+  --dpv-t-fast: 150ms;
+  --dpv-t-mid: 200ms;
+  --dpv-t-slow: 250ms;
+  --dpv-ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+
+  /* --- Tipografia --- */
+  --dpv-font: 'Segoe UI Variable Display', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --dpv-font-mono: 'Cascadia Mono', ui-monospace, 'Consolas', monospace;
+
+  /* --- Scala interfaccia: 100% -> 200% (accessibilita') --- */
+  --dpv-ui-scale: 1;
+
+  /* --- Metriche --- */
+  --dpv-panel-w: 360px;
+  --dpv-control-h: 44px;
+}
+
+/* Tema "Viola": accento primario spostato sul viola. */
+:root[data-theme='violet'] {
+  --dpv-accent: #b06bff;
+  --dpv-accent-soft: rgba(176, 107, 255, 0.18);
+  --dpv-accent-2: #4cc4ff;
+  --dpv-glow: 0 0 0 1px var(--dpv-accent-soft), 0 0 18px rgba(176, 107, 255, 0.4);
+}
+
+/* Tema "Acqua". */
+:root[data-theme='aqua'] {
+  --dpv-accent: #34e5c4;
+  --dpv-accent-soft: rgba(52, 229, 196, 0.18);
+  --dpv-accent-2: #4cc4ff;
+  --dpv-accent-3: #7bffcf;
+  --dpv-glow: 0 0 0 1px var(--dpv-accent-soft), 0 0 18px rgba(52, 229, 196, 0.4);
+}
+
+/* Tema "Magma". */
+:root[data-theme='magma'] {
+  --dpv-accent: #ff8a3d;
+  --dpv-accent-soft: rgba(255, 138, 61, 0.18);
+  --dpv-accent-2: #ff4ecd;
+  --dpv-accent-3: #ffc457;
+  --dpv-glow: 0 0 0 1px var(--dpv-accent-soft), 0 0 18px rgba(255, 138, 61, 0.4);
+}
+
+/* Riduzione animazioni: preferenza di sistema o interruttore in Impostazioni. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dpv-t-fast: 1ms;
+    --dpv-t-mid: 1ms;
+    --dpv-t-slow: 1ms;
+  }
+}
+
+:root[data-reduced-motion='true'] {
+  --dpv-t-fast: 1ms;
+  --dpv-t-mid: 1ms;
+  --dpv-t-slow: 1ms;
+}
+
+:root[data-reduced-motion='true'] *,
+:root[data-reduced-motion='true'] *::before,
+:root[data-reduced-motion='true'] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}

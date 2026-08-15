@@ -1,0 +1,274 @@
+/* =========================================================================
+   Adattamento alla finestra
+
+   Le regole non usano media query ma gli attributi che `useViewport` scrive
+   sulla radice, misurando lo spazio in rem: cosi' l'interfaccia si compatta
+   quando finisce lo spazio *utile*, tenendo conto della scala 100-200%.
+   Una media query in pixel non lo sa: la stessa finestra da 900 px ha lo
+   spazio di 900 al 100% e di 450 al 200%.
+   ========================================================================= */
+
+/* --- Sicurezze generali --------------------------------------------------- */
+
+/* Niente puo' far scorrere la pagina in orizzontale. */
+.dpv-app,
+.dpv-player,
+.dpv-player__content,
+.dpv-controls,
+.dpv-controls__group {
+  max-width: 100%;
+  min-width: 0;
+}
+
+/* --- Fino a sm: i controlli vanno a capo invece di stringersi ------------- */
+
+.dpv-app[data-size='xs'] .dpv-controls,
+.dpv-app[data-size='sm'] .dpv-controls {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.2rem 0.1rem;
+}
+
+.dpv-app[data-size='xs'] .dpv-controls__group--main,
+.dpv-app[data-size='sm'] .dpv-controls__group--main {
+  /* Il trasporto prende una riga sua e resta al centro. */
+  flex: 1 0 100%;
+  justify-content: center;
+  order: -1;
+}
+
+.dpv-app[data-size='xs'] .dpv-controls__group,
+.dpv-app[data-size='sm'] .dpv-controls__group {
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* --- md: la barra si stringe ma resta su una riga ------------------------- */
+
+.dpv-app[data-size='md'] .dpv-volume__slider {
+  width: 3.5rem;
+}
+
+.dpv-app[data-size='md'] .dpv-iconbtn {
+  width: 2.4rem;
+  height: 2.4rem;
+}
+
+/* --- xs e sm: solo l'essenziale ------------------------------------------- */
+
+.dpv-app[data-size='xs'] .dpv-iconbtn,
+.dpv-app[data-size='sm'] .dpv-iconbtn {
+  width: 2.35rem;
+  height: 2.35rem;
+}
+
+.dpv-app[data-size='xs'] .dpv-iconbtn[data-variant='primary'],
+.dpv-app[data-size='sm'] .dpv-iconbtn[data-variant='primary'] {
+  width: 2.9rem;
+  height: 2.9rem;
+}
+
+/* Il cursore del volume sparisce, l'icona resta e continua a silenziare. */
+.dpv-app[data-size='xs'] .dpv-volume__slider,
+.dpv-app[data-size='sm'] .dpv-volume__slider {
+  display: none;
+}
+
+.dpv-app[data-size='xs'] .dpv-player,
+.dpv-app[data-size='sm'] .dpv-player {
+  padding: 0 0.6rem 0.6rem;
+}
+
+.dpv-app[data-size='xs'] .dpv-cover {
+  width: 2.5rem;
+  height: 2.5rem;
+}
+
+.dpv-app[data-size='xs'] .dpv-nowplaying__title {
+  font-size: 0.92rem;
+}
+
+.dpv-app[data-size='xs'] .dpv-nowplaying__artist {
+  font-size: 0.74rem;
+}
+
+.dpv-app[data-size='xs'] .dpv-seek__time {
+  min-width: 2.6rem;
+  font-size: 0.68rem;
+}
+
+/* Da bordo a bordo: e' l'unico modo di far stare undici nomi scorrevoli. */
+.dpv-app[data-size='xs'] .dpv-presetbar {
+  left: 0.4rem;
+  right: 0.4rem;
+  transform: none;
+  max-width: none;
+  justify-content: flex-start;
+}
+
+.dpv-app[data-size='xs'][data-cinema='true'][data-controls='false'] .dpv-presetbar {
+  transform: translateY(-14px);
+}
+
+.dpv-app[data-size='xs'] .dpv-presetbar__item,
+.dpv-app[data-size='sm'] .dpv-presetbar__item {
+  padding: 0.32rem 0.55rem;
+  font-size: 0.7rem;
+}
+
+/* I pannelli diventano fogli a tutto schermo: a 30rem una colonna laterale
+   da 360 px non lascerebbe niente al visualizzatore. */
+.dpv-app[data-size='xs'] .dpv-panel,
+.dpv-app[data-size='sm'] .dpv-panel {
+  inset: 3.4rem 0.5rem 0.5rem 0.5rem;
+  width: auto;
+  max-width: none;
+}
+
+.dpv-app[data-size='xs'] .dpv-panel[data-wide='true'],
+.dpv-app[data-size='sm'] .dpv-panel[data-wide='true'] {
+  width: auto;
+}
+
+.dpv-app[data-size='xs'] .dpv-presets {
+  grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+}
+
+.dpv-app[data-size='xs'] .dpv-notices,
+.dpv-app[data-size='sm'] .dpv-notices {
+  left: 0.5rem;
+  right: 0.5rem;
+  bottom: 9.5rem;
+  width: auto;
+}
+
+.dpv-app[data-size='xs'] .dpv-empty__title {
+  font-size: 1.5rem;
+}
+
+.dpv-app[data-size='sm'] .dpv-empty__title {
+  font-size: 1.9rem;
+}
+
+.dpv-app[data-size='xs'] .dpv-empty__subtitle,
+.dpv-app[data-size='xs'] .dpv-formats {
+  display: none;
+}
+
+.dpv-app[data-size='xs'] .dpv-dropzone {
+  padding: 1.2rem 1rem;
+  width: auto;
+}
+
+.dpv-app[data-size='xs'] .dpv-stats {
+  display: none;
+}
+
+/* --- Finestre basse -------------------------------------------------------
+
+   Qui l'altezza e' la risorsa scarsa: ogni riga che il player si prende e' un
+   pezzo di visualizzatore in meno, e il visualizzatore e' il motivo dell'app.
+   L'obiettivo e' tenere i comandi intorno a un terzo dell'altezza. */
+
+.dpv-app[data-short='true'] .dpv-player {
+  padding-bottom: 0.4rem;
+}
+
+.dpv-app[data-short='true'] .dpv-player__content {
+  gap: 0.28rem;
+}
+
+.dpv-app[data-short='true'] .dpv-nowplaying {
+  gap: 0.5rem;
+}
+
+.dpv-app[data-short='true'] .dpv-cover {
+  width: 2rem;
+  height: 2rem;
+}
+
+/* L'artista sparisce, il titolo resta: e' quello che serve sapere. */
+.dpv-app[data-short='true'] .dpv-nowplaying__artist {
+  display: none;
+}
+
+.dpv-app[data-short='true'] .dpv-nowplaying__title {
+  font-size: 0.88rem;
+}
+
+/* Il meno indispensabile in una finestra piccola: la modalita' cinema, che
+   serve sugli schermi grandi. Toglierla fa stare i comandi su una riga sola. */
+.dpv-app[data-short='true'] .dpv-iconbtn[data-optional='true'] {
+  display: none;
+}
+
+.dpv-app[data-short='true'] .dpv-iconbtn {
+  width: 2.05rem;
+  height: 2.05rem;
+}
+
+.dpv-app[data-short='true'] .dpv-iconbtn[data-variant='primary'] {
+  width: 2.45rem;
+  height: 2.45rem;
+}
+
+/* Con i comandi su una riga il trasporto non deve piu' occuparne una da solo. */
+.dpv-app[data-short='true'][data-size='xs'] .dpv-controls__group--main,
+.dpv-app[data-short='true'][data-size='sm'] .dpv-controls__group--main {
+  flex: 0 1 auto;
+  order: 0;
+}
+
+.dpv-app[data-short='true'] .dpv-seek {
+  gap: 0.45rem;
+}
+
+.dpv-app[data-short='true'] .dpv-empty__inner {
+  gap: 0.6rem;
+}
+
+.dpv-app[data-short='true'] .dpv-dropzone {
+  padding: 0.9rem 1rem;
+}
+
+.dpv-app[data-short='true'] .dpv-panel {
+  bottom: 0.5rem;
+}
+
+/* --- Finestra minuscola: resta solo il necessario per suonare ------------- */
+
+.dpv-app[data-tiny='true'] .dpv-nowplaying__artist,
+.dpv-app[data-tiny='true'] .dpv-presetbar,
+.dpv-app[data-tiny='true'] .dpv-empty__title,
+.dpv-app[data-tiny='true'] .dpv-logo,
+.dpv-app[data-tiny='true'] .dpv-seek__time,
+.dpv-app[data-tiny='true'] .dpv-controls__group:not(.dpv-controls__group--main) {
+  display: none;
+}
+
+.dpv-app[data-tiny='true'] .dpv-panel {
+  inset: 0.4rem;
+}
+
+/* --- Schermi grandi: il contenuto non si stira all'infinito ---------------- */
+
+.dpv-app[data-size='lg'] .dpv-player__content,
+.dpv-app[data-size='xl'] .dpv-player__content {
+  width: 100%;
+  max-width: 92rem;
+  margin: 0 auto;
+}
+
+/* Su un pannello enorme si guarda da lontano: tutto un filo piu' grande. */
+.dpv-app[data-size='xl'] {
+  font-size: 1.06rem;
+}
+
+.dpv-app[data-size='xl'] .dpv-panel {
+  --dpv-panel-w: 26rem;
+}
+
+.dpv-app[data-size='xl'] .dpv-presets {
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+}

@@ -11,16 +11,21 @@ import { APP_LIST, APPS, type AppId, type AppState } from "@daprod/ipc";
 import { gpu } from "./gpu";
 import { runtime } from "./runtime";
 import { missingModelsGb } from "./models";
+import * as visualizer from "./apps/visualizer";
 
 /**
  * Le app già portate dentro la suite.
  *
- * Vuoto adesso: la fase 0 costruisce l'impalcatura (installer, aggiornamenti,
- * hub) e la migrazione vera è la fase 3. Un'app non elencata qui compare
- * nell'hub disattivata, con scritto che non è ancora inclusa — meglio di una
- * scheda che sembra pronta e poi non apre niente.
+ * Un'app non elencata qui compare nell'hub disattivata, con scritto che non è
+ * ancora inclusa — meglio di una scheda che sembra pronta e poi non apre niente.
  */
-const MIGRATED = new Set<AppId>([]);
+const MIGRATED = new Set<AppId>(["visualizer"]);
+
+/** Come si apre e si chiude ogni app migrata. */
+const FINESTRE: Partial<Record<AppId, { apri: (onClose: () => void) => void; chiudi: () => void }>> =
+  {
+    visualizer: { apri: visualizer.apri, chiudi: visualizer.chiudi },
+  };
 
 class AppManager extends EventEmitter {
   private states = new Map<AppId, AppState>();
@@ -86,12 +91,38 @@ class AppManager extends EventEmitter {
     }
 
     this.patch(id, { status: "in-avvio", error: undefined });
-    // L'avvio del servizio e la finestra dell'app arrivano con la fase 3.
+
+    const finestra = FINESTRE[id];
+    if (!finestra) {
+      this.patch(id, {
+        status: "in-errore",
+        error: `Manca la finestra di ${descriptor.name}.`,
+      });
+      return;
+    }
+
+    try {
+      // L'avvio del servizio Python, per le app che ne hanno uno, si innesta qui
+      // prima di aprire la finestra.
+      finestra.apri(() => {
+        // Chiusa dall'utente con la X: lo stato deve tornare indietro da solo,
+        // altrimenti l'hub resta a dire "attiva" per una finestra che non c'è.
+        gpu.release(id);
+        this.patch(id, { status: "pronta" });
+      });
+      this.patch(id, { status: "attiva" });
+    } catch (err) {
+      this.patch(id, {
+        status: "in-errore",
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
   }
 
   async close(id: AppId): Promise<void> {
+    FINESTRE[id]?.chiudi();
     gpu.release(id);
-    this.patch(id, { status: "pronta", error: undefined });
+    if (MIGRATED.has(id)) this.patch(id, { status: "pronta", error: undefined });
   }
 
   /** Spegne tutto. Chiamata alla chiusura della suite e prima di un aggiornamento. */

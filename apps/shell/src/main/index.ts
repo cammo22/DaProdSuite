@@ -7,11 +7,18 @@
 
 import { BrowserWindow, Menu, app, shell } from "electron";
 import { join } from "node:path";
+import { APP_IDS, type AppId } from "@daprod/ipc";
 import { appManager } from "./app-manager";
 import { gpu } from "./gpu";
 import { registerIpc } from "./ipc";
 import { ensureDataDirs } from "./paths";
 import { updater } from "./updater";
+import { registerTrackScheme } from "./apps/visualizer/protocol";
+
+// Gli schemi privilegiati vanno dichiarati prima che l'app sia pronta: dopo,
+// Electron ha già deciso i privilegi e la registrazione non ha effetto. Per
+// questo sta qui fuori e non dentro `start()`.
+registerTrackScheme();
 
 let hub: BrowserWindow | null = null;
 
@@ -41,6 +48,15 @@ async function start(): Promise<void> {
 
   gpu.startPolling();
   await appManager.refreshAll();
+
+  // `electron . --apri visualizer` apre subito quell'app. Serve a provarne una
+  // senza passare ogni volta dall'hub, ed è il modo in cui si controlla una
+  // migrazione appena fatta.
+  const indice = process.argv.indexOf("--apri");
+  const richiesta = indice >= 0 ? process.argv[indice + 1] : undefined;
+  if (richiesta && (APP_IDS as readonly string[]).includes(richiesta)) {
+    await appManager.open(richiesta as AppId);
+  }
 
   // Controllo silenzioso all'avvio: se c'è una versione nuova l'hub la mostra,
   // ma non scarica niente senza che l'utente lo chieda.
