@@ -35,7 +35,12 @@ export interface AppState {
   status: AppStatus;
   /** GB ancora da scaricare perché l'app sia utilizzabile. */
   missingGb: number;
-  /** Presente solo quando status è "in-preparazione". */
+  /**
+   * Presente solo quando status è "in-preparazione". `done` e `total` sono
+   * **byte**; `total` a zero vuol dire che non si sa quanto manca (l'ambiente
+   * Python e le librerie del motore non dicono quanto peseranno), e l'hub in quel
+   * caso mostra una barra che scorre invece di una ferma allo zero.
+   */
   progress?: { done: number; total: number; label: string };
   /** Presente solo quando status è "in-errore". */
   error?: string;
@@ -152,8 +157,10 @@ export interface SuiteApi {
     open(id: AppId): Promise<void>;
     /** Chiude la finestra e spegne il servizio. */
     close(id: AppId): Promise<void>;
-    /** Scarica runtime e modelli mancanti. */
+    /** Scarica ambiente, motore e modelli mancanti. Dura, e riprende dove era. */
     install(id: AppId): Promise<void>;
+    /** Ferma l'installazione. Quello che è già arrivato resta sul disco. */
+    annullaInstallazione(id: AppId): Promise<void>;
     onChanged(listener: (states: AppState[]) => void): Unsubscribe;
   };
 
@@ -249,6 +256,7 @@ export const CHANNELS = {
   appsOpen: "apps:open",
   appsClose: "apps:close",
   appsInstall: "apps:install",
+  appsAnnullaInstallazione: "apps:annulla-installazione",
   appsChanged: "apps:changed",
 
   runtimeState: "runtime:state",

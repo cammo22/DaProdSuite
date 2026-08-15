@@ -15,9 +15,18 @@ uvicorn[standard]>=0.38.0
 websockets>=15.0
 python-multipart>=0.0.20
 
-# Scaricamento dei modelli: il comando `hf` serve per i repo HuggingFace interi.
-huggingface-hub[cli]>=0.36.0
+# Scaricamento dei modelli: `snapshot_download` serve per i repo HuggingFace
+# interi (SD-Turbo, SoulX). Il tetto a 1.0 non è prudenza: `transformers`, che
+# ComfyUI si porta dietro, pretende `huggingface-hub<1.0`, e in un ambiente unico
+# per tutte le app vince chi ha il vincolo. Senza questo tetto uv installa la
+# 1.27, il motore la fa retrocedere alla prima installazione e nel frattempo
+# resta in giro un comando `hf` che punta a un modulo che non c'è più.
+huggingface-hub>=0.34,<1.0
 safetensors>=0.6.0
+
+# Tokenizzatore del traduttore italiano→inglese. Senza, MarianMT funziona lo
+# stesso ma con una segmentazione peggiore e un avviso a ogni avvio.
+sacremoses>=0.1.1
 
 # Lettura della VRAM per l'arbitro della GPU.
 nvidia-ml-py>=13.0

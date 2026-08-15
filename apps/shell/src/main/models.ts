@@ -5,8 +5,9 @@
  * Musica e Foto tenevano due copie separate degli stessi VAE e text encoder.
  * Qui un modello usato da due app si scarica una volta sola.
  *
- * Lo scaricamento vero arriva con la fase 2; questo modulo risponde già alla
- * domanda che serve all'hub: "quanti GB mancano perché questa app funzioni?".
+ * Qui si legge il catalogo e si risponde a due domande: cosa c'è già su disco, e
+ * quanto pesa quello che manca. Lo scaricamento vero sta in
+ * [scaricamenti.ts](scaricamenti.ts) e parte da queste risposte.
  */
 
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
@@ -32,6 +33,12 @@ export interface HfRepoModel {
   include?: string[];
   /** Pattern per `hf download`: salta questi file. */
   exclude?: string[];
+  /**
+   * Sottocartella da pesare invece dell'intera `dir`, per i modelli che
+   * convivono con un altro nella stessa cartella: senza, il peso del vicino li
+   * farebbe sembrare già scaricati.
+   */
+  verifica?: string;
   bytes: number;
 }
 
@@ -93,7 +100,7 @@ export function isModelPresent(id: string): boolean {
     case "hf-repo": {
       // Uno snapshot ha molti file di dimensione non nota a priori: ci si accerta
       // che la cartella esista e pesi almeno il 95% dell'atteso.
-      const dir = join(MODELS_DIR, entry.dir);
+      const dir = join(MODELS_DIR, entry.dir, entry.verifica ?? "");
       if (!existsSync(dir)) return false;
       return dirSize(dir) >= entry.bytes * 0.95;
     }
@@ -102,6 +109,24 @@ export function isModelPresent(id: string): boolean {
       // il server di LM Studio, e si fa quando si migra il Companion.
       return true;
   }
+}
+
+/**
+ * I modelli dell'elenco che non sono ancora su disco, nell'ordine dichiarato.
+ *
+ * Chi non è nel catalogo viene saltato in silenzio: un id sbagliato in
+ * `apps.ts` non deve impedire di installare gli altri modelli dell'app.
+ */
+export function modelliMancanti(ids: string[]): { id: string; entry: ModelEntry }[] {
+  const fuori: { id: string; entry: ModelEntry }[] = [];
+  for (const id of ids) {
+    const entry = modelEntry(id);
+    if (!entry) continue;
+    // LM Studio si gestisce i suoi: non c'è niente che possiamo scaricare noi.
+    if (entry.kind === "lmstudio") continue;
+    if (!isModelPresent(id)) fuori.push({ id, entry });
+  }
+  return fuori;
 }
 
 /** Quanti GB mancano perché l'elenco di modelli sia completo. */

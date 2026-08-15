@@ -15,6 +15,12 @@ export interface RunOptions {
   onLine?: (line: string, isError: boolean) => void;
   /** Oltre questo tempo il comando viene ucciso. */
   timeoutMs?: number;
+  /**
+   * Per annullare: il processo viene ucciso e la promessa rifiutata. Serve a chi
+   * lancia comandi lunghi — `hf download` di un repo da 8 GB può durare mezz'ora,
+   * e l'utente deve poter cambiare idea senza chiudere la suite.
+   */
+  segnale?: AbortSignal;
 }
 
 export class CommandError extends Error {
@@ -34,7 +40,9 @@ export async function run(
   args: string[],
   options: RunOptions = {},
 ): Promise<void> {
-  const { cwd, env, onLine, timeoutMs } = options;
+  const { cwd, env, onLine, timeoutMs, segnale } = options;
+
+  if (segnale?.aborted) throw new CommandError(`${command} annullato.`, null, []);
 
   await new Promise<void>((resolve, reject) => {
     const child = spawn(command, args, { cwd, env, windowsHide: true });
@@ -59,6 +67,13 @@ export async function run(
           );
         }, timeoutMs)
       : null;
+
+    let annullato = false;
+    const interrompi = () => {
+      annullato = true;
+      child.kill();
+    };
+    segnale?.addEventListener("abort", interrompi, { once: true });
 
     for (const [stream, isError] of [
       [child.stdout, false],
@@ -85,14 +100,22 @@ export async function run(
       });
     }
 
-    child.on("error", (err) => {
+    const finito = () => {
       if (timer) clearTimeout(timer);
+      segnale?.removeEventListener("abort", interrompi);
+    };
+
+    child.on("error", (err) => {
+      finito();
       reject(new CommandError(`Impossibile eseguire ${command}: ${err.message}`, null, tail));
     });
 
     child.on("close", (code) => {
-      if (timer) clearTimeout(timer);
-      if (code === 0) resolve();
+      finito();
+      // Ucciso da noi: il codice d'uscita è quello di un processo terminato a
+      // forza, e non significa che il comando sia fallito.
+      if (annullato) reject(new CommandError(`${command} annullato.`, code, tail));
+      else if (code === 0) resolve();
       else reject(new CommandError(`${command} è uscito con codice ${code}.`, code, tail));
     });
   });

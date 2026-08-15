@@ -14,6 +14,7 @@ import {
   CHANNELS,
   type AppId,
   type AppState,
+  modelliRichiesti,
   type Consegna,
   type Intenzione,
 } from "@daprod/ipc";
@@ -91,18 +92,36 @@ class AppManager extends EventEmitter {
         continue;
       }
 
-      if (!MIGRATED.has(app.id)) {
-        this.patch(app.id, { status: "non-inclusa", missingGb: 0, error: undefined });
-        continue;
-      }
-
-      const missingGb = await missingModelsGb(app.models);
-      this.patch(app.id, {
-        status: rt.ready && missingGb === 0 ? "pronta" : "da-installare",
-        missingGb,
-        error: undefined,
-      });
+      await this.rileggi(app.id, rt.ready);
     }
+  }
+
+  /**
+   * Rilegge una sola app, anche se è in mezzo a qualcosa.
+   *
+   * La chiama chi ha appena finito di installarla: sa che lo stato di prima non
+   * vale più, e passare da `refreshAll` vorrebbe dire uscire da "in
+   * preparazione" *prima*, cioè far comparire "Installa" per il secondo buono
+   * che ci vuole a interrogare l'ambiente Python.
+   */
+  async refreshApp(id: AppId): Promise<void> {
+    const rt = await runtime.refresh();
+    await this.rileggi(id, rt.ready);
+  }
+
+  private async rileggi(id: AppId, runtimePronto: boolean): Promise<void> {
+    if (!MIGRATED.has(id)) {
+      this.patch(id, { status: "non-inclusa", missingGb: 0, error: undefined });
+      return;
+    }
+
+    const missingGb = await missingModelsGb(modelliRichiesti(id));
+    this.patch(id, {
+      status: runtimePronto && missingGb === 0 ? "pronta" : "da-installare",
+      missingGb,
+      error: undefined,
+      progress: undefined,
+    });
   }
 
   async open(id: AppId): Promise<void> {

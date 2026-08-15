@@ -266,6 +266,29 @@ main {
   color: var(--errore);
 }
 
+/* La barra dello scaricamento prende il colore dell'app: due schede che
+   scaricano insieme si distinguono senza leggere. */
+.barra-scheda > span {
+  background: var(--accento);
+}
+
+/* Ambiente Python e librerie del motore non dicono quanto peseranno: lì, invece
+   di una barra ferma a zero che sembra bloccata, una banda che attraversa. */
+.barra.scorre > span {
+  width: 35%;
+  transition: none;
+  animation: scorri 1.4s ease-in-out infinite;
+}
+
+@keyframes scorri {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(300%);
+  }
+}
+
 /* ------------------------------------------------------------------ bottoni */
 
 .bottone {

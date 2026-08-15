@@ -15,6 +15,7 @@ import {
   type Intenzione,
 } from "@daprod/ipc";
 import { appManager } from "./app-manager";
+import { annulla, installaApp } from "./scaricamenti";
 import { libreria } from "./libreria";
 import { disinstallaApp, elimina, reset, statoSpazio } from "./spazio";
 import { gpu } from "./gpu";
@@ -37,14 +38,15 @@ export function registerIpc(getHub: () => BrowserWindow | null): void {
   ipcMain.handle(CHANNELS.appsList, () => appManager.list());
   ipcMain.handle(CHANNELS.appsOpen, (_e, id: AppId) => appManager.open(id));
   ipcMain.handle(CHANNELS.appsClose, (_e, id: AppId) => appManager.close(id));
+  // Non si aspetta: un'installazione dura minuti e a volte ore, e tenere aperta
+  // una chiamata IPC per tutto quel tempo vorrebbe dire che l'hub non può più
+  // chiedere niente. L'avanzamento arriva da `apps:changed` come ogni altro
+  // cambio di stato.
   ipcMain.handle(CHANNELS.appsInstall, (_e, id: AppId) => {
-    // Lo scaricamento di runtime e modelli è la fase 2. Finché non c'è, meglio
-    // dirlo che far girare una barra di avanzamento che non avanza.
-    appManager.patch(id, {
-      status: "in-errore",
-      error: "L'installazione automatica dei modelli arriva nella prossima versione.",
-    });
+    void installaApp(id);
   });
+
+  ipcMain.handle(CHANNELS.appsAnnullaInstallazione, (_e, id: AppId) => annulla(id));
 
   /* -------------------------------------------------------------- runtime */
 

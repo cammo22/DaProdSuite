@@ -40,6 +40,8 @@ const api: SuiteApi = {
     open: (id: AppId) => ipcRenderer.invoke(CHANNELS.appsOpen, id),
     close: (id: AppId) => ipcRenderer.invoke(CHANNELS.appsClose, id),
     install: (id: AppId) => ipcRenderer.invoke(CHANNELS.appsInstall, id),
+    annullaInstallazione: (id: AppId) =>
+      ipcRenderer.invoke(CHANNELS.appsAnnullaInstallazione, id),
     onChanged: (listener) => subscribe<AppState[]>(CHANNELS.appsChanged, listener),
   },
 

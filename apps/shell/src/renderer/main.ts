@@ -16,8 +16,16 @@ const btnAgg = document.getElementById("btn-agg") as HTMLButtonElement;
 const spiaRuntime = document.getElementById("spia-runtime") as HTMLElement;
 const spiaGpu = document.getElementById("spia-gpu") as HTMLElement;
 
-/** Bottoni delle schede, per poterli aggiornare senza ridisegnare tutto. */
-const schede = new Map<AppId, { etichetta: HTMLElement; azione: HTMLButtonElement }>();
+/** Pezzi delle schede, per poterli aggiornare senza ridisegnare tutto. */
+const schede = new Map<
+  AppId,
+  {
+    etichetta: HTMLElement;
+    azione: HTMLButtonElement;
+    barra: HTMLElement;
+    riempimento: HTMLElement;
+  }
+>();
 
 /* ------------------------------------------------------------------- schede */
 
@@ -42,6 +50,14 @@ function costruisciGriglia(): void {
 
     testa.append(pallino, testi);
 
+    // Compare solo durante uno scaricamento: una barra sempre lì, ferma a zero,
+    // sarebbe rumore su cinque schede su sette.
+    const barra = document.createElement("div");
+    barra.className = "barra barra-scheda";
+    barra.hidden = true;
+    const riempimento = document.createElement("span");
+    barra.append(riempimento);
+
     const fondo = document.createElement("div");
     fondo.className = "scheda-fondo";
 
@@ -53,10 +69,10 @@ function costruisciGriglia(): void {
     azione.addEventListener("click", () => void premuto(app.id));
 
     fondo.append(etichetta, azione);
-    scheda.append(testa, fondo);
+    scheda.append(testa, barra, fondo);
     griglia.append(scheda);
 
-    schede.set(app.id, { etichetta, azione });
+    schede.set(app.id, { etichetta, azione, barra, riempimento });
   }
 }
 
@@ -66,8 +82,10 @@ const azioniPerStato: Record<
   { testo: (s: AppState) => string; attivo: boolean; classe: string }
 > = {
   "non-inclusa": { testo: () => "In arrivo", attivo: false, classe: "" },
-  "da-installare": { testo: (s) => (s.missingGb > 0 ? `Installa · ${s.missingGb} GB` : "Installa"), attivo: true, classe: "" },
-  "in-preparazione": { testo: () => "Preparazione…", attivo: false, classe: "attesa" },
+  "da-installare": { testo: (s) => (s.missingGb > 0 ? `Installa · ${numero(s.missingGb, 1)} GB` : "Installa"), attivo: true, classe: "" },
+  // Attivo perché il bottone dice "Annulla": uno scaricamento da 6 GB su una
+  // linea di casa dura mezz'ora, e chi lo ha fatto partire deve poter cambiare idea.
+  "in-preparazione": { testo: () => "Annulla", attivo: true, classe: "attesa" },
   pronta: { testo: () => "Apri", attivo: true, classe: "pronta" },
   "in-avvio": { testo: () => "Avvio…", attivo: false, classe: "attesa" },
   attiva: { testo: () => "Chiudi", attivo: true, classe: "pronta" },
@@ -93,10 +111,43 @@ function aggiornaSchede(stati: AppState[]): void {
     elementi.azione.textContent = regola.testo(stato);
     elementi.azione.disabled = !regola.attivo;
 
-    elementi.etichetta.textContent = stato.error ?? descrizioneStato[stato.status];
+    elementi.etichetta.textContent =
+      stato.error ?? raccontaAvanzamento(stato) ?? descrizioneStato[stato.status];
     elementi.etichetta.className = `etichetta ${regola.classe}`;
     elementi.etichetta.title = stato.error ?? "";
+
+    disegnaBarra(elementi, stato);
   }
+}
+
+/**
+ * Cosa sta scaricando e a che punto è, in una riga.
+ *
+ * I byte si mostrano come GB perché è l'unità in cui l'utente pensa allo spazio
+ * che gli resta sul disco: "3,20 / 5,83 GB" si capisce, "3435973836" no.
+ */
+function raccontaAvanzamento(stato: AppState): string | null {
+  const avanzamento = stato.progress;
+  if (!avanzamento) return null;
+  if (avanzamento.total <= 0) return `${avanzamento.label}…`;
+  return `${avanzamento.label} · ${gb(avanzamento.done)} / ${gb(avanzamento.total)}`;
+}
+
+function disegnaBarra(
+  elementi: { barra: HTMLElement; riempimento: HTMLElement },
+  stato: AppState,
+): void {
+  const avanzamento = stato.progress;
+  elementi.barra.hidden = !avanzamento;
+  if (!avanzamento) return;
+
+  // Ambiente Python e librerie del motore non sanno dire quanto peseranno: lì la
+  // barra scorre da sola invece di restare ferma a zero facendo sembrare tutto bloccato.
+  const indeterminata = avanzamento.total <= 0;
+  elementi.barra.classList.toggle("scorre", indeterminata);
+  elementi.riempimento.style.width = indeterminata
+    ? ""
+    : `${Math.min(100, (avanzamento.done / avanzamento.total) * 100).toFixed(1)}%`;
 }
 
 async function premuto(id: AppId): Promise<void> {
@@ -106,6 +157,7 @@ async function premuto(id: AppId): Promise<void> {
 
   if (stato.status === "attiva") await api.apps.close(id);
   else if (stato.status === "pronta") await api.apps.open(id);
+  else if (stato.status === "in-preparazione") await api.apps.annullaInstallazione(id);
   else await api.apps.install(id);
 }
 
@@ -295,9 +347,17 @@ const COLORI: Record<string, string> = {
   log: '#5d6779',
 }
 
+/** Con la virgola, non col punto: l'interfaccia è in italiano anche nei numeri. */
+function numero(valore: number, decimali: number): string {
+  return valore.toLocaleString('it-IT', {
+    minimumFractionDigits: decimali,
+    maximumFractionDigits: decimali,
+  })
+}
+
 function gb(bytes: number): string {
   return bytes >= 1024 ** 3
-    ? `${(bytes / 1024 ** 3).toFixed(2)} GB`
+    ? `${numero(bytes / 1024 ** 3, 2)} GB`
     : `${Math.max(1, Math.round(bytes / 1024 ** 2))} MB`
 }
 
