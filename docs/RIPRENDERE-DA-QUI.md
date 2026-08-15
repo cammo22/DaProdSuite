@@ -24,6 +24,7 @@ Repo pubblico: **https://github.com/cammo22/DaProdSuite**
 | Modelli importati dai vecchi progetti | **30,29 GB spostati** |
 | **Supervisore collegato all'apertura delle app** | fatto e provato |
 | **DaProdMusica nella suite** | fatto, brano generato dentro la suite, **da provare a lungo** |
+| **DaProdFoto nella suite** | fatto, immagine generata dall'app, **ritocco da provare** |
 | Scaricamento modelli, procedura guidata | **da fare** |
 | ComfyUI scaricato al primo avvio | **da fare**: oggi deve già essere in `engines/` |
 | Foto, Dream, Companion, IoDigitale | **da migrare** |
@@ -62,12 +63,17 @@ quello che le serve è già comune.
 
 ## Il prossimo passo
 
-**DaProdFoto.** Gira sullo stesso ComfyUI già acceso da Musica, quindi il motore
-non va scritto: ci sono già `services/comfy` e il supervisore che lo accende. La
-scheda nel catalogo è già scritta, modelli compresi.
+**Lo scaricamento automatico**, che adesso è la cosa che blocca tutto il resto:
+ComfyUI e i modelli devono già essere sul disco, quindi oggi la suite funziona
+solo su questo PC. È l'ultimo pezzo del "git clone deve bastare", e senza di lui
+FLUX.2 Klein non si può installare nemmeno volendo.
+
+Poi restano tre app da migrare: **Dream**, **Companion**, **IoDigitale**.
+
+### Com'è entrata DaProdFoto
 
 Viene da **`Desktop\Flux`** (Flux Klein Studio), e tre quarti di quel progetto
-sono roba che la suite fa già:
+erano roba che la suite fa già:
 
 | Cosa c'è in Flux | Che fine fa |
 |---|---|
@@ -81,8 +87,8 @@ FLUX.2 Klein usa `UnetLoaderGGUF` e `CLIPLoaderGGUF`, cioè il custom node
 **ComfyUI-GGUF**, che nel nostro motore non c'è. Anima invece gira su nodi core,
 e i suoi pesi sono già su disco perché li usa Musica per le copertine. Quindi:
 
-1. **Anima come base** — txt2img e inpaint con maschera, tutto con nodi core.
-   Funziona oggi, senza scaricare niente.
+1. **Anima come base** — è quella che è entrata: testo→immagine e ritocco con
+   maschera, tutto con nodi core, senza scaricare niente.
 2. **FLUX.2 Klein come extra** — servono ComfyUI-GGUF e 12,4 GB di pesi, e senza
    lo scaricamento automatico non si può comunque installare. Si fa quando c'è
    quello.
@@ -94,12 +100,18 @@ ha il suo, e si promuovono a pacchetto condiviso quando li vorrà anche una terz
 app. Quello che *è* già condiviso, ed è la cosa che rischiava di divergere, sono i
 nomi dei file dei modelli: stanno in `manifest/models.json`.
 
-Restano poi le due cose viste facendo girare Musica:
+**Il ritocco è l'unica cosa davvero nuova.** Si dipinge la zona in rosso,
+`SetLatentNoiseMask` dice al campionatore dove può mettere le mani e `denoise`
+decide quanto tenere di quello che c'era. L'immagine di partenza viene
+ridisegnata a lati multipli di 16 ed entro 1536 **prima ancora di mostrarla**,
+perché il VAE lavora a blocchi di 8: se ritagliasse lui, la maschera resterebbe
+disallineata rispetto all'immagine e si rifarebbe la zona sbagliata.
 
-1. **ComfyUI va scaricato dalla suite.** Oggi deve già essere in
-   `%LOCALAPPDATA%\DaProdSuite\engines\ComfyUI`, altrimenti l'app dice che manca
-   e si ferma lì. È l'ultimo pezzo del "git clone deve bastare".
-2. **Lo scaricamento dei modelli**, che è già in roadmap per la 0.1.0.
+**Lo schema `daprod:` adesso risponde con `Access-Control-Allow-Origin`.** La
+pagina di un'app sta su `daprod://foto`, i suoi file su `daprod://file`: origini
+diverse, quindi leggerli con `fetch` è una richiesta incrociata. Senza quella
+intestazione fallivano il ritaglio di una copertina in Musica e l'apertura di una
+foto nel ritocco.
 
 ## Cose da sapere che non si vedono dal codice
 
@@ -160,5 +172,8 @@ che passava da solo al brano dopo.
 - **DaProdMusica**: un brano vero l'ha già fatto, con copertina, dentro la suite.
   Restano da provare a lungo la libreria (rinomina, copertina da file, elimina),
   la scheda Immagini e "apri nel Visualizer".
+- **DaProdFoto**: un'immagine l'ha già fatta. Resta da provare il **ritocco** —
+  è il pezzo nuovo e non l'ha ancora visto nessuno girare — e il giro completo
+  "genero un'immagine qui, la mando a Musica come copertina di un brano".
 - **Il Visualizer**: aperto dalla suite, con il pannello "Brani generati". Va
   provato — soprattutto se "Ascolta" fa partire davvero il brano.

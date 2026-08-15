@@ -34,7 +34,9 @@ girano: la spunta arriva quando le hai provate a lungo tu.
 - [ ] **DaProdMusica** — primo motore su ComfyUI condiviso *(dentro, un brano
       vero generato; con lei sono entrati il supervisore collegato, la libreria
       che sa scrivere e lo schema `daprod://` per le app senza impacchettatore)*
-- [ ] **DaProdFoto** — Anima di base, FLUX.2 Klein come extra
+- [ ] **DaProdFoto** — Anima di base, FLUX.2 Klein come extra *(dentro con Anima:
+      testo→immagine e ritocco con maschera. FLUX resta fuori finché non c'è lo
+      scaricamento: vuole ComfyUI-GGUF e 12,4 GB)*
 - [ ] **ComfyUI scaricato al primo avvio** — oggi deve già essere in `engines/`,
       ed è l'ultimo pezzo che manca a "git clone deve bastare"
 - [ ] Scaricamento dei modelli con ripresa e avanzamento
