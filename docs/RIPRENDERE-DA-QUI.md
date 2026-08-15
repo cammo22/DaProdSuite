@@ -29,6 +29,8 @@ Repo pubblico: **https://github.com/cammo22/DaProdSuite**
 | **Scelta del modello in Foto + FLUX.2 Klein** | fatto, **da provare tu**: nodo e motore provati, un'immagine FLUX no |
 | **Nodi custom del motore installati dalla suite** | fatto e provato (ComfyUI-GGUF) |
 | **Motore aggiornabile: ComfyUI 0.33.1** | fatto e provato, corregge il difetto che ammazzava i brani |
+| **Velocità: normale / spinta** | interruttore fatto, **da misurare** |
+| **Pubblicata la 0.1.0 su GitHub** | fatto: installer e `latest.yml` nella Release |
 | Procedura guidata al primo avvio | **da fare** |
 | Dream, Companion, IoDigitale | **da migrare** |
 
@@ -272,6 +274,25 @@ nell'hub — l'app è aperta e la stai usando — e l'avanzamento va alla finest
 **A modello mancante "Genera" è spento.** Meglio un bottone spento che uno che dà
 un errore del motore in inglese.
 
+## La copertina che non si vedeva
+
+Cammo, il 16 agosto: «le canzoni funzionano ma la copertina non viene proprio
+generata». Non era una questione di gusto: **veniva disegnata davvero** — nel
+log ci sono le sue dieci iterazioni da dieci secondi — e poi buttata via.
+
+L'aveva rotta il giro prima, invertendo l'ordine per la VRAM. Con la copertina
+*dopo* il brano, quando finisce il brano è già in libreria e il suo lavoro è
+stato cancellato: `concludi` cercava `lavoro(l.branoDi)`, non trovava niente, e
+`bersaglio` (che è la strada della scheda Libreria) era vuoto. Nessun ramo,
+nessun errore, nessuna copertina.
+
+Adesso il brano finito lascia detto in `finiti` con che id è entrato in
+libreria, e la copertina lo ritrova. Il brano dichiara `conCopertina` quando ne
+ha una in arrivo, così la mappa non cresce per i brani che non ne vogliono.
+
+**Da imparare, più che da correggere**: cambiare l'ordine di due lavori voleva
+dire cambiare chi passa cosa a chi, e il passaggio stava in un altro file.
+
 ## Il prossimo passo
 
 **Prima di tutto: provare FLUX.2 Klein davvero.** Il codice c'è e i pezzi sono
@@ -280,9 +301,11 @@ che funzionava in Flux Klein Studio — ma **un'immagine con FLUX in questa suit
 non l'ha ancora fatta nessuno**. Sono 11,2 GB da scaricare e una generazione da
 provare, e con 8 GB di VRAM il modello è al limite: è lì che si vede se regge.
 
-Subito dopo, le due misure gratis del paragrafo sulla velocità
-([VELOCITA-MUSICA.md](VELOCITA-MUSICA.md) § 5): rimisurare un brano sulla 0.33.1,
-e riprovare senza `--disable-dynamic-vram`.
+Subito dopo, **la misura della velocità**: adesso non serve toccare il codice,
+c'è l'interruttore in fondo all'hub. Stesso brano, stesso seed, stessa durata,
+una volta su "normale" e una su "spinta", leggendo i token/s che il log scrive da
+solo ([VELOCITA-MUSICA.md](VELOCITA-MUSICA.md) § 4-bis e § 5). Se "spinta" fa
+morire un brano come una volta, si torna indietro e lo si scrive lì.
 
 Restano aperte le altre cose chieste il 15: i pannelli veri per Risultati /
 Modelli / Log, "Mostra nella cartella" che dà errore, la copertina salvata subito

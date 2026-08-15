@@ -76,6 +76,32 @@ quello che fa il modo CG di WanGP.
 Quello che **non** è dentro un CUDA graph è il forward del modello da 7B, che è
 il 76% del tempo. Lì ogni token paga qualche centinaio di lanci di kernel.
 
+## 3-bis. Perché un brano lungo costa così tanto
+
+Il motore genera **25 frame di audio al secondo**, e ogni frame è un giro del
+modello da 7B. Quindi il conto è una moltiplicazione, non un mistero:
+
+| Durata chiesta | Giri del modello | A 5,5 giri/s |
+|---|---|---|
+| 40 s (la generazione misurata) | 1.000 | ~3 minuti |
+| 60 s | 1.500 | ~4,5 minuti |
+| **120 s** (il valore predefinito) | 3.000 | **~9 minuti** |
+| 180 s | 4.500 | ~14 minuti |
+| 360 s (il massimo che accetta) | 9.000 | ~27 minuti |
+
+E questo è **solo la parte autoregressiva**: sopra ci va la diffusione, che
+cresce anch'essa con la durata. Mezz'ora per un brano lungo non è un difetto da
+cercare — è questo numero, moltiplicato.
+
+Da cui due conseguenze pratiche, prima ancora di ottimizzare:
+
+1. **Si prova corto e si allunga alla fine.** Trenta secondi per capire se lo
+   stile e il testo funzionano costano tre minuti, non trenta.
+2. **"Solo nuova resa" salta la parte lenta.** Cambiando il seed dell'audio e
+   lasciando fermo quello del testo, i nodi della struttura arrivano dalla cache
+   del motore: 17 secondi invece di 107 sulla stessa canzone. È già nella scheda
+   Crea, ed è la cosa che fa risparmiare più tempo di qualunque flag.
+
 ## 4. La scoperta che vale più di tutte
 
 ComfyUI 0.33.1 corregge una riga sola rispetto alla 0.33.0, ed è la nostra:
