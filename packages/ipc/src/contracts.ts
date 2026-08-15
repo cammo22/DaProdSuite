@@ -59,6 +59,31 @@ export interface RuntimeState {
   error?: string;
 }
 
+/* -------------------------------------------------------------------- spazio */
+
+export type CategoriaSpazio = "modelli" | "risultati" | "ambiente" | "motori" | "cache" | "log";
+
+export interface VoceSpazio {
+  /** `categoria` oppure `categoria/nome`. */
+  id: string;
+  categoria: CategoriaSpazio;
+  etichetta: string;
+  bytes: number;
+  /** Cosa succede se la cancelli, detto prima di cancellarla. */
+  conseguenza: string;
+  cancellabile: boolean;
+}
+
+export interface StatoSpazio {
+  voci: VoceSpazio[];
+  /** Totale occupato dalla suite. */
+  occupato: number;
+  /** Spazio ancora libero sul disco. */
+  libero: number;
+}
+
+export type CosaResettare = "impostazioni" | "modelli" | "tutto";
+
 /** Chi sta occupando la GPU adesso. L'arbitro ne ammette uno solo. */
 export interface GpuState {
   holder: AppId | null;
@@ -129,6 +154,13 @@ export interface SuiteApi {
     onChanged(listener: (state: GpuState) => void): Unsubscribe;
   };
 
+  spazio: {
+    stato(): Promise<StatoSpazio>;
+    /** Cancella una voce. Ritorna i byte liberati. */
+    elimina(id: string): Promise<number>;
+    reset(cosa: CosaResettare): Promise<number>;
+  };
+
   update: {
     state(): Promise<UpdateState>;
     check(): Promise<void>;
@@ -195,6 +227,10 @@ export const CHANNELS = {
   updateDownload: "update:download",
   updateInstall: "update:install",
   updateChanged: "update:changed",
+
+  spazioStato: "spazio:stato",
+  spazioElimina: "spazio:elimina",
+  spazioReset: "spazio:reset",
 
   libreriaElenco: "libreria:elenco",
   libreriaMostra: "libreria:mostra",

@@ -23,6 +23,13 @@ export const MODELS_DIR = join(DATA_ROOT, "models");
 /** Risultati: brani, immagini, video, registrazioni. */
 export const OUTPUT_DIR = join(DATA_ROOT, "output");
 
+/** Motori di terze parti scaricati dalla suite (ComfyUI). Fuori dal repo: ComfyUI
+ *  è GPL-3.0 e la suite è MIT, quindi si scarica, non si ridistribuisce. */
+export const ENGINES_DIR = join(DATA_ROOT, "engines");
+
+/** File rigenerabili: transcodifiche audio, anteprime. Cancellabili sempre. */
+export const CACHE_DIR = join(DATA_ROOT, "cache");
+
 /** Log dello shell e di ogni servizio Python. */
 export const LOGS_DIR = join(DATA_ROOT, "logs");
 
@@ -52,7 +59,7 @@ export const SERVICES_DIR = app.isPackaged
 export function ensureDataDirs(): void {
   // RUNTIME_DIR non si crea qui: `uv venv` vuole creare lui la cartella e una
   // cartella vuota preesistente gli fa sospettare un ambiente rotto.
-  for (const dir of [DATA_ROOT, MODELS_DIR, OUTPUT_DIR, LOGS_DIR, TOOLS_DIR]) {
+  for (const dir of [DATA_ROOT, MODELS_DIR, OUTPUT_DIR, LOGS_DIR, TOOLS_DIR, ENGINES_DIR, CACHE_DIR]) {
     mkdirSync(dir, { recursive: true });
   }
 }

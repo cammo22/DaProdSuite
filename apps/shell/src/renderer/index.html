@@ -42,6 +42,23 @@
       </section>
 
       <section class="griglia" id="griglia" aria-label="App della suite"></section>
+
+      <section class="spazio" id="spazio" hidden aria-label="Spazio su disco">
+        <div class="spazio-testa">
+          <h2>Spazio su disco</h2>
+          <p id="spazio-riassunto">—</p>
+        </div>
+        <div class="barra-spazio" id="barra-spazio"></div>
+        <ul class="voci" id="spazio-voci"></ul>
+        <div class="reset">
+          <span>Riporta indietro la suite. I tuoi risultati non si toccano mai.</span>
+          <div class="reset-bottoni">
+            <button class="bottone secondario" data-reset="impostazioni">Impostazioni</button>
+            <button class="bottone secondario" data-reset="modelli">Modelli</button>
+            <button class="bottone secondario pericolo" data-reset="tutto">Tutto</button>
+          </div>
+        </div>
+      </section>
     </main>
 
     <footer class="pieddi">
@@ -53,6 +70,7 @@
         <button class="collegamento" data-apri="output">Risultati</button>
         <button class="collegamento" data-apri="models">Modelli</button>
         <button class="collegamento" data-apri="logs">Log</button>
+        <button class="collegamento" id="btn-spazio">Spazio</button>
       </div>
     </footer>
 

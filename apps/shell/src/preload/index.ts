@@ -54,6 +54,12 @@ const api: SuiteApi = {
     onChanged: (listener) => subscribe<GpuState>(CHANNELS.gpuChanged, listener),
   },
 
+  spazio: {
+    stato: () => ipcRenderer.invoke(CHANNELS.spazioStato),
+    elimina: (id: string) => ipcRenderer.invoke(CHANNELS.spazioElimina, id),
+    reset: (cosa) => ipcRenderer.invoke(CHANNELS.spazioReset, cosa),
+  },
+
   update: {
     state: () => ipcRenderer.invoke(CHANNELS.updateState),
     check: () => ipcRenderer.invoke(CHANNELS.updateCheck),

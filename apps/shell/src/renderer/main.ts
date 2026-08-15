@@ -277,3 +277,112 @@ void (async () => {
   aggiornaSpiaRuntime(await api.runtime.state());
   aggiornaSpiaGpu(await api.gpu.state());
 })();
+
+/* ------------------------------------------------------------------ spazio */
+
+const sezioneSpazio = document.getElementById('spazio') as HTMLElement
+const riassunto = document.getElementById('spazio-riassunto') as HTMLElement
+const barraSpazio = document.getElementById('barra-spazio') as HTMLElement
+const vociSpazio = document.getElementById('spazio-voci') as HTMLElement
+
+/** Un colore per categoria, così barra ed elenco si leggono insieme. */
+const COLORI: Record<string, string> = {
+  modelli: '#7c5cff',
+  risultati: '#5cff9d',
+  ambiente: '#3ddbff',
+  motori: '#ffa63d',
+  cache: '#8d97a9',
+  log: '#5d6779',
+}
+
+function gb(bytes: number): string {
+  return bytes >= 1024 ** 3
+    ? `${(bytes / 1024 ** 3).toFixed(2)} GB`
+    : `${Math.max(1, Math.round(bytes / 1024 ** 2))} MB`
+}
+
+async function disegnaSpazio(): Promise<void> {
+  const stato = await api.spazio.stato()
+
+  riassunto.textContent =
+    `La suite occupa ${gb(stato.occupato)}. Liberi sul disco: ${gb(stato.libero)}.`
+
+  barraSpazio.replaceChildren(
+    ...stato.voci.map((voce) => {
+      const fetta = document.createElement('span')
+      fetta.style.width = `${(voce.bytes / Math.max(stato.occupato, 1)) * 100}%`
+      fetta.style.background = COLORI[voce.categoria] ?? '#8d97a9'
+      fetta.title = `${voce.etichetta} · ${gb(voce.bytes)}`
+      return fetta
+    }),
+  )
+
+  vociSpazio.replaceChildren(
+    ...stato.voci.map((voce) => {
+      const riga = document.createElement('li')
+      riga.className = 'voce'
+
+      const punto = document.createElement('span')
+      punto.className = 'voce__punto'
+      punto.style.background = COLORI[voce.categoria] ?? '#8d97a9'
+
+      const nome = document.createElement('span')
+      nome.className = 'voce__nome'
+      nome.textContent = voce.etichetta
+      nome.title = voce.conseguenza
+
+      const peso = document.createElement('span')
+      peso.className = 'voce__peso'
+      peso.textContent = gb(voce.bytes)
+
+      riga.append(punto, nome, peso)
+
+      if (voce.cancellabile) {
+        const elimina = document.createElement('button')
+        elimina.className = 'voce__elimina'
+        elimina.textContent = 'Elimina'
+        elimina.addEventListener('click', async () => {
+          // La conseguenza è scritta nel messaggio: cancellare un modello da
+          // 13 GB non deve poter succedere per un clic distratto.
+          if (!confirm(`Elimino "${voce.etichetta}" (${gb(voce.bytes)})?\n\n${voce.conseguenza}`))
+            return
+          elimina.disabled = true
+          await api.spazio.elimina(voce.id)
+          await disegnaSpazio()
+        })
+        riga.append(elimina)
+      }
+
+      return riga
+    }),
+  )
+}
+
+const AVVISI_RESET: Record<string, string> = {
+  impostazioni: 'Le impostazioni tornano ai valori predefiniti. Modelli e risultati restano.',
+  modelli: 'Tutti i modelli vengono cancellati e andranno riscaricati. I risultati restano.',
+  tutto: 'Ambiente Python, motori, modelli e impostazioni: tutto cancellato.\n\nI tuoi risultati NON si toccano.',
+}
+
+for (const bottone of document.querySelectorAll<HTMLButtonElement>('[data-reset]')) {
+  bottone.addEventListener('click', async () => {
+    const cosa = bottone.dataset.reset as 'impostazioni' | 'modelli' | 'tutto'
+    if (!confirm(`${AVVISI_RESET[cosa]}\n\nProcedo?`)) return
+    bottone.disabled = true
+    const liberati = await api.spazio.reset(cosa)
+    bottone.disabled = false
+    await disegnaSpazio()
+    aggiornaSchede(await api.apps.list())
+    aggiornaSpiaRuntime(await api.runtime.state())
+    if (liberati > 0) alert(`Liberati ${gb(liberati)}.`)
+  })
+}
+
+const btnSpazio = document.getElementById('btn-spazio') as HTMLButtonElement
+btnSpazio.addEventListener('click', () => {
+  sezioneSpazio.hidden = !sezioneSpazio.hidden
+  if (!sezioneSpazio.hidden) {
+    void disegnaSpazio()
+    sezioneSpazio.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+  }
+})

@@ -347,3 +347,123 @@ main {
   background: var(--bordo);
   color: var(--testo);
 }
+
+/* ------------------------------------------------------------------- spazio */
+
+.spazio[hidden] {
+  display: none;
+}
+
+.spazio {
+  display: flex;
+  max-width: 1200px;
+  margin: 22px auto 0;
+  flex-direction: column;
+  gap: 14px;
+  padding: 20px 22px;
+  border: 1px solid var(--bordo);
+  border-radius: var(--raggio);
+  background: var(--fondo-scheda);
+}
+
+.spazio-testa h2 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 620;
+}
+
+.spazio-testa p {
+  margin: 4px 0 0;
+  color: var(--testo-tenue);
+  font-size: 13px;
+}
+
+/* Una barra sola divisa per categoria: quanto pesa ciascuna si vede a colpo
+   d'occhio, senza leggere i numeri. */
+.barra-spazio {
+  display: flex;
+  height: 10px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: var(--bordo);
+}
+
+.barra-spazio > span {
+  height: 100%;
+}
+
+.voci {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.voce {
+  display: grid;
+  grid-template-columns: 10px 1fr auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 12px;
+  border: 1px solid var(--bordo);
+  border-radius: 10px;
+}
+
+.voce__punto {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.voce__nome {
+  overflow: hidden;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.voce__peso {
+  color: var(--testo-tenue);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.voce__elimina {
+  padding: 4px 10px;
+  border: 1px solid var(--bordo-vivo);
+  border-radius: 7px;
+  background: transparent;
+  color: var(--testo-tenue);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.voce__elimina:hover {
+  border-color: var(--errore);
+  color: var(--errore);
+}
+
+.reset {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-top: 14px;
+  border-top: 1px solid var(--bordo);
+  color: var(--testo-fioco);
+  font-size: 12px;
+}
+
+.reset-bottoni {
+  display: flex;
+  gap: 8px;
+}
+
+.bottone.pericolo:hover:not(:disabled) {
+  border-color: var(--errore);
+  color: var(--errore);
+}

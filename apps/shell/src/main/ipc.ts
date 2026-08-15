@@ -7,9 +7,16 @@
 
 import { BrowserWindow, ipcMain, shell } from "electron";
 import { app } from "electron";
-import { CHANNELS, type AppId, type FiltroLibreria, type Intenzione } from "@daprod/ipc";
+import {
+  CHANNELS,
+  type AppId,
+  type CosaResettare,
+  type FiltroLibreria,
+  type Intenzione,
+} from "@daprod/ipc";
 import { appManager } from "./app-manager";
 import { libreria } from "./libreria";
+import { elencoSpazio, elimina, reset, spazioLibero } from "./spazio";
 import { gpu } from "./gpu";
 import { runtime } from "./runtime";
 import { updater } from "./updater";
@@ -62,6 +69,36 @@ export function registerIpc(getHub: () => BrowserWindow | null): void {
     // che l'installer provi a sovrascrivere la cartella del programma.
     await appManager.closeAll();
     updater.installAndRestart();
+  });
+
+  /* --------------------------------------------------------------- spazio */
+
+  ipcMain.handle(CHANNELS.spazioStato, () => {
+    const voci = elencoSpazio();
+    return {
+      voci,
+      occupato: voci.reduce((somma, v) => somma + v.bytes, 0),
+      libero: spazioLibero(),
+    };
+  });
+
+  ipcMain.handle(CHANNELS.spazioElimina, async (_e, id: string) => {
+    const liberati = elimina(id);
+    // Cancellare un modello puo' rendere inutilizzabile un'app, e cancellare un
+    // risultato cambia la libreria: entrambe vanno rilette subito.
+    await appManager.refreshAll();
+    libreria.segnalaNovita();
+    return liberati;
+  });
+
+  ipcMain.handle(CHANNELS.spazioReset, async (_e, cosa: CosaResettare) => {
+    // Prima si spengono i motori: hanno file aperti dentro le cartelle che
+    // stiamo per cancellare, e su Windows un file in uso non si cancella.
+    await appManager.closeAll();
+    const liberati = reset(cosa);
+    await appManager.refreshAll();
+    libreria.segnalaNovita();
+    return liberati;
   });
 
   /* ------------------------------------------------------------- libreria */
