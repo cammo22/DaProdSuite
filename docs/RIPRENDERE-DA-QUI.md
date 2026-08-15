@@ -168,6 +168,73 @@ sarebbero risultati mancanti per sempre. Adesso i byte vengono tutti dal
 dichiarava 2,6 GB mentre il repo intero ne pesa 13: ora ha gli `include` che
 prendono solo la pipeline fp16, che è quello che serviva a Dream.
 
+## Quello che Cammo ha chiesto dopo aver provato a fondo
+
+In ordine di quanto fanno male. Le prime due sono fatte.
+
+- [x] **Il brano moriva con `'RVQDepthDecoder' object has no attribute
+      '_v_block'`**, a volte dopo pochi secondi, a volte dopo quattro minuti. Non
+      era un difetto di ComfyUI da segnalare: era la **copertina generata per
+      prima**, che lasciava Anima nella VRAM e faceva caricare *in parte* il text
+      encoder musicale. Ordine invertito e VRAM svuotata prima del brano.
+- [x] **Il ritocco non mostrava il risultato nella sua scheda** (compariva in
+      Crea e in galleria). Adesso il risultato prende il posto dell'originale
+      sulla tela e ci si può dipingere sopra di nuovo.
+
+- [ ] **Selettore del modello in DaProdFoto**, con dentro **FLUX.2 Klein**. È la
+      cosa che chiede da tre giri. Serve: il nodo **ComfyUI-GGUF** (che il motore
+      non ha, e va installato come si installa ComfyUI — vale anche per tutti gli
+      altri nodi custom che usa), i 12,4 GB di pesi (già nel catalogo, e adesso si
+      scaricano da soli), e il menu in `apps/foto/src/grafi.js`, dove oggi
+      `MODELLO` è una costante sola con già scritto sopra come diventerà un elenco.
+
+- [ ] **La copertina va salvata su disco appena è generata.** Oggi nasce come
+      `PreviewImage`, quindi finisce nei temporanei, e sopravvive solo se la
+      applichi a un brano. La decisione di allora ("se andassero in output la
+      libreria si riempirebbe di copertine sciolte") resta giusta: la strada è
+      scriverla subito accanto al brano con `libreria.copertina()`, non
+      trasformarla in un risultato sciolto.
+
+- [ ] **Un terminale dentro ogni app.** Una finestrella con le ultime righe del
+      motore e auto-follow, così si vede cosa succede e gli errori si leggono
+      dove sono capitati invece che in un file. Le righe ci sono già: `logs/` le
+      raccoglie tutte, e il ponte della suite può servirle a qualunque finestra —
+      è una cosa da fare **una volta per tutte le app**, non sei volte.
+
+- [ ] **MiniMax Music 3 "il top del top".** Vedi il paragrafo sulla velocità qui
+      sotto: il collo di bottiglia è misurato, ed è la parte autoregressiva.
+
+## Dove se ne va il tempo di un brano
+
+Misurato su una generazione vera da 243,66 secondi, leggendo `logs/comfy.log`:
+
+| Fase | Tempo | Quota |
+|---|---|---|
+| **AR sampling** — 1001 token, uno alla volta, a 5,5 token/s | **185 s** | **76%** |
+| DiT — 30 passi a 1,48 s/passo | 44 s | 18% |
+| Caricamenti + VAE | ~15 s | 6% |
+
+**Il cursore "passi" governa il 18% del tempo.** È il posto dove si guarda per
+istinto ed è quello sbagliato: i tre quarti se ne vanno nel modello linguistico
+da 7B che genera i token audio uno per volta, e quella parte scala con la
+**durata del brano**, non con i passi.
+
+E 5,5 token/s è nove volte sotto quello che la banda di memoria della 4060
+permetterebbe per un modello da 5,5 GB: non è la banda, è costo per passo — il
+sospetto è la dequantizzazione a 4 bit ripetuta a ogni token, lo stesso fenomeno
+che il README già descrive per i GGUF. **La quantizzazione che fa stare tutto in
+8 GB è probabilmente la stessa cosa che rallenta.**
+
+Cosa non stiamo usando, verificato nei flag di ComfyUI 0.33 e nel log:
+
+- l'attenzione è quella di serie (`Using pytorch attention`): `--use-sage-attention` c'è e non è accesa;
+- `--fast` (`fp16_accumulation`, `cublas_ops`, `autotune`): niente acceso;
+- i grafi CUDA invece sono già attivi (esiste solo `--disable-cuda-graphs`).
+
+La prova pulita è a portata: stesso brano, stesso seed, stessa durata, e il log
+scrive già da solo i token/s. Da fare come **interruttore** ("Velocità: normale /
+spinta"), non come scelta cablata.
+
 ## Il prossimo passo
 
 Adesso che i modelli si scaricano da soli, **FLUX.2 Klein in Foto si può fare**:

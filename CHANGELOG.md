@@ -41,6 +41,16 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ### Aggiustato
 
+- **DaProdMusica moriva a metà brano** con un errore che non nominava la sua
+  causa (`'RVQDepthDecoder' object has no attribute '_v_block'`), a volte dopo
+  pochi secondi, a volte dopo quattro minuti di lavoro buttato. Era la copertina,
+  generata *prima* del brano: lasciava il suo modello nella scheda video e il
+  modello musicale ci entrava solo a metà. Adesso il brano parte per primo, con
+  la memoria video svuotata prima, e la copertina va in coda dietro.
+- **Il ritocco di DaProdFoto non mostrava il risultato** dove stavi lavorando:
+  compariva nella scheda Crea e in galleria. Adesso prende il posto
+  dell'originale sulla tela, e ci si può dipingere sopra un'altra volta.
+
 - **DaProdFoto: il ritocco non riusciva ad aprire nessuna immagine.** Né dal
   disco né dalla galleria, e senza dire perché. Era una regola di sicurezza della
   pagina che impediva di *rileggere* il file dopo averlo scelto.
