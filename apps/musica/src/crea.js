@@ -129,17 +129,21 @@ export function nuovaResa() {
 async function creaBrano(p) {
   p.titolo = p.titolo || titoloAuto(p.lyrics, p.caption);
 
-  // Prima la copertina: costa venti secondi e dà subito qualcosa da guardare
-  // mentre la musica, che è lunga, lavora dietro.
-  let idCopertina = null;
-  if (el.autoCover.checked) {
-    const prompt = promptCopertina(p.titolo, p.lyrics, el.coverStyleNew.value);
-    idCopertina = await ponte.invia(grafoImmagine(prompt, rnd()));
-  }
+  // **Prima il brano, poi la copertina**, e l'ordine non è un dettaglio di
+  // presentazione. La copertina carica Anima, che sono 4 GB di VRAM; se resta
+  // lì dentro, i 5,5 GB del text encoder musicale non ci stanno più e vengono
+  // caricati solo *in parte*. Il motore non lo dice: va avanti e muore più tardi
+  // con `'RVQDepthDecoder' object has no attribute '_v_block'`, a volte dopo
+  // quattro minuti di lavoro buttato. Mettendo la copertina dopo, quando tocca a
+  // lei il modello musicale ha già finito e le lascia il posto.
+  await ponte.svuotaVram();
 
   const idBrano = await ponte.invia(grafoBrano(p));
   aggiungiLavoro(idBrano, p);
-  if (idCopertina) {
+
+  if (el.autoCover.checked) {
+    const prompt = promptCopertina(p.titolo, p.lyrics, el.coverStyleNew.value);
+    const idCopertina = await ponte.invia(grafoImmagine(prompt, rnd()));
     aggiungiLavoro(idCopertina, { titolo: p.titolo }, { specie: "copertina", branoDi: idBrano });
   }
 }

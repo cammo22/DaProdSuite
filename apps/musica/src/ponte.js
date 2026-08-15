@@ -122,6 +122,25 @@ export function scaricaDallaVram(nome) {
   });
 }
 
+/**
+ * Toglie tutto dalla VRAM prima di un lavoro che la vuole quasi tutta.
+ *
+ * MiniMax Music 3 carica 5,5 GB di text encoder su una scheda da 8: se dentro
+ * c'è ancora Anima da 4 GB, il caricamento riesce solo *in parte* e il motore
+ * muore più avanti con un errore che non nomina la VRAM
+ * (`'RVQDepthDecoder' object has no attribute '_v_block'`) — a volte dopo pochi
+ * secondi, a volte dopo quattro minuti di lavoro buttato.
+ */
+export function svuotaVram() {
+  return fetch(`${motore}/daprod/scarica`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ tutti: true }),
+  }).catch(() => {
+    // Motore vecchio senza questa rotta: si prova a generare lo stesso.
+  });
+}
+
 /* ---------------------------------------------------------------- libreria */
 
 export const brani = () => suite.libreria.elenco({ tipo: "audio", app: "musica" });

@@ -153,6 +153,13 @@ async function concludi(l) {
     }
   }
 
+  // Il ritocco finito torna sulla sua tela, non solo in galleria: si guarda
+  // com'e' venuto e volendo ci si dipinge sopra un'altra volta, che e' il modo
+  // in cui il ritocco si usa davvero. Prima finiva nella scheda Crea, dove chi
+  // stava ritoccando non lo cercava.
+  const uscita = prodotte[0];
+  if (l.meta?.ritocco && uscita) annuncia("ritocco-fatto", ponte.vista(uscita));
+
   togliLavoro(l.id);
   annuncia("galleria-cambiata");
 }

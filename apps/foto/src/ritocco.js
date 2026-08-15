@@ -159,6 +159,11 @@ export function collegaRitocco() {
   // Dalla galleria: "ritocca" porta l'immagine qui dentro.
   ascolta("ritocca", (url) => void apriImmagine(url));
 
+  // Appena il motore ha finito, il risultato prende il posto dell'originale
+  // sulla tela: la maschera si azzera e si puo' ritoccare di nuovo, senza
+  // passare dalla galleria a riprendersi quello che si e' appena fatto.
+  ascolta("ritocco-fatto", (url) => void apriImmagine(url));
+
   el.rigenera.onclick = async () => {
     nascondiErrore("erroreRitocco");
 
