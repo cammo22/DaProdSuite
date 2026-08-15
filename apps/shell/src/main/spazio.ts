@@ -12,12 +12,23 @@
 
 import { existsSync, readdirSync, rmSync, statSync, statfsSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
-import type { CategoriaSpazio, VoceSpazio } from "@daprod/ipc";
+import { APPS, APP_LIST, type AppId, type CategoriaSpazio, type SpazioApp, type StatoSpazio, type VoceSpazio } from "@daprod/ipc";
+import { percorsoModello } from "./models";
 import { CACHE_DIR, DATA_ROOT, ENGINES_DIR, LOGS_DIR, MODELS_DIR, OUTPUT_DIR, RUNTIME_DIR } from "./paths";
 
 /** Somma ricorsiva. Ritorna 0 se il percorso non c'è: non è un errore. */
 export function peso(percorso: string): number {
   if (!existsSync(percorso)) return 0;
+
+  // Vale anche per un singolo file: i modelli di Musica e Foto sono file, non
+  // cartelle, e senza questo risultavano di peso zero cioe' non installati.
+  try {
+    const stat = statSync(percorso);
+    if (stat.isFile()) return stat.size;
+  } catch {
+    return 0;
+  }
+
   let totale = 0;
   let voci;
   try {
@@ -91,45 +102,139 @@ const RADICI: Radice[] = [
   },
 ];
 
-export function elencoSpazio(): VoceSpazio[] {
-  const voci: VoceSpazio[] = [];
+/** Sotto questa soglia un modello non merita una riga a sé: sarebbe rumore. */
+const SOGLIA_GRANDI = 1024 ** 3;
 
-  for (const radice of RADICI) {
-    if (!existsSync(radice.percorso)) continue;
+/**
+ * Lo stato, calcolato una volta e tenuto in cache.
+ *
+ * Contare 34 GB significa attraversare decine di migliaia di file: farlo a ogni
+ * apertura del pannello bloccherebbe la finestra per secondi. Si ricalcola solo
+ * dopo che qualcosa è cambiato.
+ */
+let cache: StatoSpazio | null = null;
 
-    if (!radice.dettaglia) {
-      const bytes = peso(radice.percorso);
-      if (bytes === 0) continue;
-      voci.push({
-        id: radice.categoria,
-        categoria: radice.categoria,
-        etichetta: radice.etichetta,
-        bytes,
-        conseguenza: radice.conseguenza,
-        // L'ambiente non si cancella dal pannello: senza, cinque app su sette
-        // smettono di funzionare, ed e' un'operazione da "reset", non da pulizia.
-        cancellabile: radice.categoria !== "ambiente",
-      });
-      continue;
+export function invalidaSpazio(): void {
+  cache = null;
+}
+
+export function statoSpazio(): StatoSpazio {
+  if (cache) return cache;
+
+  /* Le schede. È così che si ragiona: una scheda è un'esperienza, con i suoi
+     modelli. Non interessa sapere che esiste una cartella "text_encoders". */
+  const usiPerModello = new Map<string, AppId[]>();
+  for (const app of APP_LIST) {
+    for (const modello of [...app.models, ...(app.extraModels ?? [])]) {
+      usiPerModello.set(modello, [...(usiPerModello.get(modello) ?? []), app.id]);
+    }
+  }
+
+  const perApp: SpazioApp[] = [];
+  for (const app of APP_LIST) {
+    let bytes = 0;
+    let condivisi = 0;
+
+    // Piu' modelli possono puntare alla stessa cartella: SoulX Lite e Pro stanno
+    // nello stesso repo. Senza deduplicare, IoDigitale risultava il doppio.
+    const visti = new Set<string>();
+
+    for (const modello of [...app.models, ...(app.extraModels ?? [])]) {
+      const percorso = percorsoModello(modello);
+      if (!percorso || visti.has(percorso)) continue;
+      visti.add(percorso);
+      const peso_ = peso(percorso);
+      if (peso_ === 0) continue;
+      bytes += peso_;
+      // Un modello che serve anche a un'altra scheda installata non si porta via
+      // disinstallando questa: va detto prima, non dopo.
+      if ((usiPerModello.get(modello) ?? []).length > 1) condivisi += peso_;
     }
 
-    for (const voce of readdirSync(radice.percorso, { withFileTypes: true })) {
-      if (!voce.isDirectory()) continue;
-      const percorso = join(radice.percorso, voce.name);
-      const bytes = peso(percorso);
-      if (bytes === 0) continue;
-      voci.push({
-        id: `${radice.categoria}/${voce.name}`,
-        categoria: radice.categoria,
+    perApp.push({
+      id: app.id,
+      nome: app.name,
+      accent: app.accent,
+      bytes,
+      condivisi,
+      installata: bytes > 0,
+    });
+  }
+  perApp.sort((a, b) => b.bytes - a.bytes);
+
+  /* I modelli grossi, per chi vuole guardare più a fondo. */
+  const grandi: VoceSpazio[] = [];
+  if (existsSync(MODELS_DIR)) {
+    for (const voce of readdirSync(MODELS_DIR, { withFileTypes: true })) {
+      const percorso = join(MODELS_DIR, voce.name);
+      const bytes = voce.isDirectory() ? peso(percorso) : statSync(percorso).size;
+      if (bytes < SOGLIA_GRANDI) continue;
+      grandi.push({
+        id: `modelli/${voce.name}`,
+        categoria: "modelli",
         etichetta: voce.name,
         bytes,
-        conseguenza: radice.conseguenza,
+        conseguenza: "Va riscaricato prima di usare le schede che lo richiedono.",
         cancellabile: true,
       });
     }
   }
+  grandi.sort((a, b) => b.bytes - a.bytes);
 
-  return voci.sort((a, b) => b.bytes - a.bytes);
+  /* Il resto, come totali. */
+  const sistema: VoceSpazio[] = [];
+  for (const radice of RADICI) {
+    if (radice.categoria === "modelli") continue;
+    const bytes = peso(radice.percorso);
+    if (bytes === 0) continue;
+    sistema.push({
+      id: radice.categoria,
+      categoria: radice.categoria,
+      etichetta: radice.etichetta,
+      bytes,
+      conseguenza: radice.conseguenza,
+      cancellabile: radice.categoria !== "ambiente" && radice.categoria !== "risultati",
+    });
+  }
+
+  cache = {
+    app: perApp,
+    grandi,
+    sistema,
+    occupato: peso(DATA_ROOT),
+    libero: spazioLibero(),
+  };
+  return cache;
+}
+
+/**
+ * Toglie una scheda: cancella i suoi modelli, tranne quelli che servono anche a
+ * un'altra scheda ancora installata.
+ */
+export function disinstallaApp(id: AppId): number {
+  const app = APPS[id];
+  const altre = APP_LIST.filter((a) => a.id !== id);
+
+  let liberati = 0;
+  for (const modello of [...app.models, ...(app.extraModels ?? [])]) {
+    const serveAdAltri = altre.some(
+      (a) =>
+        [...a.models, ...(a.extraModels ?? [])].includes(modello) &&
+        [...a.models, ...(a.extraModels ?? [])].some((m) => {
+          const p = percorsoModello(m);
+          return p !== null && existsSync(p);
+        }),
+    );
+    if (serveAdAltri) continue;
+
+    const percorso = percorsoModello(modello);
+    if (!percorso || !existsSync(percorso)) continue;
+    liberati += peso(percorso);
+    rmSync(percorso, { recursive: true, force: true });
+  }
+
+  invalidaSpazio();
+  return liberati;
 }
 
 /** Spazio libero sul disco dove vive la suite. */
@@ -172,6 +277,7 @@ export function elimina(id: string): number {
 
   const liberati = peso(percorso);
   rmSync(percorso, { recursive: true, force: true });
+  invalidaSpazio();
   return liberati;
 }
 
@@ -197,6 +303,7 @@ export function reset(cosa: CosaResettare): number {
     daTogliere.push(RUNTIME_DIR, ENGINES_DIR, CACHE_DIR, LOGS_DIR, join(DATA_ROOT, "tools"));
   }
 
+  invalidaSpazio();
   let liberati = 0;
   for (const percorso of daTogliere) {
     if (!existsSync(percorso)) continue;

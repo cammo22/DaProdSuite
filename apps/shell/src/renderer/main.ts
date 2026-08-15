@@ -6,7 +6,7 @@
  * limita a renderlo leggibile.
  */
 
-import type { AppId, AppState, GpuState, RuntimeState, UpdateState } from "@daprod/ipc";
+import type { AppId, AppState, GpuState, RuntimeState, UpdateState, VoceSpazio } from "@daprod/ipc";
 
 const api = window.daprod;
 
@@ -302,60 +302,119 @@ function gb(bytes: number): string {
 }
 
 async function disegnaSpazio(): Promise<void> {
+  riassunto.textContent = 'Conto…'
   const stato = await api.spazio.stato()
 
   riassunto.textContent =
     `La suite occupa ${gb(stato.occupato)}. Liberi sul disco: ${gb(stato.libero)}.`
 
+  const tutte = [...stato.app.filter((a) => a.installata), ...stato.sistema]
   barraSpazio.replaceChildren(
-    ...stato.voci.map((voce) => {
+    ...tutte.map((v) => {
       const fetta = document.createElement('span')
-      fetta.style.width = `${(voce.bytes / Math.max(stato.occupato, 1)) * 100}%`
-      fetta.style.background = COLORI[voce.categoria] ?? '#8d97a9'
-      fetta.title = `${voce.etichetta} · ${gb(voce.bytes)}`
+      const bytes = v.bytes
+      fetta.style.width = `${(bytes / Math.max(stato.occupato, 1)) * 100}%`
+      fetta.style.background =
+        'accent' in v
+          ? (v as { accent: string }).accent
+          : (COLORI[(v as VoceSpazio).categoria] ?? '#8d97a9')
+      fetta.title = `${'nome' in v ? v.nome : v.etichetta} · ${gb(bytes)}`
       return fetta
     }),
   )
 
-  vociSpazio.replaceChildren(
-    ...stato.voci.map((voce) => {
-      const riga = document.createElement('li')
-      riga.className = 'voce'
+  const righe: HTMLElement[] = []
 
-      const punto = document.createElement('span')
-      punto.className = 'voce__punto'
-      punto.style.background = COLORI[voce.categoria] ?? '#8d97a9'
+  // Le schede per prime: e' cosi' che si ragiona. Una scheda e' un'esperienza
+  // con i suoi modelli, non una cartella.
+  for (const app of stato.app) {
+    if (!app.installata) continue
 
-      const nome = document.createElement('span')
-      nome.className = 'voce__nome'
-      nome.textContent = voce.etichetta
-      nome.title = voce.conseguenza
+    const riga = riga3(app.accent, app.nome, gb(app.bytes))
+    const nota = riga.querySelector('.voce__nome') as HTMLElement
+    if (app.condivisi > 0) {
+      nota.title = `${gb(app.condivisi)} sono modelli usati anche da un'altra scheda: quelli restano.`
+      nota.textContent = `${app.nome} · ${gb(app.condivisi)} condivisi`
+    }
 
-      const peso = document.createElement('span')
-      peso.className = 'voce__peso'
-      peso.textContent = gb(voce.bytes)
+    const togli = document.createElement('button')
+    togli.className = 'voce__elimina'
+    togli.textContent = 'Disinstalla'
+    togli.addEventListener('click', async () => {
+      const recuperabile = app.bytes - app.condivisi
+      if (
+        !confirm(
+          `Disinstallo ${app.nome}?
 
-      riga.append(punto, nome, peso)
+Liberi ${gb(recuperabile)}.` +
+            (app.condivisi > 0
+              ? `
+${gb(app.condivisi)} restano: servono anche a un'altra scheda.`
+              : '') +
+            `
 
-      if (voce.cancellabile) {
-        const elimina = document.createElement('button')
-        elimina.className = 'voce__elimina'
-        elimina.textContent = 'Elimina'
-        elimina.addEventListener('click', async () => {
-          // La conseguenza è scritta nel messaggio: cancellare un modello da
-          // 13 GB non deve poter succedere per un clic distratto.
-          if (!confirm(`Elimino "${voce.etichetta}" (${gb(voce.bytes)})?\n\n${voce.conseguenza}`))
-            return
-          elimina.disabled = true
-          await api.spazio.elimina(voce.id)
-          await disegnaSpazio()
-        })
-        riga.append(elimina)
-      }
+I tuoi risultati non si toccano.`,
+        )
+      )
+        return
+      togli.disabled = true
+      await api.spazio.disinstalla(app.id)
+      await disegnaSpazio()
+      aggiornaSchede(await api.apps.list())
+    })
+    riga.append(togli)
+    righe.push(riga)
+  }
 
-      return riga
-    }),
-  )
+  // Poi i modelli sopra 1 GB, per chi vuole guardare piu' a fondo.
+  for (const voce of stato.grandi) {
+    righe.push(rigaCancellabile(voce))
+  }
+  for (const voce of stato.sistema) {
+    righe.push(voce.cancellabile ? rigaCancellabile(voce) : riga3(COLORI[voce.categoria]!, voce.etichetta, gb(voce.bytes)))
+  }
+
+  vociSpazio.replaceChildren(...righe)
+}
+
+/** Riga base: pallino colorato, nome, peso. */
+function riga3(colore: string, nome: string, peso: string): HTMLElement {
+  const riga = document.createElement('li')
+  riga.className = 'voce'
+
+  const punto = document.createElement('span')
+  punto.className = 'voce__punto'
+  punto.style.background = colore
+
+  const testo = document.createElement('span')
+  testo.className = 'voce__nome'
+  testo.textContent = nome
+
+  const dim = document.createElement('span')
+  dim.className = 'voce__peso'
+  dim.textContent = peso
+
+  riga.append(punto, testo, dim)
+  return riga
+}
+
+function rigaCancellabile(voce: VoceSpazio): HTMLElement {
+  const riga = riga3(COLORI[voce.categoria] ?? '#8d97a9', voce.etichetta, gb(voce.bytes))
+  ;(riga.querySelector('.voce__nome') as HTMLElement).title = voce.conseguenza
+
+  const elimina = document.createElement('button')
+  elimina.className = 'voce__elimina'
+  elimina.textContent = 'Elimina'
+  elimina.addEventListener('click', async () => {
+    if (!confirm(`Elimino "${voce.etichetta}" (${gb(voce.bytes)})?
+
+${voce.conseguenza}`)) return
+    elimina.disabled = true
+    await api.spazio.elimina(voce.id)
+    await disegnaSpazio()
+  })
+  riga.append(elimina)
+  return riga
 }
 
 const AVVISI_RESET: Record<string, string> = {

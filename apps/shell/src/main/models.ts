@@ -124,3 +124,13 @@ function dirSize(dir: string): number {
   }
   return total;
 }
+
+/** Percorso su disco di un modello, o null se non e' un file/cartella nostro. */
+export function percorsoModello(id: string): string | null {
+  const entry = modelEntry(id);
+  if (!entry) return null;
+  if (entry.kind === "file") return join(MODELS_DIR, entry.dir, entry.file);
+  if (entry.kind === "hf-repo") return join(MODELS_DIR, entry.dir);
+  // LM Studio ha il suo archivio: non c'e' niente di nostro da cancellare.
+  return null;
+}

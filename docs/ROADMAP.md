@@ -40,7 +40,15 @@ Nell'ordine, dalla più semplice alla più delicata.
 - [ ] **DaProdCompanion** — memoria e sogni; va aggiunto `sqlite_vec` al suo pyproject
 - [ ] **DaProd IoDigitale** — l'avatar parlante, ex LeapTalk
 
-## 0.3.0 — Una cosa sola, non sette
+## 0.3.0 — Le schede diventano vetrina
+
+- [ ] **Disinstalla per scheda**: ogni scheda dice quanto occupa e si toglie da
+      sola, riprendendosi i GB. I modelli che servono anche a un'altra scheda
+      installata restano.
+- [ ] **Anteprima al passaggio del mouse**: un video corto che mostra cosa sa
+      fare quell'app, generato con l'app stessa.
+
+## 0.3.1 — Una cosa sola, non sette
 
 - [ ] `packages/ui`: colori, tipografia e componenti condivisi
 - [ ] Profilo di memoria unico — Leggero / Bilanciato / Qualità, come il

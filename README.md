@@ -4,10 +4,11 @@
 
 # DaProd Suite
 
-**Sette strumenti di intelligenza artificiale, in locale, in un solo programma.**
+**I modelli AI che valgono la pena, montati per bene, a due clic di distanza.**
 
 Musica, immagini, video, un avatar parlante e un companion che si ricorda di te.
-Tutto sul tuo computer: nessun account, nessuna API, nessun dato che esce.
+Ogni scheda è un'esperienza completa che installi, usi e disinstalli quando vuoi.
+Tutto sul tuo computer.
 
 [![versione](https://img.shields.io/badge/versione-0.0.1-7c5cff)](https://github.com/cammo22/DaProdSuite/releases)
 [![licenza](https://img.shields.io/badge/licenza-MIT-5cff9d)](LICENSE)
@@ -23,23 +24,39 @@ Tutto sul tuo computer: nessun account, nessuna API, nessun dato che esce.
 
 ---
 
-## Il problema che risolve
+## A cosa serve
 
-Ogni progetto AI locale arriva con il suo `setup.ps1`, il suo ambiente Python, la
-sua copia di PyTorch e la sua cartella di modelli. Sei progetti dopo, il disco è
-questo:
+Esce un modello nuovo ogni settimana. Leggi che fa cose incredibili, vai a
+provarlo, e ti ritrovi a clonare una repo, litigare con le versioni di CUDA,
+scaricare venti gigabyte e scoprire dopo un'ora che ti serviva un'altra versione
+di PyTorch. Quando finalmente parte, funziona da riga di comando.
 
-| | Prima | Dopo |
-|---|---|---|
-| Ambienti Python | 4 separati — torch 2.7.1, 2.11, 2.12, 2.13 | **1** |
-| Peso degli ambienti | 14,7 GB | **4,05 GB** |
-| Copie di ComfyUI | 2 | **1** |
-| Modelli duplicati | VAE e text encoder ripetuti | scaricati una volta, condivisi |
-| Modo di avviare | `.bat`, `.ps1`, pywebview, uno per progetto | un'icona |
-| Aggiornamenti | a mano, progetto per progetto | automatici |
+**DaProd Suite è una vetrina dei modelli che valgono la pena**, montati per bene,
+con tutte le loro funzioni, in un posto dove con due clic installi qualcosa che
+ti fa fare cose divertenti.
 
-La suite mette in comune quello che si può mettere in comune, e lascia diverso
-solo quello che è davvero diverso.
+Ogni scheda è **un'esperienza completa**: il modello, l'interfaccia fatta apposta
+per lui, e i suoi trucchi già configurati. La installi, la usi, e se non ti serve
+più la disinstalli e ti riprendi lo spazio. Niente ambienti da gestire, niente
+comandi, niente file di configurazione.
+
+E siccome girano tutte nello stesso posto, si parlano: il brano che generi con
+una lo apri nell'altra senza esportare niente.
+
+### Cosa c'è sotto
+
+Perché due clic bastino, la suite si prende in carico le cose noiose una volta
+sola per tutte le app:
+
+| | |
+|---|---|
+| **Un ambiente solo** | Python e PyTorch installati una volta, 4 GB invece di 14,7 sparsi in quattro copie |
+| **Modelli condivisi** | quello che serve a due app si scarica una volta |
+| **Una GPU sola** | su 8 GB ci sta un modello per volta: la suite spegne il precedente invece di farti finire in out-of-memory |
+| **Aggiornamenti** | la suite si aggiorna da sola, i modelli restano dove sono |
+| **I tuoi risultati in comune** | brani, immagini e video in una libreria che tutte le app vedono |
+
+Tutto in locale: nessun account, nessuna API, nessun dato che esce dal computer.
 
 ## Le sette app
 

@@ -16,7 +16,7 @@ import {
 } from "@daprod/ipc";
 import { appManager } from "./app-manager";
 import { libreria } from "./libreria";
-import { elencoSpazio, elimina, reset, spazioLibero } from "./spazio";
+import { disinstallaApp, elimina, reset, statoSpazio } from "./spazio";
 import { gpu } from "./gpu";
 import { runtime } from "./runtime";
 import { updater } from "./updater";
@@ -73,13 +73,13 @@ export function registerIpc(getHub: () => BrowserWindow | null): void {
 
   /* --------------------------------------------------------------- spazio */
 
-  ipcMain.handle(CHANNELS.spazioStato, () => {
-    const voci = elencoSpazio();
-    return {
-      voci,
-      occupato: voci.reduce((somma, v) => somma + v.bytes, 0),
-      libero: spazioLibero(),
-    };
+  ipcMain.handle(CHANNELS.spazioStato, () => statoSpazio());
+
+  ipcMain.handle(CHANNELS.spazioDisinstalla, async (_e, id: AppId) => {
+    await appManager.close(id);
+    const liberati = disinstallaApp(id);
+    await appManager.refreshAll();
+    return liberati;
   });
 
   ipcMain.handle(CHANNELS.spazioElimina, async (_e, id: string) => {

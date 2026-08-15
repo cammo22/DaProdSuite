@@ -74,11 +74,26 @@ export interface VoceSpazio {
   cancellabile: boolean;
 }
 
+/** Quanto occupa una scheda, e se si puo' togliere. */
+export interface SpazioApp {
+  id: AppId;
+  nome: string;
+  accent: string;
+  /** Byte dei suoi modelli presenti sul disco. */
+  bytes: number;
+  /** Di quei byte, quanti servono anche a un'altra scheda installata. */
+  condivisi: number;
+  installata: boolean;
+}
+
 export interface StatoSpazio {
-  voci: VoceSpazio[];
-  /** Totale occupato dalla suite. */
+  /** Una riga per scheda: e' cosi' che si ragiona, non per cartella. */
+  app: SpazioApp[];
+  /** Solo i modelli sopra 1 GB: sotto, l'elenco sarebbe rumore. */
+  grandi: VoceSpazio[];
+  /** Ambiente, motori, cache, log, risultati: totali, non dettagliati. */
+  sistema: VoceSpazio[];
   occupato: number;
-  /** Spazio ancora libero sul disco. */
   libero: number;
 }
 
@@ -156,6 +171,8 @@ export interface SuiteApi {
 
   spazio: {
     stato(): Promise<StatoSpazio>;
+    /** Toglie una scheda e i suoi modelli. Ritorna i byte liberati. */
+    disinstalla(id: AppId): Promise<number>;
     /** Cancella una voce. Ritorna i byte liberati. */
     elimina(id: string): Promise<number>;
     reset(cosa: CosaResettare): Promise<number>;
@@ -229,6 +246,7 @@ export const CHANNELS = {
   updateChanged: "update:changed",
 
   spazioStato: "spazio:stato",
+  spazioDisinstalla: "spazio:disinstalla",
   spazioElimina: "spazio:elimina",
   spazioReset: "spazio:reset",
 

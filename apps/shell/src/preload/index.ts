@@ -56,6 +56,7 @@ const api: SuiteApi = {
 
   spazio: {
     stato: () => ipcRenderer.invoke(CHANNELS.spazioStato),
+    disinstalla: (id: AppId) => ipcRenderer.invoke(CHANNELS.spazioDisinstalla, id),
     elimina: (id: string) => ipcRenderer.invoke(CHANNELS.spazioElimina, id),
     reset: (cosa) => ipcRenderer.invoke(CHANNELS.spazioReset, cosa),
   },
