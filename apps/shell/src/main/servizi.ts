@@ -28,6 +28,8 @@ interface Acceso {
   utenti: Set<AppId>;
   /** Condivisa fra chi apre due app insieme: un solo avvio, non due. */
   avvio: Promise<void>;
+  /** Tenuto da parte per poterlo ridare a un supervisore nuovo dopo un riavvio. */
+  onFatal: (motivo: string) => void;
 }
 
 const accesi = new Map<string, Acceso>();
@@ -72,6 +74,44 @@ export async function avvia(id: AppId, onFatal: (motivo: string) => void): Promi
     );
   }
 
+  await accendi(id, servizio, cartella, new Set([id]), onFatal);
+}
+
+/**
+ * Riavvia il motore di quest'app, se sta girando.
+ *
+ * Serve dopo aver installato un nodo custom: ComfyUI carica i nodi una volta
+ * sola, all'avvio, quindi un nodo arrivato mentre lavorava per lui non esiste.
+ * Le app che stanno usando questo motore restano segnate come sue: chi ha la
+ * finestra aperta vede il pallino tornare verde da solo dopo qualche secondo.
+ *
+ * A motore spento non fa niente, ed è giusto così: il prossimo avvio troverà il
+ * nodo al suo posto.
+ */
+export async function riavvia(id: AppId): Promise<void> {
+  const servizio = APPS[id].service;
+  if (!servizio) return;
+
+  const voce = accesi.get(servizio.id);
+  if (!voce) return;
+
+  const utenti = new Set(voce.utenti);
+  const onFatal = voce.onFatal;
+
+  accesi.delete(servizio.id);
+  await voce.supervisore.stop();
+
+  await accendi(id, servizio, join(SERVICES_DIR, servizio.id), utenti, onFatal);
+}
+
+/** Crea il supervisore, lo mette in elenco e aspetta che il motore risponda. */
+async function accendi(
+  id: AppId,
+  servizio: AppService,
+  cartella: string,
+  utenti: Set<AppId>,
+  onFatal: (motivo: string) => void,
+): Promise<void> {
   const supervisore = new ProcessSupervisor({
     name: servizio.id,
     pythonExecutable: PYTHON_EXE,
@@ -89,8 +129,9 @@ export async function avvia(id: AppId, onFatal: (motivo: string) => void): Promi
 
   const voce: Acceso = {
     supervisore,
-    utenti: new Set([id]),
+    utenti,
     avvio: supervisore.start(),
+    onFatal,
   };
   accesi.set(servizio.id, voce);
 

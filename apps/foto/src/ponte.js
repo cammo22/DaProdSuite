@@ -149,6 +149,15 @@ export const scriviMeta = (id, meta) => suite.libreria.meta(id, meta);
 export const mostraNellaCartella = (id) => suite.libreria.mostraNellaCartella(id);
 export const suLibreriaCambiata = (azione) => suite.libreria.onCambiata(azione);
 
+/* ---------------------------------------------------------------- modelli */
+
+/* Cosa c'è sul disco e cosa manca lo sa la suite, non questa pagina: qui si
+   passano solo gli id del catalogo del modello scelto. */
+export const statoModelli = (ids) => suite.modelli.stato(ids);
+export const scaricaModelli = (ids) => suite.modelli.scarica(ids);
+export const annullaScaricamento = () => suite.modelli.annulla();
+export const suAvanzamentoModelli = (azione) => suite.modelli.onAvanzamento(azione);
+
 export const mandaA = (app, id, intenzione) => suite.invia(app, id, intenzione);
 export const suConsegna = (azione) => suite.onConsegna(azione);
 

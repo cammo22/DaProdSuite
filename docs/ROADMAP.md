@@ -34,12 +34,16 @@ girano: la spunta arriva quando le hai provate a lungo tu.
 - [ ] **DaProdMusica** — primo motore su ComfyUI condiviso *(dentro, un brano
       vero generato; con lei sono entrati il supervisore collegato, la libreria
       che sa scrivere e lo schema `daprod://` per le app senza impacchettatore)*
-- [ ] **DaProdFoto** — Anima di base, FLUX.2 Klein come extra *(dentro con Anima:
-      testo→immagine e ritocco con maschera. FLUX resta fuori finché non c'è lo
-      scaricamento: vuole ComfyUI-GGUF e 12,4 GB)*
-- [x] **ComfyUI scaricato quando serve** — la versione è fissata (0.33.0), lo zip
+- [ ] **DaProdFoto** — Anima di base, FLUX.2 Klein come extra *(dentro tutte e
+      due: si sceglie il modello dal menu, e FLUX.2 si scarica da lì — 11,2 GB
+      più il nodo ComfyUI-GGUF, che adesso la suite sa installare da sola. Da
+      provare a lungo, ritocco compreso)*
+- [x] **ComfyUI scaricato quando serve** — la versione è fissata (0.33.1), lo zip
       arriva da GitHub e le sue librerie entrano nell'ambiente condiviso senza
       toccare torch. Era l'ultimo pezzo che mancava a "git clone deve bastare"
+- [x] **Il motore si aggiorna quando lo decidiamo noi** — la versione resta
+      scritta accanto al motore, così una correzione arriva anche a chi ce l'ha
+      già. I nodi custom di ComfyUI si installano allo stesso modo
 - [x] Scaricamento dei modelli con ripresa e avanzamento — *(provato: annullato a
       metà, ripreso, arrivato intero; da provare tu su una scheda intera)*
 - [ ] Procedura guidata al primo avvio: scegli le app, ti dice quanti GB

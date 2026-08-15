@@ -46,6 +46,42 @@ export interface AppState {
   error?: string;
 }
 
+/* ------------------------------------------------------------------- modelli */
+
+/**
+ * Cosa manca di un elenco di modelli, chiesto da dentro un'app aperta.
+ *
+ * Serve a chi lascia scegliere il modello nella propria interfaccia: prima di
+ * offrirlo bisogna sapere se c'è, e se non c'è quanto costa averlo.
+ */
+export interface StatoModelli {
+  /** Vero se non manca niente: né pesi né nodi del motore. */
+  pronto: boolean;
+  /** Byte ancora da scaricare. */
+  bytesMancanti: number;
+  /** Cosa manca, con l'etichetta del catalogo: è quella che si mostra. */
+  mancanti: { id: string; label: string; bytes: number }[];
+  /**
+   * Nodi custom che il motore non ha ancora. Non pesano quasi niente ma vanno
+   * detti: installarli fa ripartire il motore, e chi sta lavorando merita di
+   * saperlo prima.
+   */
+  nodiMancanti: string[];
+}
+
+/** L'avanzamento di uno scaricamento chiesto da dentro un'app. */
+export interface AvanzamentoModelli {
+  attivo: boolean;
+  /** Byte fatti e totali. `total` a zero vuol dire "non so quanto manca". */
+  done: number;
+  total: number;
+  /** Cosa sta arrivando adesso, in italiano. */
+  label: string;
+  finito?: boolean;
+  annullato?: boolean;
+  errore?: string;
+}
+
 /* ------------------------------------------------------------------- runtime */
 
 export interface RuntimeState {
@@ -232,6 +268,27 @@ export interface ApiApp {
     onCambiata(listener: (elementi: ElementoLibreria[]) => void): Unsubscribe;
   };
 
+  /**
+   * I modelli, per le app che ne lasciano scegliere più d'uno.
+   *
+   * Sta qui e non nel ponte di una singola app perché il problema non è di
+   * nessuna in particolare: DaProdFoto sceglie fra Anima e FLUX.2 Klein oggi,
+   * Cinema e Dream sceglieranno domani, e il modo di chiedere "ce l'ho? me lo
+   * scarichi?" deve essere lo stesso.
+   */
+  modelli: {
+    /** Cosa manca, di questi id del catalogo, perché il modello sia usabile. */
+    stato(ids: string[]): Promise<StatoModelli>;
+    /**
+     * Li scarica, e installa i nodi del motore che pretendono. Non aspetta: sono
+     * GB, e l'avanzamento arriva da `onAvanzamento`.
+     */
+    scarica(ids: string[]): Promise<void>;
+    /** Ferma lo scaricamento. Quello che è arrivato resta e riprende dopo. */
+    annulla(): Promise<void>;
+    onAvanzamento(listener: (stato: AvanzamentoModelli) => void): Unsubscribe;
+  };
+
   /** Manda un elemento a un'altra app, aprendola se serve. */
   invia(destinazione: AppId, elementoId: string, intenzione: Intenzione): Promise<void>;
 
@@ -276,6 +333,11 @@ export const CHANNELS = {
   spazioDisinstalla: "spazio:disinstalla",
   spazioElimina: "spazio:elimina",
   spazioReset: "spazio:reset",
+
+  modelliStato: "modelli:stato",
+  modelliScarica: "modelli:scarica",
+  modelliAnnulla: "modelli:annulla",
+  modelliAvanzamento: "modelli:avanzamento",
 
   libreriaElenco: "libreria:elenco",
   libreriaMostra: "libreria:mostra",

@@ -5,7 +5,12 @@ export {
   type InstallOptions,
   type InstallProgress,
 } from "./install";
-export { ensureUv, type UvOptions } from "./uv";
+export {
+  ensureUv,
+  installaRequisiti,
+  type InstallaRequisitiOptions,
+  type UvOptions,
+} from "./uv";
 export {
   ScaricamentoAnnullato,
   scaricaFile,
@@ -16,6 +21,19 @@ export { pesoCartella, scaricaRepo, type ScaricaRepoOptions } from "./hf";
 export {
   COMFY_VERSION,
   installaMotore,
+  motoreAggiornato,
   motorePresente,
+  versioneMotore,
   type InstallaMotoreOptions,
 } from "./motore";
+export {
+  NODI,
+  cartellaNodi,
+  installaNodo,
+  nodiMancanti,
+  nodoPresente,
+  type InstallaNodoOptions,
+  type NodoCustom,
+} from "./nodi";
+export { INTOCCABILI, filtraRequisiti, nomePacchetto } from "./requisiti";
+export { scaricaEScompatta, type ScompattaOptions } from "./zip";

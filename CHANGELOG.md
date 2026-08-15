@@ -12,6 +12,39 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ## Non ancora pubblicato
 
+### In DaProdFoto si sceglie il modello
+
+- **Due modelli, non uno.** Sopra "Estetica" c'è un menu: **Anima**, veloce e già
+  sul disco, e **FLUX.2 Klein**, che capisce descrizioni lunghe e articolate.
+  Vale sia per generare che per il ritocco.
+- **Se il modello non ce l'hai, lo scarichi da lì.** Il riquadro dice cosa manca
+  e quanto pesa (11,2 GB per FLUX.2), lo scarica con la sua barra e si può
+  annullare a metà: quello che è arrivato resta. Fino ad allora **Genera** è
+  spento, invece di far partire un lavoro che darebbe solo un errore del motore.
+- **I nodi che mancano al motore se li prende la suite.** FLUX.2 in GGUF vuole un
+  pezzo di ComfyUI che di suo non c'è: adesso arriva da solo insieme ai pesi, e
+  il motore riparte da sé per caricarlo. Prima era l'unica cosa che si doveva
+  ancora mettere a mano.
+- I cursori si spostano da soli sul punto di lavoro del modello scelto — dieci
+  passi per Anima, venti per FLUX.2 — perché non sono lo stesso numero regolato
+  diversamente.
+
+### Aggiustato: il brano che moriva a metà
+
+- **Era un difetto del motore, e ora è corretto alla fonte.** L'errore
+  `'RVQDepthDecoder' object has no attribute '_v_block'` che ammazzava i brani
+  veniva da ComfyUI 0.33.0, e capitava proprio nel modo in cui la suite avvia il
+  motore. La versione 0.33.1 lo corregge; la suite adesso **si accorge di avere
+  un motore vecchio** e lo aggiorna premendo Installa sulla scheda.
+- Da qui in poi una correzione del motore arriva anche a chi ce l'ha già
+  installato: prima la versione fissata valeva solo per chi installava da zero.
+- **Una scheda non dice più "Pronta" se il motore manca.** Prima si premeva Apri
+  e si aspettavano tre minuti perché fallisse da solo.
+- **L'installazione non si ferma più in fondo per colpa dell'antivirus.**
+  Aggiornando i pacchetti Python capitava un errore incomprensibile (`uv è uscito
+  con codice 2`) causato da file di cache trattenuti: adesso vengono sgombrati e
+  l'installazione prosegue.
+
 ### Si scarica tutto da solo
 
 - **"Installa" su una scheda adesso installa davvero.** Prende l'ambiente Python

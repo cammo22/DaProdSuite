@@ -57,6 +57,12 @@
 
     <div class="panel">
       <h2>Resa <span class="right"><button class="mini" id="toggleAdv">avanzati</button></span></h2>
+      <div class="field">
+        <label>Modello</label>
+        <select id="modello"></select>
+        <div class="hint" id="rigaModello"></div>
+      </div>
+      <div id="avvisoModello" class="manca" hidden></div>
       <div class="row">
         <div class="field"><label>Estetica</label><select id="estetica"></select></div>
         <div class="field">
@@ -91,8 +97,7 @@
         <div class="field" style="margin-top:14px">
           <label>Cosa non vuoi vedere</label>
           <textarea id="negativo" rows="2"></textarea>
-          <div class="hint">Anima lavora a CFG 1,0, e a quel valore il negativo viene ignorato dal
-            modello. Conta solo se alzi il CFG qui sopra.</div>
+          <div class="hint" id="notaNegativo"></div>
         </div>
       </div>
     </div>

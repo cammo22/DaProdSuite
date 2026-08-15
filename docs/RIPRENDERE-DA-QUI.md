@@ -1,6 +1,6 @@
 # Riprendere da qui
 
-Documento di passaggio fra una sessione e l'altra. Aggiornato il 15 agosto 2026.
+Documento di passaggio fra una sessione e l'altra. Aggiornato il 16 agosto 2026.
 
 **Se stai leggendo questo all'inizio di una conversazione nuova**: leggi anche
 [COME-SI-LAVORA.md](COME-SI-LAVORA.md) e [ROADMAP.md](ROADMAP.md), poi vai al
@@ -26,6 +26,9 @@ Repo pubblico: **https://github.com/cammo22/DaProdSuite**
 | **DaProdMusica nella suite** | fatto, brano generato dentro la suite, **da provare a lungo** |
 | **DaProdFoto nella suite** | fatto, immagine generata dall'app, **ritocco da provare** |
 | **Scaricamento automatico di modelli e motore** | fatto e provato, **da provare tu su una scheda intera** |
+| **Scelta del modello in Foto + FLUX.2 Klein** | fatto, **da provare tu**: nodo e motore provati, un'immagine FLUX no |
+| **Nodi custom del motore installati dalla suite** | fatto e provato (ComfyUI-GGUF) |
+| **Motore aggiornabile: ComfyUI 0.33.1** | fatto e provato, corregge il difetto che ammazzava i brani |
 | Procedura guidata al primo avvio | **da fare** |
 | Dream, Companion, IoDigitale | **da migrare** |
 
@@ -87,10 +90,11 @@ In ordine di quanto sono grosse. Le prime tre sono già fatte.
       arriva da `libreria.trova(id)`, quindi il sospetto è un id che non combacia
       più dopo un aggiornamento della libreria.
 
-- [ ] **In Foto si sceglie il modello**, e se non ce l'hai lo scarichi da lì.
-      Oggi Anima è cablata in `apps/foto/src/grafi.js`. Vanno aggiunti almeno
-      **FLUX.2 Klein** (vuole il nodo GGUF, vedi sotto) e **SD-Turbo**, che è già
-      nel catalogo perché lo usa DaProdDream. Dipende dallo scaricamento.
+- [x] **In Foto si sceglie il modello**, e se non ce l'hai lo scarichi da lì.
+      Dentro **Anima** e **FLUX.2 Klein**. SD-Turbo no, e non per dimenticanza:
+      nel catalogo è uno snapshot diffusers per DaProdDream, che i nodi di serie
+      del motore non caricano — servirebbe il `DiffusersLoader`, che è deprecato,
+      o un checkpoint diverso. Si rivede quando tocca a Dream.
 
 - [ ] **Il ritocco con Anima: funziona davvero?** FLUX.2 Klein l'inpainting lo
       fa (era la seconda scheda di Flux Klein Studio). Anima è un modello turbo
@@ -173,20 +177,22 @@ prendono solo la pipeline fp16, che è quello che serviva a Dream.
 In ordine di quanto fanno male. Le prime due sono fatte.
 
 - [x] **Il brano moriva con `'RVQDepthDecoder' object has no attribute
-      '_v_block'`**, a volte dopo pochi secondi, a volte dopo quattro minuti. Non
-      era un difetto di ComfyUI da segnalare: era la **copertina generata per
-      prima**, che lasciava Anima nella VRAM e faceva caricare *in parte* il text
-      encoder musicale. Ordine invertito e VRAM svuotata prima del brano.
+      '_v_block'`**, a volte dopo pochi secondi, a volte dopo quattro minuti.
+      **Era un difetto di ComfyUI, e ci eravamo sbagliati**: la copertina
+      generata per prima lo faceva comparire più spesso, ma la causa era loro —
+      la 0.33.0 provava a catturare un CUDA graph su un modulo che con
+      `--disable-dynamic-vram` quell'attributo non ce l'ha. La 0.33.1 corregge
+      quella riga, e la suite adesso ci sta sopra (vedi
+      [VELOCITA-MUSICA.md](VELOCITA-MUSICA.md) § 4). L'ordine invertito resta:
+      svuotare la VRAM prima del brano è giusto comunque.
 - [x] **Il ritocco non mostrava il risultato nella sua scheda** (compariva in
       Crea e in galleria). Adesso il risultato prende il posto dell'originale
       sulla tela e ci si può dipingere sopra di nuovo.
 
-- [ ] **Selettore del modello in DaProdFoto**, con dentro **FLUX.2 Klein**. È la
-      cosa che chiede da tre giri. Serve: il nodo **ComfyUI-GGUF** (che il motore
-      non ha, e va installato come si installa ComfyUI — vale anche per tutti gli
-      altri nodi custom che usa), i 12,4 GB di pesi (già nel catalogo, e adesso si
-      scaricano da soli), e il menu in `apps/foto/src/grafi.js`, dove oggi
-      `MODELLO` è una costante sola con già scritto sopra come diventerà un elenco.
+- [x] **Selettore del modello in DaProdFoto**, con dentro **FLUX.2 Klein**.
+      Fatto: il nodo ComfyUI-GGUF se lo installa la suite, i pesi (11,2 GB, non
+      12,4: i byte veri sono più bassi) si scaricano dal riquadro sotto il menu, e
+      `grafi.js` adesso è un catalogo di modelli con i propri grafi.
 
 - [ ] **La copertina va salvata su disco appena è generata.** Oggi nasce come
       `PreviewImage`, quindi finisce nei temporanei, e sopravvive solo se la
@@ -201,50 +207,86 @@ In ordine di quanto fanno male. Le prime due sono fatte.
       raccoglie tutte, e il ponte della suite può servirle a qualunque finestra —
       è una cosa da fare **una volta per tutte le app**, non sei volte.
 
-- [ ] **MiniMax Music 3 "il top del top".** Vedi il paragrafo sulla velocità qui
-      sotto: il collo di bottiglia è misurato, ed è la parte autoregressiva.
+- [ ] **MiniMax Music 3 "il top del top".** Il collo di bottiglia è misurato ed è
+      la parte autoregressiva: 76% del tempo. Il 16 agosto Cammo ha portato il
+      changelog di **WanGP**, che dice di essere tre volte più veloce con un
+      "vllm engine". Letto il loro codice e il nostro motore, il quadro è in
+      **[VELOCITA-MUSICA.md](VELOCITA-MUSICA.md)**, e le prove da fare sono lì in
+      fondo, dalla più economica. Le prime due non costano una riga di codice:
+      rimisurare sulla 0.33.1, e riprovare senza `--disable-dynamic-vram`.
 
-## Dove se ne va il tempo di un brano
+## Come la suite installa quello che non è suo
 
-Misurato su una generazione vera da 243,66 secondi, leggendo `logs/comfy.log`:
+Tre cose non stanno nel repo e arrivano da fuori, e adesso funzionano tutte e tre
+allo stesso modo: **zip di una versione fissata**, aperto in una cartella
+provvisoria, spostato al suo posto solo se è tutto lì, e la versione scritta
+accanto **come ultimo passo**.
 
-| Fase | Tempo | Quota |
+| Cosa | Dove | Chi |
 |---|---|---|
-| **AR sampling** — 1001 token, uno alla volta, a 5,5 token/s | **185 s** | **76%** |
-| DiT — 30 passi a 1,48 s/passo | 44 s | 18% |
-| Caricamenti + VAE | ~15 s | 6% |
+| ComfyUI | `engines/ComfyUI` | `packages/runtime/src/motore.ts` |
+| Nodi custom (ComfyUI-GGUF) | `engines/custom_nodes/<nome>` | `packages/runtime/src/nodi.ts` |
+| Pesi | `models/...` | `scarica.ts` e `hf.ts` |
 
-**Il cursore "passi" governa il 18% del tempo.** È il posto dove si guarda per
-istinto ed è quello sbagliato: i tre quarti se ne vanno nel modello linguistico
-da 7B che genera i token audio uno per volta, e quella parte scala con la
-**durata del brano**, non con i passi.
+Tre conseguenze che valgono la pena di ricordare:
 
-E 5,5 token/s è nove volte sotto quello che la banda di memoria della 4060
-permetterebbe per un modello da 5,5 GB: non è la banda, è costo per passo — il
-sospetto è la dequantizzazione a 4 bit ripetuta a ogni token, lo stesso fenomeno
-che il README già descrive per i GGUF. **La quantizzazione che fa stare tutto in
-8 GB è probabilmente la stessa cosa che rallenta.**
+1. **La versione scritta accanto serve a farla arrivare.** Prima, fissare
+   `COMFY_VERSION` valeva solo per chi installava da zero: chi aveva già il
+   motore si teneva il suo per sempre. Adesso `.daprod-versione` dice cosa c'è, e
+   una scheda con un motore vecchio torna "da installare".
+2. **I nodi di terzi stanno fuori dalla cartella di ComfyUI** — sopravvivono a un
+   suo aggiornamento, e `services/comfy/avvio.py` li dichiara al motore come già
+   faceva coi nostri. La cartella va creata anche vuota: ComfyUI fa `os.listdir`
+   su ogni percorso di nodi che gli diamo e su una cartella che non c'è muore in
+   avvio.
+3. **Un nodo nuovo il motore lo carica solo all'avvio**, quindi se entra mentre
+   sta girando `servizi.riavvia()` lo fa ripartire. È la cosa che rende possibile
+   scegliere FLUX.2 Klein senza chiudere l'app.
 
-Cosa non stiamo usando, verificato nei flag di ComfyUI 0.33 e nel log:
+**Il modello dice di quali nodi ha bisogno**, non l'app: in `manifest/models.json`
+c'è `"nodi": ["comfyui-gguf"]` accanto ai due file GGUF. Quando FLUX.2 lo vorrà
+anche Cinema non ci sarà niente da aggiungere da nessuna parte.
 
-- l'attenzione è quella di serie (`Using pytorch attention`): `--use-sage-attention` c'è e non è accesa;
-- `--fast` (`fp16_accumulation`, `cublas_ops`, `autotune`): niente acceso;
-- i grafi CUDA invece sono già attivi (esiste solo `--disable-cuda-graphs`).
+## Com'è entrata la scelta del modello in Foto
 
-La prova pulita è a portata: stesso brano, stesso seed, stessa durata, e il log
-scrive già da solo i token/s. Da fare come **interruttore** ("Velocità: normale /
-spinta"), non come scelta cablata.
+Quattro pezzi, e tre valgono per tutte le app.
+
+**`grafi.js` è diventato un catalogo.** Ogni modello si porta i propri grafi
+invece di riempire di "se" un grafo solo, perché Anima e FLUX.2 non si somigliano
+nemmeno nei nodi: Anima ha `KSampler` e nodi core, FLUX.2 ha `UnetLoaderGGUF` +
+`CFGGuider` + `SamplerCustomAdvanced` + `Flux2Scheduler`, e per il ritocco taglia
+lo schedule con `SplitSigmasDenoise` invece di passare un `denoise`. Ogni voce
+dichiara anche il proprio punto di lavoro (passi, CFG, se il negativo conta), e i
+cursori si spostano da soli quando cambi modello.
+
+**`daprodSuite.modelli`, non `daprodFoto.modelli`.** Chiedere "ce l'ho? me lo
+scarichi?" è nel ponte comune a tutte le app: Cinema e Dream sceglieranno fra più
+modelli anche loro. La pagina non indovina mai da sé quali file ci sono — passa
+gli id del catalogo e la suite risponde, altrimenti sarebbe la seconda verità sui
+modelli, cioè quella sbagliata.
+
+**`installaModelli` è `installaApp` senza la scheda.** Stessa coda (nodi prima,
+pesi poi, uno alla volta, byte non file), ma non tocca lo stato della scheda
+nell'hub — l'app è aperta e la stai usando — e l'avanzamento va alla finestra.
+
+**A modello mancante "Genera" è spento.** Meglio un bottone spento che uno che dà
+un errore del motore in inglese.
 
 ## Il prossimo passo
 
-Adesso che i modelli si scaricano da soli, **FLUX.2 Klein in Foto si può fare**:
-era bloccato solo da questo. Servono il nodo ComfyUI-GGUF (che il motore non ha,
-e va installato come si installa ComfyUI) e la scelta del modello nell'interfaccia
-di Foto, con SD-Turbo che è già nel catalogo.
+**Prima di tutto: provare FLUX.2 Klein davvero.** Il codice c'è e i pezzi sono
+provati uno per uno — il nodo si installa, il motore lo carica, il grafo è quello
+che funzionava in Flux Klein Studio — ma **un'immagine con FLUX in questa suite
+non l'ha ancora fatta nessuno**. Sono 11,2 GB da scaricare e una generazione da
+provare, e con 8 GB di VRAM il modello è al limite: è lì che si vede se regge.
 
-Restano aperte anche le altre cose che avevi chiesto il 15: i pannelli veri per
-Risultati / Modelli / Log, "Mostra nella cartella" che dà errore, e il ritocco
-con Anima da verificare.
+Subito dopo, le due misure gratis del paragrafo sulla velocità
+([VELOCITA-MUSICA.md](VELOCITA-MUSICA.md) § 5): rimisurare un brano sulla 0.33.1,
+e riprovare senza `--disable-dynamic-vram`.
+
+Restano aperte le altre cose chieste il 15: i pannelli veri per Risultati /
+Modelli / Log, "Mostra nella cartella" che dà errore, la copertina salvata subito
+su disco, e il terminale dentro ogni app.
 
 Poi la procedura guidata al primo avvio, e tre app da migrare: **Dream**,
 **Companion**, **IoDigitale**.
@@ -311,6 +353,10 @@ scoprire un errore di sintassi solo aprendo la finestra:
 
 - `node packages/runtime/scripts/prova-scaricamento.cjs` — scarica per davvero il
   VAE di Anima in una cartella temporanea, lo interrompe a 20 MB e lo riprende.
+- `node packages/runtime/scripts/prova-nodo.cjs` — installa ComfyUI-GGUF in una
+  cartella temporanea: controlla che lo zip del commit fissato esista ancora, che
+  il nodo finisca dove il motore lo cerca, e che premere due volte non rifaccia
+  niente.
 - `node apps/shell/scripts/prova-scaricamento-app.cjs` — preme "Installa" su
   DaProdMusica per finta: annulla a metà, ripreme, e controlla stati, byte e
   file. Fa scaricare solo i 216 MB del VAE di MiniMax, perché il resto entra
@@ -324,6 +370,13 @@ suite scrive in una cartella di prova invece che nella tua.
 lanci una seconda, quella nuova esce subito e mette in primo piano la vecchia. Se
 stai provando del codice appena compilato e non cambia niente, è perché stai
 guardando l'istanza di prima.
+
+**L'antivirus fa fallire `uv pip install`.** Su questa macchina capita che uv non
+riesca a togliere una `__pycache__` appena scritta e si fermi con "reparse point"
+(errore 4395) — succede aggiornando pacchetti, cioè proprio quando si installa il
+motore. Non è un caso isolato: è capitato tre volte su tre, su pacchetti diversi.
+`installaRequisiti` in `uv.ts` sgombra le `__pycache__` e riprova, e con quello
+passa. Se un giorno ricompare, il primo sospetto è sempre lo stesso.
 
 **Un ComfyUI acceso a mano blocca tutto.** La porta 8188 è fissa nel catalogo:
 se è occupata, `servizi.ts` lo dice subito invece di far aspettare tre minuti.
@@ -361,7 +414,9 @@ che passava da solo al brano dopo.
 | Modelli | spostati dai vecchi progetti; MinimaxMusica e AvatarParlante ora sono archivio |
 | Mage-VL | **scartato**: non genera immagini, le comprende |
 | ComfyUI | scaricato dalla suite, non nel repo: è GPL-3.0 e la suite è MIT |
-| ComfyUI | versione **fissata** (0.33.0) in `packages/runtime/src/motore.ts`: si aggiorna quando lo decidiamo noi e riproviamo i motori, non da sé |
+| ComfyUI | versione **fissata** (0.33.1) in `packages/runtime/src/motore.ts`: si aggiorna quando lo decidiamo noi e riproviamo i motori, non da sé |
+| Nodi custom | stessa regola e stesso posto (`nodi.ts`), commit fissato, fuori dalla cartella del motore |
+| WanGP | **non si copia il loro codice**: licenza propria, non libera. Si prende il metodo, che è pubblico. Vedi [VELOCITA-MUSICA.md](VELOCITA-MUSICA.md) § 2 |
 | huggingface-hub | tetto a `<1.0`, perché lo pretende `transformers`. Niente comando `hf`: si usa `snapshot_download` |
 | Copertine | generate con `PreviewImage`, quindi nei temporanei: se andassero in output la libreria si riempirebbe di copertine sciolte |
 | Lettore di Musica | a fine brano si ferma, non passa al successivo |
@@ -371,9 +426,12 @@ che passava da solo al brano dopo.
 - **DaProdMusica**: un brano vero l'ha già fatto, con copertina, dentro la suite.
   Restano da provare a lungo la libreria (rinomina, copertina da file, elimina),
   la scheda Immagini e "apri nel Visualizer".
-- **DaProdFoto**: un'immagine l'ha già fatta. Resta da provare il **ritocco** —
-  è il pezzo nuovo e non l'ha ancora visto nessuno girare — e il giro completo
-  "genero un'immagine qui, la mando a Musica come copertina di un brano".
+- **DaProdFoto**: un'immagine con Anima l'ha già fatta. Restano da provare il
+  **ritocco**, il giro completo "genero un'immagine qui, la mando a Musica come
+  copertina di un brano", e soprattutto **FLUX.2 Klein**: scaricarlo dal menu
+  (11,2 GB, il motore riparte da solo per prendersi il nodo) e generare. Il grafo
+  è quello collaudato in Flux Klein Studio, ma in questa suite non è mai stato
+  eseguito.
 - **Il Visualizer**: aperto dalla suite, con il pannello "Brani generati". Va
   provato — soprattutto se "Ascolta" fa partire davvero il brano.
 - **Lo scaricamento**: provato a fondo sui 216 MB del VAE di MiniMax, annullato e

@@ -2,7 +2,8 @@
 
 import { el, escapeHtml, legaValore, mostraErrore, nascondiErrore, rnd } from "./dom.js";
 import { ESTETICHE, NEGATIVO, PROPOSTE } from "./dati/estetiche.js";
-import { MODELLO, componiPrompt, grafoImmagine } from "./grafi.js";
+import { componiPrompt, grafoImmagine } from "./grafi.js";
+import { modelloCorrente } from "./scelta-modello.js";
 import { aggiungiLavoro } from "./coda.js";
 import { inInglese } from "./lingua.js";
 import * as ponte from "./ponte.js";
@@ -58,6 +59,7 @@ export function collegaCrea() {
     // non sono otto traduzioni diverse, e devono partire dallo stesso inglese.
     const inglese = await inInglese(p.testo, el.tradottoCrea);
 
+    const m = modelloCorrente();
     const quante = Math.max(1, Math.min(8, parseInt(el.quante.value) || 1));
     for (let i = 0; i < quante; i++) {
       // Dalla seconda in poi il seed cambia comunque: otto copie della stessa
@@ -66,9 +68,9 @@ export function collegaCrea() {
       const parametri = { ...leggiModulo(), prompt: componiPrompt(inglese, p.estetica) };
 
       try {
-        const id = await ponte.invia(grafoImmagine(parametri));
+        const id = await ponte.invia(grafoImmagine(m, parametri));
         aggiungiLavoro(id, p.testo, {
-          modello: MODELLO.nome,
+          modello: m.nome,
           testo: p.testo,
           estetica: p.estetica,
           prompt: parametri.prompt,

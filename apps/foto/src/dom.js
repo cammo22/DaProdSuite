@@ -5,7 +5,8 @@ export const $ = (id) => document.getElementById(id);
 export const el = {};
 for (const chiave of [
   "prompt", "proposte", "estetica", "formato", "quante", "passi", "cfg", "seed",
-  "seedCasuale", "negativo", "dado", "toggleAdv", "avanzati", "genera", "errore",
+  "seedCasuale", "negativo", "notaNegativo", "dado", "toggleAdv", "avanzati", "genera", "errore",
+  "modello", "rigaModello", "avvisoModello",
   "sessione", "stop", "svuota", "mods", "dot", "statusTxt", "navGal",
   "areaTela", "nessunaImmagine", "comandiPennello", "pennello", "pennelloVal",
   "scegliFile", "pulisciMaschera", "sceltaFile", "promptRitocco", "denoise",

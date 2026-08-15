@@ -18,10 +18,12 @@ import {
   type Consegna,
   type Intenzione,
 } from "@daprod/ipc";
+import { motoreAggiornato } from "@daprod/runtime";
 import { libreria } from "./libreria";
 import { gpu } from "./gpu";
 import { runtime } from "./runtime";
 import { missingModelsGb } from "./models";
+import { ENGINES_DIR } from "./paths";
 import * as servizi from "./servizi";
 import * as visualizer from "./apps/visualizer";
 import * as musica from "./apps/musica";
@@ -116,8 +118,15 @@ class AppManager extends EventEmitter {
     }
 
     const missingGb = await missingModelsGb(modelliRichiesti(id));
+    // Un'app che guida un motore di terzi non è pronta finché quel motore non
+    // c'è **nella versione che abbiamo provato**. Prima bastavano i modelli: la
+    // scheda diceva "pronta", si premeva Apri e si aspettavano tre minuti perché
+    // un motore mancante o vecchio se ne accorgesse da solo.
+    const motoreOk =
+      APPS[id].service?.engine !== "ComfyUI" || motoreAggiornato(ENGINES_DIR);
+
     this.patch(id, {
-      status: runtimePronto && missingGb === 0 ? "pronta" : "da-installare",
+      status: runtimePronto && missingGb === 0 && motoreOk ? "pronta" : "da-installare",
       missingGb,
       error: undefined,
       progress: undefined,

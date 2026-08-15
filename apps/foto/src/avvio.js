@@ -10,6 +10,7 @@ import { ascolta } from "./bus.js";
 import { collegaComandiCoda, messaggioDalMotore, riallinea } from "./coda.js";
 import { collegaCrea } from "./crea.js";
 import { collegaRitocco } from "./ritocco.js";
+import { collegaScelta } from "./scelta-modello.js";
 import { aggiornaGalleria, collegaGalleria } from "./galleria.js";
 import { collegaModelli } from "./modelli.js";
 import { collegaLente } from "./lente.js";
@@ -26,6 +27,10 @@ suApertura("galleria", () => void aggiornaGalleria());
 collegaLente();
 collegaCrea();
 collegaRitocco();
+// Dopo Crea e Ritocco: la scelta del modello sposta i cursori dei passi e del
+// CFG sul punto di lavoro del modello, e le etichette accanto ai cursori
+// esistono solo dopo che quei due si sono collegati.
+collegaScelta();
 collegaGalleria();
 collegaComandiCoda();
 collegaModelli();

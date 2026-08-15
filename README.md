@@ -77,7 +77,9 @@ Tutto in locale: nessun account, nessuna API, nessun dato che esce dal computer.
 > Guscio, hub, installer, aggiornamenti automatici, arbitro della GPU e ambiente
 > Python condiviso: **fatti e provati**. **Visualizer, Musica e Foto** sono dentro
 > la suite e funzionano. Premere "Installa" su una scheda adesso scarica davvero
-> tutto quello che le serve, riprendendo da dove si era fermato se la rete cade.
+> tutto quello che le serve — motore compreso — riprendendo da dove si era
+> fermato se la rete cade. In DaProdFoto si sceglie **con quale modello**
+> generare, e quello che non hai te lo scarichi da lì.
 > Le altre quattro app esistono come progetti funzionanti e vengono migrate una
 > alla volta, ognuna provata prima di passare alla successiva: nell'hub le schede
 > non ancora migrate dicono «In arrivo», e lo dicono sul serio.

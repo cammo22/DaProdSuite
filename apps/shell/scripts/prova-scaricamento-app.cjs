@@ -11,9 +11,10 @@
  * scriva in una cartella di prova invece che nella tua.
  *
  * Dentro quella cartella entrano come giunzioni l'ambiente Python, i motori e i
- * modelli grossi che hai già: così non si riscaricano 8 GB per provare. L'unica
- * cartella davvero vuota è `vae`, e quindi l'unica cosa che deve arrivare dalla
- * rete sono i 216 MB del VAE di MiniMax.
+ * modelli grossi che hai già: così non si riscaricano 8 GB per provare. Le sole
+ * cartelle davvero vuote sono `vae` e quella del traduttore, e quindi l'unica
+ * cosa che deve arrivare dalla rete sono i 216 MB del VAE di MiniMax e i 332 del
+ * traduttore.
  *
  * Serve un ambiente della suite già installato e i modelli di DaProdMusica al
  * loro posto: è una prova da fare sulla macchina di sviluppo, non su una pulita.
@@ -32,6 +33,19 @@ const OUT = resolve(__dirname, "..", "out", "main");
 /** Il VAE di MiniMax: il più piccolo dei modelli di Musica. */
 const VAE = "minimax_music3_dav.safetensors";
 const BYTE_VAE = 216696128;
+
+/**
+ * Quanto deve dire la scheda che le manca, preso dal catalogo e non scritto a
+ * mano: sono i due modelli che nella radice di prova non arrivano da una
+ * giunzione. Contarli qui vuol dire che aggiungere un modello comune alla suite
+ * non fa fallire questa prova per un numero rimasto indietro.
+ */
+const CATALOGO = require("../../../manifest/models.json").models;
+const GB_ATTESI = Number(
+  ((CATALOGO["minimax-music3-vae"].bytes + CATALOGO["traduttore-it-en"].bytes) / 1024 ** 3).toFixed(
+    1,
+  ),
+);
 
 /* --- radice finta ---------------------------------------------------------- */
 
@@ -157,7 +171,11 @@ async function provaAnnullamento() {
     stato().status,
   );
   esito(stato().progress === undefined, "la barra sparisce");
-  esito(stato().missingGb === 0.2, "e ridice quanto manca", `${stato().missingGb} GB`);
+  esito(
+    stato().missingGb === GB_ATTESI,
+    "e ridice quanto manca",
+    `${stato().missingGb} GB, attesi ${GB_ATTESI}`,
+  );
 
   return { aChePunto, avanzo };
 }

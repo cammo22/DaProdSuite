@@ -13,6 +13,7 @@ import {
   CHANNELS,
   type ApiApp,
   type AppId,
+  type AvanzamentoModelli,
   type Consegna,
   type ElementoLibreria,
   type FiltroLibreria,
@@ -42,6 +43,17 @@ export function esponiApiApp(io: AppId): void {
       elimina: (id: string) => ipcRenderer.invoke(CHANNELS.libreriaElimina, id),
       onCambiata: (listener) =>
         subscribe<ElementoLibreria[]>(CHANNELS.libreriaCambiata, listener),
+    },
+
+    // L'id dell'app lo mette il preload, non la pagina: il main deve sapere per
+    // chi sta scaricando (è il suo motore che poi riavvia) e non può fidarsi di
+    // un id che arriva dal renderer.
+    modelli: {
+      stato: (ids: string[]) => ipcRenderer.invoke(CHANNELS.modelliStato, ids),
+      scarica: (ids: string[]) => ipcRenderer.invoke(CHANNELS.modelliScarica, io, ids),
+      annulla: () => ipcRenderer.invoke(CHANNELS.modelliAnnulla, io),
+      onAvanzamento: (listener) =>
+        subscribe<AvanzamentoModelli>(CHANNELS.modelliAvanzamento, listener),
     },
 
     invia: (destinazione: AppId, elementoId: string, intenzione: Intenzione) =>

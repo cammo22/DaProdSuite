@@ -12,7 +12,7 @@
  */
 
 import { existsSync } from "node:fs";
-import { mkdir, rm, writeFile } from "node:fs/promises";
+import { mkdir, readdir, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { capture, run } from "./exec";
 
@@ -27,6 +27,87 @@ export interface UvOptions {
   /** Dove mettere la copia privata se serve scaricarla. */
   toolsDir: string;
   onLine?: (line: string) => void;
+}
+
+export interface InstallaRequisitiOptions {
+  /** Percorso di uv, da `ensureUv`. */
+  uv: string;
+  /** Cartella del venv condiviso. */
+  runtimeDir: string;
+  /** File dei requisiti già scritto da noi. */
+  requisiti: string;
+  timeoutMs?: number;
+  segnale?: AbortSignal;
+  onLine?: (riga: string) => void;
+}
+
+/**
+ * `uv pip install -r`, con un secondo tentativo a `__pycache__` sgombre.
+ *
+ * Aggiornare un pacchetto vuol dire prima togliere quello vecchio, e su Windows
+ * togliere le sue `__pycache__` a volte fallisce con "reparse point" (errore
+ * 4395): sono file appena scritti da Python che il filtro dell'antivirus sta
+ * ancora guardando. Le stesse cartelle si cancellano benissimo un attimo dopo,
+ * e infatti sgombrarle noi e riprovare fa passare l'installazione.
+ *
+ * Sembra un dettaglio e non lo è: senza, l'installazione del motore si ferma in
+ * fondo — dopo aver scaricato tutto — per un motivo che con i pacchetti non
+ * c'entra niente, e all'utente resta un "uv è uscito con codice 2".
+ *
+ * I `.pyc` non sono un danno da riparare: Python li riscrive da solo la prima
+ * volta che quel modulo serve.
+ */
+export async function installaRequisiti(options: InstallaRequisitiOptions): Promise<void> {
+  const { uv, runtimeDir, requisiti, timeoutMs, segnale, onLine } = options;
+  const argomenti = [
+    "pip",
+    "install",
+    "--python",
+    join(runtimeDir, "Scripts", "python.exe"),
+    "-r",
+    requisiti,
+  ];
+
+  try {
+    await run(uv, argomenti, { segnale, onLine: (riga) => onLine?.(riga), timeoutMs });
+  } catch (err) {
+    if (segnale?.aborted) throw err;
+    onLine?.(
+      `Installazione non riuscita al primo colpo (${
+        err instanceof Error ? err.message : String(err)
+      }): sgombro le cache di Python e riprovo.`,
+    );
+    const tolte = await svuotaPycache(join(runtimeDir, "Lib", "site-packages"));
+    onLine?.(`Tolte ${tolte} cartelle __pycache__.`);
+    await run(uv, argomenti, { segnale, onLine: (riga) => onLine?.(riga), timeoutMs });
+  }
+}
+
+/** Cancella tutte le `__pycache__` sotto una cartella. Torna quante ne ha tolte. */
+async function svuotaPycache(radice: string): Promise<number> {
+  let tolte = 0;
+  let voci;
+  try {
+    voci = await readdir(radice, { withFileTypes: true });
+  } catch {
+    return 0;
+  }
+
+  for (const voce of voci) {
+    if (!voce.isDirectory()) continue;
+    const percorso = join(radice, voce.name);
+    if (voce.name === "__pycache__") {
+      // Se anche a noi resiste, pazienza: l'importante è averci provato prima
+      // di rilanciare uv, non fare pulizia perfetta.
+      await rm(percorso, { recursive: true, force: true }).then(
+        () => tolte++,
+        () => {},
+      );
+    } else {
+      tolte += await svuotaPycache(percorso);
+    }
+  }
+  return tolte;
 }
 
 /** Restituisce il percorso di un `uv` utilizzabile, scaricandolo se manca. */

@@ -18,7 +18,11 @@
     "'bytes' NON è una stima: per i file è il Content-Length dell'URL, per i repo",
     "la somma dei file dell'API di HuggingFace filtrata su include/exclude. Deve",
     "essere esatto perché è così che si riconosce uno scaricamento finito da uno",
-    "interrotto (models.ts, isModelPresent)."
+    "interrotto (models.ts, isModelPresent).",
+    "",
+    "'nodi' elenca i nodi custom che il motore deve avere per caricare quel",
+    "modello (gli id di packages/runtime/src/nodi.ts). Si installano insieme ai",
+    "pesi: scaricare 12 GB di GGUF senza il nodo che li legge non serve a niente."
   ],
   "version": 1,
   "models": {
@@ -75,9 +79,11 @@
     "flux2-klein-q4ks": {
       "label": "FLUX.2 Klein 9B — Q4_K_S (consigliato su 8 GB)",
       "kind": "file",
-      "dir": "unet",
+      "$comment": "In diffusion_models e non in unet: il nodo UnetLoaderGGUF cerca dove cerca ComfyUI per i modelli di diffusione, e delle sue due cartelle storiche la suite ne dichiara una sola (services/comfy/avvio.py).",
+      "dir": "diffusion_models",
       "file": "flux-2-klein-9b-Q4_K_S.gguf",
       "url": "https://huggingface.co/unsloth/FLUX.2-klein-9B-GGUF/resolve/main/flux-2-klein-9b-Q4_K_S.gguf",
+      "nodi": ["comfyui-gguf"],
       "bytes": 5834332448
     },
     "flux2-text-encoder": {
@@ -86,6 +92,7 @@
       "dir": "text_encoders",
       "file": "Qwen3-8B-Q5_K_M.gguf",
       "url": "https://huggingface.co/unsloth/Qwen3-8B-GGUF/resolve/main/Qwen3-8B-Q5_K_M.gguf",
+      "nodi": ["comfyui-gguf"],
       "bytes": 5851113280
     },
     "flux2-vae": {

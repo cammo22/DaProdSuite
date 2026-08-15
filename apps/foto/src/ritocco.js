@@ -14,7 +14,8 @@
 
 import { el, mostraErrore, nascondiErrore, rnd, legaValore, mostraScheda } from "./dom.js";
 import { ascolta } from "./bus.js";
-import { MODELLO, componiPrompt, grafoRitocco } from "./grafi.js";
+import { componiPrompt, grafoRitocco } from "./grafi.js";
+import { modelloCorrente } from "./scelta-modello.js";
 import { aggiungiLavoro } from "./coda.js";
 import { inInglese } from "./lingua.js";
 import * as ponte from "./ponte.js";
@@ -180,6 +181,7 @@ export function collegaRitocco() {
 
       const inglese = await inInglese(testo, el.tradottoRitocco);
       const denoise = parseFloat(el.denoise.value);
+      const m = modelloCorrente();
       const parametri = {
         prompt: componiPrompt(inglese, el.estetica.value),
         negativo: el.negativo.value.trim(),
@@ -189,11 +191,15 @@ export function collegaRitocco() {
         denoise,
         immagine: base,
         maschera,
+        // Le misure della tela: lo scheduler di FLUX.2 le vuole, e sono quelle
+        // vere perché l'immagine è già stata ridisegnata su misura del VAE.
+        larghezza: sotto.width,
+        altezza: sotto.height,
       };
 
-      const id = await ponte.invia(grafoRitocco(parametri));
+      const id = await ponte.invia(grafoRitocco(m, parametri));
       aggiungiLavoro(id, `ritocco: ${testo}`, {
-        modello: MODELLO.nome,
+        modello: m.nome,
         testo,
         prompt: parametri.prompt,
         ritocco: true,

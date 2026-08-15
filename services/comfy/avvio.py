@@ -57,7 +57,7 @@ def _richiesta(nome: str) -> Path:
 
 
 def scrivi_percorsi(motore: Path, modelli: Path) -> Path:
-    """Genera il file che dice a ComfyUI dove sono i pesi e i nodi nostri.
+    """Genera il file che dice a ComfyUI dove sono i pesi e i nodi.
 
     Riscritto a ogni avvio invece che una volta all'installazione: se la suite
     viene spostata o i modelli cambiano posto, il file è già giusto al riavvio
@@ -73,10 +73,21 @@ def scrivi_percorsi(motore: Path, modelli: Path) -> Path:
     righe.append("")
     righe.append("nodi_daprod:")
     righe.append(f"    custom_nodes: {(QUI / 'nodi').as_posix()}")
+    # I nodi di terzi che la suite scarica (ComfyUI-GGUF e quelli che verranno):
+    # stanno accanto al motore e non dentro, così sopravvivono a un suo
+    # aggiornamento e restano distinguibili da quello che ComfyUI si porta dietro.
+    righe.append("")
+    righe.append("nodi_terzi:")
+    righe.append(f"    custom_nodes: {nodi_di_terzi(motore).as_posix()}")
 
     percorso = motore.parent / "percorsi-daprod.yaml"
     percorso.write_text("\n".join(righe) + "\n", encoding="utf-8")
     return percorso
+
+
+def nodi_di_terzi(motore: Path) -> Path:
+    """`engines/custom_nodes`, la stessa che riempie packages/runtime/nodi.ts."""
+    return motore.parent / "custom_nodes"
 
 
 def main() -> None:
@@ -93,7 +104,10 @@ def main() -> None:
             "è il motore di Musica, Foto e Cinema."
         )
 
-    for cartella in (modelli, risultati, temporanei):
+    # La cartella dei nodi di terzi va creata anche se è vuota: ComfyUI fa
+    # os.listdir su ogni percorso di custom_nodes che gli diciamo, e su una
+    # cartella che non c'è muore in avvio prima ancora di aprire la porta.
+    for cartella in (modelli, risultati, temporanei, nodi_di_terzi(motore)):
         cartella.mkdir(parents=True, exist_ok=True)
 
     percorsi = scrivi_percorsi(motore, modelli)

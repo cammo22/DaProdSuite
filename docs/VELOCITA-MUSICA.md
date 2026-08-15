@@ -1,0 +1,146 @@
+# La velocità di un brano
+
+Cosa rallenta DaProdMusica, cosa fa WanGP che noi non facciamo, e cosa di quello
+si può davvero portare qui dentro. Scritto il 16 agosto 2026, dopo aver letto il
+loro codice e il nostro motore.
+
+---
+
+## 1. Dove se ne va il tempo, misurato
+
+Su una generazione vera da 243,66 secondi, leggendo `logs/comfy.log`:
+
+| Fase | Tempo | Quota |
+|---|---|---|
+| **AR sampling** — 1001 token, uno alla volta, a 5,5 token/s | **185 s** | **76%** |
+| DiT — 30 passi a 1,48 s/passo | 44 s | 18% |
+| Caricamenti + VAE | ~15 s | 6% |
+
+**Il cursore "passi" governa il 18% del tempo.** I tre quarti se ne vanno nel
+modello linguistico da 7B che genera i token audio uno per volta, e quella parte
+scala con la **durata del brano**, non con i passi.
+
+A 5,5 token/s un modello da 5,9 GB muove 32 GB/s: la 4060 di banda ne ha 272.
+Non è la banda della memoria — è **costo fisso per token**.
+
+## 2. Cosa fa WanGP
+
+Il changelog dice «*optimized with a vllm engine for x3 faster generation*». Letto
+il codice, la frase va tradotta, perché il pacchetto `vllm` **non c'è**: una
+ricerca di "vllm" nel loro repo non trova nessuna dipendenza, e quello che
+chiamano vllm engine è roba loro, in `shared/llm_engines/`.
+
+Dentro c'è una copia adattata di **nano-vllm** (`GeeeekExplorer/nano-vllm`, MIT):
+KV cache a blocchi con block table, attenzione varlen, sampler. Sopra ci mettono
+due modi di decodificare, e li scelgono a seconda di cosa trovano installato
+(`models/TTS/minimax_music3/semantic_acceleration.py`):
+
+| Modo | Cosa usa | Serve |
+|---|---|---|
+| **CG** | KV cache a forma fissa + CUDA graph + SDPA | niente di speciale |
+| **vLLM** | il CG più FlashAttention2, RMSNorm in Triton, KV cache in Triton, e kernel Triton **misurati per le forme esatte** delle matrici | FlashAttention2 **e** Triton, altrimenti si rifiuta di partire |
+
+Il pezzo che conta davvero è l'ultimo: `configure_tiny_m_shape_overrides`, cioè
+kernel scritti apposta per le moltiplicazioni **lunghe e strettissime** che fa un
+modello quando genera un token per volta. È esattamente la diagnosi del
+paragrafo 1: non è la banda, è il costo per token.
+
+**Il loro consiglio è 16 GB di VRAM** per i profili veloci, e il loro checkpoint è
+un BF16/ConvRot. Noi stiamo in 8 GB con un w4a8 potato: il confronto "x3" non è
+sul nostro caso.
+
+### Cosa non si può prendere, e cosa sì
+
+WanGP non è sotto una licenza libera: è la **WanGP Community License 2.0**, che
+permette di usarlo e modificarlo per sé, ma non di rivenderlo, incorporarlo in un
+prodotto a pagamento o offrirlo come servizio. Copiare il loro codice dentro una
+repo MIT non si fa — è la stessa ragione per cui ComfyUI si scarica e non si
+ridistribuisce, e va decisa allo stesso modo.
+
+Quello che si può prendere è **il metodo**, che non è loro: nano-vllm è MIT, i
+CUDA graph sono di PyTorch, e i kernel per le forme strette sono una tecnica
+pubblica. Se un giorno scriviamo la nostra decodifica veloce, si parte da lì.
+
+## 3. Quello che ComfyUI già fa (e che non sapevamo)
+
+Prima di riscrivere qualcosa conviene guardare cosa c'è: in
+`comfy/ldm/minimax_music/ar.py`, il ciclo di generazione **fa già** metà di
+quello che fa il modo CG di WanGP.
+
+- KV cache allocata una volta sola, a forma fissa, per prompt + token da fare;
+- il token campionato viene copiato in memoria bloccata con un evento CUDA,
+  invece di fermare la GPU a ogni giro per leggerlo;
+- condizionato e non condizionato viaggiano insieme in un batch da due;
+- il **depth decoder** RVQ gira dentro un CUDA graph.
+
+Quello che **non** è dentro un CUDA graph è il forward del modello da 7B, che è
+il 76% del tempo. Lì ogni token paga qualche centinaio di lanci di kernel.
+
+## 4. La scoperta che vale più di tutte
+
+ComfyUI 0.33.1 corregge una riga sola rispetto alla 0.33.0, ed è la nostra:
+
+```
+-  enable_graph = enable_graph and not args.disable_cuda_graphs and is_device_cuda(device)
++  enable_graph = enable_graph and not args.disable_cuda_graphs and is_device_cuda(device) and getattr(module, "_v_block", None) is not None
+```
+
+Il titolo del commit è *"Fix minimax music not working on non dynamic vram"*, e
+`_v_block` è **l'attributo del nostro errore**: `'RVQDepthDecoder' object has no
+attribute '_v_block'`, quello che ammazzava i brani a metà. Capitava a noi e non
+a tutti perché la suite avvia il motore con `--disable-dynamic-vram`.
+
+Quindi il difetto non era la copertina generata per prima: quella era il modo in
+cui si riusciva a farlo comparire più spesso. **Era un difetto di ComfyUI**, ed è
+corretto: la suite adesso installa la 0.33.1 e sa accorgersi di avere un motore
+vecchio.
+
+Ma la correzione **spegne il CUDA graph** invece di farlo funzionare: con i
+nostri flag, il depth decoder gira senza. Cioè la parte lenta è lenta anche per
+questo.
+
+## 5. Le prove da fare, dalla più economica
+
+Nessuna di queste è scritta: sono misure, e vanno fatte sullo stesso brano, con
+lo stesso seed e la stessa durata, leggendo i token/s che il log scrive da solo.
+
+1. **Rimisurare sulla 0.33.1.** Prima di ogni altra cosa: il numero di partenza
+   adesso è un altro, e mezz'ora di lavoro può già essere lì.
+2. **Riprovare senza `--disable-dynamic-vram`.** Quel flag c'è perché con il
+   caricamento dinamico la cattura del CUDA graph abortiva
+   (`cudaErrorStreamCaptureInvalidated`). Ma il motore nel frattempo ha imparato a
+   precaricare i pesi prima di catturare (`prefetch_dynamic_vbars`), e se oggi
+   regge, il CUDA graph del depth decoder si riaccende: è il modo CG di WanGP,
+   gratis, senza scrivere niente.
+3. **`--use-sage-attention` e `--fast`**, come interruttore "Velocità: normale /
+   spinta". Sono flag già nel motore e non li stiamo usando.
+4. **Solo dopo**: la nostra decodifica accelerata sul modello da 7B. È il pezzo
+   grosso, e oggi non abbiamo nemmeno i mattoni — su questa macchina non ci sono
+   né Triton né FlashAttention2, e il log del motore lo dice a ogni avvio.
+
+## 6. I kernel GGUF 1.07: non oggi
+
+Il changelog di WanGP consiglia i **GGUF kernels 1.07**, che moltiplicano
+direttamente dai pesi GGUF compatti senza costruire la matrice densa — la stessa
+idea del paragrafo 2, applicata a FLUX.2 Klein, che è quello che DaProdFoto ha
+appena preso.
+
+Le loro ruote però esistono per **Python 3.11 + torch 2.10 + CUDA 13** e per
+**Python 3.10 + torch 2.7.1 + CUDA 12.8**. La suite gira su **Python 3.12 + torch
+2.13 + cu130**: nessuna delle due combacia, e cambiare la versione di torch
+sotto quattro motori per un esperimento non si fa. Si riguarda quando esce una
+ruota per la nostra combinazione.
+
+## 7. Per DaProdCinema
+
+Da guardare quando toccherà al video, sempre come metodo e non come codice:
+
+- `models/minimax_h3/first_block_cache.py` — la cache che nel loro changelog vale
+  «fino al 50% più veloce»;
+- `convrot_layout.py` e `components/packing.py` — come tengono i tensori per non
+  ricopiarli;
+- `lora_affine.py` con le mappe già pronte per fl2va e ref2va.
+
+I nodi MiniMax H3 nativi nel nostro motore ci sono già (verificato): quello che
+manca resta la finestra scorrevole per andare oltre la clip corta, che è la
+decisione già presa in [ROADMAP.md](ROADMAP.md) § 0.6.0.

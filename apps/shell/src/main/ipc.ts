@@ -15,12 +15,13 @@ import {
   type Intenzione,
 } from "@daprod/ipc";
 import { appManager } from "./app-manager";
-import { annulla, installaApp } from "./scaricamenti";
+import { annulla, installaApp, installaModelli, scaricamenti } from "./scaricamenti";
 import { libreria } from "./libreria";
 import { disinstallaApp, elimina, reset, statoSpazio } from "./spazio";
 import { gpu } from "./gpu";
 import { runtime } from "./runtime";
 import { updater } from "./updater";
+import { statoModelli } from "./models";
 import { LOGS_DIR, MODELS_DIR, OUTPUT_DIR } from "./paths";
 
 export function registerIpc(getHub: () => BrowserWindow | null): void {
@@ -103,6 +104,22 @@ export function registerIpc(getHub: () => BrowserWindow | null): void {
     return liberati;
   });
 
+  /* -------------------------------------------------------------- modelli */
+
+  // Chiesti da dentro un'app aperta: è così che DaProdFoto offre FLUX.2 Klein
+  // senza costringere a tornare nell'hub e reinstallare la scheda.
+  ipcMain.handle(CHANNELS.modelliStato, (_e, ids: string[]) =>
+    statoModelli(Array.isArray(ids) ? ids : []),
+  );
+
+  ipcMain.handle(CHANNELS.modelliScarica, (_e, id: AppId, ids: string[]) => {
+    // Come `apps:install`: non si aspetta, sono GB. L'avanzamento arriva sul suo
+    // canale, e la chiamata torna subito perché la finestra resti viva.
+    void installaModelli(id, Array.isArray(ids) ? ids : []);
+  });
+
+  ipcMain.handle(CHANNELS.modelliAnnulla, (_e, id: AppId) => annulla(id));
+
   /* ------------------------------------------------------------- libreria */
 
   ipcMain.handle(CHANNELS.libreriaElenco, (_e, filtro?: FiltroLibreria) =>
@@ -150,12 +167,18 @@ export function registerIpc(getHub: () => BrowserWindow | null): void {
   gpu.on("changed", (state) => send(CHANNELS.gpuChanged, state));
   updater.on("changed", (state) => send(CHANNELS.updateChanged, state));
 
+  const aTutte = (channel: string, payload: unknown) => {
+    for (const finestra of BrowserWindow.getAllWindows()) {
+      if (!finestra.isDestroyed()) finestra.webContents.send(channel, payload);
+    }
+  };
+
   // La libreria interessa tutte le finestre, non solo l'hub: se DaProdMusica
   // finisce un brano, il Visualizer aperto accanto deve vederlo comparire senza
   // che l'utente lo ricarichi.
-  libreria.on("cambiata", (elementi) => {
-    for (const finestra of BrowserWindow.getAllWindows()) {
-      if (!finestra.isDestroyed()) finestra.webContents.send(CHANNELS.libreriaCambiata, elementi);
-    }
-  });
+  libreria.on("cambiata", (elementi) => aTutte(CHANNELS.libreriaCambiata, elementi));
+
+  // Anche l'avanzamento di un modello va a tutte: i pesi sono condivisi, quindi
+  // se Foto sta scaricando qualcosa che serve anche a Musica, Musica lo vede.
+  scaricamenti.on("avanzamento", (stato) => aTutte(CHANNELS.modelliAvanzamento, stato));
 }

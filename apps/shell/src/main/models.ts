@@ -13,7 +13,9 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { app } from "electron";
-import { MODELS_DIR } from "./paths";
+import type { StatoModelli } from "@daprod/ipc";
+import { NODI, nodiMancanti as nodiMancantiSulDisco } from "@daprod/runtime";
+import { ENGINES_DIR, MODELS_DIR } from "./paths";
 
 export interface FileModel {
   label: string;
@@ -21,6 +23,12 @@ export interface FileModel {
   dir: string;
   file: string;
   url: string;
+  /**
+   * Nodi custom che il motore deve avere per caricarlo, come in
+   * `packages/runtime/src/nodi.ts`. Si installano insieme ai pesi: un GGUF da 5
+   * GB senza il nodo che lo legge è solo spazio occupato.
+   */
+  nodi?: string[];
   bytes: number;
 }
 
@@ -39,6 +47,8 @@ export interface HfRepoModel {
    * farebbe sembrare già scaricati.
    */
   verifica?: string;
+  /** Come in `FileModel`: i nodi custom senza cui questi pesi non si aprono. */
+  nodi?: string[];
   bytes: number;
 }
 
@@ -127,6 +137,46 @@ export function modelliMancanti(ids: string[]): { id: string; entry: ModelEntry 
     if (!isModelPresent(id)) fuori.push({ id, entry });
   }
   return fuori;
+}
+
+/**
+ * I nodi custom che questi modelli pretendono dal motore, senza ripetizioni.
+ *
+ * Sta qui e non nel catalogo delle app perché è una proprietà del **modello**,
+ * non della scheda: FLUX.2 Klein vuole ComfyUI-GGUF chiunque lo usi, e il giorno
+ * che lo userà anche Cinema non c'è niente da aggiungere da nessuna parte.
+ */
+export function nodiRichiesti(ids: string[]): string[] {
+  const nodi = new Set<string>();
+  for (const id of ids) {
+    const entry = modelEntry(id);
+    if (!entry || entry.kind === "lmstudio") continue;
+    for (const nodo of entry.nodi ?? []) nodi.add(nodo);
+  }
+  return [...nodi];
+}
+
+/**
+ * Cosa manca perché questi modelli si possano usare: pesi **e** nodi del motore.
+ *
+ * È la risposta che un'app aspetta prima di offrire un modello nel suo menu. Un
+ * elenco senza niente dentro è "pronto": è il caso del modello che c'è già, e
+ * dev'essere quello che non fa comparire nessun avviso.
+ */
+export function statoModelli(ids: string[]): StatoModelli {
+  const mancanti = modelliMancanti(ids).map(({ id, entry }) => ({
+    id,
+    label: entry.label,
+    bytes: entry.bytes,
+  }));
+  const nodi = nodiMancantiSulDisco(ENGINES_DIR, nodiRichiesti(ids));
+
+  return {
+    pronto: mancanti.length === 0 && nodi.length === 0,
+    bytesMancanti: mancanti.reduce((somma, m) => somma + m.bytes, 0),
+    mancanti,
+    nodiMancanti: nodi.map((id) => NODI[id]?.nome ?? id),
+  };
 }
 
 /** Quanti GB mancano perché l'elenco di modelli sia completo. */
