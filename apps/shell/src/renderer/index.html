@@ -25,6 +25,33 @@
       </div>
     </header>
 
+    <!-- La prima volta, prima di ogni altra cosa: quali app vuoi e quanto
+         costano. Compare una volta sola; chi la chiude ha deciso, e installa
+         quello che vuole dalle schede. -->
+    <section class="guida" id="guida" hidden>
+      <div class="guida-foglio">
+        <h2>Benvenuto in DaProd Suite</h2>
+        <p class="guida-intro">
+          Le app girano <b>sul tuo computer</b>: niente abbonamenti, niente immagini
+          o canzoni che escono da qui. In cambio i modelli vanno scaricati una
+          volta, e pesano. Scegli quali app vuoi: il resto lo faccio io.
+        </p>
+
+        <ul class="guida-app" id="guida-app"></ul>
+
+        <p class="guida-conto" id="guida-conto">—</p>
+        <p class="guida-nota">
+          Python, il motore e i modelli si scaricano da soli. Puoi chiudere la
+          suite mentre lavora: riprende da dove era arrivata.
+        </p>
+
+        <div class="guida-azioni">
+          <button class="bottone secondario" id="guida-salta">Lo faccio dopo</button>
+          <button class="bottone" id="guida-vai">Installa quello che ho scelto</button>
+        </div>
+      </div>
+    </section>
+
     <main>
       <!-- Senza ambiente Python cinque app su sette non partono: il pannello
            compare finché non c'è, e sparisce quando è pronto. -->

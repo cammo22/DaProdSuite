@@ -40,6 +40,7 @@ const api: SuiteApi = {
     open: (id: AppId) => ipcRenderer.invoke(CHANNELS.appsOpen, id),
     close: (id: AppId) => ipcRenderer.invoke(CHANNELS.appsClose, id),
     install: (id: AppId) => ipcRenderer.invoke(CHANNELS.appsInstall, id),
+    installaTutte: (ids: AppId[]) => ipcRenderer.invoke(CHANNELS.appsInstallaTutte, ids),
     annullaInstallazione: (id: AppId) =>
       ipcRenderer.invoke(CHANNELS.appsAnnullaInstallazione, id),
     onChanged: (listener) => subscribe<AppState[]>(CHANNELS.appsChanged, listener),
@@ -54,6 +55,7 @@ const api: SuiteApi = {
   impostazioni: {
     leggi: () => ipcRenderer.invoke(CHANNELS.impostazioniLeggi),
     velocita: (scelta) => ipcRenderer.invoke(CHANNELS.impostazioniVelocita, scelta),
+    guidaFatta: () => ipcRenderer.invoke(CHANNELS.impostazioniGuida),
   },
 
   gpu: {

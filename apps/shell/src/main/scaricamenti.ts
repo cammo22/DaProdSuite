@@ -156,6 +156,25 @@ export async function installaApp(id: AppId): Promise<void> {
 }
 
 /**
+ * Più schede, una dopo l'altra.
+ *
+ * La chiede la procedura guidata del primo avvio, dove si sceglie tutto insieme
+ * e poi si va a fare altro. **In fila e non in parallelo**: si contenderebbero
+ * la linea e l'ambiente Python, che la prima installa e le altre due
+ * troverebbero a metà. Chi guarda l'hub vede le schede accendersi una per
+ * volta, che è anche il modo in cui è più facile capire a che punto è.
+ *
+ * Se una fallisce si va avanti con le altre: una scheda in errore lo dice da
+ * sé, e fermare tutto vorrebbe dire far ricominciare da capo anche il resto.
+ */
+export async function installaTutte(ids: AppId[]): Promise<void> {
+  for (const id of ids) {
+    if (!APPS[id]) continue;
+    await installaApp(id);
+  }
+}
+
+/**
  * Modelli chiesti da dentro un'app già aperta.
  *
  * Differenze da `installaApp`, tutte per la stessa ragione — qui l'app la stai

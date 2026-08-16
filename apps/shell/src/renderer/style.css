@@ -340,6 +340,120 @@ main {
   color: var(--testo-fioco);
 }
 
+/* ------------------------------------------------------- procedura guidata */
+
+.guida {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  background: rgba(6, 8, 13, 0.86);
+  backdrop-filter: blur(9px);
+}
+
+.guida[hidden] {
+  display: none;
+}
+
+.guida-foglio {
+  width: min(680px, 100%);
+  max-height: 100%;
+  overflow: auto;
+  padding: 30px 32px;
+  border-radius: 20px;
+  background: var(--pannello, #12151d);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.55);
+}
+
+.guida-foglio h2 {
+  margin: 0 0 10px;
+  font-size: 22px;
+}
+
+.guida-intro {
+  margin: 0 0 20px;
+  line-height: 1.6;
+  color: var(--tenue, #9aa4b8);
+}
+
+.guida-app {
+  list-style: none;
+  margin: 0 0 18px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.guida-app li {
+  padding: 12px 14px;
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.guida-app label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.guida-app input {
+  accent-color: var(--accento, #7c5cff);
+  cursor: pointer;
+}
+
+/* Il pallino col colore dell'app: la stessa cosa che la riconosce nell'hub. */
+.guida-nome {
+  font-weight: 600;
+}
+
+.guida-nome::before {
+  content: "";
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  margin-right: 8px;
+  border-radius: 50%;
+  background: var(--accento);
+  vertical-align: middle;
+}
+
+.guida-gb {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+  color: var(--tenue, #9aa4b8);
+}
+
+.guida-riga {
+  margin: 6px 0 0 27px;
+  font-size: 13px;
+  color: var(--tenue, #9aa4b8);
+}
+
+.guida-conto {
+  margin: 0 0 8px;
+  line-height: 1.55;
+}
+
+.guida-nota {
+  margin: 0 0 22px;
+  font-size: 13px;
+  color: var(--tenue, #9aa4b8);
+}
+
+.guida-azioni {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
 .spie {
   display: flex;
   gap: 20px;

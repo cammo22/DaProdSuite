@@ -14,7 +14,7 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import type { Impostazioni, Velocita } from "@daprod/ipc";
 import { SETTINGS_FILE } from "./paths";
 
-const PREDEFINITE: Impostazioni = { velocita: "normale" };
+const PREDEFINITE: Impostazioni = { velocita: "normale", guidaFatta: false };
 
 let cache: Impostazioni | null = null;
 
@@ -29,6 +29,7 @@ export function impostazioni(): Impostazioni {
       // sappiamo raccontare.
       cache = {
         velocita: lette.velocita === "spinta" ? "spinta" : "normale",
+        guidaFatta: lette.guidaFatta === true,
       };
       return cache;
     } catch {
@@ -49,7 +50,16 @@ export function impostazioni(): Impostazioni {
  * invece di far finta che sia già cambiato qualcosa.
  */
 export function impostaVelocita(velocita: Velocita): Impostazioni {
-  const nuove: Impostazioni = { ...impostazioni(), velocita };
+  return salva({ velocita });
+}
+
+/** La procedura guidata è stata vista: non si ripresenta al prossimo avvio. */
+export function segnaGuidaFatta(): Impostazioni {
+  return salva({ guidaFatta: true });
+}
+
+function salva(cambi: Partial<Impostazioni>): Impostazioni {
+  const nuove: Impostazioni = { ...impostazioni(), ...cambi };
   cache = nuove;
   try {
     writeFileSync(SETTINGS_FILE, `${JSON.stringify(nuove, null, 2)}\n`, "utf8");

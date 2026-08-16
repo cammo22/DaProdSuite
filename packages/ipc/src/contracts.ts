@@ -64,6 +64,13 @@ export type Velocita = "normale" | "spinta";
 
 export interface Impostazioni {
   velocita: Velocita;
+  /**
+   * La procedura guidata del primo avvio è già stata fatta.
+   *
+   * Si segna quando l'utente la chiude, in qualunque modo: chi la salta ha
+   * deciso, e riproporgliela a ogni avvio vorrebbe dire non avergli creduto.
+   */
+  guidaFatta: boolean;
 }
 
 /* ------------------------------------------------------------------- modelli */
@@ -215,6 +222,14 @@ export interface SuiteApi {
     close(id: AppId): Promise<void>;
     /** Scarica ambiente, motore e modelli mancanti. Dura, e riprende dove era. */
     install(id: AppId): Promise<void>;
+    /**
+     * Le installa **una dopo l'altra**, nell'ordine dato.
+     *
+     * In parallelo si contenderebbero l'ambiente Python e la linea: quattro
+     * scaricamenti insieme non vanno più veloci di uno, e a interruzione di rete
+     * lasciano quattro file a metà.
+     */
+    installaTutte(ids: AppId[]): Promise<void>;
     /** Ferma l'installazione. Quello che è già arrivato resta sul disco. */
     annullaInstallazione(id: AppId): Promise<void>;
     onChanged(listener: (states: AppState[]) => void): Unsubscribe;
@@ -231,6 +246,8 @@ export interface SuiteApi {
     leggi(): Promise<Impostazioni>;
     /** Cambia la velocità dei motori. Vale dal prossimo avvio del motore. */
     velocita(scelta: Velocita): Promise<Impostazioni>;
+    /** Segna che la procedura guidata è stata vista: non si ripresenta più. */
+    guidaFatta(): Promise<Impostazioni>;
   };
 
   gpu: {
@@ -339,11 +356,13 @@ export const CHANNELS = {
   appsOpen: "apps:open",
   appsClose: "apps:close",
   appsInstall: "apps:install",
+  appsInstallaTutte: "apps:installa-tutte",
   appsAnnullaInstallazione: "apps:annulla-installazione",
   appsChanged: "apps:changed",
 
   impostazioniLeggi: "impostazioni:leggi",
   impostazioniVelocita: "impostazioni:velocita",
+  impostazioniGuida: "impostazioni:guida-fatta",
 
   runtimeState: "runtime:state",
   runtimeInstall: "runtime:install",

@@ -29,6 +29,7 @@ Repo pubblico: **https://github.com/cammo22/DaProdSuite**
 | **Scelta del modello in Foto + FLUX.2 Klein** | fatto, **da provare tu**: nodo e motore provati, un'immagine FLUX no |
 | **Nodi custom del motore installati dalla suite** | fatto e provato (ComfyUI-GGUF) |
 | **Motore aggiornabile: ComfyUI 0.33.1** | fatto e provato, corregge il difetto che ammazzava i brani |
+| **Procedura guidata al primo avvio** | fatta e provata: **con questa la 0.1.0 è chiusa** |
 | **Velocità: normale / spinta** | interruttore fatto, **da misurare** |
 | **Pubblicata la 0.1.0 su GitHub** | fatto: installer e `latest.yml` nella Release |
 | Procedura guidata al primo avvio | **da fare** |
@@ -313,6 +314,14 @@ schema e non il codice dell'app.
 la finestra e le si chiede com'è messa. Leggere il codice serve dopo, per
 capire *perché*.
 
+**E una trappola dell'hub, trovata così.** La sua pagina ha una CSP severa —
+`style-src 'self'`, senza `unsafe-inline` — quindi **uno `style=` scritto
+nell'HTML non ha effetto**: il pallino col colore dell'app restava invisibile
+senza che niente segnalasse nulla. Da JavaScript invece si può
+(`elemento.style.setProperty(...)`), perché la CSP guarda il marcatore, non il
+CSSOM. Nelle app (Foto, Musica) il problema non c'è, la loro CSP ammette gli
+stili in riga.
+
 ## Le tre cose che si sono viste solo provando (16 agosto, notte)
 
 **FLUX.2 Klein 4B e 9B non dividono il text encoder.** Sembrava ovvio che sì —
@@ -365,6 +374,17 @@ tentativi.
   giorno che cambia la scheda.
 
 ## Il prossimo passo
+
+**La 0.1.0 è chiusa.** Il pezzo che mancava — la procedura guidata al primo
+avvio — è dentro e provato. Da qui la strada è la **0.2.0: le altre tre app**,
+nell'ordine della roadmap: **Dream** (il più semplice, un solo modello che è già
+nel catalogo), poi **Companion** (vuole LM Studio acceso e `sqlite_vec` nel suo
+pyproject), poi **IoDigitale** (il più pesante, 8 GB di pesi).
+
+Restano da fare, quando capita: misurare "spinta" contro "normale" su un brano
+vero, e continuare la pulizia un pezzo per volta.
+
+### Quello che era il prossimo passo prima
 
 **Prima di tutto: provare FLUX.2 Klein davvero.** Il codice c'è e i pezzi sono
 provati uno per uno — il nodo si installa, il motore lo carica, il grafo è quello

@@ -12,6 +12,18 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ## Non ancora pubblicato
 
+### La prima volta, la suite ti prende per mano
+
+- **Al primo avvio compare una schermata che chiede cosa vuoi**: le app
+  disponibili, quanto pesa ognuna, e il conto in fondo. Scegli, premi installa, e
+  le scarica **una dopo l'altra** mentre tu fai altro.
+- **Compare solo se c'è davvero qualcosa da installare**, e una volta sola: chi
+  la salta ha deciso. Per rivederla c'è `#guida` nell'indirizzo, oppure si
+  azzerano le impostazioni dal pannello Spazio.
+- I numeri sono quelli veri: i 5 GB di Python e motore si contano solo se
+  mancano davvero, e un'app già a posto dice "già installata" invece di un peso
+  inventato.
+
 ### DaProdFoto: tre modelli, e il ritocco che si usa davvero
 
 - **Il modello si sceglie in alto**, fuori dalle schede: vale per Crea *e* per

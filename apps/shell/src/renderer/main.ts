@@ -110,7 +110,11 @@ const descrizioneStato: Record<AppState["status"], string> = {
   "in-errore": "Errore",
 };
 
+/** L'ultimo stato conosciuto, per chi deve fare i conti senza richiederlo. */
+let ultimiStati: AppState[] = [];
+
 function aggiornaSchede(stati: AppState[]): void {
+  ultimiStati = stati;
   for (const stato of stati) {
     const elementi = schede.get(stato.id);
     if (!elementi) continue;
@@ -313,6 +317,131 @@ function aggiornaSpiaGpu(stato: GpuState): void {
   }
 }
 
+/* ------------------------------------------------------ procedura guidata */
+
+/**
+ * La prima volta: quali app vuoi, e quanto costano.
+ *
+ * Esiste perché la suite appena installata è un elenco di schede tutte da
+ * installare, e nessuno sa da dove cominciare né quanti GB gli costerà. Qui si
+ * sceglie una volta e poi si va a fare altro: l'hub racconta il resto da sé.
+ *
+ * Compare **solo se c'è davvero qualcosa da installare** — chi ha già la suite
+ * a posto non deve vedersi spiegare una cosa che ha già fatto — e una volta
+ * sola, in qualunque modo la si chiuda.
+ */
+const guida = document.getElementById("guida") as HTMLElement;
+const guidaApp = document.getElementById("guida-app") as HTMLElement;
+const guidaConto = document.getElementById("guida-conto") as HTMLElement;
+
+/** Quanto costa una volta sola: ambiente Python e motore, condivisi da tutte. */
+const GB_COMUNI = 5;
+
+/** Zero quando ambiente e motore ci sono già: allora non li si fa pagare. */
+let gbComuni = GB_COMUNI;
+
+async function forseMostraGuida(stati: AppState[]): Promise<void> {
+  // `#guida` nell'indirizzo la riapre sempre: serve a provarla senza svuotare
+  // mezzo disco, ed è anche il modo di rivederla per chi l'aveva saltata.
+  const forzata = location.hash === "#guida";
+  const impostazioni = await api.impostazioni.leggi();
+  if (impostazioni.guidaFatta && !forzata) return;
+
+  const daInstallare = stati.filter((s) => s.status === "da-installare");
+  // Forzata a suite già installata non ha niente da proporre: si mostrano
+  // comunque le app che ci sono, perché sennò sarebbe una finestra vuota.
+  const scelta = daInstallare.length
+    ? daInstallare
+    : forzata
+      ? stati.filter((s) => s.status !== "non-inclusa")
+      : [];
+  if (scelta.length === 0) return;
+
+  // L'ambiente Python pesa quanto pesa solo se non c'è: quando c'è già, la
+  // stessa schermata deve dire numeri diversi.
+  gbComuni = (await api.runtime.state()).ready ? 0 : GB_COMUNI;
+
+  guidaApp.innerHTML = "";
+  for (const stato of scelta) {
+    const app = api.catalog.find((a) => a.id === stato.id);
+    if (!app) continue;
+
+    const voce = document.createElement("li");
+    voce.innerHTML = `
+      <label>
+        <input type="checkbox" value="${app.id}" checked>
+        <span class="guida-nome">${app.name}</span>
+        <span class="guida-gb">${etichettaCosto(stato)}</span>
+      </label>
+      <p class="guida-riga">${app.tagline}</p>`;
+
+    // Il colore si mette da qui e non con uno `style=` nell'HTML: la CSP
+    // dell'hub non ammette stili scritti nel marcatura, e il pallino colorato
+    // restava invisibile senza che nessuno dicesse perché.
+    voce.querySelector<HTMLElement>(".guida-nome")!.style.setProperty("--accento", app.accent);
+    voce.querySelector("input")!.addEventListener("change", aggiornaConto);
+    guidaApp.appendChild(voce);
+  }
+
+  aggiornaConto();
+  guida.hidden = false;
+}
+
+function scelte(): AppId[] {
+  return [...guidaApp.querySelectorAll<HTMLInputElement>("input:checked")].map(
+    (c) => c.value as AppId,
+  );
+}
+
+/** Quanto costa questa scheda, detto come lo direbbe una persona. */
+function etichettaCosto(stato: AppState): string {
+  if (stato.missingGb > 0) return `${numero(stato.missingGb, 1)} GB`;
+  return stato.status === "pronta" ? "già installata" : "leggera";
+}
+
+/**
+ * Il conto, che deve essere quello vero.
+ *
+ * I 5 GB di Python e motore si contano **solo se mancano davvero**: dirli a chi
+ * ce li ha già sarebbe chiedergli di scaricare due volte la stessa cosa.
+ */
+function aggiornaConto(): void {
+  const stati = ultimiStati.filter((s) => scelte().includes(s.id));
+  const modelli = stati.reduce((somma, s) => somma + s.missingGb, 0);
+  const bottone = document.getElementById("guida-vai") as HTMLButtonElement;
+  bottone.disabled = stati.length === 0;
+
+  if (stati.length === 0) {
+    guidaConto.textContent =
+      "Non hai scelto niente: puoi installare quello che vuoi dalle schede, quando vuoi.";
+    return;
+  }
+
+  const pezzi: string[] = [];
+  if (modelli > 0) pezzi.push(`${numero(modelli, 1)} GB di modelli`);
+  if (gbComuni > 0) {
+    pezzi.push(`circa ${gbComuni} GB fra Python e motore, una volta sola per tutte`);
+  }
+
+  guidaConto.textContent = pezzi.length
+    ? `In tutto: circa ${numero(modelli + gbComuni, 1)} GB — ${pezzi.join(", più ")}.`
+    : "Non manca niente: queste app sono già pronte, puoi aprirle e basta.";
+}
+
+function chiudiGuida(): void {
+  guida.hidden = true;
+  void api.impostazioni.guidaFatta();
+}
+
+(document.getElementById("guida-salta") as HTMLButtonElement).addEventListener("click", chiudiGuida);
+
+(document.getElementById("guida-vai") as HTMLButtonElement).addEventListener("click", () => {
+  const ids = scelte();
+  chiudiGuida();
+  // Una dopo l'altra: lo decide lo shell, qui si passa solo l'ordine scelto.
+  void api.apps.installaTutte(ids);
+});
+
 /* --------------------------------------------------------------- velocità */
 
 /**
@@ -361,6 +490,9 @@ void (async () => {
   aggiornaSpiaRuntime(await api.runtime.state());
   aggiornaSpiaGpu(await api.gpu.state());
   selettoreVelocita.value = (await api.impostazioni.leggi()).velocita;
+  // Per ultima, quando le schede hanno già detto cosa manca: la guida quei
+  // numeri li mostra, e senza sarebbe una domanda senza prezzi.
+  await forseMostraGuida(ultimiStati);
 })();
 
 /* ------------------------------------------------------------------ spazio */

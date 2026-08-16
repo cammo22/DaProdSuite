@@ -24,11 +24,11 @@ metterle.
 - [x] Verificato che tutti e quattro i motori girano su torch 2.13
 - [x] Dati utente separati dal programma: aggiornare non tocca i modelli
 
-## 0.1.0 — Le prime app dentro ✅ quasi
+## 0.1.0 — Le prime app dentro ✅
 
 **Pubblicata il 16 agosto 2026.** Le tre app sono dentro e girano: generano,
 si passano i risultati e sono state provate una per una aprendo l'app, non solo
-leggendo il codice. Manca un pezzo solo, ed è l'ultimo della versione.
+leggendo il codice.
 
 - [x] **DaProdVisualizer** — nessun Python, valida lo schema delle finestre.
       *Provato: i brani di DaProdMusica si ascoltano dal pannello "Brani
@@ -48,8 +48,9 @@ leggendo il codice. Manca un pezzo solo, ed è l'ultimo della versione.
       già. I nodi custom di ComfyUI si installano allo stesso modo
 - [x] Scaricamento dei modelli con ripresa e avanzamento — *(provato: annullato a
       metà, ripreso, arrivato intero; da provare tu su una scheda intera)*
-- [ ] **Procedura guidata al primo avvio**: scegli le app, ti dice quanti GB.
-      *È l'unica cosa che manca alla 0.1.0.*
+- [x] **Procedura guidata al primo avvio**: scegli le app, ti dice quanti GB, e
+      le installa una dopo l'altra. Compare solo se c'è davvero qualcosa da
+      installare, e una volta sola. *Con questa la 0.1.0 è chiusa.*
 
 ## 0.2.0 — Le altre tre
 

@@ -15,9 +15,9 @@ import {
   type Intenzione,
   type Velocita,
 } from "@daprod/ipc";
-import { impostaVelocita, impostazioni } from "./impostazioni";
+import { impostaVelocita, impostazioni, segnaGuidaFatta } from "./impostazioni";
 import { appManager } from "./app-manager";
-import { annulla, installaApp, installaModelli, scaricamenti } from "./scaricamenti";
+import { annulla, installaApp, installaModelli, installaTutte, scaricamenti } from "./scaricamenti";
 import { libreria } from "./libreria";
 import { disinstallaApp, elimina, reset, statoSpazio } from "./spazio";
 import { gpu } from "./gpu";
@@ -51,12 +51,19 @@ export function registerIpc(getHub: () => BrowserWindow | null): void {
 
   ipcMain.handle(CHANNELS.appsAnnullaInstallazione, (_e, id: AppId) => annulla(id));
 
+  // Non si aspetta nemmeno questa: sono ore di scaricamento, e l'hub racconta
+  // tutto dalle schede.
+  ipcMain.handle(CHANNELS.appsInstallaTutte, (_e, ids: AppId[]) => {
+    void installaTutte(Array.isArray(ids) ? ids : []);
+  });
+
   /* --------------------------------------------------------- impostazioni */
 
   ipcMain.handle(CHANNELS.impostazioniLeggi, () => impostazioni());
   ipcMain.handle(CHANNELS.impostazioniVelocita, (_e, scelta: Velocita) =>
     impostaVelocita(scelta === "spinta" ? "spinta" : "normale"),
   );
+  ipcMain.handle(CHANNELS.impostazioniGuida, () => segnaGuidaFatta());
 
   /* -------------------------------------------------------------- runtime */
 
