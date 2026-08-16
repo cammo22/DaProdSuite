@@ -28,6 +28,7 @@ import * as servizi from "./servizi";
 import * as visualizer from "./apps/visualizer";
 import * as musica from "./apps/musica";
 import * as foto from "./apps/foto";
+import * as dream from "./apps/dream";
 
 /**
  * Le app già portate dentro la suite.
@@ -35,7 +36,7 @@ import * as foto from "./apps/foto";
  * Un'app non elencata qui compare nell'hub disattivata, con scritto che non è
  * ancora inclusa — meglio di una scheda che sembra pronta e poi non apre niente.
  */
-const MIGRATED = new Set<AppId>(["visualizer", "musica", "foto"]);
+const MIGRATED = new Set<AppId>(["visualizer", "musica", "foto", "dream"]);
 
 interface Finestra {
   apri: (onClose: () => void) => void;
@@ -60,6 +61,11 @@ const FINESTRE: Partial<Record<AppId, Finestra>> = {
     apri: foto.apri,
     chiudi: foto.chiudi,
     laFinestra: foto.laFinestra,
+  },
+  dream: {
+    apri: dream.apri,
+    chiudi: dream.chiudi,
+    laFinestra: dream.laFinestra,
   },
 };
 

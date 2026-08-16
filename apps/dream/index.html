@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DaProdDream</title>
+<link rel="stylesheet" href="/ui/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="logo"></span>
+    <h1>DaProd<span>Dream</span></h1>
+  </div>
+
+  <nav class="tabs">
+    <button class="tab active" data-tab="sogna">Trasforma</button>
+    <button class="tab" data-tab="sogno">Sogno libero</button>
+    <button class="tab" data-tab="galleria">Galleria <em id="conta-galleria"></em></button>
+    <button class="tab" data-tab="impostazioni">Impostazioni</button>
+  </nav>
+
+  <div class="topright">
+    <span id="gpu-name" class="muted"></span>
+    <button id="btn-chiudi" class="icon-btn" title="Chiudi DaProdDream">✕</button>
+  </div>
+</header>
+
+<!-- ══════════════════════════════ SCHEDA SOGNA ══════════════════════════════ -->
+<main id="pagina-sogna">
+
+  <section class="panel left">
+    <h2>1 · Scegli cosa trasformare</h2>
+
+    <div class="sources">
+      <button class="source active" data-kind="webcam">
+        <span class="ico">◉</span><b>Webcam</b><small>in diretta</small>
+      </button>
+      <button class="source" data-kind="schermo">
+        <span class="ico">▤</span><b>Schermo</b><small>cattura</small>
+      </button>
+      <button class="source" data-kind="video">
+        <span class="ico">▷</span><b>Video</b><small>file mp4</small>
+      </button>
+      <button class="source" data-kind="immagine">
+        <span class="ico">▣</span><b>Immagine</b><small>foto ferma</small>
+      </button>
+    </div>
+
+    <div class="field" data-for="webcam">
+      <select id="webcam-select"></select>
+      <div class="row tight">
+        <label class="check"><input type="checkbox" id="mirror" checked> Specchia</label>
+        <button id="btn-scan" class="ghost small" title="Ricerca i dispositivi da capo">Ricerca</button>
+      </div>
+    </div>
+
+    <div class="field hidden" data-for="schermo">
+      <select id="monitor-select"></select>
+    </div>
+
+    <div class="field hidden" data-for="video immagine">
+      <button id="btn-sfoglia" class="ghost wide">Scegli un file…</button>
+      <div id="file-nome" class="file-nome muted">nessun file scelto</div>
+      <input type="text" id="file-path" class="hidden">
+      <label class="check" data-for="video"><input type="checkbox" id="loop" checked> Ripeti in loop</label>
+    </div>
+
+    <div class="preview-input">
+      <img id="img-input" alt="Anteprima sorgente">
+      <div class="empty" id="input-empty">in attesa</div>
+      <span class="tag">entra nel modello</span>
+    </div>
+    <div class="stat-mini"><span id="source-label">—</span><b id="capture-fps">0 fps</b></div>
+
+    <h2 class="sep-top">3 · Come deve venire</h2>
+    <div class="segmented" id="mode-seg">
+      <button data-mode="prestazioni"><b>Veloce</b><small>più fps</small></button>
+      <button data-mode="bilanciata" class="active"><b>Media</b><small>equilibrio</small></button>
+      <button data-mode="qualita"><b>Qualità</b><small>più dettaglio</small></button>
+    </div>
+    <div class="hint single" id="mode-hint"></div>
+
+    <div class="field">
+      <label>Quanto trasformare <b id="strength-val">0.36</b></label>
+      <input type="range" id="strength" min="0.10" max="0.60" step="0.01" value="0.36">
+      <div class="hint"><span>ritocca</span><span>ridipinge</span></div>
+    </div>
+
+    <div class="field">
+      <label>Forza dello stile <b id="guidance-val">2.5</b></label>
+      <input type="range" id="guidance" min="0" max="10" step="0.5" value="2.5">
+      <div class="hint"><span>veloce, prompt debole</span><span>obbedisce</span></div>
+      <div class="hint single">Sopra 4 comincia a bruciare: SD-Turbo nasce per girare senza.</div>
+    </div>
+
+    <div class="two">
+      <div class="field">
+        <label>Passi <b id="steps-val">1</b></label>
+        <input type="range" id="steps" min="1" max="6" step="1" value="1">
+      </div>
+      <div class="field">
+        <label>Scia <b id="blend-val">0.00</b></label>
+        <input type="range" id="blend" min="0" max="0.3" step="0.02" value="0">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Risoluzione</label>
+      <select id="resolution"></select>
+      <div class="hint single">Sotto i 512 px i volti si rompono: se ci sono persone
+        in primo piano, sali a 640x384 o più.</div>
+    </div>
+
+    <label class="check big"><input type="checkbox" id="soggetto" checked> Riconosci le persone</label>
+    <div class="hint single">Serve a <i>non</i> trasformarle: alzalo solo se vuoi
+      tenere il volto com'è mentre cambia lo sfondo.</div>
+    <div class="field" id="soggetto-field">
+      <label>Proteggi il soggetto <b id="protezione-val">0.00</b></label>
+      <input type="range" id="protezione" min="0" max="1" step="0.05" value="0">
+      <div class="hint"><span>trasforma anche i volti</span><span>lascia le persone come sono</span></div>
+    </div>
+
+    <label class="check"><input type="checkbox" id="depth"> Capisci la profondità</label>
+    <div class="field" id="depth-field">
+      <label>Forza profondità <b id="depth-val">1.0</b></label>
+      <input type="range" id="depth-scale" min="0.2" max="2.0" step="0.1" value="1.0">
+      <div class="hint single">Tiene i piani della scena. Si sente da 0,35 di
+        trasformazione in su.</div>
+    </div>
+
+    <div class="field">
+      <label>Seed</label>
+      <div class="row">
+        <input type="number" id="seed" value="1234">
+        <button id="btn-seed-dado" class="ghost small" title="Un seed nuovo, ma fisso">🎲</button>
+        <button id="btn-seed-vivo" class="ghost small" title="Cambia a ogni frame">−1</button>
+      </div>
+    </div>
+
+    <div class="modello-riga">
+      <span id="modello-stato" class="muted small">modello non caricato</span>
+      <button id="btn-modello" class="ghost small">Carica</button>
+    </div>
+
+  </section>
+
+  <section class="stage">
+    <div class="viewer" id="viewer">
+      <img id="img-output" alt="Visione">
+      <img id="img-compare" alt="Sorgente" class="hidden">
+      <div class="compare-handle hidden" id="compare-handle"><span></span></div>
+
+      <div class="viewer-empty" id="viewer-empty">
+        <div class="spinner" id="spinner"></div>
+        <div class="big" id="viewer-title">Scegli una sorgente qui a sinistra</div>
+        <div class="muted" id="viewer-hint">Parte da sola: non devi premere niente.</div>
+      </div>
+
+      <div class="badge rec hidden" id="rec-badge">● REC <span id="rec-time">0s</span></div>
+      <div class="hud" id="hud"><b id="hud-fps">0</b> fps · <span id="hud-ms">0</span> ms</div>
+      <div class="badge prof hidden" id="prof-badge">profondità</div>
+      <div class="barra-carico hidden" id="barra-carico"><i></i></div>
+    </div>
+
+    <div class="promptbar">
+      <textarea id="prompt" rows="1" placeholder="Scrivi cosa vuoi vedere… cambia mentre scrivi (il modello capisce meglio l'inglese)"></textarea>
+      <span class="live" id="live-dot" title="Sto applicando"></span>
+      <button id="btn-dado" class="ghost small" title="Prompt casuale">🎲 Caso</button>
+      <button id="btn-salva-prompt" class="ghost small" title="Salva fra i sogni">Salva</button>
+    </div>
+
+    <div class="promptbar negativo">
+      <span class="etichetta-neg">non voglio</span>
+      <textarea id="negative" rows="1" placeholder="sfocato, deforme, testo… (conta solo con Forza dello stile sopra 1)"></textarea>
+    </div>
+
+    <div class="transport">
+      <button id="btn-pausa" class="ghost" disabled>Pausa</button>
+      <button id="btn-ferma" class="ghost" disabled>Ferma</button>
+      <span class="divider"></span>
+      <button id="btn-confronto" class="ghost" title="Confronto prima/dopo (C)">Confronto</button>
+      <button id="btn-foto" class="ghost" title="Salva una foto (S)">Foto</button>
+      <button id="btn-rec" class="primary" title="Registra (R)">● Registra</button>
+      <span class="spacer"></span>
+      <span class="statusline"><span class="dot" id="state-dot"></span><span id="message" class="muted"></span></span>
+    </div>
+  </section>
+
+  <section class="panel right">
+    <h2>2 · Sogni pronti</h2>
+    <div class="preset-grid" id="preset-grid"></div>
+
+    <div class="row">
+      <input type="text" id="preset-nome" placeholder="dai un nome al prompt di adesso">
+      <button id="btn-preset-save" class="ghost small" title="Salva il prompt fra i sogni">Salva</button>
+    </div>
+
+
+    <h2 class="sep-top">Barra di stato</h2>
+    <div class="metrics">
+      <div class="metric"><span>Velocità</span><b id="m-fps">0 fps</b></div>
+      <div class="metric"><span>Latenza</span><b id="m-ms">0 ms</b></div>
+      <div class="metric"><span>VRAM</span><b id="m-vram">—</b></div>
+      <div class="bar"><i id="vram-bar"></i></div>
+      <div class="metric"><span>GPU</span><b id="m-util">0%</b></div>
+      <div class="metric"><span>Modello</span><b id="m-model">—</b></div>
+      <div class="metric"><span>Frame fatti</span><b id="m-frames">0</b></div>
+    </div>
+
+    <div class="scorciatoie muted small">
+      <b>Spazio</b> pausa · <b>G</b> prompt casuale · <b>S</b> foto · <b>R</b> registra ·
+      <b>C</b> confronto · <b>Esc</b> ferma
+    </div>
+  </section>
+</main>
+
+<!-- ══════════════════════════ SCHEDA SOGNO LIBERO ═══════════════════════════ -->
+<main id="pagina-sogno" class="hidden due-colonne">
+  <section class="stage">
+    <div class="viewer" id="viewer-sogno">
+      <img id="img-sogno" alt="Sogno">
+      <div class="viewer-empty" id="sogno-empty">
+        <div class="spinner" id="sogno-spinner"></div>
+        <div class="big">Niente webcam, niente video: solo il tuo prompt</div>
+        <div class="muted">Scrivi cosa vuoi vedere e premi <b>Comincia a sognare</b>.
+          L'immagine nasce dal nulla e continua a trasformarsi.</div>
+      </div>
+      <div class="badge rec hidden" id="rec-badge-sogno">● REC <span id="rec-time-sogno">0s</span></div>
+      <div class="hud" id="hud-sogno"><b id="hud-fps-sogno">0</b> fps</div>
+    </div>
+
+    <div class="promptbar">
+      <textarea id="prompt-sogno" rows="1" placeholder="un faro nella tempesta, pittura ad olio…"></textarea>
+      <span class="live" id="live-dot-sogno"></span>
+      <button id="btn-dado-sogno" class="ghost small" title="Prompt casuale">🎲 Caso</button>
+      <button id="btn-salva-prompt-sogno" class="ghost small">Salva</button>
+    </div>
+
+    <div class="promptbar negativo">
+      <span class="etichetta-neg">non voglio</span>
+      <textarea id="negative-sogno" rows="1" placeholder="sfocato, deforme, testo…"></textarea>
+    </div>
+
+    <div class="transport">
+      <button id="btn-sogna-libero" class="primary">Comincia a sognare</button>
+      <button id="btn-ferma-sogno" class="ghost" disabled>Ferma</button>
+      <button id="btn-ricomincia" class="ghost" title="Riparte da un'immagine nuova">Ricomincia</button>
+      <span class="divider"></span>
+      <button id="btn-foto-sogno" class="ghost">Foto</button>
+      <button id="btn-rec-sogno" class="ghost">● Registra</button>
+      <span class="spacer"></span>
+      <span class="statusline"><span class="dot" id="state-dot-sogno"></span><span id="message-sogno" class="muted"></span></span>
+    </div>
+  </section>
+
+  <section class="panel right">
+    <h2>Il sogno</h2>
+
+    <div class="field">
+      <label>Velocità del sogno <b id="movimento-val">0.55</b></label>
+      <input type="range" id="movimento" min="0.05" max="1" step="0.05" value="0.55">
+      <div class="hint"><span>si trasforma piano</span><span>corre</span></div>
+    </div>
+
+    <div class="field">
+      <label>Quanto vaga <b id="raggio-val">0.40</b></label>
+      <input type="range" id="raggio" min="0.05" max="1" step="0.05" value="0.4">
+      <div class="hint"><span>stessa scena che si anima</span><span>cambia tutto</span></div>
+    </div>
+
+    <div class="field">
+      <label>Passi <b id="steps-sogno-val">2</b></label>
+      <input type="range" id="steps-sogno" min="1" max="4" step="1" value="2">
+      <div class="hint"><span>più veloce</span><span>più pulito</span></div>
+    </div>
+
+    <div class="field">
+      <label>Forza dello stile <b id="guidance-sogno-val">1.0</b></label>
+      <input type="range" id="guidance-sogno" min="0" max="8" step="0.5" value="1">
+      <div class="hint single">Qui l'immagine nasce dal prompt e basta: a 1 il prompt
+        si sente lo stesso e vai al doppio della velocità.</div>
+    </div>
+
+    <div class="field">
+      <label>Risoluzione</label>
+      <select id="resolution-sogno"></select>
+    </div>
+
+    <h2 class="sep-top">Sogni pronti</h2>
+    <div class="preset-grid" id="preset-grid-sogno"></div>
+
+
+    <div class="metrics sep-top">
+      <div class="metric"><span>Velocità</span><b id="m-fps-sogno">0 fps</b></div>
+      <div class="metric"><span>VRAM</span><b id="m-vram-sogno">—</b></div>
+    </div>
+  </section>
+</main>
+
+<!-- ═════════════════════════════ SCHEDA GALLERIA ════════════════════════════ -->
+<main id="pagina-galleria" class="hidden">
+  <section class="galleria">
+    <div class="galleria-testa">
+      <h2>Galleria</h2>
+      <div class="filtri" id="filtri">
+        <button class="chip active" data-filtro="tutto">Tutto</button>
+        <button class="chip" data-filtro="video">Video</button>
+        <button class="chip" data-filtro="foto">Foto</button>
+        <span class="spacer"></span>
+        <button class="ghost small" data-open="recordings">Apri cartella video</button>
+        <button class="ghost small" data-open="screenshots">Apri cartella foto</button>
+      </div>
+    </div>
+    <div class="griglia" id="griglia"></div>
+    <div class="galleria-vuota hidden" id="galleria-vuota">
+      Qui finiscono i video registrati e le foto salvate.<br>
+      <span class="muted">Torna su <b>Sogna</b> e premi Registra o Foto.</span>
+    </div>
+  </section>
+</main>
+
+<main id="pagina-impostazioni" class="hidden una-colonna">
+  <section class="galleria">
+    <div class="galleria-testa"><h2>Impostazioni</h2></div>
+    <div class="impostazioni">
+
+      <div class="gruppo">
+        <h3>Modello</h3>
+        <div class="riga-modello">
+          <div>
+            <b id="imp-modello-nome">SD-Turbo</b>
+            <div class="muted small" id="imp-modello-stato">non caricato</div>
+          </div>
+          <div class="row">
+            <button id="imp-carica" class="primary">Carica</button>
+            <button id="imp-scarica" class="ghost">Scarica</button>
+          </div>
+        </div>
+        <div class="bar"><i id="imp-barra"></i></div>
+        <div class="hint single" id="imp-vram">—</div>
+        <label class="check"><input type="checkbox" id="imp-precarica" checked> Carica il modello all'avvio</label>
+        <div class="field" style="margin-top:12px">
+          <label>Checkpoint</label>
+          <select id="model-select"></select>
+          <div class="hint single">Metti altri .safetensors in <code>models/checkpoints</code>.</div>
+        </div>
+      </div>
+
+      <div class="gruppo">
+        <h3>Prompt in italiano</h3>
+        <label class="check"><input type="checkbox" id="imp-traduci" checked>
+          Traduci in inglese prima di generare</label>
+        <div class="hint single">Il modello capisce l'inglese molto meglio. La traduzione
+          parte solo se riconosce parole italiane, e si vede qui sotto.</div>
+        <div class="tradotto" id="imp-tradotto">—</div>
+      </div>
+
+      <div class="gruppo">
+        <h3>Fra un frame e l'altro</h3>
+        <label class="check"><input type="checkbox" id="fast-vae" checked> VAE veloce (TAESD)</label>
+        <div class="hint single">Spegnila per più dettaglio: dimezza gli fps.</div>
+      </div>
+
+      <div class="gruppo">
+        <h3>LoRA</h3>
+        <div id="lora-list" class="lora-list"></div>
+      </div>
+
+      <div class="gruppo">
+        <h3>Cartelle</h3>
+        <div class="row">
+          <button class="ghost small" data-open="recordings">Registrazioni</button>
+          <button class="ghost small" data-open="screenshots">Foto</button>
+          <button class="ghost small" data-open="loras">LoRA</button>
+        </div>
+      </div>
+
+    </div>
+  </section>
+</main>
+
+<div class="drop-overlay hidden" id="drop-overlay">
+  <div>Molla qui il file<br><span class="muted">immagine o video</span></div>
+</div>
+
+<div class="visore hidden" id="visore">
+  <button class="visore-chiudi" id="visore-chiudi">✕</button>
+  <div class="visore-corpo" id="visore-corpo"></div>
+  <div class="visore-piede">
+    <span id="visore-nome"></span>
+    <span class="spacer"></span>
+    <button class="ghost small" id="visore-elimina">Elimina</button>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script src="/ui/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+{
+  "prompt": "charcoal drawing, black and white, rough smudged strokes",
+  "negative_prompt": "colour, blurry, ugly, deformed, text, watermark, low quality",
+  "strength": 0.28,
+  "guidance": 4.0,
+  "steps": 1,
+  "temporal_blend": 0.3,
+  "name": "Carboncino"
+}

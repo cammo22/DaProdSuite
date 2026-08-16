@@ -1,0 +1,9 @@
+{
+  "prompt": "anime illustration, clean lines, flat vivid colours, cel shading",
+  "negative_prompt": "realistic, photograph, blurry, ugly, deformed, text, watermark, low quality",
+  "strength": 0.28,
+  "guidance": 4.0,
+  "steps": 1,
+  "temporal_blend": 0.3,
+  "name": "Anime"
+}

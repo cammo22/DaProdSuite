@@ -40,6 +40,10 @@ extraResources:
     to: apps/musica
   - from: ../foto
     to: apps/foto
+  # Dream la serve il suo motore, non lo schema daprod://: la cartella deve
+  # restare leggibile da Python, non finire nell'asar.
+  - from: ../dream
+    to: apps/dream
 
 win:
   target:

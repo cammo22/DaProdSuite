@@ -1,0 +1,9 @@
+{
+  "prompt": "futuristic armour, chrome metal, blue holographic lights, concept art",
+  "negative_prompt": "blurry, ugly, deformed, text, watermark, low quality",
+  "strength": 0.28,
+  "guidance": 4.0,
+  "steps": 1,
+  "temporal_blend": 0.35,
+  "name": "Fantascienza"
+}

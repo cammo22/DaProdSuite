@@ -54,7 +54,9 @@ leggendo il codice.
 
 ## 0.2.0 — Le altre tre
 
-- [ ] **DaProdDream** — trasformazione in tempo reale
+- [x] **DaProdDream** — trasformazione in tempo reale *(dentro: motore avviato
+      dal supervisore, SD-Turbo e TAESD dalla cartella condivisa, finestra della
+      suite. Provato fino al modello caricato — la webcam la giudichi tu)*
 - [ ] **DaProdCompanion** — memoria e sogni; va aggiunto `sqlite_vec` al suo pyproject
 - [ ] **DaProd IoDigitale** — l'avatar parlante, ex LeapTalk
 

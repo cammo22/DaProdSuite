@@ -1,0 +1,9 @@
+{
+  "prompt": "thick oil painting on canvas, visible brush strokes, warm light, impressionist",
+  "negative_prompt": "photograph, blurry, ugly, deformed, text, watermark, low quality",
+  "strength": 0.28,
+  "guidance": 4.0,
+  "steps": 1,
+  "temporal_blend": 0.3,
+  "name": "Pittura ad olio"
+}

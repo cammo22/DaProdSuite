@@ -1,0 +1,22 @@
+# Le librerie che servono a DaProdDream e che l'ambiente condiviso non ha già.
+#
+# Torch NON si tocca: c'è già con la build CUDA giusta, e chi lo rimette può
+# solo sostituirlo con una wheel peggiore. Vale per tutti i motori della suite
+# (packages/runtime/src/requisiti.ts).
+#
+# Chi manca davvero rispetto a ComfyUI: diffusers (la pipeline SD-Turbo), la
+# cattura dello schermo, e il video delle registrazioni.
+
+diffusers>=0.36.0
+accelerate>=1.10.0
+peft>=0.17.0
+
+fastapi>=0.121.0
+uvicorn>=0.38.0
+websockets>=15.0
+python-multipart>=0.0.20
+
+opencv-python>=4.11.0
+mss>=10.0.0
+imageio-ffmpeg>=0.6.0
+nvidia-ml-py>=13.0

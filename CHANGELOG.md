@@ -12,6 +12,17 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ## Non ancora pubblicato
 
+### DaProdDream è entrato nella suite
+
+- **La quarta app è dentro**: webcam, schermo, video o una foto trasformati in
+  tempo reale, con SD-Turbo. Si apre dall'hub come le altre, e il motore lo
+  accende e lo spegne la suite.
+- **Niente più installazione a parte**: i suoi 2,6 GB di modelli si scaricano
+  come quelli di tutte, nella cartella condivisa, e le sue librerie Python
+  entrano nell'ambiente comune.
+- Le schermate e le registrazioni finiscono **in libreria**, quindi si possono
+  mandare a DaProdFoto per il ritocco senza salvare, cercare e riaprire.
+
 ### La prima volta, la suite ti prende per mano
 
 - **Al primo avvio compare una schermata che chiede cosa vuoi**: le app

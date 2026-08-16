@@ -56,6 +56,19 @@ export const SERVICES_DIR = app.isPackaged
   ? join(process.resourcesPath, "services")
   : join(app.getAppPath(), "..", "..", "services");
 
+/**
+ * La cartella dell'interfaccia di un'app: nel repo in sviluppo, in `resources`
+ * una volta impacchettata.
+ *
+ * Serve a chi la deve servire: lo schema `daprod://` per Musica e Foto, e il
+ * motore stesso per Dream, che la sua pagina se la serve da solo.
+ */
+export function cartellaApp(id: string): string {
+  return app.isPackaged
+    ? join(process.resourcesPath, "apps", id)
+    : join(app.getAppPath(), "..", id);
+}
+
 export function ensureDataDirs(): void {
   // RUNTIME_DIR non si crea qui: `uv venv` vuole creare lui la cartella e una
   // cartella vuota preesistente gli fa sospettare un ambiente rotto.

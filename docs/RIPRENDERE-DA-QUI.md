@@ -294,6 +294,38 @@ ha una in arrivo, così la mappa non cresce per i brani che non ne vogliono.
 **Da imparare, più che da correggere**: cambiare l'ordine di due lavori voleva
 dire cambiare chi passa cosa a chi, e il passaggio stava in un altro file.
 
+## Com'è entrata DaProdDream
+
+Viene da `Desktop\DaProdDream`, che era un programma intero: si apriva da sé una
+finestra di Chrome in modalità `--app`, si sorvegliava con un watchdog e
+spegneva il motore quando non vedeva più nessuno collegato. Quelle tre cose qui
+le fa la suite, quindi `main.py` è stato sostituito da `avvio.py`, che è quasi
+solo `uvicorn.run`.
+
+**La differenza che conta rispetto a Musica e Foto:** la sua pagina **la serve
+il motore**, non lo schema `daprod://`. Non è una scorciatoia: l'interfaccia di
+Dream chiama il proprio server con indirizzi relativi e apre un WebSocket su
+`location.host`, perché i fotogrammi trasformati arrivano da lì trenta volte al
+secondo. Servirla da un'altra origine vorrebbe dire riscriverla; la finestra
+carica `http://127.0.0.1:8770/` e tutto il resto funziona com'era. Il motore la
+trova con `DAPROD_INTERFACCIA`, che `servizi.ts` passa a tutti (gli altri la
+ignorano).
+
+**Due cose nuove che valgono per tutte le app che verranno:**
+
+1. **`services/<id>/requisiti.txt`.** I motori nostri hanno bisogno di librerie
+   che l'ambiente condiviso non ha — Dream vuole diffusers, la cattura dello
+   schermo, il video — e adesso `installaApp` le installa insieme al resto.
+   Senza, l'app si installava "bene" e poi moriva con un ImportError dentro un
+   log. Lo useranno IoDigitale e il Companion.
+2. **`paths.cartellaApp(id)`**: dove sta l'interfaccia di un'app, nel repo o in
+   `resources` una volta impacchettata. Era ripetuta in ogni finestra.
+
+**I modelli non li cerca più su HuggingFace.** `params.model` punta alla cartella
+della suite (`models/diffusers/sd-turbo`), e la VAE veloce TAESD è entrata nel
+catalogo: sono 19 MB, ma sono quelli che fanno la differenza fra vedersi
+trasformare in tempo reale o no.
+
 ## Come si guarda dentro un'interfaccia che non funziona
 
 Due strumenti nati il 16 agosto, dopo un giro intero passato a indovinare.
@@ -374,6 +406,12 @@ tentativi.
   giorno che cambia la scheda.
 
 ## Il prossimo passo
+
+**DaProdDream va provata da Cammo** — la webcam e il video in tempo reale sono
+sue da giudicare — e poi tocca a **DaProd IoDigitale**, che è la più pesante
+delle due che restano: 8 GB di pesi (SoulX-FlashHead Lite, LeapTalk, wav2vec2),
+un motore a `web_server.py` sulla 7860, e un'interfaccia da portare dentro come
+si è fatto qui. Il **Companion** dopo, perché dipende da LM Studio acceso.
 
 **La 0.1.0 è chiusa.** Il pezzo che mancava — la procedura guidata al primo
 avvio — è dentro e provato. Da qui la strada è la **0.2.0: le altre tre app**,

@@ -159,10 +159,12 @@ export const APPS: Record<AppId, AppDescriptor> = {
     service: {
       id: "dream",
       port: 8770,
-      entry: "main.py",
-      healthTimeoutMs: 120_000,
+      entry: "avvio.py",
+      // Carica SD-Turbo prima di dire che è pronto: sul primo avvio, con il
+      // modello ancora fuori dalla cache del sistema, ci vuole più di un minuto.
+      healthTimeoutMs: 180_000,
     },
-    models: ["sd-turbo"],
+    models: ["sd-turbo", "taesd"],
     gpuHeavy: true,
   },
   companion: {

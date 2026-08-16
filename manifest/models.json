@@ -152,6 +152,16 @@
       "bytes": 2581650789
     },
 
+    "taesd": {
+      "label": "TAESD — VAE veloce per DaProdDream",
+      "kind": "hf-repo",
+      "dir": "diffusers/taesd",
+      "repo": "madebyollin/taesd",
+      "$comment": "19 MB, ed è quello che fa la differenza fra vedersi trasformare in tempo reale o no: il VAE normale di SD costa più della diffusione stessa quando i passi sono uno o due. Gli 'include' lasciano fuori i pesi in formato vecchio.",
+      "include": ["*.json", "*.safetensors"],
+      "bytes": 19585101
+    },
+
     "soulx-flashhead": {
       "label": "SoulX-FlashHead 1.3B — avatar parlante",
       "kind": "hf-repo",

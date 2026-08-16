@@ -30,8 +30,10 @@
 import { APPS, modelliRichiesti, type AppId, type AvanzamentoModelli } from "@daprod/ipc";
 import {
   ScaricamentoAnnullato,
+  ensureUv,
   installaMotore,
   installaNodo,
+  installaRequisiti,
   motoreAggiornato,
   motorePresente,
   nodiMancanti,
@@ -40,12 +42,13 @@ import {
   scaricaRepo,
 } from "@daprod/runtime";
 import { EventEmitter } from "node:events";
+import { existsSync } from "node:fs";
 import { stat } from "node:fs/promises";
 import { join } from "node:path";
 import { appManager } from "./app-manager";
 import { createLogger } from "./logging";
 import { modelliMancanti, nodiRichiesti, type ModelEntry } from "./models";
-import { ENGINES_DIR, MODELS_DIR, PYTHON_EXE, RUNTIME_DIR, TOOLS_DIR } from "./paths";
+import { ENGINES_DIR, MODELS_DIR, PYTHON_EXE, RUNTIME_DIR, SERVICES_DIR, TOOLS_DIR } from "./paths";
 import { runtime } from "./runtime";
 import * as servizi from "./servizi";
 
@@ -129,7 +132,10 @@ export async function installaApp(id: AppId): Promise<void> {
       });
     }
 
-    /* 3 e 4 — nodi custom e modelli ----------------------------------------- */
+    /* 3 — le librerie Python del motore di quest'app ------------------------- */
+    await installaLibrerieServizio(id, { segnale, scrivi, avanzamento });
+
+    /* 4 e 5 — nodi custom e modelli ----------------------------------------- */
     await portaDentro(modelliRichiesti(id), { segnale, scrivi, avanzamento });
 
     scrivi("Installazione completata.");
@@ -234,6 +240,38 @@ interface Corsa {
   segnale: AbortSignal;
   scrivi: (riga: string) => void;
   avanzamento: (done: number, total: number, label: string) => void;
+}
+
+/**
+ * Le librerie Python che il motore di quest'app pretende, se ne dichiara.
+ *
+ * `services/<id>/requisiti.txt`, e vale per tutti: ComfyUI si porta le sue
+ * dentro l'installazione del motore, ma i motori **nostri** — Dream, e domani
+ * IoDigitale e il Companion — hanno bisogno di roba che l'ambiente condiviso non
+ * ha (diffusers, la cattura dello schermo, il video). Senza questo passaggio
+ * l'app si installa "bene" e poi non parte, con un ImportError dentro un log.
+ *
+ * Si rilancia a ogni installazione: uv controlla in un secondo quello che c'è
+ * già, e così un requisito aggiunto dopo arriva a chi l'app ce l'ha da prima.
+ */
+async function installaLibrerieServizio(id: AppId, corsa: Corsa): Promise<void> {
+  const servizio = APPS[id].service;
+  if (!servizio) return;
+
+  const requisiti = join(SERVICES_DIR, servizio.id, "requisiti.txt");
+  if (!existsSync(requisiti)) return;
+
+  corsa.avanzamento(0, 0, `Installo le librerie di ${APPS[id].name}`);
+  corsa.scrivi(`Librerie del motore da ${requisiti}`);
+  const uv = await ensureUv({ toolsDir: TOOLS_DIR, onLine: corsa.scrivi });
+  await installaRequisiti({
+    uv,
+    runtimeDir: RUNTIME_DIR,
+    requisiti,
+    segnale: corsa.segnale,
+    onLine: corsa.scrivi,
+    timeoutMs: 60 * 60_000,
+  });
 }
 
 /**

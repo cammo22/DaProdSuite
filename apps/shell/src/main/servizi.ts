@@ -18,7 +18,7 @@ import { ProcessSupervisor } from "./process-supervisor";
 import { impostazioni } from "./impostazioni";
 import { createLogger } from "./logging";
 import { libreria } from "./libreria";
-import { CACHE_DIR, ENGINES_DIR, MODELS_DIR, PYTHON_EXE, SERVICES_DIR } from "./paths";
+import { CACHE_DIR, ENGINES_DIR, MODELS_DIR, PYTHON_EXE, SERVICES_DIR, cartellaApp } from "./paths";
 import { existsSync, mkdirSync } from "node:fs";
 import { createServer } from "node:net";
 import { join } from "node:path";
@@ -209,6 +209,9 @@ function ambiente(id: AppId, servizio: AppService): NodeJS.ProcessEnv {
     DAPROD_RISULTATI: libreria.cartella(id),
     DAPROD_TEMPORANEI: temporanei,
     DAPROD_PORTA: String(servizio.port),
+    // Serve a chi la propria pagina se la serve da solo (DaProdDream): gli
+    // altri motori la ignorano.
+    DAPROD_INTERFACCIA: cartellaApp(id),
     ...(servizio.engine ? { DAPROD_MOTORE: join(ENGINES_DIR, servizio.engine) } : {}),
   };
 }
