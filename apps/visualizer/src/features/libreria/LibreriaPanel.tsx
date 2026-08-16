@@ -61,14 +61,14 @@ export function LibreriaPanel(): JSX.Element {
     >
       {!dentroLaSuite() ? (
         <p className="dpv-libreria__vuoto">
-          Questa finestra sta girando da sola. Apri il Visualizer dalla DaProd Suite per
+          Questa finestra sta girando da sola. Apri DaPVisualizer dalla DaProd Suite per
           vedere i brani generati dalle altre app.
         </p>
       ) : caricando ? (
         <p className="dpv-libreria__vuoto">Leggo la libreria…</p>
       ) : elementi.length === 0 ? (
         <p className="dpv-libreria__vuoto">
-          Ancora nessun brano generato. Quando DaProdMusica ne produce uno, compare qui.
+          Ancora nessun brano generato. Quando DaPMusica ne produce uno, compare qui.
         </p>
       ) : (
         <ul className="dpv-libreria">

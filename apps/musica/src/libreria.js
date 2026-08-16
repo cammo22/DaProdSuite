@@ -97,7 +97,7 @@ function disegnaDettaglio() {
       : ""}
     <div class="acts">
       <button id="revealBtn">mostra nella cartella</button>
-      <button id="visualBtn">apri nel Visualizer</button>
+      <button id="visualBtn">apri in DaPVisualizer</button>
       ${brano.copertina ? `<button id="coverDel">togli copertina</button>` : ""}
       ${meta.caption ? `<button id="reuseBtn">riusa i parametri</button><button id="regenBtn">nuova resa</button>` : ""}
       <button class="del" id="delBtn">elimina</button>
@@ -214,7 +214,10 @@ export function collegaLibreria() {
   ponte.suLibreriaCambiata(() => void aggiornaLibreria());
 
   // Un'immagine mandata qui da un'altra app diventa la copertina del brano
-  // aperto: è la strada che DaProdFoto userà per vestire un brano.
+  // aperto. **Oggi non la manda nessuno**: il tasto che lo faceva da DaPFoto è
+  // stato tolto proprio perché senza un brano scelto qui sotto non succedeva
+  // niente. Questo lato resta, ed è il pezzo giusto: quello che manca è
+  // chiedere *su quale brano* mettere la copertina quando non ce n'è uno.
   ponte.suConsegna(async (consegna) => {
     if (consegna.intenzione === "usaComeCopertina" && stato.selezionato) {
       await ponte.impostaCopertina(stato.selezionato, await ponte.ritagliaQuadrata(consegna.elemento.url));

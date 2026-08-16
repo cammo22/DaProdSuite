@@ -2,9 +2,13 @@
  * La scheda Galleria: le immagini fatte qui.
  *
  * Non è un album del programma, è la cartella dei risultati della suite vista da
- * questa app. Per questo un'immagine può andarsene altrove con un clic — a
- * DaProdMusica diventa la copertina di un brano — senza salvarla, ritrovarla e
- * ricaricarla da qualche parte.
+ * questa app: le stesse immagini le vedono anche le altre.
+ *
+ * **C'era un tasto "a Musica" e non c'è più.** Mandava l'immagine a DaPMusica
+ * come copertina, ma DaPMusica la sa usare solo se in Libreria c'è già un brano
+ * scelto: senza, l'immagine partiva e non succedeva niente: un tasto che
+ * risponde "mandata" e non fa nulla è peggio di un tasto che non c'è. Il giro
+ * torna quando DaPMusica saprà chiedere *su quale brano* metterla.
  */
 
 import { el, escapeHtml, mostraScheda } from "./dom.js";
@@ -60,7 +64,6 @@ function scheda(immagine) {
     <div class="sub">${escapeHtml(descrivi(immagine))}</div>
     <div class="acts">
       <button data-ritocca="${escapeHtml(immagine.id)}">ritocca</button>
-      <button data-copertina="${escapeHtml(immagine.id)}">a Musica</button>
       <button data-mostra="${escapeHtml(immagine.id)}">nella cartella</button>
       <button class="del" data-elimina="${escapeHtml(immagine.id)}">elimina</button>
     </div>
@@ -83,16 +86,6 @@ function collega() {
     b.onclick = () => {
       const immagine = trova(b.dataset.ritocca);
       if (immagine) annuncia("ritocca", immagine.url);
-    };
-  });
-
-  // L'intenzione la capisce Musica: le arriva un'immagine e la mette come
-  // copertina del brano che ha aperto.
-  el.galleria.querySelectorAll("[data-copertina]").forEach((b) => {
-    b.onclick = async () => {
-      b.textContent = "mandata";
-      await ponte.mandaA("musica", b.dataset.copertina, "usaComeCopertina");
-      setTimeout(() => (b.textContent = "a Musica"), 1800);
     };
   });
 
