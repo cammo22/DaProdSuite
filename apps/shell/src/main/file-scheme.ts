@@ -142,6 +142,12 @@ export function gestisciSchema(): void {
     // Il seek di un file lungo chiede pezzi: senza dirlo, il lettore non prova
     // nemmeno a chiederli e scarica tutto dall'inizio ogni volta.
     if (!intestazioni.has("Accept-Ranges")) intestazioni.set("Accept-Ranges", "bytes");
+    // **Niente cache.** Una `file://` non manda né `ETag` né `Last-Modified`,
+    // quindi Chromium decide da sé per quanto tenersi la risposta: un foglio di
+    // stile appena cambiato continuava a tornare quello di prima anche
+    // ricaricando la pagina, e la modifica sembrava non aver fatto niente.
+    // Qui non si guadagna nulla a tenerla — il file è sul disco a due passi.
+    intestazioni.set("Cache-Control", "no-cache");
 
     return new Response(risposta.body, {
       status: risposta.status,

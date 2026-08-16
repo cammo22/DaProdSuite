@@ -51,9 +51,12 @@ export function apri(onClose: () => void): void {
     y: bounds.y,
     width: bounds.width,
     height: bounds.height,
-    // Sotto questa larghezza le due colonne (modulo e sessione) si accavallano.
-    minWidth: 900,
-    minHeight: 620,
+    // Era 900, perché sotto quella misura le due colonne si accavallavano.
+    // Adesso il foglio di stile le impila da sé (`.two` a 1150px) e sotto gli
+    // 860 rientra anche l'intestazione, quindi il limite può scendere: la
+    // finestra si accosta a metà schermo accanto a un'altra e resta usabile.
+    minWidth: 480,
+    minHeight: 560,
     show: false,
     backgroundColor: "#08090d",
     autoHideMenuBar: true,
