@@ -16,7 +16,7 @@ import {
   type Velocita,
 } from "@daprod/ipc";
 import { impostaVelocita, impostazioni, segnaGuidaFatta } from "./impostazioni";
-import { chiediAllLlm, statoLlm } from "./llm";
+import { caricaModello, chiediAllLlm, liberaMemoriaLlm, scaricaModello, statoLlm } from "./llm";
 import { appManager } from "./app-manager";
 import { annulla, installaApp, installaModelli, installaTutte, scaricamenti } from "./scaricamenti";
 import { libreria } from "./libreria";
@@ -141,6 +141,11 @@ export function registerIpc(getHub: () => BrowserWindow | null): void {
 
   // Uno per tutta la suite: ogni app gli chiede la cosa che sa chiedere.
   ipcMain.handle(CHANNELS.llmStato, () => statoLlm());
+  ipcMain.handle(CHANNELS.llmCarica, (_e, id: string, contesto: number) =>
+    caricaModello(String(id), Number(contesto) || 65_536),
+  );
+  ipcMain.handle(CHANNELS.llmScarica, (_e, id: string) => scaricaModello(String(id)));
+  ipcMain.handle(CHANNELS.llmLibera, () => liberaMemoriaLlm());
   ipcMain.handle(
     CHANNELS.llmChiedi,
     (

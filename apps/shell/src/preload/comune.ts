@@ -59,6 +59,7 @@ export function esponiApiApp(io: AppId): void {
     llm: {
       stato: () => ipcRenderer.invoke(CHANNELS.llmStato),
       chiedi: (domanda) => ipcRenderer.invoke(CHANNELS.llmChiedi, domanda),
+      liberaMemoria: () => ipcRenderer.invoke(CHANNELS.llmLibera),
     },
 
     invia: (destinazione: AppId, elementoId: string, intenzione: Intenzione) =>

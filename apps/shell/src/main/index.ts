@@ -10,6 +10,7 @@ import { join } from "node:path";
 import { APP_IDS, type AppId } from "@daprod/ipc";
 import { appManager } from "./app-manager";
 import { gpu } from "./gpu";
+import { spegniSeNostro } from "./llm";
 import { registerIpc } from "./ipc";
 import { ensureDataDirs } from "./paths";
 import { updater } from "./updater";
@@ -132,6 +133,10 @@ app.on("before-quit", async (event) => {
     shuttingDown = true;
     gpu.stopPolling();
     distruggiTray();
+    // Anche il modello che scrive: se l'abbiamo caricato noi in LM Studio, sono
+    // quattro GB che senza questo restavano in memoria dopo che l'utente ha
+    // chiuso la suite, occupati da un programma che credeva chiuso.
+    await spegniSeNostro().catch(() => {});
     await appManager.closeAll();
     app.quit();
   }

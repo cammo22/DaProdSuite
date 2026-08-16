@@ -75,12 +75,25 @@ export interface Impostazioni {
 
 /* ----------------------------------------------------------------------- llm */
 
-/** Se c'è qualcuno che sa scrivere, e chi. */
+/** Un modello di LM Studio, e se in questo momento occupa memoria. */
+export interface ModelloLlm {
+  id: string;
+  /** **Caricato**, cioè in RAM o VRAM adesso. Installato non basta. */
+  caricato: boolean;
+  /** Il contesto massimo che regge, in token. */
+  contestoMax: number;
+}
+
+/** Se c'è qualcuno che sa scrivere, chi, e chi sta occupando la memoria. */
 export interface StatoLlm {
   /** LM Studio risponde sul suo server locale. */
   acceso: boolean;
-  /** I modelli che ha caricato. Vuoto significa "acceso ma a vuoto". */
+  /** I modelli utilizzabili. Vuoto significa "acceso ma senza modelli". */
   modelli: string[];
+  /** Tutti, con il loro stato: è quello che l'hub mostra. */
+  disponibili: ModelloLlm[];
+  /** Quelli che in questo momento tengono occupata la memoria. */
+  caricati?: string[];
   /** Perché non si può usare, detto all'utente così com'è. */
   motivo?: string;
 }
@@ -283,6 +296,22 @@ export interface SuiteApi {
     reset(cosa: CosaResettare): Promise<number>;
   };
 
+  /**
+   * Il modello che scrive, visto dall'hub.
+   *
+   * Qui si carica e si scarica **a mano e in fretta**, perché un 27B in memoria
+   * sono quattro GB che non stanno al modello di immagini. La suite scarica da
+   * sé quello che ha caricato lei, quando ha finito e quando si chiude: questo
+   * pannello serve a vederlo e a forzarlo.
+   */
+  llm: {
+    stato(): Promise<StatoLlm>;
+    /** Lo carica con il contesto scelto (64K, 128K, 256K), GPU al massimo. */
+    carica(id: string, contesto: number): Promise<string | null>;
+    /** Lo toglie dalla memoria adesso. */
+    scarica(id: string): Promise<string | null>;
+  };
+
   update: {
     state(): Promise<UpdateState>;
     check(): Promise<void>;
@@ -375,6 +404,15 @@ export interface ApiApp {
       schema?: Record<string, unknown>;
       nomeSchema?: string;
     }): Promise<EsitoLlm>;
+
+    /**
+     * Toglie subito dalla memoria il modello che la suite ha caricato.
+     *
+     * **Da chiamare prima di ogni generazione pesante.** Scrivere il testo con
+     * Bonsai e premere Genera capita nel giro di pochi secondi: senza questo, il
+     * modello musicale trova quattro GB e mezzo già occupati.
+     */
+    liberaMemoria(): Promise<void>;
   };
 
   /** Manda un elemento a un'altra app, aprendola se serve. */
@@ -434,6 +472,9 @@ export const CHANNELS = {
 
   llmStato: "llm:stato",
   llmChiedi: "llm:chiedi",
+  llmCarica: "llm:carica",
+  llmScarica: "llm:scarica",
+  llmLibera: "llm:libera",
 
   libreriaElenco: "libreria:elenco",
   libreriaMostra: "libreria:mostra",

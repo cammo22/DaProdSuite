@@ -70,6 +70,13 @@ const api: SuiteApi = {
     reset: (cosa) => ipcRenderer.invoke(CHANNELS.spazioReset, cosa),
   },
 
+  llm: {
+    stato: () => ipcRenderer.invoke(CHANNELS.llmStato),
+    carica: (id: string, contesto: number) =>
+      ipcRenderer.invoke(CHANNELS.llmCarica, id, contesto),
+    scarica: (id: string) => ipcRenderer.invoke(CHANNELS.llmScarica, id),
+  },
+
   update: {
     state: () => ipcRenderer.invoke(CHANNELS.updateState),
     check: () => ipcRenderer.invoke(CHANNELS.updateCheck),

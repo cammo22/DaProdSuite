@@ -442,6 +442,78 @@ function chiudiGuida(): void {
   void api.apps.installaTutte(ids);
 });
 
+/* -------------------------------------------------------------- il modello */
+
+/**
+ * Il pannello di Bonsai: chi c'è, chi occupa memoria, e i tre contesti.
+ *
+ * Sta nell'hub e non dentro un'app perché il modello è di tutte — e soprattutto
+ * perché **quando occupa memoria la occupa per tutte**: un 27B caricato sono
+ * quattro GB che mancano al modello di immagini mentre generi. Da qui lo si
+ * spegne in un secondo senza aprire LM Studio.
+ */
+const sezioneLlm = document.getElementById("llm") as HTMLElement;
+const llmStato = document.getElementById("llm-stato") as HTMLElement;
+const llmElenco = document.getElementById("llm-elenco") as HTMLElement;
+
+/** Il contesto con cui caricare, scelto dai tre pulsanti. 64K è il consigliato. */
+let contestoScelto = 65_536;
+
+for (const bottone of document.querySelectorAll<HTMLButtonElement>("[data-contesto]")) {
+  bottone.addEventListener("click", () => {
+    contestoScelto = Number(bottone.dataset.contesto);
+    for (const altro of document.querySelectorAll("[data-contesto]")) altro.classList.remove("on");
+    bottone.classList.add("on");
+  });
+}
+
+async function aggiornaLlm(): Promise<void> {
+  const stato = await api.llm.stato();
+
+  if (!stato.acceso) {
+    llmStato.textContent = stato.motivo ?? "LM Studio non risponde.";
+    llmElenco.innerHTML = "";
+    return;
+  }
+
+  const caricati = stato.disponibili.filter((m) => m.caricato);
+  llmStato.textContent = caricati.length
+    ? `In memoria adesso: ${caricati.map((m) => m.id).join(", ")}`
+    : "Nessun modello in memoria: la scheda è libera.";
+
+  llmElenco.innerHTML = "";
+  for (const modello of stato.disponibili) {
+    const voce = document.createElement("li");
+    voce.className = modello.caricato ? "acceso" : "";
+    voce.innerHTML = `
+      <span class="llm-nome">${modello.id}</span>
+      <span class="llm-dati">${modello.caricato ? "in memoria" : "spento"} · fino a ${Math.round(
+        modello.contestoMax / 1024,
+      )}K</span>
+      <button class="bottone ${modello.caricato ? "secondario" : ""}">${
+        modello.caricato ? "Scarica" : "Carica"
+      }</button>`;
+
+    const bottone = voce.querySelector("button") as HTMLButtonElement;
+    bottone.addEventListener("click", async () => {
+      bottone.disabled = true;
+      bottone.textContent = modello.caricato ? "scarico…" : "carico…";
+      const errore = modello.caricato
+        ? await api.llm.scarica(modello.id)
+        : await api.llm.carica(modello.id, contestoScelto);
+      if (errore) llmStato.textContent = errore;
+      await aggiornaLlm();
+    });
+
+    llmElenco.appendChild(voce);
+  }
+}
+
+(document.getElementById("btn-llm") as HTMLButtonElement).addEventListener("click", () => {
+  sezioneLlm.hidden = !sezioneLlm.hidden;
+  if (!sezioneLlm.hidden) void aggiornaLlm();
+});
+
 /* --------------------------------------------------------------- velocità */
 
 /**

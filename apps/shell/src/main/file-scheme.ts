@@ -13,7 +13,10 @@
  */
 
 import { net, protocol } from "electron";
+import { createReadStream } from "node:fs";
+import { stat } from "node:fs/promises";
 import { join, normalize, resolve, sep } from "node:path";
+import { Readable } from "node:stream";
 import { pathToFileURL } from "node:url";
 
 export const SCHEMA = "daprod";
@@ -85,6 +88,25 @@ export function gestisciSchema(): void {
       });
     }
 
+    /**
+     * **I pezzi li serviamo noi.**
+     *
+     * `net.fetch` su una `file://` ignora la `Range` e restituisce sempre il
+     * file intero con 200. Per un `<audio>` quello vuol dire che non può
+     * spostarsi: portare avanti la canzone di venti secondi la faceva
+     * **ricominciare da capo**, perché il lettore, non potendo chiedere il pezzo
+     * che gli serve, ricarica tutto e riparte.
+     *
+     * Con un 206 e il `Content-Range` giusto il lettore salta dove vuole, e
+     * legge solo quello che gli serve invece di tenere in memoria un brano
+     * intero.
+     */
+    const richiestaRange = request.headers.get("range");
+    if (richiestaRange) {
+      const risposta = await servipezzo(percorso, richiestaRange);
+      if (risposta) return risposta;
+    }
+
     // **Solo le Range, non tutte le intestazioni della richiesta.** Passandole
     // tutte partiva anche `Origin`, e una `file://` con un Origin diverso è per
     // Chromium una richiesta incrociata verso una risposta che non può
@@ -126,6 +148,48 @@ export function gestisciSchema(): void {
       statusText: risposta.statusText,
       headers: intestazioni,
     });
+  });
+}
+
+/**
+ * Il pezzo di file chiesto da una `Range`, come 206.
+ *
+ * Torna null se la richiesta non si capisce o il file non c'è: in quel caso si
+ * prosegue come sempre e il chiamante riceve tutto quanto, che è la risposta
+ * giusta quando non sappiamo fare di meglio.
+ */
+async function servipezzo(percorso: string, range: string): Promise<Response | null> {
+  const pezzi = /^bytes=(\d*)-(\d*)$/.exec(range.trim());
+  if (!pezzi) return null;
+
+  let dimensione: number;
+  try {
+    dimensione = (await stat(percorso)).size;
+  } catch {
+    return null;
+  }
+
+  const [, daTesto, aTesto] = pezzi;
+  // `bytes=-500` vuol dire "gli ultimi 500", non "dall'inizio a 500".
+  const da = daTesto ? Number(daTesto) : Math.max(0, dimensione - Number(aTesto || 0));
+  const a = daTesto ? (aTesto ? Math.min(Number(aTesto), dimensione - 1) : dimensione - 1) : dimensione - 1;
+
+  if (!Number.isFinite(da) || !Number.isFinite(a) || da > a || da >= dimensione) {
+    return new Response(null, {
+      status: 416,
+      headers: { "Content-Range": `bytes */${dimensione}`, "Access-Control-Allow-Origin": "*" },
+    });
+  }
+
+  const flusso = createReadStream(percorso, { start: da, end: a });
+  return new Response(Readable.toWeb(flusso) as ReadableStream, {
+    status: 206,
+    headers: {
+      "Content-Range": `bytes ${da}-${a}/${dimensione}`,
+      "Content-Length": String(a - da + 1),
+      "Accept-Ranges": "bytes",
+      "Access-Control-Allow-Origin": "*",
+    },
   });
 }
 

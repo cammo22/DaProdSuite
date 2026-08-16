@@ -70,6 +70,27 @@
 
       <section class="griglia" id="griglia" aria-label="App della suite"></section>
 
+      <!-- Il modello che scrive. Sta nell'hub e non dentro un'app perché è di
+           tutte, e perché quando occupa memoria lo fa per tutte. -->
+      <section class="llm" id="llm" aria-label="Modello che scrive">
+        <div class="llm-testa">
+          <h2>Bonsai — il modello che scrive</h2>
+          <p id="llm-stato">—</p>
+        </div>
+        <ul class="llm-elenco" id="llm-elenco"></ul>
+        <div class="llm-contesto">
+          <span>Quanto contesto, quando lo carico:</span>
+          <button class="bottone secondario on" data-contesto="65536">64K</button>
+          <button class="bottone secondario" data-contesto="131072">128K</button>
+          <button class="bottone secondario" data-contesto="262144">256K</button>
+        </div>
+        <p class="llm-nota">
+          64K è quello consigliato: più contesto vuol dire più memoria per la cache e
+          meno per il modello. La suite scarica da sé quello che ha caricato lei, due
+          minuti dopo l'ultima domanda e quando chiudi la suite.
+        </p>
+      </section>
+
       <section class="spazio" id="spazio" hidden aria-label="Spazio su disco">
         <div class="spazio-testa">
           <h2>Spazio su disco</h2>
@@ -104,6 +125,7 @@
         <button class="collegamento" data-apri="output">Risultati</button>
         <button class="collegamento" data-apri="models">Modelli</button>
         <button class="collegamento" data-apri="logs">Log</button>
+        <button class="collegamento" id="btn-llm">Bonsai</button>
         <button class="collegamento" id="btn-spazio">Spazio</button>
       </div>
     </footer>

@@ -161,6 +161,10 @@ export const statoModelli = (ids) => suite.modelli.stato(ids);
 export const scaricaModelli = (ids) => suite.modelli.scarica(ids);
 export const suAvanzamentoModelli = (azione) => suite.modelli.onAvanzamento(azione);
 
+/* Toglie dalla memoria il modello che scrive: si chiama un attimo prima di far
+   partire una generazione, che e' quando quei GB servono a qualcun altro. */
+export const liberaMemoriaLlm = () => suite.llm.liberaMemoria();
+
 /** Manda un brano a un'altra app della suite: è il senso di stare tutti insieme. */
 export const mandaA = (app, id, intenzione) => suite.invia(app, id, intenzione);
 export const suConsegna = (azione) => suite.onConsegna(azione);

@@ -190,6 +190,11 @@ async function creaBrano(p) {
   // lasciava occupata. Non era quello: era un difetto di ComfyUI 0.33.0, che la
   // 0.33.1 corregge. La memoria video si svuota lo stesso fra le due, che è
   // gratis e toglie di mezzo il dubbio.
+  // **Prima di tutto, via il modello che scrive.** Fra "Bonsai mi finisce il
+  // testo" e "Crea" passano pochi secondi: senza questo, i suoi quattro GB e
+  // mezzo sono ancora in memoria quando il modello musicale ne chiede cinque e
+  // mezzo, e su una scheda da 8 non ci stanno insieme.
+  await ponte.liberaMemoriaLlm();
   await ponte.svuotaVram();
 
   let idCopertina = null;

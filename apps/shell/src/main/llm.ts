@@ -18,7 +18,11 @@
  * c'è niente che lo pretenda: si parla con quello che LM Studio ha caricato.
  */
 
-import type { EsitoLlm, StatoLlm } from "@daprod/ipc";
+import type { EsitoLlm, ModelloLlm, StatoLlm } from "@daprod/ipc";
+import { existsSync } from "node:fs";
+import { homedir } from "node:os";
+import { join } from "node:path";
+import { capture } from "@daprod/runtime";
 
 /** Dove ascolta LM Studio quando accendi il suo server locale. */
 const BASE = "http://127.0.0.1:1234/v1";
@@ -56,29 +60,202 @@ export const CONTESTO_CONSIGLIATO = 65_536;
  */
 export async function statoLlm(): Promise<StatoLlm> {
   try {
-    const risposta = await fetch(`${BASE}/models`, {
+    // `/api/v0` è l'API di LM Studio, non quella compatibile OpenAI: è l'unica
+    // che dice **chi è caricato in memoria** e non solo chi è installato. La
+    // differenza è tutta lì: un modello installato non occupa niente, uno
+    // caricato tiene 4-5 GB di VRAM anche mentre generi immagini.
+    const risposta = await fetch("http://127.0.0.1:1234/api/v0/models", {
       signal: AbortSignal.timeout(2500),
     });
     if (!risposta.ok) {
-      return { acceso: false, modelli: [], motivo: `LM Studio ha risposto ${risposta.status}.` };
+      return { acceso: false, modelli: [], disponibili: [], motivo: `LM Studio ha risposto ${risposta.status}.` };
     }
 
-    const dati = (await risposta.json()) as { data?: { id: string }[] };
-    const modelli = (dati.data ?? []).map((m) => m.id);
+    const dati = (await risposta.json()) as {
+      data?: { id: string; type?: string; state?: string; max_context_length?: number }[];
+    };
+
+    const disponibili: ModelloLlm[] = (dati.data ?? [])
+      // Gli embedding non scrivono niente: nell'elenco sarebbero solo una voce
+      // che se cliccata non fa quello che ci si aspetta.
+      .filter((m) => m.type !== "embeddings")
+      .map((m) => ({
+        id: m.id,
+        caricato: m.state === "loaded",
+        contestoMax: m.max_context_length ?? 0,
+      }));
+
+    /**
+     * Chi è **davvero** in memoria, chiesto a `lms ps`.
+     *
+     * Il campo `state` dell'API non è affidabile: subito dopo uno scarico
+     * riuscito diceva ancora "loaded", e un momento dopo il contrario. `lms ps`
+     * è la vista di LM Studio su sé stesso, e quando i due si contraddicono ha
+     * ragione lui. Se il comando non c'è si ripiega sull'API: meglio un dato
+     * incerto che nessun dato.
+     */
+    const veri = await caricatiSecondoLms();
+    if (veri) {
+      for (const m of disponibili) m.caricato = veri.includes(m.id);
+    }
+    const caricati = disponibili.filter((m) => m.caricato).map((m) => m.id);
+
     return {
       acceso: true,
-      modelli,
-      // "Nessun modello caricato" è diverso da "LM Studio spento", e all'utente
-      // servono due frasi diverse per due gesti diversi.
-      motivo: modelli.length ? undefined : "LM Studio è acceso ma non ha nessun modello caricato.",
+      // `modelli` resta quello che si può usare adesso: chi chiede una risposta
+      // guarda questo, e LM Studio carica da sé quello che gli si chiede.
+      modelli: disponibili.map((m) => m.id),
+      disponibili,
+      caricati,
+      motivo: disponibili.length ? undefined : "LM Studio è acceso ma non ha nessun modello installato.",
     };
   } catch {
     return {
       acceso: false,
       modelli: [],
+      disponibili: [],
       motivo: "LM Studio non risponde su 127.0.0.1:1234. Aprilo e accendi il server locale.",
     };
   }
+}
+
+/* ------------------------------------------------- caricare e scaricare ---- */
+
+/**
+ * Il comando `lms`, che LM Studio installa con sé.
+ *
+ * L'API su 1234 sa dire chi è caricato ma non sa caricarlo o scaricarlo a
+ * comando: quello lo fa il suo strumento da riga di comando. Se non c'è, la
+ * suite mostra lo stato e basta — meglio meno bottoni che bottoni che mentono.
+ */
+function lms(): string | null {
+  const suo = join(homedir(), ".lmstudio", "bin", "lms.exe");
+  if (existsSync(suo)) return suo;
+  return null;
+}
+
+export const puoiCaricare = (): boolean => lms() !== null;
+
+/**
+ * Gli id che `lms ps` elenca come in memoria, o null se il comando non c'è.
+ *
+ * Si legge l'uscita così com'è invece di analizzarla colonna per colonna: le
+ * tabelle da riga di comando cambiano forma fra una versione e l'altra, mentre
+ * il nome del modello dentro la riga c'è sempre.
+ */
+async function caricatiSecondoLms(): Promise<string[] | null> {
+  const exe = lms();
+  if (!exe) return null;
+  try {
+    const uscita = await capture(exe, ["ps"]);
+    return uscita
+      .split(/\r?\n/)
+      .filter((riga) => riga.trim() && !/^IDENTIFIER/i.test(riga.trim()))
+      .map((riga) => riga.trim().split(/\s{2,}/)[0]!.trim())
+      .filter(Boolean);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Carica un modello, con il contesto chiesto.
+ *
+ * `--gpu max` è il punto: quello che ci sta va in GPU, il resto in RAM. Su una
+ * scheda da 8 GB Bonsai ternario ci sta intero, ed è la differenza fra una
+ * risposta in dieci secondi e una in due minuti.
+ */
+export async function caricaModello(id: string, contesto: number): Promise<string | null> {
+  const exe = lms();
+  if (!exe) return "Non trovo il comando di LM Studio: caricalo dalla sua finestra.";
+  try {
+    await capture(exe, [
+      "load",
+      id,
+      "--context-length",
+      String(contesto),
+      "--gpu",
+      "max",
+      "--yes",
+    ]);
+    nostro = id;
+    return null;
+  } catch (err) {
+    return err instanceof Error ? err.message : String(err);
+  }
+}
+
+export async function scaricaModello(id: string): Promise<string | null> {
+  const exe = lms();
+  if (!exe) return "Non trovo il comando di LM Studio: scaricalo dalla sua finestra.";
+  try {
+    await capture(exe, ["unload", id]);
+    if (nostro === id) nostro = null;
+    return null;
+  } catch (err) {
+    return err instanceof Error ? err.message : String(err);
+  }
+}
+
+/* --------------------------------------------------- spegnerlo da soli ----- */
+
+/** Il modello che abbiamo caricato noi: solo quello ci prendiamo la libertà di spegnere. */
+let nostro: string | null = null;
+let timerScarico: NodeJS.Timeout | null = null;
+
+/**
+ * Quanto aspettare, finita una risposta, prima di liberare la memoria.
+ *
+ * Non zero: quando si sta lavorando le domande arrivano a raffica — finisci il
+ * testo, cambia una strofa, rifallo — e ricaricare quattro GB a ogni giro
+ * costerebbe più di quello che fa risparmiare. Due minuti sono abbastanza per
+ * non accorgersene e poco per non tenere occupata la scheda mentre si genera
+ * un'immagine.
+ */
+const ATTESA_SCARICO_MS = 45_000;
+
+/**
+ * Libera la memoria **adesso**, senza aspettare il timer.
+ *
+ * La chiama un'app un attimo prima di far partire una generazione pesante, ed è
+ * il punto di tutto il meccanismo: scrivere il testo con Bonsai e poi premere
+ * Genera succede nel giro di pochi secondi: con la sola attesa, il modello
+ * musicale trovava quattro GB e mezzo già occupati dal modello che aveva appena
+ * finito di scrivere. Su una scheda da 8 GB non è un dettaglio, è la differenza
+ * fra generare e non generare.
+ */
+export async function liberaMemoriaLlm(): Promise<void> {
+  if (timerScarico) clearTimeout(timerScarico);
+
+  // **Tutto quello che è in memoria, non solo quello che abbiamo caricato noi.**
+  // Chi preme Genera vuole la scheda libera, e non gliene importa — giustamente —
+  // di chi ce l'aveva messo: un modello acceso a mano in LM Studio occupa
+  // esattamente gli stessi quattro GB.
+  const caricati = (await caricatiSecondoLms()) ?? (nostro ? [nostro] : []);
+  for (const id of caricati) await scaricaModello(id);
+  nostro = null;
+}
+
+function programmaScarico(): void {
+  if (timerScarico) clearTimeout(timerScarico);
+  if (!nostro) return;
+  timerScarico = setTimeout(() => {
+    const id = nostro;
+    if (id) void scaricaModello(id);
+  }, ATTESA_SCARICO_MS);
+  // Non deve tenere sveglia la suite alla chiusura.
+  timerScarico.unref?.();
+}
+
+/**
+ * Alla chiusura della suite: quello che abbiamo caricato noi lo spegniamo noi.
+ *
+ * Senza, chiudere la suite lasciava quattro GB in memoria a LM Studio, e
+ * l'utente si ritrovava la scheda occupata da un programma che credeva chiuso.
+ */
+export async function spegniSeNostro(): Promise<void> {
+  if (timerScarico) clearTimeout(timerScarico);
+  if (nostro) await scaricaModello(nostro);
 }
 
 export interface DomandaLlm {
@@ -123,7 +300,11 @@ export async function chiediAllLlm(domanda: DomandaLlm): Promise<EsitoLlm> {
   // vuol dire farsi scrivere una canzone dal modello di embedding.
   const scelto = stato.modelli.includes(MODELLO_CONSIGLIATO)
     ? MODELLO_CONSIGLIATO
-    : stato.modelli[0];
+    : (stato.modelli[0] ?? MODELLO_CONSIGLIATO);
+
+  // Se lo carica LM Studio su nostra richiesta, siamo noi a doverlo spegnere.
+  if (!stato.caricati?.includes(scelto)) nostro = scelto;
+  if (timerScarico) clearTimeout(timerScarico);
 
   const corpo = {
     model: scelto,
@@ -205,6 +386,9 @@ export async function chiediAllLlm(domanda: DomandaLlm): Promise<EsitoLlm> {
             : "Il modello ha risposto, ma a vuoto.",
       };
     }
+    // Finito: la memoria si libera da sé fra poco, se nel frattempo non arriva
+    // un'altra domanda.
+    programmaScarico();
     return { ok: true, testo: ripulisci(testo), modello: scelto };
   } catch (err) {
     const motivo = err instanceof Error ? err.message : String(err);
