@@ -82,11 +82,10 @@ export function collegaCrea() {
     const p = leggiModulo();
     if (!p.testo) return mostraErrore("Scrivi cosa vuoi vedere.");
 
+    const m = modelloCorrente();
     // Una volta sola, prima del ciclo: otto immagini della stessa descrizione
     // non sono otto traduzioni diverse, e devono partire dallo stesso inglese.
-    const inglese = await inInglese(p.testo, el.tradottoCrea);
-
-    const m = modelloCorrente();
+    const inglese = await inInglese(p.testo, m);
     const quante = Math.max(1, Math.min(8, parseInt(el.quante.value) || 1));
     for (let i = 0; i < quante; i++) {
       // Dalla seconda in poi il seed cambia comunque: otto copie della stessa

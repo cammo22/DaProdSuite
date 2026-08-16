@@ -27,14 +27,14 @@ suApertura("galleria", () => void aggiornaGalleria());
 collegaLente();
 collegaCrea();
 collegaRitocco();
-// Dopo Crea e Ritocco: la scelta del modello sposta i cursori dei passi e del
-// CFG sul punto di lavoro del modello, e le etichette accanto ai cursori
-// esistono solo dopo che quei due si sono collegati.
+collegaTraduzione();
+// Per ultimo fra questi: la scelta del modello sposta i cursori sul suo punto
+// di lavoro e decide se serve la traduzione, quindi vuole trovare già collegate
+// le etichette dei cursori e la casella della lingua.
 collegaScelta();
 collegaGalleria();
 collegaComandiCoda();
 collegaModelli();
-collegaTraduzione();
 
 // Un'immagine trascinata dentro finisce nel ritocco, da qualunque scheda: è
 // l'unica cosa che in Foto si può fare con un'immagine che arriva da fuori.

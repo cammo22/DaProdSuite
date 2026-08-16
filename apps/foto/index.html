@@ -47,6 +47,12 @@
   <label for="modello">Modello</label>
   <select id="modello"></select>
   <span class="hint" id="rigaModello"></span>
+  <!-- Una sola casella per tutta l'app, e compare solo se il modello scelto
+       l'inglese lo pretende: FLUX.2 legge l'italiano da sé. -->
+  <label class="riga-traduci" id="rigaTraduci" hidden>
+    <input type="checkbox" id="traduci"> Traduci in inglese prima di generare
+  </label>
+  <span class="hint tradotto" id="tradotto" hidden></span>
 </section>
 <div id="avvisoModello" class="manca" hidden></div>
 
@@ -58,11 +64,6 @@
       <h2>Cosa vuoi vedere</h2>
       <div class="chips" id="proposte"></div>
       <textarea id="prompt" rows="4" placeholder="Es. una vecchia automobile ferma su una strada vuota al tramonto"></textarea>
-      <div class="hint">Scrivi in italiano: viene tradotto in inglese prima di
-        generare, perché è l'unica lingua che il modello capisce davvero.</div>
-      <label class="riga-traduci"><input type="checkbox" data-traduci checked>
-        Traduci in inglese prima di generare</label>
-      <div class="hint tradotto" id="tradottoCrea" hidden></div>
     </div>
 
     <div class="panel">
@@ -158,9 +159,6 @@
     <div class="panel sticky">
       <h2>Cosa deve diventare</h2>
       <textarea id="promptRitocco" rows="3" placeholder="Es. un cespuglio di fiori rossi"></textarea>
-      <label class="riga-traduci"><input type="checkbox" data-traduci checked>
-        Traduci in inglese prima di generare</label>
-      <div class="hint tradotto" id="tradottoRitocco" hidden></div>
       <div class="field" style="margin-top:12px">
         <label>Quanto cambiare <span class="rangeval" id="denoiseVal">0.75</span></label>
         <input type="range" id="denoise" min="0.2" max="1" step="0.05" value="0.75">

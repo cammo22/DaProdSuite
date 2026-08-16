@@ -6,12 +6,11 @@ export const el = {};
 for (const chiave of [
   "prompt", "proposte", "estetica", "formato", "quante", "passi", "cfg", "seed",
   "seedCasuale", "negativo", "notaNegativo", "dado", "toggleAdv", "avanzati", "genera", "errore",
-  "modello", "rigaModello", "avvisoModello",
+  "modello", "rigaModello", "avvisoModello", "traduci", "rigaTraduci", "tradotto",
   "sessione", "stop", "svuota", "mods", "dot", "statusTxt", "navGal",
   "areaTela", "nessunaImmagine", "comandiPennello", "pennello", "pennelloVal",
   "scegliFile", "pulisciMaschera", "sceltaFile", "promptRitocco", "denoise", "recentiRitocco",
   "denoiseVal", "rigenera", "erroreRitocco", "galleria", "conteggio", "aggiorna", "lente", "lenteImg", "lenteInfo",
-  "tradottoCrea", "tradottoRitocco",
 ]) {
   el[chiave] = $(chiave);
 }

@@ -44,6 +44,15 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
   struttura in suono, ed è l'unico dei tre che su 8 GB si può migliorare — il
   text encoder in int8 pesa 8,6 GB e non ci sta.
 
+### Con FLUX non si traduce più, e la casella è una sola
+
+- **Scegliendo un FLUX la traduzione sparisce.** Il suo lettore di descrizioni è
+  un Qwen3 e l'italiano lo capisce da sé: tradurre prima era un passaggio in più
+  che poteva solo andare storto — ed è quello che faceva restare fermo il
+  ritocco. Con Anima resta, perché lei l'inglese lo pretende davvero.
+- **Una casella "traduci" invece di due**, in cima accanto al modello, valida
+  per Crea e Ritocco. Erano due da tenere allineate a mano.
+
 ### Aggiustato, e stavolta provato aprendo l'app
 
 - **Il Visualizer riproduce i brani di DaProdMusica.** Diceva "formato non

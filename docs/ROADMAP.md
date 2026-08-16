@@ -24,20 +24,22 @@ metterle.
 - [x] Verificato che tutti e quattro i motori girano su torch 2.13
 - [x] Dati utente separati dal programma: aggiornare non tocca i modelli
 
-## 0.1.0 — Le prime app dentro
+## 0.1.0 — Le prime app dentro ✅ quasi
 
-Nell'ordine, dalla più semplice alla più delicata. Le prime due sono dentro e
-girano: la spunta arriva quando le hai provate a lungo tu.
+**Pubblicata il 16 agosto 2026.** Le tre app sono dentro e girano: generano,
+si passano i risultati e sono state provate una per una aprendo l'app, non solo
+leggendo il codice. Manca un pezzo solo, ed è l'ultimo della versione.
 
-- [ ] **DaProdVisualizer** — nessun Python, valida lo schema delle finestre
-      *(dentro, da provare)*
-- [ ] **DaProdMusica** — primo motore su ComfyUI condiviso *(dentro, un brano
-      vero generato; con lei sono entrati il supervisore collegato, la libreria
-      che sa scrivere e lo schema `daprod://` per le app senza impacchettatore)*
-- [ ] **DaProdFoto** — Anima di base, FLUX.2 Klein come extra *(dentro tutte e
-      due: si sceglie il modello dal menu, e FLUX.2 si scarica da lì — 11,2 GB
-      più il nodo ComfyUI-GGUF, che adesso la suite sa installare da sola. Da
-      provare a lungo, ritocco compreso)*
+- [x] **DaProdVisualizer** — nessun Python, valida lo schema delle finestre.
+      *Provato: i brani di DaProdMusica si ascoltano dal pannello "Brani
+      generati", con le visualizzazioni che reagiscono.*
+- [x] **DaProdMusica** — primo motore su ComfyUI condiviso. *Brani veri con
+      copertina; con lei sono entrati il supervisore collegato, la libreria che
+      sa scrivere e lo schema `daprod://`. Resta da provare a lungo la libreria
+      (rinomina, elimina) e lo scambio con le altre app.*
+- [x] **DaProdFoto** — Anima di base, FLUX.2 Klein come extra. *Dentro tutti e
+      tre i modelli — Anima, Klein 4B e 9B — con la scelta in cima e lo
+      scaricamento dal menu. Provati: generazione e ritocco con maschera.*
 - [x] **ComfyUI scaricato quando serve** — la versione è fissata (0.33.1), lo zip
       arriva da GitHub e le sue librerie entrano nell'ambiente condiviso senza
       toccare torch. Era l'ultimo pezzo che mancava a "git clone deve bastare"
@@ -46,7 +48,8 @@ girano: la spunta arriva quando le hai provate a lungo tu.
       già. I nodi custom di ComfyUI si installano allo stesso modo
 - [x] Scaricamento dei modelli con ripresa e avanzamento — *(provato: annullato a
       metà, ripreso, arrivato intero; da provare tu su una scheda intera)*
-- [ ] Procedura guidata al primo avvio: scegli le app, ti dice quanti GB
+- [ ] **Procedura guidata al primo avvio**: scegli le app, ti dice quanti GB.
+      *È l'unica cosa che manca alla 0.1.0.*
 
 ## 0.2.0 — Le altre tre
 
@@ -56,9 +59,9 @@ girano: la spunta arriva quando le hai provate a lungo tu.
 
 ## 0.3.0 — Le schede diventano vetrina
 
-- [ ] **Disinstalla per scheda**: ogni scheda dice quanto occupa e si toglie da
+- [x] **Disinstalla per scheda**: ogni scheda dice quanto occupa e si toglie da
       sola, riprendendosi i GB. I modelli che servono anche a un'altra scheda
-      installata restano.
+      installata restano. *Arrivata in anticipo, col pannello Spazio.*
 - [ ] **Anteprima al passaggio del mouse**: un video corto che mostra cosa sa
       fare quell'app, generato con l'app stessa.
 

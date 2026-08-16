@@ -176,6 +176,9 @@ function ritoccoFlux(m, p) {
  */
 const FLUX_COMUNE = {
   vae: "flux2-vae.safetensors",
+  // FLUX.2 legge il prompt con un Qwen3, che l'italiano lo capisce: tradurre
+  // prima non serve, e toglie di mezzo un passaggio che può solo andare storto.
+  traduce: false,
   passi: { min: 8, max: 40, valore: 20 },
   // Klein è distillato: il CFG resta a 1 e non c'è niente da guadagnare ad
   // alzarlo, quindi il cursore non si muove e il negativo non serve.
@@ -200,6 +203,9 @@ export const MODELLI = {
     cfg: { min: 1, max: 4, valore: 1 },
     /** A CFG 1,0 il negativo è ignorato, ma alzando il CFG torna a contare. */
     usaNegativo: true,
+    // Anima capisce solo l'inglese: una descrizione in italiano non dà errore,
+    // dà un'immagine che non c'entra niente.
+    traduce: true,
     immagine: immagineAnima,
     ritocco: ritoccoAnima,
   },

@@ -268,8 +268,12 @@ legend{font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var
 /* La lingua: l'interruttore e la riga che dice cosa è stato mandato davvero.
    Vedere la traduzione serve a dare la colpa alla parola giusta quando
    l'immagine non è quella che avevi in testa. */
-.riga-traduci{display:flex; align-items:center; gap:8px; margin-top:10px;
-  font-size:13px; color:var(--dim); cursor:pointer}
+/* Stanno nella barra del modello, in riga con lui: la lingua è un modo di
+   parlare a quel modello, non un'impostazione della scheda in cui sei. */
+.riga-traduci{display:flex; align-items:center; gap:8px; margin:0;
+  font-size:13px; color:var(--dim); cursor:pointer; white-space:nowrap}
+.riga-traduci input{width:auto}
+.barra-modello .tradotto{margin:0; padding:5px 9px; font-size:12px}
 .riga-traduci input{accent-color:var(--accent); cursor:pointer}
 .tradotto{margin-top:8px; padding:8px 10px; border-radius:10px;
   background:var(--panel2); border:1px solid var(--line); color:var(--txt)}

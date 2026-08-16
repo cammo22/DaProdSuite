@@ -16,6 +16,7 @@
 
 import { $, el, escapeHtml } from "./dom.js";
 import { MODELLI, modello } from "./grafi.js";
+import { traduzionePerModello } from "./lingua.js";
 import * as ponte from "./ponte.js";
 
 const RICORDO = "daprod.foto.modello";
@@ -49,6 +50,9 @@ function scegli(id) {
   localStorage.setItem(RICORDO, corrente.id);
   el.rigaModello.textContent = corrente.riga;
   applicaPreferenze(corrente);
+  // La traduzione è una proprietà del modello, non una preferenza dell'utente:
+  // a FLUX.2 l'italiano lo si può scrivere direttamente.
+  traduzionePerModello(corrente);
   void controlla();
 }
 

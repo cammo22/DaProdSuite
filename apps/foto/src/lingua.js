@@ -1,74 +1,73 @@
 /**
- * Scrivere in italiano a un modello che capisce l'inglese.
+ * Scrivere in italiano a un modello che capisce solo l'inglese.
  *
- * Anima, come tutti i modelli di immagini seri, è stato addestrato su didascalie
- * in inglese. Una descrizione in italiano non dà un errore: dà un'immagine che
- * non c'entra niente, e sembra che il modello ignori quello che hai scritto. È
- * il difetto che si vedeva come "genera quello che vuole".
- *
- * Qui si traduce prima di generare, e **si mostra sempre cosa è stato mandato
- * davvero**: se la traduzione sbaglia una parola, lo si vede subito invece di
- * dare la colpa al modello.
+ * **Non a tutti serve.** Anima è addestrata su didascalie inglesi: una
+ * descrizione in italiano non dà errore, dà un'immagine che non c'entra niente —
+ * il difetto che si vedeva come "genera quello che vuole". FLUX.2 invece legge
+ * il prompt con un Qwen3, che l'italiano lo capisce, e tradurre prima è solo un
+ * passaggio in più che può andare storto. Lo dice il modello, con `traduce`.
  *
  * La traduzione la fa il motore (`POST /daprod/traduci`), che ha già Python e
- * transformers accesi. Se non risponde o il traduttore non è installato, si
- * manda l'originale e si dice che non è stato tradotto: generare peggio è meglio
- * che non generare.
+ * transformers accesi. Se non risponde, si manda l'originale e lo si scrive:
+ * generare peggio è meglio che non generare.
+ *
+ * L'interruttore è **uno**, in cima accanto al modello, e vale per Crea e per
+ * Ritocco: erano due caselle da tenere allineate a mano, ed è esattamente il
+ * genere di cosa che prima o poi si disallinea.
  */
 
+import { el } from "./dom.js";
 import { traduci } from "./ponte.js";
 
 const CHIAVE = "daprod.foto.traduci";
 
 /** Acceso finché non lo spegni: chi scrive in inglese lo spegne una volta sola. */
-export function traduzioneAttiva() {
-  return localStorage.getItem(CHIAVE) !== "no";
-}
+export const traduzioneAttiva = () => localStorage.getItem(CHIAVE) !== "no";
 
 export function collegaTraduzione() {
-  const interruttori = [...document.querySelectorAll("[data-traduci]")];
-  for (const casella of interruttori) {
-    casella.checked = traduzioneAttiva();
-    casella.addEventListener("change", () => {
-      localStorage.setItem(CHIAVE, casella.checked ? "si" : "no");
-      // Le due schede sono la stessa impostazione: cambiarla in una e trovarla
-      // diversa nell'altra sarebbe un modo per non fidarsi più di nessuna delle due.
-      for (const altra of interruttori) altra.checked = casella.checked;
-      for (const riga of document.querySelectorAll(".tradotto")) riga.hidden = true;
-    });
-  }
+  el.traduci.checked = traduzioneAttiva();
+  el.traduci.addEventListener("change", () => {
+    localStorage.setItem(CHIAVE, el.traduci.checked ? "si" : "no");
+    el.tradotto.hidden = true;
+  });
 }
 
 /**
- * Il testo da mandare al modello, e la riga da mostrare sotto la casella.
+ * Mostra o nasconde l'interruttore a seconda del modello scelto.
  *
- * @param {string} testo    quello che ha scritto l'utente
- * @param {HTMLElement} riga  dove raccontare cosa è stato mandato
- * @returns {Promise<string>} il testo in inglese, o l'originale se non si è potuto tradurre
+ * Nascosto e non spento: la scelta dell'utente resta quella che era, e torna
+ * com'era se rimette un modello che l'inglese lo pretende.
  */
-export async function inInglese(testo, riga) {
-  if (!traduzioneAttiva()) {
-    if (riga) riga.hidden = true;
+export function traduzionePerModello(modello) {
+  el.rigaTraduci.hidden = !modello.traduce;
+  if (!modello.traduce) el.tradotto.hidden = true;
+}
+
+/**
+ * Il testo da mandare al modello, tradotto se serve.
+ *
+ * Racconta sempre cosa è stato mandato davvero: se la traduzione sbaglia una
+ * parola, lo si vede subito invece di dare la colpa al modello.
+ */
+export async function inInglese(testo, modello) {
+  if (!modello.traduce || !traduzioneAttiva()) {
+    el.tradotto.hidden = true;
     return testo;
   }
 
-  if (riga) {
-    riga.hidden = false;
-    riga.textContent = "Traduco…";
-  }
+  el.tradotto.hidden = false;
+  el.tradotto.textContent = "Traduco…";
 
   const esito = await traduci(testo);
 
-  if (riga) {
-    if (esito.tradotta && esito.tradotto !== testo) {
-      riga.textContent = `Mandato al modello: ${esito.tradotto}`;
-      riga.classList.remove("guasto");
-    } else if (esito.tradotta) {
-      riga.hidden = true;
-    } else {
-      riga.textContent = `Mandato così com'era — ${esito.motivo ?? "traduttore non disponibile"}`;
-      riga.classList.add("guasto");
-    }
+  if (esito.tradotta && esito.tradotto !== testo) {
+    el.tradotto.textContent = `Mandato al modello: ${esito.tradotto}`;
+    el.tradotto.classList.remove("guasto");
+  } else if (esito.tradotta) {
+    el.tradotto.hidden = true;
+  } else {
+    el.tradotto.textContent = `Mandato così com'era — ${esito.motivo ?? "traduttore non disponibile"}`;
+    el.tradotto.classList.add("guasto");
   }
 
   return esito.tradotto || testo;

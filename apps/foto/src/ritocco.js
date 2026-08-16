@@ -227,9 +227,9 @@ export function collegaRitocco() {
       const base = await ponte.carica(await inBlob(sotto), "base.png");
       const maschera = await ponte.carica(await inBlob(mascheraPiena()), "maschera.png");
 
-      const inglese = await inInglese(testo, el.tradottoRitocco);
-      const denoise = parseFloat(el.denoise.value);
       const m = modelloCorrente();
+      const inglese = await inInglese(testo, m);
+      const denoise = parseFloat(el.denoise.value);
       const parametri = {
         prompt: componiPrompt(inglese),
         negativo: el.negativo.value.trim(),
