@@ -509,10 +509,23 @@ async function aggiornaLlm(): Promise<void> {
   }
 }
 
+// Il bottone in fondo non nasconde niente: porta lì e rilegge. Nasconderlo era
+// il modo per non farlo trovare — e infatti non si trovava.
 (document.getElementById("btn-llm") as HTMLButtonElement).addEventListener("click", () => {
-  sezioneLlm.hidden = !sezioneLlm.hidden;
-  if (!sezioneLlm.hidden) void aggiornaLlm();
+  sezioneLlm.scrollIntoView({ behavior: "smooth", block: "center" });
+  void aggiornaLlm();
 });
+
+/**
+ * Riletto da solo, ogni dieci secondi.
+ *
+ * Chi carica o scarica un modello lo fa **anche da LM Studio**, e un pannello
+ * che dice "in memoria" quando la memoria è libera è peggio di un pannello che
+ * non c'è. Dieci secondi sono abbastanza per non accorgersi del ritardo e
+ * abbastanza radi da non pesare.
+ */
+void aggiornaLlm();
+setInterval(() => void aggiornaLlm(), 10_000);
 
 /* --------------------------------------------------------------- velocità */
 

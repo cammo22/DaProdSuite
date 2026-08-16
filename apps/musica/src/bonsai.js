@@ -17,6 +17,7 @@
 
 import { el, mostraErrore } from "./dom.js";
 import { titoloAuto } from "./grafi.js";
+import { collegaSelettoreLlm } from "./selettore-llm.js";
 
 const suite = window.daprodSuite;
 
@@ -154,6 +155,7 @@ async function chiedi(bottone, utente, attesa) {
 }
 
 export function collegaBonsai() {
+  collegaSelettoreLlm(el.selettoreLlm);
   el.bonsaiTutto.onclick = () => {
     const idea = el.ideaCanzone.value.trim();
     if (!idea) return mostraErrore("Scrivi in una riga di cosa deve parlare la canzone.");

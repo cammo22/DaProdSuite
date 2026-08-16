@@ -213,3 +213,14 @@ legend{font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var
 .pseek input{flex:1; height:20px}
 .pvol{width:96px; display:flex; align-items:center; gap:7px; color:var(--dim)}
 @media(max-width:900px){ .pnow{width:120px} .pvol{display:none} }
+
+/* Il selettore del modello che scrive: stessa cosa dell'hub, in una riga. */
+.selettore-llm{display:flex; align-items:center; gap:9px; flex-wrap:wrap; margin-bottom:12px;
+  padding:9px 11px; border:1px solid var(--line); border-radius:11px; background:#0b0d13}
+.selettore-llm select{width:auto; min-width:180px; max-width:100%; padding:6px 9px; font-size:12.5px}
+.selettore-llm .llm-pallino{width:9px; height:9px; border-radius:50%; background:var(--line2)}
+.selettore-llm .llm-pallino.acceso{background:#5cff9d}
+.selettore-llm .llm-detto{font-size:12px; color:var(--dim)}
+.selettore-llm .llm-contesti{display:flex; gap:5px; margin-left:auto}
+.selettore-llm .mini.on{color:#fff; border-color:var(--accent); background:#2a1c08}
+.selettore-llm .llm-spento{font-size:12.5px; color:var(--err)}

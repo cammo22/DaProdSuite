@@ -405,8 +405,13 @@ export interface ApiApp {
       nomeSchema?: string;
     }): Promise<EsitoLlm>;
 
+    /** Lo carica con il contesto scelto (64K, 128K, 256K), GPU al massimo. */
+    carica(id: string, contesto: number): Promise<string | null>;
+    /** Lo toglie dalla memoria adesso. */
+    scarica(id: string): Promise<string | null>;
+
     /**
-     * Toglie subito dalla memoria il modello che la suite ha caricato.
+     * Toglie subito dalla memoria quello che LM Studio ha caricato.
      *
      * **Da chiamare prima di ogni generazione pesante.** Scrivere il testo con
      * Bonsai e premere Genera capita nel giro di pochi secondi: senza questo, il
