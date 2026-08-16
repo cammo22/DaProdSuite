@@ -60,12 +60,35 @@ export function gestisciSchema(): void {
     let percorso: string;
     try {
       percorso = risolvi(request.url);
-    } catch {
-      return new Response("percorso non valido", { status: 400 });
+    } catch (err) {
+      // Detto, non ingoiato: un percorso rifiutato qui diventa un "Failed to
+      // fetch" nella pagina, che da solo non dice niente a nessuno.
+      return new Response(`percorso non valido: ${err instanceof Error ? err.message : err}`, {
+        status: 400,
+      });
+    }
+
+    // **Solo le Range, non tutte le intestazioni della richiesta.** Passandole
+    // tutte partiva anche `Origin`, e una `file://` con un Origin diverso è per
+    // Chromium una richiesta incrociata verso una risposta che non può
+    // autorizzarla: `net.fetch` falliva prima ancora che potessimo aggiungere
+    // noi il permesso. Si vedeva così — e in due posti diversi, senza che
+    // sembrassero la stessa cosa:
+    //
+    // - DaProdFoto: aprire un'immagine nel ritocco dava "Failed to fetch";
+    // - Visualizer: un brano di DaProdMusica dava "formato non supportato",
+    //   perché l'`<audio>` è `crossOrigin="anonymous"` e la richiesta moriva
+    //   allo stesso modo.
+    //
+    // Le Range servono e restano: senza, il seek su un brano lungo non va.
+    const inoltrate = new Headers();
+    for (const nome of ["range", "if-range"]) {
+      const valore = request.headers.get(nome);
+      if (valore) inoltrate.set(nome, valore);
     }
 
     const risposta = await net.fetch(pathToFileURL(percorso).toString(), {
-      headers: request.headers,
+      headers: inoltrate,
       bypassCustomProtocolHandlers: true,
     });
 
@@ -77,6 +100,9 @@ export function gestisciSchema(): void {
     // niente — allo schema `daprod:` arrivano solo le nostre pagine.
     const intestazioni = new Headers(risposta.headers);
     intestazioni.set("Access-Control-Allow-Origin", "*");
+    // Il seek di un file lungo chiede pezzi: senza dirlo, il lettore non prova
+    // nemmeno a chiederli e scarica tutto dall'inizio ogni volta.
+    if (!intestazioni.has("Accept-Ranges")) intestazioni.set("Accept-Ranges", "bytes");
 
     return new Response(risposta.body, {
       status: risposta.status,

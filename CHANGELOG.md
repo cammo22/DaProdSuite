@@ -16,9 +16,10 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 - **Il modello si sceglie in alto**, fuori dalle schede: vale per Crea *e* per
   Ritocco, e si vede sempre con cosa stai lavorando.
-- **FLUX.2 Klein adesso sono due**: il **4B** (8,4 GB in tutto, comodo su 8 GB di
-  VRAM) e il **9B** (11,2 GB, più bravo con le descrizioni lunghe). Dividono text
-  encoder e VAE: chi ha già uno dei due aggiunge l'altro con pochi GB.
+- **FLUX.2 Klein adesso sono due**: il **4B** (5,9 GB in tutto, comodo su 8 GB di
+  VRAM) e il **9B** (11,2 GB, più bravo con le descrizioni lunghe). Ognuno si
+  porta il proprio text encoder — scambiarli non fa un'immagine brutta, fa
+  fallire la generazione.
 - **Nel Ritocco ci sono le ultime cinque immagini**: un clic e sono sulla tela,
   senza passare dalla Galleria.
 - **"Ritocca questa" dentro l'immagine a schermo intero.** Prima, dopo aver

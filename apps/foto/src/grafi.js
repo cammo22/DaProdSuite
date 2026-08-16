@@ -165,9 +165,16 @@ function ritoccoFlux(m, p) {
 
 /* ------------------------------------------------------------- il catalogo */
 
-/** Quello che i due FLUX.2 hanno in comune: cambia solo il modello che disegna. */
+/**
+ * Quello che i due FLUX.2 hanno in comune.
+ *
+ * **Non il text encoder**, che è la cosa che sembrava ovvia e non lo era: il 4B
+ * vuole Qwen3-4B e il 9B Qwen3-8B. Dandogli quello sbagliato il motore muore con
+ * `mat1 and mat2 shapes cannot be multiplied (512x12288 and 7680x3072)` — 7680 è
+ * 2560×3 (Qwen3-4B), 12288 è 4096×3 (Qwen3-8B). In comune restano il VAE e tutto
+ * il resto del grafo.
+ */
 const FLUX_COMUNE = {
-  txt: "Qwen3-8B-Q5_K_M.gguf",
   vae: "flux2-vae.safetensors",
   passi: { min: 8, max: 40, valore: 20 },
   // Klein è distillato: il CFG resta a 1 e non c'è niente da guadagnare ad
@@ -200,9 +207,10 @@ export const MODELLI = {
     ...FLUX_COMUNE,
     id: "flux2-4b",
     nome: "FLUX.2 Klein 4B",
-    riga: "Il FLUX leggero: 8,4 GB in tutto, e su 8 GB di VRAM sta comodo.",
+    riga: "Il FLUX leggero: 5,9 GB in tutto, e su 8 GB di VRAM sta comodo.",
     dit: "flux-2-klein-4b-Q5_K_M.gguf",
-    catalogo: ["flux2-klein-4b-q5km", "flux2-text-encoder", "flux2-vae"],
+    txt: "Qwen3-4B-Q5_K_M.gguf",
+    catalogo: ["flux2-klein-4b-q5km", "flux2-4b-text-encoder", "flux2-vae"],
   },
   "flux2-9b": {
     ...FLUX_COMUNE,
@@ -210,6 +218,7 @@ export const MODELLI = {
     nome: "FLUX.2 Klein 9B",
     riga: "Il più bravo con le descrizioni lunghe. 11,2 GB, e più lento.",
     dit: "flux-2-klein-9b-Q4_K_S.gguf",
+    txt: "Qwen3-8B-Q5_K_M.gguf",
     catalogo: ["flux2-klein-q4ks", "flux2-text-encoder", "flux2-vae"],
   },
 };

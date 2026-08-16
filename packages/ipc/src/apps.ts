@@ -118,10 +118,12 @@ export const APPS: Record<AppId, AppDescriptor> = {
     // Klein dà di più ma pesa 12,4 GB ed è al limite degli 8 GB di VRAM, quindi
     // è una scelta, non un obbligo.
     models: ["anima-turbo", "qwen3-06b-base", "qwen-image-vae"],
-    // I due FLUX.2 Klein: il 4B e il 9B. Dividono text encoder e VAE, quindi il
-    // secondo che si scarica costa solo il suo modello di diffusione.
+    // I due FLUX.2 Klein: il 4B e il 9B. Dividono solo il VAE — ognuno vuole il
+    // **suo** text encoder, Qwen3-4B contro Qwen3-8B, e scambiarli non dà
+    // un'immagine brutta: dà un errore di moltiplicazione fra matrici.
     extraModels: [
       "flux2-klein-4b-q5km",
+      "flux2-4b-text-encoder",
       "flux2-klein-q4ks",
       "flux2-text-encoder",
       "flux2-vae",

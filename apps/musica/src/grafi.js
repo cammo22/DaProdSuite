@@ -126,13 +126,31 @@ export function grafoImmagine(prompt, seed, { larghezza = 1024, altezza = 1024, 
   };
 }
 
-/** Dalla canzone alla scena: titolo e testo scelgono i motivi, il menu lo stile. */
+/**
+ * Dalla canzone alla scena: titolo e testo scelgono i motivi, il menu lo stile.
+ *
+ * Lo stile può essere **nessuno**, ed è la scelta predefinita: come in
+ * DaProdFoto, dieci parole di estetica incollate in fondo a ogni copertina le
+ * facevano somigliare tutte fra loro. Senza stile il modello ha più margine, e
+ * chi ne vuole uno lo sceglie — o se lo scrive, perché il testo del prompt
+ * resta modificabile nella scheda Libreria.
+ *
+ * Anche i motivi scendono da tre a due: tre scene diverse nella stessa immagine
+ * — un cuore, il mare e la luna — non fanno una copertina, fanno un pasticcio.
+ */
 export function promptCopertina(titolo, testo, estetica) {
   const fonte = `${titolo} ${testo || ""}`;
-  const scena = MOTIVI.filter(([re]) => re.test(fonte)).slice(0, 3).map(([, t]) => t);
+  const scena = MOTIVI.filter(([re]) => re.test(fonte)).slice(0, 2).map(([, t]) => t);
   if (!scena.length) scena.push("an evocative symbolic object at the centre of an empty scene");
-  const stile = ESTETICHE[estetica] || ESTETICHE["Illustrazione"];
-  return `album cover artwork, ${scena.join(", ")}, ${stile}, square composition, high detail, no text`;
+  const stile = ESTETICHE[estetica] || "";
+  return [
+    "album cover artwork",
+    ...scena,
+    stile,
+    "square composition, no text",
+  ]
+    .filter(Boolean)
+    .join(", ");
 }
 
 /** Dalla descrizione libera della scheda Immagini, con i motivi come rinforzo. */

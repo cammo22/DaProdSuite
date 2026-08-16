@@ -86,7 +86,7 @@ function disegnaDettaglio() {
     <dl class="kv">${voci.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join("")}</dl>
     <label>Copertina automatica dal titolo e dal testo</label>
     <div class="inline" style="margin-bottom:8px">
-      <select id="coverStyle">${Object.keys(ESTETICHE).map((k) => `<option>${escapeHtml(k)}</option>`).join("")}</select>
+      <select id="coverStyle"><option value="">nessuno</option>${Object.keys(ESTETICHE).map((k) => `<option>${escapeHtml(k)}</option>`).join("")}</select>
       <button class="mini" id="coverReroll" title="ricostruisci">&#8635;</button>
     </div>
     <textarea id="coverPrompt" rows="3">${escapeHtml(promptCopertina(brano.nome, meta.lyrics, "Illustrazione"))}</textarea>

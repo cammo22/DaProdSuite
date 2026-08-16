@@ -226,9 +226,13 @@ export function collegaCrea() {
   el.lyrics.value = DEMO_LYRICS;
   el.seed_text.value = rnd();
   el.seed_audio.value = rnd();
-  el.coverStyleNew.innerHTML = Object.keys(ESTETICHE)
-    .map((k) => `<option>${escapeHtml(k)}</option>`)
-    .join("");
+  // "nessuno" per primo, ed è quello che parte: uno stile scelto da noi su ogni
+  // copertina le fa somigliare tutte, e non è una cosa che si nota subito.
+  el.coverStyleNew.innerHTML = [
+    `<option value="">nessuno</option>`,
+    ...Object.keys(ESTETICHE).map((k) => `<option>${escapeHtml(k)}</option>`),
+  ].join("");
+  el.coverStyleNew.value = "";
 
   el.toggleAdv.onclick = () => {
     const aperto = el.avanzati.style.display === "none";

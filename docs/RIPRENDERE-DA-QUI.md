@@ -293,6 +293,29 @@ ha una in arrivo, così la mappa non cresce per i brani che non ne vogliono.
 **Da imparare, più che da correggere**: cambiare l'ordine di due lavori voleva
 dire cambiare chi passa cosa a chi, e il passaggio stava in un altro file.
 
+## Le tre cose che si sono viste solo provando (16 agosto, notte)
+
+**FLUX.2 Klein 4B e 9B non dividono il text encoder.** Sembrava ovvio che sì —
+stessa famiglia, stesso grafo — e invece il 4B vuole **Qwen3-4B** e il 9B
+**Qwen3-8B**. Dando al 4B quello dell'8B il motore muore con `mat1 and mat2
+shapes cannot be multiplied (512x12288 and 7680x3072)`: 7680 è 2560×3 (la
+dimensione di Qwen3-4B), 12288 è 4096×3 (quella di Qwen3-8B). Il numero dice
+esattamente qual è il modello giusto, se lo si legge.
+
+**Un'origine diversa faceva fallire due cose che sembravano scollegate.** Lo
+schema `daprod:` passava a `net.fetch` *tutte* le intestazioni della richiesta,
+`Origin` compreso: per Chromium una `file://` con un Origin diverso è una
+richiesta incrociata verso una risposta che non può autorizzarla, e falliva
+prima che potessimo aggiungere noi il permesso. Si vedeva come "Failed to fetch"
+aprendo un'immagine nel ritocco di Foto, **e** come "formato non supportato" nel
+Visualizer su un brano di Musica (il suo `<audio>` è `crossOrigin="anonymous"`).
+Adesso si inoltra solo la `Range`, che è l'unica che serve davvero.
+
+**Il grafo si può provare senza aprire la suite.** `POST /prompt` al motore con
+il grafo esatto dell'app, e `/history/<id>` dice se è passato o dove si è rotto:
+è così che è saltato fuori il text encoder sbagliato, in due minuti invece che a
+tentativi.
+
 ## Cosa resta aperto dopo il giro del 16 agosto (sera)
 
 - **Il Visualizer non riproduce i brani di DaProdMusica.** Cercato e **non
