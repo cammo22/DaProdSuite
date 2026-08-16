@@ -165,6 +165,19 @@ function ritoccoFlux(m, p) {
 
 /* ------------------------------------------------------------- il catalogo */
 
+/** Quello che i due FLUX.2 hanno in comune: cambia solo il modello che disegna. */
+const FLUX_COMUNE = {
+  txt: "Qwen3-8B-Q5_K_M.gguf",
+  vae: "flux2-vae.safetensors",
+  passi: { min: 8, max: 40, valore: 20 },
+  // Klein è distillato: il CFG resta a 1 e non c'è niente da guadagnare ad
+  // alzarlo, quindi il cursore non si muove e il negativo non serve.
+  cfg: { min: 1, max: 1, valore: 1 },
+  usaNegativo: false,
+  immagine: immagineFlux,
+  ritocco: ritoccoFlux,
+};
+
 export const MODELLI = {
   anima: {
     id: "anima",
@@ -183,21 +196,21 @@ export const MODELLI = {
     immagine: immagineAnima,
     ritocco: ritoccoAnima,
   },
-  flux2: {
-    id: "flux2",
-    nome: "FLUX.2 Klein",
-    riga: "Capisce descrizioni lunghe. 11,2 GB da scaricare, più lento.",
+  "flux2-4b": {
+    ...FLUX_COMUNE,
+    id: "flux2-4b",
+    nome: "FLUX.2 Klein 4B",
+    riga: "Il FLUX leggero: 8,4 GB in tutto, e su 8 GB di VRAM sta comodo.",
+    dit: "flux-2-klein-4b-Q5_K_M.gguf",
+    catalogo: ["flux2-klein-4b-q5km", "flux2-text-encoder", "flux2-vae"],
+  },
+  "flux2-9b": {
+    ...FLUX_COMUNE,
+    id: "flux2-9b",
+    nome: "FLUX.2 Klein 9B",
+    riga: "Il più bravo con le descrizioni lunghe. 11,2 GB, e più lento.",
     dit: "flux-2-klein-9b-Q4_K_S.gguf",
-    txt: "Qwen3-8B-Q5_K_M.gguf",
-    vae: "flux2-vae.safetensors",
     catalogo: ["flux2-klein-q4ks", "flux2-text-encoder", "flux2-vae"],
-    passi: { min: 8, max: 40, valore: 20 },
-    // Klein è distillato: il CFG resta a 1 e non c'è niente da guadagnare ad
-    // alzarlo, quindi il cursore non si muove e il negativo non serve.
-    cfg: { min: 1, max: 1, valore: 1 },
-    usaNegativo: false,
-    immagine: immagineFlux,
-    ritocco: ritoccoFlux,
   },
 };
 
@@ -209,7 +222,21 @@ export function modello(id) {
 export const grafoImmagine = (m, p) => m.immagine(m, p);
 export const grafoRitocco = (m, p) => m.ritocco(m, p);
 
-/** La descrizione completa: quello che hai scritto più l'estetica scelta. */
-export function componiPrompt(testo, estetica) {
-  return [testo.trim(), ESTETICHE[estetica] || "", "high detail"].filter(Boolean).join(", ");
+/**
+ * La descrizione che va al modello: quello che hai scritto, e basta.
+ *
+ * Prima ci si attaccava dietro l'estetica scelta nel menu e un "high detail"
+ * fisso. Vuol dire che ogni immagine partiva con le stesse dieci parole
+ * incollate in fondo, e i modelli le seguono: le foto si somigliavano tutte
+ * senza che si capisse perché, perché quelle parole non erano scritte da
+ * nessuna parte. Adesso l'estetica, se la vuoi, te la scrive **nella casella**
+ * il menu — la vedi, la cambi, la togli.
+ */
+export function componiPrompt(testo) {
+  return testo.trim();
+}
+
+/** Le parole di un'estetica, da scrivere nella casella. Vuoto se non ne hai scelta una. */
+export function paroleEstetica(estetica) {
+  return ESTETICHE[estetica] || "";
 }

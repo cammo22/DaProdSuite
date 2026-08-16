@@ -40,6 +40,16 @@
   </div>
 </header>
 
+<!-- Il modello sta qui sopra, fuori dalle schede: è la scelta che decide tutto
+     quello che succede sotto, e vale sia per Crea che per Ritocco. Tenerlo in
+     una scheda sola vorrebbe dire non sapere con cosa stai ritoccando. -->
+<section class="barra-modello">
+  <label for="modello">Modello</label>
+  <select id="modello"></select>
+  <span class="hint" id="rigaModello"></span>
+</section>
+<div id="avvisoModello" class="manca" hidden></div>
+
 <!-- ============================== CREA ============================== -->
 <section class="tab on" id="scheda-crea">
  <div class="two">
@@ -57,14 +67,11 @@
 
     <div class="panel">
       <h2>Resa <span class="right"><button class="mini" id="toggleAdv">avanzati</button></span></h2>
-      <div class="field">
-        <label>Modello</label>
-        <select id="modello"></select>
-        <div class="hint" id="rigaModello"></div>
-      </div>
-      <div id="avvisoModello" class="manca" hidden></div>
       <div class="row">
-        <div class="field"><label>Estetica</label><select id="estetica"></select></div>
+        <div class="field">
+          <label>Estetica</label>
+          <select id="estetica"></select>
+        </div>
         <div class="field">
           <label>Formato</label>
           <select id="formato">
@@ -130,6 +137,9 @@
         <button class="mini" id="pulisciMaschera">pulisci</button>
       </span>
     </h2>
+    <!-- Le ultime della galleria, a portata di clic: ritoccare vuol dire quasi
+         sempre riprendere in mano una delle ultime cose che hai fatto. -->
+    <div class="recenti" id="recentiRitocco"></div>
     <div id="areaTela">
       <div class="vuota" id="nessunaImmagine">
         Apri un'immagine, o scegline una dalla Galleria con <b>ritocca</b>.<br>
@@ -180,6 +190,10 @@
 <div class="lente" id="lente" hidden>
   <img id="lenteImg" alt="">
   <div class="didascalia" id="lenteInfo"></div>
+  <!-- Il bottone sta dentro la lente perché è lì che ti viene voglia di
+       ritoccare: hai appena guardato l'immagine grande. Prima bisognava
+       chiudere e ritrovare la stessa scheda in galleria. -->
+  <button class="btn" id="lenteRitocca" type="button">Ritocca questa</button>
 </div>
 
 <script type="module" src="src/avvio.js"></script>

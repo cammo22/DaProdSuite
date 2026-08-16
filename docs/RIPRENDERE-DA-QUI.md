@@ -293,6 +293,19 @@ ha una in arrivo, così la mappa non cresce per i brani che non ne vogliono.
 **Da imparare, più che da correggere**: cambiare l'ordine di due lavori voleva
 dire cambiare chi passa cosa a chi, e il passaggio stava in un altro file.
 
+## Cosa resta aperto dopo il giro del 16 agosto (sera)
+
+- **Il Visualizer non riproduce i brani di DaProdMusica.** Cercato e **non
+  trovato**: il percorso arriva dalla libreria, `trackUrl` lo trasforma nello
+  stesso `daprod://file/` che il lettore di Musica usa senza problemi,
+  `crossOrigin` è già `anonymous` e lo schema manda `Access-Control-Allow-Origin`.
+  Serve vederlo dal vivo: apre il brano e resta muto, o non lo apre proprio?
+  È la prima cosa da guardare aprendo la suite.
+- **"Spinta" dava errore in generazione.** Era la memoria video dinamica: adesso
+  spinta non la tocca più (vedi [VELOCITA-MUSICA.md](VELOCITA-MUSICA.md) § 4-bis).
+- **Il text encoder int8 di WanGP non entra in 8 GB.** È nel catalogo per il
+  giorno che cambia la scheda.
+
 ## Il prossimo passo
 
 **Prima di tutto: provare FLUX.2 Klein davvero.** Il codice c'è e i pezzi sono

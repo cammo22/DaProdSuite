@@ -30,17 +30,31 @@ export function impostaCoda(elementi) {
   }
 }
 
+/**
+ * Fa partire il brano in quella posizione.
+ *
+ * Il confronto è sul **file**, non sulla posizione nell'elenco: la libreria si
+ * riordina da sé ogni volta che ne nasce uno, e con il confronto sull'indice
+ * capitava di cliccare un brano e sentirne un altro — quello che stava lì prima
+ * — finché non se ne cliccava un terzo. Il difetto si vedeva proprio quando si
+ * usa di più, cioè subito dopo aver generato.
+ */
 export function riproduci(indice) {
-  if (indice < 0 || indice >= coda.length) return;
-  if (corrente === indice && !audio.paused) {
-    audio.pause();
+  const elemento = coda[indice];
+  if (!elemento) return;
+
+  const suo = new URL(elemento.url, document.baseURI).href;
+  if (audio.src !== suo) {
+    corrente = indice;
+    audio.src = suo;
+    audio.play().catch(() => {});
     return;
   }
-  if (corrente !== indice) {
-    corrente = indice;
-    audio.src = coda[indice].url;
-  }
-  audio.play().catch(() => {});
+
+  // È già caricato: il clic vale come pausa/ripresa.
+  corrente = indice;
+  if (audio.paused) audio.play().catch(() => {});
+  else audio.pause();
 }
 
 export function riproduciId(id) {

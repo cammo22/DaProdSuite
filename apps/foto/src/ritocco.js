@@ -12,8 +12,9 @@
  * foto da telefono a piena risoluzione non entra in 8 GB di VRAM.
  */
 
-import { el, mostraErrore, nascondiErrore, rnd, legaValore, mostraScheda } from "./dom.js";
+import { el, escapeHtml, mostraErrore, nascondiErrore, rnd, legaValore, mostraScheda } from "./dom.js";
 import { ascolta } from "./bus.js";
+import { stato } from "./stato.js";
 import { componiPrompt, grafoRitocco } from "./grafi.js";
 import { modelloCorrente } from "./scelta-modello.js";
 import { aggiungiLavoro } from "./coda.js";
@@ -35,8 +36,50 @@ function misure(larghezza, altezza) {
   return [arrotonda(larghezza), arrotonda(altezza)];
 }
 
+/**
+ * Le ultime della galleria, sopra la tela.
+ *
+ * Cinque, perché ritoccare vuol dire quasi sempre riprendere in mano una delle
+ * ultime cose fatte, e passare dalla Galleria per farlo è un giro inutile.
+ */
+export function disegnaRecenti() {
+  const ultime = (stato.immagini || []).slice(0, 5);
+  if (!ultime.length) {
+    el.recentiRitocco.innerHTML = "";
+    return;
+  }
+
+  el.recentiRitocco.innerHTML = ultime
+    .map(
+      (i) =>
+        `<img src="${escapeHtml(i.url)}" alt="" loading="lazy" data-apri="${escapeHtml(i.url)}"
+           title="${escapeHtml(i.meta?.testo ?? i.nome)}">`,
+    )
+    .join("");
+
+  el.recentiRitocco.querySelectorAll("[data-apri]").forEach((img) => {
+    img.onclick = () => void apriConAvviso(img.dataset.apri);
+  });
+}
+
+/**
+ * Apre un'immagine dicendo cosa è andato storto, se va storto.
+ *
+ * Prima l'errore veniva ingoiato: cliccavi "ritocca" e non succedeva niente, e
+ * non c'era modo di sapere se era colpa del file, del percorso o di cos'altro.
+ */
+export async function apriConAvviso(sorgente) {
+  try {
+    await apriImmagine(sorgente);
+  } catch (e) {
+    mostraScheda("ritocco");
+    mostraErrore(`Non sono riuscito ad aprire l'immagine: ${e.message || e}`, "erroreRitocco");
+  }
+}
+
 export async function apriImmagine(sorgente) {
   const risposta = await fetch(sorgente);
+  if (!risposta.ok) throw new Error(`il file non si legge (HTTP ${risposta.status})`);
   const immagine = await createImageBitmap(await risposta.blob());
   const [larghezza, altezza] = misure(immagine.width, immagine.height);
 
@@ -157,13 +200,18 @@ export function collegaRitocco() {
 
   el.pulisciMaschera.onclick = pulisci;
 
-  // Dalla galleria: "ritocca" porta l'immagine qui dentro.
-  ascolta("ritocca", (url) => void apriImmagine(url));
+  // Dalla galleria e dalla lente: "ritocca" porta l'immagine qui dentro.
+  ascolta("ritocca", (url) => void apriConAvviso(url));
 
   // Appena il motore ha finito, il risultato prende il posto dell'originale
   // sulla tela: la maschera si azzera e si puo' ritoccare di nuovo, senza
   // passare dalla galleria a riprendersi quello che si e' appena fatto.
-  ascolta("ritocco-fatto", (url) => void apriImmagine(url));
+  ascolta("ritocco-fatto", (url) => void apriConAvviso(url));
+
+  // La striscia delle ultime segue la galleria: appena ne nasce una, è lì.
+  // Si ascolta l'annuncio che arriva *dopo* la rilettura, non quello che la
+  // chiede: altrimenti si ridisegnerebbe con l'elenco di prima.
+  ascolta("immagini-aggiornate", disegnaRecenti);
 
   el.rigenera.onclick = async () => {
     nascondiErrore("erroreRitocco");
@@ -183,7 +231,7 @@ export function collegaRitocco() {
       const denoise = parseFloat(el.denoise.value);
       const m = modelloCorrente();
       const parametri = {
-        prompt: componiPrompt(inglese, el.estetica.value),
+        prompt: componiPrompt(inglese),
         negativo: el.negativo.value.trim(),
         seed: rnd(),
         passi: parseInt(el.passi.value),

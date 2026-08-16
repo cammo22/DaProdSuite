@@ -153,6 +153,14 @@ export const eliminaElemento = (id) => suite.libreria.elimina(id);
 export const mostraNellaCartella = (id) => suite.libreria.mostraNellaCartella(id);
 export const suLibreriaCambiata = (azione) => suite.libreria.onCambiata(azione);
 
+/* ---------------------------------------------------------------- modelli */
+
+/* Cosa c'è sul disco lo sa la suite, non questa pagina: si passano gli id del
+   catalogo e lei risponde. Stessa superficie che usa DaProdFoto. */
+export const statoModelli = (ids) => suite.modelli.stato(ids);
+export const scaricaModelli = (ids) => suite.modelli.scarica(ids);
+export const suAvanzamentoModelli = (azione) => suite.modelli.onAvanzamento(azione);
+
 /** Manda un brano a un'altra app della suite: è il senso di stare tutti insieme. */
 export const mandaA = (app, id, intenzione) => suite.invia(app, id, intenzione);
 export const suConsegna = (azione) => suite.onConsegna(azione);

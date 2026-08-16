@@ -9,11 +9,62 @@
 import { el, escapeHtml, inserisciAlCursore, legaValore, mostraErrore, mostraScheda, rnd } from "./dom.js";
 import { DEMO_LYRICS, PRESETS, STILI, TAGS } from "./dati/stili.js";
 import { ESTETICHE } from "./dati/estetiche.js";
-import { grafoBrano, grafoImmagine, promptCopertina, titoloAuto } from "./grafi.js";
+import { QUALITA, grafoBrano, grafoImmagine, promptCopertina, titoloAuto } from "./grafi.js";
 import { aggiungiLavoro } from "./coda.js";
 import * as ponte from "./ponte.js";
 
 const CHIAVE_STILI = "daprod.stili";
+const CHIAVE_QUALITA = "daprod.musica.qualita";
+
+/** Con quale dei due modelli di diffusione si genera. */
+export function qualitaScelta() {
+  const salvata = localStorage.getItem(CHIAVE_QUALITA);
+  return QUALITA[salvata] ? salvata : "leggera";
+}
+
+/**
+ * Il menu della qualità, e cosa fare se quel modello non c'è.
+ *
+ * Stessa strada di DaProdFoto: la pagina non indovina cosa c'è sul disco, lo
+ * chiede alla suite e, se manca, lo scarica da qui. Sono 2,5 GB, non 12: la
+ * differenza è che qui si cambia **solo** il modello che fa il suono.
+ */
+async function collegaQualita() {
+  el.qualita.innerHTML = Object.values(QUALITA)
+    .map((q) => `<option value="${q.id}">${escapeHtml(q.nome)}</option>`)
+    .join("");
+  el.qualita.value = qualitaScelta();
+
+  const controlla = async () => {
+    const scelta = QUALITA[el.qualita.value];
+    el.rigaQualita.textContent = scelta.riga;
+    const stato = await ponte.statoModelli(scelta.catalogo).catch(() => null);
+
+    if (!stato || stato.pronto) {
+      el.mancaQualita.hidden = true;
+      return;
+    }
+    el.mancaQualita.hidden = false;
+    el.mancaQualita.innerHTML =
+      `<b>${escapeHtml(scelta.nome)} non è ancora sul disco.</b>` +
+      ` <button class="mini" id="prendiQualita">Scarica ${(stato.bytesMancanti / 1024 ** 3)
+        .toFixed(1)
+        .replace(".", ",")} GB</button>`;
+    document.getElementById("prendiQualita").onclick = () => {
+      el.mancaQualita.textContent = "Scarico… l'avanzamento è nell'hub.";
+      void ponte.scaricaModelli(scelta.catalogo);
+    };
+  };
+
+  el.qualita.onchange = () => {
+    localStorage.setItem(CHIAVE_QUALITA, el.qualita.value);
+    void controlla();
+  };
+  ponte.suAvanzamentoModelli((a) => {
+    if (!a.attivo) void controlla();
+  });
+  await controlla();
+}
 
 export function stiliMiei() {
   const attuali = localStorage.getItem(CHIAVE_STILI);
@@ -92,6 +143,7 @@ function leggiModulo() {
     format: el.format.value,
     tiled: el.tiled.checked,
     tile: parseInt(el.tile.value) || 1536,
+    qualita: qualitaScelta(),
   };
 }
 
@@ -129,24 +181,29 @@ export function nuovaResa() {
 async function creaBrano(p) {
   p.titolo = p.titolo || titoloAuto(p.lyrics, p.caption);
 
-  // **Prima il brano, poi la copertina**, e l'ordine non è un dettaglio di
-  // presentazione. La copertina carica Anima, che sono 4 GB di VRAM; se resta
-  // lì dentro, i 5,5 GB del text encoder musicale non ci stanno più e vengono
-  // caricati solo *in parte*. Il motore non lo dice: va avanti e muore più tardi
-  // con `'RVQDepthDecoder' object has no attribute '_v_block'`, a volte dopo
-  // quattro minuti di lavoro buttato. Mettendo la copertina dopo, quando tocca a
-  // lei il modello musicale ha già finito e le lascia il posto.
+  // **Prima la copertina, poi il brano.** Venti secondi contro dieci minuti:
+  // così l'artwork lo vedi subito, mentre la musica lavora, invece di guardare
+  // un rettangolo vuoto per tutto il tempo.
+  //
+  // L'ordine era stato invertito quando i brani morivano con `'RVQDepthDecoder'
+  // object has no attribute '_v_block'`, dando la colpa alla VRAM che Anima
+  // lasciava occupata. Non era quello: era un difetto di ComfyUI 0.33.0, che la
+  // 0.33.1 corregge. La memoria video si svuota lo stesso fra le due, che è
+  // gratis e toglie di mezzo il dubbio.
   await ponte.svuotaVram();
 
-  // `conCopertina` dice alla coda che dietro a questo brano ne arriva una: senza,
-  // il brano finito si porterebbe via il proprio lavoro e la copertina, che
-  // arriva dopo, non troverebbe più a chi attaccarsi.
+  let idCopertina = null;
+  if (el.autoCover.checked) {
+    const prompt = promptCopertina(p.titolo, p.lyrics, el.coverStyleNew.value);
+    idCopertina = await ponte.invia(grafoImmagine(prompt, rnd()));
+  }
+
+  // `conCopertina` dice alla coda che c'è una copertina per questo brano: se
+  // arriva prima gli si attacca da sé, se arriva dopo lo ritrova in libreria.
   const idBrano = await ponte.invia(grafoBrano(p));
   aggiungiLavoro(idBrano, p, { conCopertina: el.autoCover.checked });
 
-  if (el.autoCover.checked) {
-    const prompt = promptCopertina(p.titolo, p.lyrics, el.coverStyleNew.value);
-    const idCopertina = await ponte.invia(grafoImmagine(prompt, rnd()));
+  if (idCopertina) {
     aggiungiLavoro(idCopertina, { titolo: p.titolo }, { specie: "copertina", branoDi: idBrano });
   }
 }
@@ -154,6 +211,7 @@ async function creaBrano(p) {
 /* ------------------------------------------------------------ collegamenti */
 
 export function collegaCrea() {
+  void collegaQualita();
   legaValore("duration", "durVal", (v) => `${v} s`);
   legaValore("steps", "stepsVal");
   legaValore("cfg", "cfgVal");

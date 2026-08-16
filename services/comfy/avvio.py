@@ -93,30 +93,35 @@ def nodi_di_terzi(motore: Path) -> Path:
 def flag_velocita(scelta: str) -> list[str]:
     """I flag che cambiano a seconda di quanto si vuole spingere il motore.
 
-    **normale** è quello che abbiamo provato. `--disable-dynamic-vram` c'è perché
-    i 5,5 GB del text encoder musicale devono stare *tutti* in VRAM: con il
-    caricamento dinamico i pesi arrivavano dalla CPU durante la cattura dei CUDA
-    graph e la generazione moriva con `cudaErrorStreamCaptureInvalidated`.
+    **Tutte e due tengono `--disable-dynamic-vram`.** Il primo giro di questo
+    interruttore lo toglieva, perché è quel flag a spegnere i CUDA graph sulla
+    parte lenta della musica: il motore parte lo stesso e dice "DynamicVRAM
+    support detected and enabled", ma **le generazioni danno errore** — con 8 GB
+    e questi modelli il caricamento dinamico non regge, come già l'anno scorso.
+    Resta scritto in docs/VELOCITA-MUSICA.md: provato, non funziona, non si
+    riprova finché non cambia qualcosa a monte.
 
-    **spinta** toglie proprio quel flag, ed è il punto: dalla 0.33.1 il motore
-    rinuncia ai CUDA graph quando non può catturarli invece di morire, e i tre
-    quarti del tempo di un brano se ne vanno nella parte che quei graph
-    accelerano. In più accende `--fast` e, se è installata, FlashAttention.
+    Quindi **spinta** è quello che si può davvero accendere oggi:
 
-    Nessuna delle due è "giusta": una si è misurata, l'altra va misurata. Per
-    questo è un interruttore nell'hub e non una scelta scritta qui dentro.
+    - `--fast`: accumulazione in fp16, cublas_ops, autotune. Tocca soprattutto la
+      diffusione, che è il 18% del tempo di un brano e quasi tutto in un'immagine.
+    - `--use-flash-attention`, ma **solo se `flash_attn` è installata**: il flag
+      su un ambiente che non ce l'ha farebbe uscire il motore in avvio invece di
+      ripiegare da solo.
+
+    **normale** resta la configurazione con cui abbiamo generato finora, e va
+    tenuta come metro di paragone: se spinta dà problemi si torna lì.
     """
+    flag = ["--disable-dynamic-vram"]
     if scelta != "spinta":
-        return ["--disable-dynamic-vram"]
+        return flag
 
-    flag = ["--fast"]
+    flag.append("--fast")
     try:
         import flash_attn  # noqa: F401
 
         flag.append("--use-flash-attention")
     except Exception:
-        # Non installata: il motore userebbe l'attenzione di PyTorch comunque, ma
-        # il flag lo farebbe uscire in avvio invece di ripiegare da solo.
         pass
     return flag
 

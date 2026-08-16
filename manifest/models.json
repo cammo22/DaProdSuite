@@ -42,6 +42,24 @@
       "url": "https://huggingface.co/dummy9996/MiniMax-Music3-w4a8-bf16-comfyui/resolve/main/minimax_music3_qwen2-7B_pruned_w4a8.safetensors",
       "bytes": 5908365751
     },
+    "minimax-music3-dit-int8": {
+      "label": "MiniMax Music 3 — modello di diffusione (int8 ConvRot, qualità migliore)",
+      "kind": "file",
+      "$comment": "Il formato che consiglia WanGP, e che ComfyUI sa caricare da sé (nel log il backend cuda dichiara dequantize_int8_convrot_weight). Pesa 2,5 GB invece di 1,8 ma è a 8 bit invece che a 4: è la parte che trasforma i token in suono, quindi è quella che si sente. Ci sta comodo negli 8 GB.",
+      "dir": "diffusion_models",
+      "file": "minimax_music3_dit_int8_convrot.safetensors",
+      "url": "https://huggingface.co/Comfy-Org/MiniMax-Music-3/resolve/main/diffusion_models/minimax_music3_dit_int8_convrot.safetensors",
+      "bytes": 2502161682
+    },
+    "minimax-music3-text-encoder-int8": {
+      "label": "MiniMax Music 3 — text encoder potato (int8 ConvRot, non entra in 8 GB)",
+      "kind": "file",
+      "$comment": "L'altra metà di quello che usa WanGP. Sono 8,6 GB e questo modello lavora da solo in VRAM: su una scheda da 8 GB non ci sta, e per farlo entrare servirebbe il caricamento dinamico, che qui dà errore. Resta nel catalogo perché su una GPU più grande è la scelta giusta, ed è il primo posto dove guardare quando cambia la scheda video.",
+      "dir": "text_encoders",
+      "file": "minimax_music3_text_encoder_pruned_int8_convrot.safetensors",
+      "url": "https://huggingface.co/Comfy-Org/MiniMax-Music-3/resolve/main/text_encoders/minimax_music3_text_encoder_pruned_int8_convrot.safetensors",
+      "bytes": 9196611886
+    },
     "minimax-music3-vae": {
       "label": "MiniMax Music 3 — VAE audio",
       "kind": "file",
@@ -76,6 +94,16 @@
       "bytes": 253806246
     },
 
+    "flux2-klein-4b-q5km": {
+      "label": "FLUX.2 Klein 4B — Q5_K_M (il più leggero dei due)",
+      "kind": "file",
+      "$comment": "Il fratello piccolo del 9B: 3 GB invece di 5,8, e con 8 GB di VRAM lascia molto più spazio. Divide con lui text encoder e VAE, quindi chi ha già il 9B lo aggiunge con 3 GB e basta. Quantizzazione più alta del 9B (Q5 invece di Q4) proprio perché il modello è piccolo: ci sta comunque.",
+      "dir": "diffusion_models",
+      "file": "flux-2-klein-4b-Q5_K_M.gguf",
+      "url": "https://huggingface.co/unsloth/FLUX.2-klein-4B-GGUF/resolve/main/flux-2-klein-4b-Q5_K_M.gguf",
+      "nodi": ["comfyui-gguf"],
+      "bytes": 3073368640
+    },
     "flux2-klein-q4ks": {
       "label": "FLUX.2 Klein 9B — Q4_K_S (consigliato su 8 GB)",
       "kind": "file",

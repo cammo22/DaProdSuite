@@ -8,8 +8,37 @@
 
 import { COVER_NEG, ESTETICHE, MOTIVI } from "./dati/estetiche.js";
 
+/**
+ * I pesi di MiniMax Music 3, e la scelta che si può fare su uno dei tre.
+ *
+ * Il **text encoder** non è scegliebile e non è un dimenticanza: quello è il
+ * modello da 7B che genera i token audio uno per uno, lavora da solo in VRAM, e
+ * la versione a 8 bit consigliata da WanGP pesa 8,6 GB — su una scheda da 8 non
+ * ci sta. Resta a 4 bit finché non cambia la scheda video.
+ *
+ * Il **DiT** invece sì: è quello che trasforma i token in suono, sta in 2,5 GB
+ * anche a 8 bit, e quindi è l'unico posto dove qui si può davvero guadagnare
+ * qualità. `int8 ConvRot` è il formato che consiglia WanGP, e ComfyUI lo carica
+ * con i suoi kernel senza aggiungere niente.
+ */
+export const QUALITA = {
+  leggera: {
+    id: "leggera",
+    nome: "Leggera (4 bit)",
+    riga: "1,8 GB. È quella con cui abbiamo generato finora.",
+    dit: "minimax_music3_dit_w4a8.safetensors",
+    catalogo: ["minimax-music3-dit"],
+  },
+  migliore: {
+    id: "migliore",
+    nome: "Migliore (int8)",
+    riga: "2,5 GB, 8 bit invece di 4: è il formato consigliato da WanGP.",
+    dit: "minimax_music3_dit_int8_convrot.safetensors",
+    catalogo: ["minimax-music3-dit-int8"],
+  },
+};
+
 const MODELLI = {
-  dit: "minimax_music3_dit_w4a8.safetensors",
   txt: "minimax_music3_qwen2-7B_pruned_w4a8.safetensors",
   vae: "minimax_music3_dav.safetensors",
 };
@@ -45,7 +74,10 @@ export function grafoBrano(p) {
       },
     },
     "3": { class_type: "ConditioningZeroOut", inputs: { conditioning: ["2", 0] } },
-    "4": { class_type: "UNETLoader", inputs: { unet_name: MODELLI.dit, weight_dtype: "default" } },
+    "4": {
+      class_type: "UNETLoader",
+      inputs: { unet_name: (QUALITA[p.qualita] ?? QUALITA.leggera).dit, weight_dtype: "default" },
+    },
     "5": { class_type: "EmptyMiniMaxMusic3LatentAudio", inputs: { seconds: ["2", 1], batch_size: 1 } },
     "6": {
       class_type: "KSampler",

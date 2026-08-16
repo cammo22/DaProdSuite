@@ -126,9 +126,22 @@ input[type=range]{padding:0; height:24px; accent-color:var(--accent); background
 .btn:disabled:hover,.mini:disabled:hover{transform:none; filter:none; border-color:var(--line)}
 input:disabled,textarea:disabled,select:disabled{opacity:.45; cursor:not-allowed}
 
+/* Con che cosa si genera: sopra tutto, perché vale per ogni scheda. */
+.barra-modello{display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+  padding:10px 26px; border-bottom:1px solid var(--line); background:#0b0d13}
+.barra-modello label{margin:0; font-size:12px; letter-spacing:.06em; text-transform:uppercase}
+.barra-modello select{width:auto; min-width:190px; padding:7px 10px}
+.barra-modello .hint{margin:0}
+
+/* Le ultime immagini, sopra la tela del ritocco. */
+.recenti{display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap}
+.recenti img{width:64px; height:64px; object-fit:cover; border-radius:9px; cursor:pointer;
+  border:1px solid var(--line); transition:.15s}
+.recenti img:hover{border-color:var(--accent); transform:translateY(-2px)}
+
 /* Il modello scelto non è sul disco: cosa manca e come si rimedia. */
 .manca{background:#1c1608; border:1px solid #5c4520; border-radius:12px; padding:12px 13px;
-  margin:-4px 0 14px; font-size:13px; line-height:1.5}
+  margin:14px 26px 0; font-size:13px; line-height:1.5}
 .manca .hint{margin-top:5px}
 .manca .err{margin-top:0}
 .err{background:#2a1416; border:1px solid #5c2226; color:#fca5a5; padding:10px 12px; border-radius:11px;
@@ -231,6 +244,8 @@ legend{font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var
 .lente img{max-width:100%; max-height:calc(100vh - 110px); object-fit:contain;
   border-radius:12px; box-shadow:0 20px 60px rgba(0,0,0,.6)}
 .lente .didascalia{color:var(--dim); font-size:13px; text-align:center; max-width:900px}
+.lente .btn{cursor:pointer}
+.lente img{max-height:calc(100vh - 170px)}
 .card .art{cursor:zoom-in}
 
 /* Le ultime immagini fatte, sotto la sessione: si vede il risultato senza

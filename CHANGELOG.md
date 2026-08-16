@@ -12,7 +12,44 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ## Non ancora pubblicato
 
-Niente, per ora: tutto quello che c'era è uscito nella 0.1.0.
+### DaProdFoto: tre modelli, e il ritocco che si usa davvero
+
+- **Il modello si sceglie in alto**, fuori dalle schede: vale per Crea *e* per
+  Ritocco, e si vede sempre con cosa stai lavorando.
+- **FLUX.2 Klein adesso sono due**: il **4B** (8,4 GB in tutto, comodo su 8 GB di
+  VRAM) e il **9B** (11,2 GB, più bravo con le descrizioni lunghe). Dividono text
+  encoder e VAE: chi ha già uno dei due aggiunge l'altro con pochi GB.
+- **Nel Ritocco ci sono le ultime cinque immagini**: un clic e sono sulla tela,
+  senza passare dalla Galleria.
+- **"Ritocca questa" dentro l'immagine a schermo intero.** Prima, dopo aver
+  guardato una foto grande, il clic su "ritocca" chiudeva soltanto la lente e
+  sembrava che il ritocco fosse rotto.
+- **Se un'immagine non si apre nel ritocco adesso lo dice**, invece di non fare
+  niente.
+- **L'estetica non si attacca più di nascosto al prompt.** Si parte da
+  "nessuna", e se ne scegli una il menu **te la scrive nella casella**: la vedi,
+  la cambi, la togli. Prima ogni immagine partiva con le stesse dieci parole
+  incollate in fondo, e si somigliavano tutte senza che si capisse perché.
+
+### DaProdMusica
+
+- **La copertina torna a farsi per prima.** Venti secondi contro dieci minuti:
+  la vedi subito, mentre la canzone lavora.
+- **Cliccando un brano parte quel brano.** Capitava di sentirne uno vecchio
+  finché non se ne cliccava un altro: il lettore riconosceva la posizione
+  nell'elenco, e l'elenco si riordina ogni volta che nasce una canzone.
+- **Qualità del suono, con due scelte**: quella di prima (4 bit) e **quella
+  consigliata da WanGP** (int8 ConvRot, 2,5 GB). È il modello che trasforma la
+  struttura in suono, ed è l'unico dei tre che su 8 GB si può migliorare — il
+  text encoder in int8 pesa 8,6 GB e non ci sta.
+
+### Più veloce
+
+- **Flash Attention 2 e Triton sono installati** e il motore li usa: nel log ora
+  c'è "Using Flash Attention" al posto dell'attenzione di serie.
+- **"Spinta" non tocca più la memoria video dinamica**, che era la cosa che
+  faceva fallire le generazioni. Adesso accende accumulazione fp16, cublas e
+  Flash Attention: tutta roba che si può tenere.
 
 ---
 

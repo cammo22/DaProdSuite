@@ -125,6 +125,24 @@ Ma la correzione **spegne il CUDA graph** invece di farlo funzionare: con i
 nostri flag, il depth decoder gira senza. Cioè la parte lenta è lenta anche per
 questo.
 
+## 3-ter. I modelli: cosa si può prendere di WanGP e cosa no
+
+Cammo, il 16 agosto: «usiamo i modelli che consiglia WanGP, questi qua non mi
+piacciono». Il formato che usano loro — **int8 ConvRot** — c'è anche per il
+nostro motore, su `Comfy-Org/MiniMax-Music-3`, e ComfyUI lo carica da sé (nel log
+il backend cuda dichiara `dequantize_int8_convrot_weight`).
+
+| Pezzo | Quello che usiamo | Quello di WanGP | Ci sta in 8 GB? |
+|---|---|---|---|
+| **DiT** (dai token al suono) | w4a8, 1,8 GB | int8 ConvRot, **2,5 GB** | **sì** — ed è entrato come scelta in DaProdMusica |
+| **Text encoder** (la parte lenta, 76%) | w4a8 potato, 5,5 GB | int8 ConvRot potato, **8,6 GB** | **no**: lavora da solo in VRAM e sono 600 MB di troppo |
+| VAE | lo stesso | lo stesso | sì |
+
+Quindi metà sì e metà no, e il no non è una scelta: 8,6 GB in una scheda da 8 non
+entrano, e farli entrare vorrebbe dire il caricamento dinamico, che qui dà
+errore. Il modello resta nel catalogo — `minimax-music3-text-encoder-int8` — ed è
+il primo posto dove guardare il giorno che cambia la scheda video.
+
 ## 4-bis. L'interruttore, così le prove le può fare chiunque
 
 In fondo all'hub c'è **Velocità: normale / spinta**, e cambia i flag con cui
@@ -132,13 +150,22 @@ parte il motore (`services/comfy/avvio.py`, `flag_velocita`).
 
 | | normale | spinta |
 |---|---|---|
-| `--disable-dynamic-vram` | sì | **no** — è il punto: senza, il motore può tornare a catturare i CUDA graph |
+| `--disable-dynamic-vram` | sì | **sì** — vedi sotto |
 | `--fast` | no | sì (`fp16_accumulation`, `cublas_ops`, autotune) |
 | `--use-flash-attention` | no | sì, **ma solo se `flash_attn` è installata**: altrimenti il flag farebbe morire il motore in avvio, e il codice se ne accorge da sé |
 
 Vale dal prossimo avvio di un'app, perché i flag stanno nella riga di comando.
-Se un brano muore o va più piano, si rimette normale: è una prova, non una
-promessa.
+
+**La memoria video dinamica è stata provata e tolta.** Il primo giro di questo
+interruttore la accendeva, perché è quella che riporta i CUDA graph sulla parte
+lenta. Il motore parte e dichiara pure "DynamicVRAM support detected and
+enabled", ma **le generazioni danno errore**: con 8 GB e questi modelli non
+regge. Resta scritto qui perché non si riprovi la stessa strada fra tre mesi.
+
+**Flash Attention 2 e Triton sono installati** (16 agosto 2026), con le ruote
+per Python 3.12 / torch 2.13 / CUDA 13.0 elencate più sotto e `--no-deps` per non
+far toccare torch a nessuno. Il motore adesso scrive "Using Flash Attention" e il
+backend `triton` di comfy-kitchen risulta disponibile.
 
 ## 5. Le prove da fare, dalla più economica
 

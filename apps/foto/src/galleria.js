@@ -45,6 +45,10 @@ export async function aggiornaGalleria() {
   // i lavori resta a quelle di prima finché non cambia qualcos'altro.
   scordaDisegno();
   disegnaSessione();
+
+  // Adesso `stato.immagini` è aggiornato: chi mostra le ultime — la striscia del
+  // Ritocco — può ridisegnarsi con quelle vere.
+  annuncia("immagini-aggiornate");
 }
 
 function scheda(immagine) {

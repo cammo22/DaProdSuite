@@ -9,7 +9,7 @@ for (const chiave of [
   "modello", "rigaModello", "avvisoModello",
   "sessione", "stop", "svuota", "mods", "dot", "statusTxt", "navGal",
   "areaTela", "nessunaImmagine", "comandiPennello", "pennello", "pennelloVal",
-  "scegliFile", "pulisciMaschera", "sceltaFile", "promptRitocco", "denoise",
+  "scegliFile", "pulisciMaschera", "sceltaFile", "promptRitocco", "denoise", "recentiRitocco",
   "denoiseVal", "rigenera", "erroreRitocco", "galleria", "conteggio", "aggiorna", "lente", "lenteImg", "lenteInfo",
   "tradottoCrea", "tradottoRitocco",
 ]) {

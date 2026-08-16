@@ -2,7 +2,7 @@
 
 import { el, escapeHtml, legaValore, mostraErrore, nascondiErrore, rnd } from "./dom.js";
 import { ESTETICHE, NEGATIVO, PROPOSTE } from "./dati/estetiche.js";
-import { componiPrompt, grafoImmagine } from "./grafi.js";
+import { componiPrompt, grafoImmagine, paroleEstetica } from "./grafi.js";
 import { modelloCorrente } from "./scelta-modello.js";
 import { aggiungiLavoro } from "./coda.js";
 import { inInglese } from "./lingua.js";
@@ -22,13 +22,40 @@ function leggiModulo() {
   };
 }
 
+/**
+ * L'estetica si scrive nella casella, non dietro le quinte.
+ *
+ * Prima il menu attaccava le sue parole in fondo al prompt senza dirlo: ogni
+ * immagine partiva con le stesse dieci parole incollate, e le foto si
+ * somigliavano tutte senza che si capisse perché. Adesso il menu **scrive** — le
+ * vedi, le correggi, le cancelli — e di suo non c'è niente: si parte da vuoto,
+ * che è la scelta che dà più varietà al modello.
+ */
+function collegaEstetica() {
+  el.estetica.innerHTML = [
+    `<option value="">nessuna</option>`,
+    ...Object.keys(ESTETICHE).map((k) => `<option>${escapeHtml(k)}</option>`),
+  ].join("");
+  el.estetica.value = "";
+
+  let ultima = "";
+  el.estetica.onchange = () => {
+    const parole = paroleEstetica(el.estetica.value);
+    const testo = el.prompt.value;
+
+    // Si toglie quella di prima invece di accumularle: cambiare tre volte idea
+    // non deve lasciare tre estetiche in fila dentro la stessa descrizione.
+    const pulito = ultima ? testo.replace(ultima, "").replace(/,\s*,/g, ",").replace(/,\s*$/, "").trim() : testo.trim();
+    el.prompt.value = [pulito, parole].filter(Boolean).join(", ");
+    ultima = parole;
+  };
+}
+
 export function collegaCrea() {
   legaValore("passi", "passiVal");
   legaValore("cfg", "cfgVal", (v) => Number(v).toFixed(1));
 
-  el.estetica.innerHTML = Object.keys(ESTETICHE)
-    .map((k) => `<option>${escapeHtml(k)}</option>`)
-    .join("");
+  collegaEstetica();
   el.negativo.value = NEGATIVO;
   el.seed.value = rnd();
 
@@ -65,7 +92,7 @@ export function collegaCrea() {
       // Dalla seconda in poi il seed cambia comunque: otto copie della stessa
       // immagine non sono otto immagini.
       if (el.seedCasuale.checked || i > 0) el.seed.value = rnd();
-      const parametri = { ...leggiModulo(), prompt: componiPrompt(inglese, p.estetica) };
+      const parametri = { ...leggiModulo(), prompt: componiPrompt(inglese) };
 
       try {
         const id = await ponte.invia(grafoImmagine(m, parametri));
