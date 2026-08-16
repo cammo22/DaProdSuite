@@ -184,7 +184,7 @@ export function collegaBonsai() {
   void disponibile().then((motivo) => {
     el.bonsaiStato.textContent = motivo
       ? motivo
-      : "Bonsai è pronto. Consigliato: prism-ml/bonsai-27b caricato con 64K di contesto.";
+      : "Pronto. Consigliato Bonsai 27B con 64K di contesto, ma va bene qualunque modello di LM Studio.";
     el.bonsaiStato.classList.toggle("guasto", Boolean(motivo));
   });
 }

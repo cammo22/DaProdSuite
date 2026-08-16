@@ -74,7 +74,7 @@
            tutte, e perché quando occupa memoria lo fa per tutte. -->
       <section class="llm" id="llm" aria-label="Modello che scrive">
         <div class="llm-testa">
-          <h2>Bonsai — il modello che scrive</h2>
+          <h2>Il modello che scrive</h2>
           <p id="llm-stato">—</p>
         </div>
         <ul class="llm-elenco" id="llm-elenco"></ul>
@@ -85,9 +85,18 @@
           <button class="bottone secondario" data-contesto="262144">256K</button>
         </div>
         <p class="llm-nota">
-          64K è quello consigliato: più contesto vuol dire più memoria per la cache e
-          meno per il modello. La suite scarica da sé quello che ha caricato lei, due
-          minuti dopo l'ultima domanda e quando chiudi la suite.
+          64K è il contesto consigliato: più contesto vuol dire più memoria per la
+          cache e meno per il modello. Quello che carichi qui si spegne da sé
+          quarantacinque secondi dopo l'ultima domanda, prima di ogni generazione
+          pesante e alla chiusura della suite: quei GB servono ai modelli di immagini
+          e musica.
+        </p>
+        <p class="llm-nota">
+          <b>Va bene qualunque modello</b> tu abbia installato in LM Studio: l'elenco
+          qui sopra è il suo. Noi lavoriamo soprattutto con <b>Bonsai 27B</b>, che sta
+          in 4 GB e ragiona bene per quanto è piccolo — se non ce l'hai,
+          <a href="https://lmstudio.ai/models/prism-ml/bonsai-27b" target="_blank" rel="noreferrer">scaricalo da qui</a>
+          e comparirà nell'elenco da solo.
         </p>
       </section>
 
@@ -125,7 +134,7 @@
         <button class="collegamento" data-apri="output">Risultati</button>
         <button class="collegamento" data-apri="models">Modelli</button>
         <button class="collegamento" data-apri="logs">Log</button>
-        <button class="collegamento" id="btn-llm">Bonsai</button>
+        <button class="collegamento" id="btn-llm">Modello che scrive</button>
         <button class="collegamento" id="btn-spazio">Spazio</button>
       </div>
     </footer>
