@@ -233,6 +233,11 @@ Da guardare quando toccherà al video, sempre come metodo e non come codice:
   ricopiarli;
 - `lora_affine.py` con le mappe già pronte per fl2va e ref2va.
 
-I nodi MiniMax H3 nativi nel nostro motore ci sono già (verificato): quello che
-manca resta la finestra scorrevole per andare oltre la clip corta, che è la
-decisione già presa in [ROADMAP.md](ROADMAP.md) § 0.6.0.
+I nodi MiniMax H3 nativi nel nostro motore ci sono già (verificato), **e dal 16
+agosto 2026 sappiamo che ci sono anche quelli di LTX 2.5** — trenta, coi nodi
+audio compresi — e le finestre scorrevoli, che qui sopra davamo per mancanti
+(`ContextWindowsManual`, `LTXVContextWindows`). Quindi per il video non resta da
+scrivere il meccanismo, ma da **misurare**: quanto lunga la finestra, quanto
+overlap, e cosa regge in 8 GB. Il quadro sta in
+[MODELLI-E-STRATEGIA.md](MODELLI-E-STRATEGIA.md) § 5 e le cose da fare in
+[ROADMAP.md](ROADMAP.md) § 0.6.0.

@@ -139,11 +139,25 @@ reale, e il risultato è già coerente con il brano perché *nasce* dal suo suon
 
 ### Strada lunga: le clip generate
 
-**I due modelli decisi**: **MiniMax H3** (i nodi ci sono già nel motore) e
-**LTX 2.5**, che è la strada veloce per le clip lunghe.
+**I due modelli decisi**: **MiniMax H3** e **LTX 2.5**. Verificato il 16 agosto
+2026 sul ComfyUI 0.33.1 della suite: **i nodi ci sono già nel motore per tutti e
+due**, nativi e senza custom node — cinque per H3, trenta per LTX 2.5, fra cui
+quelli audio (`LTXVAudioVAEDecode`, `LTXVConcatAVLatent`, `LTXVReferenceAudio`).
+LTX 2.5 quindi **fa il video col suono e sa partire da un audio di
+riferimento**, che per un video musicale è il verso giusto. Dettagli e nomi dei
+nodi in [MODELLI-E-STRATEGIA.md](MODELLI-E-STRATEGIA.md) § 5.
 
-- [ ] Sliding window e overlap sopra i nodi MiniMax H3 di ComfyUI
-- [ ] LTX 2.5 accanto a H3, con la scelta del modello come in DaProdFoto
+Nella stessa verifica è caduto un pezzo di lavoro che era in questa lista: le
+**sliding window non sono più da scrivere**, la 0.33.1 le ha
+(`ContextWindowsManual`, `LTXVContextWindows`, `WanContextWindowsManual`).
+Resta da scegliere finestra e overlap e da misurare cosa regge in 8 GB.
+
+- [ ] Finestra e overlap misurati su 8 GB, con `LTXVContextWindows` per LTX 2.5
+      e `ContextWindowsManual` per H3
+- [ ] LTX 2.5 accanto a H3, con la scelta del modello come in DaProdFoto: un
+      menu, ogni modello coi propri grafi e il proprio punto di lavoro
+- [ ] I pesi di tutti e due nel catalogo (`manifest/models.json`), con i byte
+      veri presi dal `Content-Length` e non stimati
 - [ ] Pianificazione per sezione — la struttura arriva dai tag del testo, non da
       un'analisi del BPM che sbaglia
 - [ ] DaProdUniverso applicato ai prompt

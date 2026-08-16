@@ -124,7 +124,7 @@ WanGP, i progetti sul Desktop sono più recenti:
 |---|---|---|---|
 | Musica | ACE-Step v1.5 XL Turbo 4B / Suno | **MiniMax Music 3** | il codice (13 ago 2026) |
 | Foto | Krea 2 Turbo (in WanGP) | **Anima** (in Musica) + FLUX.2 Klein | il codice |
-| Cinema | **MiniMax H3** (in WanGP) | — | solo wiki |
+| Cinema | **MiniMax H3** (in WanGP) | — | solo wiki, ma vedi § 5 |
 
 Per Musica e Foto il codice ha superato la wiki e la suite segue il codice.
 Per il **video** invece esiste solo il metodo manuale in WanGP: è l'unico pezzo
@@ -214,11 +214,52 @@ memoria, le sliding window, il modo di far stare modelli grossi in poca VRAM —
 il codice è nostro, con l'obiettivo di far girare i modelli *meglio* di come
 girano ora. Nessuna dipendenza esterna, nessun vincolo di licenza ereditato.
 
-Resta da scrivere da zero: **sliding window e overlap**, che in ComfyUI non ci
-sono. È il pezzo di WanGP da rifare, ed è anche quello dove si può fare meglio.
-
 **Ma non adesso.** La card resta disattivata finché le altre sei non funzionano
 davvero dentro la suite. Prima si fa funzionare quello che c'è.
+
+### Il secondo modello: LTX 2.5, e due cose che cambiano il piano
+
+**Verificato il 16 agosto 2026**, interrogando `/object_info` del ComfyUI 0.33.1
+che stava girando per DaProdDream. Due sorprese, tutte e due a nostro favore.
+
+**Uno: LTX 2.5 è nativo anche lui, e non di poco.** Trenta nodi, e non sono
+quattro scatole per fare una clip muta:
+
+```
+EmptyLTXVLatentVideo     LTXVImgToVideo          LTXVAddGuide
+LTXVConditioning         LTXVScheduler           LTXVDualCFGGuider
+LTXVContextWindows       LTXVLatentUpsampler     LTXVDurationPredictor
+LTXVAudioVAELoader       LTXVAudioVAEEncode      LTXVAudioVAEDecode
+LTXVConcatAVLatent       LTXVSeparateAVLatent    LTXVReferenceAudio
+LTXVSpatioTemporalGuidance   LTXVModalityGuidance   LTXAVTextEncoderLoader
+```
+
+I nodi `Audio` non sono un dettaglio: **LTX 2.5 genera il video insieme al
+suono**, e `LTXVReferenceAudio` prende un audio come riferimento — che per un
+video musicale è esattamente il verso giusto: si parte dal brano.
+(I nodi `LtxApi25*` e `MinimaxHailuo*` che compaiono nello stesso elenco sono
+chiamate a servizi in rete: non ci interessano, la suite gira in locale.)
+
+**Due: le sliding window non sono più da scrivere.** Qui sopra c'era scritto che
+erano il pezzo di WanGP da rifare da zero perché in ComfyUI non c'erano. Nella
+0.33.1 ci sono, e in tre forme:
+
+```
+ContextWindowsManual     LTXVContextWindows     WanContextWindowsManual
+```
+
+`LTXVContextWindows` chiede la lunghezza della finestra in fotogrammi veri
+(`8n+1`, di serie 145) e l'overlap (di serie 40), e si applica al modello come
+una patch. `ContextWindowsManual` è quello generico, quindi la stessa strada
+vale anche per MiniMax H3. **Il lavoro cambia natura**: non più scrivere il
+meccanismo, ma scegliere finestra e overlap e misurare cosa regge in 8 GB.
+
+**Perché due modelli e non uno.** Stessa logica di DaProdFoto con Anima e
+FLUX.2 Klein: uno che si porta la scelta e uno che si porta il peso. H3 è quello
+della guida, con Ref2VA e FL2VA già collaudati a mano; LTX 2.5 è la strada
+veloce per le clip lunghe e l'unico dei due che il suono lo fa da sé. La scelta
+del modello si fa come in Foto — un menu, ogni voce coi propri grafi e il
+proprio punto di lavoro (`apps/foto/src/grafi.js` è già scritto così).
 
 ---
 

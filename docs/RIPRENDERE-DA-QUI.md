@@ -561,7 +561,8 @@ che passava da solo al brano dopo.
 |---|---|
 | Companion | **LM Studio**, non Ollama |
 | DaProdFoto | Anima di base, FLUX.2 Klein come extra |
-| DaProdCinema | motore nostro; ComfyUI ha già i nodi MiniMax H3 nativi, mancano le sliding window |
+| DaProdCinema | motore nostro; ComfyUI ha già i nodi nativi di **MiniMax H3 e LTX 2.5**, e dalla 0.33.1 anche le sliding window (`ContextWindowsManual`) |
+| DaProdCinema | **due modelli come in Foto**: H3 è quello della guida, LTX 2.5 fa il video **col suono** e parte da un audio di riferimento |
 | DaProdCinema | due strade: registrare gli effetti del Visualizer (breve) e le clip generate (lunga) |
 | Modelli | spostati dai vecchi progetti; MinimaxMusica e AvatarParlante ora sono archivio |
 | Mage-VL | **scartato**: non genera immagini, le comprende |
