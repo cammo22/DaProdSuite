@@ -46,6 +46,16 @@ export interface AppDescriptor {
   /** Colore d'accento della scheda nell'hub. */
   accent: string;
   service?: AppService;
+  /**
+   * Altri motori che quest'app sa usare, ma **solo quando servono davvero**.
+   *
+   * Non partono all'apertura come `service`: la finestra li chiede quando
+   * l'utente sceglie qualcosa che li richiede. DaProdDream ne è il primo caso —
+   * il suo motore fa il tempo reale con SD-Turbo, e per sognare con Anima
+   * chiede ComfyUI, che è già quello di Musica e Foto. Accenderlo sempre
+   * costerebbe un minuto d'attesa e qualche GB di VRAM a chi non lo usa.
+   */
+  motoriInPiu?: AppService[];
   /** Id dei modelli richiesti, come in manifest/models.json. */
   models: string[];
   /**
@@ -164,7 +174,22 @@ export const APPS: Record<AppId, AppDescriptor> = {
       // modello ancora fuori dalla cache del sistema, ci vuole più di un minuto.
       healthTimeoutMs: 180_000,
     },
+    // Il secondo modo di sognare: Anima, che gira su ComfyUI come in Foto e
+    // Musica. Non è il tempo reale — è un'immagine per volta, che si rifà
+    // mentre scrivi — e per questo il motore si accende solo se lo scegli.
+    motoriInPiu: [
+      {
+        id: "comfy",
+        port: 8188,
+        entry: "avvio.py",
+        engine: "ComfyUI",
+        healthTimeoutMs: 180_000,
+      },
+    ],
     models: ["sd-turbo", "taesd"],
+    // Gli stessi tre file che usano Foto e Musica: chi ha già una di quelle due
+    // installate non scarica niente.
+    extraModels: ["anima-turbo", "qwen3-06b-base", "qwen-image-vae"],
     gpuHeavy: true,
   },
   companion: {

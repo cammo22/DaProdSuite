@@ -426,6 +426,20 @@ export interface ApiApp {
   /** Riceve gli elementi che le altre app mandano a questa. */
   onConsegna(listener: (consegna: Consegna) => void): Unsubscribe;
 
+  /**
+   * Accende un motore che quest'app usa **solo a volte**, e ne torna
+   * l'indirizzo.
+   *
+   * Serve a chi ha una strada alternativa che gira su un motore diverso dal
+   * proprio: DaProdDream fa il tempo reale col suo, e per sognare con Anima
+   * chiede ComfyUI. Quale motore un'app possa chiedere sta nel catalogo
+   * (`motoriInPiu`), non nella pagina: da qui arriva solo il nome.
+   *
+   * Può metterci un minuto la prima volta, e si spegne da sé quando l'app
+   * si chiude.
+   */
+  motoreInPiu(nome: string): Promise<string>;
+
   /** Chiude questa finestra e torna all'hub. */
   chiudi(): Promise<void>;
 }
@@ -490,5 +504,6 @@ export const CHANNELS = {
   libreriaCambiata: "libreria:cambiata",
   appInvia: "app:invia",
   appConsegna: "app:consegna",
+  appMotoreInPiu: "app:motore-in-piu",
   appChiudi: "app:chiudi",
 } as const;

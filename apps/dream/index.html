@@ -243,7 +243,7 @@
       <textarea id="negative-sogno" rows="1" placeholder="sfocato, deforme, testo…"></textarea>
     </div>
 
-    <div class="transport">
+    <div class="transport anima-nascondi">
       <button id="btn-sogna-libero" class="primary">Comincia a sognare</button>
       <button id="btn-ferma-sogno" class="ghost" disabled>Ferma</button>
       <button id="btn-ricomincia" class="ghost" title="Riparte da un'immagine nuova">Ricomincia</button>
@@ -256,34 +256,34 @@
   </section>
 
   <section class="panel right">
-    <h2>Il sogno</h2>
+    <h2 class="anima-nascondi">Il sogno</h2>
 
-    <div class="field">
+    <div class="field anima-nascondi">
       <label>Velocità del sogno <b id="movimento-val">0.55</b></label>
       <input type="range" id="movimento" min="0.05" max="1" step="0.05" value="0.55">
       <div class="hint"><span>si trasforma piano</span><span>corre</span></div>
     </div>
 
-    <div class="field">
+    <div class="field anima-nascondi">
       <label>Quanto vaga <b id="raggio-val">0.40</b></label>
       <input type="range" id="raggio" min="0.05" max="1" step="0.05" value="0.4">
       <div class="hint"><span>stessa scena che si anima</span><span>cambia tutto</span></div>
     </div>
 
-    <div class="field">
+    <div class="field anima-nascondi">
       <label>Passi <b id="steps-sogno-val">2</b></label>
       <input type="range" id="steps-sogno" min="1" max="4" step="1" value="2">
       <div class="hint"><span>più veloce</span><span>più pulito</span></div>
     </div>
 
-    <div class="field">
+    <div class="field anima-nascondi">
       <label>Forza dello stile <b id="guidance-sogno-val">1.0</b></label>
       <input type="range" id="guidance-sogno" min="0" max="8" step="0.5" value="1">
       <div class="hint single">Qui l'immagine nasce dal prompt e basta: a 1 il prompt
         si sente lo stesso e vai al doppio della velocità.</div>
     </div>
 
-    <div class="field">
+    <div class="field anima-nascondi">
       <label>Risoluzione</label>
       <select id="resolution-sogno"></select>
     </div>
@@ -292,7 +292,7 @@
     <div class="preset-grid" id="preset-grid-sogno"></div>
 
 
-    <div class="metrics sep-top">
+    <div class="metrics sep-top anima-nascondi">
       <div class="metric"><span>Velocità</span><b id="m-fps-sogno">0 fps</b></div>
       <div class="metric"><span>VRAM</span><b id="m-vram-sogno">—</b></div>
     </div>
@@ -401,5 +401,9 @@
 <!-- Solo dentro la suite: dice se i modelli ci sono e li scarica se mancano.
      Aperto da solo, questo file si accorge che la suite non c'è e non fa niente. -->
 <script src="/ui/modelli-suite.js"></script>
+<!-- Il secondo modo di sognare: Anima su ComfyUI, non in tempo reale. Anche
+     questo esiste solo dentro la suite, perché è la suite ad accendere quel
+     motore quando serve. -->
+<script src="/ui/anima.js"></script>
 </body>
 </html>

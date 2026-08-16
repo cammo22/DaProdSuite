@@ -69,6 +69,10 @@ export function esponiApiApp(io: AppId): void {
 
     onConsegna: (listener) => subscribe<Consegna>(CHANNELS.appConsegna, listener),
 
+    // L'id dell'app lo mette il preload, come per i modelli: la pagina dice
+    // solo *quale* motore vuole, e il catalogo decide se può averlo.
+    motoreInPiu: (nome: string) => ipcRenderer.invoke(CHANNELS.appMotoreInPiu, io, nome),
+
     chiudi: () => ipcRenderer.invoke(CHANNELS.appChiudi, io),
   };
 

@@ -25,6 +25,7 @@ import { gpu } from "./gpu";
 import { runtime } from "./runtime";
 import { updater } from "./updater";
 import { statoModelli } from "./models";
+import { avviaInPiu } from "./servizi";
 import { LOGS_DIR, MODELS_DIR, OUTPUT_DIR } from "./paths";
 
 export function registerIpc(getHub: () => BrowserWindow | null): void {
@@ -196,6 +197,12 @@ export function registerIpc(getHub: () => BrowserWindow | null): void {
     CHANNELS.appInvia,
     (_e, destinazione: AppId, elementoId: string, intenzione: Intenzione) =>
       appManager.consegna(destinazione, elementoId, intenzione),
+  );
+
+  // Un motore che l'app usa solo a volte: lo accende quando lo chiede la sua
+  // finestra, non quando si apre la scheda.
+  ipcMain.handle(CHANNELS.appMotoreInPiu, (_e, id: AppId, nome: string) =>
+    avviaInPiu(id, nome),
   );
 
   ipcMain.handle(CHANNELS.appChiudi, (_e, id: AppId) => appManager.close(id));

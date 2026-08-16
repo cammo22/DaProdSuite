@@ -41,6 +41,59 @@ export function indirizzo(id: AppId): string | null {
   return servizio ? `http://127.0.0.1:${servizio.port}` : null;
 }
 
+/** Tutti i motori che quest'app può usare: il suo e quelli che chiede a richiesta. */
+function tuttiIServizi(id: AppId): AppService[] {
+  const app = APPS[id];
+  return [...(app.service ? [app.service] : []), ...(app.motoriInPiu ?? [])];
+}
+
+/**
+ * Accende un motore *in più* di quest'app e torna il suo indirizzo.
+ *
+ * A differenza di `avvia`, non lo chiama l'hub aprendo la scheda: lo chiede la
+ * finestra quando l'utente sceglie qualcosa che lo richiede — DaProdDream lo fa
+ * passando ad Anima. Se sta già girando (perché lo tiene acceso un'altra app)
+ * si aggiunge soltanto agli utenti: un motore solo, non due sulla stessa porta.
+ */
+export async function avviaInPiu(id: AppId, servizioId: string): Promise<string> {
+  const servizio = APPS[id].motoriInPiu?.find((s) => s.id === servizioId);
+  if (!servizio) throw new Error(`${APPS[id].name} non conosce il motore "${servizioId}".`);
+
+  const gia = accesi.get(servizio.id);
+  if (gia) {
+    gia.utenti.add(id);
+    await gia.avvio;
+    return `http://127.0.0.1:${servizio.port}`;
+  }
+
+  if (!existsSync(PYTHON_EXE)) {
+    throw new Error("Manca l'ambiente Python della suite: installalo dall'hub.");
+  }
+
+  const cartella = join(SERVICES_DIR, servizio.id);
+  if (!existsSync(cartella)) {
+    throw new Error(`Il motore "${servizio.id}" non è installato in ${cartella}.`);
+  }
+
+  if (await occupata(servizio.port)) {
+    throw new Error(
+      `La porta ${servizio.port} è già occupata da un altro programma — di solito un ComfyUI ` +
+        "rimasto acceso da prima. Chiudilo e riprova.",
+    );
+  }
+
+  // Se muore, l'app **non** va segnata come rotta: il suo motore vero sta
+  // girando e la finestra funziona ancora — a mancare è solo la strada che
+  // passava di qui, e chi la stava usando se ne accorge da solo perché il
+  // motore smette di rispondere. Qui resta scritto nel log, che è il posto in
+  // cui si va a cercare il perché.
+  const log = createLogger(servizio.id);
+  await accendi(id, servizio, cartella, new Set([id]), (motivo) => {
+    log.write(`motore in più di ${id} caduto: ${motivo}\n`, true);
+  });
+  return `http://127.0.0.1:${servizio.port}`;
+}
+
 /**
  * Accende il motore dell'app, se ne ha uno, e torna quando risponde a `/health`.
  *
@@ -147,19 +200,24 @@ async function accendi(
   }
 }
 
-/** Spegne il motore dell'app, se non serve più a nessun'altra. */
+/**
+ * Spegne i motori dell'app — il suo e quelli chiesti in più — se non servono
+ * più a nessun'altra.
+ *
+ * Anche quelli in più: chiudere DaProdDream dopo aver sognato con Anima deve
+ * lasciare la GPU libera, non un ComfyUI acceso che nessuno ha più aperto.
+ */
 export async function ferma(id: AppId): Promise<void> {
-  const servizio = APPS[id].service;
-  if (!servizio) return;
+  for (const servizio of tuttiIServizi(id)) {
+    const voce = accesi.get(servizio.id);
+    if (!voce) continue;
 
-  const voce = accesi.get(servizio.id);
-  if (!voce) return;
+    voce.utenti.delete(id);
+    if (voce.utenti.size > 0) continue;
 
-  voce.utenti.delete(id);
-  if (voce.utenti.size > 0) return;
-
-  accesi.delete(servizio.id);
-  await voce.supervisore.stop();
+    accesi.delete(servizio.id);
+    await voce.supervisore.stop();
+  }
 }
 
 /** Vero se il motore di quest'app sta girando. */

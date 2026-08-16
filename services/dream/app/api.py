@@ -18,6 +18,22 @@ from fastapi import FastAPI, File, HTTPException, UploadFile, WebSocket, WebSock
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
+
+SENZA_CACHE = {"Cache-Control": "no-cache"}
+
+
+class SenzaCache(StaticFiles):
+    """StaticFiles che dice al browser di ricontrollare sempre.
+
+    Vedi il commento al montaggio di `/ui`: è la differenza fra vedere una
+    modifica e credere di non averla fatta.
+    """
+
+    def file_response(self, *args, **kwargs):  # type: ignore[override]
+        risposta = super().file_response(*args, **kwargs)
+        risposta.headers.update(SENZA_CACHE)
+        return risposta
+
 from . import dialogs, galleria, presets, prompts
 from .capture import list_monitors
 from pathlib import Path
@@ -401,9 +417,15 @@ def create_app(engine: DreamEngine) -> FastAPI:
     if UI_DIR.exists():
         @app.get("/")
         def index():
-            return FileResponse(UI_DIR / "index.html")
+            return FileResponse(UI_DIR / "index.html", headers=SENZA_CACHE)
 
-        app.mount("/ui", StaticFiles(directory=str(UI_DIR)), name="ui")
+        # **L'interfaccia non si mette in cache.** Senza dirlo, Chromium decide
+        # da sé per quanto tenersela — non ci sono né `max-age` né altro da
+        # cui regolarsi — e dopo un aggiornamento della suite la finestra
+        # continua a caricare il foglio di stile e i moduli di prima: la
+        # modifica c'è sul disco e sembra non aver fatto niente. Qui i file
+        # stanno a due passi, e tenerli in cache non fa guadagnare nulla.
+        app.mount("/ui", SenzaCache(directory=str(UI_DIR)), name="ui")
     else:
         @app.get("/")
         def missing_ui():
