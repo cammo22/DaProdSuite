@@ -52,6 +52,27 @@ leggendo il codice.
       le installa una dopo l'altra. Compare solo se c'è davvero qualcosa da
       installare, e una volta sola. *Con questa la 0.1.0 è chiusa.*
 
+## 0.1.5 — Bonsai: il modello che scrive
+
+Un LLM locale, **uno per tutta la suite**, tenuto acceso da LM Studio. Non è il
+cervello del Companion prestato in giro: è il contrario, e ogni app gli chiede
+la cosa che sa chiedere.
+
+- [x] **Il ponte comune** (`daprodSuite.llm`): stato e domande con risposta di
+      forma imposta, uguale per tutte le app
+- [x] **DaProdMusica — "Bonsai: fai tutto"**: da una riga d'idea a titolo,
+      stile, testo con i tag di sezione e descrizione della copertina.
+      *Funziona; la qualità dell'italiano va guidata a colpi di istruzioni.*
+- [x] **DaProdMusica — "Bonsai: finisci"**: completa quello che hai abbozzato
+      senza stravolgerlo
+- [ ] **Pannello LM Studio nella suite**: quali modelli ci sono, caricarli e
+      scaricarli al volo, e il contesto con tre pulsanti — 64K, 128K, 256K.
+      L'obiettivo resta far stare domanda e risposta **dentro i 64K**, che è
+      dove va veloce
+- [ ] **DaProdFoto**: da due parole a una descrizione che il modello capisce
+- [ ] **DaProdCinema**: una chat dove butti l'idea e le foto, e ne esce un
+      piccolo video da montare
+
 ## 0.2.0 — Le altre tre
 
 - [x] **DaProdDream** — trasformazione in tempo reale *(dentro: motore avviato
@@ -92,6 +113,15 @@ Vedi [ACCESSO-REMOTO.md](ACCESSO-REMOTO.md).
 - [ ] App Android: lettore QR, credenziale nel portachiavi, notifiche, download
 - [ ] Interfacce adattate allo schermo del telefono
 
+## Chiesto e da fare, senza ancora una versione
+
+- **Pulsanti veri nelle gallerie**, non scritte in fila, e un impianto
+  responsive che regga finestre strette.
+- **Anima anche in DaProdDream**, come secondo modello per la parte "sogno": si
+  scrive e rigenera man mano, anche senza il tempo reale del video.
+- **Dalla webcam del telefono**: quando ci sarà l'app Android (§ 0.5.0),
+  DaProdDream deve poter prendere il video del telefono come sorgente.
+
 ## 0.6.0 — DaProdCinema
 
 La settima app: da una canzone al suo video musicale. **Due strade, non una.**
@@ -109,7 +139,11 @@ reale, e il risultato è già coerente con il brano perché *nasce* dal suo suon
 
 ### Strada lunga: le clip generate
 
+**I due modelli decisi**: **MiniMax H3** (i nodi ci sono già nel motore) e
+**LTX 2.5**, che è la strada veloce per le clip lunghe.
+
 - [ ] Sliding window e overlap sopra i nodi MiniMax H3 di ComfyUI
+- [ ] LTX 2.5 accanto a H3, con la scelta del modello come in DaProdFoto
 - [ ] Pianificazione per sezione — la struttura arriva dai tag del testo, non da
       un'analisi del BPM che sbaglia
 - [ ] DaProdUniverso applicato ai prompt

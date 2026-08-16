@@ -56,6 +56,11 @@ export function esponiApiApp(io: AppId): void {
         subscribe<AvanzamentoModelli>(CHANNELS.modelliAvanzamento, listener),
     },
 
+    llm: {
+      stato: () => ipcRenderer.invoke(CHANNELS.llmStato),
+      chiedi: (domanda) => ipcRenderer.invoke(CHANNELS.llmChiedi, domanda),
+    },
+
     invia: (destinazione: AppId, elementoId: string, intenzione: Intenzione) =>
       ipcRenderer.invoke(CHANNELS.appInvia, destinazione, elementoId, intenzione),
 

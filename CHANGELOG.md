@@ -12,6 +12,23 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ## Non ancora pubblicato
 
+### Bonsai: il modello che scrive, in DaProdMusica
+
+- **"Bonsai: fai tutto"**: scrivi in una riga di cosa deve parlare la canzone e
+  ti riempie titolo, stile, testo con i tag di sezione e la descrizione della
+  copertina. Poi premi Crea e basta.
+- **"Bonsai: finisci quello che ho scritto"**: parte da quello che hai abbozzato
+  e lo completa restando dentro il tuo.
+- Il modello lo tiene acceso **LM Studio** (consigliato `prism-ml/bonsai-27b`,
+  caricato con 64K di contesto). Se non è acceso, l'app lo dice invece di
+  lasciarti premere un bottone che non fa niente.
+- È **uno per tutta la suite**: la stessa strada la useranno Foto e Cinema.
+
+### DaProdDream: i modelli si vedono e si scaricano da lì
+
+- Come nelle altre app: se SD-Turbo o la VAE veloce mancano, compare un riquadro
+  che lo dice e li scarica. Prima il motore ci provava, falliva, e restava lì.
+
 ### DaProdDream è entrato nella suite
 
 - **La quarta app è dentro**: webcam, schermo, video o una foto trasformati in

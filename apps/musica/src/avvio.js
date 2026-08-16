@@ -15,6 +15,7 @@ import { collegaCostruttore } from "./costruttore.js";
 import { aggiornaLibreria, collegaLibreria } from "./libreria.js";
 import { aggiornaImmagini, collegaImmagini } from "./immagini.js";
 import { collegaModelli } from "./modelli.js";
+import { collegaBonsai } from "./bonsai.js";
 import { collega } from "./ponte.js";
 
 document.querySelectorAll("nav button").forEach((b) => {
@@ -30,6 +31,7 @@ collegaLibreria();
 collegaImmagini();
 collegaComandiCoda();
 collegaModelli();
+collegaBonsai();
 
 await aggiornaLibreria();
 

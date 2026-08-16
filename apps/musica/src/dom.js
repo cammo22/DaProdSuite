@@ -12,6 +12,7 @@ for (const chiave of [
   "titolo", "caption", "lyrics", "duration", "steps", "cfg", "cfg_scale", "top_k",
   "seed_text", "seed_audio", "format", "batch", "tiled", "tile", "instrumental",
   "qualita", "rigaQualita", "mancaQualita",
+  "ideaCanzone", "ideaCopertina", "bonsaiTutto", "bonsaiFinisci", "bonsaiStato",
   "randomSeed", "autoCover", "coverStyleNew", "go", "goAudio", "stopBtn", "clearQueue",
   "dot", "statusTxt", "feed", "error", "libList", "detail", "libCount", "navLib",
   "refreshLib", "presets", "tags", "dice1", "dice2", "builderFields", "b_preview",

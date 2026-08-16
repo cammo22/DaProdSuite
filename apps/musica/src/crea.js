@@ -194,7 +194,13 @@ async function creaBrano(p) {
 
   let idCopertina = null;
   if (el.autoCover.checked) {
-    const prompt = promptCopertina(p.titolo, p.lyrics, el.coverStyleNew.value);
+    // Se Bonsai (o tu) hai scritto un'idea per la copertina, quella vince: è
+    // scritta guardando la canzone intera, mentre i motivi la indovinano da
+    // qualche parola del testo.
+    const idea = el.ideaCopertina.value.trim();
+    const prompt = idea
+      ? `album cover artwork, ${idea}, square composition, no text`
+      : promptCopertina(p.titolo, p.lyrics, el.coverStyleNew.value);
     idCopertina = await ponte.invia(grafoImmagine(prompt, rnd()));
   }
 

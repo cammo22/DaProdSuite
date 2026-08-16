@@ -16,6 +16,7 @@ import {
   type Velocita,
 } from "@daprod/ipc";
 import { impostaVelocita, impostazioni, segnaGuidaFatta } from "./impostazioni";
+import { chiediAllLlm, statoLlm } from "./llm";
 import { appManager } from "./app-manager";
 import { annulla, installaApp, installaModelli, installaTutte, scaricamenti } from "./scaricamenti";
 import { libreria } from "./libreria";
@@ -135,6 +136,29 @@ export function registerIpc(getHub: () => BrowserWindow | null): void {
   });
 
   ipcMain.handle(CHANNELS.modelliAnnulla, (_e, id: AppId) => annulla(id));
+
+  /* ------------------------------------------------------------------ llm */
+
+  // Uno per tutta la suite: ogni app gli chiede la cosa che sa chiedere.
+  ipcMain.handle(CHANNELS.llmStato, () => statoLlm());
+  ipcMain.handle(
+    CHANNELS.llmChiedi,
+    (
+      _e,
+      domanda: {
+        sistema?: string;
+        utente?: string;
+        schema?: Record<string, unknown>;
+        nomeSchema?: string;
+      },
+    ) =>
+      chiediAllLlm({
+        sistema: String(domanda?.sistema ?? ""),
+        utente: String(domanda?.utente ?? ""),
+        schema: domanda?.schema,
+        nomeSchema: domanda?.nomeSchema,
+      }),
+  );
 
   /* ------------------------------------------------------------- libreria */
 

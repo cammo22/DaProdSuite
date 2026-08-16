@@ -48,11 +48,29 @@
 <section class="tab on" id="scheda-crea">
  <div class="two">
   <div>
+    <!-- Bonsai: dall'idea alla canzone. Sta prima di tutto perché è da qui che
+         si comincia quando non si ha ancora niente in mano. -->
+    <div class="panel">
+      <h2>Parti da un'idea <span class="right"><span class="hint" id="bonsaiStato"></span></span></h2>
+      <textarea id="ideaCanzone" rows="2"
+        placeholder="Es. una storia d'amore finita male a Napoli d'estate"></textarea>
+      <div class="acts" style="margin-top:10px">
+        <button id="bonsaiTutto">Bonsai: fai tutto</button>
+        <button id="bonsaiFinisci">Bonsai: finisci quello che ho scritto</button>
+      </div>
+      <div class="hint">Riempie titolo, stile, testo con i tag di sezione e la descrizione della
+        copertina. Il modello lo tiene acceso <b>LM Studio</b>.</div>
+    </div>
+
     <div class="panel">
       <h2>Nuovo brano</h2>
       <div class="field">
         <label>Titolo <span style="float:right">facoltativo: se lo lasci vuoto lo ricavo dal testo</span></label>
         <input id="titolo" placeholder="Es. Caffè e cornetto">
+      </div>
+      <div class="field">
+        <label>Idea per la copertina <span style="float:right">in inglese, la riempie anche Bonsai</span></label>
+        <input id="ideaCopertina" placeholder="Es. a lit cafe window in an empty street at night">
       </div>
       <label>Stile</label>
       <div class="chips" id="presets"></div>

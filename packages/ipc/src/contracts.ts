@@ -73,6 +73,25 @@ export interface Impostazioni {
   guidaFatta: boolean;
 }
 
+/* ----------------------------------------------------------------------- llm */
+
+/** Se c'è qualcuno che sa scrivere, e chi. */
+export interface StatoLlm {
+  /** LM Studio risponde sul suo server locale. */
+  acceso: boolean;
+  /** I modelli che ha caricato. Vuoto significa "acceso ma a vuoto". */
+  modelli: string[];
+  /** Perché non si può usare, detto all'utente così com'è. */
+  motivo?: string;
+}
+
+export interface EsitoLlm {
+  ok: boolean;
+  testo: string;
+  modello?: string;
+  motivo?: string;
+}
+
 /* ------------------------------------------------------------------- modelli */
 
 /**
@@ -332,6 +351,32 @@ export interface ApiApp {
     onAvanzamento(listener: (stato: AvanzamentoModelli) => void): Unsubscribe;
   };
 
+  /**
+   * Il modello che scrive, per tutte le app.
+   *
+   * A DaProdMusica finisce un testo abbozzato, a DaProdFoto trasforma due parole
+   * in una descrizione che il modello di immagini capisce, a DaProdCinema
+   * spezzerà un'idea in scene. È **uno solo** per la suite: lo tiene acceso LM
+   * Studio, e ogni app gli chiede la cosa che sa chiedere.
+   */
+  llm: {
+    /** Se c'è qualcuno che risponde, e chi. Non solleva mai. */
+    stato(): Promise<StatoLlm>;
+    /**
+     * Una domanda, una risposta.
+     *
+     * `schema` è un JSON Schema, e serve quando la risposta deve riempire dei
+     * campi invece di essere letta da una persona: con quello il modello non
+     * *può* rispondere di fantasia, e non c'è niente da interpretare.
+     */
+    chiedi(domanda: {
+      sistema: string;
+      utente: string;
+      schema?: Record<string, unknown>;
+      nomeSchema?: string;
+    }): Promise<EsitoLlm>;
+  };
+
   /** Manda un elemento a un'altra app, aprendola se serve. */
   invia(destinazione: AppId, elementoId: string, intenzione: Intenzione): Promise<void>;
 
@@ -386,6 +431,9 @@ export const CHANNELS = {
   modelliScarica: "modelli:scarica",
   modelliAnnulla: "modelli:annulla",
   modelliAvanzamento: "modelli:avanzamento",
+
+  llmStato: "llm:stato",
+  llmChiedi: "llm:chiedi",
 
   libreriaElenco: "libreria:elenco",
   libreriaMostra: "libreria:mostra",
