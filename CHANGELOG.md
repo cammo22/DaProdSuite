@@ -12,6 +12,41 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ## Non ancora pubblicato
 
+### Anima anche in DaPDream: si scrive e il sogno si rifà
+
+- Nella scheda **Sogno libero** adesso si sceglie **con che cosa sognare**:
+  SD-Turbo com'era, in tempo reale, oppure **Anima** — la stessa che fa le
+  immagini in DaPFoto e le copertine in DaPMusica.
+- Con Anima non c'è il tempo reale e non serve: **scrivi, e un secondo dopo che
+  ti fermi l'immagine si rifà**. Più bella, un'immagine per volta.
+- Non c'è niente da scaricare se hai già DaPFoto o DaPMusica: sono gli stessi
+  5,6 GB.
+- I comandi che valgono solo per il tempo reale spariscono, invece di restare lì
+  a promettere cursori che non fanno niente. E l'italiano lo traduce da sé,
+  facendoti vedere cosa è arrivato davvero al modello.
+- Passando ad Anima la scheda video si libera da sola, e tornando a SD-Turbo si
+  ricarica: non devi pensarci tu.
+
+### Nelle gallerie i pulsanti sono pulsanti
+
+- In **DaPFoto** e **DaPMusica** le azioni di ogni scheda — ritocca, nella
+  cartella, elimina — erano scritte in grigio e sembravano didascalie. Adesso
+  sono pulsanti veri, e chi cancella si riconosce anche da fermo.
+- **La finestra si può stringere**: prima non scendeva sotto i 900 pixel, adesso
+  arriva a 480 e resta usabile — schede in alto su una riga loro, pulsanti che
+  vanno a capo restando della stessa misura. Serve a tenere l'app accostata a
+  metà schermo mentre lavori con qualcos'altro.
+
+### Tolto il tasto "a Musica" dalla galleria di DaPFoto
+
+- Diceva "mandata" e non mandava niente: DaPMusica sa usare un'immagine come
+  copertina solo se in Libreria hai già scelto un brano, e senza non succedeva
+  nulla. Meglio niente che un tasto che mente. Torna quando DaPMusica saprà
+  chiedere **su quale brano** metterla.
+- E quando un'app ne nomina un'altra adesso si scrive corto: *apri in
+  DaPVisualizer*, *quando DaPMusica ne produce uno*.
+
+
 ### Bonsai: il modello che scrive, in DaProdMusica
 
 - **"Bonsai: fai tutto"**: scrivi in una riga di cosa deve parlare la canzone e

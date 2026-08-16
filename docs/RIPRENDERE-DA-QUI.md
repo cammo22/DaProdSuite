@@ -1,6 +1,7 @@
 # Riprendere da qui
 
-Documento di passaggio fra una sessione e l'altra. Aggiornato il 16 agosto 2026.
+Documento di passaggio fra una sessione e l'altra. Aggiornato il 16 agosto 2026
+(sera-notte).
 
 **Se stai leggendo questo all'inizio di una conversazione nuova**: leggi anche
 [COME-SI-LAVORA.md](COME-SI-LAVORA.md) e [ROADMAP.md](ROADMAP.md), poi vai al
@@ -32,8 +33,11 @@ Repo pubblico: **https://github.com/cammo22/DaProdSuite**
 | **Procedura guidata al primo avvio** | fatta e provata: **con questa la 0.1.0 è chiusa** |
 | **Velocità: normale / spinta** | interruttore fatto, **da misurare** |
 | **Pubblicata la 0.1.0 su GitHub** | fatto: installer e `latest.yml` nella Release |
-| Procedura guidata al primo avvio | **da fare** |
-| Dream, Companion, IoDigitale | **da migrare** |
+| **DaProdDream nella suite** | fatto; **Anima come secondo modello** fatto e provato |
+| **Un'app può chiedere un motore in più** | fatto e provato (Dream chiede ComfyUI per Anima) |
+| **Pulsanti veri nelle gallerie + finestre strette** | fatto e provato, Foto e Musica |
+| **LTX 2.5 nel piano di Cinema** | scritto, con i nodi verificati sul motore |
+| Companion, IoDigitale | **da migrare** |
 
 Si lavora solo su `main`: i rami `suite-interconnessa` e `musica-nella-suite`
 sono stati uniti e cancellati, e con loro le PR #1 e #2.
@@ -405,7 +409,151 @@ tentativi.
 - **Il text encoder int8 di WanGP non entra in 8 GB.** È nel catalogo per il
   giorno che cambia la scheda.
 
-## Il prossimo passo
+## Il giro del 16 agosto, sera-notte
+
+Quattro cose chieste, tre fatte e provate dal vivo, una no. In ordine.
+
+**Pulsanti veri nelle gallerie — fatto.** Non erano `<div>`: erano già
+`<button>`, ma il foglio di stile li disegnava `background:none; border:0;
+padding:0` con una riga tratteggiata sotto, cioè come scritte. Adesso `.acts` è
+una fila di pulsanti veri che si dispongono da sé (`flex:1 1 112px`, 76 dentro
+una scheda di galleria): in una finestra larga stanno in riga, in una stretta
+vanno a capo restando della stessa misura.
+
+E soprattutto: **la finestra si può stringere davvero**. Il limite era
+`minWidth: 900` in `apps/shell/src/main/apps/{foto,musica}/index.ts` — con
+quello, "responsive" non si poteva nemmeno provare. Adesso è 480, e sotto gli
+860 l'intestazione manda le schede a capo su una riga loro.
+
+**Trovato provando, e vale per tutte le app:** un foglio di stile appena
+cambiato continuava a tornare quello di prima anche ricaricando la pagina. Una
+`file://` non manda né `ETag` né `Last-Modified`, quindi Chromium decide da sé
+per quanto tenersi la risposta. Adesso lo schema `daprod:` risponde
+`Cache-Control: no-cache`, e lo fa anche l'interfaccia di Dream (`SenzaCache` in
+`services/dream/app/api.py`). Senza, ogni aggiornamento della suite rischia di
+essere invisibile a chi ce l'ha già aperta.
+
+**Il tasto "a Musica" è stato tolto.** Cammo: «non possiamo mandare le
+immagini». Vero, e il perché è preciso: DaPMusica usa l'immagine come copertina
+solo se in Libreria c'è già un brano selezionato (`stato.selezionato`); senza,
+la consegna arriva e non fa niente, mentre il tasto rispondeva "mandata". Il
+lato che riceve resta in `apps/musica/src/libreria.js` ed è giusto: quello che
+manca è **chiedere su quale brano**. Deciso anche come si scrive: quando un'app
+ne nomina un'altra si abbrevia **DaP** (DaPMusica, DaPFoto, DaPVisualizer); i
+nomi propri — logo, schede dell'hub, titolo della finestra — restano interi.
+
+**LTX 2.5 nel piano di Cinema — fatto**, e ha corretto due cose che erano
+scritte sbagliate in tre documenti: vedi
+[MODELLI-E-STRATEGIA.md](MODELLI-E-STRATEGIA.md) § 5.
+
+**DaProd IoDigitale — non fatto.** Il piano, con l'inventario vero, è più sotto.
+
+## Com'è entrata Anima in DaProdDream
+
+Il sogno libero non ha una webcam davanti: parte dal rumore e ci mette dentro il
+prompt. Lì il tempo reale non è il punto, e SD-Turbo si vede che è piccolo.
+
+**Anima non gira sul motore di Dream**, gira su ComfyUI — quello di Foto e
+Musica, con gli stessi tre file da 5,6 GB già sul disco. Da qui la cosa che
+vale per tutte le app che verranno: **un'app può dichiarare un motore in più**.
+
+- `AppDescriptor.motoriInPiu` nel catalogo: motori che quest'app sa usare ma
+  **solo quando servono**. Non partono all'apertura come `service`.
+- `servizi.avviaInPiu(id, nome)` li accende su richiesta, e `ferma(id)` adesso
+  spegne tutti i motori dell'app, non solo il suo.
+- `daprodSuite.motoreInPiu(nome)` è la strada dalla pagina. Il nome del motore
+  arriva dalla pagina, ma **quali** può chiedere lo dice il catalogo.
+
+Accenderlo sempre costerebbe un minuto d'attesa e qualche GB a chi non lo usa.
+Lo userà IoDigitale il giorno che entra.
+
+Il resto sta tutto in **`apps/dream/anima.js`**, fatto come `modelli-suite.js`:
+roba della suite e non del motore, e chi apre DaProdDream da solo non ha
+`window.daprodSuite` e quel file non fa niente.
+
+**Tre cose che si sono viste solo provando.**
+
+1. **L'avanzamento dei modelli arriva a ogni cambiamento**, anche a scaricamento
+   fermo. Il mio ascoltatore leggeva `!attivo && !errore` come "finito", e
+   rientrava nella scelta del modello: **un'immagine nuova ogni pochi secondi**,
+   all'infinito. Adesso reagisce solo se il riquadro dei mancanti è aperto.
+2. **Fermare il lavoro in corso con `/interrupt` e mandarne subito un altro
+   ammazza quello nuovo, non quello vecchio.** Il segnale arriva quando il
+   secondo è già in coda, e si vedeva come «il motore ha finito ma non ha reso
+   nessuna immagine». Adesso si lascia finire e si rifà dopo (`S.daRifare`).
+3. **Un `filename_prefix` con sottocartella può non salvare niente.** ComfyUI
+   rifiuta di scrivere fuori dalla cartella dei risultati, e il controllo che fa
+   (`is_within_directory`) risolve i percorsi **fino in fondo**: una
+   sottocartella nata sotto un percorso reindirizzato gli risulta "fuori". Qui
+   capitava perché il motore era stato avviato da dentro un contenitore, e la
+   cartella finiva in `AppData\Local\Packages\...\LocalCache`. Con Anima si
+   salva senza sottocartella (`sogno-anima`), che non può fallire da nessuna
+   parte. **Da ricordare quando toccherà a Cinema.**
+
+**La VRAM è una sola**: passando ad Anima il tempo reale si ferma e SD-Turbo
+esce dalla memoria; tornando indietro si dice a ComfyUI di liberare la scheda
+(`POST /free`) e SD-Turbo si ricarica. Provato: `backend.ready` torna `true`.
+
+## Il prossimo passo: DaProd IoDigitale
+
+**Viene da `Desktop\AvatarParlante\LeapTalk`.** Letto e inventariato il 16
+agosto 2026; il porto non è cominciato. È il gemello di Dream come struttura —
+un motore FastAPI che **si serve da solo la propria pagina**, con un WebSocket —
+quindi si rifà quella strada: `DAPROD_INTERFACCIA`, niente schema `daprod://`.
+
+**I pesi ci sono già.** Sono nella cartella condivisa e nel catalogo, ed è il
+pezzo più lungo che *non* c'è da fare:
+
+| | Sul disco | In `manifest/models.json` |
+|---|---|---|
+| SoulX-FlashHead Lite | dentro i 14 GB della cartella | sì, 8,3 GB (`exclude` su Pro) |
+| SoulX-FlashHead Pro | idem | sì, extra da 6,0 GB |
+| Pesi LeapTalk | 368 MB | sì |
+| wav2vec2-base-960h | 1,1 GB | sì |
+| Voce Piper `it_IT-paola-medium` | 61 MB | **no, da aggiungere** |
+| Whisper (faster-whisper small) | 605 MB | **no, da aggiungere** |
+
+*(Nota: gli "8 GB di pesi" scritti più sopra erano bassi. Il Lite da solo è 8,3.)*
+
+**Cosa si porta dentro** (~1 MB di codice): `web_server.py`,
+`leaptalk_stream.py`, `local_dialogue.py`, `inference.py`, `audioprocessing.py`,
+`spatial_mask_utils.py`, e le cartelle `flash_head/`, `vibt/`, `utils/`.
+
+**Cosa si butta**, e sono i tre quarti:
+
+| Cosa | Perché |
+|---|---|
+| `.venv/` | l'ambiente è quello condiviso della suite |
+| `models/`, `outputs/` | modelli condivisi, risultati in libreria |
+| `train.py` (82 KB), `train.sh`, `eval/` | addestramento: non ci serve |
+| `runtime/llama` (45 MB) | il modello linguistico lo tiene **LM Studio**, che la suite già governa |
+| `runtime/parakeet` (5,4 MB) | la trascrizione la fa Whisper |
+| `web/runtime` (21 MB) | file di lavoro |
+| i tre `.bat` | avvio, scaricamento e ambiente li fa la suite |
+
+`web/static` (48 KB: `index.html` + `app.css`) diventa `apps/iodigitale/`.
+
+**Le cose che morderanno, in ordine:**
+
+1. **Il `.env` deve sparire.** Oggi tutto passa da lì con percorsi relativi
+   (`./models/...`). Nella suite arrivano da `DAPROD_MODELLI` come per gli altri
+   motori: è lo stesso lavoro già fatto in `services/dream/app/config.py`.
+2. **`/health` e `/shutdown` non ci sono**, e il supervisore li pretende. Come
+   per Dream, li aggiunge `avvio.py`.
+3. **Dipende da LM Studio acceso**, ed è l'unica app che lo pretende per
+   funzionare. La buona notizia: il selettore del modello che scrive esiste già
+   ed è comune (`apps/musica/src/selettore-llm.js`, scritto per essere copiato),
+   quindi qui si riusa invece di rifarlo.
+4. **La VRAM è al limite, misurata da loro**: 7928 MiB su 8188 con tutto acceso,
+   circa 260 MB di margine, e la risoluzione decide tutto (384×384 → 25 fps e
+   5,95 GB; 512×512 → 5 fps e non ci sta). La scelta della qualità va portata
+   dentro com'è, avvisi compresi.
+5. **`requirements-windows.txt` è quello giusto**, non `requirements.txt`:
+   l'originale ha pacchetti che su Windows non esistono. Diventa
+   `services/iodigitale/requisiti.txt`.
+
+
+## Quello che era il prossimo passo prima di stasera
 
 **DaProdDream va provata da Cammo** — la webcam e il video in tempo reale sono
 sue da giudicare — e poi tocca a **DaProd IoDigitale**, che è la più pesante

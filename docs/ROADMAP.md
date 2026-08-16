@@ -115,10 +115,11 @@ Vedi [ACCESSO-REMOTO.md](ACCESSO-REMOTO.md).
 
 ## Chiesto e da fare, senza ancora una versione
 
-- **Pulsanti veri nelle gallerie**, non scritte in fila, e un impianto
-  responsive che regga finestre strette.
-- **Anima anche in DaProdDream**, come secondo modello per la parte "sogno": si
-  scrive e rigenera man mano, anche senza il tempo reale del video.
+- ~~**Pulsanti veri nelle gallerie**~~ — fatto il 16 agosto 2026, e con loro il
+  limite minimo della finestra sceso da 900 a 480 pixel.
+- ~~**Anima anche in DaProdDream**~~ — fatto il 16 agosto 2026: nella scheda
+  Sogno libero si sceglie fra SD-Turbo (tempo reale) e Anima (si scrive e si
+  rifà). Da provare a lungo.
 - **Dalla webcam del telefono**: quando ci sarà l'app Android (§ 0.5.0),
   DaProdDream deve poter prendere il video del telefono come sorgente.
 
