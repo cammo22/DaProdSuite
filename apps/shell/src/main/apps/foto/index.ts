@@ -18,6 +18,7 @@ import { BrowserWindow, app, ipcMain, shell } from "electron";
 import { join } from "node:path";
 import { readBounds, writeState } from "../../app-state";
 import { gestisciSchema, serviInterfaccia, urlInterfaccia } from "../../file-scheme";
+import { registraConsole } from "../../finestre";
 import { indirizzo } from "../../servizi";
 
 const PREDEFINITI = { width: 1420, height: 900, maximized: false };
@@ -66,6 +67,9 @@ export function apri(onClose: () => void): void {
   });
 
   const win = finestra;
+  // Gli errori della pagina finiscono in logs/foto-pagina.log: senza, un modulo
+  // che si rompe si vede solo come un bottone che non fa niente.
+  registraConsole(win, "foto");
   if (bounds.maximized) win.maximize();
   win.once("ready-to-show", () => win.show());
 

@@ -17,6 +17,7 @@ import { basename, join } from "node:path";
 import { readBounds, writeState, readState } from "../../app-state";
 import { findFfmpeg, transcodeToWav } from "./ffmpeg";
 import { codificaUrl, gestisciSchema } from "../../file-scheme";
+import { registraConsole } from "../../finestre";
 
 /** Estensioni offerte dal dialogo file nativo. */
 const ESTENSIONI_AUDIO = [
@@ -76,6 +77,7 @@ export function apri(onClose: () => void): void {
   });
 
   const win = finestra;
+  registraConsole(win, "visualizer");
   if (bounds.maximized) win.maximize();
   win.once("ready-to-show", () => win.show());
 

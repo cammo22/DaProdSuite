@@ -44,6 +44,21 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
   struttura in suono, ed è l'unico dei tre che su 8 GB si può migliorare — il
   text encoder in int8 pesa 8,6 GB e non ci sta.
 
+### Aggiustato, e stavolta provato aprendo l'app
+
+- **Il Visualizer riproduce i brani di DaProdMusica.** Diceva "formato non
+  supportato" su file che erano perfetti.
+- **Nel ritocco le immagini si aprono.** Dava "Failed to fetch" e restava lì.
+- Erano **lo stesso difetto**: alla strada con cui le app leggono i file del
+  disco mancava il permesso di essere usata da una pagina di un'altra parte
+  della suite. Le miniature si vedevano lo stesso, ed è per questo che
+  sembravano due cose diverse.
+- **FLUX.2 Klein 4B genera.** Gli mancava il suo text encoder — voleva Qwen3-4B,
+  non quello del 9B.
+- **Gli errori dell'interfaccia adesso finiscono in un log** (`logs/foto-pagina.log`
+  e compagni): prima un pezzo che si rompeva si vedeva solo come un bottone che
+  non faceva niente.
+
 ### Più veloce
 
 - **Flash Attention 2 e Triton sono installati** e il motore li usa: nel log ora

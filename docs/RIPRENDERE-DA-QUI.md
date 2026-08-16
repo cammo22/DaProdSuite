@@ -293,6 +293,26 @@ ha una in arrivo, così la mappa non cresce per i brani che non ne vogliono.
 **Da imparare, più che da correggere**: cambiare l'ordine di due lavori voleva
 dire cambiare chi passa cosa a chi, e il passaggio stava in un altro file.
 
+## Come si guarda dentro un'interfaccia che non funziona
+
+Due strumenti nati il 16 agosto, dopo un giro intero passato a indovinare.
+
+**`logs/<app>-pagina.log`.** Ogni finestra manda nel log quello che la sua
+pagina scrive in console, errori compresi, con file e riga
+([finestre.ts](../apps/shell/src/main/finestre.ts)). Prima un modulo che si
+rompeva si vedeva solo come un bottone che non faceva niente.
+
+**`node apps/shell/scripts/pilota.cjs <finestra> "<js>"`.** Si avvia la suite con
+`--remote-debugging-port=9333` e da lì si legge e si esegue dentro la pagina:
+`document.getElementById("genera").click()`, lo stato di un menu, una `fetch` di
+prova. È così che si è capito che `fetch` verso `daprod://file` falliva mentre
+una `<img>` sullo stesso indirizzo funzionava — cioè che il problema era lo
+schema e non il codice dell'app.
+
+**La regola che ne esce:** quando un difetto è nell'interfaccia, prima si apre
+la finestra e le si chiede com'è messa. Leggere il codice serve dopo, per
+capire *perché*.
+
 ## Le tre cose che si sono viste solo provando (16 agosto, notte)
 
 **FLUX.2 Klein 4B e 9B non dividono il text encoder.** Sembrava ovvio che sì —
@@ -302,14 +322,29 @@ shapes cannot be multiplied (512x12288 and 7680x3072)`: 7680 è 2560×3 (la
 dimensione di Qwen3-4B), 12288 è 4096×3 (quella di Qwen3-8B). Il numero dice
 esattamente qual è il modello giusto, se lo si legge.
 
-**Un'origine diversa faceva fallire due cose che sembravano scollegate.** Lo
-schema `daprod:` passava a `net.fetch` *tutte* le intestazioni della richiesta,
-`Origin` compreso: per Chromium una `file://` con un Origin diverso è una
-richiesta incrociata verso una risposta che non può autorizzarla, e falliva
-prima che potessimo aggiungere noi il permesso. Si vedeva come "Failed to fetch"
-aprendo un'immagine nel ritocco di Foto, **e** come "formato non supportato" nel
-Visualizer su un brano di Musica (il suo `<audio>` è `crossOrigin="anonymous"`).
-Adesso si inoltra solo la `Range`, che è l'unica che serve davvero.
+**Allo schema `daprod:` mancava `corsEnabled`, e due difetti erano lo stesso.**
+La pagina di un'app sta su `daprod://foto`, i suoi file su `daprod://file`:
+origini diverse. Uno schema che non dichiara `corsEnabled` fra i suoi privilegi
+si vede rifiutare le richieste incrociate **prima** che qualcuno guardi le
+intestazioni — quindi l'`Access-Control-Allow-Origin` che il gestore aggiungeva
+non è mai servito a niente. Si vedeva come "Failed to fetch" aprendo un'immagine
+nel ritocco di Foto **e** come "formato non supportato" nel Visualizer su un
+brano di Musica (il suo `<audio>` è `crossOrigin="anonymous"`), mentre le
+miniature comparivano benissimo — una `<img>` senza `crossOrigin` non passa da
+quel controllo, ed è per questo che sembravano due difetti diversi.
+
+Provato dentro la pagina, ed è la prova che ha chiuso la questione:
+
+| dalla pagina di Foto verso `daprod://file/...` | prima |
+|---|---|
+| `fetch(url)` | Failed to fetch |
+| `fetch(url, {mode:"no-cors"})` | risposta opaca, inutilizzabile |
+| `<img src=url>` | **funziona** |
+| `<img crossOrigin="anonymous">` | fallisce |
+
+Con `corsEnabled: true` funzionano tutte. Resta anche l'altra correzione — a
+`net.fetch` si inoltra solo la `Range` e non l'`Origin` — che è giusta comunque:
+a una `file://` quell'intestazione non serve.
 
 **Il grafo si può provare senza aprire la suite.** `POST /prompt` al motore con
 il grafo esatto dell'app, e `/history/<id>` dice se è passato o dove si è rotto:

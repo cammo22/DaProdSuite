@@ -43,6 +43,23 @@ export function registraSchema(): void {
         standard: true,
         secure: true,
         supportFetchAPI: true,
+        /**
+         * **Senza questo, tutto quello che non è una `<img>` semplice fallisce.**
+         *
+         * La pagina di un'app sta su `daprod://foto`, i suoi file su
+         * `daprod://file`: origini diverse. Chromium, per uno schema che non
+         * dichiara di accettare richieste incrociate, le rifiuta **prima** di
+         * guardare le intestazioni — quindi l'`Access-Control-Allow-Origin`
+         * che il gestore aggiungeva non è mai servito a niente.
+         *
+         * Si vedeva così, e per un mese non sono sembrati lo stesso difetto:
+         * `fetch` di un'immagine dava "Failed to fetch" (il ritocco di Foto),
+         * un `<audio crossOrigin="anonymous">` dava "formato non supportato"
+         * (i brani di Musica nel Visualizer), mentre le miniature si vedevano
+         * benissimo — perché una `<img>` senza `crossOrigin` non passa dal
+         * controllo.
+         */
+        corsEnabled: true,
         stream: true,
         bypassCSP: false,
       },
