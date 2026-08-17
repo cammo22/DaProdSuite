@@ -19,6 +19,7 @@ import { BrowserWindow, app, shell } from "electron";
 import { join } from "node:path";
 import { readBounds, writeState } from "../../app-state";
 import { registraConsole } from "../../finestre";
+import { montaTerminale } from "../../terminale";
 import { indirizzo } from "../../servizi";
 
 const PREDEFINITI = { width: 1560, height: 980, maximized: false };
@@ -56,6 +57,9 @@ export function apri(onClose: () => void): void {
 
   const win = finestra;
   registraConsole(win, "dream");
+  // Le righe del motore dentro la finestra dove sono capitate, con Ctrl+L.
+  // Iniettato dalla shell: e' una implementazione sola per tutte le app.
+  montaTerminale(win, "dream");
   if (bounds.maximized) win.maximize();
   win.once("ready-to-show", () => win.show());
 

@@ -18,6 +18,7 @@ import { readBounds, writeState, readState } from "../../app-state";
 import { findFfmpeg, transcodeToWav } from "./ffmpeg";
 import { codificaUrl, gestisciSchema } from "../../file-scheme";
 import { registraConsole } from "../../finestre";
+import { montaTerminale } from "../../terminale";
 
 /** Estensioni offerte dal dialogo file nativo. */
 const ESTENSIONI_AUDIO = [
@@ -78,6 +79,9 @@ export function apri(onClose: () => void): void {
 
   const win = finestra;
   registraConsole(win, "visualizer");
+  // Le righe del motore dentro la finestra dove sono capitate, con Ctrl+L.
+  // Iniettato dalla shell: e' una implementazione sola per tutte le app.
+  montaTerminale(win, "visualizer");
   if (bounds.maximized) win.maximize();
   win.once("ready-to-show", () => win.show());
 

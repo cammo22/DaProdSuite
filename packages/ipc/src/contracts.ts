@@ -507,6 +507,17 @@ export interface ApiApp {
    */
   motoreInPiu(nome: string): Promise<string>;
 
+  /**
+   * Le righe dei motori, per il terminale che la shell monta in ogni finestra.
+   *
+   * Le stesse del pannello Log dell'hub: un motore solo scrive un log solo, e
+   * guardarlo da dentro l'app o da fuori non cambia cosa c'e' scritto.
+   */
+  log: {
+    elenco(): Promise<VoceLog[]>;
+    leggi(nome: string, righe?: number): Promise<string>;
+  };
+
   /** Chiude questa finestra e torna all'hub. */
   chiudi(): Promise<void>;
 }

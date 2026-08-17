@@ -16,6 +16,7 @@ import { join } from "node:path";
 import { readBounds, writeState } from "../../app-state";
 import { gestisciSchema, serviInterfaccia, urlInterfaccia } from "../../file-scheme";
 import { registraConsole } from "../../finestre";
+import { montaTerminale } from "../../terminale";
 import { indirizzo } from "../../servizi";
 
 const PREDEFINITI = { width: 1420, height: 900, maximized: false };
@@ -68,6 +69,9 @@ export function apri(onClose: () => void): void {
 
   const win = finestra;
   registraConsole(win, "musica");
+  // Le righe del motore dentro la finestra dove sono capitate, con Ctrl+L.
+  // Iniettato dalla shell: e' una implementazione sola per tutte le app.
+  montaTerminale(win, "musica");
   if (bounds.maximized) win.maximize();
   win.once("ready-to-show", () => win.show());
 

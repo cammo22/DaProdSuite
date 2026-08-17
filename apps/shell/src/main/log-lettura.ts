@@ -20,6 +20,16 @@ import { LOGS_DIR } from "./paths";
 /** Quanto si legge dalla fine: abbondante per trecento righe di qualunque motore. */
 const CODA_BYTE = 512 * 1024;
 
+/**
+ * I codici colore del terminale.
+ *
+ * ComfyUI colora il proprio output con le sequenze ANSI: su una console si
+ * vedono verdi e rossi, dentro una pagina si vedono come spazzatura in mezzo
+ * al testo. Qui si tolgono, che e' l'unico posto in cui farlo una volta per
+ * l'hub e per il terminale dentro le app.
+ */
+const COLORI = /\u001B\[[0-9;]*m/g;
+
 /** Il nome arriva dal renderer: deve restare un nome di file, non un percorso. */
 function pulito(nome: string): string | null {
   return /^[A-Za-z0-9._-]+$/.test(nome) && !nome.includes("..") ? nome : null;
@@ -69,7 +79,7 @@ export function leggiLog(nome: string, righe: number): string {
     const tutte = testo.split(/\r?\n/);
     if (inizio > 0) tutte.shift();
 
-    return tutte.slice(-righe).join("\n").trimEnd();
+    return tutte.slice(-righe).join("\n").replace(COLORI, "").trimEnd();
   } catch {
     return "";
   } finally {
