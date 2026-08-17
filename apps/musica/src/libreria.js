@@ -16,6 +16,7 @@ import { grafoImmagine, promptCopertina } from "./grafi.js";
 import { ESTETICHE } from "./dati/estetiche.js";
 import { aggiungiLavoro, scordaDisegno, disegnaSessione } from "./coda.js";
 import { applicaMeta, nuovaResa } from "./crea.js";
+import { animaPronta } from "./anima.js";
 import * as ponte from "./ponte.js";
 
 export async function aggiornaLibreria() {
@@ -120,6 +121,13 @@ function collegaDettaglio(brano, meta) {
   $("coverStyle").onchange = ricostruisci;
 
   $("coverGen").onclick = async () => {
+    // Anima non c'è: si dice qui invece di far tornare al motore un errore in
+    // inglese. Si scarica dalla scheda Immagini, che è dove sta il riquadro.
+    const anima = await animaPronta();
+    if (!anima.pronto) {
+      mostraErrore("Per la copertina serve Anima, che non è ancora sul disco: la scarichi dalla scheda Immagini.");
+      return;
+    }
     try {
       const id = await ponte.invia(grafoImmagine($("coverPrompt").value, Math.floor(Math.random() * 2 ** 31)));
       aggiungiLavoro(id, { titolo: brano.nome }, { specie: "copertina", bersaglio: brano.id });

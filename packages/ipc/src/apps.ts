@@ -108,6 +108,11 @@ export const APPS: Record<AppId, AppDescriptor> = {
       healthTimeoutMs: 180_000,
     },
     models: ["minimax-music3-dit", "minimax-music3-text-encoder", "minimax-music3-vae"],
+    // Le copertine e la scheda Immagini girano su Anima, gli stessi tre file di
+    // DaProdFoto. Extra e non `models` perché una canzone si fa lo stesso senza,
+    // e chiedere 5,6 GB in più a chi vuole solo la musica sarebbe di troppo: la
+    // pagina controlla e li offre nel momento in cui servono davvero.
+    extraModels: ["anima-turbo", "qwen3-06b-base", "qwen-image-vae"],
     gpuHeavy: true,
   },
   foto: {

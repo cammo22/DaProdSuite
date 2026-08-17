@@ -14,6 +14,7 @@ for (const chiave of [
   "qualita", "rigaQualita", "mancaQualita",
   "ideaCanzone", "ideaCopertina", "bonsaiTutto", "bonsaiFinisci", "bonsaiStato", "selettoreLlm",
   "randomSeed", "autoCover", "coverStyleNew", "go", "goAudio", "stopBtn", "clearQueue",
+  "mancaAnima", "mancaAnimaCrea",
   "dot", "statusTxt", "feed", "error", "libList", "detail", "libCount", "navLib",
   "refreshLib", "presets", "tags", "dice1", "dice2", "builderFields", "b_preview",
   "b_name", "b_use", "b_copy", "b_save", "b_load", "b_clear", "coverPicker",

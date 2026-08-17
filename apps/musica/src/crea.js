@@ -11,6 +11,7 @@ import { DEMO_LYRICS, PRESETS, STILI, TAGS } from "./dati/stili.js";
 import { ESTETICHE } from "./dati/estetiche.js";
 import { QUALITA, grafoBrano, grafoImmagine, promptCopertina, titoloAuto } from "./grafi.js";
 import { aggiungiLavoro } from "./coda.js";
+import { controllaAnima } from "./anima.js";
 import * as ponte from "./ponte.js";
 
 const CHIAVE_STILI = "daprod.stili";
@@ -221,8 +222,27 @@ async function creaBrano(p) {
 
 /* ------------------------------------------------------------ collegamenti */
 
+/**
+ * La copertina si genera con Anima, che non è fra i modelli obbligatori di
+ * questa scheda: se non c'è, l'interruttore si spegne e sotto compare come
+ * prenderla. Prima spuntava allegramente e il brano usciva senza copertina, con
+ * un errore del motore in inglese dentro un log.
+ */
+async function collegaCopertina() {
+  const controlla = async () => {
+    const pronta = await controllaAnima(el.mancaAnimaCrea, null);
+    el.autoCover.disabled = !pronta;
+    if (!pronta) el.autoCover.checked = false;
+  };
+  await controlla();
+  ponte.suAvanzamentoModelli((a) => {
+    if (!a.attivo) void controlla();
+  });
+}
+
 export function collegaCrea() {
   void collegaQualita();
+  void collegaCopertina();
   legaValore("duration", "durVal", (v) => `${v} s`);
   legaValore("steps", "stepsVal");
   legaValore("cfg", "cfgVal");

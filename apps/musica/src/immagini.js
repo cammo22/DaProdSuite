@@ -16,6 +16,7 @@ import { stato } from "./stato.js";
 import { ESTETICHE, IMG_PRESETS } from "./dati/estetiche.js";
 import { grafoImmagine, promptLibero } from "./grafi.js";
 import { aggiungiLavoro } from "./coda.js";
+import { controllaAnima } from "./anima.js";
 import * as ponte from "./ponte.js";
 
 export async function aggiornaImmagini() {
@@ -82,6 +83,13 @@ export function collegaImmagini() {
 
   el.imgRefresh.onclick = () => aggiornaImmagini();
   ascolta("immagini-cambiate", () => void aggiornaImmagini());
+
+  // Anima c'e' o non c'e': se non c'e', "Genera" resta spento e sopra compare
+  // come prenderla. Meglio un bottone spento che un errore del motore.
+  void controllaAnima(el.mancaAnima, el.imgGo);
+  ponte.suAvanzamentoModelli((a) => {
+    if (!a.attivo) void controllaAnima(el.mancaAnima, el.imgGo);
+  });
 }
 
 function fallisci(testo) {
