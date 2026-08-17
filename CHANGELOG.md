@@ -12,6 +12,27 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ## Non ancora pubblicato
 
+### Le schede dell'hub hanno una copertina, fatta dalla suite stessa
+
+- Sette illustrazioni, una per scheda, **generate con Anima** dal motore che la
+  suite installa. Non sono immagini prese in giro per il web: le ha fatte il
+  software di cui parlano.
+- Una scheda non ancora dentro la suite ha la copertina spenta, così "in arrivo"
+  si vede da lontano.
+- Pesano 65 KB in tutto, e lo script che le rifà resta nel repo: se una non
+  piace, si cambia una riga e si rigenera solo quella.
+
+### Un terminale dentro ogni app
+
+- In basso a destra di ogni app c'è il tasto **log**: si apre un pannello con le
+  ultime trecento righe del motore, che si aggiorna da solo mentre lavora.
+  **Ctrl+L** lo apre e lo chiude, **Esc** lo chiude.
+- Si apre già sul motore di quell'app — quando qualcosa non va, nove volte su
+  dieci l'ha scritto lui — e dal menu si passa a qualunque altro.
+- I codici colore che ComfyUI mette nel proprio output non si vedono più come
+  spazzatura in mezzo al testo, né qui né nel pannello Log dell'hub.
+
+
 ### Risultati, Modelli e Log: tre pannelli, non tre finestre di Windows
 
 - I tre pulsanti in fondo all'hub aprivano Esplora risorse **dietro** la suite:

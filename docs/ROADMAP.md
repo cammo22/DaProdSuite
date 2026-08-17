@@ -86,8 +86,12 @@ la cosa che sa chiedere.
 - [x] **Disinstalla per scheda**: ogni scheda dice quanto occupa e si toglie da
       sola, riprendendosi i GB. I modelli che servono anche a un'altra scheda
       installata restano. *Arrivata in anticipo, col pannello Spazio.*
-- [ ] **Anteprima al passaggio del mouse**: un video corto che mostra cosa sa
-      fare quell'app, generato con l'app stessa.
+- [x] **Ogni scheda ha la sua illustrazione**, generata con Anima dentro la
+      suite (`apps/shell/scripts/genera-copertine.cjs`): descrizione e seme
+      stanno nel file, quindi una che non piace si rifà cambiando una riga.
+      *Fatto il 17 agosto 2026.*
+- [ ] **Anteprima al passaggio del mouse**: il video corto al posto del fermo
+      immagine, generato con l'app stessa.
 
 ## 0.3.1 — Una cosa sola, non sette
 
@@ -127,10 +131,9 @@ Vedi [ACCESSO-REMOTO.md](ACCESSO-REMOTO.md).
   se la chiedi.
 - **Dalla webcam del telefono**: quando ci sarà l'app Android (§ 0.5.0),
   DaProdDream deve poter prendere il video del telefono come sorgente.
-- **Un terminale dentro ogni app**: le righe del motore dove sono capitate,
-  invece che in un file. Adesso metà del lavoro è fatta — l'hub le sa leggere
-  (`log-lettura.ts`) — e resta da portare la stessa finestrella dentro le app,
-  **una volta per tutte**, non sei volte.
+- ~~**Un terminale dentro ogni app**~~ — fatto il 17 agosto 2026: tasto in
+  basso a destra e Ctrl+L, iniettato dalla shell, quindi una implementazione
+  sola per tutte e quattro.
 - **La copertina salvata su disco appena è generata**: oggi nasce come
   `PreviewImage` e vive nei temporanei, quindi sopravvive solo se la applichi a
   un brano.
