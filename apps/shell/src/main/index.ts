@@ -14,7 +14,7 @@ import { spegniSeNostro } from "./llm";
 import { registerIpc } from "./ipc";
 import { ensureDataDirs } from "./paths";
 import { updater } from "./updater";
-import { registraSchema } from "./file-scheme";
+import { gestisciSchema, registraSchema } from "./file-scheme";
 import { creaTray, distruggiTray } from "./tray";
 
 // Gli schemi privilegiati vanno dichiarati prima che l'app sia pronta: dopo,
@@ -45,6 +45,11 @@ async function start(): Promise<void> {
   Menu.setApplicationMenu(null);
 
   ensureDataDirs();
+  // Lo schema serve anche all'hub, non solo alle app: il pannello Risultati
+  // mostra le anteprime dei file, e quelle stanno su `daprod://file/...`.
+  // Prima lo accendeva la prima app che si apriva, quindi l'hub appena avviato
+  // avrebbe avuto un pannello di riquadri vuoti.
+  gestisciSchema();
   registerIpc(() => hub);
   createHub();
 

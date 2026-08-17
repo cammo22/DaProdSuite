@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'"
+      content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data: daprod:; font-src 'self'"
     />
     <title>DaProd Suite</title>
     <link rel="stylesheet" href="style.css" />
@@ -100,6 +100,55 @@
         </p>
       </section>
 
+      <!-- I tre pannelli dei pulsanti in fondo. Prima aprivano Esplora risorse
+           dietro la finestra, e sembrava che non facessero niente. -->
+
+      <section class="pannello" id="risultati" hidden aria-label="Risultati">
+        <div class="pannello-testa">
+          <h2>Risultati</h2>
+          <p id="risultati-riassunto">—</p>
+          <div class="pannello-tasti">
+            <select id="risultati-app" aria-label="Filtra per app"></select>
+            <select id="risultati-tipo" aria-label="Filtra per tipo">
+              <option value="">tutti i tipi</option>
+              <option value="audio">audio</option>
+              <option value="immagine">immagini</option>
+              <option value="video">video</option>
+            </select>
+            <button class="bottone secondario" id="risultati-cartella">Apri la cartella</button>
+          </div>
+        </div>
+        <div class="risultati-griglia" id="risultati-griglia"></div>
+      </section>
+
+      <section class="pannello" id="modelli" hidden aria-label="Modelli">
+        <div class="pannello-testa">
+          <h2>Modelli</h2>
+          <p id="modelli-riassunto">—</p>
+          <div class="pannello-tasti">
+            <button class="bottone secondario on" data-modelli-filtro="tutti">Tutti</button>
+            <button class="bottone secondario" data-modelli-filtro="presenti">Sul disco</button>
+            <button class="bottone secondario" data-modelli-filtro="mancanti">Da scaricare</button>
+            <button class="bottone secondario" id="modelli-cartella">Apri la cartella</button>
+          </div>
+        </div>
+        <div class="modelli-avanzamento" id="modelli-avanzamento" hidden></div>
+        <ul class="voci" id="modelli-voci"></ul>
+      </section>
+
+      <section class="pannello" id="log" hidden aria-label="Log">
+        <div class="pannello-testa">
+          <h2>Log</h2>
+          <p id="log-riassunto">—</p>
+          <div class="pannello-tasti">
+            <select id="log-quale" aria-label="Quale log"></select>
+            <label class="log-segui"><input type="checkbox" id="log-segui" checked> segui</label>
+            <button class="bottone secondario" id="log-cartella">Apri la cartella</button>
+          </div>
+        </div>
+        <pre class="log-righe" id="log-righe"></pre>
+      </section>
+
       <section class="spazio" id="spazio" hidden aria-label="Spazio su disco">
         <div class="spazio-testa">
           <h2>Spazio su disco</h2>
@@ -131,9 +180,9 @@
         </label>
       </div>
       <div class="scorciatoie">
-        <button class="collegamento" data-apri="output">Risultati</button>
-        <button class="collegamento" data-apri="models">Modelli</button>
-        <button class="collegamento" data-apri="logs">Log</button>
+        <button class="collegamento" data-pannello="risultati">Risultati</button>
+        <button class="collegamento" data-pannello="modelli">Modelli</button>
+        <button class="collegamento" data-pannello="log">Log</button>
         <button class="collegamento" id="btn-llm">Modello che scrive</button>
         <button class="collegamento" id="btn-spazio">Spazio</button>
       </div>

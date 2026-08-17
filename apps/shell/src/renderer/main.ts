@@ -11,6 +11,7 @@ import type {
   AppState,
   GpuState,
   RuntimeState,
+  TipoElemento,
   UpdateState,
   Velocita,
   VoceSpazio,
@@ -755,3 +756,302 @@ btnSpazio.addEventListener('click', () => {
     sezioneSpazio.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
   }
 })
+
+/* =========================================================== i tre pannelli */
+/**
+ * Testo dell'utente dentro l'HTML.
+ *
+ * Nell'hub non serviva finora — disegnava solo nomi presi dal catalogo — ma qui
+ * arrivano nomi di file che l'utente ha scelto lui.
+ */
+function escapeHtml(testo: string): string {
+  return testo.replace(
+    /[&<>"']/g,
+    (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c] as string,
+  );
+}
+
+/**
+ * Risultati, Modelli e Log.
+ *
+ * Erano tre pulsanti che chiamavano `shell.openPath`: si apriva una finestra di
+ * Esplora risorse **dietro** la suite, e da davanti sembrava che il pulsante
+ * non facesse niente. Adesso sono tre pannelli dentro l'hub, e la cartella si
+ * apre solo se la chiedi.
+ *
+ * Uno alla volta: aprirne uno chiude gli altri. Sono lunghi, e tre aperti
+ * insieme vorrebbero dire scorrere per trovarne uno.
+ */
+
+const PANNELLI = ["risultati", "modelli", "log"] as const;
+type NomePannello = (typeof PANNELLI)[number];
+
+function sezione(nome: NomePannello): HTMLElement {
+  return document.getElementById(nome) as HTMLElement;
+}
+
+function mostraPannello(nome: NomePannello): void {
+  const apriva = sezione(nome).hidden;
+  for (const altro of PANNELLI) sezione(altro).hidden = true;
+  sezioneSpazio.hidden = true;
+
+  if (!apriva) return;
+  sezione(nome).hidden = false;
+  sezione(nome).scrollIntoView({ behavior: "smooth", block: "nearest" });
+
+  if (nome === "risultati") void disegnaRisultati();
+  if (nome === "modelli") void disegnaModelli();
+  if (nome === "log") void apriLog();
+}
+
+for (const bottone of document.querySelectorAll<HTMLButtonElement>("[data-pannello]")) {
+  bottone.addEventListener("click", () => mostraPannello(bottone.dataset.pannello as NomePannello));
+}
+
+/* --------------------------------------------------------------- risultati */
+
+const risGriglia = document.getElementById("risultati-griglia") as HTMLElement;
+const risRiassunto = document.getElementById("risultati-riassunto") as HTMLElement;
+const risApp = document.getElementById("risultati-app") as HTMLSelectElement;
+const risTipo = document.getElementById("risultati-tipo") as HTMLSelectElement;
+
+risApp.innerHTML =
+  `<option value="">tutte le app</option>` +
+  api.catalog.map((a) => `<option value="${a.id}">${a.name}</option>`).join("");
+
+/** Quando non c'è una copertina: la lettera del tipo su un fondo colorato. */
+const SEGNO: Record<string, string> = { audio: "♪", immagine: "▣", video: "▶" };
+
+function quando(ms: number): string {
+  return new Date(ms).toLocaleString("it-IT", {
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+async function disegnaRisultati(): Promise<void> {
+  const filtro: { app?: AppId; tipo?: TipoElemento } = {};
+  if (risApp.value) filtro.app = risApp.value as AppId;
+  if (risTipo.value) filtro.tipo = risTipo.value as TipoElemento;
+
+  const elementi = await api.risultati.elenco(filtro);
+  const peso = elementi.reduce((somma, e) => somma + e.bytes, 0);
+  risRiassunto.textContent = elementi.length
+    ? `${elementi.length} risultati · ${gb(peso)}`
+    : "Ancora niente qui dentro.";
+
+  risGriglia.innerHTML = "";
+  for (const elemento of elementi) {
+    const nomeApp = api.catalog.find((a) => a.id === elemento.app);
+
+    const scheda = document.createElement("article");
+    scheda.className = "risultato";
+    scheda.innerHTML = `
+      <div class="risultato-arte"><span>${SEGNO[elemento.tipo] ?? "•"}</span></div>
+      <div class="risultato-nome" title="${escapeHtml(elemento.nome)}">${escapeHtml(elemento.nome)}</div>
+      <div class="risultato-dati">${escapeHtml(nomeApp?.name ?? elemento.app)} · ${quando(
+        elemento.creato,
+      )} · ${gb(elemento.bytes)}</div>
+      <div class="risultato-tasti">
+        <button class="bottone secondario" data-cartella>nella cartella</button>
+        <button class="bottone secondario pericolo" data-elimina>elimina</button>
+      </div>`;
+
+    // L'anteprima c'è quando c'è: un'immagine è la sua anteprima, un brano ha
+    // la copertina se gliel'hanno messa, un video per ora no.
+    const arte = scheda.querySelector(".risultato-arte") as HTMLElement;
+    const anteprima = elemento.tipo === "immagine" ? elemento.url : elemento.copertina;
+    if (anteprima) {
+      const img = document.createElement("img");
+      img.src = anteprima;
+      img.alt = "";
+      img.loading = "lazy";
+      arte.appendChild(img);
+    }
+    // La CSP dell'hub non ammette gli stili scritti nell'HTML, ma da qui sì.
+    if (nomeApp) arte.style.setProperty("--tinta", nomeApp.accent);
+
+    (scheda.querySelector("[data-cartella]") as HTMLButtonElement).addEventListener("click", () => {
+      void api.risultati.mostraNellaCartella(elemento.id);
+    });
+    (scheda.querySelector("[data-elimina]") as HTMLButtonElement).addEventListener(
+      "click",
+      async () => {
+        if (!confirm(`Eliminare definitivamente "${elemento.nome}"?`)) return;
+        await api.risultati.elimina(elemento.id);
+        await disegnaRisultati();
+      },
+    );
+
+    risGriglia.appendChild(scheda);
+  }
+}
+
+risApp.addEventListener("change", () => void disegnaRisultati());
+risTipo.addEventListener("change", () => void disegnaRisultati());
+(document.getElementById("risultati-cartella") as HTMLButtonElement).addEventListener("click", () => {
+  void api.suite.revealPath("output");
+});
+
+// Qualunque app produca o cancelli qualcosa, il pannello aperto lo vede.
+api.risultati.onCambiata(() => {
+  if (!sezione("risultati").hidden) void disegnaRisultati();
+});
+
+/* ----------------------------------------------------------------- modelli */
+
+const modVoci = document.getElementById("modelli-voci") as HTMLElement;
+const modRiassunto = document.getElementById("modelli-riassunto") as HTMLElement;
+const modAvanzamento = document.getElementById("modelli-avanzamento") as HTMLElement;
+
+let filtroModelli: "tutti" | "presenti" | "mancanti" = "tutti";
+
+for (const bottone of document.querySelectorAll<HTMLButtonElement>("[data-modelli-filtro]")) {
+  bottone.addEventListener("click", () => {
+    filtroModelli = bottone.dataset.modelliFiltro as typeof filtroModelli;
+    for (const altro of document.querySelectorAll("[data-modelli-filtro]")) {
+      altro.classList.remove("on");
+    }
+    bottone.classList.add("on");
+    void disegnaModelli();
+  });
+}
+
+async function disegnaModelli(): Promise<void> {
+  const voci = await api.modelli.catalogo();
+
+  const sulDisco = voci.filter((v) => v.presente && !v.esterno);
+  const mancano = voci.filter((v) => !v.presente);
+  modRiassunto.textContent =
+    `${sulDisco.length} sul disco · ${gb(sulDisco.reduce((s, v) => s + v.bytes, 0))}` +
+    (mancano.length
+      ? ` · ne mancano ${mancano.length} (${gb(mancano.reduce((s, v) => s + v.bytes, 0))})`
+      : " · non manca niente");
+
+  const mostrati = voci.filter((v) =>
+    filtroModelli === "presenti" ? v.presente : filtroModelli === "mancanti" ? !v.presente : true,
+  );
+
+  modVoci.innerHTML = "";
+  for (const voce of mostrati) {
+    const schede = voce.usatoDa
+      .map((id) => api.catalog.find((a) => a.id === id)?.name ?? id)
+      .join(", ");
+
+    const riga = document.createElement("li");
+    riga.className = voce.presente ? "modello" : "modello manca";
+    riga.innerHTML = `
+      <div class="modello-testo">
+        <b>${escapeHtml(voce.label)}</b>
+        <span class="modello-dati">${
+          voce.esterno
+            ? "lo tiene LM Studio"
+            : `${gb(voce.bytes)} · ${voce.presente ? "sul disco" : "da scaricare"}${
+                voce.extra ? " · extra" : ""
+              }`
+        }</span>
+        <span class="modello-usato">${schede ? `serve a ${escapeHtml(schede)}` : "non è di nessuna scheda"}</span>
+      </div>`;
+
+    // Si scarica a nome della prima scheda che lo usa: e' il suo motore che va
+    // riavviato se il modello si porta dietro un nodo custom nuovo.
+    const perChi = voce.usatoDa[0];
+    if (!voce.presente && !voce.esterno && perChi) {
+      const bottone = document.createElement("button");
+      bottone.className = "bottone";
+      bottone.textContent = `Scarica ${gb(voce.bytes)}`;
+      bottone.addEventListener("click", () => {
+        bottone.disabled = true;
+        void api.modelli.scarica(perChi, [voce.id]);
+      });
+      riga.appendChild(bottone);
+    }
+
+    modVoci.appendChild(riga);
+  }
+}
+
+api.modelli.onAvanzamento((stato) => {
+  if (sezione("modelli").hidden) return;
+
+  if (!stato.attivo) {
+    modAvanzamento.hidden = false;
+    modAvanzamento.textContent = stato.errore
+      ? stato.errore
+      : stato.annullato
+        ? "Annullato. Quello che era già arrivato resta sul disco."
+        : "Finito.";
+    void disegnaModelli();
+    return;
+  }
+
+  modAvanzamento.hidden = false;
+  modAvanzamento.textContent =
+    stato.total > 0
+      ? `${stato.label} · ${gb(stato.done)} / ${gb(stato.total)}`
+      : `${stato.label}…`;
+});
+
+(document.getElementById("modelli-cartella") as HTMLButtonElement).addEventListener("click", () => {
+  void api.suite.revealPath("models");
+});
+
+/* --------------------------------------------------------------------- log */
+
+const logQuale = document.getElementById("log-quale") as HTMLSelectElement;
+const logRighe = document.getElementById("log-righe") as HTMLElement;
+const logRiassunto = document.getElementById("log-riassunto") as HTMLElement;
+const logSegui = document.getElementById("log-segui") as HTMLInputElement;
+
+let orologioLog: number | null = null;
+
+async function apriLog(): Promise<void> {
+  const voci = await api.log.elenco();
+
+  if (!voci.length) {
+    logRiassunto.textContent = "Nessun log ancora: si scrivono quando parte un motore.";
+    logQuale.innerHTML = "";
+    logRighe.textContent = "";
+    return;
+  }
+
+  // Si ridisegna l'elenco solo se è cambiato: rifarlo ogni due secondi
+  // chiuderebbe il menu in faccia a chi lo sta aprendo.
+  const nomi = voci.map((v) => v.nome).join("|");
+  if (logQuale.dataset.nomi !== nomi) {
+    const scelto = logQuale.value;
+    logQuale.dataset.nomi = nomi;
+    logQuale.innerHTML = voci.map((v) => `<option value="${v.nome}">${v.nome}</option>`).join("");
+    if (voci.some((v) => v.nome === scelto)) logQuale.value = scelto;
+  }
+
+  const voce = voci.find((v) => v.nome === logQuale.value) ?? voci[0];
+  if (!voce) return;
+  logRiassunto.textContent = `${gb(voce.bytes)} · ultima riga ${quando(voce.quando)}`;
+
+  const testo = await api.log.leggi(logQuale.value || voce.nome, 300);
+  const inFondo =
+    logRighe.scrollTop + logRighe.clientHeight >= logRighe.scrollHeight - 40;
+  logRighe.textContent = testo || "(vuoto)";
+  if (logSegui.checked || inFondo) logRighe.scrollTop = logRighe.scrollHeight;
+
+  // Finché il pannello è aperto si rilegge da solo: un motore che sta partendo
+  // scrive proprio mentre lo guardi, ed è quello il momento in cui serve.
+  if (orologioLog === null) {
+    orologioLog = window.setInterval(() => {
+      if (sezione("log").hidden) {
+        window.clearInterval(orologioLog as number);
+        orologioLog = null;
+        return;
+      }
+      void apriLog();
+    }, 2000);
+  }
+}
+
+logQuale.addEventListener("change", () => void apriLog());
+(document.getElementById("log-cartella") as HTMLButtonElement).addEventListener("click", () => {
+  void api.suite.revealPath("logs");
+});

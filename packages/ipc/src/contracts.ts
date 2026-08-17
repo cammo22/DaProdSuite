@@ -197,6 +197,39 @@ export interface StatoSpazio {
   libero: number;
 }
 
+/**
+ * Una voce del catalogo dei modelli, vista dal pannello dell'hub.
+ *
+ * Non e' `manifest/models.json` cosi' com'e': la domanda a cui questa risponde
+ * non e' "com'e' fatto" ma "ce l'ho, quanto pesa, a quali schede serve".
+ */
+export interface VoceModello {
+  /** Id nel manifesto: e' quello che si passa per scaricarlo. */
+  id: string;
+  label: string;
+  /** Sul disco, intero e della dimensione giusta. */
+  presente: boolean;
+  bytes: number;
+  /** Le schede che lo dichiarano fra i propri modelli. */
+  usatoDa: AppId[];
+  /**
+   * true se nessuna scheda lo pretende per partire: e' qualita' in piu' in
+   * cambio di GB (i due FLUX, il SoulX Pro).
+   */
+  extra: boolean;
+  /** Gestito da qualcun altro — LM Studio — e quindi non scaricabile da qui. */
+  esterno: boolean;
+}
+
+/** Un file di log, per l'elenco. Le righe si chiedono a parte: pesano. */
+export interface VoceLog {
+  /** Nome del file senza `.log`: e' anche quello che si passa per leggerlo. */
+  nome: string;
+  bytes: number;
+  /** Ultima scrittura, in millisecondi. */
+  quando: number;
+}
+
 export type CosaResettare = "impostazioni" | "modelli" | "tutto";
 
 /** Chi sta occupando la GPU adesso. L'arbitro ne ammette uno solo. */
@@ -243,6 +276,40 @@ export interface SuiteApi {
     version(): Promise<string>;
     /** Apre un percorso in Esplora risorse (cartella output, log). */
     revealPath(kind: "output" | "logs" | "models"): Promise<void>;
+  };
+
+  /**
+   * I risultati di **tutte** le app insieme.
+   *
+   * E' la stessa libreria condivisa che vedono le app, senza filtro per app:
+   * l'hub e' l'unico posto da cui ha senso guardarla intera.
+   */
+  risultati: {
+    elenco(filtro?: FiltroLibreria): Promise<ElementoLibreria[]>;
+    mostraNellaCartella(id: string): Promise<boolean>;
+    elimina(id: string): Promise<boolean>;
+    onCambiata(listener: (elementi: ElementoLibreria[]) => void): Unsubscribe;
+  };
+
+  /** Cosa c'e' sul disco, quanto pesa, a chi serve, e cosa manca ancora. */
+  modelli: {
+    catalogo(): Promise<VoceModello[]>;
+    /**
+     * Scarica dei modelli, a nome della scheda che li usa.
+     *
+     * La scheda serve davvero: e' il suo motore che va riavviato se il modello
+     * si porta dietro un nodo custom nuovo. L'avanzamento arriva a tutte le
+     * finestre, hub compreso.
+     */
+    scarica(id: AppId, ids: string[]): Promise<void>;
+    onAvanzamento(listener: (avanzamento: AvanzamentoModelli) => void): Unsubscribe;
+  };
+
+  /** Le ultime righe dei motori, lette senza uscire dalla suite. */
+  log: {
+    elenco(): Promise<VoceLog[]>;
+    /** Le ultime `righe` righe di quel file. */
+    leggi(nome: string, righe?: number): Promise<string>;
   };
 
   apps: {
@@ -484,6 +551,7 @@ export const CHANNELS = {
   spazioElimina: "spazio:elimina",
   spazioReset: "spazio:reset",
 
+  modelliCatalogo: "modelli:catalogo",
   modelliStato: "modelli:stato",
   modelliScarica: "modelli:scarica",
   modelliAnnulla: "modelli:annulla",
@@ -494,6 +562,9 @@ export const CHANNELS = {
   llmCarica: "llm:carica",
   llmScarica: "llm:scarica",
   llmLibera: "llm:libera",
+
+  logElenco: "log:elenco",
+  logLeggi: "log:leggi",
 
   libreriaElenco: "libreria:elenco",
   libreriaMostra: "libreria:mostra",

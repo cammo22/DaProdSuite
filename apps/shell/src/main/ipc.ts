@@ -8,12 +8,14 @@
 import { BrowserWindow, ipcMain, shell } from "electron";
 import { app } from "electron";
 import {
+  APP_LIST,
   CHANNELS,
   type AppId,
   type CosaResettare,
   type FiltroLibreria,
   type Intenzione,
   type Velocita,
+  type VoceModello,
 } from "@daprod/ipc";
 import { impostaVelocita, impostazioni, segnaGuidaFatta } from "./impostazioni";
 import { caricaModello, chiediAllLlm, liberaMemoriaLlm, scaricaModello, statoLlm } from "./llm";
@@ -24,7 +26,8 @@ import { disinstallaApp, elimina, reset, statoSpazio } from "./spazio";
 import { gpu } from "./gpu";
 import { runtime } from "./runtime";
 import { updater } from "./updater";
-import { statoModelli } from "./models";
+import { isModelPresent, manifest, statoModelli } from "./models";
+import { elencoLog, leggiLog } from "./log-lettura";
 import { avviaInPiu } from "./servizi";
 import { LOGS_DIR, MODELS_DIR, OUTPUT_DIR } from "./paths";
 
@@ -203,6 +206,38 @@ export function registerIpc(getHub: () => BrowserWindow | null): void {
   // finestra, non quando si apre la scheda.
   ipcMain.handle(CHANNELS.appMotoreInPiu, (_e, id: AppId, nome: string) =>
     avviaInPiu(id, nome),
+  );
+
+  /**
+   * Il catalogo dei modelli come lo guarda l'hub.
+   *
+   * La domanda non e' "com'e' fatto il manifesto" ma "ce l'ho, quanto pesa, a
+   * quali schede serve": per questo `usatoDa` si ricava dal catalogo delle app
+   * invece di stare scritto due volte, e `extra` distingue i pesi che nessuna
+   * scheda pretende per partire.
+   */
+  ipcMain.handle(CHANNELS.modelliCatalogo, (): VoceModello[] => {
+    const voci = manifest().models;
+    return Object.entries(voci).map(([id, entry]) => {
+      const usatoDa = APP_LIST.filter(
+        (a) => a.models.includes(id) || (a.extraModels ?? []).includes(id),
+      ).map((a) => a.id);
+      return {
+        id,
+        label: entry.label,
+        // LM Studio se li tiene lui: chiedere al disco non avrebbe senso.
+        presente: entry.kind === "lmstudio" ? true : isModelPresent(id),
+        bytes: entry.bytes,
+        usatoDa,
+        extra: !APP_LIST.some((a) => a.models.includes(id)),
+        esterno: entry.kind === "lmstudio",
+      };
+    });
+  });
+
+  ipcMain.handle(CHANNELS.logElenco, () => elencoLog());
+  ipcMain.handle(CHANNELS.logLeggi, (_e, nome: string, righe?: number) =>
+    leggiLog(nome, righe ?? 300),
   );
 
   ipcMain.handle(CHANNELS.appChiudi, (_e, id: AppId) => appManager.close(id));

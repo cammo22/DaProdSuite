@@ -13,6 +13,9 @@ import {
   CHANNELS,
   type AppId,
   type AppState,
+  type AvanzamentoModelli,
+  type ElementoLibreria,
+  type FiltroLibreria,
   type GpuState,
   type RuntimeState,
   type SuiteApi,
@@ -33,6 +36,27 @@ const api: SuiteApi = {
   suite: {
     version: () => ipcRenderer.invoke(CHANNELS.suiteVersion),
     revealPath: (kind) => ipcRenderer.invoke(CHANNELS.suiteRevealPath, kind),
+  },
+
+  // Gli stessi canali che usano le app: la libreria e' una sola, e l'hub la
+  // guarda intera invece che filtrata per app.
+  risultati: {
+    elenco: (filtro?: FiltroLibreria) => ipcRenderer.invoke(CHANNELS.libreriaElenco, filtro),
+    mostraNellaCartella: (id: string) => ipcRenderer.invoke(CHANNELS.libreriaMostra, id),
+    elimina: (id: string) => ipcRenderer.invoke(CHANNELS.libreriaElimina, id),
+    onCambiata: (listener) => subscribe<ElementoLibreria[]>(CHANNELS.libreriaCambiata, listener),
+  },
+
+  modelli: {
+    catalogo: () => ipcRenderer.invoke(CHANNELS.modelliCatalogo),
+    scarica: (id: AppId, ids: string[]) => ipcRenderer.invoke(CHANNELS.modelliScarica, id, ids),
+    onAvanzamento: (listener) =>
+      subscribe<AvanzamentoModelli>(CHANNELS.modelliAvanzamento, listener),
+  },
+
+  log: {
+    elenco: () => ipcRenderer.invoke(CHANNELS.logElenco),
+    leggi: (nome: string, righe?: number) => ipcRenderer.invoke(CHANNELS.logLeggi, nome, righe),
   },
 
   apps: {
