@@ -23,4 +23,14 @@ for (const nome of await readdir(src)) {
   copiati += 1;
 }
 
+// Le copertine delle schede, generate con Anima (`scripts/genera-copertine.cjs`).
+// Vanno copiate come cartella: sono file dell'interfaccia come l'HTML, e senza
+// questo passaggio le schede si aprirebbero senza illustrazione.
+try {
+  await cp(join(src, "media"), join(dest, "media"), { recursive: true });
+  copiati += (await readdir(join(src, "media"))).length;
+} catch {
+  // Non ci sono ancora: si generano quando serve, non a ogni compilazione.
+}
+
 console.log(`copy-assets: ${copiati} file in out/renderer`);

@@ -885,3 +885,55 @@ li.modello .bottone {
   white-space: pre-wrap;
   word-break: break-word;
 }
+
+/* ------------------------------------------------ la copertina di una scheda */
+/*
+  L'illustrazione in cima, generata con Anima dentro la suite
+  (apps/shell/scripts/genera-copertine.cjs). Esce dai margini della scheda con
+  un margine negativo — dentro il bordo arrotondato, non sopra — e sfuma nel
+  fondo della scheda in basso, così il titolo ci si appoggia sopra senza una
+  linea netta che taglia in due.
+*/
+.scheda-arte {
+  position: relative;
+  margin: -20px -20px -4px;
+  height: 112px;
+  overflow: hidden;
+  border-radius: var(--raggio) var(--raggio) 0 0;
+  background: color-mix(in srgb, var(--accento) 18%, var(--fondo-scheda));
+}
+
+.scheda-arte img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* La sfumatura verso il fondo della scheda: è quella che tiene insieme
+   un'immagine qualunque e il pannello sotto. */
+.scheda-arte::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    transparent 40%,
+    color-mix(in srgb, var(--fondo-scheda) 70%, transparent) 74%,
+    var(--fondo-scheda) 100%
+  );
+}
+
+/* Un'app non ancora dentro la suite: spenta anche nell'illustrazione, come lo
+   è il resto della scheda. */
+.scheda.in-arrivo .scheda-arte img {
+  filter: grayscale(0.7) brightness(0.5);
+}
+
+.scheda:hover .scheda-arte img {
+  transform: scale(1.03);
+}
+
+.scheda-arte img {
+  transition: transform 0.35s ease;
+}

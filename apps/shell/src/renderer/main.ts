@@ -29,6 +29,7 @@ const spiaGpu = document.getElementById("spia-gpu") as HTMLElement;
 const schede = new Map<
   AppId,
   {
+    scheda: HTMLElement;
     etichetta: HTMLElement;
     azione: HTMLButtonElement;
     barra: HTMLElement;
@@ -43,6 +44,17 @@ function costruisciGriglia(): void {
     const scheda = document.createElement("article");
     scheda.className = "scheda";
     scheda.style.setProperty("--accento", app.accent);
+
+    // La copertina, generata con Anima dentro la suite
+    // (`scripts/genera-copertine.cjs`). Se un giorno manca il file, resta il
+    // riquadro col colore dell'app: la scheda non si rompe.
+    const arte = document.createElement("div");
+    arte.className = "scheda-arte";
+    const illustrazione = document.createElement("img");
+    illustrazione.src = `media/${app.id}.webp`;
+    illustrazione.alt = "";
+    illustrazione.addEventListener("error", () => illustrazione.remove());
+    arte.append(illustrazione);
 
     const testa = document.createElement("div");
     testa.className = "scheda-testa";
@@ -78,10 +90,10 @@ function costruisciGriglia(): void {
     azione.addEventListener("click", () => void premuto(app.id));
 
     fondo.append(etichetta, azione);
-    scheda.append(testa, barra, fondo);
+    scheda.append(arte, testa, barra, fondo);
     griglia.append(scheda);
 
-    schede.set(app.id, { etichetta, azione, barra, riempimento });
+    schede.set(app.id, { scheda, etichetta, azione, barra, riempimento });
   }
 }
 
@@ -128,6 +140,10 @@ function aggiornaSchede(stati: AppState[]): void {
       stato.error ?? raccontaAvanzamento(stato) ?? descrizioneStato[stato.status];
     elementi.etichetta.className = `etichetta ${regola.classe}`;
     elementi.etichetta.title = stato.error ?? "";
+
+    // Un'app non ancora dentro la suite si riconosce anche dalla copertina:
+    // spenta, come tutto il resto della scheda.
+    elementi.scheda.classList.toggle("in-arrivo", stato.status === "non-inclusa");
 
     disegnaBarra(elementi, stato);
   }
