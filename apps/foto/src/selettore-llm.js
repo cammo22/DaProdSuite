@@ -6,10 +6,10 @@
  * che lo si usa — chi sta scrivendo una canzone non deve tornare nell'hub per
  * accorgersi che il modello è spento, o per spegnerlo prima di generare.
  *
- * **Ce n'è una seconda copia in DaProdFoto**, identica. Il file non dipende da
- * niente dell'app che lo ospita, ma due copie prima o poi divergono: alla 0.3.1
- * nasce `packages/ui` e le due si fondono lì, insieme ai due fogli di stile
- * gemelli. Finché sono due si controllano; alla terza no.
+ * **Questa è la seconda copia**, identica a quella di DaProdMusica: il file non
+ * dipende da niente dell'app che lo ospita, ma due copie prima o poi divergono.
+ * Alla 0.3.1 nasce `packages/ui` e le due si fondono lì — è la stessa scadenza
+ * dei due fogli di stile gemelli. Finché sono due si controllano; alla terza no.
  */
 
 const suite = window.daprodSuite;

@@ -259,6 +259,8 @@ export async function spegniSeNostro(): Promise<void> {
 }
 
 export interface DomandaLlm {
+  /** Il modello scelto dall'app, se ne ha uno. Ignorato se LM Studio non ce l'ha. */
+  modello?: string;
   /** Chi deve essere il modello mentre risponde. */
   sistema: string;
   /** Cosa gli si chiede. */
@@ -277,6 +279,19 @@ export interface DomandaLlm {
   schema?: Record<string, unknown>;
   /** Come si chiama quella forma. Serve solo a LM Studio per i suoi log. */
   nomeSchema?: string;
+  /**
+   * Se lasciarlo ragionare prima di rispondere. Acceso di suo.
+   *
+   * Per una canzone il ragionamento è metà del risultato e vale il minuto che
+   * costa; per allargare la descrizione di un'immagine è un minuto buttato.
+   *
+   * **Attenzione a cosa promette.** Misurato il 17 agosto 2026 con lfm2.5:
+   * spegnendolo il modello ha ragionato lo stesso (743 token di pensiero), e
+   * quello che cambia davvero è il tetto — 900 token invece di 10.000 — cioè il
+   * caso peggiore, non il caso normale. Chi lo spegne guadagna una rete, non
+   * per forza velocità: dipende da quanto il modello rispetta il suo template.
+   */
+  pensa?: boolean;
   /** Oltre questo, meglio dire che ci sta mettendo troppo. */
   timeoutMs?: number;
 }
@@ -295,12 +310,23 @@ export async function chiediAllLlm(domanda: DomandaLlm): Promise<EsitoLlm> {
     return { ok: false, testo: "", motivo: stato.motivo ?? "LM Studio non è disponibile." };
   }
 
-  // Bonsai se c'è, altrimenti il primo che LM Studio offre. Non è un capriccio:
-  // l'elenco arriva in ordine alfabetico o di installazione, e prendere il primo
-  // vuol dire farsi scrivere una canzone dal modello di embedding.
-  const scelto = stato.modelli.includes(MODELLO_CONSIGLIATO)
-    ? MODELLO_CONSIGLIATO
-    : (stato.modelli[0] ?? MODELLO_CONSIGLIATO);
+  // **Prima quello che ha scelto l'utente.** Le app mostrano il selettore del
+  // modello in cima, e prima di questa riga non contava niente: si finiva
+  // sempre su Bonsai 27B, che ragiona bene ma su una macchina come questa ci
+  // mette minuti — e chi voleva una risposta rapida aveva scelto apposta un
+  // modello piccolo. Un id che LM Studio non ha si ignora, invece di far
+  // fallire la domanda.
+  //
+  // Se non ha scelto: Bonsai se c'è, altrimenti il primo che LM Studio offre.
+  // Prendere il primo e basta vorrebbe dire farsi scrivere una canzone dal
+  // modello di embedding.
+  const chiesto = domanda.modello && stato.modelli.includes(domanda.modello)
+    ? domanda.modello
+    : null;
+  const scelto = chiesto
+    ?? (stato.modelli.includes(MODELLO_CONSIGLIATO)
+      ? MODELLO_CONSIGLIATO
+      : (stato.modelli[0] ?? MODELLO_CONSIGLIATO));
 
   // Se lo carica LM Studio su nostra richiesta, siamo noi a doverlo spegnere.
   if (!stato.caricati?.includes(scelto)) nostro = scelto;
@@ -325,10 +351,12 @@ export async function chiediAllLlm(domanda: DomandaLlm): Promise<EsitoLlm> {
      * più il ripiego che legge la risposta dal campo del ragionamento se il
      * modello la lascia lì.
      */
-    chat_template_kwargs: { enable_thinking: true },
+    chat_template_kwargs: { enable_thinking: domanda.pensa !== false },
     // Largo per il ragionamento **e** per la risposta: con 64K di contesto
-    // questi sono un sesto del totale, e il resto resta per la domanda.
-    max_tokens: 10_000,
+    // questi sono un sesto del totale, e il resto resta per la domanda. Senza
+    // ragionamento non serve tutto quello spazio, e un tetto piu' basso e'
+    // anche una rete: un modello che parte per la tangente si ferma prima.
+    max_tokens: domanda.pensa === false ? 900 : 10_000,
     ...(domanda.schema
       ? {
           response_format: {

@@ -9,6 +9,7 @@ import { el, mostraErrore, mostraScheda, suApertura } from "./dom.js";
 import { ascolta } from "./bus.js";
 import { collegaComandiCoda, messaggioDalMotore, riallinea } from "./coda.js";
 import { collegaCrea } from "./crea.js";
+import { collegaBonsaiFoto } from "./bonsai.js";
 import { collegaRitocco } from "./ritocco.js";
 import { collegaScelta } from "./scelta-modello.js";
 import { aggiornaGalleria, collegaGalleria } from "./galleria.js";
@@ -26,6 +27,7 @@ suApertura("galleria", () => void aggiornaGalleria());
 
 collegaLente();
 collegaCrea();
+collegaBonsaiFoto();
 collegaRitocco();
 collegaTraduzione();
 // Per ultimo fra questi: la scelta del modello sposta i cursori sul suo punto

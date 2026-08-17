@@ -61,9 +61,18 @@
  <div class="two">
   <div>
     <div class="panel">
-      <h2>Cosa vuoi vedere</h2>
+      <h2>Cosa vuoi vedere <span class="right"><span class="hint" id="bonsaiStato"></span></span></h2>
       <div class="chips" id="proposte"></div>
       <textarea id="prompt" rows="4" placeholder="Es. una vecchia automobile ferma su una strada vuota al tramonto"></textarea>
+      <!-- Lo stesso selettore dell'hub: quale modello scrive, se occupa
+           memoria, e il contesto. Sta qui perché è qui che serve saperlo. -->
+      <div class="selettore-llm" id="selettoreLlm"></div>
+      <div class="acts">
+        <button id="bonsaiAllarga">Bonsai: allarga quello che ho scritto</button>
+        <button id="bonsaiIdea">Bonsai: proponi tu una scena</button>
+      </div>
+      <div class="hint">Due parole diventano una descrizione che il modello capisce:
+        soggetto, luce, inquadratura, materiali. Il modello lo tiene acceso <b>LM Studio</b>.</div>
     </div>
 
     <div class="panel">

@@ -470,6 +470,22 @@ export interface ApiApp {
       utente: string;
       schema?: Record<string, unknown>;
       nomeSchema?: string;
+      /**
+       * Quale modello, se l'app ne ha uno scelto.
+       *
+       * E' quello del selettore che le app mostrano in cima: senza, la suite
+       * prendeva sempre il consigliato — cioe' Bonsai 27B, che su questa
+       * macchina ragiona per minuti — e il menu che l'utente aveva appena usato
+       * non contava niente. Un id sconosciuto viene ignorato.
+       */
+      modello?: string;
+      /**
+       * Se lasciarlo ragionare prima di rispondere. Acceso di suo.
+       *
+       * Per una canzone il ragionamento vale il minuto che costa; per allargare
+       * la descrizione di un'immagine e' un minuto buttato.
+       */
+      pensa?: boolean;
     }): Promise<EsitoLlm>;
 
     /** Lo carica con il contesto scelto (64K, 128K, 256K), GPU al massimo. */

@@ -17,7 +17,7 @@
 
 import { el, mostraErrore } from "./dom.js";
 import { titoloAuto } from "./grafi.js";
-import { collegaSelettoreLlm } from "./selettore-llm.js";
+import { collegaSelettoreLlm, modelloScelto } from "./selettore-llm.js";
 
 const suite = window.daprodSuite;
 
@@ -137,6 +137,9 @@ async function chiedi(bottone, utente, attesa) {
   lavora(bottone, attesa);
   try {
     const esito = await suite.llm.chiedi({
+      // Quello scelto nel selettore qui sopra: se ne hai messo uno piccolo per
+      // avere una risposta subito, deve rispondere quello.
+      modello: modelloScelto(),
       sistema: SISTEMA,
       utente,
       schema: SCHEMA,
