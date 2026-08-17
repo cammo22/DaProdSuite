@@ -65,10 +65,10 @@ la cosa che sa chiedere.
       *Funziona; la qualità dell'italiano va guidata a colpi di istruzioni.*
 - [x] **DaProdMusica — "Bonsai: finisci"**: completa quello che hai abbozzato
       senza stravolgerlo
-- [ ] **Pannello LM Studio nella suite**: quali modelli ci sono, caricarli e
+- [x] **Pannello LM Studio nella suite**: quali modelli ci sono, caricarli e
       scaricarli al volo, e il contesto con tre pulsanti — 64K, 128K, 256K.
-      L'obiettivo resta far stare domanda e risposta **dentro i 64K**, che è
-      dove va veloce
+      *Fatto: sta nell'hub e, in una riga, dentro le app. L'obiettivo resta far
+      stare domanda e risposta dentro i 64K, che è dove va veloce.*
 - [ ] **DaProdFoto**: da due parole a una descrizione che il modello capisce
 - [ ] **DaProdCinema**: una chat dove butti l'idea e le foto, e ne esce un
       piccolo video da montare
@@ -96,7 +96,9 @@ la cosa che sa chiedere.
       Lower VRAM / Lower RAM di WanGP
 - [ ] Pannello dei modelli in VRAM, promosso da DaProdMusica: uno per modello,
       ci clicchi e lo scarichi
-- [ ] Cartella dei risultati unica con galleria trasversale
+- [x] Cartella dei risultati unica con galleria trasversale — *fatto il 16
+      agosto 2026 col pannello **Risultati** dell'hub: audio, immagini e video di
+      tutte le app insieme, con i filtri per app e per tipo.*
 
 ## 0.4.0 — La suite fuori dal PC
 
@@ -120,8 +122,21 @@ Vedi [ACCESSO-REMOTO.md](ACCESSO-REMOTO.md).
 - ~~**Anima anche in DaProdDream**~~ — fatto il 16 agosto 2026: nella scheda
   Sogno libero si sceglie fra SD-Turbo (tempo reale) e Anima (si scrive e si
   rifà). Da provare a lungo.
+- ~~**I pulsanti Risultati / Modelli / Log devono aprire pannelli veri**~~ —
+  fatto il 16 agosto 2026: tre pannelli dentro l'hub, e la cartella si apre solo
+  se la chiedi.
 - **Dalla webcam del telefono**: quando ci sarà l'app Android (§ 0.5.0),
   DaProdDream deve poter prendere il video del telefono come sorgente.
+- **Un terminale dentro ogni app**: le righe del motore dove sono capitate,
+  invece che in un file. Adesso metà del lavoro è fatta — l'hub le sa leggere
+  (`log-lettura.ts`) — e resta da portare la stessa finestrella dentro le app,
+  **una volta per tutte**, non sei volte.
+- **La copertina salvata su disco appena è generata**: oggi nasce come
+  `PreviewImage` e vive nei temporanei, quindi sopravvive solo se la applichi a
+  un brano.
+- **"Mostra nella cartella" in DaProdFoto**: era segnato come guasto, ma il 16
+  agosto 2026 non si è riprodotto — cinque immagini della galleria, tutte
+  aperte. Da riprovare quando ricapita, con il nome del file che l'ha fatto.
 
 ## 0.6.0 — DaProdCinema
 

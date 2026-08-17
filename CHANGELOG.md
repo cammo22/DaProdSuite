@@ -12,6 +12,30 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ## Non ancora pubblicato
 
+### Risultati, Modelli e Log: tre pannelli, non tre finestre di Windows
+
+- I tre pulsanti in fondo all'hub aprivano Esplora risorse **dietro** la suite:
+  da davanti sembrava che non facessero niente. Adesso aprono tre pannelli
+  dentro la suite. La cartella si apre ancora, ma solo se la chiedi.
+- **Risultati** è la galleria di tutte le app insieme — audio, immagini e video
+  — con l'anteprima, chi l'ha prodotto, quando e quanto pesa. Si filtra per app
+  e per tipo, e da lì si apre la cartella o si elimina.
+- **Modelli** dice cosa c'è sul disco, quanto pesa e a quali schede serve.
+  Quello che manca ha il suo tasto per scaricarlo, con l'avanzamento lì dentro.
+- **Log** mostra le ultime trecento righe di ogni motore e si rilegge da solo
+  ogni due secondi: un motore che parte lo si guarda partire, senza uscire
+  dalla suite e senza aprire un file.
+
+### Le copertine di DaPMusica non falliscono più in silenzio
+
+- DaPMusica fa le copertine e la scheda Immagini con **Anima**, ma nel catalogo
+  Anima risultava roba di DaPFoto e basta: chi installava solo la musica si
+  trovava una copertina che moriva con un errore del motore in inglese.
+- Adesso, se Anima non c'è, **"Genera" resta spento e ti dice come prenderla** —
+  come già faceva la scelta della qualità del suono. Chi ha DaPFoto o DaPDream
+  installate non deve scaricare niente: sono gli stessi file.
+
+
 ### Anima anche in DaPDream: si scrive e il sogno si rifà
 
 - Nella scheda **Sogno libero** adesso si sceglie **con che cosa sognare**:
