@@ -494,6 +494,32 @@ roba della suite e non del motore, e chi apre DaProdDream da solo non ha
 esce dalla memoria; tornando indietro si dice a ComfyUI di liberare la scheda
 (`POST /free`) e SD-Turbo si ricarica. Provato: `backend.ready` torna `true`.
 
+## Il difetto aperto: le domande a LM Studio dalla suite
+
+**Misurato il 17 agosto 2026, ed è il posto da cui ripartire.**
+
+La stessa identica domanda — stesso indirizzo (`127.0.0.1:1234`), stesso
+modello, stesso JSON, stesso schema:
+
+| Da dove | Quanto |
+|---|---|
+| `node apps/shell/scripts/prova-llm.mjs` | **9 secondi**, risposta buona |
+| `chiediAllLlm`, cioè dal processo principale di Electron | **5 minuti**, poi «The operation was aborted due to timeout» |
+
+Quindi **non è LM Studio e non è il prompt**: è come la chiediamo noi da dentro
+Electron. Escluso per misura: LM Studio libero (`curl` risponde in 0,7 s mentre
+la suite aspetta), `statoLlm()` che ci sta 0,6 s, e la coda di richieste.
+
+Da provare, nell'ordine: se il `fetch` globale del main sia quello di Node o
+quello di Chromium in questa versione di Electron, e nel dubbio passare a
+`net.fetch` o a `node:http`; poi guardare se qualcosa tiene occupato il ciclo di
+eventi del main mentre la richiesta è in volo.
+
+Lo script di riproduzione resta nel repo apposta. **Non è una regressione di
+oggi**: DaPMusica ha sempre chiesto così, e il minuto d'attesa di Bonsai era
+stato letto come "il 27B è lento". Una parte di quel minuto probabilmente non
+era il modello.
+
 ## Il prossimo passo: DaProd IoDigitale
 
 **Viene da `Desktop\AvatarParlante\LeapTalk`.** Letto e inventariato il 16

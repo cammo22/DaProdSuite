@@ -69,7 +69,11 @@ la cosa che sa chiedere.
       scaricarli al volo, e il contesto con tre pulsanti — 64K, 128K, 256K.
       *Fatto: sta nell'hub e, in una riga, dentro le app. L'obiettivo resta far
       stare domanda e risposta dentro i 64K, che è dove va veloce.*
-- [ ] **DaProdFoto**: da due parole a una descrizione che il modello capisce
+- [x] **DaProdFoto**: da due parole a una descrizione che il modello capisce.
+      *Fatto il 17 agosto 2026: due tasti sotto la casella, sempre in inglese.
+      Resta da capire perché una domanda a LM Studio dalla suite ci mette
+      minuti mentre da Node ne prende nove — vedi
+      [RIPRENDERE-DA-QUI.md](RIPRENDERE-DA-QUI.md).*
 - [ ] **DaProdCinema**: una chat dove butti l'idea e le foto, e ne esce un
       piccolo video da montare
 

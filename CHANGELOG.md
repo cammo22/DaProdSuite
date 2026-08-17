@@ -12,6 +12,18 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ## Non ancora pubblicato
 
+### DaPFoto: due parole diventano una descrizione
+
+- Sotto la casella di **Cosa vuoi vedere** ci sono due tasti: **allarga quello
+  che ho scritto** — resta dentro la tua idea e ci aggiunge luce, inquadratura e
+  materiali — e **proponi tu una scena**, che tiene conto dell'estetica scelta.
+- Scrive sempre in inglese, che è quello che Anima capisce: così la traduzione
+  non ha più niente da fare.
+- **Il menu del modello adesso conta**: prima la suite usava sempre il
+  consigliato anche se ne avevi scelto un altro. Se metti un modello piccolo per
+  avere una risposta subito, adesso risponde quello.
+
+
 ### Le schede dell'hub hanno una copertina, fatta dalla suite stessa
 
 - Sette illustrazioni, una per scheda, **generate con Anima** dal motore che la
