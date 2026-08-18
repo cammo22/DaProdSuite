@@ -1,35 +1,69 @@
-# Le librerie che il motore di DaProd IoDigitale vuole in piu' rispetto
-# all'ambiente condiviso della suite. Le installa `installaApp` quando premi
-# Installa sulla scheda (vedi services/dream/requisiti.txt, stessa strada).
+# Le librerie che servono a DaProd IoDigitale e che l'ambiente condiviso non ha.
 #
-# Viene da `requirements-windows.txt` di LeapTalk, che gia' escludeva i
-# pacchetti solo-Linux o multi-GPU (nvidia-*-cu12, triton, xformers, flash-attn,
-# xfuser, yunchang, megatron-core, DistVAE, decord) e quelli del training.
-# torch non si tocca: nell'ambiente c'e' gia', con la build CUDA giusta.
-diffusers==0.38.0
-transformers==4.57.3
-peft==0.19.1
-accelerate
-safetensors
-huggingface_hub
-einops
-loguru
-opencv-python
-mediapipe
-imageio
-imageio-ffmpeg
-librosa
-soundfile
-pyloudnorm
-tqdm
-pyyaml
-fastapi
-uvicorn
-websockets
-python-multipart
-aiofiles
-httpx
+# **Niente versioni fissate con `==` su quello che usano anche gli altri.**
+# Viene da `requirements-windows.txt` di LeapTalk, dove aveva senso: quel
+# progetto aveva un ambiente Python tutto suo. Qui l'ambiente e' uno solo per
+# tutti i motori, e un `transformers==4.57.3` scritto qui dentro non chiede una
+# versione: **la impone a ComfyUI e a DaProdDream**, che stanno usando la stessa
+# cartella. La prima volta e' costato caro — vedi il commento in fondo.
+#
+# Torch non si tocca: c'e' gia' con la build CUDA giusta, e chi lo rimette puo'
+# solo sostituirlo con una wheel peggiore. Vale per tutti i motori della suite
+# (packages/runtime/src/requisiti.ts).
+#
+# Rispetto a `requirements.txt` di LeapTalk restano fuori i pacchetti solo-Linux
+# o multi-GPU (nvidia-*-cu12, triton, xformers, flash-attn, xfuser, yunchang,
+# megatron-core, DistVAE, decord) e quelli che servono solo al training.
 
-faster-whisper
-piper-tts
-soxr
+# Il modello che muove la faccia. Le stesse che vuole Dream, con lo stesso
+# minimo: chi ha gia' installato una delle due non scarica niente.
+diffusers>=0.36.0
+transformers>=4.50.0
+peft>=0.17.0
+accelerate>=1.10.0
+
+# La faccia: riconoscimento dei punti del volto e lettura/scrittura del video.
+mediapipe>=0.10.0
+opencv-python>=4.11.0
+imageio>=2.35.0
+imageio-ffmpeg>=0.6.0
+
+# L'audio: capire quello che dici, dirlo, e tenere il volume costante.
+faster-whisper>=1.1.0
+piper-tts>=1.3.0
+soxr>=0.5.0
+librosa>=0.10.0
+soundfile>=0.12.0
+pyloudnorm>=0.1.1
+
+# Il server della pagina.
+fastapi>=0.121.0
+uvicorn>=0.38.0
+websockets>=15.0
+python-multipart>=0.0.20
+aiofiles>=24.0
+httpx>=0.27
+
+einops>=0.8.0
+loguru>=0.7.0
+
+# ---------------------------------------------------------------------------
+# Perche' i `==` sono spariti, scritto il 18 agosto 2026.
+#
+# Installando questa scheda, con ComfyUI e DaProdDream **aperti**, i loro motori
+# sono morti tutti e due con lo stesso errore:
+#
+#     ImportError: cannot import name 'CLIPTokenizer' from 'transformers'
+#         (unknown location)
+#     ImportError: cannot import name 'AutoPipelineForImage2Image' from
+#         'diffusers' (unknown location)
+#
+# Non erano rotti: erano **a meta'**. I `==` obbligavano uv a disinstallare e
+# rimettere due pacchetti che in quel momento altri due motori stavano usando, e
+# chi importava durante la sostituzione trovava una cartella senza il suo
+# `__init__.py`. Un minuto dopo, a installazione finita, gli stessi import
+# funzionavano.
+#
+# Con i minimi al posto dei pin, uv trova gia' soddisfatto quello che c'e' e non
+# tocca niente: l'installazione di una scheda non puo' piu' rompere le altre
+# mentre lavorano.
