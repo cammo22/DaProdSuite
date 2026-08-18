@@ -53,6 +53,17 @@ delle quattro: era l'ambiente Python condiviso.
 **L'ambiente su questo PC è stato riparato**: Musica, Foto, Dream e IoDigitale
 ripartono. Chi installa da zero non incontra più il problema.
 
+### «Ripara l'ambiente», nel pannello Spazio
+
+- Quando un'app non si apre e parla di librerie, l'ambiente Python è rimasto a
+  metà fra due versioni. Finora le strade erano due: chiedere aiuto a qualcuno
+  che sapesse usare i comandi, o **Reset · Tutto**, che porta via anche i 35 GB
+  di modelli e mezza giornata di scaricamenti.
+- Adesso c'è un pulsante che **reinstalla solo i pacchetti**. Modelli, motori,
+  risultati e impostazioni restano dove sono. Ci vogliono minuti, non ore.
+- Reinstalla solo quello che serve a questa macchina: la base, il motore se ce
+  l'hai, e le app che hai davvero installato.
+
 ### Quando un motore non parte, adesso dice perché
 
 - Sulla scheda si leggeva **«Controlla il log»**, e basta. Il motivo vero c'era

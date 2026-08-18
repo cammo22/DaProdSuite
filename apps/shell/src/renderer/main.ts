@@ -786,6 +786,39 @@ const AVVISI_RESET: Record<string, string> = {
   tutto: 'Ambiente Python, motori, modelli e impostazioni: tutto cancellato.\n\nI tuoi risultati NON si toccano.',
 }
 
+/**
+ * Ripara l'ambiente: reinstalla i pacchetti senza cancellare niente.
+ *
+ * Sta accanto ai Reset perche' e' li' che uno va a cercare quando qualcosa non
+ * funziona, ma non e' un reset: e' la via di mezzo che mancava fra "non si puo'
+ * fare niente" e "Tutto", che porta via anche i 35 GB di modelli.
+ */
+const btnRipara = document.getElementById('btn-ripara') as HTMLButtonElement
+btnRipara.addEventListener('click', async () => {
+  if (
+    !confirm(
+      'Reinstallo i pacchetti Python della suite.\n\nModelli, motori, risultati e ' +
+        'impostazioni non si toccano. Ci vogliono alcuni minuti.\n\nProcedo?',
+    )
+  )
+    return
+
+  const prima = btnRipara.textContent
+  btnRipara.disabled = true
+  btnRipara.textContent = 'Riparo…'
+  try {
+    await api.runtime.ripara()
+    aggiornaSchede(await api.apps.list())
+    aggiornaSpiaRuntime(await api.runtime.state())
+    alert("Ambiente riparato. Riprova ad aprire l'app.")
+  } catch (errore) {
+    alert('Non ci sono riuscito: ' + String(errore))
+  } finally {
+    btnRipara.disabled = false
+    btnRipara.textContent = prima
+  }
+})
+
 for (const bottone of document.querySelectorAll<HTMLButtonElement>('[data-reset]')) {
   bottone.addEventListener('click', async () => {
     const cosa = bottone.dataset.reset as 'impostazioni' | 'modelli' | 'tutto'

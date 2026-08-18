@@ -348,6 +348,16 @@ export interface SuiteApi {
     state(): Promise<RuntimeState>;
     /** Crea l'ambiente Python condiviso. Lungo: emette avanzamento. */
     install(): Promise<void>;
+    /**
+     * Reinstalla i pacchetti dell'ambiente senza cancellarlo.
+     *
+     * Serve quando un motore muore con un `ImportError`: vuol dire che
+     * l'ambiente è rimasto a metà fra due versioni, di solito dopo
+     * un'installazione interrotta. Modelli, motori e risultati non si toccano —
+     * è la via di mezzo che mancava fra "non si può fare niente" e "Reset ·
+     * Tutto", che porta via anche i 35 GB di pesi.
+     */
+    ripara(): Promise<void>;
     onChanged(listener: (state: RuntimeState) => void): Unsubscribe;
   };
 
@@ -589,6 +599,7 @@ export const CHANNELS = {
 
   runtimeState: "runtime:state",
   runtimeInstall: "runtime:install",
+  runtimeRipara: "runtime:ripara",
   runtimeChanged: "runtime:changed",
 
   gpuState: "gpu:state",

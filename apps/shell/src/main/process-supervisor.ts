@@ -136,8 +136,8 @@ export class ProcessSupervisor {
     if (/ImportError|ModuleNotFoundError|cannot import name/.test(errore)) {
       return (
         `${errore} — l'ambiente Python della suite è incoerente, di solito dopo ` +
-        "un'installazione interrotta. Si rimette a posto dal pannello Spazio, con Reset " +
-        "dell'ambiente."
+        "un'installazione interrotta. Si rimette a posto dal pannello **Spazio** " +
+        "dell'hub, con **Ripara l'ambiente**: i modelli non si toccano."
       );
     }
     return errore;

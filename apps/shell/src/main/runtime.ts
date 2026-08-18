@@ -14,7 +14,7 @@ import { EventEmitter } from "node:events";
 import { execFile } from "node:child_process";
 import { existsSync } from "node:fs";
 import { promisify } from "node:util";
-import { installRuntime } from "@daprod/runtime";
+import { ensureUv, installRuntime, riparaAmbiente } from "@daprod/runtime";
 import type { RuntimeState } from "@daprod/ipc";
 import { createLogger } from "./logging";
 import { BASE_REQUIREMENTS, PYTHON_EXE, RUNTIME_DIR, TOOLS_DIR } from "./paths";
@@ -84,6 +84,58 @@ class Runtime extends EventEmitter {
         const messaggio = err instanceof Error ? err.message : String(err);
         aggiungiRiga(`ERRORE: ${messaggio}`);
         this.patch({ installing: undefined, ready: false, error: messaggio });
+      } finally {
+        logger.close();
+        this.installazione = null;
+      }
+    })();
+
+    return this.installazione;
+  }
+
+  /**
+   * Reinstalla i pacchetti dell'ambiente, senza cancellare niente.
+   *
+   * **Nata il 19 agosto 2026**, dopo una notte in cui installare DaProd
+   * IoDigitale ha lasciato l'ambiente a metà fra due versioni di
+   * `huggingface_hub` e quattro app hanno smesso di aprirsi insieme. Rimetterlo
+   * a posto ha richiesto tre comandi `uv` scritti a mano: una cosa che nessuno
+   * che usa la suite può o deve fare.
+   *
+   * Riusa la stessa macchina di `install()` — stessa promessa condivisa, stesso
+   * log a dodici righe verso l'interfaccia — perché per chi guarda è la stessa
+   * cosa che succede, solo per un motivo diverso.
+   */
+  async ripara(requisiti: string[]): Promise<void> {
+    if (this.installazione) return this.installazione;
+
+    const logger = createLogger("runtime");
+    const righe: string[] = [];
+
+    const aggiungiRiga = (line: string) => {
+      logger.write(line + "\n", false);
+      righe.push(line);
+      if (righe.length > 12) righe.shift();
+      this.patch({ log: [...righe] });
+    };
+
+    this.installazione = (async () => {
+      try {
+        this.patch({
+          error: undefined,
+          installing: { step: 1, total: 2, label: "Riparo l'ambiente…" },
+        });
+
+        const uv = await ensureUv({ toolsDir: TOOLS_DIR, onLine: aggiungiRiga });
+        this.patch({ installing: { step: 2, total: 2, label: "Reinstallo i pacchetti…" } });
+        await riparaAmbiente({ uv, runtimeDir: RUNTIME_DIR, requisiti, onLine: aggiungiRiga });
+
+        this.patch({ installing: undefined });
+        await this.refresh();
+      } catch (err) {
+        const messaggio = err instanceof Error ? err.message : String(err);
+        aggiungiRiga(`ERRORE: ${messaggio}`);
+        this.patch({ installing: undefined, error: messaggio });
       } finally {
         logger.close();
         this.installazione = null;
