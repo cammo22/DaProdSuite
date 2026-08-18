@@ -10,9 +10,15 @@ Musica, immagini, video, un avatar parlante e un companion che si ricorda di te.
 Ogni scheda è un'esperienza completa che installi, usi e disinstalli quando vuoi.
 Tutto sul tuo computer.
 
-[![versione](https://img.shields.io/badge/versione-0.0.1-7c5cff)](https://github.com/cammo22/DaProdSuite/releases)
+[![versione](https://img.shields.io/badge/versione-0.1.0-7c5cff)](https://github.com/cammo22/DaProdSuite/releases)
 [![licenza](https://img.shields.io/badge/licenza-MIT-5cff9d)](LICENSE)
 [![piattaforma](https://img.shields.io/badge/Windows-x64-3ddbff)](#requisiti)
+[![sito](https://img.shields.io/badge/sito-cammo22.github.io-ffa63d)](https://cammo22.github.io/DaProdSuite/)
+[![wiki](https://img.shields.io/badge/wiki-guide%20e%20domande-ff5c8a)](https://github.com/cammo22/DaProdSuite/wiki)
+
+**[⬇ Scarica l'ultima versione](https://github.com/cammo22/DaProdSuite/releases/latest)** ·
+**[🌐 Sito](https://cammo22.github.io/DaProdSuite/)** ·
+**[📖 Wiki](https://github.com/cammo22/DaProdSuite/wiki)**
 
 </div>
 
@@ -60,29 +66,39 @@ Tutto in locale: nessun account, nessuna API, nessun dato che esce dal computer.
 
 ## Le sette app
 
-| | App | Cosa fa | Modello |
-|---|---|---|---|
-| 🟣 | **DaProdVisualizer** | La tua musica diventa visualizzazioni reattive | — |
-| 🩷 | **DaProdMusica** | Canzoni complete e cantate da una descrizione e un testo | MiniMax Music 3 (4 bit) |
-| 🟠 | **DaProdFoto** | Immagini da prompt e ritocco con maschera | Anima Turbo · FLUX.2 Klein |
-| 🟪 | **DaProdCinema** | Da una canzone al suo video musicale, scena per scena | MiniMax H3 |
-| 🩵 | **DaProdDream** | Webcam, video o schermo trasformati in tempo reale | SD-Turbo |
-| 🟢 | **DaProdCompanion** | Un compagno sul desktop che ti ascolta e si ricorda di te | un modello a scelta via LM Studio |
-| 🟥 | **DaProd IoDigitale** | Il tuo avatar parlante: gli scrivi, ti risponde in video | SoulX-FlashHead |
+| | App | Cosa fa | Modello | |
+|---|---|---|---|---|
+| 🟣 | **DaProdVisualizer** | La tua musica diventa visualizzazioni reattive | — | ✅ dentro |
+| 🩷 | **DaProdMusica** | Canzoni complete e cantate, da una riga d'idea | MiniMax Music 3 | ✅ dentro |
+| 🟠 | **DaProdFoto** | Immagini da prompt e ritocco con maschera | Anima Turbo · FLUX.2 Klein | ✅ dentro |
+| 🩵 | **DaProdDream** | Webcam, video, schermo — o solo un prompt — trasformati in tempo reale | SD-Turbo · Anima | ✅ dentro |
+| 🟥 | **DaProd IoDigitale** | Il tuo avatar parlante: gli scrivi, ti risponde in video | SoulX-FlashHead | ✅ dentro |
+| 🟪 | **DaProdCinema** | Da una canzone al suo video musicale, scena per scena | MiniMax H3 · LTX 2.5 | ⏳ in arrivo |
+| 🟢 | **DaProdCompanion** | Un compagno sul desktop che ti ascolta e si ricorda di te | un modello a scelta via LM Studio | ⏳ in arrivo |
+
+Musica, Foto e le altre parlano tutte con lo stesso **modello che scrive** —
+qualunque cosa tu tenga aperta in [LM Studio](https://lmstudio.ai), noi
+consigliamo [Bonsai 27B](https://lmstudio.ai/models/prism-ml/bonsai-27b) — per
+abbozzare titoli, testi e descrizioni quando non sai da dove cominciare.
 
 ## A che punto siamo
 
-> **0.0.1 — le fondamenta ci sono, tre app sono dentro, e adesso si installa da sola.**
+> **0.1.0 — cinque app su sette sono dentro e si usano davvero, ogni giorno.**
 >
-> Guscio, hub, installer, aggiornamenti automatici, arbitro della GPU e ambiente
-> Python condiviso: **fatti e provati**. **Visualizer, Musica e Foto** sono dentro
-> la suite e funzionano. Premere "Installa" su una scheda adesso scarica davvero
-> tutto quello che le serve — motore compreso — riprendendo da dove si era
-> fermato se la rete cade. In DaProdFoto si sceglie **con quale modello**
-> generare, e quello che non hai te lo scarichi da lì.
-> Le altre quattro app esistono come progetti funzionanti e vengono migrate una
-> alla volta, ognuna provata prima di passare alla successiva: nell'hub le schede
-> non ancora migrate dicono «In arrivo», e lo dicono sul serio.
+> **DaProdVisualizer, DaProdMusica, DaProdFoto, DaProdDream** e **DaProd
+> IoDigitale** girano nella suite: si installano da sole (motore e modelli
+> compresi, con ripresa se la rete cade), scrivono nella stessa libreria e si
+> scambiano i risultati. In DaProdFoto e DaProdDream si sceglie **con quale
+> modello** generare; in DaProdMusica e DaProdFoto un modello locale (**Bonsai**,
+> o qualunque cosa tu tenga in LM Studio) scrive la canzone o la descrizione al
+> posto tuo, se glielo chiedi. Ogni app ha un terminale con le ultime righe del
+> motore, e l'hub ha i pannelli per vedere tutti i risultati, tutti i modelli e
+> tutti i log in un posto solo.
+>
+> Restano **DaProdCinema** e **DaProdCompanion**: esistono come progetti
+> funzionanti fuori dalla suite e vengono migrati uno alla volta, ognuno provato
+> prima di passare al successivo. Nell'hub dicono «In arrivo», e lo dicono sul
+> serio — non aprono niente finché non è vero.
 
 Quello che cambia a ogni giro sta in [CHANGELOG.md](CHANGELOG.md), il percorso
 completo in [docs/ROADMAP.md](docs/ROADMAP.md).
@@ -175,7 +191,7 @@ C:\Program Files\DaProd Suite\        il programma, sostituito a ogni aggiorname
 %LOCALAPPDATA%\DaProdSuite\
   ├─ runtime\      Python 3.12 + PyTorch          ~4 GB
   ├─ engines\      ComfyUI e altri motori
-  ├─ models\       i pesi, condivisi fra le app   fino a ~28 GB
+  ├─ models\       i pesi, condivisi fra le app   fino a ~27 GB
   ├─ output\       brani, immagini, video
   └─ logs\         un file per componente
 ```
@@ -187,15 +203,18 @@ non vengono mai riscaricati né cancellati**, nemmeno disinstallando.
 
 | App | Primo avvio | Extra a richiesta |
 |---|---|---|
-| DaProdVisualizer | — | — |
-| DaProdDream | 2,4 GB | |
-| DaProdCompanion | 4,4 GB | |
-| DaProdFoto | 5,2 GB | +12,4 GB FLUX.2 Klein |
-| DaProdMusica | 7,4 GB | |
-| DaProd IoDigitale | 9,5 GB | +5,6 GB modello Pro |
+| DaProdVisualizer | — | |
+| DaProdDream | 2,6 GB | +5,6 GB per sognare con Anima |
+| DaProdFoto | 5,6 GB | +6,3 GB FLUX.2 Klein 4B · +12,0 GB il 9B |
+| DaProdMusica | 8,0 GB | +5,6 GB per le copertine con Anima* |
+| DaProd IoDigitale | 10,4 GB | +6,0 GB modello Pro |
+
+<sub>* zero se hai già DaProdFoto o DaProdDream: i pesi di Anima sono gli stessi,
+condivisi.</sub>
 
 Più ~4 GB di ambiente Python, una volta sola. Gli extra sono qualità migliore in
-cambio di spazio: la suite non li scarica se non glielo chiedi.
+cambio di spazio: la suite non li scarica se non glielo chiedi, e i byte sono
+quelli veri — misurati sul file, non stimati.
 
 ---
 
@@ -296,10 +315,11 @@ La suite non addestra nulla: mette insieme il lavoro di altri e lo rende usabile
 |---|---|
 | [ComfyUI](https://github.com/comfyanonymous/ComfyUI) | il motore di inferenza di Musica, Foto e Cinema — GPL-3.0, scaricato a parte |
 | [MiniMax](https://github.com/MiniMax-AI) | Music 3 per la musica, H3 per il video |
-| [Anima](https://huggingface.co/circlestone-labs/Anima) · [FLUX.2 Klein](https://huggingface.co/unsloth/FLUX.2-klein-9B-GGUF) | le immagini |
-| [SoulX-FlashHead](https://huggingface.co/Soul-AILab/SoulX-FlashHead-1_3B) | l'avatar parlante |
+| [Anima](https://huggingface.co/circlestone-labs/Anima) · [FLUX.2 Klein](https://huggingface.co/unsloth/FLUX.2-klein-9B-GGUF) · [LTX 2.5](https://github.com/Lightricks/LTX-Video) | le immagini e il video |
+| [SoulX-FlashHead](https://huggingface.co/Soul-AILab/SoulX-FlashHead-1_3B) · [LeapTalk](https://huggingface.co/z-rx/leaptalk) | l'avatar parlante |
 | [SD-Turbo](https://huggingface.co/stabilityai/sd-turbo) | la trasformazione in tempo reale |
-|  il cervello del Companion | il cervello del Companion |
+| [Whisper](https://github.com/SYSTRAN/faster-whisper) · [Piper](https://github.com/rhasspy/piper) | ascoltano e parlano, in locale |
+| [LM Studio](https://lmstudio.ai) | il modello che scrive, in ogni app che lo usa |
 | [WanGP](https://github.com/deepbeepmeep/Wan2GP) | non è usato dalla suite, ma le sue tecniche di memoria sono state la scuola |
 
 I modelli mantengono ognuno la propria licenza: si scaricano dalle loro fonti, non

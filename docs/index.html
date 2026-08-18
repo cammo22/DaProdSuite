@@ -1,0 +1,444 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>DaProd Suite — musica, immagini, video e un avatar parlante, sul tuo computer</title>
+<meta name="description" content="Sette strumenti di intelligenza artificiale in un solo programma, in locale, su una GPU da 8 GB. Niente riga di comando, niente CUDA da configurare a mano." />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2224%22 fill=%22%230d0f14%22/><text x=%2250%22 y=%2266%22 font-size=%2258%22 text-anchor=%22middle%22>🟣</text></svg>">
+<style>
+  :root{
+    --fondo:#0a0b0f; --fondo-alto:#12141b; --fondo-pannello:#151822;
+    --bordo:#232a37; --bordo-vivo:#333d52;
+    --testo:#eef1f7; --testo-tenue:#9aa3b6; --testo-fioco:#5c6478;
+    --viola:#7c5cff; --rosa:#ff5c8a; --ambra:#ffa63d; --ciano:#3ddbff;
+    --menta:#5cff9d; --corallo:#ff7c5c; --magenta:#c05cff;
+    --raggio:16px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; background:var(--fondo); color:var(--testo);
+    font:16px/1.6 -apple-system,"Segoe UI",Roboto,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  img{max-width:100%; display:block}
+  a{color:inherit}
+  .contenitore{max-width:1080px; margin:0 auto; padding:0 24px}
+  .badge{
+    display:inline-flex; align-items:center; gap:6px;
+    padding:5px 12px; border-radius:99px; font-size:12.5px; font-weight:600;
+    border:1px solid var(--bordo-vivo); color:var(--testo-tenue);
+  }
+  .badge b{color:var(--testo); font-weight:700}
+
+  /* ------------------------------------------------------------ hero */
+  .hero{
+    position:relative; overflow:hidden;
+    padding:72px 0 90px;
+    background:
+      radial-gradient(900px 480px at 18% -10%, rgba(124,92,255,.20), transparent 60%),
+      radial-gradient(900px 480px at 85% 0%, rgba(255,92,138,.16), transparent 60%),
+      var(--fondo);
+    border-bottom:1px solid var(--bordo);
+  }
+  .hero::after{
+    content:""; position:absolute; inset:0; z-index:0;
+    background:url('media/app/splash.webp') center 30%/cover no-repeat;
+    opacity:.16; mask-image:linear-gradient(to bottom, black, transparent 85%);
+  }
+  .hero .contenitore{position:relative; z-index:1}
+  .marchio{display:flex; align-items:center; gap:14px; margin-bottom:44px}
+  .marchio img{width:44px; height:44px; border-radius:12px}
+  .marchio span{font-weight:800; font-size:17px; letter-spacing:-.01em}
+  .hero-corpo{max-width:680px}
+  .badge-riga{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:22px}
+  h1{
+    margin:0 0 18px; font-size:clamp(32px, 5vw, 48px); line-height:1.12;
+    font-weight:800; letter-spacing:-.02em;
+  }
+  h1 .sfumato{
+    background:linear-gradient(100deg, var(--viola), var(--rosa) 45%, var(--ambra));
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .hero p.intro{font-size:17.5px; color:var(--testo-tenue); max-width:560px; margin:0 0 32px}
+  .cta-riga{display:flex; flex-wrap:wrap; gap:12px; margin-bottom:14px}
+  .bottone{
+    display:inline-flex; align-items:center; gap:9px;
+    padding:13px 22px; border-radius:12px; font-weight:700; font-size:14.5px;
+    text-decoration:none; border:1px solid transparent; transition:.15s;
+  }
+  .bottone.primario{
+    background:linear-gradient(120deg, var(--viola), var(--rosa));
+    color:#fff; box-shadow:0 10px 30px rgba(124,92,255,.28);
+  }
+  .bottone.primario:hover{filter:brightness(1.1); transform:translateY(-1px)}
+  .bottone.secondario{
+    background:rgba(255,255,255,.03); border-color:var(--bordo-vivo); color:var(--testo);
+  }
+  .bottone.secondario:hover{border-color:var(--testo-tenue)}
+  .hero-nota{font-size:13px; color:var(--testo-fioco)}
+
+  /* ------------------------------------------------------------ nav */
+  nav.pagina{
+    position:sticky; top:0; z-index:20;
+    background:rgba(10,11,15,.85); backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--bordo);
+  }
+  nav.pagina .contenitore{
+    display:flex; align-items:center; gap:22px; height:56px; overflow-x:auto;
+  }
+  nav.pagina a{
+    font-size:13.5px; font-weight:600; color:var(--testo-tenue);
+    text-decoration:none; white-space:nowrap;
+  }
+  nav.pagina a:hover{color:var(--testo)}
+  nav.pagina .spinta{margin-left:auto}
+  nav.pagina .bottone{padding:8px 16px; font-size:13px}
+
+  /* ------------------------------------------------------------ sezioni */
+  section{padding:76px 0}
+  section.alterna{background:var(--fondo-alto); border-top:1px solid var(--bordo); border-bottom:1px solid var(--bordo)}
+  .titolo-sezione{max-width:620px; margin:0 0 44px}
+  .titolo-sezione .etichetta{
+    display:block; font-size:12.5px; font-weight:700; letter-spacing:.09em;
+    text-transform:uppercase; color:var(--viola); margin-bottom:10px;
+  }
+  .titolo-sezione h2{margin:0 0 10px; font-size:clamp(24px,3.4vw,32px); letter-spacing:-.01em}
+  .titolo-sezione p{margin:0; color:var(--testo-tenue); font-size:15.5px}
+
+  /* ---------------------------------------------------------- perché */
+  .griglia-perche{display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:20px}
+  .carta-perche{
+    background:var(--fondo-pannello); border:1px solid var(--bordo); border-radius:var(--raggio);
+    padding:22px;
+  }
+  .carta-perche .ico{font-size:22px; margin-bottom:12px}
+  .carta-perche h3{margin:0 0 8px; font-size:15.5px}
+  .carta-perche p{margin:0; font-size:13.8px; color:var(--testo-tenue); line-height:1.55}
+
+  /* -------------------------------------------------------------- app */
+  .griglia-app{display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:20px}
+  .carta-app{
+    background:var(--fondo-pannello); border:1px solid var(--bordo); border-radius:var(--raggio);
+    overflow:hidden; display:flex; flex-direction:column;
+  }
+  .carta-app .arte{position:relative; aspect-ratio:16/6; overflow:hidden; background:#000}
+  .carta-app .arte img{width:100%; height:100%; object-fit:cover}
+  .carta-app.in-arrivo .arte img{filter:grayscale(.65) brightness(.45)}
+  .carta-app .stato{
+    position:absolute; top:10px; right:10px; padding:4px 10px; border-radius:99px;
+    font-size:11px; font-weight:700; backdrop-filter:blur(6px);
+  }
+  .carta-app.dentro .stato{background:rgba(92,255,157,.16); color:var(--menta); border:1px solid rgba(92,255,157,.35)}
+  .carta-app.in-arrivo .stato{background:rgba(255,255,255,.08); color:var(--testo-tenue); border:1px solid var(--bordo-vivo)}
+  .carta-app .corpo{padding:18px 20px 20px; flex:1; display:flex; flex-direction:column; gap:8px}
+  .carta-app .pallino{width:9px; height:9px; border-radius:50%; display:inline-block; margin-right:8px}
+  .carta-app h3{margin:0; font-size:16px; display:flex; align-items:center}
+  .carta-app p{margin:0; font-size:13.8px; color:var(--testo-tenue); line-height:1.5}
+  .carta-app .modello{margin-top:auto; padding-top:10px; font-size:12px; color:var(--testo-fioco); border-top:1px solid var(--bordo)}
+
+  /* --------------------------------------------------------- schermata */
+  .cornice-schermata{
+    border-radius:18px; border:1px solid var(--bordo); overflow:hidden;
+    box-shadow:0 30px 80px rgba(0,0,0,.5);
+  }
+  .cornice-schermata .barra{
+    display:flex; gap:7px; padding:12px 14px; background:#0d0f14; border-bottom:1px solid var(--bordo);
+  }
+  .cornice-schermata .barra span{width:11px; height:11px; border-radius:50%; background:#2a3040}
+
+  /* ------------------------------------------------------------- come */
+  .passi{display:grid; gap:16px; max-width:640px}
+  .passo{display:flex; gap:16px; align-items:flex-start}
+  .passo .num{
+    flex:none; width:34px; height:34px; border-radius:10px; display:flex; align-items:center;
+    justify-content:center; font-weight:800; font-size:14px;
+    background:linear-gradient(120deg, var(--viola), var(--rosa)); color:#fff;
+  }
+  .passo h3{margin:0 0 4px; font-size:15px}
+  .passo p{margin:0; font-size:13.8px; color:var(--testo-tenue)}
+
+  /* --------------------------------------------------------- requisiti */
+  table.requisiti{width:100%; border-collapse:collapse; font-size:14px}
+  table.requisiti th, table.requisiti td{
+    text-align:left; padding:11px 14px; border-bottom:1px solid var(--bordo);
+  }
+  table.requisiti th{color:var(--testo-fioco); font-weight:600; font-size:12px; text-transform:uppercase; letter-spacing:.05em}
+  table.requisiti td:first-child{color:var(--testo-tenue)}
+
+  /* ------------------------------------------------------------ footer */
+  footer{padding:48px 0; border-top:1px solid var(--bordo)}
+  footer .contenitore{display:flex; flex-wrap:wrap; gap:14px 28px; align-items:center; justify-content:space-between}
+  footer .link-riga{display:flex; flex-wrap:wrap; gap:20px; font-size:13.5px}
+  footer .link-riga a{color:var(--testo-tenue); text-decoration:none}
+  footer .link-riga a:hover{color:var(--testo)}
+  footer .marchio-piede{display:flex; align-items:center; gap:10px; font-size:13px; color:var(--testo-fioco)}
+  footer .marchio-piede img{width:22px; height:22px; border-radius:6px}
+
+  @media(max-width:640px){
+    section{padding:52px 0}
+    .hero{padding:52px 0 64px}
+  }
+</style>
+</head>
+<body>
+
+<nav class="pagina">
+  <div class="contenitore">
+    <a href="#top" style="font-weight:800">DaProd Suite</a>
+    <a href="#app">Le app</a>
+    <a href="#come-funziona">Come funziona</a>
+    <a href="#requisiti">Requisiti</a>
+    <a href="https://github.com/cammo22/DaProdSuite/wiki">Wiki</a>
+    <span class="spinta">
+      <a class="bottone primario" href="https://github.com/cammo22/DaProdSuite/releases/latest">Scarica</a>
+    </span>
+  </div>
+</nav>
+
+<header class="hero" id="top">
+  <div class="contenitore">
+    <div class="marchio">
+      <img src="media/logo.png" alt="">
+      <span>DaProd<span style="color:var(--testo-tenue)">Suite</span></span>
+    </div>
+
+    <div class="hero-corpo">
+      <div class="badge-riga">
+        <span class="badge"><b>0.1.0</b>&nbsp;pubblicata</span>
+        <span class="badge">5 app dentro, 2 in arrivo</span>
+        <span class="badge">Windows · MIT</span>
+      </div>
+
+      <h1>I modelli AI che valgono la pena,<br class="a-capo-largo"> <span class="sfumato">montati per bene.</span></h1>
+
+      <p class="intro">
+        Musica, immagini, video, un avatar parlante e un compagno che si ricorda
+        di te. Sette schede, un programma solo, tutto sul tuo computer — su una
+        GPU da 8 GB, senza riga di comando.
+      </p>
+
+      <div class="cta-riga">
+        <a class="bottone primario" href="https://github.com/cammo22/DaProdSuite/releases/latest">
+          ⬇ Scarica per Windows
+        </a>
+        <a class="bottone secondario" href="#app">Guarda le app</a>
+      </div>
+      <p class="hero-nota">Installer da un clic. Nessun account, nessuna API, niente esce dal tuo computer.</p>
+    </div>
+  </div>
+</header>
+
+<section id="perche">
+  <div class="contenitore">
+    <div class="titolo-sezione">
+      <span class="etichetta">Perché esiste</span>
+      <h2>Provare un modello nuovo non dovrebbe essere un lavoro</h2>
+      <p>
+        Esce un modello nuovo ogni settimana. Leggi che fa cose incredibili, vai a
+        provarlo, e ti ritrovi a clonare una repo, litigare con le versioni di
+        CUDA, scaricare venti gigabyte e scoprire dopo un'ora che ti serviva
+        un'altra versione di PyTorch. DaProd Suite si prende in carico tutto
+        questo una volta sola, per ogni app che aggiunge.
+      </p>
+    </div>
+
+    <div class="griglia-perche">
+      <div class="carta-perche">
+        <div class="ico">🧩</div>
+        <h3>Un ambiente solo</h3>
+        <p>Python e PyTorch installati una volta, condivisi da tutte le schede: 4 GB invece di 14,7 sparsi in quattro copie.</p>
+      </div>
+      <div class="carta-perche">
+        <div class="ico">🎛️</div>
+        <h3>Una GPU sola</h3>
+        <p>Su 8 GB ci sta un modello per volta. La suite spegne il precedente da sola, invece di farti finire in out-of-memory.</p>
+      </div>
+      <div class="carta-perche">
+        <div class="ico">🔗</div>
+        <h3>Le app si parlano</h3>
+        <p>Stessa libreria dei risultati: il brano che generi in una lo apri nell'altra senza esportare niente.</p>
+      </div>
+      <div class="carta-perche">
+        <div class="ico">🔒</div>
+        <h3>Tutto in locale</h3>
+        <p>Nessun account, nessuna chiave API, nessun dato che esce dal tuo computer. I modelli girano sulla tua scheda.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="alterna" id="app">
+  <div class="contenitore">
+    <div class="titolo-sezione">
+      <span class="etichetta">Sette schede</span>
+      <h2>Un'esperienza completa per app</h2>
+      <p>
+        Il modello, l'interfaccia fatta apposta per lui, e i suoi trucchi già
+        configurati. La installi, la usi, e se non ti serve più la disinstalli e
+        ti riprendi lo spazio.
+      </p>
+    </div>
+
+    <div class="griglia-app">
+      <div class="carta-app dentro">
+        <div class="arte"><img src="media/app/visualizer.webp" alt=""><span class="stato">dentro</span></div>
+        <div class="corpo">
+          <h3><span class="pallino" style="background:var(--viola)"></span>DaProdVisualizer</h3>
+          <p>La tua musica diventa visualizzazioni reattive, in tempo reale.</p>
+          <div class="modello">Nessun modello: reagisce all'audio</div>
+        </div>
+      </div>
+
+      <div class="carta-app dentro">
+        <div class="arte"><img src="media/app/musica.webp" alt=""><span class="stato">dentro</span></div>
+        <div class="corpo">
+          <h3><span class="pallino" style="background:var(--rosa)"></span>DaProdMusica</h3>
+          <p>Canzoni complete e cantate, da una riga d'idea a un brano intero con copertina.</p>
+          <div class="modello">MiniMax Music 3</div>
+        </div>
+      </div>
+
+      <div class="carta-app dentro">
+        <div class="arte"><img src="media/app/foto.webp" alt=""><span class="stato">dentro</span></div>
+        <div class="corpo">
+          <h3><span class="pallino" style="background:var(--ambra)"></span>DaProdFoto</h3>
+          <p>Immagini da una descrizione, e ritocco con maschera sulla zona che vuoi cambiare.</p>
+          <div class="modello">Anima Turbo · FLUX.2 Klein</div>
+        </div>
+      </div>
+
+      <div class="carta-app dentro">
+        <div class="arte"><img src="media/app/dream.webp" alt=""><span class="stato">dentro</span></div>
+        <div class="corpo">
+          <h3><span class="pallino" style="background:var(--ciano)"></span>DaProdDream</h3>
+          <p>Webcam, video, schermo — o solo un prompt — trasformati mentre li guardi.</p>
+          <div class="modello">SD-Turbo · Anima</div>
+        </div>
+      </div>
+
+      <div class="carta-app dentro">
+        <div class="arte"><img src="media/app/iodigitale.webp" alt=""><span class="stato">dentro</span></div>
+        <div class="corpo">
+          <h3><span class="pallino" style="background:var(--corallo)"></span>DaProd IoDigitale</h3>
+          <p>Il tuo avatar parlante: gli scrivi o gli parli, ti risponde in video.</p>
+          <div class="modello">SoulX-FlashHead · LeapTalk</div>
+        </div>
+      </div>
+
+      <div class="carta-app in-arrivo">
+        <div class="arte"><img src="media/app/cinema.webp" alt=""><span class="stato">in arrivo</span></div>
+        <div class="corpo">
+          <h3><span class="pallino" style="background:var(--magenta)"></span>DaProdCinema</h3>
+          <p>Da una canzone al suo video musicale, scena per scena.</p>
+          <div class="modello">MiniMax H3 · LTX 2.5</div>
+        </div>
+      </div>
+
+      <div class="carta-app in-arrivo">
+        <div class="arte"><img src="media/app/companion.webp" alt=""><span class="stato">in arrivo</span></div>
+        <div class="corpo">
+          <h3><span class="pallino" style="background:var(--menta)"></span>DaProdCompanion</h3>
+          <p>Un compagno sul desktop che ti ascolta e si ricorda di te.</p>
+          <div class="modello">un modello a scelta via LM Studio</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="come-funziona">
+  <div class="contenitore">
+    <div class="titolo-sezione">
+      <span class="etichetta">Come funziona</span>
+      <h2>Guarda com'è dentro</h2>
+      <p>L'hub: una scheda per app, con lo stato di ognuna. Apri quella che ti serve.</p>
+    </div>
+
+    <div class="cornice-schermata">
+      <div class="barra"><span></span><span></span><span></span></div>
+      <img src="media/hub.png" alt="L'hub della DaProd Suite, con le schede delle app">
+    </div>
+  </div>
+</section>
+
+<section class="alterna">
+  <div class="contenitore">
+    <div class="titolo-sezione">
+      <span class="etichetta">In tre passi</span>
+      <h2>Da zero a un risultato vero</h2>
+    </div>
+
+    <div class="passi">
+      <div class="passo">
+        <div class="num">1</div>
+        <div>
+          <h3>Scarichi e apri l'installer</h3>
+          <p>Un clic, nessuna domanda, nessun permesso di amministratore. Circa un minuto.</p>
+        </div>
+      </div>
+      <div class="passo">
+        <div class="num">2</div>
+        <div>
+          <h3>Scegli quali app ti servono</h3>
+          <p>La suite ti dice quanti GB servono prima di scaricarli. Prendi solo quello che usi.</p>
+        </div>
+      </div>
+      <div class="passo">
+        <div class="num">3</div>
+        <div>
+          <h3>Apri una scheda e crea</h3>
+          <p>Il motore si accende da solo. Quando hai finito, si spegne da solo. Non tocchi niente in mezzo.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="requisiti">
+  <div class="contenitore">
+    <div class="titolo-sezione">
+      <span class="etichetta">Prima di scaricare</span>
+      <h2>Requisiti</h2>
+      <p>La macchina di riferimento su cui tutto viene misurato è una RTX 4060 da 8 GB: non è un caso, è il vincolo che decide quasi ogni scelta tecnica del progetto.</p>
+    </div>
+
+    <table class="requisiti">
+      <tr><th></th><th>Minimo</th><th>Consigliato</th></tr>
+      <tr><td>Sistema</td><td>Windows 10 64&nbsp;bit</td><td>Windows 11</td></tr>
+      <tr><td>GPU</td><td>NVIDIA con 8&nbsp;GB di VRAM</td><td>8&nbsp;GB o più</td></tr>
+      <tr><td>RAM</td><td>16&nbsp;GB</td><td>32&nbsp;GB</td></tr>
+      <tr><td>Disco</td><td>15&nbsp;GB (una o due app)</td><td>40&nbsp;GB (tutte)</td></tr>
+    </table>
+
+    <p style="margin-top:22px; font-size:13.8px; color:var(--testo-tenue)">
+      Non serve avere Python installato: la suite si scarica da sola Python 3.12
+      e PyTorch, in una cartella sua, senza toccare quello che hai già.
+    </p>
+
+    <div class="cta-riga" style="margin-top:28px">
+      <a class="bottone primario" href="https://github.com/cammo22/DaProdSuite/releases/latest">⬇ Scarica per Windows</a>
+      <a class="bottone secondario" href="https://github.com/cammo22/DaProdSuite">Guarda il codice</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="contenitore">
+    <div class="marchio-piede">
+      <img src="media/logo.png" alt="">
+      DaProdProduzioni — codice sotto licenza MIT
+    </div>
+    <div class="link-riga">
+      <a href="https://github.com/cammo22/DaProdSuite">Codice</a>
+      <a href="https://github.com/cammo22/DaProdSuite/wiki">Wiki</a>
+      <a href="https://github.com/cammo22/DaProdSuite/releases">Release</a>
+      <a href="https://github.com/cammo22/DaProdSuite/blob/main/CHANGELOG.md">Changelog</a>
+      <a href="https://github.com/cammo22/DaProdSuite/issues">Segnala un problema</a>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
