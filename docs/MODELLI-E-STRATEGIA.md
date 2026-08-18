@@ -130,9 +130,14 @@ Per Musica e Foto il codice ha superato la wiki e la suite segue il codice.
 Per il **video** invece esiste solo il metodo manuale in WanGP: è l'unico pezzo
 del tuo flusso che la suite non copre ancora.
 
-**Deciso:** ACE-Step è superato, per la musica vale MiniMax Music 3. La wiki
-`dapwikiGPT` resta **in sola lettura**: serve a prendere spunto e a sapere se sono
-usciti aggiornamenti dei modelli. La suite non la modifica.
+**Deciso:** ACE-Step è superato, per la musica vale MiniMax Music 3.
+
+**E dal 18 agosto 2026 la wiki si aggiorna anche.** Non era così — era in sola
+lettura — poi Cammo ha chiesto di curarla. La divergenza qui sopra è stata
+chiusa nella wiki stessa: i tre hub di divisione (Musica, Foto, Cinema) dicono
+adesso quali modelli usa la suite, e le vecchie guide restano segnate come
+storico invece che come istruzioni. La regola per quando torneranno a divergere
+è semplice: **vale il codice**, e si corregge la wiki.
 
 ---
 

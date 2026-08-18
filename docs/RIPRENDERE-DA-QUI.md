@@ -733,7 +733,13 @@ che passava da solo al brano dopo.
   successiva.
 - **L'interfaccia è in italiano**, senza termini inglesi dove esiste la parola
   italiana.
-- La wiki `HermesGPT\dapwikiGPT` è **in sola lettura**: si consulta, non si tocca.
+- **La wiki `HermesGPT\dapwikiGPT` si aggiorna** (regola cambiata il 18 agosto
+  2026: prima era in sola lettura). È un vault Obsidian con le sue convenzioni —
+  frontmatter col campo `aggiornato:`, wikilink, e chi ci scrive firma come
+  *Babbasone*: leggere il suo `CLAUDE.md` prima di toccarla. La scheda della
+  suite è `DaProd-Software/Progetti/DaProd-Suite.md`.
+  **Il codice resta la verità sui modelli**: quando una guida di divisione dice
+  un modello diverso da quello che la suite usa davvero, si corregge la guida.
 
 ## Decisioni già prese, da non riaprire
 
