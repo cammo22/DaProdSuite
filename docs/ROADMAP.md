@@ -83,7 +83,11 @@ la cosa che sa chiedere.
       dal supervisore, SD-Turbo e TAESD dalla cartella condivisa, finestra della
       suite. Provato fino al modello caricato — la webcam la giudichi tu)*
 - [ ] **DaProdCompanion** — memoria e sogni; va aggiunto `sqlite_vec` al suo pyproject
-- [ ] **DaProd IoDigitale** — l'avatar parlante, ex LeapTalk
+- [x] **DaProd IoDigitale** — l'avatar parlante, ex LeapTalk *(dentro il 17
+      agosto 2026: motore avviato dal supervisore, modelli dalla cartella
+      condivisa, finestra della suite. Provato fino al motore pronto — la
+      conversazione la giudichi tu. **Resta l'interfaccia da tradurre in
+      italiano**.)*
 
 ## 0.3.0 — Le schede diventano vetrina
 

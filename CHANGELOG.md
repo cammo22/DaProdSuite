@@ -12,6 +12,29 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ## Non ancora pubblicato
 
+### DaProd IoDigitale è entrato: la quinta scheda
+
+- **L'avatar parlante è dentro la suite.** Premi Installa, si scarica quello che
+  manca, e la scheda si apre come tutte le altre: niente più `.bat` con il menu,
+  niente file da modificare a mano per cambiare voce o modello.
+- I suoi modelli stanno nella cartella condivisa insieme a tutti gli altri, e la
+  voce italiana e Whisper adesso si scaricano dalla suite invece di comparire da
+  soli al primo turno di conversazione.
+- ⚠ **L'interfaccia è ancora in inglese**: funziona, ma i pulsanti dicono LOAD
+  IMAGE e HOLD TO TALK. La traduzione è la prossima cosa.
+
+### Il modello che scrive: risponde quello che hai caricato
+
+- Prima la suite chiedeva sempre a **Bonsai 27B** anche quando in LM Studio ne
+  avevi caricato un altro — e siccome Bonsai non era in memoria, LM Studio se lo
+  caricava sul momento: minuti, con l'app che sembrava piantata.
+- Adesso risponde **quello che hai scelto nel menu**, e se non hai scelto niente
+  **quello che è già in memoria**. Il menu si apre da solo su quello caricato.
+- E una cosa da sapere: **col motore delle immagini acceso il modello che scrive
+  va molto più piano** — misurato, 5 secondi contro 148. Non è rotto, è la
+  scheda che sta facendo due lavori insieme.
+
+
 ### DaPFoto: due parole diventano una descrizione
 
 - Sotto la casella di **Cosa vuoi vedere** ci sono due tasti: **allarga quello
