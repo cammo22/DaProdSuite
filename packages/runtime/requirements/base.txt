@@ -16,12 +16,27 @@ websockets>=15.0
 python-multipart>=0.0.20
 
 # Scaricamento dei modelli: `snapshot_download` serve per i repo HuggingFace
-# interi (SD-Turbo, SoulX). Il tetto a 1.0 non è prudenza: `transformers`, che
-# ComfyUI si porta dietro, pretende `huggingface-hub<1.0`, e in un ambiente unico
-# per tutte le app vince chi ha il vincolo. Senza questo tetto uv installa la
-# 1.27, il motore la fa retrocedere alla prima installazione e nel frattempo
-# resta in giro un comando `hf` che punta a un modulo che non c'è più.
-huggingface-hub>=0.34,<1.0
+# interi (SD-Turbo, SoulX).
+#
+# **Qui c'era un tetto `<1.0`, ed è stato tolto il 19 agosto 2026.** La ragione
+# scritta accanto — «transformers pretende huggingface-hub<1.0» — era vera con
+# transformers 4, ed è diventata esattamente il contrario con la 5, che pretende
+# `>=1.0`. Il tetto quindi non proteggeva più niente: faceva **rimbalzare** le
+# due librerie a ogni installazione. Nel log di Cammo, in tre passaggi:
+#
+#     - huggingface-hub==1.27.0   + huggingface-hub==0.36.2
+#     - transformers==5.15.0      + transformers==4.57.3
+#     ... poi di nuovo             + huggingface-hub==1.28.0, transformers==5.15.0
+#
+# E ogni rimbalzo è una disinstallazione, cioè un'occasione perché l'antivirus
+# la faccia fallire a metà (l'errore 4395 di `uv.ts`). È successo: l'ambiente è
+# rimasto con `errors.py` della 0.36 accanto a `utils/__init__.py` della 1.28, e
+# ComfyUI moriva in avvio con `cannot import name 'BucketNotFoundError'`. Da
+# fuori si vedeva solo Musica e Foto che non si aprivano.
+#
+# Il pavimento a 1.0 tiene ferme tutte e due: nessun rimbalzo, nessuna
+# disinstallazione da far fallire.
+huggingface-hub>=1.28
 safetensors>=0.6.0
 
 # Tokenizzatore del traduttore italiano→inglese. Senza, MarianMT funziona lo

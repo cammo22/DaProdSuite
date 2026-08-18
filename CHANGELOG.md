@@ -34,6 +34,25 @@ IoDigitale — e la suite ha smesso di essere sette schede con la stessa icona.
   adesso ce l'hanno le schede — con la finestra più grande e le barre magre,
   tutte e sette si vedono senza dover scorrere fino in fondo.
 
+### Installare un'app non rompe più le altre
+
+Dopo aver installato DaProd IoDigitale, **DaPMusica e DaPFoto non si aprivano
+più**, e DaPDream e IoDigitale si aprivano ma non funzionavano. Non era una
+delle quattro: era l'ambiente Python condiviso.
+
+- Due librerie continuavano a **rimbalzare avanti e indietro** a ogni
+  installazione — una le voleva nuove, un vincolo scritto mesi fa le voleva
+  vecchie. Nel log si vede il rimbalzo tre volte.
+- A un certo giro l'antivirus ha fatto fallire una disinstallazione a metà, e
+  l'ambiente è rimasto **mezzo vecchio e mezzo nuovo**: il motore delle immagini
+  moriva in avvio con un errore che con le immagini non c'entrava niente.
+- Il vincolo vecchio è stato tolto — diceva il contrario di quello che serve
+  oggi — quindi non c'è più niente che rimbalzi e niente da disinstallare a ogni
+  giro.
+
+**L'ambiente su questo PC è stato riparato**: Musica, Foto, Dream e IoDigitale
+ripartono. Chi installa da zero non incontra più il problema.
+
 ### Su un PC senza scheda NVIDIA la suite adesso parte
 
 Provata su un secondo computer, solo CPU. Non partiva, e per due motivi diversi.

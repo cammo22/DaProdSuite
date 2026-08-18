@@ -668,6 +668,61 @@ scheda video": dirlo nell'interfaccia e non solo nel log, i modelli fuori
 portata segnati come tali, Dream e IoDigitale che la GPU la pretendono, e
 l'aggiornamento automatico che su quel PC non è ancora stato visto.
 
+## Quando installare un'app ha rotto le altre (19 agosto 2026)
+
+Cammo, dopo aver installato IoDigitale: «daprod musica e foto non si avviano,
+dream si avvia ma non funziona, iodigitale stessa cosa». Quattro app rotte
+insieme, e nessuna delle quattro era il problema.
+
+**Come si è trovato, e vale come metodo.** Non guardando il codice delle app —
+guardando l'orologio di `logs/`. `scaricamenti.log` era stato scritto un'ora
+prima, `comfy.log` no: quindi il motore non era nemmeno arrivato a scrivere, e
+il guasto stava *prima*, cioè nell'ambiente. Avviare `avvio.py` a mano su una
+porta libera ha dato l'errore vero in trenta secondi:
+
+    ImportError: cannot import name 'BucketNotFoundError'
+    from 'huggingface_hub.errors'
+
+Cioè `huggingface_hub` **mezzo installato**: `utils/__init__.py` della 1.28
+accanto a `errors.py` della 0.36.
+
+**Perché ci è finito.** Due difetti che da soli non facevano niente:
+
+1. **Il rimbalzo.** `base.txt` diceva `huggingface-hub<1.0`, con accanto scritto
+   «lo pretende transformers». Era vero con transformers 4; con la 5 è
+   esattamente il contrario, la 5 pretende `>=1.0`. Quindi a ogni installazione
+   le due librerie si scambiavano di posto. Nel log di quella sera, tre volte:
+   `1.27.0 → 0.36.2`, poi `0.36.2 → 1.28.0`.
+2. **L'antivirus.** Ogni rimbalzo è una disinstallazione, e su questa macchina le
+   disinstallazioni falliscono con l'errore 4395 sul `__pycache__` — è scritto
+   più sotto, ed è per quello che `uv.ts` sgombra e riprova. Con abbastanza
+   rimbalzi, prima o poi uno resta a metà.
+
+**La correzione è sul primo**, perché è quello che moltiplica: tolto il tetto,
+messo un pavimento (`huggingface-hub>=1.28`). Niente rimbalzo, niente
+disinstallazioni, niente occasioni per l'antivirus.
+
+**Come si ripara un ambiente già rotto** (serviva, il suo lo era):
+
+    # le __pycache__ prima, se no uv fallisce di nuovo
+    find .../site-packages/transformers .../huggingface_hub       -name __pycache__ -type d -exec rm -rf {} +
+    uv pip install --python <py>       --reinstall-package huggingface-hub --reinstall-package transformers       "huggingface-hub>=1.28" "transformers>=5.15"
+
+Dopo: ComfyUI riparte (`Device: cuda:0 NVIDIA GeForce RTX 4060`), e gli import
+di Dream (diffusers 0.38) e IoDigitale (peft, faster-whisper, piper) passano.
+
+**La lezione, e va oltre questo caso.** Un ambiente Python solo per sei app è
+quello che ci fa stare in 4 GB invece di 14,7, ma è anche **il posto dove un'app
+può rompere le altre senza toccarle**. I requisiti dei servizi oggi non sono
+fissati (`transformers>=4.50`, `diffusers` senza versione): ogni installazione
+tira dentro l'ultima uscita e ne butta fuori un'altra. ComfyUI e i nodi custom
+li abbiamo fissati apposta; i requisiti dei servizi no, ed è la prossima cosa da
+mettere a posto — sta in [ROADMAP.md](ROADMAP.md).
+
+**E una cosa che l'utente non deve più vedere:** quattro schede che non si
+aprono senza dire perché. L'errore vero c'era, in un file, a due passi. Portarlo
+sulla scheda è in roadmap insieme al resto.
+
 ## Il prossimo passo: DaProdCompanion
 
 È l'unica delle tre della 0.2.0 che non è entrata, e quello che serve è già

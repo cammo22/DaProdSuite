@@ -155,11 +155,25 @@ rotte e sono state corrette (vedi il changelog della 0.2.0); queste restano.
       reale e video): la loro scheda deve dirlo prima di far scaricare i GB.
 - [ ] **Provare l'aggiornamento automatico da una versione all'altra** su quel
       PC: è la cosa per cui è stato installato ed è ancora da vedere.
-- [ ] **Il tetto `huggingface-hub<1.0` in `base.txt` non vale più.** Il commento
-      dice che lo pretende `transformers`, ma nel log di quell'installazione
-      `transformers 5.15.0` è entrato con `huggingface-hub 1.28.0`: il tetto
-      resta lì a far installare la 0.36 e poi disinstallare, per niente. Da
-      togliere dopo una prova, non a occhio.
+- ~~**Il tetto `huggingface-hub<1.0` in `base.txt`**~~ — tolto il 19 agosto
+      2026, e non era un dettaglio: faceva rimbalzare due librerie a ogni
+      installazione finché una disinstallazione non è fallita a metà, lasciando
+      l'ambiente incoerente e Musica e Foto che non si aprivano.
+
+### L'ambiente condiviso, che è la cosa più fragile che abbiamo
+
+- [ ] **I requisiti dei servizi non sono fissati.** `transformers>=4.50`,
+      `diffusers` senza versione: ogni installazione tira dentro l'ultima uscita
+      e ne disinstalla un'altra, e ogni disinstallazione è un'occasione perché
+      l'antivirus la spezzi a metà (errore 4395). Vanno fissati come sono fissati
+      ComfyUI e i nodi custom: **la versione che abbiamo provato**, non quella di
+      stamattina.
+- [ ] **La suite deve accorgersi da sola che l'ambiente è incoerente**, invece di
+      far vedere una scheda che non si apre. Un controllo all'avvio degli import
+      che contano, e un tasto "ripara" che rifà l'installazione pulita.
+- [ ] **L'errore vero deve arrivare sulla scheda.** Quando il motore muore in
+      avvio, l'utente legge "processo terminato": il perché sta nel log, e ce lo
+      deve portare la suite.
 
 
 - ~~**L'hub deve aprirsi in 4:3**~~ — fatto il 18 agosto 2026: prima prendeva
