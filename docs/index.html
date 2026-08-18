@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>DaProd Suite — musica, immagini, video e un avatar parlante, sul tuo computer</title>
-<meta name="description" content="Sette strumenti di intelligenza artificiale in un solo programma, in locale, su una GPU da 8 GB. Niente riga di comando, niente CUDA da configurare a mano." />
-<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2224%22 fill=%22%230d0f14%22/><text x=%2250%22 y=%2266%22 font-size=%2258%22 text-anchor=%22middle%22>🟣</text></svg>">
+<title>DaProd Suite — musica, immagini, video e un avatar che risponde, sul tuo computer</title>
+<meta name="description" content="DaProd testa ogni giorno i modelli di intelligenza artificiale che escono e seleziona i migliori. DaProd Suite li mette in un unico programma, in locale, open source, senza riga di comando." />
+<link rel="icon" type="image/svg+xml" href="media/logo.svg">
 <style>
   :root{
     --fondo:#0a0b0f; --fondo-alto:#12141b; --fondo-pannello:#151822;
@@ -31,6 +31,7 @@
     border:1px solid var(--bordo-vivo); color:var(--testo-tenue);
   }
   .badge b{color:var(--testo); font-weight:700}
+  .badge.presto{border-style:dashed; color:var(--testo-fioco)}
 
   /* ------------------------------------------------------------ hero */
   .hero{
@@ -66,7 +67,7 @@
   .bottone{
     display:inline-flex; align-items:center; gap:9px;
     padding:13px 22px; border-radius:12px; font-weight:700; font-size:14.5px;
-    text-decoration:none; border:1px solid transparent; transition:.15s;
+    text-decoration:none; border:1px solid transparent; transition:.15s; cursor:pointer;
   }
   .bottone.primario{
     background:linear-gradient(120deg, var(--viola), var(--rosa));
@@ -99,7 +100,7 @@
   /* ------------------------------------------------------------ sezioni */
   section{padding:76px 0}
   section.alterna{background:var(--fondo-alto); border-top:1px solid var(--bordo); border-bottom:1px solid var(--bordo)}
-  .titolo-sezione{max-width:620px; margin:0 0 44px}
+  .titolo-sezione{max-width:640px; margin:0 0 44px}
   .titolo-sezione .etichetta{
     display:block; font-size:12.5px; font-weight:700; letter-spacing:.09em;
     text-transform:uppercase; color:var(--viola); margin-bottom:10px;
@@ -125,52 +126,99 @@
   }
   .carta-app .arte{position:relative; aspect-ratio:16/6; overflow:hidden; background:#000}
   .carta-app .arte img{width:100%; height:100%; object-fit:cover}
-  .carta-app.in-arrivo .arte img{filter:grayscale(.65) brightness(.45)}
+  .carta-app.futura .arte img{filter:grayscale(.65) brightness(.45)}
   .carta-app .stato{
     position:absolute; top:10px; right:10px; padding:4px 10px; border-radius:99px;
     font-size:11px; font-weight:700; backdrop-filter:blur(6px);
   }
-  .carta-app.dentro .stato{background:rgba(92,255,157,.16); color:var(--menta); border:1px solid rgba(92,255,157,.35)}
-  .carta-app.in-arrivo .stato{background:rgba(255,255,255,.08); color:var(--testo-tenue); border:1px solid var(--bordo-vivo)}
+  .carta-app.viva .stato{background:rgba(92,255,157,.16); color:var(--menta); border:1px solid rgba(92,255,157,.35)}
+  .carta-app.futura .stato{background:rgba(255,255,255,.08); color:var(--testo-tenue); border:1px solid var(--bordo-vivo)}
   .carta-app .corpo{padding:18px 20px 20px; flex:1; display:flex; flex-direction:column; gap:8px}
   .carta-app .pallino{width:9px; height:9px; border-radius:50%; display:inline-block; margin-right:8px}
   .carta-app h3{margin:0; font-size:16px; display:flex; align-items:center}
   .carta-app p{margin:0; font-size:13.8px; color:var(--testo-tenue); line-height:1.5}
   .carta-app .modello{margin-top:auto; padding-top:10px; font-size:12px; color:var(--testo-fioco); border-top:1px solid var(--bordo)}
-
-  /* --------------------------------------------------------- schermata */
-  .cornice-schermata{
-    border-radius:18px; border:1px solid var(--bordo); overflow:hidden;
-    box-shadow:0 30px 80px rgba(0,0,0,.5);
+  .nota-crescita{
+    margin-top:28px; padding:16px 20px; border-radius:12px; font-size:13.5px;
+    color:var(--testo-tenue); background:rgba(124,92,255,.06); border:1px dashed var(--bordo-vivo);
   }
-  .cornice-schermata .barra{
-    display:flex; gap:7px; padding:12px 14px; background:#0d0f14; border-bottom:1px solid var(--bordo);
-  }
-  .cornice-schermata .barra span{width:11px; height:11px; border-radius:50%; background:#2a3040}
 
-  /* ------------------------------------------------------------- come */
-  .passi{display:grid; gap:16px; max-width:640px}
-  .passo{display:flex; gap:16px; align-items:flex-start}
-  .passo .num{
-    flex:none; width:34px; height:34px; border-radius:10px; display:flex; align-items:center;
-    justify-content:center; font-weight:800; font-size:14px;
+  /* ------------------------------------------------------ come funziona */
+  .pannello-flusso{
+    aspect-ratio:4/3; max-width:640px; margin:0 auto;
+    background:var(--fondo-pannello); border:1px solid var(--bordo); border-radius:20px;
+    display:grid; grid-template-columns:1fr 1fr; gap:1px;
+    overflow:hidden; box-shadow:0 30px 80px rgba(0,0,0,.45);
+  }
+  .passo-flusso{
+    background:var(--fondo-pannello); padding:26px 22px;
+    display:flex; flex-direction:column; gap:10px; justify-content:center;
+    border-right:1px solid var(--bordo); border-bottom:1px solid var(--bordo);
+  }
+  .passo-flusso:nth-child(2){border-right:0}
+  .passo-flusso:nth-child(3),.passo-flusso:nth-child(4){border-bottom:0}
+  .passo-flusso:nth-child(4){border-right:0}
+  .passo-flusso .cerchio{
+    width:38px; height:38px; border-radius:11px; display:flex; align-items:center; justify-content:center;
+    font-size:17px; background:rgba(124,92,255,.14); border:1px solid rgba(124,92,255,.3);
+  }
+  .passo-flusso h3{margin:0; font-size:14.5px}
+  .passo-flusso p{margin:0; font-size:12.5px; color:var(--testo-tenue); line-height:1.5}
+  .passo-flusso:nth-child(1) .cerchio{background:rgba(124,92,255,.14); border-color:rgba(124,92,255,.32)}
+  .passo-flusso:nth-child(2) .cerchio{background:rgba(255,92,138,.14); border-color:rgba(255,92,138,.32)}
+  .passo-flusso:nth-child(3) .cerchio{background:rgba(255,166,61,.14); border-color:rgba(255,166,61,.32)}
+  .passo-flusso:nth-child(4) .cerchio{background:rgba(61,219,255,.14); border-color:rgba(61,219,255,.32)}
+
+  /* -------------------------------------------------------------- come */
+  .griglia-cominciare{display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:16px; max-width:820px}
+  .carta-cominciare{
+    background:var(--fondo-pannello); border:1px solid var(--bordo); border-radius:var(--raggio);
+    padding:22px;
+  }
+  .carta-cominciare.teaser{background:transparent; border-style:dashed; border-color:var(--bordo-vivo)}
+  .carta-cominciare .num{
+    display:inline-flex; width:30px; height:30px; border-radius:9px; align-items:center; justify-content:center;
+    font-weight:800; font-size:13px; margin-bottom:12px;
     background:linear-gradient(120deg, var(--viola), var(--rosa)); color:#fff;
   }
-  .passo h3{margin:0 0 4px; font-size:15px}
-  .passo p{margin:0; font-size:13.8px; color:var(--testo-tenue)}
+  .carta-cominciare h3{margin:0 0 6px; font-size:15px}
+  .carta-cominciare p{margin:0; font-size:13.5px; color:var(--testo-tenue); line-height:1.55}
 
   /* --------------------------------------------------------- requisiti */
-  table.requisiti{width:100%; border-collapse:collapse; font-size:14px}
-  table.requisiti th, table.requisiti td{
-    text-align:left; padding:11px 14px; border-bottom:1px solid var(--bordo);
+  .mini-app{
+    background:var(--fondo-pannello); border:1px solid var(--bordo); border-radius:var(--raggio);
+    padding:26px; max-width:760px;
   }
-  table.requisiti th{color:var(--testo-fioco); font-weight:600; font-size:12px; text-transform:uppercase; letter-spacing:.05em}
+  .selettore-gpu{display:flex; flex-wrap:wrap; gap:10px; margin-bottom:20px}
+  .tasto-gpu{
+    flex:1 1 150px; padding:14px 16px; border-radius:12px; text-align:left; cursor:pointer;
+    background:var(--fondo-alto); border:1px solid var(--bordo-vivo); color:var(--testo);
+    font:inherit; transition:.15s;
+  }
+  .tasto-gpu b{display:block; font-size:14px; margin-bottom:2px}
+  .tasto-gpu span{font-size:12px; color:var(--testo-fioco)}
+  .tasto-gpu:hover{border-color:var(--testo-tenue)}
+  .tasto-gpu.attivo{
+    border-color:var(--viola); background:rgba(124,92,255,.1);
+    box-shadow:0 0 0 1px var(--viola) inset;
+  }
+  .esito-gpu{
+    padding:18px 20px; border-radius:12px; background:var(--fondo-alto);
+    border:1px solid var(--bordo); font-size:14px; color:var(--testo-tenue); line-height:1.6;
+    min-height:64px;
+  }
+  .esito-gpu b{color:var(--testo)}
+  table.requisiti{width:100%; border-collapse:collapse; font-size:13.5px; margin-top:24px}
+  table.requisiti th, table.requisiti td{
+    text-align:left; padding:10px 12px; border-bottom:1px solid var(--bordo);
+  }
+  table.requisiti th{color:var(--testo-fioco); font-weight:600; font-size:11.5px; text-transform:uppercase; letter-spacing:.05em}
   table.requisiti td:first-child{color:var(--testo-tenue)}
 
   /* ------------------------------------------------------------ footer */
   footer{padding:48px 0; border-top:1px solid var(--bordo)}
   footer .contenitore{display:flex; flex-wrap:wrap; gap:14px 28px; align-items:center; justify-content:space-between}
-  footer .link-riga{display:flex; flex-wrap:wrap; gap:20px; font-size:13.5px}
+  footer .link-riga{display:flex; flex-wrap:wrap; gap:20px; font-size:13.5px; align-items:center}
   footer .link-riga a{color:var(--testo-tenue); text-decoration:none}
   footer .link-riga a:hover{color:var(--testo)}
   footer .marchio-piede{display:flex; align-items:center; gap:10px; font-size:13px; color:var(--testo-fioco)}
@@ -179,6 +227,7 @@
   @media(max-width:640px){
     section{padding:52px 0}
     .hero{padding:52px 0 64px}
+    .pannello-flusso{aspect-ratio:auto}
   }
 </style>
 </head>
@@ -200,23 +249,24 @@
 <header class="hero" id="top">
   <div class="contenitore">
     <div class="marchio">
-      <img src="media/logo.png" alt="">
+      <img src="media/logo.svg" alt="">
       <span>DaProd<span style="color:var(--testo-tenue)">Suite</span></span>
     </div>
 
     <div class="hero-corpo">
       <div class="badge-riga">
         <span class="badge"><b>0.1.0</b>&nbsp;pubblicata</span>
-        <span class="badge">5 app dentro, 2 in arrivo</span>
-        <span class="badge">Windows · MIT</span>
+        <span class="badge">100% locale</span>
+        <span class="badge">Open source · MIT</span>
+        <span class="badge presto">Discord — presto</span>
       </div>
 
-      <h1>I modelli AI che valgono la pena,<br class="a-capo-largo"> <span class="sfumato">montati per bene.</span></h1>
+      <h1>I migliori modelli AI,<br class="a-capo-largo"> <span class="sfumato">selezionati per te.</span></h1>
 
       <p class="intro">
-        Musica, immagini, video, un avatar parlante e un compagno che si ricorda
-        di te. Sette schede, un programma solo, tutto sul tuo computer — su una
-        GPU da 8 GB, senza riga di comando.
+        DaProd Suite mette musica, immagini, video, un avatar che ti risponde e
+        altro ancora in un programma solo — tutto sul tuo computer, nessun
+        account, nessuna chiave API, codice aperto.
       </p>
 
       <div class="cta-riga">
@@ -225,7 +275,7 @@
         </a>
         <a class="bottone secondario" href="#app">Guarda le app</a>
       </div>
-      <p class="hero-nota">Installer da un clic. Nessun account, nessuna API, niente esce dal tuo computer.</p>
+      <p class="hero-nota">Installer da un clic. Si aggiorna da sola. Niente esce dal tuo computer.</p>
     </div>
   </div>
 </header>
@@ -233,14 +283,15 @@
 <section id="perche">
   <div class="contenitore">
     <div class="titolo-sezione">
-      <span class="etichetta">Perché esiste</span>
-      <h2>Provare un modello nuovo non dovrebbe essere un lavoro</h2>
+      <span class="etichetta">Chi siamo</span>
+      <h2>Testiamo l'IA ogni giorno, così non devi farlo tu</h2>
       <p>
-        Esce un modello nuovo ogni settimana. Leggi che fa cose incredibili, vai a
-        provarlo, e ti ritrovi a clonare una repo, litigare con le versioni di
-        CUDA, scaricare venti gigabyte e scoprire dopo un'ora che ti serviva
-        un'altra versione di PyTorch. DaProd Suite si prende in carico tutto
-        questo una volta sola, per ogni app che aggiunge.
+        Ogni giorno esce un modello nuovo. Noi di DaProd li proviamo, buttiamo
+        via quelli che non valgono, e montiamo i migliori in un'interfaccia
+        pensata apposta per loro — che tu sia un professionista che cerca un
+        risultato serio, o qualcuno che vuole solo divertirsi mezz'ora.
+        DaProd Suite è dove mettiamo quello che troviamo. A disposizione di
+        tutti. Sì, anche tua.
       </p>
     </div>
 
@@ -261,9 +312,9 @@
         <p>Stessa libreria dei risultati: il brano che generi in una lo apri nell'altra senza esportare niente.</p>
       </div>
       <div class="carta-perche">
-        <div class="ico">🔒</div>
-        <h3>Tutto in locale</h3>
-        <p>Nessun account, nessuna chiave API, nessun dato che esce dal tuo computer. I modelli girano sulla tua scheda.</p>
+        <div class="ico">🔓</div>
+        <h3>Locale e aperto</h3>
+        <p>Nessun account, nessuna chiave API: gira tutto sul tuo computer. Il codice della suite è open source, licenza MIT.</p>
       </div>
     </div>
   </div>
@@ -272,7 +323,7 @@
 <section class="alterna" id="app">
   <div class="contenitore">
     <div class="titolo-sezione">
-      <span class="etichetta">Sette schede</span>
+      <span class="etichetta">Le app</span>
       <h2>Un'esperienza completa per app</h2>
       <p>
         Il modello, l'interfaccia fatta apposta per lui, e i suoi trucchi già
@@ -282,8 +333,8 @@
     </div>
 
     <div class="griglia-app">
-      <div class="carta-app dentro">
-        <div class="arte"><img src="media/app/visualizer.webp" alt=""><span class="stato">dentro</span></div>
+      <div class="carta-app viva">
+        <div class="arte"><img src="media/app/visualizer.webp" alt=""><span class="stato">disponibile</span></div>
         <div class="corpo">
           <h3><span class="pallino" style="background:var(--viola)"></span>DaProdVisualizer</h3>
           <p>La tua musica diventa visualizzazioni reattive, in tempo reale.</p>
@@ -291,8 +342,8 @@
         </div>
       </div>
 
-      <div class="carta-app dentro">
-        <div class="arte"><img src="media/app/musica.webp" alt=""><span class="stato">dentro</span></div>
+      <div class="carta-app viva">
+        <div class="arte"><img src="media/app/musica.webp" alt=""><span class="stato">disponibile</span></div>
         <div class="corpo">
           <h3><span class="pallino" style="background:var(--rosa)"></span>DaProdMusica</h3>
           <p>Canzoni complete e cantate, da una riga d'idea a un brano intero con copertina.</p>
@@ -300,8 +351,8 @@
         </div>
       </div>
 
-      <div class="carta-app dentro">
-        <div class="arte"><img src="media/app/foto.webp" alt=""><span class="stato">dentro</span></div>
+      <div class="carta-app viva">
+        <div class="arte"><img src="media/app/foto.webp" alt=""><span class="stato">disponibile</span></div>
         <div class="corpo">
           <h3><span class="pallino" style="background:var(--ambra)"></span>DaProdFoto</h3>
           <p>Immagini da una descrizione, e ritocco con maschera sulla zona che vuoi cambiare.</p>
@@ -309,8 +360,8 @@
         </div>
       </div>
 
-      <div class="carta-app dentro">
-        <div class="arte"><img src="media/app/dream.webp" alt=""><span class="stato">dentro</span></div>
+      <div class="carta-app viva">
+        <div class="arte"><img src="media/app/dream.webp" alt=""><span class="stato">disponibile</span></div>
         <div class="corpo">
           <h3><span class="pallino" style="background:var(--ciano)"></span>DaProdDream</h3>
           <p>Webcam, video, schermo — o solo un prompt — trasformati mentre li guardi.</p>
@@ -318,8 +369,8 @@
         </div>
       </div>
 
-      <div class="carta-app dentro">
-        <div class="arte"><img src="media/app/iodigitale.webp" alt=""><span class="stato">dentro</span></div>
+      <div class="carta-app viva">
+        <div class="arte"><img src="media/app/iodigitale.webp" alt=""><span class="stato">disponibile</span></div>
         <div class="corpo">
           <h3><span class="pallino" style="background:var(--corallo)"></span>DaProd IoDigitale</h3>
           <p>Il tuo avatar parlante: gli scrivi o gli parli, ti risponde in video.</p>
@@ -327,7 +378,7 @@
         </div>
       </div>
 
-      <div class="carta-app in-arrivo">
+      <div class="carta-app futura">
         <div class="arte"><img src="media/app/cinema.webp" alt=""><span class="stato">in arrivo</span></div>
         <div class="corpo">
           <h3><span class="pallino" style="background:var(--magenta)"></span>DaProdCinema</h3>
@@ -336,7 +387,7 @@
         </div>
       </div>
 
-      <div class="carta-app in-arrivo">
+      <div class="carta-app futura">
         <div class="arte"><img src="media/app/companion.webp" alt=""><span class="stato">in arrivo</span></div>
         <div class="corpo">
           <h3><span class="pallino" style="background:var(--menta)"></span>DaProdCompanion</h3>
@@ -345,6 +396,12 @@
         </div>
       </div>
     </div>
+
+    <p class="nota-crescita">
+      Questa non è una lista chiusa. Continuiamo a testare modelli nuovi e ad
+      aggiungere schede: quello che vedi qui è dove siamo adesso, non dove ci
+      fermiamo.
+    </p>
   </div>
 </section>
 
@@ -352,13 +409,31 @@
   <div class="contenitore">
     <div class="titolo-sezione">
       <span class="etichetta">Come funziona</span>
-      <h2>Guarda com'è dentro</h2>
-      <p>L'hub: una scheda per app, con lo stato di ognuna. Apri quella che ti serve.</p>
+      <h2>Niente comandi, niente configurazione</h2>
+      <p>Apri una scheda. La suite si occupa del resto.</p>
     </div>
 
-    <div class="cornice-schermata">
-      <div class="barra"><span></span><span></span><span></span></div>
-      <img src="media/hub.png" alt="L'hub della DaProd Suite, con le schede delle app">
+    <div class="pannello-flusso">
+      <div class="passo-flusso">
+        <div class="cerchio">🖱️</div>
+        <h3>Apri una scheda</h3>
+        <p>Musica, immagini, video, una conversazione: scegli cosa vuoi fare.</p>
+      </div>
+      <div class="passo-flusso">
+        <div class="cerchio">⚙️</div>
+        <h3>Il motore si accende da solo</h3>
+        <p>Nessun comando da lanciare, nessun file da configurare.</p>
+      </div>
+      <div class="passo-flusso">
+        <div class="cerchio">✨</div>
+        <h3>Crei</h3>
+        <p>L'interfaccia è fatta apposta per quello che stai facendo.</p>
+      </div>
+      <div class="passo-flusso">
+        <div class="cerchio">📚</div>
+        <h3>Finisce in libreria</h3>
+        <p>Tutto quello che generi resta in un posto solo, che ogni app vede.</p>
+      </div>
     </div>
   </div>
 </section>
@@ -366,31 +441,25 @@
 <section class="alterna">
   <div class="contenitore">
     <div class="titolo-sezione">
-      <span class="etichetta">In tre passi</span>
-      <h2>Da zero a un risultato vero</h2>
+      <span class="etichetta">Cominciare</span>
+      <h2>Facile da scaricare. Resta aggiornata da sola.</h2>
     </div>
 
-    <div class="passi">
-      <div class="passo">
+    <div class="griglia-cominciare">
+      <div class="carta-cominciare">
         <div class="num">1</div>
-        <div>
-          <h3>Scarichi e apri l'installer</h3>
-          <p>Un clic, nessuna domanda, nessun permesso di amministratore. Circa un minuto.</p>
-        </div>
+        <h3>Scarichi un file solo</h3>
+        <p>Un installer, un clic, nessun permesso di amministratore. In un minuto sei pronto a usarla.</p>
       </div>
-      <div class="passo">
+      <div class="carta-cominciare">
         <div class="num">2</div>
-        <div>
-          <h3>Scegli quali app ti servono</h3>
-          <p>La suite ti dice quanti GB servono prima di scaricarli. Prendi solo quello che usi.</p>
-        </div>
+        <h3>Non ci pensi più</h3>
+        <p>La suite controlla da sola se c'è una versione nuova. I tuoi modelli e i tuoi risultati non si toccano mai.</p>
       </div>
-      <div class="passo">
-        <div class="num">3</div>
-        <div>
-          <h3>Apri una scheda e crea</h3>
-          <p>Il motore si accende da solo. Quando hai finito, si spegne da solo. Non tocchi niente in mezzo.</p>
-        </div>
+      <div class="carta-cominciare teaser">
+        <div class="num" style="background:transparent;border:1px dashed var(--bordo-vivo);color:var(--testo-fioco)">3</div>
+        <h3>Community — in arrivo</h3>
+        <p>Presto apriremo un Discord: aggiornamenti, idee, e dove chiedere una mano.</p>
       </div>
     </div>
   </div>
@@ -400,22 +469,45 @@
   <div class="contenitore">
     <div class="titolo-sezione">
       <span class="etichetta">Prima di scaricare</span>
-      <h2>Requisiti</h2>
-      <p>La macchina di riferimento su cui tutto viene misurato è una RTX 4060 da 8 GB: non è un caso, è il vincolo che decide quasi ogni scelta tecnica del progetto.</p>
+      <h2>Quanto ti serve</h2>
+      <p>
+        Testiamo tutto su schede NVIDIA serie RTX 4000, almeno 8 GB di VRAM.
+        Con di più va meglio. Stiamo lavorando perché in futuro almeno una
+        parte della suite giri anche solo su CPU — oggi non ancora.
+      </p>
     </div>
 
-    <table class="requisiti">
-      <tr><th></th><th>Minimo</th><th>Consigliato</th></tr>
-      <tr><td>Sistema</td><td>Windows 10 64&nbsp;bit</td><td>Windows 11</td></tr>
-      <tr><td>GPU</td><td>NVIDIA con 8&nbsp;GB di VRAM</td><td>8&nbsp;GB o più</td></tr>
-      <tr><td>RAM</td><td>16&nbsp;GB</td><td>32&nbsp;GB</td></tr>
-      <tr><td>Disco</td><td>15&nbsp;GB (una o due app)</td><td>40&nbsp;GB (tutte)</td></tr>
-    </table>
+    <div class="mini-app">
+      <div class="selettore-gpu" id="selettore-gpu">
+        <button class="tasto-gpu attivo" data-tier="8">
+          <b>8 GB</b><span>il minimo su cui testiamo</span>
+        </button>
+        <button class="tasto-gpu" data-tier="12">
+          <b>12 GB</b><span>respiri meglio</span>
+        </button>
+        <button class="tasto-gpu" data-tier="16">
+          <b>16 GB o più</b><span>masterrace 😎</span>
+        </button>
+      </div>
+      <div class="esito-gpu" id="esito-gpu">
+        <b>Tutte le app di base, un modello alla volta.</b><br>
+        È la misura di riferimento: ogni funzione della suite viene provata e
+        misurata qui prima di considerarla pronta.
+      </div>
 
-    <p style="margin-top:22px; font-size:13.8px; color:var(--testo-tenue)">
-      Non serve avere Python installato: la suite si scarica da sola Python 3.12
-      e PyTorch, in una cartella sua, senza toccare quello che hai già.
-    </p>
+      <table class="requisiti">
+        <tr><th></th><th>Minimo</th><th>Consigliato</th></tr>
+        <tr><td>Sistema</td><td>Windows 10 64&nbsp;bit</td><td>Windows 11</td></tr>
+        <tr><td>GPU</td><td>NVIDIA, 8&nbsp;GB di VRAM</td><td>12&nbsp;GB o più</td></tr>
+        <tr><td>RAM</td><td>16&nbsp;GB</td><td>32&nbsp;GB</td></tr>
+        <tr><td>Disco</td><td>15&nbsp;GB (una o due app)</td><td>40&nbsp;GB (tutte)</td></tr>
+      </table>
+
+      <p style="margin-top:18px; font-size:13.5px; color:var(--testo-tenue)">
+        Non serve avere Python installato: la suite si scarica da sola Python
+        3.12 e PyTorch, in una cartella sua, senza toccare quello che hai già.
+      </p>
+    </div>
 
     <div class="cta-riga" style="margin-top:28px">
       <a class="bottone primario" href="https://github.com/cammo22/DaProdSuite/releases/latest">⬇ Scarica per Windows</a>
@@ -427,7 +519,7 @@
 <footer>
   <div class="contenitore">
     <div class="marchio-piede">
-      <img src="media/logo.png" alt="">
+      <img src="media/logo.svg" alt="">
       DaProdProduzioni — codice sotto licenza MIT
     </div>
     <div class="link-riga">
@@ -436,9 +528,29 @@
       <a href="https://github.com/cammo22/DaProdSuite/releases">Release</a>
       <a href="https://github.com/cammo22/DaProdSuite/blob/main/CHANGELOG.md">Changelog</a>
       <a href="https://github.com/cammo22/DaProdSuite/issues">Segnala un problema</a>
+      <span class="badge presto" style="padding:3px 10px">Discord — presto</span>
     </div>
   </div>
 </footer>
+
+<script>
+  // La mini-app dei requisiti: nessuna richiesta di rete, solo testo che
+  // cambia in base al tasto premuto.
+  const ESITI = {
+    "8": "<b>Tutte le app di base, un modello alla volta.</b><br>È la misura di riferimento: ogni funzione della suite viene provata e misurata qui prima di considerarla pronta.",
+    "12": "<b>Più margine su tutto.</b><br>Generazioni più lunghe senza sudare, e i modelli extra (quelli più pesanti, come FLUX.2 Klein 9B) cominciano a starci comodi.",
+    "16": "<b>Praticamente tutto insieme, senza pensarci.</b><br>Sei un masterrace, congratulazioni. La suite oggi non sfrutta ancora tutta questa VRAM da sola, ma è dove vogliamo arrivare.",
+  };
+  const tasti = document.querySelectorAll(".tasto-gpu");
+  const esito = document.getElementById("esito-gpu");
+  tasti.forEach((t) => {
+    t.addEventListener("click", () => {
+      tasti.forEach((x) => x.classList.remove("attivo"));
+      t.classList.add("attivo");
+      esito.innerHTML = ESITI[t.dataset.tier];
+    });
+  });
+</script>
 
 </body>
 </html>

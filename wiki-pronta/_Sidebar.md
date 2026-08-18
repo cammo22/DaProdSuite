@@ -2,7 +2,7 @@
 
 - [Home](Home)
 - [Installazione](Installazione)
-- [Le sette app](Le-app)
+- [Le app](Le-app)
 - [Domande frequenti](Domande-frequenti)
 
 ---

@@ -1,20 +1,22 @@
 <div align="center">
 
-<img src="docs/media/logo.png" width="110" alt="DaProd Suite">
+<img src="docs/media/logo.svg" width="110" alt="DaProd Suite">
 
 # DaProd Suite
 
-**I modelli AI che valgono la pena, montati per bene, a due clic di distanza.**
+**I migliori modelli AI, selezionati per te — pronti in due clic.**
 
-Musica, immagini, video, un avatar parlante e un companion che si ricorda di te.
+Musica, immagini, video, un avatar che ti risponde, e altro ancora nel tempo.
 Ogni scheda è un'esperienza completa che installi, usi e disinstalli quando vuoi.
-Tutto sul tuo computer.
+Tutto sul tuo computer, codice aperto.
 
 [![versione](https://img.shields.io/badge/versione-0.1.0-7c5cff)](https://github.com/cammo22/DaProdSuite/releases)
 [![licenza](https://img.shields.io/badge/licenza-MIT-5cff9d)](LICENSE)
 [![piattaforma](https://img.shields.io/badge/Windows-x64-3ddbff)](#requisiti)
 [![sito](https://img.shields.io/badge/sito-cammo22.github.io-ffa63d)](https://cammo22.github.io/DaProdSuite/)
 [![wiki](https://img.shields.io/badge/wiki-guide%20e%20domande-ff5c8a)](https://github.com/cammo22/DaProdSuite/wiki)
+![locale](https://img.shields.io/badge/100%25-locale-5cff9d)
+![discord](https://img.shields.io/badge/discord-presto-lightgrey)
 
 **[⬇ Scarica l'ultima versione](https://github.com/cammo22/DaProdSuite/releases/latest)** ·
 **[🌐 Sito](https://cammo22.github.io/DaProdSuite/)** ·
@@ -30,16 +32,13 @@ Tutto sul tuo computer.
 
 ---
 
-## A cosa serve
+## Chi siamo
 
-Esce un modello nuovo ogni settimana. Leggi che fa cose incredibili, vai a
-provarlo, e ti ritrovi a clonare una repo, litigare con le versioni di CUDA,
-scaricare venti gigabyte e scoprire dopo un'ora che ti serviva un'altra versione
-di PyTorch. Quando finalmente parte, funziona da riga di comando.
-
-**DaProd Suite è una vetrina dei modelli che valgono la pena**, montati per bene,
-con tutte le loro funzioni, in un posto dove con due clic installi qualcosa che
-ti fa fare cose divertenti.
+Ogni giorno esce un modello nuovo. Noi di DaProd li proviamo, buttiamo via
+quelli che non valgono, e montiamo i migliori in un'interfaccia pensata
+apposta per loro — che tu sia un professionista che cerca un risultato serio,
+o qualcuno che vuole solo divertirsi mezz'ora. **DaProd Suite** è dove
+mettiamo quello che troviamo. A disposizione di tutti.
 
 Ogni scheda è **un'esperienza completa**: il modello, l'interfaccia fatta apposta
 per lui, e i suoi trucchi già configurati. La installi, la usi, e se non ti serve
@@ -64,17 +63,21 @@ sola per tutte le app:
 
 Tutto in locale: nessun account, nessuna API, nessun dato che esce dal computer.
 
-## Le sette app
+## Le app
 
 | | App | Cosa fa | Modello | |
 |---|---|---|---|---|
-| 🟣 | **DaProdVisualizer** | La tua musica diventa visualizzazioni reattive | — | ✅ dentro |
-| 🩷 | **DaProdMusica** | Canzoni complete e cantate, da una riga d'idea | MiniMax Music 3 | ✅ dentro |
-| 🟠 | **DaProdFoto** | Immagini da prompt e ritocco con maschera | Anima Turbo · FLUX.2 Klein | ✅ dentro |
-| 🩵 | **DaProdDream** | Webcam, video, schermo — o solo un prompt — trasformati in tempo reale | SD-Turbo · Anima | ✅ dentro |
-| 🟥 | **DaProd IoDigitale** | Il tuo avatar parlante: gli scrivi, ti risponde in video | SoulX-FlashHead | ✅ dentro |
+| 🟣 | **DaProdVisualizer** | La tua musica diventa visualizzazioni reattive | — | ✅ disponibile |
+| 🩷 | **DaProdMusica** | Canzoni complete e cantate, da una riga d'idea | MiniMax Music 3 | ✅ disponibile |
+| 🟠 | **DaProdFoto** | Immagini da prompt e ritocco con maschera | Anima Turbo · FLUX.2 Klein | ✅ disponibile |
+| 🩵 | **DaProdDream** | Webcam, video, schermo — o solo un prompt — trasformati in tempo reale | SD-Turbo · Anima | ✅ disponibile |
+| 🟥 | **DaProd IoDigitale** | Il tuo avatar parlante: gli scrivi, ti risponde in video | SoulX-FlashHead | ✅ disponibile |
 | 🟪 | **DaProdCinema** | Da una canzone al suo video musicale, scena per scena | MiniMax H3 · LTX 2.5 | ⏳ in arrivo |
 | 🟢 | **DaProdCompanion** | Un compagno sul desktop che ti ascolta e si ricorda di te | un modello a scelta via LM Studio | ⏳ in arrivo |
+
+Questa non è una lista chiusa: continuiamo a testare modelli nuovi e ad
+aggiungere schede. Quello che vedi qui è dove siamo adesso, non dove ci
+fermiamo.
 
 Musica, Foto e le altre parlano tutte con lo stesso **modello che scrive** —
 qualunque cosa tu tenga aperta in [LM Studio](https://lmstudio.ai), noi
@@ -83,7 +86,7 @@ abbozzare titoli, testi e descrizioni quando non sai da dove cominciare.
 
 ## A che punto siamo
 
-> **0.1.0 — cinque app su sette sono dentro e si usano davvero, ogni giorno.**
+> **0.1.0 — le prime app sono già operative, e si usano davvero ogni giorno.**
 >
 > **DaProdVisualizer, DaProdMusica, DaProdFoto, DaProdDream** e **DaProd
 > IoDigitale** girano nella suite: si installano da sole (motore e modelli
@@ -107,10 +110,14 @@ completo in [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Requisiti
 
+Testiamo tutto su schede **NVIDIA serie RTX 4000**, almeno 8 GB di VRAM. Con di
+più va meglio. Stiamo lavorando perché in futuro almeno una parte della suite
+giri anche solo su CPU — oggi non ancora.
+
 | | Minimo | Consigliato |
 |---|---|---|
 | Sistema | Windows 10 64 bit | Windows 11 |
-| GPU | NVIDIA con 8 GB di VRAM | 8 GB o più |
+| GPU | NVIDIA, 8 GB di VRAM | 12 GB o più |
 | RAM | 16 GB | 32 GB |
 | Disco | 15 GB (una o due app) | 40 GB (tutte) |
 
@@ -220,7 +227,7 @@ quelli veri — misurati sul file, non stimati.
 
 ## Dal telefono
 
-<img src="docs/media/logo.png" width="46" align="right" alt="">
+<img src="docs/media/logo.svg" width="46" align="right" alt="">
 
 Inquadri un QR e usi la suite dal telefono o dal tablet — sulla stessa wifi, o da
 fuori casa attraverso un tunnel che si accende a mano.
@@ -324,6 +331,12 @@ La suite non addestra nulla: mette insieme il lavoro di altri e lo rende usabile
 
 I modelli mantengono ognuno la propria licenza: si scaricano dalle loro fonti, non
 sono ridistribuiti qui.
+
+## Community
+
+**In arrivo un Discord**: aggiornamenti, idee, e dove chiedere una mano. Nel
+frattempo, [Issue](https://github.com/cammo22/DaProdSuite/issues) e
+[Wiki](https://github.com/cammo22/DaProdSuite/wiki) sono i posti giusti.
 
 ## Licenza
 

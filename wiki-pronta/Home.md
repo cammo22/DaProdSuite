@@ -10,15 +10,16 @@ serve per usarla bene.
 
 - **[Installazione](Installazione)** — come si scarica, cosa succede al primo
   avvio, e quanto spazio serve davvero.
-- **[Le sette app](Le-app)** — cosa fa ognuna, con cosa genera, e a che punto è.
+- **[Le app](Le-app)** — cosa fa ognuna, con cosa genera, e a che punto è.
 - **[Domande frequenti](Domande-frequenti)** — VRAM, privacy, disinstallare
   una scheda sola, dove segnalare un problema.
 
 ## In due righe
 
 DaProd Suite è un programma per Windows che mette insieme musica, immagini,
-video, un avatar parlante e un compagno digitale — sette schede, ognuna
-un'esperienza completa attorno a un modello scelto con cura. Tutto gira **sul
+video, un avatar parlante e un compagno digitale — ogni scheda
+un'esperienza completa attorno a un modello scelto con cura. Nuove schede
+arrivano nel tempo: la suite non è mai davvero finita. Tutto gira **sul
 tuo computer**: nessun account, nessuna chiave API, nessun dato che esce dalla
 tua macchina.
 
