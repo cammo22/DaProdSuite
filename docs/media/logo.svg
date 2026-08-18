@@ -1,66 +1,56 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="DaProd">
+  <!--
+    Il marchio DaProd: una D che, se la guardi un attimo di troppo, ti guarda
+    indietro. Il vuoto dentro la lettera non e' vuoto — e' una pupilla, e le
+    corde che le girano intorno non si chiudono e non si allineano a niente.
+    Regge anche piccolissima, perche' la sagoma della D resta leggibile a 24
+    pixel: la stranezza sta dentro, non nel contorno.
+  -->
   <defs>
-    <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#7c5cff"/><stop offset="1" stop-color="#c05cff"/>
+    <linearGradient id="lettera" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#7c5cff"/>
+      <stop offset="0.55" stop-color="#c05cff"/>
+      <stop offset="1" stop-color="#ff5c8a"/>
     </linearGradient>
-    <linearGradient id="g2" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#ff5c8a"/><stop offset="1" stop-color="#7c2d5c"/>
-    </linearGradient>
-    <linearGradient id="g3" x1="0" y1="1" x2="1" y2="0">
-      <stop offset="0" stop-color="#ffa63d"/><stop offset="1" stop-color="#7a4a1c"/>
-    </linearGradient>
-    <linearGradient id="g4" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#3ddbff"/><stop offset="1" stop-color="#1c4a66"/>
-    </linearGradient>
-    <linearGradient id="g5" x1="1" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#5cff9d"/><stop offset="1" stop-color="#1c6640"/>
-    </linearGradient>
-    <linearGradient id="g6" x1="0" y1="1" x2="1" y2="0">
-      <stop offset="0" stop-color="#c05cff"/><stop offset="1" stop-color="#2a1a40"/>
-    </linearGradient>
-    <radialGradient id="vuoto" cx="50%" cy="46%" r="65%">
-      <stop offset="0" stop-color="#141018"/>
-      <stop offset="60%" stop-color="#0a0b10"/>
-      <stop offset="100%" stop-color="#050608"/>
+    <radialGradient id="fondo" cx="46%" cy="40%" r="72%">
+      <stop offset="0" stop-color="#161227"/>
+      <stop offset="62%" stop-color="#0a0b12"/>
+      <stop offset="100%" stop-color="#05060a"/>
     </radialGradient>
+    <radialGradient id="iride" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#ffa63d" stop-opacity="0.55"/>
+      <stop offset="55%" stop-color="#c05cff" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="#c05cff" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="quadro">
+      <rect x="0" y="0" width="512" height="512" rx="112"/>
+    </clipPath>
   </defs>
 
-  <rect x="0" y="0" width="512" height="512" rx="112" fill="#050608"/>
-  <circle cx="256" cy="256" r="250" fill="url(#vuoto)"/>
+  <g clip-path="url(#quadro)">
+    <rect x="0" y="0" width="512" height="512" fill="url(#fondo)"/>
 
-  <!-- Un sigillo di anelli spezzati, nessuno allineato all'altro: niente qui
-       dovrebbe girare in modo cosi' scomposto, ed e' proprio per questo che
-       non si spiega a parole. -->
-  <g fill="none" stroke-linecap="round" clip-path="inset(0 0 0 0)">
-    <ellipse cx="256" cy="244" rx="196" ry="188" stroke="url(#g1)" stroke-width="13"
-      stroke-dasharray="740 2000" transform="rotate(18 256 244)" opacity="0.95"/>
-    <ellipse cx="276" cy="268" rx="168" ry="146" stroke="url(#g2)" stroke-width="9"
-      stroke-dasharray="480 2000" transform="rotate(-52 276 268)" opacity="0.9"/>
-    <ellipse cx="222" cy="246" rx="132" ry="140" stroke="url(#g3)" stroke-width="15"
-      stroke-dasharray="260 2000" transform="rotate(205 222 246)" opacity="0.9"/>
-    <ellipse cx="256" cy="256" rx="234" ry="206" stroke="url(#g4)" stroke-width="7"
-      stroke-dasharray="920 2000" transform="rotate(76 256 256)" opacity="0.85"/>
-    <ellipse cx="298" cy="222" rx="92" ry="100" stroke="url(#g5)" stroke-width="11"
-      stroke-dasharray="330 2000" transform="rotate(-108 298 222)" opacity="0.85"/>
-    <ellipse cx="240" cy="270" rx="252" ry="228" stroke="url(#g6)" stroke-width="5"
-      stroke-dasharray="1150 2000" transform="rotate(298 240 270)" opacity="0.7"/>
-  </g>
+    <!-- Le corde: girano attorno alla lettera senza chiudersi, e nessuna e'
+         d'accordo con le altre su dove sia il centro. -->
+    <g fill="none" stroke-linecap="round" opacity="0.5">
+      <path d="M92,150 C 40,262 96,404 232,448" stroke="#3ddbff" stroke-width="5" opacity="0.55"/>
+      <path d="M430,96 C 486,190 470,318 388,398" stroke="#5cff9d" stroke-width="4" opacity="0.45"/>
+      <path d="M156,66 C 268,34 372,58 436,140" stroke="#ff5c8a" stroke-width="4" opacity="0.4"/>
+      <path d="M64,352 C 132,336 156,300 148,246" stroke="#c05cff" stroke-width="6" opacity="0.5"/>
+    </g>
 
-  <!-- Due crepe sottili, perché un cerchio da solo sarebbe troppo ordinato. -->
-  <g stroke="#c9b8ff" stroke-width="2" opacity="0.35" stroke-linecap="round">
-    <path d="M256,256 L214,148 L226,120" fill="none"/>
-    <path d="M256,256 L352,300 L378,336 L370,362" fill="none"/>
-  </g>
+    <!-- Il chiarore dietro l'occhio: si accorge di te prima che tu di lui. -->
+    <circle cx="268" cy="256" r="104" fill="url(#iride)"/>
 
-  <!-- L'occhio: fuori centro, stretto, socchiuso — l'unica cosa che si
-       riconosce, e nemmeno lui e' dove te lo aspetti. -->
-  <g transform="translate(292 214) rotate(-16)">
-    <ellipse cx="0" cy="0" rx="38" ry="17" fill="#0a0710" stroke="url(#g1)" stroke-width="2.5" opacity="0.9"/>
-    <ellipse cx="4" cy="0" rx="4.2" ry="13" fill="#050608"/>
-  </g>
-  <!-- Un secondo occhio, minuscolo, quasi invisibile — se lo trovi non lo dimentichi. -->
-  <g transform="translate(178 330) rotate(35)" opacity="0.8">
-    <ellipse cx="0" cy="0" rx="12" ry="6" fill="#0a0710" stroke="url(#g5)" stroke-width="1.4"/>
-    <ellipse cx="1.5" cy="0" rx="1.6" ry="4.3" fill="#050608"/>
+    <!-- La D. -->
+    <path d="M168,392 L168,120 C 306,120 384,180 384,256 C 384,332 306,392 168,392"
+          fill="none" stroke="url(#lettera)" stroke-width="44"
+          stroke-linecap="round" stroke-linejoin="round"/>
+
+    <!-- La pupilla, dentro il vuoto della lettera: verticale, come quella di
+         una capra o di qualcosa che non e' una capra. -->
+    <ellipse cx="268" cy="256" rx="16" ry="62" fill="#04050a"/>
+    <ellipse cx="268" cy="256" rx="16" ry="62" fill="none" stroke="#ffa63d" stroke-width="2" opacity="0.5"/>
+    <ellipse cx="262" cy="222" rx="5" ry="12" fill="#ffd9a3" opacity="0.5"/>
   </g>
 </svg>

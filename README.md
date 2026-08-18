@@ -6,52 +6,50 @@
 
 **I migliori modelli AI, selezionati per te — pronti in due clic.**
 
-Musica, immagini, video, un avatar che ti risponde, e altro ancora nel tempo.
-Ogni scheda è un'esperienza completa che installi, usi e disinstalli quando vuoi.
-Tutto sul tuo computer, codice aperto.
+Un programma solo per fare musica, immagini, video e parlare con un avatar.
+Ogni app la installi quando ti serve e la disinstalli quando non ti serve più.
+Gira sul tuo computer: niente account, niente chiavi API, codice aperto.
 
 [![versione](https://img.shields.io/badge/versione-0.1.0-7c5cff)](https://github.com/cammo22/DaProdSuite/releases)
 [![licenza](https://img.shields.io/badge/licenza-MIT-5cff9d)](LICENSE)
 [![piattaforma](https://img.shields.io/badge/Windows-x64-3ddbff)](#requisiti)
 [![sito](https://img.shields.io/badge/sito-cammo22.github.io-ffa63d)](https://cammo22.github.io/DaProdSuite/)
-[![wiki](https://img.shields.io/badge/wiki-guide%20e%20domande-ff5c8a)](https://github.com/cammo22/DaProdSuite/wiki)
+[![domande](https://img.shields.io/badge/domande-frequenti-ff5c8a)](https://cammo22.github.io/DaProdSuite/#domande)
 ![locale](https://img.shields.io/badge/100%25-locale-5cff9d)
 ![discord](https://img.shields.io/badge/discord-presto-lightgrey)
 
 **[⬇ Scarica l'ultima versione](https://github.com/cammo22/DaProdSuite/releases/latest)** ·
 **[🌐 Sito](https://cammo22.github.io/DaProdSuite/)** ·
-**[📖 Wiki](https://github.com/cammo22/DaProdSuite/wiki)**
+**[❓ Domande frequenti](https://cammo22.github.io/DaProdSuite/#domande)**
 
 </div>
 
 ---
 
 <div align="center">
-<img src="docs/media/hub.png" width="880" alt="L'hub della DaProd Suite">
+<img src="docs/media/hub.png" width="780" alt="La home di DaProd Suite: le app, una accanto all'altra">
 </div>
 
 ---
 
 ## Chi siamo
 
-Ogni giorno esce un modello nuovo. Noi di DaProd li proviamo, buttiamo via
-quelli che non valgono, e montiamo i migliori in un'interfaccia pensata
-apposta per loro — che tu sia un professionista che cerca un risultato serio,
-o qualcuno che vuole solo divertirsi mezz'ora. **DaProd Suite** è dove
-mettiamo quello che troviamo. A disposizione di tutti.
+Di modelli ne esce uno al giorno. Noi di DaProd li proviamo, scartiamo quelli
+che non valgono, e a quelli buoni costruiamo intorno un'app che li renda usabili
+senza sapere niente di come funzionano. **DaProd Suite** è dove finiscono. Serve
+sia a chi ci lavora sia a chi vuole solo provarli.
 
-Ogni scheda è **un'esperienza completa**: il modello, l'interfaccia fatta apposta
-per lui, e i suoi trucchi già configurati. La installi, la usi, e se non ti serve
-più la disinstalli e ti riprendi lo spazio. Niente ambienti da gestire, niente
-comandi, niente file di configurazione.
+Ogni app fa una cosa sola e la fa per intero: la installi quando ti serve, la
+disinstalli quando non ti serve più. Non c'è niente da configurare, nessun
+ambiente da preparare, nessun comando da lanciare.
 
-E siccome girano tutte nello stesso posto, si parlano: il brano che generi con
-una lo apri nell'altra senza esportare niente.
+E siccome girano tutte nello stesso posto, i risultati sono in comune: il brano
+che fai in un'app lo apri nell'altra senza esportarlo.
 
 ### Cosa c'è sotto
 
-Perché due clic bastino, la suite si prende in carico le cose noiose una volta
-sola per tutte le app:
+Perché bastino due clic, la suite fa una volta sola — per tutte le app — le
+cose noiose:
 
 | | |
 |---|---|
@@ -67,41 +65,43 @@ Tutto in locale: nessun account, nessuna API, nessun dato che esce dal computer.
 
 | | App | Cosa fa | Modello | |
 |---|---|---|---|---|
-| 🟣 | **DaProdVisualizer** | La tua musica diventa visualizzazioni reattive | — | ✅ disponibile |
-| 🩷 | **DaProdMusica** | Canzoni complete e cantate, da una riga d'idea | MiniMax Music 3 | ✅ disponibile |
-| 🟠 | **DaProdFoto** | Immagini da prompt e ritocco con maschera | Anima Turbo · FLUX.2 Klein | ✅ disponibile |
-| 🩵 | **DaProdDream** | Webcam, video, schermo — o solo un prompt — trasformati in tempo reale | SD-Turbo · Anima | ✅ disponibile |
-| 🟥 | **DaProd IoDigitale** | Il tuo avatar parlante: gli scrivi, ti risponde in video | SoulX-FlashHead | ✅ disponibile |
+| 🟣 | **DaProdVisualizer** | Ascolti un file audio e lo vedi: la grafica si muove col suono | — | ✅ disponibile |
+| 🩷 | **DaProdMusica** | Crei canzoni intere, cantate e suonate, da un testo e uno stile | MiniMax Music 3 | ✅ disponibile |
+| 🟠 | **DaProdFoto** | Crei immagini scrivendo cosa vuoi vedere, poi ne cambi un pezzo | Anima Turbo · FLUX.2 Klein | ✅ disponibile |
+| 🩵 | **DaProdDream** | Trasformi un video mentre scorre: webcam, un file, o lo schermo | SD-Turbo · Anima | ✅ disponibile |
+| 🟥 | **DaProd IoDigitale** | Carichi la foto di un volto e ci parli: ti risponde a voce | SoulX-FlashHead | ✅ disponibile |
 | 🟪 | **DaProdCinema** | Da una canzone al suo video musicale, scena per scena | MiniMax H3 · LTX 2.5 | ⏳ in arrivo |
-| 🟢 | **DaProdCompanion** | Un compagno sul desktop che ti ascolta e si ricorda di te | un modello a scelta via LM Studio | ⏳ in arrivo |
+| 🟢 | **DaProdCompanion** | Un assistente sul desktop che si ricorda delle conversazioni di prima | un modello a scelta via LM Studio | ⏳ in arrivo |
 
 Questa non è una lista chiusa: continuiamo a testare modelli nuovi e ad
 aggiungere schede. Quello che vedi qui è dove siamo adesso, non dove ci
 fermiamo.
 
-Musica, Foto e le altre parlano tutte con lo stesso **modello che scrive** —
-qualunque cosa tu tenga aperta in [LM Studio](https://lmstudio.ai), noi
-consigliamo [Bonsai 27B](https://lmstudio.ai/models/prism-ml/bonsai-27b) — per
-abbozzare titoli, testi e descrizioni quando non sai da dove cominciare.
+### Se colleghi un LLM
+
+Alcune app possono scrivere al posto tuo: il testo di una canzone, la
+descrizione di un'immagine. Per farlo serve un modello LLM caricato in
+[LM Studio](https://lmstudio.ai) — **qualunque modello**, la suite usa quello
+che trova. Noi lavoriamo con
+[Bonsai 27B](https://lmstudio.ai/models/prism-ml/bonsai-27b) perché l'abbiamo
+misurato a fondo, ma non è obbligatorio, e senza LLM le app funzionano tutte
+lo stesso.
 
 ## A che punto siamo
 
-> **0.1.0 — le prime app sono già operative, e si usano davvero ogni giorno.**
+> **0.1.0 — le prime app si usano davvero, ogni giorno.**
 >
 > **DaProdVisualizer, DaProdMusica, DaProdFoto, DaProdDream** e **DaProd
-> IoDigitale** girano nella suite: si installano da sole (motore e modelli
-> compresi, con ripresa se la rete cade), scrivono nella stessa libreria e si
-> scambiano i risultati. In DaProdFoto e DaProdDream si sceglie **con quale
-> modello** generare; in DaProdMusica e DaProdFoto un modello locale (**Bonsai**,
-> o qualunque cosa tu tenga in LM Studio) scrive la canzone o la descrizione al
-> posto tuo, se glielo chiedi. Ogni app ha un terminale con le ultime righe del
-> motore, e l'hub ha i pannelli per vedere tutti i risultati, tutti i modelli e
-> tutti i log in un posto solo.
+> IoDigitale** sono nella suite e funzionano. Si installano da sole, motore e
+> modelli compresi, e riprendono da dove erano se cade la rete. In DaProdFoto e
+> DaProdDream scegli tu con quale modello generare. Ogni app ha un terminale con
+> le ultime righe del motore, e nell'hub ci sono i pannelli per vedere risultati,
+> modelli, log e spazio occupato in un posto solo.
 >
-> Restano **DaProdCinema** e **DaProdCompanion**: esistono come progetti
-> funzionanti fuori dalla suite e vengono migrati uno alla volta, ognuno provato
-> prima di passare al successivo. Nell'hub dicono «In arrivo», e lo dicono sul
-> serio — non aprono niente finché non è vero.
+> **DaProdCinema** e **DaProdCompanion** non ci sono ancora. Esistono come
+> progetti a parte e li stiamo portando nella suite uno alla volta, provandoli
+> prima di passare al successivo. Nell'hub dicono «In arrivo» e non aprono niente:
+> preferiamo un pulsante spento a uno che non fa quello che promette.
 
 Quello che cambia a ogni giro sta in [CHANGELOG.md](CHANGELOG.md), il percorso
 completo in [docs/ROADMAP.md](docs/ROADMAP.md).
@@ -110,9 +110,9 @@ completo in [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Requisiti
 
-Testiamo tutto su schede **NVIDIA serie RTX 4000**, almeno 8 GB di VRAM. Con di
-più va meglio. Stiamo lavorando perché in futuro almeno una parte della suite
-giri anche solo su CPU — oggi non ancora.
+Proviamo tutto su schede **NVIDIA serie RTX 4000** con almeno 8 GB di VRAM. Di
+più è meglio. In futuro vorremmo che almeno una parte funzionasse anche solo su
+CPU: oggi non è così.
 
 | | Minimo | Consigliato |
 |---|---|---|
@@ -326,7 +326,7 @@ La suite non addestra nulla: mette insieme il lavoro di altri e lo rende usabile
 | [SoulX-FlashHead](https://huggingface.co/Soul-AILab/SoulX-FlashHead-1_3B) · [LeapTalk](https://huggingface.co/z-rx/leaptalk) | l'avatar parlante |
 | [SD-Turbo](https://huggingface.co/stabilityai/sd-turbo) | la trasformazione in tempo reale |
 | [Whisper](https://github.com/SYSTRAN/faster-whisper) · [Piper](https://github.com/rhasspy/piper) | ascoltano e parlano, in locale |
-| [LM Studio](https://lmstudio.ai) | il modello che scrive, in ogni app che lo usa |
+| [LM Studio](https://lmstudio.ai) | tiene acceso l'LLM che scrive testi e descrizioni |
 | [WanGP](https://github.com/deepbeepmeep/Wan2GP) | non è usato dalla suite, ma le sue tecniche di memoria sono state la scuola |
 
 I modelli mantengono ognuno la propria licenza: si scaricano dalle loro fonti, non
@@ -334,9 +334,11 @@ sono ridistribuiti qui.
 
 ## Community
 
-**In arrivo un Discord**: aggiornamenti, idee, e dove chiedere una mano. Nel
-frattempo, [Issue](https://github.com/cammo22/DaProdSuite/issues) e
-[Wiki](https://github.com/cammo22/DaProdSuite/wiki) sono i posti giusti.
+Apriremo un **Discord**: aggiornamenti, richieste, e un posto dove chiedere
+aiuto. Per ora si passa dalle
+[segnalazioni](https://github.com/cammo22/DaProdSuite/issues), e le domande più
+comuni hanno già una risposta
+[sul sito](https://cammo22.github.io/DaProdSuite/#domande).
 
 ## Licenza
 
