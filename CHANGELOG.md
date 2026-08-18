@@ -12,6 +12,18 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ## Non ancora pubblicato
 
+### La prima volta la suite ti prende per mano
+
+- Non si vede più il lampo di "Ambiente: da installare" e le schede spente che
+  poi si correggono da sole: la finestra aspetta di avere davvero i dati prima
+  di mostrarli.
+- Al posto del silenzio, una **schermata di caricamento** con un'illustrazione
+  generata dalla suite stessa e una riga che dice cosa sta controllando.
+  Sparisce con una dissolvenza quando è tutto pronto.
+- La finestra dell'hub è **più grande**, e cresce con lo schermo: su un 2K o un
+  4K non resta più piccola in mezzo al monitor.
+
+
 ### DaProd IoDigitale è entrato: la quinta scheda
 
 - **L'avatar parlante è dentro la suite.** Premi Installa, si scarica quello che
