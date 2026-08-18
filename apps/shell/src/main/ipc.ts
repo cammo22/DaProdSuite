@@ -41,6 +41,8 @@ export function registerIpc(getHub: () => BrowserWindow | null): void {
     await shell.openPath(target);
   });
 
+  ipcMain.handle(CHANNELS.suiteAvvioPronto, () => appManager.prontoAlPrimoAvvio);
+
   /* ------------------------------------------------------------------ app */
 
   ipcMain.handle(CHANNELS.appsList, () => appManager.list());

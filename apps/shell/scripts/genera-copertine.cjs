@@ -35,9 +35,11 @@ const PESI = {
   vae: "qwen_image_vae.safetensors",
 };
 
-/** 8:3, che è la forma della striscia in cima alla scheda. Lati multipli di 16. */
+/** 8:3, che è la forma della striscia in cima a una scheda. Lati multipli di 16. */
 const LARGHEZZA = 1024;
 const ALTEZZA = 384;
+/** Passi di Anima: dieci bastano per una copertina, un po' di più per lo splash. */
+const PASSI = 12;
 
 /**
  * Lo stile comune. Tenerlo uguale per tutte è quello che fa sembrare le sette
@@ -99,9 +101,24 @@ const SCHEDE = {
       "warm coral orange light on his face, a soft glowing sound wave line " +
       "floating beside him, warm and welcoming portrait",
   },
+  splash: {
+    // La schermata di caricamento, non una scheda: più larga e diversa dalle
+    // altre di proposito, così non sembra "un'ottava app" ma lo sfondo dietro
+    // cui la suite si prepara. Formato 16:9, per stare bene anche a schermo
+    // intero su un 4K.
+    larghezza: 1600,
+    altezza: 900,
+    passi: 14,
+    seme: 902_331_774,
+    prompt:
+      "a wide cinematic view of an abstract creative studio control room at night, " +
+      "seven glowing colored light beams (violet, pink, amber, purple, cyan, mint, coral) " +
+      "converging softly into the center from the edges of the frame, " +
+      "floating particles, soft volumetric haze, dark reflective floor, symmetrical composition",
+  },
 };
 
-function grafo(prompt, seme) {
+function grafo(prompt, seme, larghezza, altezza, passi) {
   return {
     1: { class_type: "UNETLoader", inputs: { unet_name: PESI.dit, weight_dtype: "default" } },
     2: { class_type: "CLIPLoader", inputs: { clip_name: PESI.txt, type: "stable_diffusion" } },
@@ -109,13 +126,13 @@ function grafo(prompt, seme) {
     4: { class_type: "CLIPTextEncode", inputs: { clip: ["2", 0], text: NEGATIVO } },
     5: {
       class_type: "EmptySD3LatentImage",
-      inputs: { width: LARGHEZZA, height: ALTEZZA, batch_size: 1 },
+      inputs: { width: larghezza, height: altezza, batch_size: 1 },
     },
     6: {
       class_type: "KSampler",
       inputs: {
         model: ["1", 0], positive: ["3", 0], negative: ["4", 0], latent_image: ["5", 0],
-        seed: seme, steps: 12, cfg: 1,
+        seed: seme, steps: passi, cfg: 1,
         sampler_name: "euler", scheduler: "simple", denoise: 1,
       },
     },
@@ -131,7 +148,15 @@ async function genera(id, scheda) {
   const risposta = await fetch(`${MOTORE}/prompt`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ prompt: grafo(scheda.prompt, scheda.seme) }),
+    body: JSON.stringify({
+      prompt: grafo(
+        scheda.prompt,
+        scheda.seme,
+        scheda.larghezza ?? LARGHEZZA,
+        scheda.altezza ?? ALTEZZA,
+        scheda.passi ?? PASSI,
+      ),
+    }),
   });
   const esito = await risposta.json();
   if (!risposta.ok) {
@@ -171,12 +196,12 @@ async function genera(id, scheda) {
  * ridimensionamento lo fa Pillow, che è già nell'ambiente Python della suite —
  * non serve aggiungere una libreria a Node per una cosa che si fa una volta.
  */
-function rimpicciolisci(python, sorgente, destinazione) {
+function rimpicciolisci(python, sorgente, destinazione, larghezza, altezza) {
   const codice = [
     "from PIL import Image",
     "import sys",
     "img = Image.open(sys.argv[1]).convert('RGB')",
-    "img = img.resize((640, 240), Image.LANCZOS)",
+    `img = img.resize((${larghezza}, ${altezza}), Image.LANCZOS)`,
     "img.save(sys.argv[2], 'WEBP', quality=82, method=6)",
   ].join("\n");
   const esito = spawnSync(python, ["-c", codice, sorgente, destinazione], { encoding: "utf8" });
@@ -201,7 +226,11 @@ async function main() {
     process.stdout.write(`${id}… `);
     const grezza = await genera(id, scheda);
     const leggera = join(DESTINAZIONE, `${id}.webp`);
-    rimpicciolisci(python, grezza, leggera);
+    // Lo splash resta a metà misura (800x450): a schermo intero su un 4K è
+    // comunque più grande di come lo si vede, e un file più piccolo carica
+    // prima nell'unico momento in cui contano i millisecondi.
+    const [wOut, hOut] = id === "splash" ? [800, 450] : [640, 240];
+    rimpicciolisci(python, grezza, leggera, wOut, hOut);
     require("node:fs").rmSync(grezza);
     console.log("fatta");
   }

@@ -584,17 +584,53 @@ api.gpu.onChanged(aggiornaSpiaGpu);
 
 costruisciGriglia();
 
+/**
+ * Lo splash: copre l'hub finché questo giro di richieste non è finito.
+ *
+ * Prima si vedeva un istante "Ambiente: —" e una griglia vuota, poi tutto
+ * cambiava sotto gli occhi appena le risposte arrivavano. Coprendo con
+ * un'immagine invece di mostrare l'assenza, quell'istante sparisce: quando lo
+ * splash si toglie, l'hub è già quello vero.
+ */
+const splash = document.getElementById("splash") as HTMLElement;
+const splashStato = document.getElementById("splash-stato") as HTMLElement;
+
+function dilloAlloSplash(testo: string): void {
+  splashStato.textContent = testo;
+}
+
 void (async () => {
-  (document.getElementById("versione") as HTMLElement).textContent =
-    `versione ${await api.suite.version()}`;
-  aggiornaSchede(await api.apps.list());
-  aggiornaBarraAggiornamenti(await api.update.state());
-  aggiornaSpiaRuntime(await api.runtime.state());
-  aggiornaSpiaGpu(await api.gpu.state());
-  selettoreVelocita.value = (await api.impostazioni.leggi()).velocita;
-  // Per ultima, quando le schede hanno già detto cosa manca: la guida quei
-  // numeri li mostra, e senza sarebbe una domanda senza prezzi.
-  await forseMostraGuida(ultimiStati);
+  try {
+    dilloAlloSplash("Controllo la versione…");
+    (document.getElementById("versione") as HTMLElement).textContent =
+      `versione ${await api.suite.version()}`;
+
+    // La finestra è già in ascolto mentre l'ambiente Python viene sondato:
+    // senza aspettare qui, `apps.list()` prenderebbe i valori di partenza e li
+    // correggerebbe un istante dopo, sotto gli occhi.
+    dilloAlloSplash("Verifico l'ambiente e i modelli…");
+    await api.suite.avvioPronto();
+
+    dilloAlloSplash("Guardo cosa c'è già installato…");
+    aggiornaSchede(await api.apps.list());
+
+    dilloAlloSplash("Cerco aggiornamenti…");
+    aggiornaBarraAggiornamenti(await api.update.state());
+
+    dilloAlloSplash("Controllo l'ambiente…");
+    aggiornaSpiaRuntime(await api.runtime.state());
+    aggiornaSpiaGpu(await api.gpu.state());
+    selettoreVelocita.value = (await api.impostazioni.leggi()).velocita;
+
+    // Per ultima, quando le schede hanno già detto cosa manca: la guida quei
+    // numeri li mostra, e senza sarebbe una domanda senza prezzi.
+    dilloAlloSplash("Quasi pronta…");
+    await forseMostraGuida(ultimiStati);
+  } finally {
+    // In un `finally`: anche se una richiesta va storta, l'hub non deve
+    // restare nascosto per sempre dietro la schermata di caricamento.
+    splash.classList.add("chiuso");
+  }
 })();
 
 /* ------------------------------------------------------------------ spazio */

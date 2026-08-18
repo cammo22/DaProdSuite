@@ -937,3 +937,96 @@ li.modello .bottone {
 .scheda-arte img {
   transition: transform 0.35s ease;
 }
+
+/* ---------------------------------------------------------------- splash */
+/*
+  Copre l'hub finché non ha davvero i dati della prima richiesta. Prima si
+  vedeva un istante "Ambiente: —" e una griglia vuota mentre le risposte
+  arrivavano: adesso quell'istante è nascosto dietro un'immagine, non da
+  un'assenza.
+*/
+.splash {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: var(--fondo);
+  /* Non un semplice display:none: la dissolvenza rende visibile che la suite
+     sta passando dalla preparazione al pronto, non sparendo di scatto. */
+  opacity: 1;
+  transition: opacity 0.5s ease;
+}
+
+.splash.chiuso {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.splash-arte {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* L'immagine è un'atmosfera, non il soggetto: il testo sopra deve restare
+     leggibile su qualunque punto le sia capitato sotto. */
+  filter: saturate(0.9) brightness(0.55);
+}
+
+.splash-velo {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(120% 90% at 50% 60%, transparent 0%, var(--fondo) 92%),
+    linear-gradient(180deg, rgba(13, 15, 20, 0.55), rgba(13, 15, 20, 0.85));
+}
+
+.splash-corpo {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  text-align: center;
+}
+
+.splash-logo {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #7c5cff, #ff5c8a, #ffa63d, #3ddbff);
+  box-shadow: 0 10px 40px rgba(124, 92, 255, 0.35);
+}
+
+.splash-corpo h1 {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--testo);
+}
+
+.splash-spinner {
+  width: 26px;
+  height: 26px;
+  margin-top: 6px;
+  border-radius: 50%;
+  border: 3px solid rgba(255, 255, 255, 0.16);
+  border-top-color: var(--testo);
+  animation: splash-gira 0.85s linear infinite;
+}
+
+@keyframes splash-gira {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.splash-stato {
+  margin: 0;
+  font-size: 13.5px;
+  color: var(--testo-tenue);
+  min-height: 1.4em;
+}

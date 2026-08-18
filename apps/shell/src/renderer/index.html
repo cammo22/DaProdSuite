@@ -10,6 +10,21 @@
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
+    <!-- Copre tutto finché l'hub non ha davvero i dati (schede, ambiente, GPU,
+         aggiornamenti): senza, si vedeva un attimo "Ambiente: —" prima che le
+         risposte arrivassero e la pagina si aggiornasse sotto gli occhi. Si
+         toglie in main.ts, alla fine del primo giro di richieste. -->
+    <div class="splash" id="splash">
+      <img class="splash-arte" src="media/splash.webp" alt="" />
+      <div class="splash-velo"></div>
+      <div class="splash-corpo">
+        <span class="splash-logo" aria-hidden="true"></span>
+        <h1>DaProd Suite</h1>
+        <div class="splash-spinner" aria-hidden="true"></div>
+        <p class="splash-stato" id="splash-stato">Mi preparo…</p>
+      </div>
+    </div>
+
     <header class="testata">
       <div class="marchio">
         <span class="logo" aria-hidden="true"></span>

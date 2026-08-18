@@ -5,7 +5,7 @@
  * Python resti in giro a occupare la VRAM.
  */
 
-import { BrowserWindow, Menu, app, shell } from "electron";
+import { BrowserWindow, Menu, app, screen, shell } from "electron";
 import { join } from "node:path";
 import { APP_IDS, type AppId } from "@daprod/ipc";
 import { appManager } from "./app-manager";
@@ -54,7 +54,11 @@ async function start(): Promise<void> {
   createHub();
 
   gpu.startPolling();
-  await appManager.refreshAll();
+  // Assegnata *prima* dell'await: la finestra è già in ascolto (l'ha appena
+  // creata `createHub()`) e la sua prima richiesta deve trovare la promessa
+  // già lì, non ancora `undefined`.
+  appManager.prontoAlPrimoAvvio = appManager.refreshAll();
+  await appManager.prontoAlPrimoAvvio;
 
   creaTray({
     mostraHub: () => {
@@ -92,10 +96,30 @@ async function start(): Promise<void> {
   });
 }
 
+/**
+ * Quanto deve essere grande l'hub, in proporzione allo schermo.
+ *
+ * 1180×820 era tarato per un 1080p e su un 2K o un 4K restava piccolo in mezzo
+ * allo schermo, con la suite che sembrava un programmino invece del prodotto.
+ * Qui la finestra prende una fetta fissa dell'area utile — il 78% in
+ * larghezza, il 82% in altezza — quindi cresce con lo schermo invece di
+ * restare alla stessa misura per tutti. `minWidth`/`minHeight` restano bassi:
+ * su un monitor piccolo o in una finestra ridotta a mano l'hub deve continuare
+ * a funzionare.
+ */
+function misuraHub(): { width: number; height: number } {
+  const area = screen.getPrimaryDisplay().workAreaSize;
+  return {
+    width: Math.round(Math.min(area.width * 0.78, 1900)),
+    height: Math.round(Math.min(area.height * 0.82, 1300)),
+  };
+}
+
 function createHub(): void {
+  const misura = misuraHub();
   hub = new BrowserWindow({
-    width: 1180,
-    height: 820,
+    width: misura.width,
+    height: misura.height,
     minWidth: 900,
     minHeight: 640,
     show: false,

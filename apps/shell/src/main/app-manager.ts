@@ -78,6 +78,22 @@ const FINESTRE: Partial<Record<AppId, Finestra>> = {
 class AppManager extends EventEmitter {
   private states = new Map<AppId, AppState>();
 
+  /**
+   * Il primo `refreshAll()`, quello che sostituisce i "non-inclusa" di
+   * partenza con lo stato vero.
+   *
+   * **Il bug che risolve.** L'hub si apre prima che questo giro finisca —
+   * sonda Python e torch con un sottoprocesso, non è istantaneo — e senza
+   * questa promessa la prima `apps.list()` dal renderer prendeva sempre i
+   * valori di default: "Ambiente: da installare" e tutte le schede spente,
+   * corrette un attimo dopo quando `refreshAll` finiva e mandava l'evento
+   * `changed`. Si vedeva, ed era il lampo che Cammo non voleva più.
+   *
+   * L'hub aspetta questa prima di leggere qualunque cosa
+   * (`CHANNELS.suiteAvvioPronto`): la prima occhiata è già quella giusta.
+   */
+  prontoAlPrimoAvvio: Promise<void> = Promise.resolve();
+
   constructor() {
     super();
     for (const app of APP_LIST) {

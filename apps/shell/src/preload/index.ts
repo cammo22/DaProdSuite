@@ -36,6 +36,7 @@ const api: SuiteApi = {
   suite: {
     version: () => ipcRenderer.invoke(CHANNELS.suiteVersion),
     revealPath: (kind) => ipcRenderer.invoke(CHANNELS.suiteRevealPath, kind),
+    avvioPronto: () => ipcRenderer.invoke(CHANNELS.suiteAvvioPronto),
   },
 
   // Gli stessi canali che usano le app: la libreria e' una sola, e l'hub la

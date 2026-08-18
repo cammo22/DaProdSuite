@@ -276,6 +276,16 @@ export interface SuiteApi {
     version(): Promise<string>;
     /** Apre un percorso in Esplora risorse (cartella output, log). */
     revealPath(kind: "output" | "logs" | "models"): Promise<void>;
+    /**
+     * Risolve quando il primo giro di controlli è finito: ambiente Python
+     * sondato, modelli presenti verificati sul disco per ogni scheda.
+     *
+     * L'hub la aspetta **prima** di leggere qualunque stato. Senza, la
+     * finestra è già in ascolto mentre quei controlli girano ancora — la
+     * sonda di Python non è istantanea — e la prima occhiata prendeva sempre
+     * i valori di partenza, corretti un istante dopo sotto gli occhi.
+     */
+    avvioPronto(): Promise<void>;
   };
 
   /**
@@ -547,6 +557,7 @@ export type Unsubscribe = () => void;
 export const CHANNELS = {
   suiteVersion: "suite:version",
   suiteRevealPath: "suite:reveal-path",
+  suiteAvvioPronto: "suite:avvio-pronto",
 
   appsList: "apps:list",
   appsOpen: "apps:open",
