@@ -10,7 +10,7 @@ Un programma solo per fare musica, immagini, video e parlare con un avatar.
 Ogni app la installi quando ti serve e la disinstalli quando non ti serve più.
 Gira sul tuo computer: niente account, niente chiavi API, codice aperto.
 
-[![versione](https://img.shields.io/badge/versione-0.1.0-7c5cff)](https://github.com/cammo22/DaProdSuite/releases)
+[![versione](https://img.shields.io/badge/versione-0.2.0-7c5cff)](https://github.com/cammo22/DaProdSuite/releases)
 [![licenza](https://img.shields.io/badge/licenza-MIT-5cff9d)](LICENSE)
 [![piattaforma](https://img.shields.io/badge/Windows-x64-3ddbff)](#requisiti)
 [![sito](https://img.shields.io/badge/sito-cammo22.github.io-ffa63d)](https://cammo22.github.io/DaProdSuite/)
@@ -89,14 +89,16 @@ lo stesso.
 
 ## A che punto siamo
 
-> **0.1.0 — le prime app si usano davvero, ogni giorno.**
+> **0.2.0 — cinque app su sette, e ognuna ha la sua icona.**
 >
 > **DaProdVisualizer, DaProdMusica, DaProdFoto, DaProdDream** e **DaProd
 > IoDigitale** sono nella suite e funzionano. Si installano da sole, motore e
 > modelli compresi, e riprendono da dove erano se cade la rete. In DaProdFoto e
 > DaProdDream scegli tu con quale modello generare. Ogni app ha un terminale con
 > le ultime righe del motore, e nell'hub ci sono i pannelli per vedere risultati,
-> modelli, log e spazio occupato in un posto solo.
+> modelli, log e spazio occupato in un posto solo. Il **Visualizer si apre da
+> dentro le altre app** e ci resta acceso insieme: si ascolta un brano
+> guardandolo mentre l'app che l'ha fatto continua a lavorare.
 >
 > **DaProdCinema** e **DaProdCompanion** non ci sono ancora. Esistono come
 > progetti a parte e li stiamo portando nella suite uno alla volta, provandoli

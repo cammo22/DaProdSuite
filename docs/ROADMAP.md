@@ -77,12 +77,19 @@ la cosa che sa chiedere.
 - [ ] **DaProdCinema**: una chat dove butti l'idea e le foto, e ne esce un
       piccolo video da montare
 
-## 0.2.0 — Le altre tre
+## 0.2.0 — Le altre tre ⚠
+
+**Pubblicata il 18 agosto 2026 con due su tre.** Dream e IoDigitale sono dentro
+e girano; il Companion no, ed è quello che apre la 0.2.1. Il numero è salito
+comunque perché nel frattempo era maturato molto altro — le icone, l'hub in
+4:3, il terminale in ogni app, i tre pannelli veri, la procedura guidata — e
+tenerlo fermo avrebbe voluto dire non pubblicare niente aspettando un'app sola.
 
 - [x] **DaProdDream** — trasformazione in tempo reale *(dentro: motore avviato
       dal supervisore, SD-Turbo e TAESD dalla cartella condivisa, finestra della
       suite. Provato fino al modello caricato — la webcam la giudichi tu)*
-- [ ] **DaProdCompanion** — memoria e sogni; va aggiunto `sqlite_vec` al suo pyproject
+- [ ] **DaProdCompanion** — memoria e sogni; va aggiunto `sqlite_vec` al suo
+      pyproject. *Slittato alla 0.2.1: è l'unica delle tre che non è entrata.*
 - [x] **DaProd IoDigitale** — l'avatar parlante, ex LeapTalk *(dentro il 17
       agosto 2026: motore avviato dal supervisore, modelli dalla cartella
       condivisa, finestra della suite. Provato fino al motore pronto — la
@@ -98,6 +105,10 @@ la cosa che sa chiedere.
       suite (`apps/shell/scripts/genera-copertine.cjs`): descrizione e seme
       stanno nel file, quindi una che non piace si rifà cambiando una riga.
       *Fatto il 17 agosto 2026.*
+- [x] **Ogni app ha la sua icona**, generata con Anima allo stesso modo
+      (`apps/shell/scripts/genera-icone.cjs`), quella della suite compresa: è
+      l'icona del programma, dell'installer, dell'area di notifica e della barra
+      delle applicazioni. *Fatto il 18 agosto 2026.*
 - [ ] **Anteprima al passaggio del mouse**: il video corto al posto del fermo
       immagine, generato con l'app stessa.
 
@@ -128,6 +139,18 @@ Vedi [ACCESSO-REMOTO.md](ACCESSO-REMOTO.md).
 - [ ] Interfacce adattate allo schermo del telefono
 
 ## Chiesto e da fare, senza ancora una versione
+
+- ~~**L'hub deve aprirsi in 4:3**~~ — fatto il 18 agosto 2026: prima prendeva
+  una fetta della larghezza e una dell'altezza indipendenti, quindi su un 16:9
+  usciva una finestra 16:9.
+- ~~**Il Visualizer apribile mentre gira un'altra app**~~ — fatto il 18 agosto
+  2026. La suite lo sapeva già fare (non è un motore pesante, non passa
+  dall'arbitro); quello che mancava era arrivarci senza tornare all'hub, ed è il
+  tasto in basso a destra di ogni app.
+- **L'interfaccia di DaProd IoDigitale è in inglese** — funziona, ma i pulsanti
+  dicono `Load Image` e `Hold to Talk`, e in cima c'è ancora scritto *LeapTalk
+  Live*, cioè il nome del progetto da cui viene. È l'unica scheda che non sembra
+  della suite.
 
 - ~~**Pulsanti veri nelle gallerie**~~ — fatto il 16 agosto 2026, e con loro il
   limite minimo della finestra sceso da 900 a 480 pixel.

@@ -18,6 +18,14 @@ files:
 # Manifest, requirements e servizi Python non entrano nell'asar: devono restare
 # file veri su disco perché uv e il processo Python li leggano ed eseguano.
 extraResources:
+  # Le icone generate con Anima. electron-builder incastona `build/icon.png`
+  # nell'eseguibile ma non la lascia come file: senza questa riga l'area di
+  # notifica della versione installata resta con un quadratino vuoto, e le
+  # finestre delle app perdono la loro.
+  - from: build/icon.png
+    to: icon.png
+  - from: build/icone
+    to: icone
   - from: ../../manifest
     to: manifest
   # Senza questo, `paths.ts` cerca base.txt in resources/requirements e non lo

@@ -1,7 +1,7 @@
 # Riprendere da qui
 
-Documento di passaggio fra una sessione e l'altra. Aggiornato il 16 agosto 2026
-(sera-notte).
+Documento di passaggio fra una sessione e l'altra. Aggiornato il **18 agosto
+2026**, con la 0.2.0 costruita.
 
 **Se stai leggendo questo all'inizio di una conversazione nuova**: leggi anche
 [COME-SI-LAVORA.md](COME-SI-LAVORA.md) e [ROADMAP.md](ROADMAP.md), poi vai al
@@ -37,7 +37,12 @@ Repo pubblico: **https://github.com/cammo22/DaProdSuite**
 | **Un'app può chiedere un motore in più** | fatto e provato (Dream chiede ComfyUI per Anima) |
 | **Pulsanti veri nelle gallerie + finestre strette** | fatto e provato, Foto e Musica |
 | **LTX 2.5 nel piano di Cinema** | scritto, con i nodi verificati sul motore |
-| Companion, IoDigitale | **da migrare** |
+| **DaProd IoDigitale nella suite** | fatto il 17 agosto, **interfaccia ancora in inglese** |
+| **Icone della suite e delle app, fatte con Anima** | fatte e provate (18 agosto) |
+| **Hub in 4:3, e più grande** | fatto e provato: 1266×949 su questo monitor |
+| **Il Visualizer si apre da dentro le altre app** | fatto e provato |
+| **0.2.0 costruita** | installer sul PC, **non ancora pubblicata** |
+| Companion | **da migrare** |
 
 Si lavora solo su `main`: i rami `suite-interconnessa` e `musica-nella-suite`
 sono stati uniti e cancellati, e con loro le PR #1 e #2.
@@ -526,7 +531,100 @@ che genera non vanno d'accordo sulla stessa macchina**. La suite gia' spegne
 l'LLM prima di una generazione pesante; il verso opposto — avvisare che la
 risposta sara' lenta perche' il motore e' acceso — non c'e' ancora.
 
-## Il prossimo passo: DaProd IoDigitale
+## Il giro del 18 agosto 2026
+
+Quattro cose chieste, quattro fatte e provate dal vivo aprendo la suite.
+
+**La prima cosa trovata non era fra quelle**: `apps/shell/src/main/llm.ts` aveva
+dentro due volte lo stesso pezzo — l'`import` di `node:http` e tutta `postJson`,
+identiche riga per riga, cambiava solo il commento. Un incollaggio doppio
+rimasto dalla sessione prima. Con quello la suite **non compilava**: quattro
+errori di `tsc`, e chi avesse lanciato il `.bat` avrebbe visto la build vecchia
+senza capire perché non cambiava niente. Tolto il duplicato, il file è tornato
+identico all'ultimo commit — non c'era niente di nuovo da salvare.
+
+**Da ricordare:** `pnpm run typecheck` prima di chiudere una sessione, non solo
+prima di un commit. Un albero di lavoro che non compila è una trappola per chi
+riprende dopo.
+
+### L'hub in 4:3
+
+Si apriva 16:9 (1498×846 misurati) perché prendeva **una fetta della larghezza e
+una dell'altezza indipendenti fra loro**: su un monitor 16:9 ne usciva per forza
+una finestra 16:9. Adesso comanda l'altezza — il 92% dell'area utile — e la
+larghezza viene da lì; solo su un monitor stretto si fa il contrario. In nessuno
+dei due casi la proporzione cambia.
+
+**Vale solo per l'hub**, ed è una decisione di Cammo del 18 agosto: le finestre
+delle app tengono la loro misura (quella del Visualizer gli va bene com'è), e il
+16:9 per le altre si vedrà semmai più avanti. Il 4:3 è la forma della griglia
+delle schede, non una regola della suite.
+
+### Le icone, generate con Anima
+
+`apps/shell/scripts/genera-icone.cjs`, fratello di `genera-copertine.cjs` e
+fatto sulla stessa strada: stesso motore, stessi tre pesi di Anima,
+`PreviewImage` per non sporcare la libreria, seme e descrizione nel file così
+una che non piace si rifà da sola.
+
+**Quello che cambia rispetto alle copertine, ed è tutto lì:**
+
+| Copertina | Icona |
+|---|---|
+| 1024×384 (8:3), è una striscia | 512×512, è un quadrato |
+| una scena | **un soggetto solo**, margini vuoti intorno |
+| si guarda a 640 px | deve reggere a **32 px** |
+| WebP, va nel repo | PNG con angoli arrotondati al 22% |
+
+Gli angoli li fa Pillow dopo, disegnando la maschera a quattro volte la misura e
+riducendola: è l'antialiasing che PIL sulle forme non fa da sé.
+
+**Due prompt sono stati rifatti perché non si leggevano**, e il motivo è lo
+stesso in tutti e due: descrivere l'oggetto non basta, serve una **forma**.
+"a film reel seen from the front" dava un anello viola e basta; con la pellicola
+che si srotola in diagonale la sagoma ha un verso. "big calm eyes" dava due
+pallini verdi che non sembravano un robot; col corpo intero la testa prende un
+contorno.
+
+**Un difetto vecchio trovato per strada:** nella versione installata l'icona
+nell'area di notifica era **vuota**. `tray.ts` la cercava in
+`resources/icon.png`, ma electron-builder l'icona la incastona nell'eseguibile e
+non la lascia come file — quindi quel percorso non è mai esistito. Adesso
+`build/icon.png` e `build/icone/` sono in `extraResources`, e i percorsi stanno
+in un posto solo (`ICONA_SUITE` e `iconaApp(id)` in `paths.ts`).
+
+### Il Visualizer da dentro le altre app
+
+**Prima di scrivere una riga è stato provato quello che c'era**, e la risposta è
+che funzionava già: il Visualizer è `gpuHeavy: false`, non passa dall'arbitro, e
+dal vivo si è aperto accanto a DaPFoto e a DaPMusica — anche **mentre** Musica
+stava avviando il motore — senza che nessuna delle due si chiudesse.
+
+Quello che mancava era **arrivarci**. Il bottone "Apri" sta nell'hub, e l'hub
+mentre lavori è una finestra dietro le altre o l'hai chiusa del tutto. Quindi:
+
+- **`daprodSuite.apriApp(id)`** nel ponte comune, che chiama lo stesso
+  `appManager.open` dell'hub — stessi controlli, stesso arbitro, stesso motore
+  avviato prima della finestra.
+- **`tasto-visualizer.ts`**, iniettato dalla shell in ogni finestra come il
+  terminale e per le stesse ragioni: le app non condividono né origine né CSP, un
+  file comune fra loro non esiste, e `executeJavaScript` gira nel mondo della
+  pagina senza passare dalla sua CSP. **Una implementazione sola per tutte.**
+- **La barra in basso a destra adesso è condivisa** (`.daprod-barra`): la crea
+  chi arriva per primo fra il tasto del log e quello del Visualizer, e l'altro ci
+  si aggiunge. Così l'ordine in cui la shell inietta i pezzi non conta, e il
+  terzo tasto che servirà un giorno non dovrà spostare niente.
+
+## Il prossimo passo: DaProdCompanion
+
+È l'unica delle tre della 0.2.0 che non è entrata, e quello che serve è già
+scritto: vuole **LM Studio acceso** e `sqlite_vec` nel suo pyproject. Prima però
+c'è una cosa più piccola e più visibile: **l'interfaccia di IoDigitale è ancora
+tutta in inglese** — `Load Image`, `Hold to Talk`, `Chat History` — e in cima
+c'è ancora scritto *LeapTalk Live*, cioè il nome del progetto da cui viene. È
+l'unica scheda che non sembra della suite.
+
+## Com'è entrato DaProd IoDigitale
 
 **Viene da `Desktop\AvatarParlante\LeapTalk`.** Letto e inventariato il 16
 agosto 2026; il porto non è cominciato. È il gemello di Dream come struttura —

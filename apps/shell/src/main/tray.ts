@@ -6,9 +6,9 @@
  * chiuso sarebbe irrecuperabile fino al riavvio della suite.
  */
 
-import { Menu, Tray, app, nativeImage } from "electron";
-import { join } from "node:path";
+import { Menu, Tray, nativeImage } from "electron";
 import { APPS, type AppId } from "@daprod/ipc";
+import { ICONA_SUITE } from "./paths";
 
 let tray: Tray | null = null;
 
@@ -24,11 +24,7 @@ export function creaTray(azioni: AzioniTray): void {
   if (tray) return;
 
   const icona = nativeImage
-    .createFromPath(
-      app.isPackaged
-        ? join(process.resourcesPath, "icon.png")
-        : join(app.getAppPath(), "build", "icon.png"),
-    )
+    .createFromPath(ICONA_SUITE)
     // 16px è la dimensione dell'area di notifica su Windows: senza ridimensionare,
     // l'icona da 512 viene scalata male.
     .resize({ width: 16, height: 16 });

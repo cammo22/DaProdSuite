@@ -544,6 +544,22 @@ export interface ApiApp {
     leggi(nome: string, righe?: number): Promise<string>;
   };
 
+  /**
+   * Apre un'altra app della suite, senza passare dall'hub.
+   *
+   * **Perché serve.** L'hub è una finestra come le altre: mentre lavori in
+   * DaPMusica sta dietro, e se l'hai chiusa resta solo l'area di notifica. Da
+   * qui invece un'app ne apre un'altra dov'è già la mano di chi la usa.
+   *
+   * Il caso vero è il Visualizer, che non è un motore pesante e può stare
+   * acceso insieme a chiunque: si ascolta un brano guardandolo mentre l'app che
+   * l'ha fatto continua a generare. Fra due app pesanti invece l'arbitro della
+   * GPU fa il suo mestiere e la prima si chiude — che è giusto, su otto GB.
+   *
+   * Se l'app è già aperta la porta davanti invece di aprirne una seconda.
+   */
+  apriApp(destinazione: AppId): Promise<void>;
+
   /** Chiude questa finestra e torna all'hub. */
   chiudi(): Promise<void>;
 }
@@ -614,5 +630,6 @@ export const CHANNELS = {
   appInvia: "app:invia",
   appConsegna: "app:consegna",
   appMotoreInPiu: "app:motore-in-piu",
+  appApri: "app:apri",
   appChiudi: "app:chiudi",
 } as const;

@@ -78,6 +78,8 @@ export function esponiApiApp(io: AppId): void {
       leggi: (nome: string, righe?: number) => ipcRenderer.invoke(CHANNELS.logLeggi, nome, righe),
     },
 
+    apriApp: (destinazione: AppId) => ipcRenderer.invoke(CHANNELS.appApri, destinazione),
+
     chiudi: () => ipcRenderer.invoke(CHANNELS.appChiudi, io),
   };
 

@@ -8,7 +8,7 @@
  */
 
 import { app } from "electron";
-import { mkdirSync } from "node:fs";
+import { existsSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 
 /** Radice dei dati utente: %LOCALAPPDATA%\DaProdSuite */
@@ -67,6 +67,35 @@ export function cartellaApp(id: string): string {
   return app.isPackaged
     ? join(process.resourcesPath, "apps", id)
     : join(app.getAppPath(), "..", id);
+}
+
+/**
+ * L'icona della suite: quella del programma, dell'area di notifica e dell'hub.
+ *
+ * È generata con Anima (`scripts/genera-icone.cjs`), come le copertine delle
+ * schede. In sviluppo sta in `build/`, dove electron-builder la cerca per
+ * ricavarne il `.ico`; una volta impacchettata **va copiata a mano** in
+ * resources (vedi extraResources), perché electron-builder l'icona la incastona
+ * nell'eseguibile e non la lascia come file — e senza il file l'area di notifica
+ * resterebbe con un quadratino vuoto.
+ */
+export const ICONA_SUITE = app.isPackaged
+  ? join(process.resourcesPath, "icon.png")
+  : join(app.getAppPath(), "build", "icon.png");
+
+/**
+ * L'icona di una singola app, per la sua finestra e per la barra delle
+ * applicazioni. Anche queste generate con Anima.
+ *
+ * Torna `undefined` se quell'app non ce l'ha: `BrowserWindow` accetta
+ * `icon: undefined` e ripiega su quella del programma, che è il comportamento
+ * giusto — meglio l'icona della suite che nessuna.
+ */
+export function iconaApp(id: string): string | undefined {
+  const percorso = app.isPackaged
+    ? join(process.resourcesPath, "icone", `${id}.png`)
+    : join(app.getAppPath(), "build", "icone", `${id}.png`);
+  return existsSync(percorso) ? percorso : undefined;
 }
 
 export function ensureDataDirs(): void {

@@ -242,6 +242,11 @@ export function registerIpc(getHub: () => BrowserWindow | null): void {
     leggiLog(nome, righe ?? 300),
   );
 
+  // Un'app che ne apre un'altra: la stessa strada dell'hub, quindi passa dagli
+  // stessi controlli — l'arbitro della GPU, il motore avviato prima della
+  // finestra, lo stato della scheda che si aggiorna.
+  ipcMain.handle(CHANNELS.appApri, (_e, destinazione: AppId) => appManager.open(destinazione));
+
   ipcMain.handle(CHANNELS.appChiudi, (_e, id: AppId) => appManager.close(id));
 
   /* ------------------------------------------------- notifiche al renderer */

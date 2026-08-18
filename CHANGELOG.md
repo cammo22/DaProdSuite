@@ -12,6 +12,57 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ## Non ancora pubblicato
 
+Niente, per ora: tutto quello che c'era è uscito nella 0.2.0 qui sotto.
+
+## 0.2.0 — Cinque app, e ognuna ha la sua faccia
+
+**18 agosto 2026.** Dalla 0.1.0 sono entrate due app — DaProdDream e DaProd
+IoDigitale — e la suite ha smesso di essere sette schede con la stessa icona.
+
+### La suite si apre in 4:3, e le due barre sono sottili
+
+- La finestra dell'hub si apriva **16:9** su un monitor 16:9: 1498×846, cioè una
+  striscia bassa e larga, con le schede stirate. La griglia delle sette schede è
+  fatta per una finestra alta.
+- Adesso è **4:3 sempre**, su qualunque schermo: si parte dall'altezza e la
+  larghezza viene da lì. Su un monitor stretto comanda la larghezza, ma la
+  proporzione non cambia. Ridimensionarla a mano resta libero.
+- **Vale solo per l'hub**: le finestre delle app tengono la misura che avevano,
+  che è quella giusta per quello che ci sta dentro.
+- **La barra in alto e quella in basso sono più sottili**: erano venti pixel
+  sopra e sotto per una riga di scritte che si guarda una volta. Quello spazio
+  adesso ce l'hanno le schede — con la finestra più grande e le barre magre,
+  tutte e sette si vedono senza dover scorrere fino in fondo.
+
+### Le icone, disegnate dalla suite stessa
+
+- **L'icona del programma l'ha fatta Anima**, cioè il modello che la suite
+  installa e che usi in DaPFoto: sette raggi di luce colorati che convergono su
+  un centro scuro. Non è un disegno preso in giro per il web né un logo
+  disegnato a mano — è il software che si è fatto il ritratto.
+- **Ogni app ha adesso la sua icona**, sempre generata con Anima: il microfono
+  rosa di Musica, l'obiettivo ambra di Foto, la testa di luce azzurra di Dream,
+  il volto corallo di IoDigitale, gli anelli viola del Visualizer. Si vedono
+  nella barra del titolo e in quella delle applicazioni: **con cinque finestre
+  aperte si riconoscono senza leggerne il nome.**
+- Ci sono anche quelle di Cinema e Companion, pronte per quando entreranno.
+- Sono rigenerabili: seme e descrizione stanno in
+  `apps/shell/scripts/genera-icone.cjs`, quindi una che non piace si rifà
+  cambiando una riga.
+- **L'icona nell'area di notifica della versione installata era vuota**, e
+  nessuno se n'era accorto: il file non veniva copiato nel pacchetto. Adesso sì.
+
+### Il Visualizer si apre da dentro le altre app
+
+- In basso a destra di ogni app, accanto al tasto **log**, c'è **♪ Visualizer**:
+  lo apre senza chiudere quello che stai facendo e senza tornare all'hub.
+- Il Visualizer non è un motore pesante, quindi **sta acceso insieme a
+  chiunque**: si ascolta un brano guardandolo mentre DaPMusica ne genera un
+  altro. Fra due app pesanti invece resta l'arbitro della scheda video, che ne
+  tiene accesa una sola — su otto GB è giusto così.
+- Prima si poteva già fare, ma solo dall'hub, che mentre lavori sta dietro alle
+  altre finestre o l'hai chiusa del tutto.
+
 ### La prima volta la suite ti prende per mano
 
 - Non si vede più il lampo di "Ambiente: da installare" e le schede spente che
