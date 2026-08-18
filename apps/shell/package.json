@@ -1,6 +1,6 @@
 {
   "name": "@daprod/shell",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "Guscio della suite: hub, installazione, aggiornamenti, avvio delle app.",
   "main": "out/main/index.js",
@@ -8,7 +8,7 @@
     "build": "tsc -p tsconfig.main.json && tsc -p tsconfig.preload.json && tsc -p tsconfig.renderer.json && node scripts/copy-assets.mjs",
     "dev": "pnpm build && electron .",
     "dist": "pnpm build && electron-builder --win --config electron-builder.yml --publish never",
-    "icon": "pwsh -NoProfile -File scripts/make-icon.ps1",
+    "icone": "node scripts/genera-icone.cjs",
     "typecheck": "tsc -p tsconfig.main.json --noEmit && tsc -p tsconfig.renderer.json --noEmit"
   },
   "dependencies": {

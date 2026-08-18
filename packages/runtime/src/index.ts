@@ -5,6 +5,7 @@ export {
   type InstallOptions,
   type InstallProgress,
 } from "./install";
+export { riparaAmbiente, type RiparaOptions } from "./riparazione";
 export {
   ensureUv,
   installaRequisiti,

@@ -17,9 +17,17 @@
 
 # Il modello che muove la faccia. Le stesse che vuole Dream, con lo stesso
 # minimo: chi ha gia' installato una delle due non scarica niente.
-diffusers>=0.36.0
-transformers>=4.50.0
-peft>=0.17.0
+# **I minimi sono alzati alle versioni provate il 19 agosto 2026**, e non è
+# pignoleria: a rompere l'ambiente non sono gli aggiornamenti, sono le
+# **retrocessioni**. Quella notte `huggingface-hub` e `transformers` sono
+# rimbalzate avanti e indietro fra due installazioni finché una disinstallazione
+# non è fallita a metà (l'errore 4395 dell'antivirus, vedi `uv.ts`), e Musica,
+# Foto, Dream e IoDigitale hanno smesso di funzionare tutte insieme. Un minimo
+# non impone niente a nessuno — al contrario di `==`, che è il motivo per cui
+# qui sopra c'è scritto di non usarlo — ma toglie di mezzo il rimbalzo.
+diffusers>=0.38.0
+transformers>=5.15.0
+peft>=0.19.1
 accelerate>=1.10.0
 
 # La faccia: riconoscimento dei punti del volto e lettura/scrittura del video.

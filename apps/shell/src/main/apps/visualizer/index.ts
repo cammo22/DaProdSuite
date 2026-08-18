@@ -18,7 +18,9 @@ import { readBounds, writeState, readState } from "../../app-state";
 import { findFfmpeg, transcodeToWav } from "./ffmpeg";
 import { codificaUrl, gestisciSchema } from "../../file-scheme";
 import { registraConsole } from "../../finestre";
+import { iconaApp } from "../../paths";
 import { montaTerminale } from "../../terminale";
+import { montaTastoVisualizer } from "../../tasto-visualizer";
 
 /** Estensioni offerte dal dialogo file nativo. */
 const ESTENSIONI_AUDIO = [
@@ -66,6 +68,10 @@ export function apri(onClose: () => void): void {
     backgroundColor: "#06070c",
     autoHideMenuBar: true,
     title: "DaProdVisualizer",
+    // L'icona della finestra e della barra delle applicazioni: quella dell'app,
+    // non quella della suite. Con cinque finestre aperte è l'unico modo per
+    // riconoscerle senza leggerne il titolo.
+    icon: iconaApp("visualizer"),
     webPreferences: {
       preload: join(__dirname, "..", "..", "..", "preload", "visualizer.js"),
       contextIsolation: true,
@@ -82,6 +88,8 @@ export function apri(onClose: () => void): void {
   // Le righe del motore dentro la finestra dove sono capitate, con Ctrl+L.
   // Iniettato dalla shell: e' una implementazione sola per tutte le app.
   montaTerminale(win, "visualizer");
+  // E il modo di aprire DaPVisualizer senza tornare all'hub.
+  montaTastoVisualizer(win, "visualizer");
   if (bounds.maximized) win.maximize();
   win.once("ready-to-show", () => win.show());
 

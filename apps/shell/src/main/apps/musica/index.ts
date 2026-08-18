@@ -16,7 +16,9 @@ import { join } from "node:path";
 import { readBounds, writeState } from "../../app-state";
 import { gestisciSchema, serviInterfaccia, urlInterfaccia } from "../../file-scheme";
 import { registraConsole } from "../../finestre";
+import { iconaApp } from "../../paths";
 import { montaTerminale } from "../../terminale";
+import { montaTastoVisualizer } from "../../tasto-visualizer";
 import { indirizzo } from "../../servizi";
 
 const PREDEFINITI = { width: 1420, height: 900, maximized: false };
@@ -59,6 +61,10 @@ export function apri(onClose: () => void): void {
     backgroundColor: "#08090d",
     autoHideMenuBar: true,
     title: "DaProdMusica",
+    // L'icona della finestra e della barra delle applicazioni: quella dell'app,
+    // non quella della suite. Con cinque finestre aperte è l'unico modo per
+    // riconoscerle senza leggerne il titolo.
+    icon: iconaApp("musica"),
     webPreferences: {
       preload: join(__dirname, "..", "..", "..", "preload", "musica.js"),
       contextIsolation: true,
@@ -72,6 +78,8 @@ export function apri(onClose: () => void): void {
   // Le righe del motore dentro la finestra dove sono capitate, con Ctrl+L.
   // Iniettato dalla shell: e' una implementazione sola per tutte le app.
   montaTerminale(win, "musica");
+  // E il modo di aprire DaPVisualizer senza tornare all'hub.
+  montaTastoVisualizer(win, "musica");
   if (bounds.maximized) win.maximize();
   win.once("ready-to-show", () => win.show());
 

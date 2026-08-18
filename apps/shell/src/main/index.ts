@@ -12,7 +12,7 @@ import { appManager } from "./app-manager";
 import { gpu } from "./gpu";
 import { spegniSeNostro } from "./llm";
 import { registerIpc } from "./ipc";
-import { ensureDataDirs } from "./paths";
+import { ICONA_SUITE, ensureDataDirs } from "./paths";
 import { updater } from "./updater";
 import { gestisciSchema, registraSchema } from "./file-scheme";
 import { creaTray, distruggiTray } from "./tray";
@@ -96,23 +96,43 @@ async function start(): Promise<void> {
   });
 }
 
+/** La forma dell'hub: quattro di larghezza per tre di altezza. */
+const RAPPORTO_HUB = 4 / 3;
+
 /**
  * Quanto deve essere grande l'hub, in proporzione allo schermo.
  *
- * 1180×820 era tarato per un 1080p e su un 2K o un 4K restava piccolo in mezzo
- * allo schermo, con la suite che sembrava un programmino invece del prodotto.
- * Qui la finestra prende una fetta fissa dell'area utile — il 78% in
- * larghezza, il 82% in altezza — quindi cresce con lo schermo invece di
- * restare alla stessa misura per tutti. `minWidth`/`minHeight` restano bassi:
- * su un monitor piccolo o in una finestra ridotta a mano l'hub deve continuare
- * a funzionare.
+ * **L'hub si apre in 4:3, sempre.** Prima prendeva una fetta della larghezza e
+ * una dell'altezza indipendenti fra loro, quindi su un 16:9 usciva una finestra
+ * 16:9 (1498×846 misurati su questo monitor): le schede si stiravano in una
+ * striscia bassa e larga. La griglia delle sette schede è fatta per una finestra
+ * alta, ed è quella la forma che deve avere.
+ *
+ * Si parte dall'altezza — il 92% dell'area utile, che è il vincolo vero su un
+ * monitor da scrivania — e la larghezza viene da lì. Se così l'hub uscirebbe
+ * dallo schermo (monitor stretti, o due finestre affiancate) si fa il contrario
+ * e comanda la larghezza: in nessuno dei due casi la proporzione cambia.
+ *
+ * **Vale solo per l'hub.** Le finestre delle app tengono la loro misura, che è
+ * quella giusta per quello che ci sta dentro e che l'utente si è ridimensionato
+ * a mano: il 4:3 è la forma della griglia delle schede, non una regola della
+ * suite.
  */
 function misuraHub(): { width: number; height: number } {
   const area = screen.getPrimaryDisplay().workAreaSize;
-  return {
-    width: Math.round(Math.min(area.width * 0.78, 1900)),
-    height: Math.round(Math.min(area.height * 0.82, 1300)),
-  };
+
+  // 0,92 e non 0,82: alla prima prova in 4:3 la finestra veniva 1128×846, e
+  // l'ultima riga di schede restava tagliata sotto il bordo.
+  let height = Math.min(area.height * 0.92, 1440);
+  let width = height * RAPPORTO_HUB;
+
+  const massimo = Math.min(area.width * 0.94, 1920);
+  if (width > massimo) {
+    width = massimo;
+    height = width / RAPPORTO_HUB;
+  }
+
+  return { width: Math.round(width), height: Math.round(height) };
 }
 
 function createHub(): void {
@@ -120,11 +140,17 @@ function createHub(): void {
   hub = new BrowserWindow({
     width: misura.width,
     height: misura.height,
-    minWidth: 900,
-    minHeight: 640,
+    // Il minimo è anche lui 4:3, così la forma resta quella anche stringendo
+    // la finestra fino in fondo. Ridimensionarla a mano resta libero: bloccare
+    // la proporzione impedirebbe di affiancarla a un'altra finestra.
+    minWidth: 880,
+    minHeight: 660,
     show: false,
     backgroundColor: "#0d0f14",
     title: "DaProd Suite",
+    // L'icona della suite, generata con Anima come tutto il resto delle
+    // illustrazioni (`scripts/genera-icone.cjs`).
+    icon: ICONA_SUITE,
     webPreferences: {
       preload: join(__dirname, "..", "preload", "index.js"),
       contextIsolation: true,

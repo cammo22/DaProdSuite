@@ -26,6 +26,7 @@ ComfyUI ma dallo schema `daprod://`.
 
 import os
 import runpy
+import subprocess
 import sys
 from pathlib import Path
 
@@ -90,6 +91,68 @@ def nodi_di_terzi(motore: Path) -> Path:
     return motore.parent / "custom_nodes"
 
 
+# La risposta di `con_cuda()`, calcolata una volta sola.
+_cuda: "bool | None" = None
+
+
+def con_cuda() -> bool:
+    """C'è una scheda NVIDIA utilizzabile da torch su questa macchina?
+
+    **Il difetto che questa funzione risolve.** Su un PC senza NVIDIA il motore
+    moriva in avvio, prima ancora di aprire la porta::
+
+        comfy/model_management.py, in get_torch_device
+            return torch.device(torch.cuda.current_device())
+        AssertionError: Torch not compiled with CUDA enabled
+
+    ComfyUI dà per scontato CUDA e va detto **lui** che non c'è, con `--cpu`.
+    Da fuori si vedeva solo una scheda che non si apriva: il supervisore
+    aspettava `/health` da un processo già morto.
+
+    Si chiede a torch e non a `nvidia-smi`: quello che conta non è che la scheda
+    esista, è che *questa* build di torch la sappia usare. Una macchina con una
+    NVIDIA e un torch per CPU installato sopra deve andare in CPU, non fingere.
+
+    **La domanda si fa in un processo a parte, e non è un vezzo.** La prima
+    versione importava torch qui, e ComfyUI in avvio ha cominciato a scrivere
+    *«WARNING: Torch already imported, torch should never be imported before
+    this point»*: prima di importarlo lui prepara delle variabili d'ambiente, e
+    un import anticipato gliele porta via. Un sottoprocesso risponde alla stessa
+    domanda senza che in questo processo torch entri mai.
+
+    La risposta si tiene da parte: il sottoprocesso costa qualche secondo e la
+    domanda arriva tre volte.
+    """
+    global _cuda
+    if _cuda is not None:
+        return _cuda
+
+    try:
+        esito = subprocess.run(
+            [sys.executable, "-c", "import torch; print(int(torch.cuda.is_available()))"],
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
+        _cuda = esito.stdout.strip().endswith("1")
+    except Exception:
+        # Senza torch il motore non parte comunque: qui si sceglie solo la
+        # strada meno rumorosa, l'errore vero lo darà ComfyUI un attimo dopo.
+        _cuda = False
+    return _cuda
+
+
+def flag_dispositivo() -> list[str]:
+    """`--cpu` quando non c'è CUDA, niente quando c'è.
+
+    Su CPU tutto funziona ma **va molto più piano**: un'immagine con Anima passa
+    da secondi a minuti, e i modelli grossi (MiniMax Music 3, FLUX.2 Klein) sono
+    fuori portata per pazienza prima ancora che per memoria. È comunque meglio
+    di un motore che non si accende.
+    """
+    return [] if con_cuda() else ["--cpu"]
+
+
 def flag_velocita(scelta: str) -> list[str]:
     """I flag che cambiano a seconda di quanto si vuole spingere il motore.
 
@@ -112,6 +175,13 @@ def flag_velocita(scelta: str) -> list[str]:
     **normale** resta la configurazione con cui abbiamo generato finora, e va
     tenuta come metro di paragone: se spinta dà problemi si torna lì.
     """
+    # Senza CUDA non c'è niente da regolare: `--disable-dynamic-vram` parla di
+    # memoria video, `--fast` e flash-attention sono percorsi CUDA. Passarli a un
+    # motore in CPU nel migliore dei casi non fa niente, nel peggiore lo fa
+    # uscire in avvio — che è esattamente il difetto da cui nasce `--cpu`.
+    if not con_cuda():
+        return []
+
     flag = ["--disable-dynamic-vram"]
     if scelta != "spinta":
         return flag
@@ -157,8 +227,16 @@ def main() -> None:
         "--extra-model-paths-config", str(percorsi),
         "--output-directory", str(risultati),
         "--temp-directory", str(temporanei),
+        *flag_dispositivo(),
         *flag_velocita(os.environ.get("DAPROD_VELOCITA", "normale")),
     ]
+
+    if not con_cuda():
+        print(
+            "[daprod] Nessuna GPU NVIDIA utilizzabile da torch: il motore parte "
+            "in CPU. Funziona, ma va molto piu' piano.",
+            flush=True,
+        )
 
     # ComfyUI si aspetta di girare dalla propria cartella: legge percorsi
     # relativi e importa i suoi moduli senza pacchetto.

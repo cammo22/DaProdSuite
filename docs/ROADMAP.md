@@ -77,12 +77,19 @@ la cosa che sa chiedere.
 - [ ] **DaProdCinema**: una chat dove butti l'idea e le foto, e ne esce un
       piccolo video da montare
 
-## 0.2.0 — Le altre tre
+## 0.2.0 — Le altre tre ⚠
+
+**Pubblicata il 18 agosto 2026 con due su tre.** Dream e IoDigitale sono dentro
+e girano; il Companion no, ed è quello che apre la 0.2.1. Il numero è salito
+comunque perché nel frattempo era maturato molto altro — le icone, l'hub in
+4:3, il terminale in ogni app, i tre pannelli veri, la procedura guidata — e
+tenerlo fermo avrebbe voluto dire non pubblicare niente aspettando un'app sola.
 
 - [x] **DaProdDream** — trasformazione in tempo reale *(dentro: motore avviato
       dal supervisore, SD-Turbo e TAESD dalla cartella condivisa, finestra della
       suite. Provato fino al modello caricato — la webcam la giudichi tu)*
-- [ ] **DaProdCompanion** — memoria e sogni; va aggiunto `sqlite_vec` al suo pyproject
+- [ ] **DaProdCompanion** — memoria e sogni; va aggiunto `sqlite_vec` al suo
+      pyproject. *Slittato alla 0.2.1: è l'unica delle tre che non è entrata.*
 - [x] **DaProd IoDigitale** — l'avatar parlante, ex LeapTalk *(dentro il 17
       agosto 2026: motore avviato dal supervisore, modelli dalla cartella
       condivisa, finestra della suite. Provato fino al motore pronto — la
@@ -98,6 +105,10 @@ la cosa che sa chiedere.
       suite (`apps/shell/scripts/genera-copertine.cjs`): descrizione e seme
       stanno nel file, quindi una che non piace si rifà cambiando una riga.
       *Fatto il 17 agosto 2026.*
+- [x] **Ogni app ha la sua icona**, generata con Anima allo stesso modo
+      (`apps/shell/scripts/genera-icone.cjs`), quella della suite compresa: è
+      l'icona del programma, dell'installer, dell'area di notifica e della barra
+      delle applicazioni. *Fatto il 18 agosto 2026.*
 - [ ] **Anteprima al passaggio del mouse**: il video corto al posto del fermo
       immagine, generato con l'app stessa.
 
@@ -128,6 +139,56 @@ Vedi [ACCESSO-REMOTO.md](ACCESSO-REMOTO.md).
 - [ ] Interfacce adattate allo schermo del telefono
 
 ## Chiesto e da fare, senza ancora una versione
+
+### Il PC senza scheda video
+
+Provata il 18 agosto 2026 su un secondo computer, solo CPU. Due cose erano
+rotte e sono state corrette (vedi il changelog della 0.2.0); queste restano.
+
+- [ ] **Dire all'utente che è in CPU, nell'interfaccia e non solo nel log.**
+      Oggi lo scrive il motore in un file: chi apre la suite vede solo un'app
+      lentissima e non sa perché. Nella scheda ci vuole una riga chiara, e sui
+      modelli fuori portata il pulsante spento con la ragione scritta.
+- [ ] **DaPMusica e FLUX.2 Klein in CPU non sono realistici**: vanno segnati
+      come tali invece di far partire una generazione che dura ore.
+- [ ] **DaPDream e DaProd IoDigitale pretendono la GPU** per definizione (tempo
+      reale e video): la loro scheda deve dirlo prima di far scaricare i GB.
+- [ ] **Provare l'aggiornamento automatico da una versione all'altra** su quel
+      PC: è la cosa per cui è stato installato ed è ancora da vedere.
+- ~~**Il tetto `huggingface-hub<1.0` in `base.txt`**~~ — tolto il 19 agosto
+      2026, e non era un dettaglio: faceva rimbalzare due librerie a ogni
+      installazione finché una disinstallazione non è fallita a metà, lasciando
+      l'ambiente incoerente e Musica e Foto che non si aprivano.
+
+### L'ambiente condiviso, che è la cosa più fragile che abbiamo
+
+- [ ] **I requisiti dei servizi non sono fissati.** `transformers>=4.50`,
+      `diffusers` senza versione: ogni installazione tira dentro l'ultima uscita
+      e ne disinstalla un'altra, e ogni disinstallazione è un'occasione perché
+      l'antivirus la spezzi a metà (errore 4395). Vanno fissati come sono fissati
+      ComfyUI e i nodi custom: **la versione che abbiamo provato**, non quella di
+      stamattina.
+- [x] **Un tasto "ripara"** che reinstalla i pacchetti senza cancellare niente
+      — fatto il 19 agosto 2026, nel pannello Spazio.
+- [ ] **La suite deve accorgersene da sola**, senza aspettare che sia l'utente a
+      capirlo: un controllo degli import che contano quando un motore muore, e
+      la riparazione proposta lì, sulla scheda.
+- ~~**L'errore vero deve arrivare sulla scheda**~~ — fatto il 19 agosto 2026:
+      il supervisore tiene da parte le ultime righe di stderr e mostra quella
+      che spiega la morte, con il consiglio giusto se è un problema di librerie.
+
+
+- ~~**L'hub deve aprirsi in 4:3**~~ — fatto il 18 agosto 2026: prima prendeva
+  una fetta della larghezza e una dell'altezza indipendenti, quindi su un 16:9
+  usciva una finestra 16:9.
+- ~~**Il Visualizer apribile mentre gira un'altra app**~~ — fatto il 18 agosto
+  2026. La suite lo sapeva già fare (non è un motore pesante, non passa
+  dall'arbitro); quello che mancava era arrivarci senza tornare all'hub, ed è il
+  tasto in basso a destra di ogni app.
+- **L'interfaccia di DaProd IoDigitale è in inglese** — funziona, ma i pulsanti
+  dicono `Load Image` e `Hold to Talk`, e in cima c'è ancora scritto *LeapTalk
+  Live*, cioè il nome del progetto da cui viene. È l'unica scheda che non sembra
+  della suite.
 
 - ~~**Pulsanti veri nelle gallerie**~~ — fatto il 16 agosto 2026, e con loro il
   limite minimo della finestra sceso da 900 a 480 pixel.

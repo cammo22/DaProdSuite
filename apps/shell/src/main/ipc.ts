@@ -29,7 +29,16 @@ import { updater } from "./updater";
 import { isModelPresent, manifest, statoModelli } from "./models";
 import { elencoLog, leggiLog } from "./log-lettura";
 import { avviaInPiu } from "./servizi";
-import { LOGS_DIR, MODELS_DIR, OUTPUT_DIR } from "./paths";
+import {
+  BASE_REQUIREMENTS,
+  ENGINES_DIR,
+  LOGS_DIR,
+  MODELS_DIR,
+  OUTPUT_DIR,
+  SERVICES_DIR,
+} from "./paths";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 
 export function registerIpc(getHub: () => BrowserWindow | null): void {
   /* ---------------------------------------------------------------- suite */
@@ -78,6 +87,35 @@ export function registerIpc(getHub: () => BrowserWindow | null): void {
   ipcMain.handle(CHANNELS.runtimeInstall, async () => {
     await runtime.install();
     // Le schede dicono "da installare" finché manca l'ambiente: ora va rivisto.
+    await appManager.refreshAll();
+  });
+
+  /**
+   * Ripara l'ambiente: reinstalla i pacchetti, non cancella niente.
+   *
+   * **Quali requisiti.** Solo quelli che servono davvero a questa macchina:
+   * la base, il motore di terzi se è installato, e i servizi delle app che
+   * l'utente ha davvero. Rimettere in casa i pacchetti di IoDigitale a chi non
+   * ce l'ha sarebbe una riparazione che installa roba nuova, cioè un'altra
+   * occasione di rompere qualcosa.
+   */
+  ipcMain.handle(CHANNELS.runtimeRipara, async () => {
+    const requisiti = [BASE_REQUIREMENTS];
+
+    const motore = join(ENGINES_DIR, "comfy-requisiti.txt");
+    if (existsSync(motore)) requisiti.push(motore);
+
+    const installate = new Set(
+      appManager.list().filter((s) => s.status !== "non-inclusa" && s.status !== "da-installare")
+        .map((s) => s.id),
+    );
+    for (const app of APP_LIST) {
+      if (!installate.has(app.id) || !app.service) continue;
+      const suo = join(SERVICES_DIR, app.service.id, "requisiti.txt");
+      if (existsSync(suo) && !requisiti.includes(suo)) requisiti.push(suo);
+    }
+
+    await runtime.ripara(requisiti);
     await appManager.refreshAll();
   });
 
@@ -241,6 +279,11 @@ export function registerIpc(getHub: () => BrowserWindow | null): void {
   ipcMain.handle(CHANNELS.logLeggi, (_e, nome: string, righe?: number) =>
     leggiLog(nome, righe ?? 300),
   );
+
+  // Un'app che ne apre un'altra: la stessa strada dell'hub, quindi passa dagli
+  // stessi controlli — l'arbitro della GPU, il motore avviato prima della
+  // finestra, lo stato della scheda che si aggiorna.
+  ipcMain.handle(CHANNELS.appApri, (_e, destinazione: AppId) => appManager.open(destinazione));
 
   ipcMain.handle(CHANNELS.appChiudi, (_e, id: AppId) => appManager.close(id));
 

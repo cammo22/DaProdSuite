@@ -7,9 +7,17 @@
 # Chi manca davvero rispetto a ComfyUI: diffusers (la pipeline SD-Turbo), la
 # cattura dello schermo, e il video delle registrazioni.
 
-diffusers>=0.36.0
+# **I minimi sono alzati alle versioni provate il 19 agosto 2026**, e non è
+# pignoleria: a rompere l'ambiente non sono gli aggiornamenti, sono le
+# **retrocessioni**. Quella notte `huggingface-hub` e `transformers` sono
+# rimbalzate avanti e indietro fra due installazioni finché una disinstallazione
+# non è fallita a metà (l'errore 4395 dell'antivirus, vedi `uv.ts`), e Musica,
+# Foto, Dream e IoDigitale hanno smesso di funzionare tutte insieme. Un minimo
+# non impone niente a nessuno — al contrario di `==`, che è il motivo per cui
+# qui sopra c'è scritto di non usarlo — ma toglie di mezzo il rimbalzo.
+diffusers>=0.38.0
 accelerate>=1.10.0
-peft>=0.17.0
+peft>=0.19.1
 
 fastapi>=0.121.0
 uvicorn>=0.38.0

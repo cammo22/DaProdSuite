@@ -23,8 +23,13 @@ import { APPS, type AppId } from "@daprod/ipc";
 import type { BrowserWindow } from "electron";
 
 const STILE = `
-.daprod-term-tasto {
+/* La barra in basso a destra, condivisa da tutto quello che la shell inietta:
+   il tasto del log e quello del Visualizer. Chi arriva per primo la crea. */
+.daprod-barra {
   position: fixed; right: 16px; bottom: 16px; z-index: 2147483000;
+  display: flex; align-items: center; gap: 8px;
+}
+.daprod-tasto {
   display: flex; align-items: center; gap: 7px;
   padding: 8px 13px; border-radius: 11px; cursor: pointer;
   font: 600 12.5px/1.2 "Segoe UI", system-ui, sans-serif;
@@ -32,7 +37,7 @@ const STILE = `
   box-shadow: 0 8px 24px rgba(0,0,0,.45); backdrop-filter: blur(8px);
   transition: .15s;
 }
-.daprod-term-tasto:hover { color: #fff; border-color: #4a5468; }
+.daprod-tasto:hover { color: #fff; border-color: #4a5468; }
 .daprod-term-tasto.acceso { color: #fff; border-color: #5cff9d; }
 
 .daprod-term {
@@ -82,9 +87,22 @@ const SCRIPT = `
   const suite = window.daprodSuite;
   if (!suite || !suite.log) return "niente ponte";
 
+  // La barra in basso a destra e' condivisa: la crea chi arriva per primo fra
+  // questo e il tasto del Visualizer, e l'altro ci si aggiunge. Cosi' l'ordine
+  // in cui la shell inietta i due pezzi non conta.
+  function barraDaProd() {
+    let barra = document.querySelector(".daprod-barra");
+    if (!barra) {
+      barra = document.createElement("div");
+      barra.className = "daprod-barra";
+      document.body.append(barra);
+    }
+    return barra;
+  }
+
   const tasto = document.createElement("button");
   tasto.type = "button";
-  tasto.className = "daprod-term-tasto";
+  tasto.className = "daprod-tasto daprod-term-tasto";
   tasto.textContent = "▤ log";
   tasto.title = "Le ultime righe del motore (Ctrl+L)";
 
@@ -99,7 +117,8 @@ const SCRIPT = `
     '</div>' +
     '<pre class="daprod-term-righe"></pre>';
 
-  document.body.append(tasto, pannello);
+  barraDaProd().append(tasto);
+  document.body.append(pannello);
 
   const quale = pannello.querySelector(".daprod-term-quale");
   const segui = pannello.querySelector(".daprod-term-segui");

@@ -12,6 +12,116 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ## Non ancora pubblicato
 
+Niente, per ora: tutto quello che c'era è uscito nella 0.2.0 qui sotto.
+
+## 0.2.0 — Cinque app, e ognuna ha la sua faccia
+
+**18 agosto 2026.** Dalla 0.1.0 sono entrate due app — DaProdDream e DaProd
+IoDigitale — e la suite ha smesso di essere sette schede con la stessa icona.
+
+### La suite si apre in 4:3, e le due barre sono sottili
+
+- La finestra dell'hub si apriva **16:9** su un monitor 16:9: 1498×846, cioè una
+  striscia bassa e larga, con le schede stirate. La griglia delle sette schede è
+  fatta per una finestra alta.
+- Adesso è **4:3 sempre**, su qualunque schermo: si parte dall'altezza e la
+  larghezza viene da lì. Su un monitor stretto comanda la larghezza, ma la
+  proporzione non cambia. Ridimensionarla a mano resta libero.
+- **Vale solo per l'hub**: le finestre delle app tengono la misura che avevano,
+  che è quella giusta per quello che ci sta dentro.
+- **La barra in alto e quella in basso sono più sottili**: erano venti pixel
+  sopra e sotto per una riga di scritte che si guarda una volta. Quello spazio
+  adesso ce l'hanno le schede — con la finestra più grande e le barre magre,
+  tutte e sette si vedono senza dover scorrere fino in fondo.
+
+### Installare un'app non rompe più le altre
+
+Dopo aver installato DaProd IoDigitale, **DaPMusica e DaPFoto non si aprivano
+più**, e DaPDream e IoDigitale si aprivano ma non funzionavano. Non era una
+delle quattro: era l'ambiente Python condiviso.
+
+- Due librerie continuavano a **rimbalzare avanti e indietro** a ogni
+  installazione — una le voleva nuove, un vincolo scritto mesi fa le voleva
+  vecchie. Nel log si vede il rimbalzo tre volte.
+- A un certo giro l'antivirus ha fatto fallire una disinstallazione a metà, e
+  l'ambiente è rimasto **mezzo vecchio e mezzo nuovo**: il motore delle immagini
+  moriva in avvio con un errore che con le immagini non c'entrava niente.
+- Il vincolo vecchio è stato tolto — diceva il contrario di quello che serve
+  oggi — quindi non c'è più niente che rimbalzi e niente da disinstallare a ogni
+  giro.
+
+**L'ambiente su questo PC è stato riparato**: Musica, Foto, Dream e IoDigitale
+ripartono. Chi installa da zero non incontra più il problema.
+
+### «Ripara l'ambiente», nel pannello Spazio
+
+- Quando un'app non si apre e parla di librerie, l'ambiente Python è rimasto a
+  metà fra due versioni. Finora le strade erano due: chiedere aiuto a qualcuno
+  che sapesse usare i comandi, o **Reset · Tutto**, che porta via anche i 35 GB
+  di modelli e mezza giornata di scaricamenti.
+- Adesso c'è un pulsante che **reinstalla solo i pacchetti**. Modelli, motori,
+  risultati e impostazioni restano dove sono. Ci vogliono minuti, non ore.
+- Reinstalla solo quello che serve a questa macchina: la base, il motore se ce
+  l'hai, e le app che hai davvero installato.
+
+### Quando un motore non parte, adesso dice perché
+
+- Sulla scheda si leggeva **«Controlla il log»**, e basta. Il motivo vero c'era
+  già, scritto per esteso in un file a due passi: nessuno lo portava dove stavi
+  guardando.
+- Adesso la scheda mostra **l'ultima riga dell'errore del motore**, quella che
+  dice davvero cosa è successo. E se è un problema di librerie, aggiunge anche
+  cosa fare per rimetterlo a posto.
+
+### Su un PC senza scheda NVIDIA la suite adesso parte
+
+Provata su un secondo computer, solo CPU. Non partiva, e per due motivi diversi.
+
+- **L'ambiente Python si installava sbagliato.** Su una macchina senza NVIDIA ma
+  con la grafica integrata Intel, la suite scaricava la versione **Intel** di
+  PyTorch — un giro e mezzo di GB di roba che poi non serviva a niente, perché
+  quella grafica non era comunque utilizzabile. Adesso: se c'è una NVIDIA
+  installa la versione CUDA, se non c'è installa quella per CPU e basta.
+  **Circa 400 MB invece di 3 GB**, e il messaggio dice quale delle due sta
+  facendo invece di dire sempre "con CUDA".
+- **Il motore delle immagini moriva in avvio** con `Torch not compiled with CUDA
+  enabled`, e da fuori si vedeva solo una scheda che non si apriva. Adesso, se
+  non c'è una scheda utilizzabile, parte in **CPU** e lo scrive nel log.
+
+⚠ **In CPU funziona ma va molto più piano** — un'immagine passa da secondi a
+minuti — e i modelli grossi (le canzoni di DaPMusica, FLUX.2 Klein) restano
+fuori portata per pazienza prima ancora che per memoria. DaPDream e DaProd
+IoDigitale la scheda video la vogliono per definizione.
+
+### Le icone, disegnate dalla suite stessa
+
+- **L'icona del programma l'ha fatta Anima**, cioè il modello che la suite
+  installa e che usi in DaPFoto: sette raggi di luce colorati che convergono su
+  un centro scuro. Non è un disegno preso in giro per il web né un logo
+  disegnato a mano — è il software che si è fatto il ritratto.
+- **Ogni app ha adesso la sua icona**, sempre generata con Anima: il microfono
+  rosa di Musica, l'obiettivo ambra di Foto, la testa di luce azzurra di Dream,
+  il volto corallo di IoDigitale, gli anelli viola del Visualizer. Si vedono
+  nella barra del titolo e in quella delle applicazioni: **con cinque finestre
+  aperte si riconoscono senza leggerne il nome.**
+- Ci sono anche quelle di Cinema e Companion, pronte per quando entreranno.
+- Sono rigenerabili: seme e descrizione stanno in
+  `apps/shell/scripts/genera-icone.cjs`, quindi una che non piace si rifà
+  cambiando una riga.
+- **L'icona nell'area di notifica della versione installata era vuota**, e
+  nessuno se n'era accorto: il file non veniva copiato nel pacchetto. Adesso sì.
+
+### Il Visualizer si apre da dentro le altre app
+
+- In basso a destra di ogni app, accanto al tasto **log**, c'è **♪ Visualizer**:
+  lo apre senza chiudere quello che stai facendo e senza tornare all'hub.
+- Il Visualizer non è un motore pesante, quindi **sta acceso insieme a
+  chiunque**: si ascolta un brano guardandolo mentre DaPMusica ne genera un
+  altro. Fra due app pesanti invece resta l'arbitro della scheda video, che ne
+  tiene accesa una sola — su otto GB è giusto così.
+- Prima si poteva già fare, ma solo dall'hub, che mentre lavori sta dietro alle
+  altre finestre o l'hai chiusa del tutto.
+
 ### La prima volta la suite ti prende per mano
 
 - Non si vede più il lampo di "Ambiente: da installare" e le schede spente che
