@@ -824,8 +824,13 @@ che passava da solo al brano dopo.
 
 ## Regole di Cammo
 
-- **Solo `main`**, niente rami di prova, **niente pull request**. Si parte da
-  0.0.1 e il numero sale solo quando si pubblica.
+- **Un ramo per release e una pull request** (regola cambiata il 18 agosto
+  2026: prima era «niente rami, niente PR»). Si lavora, si commetta su un ramo
+  `release-<versione>`, si apre la PR — e **il Merge lo preme lui su GitHub**:
+  è lì che dà l'ok. Niente rami di prova oltre a quello. Si parte da 0.0.1 e il
+  numero sale solo quando si pubblica.
+- **I commit sono a nome di `cammo22`**, con la noreply del suo account. Fino
+  alla 0.1.0 sono andati su *daprodproduzioni*, cioè sul profilo sbagliato.
 - **Il codice da testare resta sul PC.** Si pubblica solo dopo il suo ok.
 - **Una app alla volta**: si porta dentro, la prova lui, si aggiusta, poi la
   successiva.

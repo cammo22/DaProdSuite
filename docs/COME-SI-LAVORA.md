@@ -6,8 +6,15 @@ Le regole di questa repo. Servono a non doverle ridecidere ogni volta.
 
 ## 1. La repo
 
-**Solo `main`.** Niente branch di prova, niente `dev`, niente `feature/...`. Se il
-codice non è pronto, resta sul PC e basta.
+**Un ramo per release, e `main` resta la verità.** Niente `dev`, niente
+`feature/...`: se il codice non è pronto resta sul PC. Quando invece è pronto,
+va su un ramo che si chiama come la versione (`release-0.2.0`) e da lì apre una
+**pull request** verso `main`.
+
+**Regola cambiata il 18 agosto 2026**, e la ragione è una sola: il tasto
+**Merge** su GitHub è il modo in cui Cammo dà l'ok. Prima si committava dritto
+su `main` e a lui non restava niente da approvare. Il ramo vive quanto la PR e
+poi si cancella — la storia di `main` resta dritta come prima.
 
 **`git clone` deve bastare.** Chi clona ottiene tutto il nostro codice e può
 compilare. Quindi: nessun submodule, nessun checkout parziale, nessun file
@@ -48,8 +55,14 @@ GitHub e capire cosa è successo senza leggere il codice:
 
 - **Ogni pubblicazione passa dal [CHANGELOG](../CHANGELOG.md)**, scritto per chi
   usa la suite e non per chi la scrive. Prima il changelog, poi la roadmap.
-- **Niente rami, niente pull request, un tag per versione.** La struttura resta
-  quella che si guarda in dieci secondi.
+- **Una PR per release, un tag per versione.** La PR è il punto in cui Cammo
+  guarda e approva; il suo testo dice cosa cambia e **cosa non è a posto**. La
+  struttura resta quella che si guarda in dieci secondi.
+- **I commit sono a nome di `cammo22`.** Non è un vezzo: `dapprod22@gmail.com`
+  su GitHub appartiene all'account *daprodproduzioni*, quindi tutti i commit
+  fino alla 0.1.0 sono finiti sul profilo sbagliato e non contano come suo
+  lavoro. Questo repo ha la sua identità scritta in locale
+  (`git config --local user.email 78992276+cammo22@users.noreply.github.com`).
 
 Resta fermo che **quello che non funziona non si pubblica**: se una cosa non è
 stata provata, va detto — nel changelog o guardandolo in faccia.
