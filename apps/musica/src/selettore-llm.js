@@ -49,7 +49,14 @@ export function collegaSelettoreLlm(contenitore, onCambia) {
       return;
     }
 
-    const scelto = stato.modelli.includes(modelloScelto()) ? modelloScelto() : stato.modelli[0] || "";
+    // Se non hai ancora scelto niente, il menu si apre su quello che **hai
+    // caricato tu** in LM Studio, non sul primo della lista: se l'hai acceso,
+    // è quello che vuoi usare. Ed è lo stesso a cui la suite manderà la
+    // domanda, così il menu non dice una cosa e la suite ne fa un'altra.
+    const caricati = (stato.caricati ?? []).filter((m) => stato.modelli.includes(m));
+    const scelto = stato.modelli.includes(modelloScelto())
+      ? modelloScelto()
+      : caricati[0] || stato.modelli[0] || "";
     const caricato = (stato.caricati ?? []).includes(scelto);
 
     // Si ridisegna solo quando cambia davvero: ogni ridisegno chiuderebbe il

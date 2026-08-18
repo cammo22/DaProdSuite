@@ -1,18 +1,29 @@
 /**
  * La stessa identica domanda che la suite manda a LM Studio, mandata da Node.
  *
- * Serve a separare due cose che si confondono: **il modello è lento** oppure
- * **il nostro client è lento**. Il 17 agosto 2026 la risposta è stata la
- * seconda, ed è per questo che questo file resta:
- *
  *     node apps/shell/scripts/prova-llm.mjs
- *     -> 9 secondi, risposta buona
  *
- *     lo stesso corpo da `chiediAllLlm` (processo principale di Electron)
- *     -> 5 minuti e "The operation was aborted due to timeout"
+ * Serve a separare tre cose che si confondono quando "l'app sembra piantata":
+ * il modello e' lento, il nostro client e' lento, oppure la macchina e' occupata
+ * da qualcos'altro.
  *
- * Stesso indirizzo, stesso modello, stesso JSON. Quindi non è LM Studio e non è
- * il prompt: è come lo chiediamo noi da dentro Electron. Da riprendere da qui.
+ * **Il 17 agosto 2026 la risposta e' stata la terza**, e ci sono voluti tre giri
+ * di misure per arrivarci:
+ *
+ * | Situazione | Quanto |
+ * |---|---|
+ * | da Node, macchina libera | 9-10 s |
+ * | dalla suite con ComfyUI acceso, via `fetch` | 254 s |
+ * | dalla suite con ComfyUI acceso, via `node:http` | 148 s |
+ * | dalla suite **senza nessun motore acceso** | **5 s** |
+ *
+ * Quindi: il modello non c'entra, e il nostro client c'entrava solo per la
+ * differenza fra 254 e 148 (da li' `postJson` in `llm.ts`). Quello che conta
+ * davvero e' **chi altro sta usando la macchina**: con il motore delle immagini
+ * acceso, LM Studio si contende CPU e scheda e va trenta volte piu' piano.
+ *
+ * Da ricordare quando qualcuno dice "Bonsai e' lento": chiedere prima cosa
+ * c'era acceso.
  */
 
 const SISTEMA = `Sei un direttore della fotografia che scrive prompt per un modello di immagini.

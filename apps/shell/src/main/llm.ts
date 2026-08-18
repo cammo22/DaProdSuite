@@ -19,6 +19,7 @@
  */
 
 import type { EsitoLlm, ModelloLlm, StatoLlm } from "@daprod/ipc";
+import { request } from "node:http";
 import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
@@ -258,6 +259,49 @@ export async function spegniSeNostro(): Promise<void> {
   if (nostro) await scaricaModello(nostro);
 }
 
+/**
+ * Una POST JSON fatta con `node:http`, non con `fetch`.
+ *
+ * **Misurato il 17 agosto 2026**: la stessa domanda, con il motore delle
+ * immagini acceso, ci metteva 254 secondi passando da `fetch` e 148 passando da
+ * qui. Non e' la differenza che conta di piu' — quella la fa la macchina
+ * occupata, vedi `scripts/prova-llm.mjs` — ma e' un fattore quasi due per una
+ * riga di codice, e toglie di mezzo lo stack di rete di Chromium da una
+ * chiamata che va a 127.0.0.1 e non ha niente da guadagnarci.
+ *
+ * Qui il giro non c'e': si parla al socket e basta.
+ */
+function postJson(url: string, corpo: unknown, timeoutMs: number): Promise<{ status: number; testo: string }> {
+  return new Promise((risolvi, rifiuta) => {
+    const dati = Buffer.from(JSON.stringify(corpo), "utf8");
+    const indirizzo = new URL(url);
+
+    const richiesta = request(
+      {
+        hostname: indirizzo.hostname,
+        port: indirizzo.port,
+        path: indirizzo.pathname + indirizzo.search,
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Content-Length": dati.length },
+        timeout: timeoutMs,
+      },
+      (risposta) => {
+        const pezzi: Buffer[] = [];
+        risposta.on("data", (p: Buffer) => pezzi.push(p));
+        risposta.on("end", () =>
+          risolvi({ status: risposta.statusCode ?? 0, testo: Buffer.concat(pezzi).toString("utf8") }),
+        );
+      },
+    );
+
+    richiesta.on("timeout", () => {
+      richiesta.destroy(new Error("timed out"));
+    });
+    richiesta.on("error", rifiuta);
+    richiesta.end(dati);
+  });
+}
+
 export interface DomandaLlm {
   /** Il modello scelto dall'app, se ne ha uno. Ignorato se LM Studio non ce l'ha. */
   modello?: string;
@@ -310,23 +354,29 @@ export async function chiediAllLlm(domanda: DomandaLlm): Promise<EsitoLlm> {
     return { ok: false, testo: "", motivo: stato.motivo ?? "LM Studio non è disponibile." };
   }
 
-  // **Prima quello che ha scelto l'utente.** Le app mostrano il selettore del
-  // modello in cima, e prima di questa riga non contava niente: si finiva
-  // sempre su Bonsai 27B, che ragiona bene ma su una macchina come questa ci
-  // mette minuti — e chi voleva una risposta rapida aveva scelto apposta un
-  // modello piccolo. Un id che LM Studio non ha si ignora, invece di far
-  // fallire la domanda.
-  //
-  // Se non ha scelto: Bonsai se c'è, altrimenti il primo che LM Studio offre.
-  // Prendere il primo e basta vorrebbe dire farsi scrivere una canzone dal
-  // modello di embedding.
-  const chiesto = domanda.modello && stato.modelli.includes(domanda.modello)
-    ? domanda.modello
-    : null;
-  const scelto = chiesto
-    ?? (stato.modelli.includes(MODELLO_CONSIGLIATO)
-      ? MODELLO_CONSIGLIATO
-      : (stato.modelli[0] ?? MODELLO_CONSIGLIATO));
+  /**
+   * Chi risponde, in ordine di chi ha più diritto di decidere.
+   *
+   * 1. **Quello scelto nel menu dell'app.** Le app mostrano il selettore in
+   *    cima: se ci metti un modello, deve rispondere quello. Punto.
+   * 2. **Quello che in questo momento è in memoria.** È la regola che mancava,
+   *    e costava caro: la suite chiedeva sempre a Bonsai 27B anche quando in
+   *    LM Studio ne avevi caricato un altro. Bonsai non era caricato, quindi
+   *    LM Studio se lo caricava sul momento — un 27B, minuti — e nel frattempo
+   *    l'app sembrava piantata. Chiedere a chi è già acceso è più veloce **e**
+   *    è quello che l'utente si aspetta: ha caricato quello per usarlo.
+   * 3. Bonsai, se installato: è il consigliato e sa fare questo mestiere.
+   * 4. Il primo della lista, che è meglio di niente.
+   *
+   * Un id che LM Studio non ha si ignora invece di far fallire la domanda.
+   */
+  const caricati = (stato.caricati ?? []).filter((m) => stato.modelli.includes(m));
+  const scelto =
+    (domanda.modello && stato.modelli.includes(domanda.modello) ? domanda.modello : null) ??
+    caricati[0] ??
+    (stato.modelli.includes(MODELLO_CONSIGLIATO) ? MODELLO_CONSIGLIATO : null) ??
+    stato.modelli[0] ??
+    MODELLO_CONSIGLIATO;
 
   // Se lo carica LM Studio su nostra richiesta, siamo noi a doverlo spegnere.
   if (!stato.caricati?.includes(scelto)) nostro = scelto;
@@ -372,24 +422,23 @@ export async function chiediAllLlm(domanda: DomandaLlm): Promise<EsitoLlm> {
   };
 
   try {
-    const risposta = await fetch(`${BASE}/chat/completions`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(corpo),
-      // Un 27B che ragiona su una macchina con 8 GB di VRAM può metterci minuti:
-      // il limite è generoso di proposito, e chi chiama mostra che sta lavorando.
-      signal: AbortSignal.timeout(domanda.timeoutMs ?? 5 * 60_000),
-    });
+    // Un 27B che ragiona su una macchina con 8 GB di VRAM può metterci minuti:
+    // il limite è generoso di proposito, e chi chiama mostra che sta lavorando.
+    const risposta = await postJson(
+      `${BASE}/chat/completions`,
+      corpo,
+      domanda.timeoutMs ?? 5 * 60_000,
+    );
 
-    if (!risposta.ok) {
+    if (risposta.status < 200 || risposta.status >= 300) {
       return {
         ok: false,
         testo: "",
-        motivo: `LM Studio ha risposto ${risposta.status}: ${(await risposta.text()).slice(0, 200)}`,
+        motivo: `LM Studio ha risposto ${risposta.status}: ${risposta.testo.slice(0, 200)}`,
       };
     }
 
-    const dati = (await risposta.json()) as {
+    const dati = JSON.parse(risposta.testo) as {
       choices?: {
         finish_reason?: string;
         message?: { content?: string; reasoning_content?: string };

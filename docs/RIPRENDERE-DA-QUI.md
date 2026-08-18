@@ -494,31 +494,37 @@ roba della suite e non del motore, e chi apre DaProdDream da solo non ha
 esce dalla memoria; tornando indietro si dice a ComfyUI di liberare la scheda
 (`POST /free`) e SD-Turbo si ricarica. Provato: `backend.ready` torna `true`.
 
-## Il difetto aperto: le domande a LM Studio dalla suite
+## Perche' "Bonsai e' lento": la macchina occupata
 
-**Misurato il 17 agosto 2026, ed è il posto da cui ripartire.**
+**Chiuso il 17 agosto 2026**, dopo tre giri di misure. La stessa identica
+domanda a LM Studio — stesso indirizzo, stesso modello, stesso JSON:
 
-La stessa identica domanda — stesso indirizzo (`127.0.0.1:1234`), stesso
-modello, stesso JSON, stesso schema:
-
-| Da dove | Quanto |
+| Situazione | Quanto |
 |---|---|
-| `node apps/shell/scripts/prova-llm.mjs` | **9 secondi**, risposta buona |
-| `chiediAllLlm`, cioè dal processo principale di Electron | **5 minuti**, poi «The operation was aborted due to timeout» |
+| da Node, macchina libera | 9-10 s |
+| dalla suite con ComfyUI acceso, via `fetch` | 254 s |
+| dalla suite con ComfyUI acceso, via `node:http` | 148 s |
+| dalla suite **senza nessun motore acceso** | **5 s** |
 
-Quindi **non è LM Studio e non è il prompt**: è come la chiediamo noi da dentro
-Electron. Escluso per misura: LM Studio libero (`curl` risponde in 0,7 s mentre
-la suite aspetta), `statoLlm()` che ci sta 0,6 s, e la coda di richieste.
+Le prime due righe mi avevano portato fuori strada: sembrava che a essere lento
+fosse il processo principale di Electron. Lo era, ma per un fattore due su
+trenta. **Quello che conta e' chi altro sta usando la macchina**: col motore
+delle immagini acceso, LM Studio si contende CPU e scheda e va trenta volte piu'
+piano.
 
-Da provare, nell'ordine: se il `fetch` globale del main sia quello di Node o
-quello di Chromium in questa versione di Electron, e nel dubbio passare a
-`net.fetch` o a `node:http`; poi guardare se qualcosa tiene occupato il ciclo di
-eventi del main mentre la richiesta è in volo.
+Due cose restano, tutte e due giuste:
 
-Lo script di riproduzione resta nel repo apposta. **Non è una regressione di
-oggi**: DaPMusica ha sempre chiesto così, e il minuto d'attesa di Bonsai era
-stato letto come "il 27B è lento". Una parte di quel minuto probabilmente non
-era il modello.
+1. **`postJson` in `llm.ts`**, che parla a LM Studio con `node:http` invece che
+   col `fetch` di Electron. Vale il fattore due, e per una chiamata a 127.0.0.1
+   lo stack di rete di Chromium non aggiunge niente.
+2. **`scripts/prova-llm.mjs`**, che rifa' la misura in dieci secondi. Quando
+   qualcuno dice "l'app e' piantata", la prima domanda e' *cosa c'era acceso*.
+
+E la regola che ne esce, da tenere presente quando toccheranno il Companion e
+IoDigitale — che l'LLM lo usano di continuo: **il modello che scrive e il motore
+che genera non vanno d'accordo sulla stessa macchina**. La suite gia' spegne
+l'LLM prima di una generazione pesante; il verso opposto — avvisare che la
+risposta sara' lenta perche' il motore e' acceso — non c'e' ancora.
 
 ## Il prossimo passo: DaProd IoDigitale
 
