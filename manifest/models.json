@@ -188,6 +188,31 @@
       "repo": "z-rx/leaptalk",
       "bytes": 385142705
     },
+    "piper-paola": {
+      "label": "Voce italiana Paola (Piper) — la voce dell'avatar",
+      "kind": "file",
+      "dir": "piper",
+      "file": "it_IT-paola-medium.onnx",
+      "url": "https://huggingface.co/rhasspy/piper-voices/resolve/main/it/it_IT/paola/medium/it_IT-paola-medium.onnx",
+      "bytes": 63511038
+    },
+    "piper-paola-config": {
+      "label": "Voce italiana Paola — la sua configurazione",
+      "kind": "file",
+      "dir": "piper",
+      "file": "it_IT-paola-medium.onnx.json",
+      "$comment": "Sette KB, ma senza questo Piper non sa come e' fatta la voce e non parte.",
+      "url": "https://huggingface.co/rhasspy/piper-voices/resolve/main/it/it_IT/paola/medium/it_IT-paola-medium.onnx.json",
+      "bytes": 7099
+    },
+    "faster-whisper-small": {
+      "label": "Whisper small — capisce quello che dici",
+      "kind": "hf-repo",
+      "dir": "whisper/faster-whisper-small",
+      "repo": "Systran/faster-whisper-small",
+      "$comment": "In una cartella nostra e non nella cache di HuggingFace: cosi' il percorso e' quello che passiamo noi e non dipende da come e' fatta la cache. faster-whisper accetta una cartella al posto del nome.",
+      "bytes": 486212644
+    },
     "wav2vec2-base-960h": {
       "label": "wav2vec2 — analisi audio per il lip-sync",
       "kind": "hf-repo",

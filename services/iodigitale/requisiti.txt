@@ -1,0 +1,35 @@
+# Le librerie che il motore di DaProd IoDigitale vuole in piu' rispetto
+# all'ambiente condiviso della suite. Le installa `installaApp` quando premi
+# Installa sulla scheda (vedi services/dream/requisiti.txt, stessa strada).
+#
+# Viene da `requirements-windows.txt` di LeapTalk, che gia' escludeva i
+# pacchetti solo-Linux o multi-GPU (nvidia-*-cu12, triton, xformers, flash-attn,
+# xfuser, yunchang, megatron-core, DistVAE, decord) e quelli del training.
+# torch non si tocca: nell'ambiente c'e' gia', con la build CUDA giusta.
+diffusers==0.38.0
+transformers==4.57.3
+peft==0.19.1
+accelerate
+safetensors
+huggingface_hub
+einops
+loguru
+opencv-python
+mediapipe
+imageio
+imageio-ffmpeg
+librosa
+soundfile
+pyloudnorm
+tqdm
+pyyaml
+fastapi
+uvicorn
+websockets
+python-multipart
+aiofiles
+httpx
+
+faster-whisper
+piper-tts
+soxr

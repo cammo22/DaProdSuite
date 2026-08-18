@@ -44,6 +44,9 @@ extraResources:
   # restare leggibile da Python, non finire nell'asar.
   - from: ../dream
     to: apps/dream
+  # IoDigitale come Dream, e per la stessa ragione: la pagina la serve il motore.
+  - from: ../iodigitale
+    to: apps/iodigitale
 
 win:
   target:

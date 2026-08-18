@@ -221,15 +221,29 @@ export const APPS: Record<AppId, AppDescriptor> = {
     kind: "service",
     accent: "#ff7c5c",
     service: {
-      id: "talk",
+      id: "iodigitale",
       port: 7860,
-      entry: "web_server.py",
+      // `avvio.py` e non `web_server.py`: il server di LeapTalk non aveva
+      // /health né /shutdown, e i percorsi li leggeva da un `.env`. Quel file
+      // traduce le variabili della suite e aggiunge le due rotte.
+      entry: "avvio.py",
       // SoulX-FlashHead carica ~7 GB di pesi: il primo avvio è lento.
       healthTimeoutMs: 240_000,
     },
     // Di serie solo il modello Lite: il repo SoulX ne contiene due completi
     // (Lite e Pro) e scaricarli entrambi vuol dire 5,6 GB buttati.
-    models: ["soulx-flashhead", "leaptalk-weights", "wav2vec2-base-960h"],
+    //
+    // La catena è lunga perché l'avatar fa quattro mestieri: capisce quello che
+    // dici (Whisper), pensa la risposta (LM Studio), la dice (la voce Piper) e
+    // muove la faccia (SoulX + LeapTalk + wav2vec2).
+    models: [
+      "soulx-flashhead",
+      "leaptalk-weights",
+      "wav2vec2-base-960h",
+      "piper-paola",
+      "piper-paola-config",
+      "faster-whisper-small",
+    ],
     extraModels: ["soulx-flashhead-pro"],
     gpuHeavy: true,
   },
