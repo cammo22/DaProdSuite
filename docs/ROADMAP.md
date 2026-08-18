@@ -140,6 +140,28 @@ Vedi [ACCESSO-REMOTO.md](ACCESSO-REMOTO.md).
 
 ## Chiesto e da fare, senza ancora una versione
 
+### Il PC senza scheda video
+
+Provata il 18 agosto 2026 su un secondo computer, solo CPU. Due cose erano
+rotte e sono state corrette (vedi il changelog della 0.2.0); queste restano.
+
+- [ ] **Dire all'utente che è in CPU, nell'interfaccia e non solo nel log.**
+      Oggi lo scrive il motore in un file: chi apre la suite vede solo un'app
+      lentissima e non sa perché. Nella scheda ci vuole una riga chiara, e sui
+      modelli fuori portata il pulsante spento con la ragione scritta.
+- [ ] **DaPMusica e FLUX.2 Klein in CPU non sono realistici**: vanno segnati
+      come tali invece di far partire una generazione che dura ore.
+- [ ] **DaPDream e DaProd IoDigitale pretendono la GPU** per definizione (tempo
+      reale e video): la loro scheda deve dirlo prima di far scaricare i GB.
+- [ ] **Provare l'aggiornamento automatico da una versione all'altra** su quel
+      PC: è la cosa per cui è stato installato ed è ancora da vedere.
+- [ ] **Il tetto `huggingface-hub<1.0` in `base.txt` non vale più.** Il commento
+      dice che lo pretende `transformers`, ma nel log di quell'installazione
+      `transformers 5.15.0` è entrato con `huggingface-hub 1.28.0`: il tetto
+      resta lì a far installare la 0.36 e poi disinstallare, per niente. Da
+      togliere dopo una prova, non a occhio.
+
+
 - ~~**L'hub deve aprirsi in 4:3**~~ — fatto il 18 agosto 2026: prima prendeva
   una fetta della larghezza e una dell'altezza indipendenti, quindi su un 16:9
   usciva una finestra 16:9.

@@ -34,6 +34,26 @@ IoDigitale — e la suite ha smesso di essere sette schede con la stessa icona.
   adesso ce l'hanno le schede — con la finestra più grande e le barre magre,
   tutte e sette si vedono senza dover scorrere fino in fondo.
 
+### Su un PC senza scheda NVIDIA la suite adesso parte
+
+Provata su un secondo computer, solo CPU. Non partiva, e per due motivi diversi.
+
+- **L'ambiente Python si installava sbagliato.** Su una macchina senza NVIDIA ma
+  con la grafica integrata Intel, la suite scaricava la versione **Intel** di
+  PyTorch — un giro e mezzo di GB di roba che poi non serviva a niente, perché
+  quella grafica non era comunque utilizzabile. Adesso: se c'è una NVIDIA
+  installa la versione CUDA, se non c'è installa quella per CPU e basta.
+  **Circa 400 MB invece di 3 GB**, e il messaggio dice quale delle due sta
+  facendo invece di dire sempre "con CUDA".
+- **Il motore delle immagini moriva in avvio** con `Torch not compiled with CUDA
+  enabled`, e da fuori si vedeva solo una scheda che non si apriva. Adesso, se
+  non c'è una scheda utilizzabile, parte in **CPU** e lo scrive nel log.
+
+⚠ **In CPU funziona ma va molto più piano** — un'immagine passa da secondi a
+minuti — e i modelli grossi (le canzoni di DaPMusica, FLUX.2 Klein) restano
+fuori portata per pazienza prima ancora che per memoria. DaPDream e DaProd
+IoDigitale la scheda video la vogliono per definizione.
+
 ### Le icone, disegnate dalla suite stessa
 
 - **L'icona del programma l'ha fatta Anima**, cioè il modello che la suite

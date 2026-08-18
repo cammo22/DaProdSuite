@@ -615,6 +615,59 @@ mentre lavori è una finestra dietro le altre o l'hai chiusa del tutto. Quindi:
   si aggiunge. Così l'ordine in cui la shell inietta i pezzi non conta, e il
   terzo tasto che servirà un giorno non dovrà spostare niente.
 
+## Il PC senza scheda video, provato il 18 agosto 2026
+
+Cammo ha installato la suite su un secondo computer **solo CPU** — per provare
+anche gli aggiornamenti — e ha portato tre log. Non partiva, e i due difetti
+erano indipendenti: correggerne uno solo non sarebbe bastato.
+
+**1. `--torch-backend=auto` sceglie XPU su una Intel integrata.** Nel log:
+`torch 2.13.0+xpu`, con dietro `mkl` 172 MB, `triton-xpu` 366 MB,
+`intel-opencl-rt` 109 MB e il resto del runtime Intel. E non serviva a niente —
+il motore poi scriveva `XPU device count is zero!`, cioè quella build non aveva
+nessun dispositivo. Un torch per CPU con un chilo e mezzo di zavorra, su una
+riga di log che intanto diceva *«Installo PyTorch con CUDA»*.
+
+Adesso `install.ts` decide prima: `nvidia-smi` risponde → `--torch-backend=auto`
+(che su una NVIDIA porta alla build CUDA giusta), non risponde →
+`--torch-backend=cpu`, esplicito. `nvidia-smi` è il metro giusto perché lo
+installa il driver: c'è se e solo se la scheda è utilizzabile.
+
+**2. ComfyUI dà CUDA per scontato e muore in avvio.**
+
+    comfy/model_management.py, in get_torch_device
+        return torch.device(torch.cuda.current_device())
+    AssertionError: Torch not compiled with CUDA enabled
+
+Va detto a lui che non c'è, con `--cpu`. Da fuori si vedeva solo una scheda che
+non si apriva: il supervisore aspettava `/health` da un processo già morto.
+`avvio.py` adesso ha `flag_dispositivo()`, e `flag_velocita()` torna vuota senza
+CUDA — `--disable-dynamic-vram`, `--fast` e flash-attention sono tutti percorsi
+CUDA, e darli a un motore in CPU rischia di rifare lo stesso danno.
+
+**La cosa imparata, che vale oltre questo caso.** La prima versione di
+`con_cuda()` importava torch nel processo dell'avvio, e ComfyUI ha cominciato a
+scrivere *«WARNING: Torch already imported, torch should never be imported
+before this point»*: prima di importarlo lui prepara delle variabili d'ambiente,
+e un import anticipato gliele porta via. **Il difetto l'ha trovato la prova, non
+la rilettura**: il codice era giusto, l'effetto collaterale no. Adesso la
+domanda si fa in un sottoprocesso — cinque secondi, una volta sola, su un avvio
+che ne dura sessanta.
+
+**Come si prova senza il secondo PC.** `CUDA_VISIBLE_DEVICES=-1` e torch dice
+che CUDA non c'è, quindi il ramo CPU si esercita su questa macchina:
+
+    CUDA_VISIBLE_DEVICES=-1 DAPROD_MOTORE=... DAPROD_PORTA=8189       python services/comfy/avvio.py
+
+Provato così: `/health` risponde, `Device: cpu`, `Set vram state to: DISABLED`,
+e l'avviso di torch non c'è più. Con la scheda visibile la riga di comando è
+identica a prima — nessuna regressione sulla macchina buona.
+
+**Quello che resta aperto** sta in [ROADMAP.md](ROADMAP.md) § "Il PC senza
+scheda video": dirlo nell'interfaccia e non solo nel log, i modelli fuori
+portata segnati come tali, Dream e IoDigitale che la GPU la pretendono, e
+l'aggiornamento automatico che su quel PC non è ancora stato visto.
+
 ## Il prossimo passo: DaProdCompanion
 
 È l'unica delle tre della 0.2.0 che non è entrata, e quello che serve è già
