@@ -53,6 +53,15 @@ delle quattro: era l'ambiente Python condiviso.
 **L'ambiente su questo PC è stato riparato**: Musica, Foto, Dream e IoDigitale
 ripartono. Chi installa da zero non incontra più il problema.
 
+### Quando un motore non parte, adesso dice perché
+
+- Sulla scheda si leggeva **«Controlla il log»**, e basta. Il motivo vero c'era
+  già, scritto per esteso in un file a due passi: nessuno lo portava dove stavi
+  guardando.
+- Adesso la scheda mostra **l'ultima riga dell'errore del motore**, quella che
+  dice davvero cosa è successo. E se è un problema di librerie, aggiunge anche
+  cosa fare per rimetterlo a posto.
+
 ### Su un PC senza scheda NVIDIA la suite adesso parte
 
 Provata su un secondo computer, solo CPU. Non partiva, e per due motivi diversi.

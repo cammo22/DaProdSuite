@@ -171,9 +171,9 @@ rotte e sono state corrette (vedi il changelog della 0.2.0); queste restano.
 - [ ] **La suite deve accorgersi da sola che l'ambiente è incoerente**, invece di
       far vedere una scheda che non si apre. Un controllo all'avvio degli import
       che contano, e un tasto "ripara" che rifà l'installazione pulita.
-- [ ] **L'errore vero deve arrivare sulla scheda.** Quando il motore muore in
-      avvio, l'utente legge "processo terminato": il perché sta nel log, e ce lo
-      deve portare la suite.
+- ~~**L'errore vero deve arrivare sulla scheda**~~ — fatto il 19 agosto 2026:
+      il supervisore tiene da parte le ultime righe di stderr e mostra quella
+      che spiega la morte, con il consiglio giusto se è un problema di librerie.
 
 
 - ~~**L'hub deve aprirsi in 4:3**~~ — fatto il 18 agosto 2026: prima prendeva
