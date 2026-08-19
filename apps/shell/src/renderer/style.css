@@ -1063,6 +1063,33 @@ li.modello .bottone {
   display: block;
 }
 
+/* L'anteprima che si muove, sopra la copertina ferma.
+   Trasparente finché il mouse non passa sulla scheda: così sotto resta sempre
+   l'immagine, e un video che manca o non parte non lascia un buco nero. */
+.scheda-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  pointer-events: none;
+}
+
+.scheda:hover .scheda-video {
+  opacity: 1;
+}
+
+/* Chi ha chiesto di non vedere animazioni non deve vederle nemmeno qui: resta
+   la copertina, che è quello che l'anteprima racconta comunque. */
+@media (prefers-reduced-motion: reduce) {
+  .scheda:hover .scheda-video {
+    opacity: 0;
+  }
+}
+
 /* La sfumatura verso il fondo della scheda: è quella che tiene insieme
    un'immagine qualunque e il pannello sotto. */
 .scheda-arte::after {

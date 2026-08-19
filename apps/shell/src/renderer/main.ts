@@ -59,6 +59,7 @@ function costruisciGriglia(): void {
     illustrazione.alt = "";
     illustrazione.addEventListener("error", () => illustrazione.remove());
     arte.append(illustrazione);
+    montaAnteprima(arte, app.id);
 
     const testa = document.createElement("div");
     testa.className = "scheda-testa";
@@ -111,6 +112,50 @@ function costruisciGriglia(): void {
 
     schede.set(app.id, { scheda, etichetta, azione, rimedio, barra, riempimento });
   }
+}
+
+/**
+ * L'anteprima che si muove, al passaggio del mouse.
+ *
+ * **Come funziona.** La copertina ferma resta sempre lì sotto; se accanto c'è
+ * anche un `media/<app>.webm`, passandoci sopra parte quello, in silenzio e in
+ * ciclo. Se il file non c'è — ed è il caso di oggi per tutte e sette — non
+ * succede niente di brutto: il `<video>` fallisce il caricamento e si toglie da
+ * solo, restando la copertina.
+ *
+ * **Perché i video non ci sono ancora.** Vanno generati con le app stesse, che
+ * è il punto di averli: DaProdDream per la sua, il Visualizer per la sua. Il
+ * meccanismo però è questo, e sta qui perché il giorno che i file arrivano
+ * basta metterli nella cartella. Vedi `scripts/genera-anteprime.cjs`.
+ *
+ * `preload="none"`: sette video caricati all'apertura dell'hub sarebbero
+ * decine di MB letti per qualcosa che forse nessuno guarderà. Si caricano al
+ * primo passaggio del mouse e restano.
+ */
+function montaAnteprima(arte: HTMLElement, id: AppId): void {
+  const video = document.createElement("video");
+  video.className = "scheda-video";
+  video.src = `media/${id}.webm`;
+  video.muted = true;
+  video.loop = true;
+  video.playsInline = true;
+  video.preload = "none";
+  // Un file che non c'è non deve lasciare un rettangolo nero sopra la
+  // copertina: si toglie, e la scheda torna com'era.
+  video.addEventListener("error", () => video.remove());
+  arte.append(video);
+
+  arte.parentElement?.addEventListener("mouseenter", () => {
+    if (!video.isConnected) return;
+    void video.play().catch(() => video.remove());
+  });
+  arte.parentElement?.addEventListener("mouseleave", () => {
+    if (!video.isConnected) return;
+    video.pause();
+    // Torna all'inizio: la prossima volta ricomincia da capo invece di
+    // riprendere da metà, che su una clip di tre secondi si vede.
+    video.currentTime = 0;
+  });
 }
 
 /** Cosa fa il bottone dipende dallo stato in cui si trova l'app. */
