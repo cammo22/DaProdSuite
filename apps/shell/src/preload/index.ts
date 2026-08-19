@@ -82,12 +82,19 @@ const api: SuiteApi = {
   impostazioni: {
     leggi: () => ipcRenderer.invoke(CHANNELS.impostazioniLeggi),
     velocita: (scelta) => ipcRenderer.invoke(CHANNELS.impostazioniVelocita, scelta),
+    profilo: (scelta) => ipcRenderer.invoke(CHANNELS.impostazioniProfilo, scelta),
     guidaFatta: () => ipcRenderer.invoke(CHANNELS.impostazioniGuida),
   },
 
   gpu: {
     state: () => ipcRenderer.invoke(CHANNELS.gpuState),
     onChanged: (listener) => subscribe<GpuState>(CHANNELS.gpuChanged, listener),
+  },
+
+  vram: {
+    elenco: () => ipcRenderer.invoke(CHANNELS.vramElenco),
+    scarica: (nome: string) => ipcRenderer.invoke(CHANNELS.vramScarica, nome),
+    svuota: () => ipcRenderer.invoke(CHANNELS.vramSvuota),
   },
 
   spazio: {

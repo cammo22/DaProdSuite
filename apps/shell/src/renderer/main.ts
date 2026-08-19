@@ -11,6 +11,7 @@ import type {
   AppState,
   EsitoControllo,
   GpuState,
+  ProfiloMemoria,
   RapportoAmbiente,
   RuntimeState,
   TipoElemento,
@@ -799,6 +800,33 @@ selettoreVelocita.addEventListener("change", () => {
   });
 });
 
+/**
+ * Quanta memoria video lasciar prendere ai motori.
+ *
+ * L'altra manopola, accanto alla velocità, e risponde a una domanda diversa:
+ * non *quanto in fretta* ma *quanto spazio*. Su una scheda da 8 GB è quella che
+ * decide se una cosa entra o non entra, ed è la prima da toccare quando una
+ * generazione muore per memoria esaurita.
+ */
+const selettoreProfilo = document.getElementById("profilo") as HTMLSelectElement;
+
+const SPIEGA_PROFILO: Record<ProfiloMemoria, string> = {
+  leggero:
+    "Il motore tiene da parte un giro e mezzo di GB: va più piano, ma ci sta " +
+    "dentro anche con LM Studio acceso o altro aperto. Vale dalla prossima apertura di un'app.",
+  bilanciato: "Come abbiamo generato finora. Vale dalla prossima apertura di un'app.",
+  qualita:
+    "Il motore si tiene tutto quello che può: la seconda immagine non ricarica " +
+    "niente, ma è il primo profilo a finire lo spazio. Vale dalla prossima apertura di un'app.",
+};
+
+selettoreProfilo.addEventListener("change", () => {
+  const scelta = selettoreProfilo.value as ProfiloMemoria;
+  void api.impostazioni.profilo(scelta).then(() => {
+    selettoreProfilo.title = SPIEGA_PROFILO[scelta];
+  });
+});
+
 /* ------------------------------------------------------------------- avvio */
 
 for (const bottone of document.querySelectorAll<HTMLButtonElement>("[data-apri]")) {
@@ -851,7 +879,10 @@ void (async () => {
     dilloAlloSplash("Controllo l'ambiente…");
     aggiornaAmbiente(await api.runtime.state());
     aggiornaSpiaGpu(await api.gpu.state());
-    selettoreVelocita.value = (await api.impostazioni.leggi()).velocita;
+    const scelte = await api.impostazioni.leggi();
+    selettoreVelocita.value = scelte.velocita;
+    selettoreProfilo.value = scelte.profilo;
+    selettoreProfilo.title = SPIEGA_PROFILO[scelte.profilo];
 
     // Per ultima, quando le schede hanno già detto cosa manca: la guida quei
     // numeri li mostra, e senza sarebbe una domanda senza prezzi.
@@ -1066,7 +1097,7 @@ function escapeHtml(testo: string): string {
  * insieme vorrebbero dire scorrere per trovarne uno.
  */
 
-const PANNELLI = ["risultati", "modelli", "log"] as const;
+const PANNELLI = ["risultati", "modelli", "log", "memoria"] as const;
 type NomePannello = (typeof PANNELLI)[number];
 
 function sezione(nome: NomePannello): HTMLElement {
@@ -1085,6 +1116,7 @@ function mostraPannello(nome: NomePannello): void {
   if (nome === "risultati") void disegnaRisultati();
   if (nome === "modelli") void disegnaModelli();
   if (nome === "log") void apriLog();
+  if (nome === "memoria") void disegnaMemoria();
 }
 
 for (const bottone of document.querySelectorAll<HTMLButtonElement>("[data-pannello]")) {
@@ -1337,4 +1369,109 @@ async function apriLog(): Promise<void> {
 logQuale.addEventListener("change", () => void apriLog());
 (document.getElementById("log-cartella") as HTMLButtonElement).addEventListener("click", () => {
   void api.suite.revealPath("logs");
+});
+
+/* ------------------------------------------------------------ memoria video */
+
+/**
+ * Chi occupa la memoria video adesso, e come liberarla.
+ *
+ * **Perché serve un pannello e non basta la spia in fondo.** La spia dice
+ * quanti GB sono occupati; questo dice **da cosa**, ed è l'unica forma utile
+ * della domanda: con 8 GB, quando una generazione muore per memoria esaurita,
+ * la manovra è togliere quel modello lì — non tutti, non spegnere il motore, e
+ * soprattutto non riavviare la suite.
+ *
+ * Nasce come una fila di quadratini colorati nella barra di DaProdMusica.
+ * Diventa un pannello della suite perché la GPU è una sola: un modello lasciato
+ * in memoria da DaProdFoto è memoria che manca a Musica.
+ */
+
+const memVoci = document.getElementById("memoria-voci") as HTMLElement;
+const memRiassunto = document.getElementById("memoria-riassunto") as HTMLElement;
+const memNota = document.getElementById("memoria-nota") as HTMLElement;
+const memAggiorna = document.getElementById("memoria-aggiorna") as HTMLButtonElement;
+const memSvuota = document.getElementById("memoria-svuota") as HTMLButtonElement;
+
+/**
+ * I nomi interni del motore, detti in italiano.
+ *
+ * `MiniMaxMusic3TEModel` è giusto e non serve a niente: chi guarda vuole sapere
+ * che quei 5,5 GB sono il modello che legge il testo di una canzone. Un nome
+ * che non conosciamo si mostra com'è — meglio un nome tecnico che una riga che
+ * sparisce.
+ */
+const NOMI_VRAM: Record<string, string> = {
+  MiniMaxMusic3TEModel: "Il testo delle canzoni",
+  MiniMaxMusic3: "La musica",
+  MiniMaxMusic3DAV: "L'audio finale (VAE)",
+  Anima: "Le immagini (Anima)",
+  WanVAE: "Le immagini, ultimo passo (VAE)",
+  Flux2: "Le immagini (FLUX.2 Klein)",
+};
+
+async function disegnaMemoria(): Promise<void> {
+  const modelli = await api.vram.elenco();
+
+  const totale = modelli.reduce((somma, m) => somma + m.vramMb, 0);
+  memSvuota.disabled = modelli.length === 0;
+
+  if (modelli.length === 0) {
+    memVoci.innerHTML = "";
+    memRiassunto.textContent = "Niente in memoria video.";
+    memNota.textContent =
+      "La memoria si riempie quando un'app genera qualcosa, e quello che ci " +
+      "finisce dentro ci resta finché serve — così la seconda immagine non " +
+      "ricarica niente. Qui compare mentre un motore è acceso.";
+    return;
+  }
+
+  memRiassunto.textContent = `${modelli.length} in memoria · ${numero(totale / 1024, 2)} GB`;
+  memNota.textContent =
+    "Togliere un modello non spegne il motore: la prossima generazione " +
+    "ricarica quello che le serve. È la manovra da fare quando una cosa non " +
+    "ci sta, invece di riavviare tutto.";
+
+  memVoci.innerHTML = "";
+  for (const modello of modelli) {
+    const voce = document.createElement("li");
+    voce.className = "voce voce-memoria";
+
+    const testi = document.createElement("div");
+    const nome = document.createElement("b");
+    nome.textContent = NOMI_VRAM[modello.nome] ?? modello.nome;
+    const sotto = document.createElement("span");
+    sotto.className = "voce-sotto";
+    // Il nome interno resta scritto: è quello che si trova nei log del motore,
+    // e chi ci va a guardare deve poterlo ricollegare a questa riga.
+    sotto.textContent =
+      `${numero(modello.vramMb / 1024, 2)} GB · ${modello.nome}` +
+      (modello.dispositivo ? ` · ${modello.dispositivo}` : "");
+    testi.append(nome, document.createElement("br"), sotto);
+
+    const togli = document.createElement("button");
+    togli.className = "bottone secondario";
+    togli.textContent = "Togli dalla memoria";
+    togli.addEventListener("click", () => {
+      void (async () => {
+        togli.disabled = true;
+        togli.textContent = "Tolgo…";
+        await api.vram.scarica(modello.nome);
+        await disegnaMemoria();
+      })();
+    });
+
+    voce.append(testi, togli);
+    memVoci.append(voce);
+  }
+}
+
+memAggiorna.addEventListener("click", () => void disegnaMemoria());
+
+memSvuota.addEventListener("click", () => {
+  void (async () => {
+    memSvuota.disabled = true;
+    await api.vram.svuota();
+    await disegnaMemoria();
+  })();
 });

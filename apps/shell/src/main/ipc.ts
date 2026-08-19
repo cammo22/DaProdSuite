@@ -14,11 +14,12 @@ import {
   type CosaResettare,
   type FiltroLibreria,
   type Intenzione,
+  type ProfiloMemoria,
   type StatoMacchina,
   type Velocita,
   type VoceModello,
 } from "@daprod/ipc";
-import { impostaVelocita, impostazioni, segnaGuidaFatta } from "./impostazioni";
+import { impostaProfilo, impostaVelocita, impostazioni, segnaGuidaFatta } from "./impostazioni";
 import { caricaModello, chiediAllLlm, liberaMemoriaLlm, scaricaModello, statoLlm } from "./llm";
 import { appManager } from "./app-manager";
 import { annulla, installaApp, installaModelli, installaTutte, scaricamenti } from "./scaricamenti";
@@ -30,6 +31,7 @@ import { updater } from "./updater";
 import { isModelPresent, manifest, statoModelli } from "./models";
 import { elencoLog, leggiLog } from "./log-lettura";
 import { avviaInPiu } from "./servizi";
+import { elencoVram, scaricaDallaVram } from "./vram";
 import { requisitiDiQuestaMacchina } from "./requisiti-macchina";
 import { LOGS_DIR, MODELS_DIR, OUTPUT_DIR } from "./paths";
 
@@ -72,6 +74,10 @@ export function registerIpc(getHub: () => BrowserWindow | null): void {
   ipcMain.handle(CHANNELS.impostazioniVelocita, (_e, scelta: Velocita) =>
     impostaVelocita(scelta === "spinta" ? "spinta" : "normale"),
   );
+
+  ipcMain.handle(CHANNELS.impostazioniProfilo, (_e, scelta: ProfiloMemoria) =>
+    impostaProfilo(scelta),
+  );
   ipcMain.handle(CHANNELS.impostazioniGuida, () => segnaGuidaFatta());
 
   /* -------------------------------------------------------------- runtime */
@@ -107,6 +113,12 @@ export function registerIpc(getHub: () => BrowserWindow | null): void {
   /* ------------------------------------------------------------------ gpu */
 
   ipcMain.handle(CHANNELS.gpuState, () => gpu.getState());
+
+  /* -------------------------------------------------------- memoria video */
+
+  ipcMain.handle(CHANNELS.vramElenco, () => elencoVram());
+  ipcMain.handle(CHANNELS.vramScarica, (_e, nome: string) => scaricaDallaVram(nome));
+  ipcMain.handle(CHANNELS.vramSvuota, () => scaricaDallaVram());
 
   /* --------------------------------------------------------- aggiornamenti */
 
