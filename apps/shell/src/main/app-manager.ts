@@ -32,6 +32,7 @@ import * as musica from "./apps/musica";
 import * as foto from "./apps/foto";
 import * as dream from "./apps/dream";
 import * as iodigitale from "./apps/iodigitale";
+import * as companion from "./apps/companion";
 
 /**
  * Le app già portate dentro la suite.
@@ -39,7 +40,14 @@ import * as iodigitale from "./apps/iodigitale";
  * Un'app non elencata qui compare nell'hub disattivata, con scritto che non è
  * ancora inclusa — meglio di una scheda che sembra pronta e poi non apre niente.
  */
-const MIGRATED = new Set<AppId>(["visualizer", "musica", "foto", "dream", "iodigitale"]);
+const MIGRATED = new Set<AppId>([
+  "visualizer",
+  "musica",
+  "foto",
+  "dream",
+  "iodigitale",
+  "companion",
+]);
 
 interface Finestra {
   apri: (onClose: () => void) => void;
@@ -74,6 +82,11 @@ const FINESTRE: Partial<Record<AppId, Finestra>> = {
     apri: iodigitale.apri,
     chiudi: iodigitale.chiudi,
     laFinestra: iodigitale.laFinestra,
+  },
+  companion: {
+    apri: companion.apri,
+    chiudi: companion.chiudi,
+    laFinestra: companion.laFinestra,
   },
 };
 

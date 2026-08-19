@@ -91,6 +91,8 @@ importers:
         specifier: ~5.9.3
         version: 5.9.3
 
+  packages/ui: {}
+
 packages:
 
   '@borewit/text-codec@0.2.2':

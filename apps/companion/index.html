@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<!--
+  Come nelle altre app: niente `unsafe-inline` per gli script, così una frase
+  arrivata dal modello o da un ricordo non può diventare codice. `connect-src`
+  arriva fino a 8760, che è il motore del Companion, e `/comune/` non ha bisogno
+  di permessi perché è servito dalla stessa origine di questa pagina.
+-->
+<meta http-equiv="Content-Security-Policy" content="
+  default-src 'self';
+  script-src 'self';
+  style-src 'self' 'unsafe-inline';
+  img-src 'self' daprod: data: blob:;
+  connect-src 'self' daprod: http://127.0.0.1:8760 ws://127.0.0.1:8760;
+  object-src 'none';
+  base-uri 'none';
+">
+<title>DaProdCompanion</title>
+<link rel="stylesheet" href="/comune/tema.css">
+<link rel="stylesheet" href="stile.css">
+</head>
+<body>
+
+<header>
+  <div class="logo">DaProd<span>Companion</span></div>
+  <nav>
+    <button data-scheda="parla" class="on">Parla</button>
+    <button data-scheda="memoria">Memoria</button>
+    <button data-scheda="sogni">Sogni</button>
+  </nav>
+  <div class="status">
+    <span class="dot" id="spia"></span><span id="statoTxt">mi collego…</span>
+  </div>
+</header>
+
+<!-- Quello che non va, detto qui e non in un log: LM Studio spento, nessun
+     modello, nessun embedding. Sparisce da solo quando è tutto a posto. -->
+<div class="avviso" id="avviso" hidden></div>
+
+<!-- ============================== PARLA ============================== -->
+<section class="tab on" id="scheda-parla">
+  <div class="selettore-llm" id="selettoreLlm"></div>
+
+  <div class="conversazione" id="conversazione"></div>
+
+  <form class="scrivi" id="formScrivi">
+    <textarea id="testo" rows="2" placeholder="Scrivi qualcosa…" autocomplete="off"></textarea>
+    <button class="btn" id="manda" type="submit">Manda</button>
+  </form>
+  <p class="hint">
+    Risponde il modello che hai scelto qui sopra, sul tuo computer. Quello che vi
+    dite resta in <b>memoria.db</b>, dentro la cartella dei dati della suite:
+    è un file solo, che puoi copiare o cancellare quando vuoi.
+  </p>
+</section>
+
+<!-- ============================= MEMORIA ============================= -->
+<section class="tab" id="scheda-memoria">
+  <div class="panel">
+    <h2>Cosa ha capito di te</h2>
+    <p class="hint" style="margin-top:0">
+      Non è quello che vi siete detti: è quello che ne ha <b>ricavato</b>
+      sognando — le persone, i luoghi e le cose che hai nominato, e come stanno
+      fra loro. Si riempie dopo il primo sogno.
+    </p>
+    <div class="grafo" id="grafo"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Gli ultimi scambi</h2>
+    <div class="storico" id="storico"></div>
+  </div>
+</section>
+
+<!-- ============================== SOGNI ============================== -->
+<section class="tab" id="scheda-sogni">
+  <div class="panel">
+    <h2>Il consolidamento</h2>
+    <p class="hint" style="margin-top:0">
+      Ogni notte alle 4 il Companion rilegge quello che vi siete detti e ne
+      ricava i fatti da tenere: un riassunto, le entità e le relazioni fra loro.
+      È lì che la conversazione diventa memoria. Alle 4 perché è l'ora in cui la
+      scheda video è libera di sicuro — il modello che scrive e i motori che
+      generano non vanno d'accordo sulla stessa macchina.
+    </p>
+    <div class="righe" id="statoSogni"></div>
+    <div class="acts">
+      <button class="btn" id="sognaOra">Sogna adesso</button>
+      <button class="btn ghost" id="apriCartella">Apri la cartella dei ricordi</button>
+    </div>
+    <p class="hint">
+      Ogni sogno lascia anche dei file scritti — un appunto per il sogno stesso e
+      uno per ogni entità — con il frontmatter e i collegamenti di Obsidian, così
+      si possono leggere anche fuori dalla suite.
+    </p>
+  </div>
+</section>
+
+<script type="module" src="src/avvio.js"></script>
+</body>
+</html>

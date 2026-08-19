@@ -244,14 +244,27 @@ export const APPS: Record<AppId, AppDescriptor> = {
     kind: "service",
     accent: "#5cff9d",
     service: {
-      id: "brain",
+      // La cartella si chiama come l'app, come per tutti gli altri motori:
+      // `servizi.ts` cerca in `services/<id>`, e chiamarla `brain` — il nome
+      // che aveva nel progetto d'origine — voleva dire una regola diversa per
+      // una scheda sola.
+      id: "companion",
       port: 8760,
-      entry: "-m brain_service",
+      entry: "avvio.py",
+      // Non carica nessun modello: apre un database e si collega a LM Studio.
+      // Un minuto è già larghissimo.
       healthTimeoutMs: 60_000,
     },
     // Conversazione e memoria passano da LM Studio, che espone un'API
-    // compatibile OpenAI su 127.0.0.1:1234. I modelli li gestisce lui.
-    models: ["lmstudio-cervello", "lmstudio-memoria"],
+    // compatibile OpenAI su 127.0.0.1:1234.
+    //
+    // **`models` è vuoto di proposito.** I pesi che servono al Companion li
+    // scarica e li tiene LM Studio, che è un programma a parte: metterli qui
+    // vorrebbe dire che la suite li conta nei GB da scaricare, li cerca nella
+    // propria cartella e non li trova mai — cioè una scheda che resta «da
+    // installare» per sempre. Quello che manca lo dice il Companion stesso,
+    // aprendosi.
+    models: [],
     gpuHeavy: false,
     // A pensare ci mette LM Studio, che è un programma a parte e si arrangia
     // con quello che trova: il Companion in sé non tocca la scheda video.

@@ -48,6 +48,16 @@ export const BASE_REQUIREMENTS = app.isPackaged
   : join(app.getAppPath(), "..", "..", "packages", "runtime", "requirements", "base.txt");
 
 /**
+ * `packages/ui/src`: i pezzi di interfaccia comuni a tutte le app.
+ *
+ * Serviti a ogni finestra sotto `/comune/`, dalla **sua stessa origine** — vedi
+ * `file-scheme.ts`, che spiega perché non hanno un host tutto loro.
+ */
+export const UI_COMUNE = app.isPackaged
+  ? join(process.resourcesPath, "comune")
+  : join(app.getAppPath(), "..", "..", "packages", "ui", "src");
+
+/**
  * `requirements/versioni.txt`: le versioni che abbiamo provato.
  *
  * Va passato a **ogni** installazione della suite — base, motori nostri,

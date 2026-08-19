@@ -1,0 +1,264 @@
+/* Quello che è di DaProdCompanion e basta.
+ *
+ * Colori, tasti, pannelli e il selettore del modello stanno in
+ * `/comune/tema.css`, che è di tutte le app. Qui c'è solo la conversazione, che
+ * nessun'altra scheda della suite ha.
+ */
+
+body {
+  /* La conversazione occupa l'altezza che resta, e scorre lei invece della
+     pagina: chi scrive vuole vedere l'ultima riga senza inseguirla. */
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ------------------------------------------------------------- header --- */
+
+header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 11px 22px;
+  border-bottom: 1px solid var(--line);
+  backdrop-filter: blur(14px);
+  background: rgba(8, 9, 13, 0.82);
+  flex-shrink: 0;
+}
+.logo {
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  white-space: nowrap;
+}
+.logo span {
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+nav {
+  display: flex;
+  gap: 3px;
+  background: #0d0f15;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  padding: 4px;
+}
+nav button {
+  background: none;
+  border: 0;
+  color: var(--dim);
+  font: inherit;
+  font-weight: 600;
+  font-size: 13.5px;
+  padding: 7px 15px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: 0.15s;
+}
+nav button:hover {
+  color: var(--txt);
+  background: #151822;
+}
+nav button.on {
+  background: linear-gradient(120deg, var(--accent), #6366f1);
+  color: #fff;
+  box-shadow: 0 3px 14px rgba(139, 92, 246, 0.35);
+}
+.status {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--dim);
+}
+
+/* Giallo e non rosso: quasi sempre non è un guasto, è una cosa da accendere. */
+.avviso {
+  margin: 14px 22px 0;
+  background: #2a2413;
+  border: 1px solid #5c5122;
+  color: #fde68a;
+  padding: 11px 14px;
+  border-radius: 11px;
+  font-size: 13px;
+  line-height: 1.5;
+  flex-shrink: 0;
+}
+
+/* -------------------------------------------------------------- schede -- */
+
+.tab {
+  display: none;
+  padding: 18px 22px 22px;
+  overflow: auto;
+  flex: 1;
+  min-height: 0;
+}
+.tab.on {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* --------------------------------------------------- la conversazione --- */
+
+.conversazione {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 4px 2px;
+}
+
+.battuta {
+  max-width: 74%;
+  padding: 11px 15px;
+  border-radius: 16px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.battuta.mia {
+  align-self: flex-end;
+  background: linear-gradient(120deg, var(--accent), #6366f1);
+  color: #fff;
+  border-bottom-right-radius: 5px;
+}
+.battuta.sua {
+  align-self: flex-start;
+  background: var(--panel2);
+  border: 1px solid var(--line);
+  border-bottom-left-radius: 5px;
+}
+/* Un messaggio che il Companion sta ancora scrivendo. Non una rotellina: tre
+   puntini che respirano, perché la risposta può metterci minuti e una rotellina
+   che gira per due minuti sembra un programma piantato. */
+.battuta.attesa {
+  color: var(--dim);
+  font-style: italic;
+}
+
+/* Quando ha risposto usando un ricordo vecchio e non solo le ultime righe: è
+   la cosa che distingue questa app da una chat qualunque, e va vista. */
+.battuta .ricordo {
+  display: block;
+  margin-top: 7px;
+  font-size: 11.5px;
+  color: var(--dim);
+  font-style: normal;
+}
+
+.vuoto {
+  margin: auto;
+  text-align: center;
+  color: var(--dim);
+  font-size: 13.5px;
+  max-width: 380px;
+  line-height: 1.6;
+}
+
+.scrivi {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+  flex-shrink: 0;
+}
+.scrivi textarea {
+  flex: 1;
+  background: #0d0f15;
+  border: 1px solid var(--line);
+  color: var(--txt);
+  border-radius: 12px;
+  padding: 11px 13px;
+  font: inherit;
+  resize: none;
+  max-height: 160px;
+}
+.scrivi textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+/* ------------------------------------------------- memoria e sogni ------ */
+
+.grafo {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.entita {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 11px 14px;
+  background: #0d0f15;
+}
+.entita b {
+  font-size: 14px;
+}
+.entita .tipo {
+  font-size: 11.5px;
+  color: var(--dim);
+  margin-left: 8px;
+  text-transform: lowercase;
+}
+.entita .legami {
+  margin-top: 6px;
+  font-size: 12.5px;
+  color: var(--dim);
+  line-height: 1.6;
+}
+
+.storico {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 320px;
+  overflow: auto;
+}
+.storico .riga {
+  font-size: 13px;
+  line-height: 1.5;
+  padding-left: 11px;
+  border-left: 2px solid var(--line2);
+}
+.storico .riga.sua {
+  border-left-color: var(--accent);
+}
+.storico .quando {
+  font-size: 11px;
+  color: var(--dim);
+  display: block;
+}
+
+.righe {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  font-size: 13.5px;
+  margin-bottom: 15px;
+}
+.righe .voce {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--line);
+}
+.righe .voce:last-child {
+  border-bottom: 0;
+}
+.righe .voce span:last-child {
+  color: var(--dim);
+}
+
+.acts {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}

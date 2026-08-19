@@ -1,0 +1,216 @@
+/* Il tema della suite: colori, misure e i pezzi che ricorrono in ogni app.
+ *
+ * **Perché esiste, e da quando.** Fino al 19 agosto 2026 questi valori stavano
+ * copiati in cima a `apps/musica/stile.css` e `apps/foto/stile.css`, con
+ * scritto in tutti e due che alla 0.3.1 sarebbero dovuti finire in un posto
+ * solo. Ci sono finiti quando è arrivata la terza app a chiederli — il
+ * Companion — perché due copie si controllano a occhio e tre no.
+ *
+ * Si carica come qualunque altro foglio, dalla cartella condivisa che la suite
+ * serve a ogni app sotto la sua stessa origine:
+ *
+ *     <link rel="stylesheet" href="/comune/tema.css">
+ *
+ * Qui dentro va **solo quello che vale per tutte**. Quello che è di un'app
+ * sola resta nel suo foglio: una regola comune che serve a uno e ne disturba
+ * altri quattro non è una regola comune, è un pasticcio in mezzo alla strada.
+ */
+
+:root {
+  --bg: #08090d;
+  --panel: #111319;
+  --panel2: #161922;
+  --line: #22262f;
+  --line2: #2e3340;
+  --txt: #eceef4;
+  --dim: #868c9e;
+  --accent: #8b5cf6;
+  --accent2: #22d3ee;
+  --ok: #34d399;
+  --err: #f87171;
+  --radius: 16px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100%;
+  /* Le due luci negli angoli: sono la faccia della suite, e ci sono in tutte
+     le app da quando esiste DaProdMusica. `fixed` perché devono restare dove
+     sono mentre la pagina scorre, come una stanza illuminata e non come una
+     carta da parati che scorre con te. */
+  background:
+    radial-gradient(1100px 560px at 85% -12%, #1d1348 0%, transparent 62%),
+    radial-gradient(900px 520px at -5% 105%, #052b3d 0%, transparent 58%),
+    var(--bg);
+  background-attachment: fixed;
+  color: var(--txt);
+  font: 15px/1.55 "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--line2);
+  border-radius: 99px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ------------------------------------------------------------- pannelli -- */
+
+.panel {
+  background: linear-gradient(180deg, var(--panel), var(--panel2));
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 17px 19px;
+}
+
+.panel h2 {
+  margin: 0 0 13px;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+/* --------------------------------------------------------------- tasti --- */
+
+.btn {
+  background: linear-gradient(120deg, var(--accent), #6366f1);
+  color: #fff;
+  border: 0;
+  border-radius: 11px;
+  padding: 10px 17px;
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+  transition: 0.15s;
+}
+.btn:hover:not(:disabled) {
+  filter: brightness(1.12);
+}
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn.ghost {
+  background: #0d0f15;
+  border: 1px solid var(--line);
+  color: var(--txt);
+  font-weight: 600;
+}
+.btn.ghost:hover:not(:disabled) {
+  border-color: var(--line2);
+  background: #151822;
+}
+
+.mini {
+  background: #0d0f15;
+  border: 1px solid var(--line);
+  color: var(--dim);
+  border-radius: 9px;
+  padding: 5px 10px;
+  font: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+.mini:hover:not(:disabled) {
+  color: var(--txt);
+  border-color: var(--line2);
+}
+
+/* ---------------------------------------------------------- scritte ----- */
+
+.hint {
+  font-size: 12px;
+  color: var(--dim);
+  margin-top: 7px;
+  line-height: 1.5;
+}
+
+.err {
+  background: #2a1416;
+  border: 1px solid #5c2226;
+  color: #fca5a5;
+  padding: 10px 12px;
+  border-radius: 11px;
+  font-size: 13px;
+  white-space: pre-wrap;
+}
+
+/* La spia di collegamento: c'è in tutte le app, con lo stesso significato —
+   grigia quando il motore non risponde, verde quando risponde. */
+.dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 99px;
+  background: var(--dim);
+  display: inline-block;
+  transition: 0.2s;
+}
+.dot.on {
+  background: var(--ok);
+  box-shadow: 0 0 9px rgba(52, 211, 153, 0.75);
+}
+
+/* ------------------------------------------- il selettore del modello ---- */
+/* Le regole del pezzo condiviso stanno accanto al pezzo, non nel foglio di
+   ogni app che lo ospita: chi lo monta scrive una riga di HTML e non deve
+   sapere com'è fatto dentro. */
+
+.selettore-llm {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-wrap: wrap;
+  font-size: 12.5px;
+  color: var(--dim);
+}
+.selettore-llm select {
+  background: #0d0f15;
+  border: 1px solid var(--line);
+  color: var(--txt);
+  border-radius: 9px;
+  padding: 6px 9px;
+  font: inherit;
+  min-width: 180px;
+  max-width: 260px;
+}
+.selettore-llm .llm-pallino {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--line2);
+}
+/* Verde vuol dire **in memoria adesso**, non "installato": è la differenza che
+   conta, perché un modello caricato tiene quattro o cinque GB anche mentre stai
+   generando un'immagine. */
+.selettore-llm .llm-pallino.acceso {
+  background: var(--ok);
+}
+.selettore-llm .llm-detto {
+  font-size: 12px;
+  color: var(--dim);
+}
+.selettore-llm .llm-contesti {
+  display: flex;
+  gap: 5px;
+  margin-left: auto;
+}
+.selettore-llm .mini.on {
+  color: var(--txt);
+  border-color: var(--accent);
+}
+.llm-spento {
+  font-size: 12.5px;
+  color: var(--err);
+}
