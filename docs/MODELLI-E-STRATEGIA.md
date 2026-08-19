@@ -299,15 +299,19 @@ Non lo implemento adesso: prima la suite deve funzionare bene sulla 4060.
 
 Da sei card a **sette**:
 
+*(Stato al 19 agosto 2026: questa tabella era il piano, e adesso è quasi tutta
+fatta. Sei schede su sette sono dentro; resta Cinema, che è anche l'unica che
+non esisteva da nessuna parte prima.)*
+
 | # | App | Stato |
 |---|---|---|
-| 1 | DaProdVisualizer | da migrare |
-| 2 | DaProdMusica | da migrare |
-| 3 | DaProdFoto | da costruire (Anima base, FLUX extra) |
-| 4 | DaProdDream | da migrare |
-| 5 | DaProdCompanion | da migrare |
-| 6 | DaProd IoDigitale | da migrare |
-| 7 | **DaProdCinema** | **nuova** — da canzone a video musicale |
+| 1 | DaProdVisualizer | dentro (0.1.0) |
+| 2 | DaProdMusica | dentro (0.1.0) |
+| 3 | DaProdFoto | dentro (0.1.0) — Anima base, FLUX.2 Klein extra |
+| 4 | DaProdDream | dentro (0.2.0) |
+| 5 | DaProdCompanion | dentro (0.3.1) — senza voce, per adesso |
+| 6 | DaProd IoDigitale | dentro (0.2.0) |
+| 7 | **DaProdCinema** | **da fare** — da canzone a video musicale |
 
 E le divisioni della suite tornano a coincidere con quelle della wiki: Musica,
 Foto, Cinema. Che è come dovrebbe essere.
