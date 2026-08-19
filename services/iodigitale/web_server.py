@@ -816,7 +816,7 @@ async def _webm_to_pcm16(webm_chunks: list[bytes]) -> bytes:
     stdout, stderr = await process.communicate(b"".join(webm_chunks))
     if process.returncode != 0:
         detail = stderr.decode("utf-8", errors="ignore").strip()
-        raise RuntimeError(f"Failed to decode microphone audio with ffmpeg: {detail}")
+        raise RuntimeError(f"Non sono riuscito a leggere l'audio del microfono: {detail}")
     return stdout
 
 
@@ -1114,7 +1114,7 @@ async def chat_ws(websocket: WebSocket) -> None:
         )
         await send_client({"type": "status", "state": "idle", "message": "Pronto."})
 
-    await send_client({"type": "ready", "message": "LeapTalk WebSocket connected."})
+    await send_client({"type": "ready", "message": "Collegato al motore."})
     try:
         while True:
             message = await websocket.receive()
@@ -1151,7 +1151,7 @@ async def chat_ws(websocket: WebSocket) -> None:
                     )
             elif msg_type == "audio_start":
                 if audio_turn_task is not None and not audio_turn_task.done():
-                    await send_client({"type": "status", "state": "busy", "message": "Previous audio turn is still running."})
+                    await send_client({"type": "status", "state": "busy", "message": "Il turno precedente non e' ancora finito."})
                     continue
                 recording = True
                 audio_chunks = []
@@ -1164,7 +1164,7 @@ async def chat_ws(websocket: WebSocket) -> None:
                         str(data.get("avatar_url") or avatar_url),
                     )
                 )
-                await send_client({"type": "status", "state": "recording", "message": "Recording microphone audio."})
+                await send_client({"type": "status", "state": "recording", "message": "Sto registrando dal microfono."})
             elif msg_type == "audio_end":
                 recording = False
                 chunks = audio_chunks
@@ -1183,9 +1183,9 @@ async def chat_ws(websocket: WebSocket) -> None:
                     audio_turn_task = None
                     await task
                 elif chunks:
-                    await send_client({"type": "status", "state": "idle", "message": "Legacy microphone path is disabled."})
+                    await send_client({"type": "status", "state": "idle", "message": "Questa strada del microfono e' stata dismessa."})
                 else:
-                    await send_client({"type": "status", "state": "idle", "message": "No microphone audio was received."})
+                    await send_client({"type": "status", "state": "idle", "message": "Non e' arrivato nessun audio dal microfono."})
             elif msg_type == "ping":
                 await send_client({"type": "pong"})
     except WebSocketDisconnect:
