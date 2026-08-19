@@ -73,6 +73,11 @@ export function esponiApiApp(io: AppId): void {
     // solo *quale* motore vuole, e il catalogo decide se può averlo.
     motoreInPiu: (nome: string) => ipcRenderer.invoke(CHANNELS.appMotoreInPiu, io, nome),
 
+    // Che macchina è questa. Serve a chi offre modelli che senza scheda video
+    // non hanno senso: meglio un pulsante spento con scritto perché, che una
+    // generazione avviata che finisce fra sei ore.
+    macchina: () => ipcRenderer.invoke(CHANNELS.appMacchina),
+
     log: {
       elenco: () => ipcRenderer.invoke(CHANNELS.logElenco),
       leggi: (nome: string, righe?: number) => ipcRenderer.invoke(CHANNELS.logLeggi, nome, righe),

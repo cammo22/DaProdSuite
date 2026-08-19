@@ -384,6 +384,21 @@ main {
   margin-top: auto;
 }
 
+/* I tasti in fondo alla scheda: quasi sempre uno solo, due quando la suite sa
+   anche come rimediare al guasto che sta mostrando. */
+.scheda-tasti {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* Più piccolo di "Riprova": è la via d'uscita, non l'azione principale. */
+.rimedio {
+  font-size: 12px;
+  padding: 6px 10px;
+}
+
 .etichetta {
   font-size: 12px;
   color: var(--testo-fioco);
@@ -1167,4 +1182,10 @@ li.modello .bottone {
   font-size: 13.5px;
   color: var(--testo-tenue);
   min-height: 1.4em;
+}
+
+/* Una voce della procedura guidata che su questo computer non può funzionare:
+   si vede, si legge perché, ma non si spunta. */
+.guida-spenta {
+  opacity: 0.55;
 }

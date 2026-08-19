@@ -23,6 +23,14 @@ const RICORDO = "daprod.foto.modello";
 
 let corrente = MODELLI.anima;
 let manca = null;
+/**
+ * Vero se questo computer non ha una scheda video utilizzabile.
+ *
+ * Lo dice la suite una volta sola all'avvio. Cambia cosa si può offrire nel
+ * menu: FLUX.2 Klein sulla CPU non è "più lento", è un'immagine che non arriva
+ * — e undici GB scaricati per scoprirlo.
+ */
+let senzaScheda = false;
 /** Vero se lo scaricamento in corso l'abbiamo chiesto noi da questa finestra. */
 let nostro = false;
 
@@ -30,15 +38,31 @@ let nostro = false;
 export const modelloCorrente = () => corrente;
 
 /** Vero se col modello scelto si può generare: pesi sul disco e nodi nel motore. */
-export const modelloUsabile = () => manca === null || manca.pronto;
+export const modelloUsabile = () =>
+  !(senzaScheda && corrente.serveScheda) && (manca === null || manca.pronto);
 
-export function collegaScelta() {
+export async function collegaScelta() {
+  // Prima di disegnare il menu: da questo dipende quali voci sono scegliibili.
+  // Se la suite non risponde si tira dritto — meglio offrire tutto che spegnere
+  // FLUX per un dubbio nostro.
+  try {
+    senzaScheda = !(await ponte.macchina()).gpu;
+  } catch {
+    senzaScheda = false;
+  }
+
   el.modello.innerHTML = Object.values(MODELLI)
-    .map((m) => `<option value="${m.id}">${escapeHtml(m.nome)}</option>`)
+    .map(
+      (m) =>
+        `<option value="${m.id}"${senzaScheda && m.serveScheda ? " disabled" : ""}>${escapeHtml(
+          m.nome,
+        )}${senzaScheda && m.serveScheda ? " — serve una scheda video" : ""}</option>`,
+    )
     .join("");
 
   const ricordato = localStorage.getItem(RICORDO);
-  el.modello.value = MODELLI[ricordato] ? ricordato : MODELLI.anima.id;
+  const valido = MODELLI[ricordato] && !(senzaScheda && MODELLI[ricordato].serveScheda);
+  el.modello.value = valido ? ricordato : MODELLI.anima.id;
   el.modello.onchange = () => scegli(el.modello.value);
 
   ponte.suAvanzamentoModelli(avanzamento);
@@ -108,6 +132,18 @@ function disegna(avanza) {
   }
 
   el.avvisoModello.hidden = false;
+
+  // Niente scheda video e modello che ne pretende una: non c'è niente da
+  // scaricare né da aspettare, quindi non si mostra nessun bottone. Si dice
+  // com'è e si indica la strada che su questa macchina funziona.
+  if (senzaScheda && corrente.serveScheda) {
+    el.avvisoModello.innerHTML = `
+      <div><b>${escapeHtml(corrente.nome)} ha bisogno di una scheda video NVIDIA.</b></div>
+      <div class="hint">Questo computer non ne ha una utilizzabile, e sulla CPU
+        un'immagine con questo modello non arriva in fondo in un tempo che abbia
+        senso. <b>Anima</b> invece funziona: è più lenta del solito, ma ci arriva.</div>`;
+    return;
+  }
 
   if (avanza) {
     const quota = avanza.total > 0 ? avanza.done / avanza.total : null;

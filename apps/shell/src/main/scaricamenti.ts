@@ -48,7 +48,15 @@ import { join } from "node:path";
 import { appManager } from "./app-manager";
 import { createLogger } from "./logging";
 import { modelliMancanti, nodiRichiesti, type ModelEntry } from "./models";
-import { ENGINES_DIR, MODELS_DIR, PYTHON_EXE, RUNTIME_DIR, SERVICES_DIR, TOOLS_DIR } from "./paths";
+import {
+  ENGINES_DIR,
+  MODELS_DIR,
+  PYTHON_EXE,
+  RUNTIME_DIR,
+  SERVICES_DIR,
+  TOOLS_DIR,
+  VINCOLI_REQUIREMENTS,
+} from "./paths";
 import { runtime } from "./runtime";
 import * as servizi from "./servizi";
 
@@ -77,6 +85,15 @@ export function annulla(id: AppId): void {
 
 export async function installaApp(id: AppId): Promise<void> {
   if (inCorso.has(id)) return;
+
+  // Scaricare otto GB di pesi per un'app che su questa macchina non si aprirà
+  // è la cosa peggiore che possiamo far fare a qualcuno: mezz'ora di attesa
+  // per arrivare a un errore. Si dice prima, e non si scarica niente.
+  const impossibile = appManager.motivoImpossibile(id);
+  if (impossibile) {
+    appManager.patch(id, { status: "in-errore", error: impossibile });
+    return;
+  }
 
   const controllo = new AbortController();
   inCorso.set(id, controllo);
@@ -126,6 +143,7 @@ export async function installaApp(id: AppId): Promise<void> {
         enginesDir: ENGINES_DIR,
         runtimeDir: RUNTIME_DIR,
         toolsDir: TOOLS_DIR,
+        vincoli: VINCOLI_REQUIREMENTS,
         segnale,
         onLine: scrivi,
         onPasso: (etichetta) => avanzamento(0, 0, etichetta),
@@ -268,6 +286,7 @@ async function installaLibrerieServizio(id: AppId, corsa: Corsa): Promise<void> 
     uv,
     runtimeDir: RUNTIME_DIR,
     requisiti,
+    vincoli: VINCOLI_REQUIREMENTS,
     segnale: corsa.segnale,
     onLine: corsa.scrivi,
     timeoutMs: 60 * 60_000,
@@ -292,6 +311,7 @@ async function portaDentro(ids: string[], corsa: Corsa): Promise<boolean> {
       enginesDir: ENGINES_DIR,
       runtimeDir: RUNTIME_DIR,
       toolsDir: TOOLS_DIR,
+      vincoli: VINCOLI_REQUIREMENTS,
       segnale,
       onLine: scrivi,
       onPasso: (etichetta) => avanzamento(0, 0, etichetta),

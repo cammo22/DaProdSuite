@@ -33,7 +33,10 @@ collegaTraduzione();
 // Per ultimo fra questi: la scelta del modello sposta i cursori sul suo punto
 // di lavoro e decide se serve la traduzione, quindi vuole trovare già collegate
 // le etichette dei cursori e la casella della lingua.
-collegaScelta();
+// Adesso è asincrona: prima di disegnare il menu chiede alla suite se questo
+// computer ha una scheda video, perché FLUX.2 Klein senza non si può offrire.
+// Non si aspetta — il resto della pagina non dipende dalla risposta.
+void collegaScelta();
 collegaGalleria();
 collegaComandiCoda();
 collegaModelli();

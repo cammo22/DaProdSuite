@@ -14,6 +14,7 @@ export {
   type VoceControllo,
 } from "./controllo";
 export {
+  VincoliInConflitto,
   ensureUv,
   installaRequisiti,
   type InstallaRequisitiOptions,

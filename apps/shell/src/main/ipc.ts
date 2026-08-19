@@ -14,6 +14,7 @@ import {
   type CosaResettare,
   type FiltroLibreria,
   type Intenzione,
+  type StatoMacchina,
   type Velocita,
   type VoceModello,
 } from "@daprod/ipc";
@@ -29,16 +30,8 @@ import { updater } from "./updater";
 import { isModelPresent, manifest, statoModelli } from "./models";
 import { elencoLog, leggiLog } from "./log-lettura";
 import { avviaInPiu } from "./servizi";
-import {
-  BASE_REQUIREMENTS,
-  ENGINES_DIR,
-  LOGS_DIR,
-  MODELS_DIR,
-  OUTPUT_DIR,
-  SERVICES_DIR,
-} from "./paths";
-import { existsSync } from "node:fs";
-import { join } from "node:path";
+import { requisitiDiQuestaMacchina } from "./requisiti-macchina";
+import { LOGS_DIR, MODELS_DIR, OUTPUT_DIR } from "./paths";
 
 export function registerIpc(getHub: () => BrowserWindow | null): void {
   /* ---------------------------------------------------------------- suite */
@@ -94,7 +87,7 @@ export function registerIpc(getHub: () => BrowserWindow | null): void {
    * Ripara l'ambiente: reinstalla i pacchetti, non cancella niente.
    */
   ipcMain.handle(CHANNELS.runtimeRipara, async () => {
-    await runtime.ripara(requisitiDiQuestaMacchina());
+    await runtime.ripara(requisitiDiQuestaMacchina(appManager.list()));
     await appManager.refreshAll();
   });
 
@@ -106,7 +99,7 @@ export function registerIpc(getHub: () => BrowserWindow | null): void {
    * a posto" senza aver guardato quello che «Ripara» rimetterebbe.
    */
   ipcMain.handle(CHANNELS.runtimeControlla, async () => {
-    const rapporto = await runtime.controlla(requisitiDiQuestaMacchina());
+    const rapporto = await runtime.controlla(requisitiDiQuestaMacchina(appManager.list()));
     await appManager.refreshAll();
     return rapporto;
   });
@@ -241,6 +234,22 @@ export function registerIpc(getHub: () => BrowserWindow | null): void {
   );
 
   /**
+   * Che macchina è questa, per le app.
+   *
+   * Esce dallo stato dell'ambiente, che è già sondato all'avvio (torch aperto
+   * davvero, `torch.cuda.is_available()`): non c'è niente da misurare qui, solo
+   * da riferire in una forma che a una pagina serva.
+   */
+  ipcMain.handle(CHANNELS.appMacchina, (): StatoMacchina => {
+    const stato = runtime.getState();
+    return {
+      gpu: stato.cudaAvailable === true,
+      nomeGpu: stato.gpuName,
+      vramMb: stato.gpuTotalMb,
+    };
+  });
+
+  /**
    * Il catalogo dei modelli come lo guarda l'hub.
    *
    * La domanda non e' "com'e' fatto il manifesto" ma "ce l'ho, quanto pesa, a
@@ -307,31 +316,3 @@ export function registerIpc(getHub: () => BrowserWindow | null): void {
   scaricamenti.on("avanzamento", (stato) => aTutte(CHANNELS.modelliAvanzamento, stato));
 }
 
-/**
- * I file di requisiti che contano **su questa macchina**: la base, il motore di
- * terzi se e' installato, e i servizi delle app che l'utente ha davvero.
- *
- * Rimettere in casa i pacchetti di IoDigitale a chi non ce l'ha sarebbe una
- * riparazione che installa roba nuova, cioe' un'altra occasione di rompere
- * qualcosa. Vale uguale per il controllo, che guarda esattamente questi.
- */
-function requisitiDiQuestaMacchina(): string[] {
-  const requisiti = [BASE_REQUIREMENTS];
-
-  const motore = join(ENGINES_DIR, "comfy-requisiti.txt");
-  if (existsSync(motore)) requisiti.push(motore);
-
-  const installate = new Set(
-    appManager
-      .list()
-      .filter((s) => s.status !== "non-inclusa" && s.status !== "da-installare")
-      .map((s) => s.id),
-  );
-  for (const app of APP_LIST) {
-    if (!installate.has(app.id) || !app.service) continue;
-    const suo = join(SERVICES_DIR, app.service.id, "requisiti.txt");
-    if (existsSync(suo) && !requisiti.includes(suo)) requisiti.push(suo);
-  }
-
-  return requisiti;
-}

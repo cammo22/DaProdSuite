@@ -50,6 +50,12 @@ export interface InstallaMotoreOptions {
   /** Cartella del venv condiviso. */
   runtimeDir: string;
   toolsDir: string;
+  /**
+   * `requirements/versioni.txt`. ComfyUI dichiara le sue dipendenze come gli
+   * pare — è codice loro — e senza questo file una sua riga può spostare
+   * `transformers` sotto i piedi di DaProdDream e del Companion.
+   */
+  vincoli?: string;
   segnale?: AbortSignal;
   onLine?: (riga: string) => void;
   /** Cosa sta succedendo, in italiano, mostrabile così com'è. */
@@ -85,7 +91,7 @@ export function motoreAggiornato(enginesDir: string): boolean {
 }
 
 export async function installaMotore(options: InstallaMotoreOptions): Promise<void> {
-  const { enginesDir, runtimeDir, toolsDir, segnale, onLine, onPasso } = options;
+  const { enginesDir, runtimeDir, toolsDir, vincoli, segnale, onLine, onPasso } = options;
   const destinazione = join(enginesDir, "ComfyUI");
 
   if (motoreAggiornato(enginesDir)) {
@@ -133,6 +139,7 @@ export async function installaMotore(options: InstallaMotoreOptions): Promise<vo
     uv,
     runtimeDir,
     requisiti,
+    vincoli,
     segnale,
     onLine,
     timeoutMs: 60 * 60_000,

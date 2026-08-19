@@ -17,7 +17,7 @@ import { promisify } from "node:util";
 import { controllaAmbiente, ensureUv, installRuntime, riparaAmbiente, verdetto } from "@daprod/runtime";
 import type { RapportoAmbiente, RuntimeState } from "@daprod/ipc";
 import { createLogger } from "./logging";
-import { BASE_REQUIREMENTS, PYTHON_EXE, RUNTIME_DIR, TOOLS_DIR } from "./paths";
+import { BASE_REQUIREMENTS, PYTHON_EXE, RUNTIME_DIR, TOOLS_DIR, VINCOLI_REQUIREMENTS } from "./paths";
 
 const execFileAsync = promisify(execFile);
 
@@ -74,6 +74,7 @@ class Runtime extends EventEmitter {
           runtimeDir: RUNTIME_DIR,
           toolsDir: TOOLS_DIR,
           baseRequirements: BASE_REQUIREMENTS,
+          vincoli: VINCOLI_REQUIREMENTS,
           onProgress: (installing) => this.patch({ installing }),
           onLine: aggiungiRiga,
         });
@@ -128,7 +129,13 @@ class Runtime extends EventEmitter {
 
         const uv = await ensureUv({ toolsDir: TOOLS_DIR, onLine: aggiungiRiga });
         this.patch({ installing: { step: 2, total: 2, label: "Reinstallo i pacchetti…" } });
-        await riparaAmbiente({ uv, runtimeDir: RUNTIME_DIR, requisiti, onLine: aggiungiRiga });
+        await riparaAmbiente({
+          uv,
+          runtimeDir: RUNTIME_DIR,
+          requisiti,
+          vincoli: VINCOLI_REQUIREMENTS,
+          onLine: aggiungiRiga,
+        });
 
         this.patch({ installing: undefined });
         await this.refresh();

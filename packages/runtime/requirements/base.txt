@@ -8,6 +8,11 @@
 #
 # torch NON è qui: si installa a parte con --torch-backend=auto, perché la wheel
 # giusta dipende dal driver CUDA della macchina.
+#
+# **I numeri esatti non stanno qui, stanno in `versioni.txt`**, che è il file di
+# vincoli applicato a *ogni* installazione della suite — comprese quelle di
+# ComfyUI e dei nodi custom, che non abbiamo scritto noi. Questo file dice
+# **cosa** serve; quello dice **in che versione**, una volta per tutti.
 
 # Ogni servizio parla HTTP con lo shell ed espone /health e /shutdown.
 fastapi>=0.121.0
@@ -22,20 +27,8 @@ python-multipart>=0.0.20
 # scritta accanto — «transformers pretende huggingface-hub<1.0» — era vera con
 # transformers 4, ed è diventata esattamente il contrario con la 5, che pretende
 # `>=1.0`. Il tetto quindi non proteggeva più niente: faceva **rimbalzare** le
-# due librerie a ogni installazione. Nel log di Cammo, in tre passaggi:
-#
-#     - huggingface-hub==1.27.0   + huggingface-hub==0.36.2
-#     - transformers==5.15.0      + transformers==4.57.3
-#     ... poi di nuovo             + huggingface-hub==1.28.0, transformers==5.15.0
-#
-# E ogni rimbalzo è una disinstallazione, cioè un'occasione perché l'antivirus
-# la faccia fallire a metà (l'errore 4395 di `uv.ts`). È successo: l'ambiente è
-# rimasto con `errors.py` della 0.36 accanto a `utils/__init__.py` della 1.28, e
-# ComfyUI moriva in avvio con `cannot import name 'BucketNotFoundError'`. Da
-# fuori si vedeva solo Musica e Foto che non si aprivano.
-#
-# Il pavimento a 1.0 tiene ferme tutte e due: nessun rimbalzo, nessuna
-# disinstallazione da far fallire.
+# due librerie a ogni installazione, e da un rimbalzo finito male sono nate
+# quattro app che non si aprivano. Adesso il numero è fermo in `versioni.txt`.
 huggingface-hub>=1.28
 safetensors>=0.6.0
 

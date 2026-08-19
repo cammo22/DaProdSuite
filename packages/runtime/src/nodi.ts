@@ -63,6 +63,12 @@ export interface InstallaNodoOptions {
   /** Cartella del venv condiviso. */
   runtimeDir: string;
   toolsDir: string;
+  /**
+   * `requirements/versioni.txt`. Vale soprattutto qui: un nodo custom è il
+   * pezzo di codice di terzi più piccolo e più libero di tutti, e la sua
+   * riga `requirements.txt` non sa niente delle altre cinque app.
+   */
+  vincoli?: string;
   segnale?: AbortSignal;
   onLine?: (riga: string) => void;
   /** Cosa sta succedendo, in italiano, mostrabile così com'è. */
@@ -104,7 +110,7 @@ export async function installaNodo(id: string, options: InstallaNodoOptions): Pr
   const nodo = NODI[id];
   if (!nodo) throw new Error(`Nodo sconosciuto: ${id}.`);
 
-  const { enginesDir, runtimeDir, toolsDir, segnale, onLine, onPasso } = options;
+  const { enginesDir, runtimeDir, toolsDir, vincoli, segnale, onLine, onPasso } = options;
   const destinazione = join(cartellaNodi(enginesDir), nodo.nome);
 
   if (nodoPresente(enginesDir, id)) {
@@ -163,6 +169,7 @@ export async function installaNodo(id: string, options: InstallaNodoOptions): Pr
         uv,
         runtimeDir,
         requisiti: nostro,
+        vincoli,
         segnale,
         onLine,
         timeoutMs: 30 * 60_000,

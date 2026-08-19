@@ -44,6 +44,31 @@ export interface AppState {
   progress?: { done: number; total: number; label: string };
   /** Presente solo quando status è "in-errore". */
   error?: string;
+  /**
+   * Cosa si può fare, quando la suite lo sa. Diventa un secondo bottone sulla
+   * scheda, accanto a "Riprova".
+   */
+  rimedio?: Rimedio;
+}
+
+/**
+ * Un guasto che la suite ha riconosciuto, con la sua via d'uscita.
+ *
+ * Nasce il 19 agosto 2026 dalla lezione di quella notte: l'errore vero c'era
+ * già — in un file, a due passi — e all'utente restava una scheda che non si
+ * apriva. Portare l'errore sulla scheda è stato il primo passo; questo è il
+ * secondo, e dice **cosa fare** invece di descrivere cosa è successo.
+ */
+export interface Rimedio {
+  /**
+   * Che tasto mostrare. Per ora ce n'è uno solo, ed è quello che serve nel
+   * novanta per cento dei casi: l'ambiente Python condiviso rimasto a metà.
+   */
+  tipo: "ripara-ambiente";
+  /** Il testo del bottone, corto: ci sta accanto a "Riprova". */
+  testo: string;
+  /** Perché lo sto proponendo, in una riga. È il titolo del bottone. */
+  perche: string;
 }
 
 /* -------------------------------------------------------------- impostazioni */
@@ -257,6 +282,28 @@ export interface VoceLog {
 }
 
 export type CosaResettare = "impostazioni" | "modelli" | "tutto";
+
+/**
+ * Cosa può fare questo computer, detto alle app.
+ *
+ * **Perché serve dentro le finestre e non solo nell'hub.** Su un PC senza
+ * scheda NVIDIA la suite parte lo stesso — provato il 18 agosto 2026 — ma non
+ * tutto quello che c'è dentro ha senso: un brano di DaProdMusica in CPU dura
+ * ore, e FLUX.2 Klein non è nemmeno immaginabile. Finora l'unico che lo sapeva
+ * era il motore, che se lo scriveva in un file: chi apriva l'app vedeva solo
+ * una barra che non finiva mai.
+ *
+ * Con questo, ogni app può spegnere quello che non regge **prima** di farlo
+ * partire, e dirlo invece di lasciarlo indovinare.
+ */
+export interface StatoMacchina {
+  /** C'è una scheda video utilizzabile: torch la vede e ci può lavorare. */
+  gpu: boolean;
+  /** Come si chiama, per poterla nominare all'utente. */
+  nomeGpu?: string;
+  /** Quanta memoria ha, in MB: è il numero che decide cosa ci sta dentro. */
+  vramMb?: number;
+}
 
 /** Chi sta occupando la GPU adesso. L'arbitro ne ammette uno solo. */
 export interface GpuState {
@@ -557,6 +604,15 @@ export interface ApiApp {
     liberaMemoria(): Promise<void>;
   };
 
+  /**
+   * Che macchina è questa: c'è una scheda video, come si chiama, quanta memoria.
+   *
+   * Da chiedere **una volta all'avvio della pagina**, e da usare per spegnere
+   * quello che su questo computer non ha senso offrire. Non cambia mentre l'app
+   * è aperta: una scheda video non compare a metà sessione.
+   */
+  macchina(): Promise<StatoMacchina>;
+
   /** Manda un elemento a un'altra app, aprendola se serve. */
   invia(destinazione: AppId, elementoId: string, intenzione: Intenzione): Promise<void>;
 
@@ -676,6 +732,7 @@ export const CHANNELS = {
   appInvia: "app:invia",
   appConsegna: "app:consegna",
   appMotoreInPiu: "app:motore-in-piu",
+  appMacchina: "app:macchina",
   appApri: "app:apri",
   appChiudi: "app:chiudi",
 } as const;

@@ -6,15 +6,24 @@
 #
 # Chi manca davvero rispetto a ComfyUI: diffusers (la pipeline SD-Turbo), la
 # cattura dello schermo, e il video delle registrazioni.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# I NUMERI ESATTI NON SONO PIÙ QUI.
+#
+# Fino al 19 agosto 2026 questo file aveva solo minimi (`>=`), con accanto
+# scritto che i minimi bastavano perché «a rompere l'ambiente non sono gli
+# aggiornamenti, sono le retrocessioni». Era vero a metà: un minimo toglie il
+# rimbalzo fra due nostre liste, ma non impedisce a ComfyUI o a un nodo custom
+# di tirare dentro l'ultima `diffusers` uscita stamattina — e quella libreria la
+# usano anche Foto, IoDigitale e il Companion.
+#
+# Adesso i numeri stanno in un posto solo, `packages/runtime/requirements/
+# versioni.txt`, che viene passato come **vincolo** a ogni installazione della
+# suite, comprese quelle del codice di terzi. Qui resta solo il minimo che dice
+# «sotto questa versione il motore non funziona», che è un'informazione diversa
+# e che vale la pena avere scritta accanto al pacchetto.
+# ─────────────────────────────────────────────────────────────────────────────
 
-# **I minimi sono alzati alle versioni provate il 19 agosto 2026**, e non è
-# pignoleria: a rompere l'ambiente non sono gli aggiornamenti, sono le
-# **retrocessioni**. Quella notte `huggingface-hub` e `transformers` sono
-# rimbalzate avanti e indietro fra due installazioni finché una disinstallazione
-# non è fallita a metà (l'errore 4395 dell'antivirus, vedi `uv.ts`), e Musica,
-# Foto, Dream e IoDigitale hanno smesso di funzionare tutte insieme. Un minimo
-# non impone niente a nessuno — al contrario di `==`, che è il motivo per cui
-# qui sopra c'è scritto di non usarlo — ma toglie di mezzo il rimbalzo.
 diffusers>=0.38.0
 accelerate>=1.10.0
 peft>=0.19.1

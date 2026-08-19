@@ -69,7 +69,34 @@ export interface AppDescriptor {
    * volta: l'arbitro dello shell spegne il precedente prima di avviare il nuovo.
    */
   gpuHeavy: boolean;
+  /**
+   * Quanto le serve una scheda video **vera**, cioè una NVIDIA che torch veda.
+   *
+   * Non è la stessa cosa di `gpuHeavy`, che dice quanta VRAM occupa quando c'è:
+   * questo dice cosa succede quando **non** c'è. Nasce dalla prova del 18
+   * agosto 2026 su un computer solo-CPU, dove la suite partiva ma le schede non
+   * dicevano niente — e lasciavano scaricare otto GB di pesi per un'app che su
+   * quella macchina non sarebbe partita comunque.
+   */
+  schedaVideo: RichiestaSchedaVideo;
 }
+
+export type RichiestaSchedaVideo =
+  /**
+   * Senza, non si apre proprio: l'hub spegne il tasto e scrive il perché
+   * **prima** di far scaricare i GB. Sono le app che fanno tempo reale o video
+   * — Dream, IoDigitale, Cinema — dove la CPU non è "più lenta", è un'altra
+   * cosa: trenta secondi per fotogramma non sono una webcam.
+   */
+  | "obbligatoria"
+  /**
+   * Si apre e funziona, ma i tempi cambiano di ordine di grandezza: un brano o
+   * un'immagine passano da secondi a ore. La scheda lo dice, e l'app lo ripete
+   * dove si preme Genera. Chi vuole provare lo stesso, può.
+   */
+  | "molto-meglio"
+  /** Gira benissimo su qualunque computer: il Visualizer e il Companion. */
+  | "non-serve";
 
 export const APP_IDS = [
   "visualizer",
@@ -92,6 +119,8 @@ export const APPS: Record<AppId, AppDescriptor> = {
     accent: "#7c5cff",
     models: [],
     gpuHeavy: false,
+    // WebGL, non torch: gira sulla grafica integrata di qualunque portatile.
+    schedaVideo: "non-serve",
   },
   musica: {
     id: "musica",
@@ -114,6 +143,9 @@ export const APPS: Record<AppId, AppDescriptor> = {
     // pagina controlla e li offre nel momento in cui servono davvero.
     extraModels: ["anima-turbo", "qwen3-06b-base", "qwen-image-vae"],
     gpuHeavy: true,
+    // In CPU un brano si fa, ma si misura in ore invece che in minuti: è una
+    // cosa da sapere prima di premere Genera, non dopo.
+    schedaVideo: "molto-meglio",
   },
   foto: {
     id: "foto",
@@ -144,6 +176,9 @@ export const APPS: Record<AppId, AppDescriptor> = {
       "flux2-vae",
     ],
     gpuHeavy: true,
+    // Anima in CPU è lentissima ma arriva in fondo. FLUX.2 Klein no, ed è
+    // l'app stessa a spegnerlo nel menu dei modelli quando la scheda non c'è.
+    schedaVideo: "molto-meglio",
   },
   cinema: {
     id: "cinema",
@@ -164,6 +199,8 @@ export const APPS: Record<AppId, AppDescriptor> = {
     // Vedi docs/VERIFICA-AMBIENTE-UNIFICATO.md.
     models: [],
     gpuHeavy: true,
+    // Video: un fotogramma per volta, e i fotogrammi sono centinaia.
+    schedaVideo: "obbligatoria",
   },
   dream: {
     id: "dream",
@@ -191,6 +228,9 @@ export const APPS: Record<AppId, AppDescriptor> = {
         healthTimeoutMs: 180_000,
       },
     ],
+    // Tempo reale: senza scheda video non è "più lento", è un'altra cosa.
+    // Trenta secondi per fotogramma non sono una webcam trasformata.
+    schedaVideo: "obbligatoria",
     models: ["sd-turbo", "taesd"],
     // Gli stessi tre file che usano Foto e Musica: chi ha già una di quelle due
     // installate non scarica niente.
@@ -213,6 +253,9 @@ export const APPS: Record<AppId, AppDescriptor> = {
     // compatibile OpenAI su 127.0.0.1:1234. I modelli li gestisce lui.
     models: ["lmstudio-cervello", "lmstudio-memoria"],
     gpuHeavy: false,
+    // A pensare ci mette LM Studio, che è un programma a parte e si arrangia
+    // con quello che trova: il Companion in sé non tocca la scheda video.
+    schedaVideo: "non-serve",
   },
   iodigitale: {
     id: "iodigitale",
@@ -246,6 +289,9 @@ export const APPS: Record<AppId, AppDescriptor> = {
     ],
     extraModels: ["soulx-flashhead-pro"],
     gpuHeavy: true,
+    // Genera video di una faccia che parla, in tempo reale sul turno di
+    // conversazione: senza scheda video non c'è nessuna conversazione.
+    schedaVideo: "obbligatoria",
   },
 };
 

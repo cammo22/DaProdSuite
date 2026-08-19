@@ -121,6 +121,12 @@ input[type=range]{padding:0; height:24px; accent-color:var(--accent); background
 .err{background:#2a1416; border:1px solid #5c2226; color:#fca5a5; padding:10px 12px; border-radius:11px;
   font-size:13px; white-space:pre-wrap; margin-top:12px; max-height:190px; overflow:auto}
 
+/* Il computer non ha una scheda video: si dice una volta, in alto, e resta lì.
+   Giallo e non rosso: non è un guasto, è un avvertimento sui tempi. */
+.avviso-cpu{background:#2a2413; border:1px solid #5c5122; color:#fde68a;
+  padding:11px 14px; border-radius:11px; font-size:13px; line-height:1.5;
+  margin:0 16px 14px}
+
 /* ------------------------------------------------------------ tracce ---- */
 .tracks{display:flex; flex-direction:column; gap:9px}
 .track{display:flex; gap:12px; align-items:center; background:#0b0d13; border:1px solid var(--line);

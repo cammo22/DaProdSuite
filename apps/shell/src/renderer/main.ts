@@ -33,6 +33,8 @@ const schede = new Map<
     scheda: HTMLElement;
     etichetta: HTMLElement;
     azione: HTMLButtonElement;
+    /** Il tasto che compare solo quando la suite sa **cosa fare** per rimediare. */
+    rimedio: HTMLButtonElement;
     barra: HTMLElement;
     riempimento: HTMLElement;
   }
@@ -86,15 +88,27 @@ function costruisciGriglia(): void {
     const etichetta = document.createElement("span");
     etichetta.className = "etichetta";
 
+    // Il tasto del rimedio, accanto a "Riprova". Sta nascosto quasi sempre: si
+    // accende solo quando un motore è morto per un motivo che la suite sa
+    // riconoscere — oggi uno solo, l'ambiente Python rimasto a metà.
+    const rimedio = document.createElement("button");
+    rimedio.className = "bottone secondario rimedio";
+    rimedio.hidden = true;
+    rimedio.addEventListener("click", () => void riparaDaScheda(rimedio));
+
+    const tasti = document.createElement("div");
+    tasti.className = "scheda-tasti";
+
     const azione = document.createElement("button");
     azione.className = "bottone";
     azione.addEventListener("click", () => void premuto(app.id));
 
-    fondo.append(etichetta, azione);
+    tasti.append(rimedio, azione);
+    fondo.append(etichetta, tasti);
     scheda.append(arte, testa, barra, fondo);
     griglia.append(scheda);
 
-    schede.set(app.id, { scheda, etichetta, azione, barra, riempimento });
+    schede.set(app.id, { scheda, etichetta, azione, rimedio, barra, riempimento });
   }
 }
 
@@ -127,6 +141,27 @@ const descrizioneStato: Record<AppState["status"], string> = {
 /** L'ultimo stato conosciuto, per chi deve fare i conti senza richiederlo. */
 let ultimiStati: AppState[] = [];
 
+/**
+ * Vero quando torch **non** vede nessuna scheda video utilizzabile.
+ *
+ * Su una macchina così la suite parte lo stesso — provata il 18 agosto 2026 —
+ * ma tre schede su sette non hanno senso e due sono da armarsi di pazienza.
+ * Lo sa la barra dell'ambiente in cima; da lì arriva qui, e le schede si
+ * rileggono da sole.
+ */
+let senzaScheda = false;
+
+/** Cosa dire su una scheda quando manca la scheda video. */
+const SENZA_SCHEDA: Record<string, { etichetta: string; bottone?: string }> = {
+  obbligatoria: {
+    etichetta: "Serve una scheda video NVIDIA: su questo computer non partirebbe.",
+    bottone: "Serve una NVIDIA",
+  },
+  "molto-meglio": {
+    etichetta: "Senza scheda video funziona, ma va lentissima: ore invece di minuti.",
+  },
+};
+
 function aggiornaSchede(stati: AppState[]): void {
   ultimiStati = stati;
   for (const stato of stati) {
@@ -142,9 +177,33 @@ function aggiornaSchede(stati: AppState[]): void {
     elementi.etichetta.className = `etichetta ${regola.classe}`;
     elementi.etichetta.title = stato.error ?? "";
 
+    // Niente scheda video: si dice qui, **prima** che parta uno scaricamento da
+    // otto GB per un'app che su questo computer non si aprirebbe comunque.
+    // Vale solo per le app installabili: a una già in errore o in mezzo a un
+    // lavoro serve il suo messaggio, non questo.
+    const richiesta = api.catalog.find((a) => a.id === stato.id)?.schedaVideo;
+    const avviso = senzaScheda && richiesta ? SENZA_SCHEDA[richiesta] : undefined;
+    const daInstallare = stato.status === "da-installare" || stato.status === "pronta";
+    if (avviso && daInstallare) {
+      elementi.etichetta.textContent = avviso.etichetta;
+      elementi.etichetta.className = "etichetta attesa";
+      if (avviso.bottone) {
+        elementi.azione.textContent = avviso.bottone;
+        elementi.azione.disabled = true;
+      }
+    }
+
     // Un'app non ancora dentro la suite si riconosce anche dalla copertina:
     // spenta, come tutto il resto della scheda.
     elementi.scheda.classList.toggle("in-arrivo", stato.status === "non-inclusa");
+
+    // La via d'uscita, quando c'è. Il testo lo decide lo shell: è lui che sa
+    // *perché* il motore è morto, e la scheda non deve indovinarlo.
+    elementi.rimedio.hidden = !stato.rimedio;
+    if (stato.rimedio) {
+      elementi.rimedio.textContent = stato.rimedio.testo;
+      elementi.rimedio.title = stato.rimedio.perche;
+    }
 
     disegnaBarra(elementi, stato);
   }
@@ -178,6 +237,26 @@ function disegnaBarra(
   elementi.riempimento.style.width = indeterminata
     ? ""
     : `${Math.min(100, (avanzamento.done / avanzamento.total) * 100).toFixed(1)}%`;
+}
+
+/**
+ * «Ripara l'ambiente», premuto da una scheda invece che dalla barra in cima.
+ *
+ * È lo stesso identico lavoro (`runtime.ripara`), e finisce nello stesso posto:
+ * la barra dell'ambiente si apre da sola e mostra le righe mentre lavora. Qui si
+ * disattiva solo il tasto, perché premerlo due volte non serve a niente e
+ * l'installazione dura minuti.
+ */
+async function riparaDaScheda(tasto: HTMLButtonElement): Promise<void> {
+  tasto.disabled = true;
+  const prima = tasto.textContent;
+  tasto.textContent = "Riparo…";
+  try {
+    await api.runtime.ripara();
+  } finally {
+    tasto.disabled = false;
+    tasto.textContent = prima;
+  }
 }
 
 async function premuto(id: AppId): Promise<void> {
@@ -277,6 +356,13 @@ let ambienteOccupato = false;
 function aggiornaAmbiente(stato: RuntimeState): void {
   const inCorso = Boolean(stato.installing);
 
+  // Le schede dipendono da questo: finché non si sa se c'è una scheda video,
+  // non si può dire a nessuno che la sua app non partirà. Si ridisegnano solo
+  // quando la risposta **cambia**, non a ogni riga di log dell'installazione.
+  const primaSenzaScheda = senzaScheda;
+  senzaScheda = stato.ready && stato.cudaAvailable === false;
+  if (senzaScheda !== primaSenzaScheda) aggiornaSchede(ultimiStati);
+
   // Un'installazione o una riparazione si guardano mentre succedono: il fondo
   // si apre da sé, e resta aperto se è stato l'utente ad aprirlo.
   if (inCorso) dettagliAperti = true;
@@ -306,9 +392,16 @@ function aggiornaAmbiente(stato: RuntimeState): void {
       "Manca l'ambiente Python: cinque app su sette non partono senza. Circa 4 GB, una volta sola.",
     );
   } else if (stato.cudaAvailable === false) {
-    // Senza CUDA i motori girerebbero su CPU: tecnicamente funziona, ma così
-    // lento da essere inutilizzabile. Meglio dirlo forte.
-    dipingi("attesa", `Ambiente a posto, ma torch ${stato.torchVersion} non vede la scheda video`);
+    // Senza scheda video i motori girano sulla CPU: tecnicamente funziona, ma
+    // di un altro ordine di grandezza. Detto in italiano e con le conseguenze,
+    // perché "torch non vede CUDA" non dice niente a chi apre la suite: quello
+    // che serve sapere è **quali schede** non si apriranno e **quanto** vanno
+    // piano le altre.
+    dipingi(
+      "attesa",
+      "Nessuna scheda video utilizzabile: tutto gira sulla CPU. Musica e Foto " +
+        "funzionano ma ci mettono ore; Dream, IoDigitale e Cinema non partono.",
+    );
   } else {
     const scheda = stato.gpuName ? ` · ${stato.gpuName}` : "";
     dipingi("ok", `Ambiente: Python ${stato.pythonVersion} · torch ${stato.torchVersion}${scheda}`);
@@ -499,21 +592,36 @@ async function forseMostraGuida(stati: AppState[]): Promise<void> {
 
   // L'ambiente Python pesa quanto pesa solo se non c'è: quando c'è già, la
   // stessa schermata deve dire numeri diversi.
-  gbComuni = (await api.runtime.state()).ready ? 0 : GB_COMUNI;
+  const ambiente = await api.runtime.state();
+  gbComuni = ambiente.ready ? 0 : GB_COMUNI;
+
+  // Se l'ambiente c'è già e non vede nessuna scheda video, la procedura guidata
+  // non deve proporre di scaricare otto GB per DaProdDream: si mostra la voce,
+  // spenta, con scritto perché. A ambiente ancora da installare non si sa
+  // ancora niente dell'hardware, e chiedere di indovinare sarebbe peggio che
+  // tacere.
+  const senzaSchedaQui = ambiente.ready && ambiente.cudaAvailable === false;
 
   guidaApp.innerHTML = "";
   for (const stato of scelta) {
     const app = api.catalog.find((a) => a.id === stato.id);
     if (!app) continue;
 
+    const impossibile = senzaSchedaQui && app.schedaVideo === "obbligatoria";
+
     const voce = document.createElement("li");
     voce.innerHTML = `
       <label>
-        <input type="checkbox" value="${app.id}" checked>
+        <input type="checkbox" value="${app.id}" ${impossibile ? "disabled" : "checked"}>
         <span class="guida-nome">${app.name}</span>
-        <span class="guida-gb">${etichettaCosto(stato)}</span>
+        <span class="guida-gb">${impossibile ? "serve una NVIDIA" : etichettaCosto(stato)}</span>
       </label>
-      <p class="guida-riga">${app.tagline}</p>`;
+      <p class="guida-riga">${
+        impossibile
+          ? `${app.tagline} — su questo computer non può funzionare: fa video in tempo reale, e senza scheda video non c'è tempo reale.`
+          : app.tagline
+      }</p>`;
+    if (impossibile) voce.classList.add("guida-spenta");
 
     // Il colore si mette da qui e non con uno `style=` nell'HTML: la CSP
     // dell'hub non ammette stili scritti nel marcatura, e il pallino colorato

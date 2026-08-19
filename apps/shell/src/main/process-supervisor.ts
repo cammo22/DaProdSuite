@@ -17,6 +17,27 @@ import type { ServiceLogger } from "./logging";
  */
 const RIGHE_RICORDATE = 40;
 
+/**
+ * Vero se questa morte parla di **librerie**, non del motore.
+ *
+ * Un `ImportError` in un motore vuol dire quasi sempre una cosa sola:
+ * l'ambiente Python condiviso è rimasto a metà fra due versioni, di solito dopo
+ * un'installazione andata storta. È la firma della notte del 19 agosto 2026,
+ * quando quattro app hanno smesso di aprirsi insieme e nessuna delle quattro
+ * era il problema.
+ *
+ * Lo usano in due: qui, per aggiungere alla frase cosa si può fare, e
+ * `app-manager.ts`, per andare a **guardare l'ambiente da solo** invece di
+ * aspettare che sia l'utente a premere «Controlla». Una regola sola, in un
+ * posto solo: se un giorno impariamo a riconoscere un'altra firma si aggiunge
+ * qui, e la sanno tutti e due.
+ */
+export function sembraProblemaDiAmbiente(motivo: string): boolean {
+  return /ImportError|ModuleNotFoundError|cannot import name|DLL load failed|undefined symbol/i.test(
+    motivo,
+  );
+}
+
 export interface ServiceConfig {
   name: string;
   pythonExecutable: string;
@@ -133,11 +154,11 @@ export class ProcessSupervisor {
 
     if (!errore) return "Controlla il log.";
 
-    if (/ImportError|ModuleNotFoundError|cannot import name/.test(errore)) {
+    if (sembraProblemaDiAmbiente(errore)) {
       return (
         `${errore} — l'ambiente Python della suite è incoerente, di solito dopo ` +
-        "un'installazione interrotta. Si rimette a posto dal pannello **Spazio** " +
-        "dell'hub, con **Ripara l'ambiente**: i modelli non si toccano."
+        "un'installazione interrotta. Sto guardando cosa non torna; " +
+        "«Ripara l'ambiente» rimette a posto i pacchetti e non tocca i modelli."
       );
     }
     return errore;

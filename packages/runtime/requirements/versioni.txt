@@ -1,0 +1,122 @@
+# Le versioni che abbiamo provato. Questo file è la legge dell'ambiente.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# COS'È
+#
+# Un file di **vincoli** (`uv pip install --constraint`), non di requisiti: non
+# installa niente da solo. Dice soltanto che, se qualcuno installa uno di questi
+# pacchetti, deve essere *questa* versione. Vale per tutto ciò che entra
+# nell'ambiente condiviso:
+#
+#   - le librerie comuni (`base.txt`)
+#   - i motori nostri (`services/<id>/requisiti.txt`)
+#   - il `requirements.txt` di **ComfyUI**, che non abbiamo scritto noi
+#   - i `requirements.txt` dei **nodi custom**, idem
+#
+# Le ultime due sono la ragione per cui questo file esiste e per cui non basta
+# scrivere `==` dentro i nostri requisiti: il codice di terzi dichiara le sue
+# dipendenze come gli pare, e senza un vincolo comune è lui a decidere che
+# versione di `transformers` si ritrova in casa DaProdDream.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# PERCHÉ
+#
+# L'ambiente Python è **uno solo per sei app**. È quello che ci fa stare in
+# 4 GB invece di 14,7, ed è anche il posto dove installare un'app può rompere
+# le altre senza toccarle.
+#
+# Il 19 agosto 2026 è successo: dopo aver installato DaProd IoDigitale, Musica e
+# Foto non si aprivano più e Dream e IoDigitale si aprivano senza funzionare.
+# Nessuna delle quattro era il problema. Due librerie continuavano a rimbalzare
+# avanti e indietro a ogni installazione — una le voleva nuove, un vincolo
+# scritto mesi prima le voleva vecchie — e ogni rimbalzo è una disinstallazione,
+# cioè un'occasione perché l'antivirus la spezzi a metà (l'errore 4395 che
+# `uv.ts` sa aggirare, ma non sempre). Alla fine `huggingface_hub` è rimasto
+# mezzo installato: `errors.py` della 0.36 accanto a `utils/__init__.py` della
+# 1.28, con tutti i numeri di versione giusti e i file di due versioni mescolati.
+#
+# Con i numeri fermi non c'è più niente che rimbalzi: niente rimbalzo, niente
+# disinstallazioni, niente occasioni.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# COME SI CAMBIA
+#
+# A mano, quando lo decidiamo noi, e riprovando le app dopo. È la stessa regola
+# di ComfyUI (versione fissata in `motore.ts`) e dei nodi custom (commit fissato
+# in `nodi.ts`): si aggiorna perché abbiamo deciso di aggiornare, non perché era
+# martedì e su PyPI è uscita una versione nuova.
+#
+# **Se un'installazione fallisce con «no solution found»** è questo il file da
+# guardare: vuol dire che qualcosa di nuovo pretende una versione diversa da
+# quella che abbiamo provato. Quello è il momento di decidere — alzare il numero
+# qui e riprovare i motori — e non un incidente da aggirare togliendo il vincolo.
+#
+# I numeri qui sotto sono letti dall'ambiente di Cammo il 19 agosto 2026, quello
+# su cui girano tutti e cinque i motori.
+#
+# **torch non è in questo elenco, di proposito**: la sua versione giusta
+# (`2.13.0+cu130` su una NVIDIA, `2.13.0` su sola CPU) dipende dalla macchina,
+# e nessun codice di terzi può toccarlo comunque — `requisiti.ts` lo toglie
+# dalle liste altrui prima ancora che uv le veda.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── il servizio HTTP che ogni motore espone ─────────────────────────────────
+fastapi==0.141.1
+uvicorn==0.52.3
+websockets==17.0.1
+python-multipart==0.0.32
+httpx==0.28.1
+aiofiles==25.1.0
+
+# ── modelli e pesi ──────────────────────────────────────────────────────────
+# Le due che sono rimbalzate. Restano ferme insieme: la 5 di transformers vuole
+# `huggingface-hub>=1.0`, la 4 lo voleva `<1.0`, e non esiste un numero che vada
+# bene a tutte e due. Si sceglie, e la scelta è scritta qui.
+huggingface-hub==1.28.0
+transformers==5.15.0
+tokenizers==0.22.2
+safetensors==0.8.0
+diffusers==0.38.0
+accelerate==1.14.0
+peft==0.19.1
+sentencepiece==0.2.2
+sacremoses==0.2.0
+
+# ── il pavimento di tutto ───────────────────────────────────────────────────
+# numpy rompe più cose di qualunque altra libreria, perché ci passano sopra
+# torch, opencv, librosa e mezzo ComfyUI: se si muove lui, si muove tutto.
+numpy==2.5.2
+scipy==1.18.0
+pillow==12.3.0
+
+# ── immagini e video ────────────────────────────────────────────────────────
+opencv-python==5.0.0.93
+opencv-contrib-python==5.0.0.93
+imageio==2.37.4
+imageio-ffmpeg==0.6.0
+av==18.1.0
+mss==10.2.0
+mediapipe==1.0.1
+onnxruntime==1.28.0
+
+# ── audio e voce ────────────────────────────────────────────────────────────
+librosa==1.0.0
+soundfile==0.14.0
+soxr==1.1.0
+pyloudnorm==0.2.0
+faster-whisper==1.2.1
+piper-tts==1.6.1
+
+# ── memoria e impostazioni del Companion ────────────────────────────────────
+# `sqlite-vec` è la ricerca per somiglianza dentro SQLite: nessun database in
+# più da installare e da tenere acceso, un file solo nella cartella dell'app.
+sqlite-vec==0.1.9
+pydantic==2.13.4
+pydantic-settings==2.15.0
+croniter==6.2.4
+
+# ── varie che i motori danno per scontate ───────────────────────────────────
+einops==0.8.2
+loguru==0.7.3
+nvidia-ml-py==13.610.43
+psutil==7.2.2

@@ -188,6 +188,15 @@ const FLUX_COMUNE = {
   ritocco: ritoccoFlux,
 };
 
+/**
+ * `serveScheda: true` vuol dire **niente scheda video, niente modello**.
+ *
+ * Non è la stessa cosa di "va più piano": FLUX.2 Klein è un modello da 5,9 o
+ * 11,2 GB che sulla CPU non finisce un'immagine in un tempo che abbia senso, e
+ * offrirlo lo stesso significa lasciar scaricare undici GB per poi far
+ * aspettare qualcuno davanti a una barra che non si muove. Su una macchina
+ * senza NVIDIA il menu lo mostra spento, con scritto perché.
+ */
 export const MODELLI = {
   anima: {
     id: "anima",
@@ -208,6 +217,9 @@ export const MODELLI = {
     traduce: true,
     immagine: immagineAnima,
     ritocco: ritoccoAnima,
+    // Senza scheda video Anima ci mette molto, ma arriva in fondo: resta
+    // l'unica strada su un computer senza NVIDIA, e quindi non si spegne.
+    serveScheda: false,
   },
   "flux2-4b": {
     ...FLUX_COMUNE,
@@ -217,6 +229,7 @@ export const MODELLI = {
     dit: "flux-2-klein-4b-Q5_K_M.gguf",
     txt: "Qwen3-4B-Q5_K_M.gguf",
     catalogo: ["flux2-klein-4b-q5km", "flux2-4b-text-encoder", "flux2-vae"],
+    serveScheda: true,
   },
   "flux2-9b": {
     ...FLUX_COMUNE,
@@ -226,6 +239,7 @@ export const MODELLI = {
     dit: "flux-2-klein-9b-Q4_K_S.gguf",
     txt: "Qwen3-8B-Q5_K_M.gguf",
     catalogo: ["flux2-klein-q4ks", "flux2-text-encoder", "flux2-vae"],
+    serveScheda: true,
   },
 };
 

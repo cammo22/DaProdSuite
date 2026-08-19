@@ -18,7 +18,7 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { promisify } from "node:util";
 import { run } from "./exec";
-import { ensureUv } from "./uv";
+import { ensureUv, installaRequisiti } from "./uv";
 
 const execFileAsync = promisify(execFile);
 
@@ -40,6 +40,14 @@ export interface InstallOptions {
   toolsDir: string;
   /** Percorso di `requirements/base.txt`. */
   baseRequirements: string;
+  /**
+   * Percorso di `requirements/versioni.txt`: le versioni che abbiamo provato.
+   *
+   * Qui conta meno che altrove — `base.txt` è roba nostra e non ci sorprende —
+   * ma passarlo comunque vuol dire che l'ambiente **nasce** già con i numeri
+   * giusti, invece di arrivarci al primo motore installato.
+   */
+  vincoli?: string;
   onProgress?: (progress: InstallProgress) => void;
   onLine?: (line: string) => void;
 }
@@ -47,7 +55,7 @@ export interface InstallOptions {
 const TOTAL_STEPS = 4;
 
 export async function installRuntime(options: InstallOptions): Promise<void> {
-  const { runtimeDir, toolsDir, baseRequirements, onProgress, onLine } = options;
+  const { runtimeDir, toolsDir, baseRequirements, vincoli, onProgress, onLine } = options;
   const python = join(runtimeDir, "Scripts", "python.exe");
 
   const passo = (step: number, label: string) => {
@@ -98,7 +106,11 @@ export async function installRuntime(options: InstallOptions): Promise<void> {
 
   /* 4 — base ---------------------------------------------------------------- */
   passo(4, "Installo le librerie comuni ai motori");
-  await run(uv, ["pip", "install", "--python", python, "-r", baseRequirements], {
+  await installaRequisiti({
+    uv,
+    runtimeDir,
+    requisiti: baseRequirements,
+    vincoli,
     onLine: (line) => onLine?.(line),
     timeoutMs: 30 * 60_000,
   });

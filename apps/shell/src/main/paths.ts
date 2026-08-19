@@ -48,6 +48,19 @@ export const BASE_REQUIREMENTS = app.isPackaged
   : join(app.getAppPath(), "..", "..", "packages", "runtime", "requirements", "base.txt");
 
 /**
+ * `requirements/versioni.txt`: le versioni che abbiamo provato.
+ *
+ * Va passato a **ogni** installazione della suite — base, motori nostri,
+ * ComfyUI, nodi custom, riparazione — perché è l'unica cosa che impedisce a un
+ * `requirements.txt` di terzi di spostare una libreria condivisa sotto i piedi
+ * delle altre cinque app. Vedi l'intestazione di quel file: c'è scritta la
+ * notte in cui è successo.
+ */
+export const VINCOLI_REQUIREMENTS = app.isPackaged
+  ? join(process.resourcesPath, "requirements", "versioni.txt")
+  : join(app.getAppPath(), "..", "..", "packages", "runtime", "requirements", "versioni.txt");
+
+/**
  * Cartella dei servizi Python. In sviluppo sta nel repo; una volta impacchettata
  * finisce in resources/ accanto all'eseguibile (vedi extraResources nel
  * electron-builder.yml).

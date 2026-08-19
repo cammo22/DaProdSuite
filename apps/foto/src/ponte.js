@@ -158,6 +158,14 @@ export const scaricaModelli = (ids) => suite.modelli.scarica(ids);
 export const annullaScaricamento = () => suite.modelli.annulla();
 export const suAvanzamentoModelli = (azione) => suite.modelli.onAvanzamento(azione);
 
+/**
+ * Che macchina è questa: c'è una scheda video o no.
+ *
+ * Si chiede una volta all'avvio. Non cambia mentre l'app è aperta, e serve al
+ * menu dei modelli per spegnere quelli che senza NVIDIA non hanno senso.
+ */
+export const macchina = () => suite.macchina();
+
 export const mandaA = (app, id, intenzione) => suite.invia(app, id, intenzione);
 export const suConsegna = (azione) => suite.onConsegna(azione);
 

@@ -16,7 +16,7 @@ import { aggiornaLibreria, collegaLibreria } from "./libreria.js";
 import { aggiornaImmagini, collegaImmagini } from "./immagini.js";
 import { collegaModelli } from "./modelli.js";
 import { collegaBonsai } from "./bonsai.js";
-import { collega } from "./ponte.js";
+import { collega, macchina } from "./ponte.js";
 
 document.querySelectorAll("nav button").forEach((b) => {
   b.onclick = () => mostraScheda(b.dataset.scheda);
@@ -32,6 +32,29 @@ collegaImmagini();
 collegaComandiCoda();
 collegaModelli();
 collegaBonsai();
+
+/**
+ * Su un computer senza scheda video si dice subito, prima che qualcuno prema
+ * Genera e aspetti.
+ *
+ * **Perché non basta lasciar fare.** MiniMax Music 3 sulla CPU non dà errore:
+ * parte, e finisce dopo ore. Da fuori si vede una barra che non si muove, e la
+ * conclusione naturale è che l'app sia rotta. Non lo è: è la macchina che non
+ * ha l'attrezzo giusto, e questo è l'unico posto in cui dirlo prima e non dopo.
+ */
+try {
+  if (!(await macchina()).gpu) {
+    el.avvisoCpu.innerHTML =
+      "<b>Questo computer non ha una scheda video utilizzabile.</b> DaProdMusica " +
+      "funziona lo stesso, ma un brano che con una scheda NVIDIA richiede " +
+      "qualche minuto qui può richiedere <b>ore</b>. Puoi provare: lascialo " +
+      "lavorare e non chiudere la suite.";
+    el.avvisoCpu.hidden = false;
+  }
+} catch {
+  // La suite non ha risposto: si tira dritto. Meglio non dire niente che dire
+  // una cosa sbagliata su che computer sia questo.
+}
 
 await aggiornaLibreria();
 
