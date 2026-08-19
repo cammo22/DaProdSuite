@@ -166,6 +166,9 @@ export const suAvanzamentoModelli = (azione) => suite.modelli.onAvanzamento(azio
 export const liberaMemoriaLlm = () => suite.llm.liberaMemoria();
 
 /** Manda un brano a un'altra app della suite: è il senso di stare tutti insieme. */
+/** Che macchina è questa: c'è una scheda video o no. Chiesta una volta all'avvio. */
+export const macchina = () => suite.macchina();
+
 export const mandaA = (app, id, intenzione) => suite.invia(app, id, intenzione);
 export const suConsegna = (azione) => suite.onConsegna(azione);
 

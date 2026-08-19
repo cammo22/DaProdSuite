@@ -22,7 +22,11 @@
  */
 
 import { el, mostraErrore } from "./dom.js";
-import { collegaSelettoreLlm, modelloScelto } from "./selettore-llm.js";
+// Il selettore del modello e' di tutte le app, non di questa: sta in
+// `packages/ui` e la suite lo serve sotto `/comune/`, dalla stessa origine
+// della pagina. Fino al 19 agosto 2026 ce n'erano due copie identiche, una
+// qui e una nell'altra app.
+import { collegaSelettoreLlm, modelloScelto } from "/comune/selettore-llm.js";
 
 const suite = window.daprodSuite;
 

@@ -11,6 +11,7 @@ import type {
   AppState,
   EsitoControllo,
   GpuState,
+  ProfiloMemoria,
   RapportoAmbiente,
   RuntimeState,
   TipoElemento,
@@ -33,6 +34,8 @@ const schede = new Map<
     scheda: HTMLElement;
     etichetta: HTMLElement;
     azione: HTMLButtonElement;
+    /** Il tasto che compare solo quando la suite sa **cosa fare** per rimediare. */
+    rimedio: HTMLButtonElement;
     barra: HTMLElement;
     riempimento: HTMLElement;
   }
@@ -56,6 +59,7 @@ function costruisciGriglia(): void {
     illustrazione.alt = "";
     illustrazione.addEventListener("error", () => illustrazione.remove());
     arte.append(illustrazione);
+    montaAnteprima(arte, app.id);
 
     const testa = document.createElement("div");
     testa.className = "scheda-testa";
@@ -86,16 +90,72 @@ function costruisciGriglia(): void {
     const etichetta = document.createElement("span");
     etichetta.className = "etichetta";
 
+    // Il tasto del rimedio, accanto a "Riprova". Sta nascosto quasi sempre: si
+    // accende solo quando un motore è morto per un motivo che la suite sa
+    // riconoscere — oggi uno solo, l'ambiente Python rimasto a metà.
+    const rimedio = document.createElement("button");
+    rimedio.className = "bottone secondario rimedio";
+    rimedio.hidden = true;
+    rimedio.addEventListener("click", () => void riparaDaScheda(rimedio));
+
+    const tasti = document.createElement("div");
+    tasti.className = "scheda-tasti";
+
     const azione = document.createElement("button");
     azione.className = "bottone";
     azione.addEventListener("click", () => void premuto(app.id));
 
-    fondo.append(etichetta, azione);
+    tasti.append(rimedio, azione);
+    fondo.append(etichetta, tasti);
     scheda.append(arte, testa, barra, fondo);
     griglia.append(scheda);
 
-    schede.set(app.id, { scheda, etichetta, azione, barra, riempimento });
+    schede.set(app.id, { scheda, etichetta, azione, rimedio, barra, riempimento });
   }
+}
+
+/**
+ * L'anteprima che si muove, al passaggio del mouse.
+ *
+ * **Come funziona.** La copertina ferma resta sempre lì sotto; se accanto c'è
+ * anche un `media/<app>.webm`, passandoci sopra parte quello, in silenzio e in
+ * ciclo. Se il file non c'è — ed è il caso di oggi per tutte e sette — non
+ * succede niente di brutto: il `<video>` fallisce il caricamento e si toglie da
+ * solo, restando la copertina.
+ *
+ * **Perché i video non ci sono ancora.** Vanno generati con le app stesse, che
+ * è il punto di averli: DaProdDream per la sua, il Visualizer per la sua. Il
+ * meccanismo però è questo, e sta qui perché il giorno che i file arrivano
+ * basta metterli nella cartella. Vedi `scripts/genera-anteprime.cjs`.
+ *
+ * `preload="none"`: sette video caricati all'apertura dell'hub sarebbero
+ * decine di MB letti per qualcosa che forse nessuno guarderà. Si caricano al
+ * primo passaggio del mouse e restano.
+ */
+function montaAnteprima(arte: HTMLElement, id: AppId): void {
+  const video = document.createElement("video");
+  video.className = "scheda-video";
+  video.src = `media/${id}.webm`;
+  video.muted = true;
+  video.loop = true;
+  video.playsInline = true;
+  video.preload = "none";
+  // Un file che non c'è non deve lasciare un rettangolo nero sopra la
+  // copertina: si toglie, e la scheda torna com'era.
+  video.addEventListener("error", () => video.remove());
+  arte.append(video);
+
+  arte.parentElement?.addEventListener("mouseenter", () => {
+    if (!video.isConnected) return;
+    void video.play().catch(() => video.remove());
+  });
+  arte.parentElement?.addEventListener("mouseleave", () => {
+    if (!video.isConnected) return;
+    video.pause();
+    // Torna all'inizio: la prossima volta ricomincia da capo invece di
+    // riprendere da metà, che su una clip di tre secondi si vede.
+    video.currentTime = 0;
+  });
 }
 
 /** Cosa fa il bottone dipende dallo stato in cui si trova l'app. */
@@ -104,7 +164,14 @@ const azioniPerStato: Record<
   { testo: (s: AppState) => string; attivo: boolean; classe: string }
 > = {
   "non-inclusa": { testo: () => "In arrivo", attivo: false, classe: "" },
-  "da-installare": { testo: (s) => (s.missingGb > 0 ? `Installa · ${numero(s.missingGb, 1)} GB` : "Installa"), attivo: true, classe: "" },
+  // «Prepara» e non «Installa» quando non c'è niente da scaricare: succede a chi
+  // ha già i modelli e deve solo rimettere a posto le librerie del motore, e
+  // «Installa · 0 GB» su una scheda che si usa da giorni sembra un difetto.
+  "da-installare": {
+    testo: (s) => (s.missingGb > 0 ? `Installa · ${numero(s.missingGb, 1)} GB` : "Prepara"),
+    attivo: true,
+    classe: "",
+  },
   // Attivo perché il bottone dice "Annulla": uno scaricamento da 6 GB su una
   // linea di casa dura mezz'ora, e chi lo ha fatto partire deve poter cambiare idea.
   "in-preparazione": { testo: () => "Annulla", attivo: true, classe: "attesa" },
@@ -127,6 +194,27 @@ const descrizioneStato: Record<AppState["status"], string> = {
 /** L'ultimo stato conosciuto, per chi deve fare i conti senza richiederlo. */
 let ultimiStati: AppState[] = [];
 
+/**
+ * Vero quando torch **non** vede nessuna scheda video utilizzabile.
+ *
+ * Su una macchina così la suite parte lo stesso — provata il 18 agosto 2026 —
+ * ma tre schede su sette non hanno senso e due sono da armarsi di pazienza.
+ * Lo sa la barra dell'ambiente in cima; da lì arriva qui, e le schede si
+ * rileggono da sole.
+ */
+let senzaScheda = false;
+
+/** Cosa dire su una scheda quando manca la scheda video. */
+const SENZA_SCHEDA: Record<string, { etichetta: string; bottone?: string }> = {
+  obbligatoria: {
+    etichetta: "Serve una scheda video NVIDIA: su questo computer non partirebbe.",
+    bottone: "Serve una NVIDIA",
+  },
+  "molto-meglio": {
+    etichetta: "Senza scheda video funziona, ma va lentissima: ore invece di minuti.",
+  },
+};
+
 function aggiornaSchede(stati: AppState[]): void {
   ultimiStati = stati;
   for (const stato of stati) {
@@ -142,9 +230,33 @@ function aggiornaSchede(stati: AppState[]): void {
     elementi.etichetta.className = `etichetta ${regola.classe}`;
     elementi.etichetta.title = stato.error ?? "";
 
+    // Niente scheda video: si dice qui, **prima** che parta uno scaricamento da
+    // otto GB per un'app che su questo computer non si aprirebbe comunque.
+    // Vale solo per le app installabili: a una già in errore o in mezzo a un
+    // lavoro serve il suo messaggio, non questo.
+    const richiesta = api.catalog.find((a) => a.id === stato.id)?.schedaVideo;
+    const avviso = senzaScheda && richiesta ? SENZA_SCHEDA[richiesta] : undefined;
+    const daInstallare = stato.status === "da-installare" || stato.status === "pronta";
+    if (avviso && daInstallare) {
+      elementi.etichetta.textContent = avviso.etichetta;
+      elementi.etichetta.className = "etichetta attesa";
+      if (avviso.bottone) {
+        elementi.azione.textContent = avviso.bottone;
+        elementi.azione.disabled = true;
+      }
+    }
+
     // Un'app non ancora dentro la suite si riconosce anche dalla copertina:
     // spenta, come tutto il resto della scheda.
     elementi.scheda.classList.toggle("in-arrivo", stato.status === "non-inclusa");
+
+    // La via d'uscita, quando c'è. Il testo lo decide lo shell: è lui che sa
+    // *perché* il motore è morto, e la scheda non deve indovinarlo.
+    elementi.rimedio.hidden = !stato.rimedio;
+    if (stato.rimedio) {
+      elementi.rimedio.textContent = stato.rimedio.testo;
+      elementi.rimedio.title = stato.rimedio.perche;
+    }
 
     disegnaBarra(elementi, stato);
   }
@@ -178,6 +290,26 @@ function disegnaBarra(
   elementi.riempimento.style.width = indeterminata
     ? ""
     : `${Math.min(100, (avanzamento.done / avanzamento.total) * 100).toFixed(1)}%`;
+}
+
+/**
+ * «Ripara l'ambiente», premuto da una scheda invece che dalla barra in cima.
+ *
+ * È lo stesso identico lavoro (`runtime.ripara`), e finisce nello stesso posto:
+ * la barra dell'ambiente si apre da sola e mostra le righe mentre lavora. Qui si
+ * disattiva solo il tasto, perché premerlo due volte non serve a niente e
+ * l'installazione dura minuti.
+ */
+async function riparaDaScheda(tasto: HTMLButtonElement): Promise<void> {
+  tasto.disabled = true;
+  const prima = tasto.textContent;
+  tasto.textContent = "Riparo…";
+  try {
+    await api.runtime.ripara();
+  } finally {
+    tasto.disabled = false;
+    tasto.textContent = prima;
+  }
 }
 
 async function premuto(id: AppId): Promise<void> {
@@ -277,6 +409,13 @@ let ambienteOccupato = false;
 function aggiornaAmbiente(stato: RuntimeState): void {
   const inCorso = Boolean(stato.installing);
 
+  // Le schede dipendono da questo: finché non si sa se c'è una scheda video,
+  // non si può dire a nessuno che la sua app non partirà. Si ridisegnano solo
+  // quando la risposta **cambia**, non a ogni riga di log dell'installazione.
+  const primaSenzaScheda = senzaScheda;
+  senzaScheda = stato.ready && stato.cudaAvailable === false;
+  if (senzaScheda !== primaSenzaScheda) aggiornaSchede(ultimiStati);
+
   // Un'installazione o una riparazione si guardano mentre succedono: il fondo
   // si apre da sé, e resta aperto se è stato l'utente ad aprirlo.
   if (inCorso) dettagliAperti = true;
@@ -306,9 +445,16 @@ function aggiornaAmbiente(stato: RuntimeState): void {
       "Manca l'ambiente Python: cinque app su sette non partono senza. Circa 4 GB, una volta sola.",
     );
   } else if (stato.cudaAvailable === false) {
-    // Senza CUDA i motori girerebbero su CPU: tecnicamente funziona, ma così
-    // lento da essere inutilizzabile. Meglio dirlo forte.
-    dipingi("attesa", `Ambiente a posto, ma torch ${stato.torchVersion} non vede la scheda video`);
+    // Senza scheda video i motori girano sulla CPU: tecnicamente funziona, ma
+    // di un altro ordine di grandezza. Detto in italiano e con le conseguenze,
+    // perché "torch non vede CUDA" non dice niente a chi apre la suite: quello
+    // che serve sapere è **quali schede** non si apriranno e **quanto** vanno
+    // piano le altre.
+    dipingi(
+      "attesa",
+      "Nessuna scheda video utilizzabile: tutto gira sulla CPU. Musica e Foto " +
+        "funzionano ma ci mettono ore; Dream, IoDigitale e Cinema non partono.",
+    );
   } else {
     const scheda = stato.gpuName ? ` · ${stato.gpuName}` : "";
     dipingi("ok", `Ambiente: Python ${stato.pythonVersion} · torch ${stato.torchVersion}${scheda}`);
@@ -499,21 +645,36 @@ async function forseMostraGuida(stati: AppState[]): Promise<void> {
 
   // L'ambiente Python pesa quanto pesa solo se non c'è: quando c'è già, la
   // stessa schermata deve dire numeri diversi.
-  gbComuni = (await api.runtime.state()).ready ? 0 : GB_COMUNI;
+  const ambiente = await api.runtime.state();
+  gbComuni = ambiente.ready ? 0 : GB_COMUNI;
+
+  // Se l'ambiente c'è già e non vede nessuna scheda video, la procedura guidata
+  // non deve proporre di scaricare otto GB per DaProdDream: si mostra la voce,
+  // spenta, con scritto perché. A ambiente ancora da installare non si sa
+  // ancora niente dell'hardware, e chiedere di indovinare sarebbe peggio che
+  // tacere.
+  const senzaSchedaQui = ambiente.ready && ambiente.cudaAvailable === false;
 
   guidaApp.innerHTML = "";
   for (const stato of scelta) {
     const app = api.catalog.find((a) => a.id === stato.id);
     if (!app) continue;
 
+    const impossibile = senzaSchedaQui && app.schedaVideo === "obbligatoria";
+
     const voce = document.createElement("li");
     voce.innerHTML = `
       <label>
-        <input type="checkbox" value="${app.id}" checked>
+        <input type="checkbox" value="${app.id}" ${impossibile ? "disabled" : "checked"}>
         <span class="guida-nome">${app.name}</span>
-        <span class="guida-gb">${etichettaCosto(stato)}</span>
+        <span class="guida-gb">${impossibile ? "serve una NVIDIA" : etichettaCosto(stato)}</span>
       </label>
-      <p class="guida-riga">${app.tagline}</p>`;
+      <p class="guida-riga">${
+        impossibile
+          ? `${app.tagline} — su questo computer non può funzionare: fa video in tempo reale, e senza scheda video non c'è tempo reale.`
+          : app.tagline
+      }</p>`;
+    if (impossibile) voce.classList.add("guida-spenta");
 
     // Il colore si mette da qui e non con uno `style=` nell'HTML: la CSP
     // dell'hub non ammette stili scritti nel marcatura, e il pallino colorato
@@ -691,6 +852,33 @@ selettoreVelocita.addEventListener("change", () => {
   });
 });
 
+/**
+ * Quanta memoria video lasciar prendere ai motori.
+ *
+ * L'altra manopola, accanto alla velocità, e risponde a una domanda diversa:
+ * non *quanto in fretta* ma *quanto spazio*. Su una scheda da 8 GB è quella che
+ * decide se una cosa entra o non entra, ed è la prima da toccare quando una
+ * generazione muore per memoria esaurita.
+ */
+const selettoreProfilo = document.getElementById("profilo") as HTMLSelectElement;
+
+const SPIEGA_PROFILO: Record<ProfiloMemoria, string> = {
+  leggero:
+    "Il motore tiene da parte un giro e mezzo di GB: va più piano, ma ci sta " +
+    "dentro anche con LM Studio acceso o altro aperto. Vale dalla prossima apertura di un'app.",
+  bilanciato: "Come abbiamo generato finora. Vale dalla prossima apertura di un'app.",
+  qualita:
+    "Il motore si tiene tutto quello che può: la seconda immagine non ricarica " +
+    "niente, ma è il primo profilo a finire lo spazio. Vale dalla prossima apertura di un'app.",
+};
+
+selettoreProfilo.addEventListener("change", () => {
+  const scelta = selettoreProfilo.value as ProfiloMemoria;
+  void api.impostazioni.profilo(scelta).then(() => {
+    selettoreProfilo.title = SPIEGA_PROFILO[scelta];
+  });
+});
+
 /* ------------------------------------------------------------------- avvio */
 
 for (const bottone of document.querySelectorAll<HTMLButtonElement>("[data-apri]")) {
@@ -743,7 +931,10 @@ void (async () => {
     dilloAlloSplash("Controllo l'ambiente…");
     aggiornaAmbiente(await api.runtime.state());
     aggiornaSpiaGpu(await api.gpu.state());
-    selettoreVelocita.value = (await api.impostazioni.leggi()).velocita;
+    const scelte = await api.impostazioni.leggi();
+    selettoreVelocita.value = scelte.velocita;
+    selettoreProfilo.value = scelte.profilo;
+    selettoreProfilo.title = SPIEGA_PROFILO[scelte.profilo];
 
     // Per ultima, quando le schede hanno già detto cosa manca: la guida quei
     // numeri li mostra, e senza sarebbe una domanda senza prezzi.
@@ -958,7 +1149,7 @@ function escapeHtml(testo: string): string {
  * insieme vorrebbero dire scorrere per trovarne uno.
  */
 
-const PANNELLI = ["risultati", "modelli", "log"] as const;
+const PANNELLI = ["risultati", "modelli", "log", "memoria"] as const;
 type NomePannello = (typeof PANNELLI)[number];
 
 function sezione(nome: NomePannello): HTMLElement {
@@ -977,6 +1168,7 @@ function mostraPannello(nome: NomePannello): void {
   if (nome === "risultati") void disegnaRisultati();
   if (nome === "modelli") void disegnaModelli();
   if (nome === "log") void apriLog();
+  if (nome === "memoria") void disegnaMemoria();
 }
 
 for (const bottone of document.querySelectorAll<HTMLButtonElement>("[data-pannello]")) {
@@ -1229,4 +1421,109 @@ async function apriLog(): Promise<void> {
 logQuale.addEventListener("change", () => void apriLog());
 (document.getElementById("log-cartella") as HTMLButtonElement).addEventListener("click", () => {
   void api.suite.revealPath("logs");
+});
+
+/* ------------------------------------------------------------ memoria video */
+
+/**
+ * Chi occupa la memoria video adesso, e come liberarla.
+ *
+ * **Perché serve un pannello e non basta la spia in fondo.** La spia dice
+ * quanti GB sono occupati; questo dice **da cosa**, ed è l'unica forma utile
+ * della domanda: con 8 GB, quando una generazione muore per memoria esaurita,
+ * la manovra è togliere quel modello lì — non tutti, non spegnere il motore, e
+ * soprattutto non riavviare la suite.
+ *
+ * Nasce come una fila di quadratini colorati nella barra di DaProdMusica.
+ * Diventa un pannello della suite perché la GPU è una sola: un modello lasciato
+ * in memoria da DaProdFoto è memoria che manca a Musica.
+ */
+
+const memVoci = document.getElementById("memoria-voci") as HTMLElement;
+const memRiassunto = document.getElementById("memoria-riassunto") as HTMLElement;
+const memNota = document.getElementById("memoria-nota") as HTMLElement;
+const memAggiorna = document.getElementById("memoria-aggiorna") as HTMLButtonElement;
+const memSvuota = document.getElementById("memoria-svuota") as HTMLButtonElement;
+
+/**
+ * I nomi interni del motore, detti in italiano.
+ *
+ * `MiniMaxMusic3TEModel` è giusto e non serve a niente: chi guarda vuole sapere
+ * che quei 5,5 GB sono il modello che legge il testo di una canzone. Un nome
+ * che non conosciamo si mostra com'è — meglio un nome tecnico che una riga che
+ * sparisce.
+ */
+const NOMI_VRAM: Record<string, string> = {
+  MiniMaxMusic3TEModel: "Il testo delle canzoni",
+  MiniMaxMusic3: "La musica",
+  MiniMaxMusic3DAV: "L'audio finale (VAE)",
+  Anima: "Le immagini (Anima)",
+  WanVAE: "Le immagini, ultimo passo (VAE)",
+  Flux2: "Le immagini (FLUX.2 Klein)",
+};
+
+async function disegnaMemoria(): Promise<void> {
+  const modelli = await api.vram.elenco();
+
+  const totale = modelli.reduce((somma, m) => somma + m.vramMb, 0);
+  memSvuota.disabled = modelli.length === 0;
+
+  if (modelli.length === 0) {
+    memVoci.innerHTML = "";
+    memRiassunto.textContent = "Niente in memoria video.";
+    memNota.textContent =
+      "La memoria si riempie quando un'app genera qualcosa, e quello che ci " +
+      "finisce dentro ci resta finché serve — così la seconda immagine non " +
+      "ricarica niente. Qui compare mentre un motore è acceso.";
+    return;
+  }
+
+  memRiassunto.textContent = `${modelli.length} in memoria · ${numero(totale / 1024, 2)} GB`;
+  memNota.textContent =
+    "Togliere un modello non spegne il motore: la prossima generazione " +
+    "ricarica quello che le serve. È la manovra da fare quando una cosa non " +
+    "ci sta, invece di riavviare tutto.";
+
+  memVoci.innerHTML = "";
+  for (const modello of modelli) {
+    const voce = document.createElement("li");
+    voce.className = "voce voce-memoria";
+
+    const testi = document.createElement("div");
+    const nome = document.createElement("b");
+    nome.textContent = NOMI_VRAM[modello.nome] ?? modello.nome;
+    const sotto = document.createElement("span");
+    sotto.className = "voce-sotto";
+    // Il nome interno resta scritto: è quello che si trova nei log del motore,
+    // e chi ci va a guardare deve poterlo ricollegare a questa riga.
+    sotto.textContent =
+      `${numero(modello.vramMb / 1024, 2)} GB · ${modello.nome}` +
+      (modello.dispositivo ? ` · ${modello.dispositivo}` : "");
+    testi.append(nome, document.createElement("br"), sotto);
+
+    const togli = document.createElement("button");
+    togli.className = "bottone secondario";
+    togli.textContent = "Togli dalla memoria";
+    togli.addEventListener("click", () => {
+      void (async () => {
+        togli.disabled = true;
+        togli.textContent = "Tolgo…";
+        await api.vram.scarica(modello.nome);
+        await disegnaMemoria();
+      })();
+    });
+
+    voce.append(testi, togli);
+    memVoci.append(voce);
+  }
+}
+
+memAggiorna.addEventListener("click", () => void disegnaMemoria());
+
+memSvuota.addEventListener("click", () => {
+  void (async () => {
+    memSvuota.disabled = true;
+    await api.vram.svuota();
+    await disegnaMemoria();
+  })();
 });

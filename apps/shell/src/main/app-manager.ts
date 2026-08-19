@@ -19,6 +19,9 @@ import {
   type Intenzione,
 } from "@daprod/ipc";
 import { motoreAggiornato } from "@daprod/runtime";
+import { sembraProblemaDiAmbiente } from "./process-supervisor";
+import { requisitiDiQuestaMacchina } from "./requisiti-macchina";
+import { librerieServizioPronte } from "./librerie-servizio";
 import { libreria } from "./libreria";
 import { gpu } from "./gpu";
 import { runtime } from "./runtime";
@@ -30,6 +33,7 @@ import * as musica from "./apps/musica";
 import * as foto from "./apps/foto";
 import * as dream from "./apps/dream";
 import * as iodigitale from "./apps/iodigitale";
+import * as companion from "./apps/companion";
 
 /**
  * Le app già portate dentro la suite.
@@ -37,7 +41,14 @@ import * as iodigitale from "./apps/iodigitale";
  * Un'app non elencata qui compare nell'hub disattivata, con scritto che non è
  * ancora inclusa — meglio di una scheda che sembra pronta e poi non apre niente.
  */
-const MIGRATED = new Set<AppId>(["visualizer", "musica", "foto", "dream", "iodigitale"]);
+const MIGRATED = new Set<AppId>([
+  "visualizer",
+  "musica",
+  "foto",
+  "dream",
+  "iodigitale",
+  "companion",
+]);
 
 interface Finestra {
   apri: (onClose: () => void) => void;
@@ -72,6 +83,11 @@ const FINESTRE: Partial<Record<AppId, Finestra>> = {
     apri: iodigitale.apri,
     chiudi: iodigitale.chiudi,
     laFinestra: iodigitale.laFinestra,
+  },
+  companion: {
+    apri: companion.apri,
+    chiudi: companion.chiudi,
+    laFinestra: companion.laFinestra,
   },
 };
 
@@ -153,12 +169,45 @@ class AppManager extends EventEmitter {
     const motoreOk =
       APPS[id].service?.engine !== "ComfyUI" || motoreAggiornato(ENGINES_DIR);
 
+    // E le librerie Python che il motore dichiara. Prima non le guardava
+    // nessuno, e andava bene per caso: ogni app aveva dei modelli da scaricare,
+    // quindi si passava comunque da «Installa». DaProdCompanion no — i suoi
+    // pesi li tiene LM Studio — e la sua scheda diceva «pronta» premendo la
+    // quale il motore moriva su un `ImportError`.
+    const librerieOk = librerieServizioPronte(id);
+
     this.patch(id, {
-      status: runtimePronto && missingGb === 0 && motoreOk ? "pronta" : "da-installare",
+      status:
+        runtimePronto && missingGb === 0 && motoreOk && librerieOk ? "pronta" : "da-installare",
       missingGb,
       error: undefined,
       progress: undefined,
+      rimedio: undefined,
     });
+  }
+
+  /**
+   * Perché quest'app non può funzionare su questo computer, se non può.
+   *
+   * Una sola ragione, per ora: non c'è nessuna scheda video e l'app ne pretende
+   * una. Sta nello shell e non solo nell'hub perché l'hub è una vista — spegne
+   * un bottone — mentre qui si decide davvero, e ci passano anche la procedura
+   * guidata e chi installa tutto in fila.
+   *
+   * Torna `null` finché l'ambiente non è installato: senza torch non si sa cosa
+   * c'è su questa macchina, e tirare a indovinare sarebbe peggio che tacere.
+   */
+  motivoImpossibile(id: AppId): string | null {
+    if (APPS[id].schedaVideo !== "obbligatoria") return null;
+
+    const rt = runtime.getState();
+    if (!rt.ready || rt.cudaAvailable !== false) return null;
+
+    return (
+      `${APPS[id].name} ha bisogno di una scheda video NVIDIA: fa video, ` +
+      "un fotogramma per volta, e sulla CPU un fotogramma costa decine di " +
+      "secondi. Su questo computer non partirebbe in modo utilizzabile."
+    );
   }
 
   async open(id: AppId): Promise<void> {
@@ -167,6 +216,12 @@ class AppManager extends EventEmitter {
         status: "in-errore",
         error: `${APPS[id].name} non è ancora inclusa in questa versione della suite.`,
       });
+      return;
+    }
+
+    const impossibile = this.motivoImpossibile(id);
+    if (impossibile) {
+      this.patch(id, { status: "in-errore", error: impossibile, rimedio: undefined });
       return;
     }
 
@@ -196,7 +251,7 @@ class AppManager extends EventEmitter {
       // offline". `avvia` torna solo quando /health dice di sì, e per MiniMax
       // Music 3 può essere più di un minuto.
       await servizi.avvia(id, (motivo) => {
-        this.patch(id, { status: "in-errore", error: motivo });
+        this.morto(id, motivo);
         FINESTRE[id]?.chiudi();
         gpu.release(id);
       });
@@ -212,10 +267,7 @@ class AppManager extends EventEmitter {
       // non c'è, e la prossima non riuscirebbe più ad aprirsi.
       await servizi.ferma(id).catch(() => {});
       gpu.release(id);
-      this.patch(id, {
-        status: "in-errore",
-        error: err instanceof Error ? err.message : String(err),
-      });
+      this.morto(id, err instanceof Error ? err.message : String(err));
     }
   }
 
@@ -225,7 +277,9 @@ class AppManager extends EventEmitter {
     // sono i secondi in cui si liberano gli 8 GB di VRAM.
     await servizi.ferma(id);
     gpu.release(id);
-    if (MIGRATED.has(id)) this.patch(id, { status: "pronta", error: undefined });
+    if (MIGRATED.has(id)) {
+      this.patch(id, { status: "pronta", error: undefined, rimedio: undefined });
+    }
   }
 
   /** Spegne tutto. Chiamata alla chiusura della suite e prima di un aggiornamento. */
@@ -275,6 +329,54 @@ class AppManager extends EventEmitter {
     }
 
     win.focus();
+  }
+
+  /** Un controllo per volta: due insieme aprirebbero torch due volte per niente. */
+  private controlloInCorso = false;
+
+  /**
+   * Un motore è morto: si scrive sulla scheda, e se parla di librerie la suite
+   * va a **guardare l'ambiente da sola**.
+   *
+   * **Perché non basta aspettare che l'utente prema «Controlla».** Chi vede una
+   * scheda che non si apre non pensa "sarà l'ambiente Python condiviso": pensa
+   * che sia rotta quell'app, e le altre quattro che non si aprono gli sembrano
+   * quattro guasti diversi. Il 19 agosto 2026 era un guasto solo, e per trovarlo
+   * è servito aprire le librerie a mano da un terminale.
+   *
+   * Il controllo dura qualche decina di secondi e non tocca niente. Intanto la
+   * scheda ha già il suo tasto: la proposta di riparare non aspetta il verdetto,
+   * perché l'`ImportError` da solo basta a giustificarla. Quello che il
+   * controllo aggiunge è il **rapporto** — quale libreria non si apre davvero —
+   * che compare nella barra dell'ambiente in cima all'hub.
+   */
+  private morto(id: AppId, motivo: string): void {
+    const ambiente = sembraProblemaDiAmbiente(motivo);
+
+    this.patch(id, {
+      status: "in-errore",
+      error: motivo,
+      rimedio: ambiente
+        ? {
+            tipo: "ripara-ambiente",
+            testo: "Ripara l'ambiente",
+            perche:
+              "Il motore è morto parlando di librerie: l'ambiente Python condiviso " +
+              "è rimasto a metà fra due versioni. Si reinstallano i pacchetti; " +
+              "modelli, motori e risultati non si toccano.",
+          }
+        : undefined,
+    });
+
+    if (!ambiente || this.controlloInCorso) return;
+
+    this.controlloInCorso = true;
+    void runtime
+      .controlla(requisitiDiQuestaMacchina(this.list()))
+      .catch(() => {})
+      .finally(() => {
+        this.controlloInCorso = false;
+      });
   }
 
   patch(id: AppId, partial: Partial<AppState>): void {

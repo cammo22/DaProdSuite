@@ -44,6 +44,31 @@ export interface AppState {
   progress?: { done: number; total: number; label: string };
   /** Presente solo quando status è "in-errore". */
   error?: string;
+  /**
+   * Cosa si può fare, quando la suite lo sa. Diventa un secondo bottone sulla
+   * scheda, accanto a "Riprova".
+   */
+  rimedio?: Rimedio;
+}
+
+/**
+ * Un guasto che la suite ha riconosciuto, con la sua via d'uscita.
+ *
+ * Nasce il 19 agosto 2026 dalla lezione di quella notte: l'errore vero c'era
+ * già — in un file, a due passi — e all'utente restava una scheda che non si
+ * apriva. Portare l'errore sulla scheda è stato il primo passo; questo è il
+ * secondo, e dice **cosa fare** invece di descrivere cosa è successo.
+ */
+export interface Rimedio {
+  /**
+   * Che tasto mostrare. Per ora ce n'è uno solo, ed è quello che serve nel
+   * novanta per cento dei casi: l'ambiente Python condiviso rimasto a metà.
+   */
+  tipo: "ripara-ambiente";
+  /** Il testo del bottone, corto: ci sta accanto a "Riprova". */
+  testo: string;
+  /** Perché lo sto proponendo, in una riga. È il titolo del bottone. */
+  perche: string;
 }
 
 /* -------------------------------------------------------------- impostazioni */
@@ -62,8 +87,40 @@ export interface AppState {
  */
 export type Velocita = "normale" | "spinta";
 
+/**
+ * Quanta memoria video lasciar prendere ai motori.
+ *
+ * **Non è la stessa cosa di `Velocita`**, ed è la ragione per cui sono due
+ * scelte e non una: la velocità accende ottimizzazioni di calcolo, questa
+ * decide *quanto spazio* il motore si tiene. Su una scheda da 8 GB è la scelta
+ * che decide se una cosa entra o non entra, e cambiarla è l'unica manovra che
+ * salva una generazione che va in errore di memoria.
+ *
+ * L'idea viene dal Lower VRAM / Lower RAM di WanGP — il metodo, non il codice:
+ * la loro licenza non è libera, e quello che si prende è pubblico
+ * (vedi VELOCITA-MUSICA.md § 2).
+ */
+export type ProfiloMemoria =
+  /**
+   * Il motore tiene in memoria video il meno possibile e sposta il resto nella
+   * RAM. Va più piano, ma **entra**: è la scelta di chi ha una scheda piccola,
+   * o di chi vuole tenere aperto dell'altro mentre genera — LM Studio, un
+   * gioco, un browser con quaranta schede.
+   */
+  | "leggero"
+  /** Come abbiamo generato finora, ed è il metro di paragone. */
+  | "bilanciato"
+  /**
+   * Tutto quello che ci sta resta in memoria video fra una generazione e
+   * l'altra: la seconda immagine non ricarica niente. Il più veloce, e il primo
+   * a finire lo spazio se apri qualcos'altro.
+   */
+  | "qualita";
+
 export interface Impostazioni {
   velocita: Velocita;
+  /** Quanta memoria video lasciar prendere ai motori. Vale dal prossimo avvio. */
+  profilo: ProfiloMemoria;
   /**
    * La procedura guidata del primo avvio è già stata fatta.
    *
@@ -258,6 +315,46 @@ export interface VoceLog {
 
 export type CosaResettare = "impostazioni" | "modelli" | "tutto";
 
+/**
+ * Cosa può fare questo computer, detto alle app.
+ *
+ * **Perché serve dentro le finestre e non solo nell'hub.** Su un PC senza
+ * scheda NVIDIA la suite parte lo stesso — provato il 18 agosto 2026 — ma non
+ * tutto quello che c'è dentro ha senso: un brano di DaProdMusica in CPU dura
+ * ore, e FLUX.2 Klein non è nemmeno immaginabile. Finora l'unico che lo sapeva
+ * era il motore, che se lo scriveva in un file: chi apriva l'app vedeva solo
+ * una barra che non finiva mai.
+ *
+ * Con questo, ogni app può spegnere quello che non regge **prima** di farlo
+ * partire, e dirlo invece di lasciarlo indovinare.
+ */
+export interface StatoMacchina {
+  /** C'è una scheda video utilizzabile: torch la vede e ci può lavorare. */
+  gpu: boolean;
+  /** Come si chiama, per poterla nominare all'utente. */
+  nomeGpu?: string;
+  /** Quanta memoria ha, in MB: è il numero che decide cosa ci sta dentro. */
+  vramMb?: number;
+}
+
+/**
+ * Un modello che in questo momento occupa memoria video.
+ *
+ * Non è un modello del catalogo — quelli sono file sul disco — ma un pezzo di
+ * modello **caricato**: `MiniMaxMusic3TEModel`, `Anima`, il VAE. Sono i nomi
+ * che usa il motore, e si mostrano tradotti dove si può.
+ */
+export interface ModelloInVram {
+  /** Il nome interno del motore: è anche la chiave per scaricarlo. */
+  nome: string;
+  /** Quanti MB si prende adesso. */
+  vramMb: number;
+  /** Quanti ne prenderebbe tutto intero, se non fosse in parte nella RAM. */
+  totaleMb?: number;
+  /** `cuda:0`, `cpu`: dove sta davvero. */
+  dispositivo?: string;
+}
+
 /** Chi sta occupando la GPU adesso. L'arbitro ne ammette uno solo. */
 export interface GpuState {
   holder: AppId | null;
@@ -399,6 +496,13 @@ export interface SuiteApi {
     leggi(): Promise<Impostazioni>;
     /** Cambia la velocità dei motori. Vale dal prossimo avvio del motore. */
     velocita(scelta: Velocita): Promise<Impostazioni>;
+    /**
+     * Cambia quanta memoria video lasciar prendere ai motori.
+     *
+     * Come la velocità, vale **dal prossimo avvio del motore**: i flag si
+     * passano alla riga di comando, e un motore acceso non se li rilegge.
+     */
+    profilo(scelta: ProfiloMemoria): Promise<Impostazioni>;
     /** Segna che la procedura guidata è stata vista: non si ripresenta più. */
     guidaFatta(): Promise<Impostazioni>;
   };
@@ -406,6 +510,23 @@ export interface SuiteApi {
   gpu: {
     state(): Promise<GpuState>;
     onChanged(listener: (state: GpuState) => void): Unsubscribe;
+  };
+
+  /**
+   * Chi occupa la memoria video adesso, e come liberarla.
+   *
+   * **Perché sta nell'hub e non in un'app.** La GPU è una sola: un modello
+   * lasciato in memoria da DaProdFoto è memoria che manca a DaProdMusica.
+   * Nasce come una fila di quadratini nella barra di Musica; qui è di tutti,
+   * come deve essere una cosa che riguarda tutti.
+   */
+  vram: {
+    /** Vuota se non c'è nessun motore acceso: allora la memoria è libera davvero. */
+    elenco(): Promise<ModelloInVram[]>;
+    /** Toglie dalla memoria quel modello. Il motore resta acceso. */
+    scarica(nome: string): Promise<void>;
+    /** Toglie tutto: è la manovra da fare prima di un lavoro che vuole spazio. */
+    svuota(): Promise<void>;
   };
 
   spazio: {
@@ -557,6 +678,15 @@ export interface ApiApp {
     liberaMemoria(): Promise<void>;
   };
 
+  /**
+   * Che macchina è questa: c'è una scheda video, come si chiama, quanta memoria.
+   *
+   * Da chiedere **una volta all'avvio della pagina**, e da usare per spegnere
+   * quello che su questo computer non ha senso offrire. Non cambia mentre l'app
+   * è aperta: una scheda video non compare a metà sessione.
+   */
+  macchina(): Promise<StatoMacchina>;
+
   /** Manda un elemento a un'altra app, aprendola se serve. */
   invia(destinazione: AppId, elementoId: string, intenzione: Intenzione): Promise<void>;
 
@@ -629,6 +759,7 @@ export const CHANNELS = {
 
   impostazioniLeggi: "impostazioni:leggi",
   impostazioniVelocita: "impostazioni:velocita",
+  impostazioniProfilo: "impostazioni:profilo",
   impostazioniGuida: "impostazioni:guida-fatta",
 
   runtimeState: "runtime:state",
@@ -638,6 +769,9 @@ export const CHANNELS = {
   runtimeChanged: "runtime:changed",
 
   gpuState: "gpu:state",
+  vramElenco: "vram:elenco",
+  vramScarica: "vram:scarica",
+  vramSvuota: "vram:svuota",
   gpuChanged: "gpu:changed",
 
   updateState: "update:state",
@@ -676,6 +810,7 @@ export const CHANNELS = {
   appInvia: "app:invia",
   appConsegna: "app:consegna",
   appMotoreInPiu: "app:motore-in-piu",
+  appMacchina: "app:macchina",
   appApri: "app:apri",
   appChiudi: "app:chiudi",
 } as const;

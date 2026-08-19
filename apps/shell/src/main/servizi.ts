@@ -263,6 +263,10 @@ function ambiente(id: AppId, servizio: AppService): NodeJS.ProcessEnv {
     // come ambiente e non come argomento perché la ServiceConfig è uguale per
     // tutti i motori e non deve sapere cosa significhi per ognuno.
     DAPROD_VELOCITA: impostazioni().velocita,
+    // Quanta memoria video lasciargli prendere. Come la velocità: il motore la
+    // legge e ne ricava i propri flag, perché cosa voglia dire "leggero" per
+    // ComfyUI e per il motore di Dream non è la stessa cosa.
+    DAPROD_PROFILO: impostazioni().profilo,
     DAPROD_MODELLI: MODELS_DIR,
     DAPROD_RISULTATI: libreria.cartella(id),
     DAPROD_TEMPORANEI: temporanei,

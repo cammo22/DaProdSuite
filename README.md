@@ -89,20 +89,22 @@ lo stesso.
 
 ## A che punto siamo
 
-> **0.2.0 — cinque app su sette, e ognuna ha la sua icona.**
+> **0.2.0 pubblicata — cinque app su sette. La sesta è pronta e in prova.**
 >
 > **DaProdVisualizer, DaProdMusica, DaProdFoto, DaProdDream** e **DaProd
 > IoDigitale** sono nella suite e funzionano. Si installano da sole, motore e
 > modelli compresi, e riprendono da dove erano se cade la rete. In DaProdFoto e
 > DaProdDream scegli tu con quale modello generare. Ogni app ha un terminale con
 > le ultime righe del motore, e nell'hub ci sono i pannelli per vedere risultati,
-> modelli, log e spazio occupato in un posto solo. Il **Visualizer si apre da
-> dentro le altre app** e ci resta acceso insieme: si ascolta un brano
-> guardandolo mentre l'app che l'ha fatto continua a lavorare.
+> modelli, log, memoria video e spazio occupato in un posto solo. Il
+> **Visualizer si apre da dentro le altre app** e ci resta acceso insieme: si
+> ascolta un brano guardandolo mentre l'app che l'ha fatto continua a lavorare.
 >
-> **DaProdCinema** e **DaProdCompanion** non ci sono ancora. Esistono come
-> progetti a parte e li stiamo portando nella suite uno alla volta, provandoli
-> prima di passare al successivo. Nell'hub dicono «In arrivo» e non aprono niente:
+> **DaProdCompanion** — un compagno che ti risponde e la notte rilegge quello
+> che vi siete detti per ricordarsene — è entrato nella suite ed è nella
+> versione in prova, quella che uscirà come 0.3.1.
+>
+> **DaProdCinema** non c'è ancora. Nell'hub dice «In arrivo» e non apre niente:
 > preferiamo un pulsante spento a uno che non fa quello che promette.
 
 Quello che cambia a ogni giro sta in [CHANGELOG.md](CHANGELOG.md), il percorso
@@ -113,8 +115,13 @@ completo in [docs/ROADMAP.md](docs/ROADMAP.md).
 ## Requisiti
 
 Proviamo tutto su schede **NVIDIA serie RTX 4000** con almeno 8 GB di VRAM. Di
-più è meglio. In futuro vorremmo che almeno una parte funzionasse anche solo su
-CPU: oggi non è così.
+più è meglio.
+
+**Senza scheda video la suite parte lo stesso**, e adesso te lo dice in faccia
+invece di lasciartelo scoprire: DaProdDream, DaProd IoDigitale e DaProdCinema
+non si installano nemmeno (fanno video, e senza scheda non è "più lento", è
+un'altra cosa), DaProdMusica avvisa che un brano può richiedere ore, e in
+DaProdFoto resta acceso il modello che ce la fa.
 
 | | Minimo | Consigliato |
 |---|---|---|

@@ -6,10 +6,17 @@
  * che lo si usa — chi sta scrivendo una canzone non deve tornare nell'hub per
  * accorgersi che il modello è spento, o per spegnerlo prima di generare.
  *
- * **Ce n'è una seconda copia in DaProdFoto**, identica. Il file non dipende da
- * niente dell'app che lo ospita, ma due copie prima o poi divergono: alla 0.3.1
- * nasce `packages/ui` e le due si fondono lì, insieme ai due fogli di stile
- * gemelli. Finché sono due si controllano; alla terza no.
+ * **Questa è la copia unica, e la scadenza è arrivata.** Fino al 19 agosto 2026
+ * questo file esisteva due volte, identico, in DaProdMusica e in DaProdFoto, con
+ * scritto in cima che alla terza copia si sarebbe dovuto fare qualcosa. La terza
+ * è DaProdCompanion, quindi eccolo qui: `packages/ui`, servito a tutte le app
+ * sotto `/comune/` dalla stessa origine della pagina che lo usa (vedi
+ * `file-scheme.ts`), così un `import` normale basta e nessuna CSP si mette di
+ * mezzo.
+ *
+ * **Non dipende da nessuna app**: parla solo con `window.daprodSuite`, che ogni
+ * finestra riceve. Chi lo usa gli passa un contenitore e, se vuole, cosa fare
+ * quando lo stato cambia.
  */
 
 const suite = window.daprodSuite;

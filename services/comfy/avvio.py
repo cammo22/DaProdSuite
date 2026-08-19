@@ -196,6 +196,40 @@ def flag_velocita(scelta: str) -> list[str]:
     return flag
 
 
+def flag_memoria(scelta: str) -> list[str]:
+    """Quanta memoria video lasciar prendere al motore.
+
+    E' l'altra manopola accanto alla velocita', e risponde a una domanda
+    diversa: non *quanto in fretta* ma *quanto spazio*. Su una scheda da 8 GB e'
+    la scelta che decide se una cosa entra o non entra, ed e' l'unica manovra
+    che salva una generazione che va in errore di memoria.
+
+    | | Cosa fa ComfyUI | Quando serve |
+    |---|---|---|
+    | leggero | `--lowvram`, e un giro e mezzo di GB tenuti da parte | scheda piccola, o altro aperto mentre generi |
+    | bilanciato | quello che sceglie da se' | come abbiamo generato finora |
+    | qualita' | `--highvram`, e quasi niente da parte | niente altro aperto, e la seconda immagine non ricarica nulla |
+
+    **`--reserve-vram` e' il pezzo che conta davvero in leggero.** Dice al
+    motore di lasciare liberi tot GB invece di prendersi tutto quello che vede:
+    e' quello spazio che permette a LM Studio di restare acceso mentre generi,
+    o al desktop di non impastarsi. Senza, "lowvram" sposta i pesi ma poi si
+    riprende comunque tutto il resto.
+
+    Come per la velocita', senza CUDA non c'e' niente da regolare: sono tutti
+    flag che parlano di memoria video, e a un motore in CPU nel migliore dei
+    casi non dicono niente.
+    """
+    if not con_cuda():
+        return []
+
+    if scelta == "leggero":
+        return ["--lowvram", "--reserve-vram", "1.5"]
+    if scelta == "qualita":
+        return ["--highvram", "--reserve-vram", "0.3"]
+    return []
+
+
 def main() -> None:
     motore = _richiesta("DAPROD_MOTORE")
     modelli = _richiesta("DAPROD_MODELLI")
@@ -229,6 +263,7 @@ def main() -> None:
         "--temp-directory", str(temporanei),
         *flag_dispositivo(),
         *flag_velocita(os.environ.get("DAPROD_VELOCITA", "normale")),
+        *flag_memoria(os.environ.get("DAPROD_PROFILO", "bilanciato")),
     ]
 
     if not con_cuda():

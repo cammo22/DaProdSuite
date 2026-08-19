@@ -42,14 +42,21 @@ import {
   scaricaRepo,
 } from "@daprod/runtime";
 import { EventEmitter } from "node:events";
-import { existsSync } from "node:fs";
 import { stat } from "node:fs/promises";
 import { join } from "node:path";
 import { appManager } from "./app-manager";
 import { createLogger } from "./logging";
 import { modelliMancanti, nodiRichiesti, type ModelEntry } from "./models";
-import { ENGINES_DIR, MODELS_DIR, PYTHON_EXE, RUNTIME_DIR, SERVICES_DIR, TOOLS_DIR } from "./paths";
+import {
+  ENGINES_DIR,
+  MODELS_DIR,
+  PYTHON_EXE,
+  RUNTIME_DIR,
+  TOOLS_DIR,
+  VINCOLI_REQUIREMENTS,
+} from "./paths";
 import { runtime } from "./runtime";
+import { fileRequisiti, segnaLibrerieServizio } from "./librerie-servizio";
 import * as servizi from "./servizi";
 
 /** Un'installazione per app, con il modo di fermarla. */
@@ -77,6 +84,15 @@ export function annulla(id: AppId): void {
 
 export async function installaApp(id: AppId): Promise<void> {
   if (inCorso.has(id)) return;
+
+  // Scaricare otto GB di pesi per un'app che su questa macchina non si aprirà
+  // è la cosa peggiore che possiamo far fare a qualcuno: mezz'ora di attesa
+  // per arrivare a un errore. Si dice prima, e non si scarica niente.
+  const impossibile = appManager.motivoImpossibile(id);
+  if (impossibile) {
+    appManager.patch(id, { status: "in-errore", error: impossibile });
+    return;
+  }
 
   const controllo = new AbortController();
   inCorso.set(id, controllo);
@@ -126,6 +142,7 @@ export async function installaApp(id: AppId): Promise<void> {
         enginesDir: ENGINES_DIR,
         runtimeDir: RUNTIME_DIR,
         toolsDir: TOOLS_DIR,
+        vincoli: VINCOLI_REQUIREMENTS,
         segnale,
         onLine: scrivi,
         onPasso: (etichetta) => avanzamento(0, 0, etichetta),
@@ -255,11 +272,8 @@ interface Corsa {
  * già, e così un requisito aggiunto dopo arriva a chi l'app ce l'ha da prima.
  */
 async function installaLibrerieServizio(id: AppId, corsa: Corsa): Promise<void> {
-  const servizio = APPS[id].service;
-  if (!servizio) return;
-
-  const requisiti = join(SERVICES_DIR, servizio.id, "requisiti.txt");
-  if (!existsSync(requisiti)) return;
+  const requisiti = fileRequisiti(id);
+  if (!requisiti) return;
 
   corsa.avanzamento(0, 0, `Installo le librerie di ${APPS[id].name}`);
   corsa.scrivi(`Librerie del motore da ${requisiti}`);
@@ -268,10 +282,15 @@ async function installaLibrerieServizio(id: AppId, corsa: Corsa): Promise<void> 
     uv,
     runtimeDir: RUNTIME_DIR,
     requisiti,
+    vincoli: VINCOLI_REQUIREMENTS,
     segnale: corsa.segnale,
     onLine: corsa.scrivi,
     timeoutMs: 60 * 60_000,
   });
+
+  // Solo adesso: se qualcosa è andato storto sopra, la scheda resta «da
+  // installare» e il prossimo tentativo rifà il giro invece di credersi a posto.
+  segnaLibrerieServizio(id);
 }
 
 /**
@@ -292,6 +311,7 @@ async function portaDentro(ids: string[], corsa: Corsa): Promise<boolean> {
       enginesDir: ENGINES_DIR,
       runtimeDir: RUNTIME_DIR,
       toolsDir: TOOLS_DIR,
+      vincoli: VINCOLI_REQUIREMENTS,
       segnale,
       onLine: scrivi,
       onPasso: (etichetta) => avanzamento(0, 0, etichetta),

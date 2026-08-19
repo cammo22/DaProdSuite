@@ -1,7 +1,7 @@
 # Riprendere da qui
 
-Documento di passaggio fra una sessione e l'altra. Aggiornato il **18 agosto
-2026**, con la 0.2.0 costruita.
+Documento di passaggio fra una sessione e l'altra. Aggiornato il **19 agosto
+2026**, con la 0.2.0 pubblicata e la 0.3.1 costruita.
 
 **Se stai leggendo questo all'inizio di una conversazione nuova**: leggi anche
 [COME-SI-LAVORA.md](COME-SI-LAVORA.md) e [ROADMAP.md](ROADMAP.md), poi vai al
@@ -41,11 +41,18 @@ Repo pubblico: **https://github.com/cammo22/DaProdSuite**
 | **Icone della suite e delle app, fatte con Anima** | fatte e provate (18 agosto) |
 | **Hub in 4:3, e più grande** | fatto e provato: 1266×949 su questo monitor |
 | **Il Visualizer si apre da dentro le altre app** | fatto e provato |
-| **0.2.0 costruita** | installer sul PC, **non ancora pubblicata** |
-| Companion | **da migrare** |
+| **0.2.0 pubblicata** | fatto il 19 agosto: tag `v0.2.0`, Release con installer e `latest.yml` |
+| **DaProdCompanion nella suite** | fatto il 19 agosto, **la voce non c'è ancora** |
+| **Versioni dei pacchetti fissate** | `requirements/versioni.txt`, vincolo su *ogni* installazione |
+| **La suite si accorge da sola di un ambiente rotto** | fatto: import veri quando un motore muore |
+| **Il PC senza scheda video, detto in faccia** | fatto: tre schede non si installano, due avvisano |
+| **Anteprime che si muovono sulle schede** | fatte, dalle copertine |
+| **`packages/ui`: tema e selettore condivisi** | fatto: era in due copie, la terza sarebbe stata il Companion |
+| **Profilo di memoria + pannello VRAM** | fatti, **da misurare** |
+| **0.3.1 costruita** | **da provare**, e poi si pubblica |
 
-Si lavora solo su `main`: i rami `suite-interconnessa` e `musica-nella-suite`
-sono stati uniti e cancellati, e con loro le PR #1 e #2.
+Si lavora su un ramo per release e una PR: `release-0.2.0` è stata unita con le
+PR #3 e #4, e questo giro sta su `release-0.3.1`. Il Merge lo preme Cammo.
 
 ## Com'è entrata DaProdMusica
 
@@ -730,14 +737,74 @@ mettere a posto — sta in [ROADMAP.md](ROADMAP.md).
 aprono senza dire perché. L'errore vero c'era, in un file, a due passi. Portarlo
 sulla scheda è in roadmap insieme al resto.
 
-## Il prossimo passo: DaProdCompanion
+## Com'è entrato DaProdCompanion (19 agosto 2026)
 
-È l'unica delle tre della 0.2.0 che non è entrata, e quello che serve è già
-scritto: vuole **LM Studio acceso** e `sqlite_vec` nel suo pyproject. Prima però
-c'è una cosa più piccola e più visibile: **l'interfaccia di IoDigitale è ancora
-tutta in inglese** — `Load Image`, `Hold to Talk`, `Chat History` — e in cima
-c'è ancora scritto *LeapTalk Live*, cioè il nome del progetto da cui viene. È
-l'unica scheda che non sembra della suite.
+**Viene da `Desktop\DaProdCompanion`**, che era un programma intero: un
+workspace `uv` con quattro pacchetti Python, un `.env` da compilare a mano,
+Ollama a parte, e **tre** servizi — `brain`, `stt`, `tts` — accesi da un
+Electron tutto suo. Dentro la suite è entrato il cervello e basta.
+
+**Cosa è cambiato, e perché.**
+
+| Nel progetto d'origine | Nella suite | Perché |
+|---|---|---|
+| Ollama su `/api/chat` | LM Studio su `/v1/chat/completions` | è il modello che scrive di tutta la suite: un secondo sarebbe la stessa cosa due volte nella stessa memoria |
+| `.env` nella radice | le variabili che passa la shell | come Dream e IoDigitale |
+| `input()` per il nome al primo avvio | «Compagno», e si cambia dalla pagina | il motore lo avvia il supervisore, senza console: un `input()` è un processo fermo per sempre |
+| `tts_service` + `stt_service` | `None`, e il codice degrada da sé | erano due processi con i loro GB, e la suite ha già Piper e Whisper |
+| `models: [lmstudio-cervello, ...]` nel catalogo | `models: []` | quei pesi li tiene LM Studio: contarli fra i GB da scaricare avrebbe lasciato la scheda «da installare» per sempre |
+
+**Le tre differenze che si sono sentite davvero nel codice**, passando da Ollama
+all'API di OpenAI:
+
+1. **Gli argomenti di un `tool_call`** arrivano come stringa JSON e non come
+   oggetto già pronto.
+2. **Il risultato di uno strumento vuole `tool_call_id`**: senza, LM Studio
+   rifiuta tutto il turno.
+3. **Il contesto non si passa più a ogni domanda** (`num_ctx`): in LM Studio è
+   una proprietà del modello caricato, ed è quello che decidono i tre pulsanti
+   dell'hub.
+
+**Due cose trovate solo provandolo**, e che valgono come metodo:
+
+- **`/v1/models` elenca i modelli installati, non quelli caricati**, e il primo
+  dell'elenco su questa macchina era `text-embedding-nomic-embed-text-v1.5`.
+  Chiedendo una conversazione a un modello di embedding, LM Studio risponde
+  *«No models loaded»* — un messaggio che manda a cercare nel posto sbagliato.
+  Adesso il ripiego salta i modelli il cui nome dice `embed`, e per gli
+  embedding fa il contrario.
+- **`enable_thinking: False` non lo onorano tutti.** Con `lfm2.5-2.6b` il
+  consolidamento tornava `content` **vuoto** e tutto il ragionamento nel campo
+  di fianco: da fuori sembrava un modello che non sa rispondere, e invece aveva
+  risposto nella casella sbagliata. Il ripiego legge anche lì — è lo stesso che
+  `llm.ts` fa già per DaProdMusica.
+
+**Provato fino in fondo** il 19 agosto: due turni di conversazione con memoria
+fra l'uno e l'altro, un consolidamento forzato che ha prodotto quattro episodi
+consolidati, e il grafo scritto con `Cammo (Persona) → conosce → Compagno`, più
+i due appunti in markdown con il frontmatter di Obsidian. Zero errori nel log.
+
+**Cosa resta**: la voce, e il giudizio di Cammo sulla qualità della
+conversazione — che dipende dal modello che sceglie lui, non da noi.
+
+## Il prossimo passo
+
+**Prima di tutto: la 0.3.1 va provata.** È costruita e non pubblicata, e la
+Release esce dopo il giudizio di Cammo. Cosa guardare per primo sta in fondo, in
+«Cosa aspetta un giudizio di Cammo».
+
+Poi, in ordine di quello che resta aperto:
+
+1. **L'aggiornamento automatico sul secondo PC.** Adesso si può davvero: la
+   0.2.0 è pubblicata, quindi da una 0.1.0 installata l'aggiornamento ha
+   finalmente qualcosa da vedere. È la cosa per cui quel computer è stato
+   installato.
+2. **DaProdCinema**, la settima e ultima scheda (§ 0.6.0 della roadmap). Due
+   strade, e quella breve — registrare gli effetti del Visualizer su un brano —
+   non ha bisogno di nessun modello nuovo.
+3. **La voce del Companion**, con Piper e faster-whisper che la suite ha già in
+   casa per IoDigitale.
+4. **L'accesso da fuori e Android** (§ 0.4.0 e § 0.5.0), che è un progetto a sé.
 
 ## Com'è entrato DaProd IoDigitale
 
@@ -974,11 +1041,29 @@ che passava da solo al brano dopo.
 | ComfyUI | versione **fissata** (0.33.1) in `packages/runtime/src/motore.ts`: si aggiorna quando lo decidiamo noi e riproviamo i motori, non da sé |
 | Nodi custom | stessa regola e stesso posto (`nodi.ts`), commit fissato, fuori dalla cartella del motore |
 | WanGP | **non si copia il loro codice**: licenza propria, non libera. Si prende il metodo, che è pubblico. Vedi [VELOCITA-MUSICA.md](VELOCITA-MUSICA.md) § 2 |
-| huggingface-hub | tetto a `<1.0`, perché lo pretende `transformers`. Niente comando `hf`: si usa `snapshot_download` |
+| huggingface-hub | **pavimento a `>=1.28`**, non un tetto: la decisione del 18 (tetto a `<1.0` «perché lo pretende transformers») era vera con transformers 4 ed è diventata il contrario con la 5. È quella che ha rotto quattro app il 19 agosto. Niente comando `hf`: si usa `snapshot_download` |
+| Versioni dei pacchetti | fissate in `packages/runtime/requirements/versioni.txt` e passate come **vincolo** a ogni installazione, ComfyUI e nodi custom compresi. Non `==` nei requisiti: quello obbligherebbe a reinstallare pacchetti che altri motori stanno usando, ed è il difetto per cui i `==` erano stati tolti |
+| Companion | **niente voce, per adesso**: `tts_service` e `stt_service` erano due processi Python in più con i loro GB, e la suite ha già Piper e faster-whisper per IoDigitale. Il codice che li chiamava è intatto, con `None` al posto del client |
+| Pezzi di interfaccia condivisi | `packages/ui`, serviti sotto `/comune/` **dalla stessa origine** della pagina che li usa: un host tutto loro sarebbe stato bloccato dalla CSP delle app (`script-src 'self'`) |
 | Copertine | generate con `PreviewImage`, quindi nei temporanei: se andassero in output la libreria si riempirebbe di copertine sciolte |
 | Lettore di Musica | a fine brano si ferma, non passa al successivo |
 
 ## Cosa aspetta un giudizio di Cammo
+
+**Della 0.3.1, costruita il 19 agosto e da provare:**
+
+- **DaProdCompanion** — parlarci, guardare la scheda *Memoria* dopo qualche
+  scambio, premere «Sogna adesso» e vedere se quello che ha capito ha senso. La
+  qualità della conversazione dipende dal modello scelto nel selettore: con un
+  2,6B è quello che è, con Bonsai 27B è un'altra cosa.
+- **Il profilo di memoria** — è **da misurare**, come la velocità: generare la
+  stessa cosa in *bilanciato* e in *leggero* e guardare i minuti. In *leggero*
+  la promessa è che LM Studio possa restare acceso mentre generi.
+- **Il pannello della memoria video** — aprirlo mentre Musica o Foto stanno
+  lavorando: dovrebbe elencare quello che c'è dentro e lasciarlo togliere.
+- **Le anteprime delle schede** — passare il mouse sulle sette schede dell'hub.
+
+**Da prima, e ancora aperto:**
 
 - **DaProdMusica**: un brano vero l'ha già fatto, con copertina, dentro la suite.
   Restano da provare a lungo la libreria (rinomina, copertina da file, elimina),

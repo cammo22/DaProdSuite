@@ -11,10 +11,15 @@
  */
 
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
-import type { Impostazioni, Velocita } from "@daprod/ipc";
+import type { Impostazioni, ProfiloMemoria, Velocita } from "@daprod/ipc";
 import { SETTINGS_FILE } from "./paths";
 
-const PREDEFINITE: Impostazioni = { velocita: "normale", guidaFatta: false };
+const PREDEFINITE: Impostazioni = {
+  velocita: "normale",
+  // Quello con cui abbiamo generato finora: il metro di paragone.
+  profilo: "bilanciato",
+  guidaFatta: false,
+};
 
 let cache: Impostazioni | null = null;
 
@@ -29,6 +34,10 @@ export function impostazioni(): Impostazioni {
       // sappiamo raccontare.
       cache = {
         velocita: lette.velocita === "spinta" ? "spinta" : "normale",
+        profilo:
+          lette.profilo === "leggero" || lette.profilo === "qualita"
+            ? lette.profilo
+            : "bilanciato",
         guidaFatta: lette.guidaFatta === true,
       };
       return cache;
@@ -51,6 +60,16 @@ export function impostazioni(): Impostazioni {
  */
 export function impostaVelocita(velocita: Velocita): Impostazioni {
   return salva({ velocita });
+}
+
+/**
+ * Cambia quanta memoria video lasciar prendere ai motori.
+ *
+ * Come la velocità, ha effetto al **prossimo avvio del motore**: i flag si
+ * passano alla riga di comando e un motore acceso non se li rilegge.
+ */
+export function impostaProfilo(profilo: ProfiloMemoria): Impostazioni {
+  return salva({ profilo });
 }
 
 /** La procedura guidata è stata vista: non si ripresenta al prossimo avvio. */

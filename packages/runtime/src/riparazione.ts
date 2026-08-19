@@ -34,6 +34,13 @@ export interface RiparaOptions {
    * suoi pacchetti solo perché sta riparando.
    */
   requisiti: string[];
+  /**
+   * `requirements/versioni.txt`. Riparare senza vincoli vorrebbe dire
+   * reinstallare *l'ultima* versione di tutto: si uscirebbe dalla riparazione
+   * con un ambiente diverso da quello provato, che è come rimettere in piedi un
+   * muro con mattoni di un'altra misura.
+   */
+  vincoli?: string;
   onLine?: (riga: string) => void;
   segnale?: AbortSignal;
 }
@@ -46,7 +53,7 @@ export interface RiparaOptions {
  * l'ambiente è rotto, perché **i numeri erano a posto e i file no**.
  */
 export async function riparaAmbiente(options: RiparaOptions): Promise<void> {
-  const { uv, runtimeDir, requisiti, onLine, segnale } = options;
+  const { uv, runtimeDir, requisiti, vincoli, onLine, segnale } = options;
   const python = join(runtimeDir, "Scripts", "python.exe");
 
   onLine?.("==> Sgombro le cache di Python");
@@ -56,6 +63,7 @@ export async function riparaAmbiente(options: RiparaOptions): Promise<void> {
   onLine?.("==> Reinstallo i pacchetti dell'ambiente condiviso");
   const argomenti = ["pip", "install", "--python", python, "--reinstall"];
   for (const file of requisiti) argomenti.push("-r", file);
+  if (vincoli) argomenti.push("--constraint", vincoli);
 
   await run(uv, argomenti, {
     segnale,

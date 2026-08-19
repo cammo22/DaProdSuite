@@ -13,6 +13,7 @@
  */
 
 import { net, protocol } from "electron";
+import { UI_COMUNE } from "./paths";
 import { createReadStream } from "node:fs";
 import { stat } from "node:fs/promises";
 import { join, normalize, resolve, sep } from "node:path";
@@ -219,10 +220,28 @@ function risolvi(url: string): string {
   const parsed = new URL(url);
   if (parsed.host === "file") return decodificaUrl(url);
 
+  const relativo = decodeURIComponent(parsed.pathname).replace(/^\/+/, "");
+
+  // I pezzi comuni a tutte le app, serviti **sotto l'origine di chi li chiede**.
+  //
+  // Sarebbe stato più naturale dare loro un host tutto loro — `daprod://ui/` —
+  // e invece no: la pagina di ogni app dichiara `script-src 'self'`, quindi un
+  // modulo importato da un'altra origine viene bloccato dalla CSP prima ancora
+  // di essere chiesto. Servendoli da `daprod://musica/comune/...` sono "self" a
+  // tutti gli effetti, e un `import "/comune/selettore-llm.js"` funziona come
+  // se il file stesse nella cartella dell'app. Sul disco invece è uno solo.
+  if (relativo === "comune" || relativo.startsWith("comune/")) {
+    const dentro = relativo.slice("comune".length).replace(/^\/+/, "");
+    const percorsoComune = normalize(join(UI_COMUNE, dentro));
+    if (percorsoComune !== UI_COMUNE && !percorsoComune.startsWith(UI_COMUNE + sep)) {
+      throw new Error("percorso fuori dalla cartella comune");
+    }
+    return percorsoComune;
+  }
+
   const radice = interfacce.get(parsed.host);
   if (!radice) throw new Error(`interfaccia "${parsed.host}" non registrata`);
 
-  const relativo = decodeURIComponent(parsed.pathname).replace(/^\/+/, "");
   const percorso = normalize(join(radice, relativo));
   // Un `..` nel percorso trasformerebbe la cartella dell'app in una finestra su
   // tutto il disco: qui dentro si serve solo quello che sta sotto la radice.

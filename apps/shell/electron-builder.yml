@@ -32,6 +32,11 @@ extraResources:
   # trova: dalla versione installata l'ambiente Python non si creerebbe.
   - from: ../../packages/runtime/requirements
     to: requirements
+  # I pezzi di interfaccia comuni a tutte le app (`packages/ui`). Senza,
+  # `paths.ts` li cerca in resources/comune e le pagine restano senza il tema e
+  # senza il selettore del modello.
+  - from: ../../packages/ui/src
+    to: comune
   - from: ../../services
     to: services
     filter:
@@ -55,6 +60,8 @@ extraResources:
   # IoDigitale come Dream, e per la stessa ragione: la pagina la serve il motore.
   - from: ../iodigitale
     to: apps/iodigitale
+  - from: ../companion
+    to: apps/companion
 
 win:
   target:

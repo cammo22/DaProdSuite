@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data: daprod:; font-src 'self'"
+      content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data: daprod:; media-src 'self'; font-src 'self'"
     />
     <title>DaProd Suite</title>
     <link rel="stylesheet" href="style.css" />
@@ -179,6 +179,23 @@
         <pre class="log-righe" id="log-righe"></pre>
       </section>
 
+      <!-- La memoria video, che e' una sola per tutte le app. Nasce come una
+           fila di quadratini nella barra di DaProdMusica: qui e' di tutti,
+           perche' un modello lasciato acceso da una scheda e' memoria che manca
+           a quella dopo. -->
+      <section class="pannello" id="memoria" hidden aria-label="Memoria video">
+        <div class="pannello-testa">
+          <h2>Memoria video</h2>
+          <p id="memoria-riassunto">—</p>
+          <div class="pannello-tasti">
+            <button class="bottone secondario" id="memoria-aggiorna">Aggiorna</button>
+            <button class="bottone secondario pericolo" id="memoria-svuota">Svuota tutto</button>
+          </div>
+        </div>
+        <ul class="voci" id="memoria-voci"></ul>
+        <p class="memoria-nota" id="memoria-nota"></p>
+      </section>
+
       <section class="spazio" id="spazio" hidden aria-label="Spazio su disco">
         <div class="spazio-testa">
           <h2>Spazio su disco</h2>
@@ -207,11 +224,22 @@
             <option value="spinta">spinta</option>
           </select>
         </label>
+        <!-- L'altra manopola: non quanto in fretta, ma quanta memoria video
+             lasciar prendere. Su 8 GB è quella che decide se una cosa entra. -->
+        <label class="spia velocita" title="Vale dal prossimo avvio di un'app">
+          Memoria
+          <select id="profilo">
+            <option value="leggero">leggero</option>
+            <option value="bilanciato">bilanciato</option>
+            <option value="qualita">qualità</option>
+          </select>
+        </label>
       </div>
       <div class="scorciatoie">
         <button class="collegamento" data-pannello="risultati">Risultati</button>
         <button class="collegamento" data-pannello="modelli">Modelli</button>
         <button class="collegamento" data-pannello="log">Log</button>
+        <button class="collegamento" data-pannello="memoria">Memoria video</button>
         <button class="collegamento" id="btn-llm">Modello che scrive</button>
         <button class="collegamento" id="btn-spazio">Spazio</button>
       </div>

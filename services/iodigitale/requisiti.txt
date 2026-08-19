@@ -1,11 +1,12 @@
 # Le librerie che servono a DaProd IoDigitale e che l'ambiente condiviso non ha.
 #
-# **Niente versioni fissate con `==` su quello che usano anche gli altri.**
-# Viene da `requirements-windows.txt` di LeapTalk, dove aveva senso: quel
-# progetto aveva un ambiente Python tutto suo. Qui l'ambiente e' uno solo per
-# tutti i motori, e un `transformers==4.57.3` scritto qui dentro non chiede una
-# versione: **la impone a ComfyUI e a DaProdDream**, che stanno usando la stessa
-# cartella. La prima volta e' costato caro — vedi il commento in fondo.
+# **Niente versioni fissate con `==` qui dentro.** Viene da
+# `requirements-windows.txt` di LeapTalk, dove aveva senso: quel progetto aveva
+# un ambiente Python tutto suo. Qui l'ambiente e' uno solo per tutti i motori, e
+# un `transformers==4.57.3` scritto qui dentro non chiede una versione: **la
+# impone a ComfyUI e a DaProdDream**, che stanno usando la stessa cartella, e li
+# fa disinstallare e rimettere mentre lavorano. La prima volta e' costato caro —
+# vedi il commento in fondo, che va letto prima di rimettercene uno.
 #
 # Torch non si tocca: c'e' gia' con la build CUDA giusta, e chi lo rimette puo'
 # solo sostituirlo con una wheel peggiore. Vale per tutti i motori della suite
@@ -14,17 +15,26 @@
 # Rispetto a `requirements.txt` di LeapTalk restano fuori i pacchetti solo-Linux
 # o multi-GPU (nvidia-*-cu12, triton, xformers, flash-attn, xfuser, yunchang,
 # megatron-core, DistVAE, decord) e quelli che servono solo al training.
+#
+# ---------------------------------------------------------------------------
+# DOVE STANNO I NUMERI, DAL 19 AGOSTO 2026
+#
+# Qui ci sono i **minimi**: sotto quella versione il motore non funziona, ed e'
+# un'informazione che vale la pena avere scritta accanto al pacchetto.
+#
+# Le versioni **esatte** — quelle che abbiamo provato — stanno tutte in
+# `packages/runtime/requirements/versioni.txt`, che la suite passa come
+# *vincolo* a ogni installazione, comprese quelle di ComfyUI e dei nodi custom.
+#
+# Un vincolo non e' un `==`, ed e' tutta la differenza: non obbliga a
+# reinstallare niente. Se quello che c'e' gia' va bene, uv non lo tocca — che e'
+# la proprieta' salvata a fatica qui sotto — ma nessun `requirements.txt` di
+# terzi puo' piu' portarsi via una libreria che stanno usando gli altri cinque
+# motori.
+# ---------------------------------------------------------------------------
 
 # Il modello che muove la faccia. Le stesse che vuole Dream, con lo stesso
 # minimo: chi ha gia' installato una delle due non scarica niente.
-# **I minimi sono alzati alle versioni provate il 19 agosto 2026**, e non è
-# pignoleria: a rompere l'ambiente non sono gli aggiornamenti, sono le
-# **retrocessioni**. Quella notte `huggingface-hub` e `transformers` sono
-# rimbalzate avanti e indietro fra due installazioni finché una disinstallazione
-# non è fallita a metà (l'errore 4395 dell'antivirus, vedi `uv.ts`), e Musica,
-# Foto, Dream e IoDigitale hanno smesso di funzionare tutte insieme. Un minimo
-# non impone niente a nessuno — al contrario di `==`, che è il motivo per cui
-# qui sopra c'è scritto di non usarlo — ma toglie di mezzo il rimbalzo.
 diffusers>=0.38.0
 transformers>=5.15.0
 peft>=0.19.1
@@ -75,3 +85,10 @@ loguru>=0.7.0
 # Con i minimi al posto dei pin, uv trova gia' soddisfatto quello che c'e' e non
 # tocca niente: l'installazione di una scheda non puo' piu' rompere le altre
 # mentre lavorano.
+#
+# **E il seguito, del 19 agosto 2026.** Quella lezione era giusta ma incompleta:
+# i minimi impediscono a *noi* di spostare una libreria, non a ComfyUI e ai nodi
+# custom, che dichiarano le loro dipendenze come gli pare e sono la meta' del
+# codice che entra nell'ambiente. Il rimbalzo che ha rotto quattro app quella
+# notte e' nato cosi'. La risposta e' `versioni.txt`, spiegata qui sopra: un
+# vincolo per tutti, che non fa reinstallare niente a chi e' gia' a posto.
