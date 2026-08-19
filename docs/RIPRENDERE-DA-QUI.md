@@ -1006,11 +1006,13 @@ che passava da solo al brano dopo.
 
 ## Regole di Cammo
 
-- **Un ramo per release e una pull request** (regola cambiata il 18 agosto
-  2026: prima era «niente rami, niente PR»). Si lavora, si commetta su un ramo
-  `release-<versione>`, si apre la PR — e **il Merge lo preme lui su GitHub**:
-  è lì che dà l'ok. Niente rami di prova oltre a quello. Si parte da 0.0.1 e il
-  numero sale solo quando si pubblica.
+- **Un ramo per release e una pull request**, e si va **fino alla Release**
+  (regola cambiata due volte: il 18 agosto 2026 da «niente rami, niente PR» a
+  «il Merge lo preme lui», e il 19 agosto ancora, perché fermarsi lì gli
+  lasciava tre passaggi meccanici da fare per arrivare a quello che voleva —
+  aggiornare e provare). Quindi: ramo `release-<versione>`, PR con dentro cosa
+  cambia **e cosa non è a posto**, merge, tag, Release. Niente rami di prova
+  oltre a quello. Si parte da 0.0.1 e il numero sale solo quando si pubblica.
 - **I commit sono a nome di `cammo22`**, con la noreply del suo account. Fino
   alla 0.1.0 sono andati su *daprodproduzioni*, cioè sul profilo sbagliato.
 - **Il codice da testare resta sul PC.** Si pubblica solo dopo il suo ok.

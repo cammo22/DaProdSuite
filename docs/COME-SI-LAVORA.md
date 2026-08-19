@@ -55,9 +55,13 @@ GitHub e capire cosa è successo senza leggere il codice:
 
 - **Ogni pubblicazione passa dal [CHANGELOG](../CHANGELOG.md)**, scritto per chi
   usa la suite e non per chi la scrive. Prima il changelog, poi la roadmap.
-- **Una PR per release, un tag per versione.** La PR è il punto in cui Cammo
-  guarda e approva; il suo testo dice cosa cambia e **cosa non è a posto**. La
-  struttura resta quella che si guarda in dieci secondi.
+- **Una PR per release, un tag per versione.** Il testo della PR dice cosa
+  cambia e **cosa non è a posto**, e resta quello che si guarda in dieci
+  secondi. **Dal 19 agosto 2026 la PR non è più un cancello**: il merge, il tag
+  e la Release li fa chi lavora, senza fermarsi a chiedere. Parole di Cammo:
+  «fai tutto metti la release che così aggiorno e testo». Il punto in cui
+  guarda è l'installer, non il tasto Merge — e per questo dire cosa non è
+  stato provato conta il doppio.
 - **I commit sono a nome di `cammo22`.** Non è un vezzo: `dapprod22@gmail.com`
   su GitHub appartiene all'account *daprodproduzioni*, quindi tutti i commit
   fino alla 0.1.0 sono finiti sul profilo sbagliato e non contano come suo
