@@ -1,0 +1,31 @@
+# Le librerie che servono a DaProdCompanion e che l'ambiente condiviso non ha.
+#
+# Sono poche, ed è il punto: il Companion non carica nessun modello: la
+# conversazione la fa LM Studio, che è un programma a parte, e la memoria è un
+# file SQLite. Non c'è niente da mettere in VRAM, e infatti questa è l'unica
+# scheda della suite che gira bene anche su un computer senza scheda video.
+#
+# I numeri esatti stanno in `packages/runtime/requirements/versioni.txt`, che la
+# suite passa come vincolo a ogni installazione: qui ci sono i minimi, cioè
+# «sotto questa versione non funziona».
+
+# La memoria: ricerca per somiglianza dentro SQLite, senza nessun database in
+# più da installare e da tenere acceso. Un file solo, che si può copiare,
+# guardare e cancellare.
+sqlite-vec>=0.1.9
+
+# Le impostazioni, lette dall'ambiente che passa la shell.
+pydantic>=2.13
+pydantic-settings>=2.15
+
+# Quando sognare: legge la riga cron del consolidamento notturno.
+croniter>=2.0
+
+# Parla con LM Studio.
+httpx>=0.27
+
+# Il server, che l'ambiente condiviso ha già: qui per completezza, così
+# `requisiti.txt` racconta da solo di cosa ha bisogno questo motore.
+fastapi>=0.121.0
+uvicorn>=0.38.0
+websockets>=15.0
