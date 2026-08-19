@@ -39,6 +39,22 @@ stessa scheda video e rallenta parecchio — non è rotto, sta condividendo la
 GPU. Aspetta che l'altro lavoro finisca, o scegli un modello più piccolo in
 LM Studio per una risposta più rapida.
 
+### Un'app non si apre e parla di librerie: cosa faccio?
+
+In cima all'hub c'è una riga con un pallino: è l'**ambiente Python**, quello che
+fa partire cinque app su sette. Se il pallino è rosso o giallo, il problema è
+lì e non nell'app.
+
+1. Premi **Controlla**: guarda e non tocca niente, ci mette qualche decina di
+   secondi e ti dice in cinque righe cosa non torna.
+2. Se dice che c'è qualcosa che non va, premi **Ripara**: reinstalla i pacchetti
+   dell'ambiente. **Modelli, motori, risultati e impostazioni non si toccano** —
+   non è il Reset, non ti fa riscaricare i 35 GB di modelli. Ci vogliono minuti.
+3. Riprova ad aprire l'app.
+
+Con **Dettagli** vedi il rapporto per esteso e le righe di quello che sta
+succedendo, che sono anche quelle da incollare in una segnalazione.
+
 ### Come segnalo un problema?
 
 Apri una

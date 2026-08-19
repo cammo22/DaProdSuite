@@ -92,31 +92,23 @@ export function registerIpc(getHub: () => BrowserWindow | null): void {
 
   /**
    * Ripara l'ambiente: reinstalla i pacchetti, non cancella niente.
-   *
-   * **Quali requisiti.** Solo quelli che servono davvero a questa macchina:
-   * la base, il motore di terzi se è installato, e i servizi delle app che
-   * l'utente ha davvero. Rimettere in casa i pacchetti di IoDigitale a chi non
-   * ce l'ha sarebbe una riparazione che installa roba nuova, cioè un'altra
-   * occasione di rompere qualcosa.
    */
   ipcMain.handle(CHANNELS.runtimeRipara, async () => {
-    const requisiti = [BASE_REQUIREMENTS];
-
-    const motore = join(ENGINES_DIR, "comfy-requisiti.txt");
-    if (existsSync(motore)) requisiti.push(motore);
-
-    const installate = new Set(
-      appManager.list().filter((s) => s.status !== "non-inclusa" && s.status !== "da-installare")
-        .map((s) => s.id),
-    );
-    for (const app of APP_LIST) {
-      if (!installate.has(app.id) || !app.service) continue;
-      const suo = join(SERVICES_DIR, app.service.id, "requisiti.txt");
-      if (existsSync(suo) && !requisiti.includes(suo)) requisiti.push(suo);
-    }
-
-    await runtime.ripara(requisiti);
+    await runtime.ripara(requisitiDiQuestaMacchina());
     await appManager.refreshAll();
+  });
+
+  /**
+   * Controlla l'ambiente e torna il rapporto. Non tocca niente.
+   *
+   * Guarda gli stessi requisiti che riparerebbe: sarebbe strano dire "manca un
+   * pacchetto" di un'app che l'utente non ha, e ancora piu' strano dire "tutto
+   * a posto" senza aver guardato quello che «Ripara» rimetterebbe.
+   */
+  ipcMain.handle(CHANNELS.runtimeControlla, async () => {
+    const rapporto = await runtime.controlla(requisitiDiQuestaMacchina());
+    await appManager.refreshAll();
+    return rapporto;
   });
 
   /* ------------------------------------------------------------------ gpu */
@@ -313,4 +305,33 @@ export function registerIpc(getHub: () => BrowserWindow | null): void {
   // Anche l'avanzamento di un modello va a tutte: i pesi sono condivisi, quindi
   // se Foto sta scaricando qualcosa che serve anche a Musica, Musica lo vede.
   scaricamenti.on("avanzamento", (stato) => aTutte(CHANNELS.modelliAvanzamento, stato));
+}
+
+/**
+ * I file di requisiti che contano **su questa macchina**: la base, il motore di
+ * terzi se e' installato, e i servizi delle app che l'utente ha davvero.
+ *
+ * Rimettere in casa i pacchetti di IoDigitale a chi non ce l'ha sarebbe una
+ * riparazione che installa roba nuova, cioe' un'altra occasione di rompere
+ * qualcosa. Vale uguale per il controllo, che guarda esattamente questi.
+ */
+function requisitiDiQuestaMacchina(): string[] {
+  const requisiti = [BASE_REQUIREMENTS];
+
+  const motore = join(ENGINES_DIR, "comfy-requisiti.txt");
+  if (existsSync(motore)) requisiti.push(motore);
+
+  const installate = new Set(
+    appManager
+      .list()
+      .filter((s) => s.status !== "non-inclusa" && s.status !== "da-installare")
+      .map((s) => s.id),
+  );
+  for (const app of APP_LIST) {
+    if (!installate.has(app.id) || !app.service) continue;
+    const suo = join(SERVICES_DIR, app.service.id, "requisiti.txt");
+    if (existsSync(suo) && !requisiti.includes(suo)) requisiti.push(suo);
+  }
+
+  return requisiti;
 }

@@ -711,6 +711,13 @@ disinstallazioni, niente occasioni per l'antivirus.
 Dopo: ComfyUI riparte (`Device: cuda:0 NVIDIA GeForce RTX 4060`), e gli import
 di Dream (diffusers 0.38) e IoDigitale (peft, faster-whisper, piper) passano.
 
+**Quei comandi adesso sono due tasti**, nella barra dell'ambiente in cima
+all'hub: «Ripara» fa la stessa cosa (`packages/runtime/src/riparazione.ts`) e
+«Controlla» dice se serviva (`packages/runtime/src/controllo.ts`). Il controllo
+**importa davvero** le librerie condivise, perché è l'unico modo di vedere
+questo guasto: qui i numeri di versione erano tutti giusti, e a essere mescolati
+erano i file.
+
 **La lezione, e va oltre questo caso.** Un ambiente Python solo per sei app è
 quello che ci fa stare in 4 GB invece di 14,7, ma è anche **il posto dove un'app
 può rompere le altre senza toccarle**. I requisiti dei servizi oggi non sono

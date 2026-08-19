@@ -9,7 +9,9 @@
 import type {
   AppId,
   AppState,
+  EsitoControllo,
   GpuState,
+  RapportoAmbiente,
   RuntimeState,
   TipoElemento,
   UpdateState,
@@ -22,7 +24,6 @@ const api = window.daprod;
 const griglia = document.getElementById("griglia") as HTMLElement;
 const statoAgg = document.getElementById("stato-agg") as HTMLElement;
 const btnAgg = document.getElementById("btn-agg") as HTMLButtonElement;
-const spiaRuntime = document.getElementById("spia-runtime") as HTMLElement;
 const spiaGpu = document.getElementById("spia-gpu") as HTMLElement;
 
 /** Pezzi delle schede, per poterli aggiornare senza ridisegnare tutto. */
@@ -242,83 +243,205 @@ function mostraBottone(testo: string, azione: () => Promise<void> | void): void 
   btnAgg.onclick = () => void azione();
 }
 
-/* ------------------------------------------------------------------- spie */
+/* --------------------------------------------------------- barra ambiente */
+/**
+ * L'ambiente Python in una riga, sempre in cima.
+ *
+ * Cinque app su sette non partono senza; quando si rompe, è l'unica cosa che
+ * conta sapere. Prima si vedeva in due posti: una spia nel piede della pagina,
+ * che diceva solo com'era andata, e «Ripara» in fondo al pannello Spazio —
+ * cioè nella schermata che si apre per liberare il disco, l'ultimo posto in cui
+ * uno guarda quando un'app non si apre. Adesso è qui, con tre tasti:
+ * **Controlla** (guarda e basta), **Ripara** (rimette a posto), **Dettagli**
+ * (il rapporto, e le righe di quello che sta succedendo).
+ */
 
-function aggiornaSpiaRuntime(stato: RuntimeState): void {
-  aggiornaPannelloAmbiente(stato);
-  spiaRuntime.className = "spia";
-
-  if (stato.installing) {
-    spiaRuntime.textContent = `Ambiente: installazione ${stato.installing.step}/${stato.installing.total}`;
-    return;
-  }
-  if (!stato.ready) {
-    spiaRuntime.textContent = "Ambiente: da installare";
-    return;
-  }
-  if (stato.cudaAvailable === false) {
-    // Senza CUDA i motori girerebbero su CPU: tecnicamente funziona, ma così
-    // lento da essere inutilizzabile. Meglio dirlo forte.
-    spiaRuntime.textContent = `Ambiente: torch ${stato.torchVersion} — GPU non rilevata`;
-    spiaRuntime.classList.add("guasto");
-    return;
-  }
-  spiaRuntime.textContent = `Ambiente: Python ${stato.pythonVersion} · torch ${stato.torchVersion}`;
-}
-
-/* --------------------------------------------------- pannello dell'ambiente */
-
-const pannello = document.getElementById("pannello-ambiente") as HTMLElement;
-const ambTitolo = document.getElementById("ambiente-titolo") as HTMLElement;
-const ambDettaglio = document.getElementById("ambiente-dettaglio") as HTMLElement;
-const ambAzione = document.getElementById("ambiente-azione") as HTMLButtonElement;
+const ambSpia = document.getElementById("ambiente-spia") as HTMLElement;
+const ambDetto = document.getElementById("ambiente-detto") as HTMLElement;
+const btnInstalla = document.getElementById("ambiente-installa") as HTMLButtonElement;
+const btnControlla = document.getElementById("ambiente-controlla") as HTMLButtonElement;
+const btnRipara = document.getElementById("ambiente-ripara") as HTMLButtonElement;
+const btnDettagli = document.getElementById("ambiente-dettagli") as HTMLButtonElement;
+const ambFondo = document.getElementById("ambiente-fondo") as HTMLElement;
 const ambBarra = document.getElementById("ambiente-barra") as HTMLElement;
 const ambRiempimento = document.getElementById("ambiente-riempimento") as HTMLElement;
+const ambRapporto = document.getElementById("ambiente-rapporto") as HTMLElement;
 const ambLog = document.getElementById("ambiente-log") as HTMLElement;
 
-ambAzione.addEventListener("click", () => {
-  ambAzione.disabled = true;
-  void api.runtime.install();
-});
+/** Aperto a mano: un lavoro in corso lo apre da sé, ma non lo richiude. */
+let dettagliAperti = false;
 
-function aggiornaPannelloAmbiente(stato: RuntimeState): void {
-  // Ambiente a posto: il pannello sparisce e non ruba spazio alle app.
-  if (stato.ready && !stato.installing) {
-    pannello.hidden = true;
-    return;
-  }
-  pannello.hidden = false;
+/** Vero mentre un tasto sta lavorando: nel frattempo gli altri non si toccano. */
+let ambienteOccupato = false;
 
+function aggiornaAmbiente(stato: RuntimeState): void {
   const inCorso = Boolean(stato.installing);
-  ambAzione.disabled = inCorso;
+
+  // Un'installazione o una riparazione si guardano mentre succedono: il fondo
+  // si apre da sé, e resta aperto se è stato l'utente ad aprirlo.
+  if (inCorso) dettagliAperti = true;
   ambBarra.hidden = !inCorso;
-  ambLog.hidden = !stato.log?.length;
 
   if (stato.log?.length) {
     ambLog.textContent = stato.log.join("\n");
+    ambLog.hidden = false;
     ambLog.scrollTop = ambLog.scrollHeight;
   }
 
+  btnInstalla.hidden = stato.ready || inCorso;
+  btnInstalla.disabled = inCorso;
+  // Riparare o controllare un ambiente che non c'è non vuol dire niente.
+  btnRipara.disabled = ambienteOccupato || inCorso || !stato.ready;
+  btnControlla.disabled = ambienteOccupato || inCorso || !stato.ready;
+
   if (stato.installing) {
     const { step, total, label } = stato.installing;
-    ambTitolo.textContent = `Installazione in corso — passo ${step} di ${total}`;
-    ambDettaglio.textContent = label;
-    ambAzione.textContent = "Attendi…";
+    dipingi("attesa", `${label} — passo ${step} di ${total}`);
     ambRiempimento.style.width = `${(step / total) * 100}%`;
-    return;
+  } else if (stato.error) {
+    dipingi("guasto", `L'ambiente si è fermato: ${stato.error}`);
+  } else if (!stato.ready) {
+    dipingi(
+      "guasto",
+      "Manca l'ambiente Python: cinque app su sette non partono senza. Circa 4 GB, una volta sola.",
+    );
+  } else if (stato.cudaAvailable === false) {
+    // Senza CUDA i motori girerebbero su CPU: tecnicamente funziona, ma così
+    // lento da essere inutilizzabile. Meglio dirlo forte.
+    dipingi("attesa", `Ambiente a posto, ma torch ${stato.torchVersion} non vede la scheda video`);
+  } else {
+    const scheda = stato.gpuName ? ` · ${stato.gpuName}` : "";
+    dipingi("ok", `Ambiente: Python ${stato.pythonVersion} · torch ${stato.torchVersion}${scheda}`);
   }
 
-  if (stato.error) {
-    ambTitolo.textContent = "L'installazione si è fermata";
-    ambDettaglio.textContent = stato.error;
-    ambAzione.textContent = "Riprova";
+  mostraFondo();
+}
+
+function dipingi(come: "ok" | "attesa" | "guasto", testo: string): void {
+  ambSpia.className = `ambiente-spia ${come}`;
+  ambDetto.textContent = testo;
+  ambDetto.className = `ambiente-detto ${come}`;
+}
+
+/** Il fondo si mostra solo se ha qualcosa dentro: barra, rapporto o log. */
+function mostraFondo(): void {
+  const qualcosa = !ambBarra.hidden || !ambRapporto.hidden || !ambLog.hidden;
+  ambFondo.hidden = !(dettagliAperti && qualcosa);
+  btnDettagli.hidden = !qualcosa;
+  btnDettagli.setAttribute("aria-expanded", String(!ambFondo.hidden));
+}
+
+btnDettagli.addEventListener("click", () => {
+  dettagliAperti = !dettagliAperti;
+  mostraFondo();
+});
+
+btnInstalla.addEventListener("click", () => {
+  btnInstalla.disabled = true;
+  dettagliAperti = true;
+  void api.runtime.install();
+});
+
+/**
+ * Controlla: guarda l'ambiente e non tocca niente.
+ *
+ * Dura qualche decina di secondi perché apre torch e le librerie condivise per
+ * davvero — l'unico modo di accorgersi dei file rimasti a metà fra due
+ * versioni, cioè il guasto in cui tutti i numeri di versione sono giusti.
+ */
+btnControlla.addEventListener("click", () => {
+  void occupato(btnControlla, "Controllo…", async () => {
+    disegnaRapporto(await api.runtime.controlla());
+    aggiornaSchede(await api.apps.list());
+  });
+});
+
+btnRipara.addEventListener("click", () => {
+  if (
+    !confirm(
+      "Reinstallo i pacchetti Python della suite.\n\nModelli, motori, risultati e " +
+        "impostazioni non si toccano. Ci vogliono alcuni minuti.\n\nProcedo?",
+    )
+  )
     return;
+
+  void occupato(btnRipara, "Riparo…", async () => {
+    await api.runtime.ripara();
+    aggiornaSchede(await api.apps.list());
+    alert("Ambiente riparato. Riprova ad aprire l'app.");
+  });
+});
+
+/** Un tasto che lavora: si spegne, e spegne gli altri finché non ha finito. */
+async function occupato(
+  tasto: HTMLButtonElement,
+  intanto: string,
+  lavoro: () => Promise<void>,
+): Promise<void> {
+  const prima = tasto.textContent;
+  ambienteOccupato = true;
+  dettagliAperti = true;
+  tasto.textContent = intanto;
+  tasto.disabled = true;
+  btnControlla.disabled = true;
+  btnRipara.disabled = true;
+  try {
+    await lavoro();
+  } catch (errore) {
+    alert("Non ci sono riuscito: " + String(errore));
+  } finally {
+    tasto.textContent = prima;
+    ambienteOccupato = false;
+    // Rimette a posto anche i tasti: quali siano attivi dipende dallo stato.
+    aggiornaAmbiente(await api.runtime.state());
+  }
+}
+
+const SEGNI: Record<EsitoControllo, string> = { ok: "✓", attenzione: "!", guasto: "×" };
+
+/** Il rapporto: una riga per controllo, e in cima cosa vuol dire tutto insieme. */
+function disegnaRapporto(rapporto: RapportoAmbiente): void {
+  ambRapporto.textContent = "";
+
+  const ora = new Date(rapporto.quando).toLocaleTimeString("it-IT", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  const riassunti: Record<EsitoControllo, string> = {
+    ok: `Controllato alle ${ora}: è tutto a posto.`,
+    attenzione: `Controllato alle ${ora}: funziona, ma c'è qualcosa da sapere.`,
+    guasto:
+      `Controllato alle ${ora}: c'è qualcosa che non va. «Ripara» reinstalla i ` +
+      "pacchetti senza toccare modelli, motori e risultati.",
+  };
+
+  const testa = document.createElement("li");
+  testa.className = `voce-controllo testa ${rapporto.esito}`;
+  testa.textContent = riassunti[rapporto.esito];
+  ambRapporto.append(testa);
+
+  for (const voce of rapporto.voci) {
+    const riga = document.createElement("li");
+    riga.className = `voce-controllo ${voce.esito}`;
+
+    const segno = document.createElement("span");
+    segno.className = "voce-segno";
+    segno.textContent = SEGNI[voce.esito];
+
+    const testo = document.createElement("div");
+    const titolo = document.createElement("b");
+    titolo.textContent = voce.titolo;
+    const dettaglio = document.createElement("p");
+    dettaglio.textContent = voce.dettaglio;
+    testo.append(titolo, dettaglio);
+
+    riga.append(segno, testo);
+    ambRapporto.append(riga);
   }
 
-  ambTitolo.textContent = "Manca l'ambiente Python";
-  ambDettaglio.textContent =
-    "La suite installa una volta sola Python 3.12 e PyTorch con CUDA, condivisi da tutte le app. Circa 4 GB, qualche minuto.";
-  ambAzione.textContent = "Installa l'ambiente";
+  ambRapporto.hidden = false;
+  dettagliAperti = true;
+  mostraFondo();
 }
 
 function aggiornaSpiaGpu(stato: GpuState): void {
@@ -579,7 +702,7 @@ for (const bottone of document.querySelectorAll<HTMLButtonElement>("[data-apri]"
 
 api.apps.onChanged(aggiornaSchede);
 api.update.onChanged(aggiornaBarraAggiornamenti);
-api.runtime.onChanged(aggiornaSpiaRuntime);
+api.runtime.onChanged(aggiornaAmbiente);
 api.gpu.onChanged(aggiornaSpiaGpu);
 
 costruisciGriglia();
@@ -618,7 +741,7 @@ void (async () => {
     aggiornaBarraAggiornamenti(await api.update.state());
 
     dilloAlloSplash("Controllo l'ambiente…");
-    aggiornaSpiaRuntime(await api.runtime.state());
+    aggiornaAmbiente(await api.runtime.state());
     aggiornaSpiaGpu(await api.gpu.state());
     selettoreVelocita.value = (await api.impostazioni.leggi()).velocita;
 
@@ -786,39 +909,6 @@ const AVVISI_RESET: Record<string, string> = {
   tutto: 'Ambiente Python, motori, modelli e impostazioni: tutto cancellato.\n\nI tuoi risultati NON si toccano.',
 }
 
-/**
- * Ripara l'ambiente: reinstalla i pacchetti senza cancellare niente.
- *
- * Sta accanto ai Reset perche' e' li' che uno va a cercare quando qualcosa non
- * funziona, ma non e' un reset: e' la via di mezzo che mancava fra "non si puo'
- * fare niente" e "Tutto", che porta via anche i 35 GB di modelli.
- */
-const btnRipara = document.getElementById('btn-ripara') as HTMLButtonElement
-btnRipara.addEventListener('click', async () => {
-  if (
-    !confirm(
-      'Reinstallo i pacchetti Python della suite.\n\nModelli, motori, risultati e ' +
-        'impostazioni non si toccano. Ci vogliono alcuni minuti.\n\nProcedo?',
-    )
-  )
-    return
-
-  const prima = btnRipara.textContent
-  btnRipara.disabled = true
-  btnRipara.textContent = 'Riparo…'
-  try {
-    await api.runtime.ripara()
-    aggiornaSchede(await api.apps.list())
-    aggiornaSpiaRuntime(await api.runtime.state())
-    alert("Ambiente riparato. Riprova ad aprire l'app.")
-  } catch (errore) {
-    alert('Non ci sono riuscito: ' + String(errore))
-  } finally {
-    btnRipara.disabled = false
-    btnRipara.textContent = prima
-  }
-})
-
 for (const bottone of document.querySelectorAll<HTMLButtonElement>('[data-reset]')) {
   bottone.addEventListener('click', async () => {
     const cosa = bottone.dataset.reset as 'impostazioni' | 'modelli' | 'tutto'
@@ -828,7 +918,7 @@ for (const bottone of document.querySelectorAll<HTMLButtonElement>('[data-reset]
     bottone.disabled = false
     await disegnaSpazio()
     aggiornaSchede(await api.apps.list())
-    aggiornaSpiaRuntime(await api.runtime.state())
+    aggiornaAmbiente(await api.runtime.state())
     if (liberati > 0) alert(`Liberati ${gb(liberati)}.`)
   })
 }

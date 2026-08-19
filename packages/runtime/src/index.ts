@@ -7,6 +7,13 @@ export {
 } from "./install";
 export { riparaAmbiente, type RiparaOptions } from "./riparazione";
 export {
+  controllaAmbiente,
+  verdetto,
+  type ControllaOptions,
+  type EsitoControllo,
+  type VoceControllo,
+} from "./controllo";
+export {
   ensureUv,
   installaRequisiti,
   type InstallaRequisitiOptions,

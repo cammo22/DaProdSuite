@@ -112,44 +112,102 @@ main {
 
 /* ---------------------------------------------------------------- ambiente */
 
-.pannello-ambiente {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: center;
-  gap: 16px 24px;
-  max-width: 1200px;
-  margin: 0 auto 22px;
-  padding: 20px 22px;
-  border: 1px solid var(--bordo-vivo);
-  border-radius: var(--raggio);
-  background: var(--fondo-scheda);
-  background-image: radial-gradient(
-    100% 100% at 0% 0%,
-    color-mix(in srgb, var(--attesa) 10%, transparent),
-    transparent 70%
-  );
+/*
+  La barra dell'ambiente: una riga sotto la testata, sempre in vista.
+
+  Sottile per quanto si può — è una riga che a suite sana si legge di sfuggita
+  e non si tocca mai — ma con i tasti veri dentro, non nascosti in un pannello.
+  Quando c'è qualcosa da mostrare (una riparazione in corso, il rapporto di un
+  controllo) si apre il fondo, e allora sì che prende spazio: in quel momento è
+  l'unica cosa che conta.
+*/
+.ambiente {
+  border-bottom: 1px solid var(--bordo);
+  background: var(--fondo-alto);
 }
 
-/* Senza questo il pannello non sparisce mai: l'attributo `hidden` vale
-   display:none dal foglio di stile del browser, e la regola qui sopra lo batte. */
-.pannello-ambiente[hidden] {
+.ambiente-riga {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 7px 24px;
+}
+
+.ambiente-spia {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--testo-fioco);
+}
+
+.ambiente-spia.ok {
+  background: var(--ok);
+}
+
+.ambiente-spia.attesa {
+  background: var(--attesa);
+}
+
+.ambiente-spia.guasto {
+  background: var(--errore);
+  /* Un'app su sette che non parte è un'emergenza: il pallino pulsa finché
+     qualcuno non ci mette mano. */
+  animation: battito 1.8s ease-in-out infinite;
+}
+
+@keyframes battito {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.ambiente-detto {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 12px;
+  color: var(--testo-tenue);
+  /* Una riga sola: il testo lungo è quello dei guasti, e per intero sta nel
+     rapporto qui sotto. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ambiente-detto.attesa {
+  color: var(--attesa);
+}
+
+.ambiente-detto.guasto {
+  color: var(--errore);
+}
+
+.ambiente-tasti {
+  display: flex;
+  flex: none;
+  gap: 6px;
+}
+
+/* Tasti da barra: gli stessi bottoni, più bassi. Una riga da sette pixel di
+   padding non può contenerne di alti trentasei. */
+.ambiente-tasti .bottone {
+  padding: 3px 11px;
+  font-size: 12px;
+}
+
+.ambiente-tasti .bottone[hidden] {
   display: none;
 }
 
-.pannello-ambiente h2 {
-  margin: 0;
-  font-size: 15px;
-  font-weight: 620;
+.ambiente-fondo {
+  display: grid;
+  gap: 10px;
+  padding: 0 24px 12px;
 }
 
-.pannello-ambiente p {
-  margin: 4px 0 0;
-  font-size: 13px;
-  color: var(--testo-tenue);
-}
-
-.pannello-ambiente .bottone {
-  background: var(--attesa);
+.ambiente-fondo[hidden] {
+  display: none;
 }
 
 .barra {
@@ -184,6 +242,81 @@ main {
   white-space: pre-wrap;
   word-break: break-all;
   overflow-y: auto;
+}
+
+/* --------------------------------------------------- rapporto del controllo */
+
+.rapporto {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rapporto[hidden] {
+  display: none;
+}
+
+.voce-controllo {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 12px;
+  border: 1px solid var(--bordo);
+  border-radius: 10px;
+  background: var(--fondo-scheda);
+  font-size: 12px;
+}
+
+.voce-controllo p {
+  margin: 2px 0 0;
+  color: var(--testo-tenue);
+  /* I motivi veri sono lunghi (una riga di `uv pip check` lo è sempre): qui
+     vanno a capo, perché è il posto in cui si leggono per intero. */
+  overflow-wrap: anywhere;
+}
+
+/* Il riassunto in cima: niente pallino, è la frase che si legge per prima. */
+.voce-controllo.testa {
+  border-color: var(--bordo-vivo);
+  font-weight: 600;
+}
+
+.voce-controllo.testa.ok {
+  color: var(--ok);
+}
+
+.voce-controllo.testa.attenzione {
+  color: var(--attesa);
+}
+
+.voce-controllo.testa.guasto {
+  color: var(--errore);
+}
+
+.voce-segno {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  color: #0d0f14;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+}
+
+.voce-controllo.ok .voce-segno {
+  background: var(--ok);
+}
+
+.voce-controllo.attenzione .voce-segno {
+  background: var(--attesa);
+}
+
+.voce-controllo.guasto .voce-segno {
+  background: var(--errore);
 }
 
 .griglia {

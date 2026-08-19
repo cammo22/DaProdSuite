@@ -14,8 +14,8 @@ import { EventEmitter } from "node:events";
 import { execFile } from "node:child_process";
 import { existsSync } from "node:fs";
 import { promisify } from "node:util";
-import { ensureUv, installRuntime, riparaAmbiente } from "@daprod/runtime";
-import type { RuntimeState } from "@daprod/ipc";
+import { controllaAmbiente, ensureUv, installRuntime, riparaAmbiente, verdetto } from "@daprod/runtime";
+import type { RapportoAmbiente, RuntimeState } from "@daprod/ipc";
 import { createLogger } from "./logging";
 import { BASE_REQUIREMENTS, PYTHON_EXE, RUNTIME_DIR, TOOLS_DIR } from "./paths";
 
@@ -143,6 +143,67 @@ class Runtime extends EventEmitter {
     })();
 
     return this.installazione;
+  }
+
+  /**
+   * Guarda l'ambiente e torna il rapporto. Non tocca niente.
+   *
+   * Non passa dalla promessa condivisa di `install`/`ripara` — non e' una
+   * modifica, e due controlli insieme non si pestano i piedi — ma se una
+   * riparazione e' in corso non ha senso guardare un ambiente a meta': meglio
+   * dirlo che rispondere una cosa falsa.
+   */
+  async controlla(requisiti: string[]): Promise<RapportoAmbiente> {
+    if (this.installazione) {
+      return {
+        esito: "attenzione",
+        quando: Date.now(),
+        voci: [
+          {
+            id: "in-corso",
+            titolo: "C'e' un lavoro in corso",
+            esito: "attenzione",
+            dettaglio:
+              "L'ambiente si sta installando o riparando: il controllo ha senso quando ha finito.",
+          },
+        ],
+      };
+    }
+
+    const logger = createLogger("runtime");
+    try {
+      const uv = await ensureUv({
+        toolsDir: TOOLS_DIR,
+        onLine: (riga) => logger.write(riga + "\n", false),
+      });
+      const voci = await controllaAmbiente({
+        uv,
+        runtimeDir: RUNTIME_DIR,
+        requisiti,
+        onLine: (riga) => logger.write(riga + "\n", false),
+      });
+      // Il controllo apre torch davvero: quello che ha visto vale anche per lo
+      // stato, che altrimenti resterebbe quello dell'ultimo avvio.
+      await this.refresh();
+      return { esito: verdetto(voci), quando: Date.now(), voci };
+    } catch (err) {
+      const messaggio = err instanceof Error ? err.message : String(err);
+      logger.write(`ERRORE nel controllo: ${messaggio}\n`, true);
+      return {
+        esito: "guasto",
+        quando: Date.now(),
+        voci: [
+          {
+            id: "controllo",
+            titolo: "Il controllo non e' arrivato in fondo",
+            esito: "guasto",
+            dettaglio: messaggio,
+          },
+        ],
+      };
+    } finally {
+      logger.close();
+    }
   }
 
   /** Controlla se l'ambiente esiste e se torch vede la GPU. */
