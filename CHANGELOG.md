@@ -53,6 +53,33 @@ delle quattro: era l'ambiente Python condiviso.
 **L'ambiente su questo PC è stato riparato**: Musica, Foto, Dream e IoDigitale
 ripartono. Chi installa da zero non incontra più il problema.
 
+### L'ambiente Python è in alto, sempre in vista, e si controlla da lì
+
+L'ambiente Python è quello che fa partire cinque app su sette, ed è la cosa che
+si rompe. Fino a ieri lo si guardava in due posti, e nessuno dei due era quello
+giusto: una scrittina in fondo alla pagina, che diceva com'era andata e basta, e
+il tasto «Ripara» in fondo al pannello **Spazio** — cioè dentro la schermata che
+si apre per liberare il disco. Chi ha un'app che non parte lì non ci va.
+
+- **Adesso è una riga sottile sotto il titolo, sempre visibile**, con un pallino
+  che dice tutto a colpo d'occhio: verde a posto, giallo funziona-ma, rosso c'è
+  un guaio (e in quel caso il pallino pulsa). Accanto, cosa c'è davvero
+  installato: Python, torch e il nome della tua scheda video.
+- **«Ripara» si è spostato lì**, dal pannello Spazio. Fa esattamente quello che
+  faceva: reinstalla i pacchetti, e non tocca modelli, motori né risultati.
+- **«Controlla» è nuovo, e serve a sapere prima di riparare.** Guarda l'ambiente
+  e non tocca niente, poi risponde in cinque righe: c'è Python, torch vede la
+  scheda video, le librerie delle app che hai ci sono tutte, le versioni vanno
+  d'accordo, e — la più importante — **le librerie si aprono davvero**. È il
+  guasto della notte del 19 agosto: numeri di versione tutti giusti e i file di
+  due versioni mescolati. L'unico modo di accorgersene è aprirle, e questo lo fa.
+  Ci mette qualche decina di secondi, e alla fine dice se «Ripara» serve o no.
+- **«Dettagli» apre quello che c'è sotto**: il rapporto dell'ultimo controllo e
+  le righe dell'installazione mentre sta lavorando. A suite sana non c'è niente
+  da aprire e il tasto sparisce.
+- L'installazione dell'ambiente, quando manca, si fa **da questa stessa riga**:
+  il pannellone di prima non c'è più, e la pagina parte dalle schede delle app.
+
 ### «Ripara l'ambiente», nel pannello Spazio
 
 - Quando un'app non si apre e parla di librerie, l'ambiente Python è rimasto a
@@ -63,6 +90,8 @@ ripartono. Chi installa da zero non incontra più il problema.
   risultati e impostazioni restano dove sono. Ci vogliono minuti, non ore.
 - Reinstalla solo quello che serve a questa macchina: la base, il motore se ce
   l'hai, e le app che hai davvero installato.
+- **Nato nel pannello Spazio, vive in alto**: nello stesso giro è salito nella
+  barra dell'ambiente qui sopra, che è dove uno lo cerca.
 
 ### Quando un motore non parte, adesso dice perché
 

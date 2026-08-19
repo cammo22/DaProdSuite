@@ -159,6 +159,32 @@ export interface RuntimeState {
   error?: string;
 }
 
+/**
+ * Il rapporto del controllo dell'ambiente: una voce per ogni cosa guardata.
+ *
+ * Nasce il 19 agosto 2026, accanto a «Ripara»: riparare senza sapere se serviva
+ * sono minuti spesi al buio, e soprattutto non risponde alla domanda vera —
+ * quando un'app non si apre, e' l'ambiente o e' quell'app? Il rapporto risponde.
+ */
+export type EsitoControllo = "ok" | "attenzione" | "guasto";
+
+export interface VoceControllo {
+  id: string;
+  /** Cosa si e' guardato, detto all'utente. */
+  titolo: string;
+  esito: EsitoControllo;
+  /** Com'e' andata, in una riga che si legge senza sapere cos'e' un pacchetto. */
+  dettaglio: string;
+}
+
+export interface RapportoAmbiente {
+  /** Il peggiore fra gli esiti: e' quello che decide il colore della barra. */
+  esito: EsitoControllo;
+  voci: VoceControllo[];
+  /** Quando e' stato fatto, per poter dire "controllato alle 21:14". */
+  quando: number;
+}
+
 /* -------------------------------------------------------------------- spazio */
 
 export type CategoriaSpazio = "modelli" | "risultati" | "ambiente" | "motori" | "cache" | "log";
@@ -358,6 +384,14 @@ export interface SuiteApi {
      * Tutto", che porta via anche i 35 GB di pesi.
      */
     ripara(): Promise<void>;
+    /**
+     * Guarda l'ambiente e torna il rapporto, senza toccare niente.
+     *
+     * Dura qualche decina di secondi: apre davvero torch e le librerie
+     * condivise, che e' l'unico modo di accorgersi dei file rimasti a meta' fra
+     * due versioni — il guasto in cui i numeri sono tutti giusti.
+     */
+    controlla(): Promise<RapportoAmbiente>;
     onChanged(listener: (state: RuntimeState) => void): Unsubscribe;
   };
 
@@ -600,6 +634,7 @@ export const CHANNELS = {
   runtimeState: "runtime:state",
   runtimeInstall: "runtime:install",
   runtimeRipara: "runtime:ripara",
+  runtimeControlla: "runtime:controlla",
   runtimeChanged: "runtime:changed",
 
   gpuState: "gpu:state",

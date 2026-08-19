@@ -40,6 +40,36 @@
       </div>
     </header>
 
+    <!-- L'ambiente Python, sempre in vista.
+         Prima stava in due posti e nessuno dei due era questo: una spia nel
+         piede della pagina che diceva solo com'era andata, e «Ripara» in fondo
+         al pannello Spazio, cioe' dentro la schermata che si apre per liberare
+         il disco. Chi ha un'app che non parte non va a cercare li'. Adesso e'
+         una riga sola in alto: cosa c'e', se e' a posto, e i tasti per
+         controllarlo o rimetterlo in sesto. -->
+    <section class="ambiente" id="ambiente" aria-label="Ambiente Python">
+      <div class="ambiente-riga">
+        <span class="ambiente-spia" id="ambiente-spia" aria-hidden="true"></span>
+        <p class="ambiente-detto" id="ambiente-detto">Ambiente: —</p>
+        <div class="ambiente-tasti">
+          <button class="bottone" id="ambiente-installa" hidden>Installa l'ambiente</button>
+          <button class="bottone secondario" id="ambiente-controlla">Controlla</button>
+          <button class="bottone secondario" id="ambiente-ripara">Ripara</button>
+          <button class="bottone secondario" id="ambiente-dettagli" aria-expanded="false">
+            Dettagli
+          </button>
+        </div>
+      </div>
+
+      <!-- Si apre solo quando c'e' qualcosa da vedere: il rapporto di un
+           controllo, o le righe di un'installazione in corso. -->
+      <div class="ambiente-fondo" id="ambiente-fondo" hidden>
+        <div class="barra" id="ambiente-barra" hidden><span id="ambiente-riempimento"></span></div>
+        <ul class="rapporto" id="ambiente-rapporto" hidden></ul>
+        <pre class="log" id="ambiente-log" hidden></pre>
+      </div>
+    </section>
+
     <!-- La prima volta, prima di ogni altra cosa: quali app vuoi e quanto
          costano. Compare una volta sola; chi la chiude ha deciso, e installa
          quello che vuole dalle schede. -->
@@ -68,21 +98,6 @@
     </section>
 
     <main>
-      <!-- Senza ambiente Python cinque app su sette non partono: il pannello
-           compare finché non c'è, e sparisce quando è pronto. -->
-      <section class="pannello-ambiente" id="pannello-ambiente" hidden>
-        <div class="ambiente-testo">
-          <h2 id="ambiente-titolo">Manca l'ambiente Python</h2>
-          <p id="ambiente-dettaglio">
-            La suite installa una volta sola Python 3.12 e PyTorch con CUDA, condivisi da
-            tutte le app. Circa 4 GB, qualche minuto.
-          </p>
-        </div>
-        <button class="bottone" id="ambiente-azione">Installa l'ambiente</button>
-        <div class="barra" id="ambiente-barra" hidden><span id="ambiente-riempimento"></span></div>
-        <pre class="log" id="ambiente-log" hidden></pre>
-      </section>
-
       <section class="griglia" id="griglia" aria-label="App della suite"></section>
 
       <!-- Il modello che scrive. Sta nell'hub e non dentro un'app perché è di
@@ -172,16 +187,6 @@
         <div class="barra-spazio" id="barra-spazio"></div>
         <ul class="voci" id="spazio-voci"></ul>
         <div class="reset">
-          <span>
-            <b>Un'app non si apre e parla di librerie?</b> L'ambiente Python è
-            rimasto a metà: si rimette a posto reinstallando i pacchetti.
-            Modelli, motori e risultati non si toccano.
-          </span>
-          <div class="reset-bottoni">
-            <button class="bottone secondario" id="btn-ripara">Ripara l'ambiente</button>
-          </div>
-        </div>
-        <div class="reset">
           <span>Riporta indietro la suite. I tuoi risultati non si toccano mai.</span>
           <div class="reset-bottoni">
             <button class="bottone secondario" data-reset="impostazioni">Impostazioni</button>
@@ -194,7 +199,6 @@
 
     <footer class="pieddi">
       <div class="spie">
-        <span class="spia" id="spia-runtime">Ambiente: —</span>
         <span class="spia" id="spia-gpu">GPU: —</span>
         <label class="spia velocita" title="Vale dal prossimo avvio di un'app">
           Velocità

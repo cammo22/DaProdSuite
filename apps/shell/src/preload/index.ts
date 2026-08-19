@@ -75,6 +75,7 @@ const api: SuiteApi = {
     state: () => ipcRenderer.invoke(CHANNELS.runtimeState),
     install: () => ipcRenderer.invoke(CHANNELS.runtimeInstall),
     ripara: () => ipcRenderer.invoke(CHANNELS.runtimeRipara),
+    controlla: () => ipcRenderer.invoke(CHANNELS.runtimeControlla),
     onChanged: (listener) => subscribe<RuntimeState>(CHANNELS.runtimeChanged, listener),
   },
 

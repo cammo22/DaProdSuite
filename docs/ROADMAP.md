@@ -169,10 +169,15 @@ rotte e sono state corrette (vedi il changelog della 0.2.0); queste restano.
       ComfyUI e i nodi custom: **la versione che abbiamo provato**, non quella di
       stamattina.
 - [x] **Un tasto "ripara"** che reinstalla i pacchetti senza cancellare niente
-      — fatto il 19 agosto 2026, nel pannello Spazio.
+      — fatto il 19 agosto 2026. Nato nel pannello Spazio, spostato lo stesso
+      giorno nella barra dell'ambiente in alto, che è dove uno lo cerca.
+- [x] **Un tasto "controlla"** che guarda e non tocca: import veri delle
+      librerie condivise, pacchetti dichiarati dalle app installate, coerenza
+      delle versioni (`uv pip check`). Fatto il 19 agosto 2026, accanto a
+      «Ripara».
 - [ ] **La suite deve accorgersene da sola**, senza aspettare che sia l'utente a
-      capirlo: un controllo degli import che contano quando un motore muore, e
-      la riparazione proposta lì, sulla scheda.
+      premere «Controlla»: gli stessi import, fatti da soli quando un motore
+      muore, e la riparazione proposta lì, sulla scheda.
 - ~~**L'errore vero deve arrivare sulla scheda**~~ — fatto il 19 agosto 2026:
       il supervisore tiene da parte le ultime righe di stderr e mostra quella
       che spiega la morte, con il consiglio giusto se è un problema di librerie.
