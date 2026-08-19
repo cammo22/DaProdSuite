@@ -10,14 +10,147 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ---
 
-## Non ancora pubblicato
+## Non ancora pubblicato — sarà la 0.3.1
 
-Niente, per ora: tutto quello che c'era è uscito nella 0.2.0 qui sotto.
+**Costruita il 19 agosto 2026, da provare.** Dalla 0.2.0 è entrata la sesta app
+— DaProdCompanion — e sono arrivate le due manopole che mancavano su una scheda
+da 8 GB: quanta memoria video lasciar prendere, e chi la sta occupando adesso.
+
+Il numero scende sotto una versione il giorno che esce la Release, e la Release
+esce dopo che l'hai provata.
+
+### DaProdCompanion: un compagno che si ricorda di te
+
+La sesta scheda. Gli scrivi, ti risponde, e **la notte rilegge quello che vi
+siete detti** e ne tiene quello che conta: le persone che hai nominato, i
+luoghi, come stanno fra loro. Il giorno dopo se ne ricorda.
+
+- **Risponde il modello che hai scelto tu**, dal solito selettore in cima —
+  quello di DaProdMusica e DaProdFoto. Non ne carica uno suo: sarebbero due
+  copie dello stesso modello nella stessa memoria.
+- **Tre schede.** *Parla* è la conversazione. *Memoria* mostra cosa ha capito
+  di te, in chiaro: un elenco di persone e cose con i loro legami, che si può
+  guardare e da cui si può accorgersi se ha capito male. *Sogni* dice quando ha
+  consolidato l'ultima volta, e ha il tasto per farlo adesso.
+- **Riaprire l'app non è ricominciare da zero**: la conversazione è dov'era.
+- **Ogni sogno lascia dei file scritti** — un appunto per il sogno e uno per
+  ogni persona o cosa — con il frontmatter e i collegamenti di Obsidian, così
+  si leggono anche fuori dalla suite. Il tasto per aprire quella cartella sta
+  nella scheda Sogni.
+- **La memoria è un file solo**, `memoria.db`, che si può copiare o cancellare.
+- ⚠ **Non ha ancora la voce.** Nel progetto da cui viene c'erano due programmi
+  in più solo per parlare e ascoltare, con i loro GB di modelli; la suite ha
+  già le voci di DaProd IoDigitale, e rifarli qui vorrebbe dire scaricare due
+  volte le stesse cose. Per adesso si scrive.
+- ⚠ **Vuole LM Studio acceso**, come tutto quello che scrive nella suite. Se è
+  spento o non ha modelli, la scheda lo dice appena si apre invece di far
+  fallire la prima frase.
+
+### Quanta memoria video lasciar prendere ai motori
+
+Accanto a «Velocità», in fondo all'hub, c'è **«Memoria»** con tre scelte. Non è
+la stessa domanda: la velocità dice *quanto in fretta*, questa dice *quanto
+spazio*. Su una scheda da 8 GB è quella che decide se una cosa entra.
+
+- **leggero** — il motore tiene da parte un giro e mezzo di GB. Va più piano,
+  ma ci sta dentro anche con LM Studio acceso o con un'altra cosa aperta.
+- **bilanciato** — come abbiamo generato finora, ed è il metro di paragone.
+- **qualità** — il motore si tiene tutto quello che può: la seconda immagine non
+  ricarica niente, ed è il primo profilo a finire lo spazio.
+
+È la prima cosa da toccare quando una generazione muore per memoria esaurita.
+Vale dalla prossima apertura di un'app.
+
+### Chi occupa la memoria video, e come toglierlo
+
+Un pannello nuovo nell'hub, accanto a Risultati e Modelli: **cosa c'è in memoria
+video adesso**, quanto si prende ognuno, e un tasto per toglierlo.
+
+- Togliere un modello **non spegne il motore**: la prossima generazione ricarica
+  quello che le serve. È la manovra da fare quando una cosa non ci sta, invece
+  di riavviare tutto.
+- Era una fila di quadratini colorati nella barra di DaProdMusica, ed era
+  scritto lì che sarebbe diventata roba di tutti: **la GPU è una sola**, e un
+  modello lasciato in memoria da DaProdFoto è memoria che manca a Musica.
+
+### Le versioni dei pacchetti adesso le decidiamo noi
+
+È la correzione della notte del 19 agosto, quella in cui installare un'app ne ha
+rotte quattro. Allora si era tolto il vincolo che faceva rimbalzare due
+librerie; adesso c'è **il pavimento sotto tutto**.
+
+- Un file solo, `versioni.txt`, con le versioni **che abbiamo provato**, passato
+  a ogni installazione della suite — comprese quelle di ComfyUI e dei nodi
+  custom, che non abbiamo scritto noi. Erano proprio loro a potersi portare via
+  una libreria che serviva alle altre cinque app.
+- Non obbliga a reinstallare niente: se quello che c'è va già bene, non si tocca
+  nulla. Toglie solo la possibilità che una libreria si sposti da sola.
+- Se un giorno qualcosa pretendesse una versione diversa, l'installazione si
+  ferma **senza toccare l'ambiente** e lo dice in italiano, invece di fare il
+  cambio e lasciare la scoperta al primo motore che non parte.
+
+### Quando un motore muore per le librerie, la suite se ne accorge da sola
+
+- Prima bisognava premere «Controlla». Adesso, se un motore muore parlando di
+  librerie, la suite **va a guardare l'ambiente da sé**: apre davvero le
+  librerie condivise e il rapporto compare nella barra in alto.
+- E sulla scheda, accanto a «Riprova», compare **«Ripara l'ambiente»**: la via
+  d'uscita dove sta il problema, non tre pannelli più in là.
+
+### Su un computer senza scheda video, adesso lo dice prima
+
+La suite ci partiva già dalla 0.2.0, ma non lo diceva a nessuno: si vedeva solo
+un'app lentissima, o una barra che non finiva mai.
+
+- **La barra in alto lo dice in italiano** e con le conseguenze: quali schede
+  non partiranno e quanto vanno piano le altre.
+- **DaProdDream, DaProd IoDigitale e DaProdCinema non si installano nemmeno**:
+  fanno video, e senza scheda video non è "più lento", è un'altra cosa. Il
+  pulsante è spento con scritto perché — prima degli otto GB di scaricamento,
+  non dopo.
+- **DaProdMusica avvisa in cima** che un brano può richiedere ore. Puoi provare
+  lo stesso: è una tua scelta, non un divieto.
+- **In DaProdFoto, FLUX.2 Klein resta spento** nel menu dei modelli, con scritto
+  perché. Anima invece funziona: più lenta, ma ci arriva.
+
+### Le schede dell'hub si muovono, se ci passi sopra
+
+Al posto del fermo immagine parte una clip di quattro secondi, in silenzio e in
+ciclo, diversa per ogni scheda. Nascono dalle copertine che Anima aveva già
+generato, con un movimento lento di macchina: 226 KB in tutto.
+
+⚠ **Non sono ancora l'app che si mostra da sola** — il video generato da
+DaProdDream o dal Visualizer arriva col video vero (0.6.0). Quando arriverà
+cambierà il programma che le fa, non quello che le mostra.
+
+### DaProd IoDigitale parla italiano
+
+Era l'unica scheda che non sembrava della suite: in cima diceva ancora *LeapTalk
+Live*, i tasti dicevano `Load Image` e `Hold to Talk`, e quando qualcosa andava
+storto rispondeva in inglese. Adesso è tradotta tutta, comprese le frasi che
+arrivano dal motore.
+
+### Una cosa sola, non sei copie
+
+Il selettore del modello che scrive esisteva **due volte**, identico, in
+DaProdMusica e in DaProdFoto, con scritto in tutti e due che alla terza copia
+si sarebbe dovuto fare qualcosa. La terza era il Companion.
+
+Adesso c'è `packages/ui`: un solo selettore e un solo tema, serviti a tutte le
+app. Per chi usa la suite non cambia niente oggi — e cambia tutto il giorno che
+si corregge un difetto lì dentro, perché si corregge una volta sola.
 
 ## 0.2.0 — Cinque app, e ognuna ha la sua faccia
 
-**18 agosto 2026.** Dalla 0.1.0 sono entrate due app — DaProdDream e DaProd
-IoDigitale — e la suite ha smesso di essere sette schede con la stessa icona.
+**18 agosto 2026, pubblicata il 19.** Dalla 0.1.0 sono entrate due app —
+DaProdDream e DaProd IoDigitale — e la suite ha smesso di essere sette schede
+con la stessa icona.
+
+> **Perché la data è doppia.** La 0.2.0 era costruita dal 18 e stava sul
+> computer, ma la Release su GitHub non c'era: chi aveva installato la 0.1.0 non
+> vedeva nessun aggiornamento, e il badge del README prometteva una versione che
+> non si poteva scaricare. È uscita il 19, con il suo installer e il suo
+> `latest.yml`.
 
 ### La suite si apre in 4:3, e le due barre sono sottili
 

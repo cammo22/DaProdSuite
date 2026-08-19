@@ -77,19 +77,26 @@ la cosa che sa chiedere.
 - [ ] **DaProdCinema**: una chat dove butti l'idea e le foto, e ne esce un
       piccolo video da montare
 
-## 0.2.0 — Le altre tre ⚠
+## 0.2.0 — Le altre tre ✅
 
-**Pubblicata il 18 agosto 2026 con due su tre.** Dream e IoDigitale sono dentro
-e girano; il Companion no, ed è quello che apre la 0.2.1. Il numero è salito
-comunque perché nel frattempo era maturato molto altro — le icone, l'hub in
-4:3, il terminale in ogni app, i tre pannelli veri, la procedura guidata — e
-tenerlo fermo avrebbe voluto dire non pubblicare niente aspettando un'app sola.
+**Pubblicata il 19 agosto 2026 (costruita il 18) con due su tre.** Dream e
+IoDigitale sono entrate e girano; il Companion no. Il numero è salito comunque
+perché nel frattempo era maturato molto altro — le icone, l'hub in 4:3, il
+terminale in ogni app, i tre pannelli veri, la procedura guidata — e tenerlo
+fermo avrebbe voluto dire non pubblicare niente aspettando un'app sola.
+
+**La terza è arrivata poche ore dopo**, ed è dentro la 0.3.1: non è servita una
+0.2.1, perché nello stesso giro sono entrate anche le cose che aspettavano lì.
 
 - [x] **DaProdDream** — trasformazione in tempo reale *(dentro: motore avviato
       dal supervisore, SD-Turbo e TAESD dalla cartella condivisa, finestra della
       suite. Provato fino al modello caricato — la webcam la giudichi tu)*
-- [ ] **DaProdCompanion** — memoria e sogni; va aggiunto `sqlite_vec` al suo
-      pyproject. *Slittato alla 0.2.1: è l'unica delle tre che non è entrata.*
+- [x] **DaProdCompanion** — memoria e sogni. *Dentro il 19 agosto 2026: il
+      cervello del progetto d'origine portato nella suite, con LM Studio al
+      posto di Ollama e le cartelle della suite al posto del `.env`. Provato
+      fino al giro completo — parlato, ricordato, sognato, e il grafo scritto
+      con le sue entità. **La voce non c'è ancora**: erano due servizi Python in
+      più con i loro GB, e la suite ha già Piper e Whisper per IoDigitale.*
 - [x] **DaProd IoDigitale** — l'avatar parlante, ex LeapTalk *(dentro il 17
       agosto 2026: motore avviato dal supervisore, modelli dalla cartella
       condivisa, finestra della suite. Provato fino al motore pronto — la
@@ -109,16 +116,30 @@ tenerlo fermo avrebbe voluto dire non pubblicare niente aspettando un'app sola.
       (`apps/shell/scripts/genera-icone.cjs`), quella della suite compresa: è
       l'icona del programma, dell'installer, dell'area di notifica e della barra
       delle applicazioni. *Fatto il 18 agosto 2026.*
-- [ ] **Anteprima al passaggio del mouse**: il video corto al posto del fermo
-      immagine, generato con l'app stessa.
+- [x] **Anteprima al passaggio del mouse** — *fatta il 19 agosto 2026: una clip
+      di quattro secondi al posto del fermo immagine, con un movimento diverso
+      per ogni scheda (`apps/shell/scripts/genera-anteprime.cjs`). Nascono dalle
+      copertine già generate con Anima.* ⚠ **Non è ancora l'app che si mostra da
+      sola**: il video generato da DaProdDream o dal Visualizer arriva col video
+      vero (§ 0.6.0), e allora cambia il programma che le fa, non quello che le
+      mostra.
 
-## 0.3.1 — Una cosa sola, non sette
+## 0.3.1 — Una cosa sola, non sette ✅
 
-- [ ] `packages/ui`: colori, tipografia e componenti condivisi
-- [ ] Profilo di memoria unico — Leggero / Bilanciato / Qualità, come il
-      Lower VRAM / Lower RAM di WanGP
-- [ ] Pannello dei modelli in VRAM, promosso da DaProdMusica: uno per modello,
-      ci clicchi e lo scarichi
+**Costruita il 19 agosto 2026, da provare.** È la versione in cui la suite
+smette di essere sei programmi che si somigliano.
+
+- [x] `packages/ui`: tema e componenti condivisi — *fatto il 19 agosto 2026. Il
+      selettore del modello esisteva in due copie identiche e questa sarebbe
+      stata la terza. Servito a ogni app sotto `/comune/`, dalla **sua stessa
+      origine**: un host tutto suo sarebbe stato più naturale e la CSP delle
+      pagine lo avrebbe bloccato.*
+- [x] Profilo di memoria unico — Leggero / Bilanciato / Qualità, come il
+      Lower VRAM / Lower RAM di WanGP. *Fatto il 19 agosto 2026, accanto a
+      «Velocità» in fondo all'hub: `--lowvram` con un giro e mezzo di GB tenuti
+      da parte, oppure `--highvram`. **Da misurare**, come la velocità.*
+- [x] Pannello dei modelli in VRAM, promosso da DaProdMusica: uno per modello,
+      ci clicchi e lo scarichi. *Fatto il 19 agosto 2026.*
 - [x] Cartella dei risultati unica con galleria trasversale — *fatto il 16
       agosto 2026 col pannello **Risultati** dell'hub: audio, immagini e video di
       tutte le app insieme, con i filtri per app e per tipo.*
@@ -145,16 +166,20 @@ Vedi [ACCESSO-REMOTO.md](ACCESSO-REMOTO.md).
 Provata il 18 agosto 2026 su un secondo computer, solo CPU. Due cose erano
 rotte e sono state corrette (vedi il changelog della 0.2.0); queste restano.
 
-- [ ] **Dire all'utente che è in CPU, nell'interfaccia e non solo nel log.**
-      Oggi lo scrive il motore in un file: chi apre la suite vede solo un'app
-      lentissima e non sa perché. Nella scheda ci vuole una riga chiara, e sui
-      modelli fuori portata il pulsante spento con la ragione scritta.
-- [ ] **DaPMusica e FLUX.2 Klein in CPU non sono realistici**: vanno segnati
-      come tali invece di far partire una generazione che dura ore.
-- [ ] **DaPDream e DaProd IoDigitale pretendono la GPU** per definizione (tempo
-      reale e video): la loro scheda deve dirlo prima di far scaricare i GB.
+- ~~**Dire all'utente che è in CPU**~~ — fatto il 19 agosto 2026: la barra in
+      alto lo dice in italiano e con le conseguenze, non con «torch non vede la
+      scheda video».
+- ~~**DaPMusica e FLUX.2 Klein in CPU non sono realistici**~~ — fatto il 19
+      agosto 2026: Musica avvisa in cima che un brano può richiedere ore (e ti
+      lascia provare), FLUX.2 Klein resta spento nel menu di Foto con scritto
+      perché.
+- ~~**DaPDream e DaProd IoDigitale pretendono la GPU**~~ — fatto il 19 agosto
+      2026: su un computer senza scheda video non si installano nemmeno, e il
+      pulsante spento dice il motivo **prima** degli otto GB.
 - [ ] **Provare l'aggiornamento automatico da una versione all'altra** su quel
-      PC: è la cosa per cui è stato installato ed è ancora da vedere.
+      PC: è la cosa per cui è stato installato ed è ancora da vedere. **Adesso
+      si può**: la 0.2.0 è pubblicata, quindi da una 0.1.0 installata
+      l'aggiornamento ha finalmente qualcosa da vedere.
 - ~~**Il tetto `huggingface-hub<1.0` in `base.txt`**~~ — tolto il 19 agosto
       2026, e non era un dettaglio: faceva rimbalzare due librerie a ogni
       installazione finché una disinstallazione non è fallita a metà, lasciando
@@ -162,12 +187,14 @@ rotte e sono state corrette (vedi il changelog della 0.2.0); queste restano.
 
 ### L'ambiente condiviso, che è la cosa più fragile che abbiamo
 
-- [ ] **I requisiti dei servizi non sono fissati.** `transformers>=4.50`,
-      `diffusers` senza versione: ogni installazione tira dentro l'ultima uscita
-      e ne disinstalla un'altra, e ogni disinstallazione è un'occasione perché
-      l'antivirus la spezzi a metà (errore 4395). Vanno fissati come sono fissati
-      ComfyUI e i nodi custom: **la versione che abbiamo provato**, non quella di
-      stamattina.
+- ~~**I requisiti dei servizi non sono fissati**~~ — fatto il 19 agosto 2026, e
+      in un modo che copre anche quello che non avevamo scritto noi:
+      `packages/runtime/requirements/versioni.txt` è un file di **vincoli**
+      passato a *ogni* installazione, ComfyUI e nodi custom compresi. Erano
+      proprio loro a poter portare via una libreria alle altre cinque app, cosa
+      che scrivere `==` nei nostri requisiti non avrebbe impedito. E un vincolo
+      non fa reinstallare niente a chi è già a posto, che era il difetto per cui
+      i `==` erano stati tolti il 18.
 - [x] **Un tasto "ripara"** che reinstalla i pacchetti senza cancellare niente
       — fatto il 19 agosto 2026. Nato nel pannello Spazio, spostato lo stesso
       giorno nella barra dell'ambiente in alto, che è dove uno lo cerca.
@@ -175,9 +202,10 @@ rotte e sono state corrette (vedi il changelog della 0.2.0); queste restano.
       librerie condivise, pacchetti dichiarati dalle app installate, coerenza
       delle versioni (`uv pip check`). Fatto il 19 agosto 2026, accanto a
       «Ripara».
-- [ ] **La suite deve accorgersene da sola**, senza aspettare che sia l'utente a
-      premere «Controlla»: gli stessi import, fatti da soli quando un motore
-      muore, e la riparazione proposta lì, sulla scheda.
+- ~~**La suite deve accorgersene da sola**~~ — fatto il 19 agosto 2026: quando
+      un motore muore parlando di librerie, la suite fa da sé gli import veri e
+      il rapporto compare nella barra in alto, mentre sulla scheda spunta
+      «Ripara l'ambiente» accanto a «Riprova».
 - ~~**L'errore vero deve arrivare sulla scheda**~~ — fatto il 19 agosto 2026:
       il supervisore tiene da parte le ultime righe di stderr e mostra quella
       che spiega la morte, con il consiglio giusto se è un problema di librerie.
@@ -190,10 +218,8 @@ rotte e sono state corrette (vedi il changelog della 0.2.0); queste restano.
   2026. La suite lo sapeva già fare (non è un motore pesante, non passa
   dall'arbitro); quello che mancava era arrivarci senza tornare all'hub, ed è il
   tasto in basso a destra di ogni app.
-- **L'interfaccia di DaProd IoDigitale è in inglese** — funziona, ma i pulsanti
-  dicono `Load Image` e `Hold to Talk`, e in cima c'è ancora scritto *LeapTalk
-  Live*, cioè il nome del progetto da cui viene. È l'unica scheda che non sembra
-  della suite.
+- ~~**L'interfaccia di DaProd IoDigitale è in inglese**~~ — fatta il 19 agosto
+  2026: la pagina, i tasti e le frasi che arrivano dal motore.
 
 - ~~**Pulsanti veri nelle gallerie**~~ — fatto il 16 agosto 2026, e con loro il
   limite minimo della finestra sceso da 900 a 480 pixel.
@@ -259,7 +285,9 @@ Resta da scegliere finestra e overlap e da misurare cosa regge in 8 GB.
 ## 1.0.0 — Pubblicabile
 
 - [ ] Tutte le app provate a lungo su una macchina pulita
-- [ ] Sito vetrina su GitHub Pages
+- [x] Sito vetrina su GitHub Pages — *vivo su
+      [cammo22.github.io/DaProdSuite](https://cammo22.github.io/DaProdSuite/)
+      dal 18 agosto 2026; la casella era rimasta vuota per distrazione.*
 - [ ] Video di ogni app
 
 ---

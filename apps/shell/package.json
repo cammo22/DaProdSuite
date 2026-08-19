@@ -1,6 +1,6 @@
 {
   "name": "@daprod/shell",
-  "version": "0.2.0",
+  "version": "0.3.1",
   "private": true,
   "description": "Guscio della suite: hub, installazione, aggiornamenti, avvio delle app.",
   "main": "out/main/index.js",

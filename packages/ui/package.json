@@ -1,6 +1,6 @@
 {
   "name": "@daprod/ui",
-  "version": "0.2.0",
+  "version": "0.0.1",
   "private": true,
   "description": "I pezzi di interfaccia comuni a tutte le app della suite.",
   "type": "module"
