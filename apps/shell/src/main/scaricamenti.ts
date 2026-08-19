@@ -42,7 +42,6 @@ import {
   scaricaRepo,
 } from "@daprod/runtime";
 import { EventEmitter } from "node:events";
-import { existsSync } from "node:fs";
 import { stat } from "node:fs/promises";
 import { join } from "node:path";
 import { appManager } from "./app-manager";
@@ -53,11 +52,11 @@ import {
   MODELS_DIR,
   PYTHON_EXE,
   RUNTIME_DIR,
-  SERVICES_DIR,
   TOOLS_DIR,
   VINCOLI_REQUIREMENTS,
 } from "./paths";
 import { runtime } from "./runtime";
+import { fileRequisiti, segnaLibrerieServizio } from "./librerie-servizio";
 import * as servizi from "./servizi";
 
 /** Un'installazione per app, con il modo di fermarla. */
@@ -273,11 +272,8 @@ interface Corsa {
  * già, e così un requisito aggiunto dopo arriva a chi l'app ce l'ha da prima.
  */
 async function installaLibrerieServizio(id: AppId, corsa: Corsa): Promise<void> {
-  const servizio = APPS[id].service;
-  if (!servizio) return;
-
-  const requisiti = join(SERVICES_DIR, servizio.id, "requisiti.txt");
-  if (!existsSync(requisiti)) return;
+  const requisiti = fileRequisiti(id);
+  if (!requisiti) return;
 
   corsa.avanzamento(0, 0, `Installo le librerie di ${APPS[id].name}`);
   corsa.scrivi(`Librerie del motore da ${requisiti}`);
@@ -291,6 +287,10 @@ async function installaLibrerieServizio(id: AppId, corsa: Corsa): Promise<void> 
     onLine: corsa.scrivi,
     timeoutMs: 60 * 60_000,
   });
+
+  // Solo adesso: se qualcosa è andato storto sopra, la scheda resta «da
+  // installare» e il prossimo tentativo rifà il giro invece di credersi a posto.
+  segnaLibrerieServizio(id);
 }
 
 /**

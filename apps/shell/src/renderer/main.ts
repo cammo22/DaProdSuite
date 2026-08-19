@@ -164,7 +164,14 @@ const azioniPerStato: Record<
   { testo: (s: AppState) => string; attivo: boolean; classe: string }
 > = {
   "non-inclusa": { testo: () => "In arrivo", attivo: false, classe: "" },
-  "da-installare": { testo: (s) => (s.missingGb > 0 ? `Installa · ${numero(s.missingGb, 1)} GB` : "Installa"), attivo: true, classe: "" },
+  // «Prepara» e non «Installa» quando non c'è niente da scaricare: succede a chi
+  // ha già i modelli e deve solo rimettere a posto le librerie del motore, e
+  // «Installa · 0 GB» su una scheda che si usa da giorni sembra un difetto.
+  "da-installare": {
+    testo: (s) => (s.missingGb > 0 ? `Installa · ${numero(s.missingGb, 1)} GB` : "Prepara"),
+    attivo: true,
+    classe: "",
+  },
   // Attivo perché il bottone dice "Annulla": uno scaricamento da 6 GB su una
   // linea di casa dura mezz'ora, e chi lo ha fatto partire deve poter cambiare idea.
   "in-preparazione": { testo: () => "Annulla", attivo: true, classe: "attesa" },

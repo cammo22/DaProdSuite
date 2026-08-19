@@ -130,6 +130,23 @@ Live*, i tasti dicevano `Load Image` e `Hold to Talk`, e quando qualcosa andava
 storto rispondeva in inglese. Adesso è tradotta tutta, comprese le frasi che
 arrivano dal motore.
 
+### Le schede chiedono conto anche delle librerie del motore
+
+Una scheda era «pronta» quando c'erano l'ambiente, il motore e i modelli. Delle
+librerie Python che ogni motore dichiara non chiedeva conto nessuno, e andava
+bene **per caso**: ogni app aveva dei modelli da scaricare, quindi si passava
+comunque da «Installa» e l'installazione le metteva.
+
+DaProdCompanion ha rotto quel presupposto — i suoi pesi li tiene LM Studio,
+quindi non ha modelli suoi — e la sua scheda avrebbe detto «pronta» premendo la
+quale il motore moriva su un errore di librerie.
+
+⚠ **La prima volta che apri questa versione, le schede che hai già installato
+chiedono un giro di «Prepara».** Non scarica niente: rimette a posto le librerie
+dei motori e dura pochi secondi per scheda. Da lì in poi, aggiungere una riga ai
+requisiti di un motore fa tornare la sua scheda da sé — cosa che prima non
+succedeva a chi l'app ce l'aveva già.
+
 ### Una cosa sola, non sei copie
 
 Il selettore del modello che scrive esisteva **due volte**, identico, in

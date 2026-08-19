@@ -21,6 +21,7 @@ import {
 import { motoreAggiornato } from "@daprod/runtime";
 import { sembraProblemaDiAmbiente } from "./process-supervisor";
 import { requisitiDiQuestaMacchina } from "./requisiti-macchina";
+import { librerieServizioPronte } from "./librerie-servizio";
 import { libreria } from "./libreria";
 import { gpu } from "./gpu";
 import { runtime } from "./runtime";
@@ -168,8 +169,16 @@ class AppManager extends EventEmitter {
     const motoreOk =
       APPS[id].service?.engine !== "ComfyUI" || motoreAggiornato(ENGINES_DIR);
 
+    // E le librerie Python che il motore dichiara. Prima non le guardava
+    // nessuno, e andava bene per caso: ogni app aveva dei modelli da scaricare,
+    // quindi si passava comunque da «Installa». DaProdCompanion no — i suoi
+    // pesi li tiene LM Studio — e la sua scheda diceva «pronta» premendo la
+    // quale il motore moriva su un `ImportError`.
+    const librerieOk = librerieServizioPronte(id);
+
     this.patch(id, {
-      status: runtimePronto && missingGb === 0 && motoreOk ? "pronta" : "da-installare",
+      status:
+        runtimePronto && missingGb === 0 && motoreOk && librerieOk ? "pronta" : "da-installare",
       missingGb,
       error: undefined,
       progress: undefined,
