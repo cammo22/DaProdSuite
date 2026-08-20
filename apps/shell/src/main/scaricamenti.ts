@@ -216,8 +216,11 @@ export async function installaModelli(id: AppId, ids: string[]): Promise<void> {
   const logger = createLogger("scaricamenti");
   const scrivi = (riga: string) => logger.write(`[${id}] ${riga}\n`, false);
 
+  // Ogni messaggio dice anche **per chi** si sta scaricando: è così che l'hub,
+  // o un'altra finestra, può premere «Annulla» su uno scaricamento che non ha
+  // chiesto lei.
   const avanzamento = (done: number, total: number, label: string) =>
-    dillo({ attivo: true, done, total, label });
+    dillo({ attivo: true, done, total, label, app: id });
 
   try {
     if (!runtime.getState().ready) {
@@ -237,15 +240,15 @@ export async function installaModelli(id: AppId, ids: string[]): Promise<void> {
     }
 
     scrivi("Scaricamento completato.");
-    dillo({ attivo: false, done: 0, total: 0, label: "", finito: true });
+    dillo({ attivo: false, done: 0, total: 0, label: "", finito: true, app: id });
   } catch (err) {
     if (err instanceof ScaricamentoAnnullato) {
       scrivi("Annullato dall'utente. Quello che era già arrivato resta sul disco.");
-      dillo({ attivo: false, done: 0, total: 0, label: "", annullato: true });
+      dillo({ attivo: false, done: 0, total: 0, label: "", annullato: true, app: id });
     } else {
       const motivo = err instanceof Error ? err.message : String(err);
       scrivi(`ERRORE: ${motivo}`);
-      dillo({ attivo: false, done: 0, total: 0, label: "", errore: motivo });
+      dillo({ attivo: false, done: 0, total: 0, label: "", errore: motivo, app: id });
     }
   } finally {
     inCorso.delete(id);

@@ -964,6 +964,23 @@ main {
   display: none;
 }
 
+/* Dentro ci sta una barra vera dalla 0.4.1: qui arrivano decine di GB, e da una
+   riga di testo non si capisce se sta arrivando qualcosa o se è tutto fermo. */
+.modelli-avanzamento .modelli-avanzamento-testa {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.modelli-avanzamento .barra {
+  margin-bottom: 10px;
+}
+
+.modelli-avanzamento .barra > span {
+  background: var(--accento, #a78bfa);
+}
+
 li.modello {
   display: flex;
   align-items: center;

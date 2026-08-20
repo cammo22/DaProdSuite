@@ -52,6 +52,7 @@ const api: SuiteApi = {
   modelli: {
     catalogo: () => ipcRenderer.invoke(CHANNELS.modelliCatalogo),
     scarica: (id: AppId, ids: string[]) => ipcRenderer.invoke(CHANNELS.modelliScarica, id, ids),
+    annulla: (id: AppId) => ipcRenderer.invoke(CHANNELS.modelliAnnulla, id),
     onAvanzamento: (listener) =>
       subscribe<AvanzamentoModelli>(CHANNELS.modelliAvanzamento, listener),
   },

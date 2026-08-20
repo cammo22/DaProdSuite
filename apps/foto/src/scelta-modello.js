@@ -14,15 +14,19 @@
  * esistono sarebbe la seconda verità sui modelli, e prima o poi quella sbagliata.
  */
 
-import { $, el, escapeHtml } from "./dom.js";
+import { el, escapeHtml } from "./dom.js";
 import { MODELLI, modello } from "./grafi.js";
 import { traduzionePerModello } from "./lingua.js";
+// Il riquadro «manca, ecco i GB» con dentro la barra: nato qui, e dalla 0.4.1
+// è un pezzo di `packages/ui` che vale per tutte le app. Servito sotto `/comune/`.
+import { collegaScaricamento } from "/comune/scaricamento.js";
 import * as ponte from "./ponte.js";
 
 const RICORDO = "daprod.foto.modello";
 
 let corrente = MODELLI.anima;
-let manca = null;
+/** Vero quando i pesi del modello scelto sono tutti sul disco. */
+let pronto = true;
 /**
  * Vero se questo computer non ha una scheda video utilizzabile.
  *
@@ -31,15 +35,15 @@ let manca = null;
  * — e undici GB scaricati per scoprirlo.
  */
 let senzaScheda = false;
-/** Vero se lo scaricamento in corso l'abbiamo chiesto noi da questa finestra. */
-let nostro = false;
+
+/** Il riquadro condiviso, creato una volta sola sopra il menu dei modelli. */
+let barra = null;
 
 /** Il modello scelto adesso. Lo chiedono Crea e Ritocco al momento di generare. */
 export const modelloCorrente = () => corrente;
 
 /** Vero se col modello scelto si può generare: pesi sul disco e nodi nel motore. */
-export const modelloUsabile = () =>
-  !(senzaScheda && corrente.serveScheda) && (manca === null || manca.pronto);
+export const modelloUsabile = () => !(senzaScheda && corrente.serveScheda) && pronto;
 
 export async function collegaScelta() {
   // Prima di disegnare il menu: da questo dipende quali voci sono scegliibili.
@@ -65,7 +69,20 @@ export async function collegaScelta() {
   el.modello.value = valido ? ricordato : MODELLI.anima.id;
   el.modello.onchange = () => scegli(el.modello.value);
 
-  ponte.suAvanzamentoModelli(avanzamento);
+  barra = collegaScaricamento(el.avvisoModello, {
+    stato: ponte.statoModelli,
+    scarica: ponte.scaricaModelli,
+    annulla: ponte.annullaScaricamento,
+    onAvanzamento: ponte.suAvanzamentoModelli,
+    io: ponte.io,
+    // Finito di scaricare, i tasti si riaccendono da soli: chi ha appena visto
+    // arrivare dodici GB non deve anche cambiare modello e tornare indietro.
+    onCambio: (ok) => {
+      pronto = ok;
+      accendiBottoni();
+    },
+  });
+
   scegli(el.modello.value);
 }
 
@@ -105,38 +122,22 @@ function applicaPreferenze(m) {
     : `${m.nome} è distillato: lavora sempre a CFG 1,0 e non guarda mai il negativo.`;
 }
 
+/**
+ * Cosa manca del modello scelto, e cosa può fare l'utente.
+ *
+ * Tre casi soli: niente scheda video (e allora non c'è niente da scaricare, si
+ * dice com'è), pesi mancanti (li disegna il riquadro comune, barra compresa),
+ * tutto a posto (il riquadro sparisce).
+ */
 async function controlla() {
-  try {
-    manca = await ponte.statoModelli(corrente.catalogo);
-  } catch {
-    // La suite non ha risposto: meglio lasciar provare che bloccare tutto per
-    // un dubbio nostro. Se il modello davvero non c'è, lo dirà il motore.
-    manca = null;
-  }
-  disegna();
-}
-
-/* ------------------------------------------------------------- il riquadro */
-
-const gb = (byte) => `${(byte / 1024 ** 3).toFixed(1).replace(".", ",")} GB`;
-
-function disegna(avanza) {
-  const usabile = modelloUsabile();
-  el.genera.disabled = !usabile;
-  el.rigenera.disabled = !usabile;
-
-  if (usabile && !avanza) {
-    el.avvisoModello.hidden = true;
-    el.avvisoModello.innerHTML = "";
-    return;
-  }
-
-  el.avvisoModello.hidden = false;
-
-  // Niente scheda video e modello che ne pretende una: non c'è niente da
-  // scaricare né da aspettare, quindi non si mostra nessun bottone. Si dice
-  // com'è e si indica la strada che su questa macchina funziona.
   if (senzaScheda && corrente.serveScheda) {
+    pronto = false;
+    accendiBottoni();
+    // Il riquadro comune si mette a riposo — niente da scaricare, niente da
+    // mostrare — così non ci riscrive sopra la barra di uno scaricamento che
+    // un'altra finestra ha chiesto per conto suo.
+    await barra.controlla({ ids: [], nome: corrente.nome });
+    el.avvisoModello.hidden = false;
     el.avvisoModello.innerHTML = `
       <div><b>${escapeHtml(corrente.nome)} ha bisogno di una scheda video NVIDIA.</b></div>
       <div class="hint">Questo computer non ne ha una utilizzabile, e sulla CPU
@@ -145,74 +146,12 @@ function disegna(avanza) {
     return;
   }
 
-  if (avanza) {
-    const quota = avanza.total > 0 ? avanza.done / avanza.total : null;
-    const quanto =
-      quota === null
-        ? escapeHtml(avanza.label)
-        : `${escapeHtml(avanza.label)} — ${gb(avanza.done)} di ${gb(avanza.total)}`;
-
-    el.avvisoModello.innerHTML = `
-      <div class="bar"><i class="p1" style="width:${quota === null ? 100 : (quota * 100).toFixed(1)}%${
-        quota === null ? ";opacity:.45" : ""
-      }"></i></div>
-      <div class="hint">${quanto}</div>
-      <button class="mini" id="fermaModello">Annulla</button>`;
-    $("fermaModello").onclick = () => void ponte.annullaScaricamento();
-    return;
-  }
-
-  const pesi = manca.mancanti.map((m) => m.label);
-  const nodi = manca.nodiMancanti;
-
-  el.avvisoModello.innerHTML = `
-    <div><b>${escapeHtml(corrente.nome)} non è ancora sul disco.</b></div>
-    ${
-      pesi.length
-        ? `<div class="hint">${gb(manca.bytesMancanti)} da scaricare: ${escapeHtml(pesi.join(", "))}.</div>`
-        : ""
-    }
-    ${
-      nodi.length
-        ? `<div class="hint">Il motore deve anche prendere ${escapeHtml(nodi.join(", "))}:
-             quando arriva riparte da solo, e ci vogliono pochi secondi.</div>`
-        : ""
-    }
-    <button class="btn" id="prendiModello" style="margin-top:12px">Scarica ${gb(
-      manca.bytesMancanti,
-    )}</button>`;
-
-  $("prendiModello").onclick = () => {
-    nostro = true;
-    disegna({ done: 0, total: 0, label: "Comincio" });
-    void ponte.scaricaModelli(corrente.catalogo);
-  };
+  pronto = await barra.controlla({ ids: corrente.catalogo, nome: corrente.nome });
+  accendiBottoni();
 }
 
-function avanzamento(stato) {
-  if (!nostro) return;
-
-  if (stato.attivo) {
-    disegna(stato);
-    return;
-  }
-
-  nostro = false;
-
-  if (stato.errore) {
-    el.avvisoModello.hidden = false;
-    el.avvisoModello.innerHTML = `<div class="err">${escapeHtml(stato.errore)}</div>
-      <button class="btn" id="prendiModello" style="margin-top:12px">Riprova</button>`;
-    $("prendiModello").onclick = () => {
-      nostro = true;
-      disegna({ done: 0, total: 0, label: "Riprovo" });
-      void ponte.scaricaModelli(corrente.catalogo);
-    };
-    return;
-  }
-
-  // Finito o annullato: si rilegge cosa c'è davvero sul disco invece di credere
-  // al messaggio. Dopo un annullamento il modello resta mancante, ed è giusto
-  // che il riquadro torni a dirlo.
-  void controlla();
+function accendiBottoni() {
+  const usabile = modelloUsabile();
+  el.genera.disabled = !usabile;
+  el.rigenera.disabled = !usabile;
 }

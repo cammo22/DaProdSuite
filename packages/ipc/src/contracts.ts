@@ -188,6 +188,15 @@ export interface StatoModelli {
 /** L'avanzamento di uno scaricamento chiesto da dentro un'app. */
 export interface AvanzamentoModelli {
   attivo: boolean;
+  /**
+   * Per conto di quale scheda si sta scaricando.
+   *
+   * Serve ad annullare: chi ferma lo scaricamento deve dire *quale*, e una
+   * finestra che non l'ha chiesta lei — l'hub, o un'altra app — non lo saprebbe
+   * altrimenti. L'avanzamento arriva a tutte le finestre, quindi tutte devono
+   * poterlo fermare.
+   */
+  app?: AppId;
   /** Byte fatti e totali. `total` a zero vuol dire "non so quanto manca". */
   done: number;
   total: number;
@@ -445,6 +454,14 @@ export interface SuiteApi {
      * finestre, hub compreso.
      */
     scarica(id: AppId, ids: string[]): Promise<void>;
+    /**
+     * Ferma lo scaricamento di quella scheda.
+     *
+     * Quale sia lo dice l'avanzamento stesso (`AvanzamentoModelli.app`): l'hub
+     * puo' fermare anche uno scaricamento partito da dentro un'app, che e'
+     * quello che uno si aspetta da un tasto «Annulla» sotto una barra.
+     */
+    annulla(id: AppId): Promise<void>;
     onAvanzamento(listener: (avanzamento: AvanzamentoModelli) => void): Unsubscribe;
   };
 
