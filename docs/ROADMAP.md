@@ -124,9 +124,31 @@ fermo avrebbe voluto dire non pubblicare niente aspettando un'app sola.
       vero (§ 0.6.0), e allora cambia il programma che le fa, non quello che le
       mostra.
 
+## 0.3.2 — Le cose che non facevano quello che dicevano ✅
+
+**Costruita il 20 agosto 2026, da provare.** Nessuna funzione nuova grossa: un
+giro su quello che si è visto usando la suite davvero.
+
+- [x] Scaricamento su **quattro connessioni insieme** — *fatto il 20 agosto 2026.
+      Era il vero motivo per cui i modelli sembravano non arrivare mai: una
+      connessione sola verso HuggingFace regge molto meno della linea. Misurato
+      su questo PC: 3,9 → 11,8 MB/s, cioè i 7,9 GB di MiniMax da ~35 a ~11
+      minuti. La ripresa regge, anche su un `.parte` lasciato dalla versione
+      prima.*
+- [x] Il modello scelto nell'app **arriva davvero a LM Studio** — *fatto il 20
+      agosto 2026. Il ponte fra pagina e suite buttava via il campo `modello`, e
+      la suite ripiegava sul consigliato: si caricava Bonsai 27B anche con un
+      altro modello già acceso. I tasti non si chiamano più «Bonsai: …».*
+- [x] DaProdFoto: «Genera» che dice di stare lavorando, immagini che non si
+      perdono se salta il messaggio del motore, «cartella» che apre davvero
+      Esplora risorse, e **«salva»** per portarne fuori una copia — *fatto il 20
+      agosto 2026; «salva» è anche nei Risultati dell'hub.*
+- [x] Tolto il tasto «♪ Visualizer» dalle finestre delle app — *le app si aprono
+      già tutte insieme dall'hub.*
+
 ## 0.3.1 — Una cosa sola, non sette ✅
 
-**Costruita il 19 agosto 2026, da provare.** È la versione in cui la suite
+**19 agosto 2026, pubblicata.** È la versione in cui la suite
 smette di essere sei programmi che si somigliano.
 
 - [x] `packages/ui`: tema e componenti condivisi — *fatto il 19 agosto 2026. Il

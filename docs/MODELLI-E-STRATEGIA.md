@@ -132,6 +132,27 @@ del tuo flusso che la suite non copre ancora.
 
 **Deciso:** ACE-Step è superato, per la musica vale MiniMax Music 3.
 
+### 4.1 «Togliamo il 4 bit e usiamo i GGUF originali» — guardato il 20 agosto 2026
+
+Chiesto da Cammo perché il text encoder da 5,9 GB ci metteva troppo a scaricare.
+Guardato prima di toccare il manifest, e la risposta è **no** su tutti e tre i
+punti:
+
+| | Cosa c'è davvero |
+|---|---|
+| `MiniMaxAI/MiniMax-Music3` (l'ufficiale) | **nessun GGUF**: sono i pesi originali in `diffusers`, 47 file, **67,2 GB** in tutto |
+| I GGUF che esistono (`scragnog`, `audio-cpp`, …) | sono tagliati per l'altra pipeline — `mm3-lm`, `mm3-depth`, `mm3-synth`, `mm3-voc` — e i nodi ComfyUI che usiamo (`CLIPLoader type: minimax`, `UNETLoader`, `VAELoader`) non li caricano |
+| Il peso | il set GGUF equivalente (lm Q4_K_M 5,5 GB + dit 1,5 + depth + synth + cond + voc) fa **~9,7 GB**: più dei 7,9 di adesso, non meno |
+
+Quindi il modello non era il problema: **lo era lo scaricamento**, una
+connessione sola contro le quattro di adesso (§ CHANGELOG 0.3.2). Il manifest
+resta com'è: W4A8 per il text encoder, e la scelta fra 4 bit e int8 per il DiT.
+
+Da rivedere solo se cambia una di queste tre cose: esce un repack ComfyUI più
+leggero del W4A8, oppure la scheda video diventa più grande (allora conta il
+text encoder int8 da 9,2 GB, non i GGUF), oppure ComfyUI impara a caricare
+quella famiglia di GGUF.
+
 **E dal 18 agosto 2026 la wiki si aggiorna anche.** Non era così — era in sola
 lettura — poi Cammo ha chiesto di curarla. La divergenza qui sopra è stata
 chiusa nella wiki stessa: i tre hub di divisione (Musica, Foto, Cinema) dicono

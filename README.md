@@ -96,13 +96,14 @@ lo stesso.
 > modelli compresi, e riprendono da dove erano se cade la rete. In DaProdFoto e
 > DaProdDream scegli tu con quale modello generare. Ogni app ha un terminale con
 > le ultime righe del motore, e nell'hub ci sono i pannelli per vedere risultati,
-> modelli, log, memoria video e spazio occupato in un posto solo. Il
-> **Visualizer si apre da dentro le altre app** e ci resta acceso insieme: si
-> ascolta un brano guardandolo mentre l'app che l'ha fatto continua a lavorare.
+> modelli, log, memoria video e spazio occupato in un posto solo. **Le app si
+> aprono tutte insieme**: si ascolta un brano nel Visualizer mentre l'app che
+> l'ha fatto continua a lavorare.
 >
 > **DaProdCompanion** — un compagno che ti risponde e la notte rilegge quello
-> che vi siete detti per ricordarsene — è entrato nella suite ed è nella
-> versione in prova, quella che uscirà come 0.3.1.
+> che vi siete detti per ricordarsene — è entrato nella suite con la 0.3.1.
+> Nella versione in prova, la 0.3.2, i modelli si scaricano **tre volte più in
+> fretta**: quattro connessioni insieme invece di una.
 >
 > **DaProdCinema** non c'è ancora. Nell'hub dice «In arrivo» e non apre niente:
 > preferiamo un pulsante spento a uno che non fa quello che promette.

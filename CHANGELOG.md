@@ -10,14 +10,79 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ---
 
-## Non ancora pubblicato — sarà la 0.3.1
+## Non ancora pubblicato — sarà la 0.3.2
 
-**Costruita il 19 agosto 2026, da provare.** Dalla 0.2.0 è entrata la sesta app
+**Costruita il 20 agosto 2026, da provare.** Un giro di correzioni su quello che
+si era visto usando la suite davvero: tasti che non facevano quello che dicevano,
+e trentacinque GB di modelli che ci mettevano tre volte il tempo che serve.
+
+### I modelli arrivano tre volte più in fretta
+
+La suite scaricava con **una connessione sola**. Misurato oggi su questo computer,
+con lo stesso file di 207 MB:
+
+| | velocità | i 7,9 GB di DaProdMusica |
+|---|---|---|
+| prima | 3,9 MB/s | circa 35 minuti |
+| adesso | 11,8 MB/s | circa 11 minuti |
+
+Non è cambiato nessun modello: è cambiato **quante connessioni si aprono insieme**
+(quattro), che è il vero collo di bottiglia con HuggingFace. È la stessa cosa che
+fa `hf_transfer`, ed è il motivo per cui esiste.
+
+- Vale per **tutti** i modelli di tutte le schede, non solo per Musica.
+- **La ripresa continua a funzionare**, e continua a funzionare anche su uno
+  scaricamento lasciato a metà dalla versione di prima: quello che era già
+  arrivato non si riscarica. Provato interrompendo a metà e ripartendo.
+- Sotto i 128 MB si scarica come sempre: su un file piccolo il giro in più
+  costerebbe più di quello che fa risparmiare.
+
+### DaProdFoto: i tasti fanno quello che dicono
+
+- **«Genera» non sembra più morto.** Ogni tanto premerlo non faceva niente e
+  bisognava ripremere: la prima traduzione della sessione carica il suo modello
+  nel motore e ci mette una decina di secondi, in silenzio. Adesso il tasto si
+  spegne e scrive cosa sta facendo — e non accetta un secondo clic, che prima
+  metteva in coda una seconda immagine. Stessa cosa per «Rigenera la zona».
+- **Un'immagine generata non si perde più per strada.** Se il messaggio con cui
+  il motore dice «fatto» andava perso — capita quando la connessione interna si
+  riapre — l'immagine c'era sul disco ma spariva dalla sessione e non compariva
+  in galleria. Adesso, prima di buttare via un lavoro, la suite chiede al motore
+  se per caso l'aveva finito.
+- **«cartella» apre davvero la cartella.** Si chiamava «nella cartella» e spesso
+  non apriva niente: sotto c'era una chiamata che su Windows 11 ogni tanto non
+  fa comparire nessuna finestra. Adesso Esplora risorse si apre come lo aprirebbe
+  Windows, con l'immagine già selezionata. Se il file non c'è più, lo dice.
+- **C'è «salva».** Ne mette una copia dove vuoi tu — Desktop, chiavetta, cartella
+  del lavoro — scegliendo nome e posto con la finestra di Windows. L'originale
+  resta in galleria. Lo stesso tasto è nei **Risultati dell'hub**, per tutto
+  quello che producono le altre app.
+
+### Il modello che scrive è quello che hai scelto tu
+
+I due tasti che allargano la descrizione si chiamavano **«Bonsai: …»** e si
+comportavano come se Bonsai servisse per forza: LM Studio se lo caricava sul
+momento — 27 miliardi di parametri, minuti di attesa — anche con un altro modello
+già acceso e mostrato nel menu lì sopra.
+
+Era un difetto vero, in mezzo al ponte fra l'app e la suite: il modello scelto
+partiva dall'app e **veniva buttato via per strada**. Adesso arriva a
+destinazione, e i tasti si chiamano per quello che fanno — «Allarga quello che ho
+scritto», «Proponi tu una scena». Bonsai resta il consigliato, non l'obbligatorio.
+Stessa correzione in DaProdMusica.
+
+### Via il tasto «♪ Visualizer» dalle app
+
+Era comparso in basso a destra in ogni finestra per aprire il Visualizer senza
+tornare all'hub. Le app si aprono già tutte insieme dall'hub: un tasto che ne
+apre un'altra dentro la finestra in cui stai lavorando è solo ingombro. Il tasto
+**log**, accanto, resta dov'è.
+
+## 0.3.1 — La sesta app, e le manopole della memoria video
+
+**19 agosto 2026.** Dalla 0.2.0 è entrata la sesta app
 — DaProdCompanion — e sono arrivate le due manopole che mancavano su una scheda
 da 8 GB: quanta memoria video lasciar prendere, e chi la sta occupando adesso.
-
-Il numero scende sotto una versione il giorno che esce la Release, e la Release
-esce dopo che l'hai provata.
 
 ### DaProdCompanion: un compagno che si ricorda di te
 
