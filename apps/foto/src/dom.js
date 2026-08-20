@@ -10,7 +10,7 @@ for (const chiave of [
   "modello", "rigaModello", "avvisoModello", "traduci", "rigaTraduci", "tradotto",
   "sessione", "stop", "svuota", "mods", "dot", "statusTxt", "navGal",
   "areaTela", "nessunaImmagine", "comandiPennello", "pennello", "pennelloVal",
-  "scegliFile", "pulisciMaschera", "sceltaFile", "promptRitocco", "denoise", "recentiRitocco",
+  "scegliFile", "pulisciMaschera", "invertiMaschera", "sceltaFile", "promptRitocco", "denoise", "recentiRitocco",
   "denoiseVal", "rigenera", "erroreRitocco", "galleria", "conteggio", "aggiorna", "lente", "lenteImg", "lenteInfo",
 ]) {
   el[chiave] = $(chiave);
