@@ -1,9 +1,9 @@
 /** La scheda Crea: dal testo all'immagine. */
 
-import { el, escapeHtml, legaValore, mostraErrore, nascondiErrore, rnd } from "./dom.js";
+import { el, escapeHtml, legaValore, libera, mostraErrore, nascondiErrore, occupa, rnd } from "./dom.js";
 import { ESTETICHE, NEGATIVO, PROPOSTE } from "./dati/estetiche.js";
 import { componiPrompt, grafoImmagine, paroleEstetica } from "./grafi.js";
-import { modelloCorrente } from "./scelta-modello.js";
+import { modelloCorrente, modelloUsabile } from "./scelta-modello.js";
 import { aggiungiLavoro } from "./coda.js";
 import { inInglese } from "./lingua.js";
 import * as ponte from "./ponte.js";
@@ -83,17 +83,31 @@ export function collegaCrea() {
     if (!p.testo) return mostraErrore("Scrivi cosa vuoi vedere.");
 
     const m = modelloCorrente();
-    // Una volta sola, prima del ciclo: otto immagini della stessa descrizione
-    // non sono otto traduzioni diverse, e devono partire dallo stesso inglese.
-    const inglese = await inInglese(p.testo, m);
-    const quante = Math.max(1, Math.min(8, parseInt(el.quante.value) || 1));
-    for (let i = 0; i < quante; i++) {
-      // Dalla seconda in poi il seed cambia comunque: otto copie della stessa
-      // immagine non sono otto immagini.
-      if (el.seedCasuale.checked || i > 0) el.seed.value = rnd();
-      const parametri = { ...leggiModulo(), prompt: componiPrompt(inglese) };
 
-      try {
+    /**
+     * Da qui in poi il tasto è spento e racconta cosa sta facendo.
+     *
+     * Prima non diceva niente, e la prima traduzione della sessione carica il
+     * suo modello nel motore: dieci secondi in cui premere **Genera** sembrava
+     * non fare niente — da cui «a volte devo ripremere». E chi ripremeva non
+     * rimediava a un clic perso: ne metteva in coda una seconda.
+     *
+     * Il `try` comincia **prima** della traduzione, non dopo: era l'altro modo
+     * in cui il tasto poteva sembrare morto, perché un errore lì dentro usciva
+     * dalla funzione senza scrivere niente da nessuna parte.
+     */
+    occupa(el.genera, "preparo…");
+    try {
+      // Una volta sola, prima del ciclo: otto immagini della stessa descrizione
+      // non sono otto traduzioni diverse, e devono partire dallo stesso inglese.
+      const inglese = await inInglese(p.testo, m);
+      const quante = Math.max(1, Math.min(8, parseInt(el.quante.value) || 1));
+      for (let i = 0; i < quante; i++) {
+        // Dalla seconda in poi il seed cambia comunque: otto copie della stessa
+        // immagine non sono otto immagini.
+        if (el.seedCasuale.checked || i > 0) el.seed.value = rnd();
+        const parametri = { ...leggiModulo(), prompt: componiPrompt(inglese) };
+
         const id = await ponte.invia(grafoImmagine(m, parametri));
         aggiungiLavoro(id, p.testo, {
           modello: m.nome,
@@ -105,9 +119,13 @@ export function collegaCrea() {
           cfg: parametri.cfg,
           seed: parametri.seed,
         });
-      } catch (e) {
-        return mostraErrore(String(e.message || e));
       }
+    } catch (e) {
+      mostraErrore(String(e.message || e));
+    } finally {
+      // Non `disabled = false` e basta: mentre lavorava, il controllo dei
+      // modelli può aver deciso che con quello scelto non si genera più.
+      libera(el.genera, !modelloUsabile());
     }
   };
 }

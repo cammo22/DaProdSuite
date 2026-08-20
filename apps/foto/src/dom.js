@@ -40,6 +40,26 @@ export function legaValore(id, uscita, formato = (v) => v) {
   aggiorna();
 }
 
+/**
+ * Un tasto che sta lavorando lo dice, e non si lascia premere due volte.
+ *
+ * Serve per i gesti che possono metterci qualche secondo senza che si veda
+ * niente: la prima traduzione carica il suo modello, e in quei secondi «Genera»
+ * sembrava non aver ricevuto il clic. Chi lo premeva un'altra volta si ritrovava
+ * due immagini in coda.
+ */
+export function occupa(bottone, testo) {
+  bottone.disabled = true;
+  bottone.dataset.prima = bottone.dataset.prima || bottone.textContent;
+  bottone.textContent = testo;
+}
+
+/** Lo rimette com'era. `spento` per i casi in cui non deve tornare premibile. */
+export function libera(bottone, spento = false) {
+  bottone.disabled = spento;
+  if (bottone.dataset.prima) bottone.textContent = bottone.dataset.prima;
+}
+
 export function mostraErrore(testo, dove = "errore") {
   el[dove].style.display = "block";
   el[dove].textContent = testo;

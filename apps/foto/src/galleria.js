@@ -64,7 +64,8 @@ function scheda(immagine) {
     <div class="sub">${escapeHtml(descrivi(immagine))}</div>
     <div class="acts">
       <button data-ritocca="${escapeHtml(immagine.id)}">ritocca</button>
-      <button data-mostra="${escapeHtml(immagine.id)}">nella cartella</button>
+      <button data-salva="${escapeHtml(immagine.id)}">salva</button>
+      <button data-mostra="${escapeHtml(immagine.id)}">cartella</button>
       <button class="del" data-elimina="${escapeHtml(immagine.id)}">elimina</button>
     </div>
   </div>`;
@@ -72,6 +73,13 @@ function scheda(immagine) {
 
 function trova(id) {
   return immagini.find((i) => i.id === id);
+}
+
+/** Due secondi di risposta sul tasto stesso: qui non c'è una riga per gli avvisi. */
+function dilloSulTasto(bottone, testo) {
+  const prima = bottone.textContent;
+  bottone.textContent = testo;
+  setTimeout(() => (bottone.textContent = prima), 2200);
 }
 
 function collega() {
@@ -89,8 +97,48 @@ function collega() {
     };
   });
 
+  /**
+   * «cartella» apre Esplora risorse sull'immagine.
+   *
+   * Il tasto si chiamava "nella cartella" e non apriva niente. Erano due cose
+   * insieme: il nome, che prometteva di *portarti* nella cartella, e sotto una
+   * chiamata di Electron che su Windows 11 ogni tanto non apre nessuna finestra
+   * e non lo dice a nessuno (vedi `rivela.ts` nello shell, che adesso lancia
+   * Esplora come farebbe Windows). Se il file non c'è più, lo dice il tasto:
+   * qui non c'è una riga per gli errori, e non ne serve una.
+   */
   el.galleria.querySelectorAll("[data-mostra]").forEach((b) => {
-    b.onclick = () => ponte.mostraNellaCartella(b.dataset.mostra);
+    b.onclick = async () => {
+      if (await ponte.mostraNellaCartella(b.dataset.mostra)) return;
+      dilloSulTasto(b, "non c'è più");
+    };
+  });
+
+  /**
+   * «salva» ne porta fuori una copia.
+   *
+   * I risultati stanno in `%LOCALAPPDATA%`, che è il posto giusto per la suite
+   * e quello sbagliato per chi l'immagine la vuole mandare a qualcuno. Qui si
+   * sceglie cartella e nome con la finestra di Windows, e l'originale resta
+   * dov'è: la galleria continua a mostrarlo.
+   */
+  el.galleria.querySelectorAll("[data-salva]").forEach((b) => {
+    b.onclick = async () => {
+      const prima = b.textContent;
+      b.disabled = true;
+      b.textContent = "salvo…";
+      try {
+        const dove = await ponte.salvaCopia(b.dataset.salva);
+        b.textContent = prima;
+        if (dove) dilloSulTasto(b, "salvata");
+      } catch (e) {
+        b.textContent = prima;
+        dilloSulTasto(b, "non riesco");
+        console.error(e);
+      } finally {
+        b.disabled = false;
+      }
+    };
   });
 
   el.galleria.querySelectorAll("[data-elimina]").forEach((b) => {

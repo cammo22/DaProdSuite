@@ -12,11 +12,11 @@
  * foto da telefono a piena risoluzione non entra in 8 GB di VRAM.
  */
 
-import { el, escapeHtml, mostraErrore, nascondiErrore, rnd, legaValore, mostraScheda } from "./dom.js";
+import { el, escapeHtml, libera, mostraErrore, nascondiErrore, occupa, rnd, legaValore, mostraScheda } from "./dom.js";
 import { ascolta } from "./bus.js";
 import { stato } from "./stato.js";
 import { componiPrompt, grafoRitocco } from "./grafi.js";
-import { modelloCorrente } from "./scelta-modello.js";
+import { modelloCorrente, modelloUsabile } from "./scelta-modello.js";
 import { aggiungiLavoro } from "./coda.js";
 import { inInglese } from "./lingua.js";
 import * as ponte from "./ponte.js";
@@ -223,6 +223,9 @@ export function collegaRitocco() {
     const testo = el.promptRitocco.value.trim();
     if (!testo) return mostraErrore("Scrivi cosa deve diventare quella zona.", "erroreRitocco");
 
+    // Come in Crea: il ritocco comincia con due caricamenti e una traduzione,
+    // ed erano altri secondi in cui il tasto non diceva niente.
+    occupa(el.rigenera, "preparo…");
     try {
       const base = await ponte.carica(await inBlob(sotto), "base.png");
       const maschera = await ponte.carica(await inBlob(mascheraPiena()), "maschera.png");
@@ -258,6 +261,8 @@ export function collegaRitocco() {
       });
     } catch (e) {
       mostraErrore(String(e.message || e), "erroreRitocco");
+    } finally {
+      libera(el.rigenera, !modelloUsabile());
     }
   };
 }

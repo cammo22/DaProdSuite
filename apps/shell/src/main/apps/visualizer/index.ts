@@ -12,7 +12,7 @@
  */
 
 import { BrowserWindow, app, dialog, ipcMain, shell } from "electron";
-import { closeSync, existsSync, fstatSync, openSync, readSync, statSync } from "node:fs";
+import { closeSync, fstatSync, openSync, readSync, statSync } from "node:fs";
 import { basename, join } from "node:path";
 import { readBounds, writeState, readState } from "../../app-state";
 import { findFfmpeg, transcodeToWav } from "./ffmpeg";
@@ -20,7 +20,7 @@ import { codificaUrl, gestisciSchema } from "../../file-scheme";
 import { registraConsole } from "../../finestre";
 import { iconaApp } from "../../paths";
 import { montaTerminale } from "../../terminale";
-import { montaTastoVisualizer } from "../../tasto-visualizer";
+import { rivela } from "../../rivela";
 
 /** Estensioni offerte dal dialogo file nativo. */
 const ESTENSIONI_AUDIO = [
@@ -88,8 +88,6 @@ export function apri(onClose: () => void): void {
   // Le righe del motore dentro la finestra dove sono capitate, con Ctrl+L.
   // Iniettato dalla shell: e' una implementazione sola per tutte le app.
   montaTerminale(win, "visualizer");
-  // E il modo di aprire DaPVisualizer senza tornare all'hub.
-  montaTastoVisualizer(win, "visualizer");
   if (bounds.maximized) win.maximize();
   win.once("ready-to-show", () => win.show());
 
@@ -205,11 +203,9 @@ function registraCanali(): void {
     typeof filePath === "string" ? descrivi(filePath) : null,
   );
 
-  ipcMain.handle("dpv:reveal", (_e, filePath: string) => {
-    if (typeof filePath !== "string" || !existsSync(filePath)) return false;
-    shell.showItemInFolder(filePath);
-    return true;
-  });
+  ipcMain.handle("dpv:reveal", (_e, filePath: string) =>
+    typeof filePath === "string" ? rivela(filePath) : false,
+  );
 
   ipcMain.handle("dpv:setFullscreen", (_e, value: boolean) => {
     if (!finestra || finestra.isDestroyed()) return false;

@@ -147,6 +147,8 @@ export const immagini = () => suite.libreria.elenco({ tipo: "immagine", app: "fo
 export const eliminaElemento = (id) => suite.libreria.elimina(id);
 export const scriviMeta = (id, meta) => suite.libreria.meta(id, meta);
 export const mostraNellaCartella = (id) => suite.libreria.mostraNellaCartella(id);
+/** Una copia dove dice l'utente. Torna il percorso scelto, o null se ha annullato. */
+export const salvaCopia = (id) => suite.libreria.salva(id);
 export const suLibreriaCambiata = (azione) => suite.libreria.onCambiata(azione);
 
 /* ---------------------------------------------------------------- modelli */

@@ -44,6 +44,7 @@ const api: SuiteApi = {
   risultati: {
     elenco: (filtro?: FiltroLibreria) => ipcRenderer.invoke(CHANNELS.libreriaElenco, filtro),
     mostraNellaCartella: (id: string) => ipcRenderer.invoke(CHANNELS.libreriaMostra, id),
+    salva: (id: string) => ipcRenderer.invoke(CHANNELS.libreriaSalva, id),
     elimina: (id: string) => ipcRenderer.invoke(CHANNELS.libreriaElimina, id),
     onCambiata: (listener) => subscribe<ElementoLibreria[]>(CHANNELS.libreriaCambiata, listener),
   },

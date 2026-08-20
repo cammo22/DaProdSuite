@@ -21,7 +21,6 @@ import { readBounds, writeState } from "../../app-state";
 import { registraConsole } from "../../finestre";
 import { iconaApp } from "../../paths";
 import { montaTerminale } from "../../terminale";
-import { montaTastoVisualizer } from "../../tasto-visualizer";
 import { indirizzo } from "../../servizi";
 
 const PREDEFINITI = { width: 1400, height: 940, maximized: false };
@@ -70,8 +69,6 @@ export function apri(onClose: () => void): void {
   win.on("page-title-updated", (evento) => evento.preventDefault());
   registraConsole(win, "iodigitale");
   montaTerminale(win, "iodigitale");
-  // E il modo di aprire DaPVisualizer senza tornare all'hub.
-  montaTastoVisualizer(win, "iodigitale");
   if (bounds.maximized) win.maximize();
   win.once("ready-to-show", () => win.show());
 

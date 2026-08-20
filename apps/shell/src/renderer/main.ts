@@ -1222,7 +1222,8 @@ async function disegnaRisultati(): Promise<void> {
         elemento.creato,
       )} · ${gb(elemento.bytes)}</div>
       <div class="risultato-tasti">
-        <button class="bottone secondario" data-cartella>nella cartella</button>
+        <button class="bottone secondario" data-salva>salva</button>
+        <button class="bottone secondario" data-cartella>cartella</button>
         <button class="bottone secondario pericolo" data-elimina>elimina</button>
       </div>`;
 
@@ -1242,6 +1243,25 @@ async function disegnaRisultati(): Promise<void> {
 
     (scheda.querySelector("[data-cartella]") as HTMLButtonElement).addEventListener("click", () => {
       void api.risultati.mostraNellaCartella(elemento.id);
+    });
+
+    // Portarne fuori una copia: i risultati stanno in %LOCALAPPDATA%, che va
+    // bene alla suite e non a chi il file lo vuole mandare a qualcuno.
+    const salva = scheda.querySelector("[data-salva]") as HTMLButtonElement;
+    salva.addEventListener("click", async () => {
+      salva.disabled = true;
+      const prima = salva.textContent;
+      salva.textContent = "salvo…";
+      try {
+        const dove = await api.risultati.salva(elemento.id);
+        salva.textContent = dove ? "salvato" : prima;
+        if (dove) setTimeout(() => (salva.textContent = prima), 2200);
+      } catch {
+        salva.textContent = "non riesco";
+        setTimeout(() => (salva.textContent = prima), 2200);
+      } finally {
+        salva.disabled = false;
+      }
     });
     (scheda.querySelector("[data-elimina]") as HTMLButtonElement).addEventListener(
       "click",
