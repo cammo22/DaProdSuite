@@ -10,9 +10,84 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ---
 
-## Non ancora pubblicato — sarà la 0.3.2
+## Non ancora pubblicato — sarà la 0.3.3
 
-**Costruita il 20 agosto 2026, da provare.** Un giro di correzioni su quello che
+**Costruita il 20 agosto 2026, da provare.** Un giro tutto dentro DaProdFoto,
+su come si scrive quello che si vuole vedere e su come si arriva all'immagine.
+
+### Le foto vengono meglio: da 30 a 50 step
+
+Anima girava a **dieci step**, perché è un modello turbo e i turbo si vendono
+così. Ma chi l'ha addestrata scrive un'altra cosa: **da 30 a 50**. È il motivo
+per cui le immagini venivano molli, e non c'era nessun modo di scoprirlo
+dall'app, perché il cursore si fermava a 30 e partiva da 10.
+
+- Adesso parte da **30**, e si può arrivare a **50**.
+- Non si chiamano più «passi»: si chiamano **step**, come nella scheda del
+  modello e come li chiama chiunque.
+- Il minimo resta basso per chi vuole solo vedere in fretta com'è inquadrata.
+
+### Il formato è una fila di pulsanti
+
+Era un menu con cinque voci scritte a parole («Verticale 2:3», «Veloce 768»):
+due clic per cambiare, e per sapere quanto ci avrebbe messo bisognava sapere a
+memoria cosa voleva dire ogni voce. Adesso sono due file di pulsanti:
+
+- la **forma** — 16:9, 9:16, 4:3, 1:1;
+- la **risoluzione** — 480, 720, 1080p;
+- e accanto, i pixel veri: `1920 × 1088 px`, che è il numero che decide l'attesa.
+
+Quello che scegli resta scelto anche alla riapertura. *(1080 diventa 1088 perché
+i modelli lavorano a multipli di 16: chiedendo 1080 sarebbe stato il motore a
+cambiare la misura per conto suo, senza dirlo.)*
+
+### Le proposte sono tue
+
+Le pastiglie sopra «Cosa vuoi vedere» erano dieci frasi scritte nel programma,
+sempre quelle. Adesso:
+
+- **`+`** ne aggiunge una — e parte da quello che hai appena scritto, che è
+  quasi sempre quella che vale la pena tenere;
+- **tasto destro** su una pastiglia: **modifica** o **elimina**;
+- ognuna ha un **titolo corto** — «Vicolo sotto la pioggia» — e dentro il prompt
+  intero, che si legge passandoci sopra. Il titolo è facoltativo.
+
+Se le cancelli tutte compare la pastiglia per riportare quelle di partenza.
+**Vale anche per DaProdMusica**, nella scheda Immagini: è lo stesso pezzo, non
+una seconda copia.
+
+### La scheda video non se la contendono più
+
+Fra lo scrivere la descrizione con Bonsai e il premere Genera passano pochi
+secondi, e in quei secondi il modello che scrive occupa ancora la memoria video.
+Su una scheda da 8 GB era la differenza fra un'immagine che parte e mezzo minuto
+di rimescolamento — o un errore che la VRAM non la nominava nemmeno.
+
+Adesso, premendo **Genera** (e **Rigenera la zona**), un attimo prima di mandare
+il lavoro al motore:
+
+1. si spegne il modello che scrive, quello di LM Studio;
+2. si toglie di mezzo quello che il motore tiene dentro e qui non serve — il
+   modello musicale lasciato lì da DaProdMusica, o il modello di immagini di
+   prima se nel frattempo ne hai scelto un altro.
+
+**Quello che serve resta dov'è**: dieci immagini di fila con lo stesso modello
+non lo scaricano e ricaricano dieci volte. Il tasto lo racconta mentre lo fa —
+«libero la memoria…», «carico il modello…» — invece di stare zitto.
+
+### Genera sta sopra la resa, e la resa sta in poco
+
+Il tasto era in fondo alla colonna, sotto tutte le manopole: per premerlo
+bisognava scorrere oltre roba che si tocca una volta ogni tanto. Adesso sta
+**subito sotto la descrizione**, e il pannello «Resa» è sotto di lui — con
+estetica, quante, formato e risoluzione su **una riga sola** invece che in una
+griglia di campi alti.
+
+---
+
+## 0.3.2 — I tasti fanno quello che dicono
+
+**Pubblicata il 20 agosto 2026.** Un giro di correzioni su quello che
 si era visto usando la suite davvero: tasti che non facevano quello che dicevano,
 e trentacinque GB di modelli che ci mettevano tre volte il tempo che serve.
 

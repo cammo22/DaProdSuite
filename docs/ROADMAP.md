@@ -124,9 +124,33 @@ fermo avrebbe voluto dire non pubblicare niente aspettando un'app sola.
       vero (§ 0.6.0), e allora cambia il programma che le fa, non quello che le
       mostra.
 
+## 0.3.3 — DaProdFoto: foto migliori, e la scheda video sgombra ✅
+
+**Costruita il 20 agosto 2026, da provare.** Tutto dentro DaProdFoto, salvo le
+proposte che valgono anche per Musica.
+
+- [x] **Da 30 a 50 step su Anima**, con 30 di partenza — *fatto il 20 agosto
+      2026. Girava a dieci perché è un modello turbo; la scheda del modello dice
+      30-50, ed è il motivo per cui le immagini venivano molli. E si chiamano
+      **step**, non «passi».*
+- [x] **Formato e risoluzione a pulsanti**: 16:9 / 9:16 / 4:3 / 1:1 per 480, 720
+      o 1080p, con i pixel veri scritti accanto — *fatto il 20 agosto 2026. Il
+      1080 diventa 1088 perché i modelli vogliono multipli di 16: prima lo
+      cambiava il motore per conto suo, senza dirlo.*
+- [x] **Le proposte se le scrive l'utente**: `+` per aggiungerne una, tasto
+      destro per modificarla o eliminarla, titolo corto e prompt intero dentro —
+      *fatto il 20 agosto 2026 in `packages/ui`, quindi vale anche per la scheda
+      Immagini di DaProdMusica.*
+- [x] **La memoria video si libera premendo Genera** — *fatto il 20 agosto 2026:
+      via il modello di LM Studio e via quello che il motore tiene dentro e qui
+      non serve. Quello che serve resta caricato: generare dieci immagini di
+      fila non lo ricarica dieci volte.*
+- [x] **Genera sopra la resa, e la resa in una riga** — *fatto il 20 agosto
+      2026.*
+
 ## 0.3.2 — Le cose che non facevano quello che dicevano ✅
 
-**Costruita il 20 agosto 2026, da provare.** Nessuna funzione nuova grossa: un
+**Pubblicata il 20 agosto 2026.** Nessuna funzione nuova grossa: un
 giro su quello che si è visto usando la suite davvero.
 
 - [x] Scaricamento su **quattro connessioni insieme** — *fatto il 20 agosto 2026.
