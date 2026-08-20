@@ -10,9 +10,102 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ---
 
-## Non ancora pubblicato — sarà la 0.4.0
+## Non ancora pubblicato — sarà la 0.4.1
 
-**Costruita il 20 agosto 2026, da provare.** La settima scheda, un secondo
+**Costruita il 20 agosto 2026, da provare.** Il giro dopo la 0.4.0, e quasi
+tutto viene da quello che hai visto usandola: il modello in cima invece che in
+fondo, il 4 bit che se ne va, la lingua del canto a pastiglie, DaProdCinema che
+torna ai modelli decisi, e una barra che dice cosa sta arrivando mentre arriva.
+
+### DaProdMusica: la scelta del modello in cima, e il 4 bit via
+
+**Il modello si sceglie per primo.** Prima stava in fondo, dentro «Parametri»,
+cioè dopo che avevi già scritto stile e testo — ed è la scelta che cambia tutte
+le altre. Adesso è il primo riquadro della scheda Crea, con sotto la sua riga di
+spiegazione e, se manca dal disco, il tasto per scaricarlo.
+
+**Il MiniMax a 4 bit non c'è più.** Era la voce «leggera»: 700 MB risparmiati su
+uno scaricamento da otto GB, in cambio della parte che si sente — il modello di
+diffusione è quello che trasforma i token in suono. Resta l'int8, che è lo
+stesso modello quantizzato meglio. Se avevi scelto il 4 bit ti ritrovi
+sull'int8 senza fare niente, e `minimax_music3_dit_w4a8.safetensors` lo puoi
+cancellare dalla cartella dei modelli: sono 1,8 GB che non serviranno più.
+
+**Parte ACE-Step 1.5 Turbo.** Chi apre l'app per la prima volta trova lui, e non
+MiniMax: otto passi invece di trenta, e sulle parole cantate si capisce meglio.
+Chi aveva già scelto a mano tiene la sua scelta.
+
+**Il decode a blocchi parte spento.** Era acceso, e nei punti di attacco fra un
+blocco e l'altro si poteva sentire. Resta negli avanzati: accendilo se un brano
+lungo si ferma per memoria finita, che è la cosa per cui esiste.
+
+### La lingua del canto, a pastiglie sopra il testo
+
+Le lingue principali sono dodici pastiglie sopra la casella del testo, con
+l'italiano per primo. Prima era un menu a tendina in fondo agli avanzati, che
+compariva **solo con ACE-Step scelto** — cioè era invisibile proprio a chi aveva
+il problema.
+
+I due modelli la ricevono in due modi diversi, e sotto le pastiglie c'è scritto
+quale dei due:
+
+- **ACE-Step** ha una casella sua: canta nella lingua che scegli.
+- **MiniMax Music 3** no, non ce l'ha proprio. Quindi la lingua finisce nella
+  descrizione dello stile, insieme alla richiesta di **scandire le parole** —
+  che è il difetto per cui questa cosa è stata fatta. Aiuta, non è un
+  interruttore: se dopo qualche prova la voce continua a impastarsi, ACE-Step su
+  quello va meglio.
+
+### DaProdCinema: via Wan, dentro LTX 2.5 e MiniMax H3
+
+**Wan 2.2 è uscito dalla suite.** Era entrato nella 0.4.0 al posto dei due
+modelli che erano stati decisi, perché costa 18 GB invece di 23 e 42 e su una
+scheda da 8 GB gira meglio. Ragione vera, scelta non nostra: adesso nel menu ci
+sono i due di prima.
+
+| Modello | Da scaricare | Com'è |
+|---|---|---|
+| **LTX 2.5 22B distillato** | 23,2 GB | quello che parte: otto passi, e fa il video **col suono dentro** |
+| **MiniMax H3 (FL2VA + turbo)** | 42,3 GB | quattro passi grazie al LoRA turbo, ma 25 GB sono il solo text encoder |
+
+I pesi sono i più compressi che il motore sa caricare da sé — W4A8 ConvRot, lo
+stesso formato con cui gira già MiniMax Music 3 — ed è la cosa vera presa da
+**WanGP**: non un modello, ma il modo di far entrare modelli enormi in poca
+memoria.
+
+⚠ **Nessuno dei due è stato provato su una clip vera**, e va detto chiaro: i
+grafi sono verificati contro quello che il motore dichiara (nodi che esistono,
+ingressi tutti a posto, niente collegamenti nel vuoto), ma da lì a «esce un mp4»
+c'è di mezzo uno scaricamento da 23 GB e una clip girata. Sulla 4060 da 8 GB
+tutti e due lavorano spostando i pesi fra scheda e RAM: aspettati minuti a clip,
+non secondi. **Prima prova: una sola inquadratura, misura Provino.**
+
+Se avevi già scaricato Wan, i suoi tre file (18,1 GB) restano sul disco e non
+servono più a niente: `wan2.2_ti2v_5B_fp16.safetensors`,
+`umt5_xxl_fp8_e4m3fn_scaled.safetensors` e `wan2.2_vae.safetensors`.
+
+### Una barra per quello che sta arrivando, in tutte le app
+
+Quando scarichi un modello **da dentro un'app** adesso vedi una barra vera: a
+che punto è, quanti GB su quanti, a che velocità, quanto manca e un tasto per
+fermarla. Prima, tranne che in DaProdFoto, c'era scritto «Scarico… l'avanzamento
+è nell'hub»: cioè per sapere se stavano arrivando dodici GB dovevi lasciare
+quello che stavi facendo e andare a guardare da un'altra parte.
+
+- **DaProdMusica**: sia per il modello musicale sia per Anima (le copertine).
+- **DaProdCinema**: qui sono decine di GB, ed è dove serviva di più.
+- **DaProdFoto**: la barra c'era già; adesso è la stessa delle altre.
+- **Nell'hub**, nel pannello Modelli, al posto della riga di testo.
+- **DaProdDream** la aveva già per conto suo.
+
+Il riquadro è **uno solo** scritto una volta in `packages/ui`: la stessa cosa in
+tutte le app, e la prossima app che scarica qualcosa ce l'ha senza scriverla.
+
+---
+
+## 0.4.0 — DaProdCinema, e un secondo modo di fare musica
+
+**Pubblicata il 20 agosto 2026.** La settima scheda, un secondo
 modello musicale, e il traduttore che finalmente risponde.
 
 ### DaProdCinema: da una canzone al suo video

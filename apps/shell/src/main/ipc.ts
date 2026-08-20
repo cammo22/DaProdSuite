@@ -328,7 +328,9 @@ export function registerIpc(getHub: () => BrowserWindow | null): void {
    */
   ipcMain.handle(CHANNELS.modelliCatalogo, (): VoceModello[] => {
     const voci = manifest().models;
-    return Object.entries(voci).map(([id, entry]) => {
+    // Le chiavi che cominciano per `$` sono commenti del catalogo, non modelli:
+    // il manifesto le usa per spiegarsi, e una spiegazione non si scarica.
+    return Object.entries(voci).filter(([id]) => !id.startsWith("$")).map(([id, entry]) => {
       const usatoDa = APP_LIST.filter(
         (a) => a.models.includes(id) || (a.extraModels ?? []).includes(id),
       ).map((a) => a.id);

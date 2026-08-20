@@ -18,10 +18,14 @@ import { LOOK, MASSIMO_CLIP, MINIMO_CLIP } from "./dati/look.js";
 import { MISURE, MODELLI, grafoClip, grafoMontaggio, modello } from "./grafi.js";
 import { attacchi, inquadrature } from "./regista.js";
 import { attendi, guarda, lasciaPerdere } from "./coda.js";
+// La barra di quello che sta arrivando: uguale in tutte le app, quindi sta in
+// `packages/ui` e la suite la serve sotto `/comune/`.
+import { collegaScaricamento } from "/comune/scaricamento.js";
 import * as ponte from "./ponte.js";
 
 const RICORDO_LOOK = "daprod.cinema.look";
 const RICORDO_MISURA = "daprod.cinema.misura";
+const RICORDO_MODELLO = "daprod.cinema.modello";
 
 /** Il brano scelto e quello che se ne sa. */
 let brano = null;
@@ -279,7 +283,12 @@ export async function monta() {
     const dentroBrano = await ponte.carica(audio, "brano.mp3");
 
     el.passoOra.textContent = "Monto il video…";
-    const id = await ponte.invia(grafoMontaggio({ clip: dentro, brano: dentroBrano, cartella }));
+    // I fotogrammi al secondo sono quelli del modello che ha girato le clip: LTX
+    // gira a 25 e H3 a 24, e rimontare a un ritmo diverso da quello con cui
+    // sono nate vuol dire un video che scivola via dalla canzone.
+    const id = await ponte.invia(
+      grafoMontaggio({ clip: dentro, brano: dentroBrano, cartella, fps: modello(el.modello.value).fps }),
+    );
     const uscite = await attendi(id);
 
     const file = Object.values(uscite).flatMap((u) => u.images ?? u.video ?? [])[0];
@@ -321,14 +330,17 @@ export async function collegaCrea() {
   el.modello.innerHTML = Object.values(MODELLI)
     .map((m) => `<option value="${m.id}">${escapeHtml(m.nome)}</option>`)
     .join("");
+  el.modello.value = modello(localStorage.getItem(RICORDO_MODELLO)).id;
 
   legaValore("passi", "passiVal");
-  const m = modello(el.modello.value);
-  el.passi.min = m.passi.min;
-  el.passi.max = m.passi.max;
-  el.passi.value = m.passi.valore;
-  el.passi.dispatchEvent(new Event("input"));
-  el.rigaModello.textContent = m.riga;
+  // Cambiare modello cambia il punto di lavoro: LTX 2.5 è distillato e vuole
+  // otto passi, H3 col LoRA turbo ne vuole quattro. Lasciare il cursore dov'era
+  // vuol dire generare male col modello appena scelto.
+  el.modello.onchange = () => {
+    localStorage.setItem(RICORDO_MODELLO, el.modello.value);
+    applicaModello();
+    void controllaModello();
+  };
 
   // L'estetica non si incolla in fondo: **riscrive la casella**, come in
   // DaProdFoto. Così la vedi, la cambi e la togli, invece che subirla.
@@ -350,10 +362,8 @@ export async function collegaCrea() {
     avanzamentoTotale(quota);
   });
 
+  applicaModello();
   void controllaModello();
-  ponte.suAvanzamentoModelli((a) => {
-    if (!a.attivo) void controllaModello();
-  });
 
   await aggiornaBrani();
 }
@@ -363,22 +373,37 @@ function salvaERifai() {
   riscriviScaletta();
 }
 
-/** Se i pesi non ci sono, si scaricano da qui: stessa strada di Musica e Foto. */
+/** Il punto di lavoro del modello scelto: la riga sotto al menu e i passi. */
+function applicaModello() {
+  const m = modello(el.modello.value);
+  el.rigaModello.textContent = m.riga;
+  el.passi.min = m.passi.min;
+  el.passi.max = m.passi.max;
+  el.passi.value = m.passi.valore;
+  el.passi.dispatchEvent(new Event("input"));
+  // La scaletta si rifà: la griglia dei fotogrammi non è la stessa per i due
+  // modelli, e nemmeno i fotogrammi al secondo.
+  riscriviScaletta();
+}
+
+/**
+ * Se i pesi non ci sono, si scaricano da qui — con la barra sotto il menu.
+ *
+ * Il riquadro se lo disegna il pezzo comune di `packages/ui`: qui sono decine di
+ * GB, e «l'avanzamento è nell'hub» (che è quello che c'era scritto fino alla
+ * 0.4.0) vuol dire chiedere a chi scarica di guardare da un'altra parte per
+ * mezz'ora.
+ */
+let barraModello = null;
+
 async function controllaModello() {
   const m = modello(el.modello.value);
-  const stato = await ponte.statoModelli(m.catalogo).catch(() => null);
-  if (!stato || stato.pronto) {
-    el.mancaModello.hidden = true;
-    return;
-  }
-  el.mancaModello.hidden = false;
-  el.mancaModello.innerHTML =
-    `<b>${escapeHtml(m.nome)} non è ancora sul disco.</b>` +
-    ` <button class="mini" id="prendiModello">Scarica ${(stato.bytesMancanti / 1024 ** 3)
-      .toFixed(1)
-      .replace(".", ",")} GB</button>`;
-  document.getElementById("prendiModello").onclick = () => {
-    el.mancaModello.textContent = "Scarico… l'avanzamento è nell'hub.";
-    void ponte.scaricaModelli(m.catalogo);
-  };
+  barraModello ??= collegaScaricamento(el.mancaModello, {
+    stato: ponte.statoModelli,
+    scarica: ponte.scaricaModelli,
+    annulla: ponte.annullaScaricamento,
+    onAvanzamento: ponte.suAvanzamentoModelli,
+    io: ponte.io,
+  });
+  await barraModello.controlla({ ids: m.catalogo, nome: m.nome });
 }

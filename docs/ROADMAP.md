@@ -124,6 +124,45 @@ fermo avrebbe voluto dire non pubblicare niente aspettando un'app sola.
       vero (§ 0.7.0), e allora cambia il programma che le fa, non quello che le
       mostra.
 
+## 0.4.1 — Quello che si è visto usandola ✅
+
+**Costruita il 20 agosto 2026, da provare.** Nessuna funzione nuova grossa: un
+giro su quello che è venuto fuori provando la 0.4.0, più il ritorno ai due
+modelli video decisi.
+
+- [x] **DaProdMusica: il modello si sceglie per primo** — *stava in fondo, dentro
+      «Parametri», ed è la scelta che cambia tutte le altre.*
+- [x] **Via il MiniMax a 4 bit** — *700 MB risparmiati in cambio della parte che
+      si sente. Resta l'int8, e chi aveva scelto il 4 bit ci finisce sopra da sé.*
+- [x] **Il decode a blocchi parte spento** — *resta negli avanzati, per quando un
+      brano lungo si ferma per memoria finita.*
+- [x] **La lingua del canto a pastiglie, sopra il testo** — *dodici lingue,
+      italiano per primo. Con ACE-Step è un'impostazione del nodo; con MiniMax,
+      che una casella per la lingua non ce l'ha, finisce nella descrizione dello
+      stile insieme alla richiesta di scandire le parole.*
+- [x] **DaProdCinema: via Wan, dentro LTX 2.5 e MiniMax H3** — *i due della § 0.7.0.
+      LTX 2.5 22B distillato in W4A8 (23,2 GB) è quello che parte e fa il video
+      col suono dentro; MiniMax H3 FL2VA col LoRA turbo a quattro passi (42,3 GB)
+      è l'altro. I pesi sono i più compressi che ComfyUI 0.33.1 sa caricare da
+      sé — la cosa vera presa da WanGP, che è un modo di far entrare i modelli in
+      poca memoria e non un modello.* ⚠ **Nessuno dei due è stato provato su una
+      clip vera**: i grafi sono verificati contro `/object_info` del motore, non
+      su un mp4 uscito dal disco.
+- [x] **Una barra per gli scaricamenti, in tutte le app** — *quanti GB su quanti,
+      la velocità, quanto manca e il tasto per fermare. Prima c'era scritto
+      «l'avanzamento è nell'hub» dappertutto tranne che in DaProdFoto. Il pezzo è
+      uno solo, in `packages/ui`, e l'hub ha la stessa barra al posto della riga
+      di testo.*
+
+### Cosa **non** è a posto, e va detto
+
+- **I due modelli video non hanno mai girato una clip.** Prima prova consigliata:
+  una sola inquadratura, misura Provino, LTX 2.5. Sono 23 GB da scaricare prima
+  di sapere se funziona, e su 8 GB di scheda lavorano in offload — minuti a clip.
+- **Wan 2.2 resta sul disco a chi l'aveva scaricato**: 18,1 GB in tre file che
+  non servono più a niente, da cancellare a mano.
+- **Il montaggio finale è ancora quello mai provato** della 0.4.0.
+
 ## 0.4.0 — La settima scheda, e un secondo modo di fare musica ✅
 
 **Costruita il 20 agosto 2026, da provare.** DaProdCinema entra nella suite, e
@@ -135,7 +174,11 @@ DaProdMusica smette di avere un modello solo.
       e il montaggio sopra la canzone. Il regista è provato da solo, senza
       motore: 90 secondi di canzone in 7 sezioni fanno 17 inquadrature, e i conti
       tornano al decimo di secondo.*
-- [x] **Il modello video: Wan 2.2 TI2V 5B** — *e non MiniMax H3 o LTX 2.5, che
+- [x] ~~**Il modello video: Wan 2.2 TI2V 5B**~~ — *durata due giorni: nella
+      0.4.1 Wan è uscito e sono entrati i due modelli che questa roadmap aveva
+      scelto. La ragione tecnica qui sotto resta vera — costano il doppio e il
+      quadruplo — ma non era una scelta da fare al posto di chi usa la suite.
+      Il testo di allora, per memoria: e non MiniMax H3 o LTX 2.5, che
       questa roadmap aveva scelto. I loro nodi ci sono davvero nel motore, la
       verifica del 16 agosto regge; a non reggere sono i pesi. LTX 2.3 è un 22B
       che in fp8 fa 23 GB più un Gemma 3 12B da 9,4 per leggere il prompt: sugli
@@ -370,19 +413,26 @@ rotte e sono state corrette (vedi il changelog della 0.2.0); queste restano.
 
 ## 0.7.0 — DaProdCinema: le due strade che restano
 
-**La scheda è nata nella 0.4.0**, con la strada lunga: clip generate da Wan 2.2,
-una per inquadratura. Questa sezione è quello che resta da fare, e la prima voce
-è quella che non è mai stata provata.
+**La scheda è nata nella 0.4.0** e nella 0.4.1 ha preso i suoi modelli: LTX 2.5
+e MiniMax H3, quelli decisi qui sotto. Questa sezione è quello che resta da
+fare, e le prime voci sono quelle che non sono mai state provate.
 
 - [ ] **Il montaggio finale su clip vere.** Il grafo c'è ed è verificato contro
       `object_info`, ma da «il grafo è giusto» a «esce un mp4 con la canzone
       sopra» c'è di mezzo un video intero girato — più di un'ora di scheda video.
 - [ ] **Le prove di tempistica**, che le fa Cammo: quanto costa una clip a ogni
       misura e a ogni numero di passi, e da lì si decide il punto di lavoro.
-- [ ] **Le finestre di contesto** (`WanContextWindowsManual`) per le
-      inquadrature lunghe: oggi una sezione lunga si taglia in più clip, che è
-      anche più giusto di montaggio, ma le finestre servono il giorno che si
-      vuole un piano sequenza vero.
+- [ ] **Una clip vera, con l'uno e con l'altro.** I grafi sono verificati contro
+      `/object_info`, i pesi sono nel catalogo con i byte veri, ma da lì a un mp4
+      ci sono 23 GB di scaricamento e minuti di scheda video.
+- [ ] **Le finestre di contesto** (`LTXVContextWindows` per LTX 2.5,
+      `ContextWindowsManual` per H3) per le inquadrature lunghe: oggi una sezione
+      lunga si taglia in più clip, che è anche più giusto di montaggio, ma le
+      finestre servono il giorno che si vuole un piano sequenza vero.
+- [ ] **Il suono che i modelli generano da soli**: tutti e due fanno video *e*
+      audio, e oggi la traccia generata si butta via perché sopra ci va la
+      canzone. Un giorno può servire — un'inquadratura con un rumore d'ambiente
+      sotto il brano non è la stessa cosa di un'inquadratura muta.
 
 Sotto restano le due strade come erano state pensate. **Due strade, non una.**
 
@@ -414,10 +464,13 @@ Resta da scegliere finestra e overlap e da misurare cosa regge in 8 GB.
 
 - [ ] Finestra e overlap misurati su 8 GB, con `LTXVContextWindows` per LTX 2.5
       e `ContextWindowsManual` per H3
-- [ ] LTX 2.5 accanto a H3, con la scelta del modello come in DaProdFoto: un
-      menu, ogni modello coi propri grafi e il proprio punto di lavoro
-- [ ] I pesi di tutti e due nel catalogo (`manifest/models.json`), con i byte
-      veri presi dal `Content-Length` e non stimati
+- [x] LTX 2.5 accanto a H3, con la scelta del modello come in DaProdFoto: un
+      menu, ogni modello coi propri grafi e il proprio punto di lavoro — *fatto
+      nella 0.4.1*
+- [x] I pesi di tutti e due nel catalogo (`manifest/models.json`), con i byte
+      veri presi dal `Content-Length` e non stimati — *fatto nella 0.4.1: W4A8
+      ConvRot dove esiste, e per LTX 2.5 da uno specchio senza cancello, perché
+      il repo di Lightricks chiede un account e un token che la suite non ha*
 - [ ] Pianificazione per sezione — la struttura arriva dai tag del testo, non da
       un'analisi del BPM che sbaglia
 - [ ] DaProdUniverso applicato ai prompt

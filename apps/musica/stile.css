@@ -121,6 +121,12 @@ input[type=range]{padding:0; height:24px; accent-color:var(--accent); background
 .mini.on{color:#fff;border-color:var(--accent);background:#1a1330}
 .hint{font-size:12px; color:var(--dim); margin-top:7px; line-height:1.5}
 .empty{color:var(--dim); font-size:13px; padding:10px 2px}
+/* Il modello scelto non è sul disco: cosa manca, e la barra mentre arriva. */
+.manca{background:#1c1608; border:1px solid #5c4520; border-radius:12px; padding:12px 13px;
+  margin-top:12px; font-size:13px; line-height:1.5}
+.manca .hint{margin-top:5px}
+.manca .err{margin-top:0}
+
 .err{background:#2a1416; border:1px solid #5c2226; color:#fca5a5; padding:10px 12px; border-radius:11px;
   font-size:13px; white-space:pre-wrap; margin-top:12px; max-height:190px; overflow:auto}
 

@@ -136,7 +136,16 @@ export const APPS: Record<AppId, AppDescriptor> = {
       // Il primo avvio carica MiniMax Music 3 in VRAM: può volerci un minuto abbondante.
       healthTimeoutMs: 180_000,
     },
-    models: ["minimax-music3-dit", "minimax-music3-text-encoder", "minimax-music3-vae"],
+    /**
+     * ACE-Step 1.5 Turbo, che dalla 0.4.1 è anche quello che l'app sceglie da
+     * sola aprendosi.
+     *
+     * Prima qui c'era MiniMax Music 3 a 4 bit, che pesava meno (8 GB contro
+     * 13,7): il conto però va fatto con quello che succede dopo, e cioè che
+     * l'app si apriva su un modello che non era quello installato e chiedeva
+     * subito di scaricarne un altro. Meglio installare quello che parte.
+     */
+    models: ["acestep15-turbo", "acestep15-qwen-06b", "acestep15-qwen-4b", "acestep15-vae"],
     /**
      * Quello che la scheda sa usare ma non pretende per partire.
      *
@@ -156,11 +165,9 @@ export const APPS: Record<AppId, AppDescriptor> = {
       "qwen3-06b-base",
       "qwen-image-vae",
       "minimax-music3-dit-int8",
-      "acestep15-turbo",
+      "minimax-music3-text-encoder",
+      "minimax-music3-vae",
       "acestep15-xl-turbo",
-      "acestep15-qwen-06b",
-      "acestep15-qwen-4b",
-      "acestep15-vae",
     ],
     gpuHeavy: true,
     // In CPU un brano si fa, ma si misura in ore invece che in minuti: è una
@@ -214,19 +221,23 @@ export const APPS: Record<AppId, AppDescriptor> = {
       healthTimeoutMs: 180_000,
     },
     /**
-     * Wan 2.2 TI2V 5B: 18,1 GB fra modello, text encoder e VAE.
+     * LTX 2.5, in W4A8: 23,2 GB fra modello, text encoder e le due VAE.
      *
-     * La roadmap aveva scelto MiniMax H3 e LTX 2.5, e i loro nodi ComfyUI ce li
-     * ha davvero, nativi. Poi si sono guardati i pesi: LTX 2.3 è un 22B che in
-     * fp8 fa 23 GB, più un Gemma 3 da 12B per leggere il prompt. Su una scheda
-     * da 8 GB non è «lento», è un'altra categoria di macchina.
+     * È uno dei due che la roadmap aveva scelto (§ 0.7.0). Nella 0.4.0 al loro
+     * posto era entrato Wan 2.2 TI2V 5B, che pesa 18,1 GB e su 8 GB di scheda
+     * gira meglio: una scelta ragionevole, ma fatta al posto di chi la suite la
+     * usa. Nella 0.4.1 Wan è uscito.
      *
-     * Il 5B è l'unico della famiglia che qui gira, e fa testo→video **e**
-     * immagine→video con lo stesso file — che è la proprietà su cui sta in piedi
-     * la continuità fra un'inquadratura e la successiva. Gli altri due restano
-     * in roadmap: nel menu ci va quello che è stato provato.
+     * LTX 2.5 è quello di base perché fa **video e suono insieme**, è distillato
+     * (otto passi) e pesa poco più della metà di H3.
      */
-    models: ["wan22-ti2v-5b", "wan22-text-encoder", "wan22-vae"],
+    models: ["ltx25-dit", "ltx25-text-encoder", "ltx25-vae", "ltx25-audio-vae"],
+    /**
+     * MiniMax H3, l'altro della roadmap: 42,3 GB, di cui 25 di solo text
+     * encoder (Qwen3-VL 32B). Si sceglie dal menu dentro l'app, che è anche il
+     * posto dove si vede quanto costa prima di premere.
+     */
+    extraModels: ["h3-dit", "h3-text-encoder", "h3-vae", "h3-audio-vae", "h3-lora-turbo"],
     gpuHeavy: true,
     // Video: un fotogramma per volta, e i fotogrammi sono centinaia.
     schedaVideo: "obbligatoria",

@@ -70,7 +70,7 @@ Tutto in locale: nessun account, nessuna API, nessun dato che esce dal computer.
 | 🟠 | **DaProdFoto** | Crei immagini scrivendo cosa vuoi vedere, poi ne cambi un pezzo | Anima Turbo · FLUX.2 Klein | ✅ disponibile |
 | 🩵 | **DaProdDream** | Trasformi un video mentre scorre: webcam, un file, o lo schermo | SD-Turbo · Anima | ✅ disponibile |
 | 🟥 | **DaProdIoDigitale** | Carichi la foto di un volto e ci parli: ti risponde a voce | LeapTalk | ✅ disponibile |
-| 🟪 | **DaProdCinema** | Da una canzone al suo video musicale, scena per scena | Wan 2.2 TI2V 5B | ✅ disponibile |
+| 🟪 | **DaProdCinema** | Da una canzone al suo video musicale, scena per scena | LTX 2.5 · MiniMax H3 | ✅ disponibile |
 | 🟢 | **DaProdCompanion** | Un assistente sul desktop che si ricorda delle conversazioni di prima | un modello a scelta via LM Studio | ⏳ in arrivo |
 
 Questa non è una lista chiusa: continuiamo a testare modelli nuovi e ad
@@ -89,7 +89,8 @@ lo stesso.
 
 ## A che punto siamo
 
-> **0.3.4 pubblicata — e nella 0.4.0 in prova ci sono tutte e sette.**
+> **0.4.0 pubblicata — tutte e sette le schede sono dentro, e nella 0.4.1 in
+> prova DaProdCinema torna ai due modelli decisi.**
 >
 > **DaProdVisualizer, DaProdMusica, DaProdFoto, DaProdDream,
 > DaProdIoDigitale** e **DaProdCinema** sono nella suite e funzionano. Si installano da sole, motore e
@@ -110,6 +111,13 @@ lo stesso.
 > 480, 720 o 1080p), e le proposte sopra la casella te le scrivi tu — un titolo
 > corto, il prompt intero dentro. Premendo Genera la memoria video viene
 > liberata da sola da quello che non serve.
+>
+> Con la 0.4.1 (in prova) **il modello si sceglie per primo** in DaProdMusica,
+> la **lingua del canto** è una fila di pastiglie sopra il testo, il MiniMax a 4
+> bit è stato tolto e **DaProdCinema gira con LTX 2.5 o MiniMax H3** al posto di
+> Wan 2.2. E quando scarichi un modello da dentro un'app adesso c'è **una barra
+> che dice a che punto è**, con la velocità e quanto manca, invece di rimandarti
+> all'hub.
 >
 > Con la 0.3.4 il **ritocco** di DaProdFoto sa rifare anche tutta la foto —
 > senza dipingere niente, o dipingendo quello che vuoi tenere e premendo
@@ -243,11 +251,16 @@ non vengono mai riscaricati né cancellati**, nemmeno disinstallando.
 | DaProdVisualizer | — | |
 | DaProdDream | 2,6 GB | +5,6 GB per sognare con Anima |
 | DaProdFoto | 5,6 GB | +6,3 GB FLUX.2 Klein 4B · +12,0 GB il 9B |
-| DaProdMusica | 8,0 GB | +5,6 GB per le copertine con Anima* |
+| DaProdMusica | 13,7 GB | +8,0 GB MiniMax Music 3 · +9,3 GB ACE-Step XL · +5,6 GB per le copertine con Anima* |
 | DaProdIoDigitale | 10,4 GB | +6,0 GB modello Pro |
+| DaProdCinema | 23,2 GB | +42,3 GB MiniMax H3 |
 
 <sub>* zero se hai già DaProdFoto o DaProdDream: i pesi di Anima sono gli stessi,
 condivisi.</sub>
+
+**DaProdCinema è l'unica che costa così tanto**, e non c'è un modo onesto di
+farla costare meno: un modello che genera video *con il suono* è un 22B, e i 23
+GB sono già la sua versione più compressa che il motore sappia caricare.
 
 Più ~4 GB di ambiente Python, una volta sola. Gli extra sono qualità migliore in
 cambio di spazio: la suite non li scarica se non glielo chiedi, e i byte sono
@@ -352,7 +365,7 @@ La suite non addestra nulla: mette insieme il lavoro di altri e lo rende usabile
 |---|---|
 | [ComfyUI](https://github.com/comfyanonymous/ComfyUI) | il motore di inferenza di Musica, Foto e Cinema — GPL-3.0, scaricato a parte |
 | [MiniMax](https://github.com/MiniMax-AI) · [ACE-Step](https://huggingface.co/ACE-Step) | i due modi di fare una canzone |
-| [Wan 2.2](https://huggingface.co/Wan-AI) | il video di DaProdCinema |
+| [LTX-2.5](https://huggingface.co/Lightricks/LTX-2.5) · [MiniMax H3](https://huggingface.co/MiniMaxAI/MiniMax-H3) | il video di DaProdCinema, con il suono dentro |
 | [Anima](https://huggingface.co/circlestone-labs/Anima) · [FLUX.2 Klein](https://huggingface.co/unsloth/FLUX.2-klein-9B-GGUF) | le immagini |
 | [LeapTalk](https://huggingface.co/z-rx/leaptalk) · [SoulX-FlashHead](https://huggingface.co/Soul-AILab/SoulX-FlashHead-1_3B) | l'avatar parlante: LeapTalk gira sopra SoulX, che è il suo modello di base |
 | [SD-Turbo](https://huggingface.co/stabilityai/sd-turbo) | la trasformazione in tempo reale |

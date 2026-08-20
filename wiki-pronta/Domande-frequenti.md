@@ -43,6 +43,12 @@ insieme** invece di una: sullo stesso computer siamo passati da 3,9 a 11,8 MB/s,
 cioè da ~35 a ~11 minuti per gli 8 GB di DaProdMusica. Se chiudi tutto a metà
 strada non perdi niente: riprende da dov'era.
 
+Dalla 0.4.1 non devi più indovinare: quando scarichi un modello **da dentro
+un'app** c'è una barra che dice a che punto è, quanti GB su quanti, a che
+velocità e quanto manca — con il tasto per fermarla. La stessa barra è nel
+pannello **Modelli** dell'hub. Serve soprattutto a DaProdCinema, dove il modello
+più leggero è 23 GB.
+
 ### Il modello che scrive è lentissimo, cosa succede?
 
 Se hai un motore pesante acceso nello stesso momento (per esempio DaProdFoto

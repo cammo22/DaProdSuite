@@ -14,12 +14,12 @@
  * scaricarli invece di lasciarti premere un bottone che non può funzionare.
  */
 
+// La barra dello scaricamento sta in `packages/ui`, servita sotto `/comune/`.
+import { collegaScaricamento } from "/comune/scaricamento.js";
 import * as ponte from "./ponte.js";
 
 /** Gli id di `manifest/models.json`. Gli stessi che chiede DaPFoto. */
 export const MODELLI_ANIMA = ["anima-turbo", "qwen3-06b-base", "qwen-image-vae"];
-
-const gb = (byte) => `${(byte / 1024 ** 3).toFixed(1).replace(".", ",")} GB`;
 
 /**
  * Se Anima è sul disco.
@@ -36,31 +36,46 @@ export async function animaPronta() {
 }
 
 /**
+ * Un riquadro per posto: la scheda Crea e la scheda Immagini ne hanno uno
+ * ognuna, e ognuno si tiene il suo pezzo di interfaccia con dentro la barra.
+ */
+const riquadri = new WeakMap();
+
+/**
  * Riempie un riquadro con "manca Anima" e il tasto per prenderla, e spegne i
  * bottoni che senza di lei non possono funzionare.
  *
  * Torna `true` se si può generare.
+ *
+ * Il riquadro non se lo disegna più questo file: lo disegna il pezzo comune di
+ * `packages/ui`, che sa anche mostrare la barra mentre i 5,6 GB arrivano. Prima
+ * qui c'era scritto «Scarico… l'avanzamento è nell'hub», che è un modo cortese
+ * di dire "vai a guardare da un'altra parte".
  */
 export async function controllaAnima(riquadro, ...bottoni) {
-  const stato = await animaPronta();
+  let barra = riquadri.get(riquadro);
+  if (!barra) {
+    barra = collegaScaricamento(riquadro, {
+      stato: ponte.statoModelli,
+      scarica: ponte.scaricaModelli,
+      annulla: ponte.annullaScaricamento,
+      onAvanzamento: ponte.suAvanzamentoModelli,
+      io: ponte.io,
+      onCambio: (pronto) => {
+        for (const bottone of bottoni) if (bottone) bottone.disabled = !pronto;
+      },
+    });
+    riquadri.set(riquadro, barra);
+  }
+
+  const pronto = await barra.controlla({
+    ids: MODELLI_ANIMA,
+    nome: "Anima",
+    spiega: "Senza di lei le immagini non si fanno.",
+  });
 
   for (const bottone of bottoni) {
-    if (bottone) bottone.disabled = !stato.pronto;
+    if (bottone) bottone.disabled = !pronto;
   }
-
-  if (stato.pronto) {
-    riquadro.hidden = true;
-    return true;
-  }
-
-  riquadro.hidden = false;
-  riquadro.innerHTML =
-    `<b>Anima non è ancora sul disco</b>, e senza di lei le immagini non si fanno. ` +
-    `<button class="mini" id="prendiAnima">Scarica ${gb(stato.bytesMancanti)}</button>`;
-  riquadro.querySelector("#prendiAnima").onclick = (ev) => {
-    ev.target.disabled = true;
-    riquadro.append(" Scarico… l'avanzamento è nell'hub.");
-    void ponte.scaricaModelli(MODELLI_ANIMA);
-  };
-  return false;
+  return pronto;
 }

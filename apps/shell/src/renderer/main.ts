@@ -1361,10 +1361,38 @@ async function disegnaModelli(): Promise<void> {
   }
 }
 
+/**
+ * La velocità di adesso, non la media dall'inizio.
+ *
+ * Si tengono i campioni degli ultimi dieci secondi: una ripresa a metà file, o
+ * un modello piccolo passato in un lampo, darebbero una media che non è mai
+ * stata vera — e su cui uno fa i suoi conti su quanto deve aspettare.
+ */
+let campioniModelli: [number, number][] = [];
+/** Per conto di quale scheda si sta scaricando: serve al tasto «Annulla». */
+let scaricamentoDi: AppId | null = null;
+
+function velocitaModelli(done: number): string {
+  const ora = Date.now();
+  campioniModelli.push([ora, done]);
+  campioniModelli = campioniModelli.filter(([t]) => ora - t <= 10_000);
+  const primo = campioniModelli[0];
+  if (!primo) return "";
+  const [primoT, primoDone] = primo;
+  const secondi = (ora - primoT) / 1000;
+  if (secondi < 1) return "";
+  const alSecondo = (done - primoDone) / secondi;
+  if (!(alSecondo > 0)) return "";
+  const mb = alSecondo / 1024 ** 2;
+  return mb >= 1 ? `${mb.toFixed(1).replace(".", ",")} MB/s` : `${Math.round(alSecondo / 1024)} KB/s`;
+}
+
 api.modelli.onAvanzamento((stato) => {
   if (sezione("modelli").hidden) return;
 
   if (!stato.attivo) {
+    campioniModelli = [];
+    scaricamentoDi = null;
     modAvanzamento.hidden = false;
     modAvanzamento.textContent = stato.errore
       ? stato.errore
@@ -1375,11 +1403,48 @@ api.modelli.onAvanzamento((stato) => {
     return;
   }
 
+  // Una barra e non una riga di testo: qui arrivano decine di GB, e la
+  // differenza fra "sta arrivando" e "si è piantato" deve vedersi da lontano.
+  scaricamentoDi = stato.app ?? scaricamentoDi;
+  const indeterminata = stato.total <= 0;
+  const quota = indeterminata ? 0 : Math.min(1, stato.done / stato.total);
+  const misure = [
+    indeterminata ? gb(stato.done) : `${gb(stato.done)} / ${gb(stato.total)}`,
+    velocitaModelli(stato.done),
+  ].filter(Boolean);
+
   modAvanzamento.hidden = false;
-  modAvanzamento.textContent =
-    stato.total > 0
-      ? `${stato.label} · ${gb(stato.done)} / ${gb(stato.total)}`
-      : `${stato.label}…`;
+  modAvanzamento.replaceChildren();
+
+  const testa = document.createElement("div");
+  testa.className = "modelli-avanzamento-testa";
+  const che = document.createElement("span");
+  che.textContent = stato.label;
+  const quanto = document.createElement("span");
+  quanto.textContent = misure.join(" · ");
+  testa.append(che, quanto);
+
+  const barra = document.createElement("div");
+  barra.className = indeterminata ? "barra scorre" : "barra";
+  const riempimento = document.createElement("span");
+  riempimento.style.width = indeterminata ? "35%" : `${(quota * 100).toFixed(1)}%`;
+  barra.appendChild(riempimento);
+
+  modAvanzamento.append(testa, barra);
+
+  // «Annulla» c'è solo se sappiamo per conto di chi si sta scaricando: senza,
+  // sarebbe un tasto che non ferma niente.
+  if (scaricamentoDi) {
+    const di = scaricamentoDi;
+    const ferma = document.createElement("button");
+    ferma.className = "bottone secondario";
+    ferma.textContent = "Annulla";
+    ferma.addEventListener("click", () => {
+      ferma.disabled = true;
+      void api.modelli.annulla(di);
+    });
+    modAvanzamento.appendChild(ferma);
+  }
 });
 
 (document.getElementById("modelli-cartella") as HTMLButtonElement).addEventListener("click", () => {

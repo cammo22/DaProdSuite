@@ -24,16 +24,24 @@
     "modello (gli id di packages/runtime/src/nodi.ts). Si installano insieme ai",
     "pesi: scaricare 12 GB di GGUF senza il nodo che li legge non serve a niente."
   ],
+  "$comment-cinema": [
+    "I due modelli video di DaProdCinema, che sono quelli che la roadmap aveva",
+    "scelto (§ 0.7.0): LTX 2.5 e MiniMax H3. Wan 2.2 TI2V 5B è uscito dal",
+    "catalogo nella 0.4.1: era una sostituzione fatta per far entrare il video",
+    "negli 8 GB, e non era una scelta da fare al posto di chi usa la suite.",
+    "",
+    "I pesi sono i più compressi che ComfyUI 0.33.1 sa caricare da sé, che è la",
+    "cosa vera da rubare a WanGP: W4A8 ConvRot, letto da comfy-kitchen",
+    "(AsymW4A8Int8Layout), lo stesso formato con cui gira MiniMax Music 3.",
+    "Niente GGUF: per queste due famiglie vorrebbero un nodo custom rattoppato.",
+    "",
+    "Gli originali di Lightricks (Lightricks/LTX-2.5) sono dietro un cancello:",
+    "servono un account e un token, che la suite non ha. I file qui sotto sono",
+    "gli stessi pesi ricompressi o rispecchiati senza cancello — le due VAE sono",
+    "byte per byte i file ufficiali."
+  ],
   "version": 1,
   "models": {
-    "minimax-music3-dit": {
-      "label": "MiniMax Music 3 — modello di diffusione (4 bit)",
-      "kind": "file",
-      "dir": "diffusion_models",
-      "file": "minimax_music3_dit_w4a8.safetensors",
-      "url": "https://huggingface.co/dummy9996/MiniMax-Music3-w4a8-bf16-comfyui/resolve/main/minimax_music3_dit_w4a8.safetensors",
-      "bytes": 1830722434
-    },
     "minimax-music3-text-encoder": {
       "label": "MiniMax Music 3 — text encoder Qwen2-7B potato (4 bit)",
       "kind": "file",
@@ -113,32 +121,86 @@
       "bytes": 337431732
     },
 
-    "wan22-ti2v-5b": {
-      "label": "Wan 2.2 TI2V 5B — video di DaProdCinema",
+    "ltx25-dit": {
+      "label": "LTX 2.5 22B distillato — modello video (W4A8 ConvRot)",
       "kind": "file",
-      "$comment": "Il modello video di DaProdCinema. Cinque miliardi di parametri e non ventidue: e' l'unico della famiglia che su una scheda da 8 GB fa una clip in un tempo che si puo' aspettare. E' anche la famiglia su cui e' costruito WanGP, che e' il metro con cui misuriamo la memoria. Fa testo->video e immagine->video con lo stesso file, ed e' quello che tiene insieme le inquadrature: l'ultimo fotogramma di una diventa il primo della successiva.",
+      "$comment": "Il 22B quantizzato a 4 bit con attivazioni a 8: 11,7 GB invece dei 20 della int8 ufficiale. Distillato, quindi otto passi. La versione 'dev' (non distillata) sta nello stesso repo e vuole molti più passi.",
       "dir": "diffusion_models",
-      "file": "wan2.2_ti2v_5B_fp16.safetensors",
-      "url": "https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/diffusion_models/wan2.2_ti2v_5B_fp16.safetensors",
-      "bytes": 9999658848
+      "file": "ltx-2.5-22b-distilled-transformer-w4a8_convrot.safetensors",
+      "url": "https://huggingface.co/Winnougan/ltx-2.5-w4a8-convrot-int4-convrot-Winnougan-Blessing/resolve/main/diffusion_models/ltx-2.5-22b-distilled-transformer-w4a8_convrot.safetensors",
+      "bytes": 12520292200
     },
-    "wan22-text-encoder": {
-      "label": "Wan 2.2 — text encoder (umT5 XXL fp8)",
+    "ltx25-text-encoder": {
+      "label": "LTX 2.5 — text encoder Gemma 4 12B (W4A8 ConvRot)",
       "kind": "file",
-      "$comment": "La versione fp8 e non fp16: 6,7 GB invece di 11,4, e su questa scheda la differenza e' fra caricarlo e non caricarlo.",
+      "$comment": "Si porta dentro le proiezioni audio/video (text_embedding_projection), quindi CLIPLoader tipo 'ltxv' basta da solo: senza quelle servirebbe anche il checkpoint intero da 42 GB. La int8 ufficiale è 14,3 GB.",
       "dir": "text_encoders",
-      "file": "umt5_xxl_fp8_e4m3fn_scaled.safetensors",
-      "url": "https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors",
-      "bytes": 6735906897
+      "file": "gemma4-12b-with-proj-ltx-2.5-w4a8_convrot.safetensors",
+      "url": "https://huggingface.co/Winnougan/ltx-2.5-w4a8-convrot-int4-convrot-Winnougan-Blessing/resolve/main/text_encoders/gemma4-12b-with-proj-ltx-2.5-w4a8_convrot.safetensors",
+      "bytes": 10604323186
     },
-    "wan22-vae": {
-      "label": "Wan 2.2 — VAE video",
-      "$comment": "Quello della 2.2, non quello della 2.1: il 5B comprime di piu' nello spazio e vuole il suo. Scambiarli da' un video sfocato, non un errore.",
+    "ltx25-vae": {
+      "label": "LTX 2.5 — VAE video (decoder veloce)",
+      "kind": "file",
+      "$comment": "La variante 'conv', che è quella predefinita anche in WanGP: l'altra passa da un decoder a diffusione, viene meglio e costa memoria e tempo. File ufficiale, da uno specchio senza cancello.",
+      "dir": "vae",
+      "file": "ltx-2.5-video-vae-conv-bf16.safetensors",
+      "url": "https://huggingface.co/dummy9996/LTX-2.5-22b-ungate/resolve/main/ltx-2.5-video-vae-conv-bf16.safetensors",
+      "bytes": 1452269922
+    },
+    "ltx25-audio-vae": {
+      "label": "LTX 2.5 — VAE audio (con il vocoder)",
+      "kind": "file",
+      "$comment": "In 'checkpoints' e non in 'vae', e non è un errore: LTXVAudioVAELoader legge da lì perché questo file contiene l'autoencoder e il vocoder insieme, e non è un VAE come gli altri.",
+      "dir": "checkpoints",
+      "file": "ltx-2.5-audio-vae-bf16.safetensors",
+      "url": "https://huggingface.co/dummy9996/LTX-2.5-22b-ungate/resolve/main/ltx-2.5-audio-vae-bf16.safetensors",
+      "bytes": 364866540
+    },
+
+    "h3-dit": {
+      "label": "MiniMax H3 FL2VA — modello video (W4A8, potato)",
+      "kind": "file",
+      "$comment": "La versione FL2VA: primo e ultimo fotogramma verso video+audio, che è quella che tiene attaccate le inquadrature. Potato e quantizzato: 11,7 GB invece dei 19,5 della int8 ufficiale di Comfy-Org, che resta l'alternativa quando la scheda cresce.",
+      "dir": "diffusion_models",
+      "file": "minimax_h3_fl2va_pruned_w4a8_mixed.safetensors",
+      "url": "https://huggingface.co/Kijai/MiniMax-H3-experimental/resolve/main/minimax_h3_fl2va_pruned_w4a8_mixed.safetensors",
+      "bytes": 12540858008
+    },
+    "h3-text-encoder": {
+      "label": "MiniMax H3 — text encoder Qwen3-VL 32B (int8 ConvRot)",
+      "kind": "file",
+      "$comment": "Venticinque GB, ed è il motivo per cui H3 non è il modello che parte. Più piccolo di così questo motore non sa leggere: la NVFP4 da 14,6 GB vuole una scheda Blackwell (serie 50), i GGUF vogliono un nodo custom che questa famiglia non la carica.",
+      "dir": "text_encoders",
+      "file": "qwen3vl_32b_minimax_h3_int8_convrot.safetensors",
+      "url": "https://huggingface.co/Comfy-Org/MiniMax-H3/resolve/main/text_encoders/qwen3vl_32b_minimax_h3_int8_convrot.safetensors",
+      "bytes": 27141342152
+    },
+    "h3-vae": {
+      "label": "MiniMax H3 — VAE video (int8 ConvRot)",
+      "kind": "file",
+      "$comment": "Quantizzato anche lui: 3 GB invece di 4,9. Si taglia i blocchi da solo, sedici fotogrammi per volta, quindi il grafo lo decodifica con VAEDecode e non con la versione a blocchi.",
+      "dir": "vae",
+      "file": "minimax_h3_video_vae_int8_convrot.safetensors",
+      "url": "https://huggingface.co/Kijai/MiniMax-H3-experimental/resolve/main/minimax_h3_video_vae_int8_convrot.safetensors",
+      "bytes": 3171670912
+    },
+    "h3-audio-vae": {
+      "label": "MiniMax H3 — VAE audio",
       "kind": "file",
       "dir": "vae",
-      "file": "wan2.2_vae.safetensors",
-      "url": "https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/vae/wan2.2_vae.safetensors",
-      "bytes": 1409400960
+      "file": "minimax_h3_audio_vae_fp32.safetensors",
+      "url": "https://huggingface.co/Comfy-Org/MiniMax-H3/resolve/main/vae/minimax_h3_audio_vae_fp32.safetensors",
+      "bytes": 605254808
+    },
+    "h3-lora-turbo": {
+      "label": "MiniMax H3 — LoRA turbo a quattro passi",
+      "kind": "file",
+      "$comment": "Non è un extra: senza, H3 vuole decine di passi per clip, e diciassette clip diventano una notte. Ufficiale di Comfy-Org, per la variante FL2V a 768p.",
+      "dir": "loras",
+      "file": "minimax_h3_fl2v_turbo_4step_v1.0_768p_comfyui_bf16.safetensors",
+      "url": "https://huggingface.co/Comfy-Org/MiniMax-H3/resolve/main/loras/minimax_h3_fl2v_turbo_4step_v1.0_768p_comfyui_bf16.safetensors",
+      "bytes": 1956192992
     },
 
     "anima-turbo": {
