@@ -1,7 +1,7 @@
 # Riprendere da qui
 
 Documento di passaggio fra una sessione e l'altra. Aggiornato il **20 agosto
-2026**, con la 0.3.3 pubblicata e la 0.3.4 costruita.
+2026**, con la 0.4.0 pubblicata e la 0.4.1 costruita.
 
 **Se stai leggendo questo all'inizio di una conversazione nuova**: leggi anche
 [COME-SI-LAVORA.md](COME-SI-LAVORA.md) e [ROADMAP.md](ROADMAP.md), poi vai al
@@ -60,10 +60,14 @@ Repo pubblico: **https://github.com/cammo22/DaProdSuite**
 | **Ritocco: inverti, e senza maschera si rifà tutto** | fatto, **da provare tu** su un'immagine vera |
 | **Il traduttore si vede, ha una barra e non si pianta** | fatto e **misurato** sul motore vero: 267 risposte servite mentre traduceva |
 | **0.3.4 costruita** | **da provare**, e poi si pubblica |
+| **0.4.0 pubblicata** | fatto il 20 agosto: tag `v0.4.0`, con DaProdCinema e ACE-Step |
+| **Musica: modello in cima, 4 bit via, lingua a pastiglie** | fatto, **da provare tu**: la lingua con MiniMax è un suggerimento nel prompt, non un interruttore |
+| **Cinema: LTX 2.5 e MiniMax H3 al posto di Wan 2.2** | grafi **verificati contro `/object_info`**, ma **nessuna clip vera**: 23 GB da scaricare prima di saperlo |
+| **Barra di scaricamento in tutte le app** | fatto: `packages/ui/src/scaricamento.js`, più l'hub |
 
 Si lavora su un ramo per release e una PR: `release-0.2.0` è stata unita con le
-PR #3 e #4, la 0.3.1 con la #5, la 0.3.2 con la #6, e questo giro sta su
-`release-0.3.3`.
+PR #3 e #4, la 0.3.1 con la #5, la 0.3.2 con la #6, la 0.3.3 con la #7, la
+0.3.4 con la #8, la 0.4.0 con la #9, e questo giro sta su `release-0.4.1`.
 
 ### Com'è fatto il giro della 0.3.3
 
@@ -117,6 +121,49 @@ cinque minuti se serve.
   tutta rossa quando non hai dipinto niente, e `raccontaIlTasto()` tiene
   aggiornata anche `dataset.prima`, che è quello che `libera()` rimette sul
   tasto quando ha finito di lavorare.
+
+### Com'è fatto il giro della 0.4.1
+
+- **`packages/ui/src/scaricamento.js`** — il riquadro «manca, ecco i GB» con
+  dentro la barra, per tutte le app. Nato copiando quello che DaProdFoto aveva
+  già in `scelta-modello.js`, che adesso lo usa al posto del suo. Chi lo collega
+  gli passa le quattro funzioni del proprio ponte (`stato`, `scarica`,
+  `annulla`, `onAvanzamento`) e `io`, l'id dell'app. Due cose imparate
+  scrivendolo: la velocità va misurata **sugli ultimi dieci secondi** (una media
+  dall'inizio, su uno scaricamento ripreso a metà, non è mai stata vera), e
+  «Annulla» si mostra **solo se lo scaricamento è nostro** — per questo
+  `AvanzamentoModelli` adesso porta anche `app`.
+- **`AvanzamentoModelli.app`** (`packages/ipc`) — chi ha chiesto lo
+  scaricamento. Serviva all'hub, che prima non poteva annullare uno
+  scaricamento partito da dentro un'app: `annulla(id)` vuole l'id della scheda,
+  e l'hub non lo sapeva. Adesso `api.modelli.annulla` c'è anche nel suo preload.
+- **`apps/cinema/src/grafi.js`** — riscritto: `grafoLtx` e `grafoH3` al posto di
+  quello di Wan, con la stessa numerazione dei nodi (1 testo, 2 inquadratura, 4
+  modello video, 6 la parte lunga, 8 i fotogrammi, 12 il file), così `FASI` e la
+  barra funzionano per tutti e due. Cose da sapere:
+  - **LTX vuole `SamplerCustomAdvanced`**, non `KSampler`: i suoi sigma li fa
+    `LTXVScheduler`, e nessuno degli scheduler del KSampler gli somiglia.
+  - **`LTXVScheduler` va nutrito col latente *video*, non con quello unito**: il
+    latente AV è una coppia annidata, e lui ci calcola sopra `math.prod(shape)`.
+  - **Il VAE audio di LTX si carica da `checkpoints`** (`LTXVAudioVAELoader`
+    legge da lì), non da `vae`: dentro c'è anche il vocoder.
+  - **H3 restituisce conditioning e latente insieme** da
+    `MiniMaxH3ImageToVideo`, e il suo VAE video si taglia i blocchi da solo —
+    quindi `VAEDecode` e non `VAEDecodeTiled`.
+  - **Le lunghezze sono su due griglie diverse**: `8n+1` a 25 fps per LTX,
+    `17k+5` a 24 fps per H3. Il montaggio adesso riceve gli fps del modello che
+    ha girato le clip, altrimenti il video scivola via dalla canzone.
+- **La verifica dei grafi**, che si può rifare in due minuti: motore avviato a
+  parte (`python main.py --cpu --port 8199 --extra-model-paths-config
+  engines/percorsi-daprod.yaml`), i grafi generati con `node` e passati a uno
+  script che controlla contro `/object_info` che ogni `class_type` esista, che
+  ogni ingresso sia previsto, che non manchi nessun obbligatorio e che nessun
+  collegamento punti nel vuoto. Passano tutti — cinema e musica — e l'unica cosa
+  che segnala è `LoadImage.image`, che è un elenco di file già dentro al motore.
+- **`apps/musica/src/dati/ace.js`** — `LINGUE` ha tre campi adesso: `id` (il
+  valore che vuole il nodo di ACE-Step, lettera per lettera), `nome` (l'italiano
+  della pastiglia) e `inglese` (quello che finisce nella descrizione per
+  MiniMax, in `grafi.js` → `descrizione()`).
 
 ## Com'è entrata DaProdMusica
 
@@ -1122,6 +1169,23 @@ che passava da solo al brano dopo.
 | Lettore di Musica | a fine brano si ferma, non passa al successivo |
 
 ## Cosa aspetta un giudizio di Cammo
+
+**Della 0.4.1, costruita il 20 agosto e da provare:**
+
+- **DaProdCinema con LTX 2.5** — è la cosa grossa, ed è quella che nessuno ha
+  mai visto girare. 23,2 GB da scaricare (la barra adesso te lo dice mentre
+  arriva), poi **una sola inquadratura, misura Provino**: prima di impegnare un
+  pomeriggio si guarda quanto costa una clip. Se esce un mp4 con dentro un
+  movimento, il resto della scheda è già collaudato dalla 0.4.0.
+- **MiniMax H3** — 42,3 GB, e su 8 GB di scheda è una prova, non un modo di
+  lavorare. Vale la pena solo dopo che LTX ha funzionato.
+- **DaProdMusica, la lingua** — cantare in italiano con ACE-Step (dove è
+  un'impostazione vera) e con MiniMax (dove è una frase nel prompt): serve
+  sapere se la seconda cambia qualcosa davvero o se tanto vale dirlo a mano.
+- **Il decode a blocchi spento** — se un brano lungo adesso si ferma per memoria
+  finita, va riacceso dagli avanzati: è esattamente la cosa da segnalare.
+- **La barra dello scaricamento** — annullare a metà e riprendere, e guardare se
+  velocità e «quanto manca» raccontano la verità su decine di GB.
 
 **Della 0.3.2, costruita il 20 agosto e da provare:**
 

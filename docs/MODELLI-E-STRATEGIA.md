@@ -124,7 +124,7 @@ WanGP, i progetti sul Desktop sono più recenti:
 |---|---|---|---|
 | Musica | ACE-Step v1.5 XL Turbo 4B / Suno | **MiniMax Music 3** | il codice (13 ago 2026) |
 | Foto | Krea 2 Turbo (in WanGP) | **Anima** (in Musica) + FLUX.2 Klein | il codice |
-| Cinema | **MiniMax H3** (in WanGP) | — | solo wiki, ma vedi § 5 |
+| Cinema | **MiniMax H3** (in WanGP) | **LTX 2.5** e **MiniMax H3** (0.4.1) | il codice: adesso ci sono tutti e due, vedi § 5.1 |
 
 Per Musica e Foto il codice ha superato la wiki e la suite segue il codice.
 Per il **video** invece esiste solo il metodo manuale in WanGP: è l'unico pezzo
@@ -152,6 +152,15 @@ Da rivedere solo se cambia una di queste tre cose: esce un repack ComfyUI più
 leggero del W4A8, oppure la scheda video diventa più grande (allora conta il
 text encoder int8 da 9,2 GB, non i GGUF), oppure ComfyUI impara a caricare
 quella famiglia di GGUF.
+
+**Seguito del 20 agosto 2026 (0.4.1): il DiT a 4 bit è stato tolto.** Non per
+qualità misurata — nessuno ha fatto un confronto in cieco — ma perché la scelta
+fra 1,8 e 2,5 GB su uno scaricamento da otto non è una scelta: sono 700 MB in
+cambio della parte che si sente. Nel menu restano tre voci (ACE Turbo, ACE XL
+Turbo, MiniMax int8) invece di quattro, e chi aveva scelto il 4 bit finisce
+sull'int8 da sé (`crea.js`, `modelloScelto`). **Il text encoder W4A8 resta**, ed
+è l'unico pezzo a 4 bit della suite: la sua alternativa int8 pesa 9,2 GB e su
+8 GB di VRAM non ci sta.
 
 **E dal 18 agosto 2026 la wiki si aggiorna anche.** Non era così — era in sola
 lettura — poi Cammo ha chiesto di curarla. La divergenza qui sopra è stata
@@ -286,6 +295,51 @@ della guida, con Ref2VA e FL2VA già collaudati a mano; LTX 2.5 è la strada
 veloce per le clip lunghe e l'unico dei due che il suono lo fa da sé. La scelta
 del modello si fa come in Foto — un menu, ogni voce coi propri grafi e il
 proprio punto di lavoro (`apps/foto/src/grafi.js` è già scritto così).
+
+### 5.1 Come è finita: i pesi veri, scelti il 20 agosto 2026 (0.4.1)
+
+Nella 0.4.0 DaProdCinema era nata con **Wan 2.2 TI2V 5B**, 18,1 GB, perché i due
+modelli decisi costavano il doppio e il quadruplo. Cammo ha chiesto di tornare
+ai due decisi: «io volevo solo ltx 2.5 e minimax h3, ti avevo detto di ispirarti
+a Wan**GP**, non al modello». Ed è la lettura giusta di questo documento: da
+WanGP si prende il **metodo** (§ 3), non il catalogo.
+
+Cosa c'è nel catalogo adesso, e perché proprio quei file:
+
+| | File | Peso | Perché questo |
+|---|---|---|---|
+| LTX 2.5 DiT | `ltx-2.5-22b-distilled-transformer-w4a8_convrot` | 11,7 GB | distillato (8 passi) e W4A8: la int8 ufficiale è 20 GB |
+| LTX 2.5 encoder | `gemma4-12b-with-proj-ltx-2.5-w4a8_convrot` | 9,9 GB | si porta dentro le proiezioni, quindi basta `CLIPLoader` tipo `ltxv` |
+| LTX 2.5 VAE video | `ltx-2.5-video-vae-conv-bf16` | 1,35 GB | il decoder «conv», quello veloce, che è anche il predefinito di WanGP |
+| LTX 2.5 VAE audio | `ltx-2.5-audio-vae-bf16` | 0,34 GB | **va in `checkpoints`**: contiene autoencoder *e* vocoder, e `LTXVAudioVAELoader` legge da lì |
+| H3 DiT | `minimax_h3_fl2va_pruned_w4a8_mixed` | 11,7 GB | la variante FL2VA, che è quella che attacca le inquadrature |
+| H3 encoder | `qwen3vl_32b_minimax_h3_int8_convrot` | 25,3 GB | il pezzo che decide tutto: più piccolo non si può, vedi sotto |
+| H3 VAE video | `minimax_h3_video_vae_int8_convrot` | 2,95 GB | si taglia i blocchi da solo, quindi `VAEDecode` e non la versione a blocchi |
+| H3 VAE audio | `minimax_h3_audio_vae_fp32` | 0,56 GB | |
+| H3 LoRA turbo | `minimax_h3_fl2v_turbo_4step_v1.0_768p` | 1,82 GB | quattro passi invece di decine: senza, diciassette clip sono una notte |
+
+**Tre cose imparate scegliendoli**, che valgono per la prossima volta:
+
+1. **Il repo ufficiale di LTX 2.5 è dietro un cancello** (`gated: auto`): serve
+   un account HuggingFace e un token, e la suite non ne ha uno. Gli stessi pesi
+   esistono rispecchiati senza cancello, e le due VAE sono byte per byte i file
+   ufficiali (verificato sul `Content-Length`).
+2. **Il text encoder di H3 è il collo di bottiglia, non il DiT.** Qwen3-VL 32B in
+   int8 è 25,3 GB. La versione NVFP4 da 14,6 GB vuole una scheda **Blackwell**
+   (serie 50) e la 4060 è Ada; i GGUF vorrebbero ComfyUI-GGUF, che questa
+   famiglia non la carica. Finché non cambia una delle due cose, H3 costa 42 GB.
+3. **W4A8 ConvRot si carica da sé.** `comfy-kitchen` (`AsymW4A8Int8Layout`) è già
+   nell'ambiente condiviso e ComfyUI 0.33.1 lo registra in `quant_ops.py`: è la
+   stessa strada di MiniMax Music 3, e vale la pena cercarla per prima quando
+   arriva un modello nuovo troppo grosso.
+
+**Come sono stati verificati i grafi.** Motore avviato su una porta a parte
+(`--cpu --port 8199`) e `/object_info` interrogato: per ogni nodo dei due grafi
+si è controllato che il `class_type` esista, che ogni ingresso sia previsto, che
+non manchi nessun obbligatorio e che nessun collegamento punti a un nodo che non
+c'è. Passano tutti e due, con le due varianti (con e senza primo fotogramma).
+**Non è la stessa cosa di una clip uscita davvero**: quella richiede 23 GB
+scaricati e minuti di scheda video, e resta la prima cosa da fare.
 
 ---
 

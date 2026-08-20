@@ -17,6 +17,13 @@ copertina al posto tuo. Serve avere [LM Studio](https://lmstudio.ai) aperto:
 risponde **il modello che scegli nel menu lì sopra**, qualunque sia. Bonsai 27B
 è quello che consigliamo, non quello che ti tocca.
 
+**Il modello si sceglie per primo**, in cima alla scheda: **ACE-Step 1.5 Turbo**
+(quello che parte, otto passi), il suo fratello **XL Turbo**, o **MiniMax Music
+3**. Sotto il testo c'è la **lingua del canto**, una fila di pastiglie con
+l'italiano per primo: ACE-Step la riceve come impostazione e canta in quella
+lingua, MiniMax una casella per la lingua non ce l'ha e quindi gliela diciamo
+nella descrizione dello stile — aiuta, ma non è un interruttore.
+
 La copertina si genera insieme al brano, prima che parta la musica.
 
 ## 🖼️ DaProdFoto — *disponibile*
@@ -62,10 +69,17 @@ insieme il video. La regia invece è già scritta: l'apertura stabilisce il mond
 con un campo lungo fermo, la strofa mostra il dettaglio con una lenta spinta in
 avanti, il ritornello è il picco con una corsa bassa.
 
-⏱️ **Aspettati minuti a inquadratura.** Su una scheda da 8 GB una clip da cinque
-secondi costa fra due e quattro minuti, e un video da un minuto e mezzo sono
-diciassette inquadrature: da mezz'ora a più di un'ora. Si gira una clip per
-volta, e «Ferma» non butta via quello che è già fatto — riprendi da lì.
+I modelli sono due, e si scelgono dal menu: **LTX 2.5** (23,2 GB da scaricare,
+quello che parte) e **MiniMax H3** (42,3 GB). Fanno tutti e due il video **con
+il suono dentro**; nel montaggio finale però sopra ci va la canzone, quindi
+quella traccia si sente solo nelle anteprime delle singole clip.
+
+⏱️ **Aspettati minuti a inquadratura.** Su una scheda da 8 GB questi modelli
+lavorano spostando i pesi fra scheda e RAM, e un video da un minuto e mezzo sono
+diciassette inquadrature. Si gira una clip per volta, e «Ferma» non butta via
+quello che è già fatto — riprendi da lì. **La prima prova falla su una sola
+inquadratura**, alla misura più piccola: così sai quanto costa prima di
+impegnare un pomeriggio.
 
 ## 🤖 DaProdCompanion — *in arrivo*
 
