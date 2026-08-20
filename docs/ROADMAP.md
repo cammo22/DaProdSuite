@@ -97,7 +97,7 @@ fermo avrebbe voluto dire non pubblicare niente aspettando un'app sola.
       fino al giro completo — parlato, ricordato, sognato, e il grafo scritto
       con le sue entità. **La voce non c'è ancora**: erano due servizi Python in
       più con i loro GB, e la suite ha già Piper e Whisper per IoDigitale.*
-- [x] **DaProd IoDigitale** — l'avatar parlante, ex LeapTalk *(dentro il 17
+- [x] **DaProdIoDigitale** — l'avatar parlante, ex LeapTalk *(dentro il 17
       agosto 2026: motore avviato dal supervisore, modelli dalla cartella
       condivisa, finestra della suite. Provato fino al motore pronto — la
       conversazione la giudichi tu. **Resta l'interfaccia da tradurre in
@@ -244,7 +244,7 @@ rotte e sono state corrette (vedi il changelog della 0.2.0); queste restano.
       agosto 2026: Musica avvisa in cima che un brano può richiedere ore (e ti
       lascia provare), FLUX.2 Klein resta spento nel menu di Foto con scritto
       perché.
-- ~~**DaPDream e DaProd IoDigitale pretendono la GPU**~~ — fatto il 19 agosto
+- ~~**DaPDream e DaProdIoDigitale pretendono la GPU**~~ — fatto il 19 agosto
       2026: su un computer senza scheda video non si installano nemmeno, e il
       pulsante spento dice il motivo **prima** degli otto GB.
 - [ ] **Provare l'aggiornamento automatico da una versione all'altra** su quel
@@ -289,7 +289,7 @@ rotte e sono state corrette (vedi il changelog della 0.2.0); queste restano.
   2026. La suite lo sapeva già fare (non è un motore pesante, non passa
   dall'arbitro); quello che mancava era arrivarci senza tornare all'hub, ed è il
   tasto in basso a destra di ogni app.
-- ~~**L'interfaccia di DaProd IoDigitale è in inglese**~~ — fatta il 19 agosto
+- ~~**L'interfaccia di DaProdIoDigitale è in inglese**~~ — fatta il 19 agosto
   2026: la pagina, i tasti e le frasi che arrivano dal motore.
 
 - ~~**Pulsanti veri nelle gallerie**~~ — fatto il 16 agosto 2026, e con loro il

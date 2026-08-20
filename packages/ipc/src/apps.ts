@@ -272,7 +272,7 @@ export const APPS: Record<AppId, AppDescriptor> = {
   },
   iodigitale: {
     id: "iodigitale",
-    name: "DaProd IoDigitale",
+    name: "DaProdIoDigitale",
     tagline: "Il tuo avatar parlante: gli scrivi, ti risponde in video.",
     kind: "service",
     accent: "#ff7c5c",

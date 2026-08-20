@@ -1,5 +1,5 @@
 /**
- * DaProd IoDigitale dentro la suite.
+ * DaProdIoDigitale dentro la suite.
  *
  * Viene da `Desktop\AvatarParlante\LeapTalk`, che era un programma intero: un
  * `.bat` con un menu, un ambiente Python suo, quindici GB di modelli in una
@@ -48,7 +48,7 @@ export function apri(onClose: () => void): void {
     show: false,
     backgroundColor: "#08090d",
     autoHideMenuBar: true,
-    title: "DaProd IoDigitale",
+    title: "DaProdIoDigitale",
     // L'icona della finestra e della barra delle applicazioni: quella dell'app,
     // non quella della suite. Con cinque finestre aperte è l'unico modo per
     // riconoscerle senza leggerne il titolo.

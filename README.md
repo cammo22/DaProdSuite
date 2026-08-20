@@ -69,7 +69,7 @@ Tutto in locale: nessun account, nessuna API, nessun dato che esce dal computer.
 | 🩷 | **DaProdMusica** | Crei canzoni intere, cantate e suonate, da un testo e uno stile | MiniMax Music 3 | ✅ disponibile |
 | 🟠 | **DaProdFoto** | Crei immagini scrivendo cosa vuoi vedere, poi ne cambi un pezzo | Anima Turbo · FLUX.2 Klein | ✅ disponibile |
 | 🩵 | **DaProdDream** | Trasformi un video mentre scorre: webcam, un file, o lo schermo | SD-Turbo · Anima | ✅ disponibile |
-| 🟥 | **DaProd IoDigitale** | Carichi la foto di un volto e ci parli: ti risponde a voce | SoulX-FlashHead | ✅ disponibile |
+| 🟥 | **DaProdIoDigitale** | Carichi la foto di un volto e ci parli: ti risponde a voce | SoulX-FlashHead | ✅ disponibile |
 | 🟪 | **DaProdCinema** | Da una canzone al suo video musicale, scena per scena | MiniMax H3 · LTX 2.5 | ⏳ in arrivo |
 | 🟢 | **DaProdCompanion** | Un assistente sul desktop che si ricorda delle conversazioni di prima | un modello a scelta via LM Studio | ⏳ in arrivo |
 
@@ -131,7 +131,7 @@ Proviamo tutto su schede **NVIDIA serie RTX 4000** con almeno 8 GB di VRAM. Di
 più è meglio.
 
 **Senza scheda video la suite parte lo stesso**, e adesso te lo dice in faccia
-invece di lasciartelo scoprire: DaProdDream, DaProd IoDigitale e DaProdCinema
+invece di lasciartelo scoprire: DaProdDream, DaProdIoDigitale e DaProdCinema
 non si installano nemmeno (fanno video, e senza scheda non è "più lento", è
 un'altra cosa), DaProdMusica avvisa che un brano può richiedere ore, e in
 DaProdFoto resta acceso il modello che ce la fa.
@@ -236,7 +236,7 @@ non vengono mai riscaricati né cancellati**, nemmeno disinstallando.
 | DaProdDream | 2,6 GB | +5,6 GB per sognare con Anima |
 | DaProdFoto | 5,6 GB | +6,3 GB FLUX.2 Klein 4B · +12,0 GB il 9B |
 | DaProdMusica | 8,0 GB | +5,6 GB per le copertine con Anima* |
-| DaProd IoDigitale | 10,4 GB | +6,0 GB modello Pro |
+| DaProdIoDigitale | 10,4 GB | +6,0 GB modello Pro |
 
 <sub>* zero se hai già DaProdFoto o DaProdDream: i pesi di Anima sono gli stessi,
 condivisi.</sub>

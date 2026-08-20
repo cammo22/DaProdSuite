@@ -17,7 +17,7 @@ altro, quindi qui resta il **cervello**: la conversazione, la memoria e i sogni.
 
 - **`tts_service`** (voce Kokoro) e **`stt_service`** (ascolto Whisper) erano
   due processi Python a parte, con i loro modelli e i loro GB. La suite ha già
-  Piper e faster-whisper per DaProd IoDigitale: rifarli qui vorrebbe dire
+  Piper e faster-whisper per DaProdIoDigitale: rifarli qui vorrebbe dire
   scaricarli due volte. Il codice che li chiamava è rimasto dov'era, con `None`
   al posto del client — degrada da sé, e quando la voce arriverà si accenderà
   senza riscrivere niente.

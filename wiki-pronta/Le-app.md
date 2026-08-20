@@ -42,7 +42,7 @@ niente — solo un prompt che si trasforma da solo mentre lo guardi, senza
 bisogno di una sorgente. Il modo veloce gira a ritmo di webcam; il secondo
 modo, più curato, rifà l'immagine un fotogramma alla volta mentre scrivi.
 
-## 🗣️ DaProd IoDigitale — *disponibile*
+## 🗣️ DaProdIoDigitale — *disponibile*
 
 Il tuo avatar parlante: carichi un ritratto, gli parli o gli scrivi, e ti
 risponde a voce con il volto che si muove. Capisce l'italiano, risponde in

@@ -1,4 +1,4 @@
-r"""Avvio di DaProd IoDigitale come motore della suite.
+r"""Avvio di DaProdIoDigitale come motore della suite.
 
 Viene da `Desktop\AvatarParlante\LeapTalk`, che era un programma intero: un
 `.bat` con un menu, un ambiente Python suo, i modelli in una cartella sua e un
@@ -138,7 +138,7 @@ def main() -> int:
         return Response(status_code=204)
 
     log.info("Modelli da %s", MODELLI)
-    log.info("DaProd IoDigitale in ascolto su http://%s:%s", settings.host, settings.port)
+    log.info("DaProdIoDigitale in ascolto su http://%s:%s", settings.host, settings.port)
     uvicorn.run(app, host=settings.host, port=settings.port, log_level="warning", access_log=False)
     return 0
 

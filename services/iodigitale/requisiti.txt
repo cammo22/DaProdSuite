@@ -1,4 +1,4 @@
-# Le librerie che servono a DaProd IoDigitale e che l'ambiente condiviso non ha.
+# Le librerie che servono a DaProdIoDigitale e che l'ambiente condiviso non ha.
 #
 # **Niente versioni fissate con `==` qui dentro.** Viene da
 # `requirements-windows.txt` di LeapTalk, dove aveva senso: quel progetto aveva

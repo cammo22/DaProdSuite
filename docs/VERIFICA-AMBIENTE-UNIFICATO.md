@@ -1,7 +1,7 @@
 # Verifica dell'ambiente unificato — 15 agosto 2026
 
 Il piano prevedeva un solo ambiente Python con torch 2.13 al posto di quattro.
-Il rischio dichiarato era **DaProd IoDigitale**, pinnato a torch 2.7.1 con codice
+Il rischio dichiarato era **DaProdIoDigitale**, pinnato a torch 2.7.1 con codice
 di ricerca (SoulX-FlashHead): il salto poteva rompere il lip-sync.
 
 **Esito: l'ambiente unificato regge. Nessun motore è rimasto indietro.**
@@ -26,7 +26,7 @@ diffusers di Dream, lo stack SoulX di IoDigitale e il brain del Companion.
 
 ---
 
-## DaProd IoDigitale — il rischio, rientrato
+## DaProdIoDigitale — il rischio, rientrato
 
 Era pinnato a `torch==2.7.1`, `torchvision==0.22.1`. Su torch 2.13:
 

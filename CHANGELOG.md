@@ -230,7 +230,7 @@ luoghi, come stanno fra loro. Il giorno dopo se ne ricorda.
 - **La memoria è un file solo**, `memoria.db`, che si può copiare o cancellare.
 - ⚠ **Non ha ancora la voce.** Nel progetto da cui viene c'erano due programmi
   in più solo per parlare e ascoltare, con i loro GB di modelli; la suite ha
-  già le voci di DaProd IoDigitale, e rifarli qui vorrebbe dire scaricare due
+  già le voci di DaProdIoDigitale, e rifarli qui vorrebbe dire scaricare due
   volte le stesse cose. Per adesso si scrive.
 - ⚠ **Vuole LM Studio acceso**, come tutto quello che scrive nella suite. Se è
   spento o non ha modelli, la scheda lo dice appena si apre invece di far
@@ -294,7 +294,7 @@ un'app lentissima, o una barra che non finiva mai.
 
 - **La barra in alto lo dice in italiano** e con le conseguenze: quali schede
   non partiranno e quanto vanno piano le altre.
-- **DaProdDream, DaProd IoDigitale e DaProdCinema non si installano nemmeno**:
+- **DaProdDream, DaProdIoDigitale e DaProdCinema non si installano nemmeno**:
   fanno video, e senza scheda video non è "più lento", è un'altra cosa. Il
   pulsante è spento con scritto perché — prima degli otto GB di scaricamento,
   non dopo.
@@ -313,7 +313,7 @@ generato, con un movimento lento di macchina: 226 KB in tutto.
 DaProdDream o dal Visualizer arriva col video vero (0.6.0). Quando arriverà
 cambierà il programma che le fa, non quello che le mostra.
 
-### DaProd IoDigitale parla italiano
+### DaProdIoDigitale parla italiano
 
 Era l'unica scheda che non sembrava della suite: in cima diceva ancora *LeapTalk
 Live*, i tasti dicevano `Load Image` e `Hold to Talk`, e quando qualcosa andava
@@ -350,7 +350,7 @@ si corregge un difetto lì dentro, perché si corregge una volta sola.
 ## 0.2.0 — Cinque app, e ognuna ha la sua faccia
 
 **18 agosto 2026, pubblicata il 19.** Dalla 0.1.0 sono entrate due app —
-DaProdDream e DaProd IoDigitale — e la suite ha smesso di essere sette schede
+DaProdDream e DaProdIoDigitale — e la suite ha smesso di essere sette schede
 con la stessa icona.
 
 > **Perché la data è doppia.** La 0.2.0 era costruita dal 18 e stava sul
@@ -376,7 +376,7 @@ con la stessa icona.
 
 ### Installare un'app non rompe più le altre
 
-Dopo aver installato DaProd IoDigitale, **DaPMusica e DaPFoto non si aprivano
+Dopo aver installato DaProdIoDigitale, **DaPMusica e DaPFoto non si aprivano
 più**, e DaPDream e IoDigitale si aprivano ma non funzionavano. Non era una
 delle quattro: era l'ambiente Python condiviso.
 
@@ -503,7 +503,7 @@ IoDigitale la scheda video la vogliono per definizione.
   4K non resta più piccola in mezzo al monitor.
 
 
-### DaProd IoDigitale è entrato: la quinta scheda
+### DaProdIoDigitale è entrato: la quinta scheda
 
 - **L'avatar parlante è dentro la suite.** Premi Installa, si scarica quello che
   manca, e la scheda si apre come tutte le altre: niente più `.bat` con il menu,

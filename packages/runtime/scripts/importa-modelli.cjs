@@ -31,12 +31,12 @@ const MAPPA = [
     a: join(MODELLI, cartella),
     perche: `DaProdMusica e DaProdFoto — ${cartella}`,
   })),
-  // DaProd IoDigitale: l'avatar parlante e i modelli di voce e ascolto
+  // DaProdIoDigitale: l'avatar parlante e i modelli di voce e ascolto
   ...['SoulX-FlashHead-1_3B', 'leaptalk', 'wav2vec2-base-960h', 'asr', 'llm', 'whisper', 'piper'].map(
     (cartella) => ({
       da: join(DESKTOP, 'AvatarParlante', 'LeapTalk', 'models', cartella),
       a: join(MODELLI, cartella),
-      perche: `DaProd IoDigitale — ${cartella}`,
+      perche: `DaProdIoDigitale — ${cartella}`,
     }),
   ),
 ];

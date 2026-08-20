@@ -17,7 +17,7 @@ Se installassimo tutto così com'è, con il manifest attuale:
 | DaProdCompanion | un modello a scelta, via LM Studio | 0 (li gestisce LM Studio) |
 | DaProdMusica | MiniMax Music 3 (DiT + encoder + VAE, tutti W4A8) | 7,4 GB |
 | DaProdFoto | FLUX.2 Klein Q4_K_S + Qwen3-8B + VAE **+** Anima + Qwen3 0.6B + VAE | 16,8 GB |
-| DaProd IoDigitale | SoulX-FlashHead + LeapTalk + wav2vec2 | 14,8 GB |
+| DaProdIoDigitale | SoulX-FlashHead + LeapTalk + wav2vec2 | 14,8 GB |
 | | **totale** | **~46 GB** |
 
 Più ~4 GB di ambiente Python. **Si può fare molto meglio.**
@@ -331,7 +331,7 @@ non esisteva da nessuna parte prima.)*
 | 3 | DaProdFoto | dentro (0.1.0) — Anima base, FLUX.2 Klein extra |
 | 4 | DaProdDream | dentro (0.2.0) |
 | 5 | DaProdCompanion | dentro (0.3.1) — senza voce, per adesso |
-| 6 | DaProd IoDigitale | dentro (0.2.0) |
+| 6 | DaProdIoDigitale | dentro (0.2.0) |
 | 7 | **DaProdCinema** | **da fare** — da canzone a video musicale |
 
 E le divisioni della suite tornano a coincidere con quelle della wiki: Musica,

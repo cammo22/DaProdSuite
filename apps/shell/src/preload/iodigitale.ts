@@ -1,7 +1,7 @@
 import { esponiApiApp } from "./comune";
 
 /**
- * Il ponte di DaProd IoDigitale.
+ * Il ponte di DaProdIoDigitale.
  *
  * Solo quello comune: la libreria della suite, lo scambio con le altre app, il
  * modello che scrive, i log per il terminale. L'indirizzo del motore qui non

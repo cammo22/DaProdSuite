@@ -35,7 +35,7 @@ con altri programmi che usi.
 | DaProdDream | 2,6 GB |
 | DaProdFoto | 5,6 GB |
 | DaProdMusica | 8,0 GB |
-| DaProd IoDigitale | 10,4 GB |
+| DaProdIoDigitale | 10,4 GB |
 
 Più ~4 GB di ambiente Python, una volta sola per tutte. Ogni scheda ha anche
 dei modelli **extra**, opzionali, per una qualità più alta in cambio di più

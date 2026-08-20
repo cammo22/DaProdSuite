@@ -25,7 +25,7 @@
 # 4 GB invece di 14,7, ed è anche il posto dove installare un'app può rompere
 # le altre senza toccarle.
 #
-# Il 19 agosto 2026 è successo: dopo aver installato DaProd IoDigitale, Musica e
+# Il 19 agosto 2026 è successo: dopo aver installato DaProdIoDigitale, Musica e
 # Foto non si aprivano più e Dream e IoDigitale si aprivano senza funzionare.
 # Nessuna delle quattro era il problema. Due librerie continuavano a rimbalzare
 # avanti e indietro a ogni installazione — una le voleva nuove, un vincolo
