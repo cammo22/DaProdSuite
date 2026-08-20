@@ -147,6 +147,9 @@ export const suConsegna = (azione) => suite.onConsegna(azione);
 
 export const statoModelli = (ids) => suite.modelli.stato(ids);
 export const scaricaModelli = (ids) => suite.modelli.scarica(ids);
+export const annullaScaricamento = () => suite.modelli.annulla();
+/** Chi siamo, per la suite: serve a sapere se uno scaricamento in corso è il nostro. */
+export const io = suite.io;
 export const suAvanzamentoModelli = (azione) => suite.modelli.onAvanzamento(azione);
 export const macchina = () => suite.macchina();
 
