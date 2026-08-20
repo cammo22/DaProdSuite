@@ -25,7 +25,7 @@ gestire motori molto diversi fra loro.
 |---|---|---|
 | `comfy/` ✅ | DaProdMusica, DaProdFoto, DaProdCinema | ComfyUI, scaricato al primo avvio |
 | `dream/` | DaProdDream | `DaProdDream/engine` |
-| `talk/` | DaProd IoDigitale | `AvatarParlante/LeapTalk`, solo l'inference |
+| `talk/` | DaProdIoDigitale | `AvatarParlante/LeapTalk`, solo l'inference |
 | `brain/` | DaProdCompanion | `DaProdCompanion/services/brain` |
 
 ComfyUI **non** viene copiato qui: è GPL-3.0 e la suite è MIT, quindi si scarica

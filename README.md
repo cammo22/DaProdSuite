@@ -66,11 +66,11 @@ Tutto in locale: nessun account, nessuna API, nessun dato che esce dal computer.
 | | App | Cosa fa | Modello | |
 |---|---|---|---|---|
 | 🟣 | **DaProdVisualizer** | Ascolti un file audio e lo vedi: la grafica si muove col suono | — | ✅ disponibile |
-| 🩷 | **DaProdMusica** | Crei canzoni intere, cantate e suonate, da un testo e uno stile | MiniMax Music 3 | ✅ disponibile |
+| 🩷 | **DaProdMusica** | Crei canzoni intere, cantate e suonate, da un testo e uno stile | MiniMax Music 3 · ACE-Step 1.5 | ✅ disponibile |
 | 🟠 | **DaProdFoto** | Crei immagini scrivendo cosa vuoi vedere, poi ne cambi un pezzo | Anima Turbo · FLUX.2 Klein | ✅ disponibile |
 | 🩵 | **DaProdDream** | Trasformi un video mentre scorre: webcam, un file, o lo schermo | SD-Turbo · Anima | ✅ disponibile |
-| 🟥 | **DaProd IoDigitale** | Carichi la foto di un volto e ci parli: ti risponde a voce | SoulX-FlashHead | ✅ disponibile |
-| 🟪 | **DaProdCinema** | Da una canzone al suo video musicale, scena per scena | MiniMax H3 · LTX 2.5 | ⏳ in arrivo |
+| 🟥 | **DaProdIoDigitale** | Carichi la foto di un volto e ci parli: ti risponde a voce | LeapTalk | ✅ disponibile |
+| 🟪 | **DaProdCinema** | Da una canzone al suo video musicale, scena per scena | Wan 2.2 TI2V 5B | ✅ disponibile |
 | 🟢 | **DaProdCompanion** | Un assistente sul desktop che si ricorda delle conversazioni di prima | un modello a scelta via LM Studio | ⏳ in arrivo |
 
 Questa non è una lista chiusa: continuiamo a testare modelli nuovi e ad
@@ -89,10 +89,10 @@ lo stesso.
 
 ## A che punto siamo
 
-> **0.3.3 pubblicata — sei app su sette dentro la suite.**
+> **0.3.4 pubblicata — e nella 0.4.0 in prova ci sono tutte e sette.**
 >
-> **DaProdVisualizer, DaProdMusica, DaProdFoto, DaProdDream** e **DaProd
-> IoDigitale** sono nella suite e funzionano. Si installano da sole, motore e
+> **DaProdVisualizer, DaProdMusica, DaProdFoto, DaProdDream,
+> DaProdIoDigitale** e **DaProdCinema** sono nella suite e funzionano. Si installano da sole, motore e
 > modelli compresi, e riprendono da dove erano se cade la rete. In DaProdFoto e
 > DaProdDream scegli tu con quale modello generare. Ogni app ha un terminale con
 > le ultime righe del motore, e nell'hub ci sono i pannelli per vedere risultati,
@@ -111,14 +111,22 @@ lo stesso.
 > corto, il prompt intero dentro. Premendo Genera la memoria video viene
 > liberata da sola da quello che non serve.
 >
-> Nella versione in prova, la 0.3.4, il **ritocco** sa rifare anche tutta la
-> foto — senza dipingere niente, o dipingendo quello che vuoi tenere e premendo
-> **inverti** — e il **traduttore** italiano→inglese ha il suo quadratino in
-> cima, una barra che dice a che punto è, e non resta più piantato su
-> «traduco…».
+> Con la 0.3.4 il **ritocco** di DaProdFoto sa rifare anche tutta la foto —
+> senza dipingere niente, o dipingendo quello che vuoi tenere e premendo
+> **inverti**.
 >
-> **DaProdCinema** non c'è ancora. Nell'hub dice «In arrivo» e non apre niente:
-> preferiamo un pulsante spento a uno che non fa quello che promette.
+> Nella versione in prova, la 0.4.0, **c'è la settima scheda**: DaProdCinema
+> prende una canzone dalla libreria, legge i suoi `[Verse]` e `[Chorus]`, e ne
+> ricava la scaletta delle inquadrature — quanto dura ognuna, cosa ci succede
+> dentro, come si muove la camera. Poi le gira una per una e le monta sopra il
+> brano. **Sono minuti a inquadratura**: un video da un minuto e mezzo è più di
+> un'ora di scheda video, ed è una cosa da sapere prima di premere Gira.
+>
+> Sempre nella 0.4.0, **DaProdMusica ha un secondo modo di fare una canzone** —
+> ACE-Step 1.5, in otto passi invece di trenta, accanto a MiniMax Music 3 — e il
+> **traduttore** italiano→inglese risponde alla prima: prima la prima traduzione
+> di ogni sessione non rispondeva mai, e dopo due minuti l'app mandava
+> l'italiano al modello. Adesso traduce anche meglio.
 
 Quello che cambia a ogni giro sta in [CHANGELOG.md](CHANGELOG.md), il percorso
 completo in [docs/ROADMAP.md](docs/ROADMAP.md).
@@ -131,7 +139,7 @@ Proviamo tutto su schede **NVIDIA serie RTX 4000** con almeno 8 GB di VRAM. Di
 più è meglio.
 
 **Senza scheda video la suite parte lo stesso**, e adesso te lo dice in faccia
-invece di lasciartelo scoprire: DaProdDream, DaProd IoDigitale e DaProdCinema
+invece di lasciartelo scoprire: DaProdDream, DaProdIoDigitale e DaProdCinema
 non si installano nemmeno (fanno video, e senza scheda non è "più lento", è
 un'altra cosa), DaProdMusica avvisa che un brano può richiedere ore, e in
 DaProdFoto resta acceso il modello che ce la fa.
@@ -236,7 +244,7 @@ non vengono mai riscaricati né cancellati**, nemmeno disinstallando.
 | DaProdDream | 2,6 GB | +5,6 GB per sognare con Anima |
 | DaProdFoto | 5,6 GB | +6,3 GB FLUX.2 Klein 4B · +12,0 GB il 9B |
 | DaProdMusica | 8,0 GB | +5,6 GB per le copertine con Anima* |
-| DaProd IoDigitale | 10,4 GB | +6,0 GB modello Pro |
+| DaProdIoDigitale | 10,4 GB | +6,0 GB modello Pro |
 
 <sub>* zero se hai già DaProdFoto o DaProdDream: i pesi di Anima sono gli stessi,
 condivisi.</sub>
@@ -343,11 +351,13 @@ La suite non addestra nulla: mette insieme il lavoro di altri e lo rende usabile
 | | |
 |---|---|
 | [ComfyUI](https://github.com/comfyanonymous/ComfyUI) | il motore di inferenza di Musica, Foto e Cinema — GPL-3.0, scaricato a parte |
-| [MiniMax](https://github.com/MiniMax-AI) | Music 3 per la musica, H3 per il video |
-| [Anima](https://huggingface.co/circlestone-labs/Anima) · [FLUX.2 Klein](https://huggingface.co/unsloth/FLUX.2-klein-9B-GGUF) · [LTX 2.5](https://github.com/Lightricks/LTX-Video) | le immagini e il video |
-| [SoulX-FlashHead](https://huggingface.co/Soul-AILab/SoulX-FlashHead-1_3B) · [LeapTalk](https://huggingface.co/z-rx/leaptalk) | l'avatar parlante |
+| [MiniMax](https://github.com/MiniMax-AI) · [ACE-Step](https://huggingface.co/ACE-Step) | i due modi di fare una canzone |
+| [Wan 2.2](https://huggingface.co/Wan-AI) | il video di DaProdCinema |
+| [Anima](https://huggingface.co/circlestone-labs/Anima) · [FLUX.2 Klein](https://huggingface.co/unsloth/FLUX.2-klein-9B-GGUF) | le immagini |
+| [LeapTalk](https://huggingface.co/z-rx/leaptalk) · [SoulX-FlashHead](https://huggingface.co/Soul-AILab/SoulX-FlashHead-1_3B) | l'avatar parlante: LeapTalk gira sopra SoulX, che è il suo modello di base |
 | [SD-Turbo](https://huggingface.co/stabilityai/sd-turbo) | la trasformazione in tempo reale |
 | [Whisper](https://github.com/SYSTRAN/faster-whisper) · [Piper](https://github.com/rhasspy/piper) | ascoltano e parlano, in locale |
+| [opus-mt](https://huggingface.co/Helsinki-NLP/opus-mt-tc-big-it-en) | traduce le descrizioni in inglese prima di generare |
 | [LM Studio](https://lmstudio.ai) | tiene acceso l'LLM che scrive testi e descrizioni |
 | [WanGP](https://github.com/deepbeepmeep/Wan2GP) | non è usato dalla suite, ma le sue tecniche di memoria sono state la scuola |
 

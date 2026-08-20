@@ -96,7 +96,7 @@ async def modelli(request):
             "nome": TRADUTTORE,
             "dispositivo": "cpu",
             "vramMb": 0,
-            "totaleMb": TRADUTTORE_MB,
+            "totaleMb": _traduttore_mb,
             "stato": _stato_trad["fase"] if _stato_trad["fase"] == "carico" else "pronto",
         })
 
@@ -143,36 +143,80 @@ un'immagine che non c'entra niente con quello che hai chiesto, e senza dire che
 non ha capito. Qui si traduce prima di generare, così si può scrivere in
 italiano.
 
-**Non è un LLM, e non passa da LM Studio.** È Marian (`opus-mt-it-en`), 74
-milioni di parametri e 330 MB: un modello che sa fare una cosa sola. Gira dentro
-al motore, sul computer, e non chiede niente a nessuno — né a internet né al
-modello che scrive le descrizioni. Sta qui per la stessa ragione dell'elenco
-della memoria: c'è già un Python con torch acceso, e un servizio a parte
-vorrebbe dire un secondo processo, una seconda porta e un secondo avvio da
-aspettare.
+**Non è un LLM, e non passa da LM Studio.** È Marian (`opus-mt-tc-big-it-en`),
+un modello che sa fare una cosa sola. Gira dentro al motore, sul computer, e non
+chiede niente a nessuno — né a internet né al modello che scrive le descrizioni.
+Sta qui per la stessa ragione dell'elenco della memoria: c'è già un Python con
+torch acceso, e un servizio a parte vorrebbe dire un secondo processo, una
+seconda porta e un secondo avvio da aspettare.
 
-**In CPU, non in GPU.** In VRAM quei 330 MB toglierebbero spazio al modello che
-deve fare il lavoro vero, e su una scheda da 8 GB quello spazio è esattamente
-ciò che manca. In CPU la traduzione di una frase dura un secondo o due.
+**Perché quello grande e non quello piccolo.** Fino alla 0.3.4 era
+`opus-mt-it-en`, 74 milioni di parametri e 330 MB, e si sentiva: «luce calda»
+diventava *hot light*, che a un modello di immagini dice un'altra cosa. Il
+`tc-big` della stessa famiglia costa 576 MB e si carica con le stesse due righe
+— è Marian anche lui — ma traduce come si deve. Chi ha ancora solo il piccolo
+sul disco continua a usare quello, vedi `_cartella_traduttore`.
+
+**In CPU, non in GPU.** In VRAM quei MB toglierebbero spazio al modello che deve
+fare il lavoro vero, e su una scheda da 8 GB quello spazio è esattamente ciò che
+manca. In CPU la traduzione di una frase dura un secondo o due.
 
 **Perché prima restava piantato su «traduco…».** Il modello si caricava *dentro
 il loop di aiohttp*, e la prima volta non è questione di un attimo: misurati
-quindici secondi buoni fra lo svegliare le librerie e il leggere i 330 MB dal
+quindici secondi buoni fra lo svegliare le librerie e il leggere i pesi dal
 disco. Per tutto quel tempo il motore non rispondeva più a niente — né alla
 traduzione, né a `/health`, né all'interfaccia. E due Genera premuti a distanza di poco mandavano due traduzioni
 insieme sullo stesso modello. Adesso il caricamento sta in un thread a parte, ne
 passa una alla volta, e a ogni istante c'è una risposta pronta a
 `/daprod/traduttore` che dice a che punto è: è quella che disegna la barra
 nell'app, invece di tre puntini fermi.
+
+**E perché poi restava piantato lo stesso.** Quello sopra era vero e non
+bastava: dalla 0.3.4 alla 0.4.0 la *prima* traduzione di ogni sessione non
+rispondeva **mai**, e l'app se ne accorgeva solo dopo i suoi due minuti di
+attesa. Misurato: `HTTP 000` dopo 180 secondi la prima volta, `HTTP 200` in 0,15
+secondi la seconda. Il modello si caricava benissimo — erano la riga di log che
+diceva «pronto» e la freccia dentro quella riga. Su Windows lo stdout di un
+processo Python è `cp1252`, che la freccia non la sa scrivere, e `logging` alzava
+un `UnicodeEncodeError` **dopo** che il modello era già in memoria: veniva preso
+per un caricamento fallito, e l'eccezione usciva dal thread senza che nessuno
+rispondesse alla richiesta.
+
+Da qui tre regole, e sono quelle che tengono in piedi il resto del file:
+
+1. **Il log non può rompere niente.** Si scrive con `_dillo`, che si mangia i
+   propri guasti. Un registro che non si riesce a scrivere è un fastidio, non un
+   guasto del programma.
+2. **Un caricamento riuscito resta riuscito.** Il `try` copre il caricamento e
+   basta: quello che viene dopo non può più trasformarlo in un fallimento.
+3. **La rotta risponde sempre.** Qualunque cosa succeda là dentro, chi ha chiesto
+   una traduzione riceve una risposta — al limite «tieniti l'italiano, ecco
+   perché». Restare in silenzio è l'unico esito che l'app non sa gestire.
+
+La causa a monte — lo stdout in `cp1252` — è riparata per tutti i motori in una
+riga sola, `PYTHONIOENCODING` in `apps/shell/src/main/servizi.ts`. Queste tre
+regole restano comunque: valgono anche il giorno che qualcuno avvia il motore a
+mano, fuori dalla suite, come si fa quando lo si sta riparando.
 """
 
 # Il nome con cui il traduttore compare fra i modelli in memoria, ed è anche la
 # chiave per scaricarlo.
 TRADUTTORE = "Traduttore"
-TRADUTTORE_MB = 330
+
+# Le cartelle in cui può stare, in ordine di preferenza: il grande è quello che
+# la suite scarica oggi, il piccolo è quello che si trova già sul disco di chi
+# usava la suite prima della 0.4.0. I MB servono solo al pannello Memoria.
+TRADUTTORI = (
+    ("traduttore/opus-mt-tc-big-it-en", 576),
+    ("traduttore/opus-mt-it-en", 330),
+)
+TRADUTTORE_MB = TRADUTTORI[0][1]
 
 _traduttore = None
 _traduttore_rotto = None
+# Quanti MB occupa quello che è davvero in RAM: dipende da quale dei due si è
+# trovato sul disco.
+_traduttore_mb = TRADUTTORE_MB
 
 # Una traduzione alla volta: il modello è uno, e due richieste insieme lo
 # facevano lavorare il doppio per rispondere più tardi a tutte e due.
@@ -192,39 +236,115 @@ def _stato_pulito():
     _stato_trad.update({"fase": "fermo", "fatti": 0, "attesi": 0, "da": 0.0})
 
 
+def _dillo(messaggio, guasto=False):
+    """Scrive nel registro, e se non ci riesce si tiene il dispiacere per sé.
+
+    Non è prudenza generica: è la riparazione del difetto raccontato in cima.
+    `logging` su Windows può alzare `UnicodeEncodeError` in faccia a chi lo
+    chiama, e quel `raise` arrivava fin dentro al traduttore. Nessuna riga di
+    registro vale una funzione che smette di funzionare.
+    """
+    try:
+        logging.error(messaggio) if guasto else logging.info(messaggio)
+    except Exception:  # noqa: BLE001 — appunto: nemmeno questo può alzare la voce
+        pass
+
+
+def _cartella_traduttore():
+    """Dove sta il traduttore: il grande se c'è, altrimenti il piccolo.
+
+    Chi aggiorna la suite si ritrova sul disco il piccolo della 0.3.x e non ha
+    ancora scaricato il grande: deve continuare a tradurre come prima, peggio ma
+    subito, invece di vedersi dire che il traduttore non è installato.
+
+    Torna anche i suoi MB, che sono quelli che il pannello Memoria mostra: dire
+    576 quando in RAM ce ne sono 330 sarebbe una bugia comoda e inutile.
+    """
+    radice = Path(os.environ.get("DAPROD_MODELLI", ""))
+    for dove, mb in TRADUTTORI:
+        cartella = radice / dove
+        if (cartella / "config.json").exists():
+            return cartella, mb
+    return None, TRADUTTORE_MB
+
+
+def _rilega_uscita(modello):
+    """Rimette insieme le due metà che `transformers` 5 separa, e non dovrebbe.
+
+    **Senza questa funzione il traduttore grande traduce a caso.** Non «peggio»:
+    a caso. Misurato — «un gatto nero seduto su un davanzale al tramonto, luce
+    calda» diventava *physical Favorite JolieTENStock CTfeatchar pension Pitti…*,
+    parole vere in ordine casuale.
+
+    I pesi si caricavano tutti e giusti: il file ne ha 257, il modello ne vuole
+    259, e i due che mancano sono le posizioni, che Marian si calcola da sé. Il
+    guaio è un altro. La configurazione di questo modello dice `tie_word_
+    embeddings`, cioè «la tabella delle parole in ingresso e quella in uscita
+    sono la stessa cosa»; il file però se le porta dietro tutte e due, e non
+    identiche. `transformers` 5 se ne accorge, decide di non legarle e tiene
+    quella scritta nel file — che è un residuo della conversione da Marian e non
+    vuol dire niente. Da lì le parole a caso: il decoder sceglieva sulla tabella
+    sbagliata.
+
+    Qui si fa quello che la configurazione chiede: si rilega. Con le due legate
+    la stessa frase diventa *a black cat sitting on a windowsill at sunset, warm
+    light*, che è la traduzione giusta parola per parola.
+
+    Vale solo dove la configurazione lo chiede: su un modello che dice davvero di
+    volerle separate non tocca niente, e sul traduttore piccolo della 0.3.x è un
+    giro a vuoto perché lì le due tabelle erano già la stessa.
+    """
+    if not getattr(modello.config, "tie_word_embeddings", False):
+        return
+    testa = getattr(modello, "lm_head", None)
+    parole = getattr(getattr(modello, "model", None), "shared", None)
+    if testa is None or parole is None or testa.weight is parole.weight:
+        return
+    testa.weight = parole.weight
+    _dillo("[daprod] traduttore: tabella delle parole rilegata alla testa di uscita")
+
+
 def _carica_traduttore():
     """Carica il modello alla prima richiesta, non all'avvio del motore.
 
-    Chi genera solo in inglese non deve aspettare 330 MB che non userà mai, e
+    Chi genera solo in inglese non deve aspettare mezzo giga che non userà mai, e
     chi non ha scaricato il traduttore deve poter usare l'app lo stesso.
 
     **Gira in un thread**, mai nel loop di aiohttp: vedi la nota qui sopra.
     """
-    global _traduttore, _traduttore_rotto
+    global _traduttore, _traduttore_rotto, _traduttore_mb
     if _traduttore is not None or _traduttore_rotto is not None:
         return
 
-    cartella = Path(os.environ.get("DAPROD_MODELLI", "")) / "traduttore" / "opus-mt-it-en"
-    if not (cartella / "config.json").exists():
+    cartella, mb = _cartella_traduttore()
+    if cartella is None:
         _traduttore_rotto = (
             "Il traduttore non è installato. Scaricalo dall'hub, oppure scrivi in inglese."
         )
         return
 
     _stato_trad.update({"fase": "carico", "fatti": 0, "attesi": 0, "da": time.time()})
+    # **Il `try` copre il caricamento e nient'altro.** Prima comprendeva anche la
+    # riga di log che veniva dopo, e quella riga di log ha fatto passare per
+    # rotto un traduttore che era pronto e funzionante. Quello che c'è da fare a
+    # cose riuscite sta fuori, dove non può più far cambiare idea a nessuno.
     try:
         from transformers import MarianMTModel, MarianTokenizer
 
         tokenizer = MarianTokenizer.from_pretrained(str(cartella))
         modello = MarianMTModel.from_pretrained(str(cartella))
+        _rilega_uscita(modello)
         modello.eval()
-        _traduttore = (tokenizer, modello)
-        logging.info("[daprod] traduttore italiano→inglese pronto")
     except Exception as exc:  # noqa: BLE001 — qualunque cosa vada storta, l'app deve restare in piedi
         _traduttore_rotto = f"Il traduttore non si è caricato: {exc}"
-        logging.exception("[daprod] traduttore non caricato")
-    finally:
+        _dillo(f"[daprod] traduttore non caricato: {exc!r}", guasto=True)
         _stato_pulito()
+        return
+
+    _traduttore = (tokenizer, modello)
+    _traduttore_mb = mb
+    _stato_pulito()
+    _dillo(f"[daprod] traduttore pronto da {cartella.name}")
 
 
 def _scarica_traduttore():
@@ -274,7 +394,7 @@ async def stato_traduttore(request):
             "secondi": round(time.time() - _stato_trad["da"], 1) if _stato_trad["da"] else 0,
             "pronto": _traduttore is not None,
             "motivo": _traduttore_rotto,
-            "mb": TRADUTTORE_MB,
+            "mb": _traduttore_mb,
         },
         headers={"Cache-Control": "no-store"},
     )
@@ -369,7 +489,22 @@ async def traduci(request):
     # Fuori dal loop di aiohttp: mentre carica e mentre traduce, il motore deve
     # continuare a rispondere a /health, all'interfaccia, e a chi chiede a che
     # punto è la traduzione.
-    tradotto = await asyncio.get_running_loop().run_in_executor(None, lavora)
+    #
+    # **E qualunque cosa succeda là dentro, si risponde.** Un'eccezione che
+    # scappa da `lavora` lasciava la richiesta senza risposta, e l'app scopriva
+    # il guasto solo allo scadere dei suoi due minuti — due minuti in cui il
+    # tasto Genera è spento e sembra rotto. Un errore raccontato subito è
+    # infinitamente meglio di un silenzio: si genera in italiano, si legge il
+    # perché nel riquadro, e si va avanti.
+    try:
+        tradotto = await asyncio.get_running_loop().run_in_executor(None, lavora)
+    except Exception as exc:  # noqa: BLE001
+        _dillo(f"[daprod] traduzione fallita: {exc!r}", guasto=True)
+        _stato_pulito()
+        return web.json_response(
+            {"tradotto": testo, "originale": testo, "tradotta": False, "motivo": str(exc)},
+            headers={"Cache-Control": "no-store"},
+        )
 
     if tradotto is None:
         return web.json_response(

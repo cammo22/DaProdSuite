@@ -8,18 +8,25 @@
  * passaggio in più che può andare storto. Lo dice il modello, con `traduce`.
  *
  * **Chi traduce non è un LLM e non è LM Studio.** È un modello che sa fare una
- * cosa sola — Marian `opus-mt-it-en`, 74 milioni di parametri, 330 MB — e gira
- * dentro al motore, sul computer, senza chiedere niente a nessuno. Lo si vede
- * fra i quadratini in alto a destra, come tutti gli altri, e lo si può scaricare
- * dalla memoria cliccandoci sopra.
+ * cosa sola — Marian `opus-mt-tc-big-it-en`, 576 MB — e gira dentro al motore,
+ * sul computer, senza chiedere niente a nessuno. Lo si vede fra i quadratini in
+ * alto a destra, come tutti gli altri, e lo si può scaricare dalla memoria
+ * cliccandoci sopra.
  *
  * **Perché c'è una barra.** La traduzione dura un secondo, ma la *prima* della
  * sessione ne dura anche quindici: prima di tradurre il motore deve svegliare le
- * sue librerie e leggere 330 MB dal disco.
+ * sue librerie e leggere mezzo giga dal disco.
  * Prima si vedeva solo «Traduco…», fermo, e non c'era modo di distinguere «sta
  * caricando» da «si è piantato» — e ogni tanto si era piantato davvero. Adesso
  * si vede a che punto è, e se il motore non risponde entro due minuti si manda
  * l'originale invece di restare lì.
+ *
+ * **I due minuti non devono più scattare mai.** Fino alla 0.3.4 scattavano
+ * sempre, alla prima traduzione di ogni sessione: il motore si piantava su una
+ * riga di registro e non rispondeva più a quella richiesta. Il guasto era di
+ * là — `services/comfy/nodi/daprod_ponte`, e la riparazione con lui — ma vale la
+ * pena saperlo leggendo questo file: se rivedi «il traduttore non ha risposto in
+ * due minuti», il posto da guardare è il registro del motore, non questa pagina.
  *
  * L'interruttore è **uno**, in cima accanto al modello, e vale per Crea e per
  * Ritocco: erano due caselle da tenere allineate a mano, ed è esattamente il

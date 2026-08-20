@@ -37,7 +37,7 @@ Repo pubblico: **https://github.com/cammo22/DaProdSuite**
 | **Un'app può chiedere un motore in più** | fatto e provato (Dream chiede ComfyUI per Anima) |
 | **Pulsanti veri nelle gallerie + finestre strette** | fatto e provato, Foto e Musica |
 | **LTX 2.5 nel piano di Cinema** | scritto, con i nodi verificati sul motore |
-| **DaProd IoDigitale nella suite** | fatto il 17 agosto, **interfaccia ancora in inglese** |
+| **DaProdIoDigitale nella suite** | fatto il 17 agosto, **interfaccia ancora in inglese** |
 | **Icone della suite e delle app, fatte con Anima** | fatte e provate (18 agosto) |
 | **Hub in 4:3, e più grande** | fatto e provato: 1266×949 su questo monitor |
 | **Il Visualizer si apre da dentro le altre app** | **tolto il 20 agosto**: le app si aprono già tutte insieme, il tasto in finestra era ingombro |
@@ -522,7 +522,7 @@ nomi propri — logo, schede dell'hub, titolo della finestra — restano interi.
 scritte sbagliate in tre documenti: vedi
 [MODELLI-E-STRATEGIA.md](MODELLI-E-STRATEGIA.md) § 5.
 
-**DaProd IoDigitale — non fatto.** Il piano, con l'inventario vero, è più sotto.
+**DaProdIoDigitale — non fatto.** Il piano, con l'inventario vero, è più sotto.
 
 ## Com'è entrata Anima in DaProdDream
 
@@ -870,14 +870,14 @@ Poi, in ordine di quello che resta aperto:
    0.2.0 è pubblicata, quindi da una 0.1.0 installata l'aggiornamento ha
    finalmente qualcosa da vedere. È la cosa per cui quel computer è stato
    installato.
-2. **DaProdCinema**, la settima e ultima scheda (§ 0.6.0 della roadmap). Due
+2. **DaProdCinema**, la settima e ultima scheda (§ 0.7.0 della roadmap per quello che resta). Due
    strade, e quella breve — registrare gli effetti del Visualizer su un brano —
    non ha bisogno di nessun modello nuovo.
 3. **La voce del Companion**, con Piper e faster-whisper che la suite ha già in
    casa per IoDigitale.
-4. **L'accesso da fuori e Android** (§ 0.4.0 e § 0.5.0), che è un progetto a sé.
+4. **L'accesso da fuori e Android** (§ 0.5.0 e § 0.6.0), che è un progetto a sé.
 
-## Com'è entrato DaProd IoDigitale
+## Com'è entrato DaProdIoDigitale
 
 **Viene da `Desktop\AvatarParlante\LeapTalk`.** Letto e inventariato il 16
 agosto 2026; il porto non è cominciato. È il gemello di Dream come struttura —
@@ -939,7 +939,7 @@ pezzo più lungo che *non* c'è da fare:
 ## Quello che era il prossimo passo prima di stasera
 
 **DaProdDream va provata da Cammo** — la webcam e il video in tempo reale sono
-sue da giudicare — e poi tocca a **DaProd IoDigitale**, che è la più pesante
+sue da giudicare — e poi tocca a **DaProdIoDigitale**, che è la più pesante
 delle due che restano: 8 GB di pesi (SoulX-FlashHead Lite, LeapTalk, wav2vec2),
 un motore a `web_server.py` sulla 7860, e un'interfaccia da portare dentro come
 si è fatto qui. Il **Companion** dopo, perché dipende da LM Studio acceso.

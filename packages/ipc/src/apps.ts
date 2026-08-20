@@ -137,11 +137,31 @@ export const APPS: Record<AppId, AppDescriptor> = {
       healthTimeoutMs: 180_000,
     },
     models: ["minimax-music3-dit", "minimax-music3-text-encoder", "minimax-music3-vae"],
-    // Le copertine e la scheda Immagini girano su Anima, gli stessi tre file di
-    // DaProdFoto. Extra e non `models` perché una canzone si fa lo stesso senza,
-    // e chiedere 5,6 GB in più a chi vuole solo la musica sarebbe di troppo: la
-    // pagina controlla e li offre nel momento in cui servono davvero.
-    extraModels: ["anima-turbo", "qwen3-06b-base", "qwen-image-vae"],
+    /**
+     * Quello che la scheda sa usare ma non pretende per partire.
+     *
+     * Le copertine e la scheda Immagini girano su Anima, gli stessi tre file di
+     * DaProdFoto: una canzone si fa lo stesso senza, e chiedere 5,6 GB in più a
+     * chi vuole solo la musica sarebbe di troppo. La pagina controlla e li offre
+     * nel momento in cui servono davvero.
+     *
+     * Poi ci sono gli altri modelli musicali del menu — il DiT a 8 bit di
+     * MiniMax e i due ACE-Step 1.5 con i loro encoder. Si scaricano dal menu
+     * stesso, dentro l'app, e stanno elencati qui perché l'hub sappia a chi
+     * servono: senza, nel pannello dei modelli comparirebbero come pesi di
+     * nessuno, e sono venticinque GB di "pesi di nessuno".
+     */
+    extraModels: [
+      "anima-turbo",
+      "qwen3-06b-base",
+      "qwen-image-vae",
+      "minimax-music3-dit-int8",
+      "acestep15-turbo",
+      "acestep15-xl-turbo",
+      "acestep15-qwen-06b",
+      "acestep15-qwen-4b",
+      "acestep15-vae",
+    ],
     gpuHeavy: true,
     // In CPU un brano si fa, ma si misura in ore invece che in minuti: è una
     // cosa da sapere prima di premere Genera, non dopo.
@@ -193,11 +213,20 @@ export const APPS: Record<AppId, AppDescriptor> = {
       engine: "ComfyUI",
       healthTimeoutMs: 180_000,
     },
-    // Verificato: ComfyUI ha i nodi MiniMax H3 nativi (MiniMaxH3ImageToVideo,
-    // MiniMaxH3ReferenceToVideo, MiniMaxH3AddGuide...), quindi il video gira nel
-    // nostro motore senza WanGP. Restano da scrivere le sliding window.
-    // Vedi docs/VERIFICA-AMBIENTE-UNIFICATO.md.
-    models: [],
+    /**
+     * Wan 2.2 TI2V 5B: 18,1 GB fra modello, text encoder e VAE.
+     *
+     * La roadmap aveva scelto MiniMax H3 e LTX 2.5, e i loro nodi ComfyUI ce li
+     * ha davvero, nativi. Poi si sono guardati i pesi: LTX 2.3 è un 22B che in
+     * fp8 fa 23 GB, più un Gemma 3 da 12B per leggere il prompt. Su una scheda
+     * da 8 GB non è «lento», è un'altra categoria di macchina.
+     *
+     * Il 5B è l'unico della famiglia che qui gira, e fa testo→video **e**
+     * immagine→video con lo stesso file — che è la proprietà su cui sta in piedi
+     * la continuità fra un'inquadratura e la successiva. Gli altri due restano
+     * in roadmap: nel menu ci va quello che è stato provato.
+     */
+    models: ["wan22-ti2v-5b", "wan22-text-encoder", "wan22-vae"],
     gpuHeavy: true,
     // Video: un fotogramma per volta, e i fotogrammi sono centinaia.
     schedaVideo: "obbligatoria",
@@ -272,7 +301,7 @@ export const APPS: Record<AppId, AppDescriptor> = {
   },
   iodigitale: {
     id: "iodigitale",
-    name: "DaProd IoDigitale",
+    name: "DaProdIoDigitale",
     tagline: "Il tuo avatar parlante: gli scrivi, ti risponde in video.",
     kind: "service",
     accent: "#ff7c5c",

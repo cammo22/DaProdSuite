@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!--
+  Le stesse regole di DaProdFoto e DaProdMusica, con una aggiunta: `media-src`.
+  Qui i risultati sono video, e vanno guardati due volte — nell'anteprima della
+  riga e nel montaggio finale — sia dal motore su 127.0.0.1 sia dalla libreria
+  attraverso lo schema `daprod:`. Senza, i video non partono e non lo dicono.
+
+  `connect-src` comprende `daprod:` perché il montaggio rilegge il brano dalla
+  libreria per rimandarlo dentro al motore.
+-->
+<meta http-equiv="Content-Security-Policy" content="
+  default-src 'self';
+  script-src 'self';
+  style-src 'self' 'unsafe-inline';
+  img-src 'self' daprod: http://127.0.0.1:8188 data: blob:;
+  media-src 'self' daprod: http://127.0.0.1:8188 blob:;
+  connect-src 'self' daprod: blob: data: http://127.0.0.1:8188 ws://127.0.0.1:8188;
+  object-src 'none';
+  base-uri 'none';
+">
+<title>DaProdCinema</title>
+<link rel="stylesheet" href="stile.css">
+</head>
+<body>
+
+<header>
+  <div class="logo">DaProd<span>Cinema</span></div>
+  <div class="stato">
+    <div class="mods" id="mods"></div>
+    <span class="dot" id="dot"></span><span id="statusTxt">connessione…</span>
+  </div>
+</header>
+
+<main>
+  <div class="two">
+    <!-- Colonna di sinistra: da cosa si parte e come deve venire. -->
+    <div>
+      <div class="panel">
+        <h2>Il brano</h2>
+        <div class="row">
+          <div class="field" style="flex:1">
+            <label>Da quale canzone</label>
+            <select id="brano"></select>
+          </div>
+          <div class="field">
+            <label>Dura</label>
+            <div class="inline"><b id="durataBrano">—</b>
+              <button class="mini" id="ricaricaBrani" title="rileggi la libreria">↻</button></div>
+          </div>
+        </div>
+        <div class="field">
+          <label>Il testo, con i suoi tag di sezione</label>
+          <textarea id="testoBrano" rows="8" placeholder="[Verse]&#10;…"></textarea>
+          <div class="hint">È da qui che esce la scaletta: <b>[Intro]</b>, <b>[Verse]</b>,
+            <b>[Chorus]</b>… Se il brano viene da DaProdMusica il testo è già suo, e
+            correggerlo qui cambia solo il video.</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Come deve venire</h2>
+        <div class="field">
+          <label>Look — l'identità visiva, uguale in tutte le inquadrature</label>
+          <select id="estetica"></select>
+          <textarea id="look" rows="2"></textarea>
+          <div class="hint">In inglese, e concreto: una pellicola, un'ora del giorno, un posto.
+            «cinematic, high quality» non vuol dire niente e ogni clip se lo interpreta a modo suo.</div>
+        </div>
+        <div class="row">
+          <div class="field">
+            <label>Modello</label>
+            <select id="modello"></select>
+            <div class="hint" id="rigaModello"></div>
+            <div class="hint" id="mancaModello" hidden></div>
+          </div>
+          <div class="field">
+            <label>Misura</label>
+            <select id="misura"></select>
+          </div>
+          <div class="field">
+            <label>Passi <span class="rangeval" id="passiVal">30</span></label>
+            <input type="range" id="passi" min="6" max="40" step="1" value="30">
+          </div>
+        </div>
+        <label class="switch"><input type="checkbox" id="continuita" checked>
+          Attacca le inquadrature: l'ultimo fotogramma di una è il primo della successiva</label>
+        <div class="hint">Spegnerlo rende ogni clip indipendente — più varia, meno un video solo.</div>
+      </div>
+    </div>
+
+    <!-- Colonna di destra: cosa verrà girato, e a che punto siamo. -->
+    <div>
+      <div class="panel">
+        <h2>La scaletta
+          <span class="right"><b id="quante">0</b> inquadrature · <b id="totale">0:00</b></span>
+        </h2>
+        <div class="scaletta" id="scaletta"></div>
+      </div>
+
+      <div class="panel">
+        <h2>Gira</h2>
+        <div class="bar"><i class="p1" id="avanzamento" style="width:0%"></i></div>
+        <div class="hint" id="passoOra">Scegli un brano e premi Gira.</div>
+        <div style="margin-top:14px; display:flex; gap:10px">
+          <button class="btn wide" id="gira">Gira</button>
+          <button class="btn wide" id="ferma" disabled style="max-width:150px">Ferma</button>
+          <button class="btn wide cyan" id="monta" disabled style="max-width:180px">Monta il video</button>
+        </div>
+        <div class="hint">Una clip per volta, in fila: sono minuti a inquadratura.
+          «Ferma» non butta via niente — «Gira» riprende da dove eravamo.</div>
+        <div class="manca" id="error" hidden></div>
+        <div class="finale" id="finale" hidden></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script type="module" src="src/avvio.js"></script>
+</body>
+</html>

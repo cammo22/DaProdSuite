@@ -31,6 +31,7 @@ import * as servizi from "./servizi";
 import * as visualizer from "./apps/visualizer";
 import * as musica from "./apps/musica";
 import * as foto from "./apps/foto";
+import * as cinema from "./apps/cinema";
 import * as dream from "./apps/dream";
 import * as iodigitale from "./apps/iodigitale";
 import * as companion from "./apps/companion";
@@ -45,6 +46,7 @@ const MIGRATED = new Set<AppId>([
   "visualizer",
   "musica",
   "foto",
+  "cinema",
   "dream",
   "iodigitale",
   "companion",
@@ -73,6 +75,11 @@ const FINESTRE: Partial<Record<AppId, Finestra>> = {
     apri: foto.apri,
     chiudi: foto.chiudi,
     laFinestra: foto.laFinestra,
+  },
+  cinema: {
+    apri: cinema.apri,
+    chiudi: cinema.chiudi,
+    laFinestra: cinema.laFinestra,
   },
   dream: {
     apri: dream.apri,

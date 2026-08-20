@@ -10,9 +10,118 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ---
 
-## Non ancora pubblicato — sarà la 0.3.4
+## Non ancora pubblicato — sarà la 0.4.0
 
-**Costruita il 20 agosto 2026, da provare.** Il giro dopo la 0.3.3, sempre in
+**Costruita il 20 agosto 2026, da provare.** La settima scheda, un secondo
+modello musicale, e il traduttore che finalmente risponde.
+
+### DaProdCinema: da una canzone al suo video
+
+**C'è la settima scheda**, ed è la prima che non viene da un programma già
+esistente: le altre sei sono porti — Flux Klein Studio, MinimaxMusica, LeapTalk —
+questa nasce qui.
+
+Come funziona: scegli un brano dalla libreria, di solito uno fatto in
+DaProdMusica. La scheda legge i suoi `[Verse]` e `[Chorus]` e scrive **la
+scaletta**: una riga per inquadratura, con quanto dura, cosa deve succederci
+dentro e come si muove la camera. Poi gira una clip per riga, una per volta, e
+alla fine monta tutto sopra la canzone.
+
+**La struttura della canzone non viene indovinata: viene letta.** È il vantaggio
+che i tentativi precedenti non potevano avere — l'hai scritta tu nei tag, e
+quindi non serve nessuna analisi del battito che poi sbaglia.
+
+**Cosa decide il programma e cosa decidi tu.** La funzione di ogni sezione e il
+movimento di camera stanno in una tabella scritta a mano: l'apertura stabilisce
+il mondo con un campo lungo fermo, la strofa mostra il dettaglio con una lenta
+spinta in avanti, il ritornello è il picco con una corsa bassa. Non lo decide un
+modello, perché quando lo decideva un modello il ritmo veniva sbagliato — il
+climax bruciato all'inizio e la chiusura vuota. Tu decidi il **look**: una riga
+in inglese, uguale in tutte le clip, ed è quella che tiene insieme il video.
+
+**Le sezioni lunghe diventano più inquadrature.** Una strofa da trenta secondi
+non è una clip da trenta secondi: sono cinque tagli che cambiano il verso della
+camera, come in un video musicale vero.
+
+**Le inquadrature si attaccano.** L'ultimo fotogramma di una diventa il primo
+della successiva, e si può spegnere. È la differenza fra un video e diciassette
+cartoline.
+
+Il modello è **Wan 2.2 TI2V 5B** (18,1 GB). La roadmap aveva scelto MiniMax H3 e
+LTX 2.5, e i loro nodi ci sono davvero nel motore — ma LTX 2.3 è un modello da 22
+miliardi di parametri che pesa 23 GB, più un Gemma da 12B per leggere il prompt,
+e sulla tua scheda da 8 GB non è «lento», è un'altra categoria di macchina. Il 5B
+è l'unico che qui gira, ed è anche l'unico che fa testo→video **e**
+immagine→video con lo stesso file, che è quello che serve per attaccare le clip.
+
+**Quanto ci mette, misurato sulla tua 4060.** Una clip da 5 secondi a 640×352:
+
+| Passi | Una clip | Un video da 90 s (17 inquadrature) |
+|---|---|---|
+| 30 | 256 s (col modello da caricare) | ~1 ora e 10 |
+| 10 | 115 s | ~33 minuti |
+
+**Questa è la cosa da provare**: i numeri veri li fai tu, e poi si decide se
+conviene alzare la misura o scendere di passi.
+
+⚠ **Il montaggio finale non è mai stato provato su clip vere.** Il grafo è
+verificato contro quello che il motore dichiara — nodi che esistono, ingressi
+tutti a posto — ma da lì a «esce un mp4 con la canzone sopra» c'è di mezzo un
+video intero girato, cioè più di mezz'ora di scheda video. È la prima cosa da
+guardare quando provi.
+
+### DaProdMusica: ACE-Step 1.5, accanto a MiniMax
+
+Il menu che diceva «Qualità del suono» adesso dice **Modello**, e ha quattro voci
+invece di due: le due di MiniMax Music 3 che c'erano già, più **ACE-Step 1.5
+Turbo** e **XL Turbo**. Non sono una versione più fine dello stesso — sono un
+altro modo di fare una canzone, in otto passi invece di trenta.
+
+- **Turbo** pesa 4,8 GB e sta tutto nella scheda video.
+- **XL Turbo** pesa 10 GB: gira lo stesso, spostando i pesi fra scheda e RAM.
+- Tutti e due dividono gli stessi due text encoder e lo stesso VAE, quindi il
+  secondo costa molto meno del primo.
+
+Si scaricano dal menu stesso, senza tornare nell'hub, come già fa DaProdFoto con
+FLUX.
+
+**Negli avanzati adesso vedi quello che il modello scelto usa davvero**: il Top-K
+con MiniMax, e **battito, tonalità, tempo e lingua del canto** con ACE-Step. E i
+passi si spostano da soli sul valore giusto: trenta a un modello turbo da otto
+passi vuol dire aspettare quattro volte tanto per la stessa canzone.
+
+**Provato**: un brano da 20 secondi con ACE-Step Turbo, 91 secondi col modello da
+caricare e 28 a modello caldo.
+
+### Il traduttore di DaProdFoto risponde alla prima
+
+Era rotto, e in un modo che non si vedeva: **la prima traduzione di ogni sessione
+non rispondeva mai**. L'app aspettava due minuti e poi mandava l'italiano al
+modello, che è come non tradurre.
+
+Il modello si caricava benissimo. Era la riga di registro che diceva «pronto» e
+la freccia dentro quella riga: su Windows quel registro non sa scrivere `→`, e
+l'errore veniva scambiato per un caricamento fallito. Adesso è a posto, e la
+stessa riparazione vale per **tutti i motori** — fino a oggi ogni parola
+accentata nei registri arrivava anche storta.
+
+**E traduce meglio.** Il traduttore è passato da 330 MB a 576 MB, stesso tipo di
+modello ma la versione grande. Quello piccolo traduceva «luce calda» con *hot
+light*, che a un modello di immagini dice un'altra cosa; il grande dice *warm
+light*, e *windowsill* invece di *sill*. Se hai ancora solo il piccolo continui a
+usare quello finché non scarichi l'altro.
+
+*Prima traduzione: 5,4 secondi. Le successive: mezzo secondo.*
+
+### DaProdIoDigitale, attaccato
+
+Era l'unica scheda con uno spazio nel nome. Adesso si scrive come tutte le altre.
+
+---
+
+## 0.3.4 — DaProdFoto: il ritocco che rifà tutto, e il traduttore che si vede
+
+**Pubblicata il 20 agosto 2026.** Il giro dopo la 0.3.3, sempre in
 DaProdFoto: il ritocco che sa rifare anche tutta la foto, e il traduttore che
 smette di essere un mistero.
 
@@ -230,7 +339,7 @@ luoghi, come stanno fra loro. Il giorno dopo se ne ricorda.
 - **La memoria è un file solo**, `memoria.db`, che si può copiare o cancellare.
 - ⚠ **Non ha ancora la voce.** Nel progetto da cui viene c'erano due programmi
   in più solo per parlare e ascoltare, con i loro GB di modelli; la suite ha
-  già le voci di DaProd IoDigitale, e rifarli qui vorrebbe dire scaricare due
+  già le voci di DaProdIoDigitale, e rifarli qui vorrebbe dire scaricare due
   volte le stesse cose. Per adesso si scrive.
 - ⚠ **Vuole LM Studio acceso**, come tutto quello che scrive nella suite. Se è
   spento o non ha modelli, la scheda lo dice appena si apre invece di far
@@ -294,7 +403,7 @@ un'app lentissima, o una barra che non finiva mai.
 
 - **La barra in alto lo dice in italiano** e con le conseguenze: quali schede
   non partiranno e quanto vanno piano le altre.
-- **DaProdDream, DaProd IoDigitale e DaProdCinema non si installano nemmeno**:
+- **DaProdDream, DaProdIoDigitale e DaProdCinema non si installano nemmeno**:
   fanno video, e senza scheda video non è "più lento", è un'altra cosa. Il
   pulsante è spento con scritto perché — prima degli otto GB di scaricamento,
   non dopo.
@@ -313,7 +422,7 @@ generato, con un movimento lento di macchina: 226 KB in tutto.
 DaProdDream o dal Visualizer arriva col video vero (0.6.0). Quando arriverà
 cambierà il programma che le fa, non quello che le mostra.
 
-### DaProd IoDigitale parla italiano
+### DaProdIoDigitale parla italiano
 
 Era l'unica scheda che non sembrava della suite: in cima diceva ancora *LeapTalk
 Live*, i tasti dicevano `Load Image` e `Hold to Talk`, e quando qualcosa andava
@@ -350,7 +459,7 @@ si corregge un difetto lì dentro, perché si corregge una volta sola.
 ## 0.2.0 — Cinque app, e ognuna ha la sua faccia
 
 **18 agosto 2026, pubblicata il 19.** Dalla 0.1.0 sono entrate due app —
-DaProdDream e DaProd IoDigitale — e la suite ha smesso di essere sette schede
+DaProdDream e DaProdIoDigitale — e la suite ha smesso di essere sette schede
 con la stessa icona.
 
 > **Perché la data è doppia.** La 0.2.0 era costruita dal 18 e stava sul
@@ -376,7 +485,7 @@ con la stessa icona.
 
 ### Installare un'app non rompe più le altre
 
-Dopo aver installato DaProd IoDigitale, **DaPMusica e DaPFoto non si aprivano
+Dopo aver installato DaProdIoDigitale, **DaPMusica e DaPFoto non si aprivano
 più**, e DaPDream e IoDigitale si aprivano ma non funzionavano. Non era una
 delle quattro: era l'ambiente Python condiviso.
 
@@ -503,7 +612,7 @@ IoDigitale la scheda video la vogliono per definizione.
   4K non resta più piccola in mezzo al monitor.
 
 
-### DaProd IoDigitale è entrato: la quinta scheda
+### DaProdIoDigitale è entrato: la quinta scheda
 
 - **L'avatar parlante è dentro la suite.** Premi Installa, si scarica quello che
   manca, e la scheda si apre come tutte le altre: niente più `.bat` con il menu,

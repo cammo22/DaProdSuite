@@ -12,7 +12,7 @@ pagina in attesa di una risposta HTTP non potrebbe mai ricevere.
 
 - Niente `tts_service` e niente `stt_service`: erano due processi Python a
   parte, con i loro modelli e i loro GB. La voce del Companion tornera' dalla
-  porta principale — la suite ha gia' Piper per DaProd IoDigitale — e il
+  porta principale — la suite ha gia' Piper per DaProdIoDigitale — e il
   codice che la chiamava e' rimasto intatto, solo con `None` al posto del
   client. Degrada da se': testo si', voce no.
 - Niente Ollama: risponde LM Studio, che e' il modello che scrive di tutta la

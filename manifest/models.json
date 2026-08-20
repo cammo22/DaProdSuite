@@ -69,6 +69,78 @@
       "bytes": 216696128
     },
 
+    "acestep15-turbo": {
+      "label": "ACE-Step 1.5 Turbo — modello musicale",
+      "kind": "file",
+      "$comment": "L'altro modo di fare una canzone, accanto a MiniMax Music 3. Otto passi invece di trenta, e 4,8 GB che negli 8 GB della scheda ci stanno tutti. I nodi li ha gia' ComfyUI, nativi: nessun custom node da installare. Divide con l'XL i due text encoder e il VAE, che sono la parte grossa dello scaricamento.",
+      "dir": "diffusion_models",
+      "file": "acestep_v1.5_turbo.safetensors",
+      "url": "https://huggingface.co/Comfy-Org/ace_step_1.5_ComfyUI_files/resolve/main/split_files/diffusion_models/acestep_v1.5_turbo.safetensors",
+      "bytes": 4787825604
+    },
+    "acestep15-xl-turbo": {
+      "label": "ACE-Step 1.5 XL Turbo — modello musicale grande",
+      "kind": "file",
+      "$comment": "Il fratello grande, 10 GB in bf16. Su una scheda da 8 GB non ci sta: ComfyUI lo fa girare lo stesso spostando i pesi fra scheda e RAM, e il tempo per brano ne risente. Sta nel menu perche' la qualita' e' un'altra cosa, ma il Turbo normale resta quello che parte.",
+      "dir": "diffusion_models",
+      "file": "acestep_v1.5_xl_turbo_bf16.safetensors",
+      "url": "https://huggingface.co/Comfy-Org/ace_step_1.5_ComfyUI_files/resolve/main/split_files/diffusion_models/acestep_v1.5_xl_turbo_bf16.safetensors",
+      "bytes": 9974719892
+    },
+    "acestep15-qwen-06b": {
+      "label": "ACE-Step 1.5 — text encoder piccolo (Qwen 0.6B)",
+      "kind": "file",
+      "$comment": "ACE-Step 1.5 di encoder ne vuole due insieme, non uno: il nodo si chiama DualCLIPLoader apposta. Il piccolo legge i tag, il grande il testo cantato. Servono a tutte e due le varianti.",
+      "dir": "text_encoders",
+      "file": "qwen_0.6b_ace15.safetensors",
+      "url": "https://huggingface.co/Comfy-Org/ace_step_1.5_ComfyUI_files/resolve/main/split_files/text_encoders/qwen_0.6b_ace15.safetensors",
+      "bytes": 1191588248
+    },
+    "acestep15-qwen-4b": {
+      "label": "ACE-Step 1.5 — text encoder grande (Qwen 4B)",
+      "kind": "file",
+      "dir": "text_encoders",
+      "file": "qwen_4b_ace15.safetensors",
+      "url": "https://huggingface.co/Comfy-Org/ace_step_1.5_ComfyUI_files/resolve/main/split_files/text_encoders/qwen_4b_ace15.safetensors",
+      "bytes": 8379154232
+    },
+    "acestep15-vae": {
+      "label": "ACE-Step 1.5 — VAE audio",
+      "kind": "file",
+      "dir": "vae",
+      "file": "ace_1.5_vae.safetensors",
+      "url": "https://huggingface.co/Comfy-Org/ace_step_1.5_ComfyUI_files/resolve/main/split_files/vae/ace_1.5_vae.safetensors",
+      "bytes": 337431732
+    },
+
+    "wan22-ti2v-5b": {
+      "label": "Wan 2.2 TI2V 5B — video di DaProdCinema",
+      "kind": "file",
+      "$comment": "Il modello video di DaProdCinema. Cinque miliardi di parametri e non ventidue: e' l'unico della famiglia che su una scheda da 8 GB fa una clip in un tempo che si puo' aspettare. E' anche la famiglia su cui e' costruito WanGP, che e' il metro con cui misuriamo la memoria. Fa testo->video e immagine->video con lo stesso file, ed e' quello che tiene insieme le inquadrature: l'ultimo fotogramma di una diventa il primo della successiva.",
+      "dir": "diffusion_models",
+      "file": "wan2.2_ti2v_5B_fp16.safetensors",
+      "url": "https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/diffusion_models/wan2.2_ti2v_5B_fp16.safetensors",
+      "bytes": 9999658848
+    },
+    "wan22-text-encoder": {
+      "label": "Wan 2.2 — text encoder (umT5 XXL fp8)",
+      "kind": "file",
+      "$comment": "La versione fp8 e non fp16: 6,7 GB invece di 11,4, e su questa scheda la differenza e' fra caricarlo e non caricarlo.",
+      "dir": "text_encoders",
+      "file": "umt5_xxl_fp8_e4m3fn_scaled.safetensors",
+      "url": "https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors",
+      "bytes": 6735906897
+    },
+    "wan22-vae": {
+      "label": "Wan 2.2 — VAE video",
+      "$comment": "Quello della 2.2, non quello della 2.1: il 5B comprime di piu' nello spazio e vuole il suo. Scambiarli da' un video sfocato, non un errore.",
+      "kind": "file",
+      "dir": "vae",
+      "file": "wan2.2_vae.safetensors",
+      "url": "https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/vae/wan2.2_vae.safetensors",
+      "bytes": 1409400960
+    },
+
     "anima-turbo": {
       "label": "Anima Turbo — immagini (condiviso Musica/Foto)",
       "kind": "file",
@@ -224,11 +296,11 @@
     "traduttore-it-en": {
       "label": "Traduttore italiano → inglese",
       "kind": "hf-repo",
-      "dir": "traduttore/opus-mt-it-en",
-      "repo": "Helsinki-NLP/opus-mt-it-en",
-      "$comment": "I modelli di immagini capiscono l'inglese: una descrizione in italiano dà un'immagine che non c'entra niente. Questo traduce prima di generare. È MarianMT, 74 milioni di parametri, gira in CPU in meno di un secondo e non toglie VRAM al modello che deve fare il lavoro vero. Licenza Apache-2.0. Gli 'include' lasciano fuori i pesi TensorFlow, che sono metà del repo e non servono.",
+      "dir": "traduttore/opus-mt-tc-big-it-en",
+      "repo": "Helsinki-NLP/opus-mt-tc-big-it-en",
+      "$comment": "I modelli di immagini capiscono l'inglese: una descrizione in italiano dà un'immagine che non c'entra niente. Questo traduce prima di generare. È MarianMT, gira in CPU in meno di un secondo e non toglie VRAM al modello che deve fare il lavoro vero. Licenza CC-BY-4.0. Gli 'include' lasciano fuori i pesi TensorFlow, che sono più di metà del repo e non servono. Fino alla 0.3.4 qui c'era 'opus-mt-it-en', il fratello piccolo da 330 MB: traduceva 'luce calda' con 'hot light', e a un modello di immagini quello è un'altra cosa. Il motore usa ancora il piccolo se è l'unico che trova sul disco, così chi aggiorna non resta senza traduttore mentre scarica.",
       "include": ["*.json", "*.spm", "pytorch_model.bin"],
-      "bytes": 347617484
+      "bytes": 578792253
     },
 
     "lmstudio-cervello": {

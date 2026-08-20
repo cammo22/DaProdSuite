@@ -53,6 +53,10 @@ extraResources:
     to: apps/musica
   - from: ../foto
     to: apps/foto
+  # Cinema come Foto e Musica: HTML, CSS e moduli ES, serviti dallo schema
+  # daprod://. Il sorgente è già la versione da spedire.
+  - from: ../cinema
+    to: apps/cinema
   # Dream la serve il suo motore, non lo schema daprod://: la cartella deve
   # restare leggibile da Python, non finire nell'asar.
   - from: ../dream
