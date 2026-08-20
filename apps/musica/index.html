@@ -53,7 +53,20 @@
 <section class="tab on" id="scheda-crea">
  <div class="two">
   <div>
-    <!-- Bonsai: dall'idea alla canzone. Sta prima di tutto perché è da qui che
+    <!-- Con che cosa la fai. **Sta sopra tutto il resto** perché è la scelta che
+         cambia tutte le altre: quali comandi hanno senso, quanti passi servono,
+         quanto ci mette. Fino alla 0.4.0 stava in fondo, dentro «Parametri»,
+         cioè dopo aver già scritto stile e testo. -->
+    <div class="panel">
+      <h2>Con che cosa la fai</h2>
+      <div class="field">
+        <select id="qualita"></select>
+        <div class="hint" id="rigaQualita"></div>
+      </div>
+      <div class="manca" id="mancaQualita" hidden></div>
+    </div>
+
+    <!-- Bonsai: dall'idea alla canzone. Sta subito dopo perché è da qui che
          si comincia quando non si ha ancora niente in mano. -->
     <div class="panel">
       <h2>Parti da un'idea <span class="right"><span class="hint" id="bonsaiStato"></span></span></h2>
@@ -91,6 +104,9 @@
 
     <div class="panel">
       <h2>Testo <span class="right"><label class="switch"><input type="checkbox" id="instrumental"> strumentale</label></span></h2>
+      <label>Lingua del canto</label>
+      <div class="chips" id="lingue"></div>
+      <div class="hint" id="notaLingua"></div>
       <div class="chips" id="tags"></div>
       <textarea id="lyrics" rows="11" placeholder="[Verse]&#10;…"></textarea>
       <div class="hint">Solo questi tag di sezione: sono gli unici che MiniMax Music 3 interpreta davvero.</div>
@@ -101,12 +117,6 @@
       <div class="field">
         <label>Durata massima <span class="rangeval" id="durVal">60 s</span></label>
         <input type="range" id="duration" min="15" max="300" step="5" value="60">
-      </div>
-      <div class="field">
-        <label>Modello</label>
-        <select id="qualita"></select>
-        <div class="hint" id="rigaQualita"></div>
-        <div class="hint" id="mancaQualita" hidden></div>
       </div>
       <div class="row">
         <div class="field">
@@ -169,10 +179,6 @@
               <option value="6">6/8</option>
             </select>
           </div>
-          <div class="field">
-            <label>Lingua del canto</label>
-            <select id="lingua"></select>
-          </div>
         </div>
         <div class="row">
           <div class="field">
@@ -185,10 +191,13 @@
           </div>
         </div>
         <label class="switch"><input type="checkbox" id="randomSeed" checked> Seed casuali a ogni brano</label>
-        <label class="switch" style="margin-top:8px"><input type="checkbox" id="tiled" checked> Decode a blocchi
+        <label class="switch" style="margin-top:8px"><input type="checkbox" id="tiled"> Decode a blocchi
           <input type="number" id="tile" value="1536" min="256" max="4096" step="128" style="width:90px;padding:5px 9px;margin-left:6px">
         </label>
-        <div class="hint">Un blocco da 1536 copre ~18 s: sotto non cambia niente, sopra tiene la VRAM bassa.
+        <div class="hint"><b>Il decode a blocchi parte spento.</b> Decodifica l'audio a pezzi invece che
+          tutto insieme: tiene bassa la memoria video, e in cambio nei punti di attacco fra un blocco e
+          l'altro si può sentire. Accendilo se un brano lungo si ferma per memoria finita —
+          un blocco da 1536 copre ~18 s.
           Il <b>seed struttura</b> decide melodia e voce (la parte lenta): cambiando solo il
           <b>seed resa audio</b> il motore riusa la struttura dalla cache.</div>
       </div>

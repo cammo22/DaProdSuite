@@ -159,6 +159,9 @@ export const suLibreriaCambiata = (azione) => suite.libreria.onCambiata(azione);
    catalogo e lei risponde. Stessa superficie che usa DaProdFoto. */
 export const statoModelli = (ids) => suite.modelli.stato(ids);
 export const scaricaModelli = (ids) => suite.modelli.scarica(ids);
+export const annullaScaricamento = () => suite.modelli.annulla();
+/** Chi siamo, per la suite: serve a sapere se uno scaricamento in corso è il nostro. */
+export const io = suite.io;
 export const suAvanzamentoModelli = (azione) => suite.modelli.onAvanzamento(azione);
 
 /* Toglie dalla memoria il modello che scrive: si chiama un attimo prima di far

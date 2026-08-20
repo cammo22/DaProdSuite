@@ -10,26 +10,43 @@ import { el, escapeHtml, inserisciAlCursore, legaValore, mostraErrore, mostraSch
 import { DEMO_LYRICS, PRESETS, STILI, TAGS } from "./dati/stili.js";
 import { ESTETICHE } from "./dati/estetiche.js";
 import { MODELLI, grafoBrano, grafoImmagine, modello, promptCopertina, titoloAuto, usaCampo } from "./grafi.js";
-import { LINGUE, TONALITA, TONALITA_PREDEFINITA } from "./dati/ace.js";
+import { LINGUA_PREDEFINITA, LINGUE, TONALITA, TONALITA_PREDEFINITA } from "./dati/ace.js";
 import { aggiungiLavoro } from "./coda.js";
 import { controllaAnima } from "./anima.js";
+// La barra di quello che sta arrivando: uguale in tutte le app, quindi sta in
+// `packages/ui` e la suite la serve sotto `/comune/`.
+import { collegaScaricamento } from "/comune/scaricamento.js";
 import * as ponte from "./ponte.js";
 
 const CHIAVE_STILI = "daprod.stili";
 /**
  * La chiave è ancora `.qualita` e non `.modello`.
  *
- * Il menu adesso sceglie il modello, ma i due valori che ci sono scritti dentro
- * — `leggera` e `migliore` — sono ancora id validi. Cambiare nome alla chiave
- * vorrebbe dire che chi aggiorna si ritrova la scelta azzerata, e in cambio di
- * niente: un nome più bello dentro `localStorage`, che non guarda nessuno.
+ * Il menu adesso sceglie il modello, ma quello che c'è scritto dentro è ancora
+ * un id valido. Cambiare nome alla chiave vorrebbe dire che chi aggiorna si
+ * ritrova la scelta azzerata, e in cambio di niente: un nome più bello dentro
+ * `localStorage`, che non guarda nessuno.
  */
 const CHIAVE_QUALITA = "daprod.musica.qualita";
+const CHIAVE_LINGUA = "daprod.musica.lingua";
 
-/** Con quale modello si genera. */
+/**
+ * Con quale modello si genera.
+ *
+ * `leggera` era il MiniMax a 4 bit, tolto nella 0.4.1: chi l'aveva scelto
+ * finisce sull'int8, che è lo stesso modello meglio quantizzato, e non sul
+ * primo della lista — aveva scelto MiniMax, e MiniMax resta.
+ */
 export function modelloScelto() {
   const salvato = localStorage.getItem(CHIAVE_QUALITA);
-  return MODELLI[salvato] ? salvato : "leggera";
+  if (salvato === "leggera") return "migliore";
+  return MODELLI[salvato] ? salvato : "ace-turbo";
+}
+
+/** In che lingua si canta. Vale per tutti e due i modelli, in due modi diversi. */
+export function linguaScelta() {
+  const salvata = localStorage.getItem(CHIAVE_LINGUA);
+  return LINGUE.some((l) => l.id === salvata) ? salvata : LINGUA_PREDEFINITA;
 }
 
 /**
@@ -49,43 +66,70 @@ async function collegaModelli() {
     .join("");
   el.qualita.value = modelloScelto();
 
-  const voci = (elenco) =>
-    elenco.map(([v, etichetta]) => `<option value="${v}">${escapeHtml(etichetta)}</option>`).join("");
-  el.lingua.innerHTML = voci(LINGUE);
-  el.lingua.value = "it";
-  el.tonalita.innerHTML = voci(TONALITA);
+  el.tonalita.innerHTML = TONALITA.map(
+    ([v, etichetta]) => `<option value="${v}">${escapeHtml(etichetta)}</option>`,
+  ).join("");
   el.tonalita.value = TONALITA_PREDEFINITA;
+
+  // Il riquadro «manca, e questi sono i GB» con dentro la barra: non lo disegna
+  // più questa pagina, lo disegna il pezzo comune. Prima qui c'era scritto
+  // «l'avanzamento è nell'hub», che vuol dire chiudere quello che stai facendo
+  // per sapere se sta arrivando qualcosa.
+  const scaricamento = collegaScaricamento(el.mancaQualita, {
+    stato: ponte.statoModelli,
+    scarica: ponte.scaricaModelli,
+    annulla: ponte.annullaScaricamento,
+    onAvanzamento: ponte.suAvanzamentoModelli,
+    io: ponte.io,
+  });
 
   const controlla = async () => {
     const scelto = modello(el.qualita.value);
     el.rigaQualita.textContent = scelto.riga;
     mostraCampi(scelto);
-
-    const stato = await ponte.statoModelli(scelto.catalogo).catch(() => null);
-    if (!stato || stato.pronto) {
-      el.mancaQualita.hidden = true;
-      return;
-    }
-    el.mancaQualita.hidden = false;
-    el.mancaQualita.innerHTML =
-      `<b>${escapeHtml(scelto.nome)} non è ancora sul disco.</b>` +
-      ` <button class="mini" id="prendiQualita">Scarica ${(stato.bytesMancanti / 1024 ** 3)
-        .toFixed(1)
-        .replace(".", ",")} GB</button>`;
-    document.getElementById("prendiQualita").onclick = () => {
-      el.mancaQualita.textContent = "Scarico… l'avanzamento è nell'hub.";
-      void ponte.scaricaModelli(scelto.catalogo);
-    };
+    disegnaLingue(scelto);
+    await scaricamento.controlla({ ids: scelto.catalogo, nome: scelto.nome });
   };
 
   el.qualita.onchange = () => {
     localStorage.setItem(CHIAVE_QUALITA, el.qualita.value);
     void controlla();
   };
-  ponte.suAvanzamentoModelli((a) => {
-    if (!a.attivo) void controlla();
-  });
   await controlla();
+}
+
+/**
+ * Le pastiglie della lingua, e cosa succede davvero premendole.
+ *
+ * Stanno sopra il testo e non dentro gli avanzati perché è lì che uno ci pensa:
+ * scrivi il testo, e la lingua è una proprietà di quello che hai scritto. Prima
+ * erano un menu a tendina in fondo ai parametri avanzati, visibile solo con
+ * ACE-Step scelto — cioè invisibile proprio a chi aveva il problema.
+ *
+ * La riga sotto cambia con il modello e non è pignoleria: con ACE-Step è
+ * un'impostazione che il nodo riceve, con MiniMax è una frase che finisce nella
+ * descrizione. Sono due cose diverse e chi le usa merita di saperlo.
+ */
+function disegnaLingue(m) {
+  const scelta = linguaScelta();
+  el.lingue.innerHTML = "";
+
+  for (const lingua of LINGUE) {
+    const chip = document.createElement("button");
+    chip.className = "chip" + (lingua.id === scelta ? " on" : "");
+    chip.textContent = lingua.nome;
+    chip.onclick = () => {
+      localStorage.setItem(CHIAVE_LINGUA, lingua.id);
+      disegnaLingue(m);
+    };
+    el.lingue.appendChild(chip);
+  }
+
+  el.notaLingua.innerHTML =
+    m.lingua === "impostazione"
+      ? "<b>ACE-Step</b> la riceve come impostazione: canta nella lingua che scegli qui."
+      : "<b>MiniMax Music 3</b> non ha una casella per la lingua: la aggiungo alla descrizione dello " +
+        "stile insieme alla richiesta di scandire le parole. Aiuta, ma non è un interruttore.";
 }
 
 /**
@@ -193,7 +237,9 @@ function leggiModulo() {
     bpm: parseInt(el.bpm.value) || 120,
     tonalita: el.tonalita.value,
     tempo: el.tempo.value,
-    lingua: el.lingua.value,
+    // La lingua invece si legge sempre e vale per tutti e due: ACE-Step la
+    // riceve come impostazione, MiniMax se la ritrova nella descrizione.
+    lingua: linguaScelta(),
   };
 }
 
@@ -218,7 +264,10 @@ export function applicaMeta(meta) {
   if (meta.bpm) el.bpm.value = meta.bpm;
   if (meta.tonalita) el.tonalita.value = meta.tonalita;
   if (meta.tempo) el.tempo.value = meta.tempo;
-  if (meta.lingua) el.lingua.value = meta.lingua;
+  if (meta.lingua && LINGUE.some((l) => l.id === meta.lingua)) {
+    localStorage.setItem(CHIAVE_LINGUA, meta.lingua);
+    disegnaLingue(modello(modelloScelto()));
+  }
   el.randomSeed.checked = false;
   // Le etichette dei cursori si aggiornano su "input": senza questo, i numeri
   // resterebbero quelli di prima mentre i cursori si sono già mossi.

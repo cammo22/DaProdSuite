@@ -7,21 +7,27 @@
  */
 
 import { COVER_NEG, ESTETICHE, MOTIVI } from "./dati/estetiche.js";
+import { LINGUE } from "./dati/ace.js";
 
 /**
- * Con che cosa si fa il brano: due famiglie di modelli, quattro voci nel menu.
+ * Con che cosa si fa il brano: due famiglie di modelli, tre voci nel menu.
  *
  * Fino alla 0.3.4 questo menu si chiamava «qualità» e sceglieva soltanto fra i
  * due formati del DiT di MiniMax. Adesso sceglie il **modello**, perché accanto
  * a MiniMax Music 3 c'è ACE-Step 1.5, che è un altro modo di fare la stessa
  * cosa e non una versione più fine dello stesso.
  *
+ * **Il MiniMax a 4 bit non c'è più.** Era la voce «leggera», il DiT W4A8 da 1,8
+ * GB, ed è stata tolta nella 0.4.1: 700 MB risparmiati su uno scaricamento da
+ * sette GB e mezzo, in cambio della parte che si sente — il DiT è quello che
+ * trasforma i token in suono. Chi l'aveva scelta si ritrova sull'int8 senza
+ * fare niente, e il file vecchio si può cancellare dalla cartella dei modelli.
+ *
  * **MiniMax Music 3.** Il text encoder non è scegliibile e non è una
  * dimenticanza: è il modello da 7B che genera i token audio uno per uno, lavora
  * da solo in VRAM, e la versione a 8 bit consigliata da WanGP pesa 8,6 GB — su
- * una scheda da 8 non ci sta. Resta a 4 bit finché non cambia la scheda. Il DiT
- * invece sì: sta in 2,5 GB anche a 8 bit, ed è l'unico posto dove qui si guadagna
- * davvero qualità.
+ * una scheda da 8 non ci sta. Resta a 4 bit finché non cambia la scheda, ed è
+ * l'unico pezzo a 4 bit rimasto. Il DiT invece sta in 2,5 GB anche a 8 bit.
  *
  * **ACE-Step 1.5.** Otto passi invece di trenta. I nodi sono nativi di ComfyUI —
  * `TextEncodeAceStepAudio1.5`, `EmptyAceStep1.5LatentAudio` — quindi non c'è
@@ -44,6 +50,14 @@ const MINIMAX = {
   /** Quali comandi degli avanzati vogliono dire qualcosa per questa famiglia. */
   campi: ["steps", "cfg", "cfg_scale", "top_k", "tiled"],
   passi: { min: 10, max: 60, valore: 30 },
+  /**
+   * La lingua qui non è un'impostazione: è una frase dentro la descrizione.
+   *
+   * `MiniMaxMusic3TextEncode` ha due caselle di testo, la descrizione e il
+   * testo cantato, e nient'altro. Quindi la lingua si dice dove il modello
+   * legge: in fondo alla descrizione, in inglese come tutto il resto.
+   */
+  lingua: "descrizione",
   comuni: ["minimax-music3-text-encoder", "minimax-music3-vae"],
 };
 
@@ -53,7 +67,9 @@ const ACE = {
   txt2: "qwen_4b_ace15.safetensors",
   vae: "ace_1.5_vae.safetensors",
   grafo: grafoAce,
-  campi: ["steps", "cfg", "cfg_scale", "bpm", "tonalita", "tempo", "lingua", "tiled"],
+  campi: ["steps", "cfg", "cfg_scale", "bpm", "tonalita", "tempo", "tiled"],
+  /** Qui invece la lingua è una casella vera del nodo, con l'elenco chiuso. */
+  lingua: "impostazione",
   /**
    * **Otto passi**, e non è un risparmio: è come è fatto.
    *
@@ -68,23 +84,15 @@ const ACE = {
   comuni: ["acestep15-qwen-06b", "acestep15-qwen-4b", "acestep15-vae"],
 };
 
+/**
+ * L'ordine è quello del menu, e il primo è quello che parte.
+ *
+ * ACE-Step Turbo davanti a MiniMax dalla 0.4.1, ed è una cosa che si è decisa
+ * ascoltando: otto passi contro trenta, e sulle parole si capisce meglio. Chi
+ * ha già scelto a mano tiene la sua scelta — questo cambia solo il primo brano
+ * di chi non ha ancora scelto niente.
+ */
 export const MODELLI = {
-  leggera: {
-    ...MINIMAX,
-    id: "leggera",
-    nome: "MiniMax Music 3 — leggera (4 bit)",
-    riga: "1,8 GB. È quella con cui abbiamo generato finora.",
-    dit: "minimax_music3_dit_w4a8.safetensors",
-    catalogo: ["minimax-music3-dit", ...MINIMAX.comuni],
-  },
-  migliore: {
-    ...MINIMAX,
-    id: "migliore",
-    nome: "MiniMax Music 3 — migliore (int8)",
-    riga: "2,5 GB, 8 bit invece di 4: è il formato consigliato da WanGP.",
-    dit: "minimax_music3_dit_int8_convrot.safetensors",
-    catalogo: ["minimax-music3-dit-int8", ...MINIMAX.comuni],
-  },
   "ace-turbo": {
     ...ACE,
     id: "ace-turbo",
@@ -101,10 +109,18 @@ export const MODELLI = {
     dit: "acestep_v1.5_xl_turbo_bf16.safetensors",
     catalogo: ["acestep15-xl-turbo", ...ACE.comuni],
   },
+  migliore: {
+    ...MINIMAX,
+    id: "migliore",
+    nome: "MiniMax Music 3 (int8)",
+    riga: "8 GB in tutto e trenta passi: è il più lento dei tre, e l'unico senza casella della lingua.",
+    dit: "minimax_music3_dit_int8_convrot.safetensors",
+    catalogo: ["minimax-music3-dit-int8", ...MINIMAX.comuni],
+  },
 };
 
-/** Il modello scelto, o il primo se l'id salvato non esiste più. */
-export const modello = (id) => MODELLI[id] ?? MODELLI.leggera;
+/** Il modello scelto, o quello che parte se l'id salvato non esiste più. */
+export const modello = (id) => MODELLI[id] ?? MODELLI["ace-turbo"];
 
 /** Vero se questo comando degli avanzati vuol dire qualcosa per questo modello. */
 export const usaCampo = (m, campo) => m.campi.includes(campo);
@@ -135,6 +151,34 @@ const SALVATAGGI = {
 export const grafoBrano = (m, p) => m.grafo(m, p);
 
 /**
+ * La descrizione dello stile, con la lingua dentro quando serve.
+ *
+ * ACE-Step la lingua ce l'ha come casella sua e questa funzione non tocca
+ * niente. MiniMax Music 3 no: i suoi ingressi di testo sono due, la descrizione
+ * e il testo cantato, e quindi la lingua si dice nella descrizione — in inglese,
+ * come tutto quello che ci sta dentro.
+ *
+ * `clearly enunciated lyrics` sta lì apposta: è il difetto per cui questa riga
+ * esiste, cioè parole cantate che si capiscono a metà. Non è una garanzia — è
+ * un modello che indovina, non un interruttore — ma è l'unico posto in cui
+ * questa richiesta gli arriva.
+ *
+ * Se la descrizione **dice già** la lingua (uno che scrive «neapolitan
+ * neomelodic» sa cosa sta chiedendo) non si aggiunge niente: due volte la stessa
+ * cosa in un prompt corto la fa pesare il doppio.
+ */
+export function descrizione(m, p) {
+  const testo = (p.caption || "").trim();
+  if (m.lingua !== "descrizione" || !p.lyrics) return testo;
+
+  const lingua = LINGUE.find((l) => l.id === p.lingua);
+  if (!lingua?.inglese) return testo;
+  if (new RegExp(lingua.inglese, "i").test(testo)) return testo;
+
+  return `${testo}, sung in ${lingua.inglese}, clearly enunciated lyrics`;
+}
+
+/**
  * MiniMax Music 3.
  *
  * I nodi 1-2-5 dipendono solo dai parametri di struttura: se non cambiano,
@@ -148,7 +192,7 @@ function grafoMiniMax(m, p) {
     "2": {
       class_type: "MiniMaxMusic3TextEncode",
       inputs: {
-        clip: ["1", 0], caption: p.caption, lyrics: p.lyrics,
+        clip: ["1", 0], caption: descrizione(m, p), lyrics: p.lyrics,
         seed: p.seed_text, max_duration: p.duration, cfg_scale: p.cfg_scale, top_k: p.top_k,
       },
     },
