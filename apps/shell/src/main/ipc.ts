@@ -5,8 +5,10 @@
  * in @daprod/ipc e sono gli stessi usati dal preload, così non possono divergere.
  */
 
-import { BrowserWindow, ipcMain, shell } from "electron";
+import { BrowserWindow, dialog, ipcMain, shell } from "electron";
 import { app } from "electron";
+import { copyFile } from "node:fs/promises";
+import { basename, extname } from "node:path";
 import {
   APP_LIST,
   CHANNELS,
@@ -34,6 +36,7 @@ import { avviaInPiu } from "./servizi";
 import { elencoVram, scaricaDallaVram } from "./vram";
 import { requisitiDiQuestaMacchina } from "./requisiti-macchina";
 import { LOGS_DIR, MODELS_DIR, OUTPUT_DIR } from "./paths";
+import { rivela } from "./rivela";
 
 export function registerIpc(getHub: () => BrowserWindow | null): void {
   /* ---------------------------------------------------------------- suite */
@@ -196,6 +199,8 @@ export function registerIpc(getHub: () => BrowserWindow | null): void {
         utente?: string;
         schema?: Record<string, unknown>;
         nomeSchema?: string;
+        modello?: string;
+        pensa?: boolean;
       },
     ) =>
       chiediAllLlm({
@@ -203,6 +208,16 @@ export function registerIpc(getHub: () => BrowserWindow | null): void {
         utente: String(domanda?.utente ?? ""),
         schema: domanda?.schema,
         nomeSchema: domanda?.nomeSchema,
+        /**
+         * **Queste due righe mancavano, e si vedeva.** Le app mandano da sempre
+         * il modello scelto nel loro menu e se lasciarlo ragionare; qui dentro
+         * i due campi venivano buttati via, e `chiediAllLlm` ripiegava sul
+         * consigliato — Bonsai 27B — che LM Studio si caricava sul momento.
+         * Da fuori sembrava che i tasti «allarga» e «proponi» pretendessero
+         * Bonsai: non era vero, era questa funzione che non passava la scelta.
+         */
+        modello: typeof domanda?.modello === "string" ? domanda.modello : undefined,
+        pensa: typeof domanda?.pensa === "boolean" ? domanda.pensa : undefined,
       }),
   );
 
@@ -215,8 +230,50 @@ export function registerIpc(getHub: () => BrowserWindow | null): void {
   ipcMain.handle(CHANNELS.libreriaMostra, (_e, id: string) => {
     const elemento = libreria.trova(id);
     if (!elemento) return false;
-    shell.showItemInFolder(elemento.percorso);
-    return true;
+    // Perche' non `shell.showItemInFolder` e basta: vedi `rivela.ts`.
+    return rivela(elemento.percorso);
+  });
+
+  /**
+   * Salvarne una copia dove la vuoi tu.
+   *
+   * Aprire la cartella dei risultati fa vedere dove sta il file; questo lo
+   * porta fuori — sul Desktop, in una chiavetta, nella cartella del lavoro —
+   * senza toccare l'originale, che la libreria continua a conoscere.
+   *
+   * La finestra di salvataggio si appende a quella che l'ha chiesta, cosi'
+   * resta davanti alla sua app e non dietro a un'altra finestra della suite.
+   */
+  ipcMain.handle(CHANNELS.libreriaSalva, async (evento, id: string) => {
+    const elemento = libreria.trova(String(id ?? ""));
+    if (!elemento) return null;
+
+    // Il nome del file, non il titolo dei metadati: quello puo' contenere
+    // caratteri che Windows nei nomi non accetta.
+    const nome = basename(elemento.percorso);
+    const estensione = extname(nome).replace(".", "").toLowerCase();
+
+    const opzioni: Electron.SaveDialogOptions = {
+      title: "Salva una copia",
+      defaultPath: nome,
+      filters: estensione
+        ? [
+            { name: estensione.toUpperCase(), extensions: [estensione] },
+            { name: "Tutti i file", extensions: ["*"] },
+          ]
+        : [{ name: "Tutti i file", extensions: ["*"] }],
+    };
+
+    const finestra = BrowserWindow.fromWebContents(evento.sender);
+    const esito =
+      finestra && !finestra.isDestroyed()
+        ? await dialog.showSaveDialog(finestra, opzioni)
+        : await dialog.showSaveDialog(opzioni);
+
+    if (esito.canceled || !esito.filePath) return null;
+
+    await copyFile(elemento.percorso, esito.filePath);
+    return esito.filePath;
   });
 
   ipcMain.handle(CHANNELS.libreriaRinomina, (_e, id: string, nome: string) =>
