@@ -83,12 +83,12 @@ function scegli(id) {
 /**
  * I cursori si spostano sul punto di lavoro del modello.
  *
- * Dieci passi su Anima e venti su FLUX non sono lo stesso numero regolato
+ * Trenta step su Anima e venti su FLUX non sono lo stesso numero regolato
  * diversamente: sono due modelli che lavorano in modo diverso, e lasciare il
  * cursore dov'era significa generare male col modello appena scelto.
  */
 function applicaPreferenze(m) {
-  for (const [chiave, campo] of [["passi", el.passi], ["cfg", el.cfg]]) {
+  for (const [chiave, campo] of [["step", el.step], ["cfg", el.cfg]]) {
     const regola = m[chiave];
     campo.min = regola.min;
     campo.max = regola.max;

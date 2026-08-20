@@ -141,6 +141,30 @@ export const scaricaDallaVram = (nome) =>
     body: JSON.stringify({ nome }),
   });
 
+/**
+ * Toglie tutto dalla VRAM, com'era prima di cominciare.
+ *
+ * Serve quando si cambia modello di immagini: quello di prima resterebbe dentro
+ * con il suo text encoder e il suo VAE — e su una scheda da 8 GB sono i GB che
+ * mancano a quello nuovo. Gemella di quella di DaProdMusica, vedi `memoria.js`.
+ */
+export const svuotaVram = () =>
+  fetch(`${motore}/daprod/scarica`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ tutti: true }),
+  }).catch(() => {
+    // Motore vecchio senza questa rotta: si prova a generare lo stesso.
+  });
+
+/**
+ * Spegne il modello che scrive, quello di LM Studio.
+ *
+ * Non lo può fare il motore: LM Studio è un altro programma, e i suoi GB il
+ * motore non li vede nemmeno. Lo fa la suite, che parla con tutti e due.
+ */
+export const liberaMemoriaLlm = () => suite.llm.liberaMemoria();
+
 /* ---------------------------------------------------------------- libreria */
 
 export const immagini = () => suite.libreria.elenco({ tipo: "immagine", app: "foto" });

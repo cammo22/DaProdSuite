@@ -1,7 +1,7 @@
 # Riprendere da qui
 
 Documento di passaggio fra una sessione e l'altra. Aggiornato il **20 agosto
-2026**, con la 0.3.1 pubblicata e la 0.3.2 costruita.
+2026**, con la 0.3.2 pubblicata e la 0.3.3 costruita.
 
 **Se stai leggendo questo all'inizio di una conversazione nuova**: leggi anche
 [COME-SI-LAVORA.md](COME-SI-LAVORA.md) e [ROADMAP.md](ROADMAP.md), poi vai al
@@ -53,10 +53,38 @@ Repo pubblico: **https://github.com/cammo22/DaProdSuite**
 | **Scaricamento a 4 connessioni** | fatto e **misurato**: 3,9 → 11,8 MB/s su questo PC |
 | **Foto: Genera, cartella, salva** | fatti, **da provare tu** |
 | **Il modello scelto arriva davvero a LM Studio** | fatto: il ponte lo buttava via |
-| **0.3.2 costruita** | **da provare**, e poi si pubblica |
+| **0.3.2 pubblicata** | fatto il 20 agosto: tag `v0.3.2` |
+| **Foto: 30-50 step, formato a pulsanti, proposte tue** | fatto, **da provare tu**: provato in un banco fuori da Electron, non con un'immagine vera |
+| **La VRAM si libera premendo Genera** | fatto in Foto; la sequenza è verificata, **l'effetto su una generazione vera no** |
+| **0.3.3 costruita** | **da provare**, e poi si pubblica |
 
 Si lavora su un ramo per release e una PR: `release-0.2.0` è stata unita con le
-PR #3 e #4, la 0.3.1 con la #5, e questo giro sta su `release-0.3.2`.
+PR #3 e #4, la 0.3.1 con la #5, la 0.3.2 con la #6, e questo giro sta su
+`release-0.3.3`.
+
+### Com'è fatto il giro della 0.3.3
+
+- **`packages/ui/src/proposte.js`** — le pastiglie con le proposte, per tutte le
+  app. Elenco nel `localStorage` sotto la chiave che passa l'app, `+` per
+  aggiungere, menu col tasto destro per modificare/eliminare, e una finestrella
+  `<dialog>` per titolo e prompt. Due avvertenze imparate provandolo su
+  Chromium: **l'evento `close` di un `<dialog>` non arriva** — né con
+  `onclose`, né con `addEventListener` — quindi chi chiude toglie la finestrella
+  da sé; e lo stile se lo inietta da solo, perché i fogli delle app non lo
+  conoscono.
+- **`apps/foto/src/formato.js`** — forma e risoluzione a pulsanti, con la tabella
+  delle misure scritta a mano (tutte multiple di 16) invece che calcolata: un
+  16:9 arrotondato darebbe 1936×1088, e nessuno riconosce quel numero.
+- **`apps/foto/src/memoria.js`** — `faiSpazio(modello, racconta)`: spegne il
+  modello di LM Studio e, se serve, svuota la VRAM del motore. Chiamata da Crea
+  e da Ritocco appena prima di `ponte.invia`. Il modello usato l'ultima volta
+  sta nel `localStorage`: è così che si sa se è cambiato.
+- **`passi` è diventato `step`** dappertutto in Foto — id nella pagina, campo dei
+  modelli in `grafi.js`, metadati delle immagini nuove.
+
+Il banco di prova usato per guardare le pagine fuori da Electron (un
+`window.daprodSuite` finto e un server statico) è stato buttato: si rifà in
+cinque minuti se serve.
 
 ## Com'è entrata DaProdMusica
 

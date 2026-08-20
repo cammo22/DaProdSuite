@@ -1,10 +1,10 @@
 /**
  * I modelli fra cui si sceglie, e i grafi che si mandano al motore.
  *
- * Due, con caratteri diversi. **Anima** è un turbo: dieci passi, CFG 1,0, 5,6 GB,
- * ed è già sul disco perché Musica la usa per le copertine — si genera subito,
- * senza scaricare niente. **FLUX.2 Klein** è il modello grosso: 11,2 GB fra pesi
- * e text encoder, venti passi, capisce descrizioni lunghe e articolate. Costa
+ * Due, con caratteri diversi. **Anima** è un turbo: CFG 1,0, 5,6 GB, ed è già sul
+ * disco perché Musica la usa per le copertine — si genera subito, senza
+ * scaricare niente. **FLUX.2 Klein** è il modello grosso: 11,2 GB fra pesi e
+ * text encoder, capisce descrizioni lunghe e articolate. Costa
  * l'attesa dello scaricamento e qualche decina di secondi in più a immagine.
  *
  * I due non si somigliano nemmeno nei nodi. Anima gira sui nodi di serie del
@@ -47,7 +47,7 @@ function immagineAnima(m, p) {
       class_type: "KSampler",
       inputs: {
         model: ["1", 0], positive: ["3", 0], negative: ["4", 0], latent_image: ["5", 0],
-        seed: p.seed, steps: p.passi, cfg: p.cfg,
+        seed: p.seed, steps: p.step, cfg: p.cfg,
         sampler_name: "euler", scheduler: "simple", denoise: 1,
       },
     },
@@ -76,7 +76,7 @@ function ritoccoAnima(m, p) {
       class_type: "KSampler",
       inputs: {
         model: ["1", 0], positive: ["3", 0], negative: ["4", 0], latent_image: ["13", 0],
-        seed: p.seed, steps: p.passi, cfg: p.cfg,
+        seed: p.seed, steps: p.step, cfg: p.cfg,
         sampler_name: "euler", scheduler: "simple", denoise: p.denoise,
       },
     },
@@ -111,7 +111,7 @@ function comuniFlux(m, p) {
     // dipende da quanti pixel ci sono da fare.
     "8": {
       class_type: "Flux2Scheduler",
-      inputs: { steps: p.passi, width: p.larghezza, height: p.altezza },
+      inputs: { steps: p.step, width: p.larghezza, height: p.altezza },
     },
     "9": { class_type: "VAELoader", inputs: { vae_name: m.vae } },
     "10": { class_type: "VAEDecode", inputs: { samples: ["12", 0], vae: ["9", 0] } },
@@ -179,7 +179,7 @@ const FLUX_COMUNE = {
   // FLUX.2 legge il prompt con un Qwen3, che l'italiano lo capisce: tradurre
   // prima non serve, e toglie di mezzo un passaggio che può solo andare storto.
   traduce: false,
-  passi: { min: 8, max: 40, valore: 20 },
+  step: { min: 8, max: 50, valore: 20 },
   // Klein è distillato: il CFG resta a 1 e non c'è niente da guadagnare ad
   // alzarlo, quindi il cursore non si muove e il negativo non serve.
   cfg: { min: 1, max: 1, valore: 1 },
@@ -201,14 +201,22 @@ export const MODELLI = {
   anima: {
     id: "anima",
     nome: "Anima",
-    riga: "Veloce, già sul disco. Dieci passi bastano.",
+    riga: "Già sul disco. Da 30 a 50 step, come dice chi l'ha fatta.",
     dit: "anima-turbo-v1.0.safetensors",
     txt: "qwen_3_06b_base.safetensors",
     vae: "qwen_image_vae.safetensors",
     catalogo: ["anima-turbo", "qwen3-06b-base", "qwen-image-vae"],
-    // Anima è un modello turbo: dieci passi e CFG 1,0 sono il suo punto di
-    // lavoro, non un risparmio.
-    passi: { min: 4, max: 30, valore: 10 },
+    /**
+     * **Da 30 a 50 step**, come dice chi l'ha addestrata.
+     *
+     * Fino alla 0.3.2 qui c'era `{ min: 4, max: 30, valore: 10 }`: dieci step
+     * perché Anima è un modello turbo, e il turbo era anche il motivo per cui
+     * le immagini venivano molli. La scheda del modello su HuggingFace consiglia
+     * **30-50** step, e la differenza si vede. Trenta è il punto di partenza,
+     * cinquanta il massimo che ha senso chiedere: oltre, cambia il tempo e non
+     * l'immagine. Il minimo resta basso per chi vuole una prova veloce.
+     */
+    step: { min: 4, max: 50, valore: 30 },
     cfg: { min: 1, max: 4, valore: 1 },
     /** A CFG 1,0 il negativo è ignorato, ma alzando il CFG torna a contare. */
     usaNegativo: true,

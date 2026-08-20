@@ -62,6 +62,10 @@
   <div>
     <div class="panel">
       <h2>Cosa vuoi vedere <span class="right"><span class="hint" id="bonsaiStato"></span></span></h2>
+      <!-- Le pastiglie sono tue: il "+" ne aggiunge una, il tasto destro su una
+           di quelle che ci sono la modifica o la cancella. Le disegna il pezzo
+           comune in packages/ui, lo stesso che usa la scheda Immagini di
+           DaProdMusica. -->
       <div class="chips" id="proposte"></div>
       <textarea id="prompt" rows="4" placeholder="Es. una vecchia automobile ferma su una strada vuota al tramonto"></textarea>
       <!-- Lo stesso selettore dell'hub: quale modello scrive, se occupa
@@ -76,52 +80,64 @@
         quello che tiene acceso LM Studio: Bonsai è il consigliato, non l'obbligatorio.</div>
     </div>
 
+    <!-- Il tasto sta sopra la resa, non in fondo alla colonna: quello che si
+         fa quasi sempre è scrivere e premere, e le manopole si toccano una
+         volta ogni tanto. Prima bisognava scorrere oltre tutte per arrivarci. -->
+    <button class="btn wide" id="genera" style="margin-top:16px">Genera</button>
+    <div id="errore" class="err" style="display:none"></div>
+
     <div class="panel">
       <h2>Resa <span class="right"><button class="mini" id="toggleAdv">avanzati</button></span></h2>
-      <div class="row">
-        <div class="field">
-          <label>Estetica</label>
+      <!-- Tutto su una riga sola finché ci sta, e a capo da sé quando la
+           finestra si stringe: le manopole che si toccano sempre sono quattro,
+           e in una griglia di campi alti occupavano mezza colonna. -->
+      <div class="resa">
+        <div class="voce">
+          <label for="estetica">Estetica</label>
           <select id="estetica"></select>
         </div>
-        <div class="field">
-          <label>Formato</label>
-          <select id="formato">
-            <option value="1024x1024">Quadrato 1024</option>
-            <option value="1024x1536">Verticale 2:3</option>
-            <option value="1536x1024">Orizzontale 3:2</option>
-            <option value="1152x896">Orizzontale 4:3</option>
-            <option value="768x768">Veloce 768</option>
-          </select>
+        <div class="voce corta">
+          <label for="quante">Quante</label>
+          <input type="number" id="quante" value="1" min="1" max="8">
         </div>
-        <div class="field"><label>Quante</label><input type="number" id="quante" value="1" min="1" max="8"></div>
+        <!-- Formato e risoluzione a pulsanti, non a menu: sono sette scelte in
+             tutto, e in un menu costavano due clic per vederne una. I pixel
+             veri stanno scritti accanto, perché "1080p" non dice quanto ci
+             mette a farla. -->
+        <div class="voce larga">
+          <label>Formato <span class="misura" id="misura"></span></label>
+          <div class="gruppo">
+            <div class="serie" id="formati"></div>
+            <div class="serie" id="risoluzioni"></div>
+          </div>
+        </div>
       </div>
 
-      <div id="avanzati" style="display:none">
-        <div class="row">
-          <div class="field">
-            <label>Passi <span class="rangeval" id="passiVal">10</span></label>
-            <input type="range" id="passi" min="4" max="30" step="1" value="10">
+      <div id="avanzati" hidden>
+        <div class="resa">
+          <div class="voce">
+            <label>Step <span class="rangeval" id="stepVal">30</span></label>
+            <input type="range" id="step" min="4" max="50" step="1" value="30">
           </div>
-          <div class="field">
+          <div class="voce">
             <label>CFG <span class="rangeval" id="cfgVal">1.0</span></label>
             <input type="range" id="cfg" min="1" max="4" step="0.1" value="1.0">
           </div>
-          <div class="field">
-            <label>Seed</label>
+        </div>
+        <div class="resa">
+          <div class="voce corta">
+            <label for="seed">Seed</label>
             <div class="inline"><input type="number" id="seed" min="0"><button class="mini" id="dado">&#127922;</button></div>
           </div>
+          <label class="switch"><input type="checkbox" id="seedCasuale" checked> Seed casuale a ogni immagine</label>
         </div>
-        <label class="switch"><input type="checkbox" id="seedCasuale" checked> Seed casuale a ogni immagine</label>
-        <div class="field" style="margin-top:14px">
-          <label>Cosa non vuoi vedere</label>
+        <div class="voce">
+          <label for="negativo">Cosa non vuoi vedere</label>
           <textarea id="negativo" rows="2"></textarea>
           <div class="hint" id="notaNegativo"></div>
         </div>
       </div>
     </div>
-
-    <button class="btn wide" id="genera" style="margin-top:16px">Genera</button>
-    <div id="errore" class="err" style="display:none"></div>
   </div>
 
   <div>
