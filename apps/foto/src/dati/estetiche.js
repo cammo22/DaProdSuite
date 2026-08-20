@@ -25,15 +25,23 @@ export const ESTETICHE = {
 export const NEGATIVO =
   "worst quality, low quality, blurry, jpeg artifacts, watermark, signature, text, letters";
 
+/**
+ * Le proposte di partenza: un titolo corto e il prompt intero.
+ *
+ * Sono un punto di partenza, non un elenco chiuso: dall'app si aggiungono le
+ * proprie col "+" e si modificano col tasto destro — le tue finiscono nel
+ * `localStorage`, queste restano quelle del primo avvio. Vedi
+ * `packages/ui/src/proposte.js`.
+ */
 export const PROPOSTE = [
-  "una vecchia automobile ferma su una strada vuota al tramonto",
-  "il mare di notte con la luna piena",
-  "un vicolo di città sotto la pioggia, insegne accese",
-  "una chitarra appoggiata a un amplificatore su un palco vuoto",
-  "fiori che crescono da una crepa nel cemento",
-  "una giostra abbandonata in un luna park spento",
-  "una stanza vuota con la luce che entra dalla finestra",
-  "un treno fermo su binari deserti all'alba",
-  "un ritratto di profilo controluce davanti a una finestra",
-  "una tavola apparecchiata dopo la cena, luci basse",
+  { titolo: "Automobile al tramonto", prompt: "una vecchia automobile ferma su una strada vuota al tramonto" },
+  { titolo: "Mare di notte", prompt: "il mare di notte con la luna piena" },
+  { titolo: "Vicolo sotto la pioggia", prompt: "un vicolo di città sotto la pioggia, insegne accese" },
+  { titolo: "Chitarra sul palco", prompt: "una chitarra appoggiata a un amplificatore su un palco vuoto" },
+  { titolo: "Fiori nel cemento", prompt: "fiori che crescono da una crepa nel cemento" },
+  { titolo: "Giostra abbandonata", prompt: "una giostra abbandonata in un luna park spento" },
+  { titolo: "Stanza e finestra", prompt: "una stanza vuota con la luce che entra dalla finestra" },
+  { titolo: "Treno all'alba", prompt: "un treno fermo su binari deserti all'alba" },
+  { titolo: "Ritratto controluce", prompt: "un ritratto di profilo controluce davanti a una finestra" },
+  { titolo: "Tavola dopo cena", prompt: "una tavola apparecchiata dopo la cena, luci basse" },
 ];

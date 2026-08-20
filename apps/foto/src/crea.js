@@ -3,19 +3,25 @@
 import { el, escapeHtml, legaValore, libera, mostraErrore, nascondiErrore, occupa, rnd } from "./dom.js";
 import { ESTETICHE, NEGATIVO, PROPOSTE } from "./dati/estetiche.js";
 import { componiPrompt, grafoImmagine, paroleEstetica } from "./grafi.js";
+import { collegaFormato, misuraScelta } from "./formato.js";
 import { modelloCorrente, modelloUsabile } from "./scelta-modello.js";
+import { faiSpazio } from "./memoria.js";
 import { aggiungiLavoro } from "./coda.js";
 import { inInglese } from "./lingua.js";
 import * as ponte from "./ponte.js";
+// Le pastiglie con le proposte sono di tutte le app, non di questa: stanno in
+// `packages/ui` e la suite le serve sotto `/comune/`, dalla stessa origine
+// della pagina. Qui si dice solo cosa proporre e dove finisce quello che clicchi.
+import { collegaProposte } from "/comune/proposte.js";
 
 function leggiModulo() {
-  const [larghezza, altezza] = el.formato.value.split("x").map(Number);
+  const { larghezza, altezza } = misuraScelta();
   return {
     testo: el.prompt.value.trim(),
     estetica: el.estetica.value,
     larghezza,
     altezza,
-    passi: parseInt(el.passi.value),
+    step: parseInt(el.step.value),
     cfg: parseFloat(el.cfg.value),
     negativo: el.negativo.value.trim() || NEGATIVO,
     seed: parseInt(el.seed.value) || 0,
@@ -52,29 +58,28 @@ function collegaEstetica() {
 }
 
 export function collegaCrea() {
-  legaValore("passi", "passiVal");
+  legaValore("step", "stepVal");
   legaValore("cfg", "cfgVal", (v) => Number(v).toFixed(1));
 
   collegaEstetica();
+  collegaFormato();
   el.negativo.value = NEGATIVO;
   el.seed.value = rnd();
 
-  el.proposte.innerHTML = "";
-  for (const proposta of PROPOSTE) {
-    const chip = document.createElement("button");
-    chip.className = "chip";
-    chip.textContent = proposta.length > 42 ? proposta.slice(0, 40) + "…" : proposta;
-    chip.title = proposta;
-    chip.onclick = () => (el.prompt.value = proposta);
-    el.proposte.appendChild(chip);
-  }
+  collegaProposte(el.proposte, {
+    chiave: "daprod.foto.proposte",
+    difetto: PROPOSTE,
+    applica: (prompt) => (el.prompt.value = prompt),
+    // Il "+" parte da quello che hai appena scritto: la proposta che vale la
+    // pena salvare è quasi sempre quella con cui hai appena fatto una foto buona.
+    testoCorrente: () => el.prompt.value.trim(),
+  });
 
   el.dado.onclick = () => (el.seed.value = rnd());
 
   el.toggleAdv.onclick = () => {
-    const aperto = el.avanzati.style.display === "none";
-    el.avanzati.style.display = aperto ? "block" : "none";
-    el.toggleAdv.classList.toggle("on", aperto);
+    el.avanzati.hidden = !el.avanzati.hidden;
+    el.toggleAdv.classList.toggle("on", !el.avanzati.hidden);
   };
 
   el.genera.onclick = async () => {
@@ -101,6 +106,14 @@ export function collegaCrea() {
       // Una volta sola, prima del ciclo: otto immagini della stessa descrizione
       // non sono otto traduzioni diverse, e devono partire dallo stesso inglese.
       const inglese = await inInglese(p.testo, m);
+
+      // **Adesso, non prima.** Fra l'aver scritto la descrizione con Bonsai e
+      // il generare passano pochi secondi, e in quei secondi il modello che
+      // scrive occupa ancora la scheda video. Si libera qui, appena prima di
+      // mandare il lavoro: vedi `memoria.js` per cosa se ne va e cosa resta.
+      await faiSpazio(m, (detto) => occupa(el.genera, detto));
+
+      occupa(el.genera, "carico il modello…");
       const quante = Math.max(1, Math.min(8, parseInt(el.quante.value) || 1));
       for (let i = 0; i < quante; i++) {
         // Dalla seconda in poi il seed cambia comunque: otto copie della stessa
@@ -114,8 +127,8 @@ export function collegaCrea() {
           testo: p.testo,
           estetica: p.estetica,
           prompt: parametri.prompt,
-          formato: el.formato.value,
-          passi: parametri.passi,
+          formato: misuraScelta().etichetta,
+          step: parametri.step,
           cfg: parametri.cfg,
           seed: parametri.seed,
         });

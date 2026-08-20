@@ -17,6 +17,7 @@ import { ascolta } from "./bus.js";
 import { stato } from "./stato.js";
 import { componiPrompt, grafoRitocco } from "./grafi.js";
 import { modelloCorrente, modelloUsabile } from "./scelta-modello.js";
+import { faiSpazio } from "./memoria.js";
 import { aggiungiLavoro } from "./coda.js";
 import { inInglese } from "./lingua.js";
 import * as ponte from "./ponte.js";
@@ -232,12 +233,18 @@ export function collegaRitocco() {
 
       const m = modelloCorrente();
       const inglese = await inInglese(testo, m);
+
+      // Come in Crea, e per la stessa ragione: la scheda video se la contendono
+      // il modello che scrive e quello che disegna, e qui si genera lo stesso.
+      await faiSpazio(m, (detto) => occupa(el.rigenera, detto));
+      occupa(el.rigenera, "carico il modello…");
+
       const denoise = parseFloat(el.denoise.value);
       const parametri = {
         prompt: componiPrompt(inglese),
         negativo: el.negativo.value.trim(),
         seed: rnd(),
-        passi: parseInt(el.passi.value),
+        step: parseInt(el.step.value),
         cfg: parseFloat(el.cfg.value),
         denoise,
         immagine: base,
@@ -255,7 +262,7 @@ export function collegaRitocco() {
         prompt: parametri.prompt,
         ritocco: true,
         denoise,
-        passi: parametri.passi,
+        step: parametri.step,
         cfg: parametri.cfg,
         seed: parametri.seed,
       });

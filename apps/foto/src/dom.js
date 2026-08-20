@@ -4,7 +4,7 @@ export const $ = (id) => document.getElementById(id);
 
 export const el = {};
 for (const chiave of [
-  "prompt", "proposte", "estetica", "formato", "quante", "passi", "cfg", "seed",
+  "prompt", "proposte", "estetica", "formati", "risoluzioni", "misura", "quante", "step", "cfg", "seed",
   "selettoreLlm", "bonsaiAllarga", "bonsaiIdea", "bonsaiStato",
   "seedCasuale", "negativo", "notaNegativo", "dado", "toggleAdv", "avanzati", "genera", "errore",
   "modello", "rigaModello", "avvisoModello", "traduci", "rigaTraduci", "tradotto",

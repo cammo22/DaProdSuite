@@ -98,6 +98,28 @@ textarea:focus,input:focus,select:focus{border-color:var(--accent); box-shadow:0
 .chip .x:hover{opacity:1; color:var(--err)}
 .row{display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:12px}
 .field{margin-bottom:14px}
+
+/* La resa, stretta. Le manopole sono sette e si guardano tutte insieme: in
+   righe che vanno a capo da sole occupano metà dello spazio che occupavano in
+   una griglia di campi alti, e il tasto Genera resta in vista mentre le muovi. */
+.resa{display:flex; flex-wrap:wrap; gap:9px 14px; align-items:flex-end; margin-bottom:10px}
+.resa:last-child{margin-bottom:0}
+.resa .voce{flex:1 1 150px; min-width:0}
+.resa .voce.corta{flex:0 0 86px}
+/* I pulsanti non si stringono: o ci stanno in riga, o vanno a capo interi. */
+.resa .voce.larga{flex:0 1 auto; min-width:330px}
+.resa label{margin-bottom:5px; display:flex; align-items:baseline; gap:8px}
+.resa label .rangeval{float:none; margin-left:auto; font-size:12px}
+.resa .misura{margin-left:auto; font-size:11px; color:var(--dim); font-variant-numeric:tabular-nums}
+.resa select,.resa input{padding:8px 10px; font-size:13.5px}
+.resa .switch{flex:1 1 auto; margin-bottom:9px}
+.resa textarea{font-size:13.5px}
+/* Formato e risoluzione: due file di pulsanti attaccate, uno acceso per fila.
+   Lo spazio più largo fra le due file è quello che dice che sono due scelte
+   diverse — senza scriverci sopra due etichette e una riga in più. */
+.gruppo{display:flex; gap:4px 14px; flex-wrap:wrap}
+.serie{display:flex; gap:4px; flex-wrap:wrap}
+.gruppo .mini{padding:6px 9px; font-size:12.5px; flex:0 0 auto}
 .rangeval{float:right; color:var(--txt); font-variant-numeric:tabular-nums}
 input[type=range]{padding:0; height:24px; accent-color:var(--accent); background:transparent; border:0; box-shadow:none}
 .inline{display:flex; gap:8px; align-items:center}
