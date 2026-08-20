@@ -23,8 +23,10 @@ import { APPS, type AppId } from "@daprod/ipc";
 import type { BrowserWindow } from "electron";
 
 const STILE = `
-/* La barra in basso a destra, condivisa da tutto quello che la shell inietta:
-   il tasto del log e quello del Visualizer. Chi arriva per primo la crea. */
+/* La barra in basso a destra. Ci stava anche un tasto "♪ Visualizer" per aprire
+   il Visualizer da dentro le altre app: tolto il 19 agosto 2026 su richiesta di
+   Cammo — le app si aprono tutte insieme dall'hub, e un tasto che ne apre
+   un'altra dentro la finestra in cui stai lavorando e' solo ingombro. */
 .daprod-barra {
   position: fixed; right: 16px; bottom: 16px; z-index: 2147483000;
   display: flex; align-items: center; gap: 8px;
@@ -87,9 +89,9 @@ const SCRIPT = `
   const suite = window.daprodSuite;
   if (!suite || !suite.log) return "niente ponte";
 
-  // La barra in basso a destra e' condivisa: la crea chi arriva per primo fra
-  // questo e il tasto del Visualizer, e l'altro ci si aggiunge. Cosi' l'ordine
-  // in cui la shell inietta i due pezzi non conta.
+  // La barra in basso a destra: adesso ci sta solo il log, ma resta una barra
+  // e non un tasto attaccato al corpo della pagina — il giorno che la shell
+  // inietta qualcos'altro, quello ci si aggiunge senza rifare niente.
   function barraDaProd() {
     let barra = document.querySelector(".daprod-barra");
     if (!barra) {

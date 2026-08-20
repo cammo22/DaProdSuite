@@ -22,7 +22,6 @@ import { gestisciSchema, serviInterfaccia, urlInterfaccia } from "../../file-sch
 import { registraConsole } from "../../finestre";
 import { CACHE_DIR, iconaApp } from "../../paths";
 import { montaTerminale } from "../../terminale";
-import { montaTastoVisualizer } from "../../tasto-visualizer";
 import { indirizzo } from "../../servizi";
 
 const PREDEFINITI = { width: 900, height: 940, maximized: false };
@@ -73,7 +72,6 @@ export function apri(onClose: () => void): void {
   const win = finestra;
   registraConsole(win, "companion");
   montaTerminale(win, "companion");
-  montaTastoVisualizer(win, "companion");
   if (bounds.maximized) win.maximize();
   win.once("ready-to-show", () => win.show());
 

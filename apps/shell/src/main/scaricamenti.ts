@@ -31,6 +31,7 @@ import { APPS, modelliRichiesti, type AppId, type AvanzamentoModelli } from "@da
 import {
   ScaricamentoAnnullato,
   ensureUv,
+  giaScaricato,
   installaMotore,
   installaNodo,
   installaRequisiti,
@@ -42,7 +43,6 @@ import {
   scaricaRepo,
 } from "@daprod/runtime";
 import { EventEmitter } from "node:events";
-import { stat } from "node:fs/promises";
 import { join } from "node:path";
 import { appManager } from "./app-manager";
 import { createLogger } from "./logging";
@@ -371,17 +371,15 @@ async function portaDentro(ids: string[], corsa: Corsa): Promise<boolean> {
 /**
  * Quanto di questo modello è già sul disco da un tentativo interrotto.
  *
- * Per un file è il `.parte` che gli sta accanto; per un repo HuggingFace è
- * quanto pesa la sua cartella, perché lì i file finiti restano al loro posto e
- * al giro dopo si scaricano solo quelli che mancano.
+ * Per un file lo dice chi l'ha scaricato: da quando i file grossi arrivano su
+ * più connessioni, il `.parte` diventa grande quanto il totale appena comincia
+ * l'ultimo pezzo, e misurarlo direbbe "quasi finito" con dentro dei buchi. Per
+ * un repo HuggingFace è quanto pesa la sua cartella, perché lì i file finiti
+ * restano al loro posto e al giro dopo si scaricano solo quelli che mancano.
  */
 async function giaSulDisco(entry: ModelEntry): Promise<number> {
   if (entry.kind === "file") {
-    try {
-      return (await stat(join(MODELS_DIR, entry.dir, `${entry.file}.parte`))).size;
-    } catch {
-      return 0;
-    }
+    return giaScaricato(join(MODELS_DIR, entry.dir, entry.file), entry.bytes);
   }
   if (entry.kind === "hf-repo") {
     return pesoCartella(join(MODELS_DIR, entry.dir, entry.verifica ?? ""));

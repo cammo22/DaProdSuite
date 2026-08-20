@@ -420,6 +420,8 @@ export interface SuiteApi {
   risultati: {
     elenco(filtro?: FiltroLibreria): Promise<ElementoLibreria[]>;
     mostraNellaCartella(id: string): Promise<boolean>;
+    /** Ne salva una copia dove dice l'utente. Torna il percorso, o `null` se ha annullato. */
+    salva(id: string): Promise<string | null>;
     elimina(id: string): Promise<boolean>;
     onCambiata(listener: (elementi: ElementoLibreria[]) => void): Unsubscribe;
   };
@@ -578,6 +580,18 @@ export interface ApiApp {
     elenco(filtro?: FiltroLibreria): Promise<ElementoLibreria[]>;
     /** Apre il file in Esplora risorse. */
     mostraNellaCartella(id: string): Promise<boolean>;
+
+    /**
+     * Ne salva una copia dove dice l'utente, con la finestra di Windows.
+     *
+     * "Nella cartella" apre il posto dove la suite tiene i risultati, che sta
+     * dentro `%LOCALAPPDATA%`: serve a capire dove sono finiti i file, non a
+     * portarli via. Questo e' il gesto normale — scegli tu cartella e nome, e
+     * l'originale resta dov'e'.
+     *
+     * Torna il percorso scelto, o `null` se hai annullato.
+     */
+    salva(id: string): Promise<string | null>;
 
     /**
      * Rinomina il file sul disco. Torna l'elemento aggiornato: l'id è il
@@ -806,6 +820,7 @@ export const CHANNELS = {
   libreriaCopertina: "libreria:copertina",
   libreriaMeta: "libreria:meta",
   libreriaElimina: "libreria:elimina",
+  libreriaSalva: "libreria:salva",
   libreriaCambiata: "libreria:cambiata",
   appInvia: "app:invia",
   appConsegna: "app:consegna",

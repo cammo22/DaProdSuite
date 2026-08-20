@@ -27,9 +27,21 @@ sul disco — non lo riscarichi la volta dopo.
 
 ### Uso già LM Studio con un modello mio: la suite lo obbliga a usarne uno suo?
 
-No. Le app che scrivono (DaProdMusica, DaProdFoto) parlano con LM Studio e
-usano **qualunque modello tu abbia caricato lì**. Consigliamo Bonsai 27B
-perché lo abbiamo misurato a fondo, ma non è un obbligo.
+No. Le app che scrivono (DaProdMusica, DaProdFoto, DaProdCompanion) parlano
+con LM Studio e usano **quello che vedi nel menu in cima all'app** — che di suo
+è il modello che hai caricato tu. Consigliamo Bonsai 27B perché lo abbiamo
+misurato a fondo, ma non è un obbligo.
+
+> Fino alla 0.3.1 c'era un difetto che smentiva questa risposta: la scelta del
+> menu si perdeva per strada e la suite finiva per far caricare Bonsai a LM
+> Studio. Corretto nella 0.3.2.
+
+### Quanto ci mette a scaricare i modelli?
+
+Dipende dalla linea, ma dalla 0.3.2 la suite scarica su **quattro connessioni
+insieme** invece di una: sullo stesso computer siamo passati da 3,9 a 11,8 MB/s,
+cioè da ~35 a ~11 minuti per gli 8 GB di DaProdMusica. Se chiudi tutto a metà
+strada non perdi niente: riprende da dov'era.
 
 ### Il modello che scrive è lentissimo, cosa succede?
 

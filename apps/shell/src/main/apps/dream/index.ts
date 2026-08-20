@@ -21,7 +21,6 @@ import { readBounds, writeState } from "../../app-state";
 import { registraConsole } from "../../finestre";
 import { iconaApp } from "../../paths";
 import { montaTerminale } from "../../terminale";
-import { montaTastoVisualizer } from "../../tasto-visualizer";
 import { indirizzo } from "../../servizi";
 
 const PREDEFINITI = { width: 1560, height: 980, maximized: false };
@@ -66,8 +65,6 @@ export function apri(onClose: () => void): void {
   // Le righe del motore dentro la finestra dove sono capitate, con Ctrl+L.
   // Iniettato dalla shell: e' una implementazione sola per tutte le app.
   montaTerminale(win, "dream");
-  // E il modo di aprire DaPVisualizer senza tornare all'hub.
-  montaTastoVisualizer(win, "dream");
   if (bounds.maximized) win.maximize();
   win.once("ready-to-show", () => win.show());
 

@@ -140,6 +140,11 @@ export function messaggioDalMotore(msg) {
 }
 
 async function concludi(l) {
+  // Ci si arriva da due strade — il messaggio del motore e il riallineamento
+  // qui sotto — e possono capitare insieme.
+  if (l.concluso) return;
+  l.concluso = true;
+
   const uscite = await ponte.risultati(l.id);
   const prodotte = Object.values(uscite).flatMap((o) => o.images || []);
 
@@ -164,13 +169,33 @@ async function concludi(l) {
   annuncia("galleria-cambiata");
 }
 
-/** Ributta via i lavori che il motore non ha più: dopo un suo riavvio, o un ricarico. */
+/**
+ * Rimette in fila la sessione con quello che il motore ha davvero.
+ *
+ * **Prima buttava via troppo.** Un lavoro che non è più nella coda del motore
+ * veniva tolto e basta — ma "non è più in coda" vuol dire anche *finito*, e il
+ * messaggio che lo racconta viaggia su un WebSocket che ogni tanto si riapre.
+ * Quando quel messaggio si perdeva, l'immagine era stata fatta davvero: sparita
+ * dalla sessione, mai comparsa in galleria (che si aggiorna proprio lì), e da
+ * fuori si vedeva come «ho premuto Genera e non è successo niente».
+ *
+ * Adesso, prima di buttarlo, si chiede la cronologia al motore: se quel lavoro
+ * ha prodotto qualcosa lo si conclude come se il messaggio fosse arrivato.
+ */
 export async function riallinea() {
   try {
     const vivi = await ponte.lavoriVivi();
-    ordine.slice().forEach((id) => {
-      if (!vivi.has(id)) togliLavoro(id);
-    });
+
+    for (const id of ordine.slice()) {
+      if (vivi.has(id)) continue;
+      const l = lavoro(id);
+      if (!l || l.concluso) continue;
+
+      const uscite = await ponte.risultati(id);
+      const prodotte = Object.values(uscite).flatMap((o) => o.images || []);
+      if (prodotte.length) await concludi(l);
+      else togliLavoro(id);
+    }
   } catch {
     // Motore spento: se ne riparla al prossimo giro.
   }

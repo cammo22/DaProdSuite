@@ -11,10 +11,11 @@ poche parole vaghe (2-3 generi, non un elenco di strumenti — è quello che dà
 risultati migliori) e il testo con i tag `[Verse]`, `[Chorus]`, `[Bridge]` per
 dire dove va cosa.
 
-Non sai da dove cominciare? C'è **Bonsai**: scrivi in una riga di cosa deve
-parlare la canzone, e riempie titolo, stile, testo e perfino l'idea per la
-copertina al posto tuo. Serve avere [LM Studio](https://lmstudio.ai) aperto
-con un modello caricato — qualunque modello va bene.
+Non sai da dove cominciare? C'è **«Fai tutto»**: scrivi in una riga di cosa
+deve parlare la canzone, e riempie titolo, stile, testo e perfino l'idea per la
+copertina al posto tuo. Serve avere [LM Studio](https://lmstudio.ai) aperto:
+risponde **il modello che scegli nel menu lì sopra**, qualunque sia. Bonsai 27B
+è quello che consigliamo, non quello che ti tocca.
 
 La copertina si genera insieme al brano, prima che parta la musica.
 

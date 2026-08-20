@@ -31,7 +31,24 @@ const CONTESTI = [
 const CHIAVE_MODELLO = "daprod.llm.modello";
 const CHIAVE_CONTESTO = "daprod.llm.contesto";
 
-export const modelloScelto = () => localStorage.getItem(CHIAVE_MODELLO) || "";
+/** Quello che hai scelto tu nel menu, se l'hai fatto. */
+const ricordato = () => localStorage.getItem(CHIAVE_MODELLO) || "";
+
+/**
+ * Quello che il menu sta **mostrando adesso**.
+ *
+ * Non e' la stessa cosa del ricordo qui sopra: chi non ha mai toccato il menu
+ * non ha niente da ricordare, e il menu in quel caso mostra il modello che hai
+ * caricato tu in LM Studio. Prima di questa riga, in quel caso, le app
+ * chiedevano una risposta **senza dire a chi**, e la suite ripiegava sul
+ * consigliato: LM Studio si caricava Bonsai 27B — un 27B, minuti — mentre il
+ * menu in cima all'app ne mostrava un altro.
+ */
+let mostrato = "";
+
+/** A chi va chiesta la risposta: quello che si vede, non quello che si ricorda. */
+export const modelloScelto = () => mostrato || ricordato();
+
 const contestoScelto = () => Number(localStorage.getItem(CHIAVE_CONTESTO)) || 65_536;
 
 /**
@@ -61,10 +78,13 @@ export function collegaSelettoreLlm(contenitore, onCambia) {
     // è quello che vuoi usare. Ed è lo stesso a cui la suite manderà la
     // domanda, così il menu non dice una cosa e la suite ne fa un'altra.
     const caricati = (stato.caricati ?? []).filter((m) => stato.modelli.includes(m));
-    const scelto = stato.modelli.includes(modelloScelto())
-      ? modelloScelto()
+    const scelto = stato.modelli.includes(ricordato())
+      ? ricordato()
       : caricati[0] || stato.modelli[0] || "";
     const caricato = (stato.caricati ?? []).includes(scelto);
+    // Da qui in poi le app sanno a chi stanno chiedendo, anche se il menu non
+    // l'ha mai toccato nessuno.
+    mostrato = scelto;
 
     // Si ridisegna solo quando cambia davvero: ogni ridisegno chiuderebbe il
     // menu proprio mentre lo stai aprendo.

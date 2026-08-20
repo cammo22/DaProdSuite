@@ -1,7 +1,7 @@
 # Riprendere da qui
 
-Documento di passaggio fra una sessione e l'altra. Aggiornato il **19 agosto
-2026**, con la 0.2.0 pubblicata e la 0.3.1 costruita.
+Documento di passaggio fra una sessione e l'altra. Aggiornato il **20 agosto
+2026**, con la 0.3.1 pubblicata e la 0.3.2 costruita.
 
 **Se stai leggendo questo all'inizio di una conversazione nuova**: leggi anche
 [COME-SI-LAVORA.md](COME-SI-LAVORA.md) e [ROADMAP.md](ROADMAP.md), poi vai al
@@ -40,7 +40,7 @@ Repo pubblico: **https://github.com/cammo22/DaProdSuite**
 | **DaProd IoDigitale nella suite** | fatto il 17 agosto, **interfaccia ancora in inglese** |
 | **Icone della suite e delle app, fatte con Anima** | fatte e provate (18 agosto) |
 | **Hub in 4:3, e più grande** | fatto e provato: 1266×949 su questo monitor |
-| **Il Visualizer si apre da dentro le altre app** | fatto e provato |
+| **Il Visualizer si apre da dentro le altre app** | **tolto il 20 agosto**: le app si aprono già tutte insieme, il tasto in finestra era ingombro |
 | **0.2.0 pubblicata** | fatto il 19 agosto: tag `v0.2.0`, Release con installer e `latest.yml` |
 | **DaProdCompanion nella suite** | fatto il 19 agosto, **la voce non c'è ancora** |
 | **Versioni dei pacchetti fissate** | `requirements/versioni.txt`, vincolo su *ogni* installazione |
@@ -49,10 +49,14 @@ Repo pubblico: **https://github.com/cammo22/DaProdSuite**
 | **Anteprime che si muovono sulle schede** | fatte, dalle copertine |
 | **`packages/ui`: tema e selettore condivisi** | fatto: era in due copie, la terza sarebbe stata il Companion |
 | **Profilo di memoria + pannello VRAM** | fatti, **da misurare** |
-| **0.3.1 costruita** | **da provare**, e poi si pubblica |
+| **0.3.1 pubblicata** | fatto il 19 agosto: tag `v0.3.1` |
+| **Scaricamento a 4 connessioni** | fatto e **misurato**: 3,9 → 11,8 MB/s su questo PC |
+| **Foto: Genera, cartella, salva** | fatti, **da provare tu** |
+| **Il modello scelto arriva davvero a LM Studio** | fatto: il ponte lo buttava via |
+| **0.3.2 costruita** | **da provare**, e poi si pubblica |
 
 Si lavora su un ramo per release e una PR: `release-0.2.0` è stata unita con le
-PR #3 e #4, e questo giro sta su `release-0.3.1`. Il Merge lo preme Cammo.
+PR #3 e #4, la 0.3.1 con la #5, e questo giro sta su `release-0.3.2`.
 
 ## Com'è entrata DaProdMusica
 
@@ -600,7 +604,15 @@ non la lascia come file — quindi quel percorso non è mai esistito. Adesso
 `build/icon.png` e `build/icone/` sono in `extraResources`, e i percorsi stanno
 in un posto solo (`ICONA_SUITE` e `iconaApp(id)` in `paths.ts`).
 
-### Il Visualizer da dentro le altre app
+### Il Visualizer da dentro le altre app — tolto il 20 agosto 2026
+
+> **Non c'è più.** Il tasto «♪ Visualizer» in basso a destra di ogni app è stato
+> tolto su richiesta di Cammo: «io intendevo che posso aprire tutte le app
+> contemporaneamente, non voglio questi pulsanti nelle app». `apriApp` resta nel
+> ponte comune, e la barra condivisa `.daprod-barra` resta con dentro il solo
+> tasto del log. Quello che segue è la storia di com'era, e resta perché la
+> prima metà — la prova che il Visualizer sta acceso insieme alle altre app — è
+> ancora vera ed è la ragione per cui il tasto non serve.
 
 **Prima di scrivere una riga è stato provato quello che c'era**, e la risposta è
 che funzionava già: il Visualizer è `gpuHeavy: false`, non passa dall'arbitro, e
@@ -789,9 +801,8 @@ conversazione — che dipende dal modello che sceglie lui, non da noi.
 
 ## Il prossimo passo
 
-**Prima di tutto: la 0.3.1 va provata.** È costruita e non pubblicata, e la
-Release esce dopo il giudizio di Cammo. Cosa guardare per primo sta in fondo, in
-«Cosa aspetta un giudizio di Cammo».
+**Prima di tutto: la 0.3.2 va provata.** Cosa guardare per primo sta in fondo,
+in «Cosa aspetta un giudizio di Cammo».
 
 Poi, in ordine di quello che resta aperto:
 
@@ -1052,7 +1063,19 @@ che passava da solo al brano dopo.
 
 ## Cosa aspetta un giudizio di Cammo
 
-**Della 0.3.1, costruita il 19 agosto e da provare:**
+**Della 0.3.2, costruita il 20 agosto e da provare:**
+
+- **Lo scaricamento a quattro connessioni** — la prova vera è una scheda intera
+  da installare: dovrebbe metterci un terzo del tempo. Misurato qui su un file
+  da 207 MB (3,9 → 11,8 MB/s) e provato interrompendolo a metà, ma **su 7,9 GB
+  di MiniMax non l'ha ancora provato nessuno**.
+- **DaProdFoto** — premere «Genera» e vedere se capita ancora che non parta;
+  «cartella» su un'immagine della galleria (deve aprirsi Esplora risorse con
+  l'immagine selezionata); «salva» per portarne fuori una copia.
+- **I due tasti che allargano la descrizione** — con un modello *piccolo* già
+  caricato in LM Studio: non deve più partire il caricamento di Bonsai 27B.
+
+**Della 0.3.1, pubblicata il 19 agosto:**
 
 - **DaProdCompanion** — parlarci, guardare la scheda *Memoria* dopo qualche
   scambio, premere «Sogna adesso» e vedere se quello che ha capito ha senso. La

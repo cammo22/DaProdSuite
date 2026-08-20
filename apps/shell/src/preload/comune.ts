@@ -34,6 +34,7 @@ export function esponiApiApp(io: AppId): void {
     libreria: {
       elenco: (filtro?: FiltroLibreria) => ipcRenderer.invoke(CHANNELS.libreriaElenco, filtro),
       mostraNellaCartella: (id: string) => ipcRenderer.invoke(CHANNELS.libreriaMostra, id),
+      salva: (id: string) => ipcRenderer.invoke(CHANNELS.libreriaSalva, id),
       rinomina: (id: string, nome: string) =>
         ipcRenderer.invoke(CHANNELS.libreriaRinomina, id, nome),
       copertina: (id: string, dataUrl: string | null) =>
