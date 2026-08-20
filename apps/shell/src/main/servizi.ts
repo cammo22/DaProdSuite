@@ -259,6 +259,29 @@ function ambiente(id: AppId, servizio: AppService): NodeJS.ProcessEnv {
     // Senza questo lo stdout di Python arriva a blocchi da 8 KB: quando un
     // motore muore in avvio, il log si ferma prima della riga che spiega perché.
     PYTHONUNBUFFERED: "1",
+    /**
+     * **Il log parla italiano, quindi parla UTF-8.**
+     *
+     * Senza questa riga lo stdout di un servizio Python su Windows è `cp1252`, e
+     * `cp1252` non sa scrivere né `→` né mezzo alfabeto: scriverci una riga di
+     * log alza un `UnicodeEncodeError` *dentro* `logging`, che è l'ultimo posto
+     * dove uno se lo aspetta.
+     *
+     * Non è un difetto teorico. È il motivo per cui la prima traduzione di ogni
+     * sessione non rispondeva mai: il traduttore si caricava, riusciva, e poi
+     * moriva sulla riga «traduttore italiano→inglese pronto» — e chi aspettava
+     * la risposta aspettava per sempre. Vedi `services/comfy/nodi/daprod_ponte`.
+     *
+     * Sta qui e non in un motore solo perché il difetto non era di quel motore:
+     * era di qualunque servizio scriva una parola accentata nel proprio log.
+     * `PYTHONUTF8` fa la stessa cosa per i file che i servizi aprono senza dire
+     * l'encoding — l'altra metà dello stesso guaio.
+     *
+     * Dall'altra parte del tubo `logging.ts` fa già `chunk.toString()`, che in
+     * Node vuol dire UTF-8: fino a oggi ogni accento nei log arrivava storto.
+     */
+    PYTHONIOENCODING: "utf-8",
+    PYTHONUTF8: "1",
     // Quanto spingere: il motore la legge e ne ricava i propri flag. Passata
     // come ambiente e non come argomento perché la ServiceConfig è uguale per
     // tutti i motori e non deve sapere cosa significhi per ognuno.

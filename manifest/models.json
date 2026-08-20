@@ -224,11 +224,11 @@
     "traduttore-it-en": {
       "label": "Traduttore italiano → inglese",
       "kind": "hf-repo",
-      "dir": "traduttore/opus-mt-it-en",
-      "repo": "Helsinki-NLP/opus-mt-it-en",
-      "$comment": "I modelli di immagini capiscono l'inglese: una descrizione in italiano dà un'immagine che non c'entra niente. Questo traduce prima di generare. È MarianMT, 74 milioni di parametri, gira in CPU in meno di un secondo e non toglie VRAM al modello che deve fare il lavoro vero. Licenza Apache-2.0. Gli 'include' lasciano fuori i pesi TensorFlow, che sono metà del repo e non servono.",
+      "dir": "traduttore/opus-mt-tc-big-it-en",
+      "repo": "Helsinki-NLP/opus-mt-tc-big-it-en",
+      "$comment": "I modelli di immagini capiscono l'inglese: una descrizione in italiano dà un'immagine che non c'entra niente. Questo traduce prima di generare. È MarianMT, gira in CPU in meno di un secondo e non toglie VRAM al modello che deve fare il lavoro vero. Licenza CC-BY-4.0. Gli 'include' lasciano fuori i pesi TensorFlow, che sono più di metà del repo e non servono. Fino alla 0.3.4 qui c'era 'opus-mt-it-en', il fratello piccolo da 330 MB: traduceva 'luce calda' con 'hot light', e a un modello di immagini quello è un'altra cosa. Il motore usa ancora il piccolo se è l'unico che trova sul disco, così chi aggiorna non resta senza traduttore mentre scarica.",
       "include": ["*.json", "*.spm", "pytorch_model.bin"],
-      "bytes": 347617484
+      "bytes": 578792253
     },
 
     "lmstudio-cervello": {
