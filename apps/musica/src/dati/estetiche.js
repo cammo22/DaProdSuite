@@ -39,13 +39,20 @@ export const MOTIVI = [
   [/deserto|sabbia|polver/i,    "a dusty open landscape under a wide sky"],
   [/casa|stanza|letto|finestr/i, "an empty room with light coming through a window"]
 ];
+/**
+ * Le proposte di partenza della scheda Immagini: titolo corto e prompt intero.
+ *
+ * Come in DaProdFoto, e con la stessa meccanica: il "+" ne aggiunge una, il
+ * tasto destro la modifica o la cancella. Vedi `packages/ui/src/proposte.js`.
+ */
 export const IMG_PRESETS = [
-  "una vecchia automobile ferma su una strada vuota al tramonto",
-  "il mare di notte con la luna piena",
-  "un vicolo di città sotto la pioggia, insegne accese",
-  "una chitarra appoggiata a un amplificatore su un palco vuoto",
-  "fiori che crescono da una crepa nel cemento",
-  "una giostra abbandonata in un luna park spento",
-  "una stanza vuota con la luce che entra dalla finestra",
-  "un treno fermo su binari deserti all'alba"
+  { titolo: "Automobile al tramonto", prompt: "una vecchia automobile ferma su una strada vuota al tramonto" },
+  { titolo: "Mare di notte", prompt: "il mare di notte con la luna piena" },
+  { titolo: "Vicolo sotto la pioggia", prompt: "un vicolo di città sotto la pioggia, insegne accese" },
+  { titolo: "Chitarra sul palco", prompt: "una chitarra appoggiata a un amplificatore su un palco vuoto" },
+  { titolo: "Fiori nel cemento", prompt: "fiori che crescono da una crepa nel cemento" },
+  { titolo: "Giostra abbandonata", prompt: "una giostra abbandonata in un luna park spento" },
+  { titolo: "Stanza e finestra", prompt: "una stanza vuota con la luce che entra dalla finestra" },
+  { titolo: "Treno all'alba", prompt: "un treno fermo su binari deserti all'alba" },
 ];
+

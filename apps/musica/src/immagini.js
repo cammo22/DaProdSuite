@@ -18,6 +18,9 @@ import { grafoImmagine, promptLibero } from "./grafi.js";
 import { aggiungiLavoro } from "./coda.js";
 import { controllaAnima } from "./anima.js";
 import * as ponte from "./ponte.js";
+// Le pastiglie con le proposte: di tutte le app, non di questa. Stanno in
+// `packages/ui`, servite sotto `/comune/` dalla stessa origine della pagina.
+import { collegaProposte } from "/comune/proposte.js";
 
 export async function aggiornaImmagini() {
   stato.immagini = await ponte.immaginiSalvate();
@@ -52,15 +55,15 @@ export async function aggiornaImmagini() {
 export function collegaImmagini() {
   el.imgStyle.innerHTML = Object.keys(ESTETICHE).map((k) => `<option>${escapeHtml(k)}</option>`).join("");
 
-  el.imgPresets.innerHTML = "";
-  for (const proposta of IMG_PRESETS) {
-    const chip = document.createElement("button");
-    chip.className = "chip";
-    chip.textContent = proposta.length > 40 ? proposta.slice(0, 38) + "…" : proposta;
-    chip.title = proposta;
-    chip.onclick = () => (el.imgPrompt.value = proposta);
-    el.imgPresets.appendChild(chip);
-  }
+  // Le stesse pastiglie di DaProdFoto, con la stessa meccanica: il "+" ne
+  // aggiunge una tua, il tasto destro la modifica o la cancella. Le disegna il
+  // pezzo comune in `packages/ui`.
+  collegaProposte(el.imgPresets, {
+    chiave: "daprod.musica.proposte-immagini",
+    difetto: IMG_PRESETS,
+    applica: (prompt) => (el.imgPrompt.value = prompt),
+    testoCorrente: () => el.imgPrompt.value.trim(),
+  });
 
   el.imgGo.onclick = async () => {
     el.imgError.style.display = "none";
