@@ -19,8 +19,26 @@
 
 import { FASI } from "./grafi.js";
 
+/** I messaggi che dicono com'è andata, e che quindi non si possono perdere. */
+const ATTESI = new Set(["executed", "execution_error", "execution_interrupted", "executing"]);
+
 /** I lavori che stiamo aspettando, per prompt_id. */
 const attese = new Map();
+
+/**
+ * I messaggi arrivati **prima** che ci mettessimo in ascolto.
+ *
+ * C'è una corsa, ed è reale anche se stretta: `invia` manda il grafo con una
+ * POST, e `attendi` può registrarsi solo dopo che quella POST ha risposto con
+ * l'id. Il motore però comincia a lavorare — e a parlare sul WebSocket — appena
+ * riceve il grafo, non appena il client legge la risposta. Un lavoro corto può
+ * finire in quella finestra, e allora la promessa non si scioglie più e l'app
+ * resta ferma per sempre su un lavoro che è già andato a buon fine.
+ *
+ * Qui i messaggi di un id sconosciuto si tengono da parte invece di buttarli, e
+ * `attendi` se li rigioca appena si registra.
+ */
+const anticipati = new Map();
 
 /** Chi vuole sapere a che punto è: lo chiama la pagina per disegnare la barra. */
 let osservatore = () => {};
@@ -39,6 +57,12 @@ export function guarda(azione) {
 export function attendi(promptId) {
   return new Promise((risolvi, rifiuta) => {
     attese.set(promptId, { risolvi, rifiuta, uscite: {} });
+    // Quello che era arrivato mentre non guardavamo, nell'ordine in cui è
+    // arrivato: fra questi può esserci già la fine del lavoro.
+    const arretrati = anticipati.get(promptId);
+    if (!arretrati) return;
+    anticipati.delete(promptId);
+    for (const messaggio of arretrati) messaggioDalMotore(messaggio);
   });
 }
 
@@ -46,6 +70,7 @@ export function attendi(promptId) {
 export function lasciaPerdere() {
   for (const { rifiuta } of attese.values()) rifiuta(new Error("fermato"));
   attese.clear();
+  anticipati.clear();
 }
 
 /**
@@ -60,6 +85,16 @@ export function lasciaPerdere() {
 export function messaggioDalMotore(messaggio) {
   const { type, data } = messaggio;
   const attesa = data?.prompt_id ? attese.get(data.prompt_id) : null;
+
+  // Un messaggio con un id che non stiamo (ancora) aspettando: se è uno di
+  // quelli che raccontano la sorte del lavoro, si mette da parte. `progress` e
+  // gli altri no — servono solo a muovere la barra, e una barra vecchia di
+  // mezzo secondo non serve a nessuno.
+  if (!attesa && data?.prompt_id && ATTESI.has(type)) {
+    if (!anticipati.has(data.prompt_id)) anticipati.set(data.prompt_id, []);
+    anticipati.get(data.prompt_id).push(messaggio);
+    return;
+  }
 
   if (type === "executed" && attesa) {
     // Le uscite arrivano nodo per nodo: si tengono tutte, e chi aspetta
