@@ -240,4 +240,4 @@ audio compresi — e le finestre scorrevoli, che qui sopra davamo per mancanti
 scrivere il meccanismo, ma da **misurare**: quanto lunga la finestra, quanto
 overlap, e cosa regge in 8 GB. Il quadro sta in
 [MODELLI-E-STRATEGIA.md](MODELLI-E-STRATEGIA.md) § 5 e le cose da fare in
-[ROADMAP.md](ROADMAP.md) § 0.6.0.
+[ROADMAP.md](ROADMAP.md) § 0.7.0.

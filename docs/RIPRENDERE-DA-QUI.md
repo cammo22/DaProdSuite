@@ -870,12 +870,12 @@ Poi, in ordine di quello che resta aperto:
    0.2.0 è pubblicata, quindi da una 0.1.0 installata l'aggiornamento ha
    finalmente qualcosa da vedere. È la cosa per cui quel computer è stato
    installato.
-2. **DaProdCinema**, la settima e ultima scheda (§ 0.6.0 della roadmap). Due
+2. **DaProdCinema**, la settima e ultima scheda (§ 0.7.0 della roadmap per quello che resta). Due
    strade, e quella breve — registrare gli effetti del Visualizer su un brano —
    non ha bisogno di nessun modello nuovo.
 3. **La voce del Companion**, con Piper e faster-whisper che la suite ha già in
    casa per IoDigitale.
-4. **L'accesso da fuori e Android** (§ 0.4.0 e § 0.5.0), che è un progetto a sé.
+4. **L'accesso da fuori e Android** (§ 0.5.0 e § 0.6.0), che è un progetto a sé.
 
 ## Com'è entrato DaProdIoDigitale
 

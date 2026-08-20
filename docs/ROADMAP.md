@@ -121,8 +121,64 @@ fermo avrebbe voluto dire non pubblicare niente aspettando un'app sola.
       per ogni scheda (`apps/shell/scripts/genera-anteprime.cjs`). Nascono dalle
       copertine già generate con Anima.* ⚠ **Non è ancora l'app che si mostra da
       sola**: il video generato da DaProdDream o dal Visualizer arriva col video
-      vero (§ 0.6.0), e allora cambia il programma che le fa, non quello che le
+      vero (§ 0.7.0), e allora cambia il programma che le fa, non quello che le
       mostra.
+
+## 0.4.0 — La settima scheda, e un secondo modo di fare musica ✅
+
+**Costruita il 20 agosto 2026, da provare.** DaProdCinema entra nella suite, e
+DaProdMusica smette di avere un modello solo.
+
+- [x] **DaProdCinema, la strada lunga** — *fatta il 20 agosto 2026. Da un brano
+      della libreria alla scaletta delle inquadrature (funzione e camera per
+      sezione, dalla tabella di `regista.js`), una clip per riga girata in fila,
+      e il montaggio sopra la canzone. Il regista è provato da solo, senza
+      motore: 90 secondi di canzone in 7 sezioni fanno 17 inquadrature, e i conti
+      tornano al decimo di secondo.*
+- [x] **Il modello video: Wan 2.2 TI2V 5B** — *e non MiniMax H3 o LTX 2.5, che
+      questa roadmap aveva scelto. I loro nodi ci sono davvero nel motore, la
+      verifica del 16 agosto regge; a non reggere sono i pesi. LTX 2.3 è un 22B
+      che in fp8 fa 23 GB più un Gemma 3 12B da 9,4 per leggere il prompt: sugli
+      8 GB della 4060 non è lento, è un'altra macchina. Il 5B costa 18,1 GB in
+      tutto ed è l'unico che fa testo→video e immagine→video con lo stesso file
+      — che è la proprietà su cui sta in piedi la continuità fra le clip.*
+- [x] **Le inquadrature si attaccano** — *l'ultimo fotogramma di una clip
+      diventa il primo della successiva, letto dal video con una tela e
+      rimandato dentro al motore. Si può spegnere.*
+- [x] **Offload dove si può** — *`VAEDecodeTiled` a blocchi di 16 fotogrammi con
+      4 di sovrapposizione (la decodifica è il punto in cui la memoria finisce,
+      **dopo** che il lavoro sembrava fatto), la VRAM svuotata prima di
+      cominciare, e una clip per volta invece che diciassette in coda. Le
+      manopole del motore — `--lowvram`, `--reserve-vram` — sono già quelle
+      condivise dell'hub.*
+- [x] **ACE-Step 1.5 in DaProdMusica** — *fatto il 20 agosto 2026: Turbo e XL
+      Turbo accanto ai due MiniMax, con nodi nativi di ComfyUI e niente da
+      installare nel motore. Provato: 20 secondi di canzone in 91 s col modello
+      da caricare, 28 s a caldo.*
+- [x] **Il traduttore risponde alla prima** — *fatto il 20 agosto 2026, ed era
+      rotto da quando c'è la barra: la prima traduzione di ogni sessione non
+      rispondeva **mai** (misurato: HTTP 000 dopo 180 s la prima volta, HTTP 200
+      in 0,15 s la seconda). Una riga di registro con dentro una freccia, che su
+      Windows non si sa scrivere. Riparato per tutti i motori con
+      `PYTHONIOENCODING`. Ed è passato al modello grande: «luce calda» non è più
+      "hot light".*
+- [x] **DaProdIoDigitale attaccato** — *era l'unica scheda col nome spezzato.*
+
+### Cosa **non** è a posto, e va detto
+
+- **Il montaggio finale non è mai stato provato su clip vere.** Il grafo è
+  verificato contro `object_info` — nodi che esistono, ingressi tutti presenti,
+  nessun collegamento nel vuoto — ma da «il grafo è giusto» a «esce un mp4 con
+  la canzone sopra» c'è di mezzo una prova che richiede un video intero girato,
+  cioè più di un'ora di scheda video. È la prima cosa da guardare.
+- **Una clip da 5 secondi a 640×352 costa 256 secondi a 30 passi** (primo
+  caricamento compreso) e **115 a 10 passi** (a modello caldo). Diciassette
+  inquadrature sono rispettivamente un'ora e dieci, o mezz'ora. Prima di
+  decidere il punto di lavoro servono le prove di tempistica, che le fa Cammo.
+- **`packages/ui` non ha ancora assorbito il foglio di stile.** In quello di
+  DaProdFoto c'era scritto «alla terza copia si smette», e questa è la terza.
+  Non si è fatto adesso perché rifare il foglio comune mentre nasce una scheda
+  vuol dire spostare tre app in un colpo per far posto alla quarta.
 
 ## 0.3.4 — Il ritocco che rifà tutto, e il traduttore che si fa vedere ✅
 
@@ -215,7 +271,7 @@ smette di essere sei programmi che si somigliano.
       agosto 2026 col pannello **Risultati** dell'hub: audio, immagini e video di
       tutte le app insieme, con i filtri per app e per tipo.*
 
-## 0.4.0 — La suite fuori dal PC
+## 0.5.0 — La suite fuori dal PC
 
 Vedi [ACCESSO-REMOTO.md](ACCESSO-REMOTO.md).
 
@@ -225,7 +281,7 @@ Vedi [ACCESSO-REMOTO.md](ACCESSO-REMOTO.md).
 - [ ] Tunnel in uscita per l'accesso da Internet, acceso a mano
 - [ ] Gestione dei dispositivi: permessi separati, revoca singola
 
-## 0.5.0 — Android
+## 0.6.0 — Android
 
 - [ ] App Android: lettore QR, credenziale nel portachiavi, notifiche, download
 - [ ] Interfacce adattate allo schermo del telefono
@@ -300,7 +356,7 @@ rotte e sono state corrette (vedi il changelog della 0.2.0); queste restano.
 - ~~**I pulsanti Risultati / Modelli / Log devono aprire pannelli veri**~~ —
   fatto il 16 agosto 2026: tre pannelli dentro l'hub, e la cartella si apre solo
   se la chiedi.
-- **Dalla webcam del telefono**: quando ci sarà l'app Android (§ 0.5.0),
+- **Dalla webcam del telefono**: quando ci sarà l'app Android (§ 0.6.0),
   DaProdDream deve poter prendere il video del telefono come sorgente.
 - ~~**Un terminale dentro ogni app**~~ — fatto il 17 agosto 2026: tasto in
   basso a destra e Ctrl+L, iniettato dalla shell, quindi una implementazione
@@ -312,9 +368,23 @@ rotte e sono state corrette (vedi il changelog della 0.2.0); queste restano.
   agosto 2026 non si è riprodotto — cinque immagini della galleria, tutte
   aperte. Da riprovare quando ricapita, con il nome del file che l'ha fatto.
 
-## 0.6.0 — DaProdCinema
+## 0.7.0 — DaProdCinema: le due strade che restano
 
-La settima app: da una canzone al suo video musicale. **Due strade, non una.**
+**La scheda è nata nella 0.4.0**, con la strada lunga: clip generate da Wan 2.2,
+una per inquadratura. Questa sezione è quello che resta da fare, e la prima voce
+è quella che non è mai stata provata.
+
+- [ ] **Il montaggio finale su clip vere.** Il grafo c'è ed è verificato contro
+      `object_info`, ma da «il grafo è giusto» a «esce un mp4 con la canzone
+      sopra» c'è di mezzo un video intero girato — più di un'ora di scheda video.
+- [ ] **Le prove di tempistica**, che le fa Cammo: quanto costa una clip a ogni
+      misura e a ogni numero di passi, e da lì si decide il punto di lavoro.
+- [ ] **Le finestre di contesto** (`WanContextWindowsManual`) per le
+      inquadrature lunghe: oggi una sezione lunga si taglia in più clip, che è
+      anche più giusto di montaggio, ma le finestre servono il giorno che si
+      vuole un piano sequenza vero.
+
+Sotto restano le due strade come erano state pensate. **Due strade, non una.**
 
 ### Strada breve: gli effetti del Visualizer diventano video
 

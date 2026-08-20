@@ -48,11 +48,24 @@ Il tuo avatar parlante: carichi un ritratto, gli parli o gli scrivi, e ti
 risponde a voce con il volto che si muove. Capisce l'italiano, risponde in
 italiano, e la voce è generata anche lei in locale.
 
-## 🎬 DaProdCinema — *in arrivo*
+## 🎬 DaProdCinema — *disponibile*
 
-Da una canzone al suo video musicale, scena per scena. È il pezzo più lungo
-ancora da portare nella suite: il piano prevede due modelli, uno più fedele a una
-regia precisa e uno più veloce per le clip lunghe con l'audio incorporato.
+Da una canzone al suo video musicale, scena per scena. Scegli un brano dalla
+libreria — di solito uno fatto in DaProdMusica — e la scheda legge i suoi tag
+di sezione (`[Verse]`, `[Chorus]`…) per ricavarne **la scaletta**: una riga per
+inquadratura, con quanto dura, cosa deve succederci dentro e come si muove la
+camera. Poi le gira una per una e le monta sopra il brano.
+
+Quello che decidi tu è il **look**: una riga in inglese — una pellicola, un'ora
+del giorno, un posto — che resta uguale in tutte le clip ed è quella che tiene
+insieme il video. La regia invece è già scritta: l'apertura stabilisce il mondo
+con un campo lungo fermo, la strofa mostra il dettaglio con una lenta spinta in
+avanti, il ritornello è il picco con una corsa bassa.
+
+⏱️ **Aspettati minuti a inquadratura.** Su una scheda da 8 GB una clip da cinque
+secondi costa fra due e quattro minuti, e un video da un minuto e mezzo sono
+diciassette inquadrature: da mezz'ora a più di un'ora. Si gira una clip per
+volta, e «Ferma» non butta via quello che è già fatto — riprendi da lì.
 
 ## 🤖 DaProdCompanion — *in arrivo*
 

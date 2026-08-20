@@ -213,11 +213,20 @@ export const APPS: Record<AppId, AppDescriptor> = {
       engine: "ComfyUI",
       healthTimeoutMs: 180_000,
     },
-    // Verificato: ComfyUI ha i nodi MiniMax H3 nativi (MiniMaxH3ImageToVideo,
-    // MiniMaxH3ReferenceToVideo, MiniMaxH3AddGuide...), quindi il video gira nel
-    // nostro motore senza WanGP. Restano da scrivere le sliding window.
-    // Vedi docs/VERIFICA-AMBIENTE-UNIFICATO.md.
-    models: [],
+    /**
+     * Wan 2.2 TI2V 5B: 18,1 GB fra modello, text encoder e VAE.
+     *
+     * La roadmap aveva scelto MiniMax H3 e LTX 2.5, e i loro nodi ComfyUI ce li
+     * ha davvero, nativi. Poi si sono guardati i pesi: LTX 2.3 è un 22B che in
+     * fp8 fa 23 GB, più un Gemma 3 da 12B per leggere il prompt. Su una scheda
+     * da 8 GB non è «lento», è un'altra categoria di macchina.
+     *
+     * Il 5B è l'unico della famiglia che qui gira, e fa testo→video **e**
+     * immagine→video con lo stesso file — che è la proprietà su cui sta in piedi
+     * la continuità fra un'inquadratura e la successiva. Gli altri due restano
+     * in roadmap: nel menu ci va quello che è stato provato.
+     */
+    models: ["wan22-ti2v-5b", "wan22-text-encoder", "wan22-vae"],
     gpuHeavy: true,
     // Video: un fotogramma per volta, e i fotogrammi sono centinaia.
     schedaVideo: "obbligatoria",

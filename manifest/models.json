@@ -113,6 +113,34 @@
       "bytes": 337431732
     },
 
+    "wan22-ti2v-5b": {
+      "label": "Wan 2.2 TI2V 5B — video di DaProdCinema",
+      "kind": "file",
+      "$comment": "Il modello video di DaProdCinema. Cinque miliardi di parametri e non ventidue: e' l'unico della famiglia che su una scheda da 8 GB fa una clip in un tempo che si puo' aspettare. E' anche la famiglia su cui e' costruito WanGP, che e' il metro con cui misuriamo la memoria. Fa testo->video e immagine->video con lo stesso file, ed e' quello che tiene insieme le inquadrature: l'ultimo fotogramma di una diventa il primo della successiva.",
+      "dir": "diffusion_models",
+      "file": "wan2.2_ti2v_5B_fp16.safetensors",
+      "url": "https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/diffusion_models/wan2.2_ti2v_5B_fp16.safetensors",
+      "bytes": 9999658848
+    },
+    "wan22-text-encoder": {
+      "label": "Wan 2.2 — text encoder (umT5 XXL fp8)",
+      "kind": "file",
+      "$comment": "La versione fp8 e non fp16: 6,7 GB invece di 11,4, e su questa scheda la differenza e' fra caricarlo e non caricarlo.",
+      "dir": "text_encoders",
+      "file": "umt5_xxl_fp8_e4m3fn_scaled.safetensors",
+      "url": "https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors",
+      "bytes": 6735906897
+    },
+    "wan22-vae": {
+      "label": "Wan 2.2 — VAE video",
+      "$comment": "Quello della 2.2, non quello della 2.1: il 5B comprime di piu' nello spazio e vuole il suo. Scambiarli da' un video sfocato, non un errore.",
+      "kind": "file",
+      "dir": "vae",
+      "file": "wan2.2_vae.safetensors",
+      "url": "https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/vae/wan2.2_vae.safetensors",
+      "bytes": 1409400960
+    },
+
     "anima-turbo": {
       "label": "Anima Turbo — immagini (condiviso Musica/Foto)",
       "kind": "file",
