@@ -22,6 +22,7 @@ export {
 } from "./uv";
 export {
   ScaricamentoAnnullato,
+  giaScaricato,
   scaricaFile,
   type AvanzamentoFile,
   type ScaricaFileOptions,
