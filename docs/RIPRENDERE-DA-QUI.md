@@ -1,7 +1,7 @@
 # Riprendere da qui
 
 Documento di passaggio fra una sessione e l'altra. Aggiornato il **20 agosto
-2026**, con la 0.3.2 pubblicata e la 0.3.3 costruita.
+2026**, con la 0.3.3 pubblicata e la 0.3.4 costruita.
 
 **Se stai leggendo questo all'inizio di una conversazione nuova**: leggi anche
 [COME-SI-LAVORA.md](COME-SI-LAVORA.md) e [ROADMAP.md](ROADMAP.md), poi vai al
@@ -56,7 +56,10 @@ Repo pubblico: **https://github.com/cammo22/DaProdSuite**
 | **0.3.2 pubblicata** | fatto il 20 agosto: tag `v0.3.2` |
 | **Foto: 30-50 step, formato a pulsanti, proposte tue** | fatto, **da provare tu**: provato in un banco fuori da Electron, non con un'immagine vera |
 | **La VRAM si libera premendo Genera** | fatto in Foto; la sequenza è verificata, **l'effetto su una generazione vera no** |
-| **0.3.3 costruita** | **da provare**, e poi si pubblica |
+| **0.3.3 pubblicata** | fatto il 20 agosto: tag `v0.3.3` |
+| **Ritocco: inverti, e senza maschera si rifà tutto** | fatto, **da provare tu** su un'immagine vera |
+| **Il traduttore si vede, ha una barra e non si pianta** | fatto e **misurato** sul motore vero: 267 risposte servite mentre traduceva |
+| **0.3.4 costruita** | **da provare**, e poi si pubblica |
 
 Si lavora su un ramo per release e una PR: `release-0.2.0` è stata unita con le
 PR #3 e #4, la 0.3.1 con la #5, la 0.3.2 con la #6, e questo giro sta su
@@ -85,6 +88,35 @@ PR #3 e #4, la 0.3.1 con la #5, la 0.3.2 con la #6, e questo giro sta su
 Il banco di prova usato per guardare le pagine fuori da Electron (un
 `window.daprodSuite` finto e un server statico) è stato buttato: si rifà in
 cinque minuti se serve.
+
+### Com'è fatto il giro della 0.3.4
+
+- **`services/comfy/nodi/daprod_ponte/__init__.py`** — il traduttore. Tre
+  cambiamenti che vanno insieme: `_carica_traduttore()` gira **in un thread**
+  (prima bloccava il loop di aiohttp per una quindicina di secondi, ed è la
+  ragione vera del «bloccato su traduco…»), un `threading.Lock` fa passare una
+  traduzione alla volta, e `_stato_trad` racconta a che punto è. La rotta nuova
+  è `GET /daprod/traduttore`. Il conteggio dei token arriva da un
+  `StoppingCriteria` che non ferma mai niente, costruito con una via di fuga:
+  se una versione di transformers non lo accetta, la traduzione parte lo stesso
+  e la barra si muove senza fondo.
+- **`/daprod/modelli` non è più solo la VRAM**: c'è dentro anche il traduttore,
+  con `dispositivo: "cpu"` e i suoi MB in `totaleMb`. Chi disegna la riga guarda
+  `dispositivo` per non sommare RAM e memoria video.
+- **`packages/ui/src/modelli-in-memoria.js`** — i quadratini in cima alle app,
+  che erano in due copie identiche in Foto e Musica. Promosso adesso perché
+  aggiungere il traduttore avrebbe voluto dire scriverlo due volte. Le due copie
+  in `apps/*/src/modelli.js` non ci sono più.
+- **`apps/foto/src/lingua.js`** — la barra. Guarda `/daprod/traduttore` quattro
+  volte al secondo e disegna: `quota` a `null` (caricamento) diventa una barra
+  che scorre, un numero diventa una barra piena a percentuale. Attenzione al
+  colpo d'occhio che torna **dopo** la fine: senza la sua guardia riscriveva il
+  riquadro sopra il risultato, e restava lì "aspetto il traduttore" per sempre.
+- **`apps/foto/src/ritocco.js`** — `inverti()` scambia la trasparenza (non
+  "dipinto sì/no": i bordi del pennello sono sfumati), `mascheraPiena()` torna
+  tutta rossa quando non hai dipinto niente, e `raccontaIlTasto()` tiene
+  aggiornata anche `dataset.prima`, che è quello che `libera()` rimette sul
+  tasto quando ha finito di lavorare.
 
 ## Com'è entrata DaProdMusica
 

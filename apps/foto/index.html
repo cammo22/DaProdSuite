@@ -52,7 +52,9 @@
   <label class="riga-traduci" id="rigaTraduci" hidden>
     <input type="checkbox" id="traduci"> Traduci in inglese prima di generare
   </label>
-  <span class="hint tradotto" id="tradotto" hidden></span>
+  <!-- Non più uno `span`: qui dentro ci va la barra di avanzamento della
+       traduzione, e una barra dentro una riga di testo non ci sta. -->
+  <div class="hint tradotto" id="tradotto" hidden></div>
 </section>
 <div id="avvisoModello" class="manca" hidden></div>
 
@@ -125,7 +127,9 @@
           </div>
         </div>
         <div class="resa">
-          <div class="voce corta">
+          <!-- Larga: un seed sono dieci cifre, e nella casella stretta di prima
+               non se ne vedevano tre — cioè non serviva a niente averlo. -->
+          <div class="voce seed">
             <label for="seed">Seed</label>
             <div class="inline"><input type="number" id="seed" min="0"><button class="mini" id="dado">&#127922;</button></div>
           </div>
@@ -161,6 +165,10 @@
     <h2>Dipingi la zona da rifare
       <span class="right">
         <button class="mini" id="scegliFile">apri un'immagine</button>
+        <!-- Inverti: quello che hai dipinto resta com'è e si rifà tutto il
+             resto. Dipingere il soggetto e premere qui è molto più veloce che
+             passare il pennello su tutto lo sfondo. -->
+        <button class="mini" id="invertiMaschera">inverti</button>
         <button class="mini" id="pulisciMaschera">pulisci</button>
       </span>
     </h2>
@@ -170,7 +178,8 @@
     <div id="areaTela">
       <div class="vuota" id="nessunaImmagine">
         Apri un'immagine, o scegline una dalla Galleria con <b>ritocca</b>.<br>
-        Poi passa il pennello dove vuoi che rigeneri.
+        Poi passa il pennello dove vuoi che rigeneri — o non dipingere niente,
+        e viene rifatta tutta.
       </div>
     </div>
     <div class="pennello" id="comandiPennello" style="display:none">
@@ -192,6 +201,8 @@
       </div>
       <button class="btn wide" id="rigenera">Rigenera la zona</button>
       <div class="hint">La zona dipinta viene rifatta, il resto dell'immagine resta identico.
+        <b>Senza niente di dipinto viene rifatta tutta la foto</b>, tenendone la forma:
+        è il modo per cambiarle luce, stagione o stile senza ridisegnarla da capo.
         Il risultato è un'immagine nuova: l'originale non si tocca.</div>
     </div>
   </div>

@@ -353,6 +353,14 @@ export interface ModelloInVram {
   totaleMb?: number;
   /** `cuda:0`, `cpu`: dove sta davvero. */
   dispositivo?: string;
+  /**
+   * `carico` mentre lo sta ancora tirando su, `pronto` quando lavora.
+   *
+   * Lo dice solo il traduttore, che è nostro e che ci mette qualche secondo a
+   * leggere i suoi 330 MB: gli altri li carica il motore dentro una
+   * generazione, e quando compaiono nell'elenco ci sono già.
+   */
+  stato?: "carico" | "pronto";
 }
 
 /** Chi sta occupando la GPU adesso. L'arbitro ne ammette uno solo. */

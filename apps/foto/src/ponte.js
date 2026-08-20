@@ -112,17 +112,46 @@ export async function carica(blob, nome) {
  * l'originale con `tradotta: false`, e l'interfaccia lo dice. Un traduttore
  * mancante non deve mai impedire di generare — al massimo si genera peggio.
  */
-export async function traduci(testo) {
+export async function traduci(testo, attesaMassimaMs = 120_000) {
   try {
     const risposta = await fetch(`${motore}/daprod/traduci`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ testo }),
+      // **Un tempo massimo, sempre.** Senza, una richiesta che non torna
+      // lasciava l'app su «Traduco…» per sempre, e l'unico modo di uscirne era
+      // chiudere la finestra. Due minuti sono molto più del necessario — una
+      // traduzione dura un secondo, il primo caricamento qualcuno in più — ma
+      // sono un tempo che finisce.
+      signal: AbortSignal.timeout(attesaMassimaMs),
     });
     if (!risposta.ok) throw new Error(`HTTP ${risposta.status}`);
     return await risposta.json();
   } catch (e) {
-    return { tradotto: testo, originale: testo, tradotta: false, motivo: String(e.message || e) };
+    const scaduto = e.name === "TimeoutError" || e.name === "AbortError";
+    return {
+      tradotto: testo,
+      originale: testo,
+      tradotta: false,
+      motivo: scaduto
+        ? "il traduttore non ha risposto in due minuti"
+        : String(e.message || e),
+    };
+  }
+}
+
+/**
+ * A che punto è la traduzione: la si chiede mentre si aspetta.
+ *
+ * Costa niente al motore — legge un dizionario — ed è quello che fa muovere la
+ * barra invece di lasciare tre puntini fermi.
+ */
+export async function statoTraduttore() {
+  try {
+    const risposta = await fetch(`${motore}/daprod/traduttore`, { cache: "no-store" });
+    return risposta.ok ? await risposta.json() : null;
+  } catch {
+    return null;
   }
 }
 

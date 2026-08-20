@@ -61,6 +61,9 @@ nav .pill{background:rgba(255,255,255,.2); border-radius:99px; font-size:11px; p
 .mods .m-testo{background:linear-gradient(135deg,#155e75,#0891b2); border-color:#0891b2}
 .mods .m-immagini{background:linear-gradient(135deg,#166534,#22c55e); border-color:#22c55e}
 .mods .m-vae{background:linear-gradient(135deg,#78350f,#d97706); border-color:#d97706}
+/* Il traduttore: sta nella RAM e non nella VRAM, ma occupa memoria e fa
+   aspettare come gli altri, quindi il suo quadratino ce l'ha anche lui. */
+.mods .m-lingua{background:linear-gradient(135deg,#3730a3,#6366f1); border-color:#6366f1; font-size:9.5px}
 
 /* -------------------------------------------------------------- tabs ---- */
 .tab{display:none; padding:22px 22px 40px; max-width:1560px; margin:0 auto}
@@ -106,6 +109,10 @@ textarea:focus,input:focus,select:focus{border-color:var(--accent); box-shadow:0
 .resa:last-child{margin-bottom:0}
 .resa .voce{flex:1 1 150px; min-width:0}
 .resa .voce.corta{flex:0 0 86px}
+/* Il seed vuole spazio: sono dieci cifre, e in una casella stretta non se ne
+   leggono tre. Non si stringe sotto i 150 px nemmeno in finestra piccola. */
+.resa .voce.seed{flex:1 1 230px; min-width:150px}
+.resa .voce.seed input{font-variant-numeric:tabular-nums; letter-spacing:.02em}
 /* I pulsanti non si stringono: o ci stanno in riga, o vanno a capo interi. */
 .resa .voce.larga{flex:0 1 auto; min-width:330px}
 .resa label{margin-bottom:5px; display:flex; align-items:baseline; gap:8px}
@@ -324,6 +331,17 @@ legend{font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var
 .tradotto{margin-top:8px; padding:8px 10px; border-radius:10px;
   background:var(--panel2); border:1px solid var(--line); color:var(--txt)}
 .tradotto.guasto{color:var(--err); border-color:var(--err)}
+/* Mentre traduce: una riga che dice cosa sta facendo e la barra sotto. Nella
+   barra del modello si prende lo spazio che serve alla barra per essere una
+   barra, senza mangiarsi il menu dei modelli. */
+.barra-modello .tradotto{flex:1 1 280px; max-width:560px}
+.tradotto .detto{font-size:12px; color:var(--dim)}
+.tradotto .detto b{color:var(--txt); font-variant-numeric:tabular-nums}
+.tradotto .bar{margin-top:6px}
+/* Quando non si sa quanto manca — leggere 330 MB dal disco non ha una
+   percentuale — la barra va avanti e indietro invece di inventarsi un numero. */
+.bar i.scorre{width:34%; animation:scorre 1.15s ease-in-out infinite alternate}
+@keyframes scorre{from{left:0} to{left:66%}}
 
 /* ------------------------------------------------- finestre strette ---- */
 /* La suite si usa anche a mezzo schermo, con la finestra accostata a un lato.

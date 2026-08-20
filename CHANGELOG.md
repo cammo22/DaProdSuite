@@ -10,9 +10,59 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ---
 
-## Non ancora pubblicato — sarà la 0.3.3
+## Non ancora pubblicato — sarà la 0.3.4
 
-**Costruita il 20 agosto 2026, da provare.** Un giro tutto dentro DaProdFoto,
+**Costruita il 20 agosto 2026, da provare.** Il giro dopo la 0.3.3, sempre in
+DaProdFoto: il ritocco che sa rifare anche tutta la foto, e il traduttore che
+smette di essere un mistero.
+
+### Il ritocco: **inverti**, e senza pennellate si rifà tutta
+
+- **«inverti»** scambia dipinto e non dipinto. Dipingi il soggetto, premi
+  inverti, e si rifà tutto lo sfondo — invece di passare il pennello su tutto il
+  resto lasciando buchi lungo i bordi. I bordi sfumati restano sfumati.
+- **Senza niente di dipinto viene rifatta tutta la foto**, tenendone la forma:
+  è il modo per cambiare la luce, la stagione o lo stile di un'immagine senza
+  ridisegnarla da capo. Prima era un errore («Dipingi la zona da rifare, poi
+  riprova»), cioè l'unica risposta era pennellare a mano tutta l'immagine.
+- Il tasto dice quale delle due sta per fare: **«Rigenera la zona»** o
+  **«Rigenera tutta la foto»**.
+
+### Il seed si legge
+
+Nel menu avanzati la casella del seed era larga tre cifre su dieci: c'era il
+numero, ma non si vedeva. Adesso è larga il doppio e le cifre stanno in colonna.
+
+### Il traduttore: si vede, dice a che punto è, e non si pianta più
+
+Chi traduce l'italiano in inglese prima di generare **non è un modello di
+linguaggio e non passa da LM Studio**: è un traduttore vero e proprio — Marian
+`opus-mt-it-en`, 74 milioni di parametri, 330 MB — che gira dentro al motore,
+sul tuo computer, e non chiede niente a nessuno. Era già così, ma da fuori non
+si vedeva. Adesso:
+
+- **C'è il suo quadratino in alto a destra**, accanto agli altri modelli, con
+  scritto quanti MB si prende. Non compariva perché sta nella RAM e non nella
+  memoria video: era l'unico che ti faceva aspettare senza farsi vedere. Ci
+  clicchi sopra e lo scarichi, come gli altri. Si vede anche nel pannello
+  **Memoria** dell'hub, dove i suoi MB restano contati a parte da quelli della
+  scheda video.
+- **C'è una barra di avanzamento.** Mentre carica dice che sta caricando, e
+  mentre traduce la barra si muove parola per parola. Prima c'erano tre puntini
+  fermi, uguali sia che stesse lavorando sia che fosse morto.
+- **Non resta più bloccato su «traduco…».** Erano due cose insieme: il modello
+  si caricava dentro al filo che risponde alle domande, e per una quindicina di
+  secondi il motore non rispondeva più *a niente*; e due «Genera» premuti a
+  distanza di poco mandavano due traduzioni insieme sullo stesso modello.
+  Adesso il caricamento sta per conto suo, ne passa una alla volta, e se il
+  motore non risponde entro due minuti l'app manda la descrizione originale
+  invece di restare lì ad aspettare.
+
+---
+
+## 0.3.3 — DaProdFoto: foto migliori, e la scheda video sgombra
+
+**Pubblicata il 20 agosto 2026.** Un giro tutto dentro DaProdFoto,
 su come si scrive quello che si vuole vedere e su come si arriva all'immagine.
 
 ### Le foto vengono meglio: da 30 a 50 step

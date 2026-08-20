@@ -89,7 +89,7 @@ lo stesso.
 
 ## A che punto siamo
 
-> **0.3.2 pubblicata — sei app su sette dentro la suite.**
+> **0.3.3 pubblicata — sei app su sette dentro la suite.**
 >
 > **DaProdVisualizer, DaProdMusica, DaProdFoto, DaProdDream** e **DaProd
 > IoDigitale** sono nella suite e funzionano. Si installano da sole, motore e
@@ -105,11 +105,17 @@ lo stesso.
 > la 0.3.2 i modelli si scaricano **tre volte più in fretta**: quattro
 > connessioni insieme invece di una.
 >
-> Nella versione in prova, la 0.3.3, **DaProdFoto fa foto migliori**: da 30 a 50
-> step come dice chi ha fatto il modello, formato e risoluzione a pulsanti
-> (16:9, 9:16, 4:3, 1:1 per 480, 720 o 1080p), e le proposte sopra la casella
-> te le scrivi tu — un titolo corto, il prompt intero dentro. Premendo Genera la
-> memoria video viene liberata da sola da quello che non serve.
+> Con la 0.3.3 **DaProdFoto fa foto migliori**: da 30 a 50 step come dice chi ha
+> fatto il modello, formato e risoluzione a pulsanti (16:9, 9:16, 4:3, 1:1 per
+> 480, 720 o 1080p), e le proposte sopra la casella te le scrivi tu — un titolo
+> corto, il prompt intero dentro. Premendo Genera la memoria video viene
+> liberata da sola da quello che non serve.
+>
+> Nella versione in prova, la 0.3.4, il **ritocco** sa rifare anche tutta la
+> foto — senza dipingere niente, o dipingendo quello che vuoi tenere e premendo
+> **inverti** — e il **traduttore** italiano→inglese ha il suo quadratino in
+> cima, una barra che dice a che punto è, e non resta più piantato su
+> «traduco…».
 >
 > **DaProdCinema** non c'è ancora. Nell'hub dice «In arrivo» e non apre niente:
 > preferiamo un pulsante spento a uno che non fa quello che promette.

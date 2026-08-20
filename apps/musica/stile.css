@@ -59,6 +59,9 @@ nav .pill{background:rgba(255,255,255,.2); border-radius:99px; font-size:11px; p
 .mods .m-testo{background:linear-gradient(135deg,#155e75,#0891b2); border-color:#0891b2}
 .mods .m-immagini{background:linear-gradient(135deg,#166534,#22c55e); border-color:#22c55e}
 .mods .m-vae{background:linear-gradient(135deg,#78350f,#d97706); border-color:#d97706}
+/* Il traduttore di DaProdFoto: gira sullo stesso motore, quindi la sua
+   memoria occupata si vede anche da qui. */
+.mods .m-lingua{background:linear-gradient(135deg,#3730a3,#6366f1); border-color:#6366f1; font-size:9.5px}
 
 /* -------------------------------------------------------------- tabs ---- */
 .tab{display:none; padding:22px 22px 40px; max-width:1560px; margin:0 auto}

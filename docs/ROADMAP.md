@@ -124,9 +124,34 @@ fermo avrebbe voluto dire non pubblicare niente aspettando un'app sola.
       vero (§ 0.6.0), e allora cambia il programma che le fa, non quello che le
       mostra.
 
+## 0.3.4 — Il ritocco che rifà tutto, e il traduttore che si fa vedere ✅
+
+**Costruita il 20 agosto 2026, da provare.** Il giro dopo la 0.3.3, sullo stesso
+pezzo di suite.
+
+- [x] **Ritocco: «inverti» la selezione** — *fatto il 20 agosto 2026. Si inverte
+      la trasparenza e non "dipinto sì/no", così i bordi sfumati del pennello
+      restano sfumati anche dall'altra parte.*
+- [x] **Ritocco: senza niente di dipinto si rifà tutta la foto** — *fatto il 20
+      agosto 2026. Era un errore che rimandava indietro a pennellare, ed è
+      invece il modo per cambiare luce o stagione a un'immagine intera. Il tasto
+      dice quale delle due cose farà.*
+- [x] **Il seed si legge** — *fatto il 20 agosto 2026: la casella era larga tre
+      cifre su dieci.*
+- [x] **Il traduttore compare fra i modelli in memoria** — *fatto il 20 agosto
+      2026. Sta nella RAM e non nella VRAM, quindi non lo vedeva nessuno: era
+      l'unico che ti faceva aspettare senza farsi vedere. I quadratini in cima
+      alle app sono diventati un pezzo comune in `packages/ui` — erano in due
+      copie identiche.*
+- [x] **Barra di avanzamento della traduzione, e mai più piantata** — *fatto il
+      20 agosto 2026. Il caricamento non blocca più il motore (misurato: 267
+      risposte servite mentre traduceva, ritardo massimo sotto il millisecondo),
+      ne passa una alla volta, e l'app si arrende dopo due minuti mandando
+      l'originale.*
+
 ## 0.3.3 — DaProdFoto: foto migliori, e la scheda video sgombra ✅
 
-**Costruita il 20 agosto 2026, da provare.** Tutto dentro DaProdFoto, salvo le
+**Pubblicata il 20 agosto 2026.** Tutto dentro DaProdFoto, salvo le
 proposte che valgono anche per Musica.
 
 - [x] **Da 30 a 50 step su Anima**, con 30 di partenza — *fatto il 20 agosto

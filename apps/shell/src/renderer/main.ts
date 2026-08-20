@@ -11,6 +11,7 @@ import type {
   AppState,
   EsitoControllo,
   GpuState,
+  ModelloInVram,
   ProfiloMemoria,
   RapportoAmbiente,
   RuntimeState,
@@ -1480,13 +1481,24 @@ const NOMI_VRAM: Record<string, string> = {
   Anima: "Le immagini (Anima)",
   WanVAE: "Le immagini, ultimo passo (VAE)",
   Flux2: "Le immagini (FLUX.2 Klein)",
+  Traduttore: "L'italiano tradotto in inglese",
 };
+
+/** Quanto si prende, e dove: la RAM e la memoria video non sono la stessa cosa. */
+function quantoOccupa(modello: ModelloInVram): string {
+  if (modello.dispositivo === "cpu") return `${modello.totaleMb ?? modello.vramMb} MB nella RAM`;
+  return `${numero(modello.vramMb / 1024, 2)} GB`;
+}
 
 async function disegnaMemoria(): Promise<void> {
   const modelli = await api.vram.elenco();
 
-  const totale = modelli.reduce((somma, m) => somma + m.vramMb, 0);
-  memSvuota.disabled = modelli.length === 0;
+  // Il traduttore di DaProdFoto sta nella RAM: conta come qualcosa che occupa
+  // memoria e che si può togliere, ma non va sommato ai GB della scheda video —
+  // scriverli insieme direbbe una cosa falsa sullo spazio che resta sulla GPU.
+  const inScheda = modelli.filter((m) => m.dispositivo !== "cpu");
+  const totale = inScheda.reduce((somma, m) => somma + m.vramMb, 0);
+  memSvuota.disabled = inScheda.length === 0;
 
   if (modelli.length === 0) {
     memVoci.innerHTML = "";
@@ -1498,7 +1510,11 @@ async function disegnaMemoria(): Promise<void> {
     return;
   }
 
-  memRiassunto.textContent = `${modelli.length} in memoria · ${numero(totale / 1024, 2)} GB`;
+  const nellaRam = modelli.length - inScheda.length;
+  memRiassunto.textContent =
+    (inScheda.length
+      ? `${inScheda.length} in memoria video · ${numero(totale / 1024, 2)} GB`
+      : "Niente in memoria video") + (nellaRam ? ` · ${nellaRam} nella RAM` : "");
   memNota.textContent =
     "Togliere un modello non spegne il motore: la prossima generazione " +
     "ricarica quello che le serve. È la manovra da fare quando una cosa non " +
@@ -1517,8 +1533,9 @@ async function disegnaMemoria(): Promise<void> {
     // Il nome interno resta scritto: è quello che si trova nei log del motore,
     // e chi ci va a guardare deve poterlo ricollegare a questa riga.
     sotto.textContent =
-      `${numero(modello.vramMb / 1024, 2)} GB · ${modello.nome}` +
-      (modello.dispositivo ? ` · ${modello.dispositivo}` : "");
+      `${quantoOccupa(modello)} · ${modello.nome}` +
+      (modello.dispositivo ? ` · ${modello.dispositivo}` : "") +
+      (modello.stato === "carico" ? " · lo sto caricando" : "");
     testi.append(nome, document.createElement("br"), sotto);
 
     const togli = document.createElement("button");

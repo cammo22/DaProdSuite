@@ -105,6 +105,7 @@ export async function apriImmagine(sorgente) {
   nascondiErrore("erroreRitocco");
 
   collegaPennello();
+  raccontaIlTasto();
   mostraScheda("ritocco");
 }
 
@@ -139,7 +140,10 @@ function collegaPennello() {
   sopra.onpointermove = (ev) => {
     if (disegnando) pennellata(ev);
   };
-  const smetti = () => (disegnando = false);
+  const smetti = () => {
+    disegnando = false;
+    raccontaIlTasto();
+  };
   sopra.onpointerup = smetti;
   sopra.onpointercancel = smetti;
 }
@@ -147,9 +151,37 @@ function collegaPennello() {
 function pulisci() {
   if (!sopra) return;
   sopra.getContext("2d").clearRect(0, 0, sopra.width, sopra.height);
+  raccontaIlTasto();
 }
 
-/** Vero se qualcosa è stato dipinto: senza maschera non c'è niente da rifare. */
+/**
+ * Scambia dipinto e non dipinto.
+ *
+ * Serve tutte le volte che quello che vuoi tenere è più piccolo di quello che
+ * vuoi cambiare: dipingi il soggetto, premi **inverti**, e si rifà tutto lo
+ * sfondo. A passare il pennello su tutto il resto ci si mette un minuto, e si
+ * lascia sempre qualche buco lungo i bordi.
+ *
+ * Si inverte la **trasparenza**, non "dipinto sì / dipinto no": il pennello ha i
+ * bordi sfumati, e trattarli come pieni farebbe comparire un contorno netto
+ * proprio dove il ritocco si deve confondere con quello che resta.
+ */
+function inverti() {
+  if (!sopra) return;
+  const contesto = sopra.getContext("2d");
+  const immagine = contesto.getImageData(0, 0, sopra.width, sopra.height);
+  const dati = immagine.data;
+  for (let i = 0; i < dati.length; i += 4) {
+    dati[i] = 255;
+    dati[i + 1] = 0;
+    dati[i + 2] = 0;
+    dati[i + 3] = 255 - dati[i + 3];
+  }
+  contesto.putImageData(immagine, 0, 0);
+  raccontaIlTasto();
+}
+
+/** Vero se qualcosa è stato dipinto. Senza, si rifà tutta la foto. */
 function mascherata() {
   if (!sopra) return false;
   const dati = sopra.getContext("2d").getImageData(0, 0, sopra.width, sopra.height).data;
@@ -157,6 +189,22 @@ function mascherata() {
     if (dati[i] > 0) return true;
   }
   return false;
+}
+
+/**
+ * Il tasto dice quale delle due cose sta per fare.
+ *
+ * Senza niente di dipinto rifà tutta la foto, ed è una cosa diversa dal
+ * rigenerare una zona: deve essere scritto sul tasto, non nella riga di aiuto
+ * sotto — quella si legge dopo, non prima di premere.
+ */
+function raccontaIlTasto() {
+  if (!el.rigenera) return;
+  const tutta = Boolean(sotto) && !mascherata();
+  el.rigenera.textContent = tutta ? "Rigenera tutta la foto" : "Rigenera la zona";
+  // `dataset.prima` è quello che `libera()` rimette quando il tasto ha finito di
+  // lavorare: se non lo si aggiorna, torna a dire quello che diceva ieri.
+  el.rigenera.dataset.prima = el.rigenera.textContent;
 }
 
 /**
@@ -171,6 +219,16 @@ function mascheraPiena() {
   piena.width = sopra.width;
   piena.height = sopra.height;
   const contesto = piena.getContext("2d");
+
+  // Niente dipinto: rossa tutta, cioè "rifai tutto". Il denoise tiene la forma
+  // di quello che c'era, quindi non è ricominciare da zero — è la stessa foto
+  // rifatta, con la luce, la stagione o lo stile che chiedi nella casella.
+  if (!mascherata()) {
+    contesto.fillStyle = "#ff0000";
+    contesto.fillRect(0, 0, piena.width, piena.height);
+    return piena;
+  }
+
   contesto.fillStyle = "#000000";
   contesto.fillRect(0, 0, piena.width, piena.height);
   contesto.drawImage(sopra, 0, 0);
@@ -200,6 +258,7 @@ export function collegaRitocco() {
   };
 
   el.pulisciMaschera.onclick = pulisci;
+  el.invertiMaschera.onclick = inverti;
 
   // Dalla galleria e dalla lente: "ritocca" porta l'immagine qui dentro.
   ascolta("ritocca", (url) => void apriConAvviso(url));
@@ -218,9 +277,10 @@ export function collegaRitocco() {
     nascondiErrore("erroreRitocco");
 
     if (!sotto) return mostraErrore("Prima apri un'immagine.", "erroreRitocco");
-    if (!mascherata()) {
-      return mostraErrore("Dipingi la zona da rifare, poi riprova.", "erroreRitocco");
-    }
+    // Niente dipinto **non** è più un errore: vuol dire "rifai tutta la foto",
+    // e il tasto lo dice già da sé. Prima si veniva rimandati indietro a
+    // pennellare, che è l'unica cosa che si può fare quando si vuole cambiare
+    // la luce di un'immagine intera.
     const testo = el.promptRitocco.value.trim();
     if (!testo) return mostraErrore("Scrivi cosa deve diventare quella zona.", "erroreRitocco");
 
