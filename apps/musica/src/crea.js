@@ -9,51 +9,72 @@
 import { el, escapeHtml, inserisciAlCursore, legaValore, mostraErrore, mostraScheda, rnd } from "./dom.js";
 import { DEMO_LYRICS, PRESETS, STILI, TAGS } from "./dati/stili.js";
 import { ESTETICHE } from "./dati/estetiche.js";
-import { QUALITA, grafoBrano, grafoImmagine, promptCopertina, titoloAuto } from "./grafi.js";
+import { MODELLI, grafoBrano, grafoImmagine, modello, promptCopertina, titoloAuto, usaCampo } from "./grafi.js";
+import { LINGUE, TONALITA, TONALITA_PREDEFINITA } from "./dati/ace.js";
 import { aggiungiLavoro } from "./coda.js";
 import { controllaAnima } from "./anima.js";
 import * as ponte from "./ponte.js";
 
 const CHIAVE_STILI = "daprod.stili";
+/**
+ * La chiave è ancora `.qualita` e non `.modello`.
+ *
+ * Il menu adesso sceglie il modello, ma i due valori che ci sono scritti dentro
+ * — `leggera` e `migliore` — sono ancora id validi. Cambiare nome alla chiave
+ * vorrebbe dire che chi aggiorna si ritrova la scelta azzerata, e in cambio di
+ * niente: un nome più bello dentro `localStorage`, che non guarda nessuno.
+ */
 const CHIAVE_QUALITA = "daprod.musica.qualita";
 
-/** Con quale dei due modelli di diffusione si genera. */
-export function qualitaScelta() {
-  const salvata = localStorage.getItem(CHIAVE_QUALITA);
-  return QUALITA[salvata] ? salvata : "leggera";
+/** Con quale modello si genera. */
+export function modelloScelto() {
+  const salvato = localStorage.getItem(CHIAVE_QUALITA);
+  return MODELLI[salvato] ? salvato : "leggera";
 }
 
 /**
- * Il menu della qualità, e cosa fare se quel modello non c'è.
+ * Il menu dei modelli, e cosa fare se quel modello non c'è.
  *
  * Stessa strada di DaProdFoto: la pagina non indovina cosa c'è sul disco, lo
- * chiede alla suite e, se manca, lo scarica da qui. Sono 2,5 GB, non 12: la
- * differenza è che qui si cambia **solo** il modello che fa il suono.
+ * chiede alla suite e, se manca, lo scarica da qui.
+ *
+ * Cambiare modello cambia anche **cosa si vede negli avanzati**: MiniMax ha il
+ * Top-K del suo decoder, ACE-Step ha battito, tonalità, tempo e lingua. Mostrare
+ * a ognuno i comandi dell'altro vorrebbe dire cursori che non fanno niente, che
+ * è il modo più veloce di far perdere fiducia a chi li muove.
  */
-async function collegaQualita() {
-  el.qualita.innerHTML = Object.values(QUALITA)
-    .map((q) => `<option value="${q.id}">${escapeHtml(q.nome)}</option>`)
+async function collegaModelli() {
+  el.qualita.innerHTML = Object.values(MODELLI)
+    .map((m) => `<option value="${m.id}">${escapeHtml(m.nome)}</option>`)
     .join("");
-  el.qualita.value = qualitaScelta();
+  el.qualita.value = modelloScelto();
+
+  const voci = (elenco) =>
+    elenco.map(([v, etichetta]) => `<option value="${v}">${escapeHtml(etichetta)}</option>`).join("");
+  el.lingua.innerHTML = voci(LINGUE);
+  el.lingua.value = "it";
+  el.tonalita.innerHTML = voci(TONALITA);
+  el.tonalita.value = TONALITA_PREDEFINITA;
 
   const controlla = async () => {
-    const scelta = QUALITA[el.qualita.value];
-    el.rigaQualita.textContent = scelta.riga;
-    const stato = await ponte.statoModelli(scelta.catalogo).catch(() => null);
+    const scelto = modello(el.qualita.value);
+    el.rigaQualita.textContent = scelto.riga;
+    mostraCampi(scelto);
 
+    const stato = await ponte.statoModelli(scelto.catalogo).catch(() => null);
     if (!stato || stato.pronto) {
       el.mancaQualita.hidden = true;
       return;
     }
     el.mancaQualita.hidden = false;
     el.mancaQualita.innerHTML =
-      `<b>${escapeHtml(scelta.nome)} non è ancora sul disco.</b>` +
+      `<b>${escapeHtml(scelto.nome)} non è ancora sul disco.</b>` +
       ` <button class="mini" id="prendiQualita">Scarica ${(stato.bytesMancanti / 1024 ** 3)
         .toFixed(1)
         .replace(".", ",")} GB</button>`;
     document.getElementById("prendiQualita").onclick = () => {
       el.mancaQualita.textContent = "Scarico… l'avanzamento è nell'hub.";
-      void ponte.scaricaModelli(scelta.catalogo);
+      void ponte.scaricaModelli(scelto.catalogo);
     };
   };
 
@@ -65,6 +86,27 @@ async function collegaQualita() {
     if (!a.attivo) void controlla();
   });
   await controlla();
+}
+
+/**
+ * Mostra i comandi che questo modello usa davvero, e sposta i passi sui suoi.
+ *
+ * I passi non sono un gusto: trenta a un modello turbo da otto passi vogliono
+ * dire quattro volte il tempo per la stessa canzone. Quindi cambiando modello il
+ * cursore si riposiziona sul valore giusto per lui — a meno che tu non l'abbia
+ * spostato a mano restando nel suo intervallo, nel qual caso è una tua scelta e
+ * si rispetta.
+ */
+function mostraCampi(m) {
+  for (const riquadro of document.querySelectorAll("#avanzati [data-campo]")) {
+    riquadro.hidden = !usaCampo(m, riquadro.dataset.campo);
+  }
+  const passi = m.passi;
+  const ora = parseInt(el.steps.value);
+  el.steps.min = passi.min;
+  el.steps.max = passi.max;
+  if (!(ora >= passi.min && ora <= passi.max)) el.steps.value = passi.valore;
+  el.steps.dispatchEvent(new Event("input"));
 }
 
 export function stiliMiei() {
@@ -144,7 +186,14 @@ function leggiModulo() {
     format: el.format.value,
     tiled: el.tiled.checked,
     tile: parseInt(el.tile.value) || 1536,
-    qualita: qualitaScelta(),
+    qualita: modelloScelto(),
+    // I quattro di ACE-Step. Si leggono sempre, anche con MiniMax scelto: costa
+    // niente, e vuol dire che riaprendo un brano vecchio i suoi valori tornano
+    // al loro posto invece di sparire.
+    bpm: parseInt(el.bpm.value) || 120,
+    tonalita: el.tonalita.value,
+    tempo: el.tempo.value,
+    lingua: el.lingua.value,
   };
 }
 
@@ -166,10 +215,14 @@ export function applicaMeta(meta) {
   if (meta.format) el.format.value = meta.format;
   el.tiled.checked = !!meta.tiled;
   if (meta.tile) el.tile.value = meta.tile;
+  if (meta.bpm) el.bpm.value = meta.bpm;
+  if (meta.tonalita) el.tonalita.value = meta.tonalita;
+  if (meta.tempo) el.tempo.value = meta.tempo;
+  if (meta.lingua) el.lingua.value = meta.lingua;
   el.randomSeed.checked = false;
   // Le etichette dei cursori si aggiornano su "input": senza questo, i numeri
   // resterebbero quelli di prima mentre i cursori si sono già mossi.
-  for (const k of ["duration", "steps", "cfg", "cfg_scale", "top_k"]) {
+  for (const k of ["duration", "steps", "cfg", "cfg_scale", "top_k", "bpm"]) {
     el[k].dispatchEvent(new Event("input"));
   }
 }
@@ -212,7 +265,7 @@ async function creaBrano(p) {
 
   // `conCopertina` dice alla coda che c'è una copertina per questo brano: se
   // arriva prima gli si attacca da sé, se arriva dopo lo ritrova in libreria.
-  const idBrano = await ponte.invia(grafoBrano(p));
+  const idBrano = await ponte.invia(grafoBrano(modello(p.qualita), p));
   aggiungiLavoro(idBrano, p, { conCopertina: el.autoCover.checked });
 
   if (idCopertina) {
@@ -241,13 +294,14 @@ async function collegaCopertina() {
 }
 
 export function collegaCrea() {
-  void collegaQualita();
+  void collegaModelli();
   void collegaCopertina();
   legaValore("duration", "durVal", (v) => `${v} s`);
   legaValore("steps", "stepsVal");
   legaValore("cfg", "cfgVal");
   legaValore("cfg_scale", "cfgsVal");
   legaValore("top_k", "topkVal");
+  legaValore("bpm", "bpmVal", (v) => `${v} BPM`);
 
   el.dice1.onclick = () => (el.seed_text.value = rnd());
   el.dice2.onclick = () => (el.seed_audio.value = rnd());
@@ -311,7 +365,7 @@ export function collegaCrea() {
     if (!p.caption) return mostraErrore("Scrivi almeno uno stile.");
     p.titolo = p.titolo || titoloAuto(p.lyrics, p.caption);
     try {
-      aggiungiLavoro(await ponte.invia(grafoBrano(p)), p);
+      aggiungiLavoro(await ponte.invia(grafoBrano(modello(p.qualita), p)), p);
     } catch (e) {
       mostraErrore(String(e.message || e));
     }

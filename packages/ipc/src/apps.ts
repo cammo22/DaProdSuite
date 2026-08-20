@@ -137,11 +137,31 @@ export const APPS: Record<AppId, AppDescriptor> = {
       healthTimeoutMs: 180_000,
     },
     models: ["minimax-music3-dit", "minimax-music3-text-encoder", "minimax-music3-vae"],
-    // Le copertine e la scheda Immagini girano su Anima, gli stessi tre file di
-    // DaProdFoto. Extra e non `models` perché una canzone si fa lo stesso senza,
-    // e chiedere 5,6 GB in più a chi vuole solo la musica sarebbe di troppo: la
-    // pagina controlla e li offre nel momento in cui servono davvero.
-    extraModels: ["anima-turbo", "qwen3-06b-base", "qwen-image-vae"],
+    /**
+     * Quello che la scheda sa usare ma non pretende per partire.
+     *
+     * Le copertine e la scheda Immagini girano su Anima, gli stessi tre file di
+     * DaProdFoto: una canzone si fa lo stesso senza, e chiedere 5,6 GB in più a
+     * chi vuole solo la musica sarebbe di troppo. La pagina controlla e li offre
+     * nel momento in cui servono davvero.
+     *
+     * Poi ci sono gli altri modelli musicali del menu — il DiT a 8 bit di
+     * MiniMax e i due ACE-Step 1.5 con i loro encoder. Si scaricano dal menu
+     * stesso, dentro l'app, e stanno elencati qui perché l'hub sappia a chi
+     * servono: senza, nel pannello dei modelli comparirebbero come pesi di
+     * nessuno, e sono venticinque GB di "pesi di nessuno".
+     */
+    extraModels: [
+      "anima-turbo",
+      "qwen3-06b-base",
+      "qwen-image-vae",
+      "minimax-music3-dit-int8",
+      "acestep15-turbo",
+      "acestep15-xl-turbo",
+      "acestep15-qwen-06b",
+      "acestep15-qwen-4b",
+      "acestep15-vae",
+    ],
     gpuHeavy: true,
     // In CPU un brano si fa, ma si misura in ore invece che in minuti: è una
     // cosa da sapere prima di premere Genera, non dopo.

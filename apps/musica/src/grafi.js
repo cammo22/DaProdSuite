@@ -9,39 +9,105 @@
 import { COVER_NEG, ESTETICHE, MOTIVI } from "./dati/estetiche.js";
 
 /**
- * I pesi di MiniMax Music 3, e la scelta che si può fare su uno dei tre.
+ * Con che cosa si fa il brano: due famiglie di modelli, quattro voci nel menu.
  *
- * Il **text encoder** non è scegliebile e non è un dimenticanza: quello è il
- * modello da 7B che genera i token audio uno per uno, lavora da solo in VRAM, e
- * la versione a 8 bit consigliata da WanGP pesa 8,6 GB — su una scheda da 8 non
- * ci sta. Resta a 4 bit finché non cambia la scheda video.
+ * Fino alla 0.3.4 questo menu si chiamava «qualità» e sceglieva soltanto fra i
+ * due formati del DiT di MiniMax. Adesso sceglie il **modello**, perché accanto
+ * a MiniMax Music 3 c'è ACE-Step 1.5, che è un altro modo di fare la stessa
+ * cosa e non una versione più fine dello stesso.
  *
- * Il **DiT** invece sì: è quello che trasforma i token in suono, sta in 2,5 GB
- * anche a 8 bit, e quindi è l'unico posto dove qui si può davvero guadagnare
- * qualità. `int8 ConvRot` è il formato che consiglia WanGP, e ComfyUI lo carica
- * con i suoi kernel senza aggiungere niente.
+ * **MiniMax Music 3.** Il text encoder non è scegliibile e non è una
+ * dimenticanza: è il modello da 7B che genera i token audio uno per uno, lavora
+ * da solo in VRAM, e la versione a 8 bit consigliata da WanGP pesa 8,6 GB — su
+ * una scheda da 8 non ci sta. Resta a 4 bit finché non cambia la scheda. Il DiT
+ * invece sì: sta in 2,5 GB anche a 8 bit, ed è l'unico posto dove qui si guadagna
+ * davvero qualità.
+ *
+ * **ACE-Step 1.5.** Otto passi invece di trenta. I nodi sono nativi di ComfyUI —
+ * `TextEncodeAceStepAudio1.5`, `EmptyAceStep1.5LatentAudio` — quindi non c'è
+ * niente da installare nel motore, solo pesi da scaricare. Vuole **due** text
+ * encoder insieme (`DualCLIPLoader`, tipo `ace`): il piccolo per i tag, il
+ * grande per il testo cantato. E vuole `ModelSamplingAuraFlow` fra il modello e
+ * il campionatore: senza, il campionatore lavora sulla scala di rumore
+ * sbagliata e viene fuori un ronzio.
+ *
+ * Il **Turbo** sta negli 8 GB e va veloce. L'**XL Turbo** pesa 10 GB da solo:
+ * ComfyUI lo fa girare lo stesso spostando i pesi fra scheda e RAM, ma il tempo
+ * per brano è un'altra cosa. Per questo il Turbo normale è quello che parte, e
+ * l'XL è una scelta che si fa sapendo cosa costa.
  */
-export const QUALITA = {
+const MINIMAX = {
+  famiglia: "minimax",
+  txt: "minimax_music3_qwen2-7B_pruned_w4a8.safetensors",
+  vae: "minimax_music3_dav.safetensors",
+  grafo: grafoMiniMax,
+  /** Quali comandi degli avanzati vogliono dire qualcosa per questa famiglia. */
+  campi: ["steps", "cfg", "cfg_scale", "top_k", "tiled"],
+  passi: { min: 10, max: 60, valore: 30 },
+  comuni: ["minimax-music3-text-encoder", "minimax-music3-vae"],
+};
+
+const ACE = {
+  famiglia: "ace",
+  txt1: "qwen_0.6b_ace15.safetensors",
+  txt2: "qwen_4b_ace15.safetensors",
+  vae: "ace_1.5_vae.safetensors",
+  grafo: grafoAce,
+  campi: ["steps", "cfg", "cfg_scale", "bpm", "tonalita", "tempo", "lingua", "tiled"],
+  /**
+   * **Otto passi**, e non è un risparmio: è come è fatto.
+   *
+   * È il numero del flusso ufficiale di ComfyUI per questo modello. Alzarlo non
+   * dà una canzone migliore — i modelli turbo sono distillati per finire lì — ma
+   * il cursore resta aperto fino a trenta perché provare costa poco e la prova
+   * la fa chi ascolta, non chi scrive il programma.
+   */
+  passi: { min: 4, max: 30, valore: 8 },
+  /** Lo scarto di rumore di `ModelSamplingAuraFlow`, dal flusso ufficiale. */
+  shift: 3,
+  comuni: ["acestep15-qwen-06b", "acestep15-qwen-4b", "acestep15-vae"],
+};
+
+export const MODELLI = {
   leggera: {
+    ...MINIMAX,
     id: "leggera",
-    nome: "Leggera (4 bit)",
+    nome: "MiniMax Music 3 — leggera (4 bit)",
     riga: "1,8 GB. È quella con cui abbiamo generato finora.",
     dit: "minimax_music3_dit_w4a8.safetensors",
-    catalogo: ["minimax-music3-dit"],
+    catalogo: ["minimax-music3-dit", ...MINIMAX.comuni],
   },
   migliore: {
+    ...MINIMAX,
     id: "migliore",
-    nome: "Migliore (int8)",
+    nome: "MiniMax Music 3 — migliore (int8)",
     riga: "2,5 GB, 8 bit invece di 4: è il formato consigliato da WanGP.",
     dit: "minimax_music3_dit_int8_convrot.safetensors",
-    catalogo: ["minimax-music3-dit-int8"],
+    catalogo: ["minimax-music3-dit-int8", ...MINIMAX.comuni],
+  },
+  "ace-turbo": {
+    ...ACE,
+    id: "ace-turbo",
+    nome: "ACE-Step 1.5 Turbo",
+    riga: "Otto passi. 4,8 GB di modello, e negli 8 GB della scheda ci sta tutto.",
+    dit: "acestep_v1.5_turbo.safetensors",
+    catalogo: ["acestep15-turbo", ...ACE.comuni],
+  },
+  "ace-xl-turbo": {
+    ...ACE,
+    id: "ace-xl-turbo",
+    nome: "ACE-Step 1.5 XL Turbo",
+    riga: "Il grande: 10 GB. Sulla tua scheda gira in offload, quindi più lento.",
+    dit: "acestep_v1.5_xl_turbo_bf16.safetensors",
+    catalogo: ["acestep15-xl-turbo", ...ACE.comuni],
   },
 };
 
-const MODELLI = {
-  txt: "minimax_music3_qwen2-7B_pruned_w4a8.safetensors",
-  vae: "minimax_music3_dav.safetensors",
-};
+/** Il modello scelto, o il primo se l'id salvato non esiste più. */
+export const modello = (id) => MODELLI[id] ?? MODELLI.leggera;
+
+/** Vero se questo comando degli avanzati vuol dire qualcosa per questo modello. */
+export const usaCampo = (m, campo) => m.campi.includes(campo);
 const MODELLI_IMMAGINE = {
   dit: "anima-turbo-v1.0.safetensors",
   txt: "qwen_3_06b_base.safetensors",
@@ -56,16 +122,29 @@ const SALVATAGGI = {
 };
 
 /**
- * Il brano.
+ * Il brano, col modello scelto nel menu.
+ *
+ * **La numerazione dei nodi è la stessa per tutti e due i grafi**, e non per
+ * pigrizia: `FASI` qui sotto traduce «sta lavorando il nodo 2» in «compongo la
+ * struttura», e la barra di DaProdMusica legge quella tabella. Numerare uguale
+ * vuol dire che la barra funziona con ACE-Step senza sapere che ACE-Step esiste.
+ * Chi aggiunge un terzo modello domani tenga lo stesso ordine: 1 il caricamento
+ * del testo, 2 la parte lunga, 4 il modello musicale, 6 il campionatore, 7-8 il
+ * suono, 9 il file.
+ */
+export const grafoBrano = (m, p) => m.grafo(m, p);
+
+/**
+ * MiniMax Music 3.
  *
  * I nodi 1-2-5 dipendono solo dai parametri di struttura: se non cambiano,
  * ComfyUI li riprende dalla cache e salta la generazione autoregressiva, che è
  * la parte lenta. È il motivo per cui "solo nuova resa" costa 17 secondi invece
  * di 107 — basta cambiare il seed dell'audio e lasciare fermo quello del testo.
  */
-export function grafoBrano(p) {
+function grafoMiniMax(m, p) {
   return {
-    "1": { class_type: "CLIPLoader", inputs: { clip_name: MODELLI.txt, type: "minimax" } },
+    "1": { class_type: "CLIPLoader", inputs: { clip_name: m.txt, type: "minimax" } },
     "2": {
       class_type: "MiniMaxMusic3TextEncode",
       inputs: {
@@ -74,10 +153,7 @@ export function grafoBrano(p) {
       },
     },
     "3": { class_type: "ConditioningZeroOut", inputs: { conditioning: ["2", 0] } },
-    "4": {
-      class_type: "UNETLoader",
-      inputs: { unet_name: (QUALITA[p.qualita] ?? QUALITA.leggera).dit, weight_dtype: "default" },
-    },
+    "4": { class_type: "UNETLoader", inputs: { unet_name: m.dit, weight_dtype: "default" } },
     "5": { class_type: "EmptyMiniMaxMusic3LatentAudio", inputs: { seconds: ["2", 1], batch_size: 1 } },
     "6": {
       class_type: "KSampler",
@@ -87,11 +163,78 @@ export function grafoBrano(p) {
         sampler_name: "euler", scheduler: "simple", denoise: 1,
       },
     },
-    "7": { class_type: "VAELoader", inputs: { vae_name: MODELLI.vae } },
+    "7": { class_type: "VAELoader", inputs: { vae_name: m.vae } },
     "8": p.tiled
       ? { class_type: "VAEDecodeAudioTiled", inputs: { samples: ["6", 0], vae: ["7", 0], tile_size: p.tile, overlap: 64 } }
       : { class_type: "VAEDecodeAudio", inputs: { samples: ["6", 0], vae: ["7", 0] } },
     "9": SALVATAGGI[p.format],
+  };
+}
+
+/**
+ * ACE-Step 1.5.
+ *
+ * Stesso disegno del grafo di MiniMax, con tre differenze che contano:
+ *
+ * 1. **Due encoder e non uno.** `DualCLIPLoader` di tipo `ace` carica il piccolo
+ *    e il grande insieme: il modello è stato addestrato con tutti e due, e
+ *    passargliene uno solo non dà un errore — dà una canzone che non c'entra.
+ * 2. **`generate_audio_codes` acceso.** È la parte lunga, l'equivalente della
+ *    fase autoregressiva di MiniMax, ed è per questo che sta sul nodo 2: la
+ *    barra la conta come «compongo la struttura» esattamente come l'altra.
+ * 3. **`ModelSamplingAuraFlow` fra modello e campionatore.** Sposta la scala del
+ *    rumore dove questo modello se l'aspetta. Non è una raffinatezza: senza,
+ *    quello che esce è un ronzio.
+ *
+ * La durata la decide il modulo, come per MiniMax, ma qui va detta due volte —
+ * al testo e al latente — perché sono due nodi che non si parlano.
+ */
+function grafoAce(m, p) {
+  return {
+    "1": {
+      class_type: "DualCLIPLoader",
+      inputs: { clip_name1: m.txt1, clip_name2: m.txt2, type: "ace", device: "default" },
+    },
+    "2": {
+      class_type: "TextEncodeAceStepAudio1.5",
+      inputs: {
+        clip: ["1", 0],
+        tags: p.caption,
+        lyrics: p.lyrics,
+        seed: p.seed_text,
+        bpm: p.bpm,
+        duration: p.duration,
+        timesignature: p.tempo,
+        language: p.lingua,
+        keyscale: p.tonalita,
+        generate_audio_codes: true,
+        cfg_scale: p.cfg_scale,
+        // I quattro del campionamento dei token: sono quelli del flusso
+        // ufficiale, e non stanno negli avanzati perché muoverli senza sapere
+        // cosa fanno rovina la canzone in modi difficili da ricondurre a loro.
+        temperature: 0.85,
+        top_p: 0.9,
+        top_k: 0,
+        min_p: 0,
+      },
+    },
+    "3": { class_type: "ConditioningZeroOut", inputs: { conditioning: ["2", 0] } },
+    "4": { class_type: "UNETLoader", inputs: { unet_name: m.dit, weight_dtype: "default" } },
+    "5": { class_type: "EmptyAceStep1.5LatentAudio", inputs: { seconds: p.duration, batch_size: 1 } },
+    "6": {
+      class_type: "KSampler",
+      inputs: {
+        model: ["10", 0], positive: ["2", 0], negative: ["3", 0], latent_image: ["5", 0],
+        seed: p.seed_audio, steps: p.steps, cfg: p.cfg,
+        sampler_name: "euler", scheduler: "simple", denoise: 1,
+      },
+    },
+    "7": { class_type: "VAELoader", inputs: { vae_name: m.vae } },
+    "8": p.tiled
+      ? { class_type: "VAEDecodeAudioTiled", inputs: { samples: ["6", 0], vae: ["7", 0], tile_size: p.tile, overlap: 64 } }
+      : { class_type: "VAEDecodeAudio", inputs: { samples: ["6", 0], vae: ["7", 0] } },
+    "9": SALVATAGGI[p.format],
+    "10": { class_type: "ModelSamplingAuraFlow", inputs: { model: ["4", 0], shift: m.shift } },
   };
 }
 
@@ -171,6 +314,7 @@ export function promptLibero(testo, estetica) {
 export const SEPARAZIONE = 0.8;
 
 export const FASI = {
+  "10": { label: "preparo il campionamento", da: 0.82, a: 0.82, fase: 2 },
   "1": { label: "carico il modello di testo", da: 0, a: 0.03, fase: 1 },
   "2": { label: "compongo la struttura", da: 0.03, a: SEPARAZIONE, fase: 1 },
   "4": { label: "carico il modello musicale", da: SEPARAZIONE, a: 0.82, fase: 2 },

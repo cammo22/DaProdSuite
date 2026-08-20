@@ -103,7 +103,7 @@
         <input type="range" id="duration" min="15" max="300" step="5" value="60">
       </div>
       <div class="field">
-        <label>Qualità del suono</label>
+        <label>Modello</label>
         <select id="qualita"></select>
         <div class="hint" id="rigaQualita"></div>
         <div class="hint" id="mancaQualita" hidden></div>
@@ -143,9 +143,35 @@
             <label>CFG testo <span class="rangeval" id="cfgsVal">1.5</span></label>
             <input type="range" id="cfg_scale" min="0" max="5" step="0.1" value="1.5">
           </div>
-          <div class="field">
+          <div class="field" data-campo="top_k">
             <label>Top-K <span class="rangeval" id="topkVal">50</span></label>
             <input type="range" id="top_k" min="1" max="200" step="1" value="50">
+          </div>
+        </div>
+        <!-- I quattro di ACE-Step. Restano nascosti con MiniMax, che di battito
+             e tonalità non sa che farsene: mostrarli spenti sarebbe peggio che
+             non mostrarli, perché uno li muove e non succede niente. -->
+        <div class="row" data-campo="bpm">
+          <div class="field">
+            <label>Battito <span class="rangeval" id="bpmVal">120 BPM</span></label>
+            <input type="range" id="bpm" min="40" max="220" step="1" value="120">
+          </div>
+          <div class="field">
+            <label>Tonalità</label>
+            <select id="tonalita"></select>
+          </div>
+          <div class="field">
+            <label>Tempo</label>
+            <select id="tempo">
+              <option value="4">4/4</option>
+              <option value="3">3/4</option>
+              <option value="2">2/4</option>
+              <option value="6">6/8</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Lingua del canto</label>
+            <select id="lingua"></select>
           </div>
         </div>
         <div class="row">

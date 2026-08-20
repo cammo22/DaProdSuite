@@ -69,6 +69,50 @@
       "bytes": 216696128
     },
 
+    "acestep15-turbo": {
+      "label": "ACE-Step 1.5 Turbo — modello musicale",
+      "kind": "file",
+      "$comment": "L'altro modo di fare una canzone, accanto a MiniMax Music 3. Otto passi invece di trenta, e 4,8 GB che negli 8 GB della scheda ci stanno tutti. I nodi li ha gia' ComfyUI, nativi: nessun custom node da installare. Divide con l'XL i due text encoder e il VAE, che sono la parte grossa dello scaricamento.",
+      "dir": "diffusion_models",
+      "file": "acestep_v1.5_turbo.safetensors",
+      "url": "https://huggingface.co/Comfy-Org/ace_step_1.5_ComfyUI_files/resolve/main/split_files/diffusion_models/acestep_v1.5_turbo.safetensors",
+      "bytes": 4787825604
+    },
+    "acestep15-xl-turbo": {
+      "label": "ACE-Step 1.5 XL Turbo — modello musicale grande",
+      "kind": "file",
+      "$comment": "Il fratello grande, 10 GB in bf16. Su una scheda da 8 GB non ci sta: ComfyUI lo fa girare lo stesso spostando i pesi fra scheda e RAM, e il tempo per brano ne risente. Sta nel menu perche' la qualita' e' un'altra cosa, ma il Turbo normale resta quello che parte.",
+      "dir": "diffusion_models",
+      "file": "acestep_v1.5_xl_turbo_bf16.safetensors",
+      "url": "https://huggingface.co/Comfy-Org/ace_step_1.5_ComfyUI_files/resolve/main/split_files/diffusion_models/acestep_v1.5_xl_turbo_bf16.safetensors",
+      "bytes": 9974719892
+    },
+    "acestep15-qwen-06b": {
+      "label": "ACE-Step 1.5 — text encoder piccolo (Qwen 0.6B)",
+      "kind": "file",
+      "$comment": "ACE-Step 1.5 di encoder ne vuole due insieme, non uno: il nodo si chiama DualCLIPLoader apposta. Il piccolo legge i tag, il grande il testo cantato. Servono a tutte e due le varianti.",
+      "dir": "text_encoders",
+      "file": "qwen_0.6b_ace15.safetensors",
+      "url": "https://huggingface.co/Comfy-Org/ace_step_1.5_ComfyUI_files/resolve/main/split_files/text_encoders/qwen_0.6b_ace15.safetensors",
+      "bytes": 1191588248
+    },
+    "acestep15-qwen-4b": {
+      "label": "ACE-Step 1.5 — text encoder grande (Qwen 4B)",
+      "kind": "file",
+      "dir": "text_encoders",
+      "file": "qwen_4b_ace15.safetensors",
+      "url": "https://huggingface.co/Comfy-Org/ace_step_1.5_ComfyUI_files/resolve/main/split_files/text_encoders/qwen_4b_ace15.safetensors",
+      "bytes": 8379154232
+    },
+    "acestep15-vae": {
+      "label": "ACE-Step 1.5 — VAE audio",
+      "kind": "file",
+      "dir": "vae",
+      "file": "ace_1.5_vae.safetensors",
+      "url": "https://huggingface.co/Comfy-Org/ace_step_1.5_ComfyUI_files/resolve/main/split_files/vae/ace_1.5_vae.safetensors",
+      "bytes": 337431732
+    },
+
     "anima-turbo": {
       "label": "Anima Turbo — immagini (condiviso Musica/Foto)",
       "kind": "file",
