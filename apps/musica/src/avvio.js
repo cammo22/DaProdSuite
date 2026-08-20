@@ -14,9 +14,11 @@ import { collegaCrea } from "./crea.js";
 import { collegaCostruttore } from "./costruttore.js";
 import { aggiornaLibreria, collegaLibreria } from "./libreria.js";
 import { aggiornaImmagini, collegaImmagini } from "./immagini.js";
-import { collegaModelli } from "./modelli.js";
+// I quadratini di cosa occupa la memoria: uguali in tutte le app, quindi
+// stanno in `packages/ui` e la suite li serve sotto `/comune/`.
+import { collegaModelliInMemoria } from "/comune/modelli-in-memoria.js";
 import { collegaBonsai } from "./bonsai.js";
-import { collega, macchina } from "./ponte.js";
+import { collega, macchina, modelliInVram, scaricaDallaVram } from "./ponte.js";
 
 document.querySelectorAll("nav button").forEach((b) => {
   b.onclick = () => mostraScheda(b.dataset.scheda);
@@ -30,7 +32,10 @@ collegaCostruttore();
 collegaLibreria();
 collegaImmagini();
 collegaComandiCoda();
-collegaModelli();
+collegaModelliInMemoria(el.mods, {
+  elenco: modelliInVram,
+  scarica: scaricaDallaVram,
+});
 collegaBonsai();
 
 /**

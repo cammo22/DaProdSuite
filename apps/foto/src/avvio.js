@@ -13,12 +13,14 @@ import { collegaBonsaiFoto } from "./bonsai.js";
 import { collegaRitocco } from "./ritocco.js";
 import { collegaScelta } from "./scelta-modello.js";
 import { aggiornaGalleria, collegaGalleria } from "./galleria.js";
-import { collegaModelli } from "./modelli.js";
+// I quadratini di cosa occupa la memoria: uguali in tutte le app, quindi
+// stanno in `packages/ui` e la suite li serve sotto `/comune/`.
+import { collegaModelliInMemoria } from "/comune/modelli-in-memoria.js";
 import { collegaLente } from "./lente.js";
 import { collegaTrascinamento, eImmagine } from "./trascina.js";
 import { collegaTraduzione } from "./lingua.js";
 import { apriImmagine } from "./ritocco.js";
-import { collega } from "./ponte.js";
+import { collega, modelliInVram, scaricaDallaVram } from "./ponte.js";
 
 document.querySelectorAll("nav button").forEach((b) => {
   b.onclick = () => mostraScheda(b.dataset.scheda);
@@ -39,7 +41,10 @@ collegaTraduzione();
 void collegaScelta();
 collegaGalleria();
 collegaComandiCoda();
-collegaModelli();
+collegaModelliInMemoria(el.mods, {
+  elenco: modelliInVram,
+  scarica: scaricaDallaVram,
+});
 
 // Un'immagine trascinata dentro finisce nel ritocco, da qualunque scheda: è
 // l'unica cosa che in Foto si può fare con un'immagine che arriva da fuori.
