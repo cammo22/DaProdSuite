@@ -10,7 +10,7 @@
 import { el, mostraScheda, suApertura } from "./dom.js";
 import { collegaCrea } from "./crea.js";
 import { aggiornaGalleria, collegaGalleria } from "./galleria.js";
-import { caricaUltimi, messaggioDalMotore, riallinea, scordaDisegno } from "./coda.js";
+import { caricaUltimi, messaggioDalMotore, riallinea } from "./coda.js";
 // I quadratini di cosa occupa la memoria: uguali in tutte le app, quindi stanno
 // in `packages/ui` e la suite li serve sotto `/comune/`.
 import { collegaModelliInMemoria } from "/comune/modelli-in-memoria.js";
@@ -47,10 +47,7 @@ await collega(
     // Il WebSocket che si riapre è il momento in cui si perdono i messaggi di
     // fine lavoro: appena torna, si va a vedere nella cronologia del motore
     // cosa è successo mentre non stavamo ascoltando.
-    if (connesso) {
-      scordaDisegno();
-      void riallinea();
-    }
+    if (connesso) void riallinea();
   },
   messaggioDalMotore,
 );

@@ -12,15 +12,17 @@
  */
 
 import { el, escapeHtml, fmtTime, mostraErrore } from "./dom.js";
+// La lista che si aggiorna senza rifarsi da capo: vale per tutte le app, quindi
+// sta in `packages/ui` e la suite la serve sotto `/comune/`.
+import { disegnaLista } from "/comune/lista-viva.js";
 import { annuncia } from "./bus.js";
 import { stato } from "./stato.js";
-import { collegaRighe, rigaBrano } from "./righe.js";
+import { aggiornaRiga, collegaRighe, rigaBrano } from "./righe.js";
 import { FASI, SEPARAZIONE } from "./grafi.js";
 import * as ponte from "./ponte.js";
 
 const lavori = new Map();
 let ordine = [];
-let ultimoDisegno = "";
 
 /**
  * Brani già finiti: id del lavoro → id con cui stanno in libreria.
@@ -67,17 +69,28 @@ export function disegnaSessione() {
   const attivi = ordine.map(lavoro).filter((l) => l && l.specie === "brano");
   const recenti = stato.brani.slice(0, 8);
 
-  let html = attivi.map(riquadroLavoro).join("");
-  html += recenti.map(rigaBrano).join("");
-  if (!attivi.length && !recenti.length) {
-    html = `<div class="empty">Ancora niente. Scrivi uno stile e premi <b>Crea</b>.</div>`;
+  // Ogni riga con la sua chiave: il lavoro in corso si aggiorna in casa —
+  // scorrono i tempi e le barre, il resto resta dov'è — e le righe dei brani
+  // già fatti non si toccano. Rifare tutto il pannello a ogni secondo, com'era
+  // prima, voleva dire ricaricare copertine e lettori una volta al secondo.
+  const voci = attivi.map((l) => ({
+    chiave: `lavoro:${l.id}`,
+    html: riquadroLavoro(l),
+    aggiorna: (nodo) => aggiornaRiquadro(nodo, l),
+  }));
+
+  for (const b of recenti) {
+    voci.push({ chiave: `brano:${b.id}`, html: rigaBrano(b), aggiorna: (nodo) => aggiornaRiga(nodo, b) });
   }
 
-  // Ridisegnare un HTML identico farebbe sfarfallare le immagini e perderebbe
-  // il fuoco: qui dentro si passa una volta al secondo.
-  if (html === ultimoDisegno) return;
-  ultimoDisegno = html;
-  el.feed.innerHTML = html;
+  if (!voci.length) {
+    voci.push({
+      chiave: "vuoto",
+      html: `<div class="empty">Ancora niente. Scrivi uno stile e premi <b>Crea</b>.</div>`,
+    });
+  }
+
+  if (!disegnaLista(el.feed, voci)) return;
 
   collegaRighe(el.feed);
   el.feed.querySelectorAll("[data-annulla]").forEach((b) => {
@@ -85,22 +98,56 @@ export function disegnaSessione() {
   });
 }
 
-/** Forza il prossimo disegno anche se l'HTML non è cambiato. */
-export function scordaDisegno() {
-  ultimoDisegno = "";
-}
-
-function riquadroLavoro(l) {
+/** Le poche cose che cambiano mentre il lavoro corre: testo, barre, fasi. */
+function avanzamento(l) {
   const corre = l.stato === "in-corso";
   const secondi = l.inizio ? Math.floor((Date.now() - l.inizio) / 1000) : 0;
   const restano = corre && l.avanzamento > 0.02 ? Math.round(secondi / l.avanzamento - secondi) : null;
 
-  const larghezza1 = (Math.min(l.avanzamento, SEPARAZIONE) / SEPARAZIONE) * (SEPARAZIONE * 100);
-  const larghezza2 = (Math.max(0, l.avanzamento - SEPARAZIONE) / (1 - SEPARAZIONE)) * ((1 - SEPARAZIONE) * 100);
+  return {
+    larghezza1: (Math.min(l.avanzamento, SEPARAZIONE) / SEPARAZIONE) * (SEPARAZIONE * 100),
+    larghezza2: (Math.max(0, l.avanzamento - SEPARAZIONE) / (1 - SEPARAZIONE)) * ((1 - SEPARAZIONE) * 100),
+    sotto: corre
+      ? `${l.passo} &middot; ${fmtTime(secondi)}${restano !== null ? ` &middot; ~${fmtTime(restano)} alla fine` : ""}`
+      : "in attesa",
+  };
+}
 
-  const sotto = corre
-    ? `${l.passo} &middot; ${fmtTime(secondi)}${restano !== null ? ` &middot; ~${fmtTime(restano)} alla fine` : ""}`
-    : "in attesa";
+/**
+ * Cambia quello che cambia lasciando in piedi il riquadro.
+ *
+ * Così la copertina già arrivata non si ricarica, e la miniatura che aspetta non
+ * ricomincia la sua animazione a ogni secondo.
+ */
+function aggiornaRiquadro(nodo, l) {
+  const { larghezza1, larghezza2, sotto } = avanzamento(l);
+
+  const sub = nodo.querySelector(".tsub");
+  if (sub) sub.innerHTML = sotto;
+  const p1 = nodo.querySelector(".p1");
+  if (p1) p1.style.width = `${larghezza1.toFixed(1)}%`;
+  const p2 = nodo.querySelector(".p2");
+  if (p2) p2.style.width = `${larghezza2.toFixed(1)}%`;
+
+  const fase1 = nodo.querySelector(".phases .a");
+  if (fase1) {
+    fase1.classList.toggle("off", l.fase !== 1);
+    // «(cache)» si scopre a lavoro partito: la struttura del brano c'era già.
+    fase1.innerHTML = `1 &middot; struttura${l.daCache ? " (cache)" : ""}`;
+  }
+  nodo.querySelector(".phases .b")?.classList.toggle("off", l.fase !== 2);
+
+  // La copertina arriva a brano quasi finito: appena c'è, prende il posto della
+  // miniatura che luccica.
+  const thumb = nodo.querySelector(".thumb");
+  if (thumb && l.copertinaUrl && !thumb.querySelector("img")) {
+    thumb.classList.remove("shimmer");
+    thumb.innerHTML = `<img src="${escapeHtml(l.copertinaUrl)}" alt="">`;
+  }
+}
+
+function riquadroLavoro(l) {
+  const { larghezza1, larghezza2, sotto } = avanzamento(l);
 
   return `<div class="track">
     <div class="thumb ${l.copertinaUrl ? "" : "shimmer"}">${l.copertinaUrl ? `<img src="${escapeHtml(l.copertinaUrl)}" alt="">` : ""}</div>

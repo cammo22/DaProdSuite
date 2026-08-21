@@ -18,7 +18,6 @@
 
 import { el, escapeHtml, mostraErrore, mostraScheda } from "./dom.js";
 import { aggiungiRiferimento } from "./riferimenti.js";
-import { scordaDisegno } from "./coda.js";
 import * as ponte from "./ponte.js";
 
 let video = [];
@@ -47,10 +46,6 @@ export async function aggiornaGalleria() {
     : `<div class="empty">Ancora nessun video. Vai su <b>Crea</b> e fallo.</div>`;
 
   collega();
-
-  // La sessione mostra gli stessi video: senza questo, la fila sotto i lavori
-  // resta a quella di prima finché non cambia qualcos'altro.
-  scordaDisegno();
 }
 
 function scheda(v) {

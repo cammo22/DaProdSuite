@@ -10,7 +10,34 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ---
 
-## Non ancora pubblicato — sarà la 0.4.3
+## 0.4.4 — Quello che hai già fatto resta dov'è
+
+**Costruita il 21 agosto 2026.** Un difetto solo, visto usando la 0.4.3, ma si
+vedeva su tre schede.
+
+### Il video non si ferma più mentre qualcosa sta generando
+
+**Il bug.** Mentre un lavoro era in corso, il pannello *Sessione* si rifaceva
+da capo una volta al secondo — serviva a far scorrere il tempo trascorso e la
+barra di avanzamento. Solo che rifarlo da capo voleva dire buttare via e
+ricostruire **anche tutto quello che ci stava dentro**: i video già fatti, le
+copertine, i lettori. Il risultato era che a DaProdCinema un video ripartiva da
+zero ogni secondo, e provare a guardarlo mentre il prossimo generava era
+impossibile. A DaProdMusica e DaProdFoto succedeva la stessa cosa alle
+copertine e alle ultime immagini, che ricaricavano di continuo.
+
+**Adesso ogni riga è cosa sua.** Il pannello confronta quello che c'è con
+quello che ci deve essere, riga per riga: il lavoro in corso si aggiorna dove
+sta — cambiano il tempo e la barra, il resto non si tocca — e i risultati già
+usciti restano esattamente dov'erano. Un video che stai guardando continua a
+suonare anche quando ne arriva uno nuovo sopra di lui.
+
+Vale per **DaProdCinema, DaProdMusica e DaProdFoto**. DaProdVoce lo faceva già
+così dal primo giorno, ed è da lì che è venuta la soluzione.
+
+---
+
+## 0.4.3 — DaProdVoce, e la Galleria di DaProdCinema
 
 **Costruita il 21 agosto 2026.** Una scheda nuova — **DaProdVoce**, che legge
 quello che scrivi con la voce che scegli tu — e tre cose viste usando la 0.4.2:

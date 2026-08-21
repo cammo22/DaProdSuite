@@ -20,6 +20,9 @@
  */
 
 import { durata, el, escapeHtml } from "./dom.js";
+// La lista che si aggiorna senza rifarsi da capo: vale per tutte le app, quindi
+// sta in `packages/ui` e la suite la serve sotto `/comune/`.
+import { disegnaLista } from "/comune/lista-viva.js";
 import { FASI } from "./grafi.js";
 import * as ponte from "./ponte.js";
 
@@ -27,7 +30,6 @@ const lavori = new Map();
 let ordine = [];
 /** I video usciti in questa sessione, il più recente per primo. */
 let fatti = [];
-let ultimoDisegno = "";
 
 const lavoro = (id) => lavori.get(id);
 const inCorso = () => ordine.map(lavoro).find((l) => l && l.stato === "in-corso");
@@ -57,17 +59,27 @@ function togliLavoro(id) {
 export function disegnaSessione() {
   const attivi = ordine.map(lavoro).filter(Boolean);
 
-  let html = attivi.length
-    ? attivi.map(riquadro).join("")
-    : `<div class="empty">Niente in lavorazione. Scrivi cosa vuoi vedere e premi <b>Genera</b>.</div>`;
+  // Ogni riquadro con la sua chiave: i lavori in corso si aggiornano in casa
+  // (scorrono i tempi e la barra, il resto resta), i video finiti non si
+  // toccano proprio. Rifare tutto a ogni secondo, com'era prima, voleva dire
+  // ricaricare i video: chi provava a dare play mentre generava se lo vedeva
+  // fermare dopo un attimo.
+  const voci = attivi.map((l) => ({
+    chiave: `lavoro:${l.id}`,
+    html: riquadro(l),
+    aggiorna: (nodo) => aggiornaRiquadro(nodo, l),
+  }));
 
-  if (fatti.length) html += fatti.map(riquadroFatto).join("");
+  for (const v of fatti) voci.push({ chiave: `fatto:${v.id || v.url}`, html: riquadroFatto(v) });
 
-  // Ridisegnare un HTML identico farebbe ripartire i video da capo a ogni
-  // secondo: qui dentro si passa una volta al secondo, per far scorrere i tempi.
-  if (html === ultimoDisegno) return;
-  ultimoDisegno = html;
-  el.sessione.innerHTML = html;
+  if (!voci.length) {
+    voci.push({
+      chiave: "vuoto",
+      html: `<div class="empty">Niente in lavorazione. Scrivi cosa vuoi vedere e premi <b>Genera</b>.</div>`,
+    });
+  }
+
+  if (!disegnaLista(el.sessione, voci)) return;
 
   el.sessione.querySelectorAll("[data-annulla]").forEach((b) => {
     b.onclick = () => void annulla(b.dataset.annulla);
@@ -77,27 +89,41 @@ export function disegnaSessione() {
   });
 }
 
-/** Forza il prossimo disegno anche se l'HTML non è cambiato. */
-export function scordaDisegno() {
-  ultimoDisegno = "";
-}
-
 /**
- * Un lavoro in corso.
+ * La riga sotto il titolo di un lavoro in corso.
  *
- * La riga sotto dice **quanto è passato** e, quando c'è abbastanza avanzamento
- * per non mentire, quanto manca. Sotto il 5% la stima è un numero inventato e
- * non si scrive: su un lavoro da dieci minuti sbagliare all'inizio vuol dire
- * scrivere «due minuti» a chi ne aspetterà dodici.
+ * Dice **quanto è passato** e, quando c'è abbastanza avanzamento per non
+ * mentire, quanto manca. Sotto il 5% la stima è un numero inventato e non si
+ * scrive: su un lavoro da dieci minuti sbagliare all'inizio vuol dire scrivere
+ * «due minuti» a chi ne aspetterà dodici.
  */
-function riquadro(l) {
+function sottotitolo(l) {
   const corre = l.stato === "in-corso";
   const secondi = l.inizio ? Math.floor((Date.now() - l.inizio) / 1000) : 0;
   const restano = corre && l.avanzamento > 0.05 ? Math.round(secondi / l.avanzamento - secondi) : null;
 
-  const sotto = corre
+  return corre
     ? `${escapeHtml(l.passo)} &middot; ${durata(secondi)}${restano !== null ? ` &middot; ~${durata(restano)} alla fine` : ""}`
     : "in attesa";
+}
+
+/**
+ * Quello che cambia mentre il lavoro corre, cambiato dov'è.
+ *
+ * Il riquadro resta lo stesso nodo: così la miniatura non ricomincia la sua
+ * animazione a ogni secondo, e soprattutto non si porta dietro il resto del
+ * pannello.
+ */
+function aggiornaRiquadro(nodo, l) {
+  const sub = nodo.querySelector(".tsub");
+  const barra = nodo.querySelector(".p1");
+  if (sub) sub.innerHTML = sottotitolo(l);
+  if (barra) barra.style.width = `${(l.avanzamento * 100).toFixed(1)}%`;
+}
+
+/** Un lavoro in corso. */
+function riquadro(l) {
+  const sotto = sottotitolo(l);
 
   return `<div class="track">
     <div class="thumb shimmer"></div>
@@ -293,7 +319,6 @@ export async function caricaUltimi() {
         .filter(Boolean)
         .join(" · "),
     }));
-    scordaDisegno();
     disegnaSessione();
   } catch {
     // La suite non risponde: la sessione parte vuota e si riempie generando.
