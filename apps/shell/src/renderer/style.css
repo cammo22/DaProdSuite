@@ -1285,6 +1285,27 @@ li.modello .bottone {
   color: var(--testo-tenue);
 }
 
+/* La scelta dell'indirizzo, quando ce n'è più d'uno. */
+.telefono-rete {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: -6px 0 14px;
+  font-size: 12.5px;
+  color: var(--testo-tenue);
+}
+
+.telefono-rete select {
+  background: var(--fondo-alto);
+  color: var(--testo);
+  border: 1px solid var(--bordo-vivo);
+  border-radius: 8px;
+  padding: 6px 9px;
+  font: inherit;
+  max-width: 100%;
+}
+
 /* L'invito: QR accanto al codice. */
 .telefono-invito {
   display: flex;

@@ -10,7 +10,7 @@ Un programma solo per fare musica, immagini, video, voci e parlare con un avatar
 Ogni app la installi quando ti serve e la disinstalli quando non ti serve più.
 Gira sul tuo computer: niente account, niente chiavi API, codice aperto.
 
-[![versione](https://img.shields.io/badge/versione-0.5.0-7c5cff)](https://github.com/cammo22/DaProdSuite/releases)
+[![versione](https://img.shields.io/badge/versione-0.5.1-7c5cff)](https://github.com/cammo22/DaProdSuite/releases)
 [![licenza](https://img.shields.io/badge/licenza-MIT-5cff9d)](LICENSE)
 [![piattaforma](https://img.shields.io/badge/Windows-x64-3ddbff)](#requisiti)
 [![sito](https://img.shields.io/badge/sito-cammo22.github.io-ffa63d)](https://cammo22.github.io/DaProdSuite/)
@@ -90,8 +90,10 @@ lo stesso.
 
 ## A che punto siamo
 
-> **0.5.0: la suite non è più solo quel computer.** La comandi dal telefono,
-> dal browser di un altro computer, e da un'AI.
+> **0.5.1: la suite non è più solo quel computer.** La comandi dal telefono,
+> dal browser di un altro computer, e da un'AI. *(La 0.5.0 dava un indirizzo di
+> rete che il telefono non poteva raggiungere e non mostrava il QR al primo
+> click: se hai provato quella, aggiorna.)*
 >
 > In fondo all'hub c'è un pannello nuovo, **Da fuori**. Lo accendi e ti dà un
 > indirizzo: lo scrivi nel browser del portatile, batti il codice di otto cifre,
@@ -103,8 +105,8 @@ lo stesso.
 > C'è anche un'**app Android**: inquadri il QR e chiedi lavori mentre sei in
 > giro. Se il PC non c'è, quello che scrivi resta sul telefono e parte da solo
 > quando torna; quando il lavoro finisce arriva una notifica anche ore dopo; e
-> il risultato te lo porti in galleria. *(L'app va compilata: non c'è ancora un
-> APK da scaricare.)*
+> il risultato te lo porti in galleria. L'APK si scarica dalla
+> [Release](https://github.com/cammo22/DaProdSuite/releases/latest).
 >
 > **Chi comanda resta chi sta al PC.** Una richiesta che arriva da fuori non fa
 > partire niente da sola: compare nel pannello e tu la accetti o la scarti. Su

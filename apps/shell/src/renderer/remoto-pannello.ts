@@ -22,6 +22,8 @@ const interruttore = document.getElementById("telefono-interruttore") as HTMLBut
 const indirizzoBox = document.getElementById("telefono-indirizzo-box") as HTMLElement;
 const indirizzoConsole = document.getElementById("telefono-console") as HTMLElement;
 const bottoneCopia = document.getElementById("telefono-copia") as HTMLButtonElement;
+const reteBox = document.getElementById("telefono-rete-box") as HTMLElement;
+const sceltaRete = document.getElementById("telefono-rete") as HTMLSelectElement;
 const invitoBox = document.getElementById("telefono-invito-box") as HTMLElement;
 const qr = document.getElementById("telefono-qr") as HTMLImageElement;
 const codiceValore = document.getElementById("telefono-codice-valore") as HTMLElement;
@@ -41,17 +43,42 @@ interruttore.addEventListener("click", () => {
   void (async () => {
     interruttore.disabled = true;
     try {
-      // Spegnendo si nasconde anche l'invito: un codice per un gateway spento
-      // non porta da nessuna parte, e lasciarlo lì è solo un modo di far
-      // sbagliare chi lo sta copiando.
-      stato = stato?.acceso ? await api.remoto.spegni() : await api.remoto.accendi();
-      if (!stato.acceso) nascondiInvito();
+      if (stato?.acceso) {
+        // Spegnendo si nasconde anche l'invito: un codice per un gateway spento
+        // non porta da nessuna parte, e lasciarlo lì è solo un modo di far
+        // sbagliare chi lo sta copiando.
+        stato = await api.remoto.spegni();
+        nascondiInvito();
+        disegna();
+        return;
+      }
+
+      stato = await api.remoto.accendi();
       disegna();
+
+      // E subito un invito, se non c'è ancora nessuno collegato.
+      //
+      // Prima «Accendi» accendeva e basta: comparivano un indirizzo e tre
+      // bottoni, e il QR — che è la ragione per cui questo pannello esiste —
+      // voleva un secondo click che nessuno diceva di fare. Chi lo ha provato
+      // il 21 agosto ha visto una scheda che sembrava rotta.
+      if (stato.dispositivi.length === 0) await invitaGiusto();
     } catch (e) {
       riassunto.textContent = `Non riesco: ${(e as Error).message}`;
     } finally {
       interruttore.disabled = false;
     }
+  })();
+});
+
+// Cambiare indirizzo butta gli inviti in corso: un QR è la fotografia di un
+// indirizzo, e quello vecchio non porterebbe più da nessuna parte.
+sceltaRete.addEventListener("change", () => {
+  void (async () => {
+    stato = await api.remoto.scegliRete(sceltaRete.value);
+    nascondiInvito();
+    disegna();
+    if (stato.acceso) await invitaGiusto();
   })();
 });
 
@@ -82,6 +109,18 @@ function avvisoCopia(testo: string): void {
 }
 
 /* ---------------------------------------------------------------- l'invito */
+
+/**
+ * Un invito del ruolo che ha senso adesso.
+ *
+ * Il primo dispositivo dev'essere il padrone — è quello che poi decide sulle
+ * richieste. Dal secondo in poi si invita un ospite, perché chiedere un secondo
+ * padrone fallirebbe: ce n'è uno solo, ed è una regola del gateway.
+ */
+function invitaGiusto(): Promise<void> {
+  const cePadrone = (stato?.dispositivi ?? []).some((d) => d.ruolo === "admin");
+  return invita(cePadrone ? "ospite" : "admin");
+}
 
 async function invita(ruolo: "admin" | "ospite"): Promise<void> {
   try {
@@ -161,6 +200,7 @@ function disegna(): void {
   interruttore.classList.toggle("secondario", acceso);
   indirizzoBox.hidden = !acceso;
   indirizzoConsole.textContent = stato?.console ?? "";
+  disegnaReti(acceso);
 
   riassunto.textContent = acceso
     ? `In ascolto · ${contati(stato?.dispositivi.length ?? 0, "dispositivo", "dispositivi")} · ${
@@ -174,6 +214,27 @@ function disegna(): void {
 
 function contati(n: number, uno: string, molti: string): string {
   return `${n} ${n === 1 ? uno : molti}`;
+}
+
+/**
+ * Il menu degli indirizzi.
+ *
+ * Compare solo se ce n'è più d'uno: su un computer con una scheda sola sarebbe
+ * una domanda senza risposte, e una scelta in più da capire per niente.
+ */
+function disegnaReti(acceso: boolean): void {
+  const elenco = stato?.reti ?? [];
+  reteBox.hidden = !acceso || elenco.length < 2;
+  if (reteBox.hidden) return;
+
+  sceltaRete.innerHTML = "";
+  for (const rete of elenco) {
+    const voce = document.createElement("option");
+    voce.value = rete.ip;
+    voce.textContent = `${rete.ip} — ${rete.che}`;
+    voce.selected = rete.ip === stato?.rete;
+    sceltaRete.append(voce);
+  }
 }
 
 function disegnaDispositivi(): void {

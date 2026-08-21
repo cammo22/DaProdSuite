@@ -369,6 +369,7 @@ export function registerIpc(getHub: () => BrowserWindow | null): void {
     accessoRemoto.nuovoInvito(ruolo),
   );
   ipcMain.handle(CHANNELS.remotoRevoca, (_e, id: string) => accessoRemoto.revoca(id));
+  ipcMain.handle(CHANNELS.remotoScegliRete, (_e, ip: string) => accessoRemoto.scegliRete(ip));
   ipcMain.handle(CHANNELS.remotoDecidi, (_e, id: string, stato: "accettata" | "scartata" | "in-lavoro", motivo?: string) =>
     accessoRemoto.decidi(id, stato, motivo),
   );

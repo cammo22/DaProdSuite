@@ -29,6 +29,17 @@ export interface StatoAccesso {
    * computer. Vuoto quando il gateway è spento.
    */
   console: string;
+  /**
+   * Gli indirizzi su cui il gateway può farsi trovare, dal più probabile.
+   *
+   * Un computer ne ha spesso più d'uno — la rete di casa, una scheda virtuale,
+   * Tailscale — e **solo uno è raggiungibile dal telefono**. La suite sceglie,
+   * ma li mostra tutti: su una macchina con quattro indirizzi nessuna regola è
+   * giusta sempre, e chi guarda lo schermo sa cose che noi non sappiamo.
+   */
+  reti: ReteDisponibile[];
+  /** L'indirizzo che si sta usando adesso, fra quelli di `reti`. */
+  rete: string;
   /** Il nome del computer, mostrato al telefono. */
   computer: string;
   /** L'invito attivo, se c'è. */
@@ -37,6 +48,15 @@ export interface StatoAccesso {
   richieste: RichiestaRemota[];
   /** Quante richieste nuove (in attesa) ci sono: per il pallino sul pannello. */
   attesa: number;
+}
+
+/** Un indirizzo su cui il gateway può farsi trovare. */
+export interface ReteDisponibile {
+  ip: string;
+  /** Il nome della scheda, come lo chiama Windows. */
+  scheda: string;
+  /** Una riga che dice cos'è: «rete di casa», «scheda virtuale»… */
+  che: string;
 }
 
 /** Un invito: quello che va nel QR e nel codice a otto cifre. */
