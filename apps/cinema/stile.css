@@ -42,6 +42,16 @@ header{
 .logo{font-size:19px; font-weight:800; letter-spacing:-.03em; white-space:nowrap}
 .logo span{background:linear-gradient(90deg,var(--accent),var(--accent2));
   -webkit-background-clip:text; background-clip:text; color:transparent}
+/* Le due schede: Crea e Galleria. Stesse regole di DaProdFoto, con l'accento
+   viola di questa app: il numero accanto a "Galleria" e' quanti video ci sono,
+   e si vede senza entrarci. */
+nav{display:flex; gap:3px; background:#0d0f15; border:1px solid var(--line); border-radius:13px; padding:4px}
+nav button{
+  background:none; border:0; color:var(--dim); font:inherit; font-weight:600; font-size:13.5px;
+  padding:7px 15px; border-radius:10px; cursor:pointer; transition:.15s; display:flex; align-items:center; gap:7px}
+nav button:hover{color:var(--txt); background:#151822}
+nav button.on{background:linear-gradient(120deg,var(--accent),#7c3aed); color:#fff; box-shadow:0 3px 14px rgba(192,92,255,.35)}
+nav .pill{background:rgba(255,255,255,.2); border-radius:99px; font-size:11px; padding:1px 7px; font-weight:700}
 .status{margin-left:auto; display:flex; align-items:center; gap:12px; font-size:12.5px; color:var(--dim)}
 .dot{width:8px;height:8px;border-radius:50%;background:var(--err);transition:.3s}
 .dot.on{background:var(--ok); box-shadow:0 0 9px var(--ok)}
@@ -262,3 +272,71 @@ input:disabled,textarea:disabled,select:disabled{opacity:.45; cursor:not-allowed
 .uscito video{width:100%; display:block; background:#000; max-height:340px}
 .uscito .sotto{padding:9px 11px}
 .uscito .sotto .mini{margin-top:7px}
+
+/* ------------------------------------------------------------- galleria ---- */
+/* La griglia dei video fatti. Le stesse schede di DaProdFoto, con dentro un
+   lettore invece di una immagine: l'anteprima e' il primo fotogramma, e il
+   video vero si guarda a schermo intero. */
+.cards{display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:12px;
+  max-height:74vh; overflow:auto; padding-right:4px}
+.card{background:#0b0d13; border:1px solid var(--line); border-radius:13px; padding:9px; transition:.15s}
+.card:hover{border-color:var(--accent)}
+/* 16:9 e non quadrata: i video di questa scheda sono quasi sempre orizzontali, e
+   una miniatura quadrata li taglierebbe ai lati proprio dove sta l'inquadratura. */
+.card .art{width:100%; aspect-ratio:16/9; border-radius:10px; object-fit:cover; display:block;
+  background:#000; margin-bottom:8px; cursor:zoom-in}
+.card .nm{font-size:13px; font-weight:650; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.card .sub{font-size:11.5px; color:var(--dim); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+
+/* I pulsanti sotto ogni scheda. Ognuno chiede 112px e poi si allarga a riempire
+   la riga: in una finestra larga stanno in fila, in una stretta vanno a capo
+   restando della stessa misura, senza mai uscire dal pannello. */
+.acts{display:flex; flex-wrap:wrap; gap:8px; margin-top:12px}
+.acts a,.acts button{
+  flex:1 1 112px; min-width:0;
+  display:inline-flex; align-items:center; justify-content:center; gap:6px;
+  min-height:34px; padding:8px 12px; border-radius:10px;
+  border:1px solid var(--line2); background:#141824; color:var(--txt);
+  font:inherit; font-size:12.5px; font-weight:600; line-height:1.25;
+  text-align:center; text-decoration:none; cursor:pointer; transition:.15s}
+.acts a:hover,.acts button:hover{border-color:var(--accent); background:#1b2132; color:#fff}
+.acts button:active{transform:translateY(1px)}
+.acts button:disabled{opacity:.4; cursor:not-allowed; color:var(--dim); border-color:var(--line)}
+.acts button:disabled:hover{background:#141824; color:var(--dim); border-color:var(--line)}
+/* Un pulsante che cancella non deve sembrare quello principale, anche quando
+   resta da solo in fondo e si allarga per tutta la riga. */
+.acts .del{color:#f0a9a9; border-color:#4a2226; background:#1a1113}
+.acts .del:hover{color:#fff; background:#2a1416; border-color:var(--err)}
+.card .acts{gap:6px; margin-top:9px}
+.card .acts a,.card .acts button{flex:1 1 76px; min-height:30px; padding:6px 8px; font-size:11.5px}
+
+/* Il consiglio sotto ai riquadri dei riferimenti: un consiglio, non un divieto.
+   Ha il bordo e non il fondo rosso apposta — non e' un errore, e non deve
+   sembrarlo. */
+.hint.consiglio{margin-top:12px; padding:9px 11px; border-radius:10px;
+  border:1px solid #3a2a52; background:#150f22; color:#c9b8e6}
+
+/* ------------------------------------------------------------ la lente ---- */
+/* Il video a schermo intero. Non si chiude cliccando ovunque, come quella di
+   DaProdFoto: qui sotto c'e' un lettore, e un clic su play o sulla barra di
+   scorrimento chiuderebbe quello che stai guardando. */
+.lente{position:fixed; inset:0; z-index:60; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; gap:14px; padding:28px;
+  background:rgba(6,7,11,.94); backdrop-filter:blur(8px)}
+.lente[hidden]{display:none}
+.lente video{max-width:100%; max-height:calc(100vh - 150px); border-radius:12px;
+  background:#000; box-shadow:0 20px 60px rgba(0,0,0,.6)}
+.lente .didascalia{color:var(--dim); font-size:13px; text-align:center; max-width:900px}
+.chiudi-lente{position:absolute; top:18px; right:20px; width:38px; height:38px; border-radius:11px;
+  border:1px solid var(--line2); background:#141824; color:var(--txt); font-size:15px; cursor:pointer;
+  transition:.15s}
+.chiudi-lente:hover{border-color:var(--err); color:#fff; background:#2a1416}
+
+@media(max-width:760px){
+  .cards{grid-template-columns:repeat(auto-fill,minmax(180px,1fr))}
+}
+/* Piu' stretto di cosi' una scheda non regge due pulsanti per riga: meglio uno
+   solo e leggibile che due tagliati. */
+@media(max-width:560px){
+  .card .acts a,.card .acts button{flex:1 1 100%}
+}

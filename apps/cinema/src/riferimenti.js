@@ -10,7 +10,15 @@
  *   inventa dal testo.
  * - **MiniMax H3** vuole dei **riferimenti**, che è un'altra cosa: non «comincia
  *   così», ma «questa è la faccia, questo è il posto, questo è il movimento,
- *   questa è la voce». Fino a nove immagini, tre video e tre audio.
+ *   questa è la voce». Fino a nove immagini, tre video e tre audio — e sono
+ *   **tutti facoltativi**: senza niente, H3 genera dal solo testo come fa LTX.
+ *
+ * **Fino alla 0.4.2 senza riferimenti H3 non partiva**, e non perché non
+ * potesse: era questa app a fermarlo, per non far spendere quaranta GB di
+ * modello a fare quello che LTX fa con ventitré. Era una decisione presa al
+ * posto di chi la suite la usa, ed era anche sbagliata nei fatti: il testo H3 lo
+ * legge con un Qwen3-VL da 32B, e c'è chi lo vuole proprio per quello. Adesso il
+ * consiglio resta scritto sotto ai riquadri, e il tasto Genera funziona.
  *
  * **Le etichette sono la parte che conta.** H3 non indovina a cosa serve ogni
  * riferimento: bisogna dirglielo nel prompt, chiamandoli per nome — `<Picture 1>`,
@@ -100,6 +108,16 @@ function scegliFile(accetta, multiplo = false) {
 
 const anteprima = (file) => URL.createObjectURL(file);
 
+/** In quale dei tre gruppi di H3 può stare questo file, se in nessuno `null`. */
+const gruppoDi = (file) =>
+  file.type.startsWith("image/")
+    ? "immagini"
+    : file.type.startsWith("video/")
+      ? "video"
+      : file.type.startsWith("audio/")
+        ? "audio"
+        : null;
+
 /* -------------------------------------------------------------- i riquadri */
 
 /** Un riquadro con dentro qualcosa, o vuoto e da riempire. */
@@ -176,8 +194,9 @@ function disegnaRiferimenti() {
   }
 
   return `
-    <div class="hint">Tutti facoltativi. <b>Chiamali per nome nel prompt</b> — clicca
-      l'etichetta e te la scrivo dove hai il cursore: &laquo;the woman in
+    <div class="hint">Tutti facoltativi, <b>anche tutti insieme</b>: senza niente qui dentro
+      H3 genera dal solo testo. <b>Quelli che metti vanno chiamati per nome nel prompt</b> —
+      clicca l'etichetta e te la scrivo dove hai il cursore: &laquo;the woman in
       <b>&lt;Picture 1&gt;</b> walks through <b>&lt;Picture 2&gt;</b>, camera moves like
       <b>&lt;Video 1&gt;</b>&raquo;. Senza nominarli, il modello riceve dei file e nessuna
       istruzione su cosa prendere da quale.</div>
@@ -194,7 +213,23 @@ function disegnaRiferimenti() {
     <label class="switch"><input type="checkbox" id="fedelta"> Massima fedeltà alle immagini di riferimento</label>
     <div class="hint">Le manda al modello a piena risoluzione invece che ridotte alla misura del
       video. Somiglia di più, e ci mette parecchio di più: quei pixel ripassano
-      dentro al modello a ogni passo.</div>`;
+      dentro al modello a ogni passo.</div>
+
+    ${quantiRiferimenti() === 0 ? consiglioSenzaRiferimenti() : ""}`;
+}
+
+/**
+ * Il consiglio quando i riquadri sono vuoti. **Un consiglio, non un divieto.**
+ *
+ * H3 dal solo testo funziona: quello che non funziona è il conto delle ore. Sono
+ * quarantun GB di modello per fare quello che LTX fa con ventitré, ed è giusto
+ * dirlo — una volta, dove si guarda, senza spegnere niente.
+ */
+function consiglioSenzaRiferimenti() {
+  return `<div class="hint consiglio">Nessun riferimento: H3 genererà <b>dal solo testo</b>, e va bene.
+    Sappi solo che così stai usando quarantun GB di modello per una cosa che
+    <b>LTX 2.5</b> fa con ventitré, in molto meno tempo. I riferimenti sono il motivo
+    per cui H3 sta qui.</div>`;
 }
 
 /* --------------------------------------------------------------- il disegno */
@@ -313,17 +348,35 @@ export async function caricaIngressi(m, racconta = () => {}) {
 }
 
 /**
- * Cosa non va, prima di mandare.
+ * Un file che arriva da fuori dai riquadri: la galleria, un'altra app.
  *
- * Torna una stringa da mostrare, o niente se va tutto bene. Un solo controllo,
- * e non è pignoleria: `MiniMaxH3ReferenceToVideo` senza nessun riferimento è
- * il modello da 41 GB usato per fare quello che LTX fa con 23, cioè mezz'ora di
- * attesa in piu' per niente.
+ * Torna `null` se è entrato, o una frase da mostrare se non poteva entrare.
+ * Passa dallo stesso smistamento del trascinamento, perché è la stessa cosa: un
+ * file che entra e va messo dove può stare.
  */
-export function cosaManca(m) {
-  if (m.ingressi === "riferimenti" && quantiRiferimenti() === 0) {
-    return "MiniMax H3 è il modello dei riferimenti: dagli almeno un'immagine, un video o un audio. Per generare dal solo testo usa LTX 2.5, che ci mette molto meno.";
+export function aggiungiRiferimento(file) {
+  if (!modelloOra) return "La scheda non è ancora pronta: riprova fra un istante.";
+
+  const gruppo = gruppoDi(file);
+  if (!gruppo) return `"${file.name}" non è un'immagine, un video o un audio.`;
+
+  if (modelloOra.ingressi === "fotogrammi") {
+    if (gruppo !== "immagini") {
+      return "LTX 2.5 prende solo due immagini, il primo e l'ultimo fotogramma. Per usare un video o un audio come riferimento scegli MiniMax H3 nel menu dei modelli.";
+    }
+    if (roba.primo && roba.ultimo) return "Primo e ultimo fotogramma ci sono già: togline uno.";
+    if (!roba.primo) roba.primo = file;
+    else roba.ultimo = file;
+    disegna();
+    return null;
   }
+
+  if (roba[gruppo].length >= MASSIMI[gruppo]) {
+    return `Di ${gruppo} il modello ne prende ${MASSIMI[gruppo]}, e ci sono già tutti.`;
+  }
+  if (gruppo === "video") roba.video.push({ file, conAudio: false });
+  else roba[gruppo].push(file);
+  disegna();
   return null;
 }
 
@@ -374,13 +427,7 @@ function accogli(files) {
 
   const pieni = [];
   for (const file of files) {
-    const gruppo = file.type.startsWith("image/")
-      ? "immagini"
-      : file.type.startsWith("video/")
-        ? "video"
-        : file.type.startsWith("audio/")
-          ? "audio"
-          : null;
+    const gruppo = gruppoDi(file);
     if (!gruppo) continue;
     if (roba[gruppo].length >= MASSIMI[gruppo]) {
       if (!pieni.includes(gruppo)) pieni.push(gruppo);

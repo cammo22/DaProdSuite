@@ -29,7 +29,7 @@ import { ESTETICHE, PROPOSTE } from "./dati/estetiche.js";
 import { NEGATIVO, grafoClip, secondiVeri } from "./grafi.js";
 import { collegaFormato, misuraScelta } from "./formato.js";
 import { collegaScelta, modelloCorrente, modelloUsabile } from "./scelta-modello.js";
-import { caricaIngressi, collegaIngressi, cosaManca } from "./riferimenti.js";
+import { caricaIngressi, collegaIngressi } from "./riferimenti.js";
 import { faiSpazio } from "./memoria.js";
 import { aggiungiLavoro, collegaComandiCoda } from "./coda.js";
 import * as ponte from "./ponte.js";
@@ -145,9 +145,10 @@ async function genera() {
   const m = modelloCorrente();
   const p = leggiModulo();
 
+  // L'unica cosa che serve davvero: cosa vuoi vedere. I riferimenti di H3 sono
+  // facoltativi — il consiglio di usare LTX quando non ce ne sono sta scritto
+  // sotto ai riquadri, e resta un consiglio.
   if (!p.prompt) return mostraErrore("Scrivi cosa vuoi vedere.");
-  const manca = cosaManca(m);
-  if (manca) return mostraErrore(manca);
 
   // Da qui in poi il tasto è spento e racconta. Il `try` comincia **prima** di
   // tutto quello che può metterci: un errore fuori dal try uscirebbe di qui

@@ -7,20 +7,33 @@
  * che uno fa la prima volta che apre questa scheda.
  */
 
-import { el } from "./dom.js";
+import { el, mostraScheda, suApertura } from "./dom.js";
 import { collegaCrea } from "./crea.js";
+import { aggiornaGalleria, collegaGalleria } from "./galleria.js";
 import { caricaUltimi, messaggioDalMotore, riallinea, scordaDisegno } from "./coda.js";
 // I quadratini di cosa occupa la memoria: uguali in tutte le app, quindi stanno
 // in `packages/ui` e la suite li serve sotto `/comune/`.
 import { collegaModelliInMemoria } from "/comune/modelli-in-memoria.js";
 import { collega, modelliInVram, scaricaDallaVram, suLibreriaCambiata } from "./ponte.js";
 
+// Le due schede: Crea e Galleria. La galleria si rilegge quando la si apre —
+// non ogni secondo mentre si guarda altro.
+document.querySelectorAll("nav button").forEach((b) => {
+  b.onclick = () => mostraScheda(b.dataset.scheda);
+});
+suApertura("galleria", () => void aggiornaGalleria());
+
 await collegaCrea();
+collegaGalleria();
 
 // I video di ieri, sotto la sessione: riaprire la scheda e vedere il vuoto dava
 // l'impressione che quello che si era fatto fosse andato perso.
 void caricaUltimi();
 suLibreriaCambiata(() => void caricaUltimi());
+
+// Il conteggio accanto a «Galleria» dev'essere giusto **prima** che qualcuno ci
+// entri: è metà del motivo per cui esiste quel numero.
+void aggiornaGalleria();
 
 collegaModelliInMemoria(el.mods, {
   elenco: modelliInVram,
