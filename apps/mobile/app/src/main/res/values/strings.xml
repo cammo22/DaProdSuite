@@ -27,6 +27,21 @@
     <string name="nessuna_richiesta">Ancora niente. Quello che chiedi compare qui.</string>
     <string name="btn_scarica">Scarica nel telefono</string>
 
+    <!-- La barra in fondo -->
+    <string name="nav_richieste">Richieste</string>
+    <string name="nav_stato">Stato</string>
+    <string name="nav_aggiorna">Aggiorna</string>
+
+    <!-- Aggiornamenti dell'app -->
+    <string name="agg_cerco">Guardo se c\'è una versione nuova…</string>
+    <string name="agg_a_posto">Sei già all\'ultima versione (%1$s).</string>
+    <string name="agg_trovata">C\'è la %1$s</string>
+    <string name="agg_scarica">Scarica e installa</string>
+    <string name="agg_dopo">Non adesso</string>
+    <string name="agg_permesso">Per installare l\'aggiornamento il telefono deve lasciarmelo fare. Ti porto nelle impostazioni: cerca «DaProd Suite» e accendi il permesso, poi torna qui.</string>
+    <string name="agg_vai">Portami lì</string>
+    <string name="agg_banner">C\'è la versione %1$s</string>
+
     <!-- Notifiche -->
     <string name="notifica_canale">Lavori DaProd Suite</string>
     <string name="notifica_descrizione">Quando un lavoro finisce sul PC</string>

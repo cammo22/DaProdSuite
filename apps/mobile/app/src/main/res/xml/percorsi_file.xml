@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Cosa questa app è disposta a passare a un'altra app.
+
+  Una sola cartella: quella dove finisce l'APK dell'aggiornamento, che va
+  consegnato all'installatore di Android. Niente altro — il token che apre il PC
+  di casa sta nelle preferenze, e da qui non si raggiunge.
+-->
+<paths>
+    <cache-path name="aggiornamenti" path="aggiornamenti/" />
+</paths>

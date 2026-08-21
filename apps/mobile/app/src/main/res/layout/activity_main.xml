@@ -60,6 +60,20 @@
             android:visibility="gone" />
     </LinearLayout>
 
+    <!-- Compare solo quando c'è davvero una versione nuova: un avviso che sta
+         lì sempre smette di essere un avviso. -->
+    <TextView
+        android:id="@+id/banner_aggiornamento"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginBottom="10dp"
+        android:padding="12dp"
+        android:background="@drawable/sfondo_carta"
+        android:textColor="@color/accento"
+        android:textSize="13sp"
+        android:visibility="gone" />
+
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"

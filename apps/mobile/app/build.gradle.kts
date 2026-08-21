@@ -7,35 +7,51 @@ android {
     namespace = "it.daprod.suite"
     compileSdk = 34
 
+    /*
+     * La chiave con cui si firma l'APK da scaricare.
+     *
+     * **Non è un segreto, e non deve esserlo.** Sta nel repository con la sua
+     * password scritta qui sotto, e il motivo è preciso: Android rifiuta di
+     * aggiornare un'app se la firma non combacia con quella già installata. Con
+     * la chiave di debug — che ogni computer si genera per conto suo, e il
+     * runner della CI pure — ogni release avrebbe una firma diversa, e
+     * l'aggiornamento automatico dell'app **non potrebbe funzionare**: ogni
+     * volta bisognerebbe disinstallare e reinstallare.
+     *
+     * Cosa non protegge: chiunque abbia questo file può firmare un finto
+     * «DaProd Suite». È vero, ed è vero **anche senza**: la chiave di debug di
+     * Android è pubblica e universale, e prima si usava quella. Questo file non
+     * aggiunge un rischio, toglie un fastidio.
+     *
+     * Il giorno che la suite dovesse andare su un negozio, quella sarà una
+     * chiave vera, segreta, e custodita da chi la pubblica — non questa.
+     */
+    signingConfigs {
+        create("sideload") {
+            storeFile = file("../firma-sideload.jks")
+            storePassword = "daprod-sideload"
+            keyAlias = "daprod"
+            keyPassword = "daprod-sideload"
+        }
+    }
+
     defaultConfig {
         applicationId = "it.daprod.suite"
         minSdk = 26
         targetSdk = 34
         // Segue la versione della suite: l'app e il gateway si tengono per mano,
         // e sapere che numero ha in mano il telefono serve quando qualcosa non torna.
-        versionCode = 6
-        versionName = "0.5.1"
+        versionCode = 7
+        versionName = "0.5.2"
     }
 
     buildTypes {
         release {
             isMinifyEnabled = false
-            // Firmata con la chiave di **debug**, e va detto: non è la chiave di
-            // nessuno, è quella che Android genera uguale su ogni computer.
-            //
-            // Serve a una cosa sola: rendere l'APK installabile. Senza una
-            // firma Android rifiuta di installarlo, e con `assembleRelease`
-            // nudo esce un `app-release-unsigned.apk` che non serve a niente.
-            //
-            // Quello che si guadagna rispetto all'APK di debug è la cosa che
-            // conta: **non è `debuggable`**. Un APK di debug lascia che
-            // qualunque programma sul telefono si attacchi al processo, e
-            // dentro quel processo c'è il token che apre il PC di casa.
-            //
-            // Per una chiave vera serve un keystore, che è roba di Cammo: la
-            // password non può stare in un repo pubblico, e la chiave che firma
-            // un'app non la genera qualcun altro al posto suo.
-            signingConfig = signingConfigs.getByName("debug")
+            // La chiave stabile qui sopra, non quella di debug: è ciò che
+            // permette all'app di aggiornarsi da sola invece di chiedere ogni
+            // volta di disinstallare.
+            signingConfig = signingConfigs.getByName("sideload")
         }
     }
 

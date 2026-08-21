@@ -20,6 +20,22 @@ computer in quel momento non è raggiungibile.
   video in galleria, un brano fra la musica: sotto `DaProd Suite`, dove poi si
   ritrovano senza riaprire l'app.
 
+## La firma
+
+L'APK di release è firmato con `firma-sideload.jks`, che **sta nel repository
+con la password scritta in `app/build.gradle.kts`**. Non è una dimenticanza.
+
+Android rifiuta di aggiornare un'app se la firma non combacia con quella
+installata. Con la chiave di debug — che ogni computer, e ogni runner della CI,
+si genera per conto suo — ogni Release avrebbe una firma diversa e
+l'aggiornamento automatico non potrebbe funzionare.
+
+Quella chiave non protegge da niente: chiunque l'abbia può firmare un finto
+«DaProd Suite». Ma poteva già farlo con la chiave di debug di Android, che è
+pubblica e universale. Non aggiunge un rischio, toglie un fastidio. Il giorno
+che questa app andasse su un negozio, servirà una chiave vera e segreta — non
+questa.
+
 ## Cosa non fa
 
 - **Non decide.** Accettare o scartare una richiesta resta di chi sta al PC, dal
@@ -29,6 +45,8 @@ computer in quel momento non è raggiungibile.
   uscita è il passo dopo, § 0.5.0 della roadmap.
 - **Non mostra il risultato prima di scaricarlo.** Niente anteprime: si preme
   «Scarica nel telefono» e si guarda con l'app di sistema.
+- **Non si aggiorna da sola in background.** Il controllo è al massimo una volta
+  al giorno, all'apertura, e scaricare e installare li decidi tu.
 
 ## Com'è fatta
 

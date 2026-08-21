@@ -3,9 +3,13 @@
     <item
         android:id="@+id/nav_richieste"
         android:icon="@android:drawable/ic_menu_edit"
-        android:title="Richieste" />
+        android:title="@string/nav_richieste" />
     <item
         android:id="@+id/nav_stato"
         android:icon="@android:drawable/ic_menu_myplaces"
-        android:title="Stato" />
+        android:title="@string/nav_stato" />
+    <item
+        android:id="@+id/nav_aggiorna"
+        android:icon="@android:drawable/stat_sys_download"
+        android:title="@string/nav_aggiorna" />
 </menu>

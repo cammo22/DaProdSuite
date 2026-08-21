@@ -48,6 +48,8 @@ import kotlinx.coroutines.launch
  * sul PC si aggiunge un'azione, qui compare da sola — senza una versione nuova
  * dell'app.
  */
+private const val GIORNO = 24L * 60 * 60 * 1000
+
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
@@ -130,8 +132,19 @@ class MainActivity : AppCompatActivity() {
         }
 
         binding.bottomBar.setOnItemSelectedListener { voce ->
-            if (voce.itemId == R.id.nav_stato) mostraStato() else rinfresca()
+            when (voce.itemId) {
+                R.id.nav_stato -> mostraStato()
+                R.id.nav_aggiorna -> cercaAggiornamento(dilloSempre = true)
+                else -> rinfresca()
+            }
             true
+        }
+
+        // Un giro all'avvio, ma non più di uno al giorno e in silenzio se non
+        // c'è niente: è l'unica cosa che questa app manda fuori dalla tua rete,
+        // e non deve diventare un pettegolezzo continuo.
+        if (System.currentTimeMillis() - Store.ultimoControlloAgg(this) > GIORNO) {
+            cercaAggiornamento(dilloSempre = false)
         }
 
         // Se c'è un accoppiamento salvato, riparte da lì.
@@ -536,6 +549,89 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /* ------------------------------------------------- aggiornare l'app */
+
+    /**
+     * Cerca una versione nuova.
+     *
+     * `dilloSempre` è la differenza fra il giro automatico e il tasto: premendo
+     * **Aggiorna** si vuole una risposta comunque, anche «sei già a posto»;
+     * all'avvio no, o sarebbe un messaggio a ogni apertura.
+     */
+    private fun cercaAggiornamento(dilloSempre: Boolean) {
+        if (dilloSempre) avvisa(getString(R.string.agg_cerco))
+        lifecycleScope.launch {
+            Store.segnaControlloAgg(this@MainActivity)
+            when (val esito = Aggiornamenti.cerca(this@MainActivity)) {
+                is Aggiornamenti.Esito.GiaAggiornata -> {
+                    binding.bannerAggiornamento.visibility = View.GONE
+                    if (dilloSempre) avvisa(getString(R.string.agg_a_posto, esito.versione))
+                }
+
+                is Aggiornamenti.Esito.NonSiSa ->
+                    if (dilloSempre) avvisa(esito.perche)
+
+                is Aggiornamenti.Esito.CeNeUnaNuova -> {
+                    binding.bannerAggiornamento.text = getString(R.string.agg_banner, esito.versione)
+                    binding.bannerAggiornamento.visibility = View.VISIBLE
+                    binding.bannerAggiornamento.setOnClickListener { proponi(esito) }
+                    if (dilloSempre) proponi(esito)
+                }
+            }
+            binding.bottomBar.selectedItemId = R.id.nav_richieste
+        }
+    }
+
+    private fun proponi(nuova: Aggiornamenti.Esito.CeNeUnaNuova) {
+        AlertDialog.Builder(this)
+            .setTitle(getString(R.string.agg_trovata, nuova.versione))
+            .setMessage(
+                buildString {
+                    append(nuova.note.ifBlank { "Una versione nuova dell'app." })
+                    append("\n\n")
+                    append(pesa(nuova.bytes))
+                },
+            )
+            .setPositiveButton(R.string.agg_scarica) { _, _ -> scarica(nuova) }
+            .setNegativeButton(R.string.agg_dopo, null)
+            .show()
+    }
+
+    private fun scarica(nuova: Aggiornamenti.Esito.CeNeUnaNuova) {
+        // Il permesso si chiede **prima** di scaricare sei megabyte, non dopo.
+        if (!Aggiornamenti.puoInstallare(this)) {
+            AlertDialog.Builder(this)
+                .setMessage(R.string.agg_permesso)
+                .setPositiveButton(R.string.agg_vai) { _, _ ->
+                    Aggiornamenti.chiediDiPoterInstallare(this)
+                }
+                .setNegativeButton(R.string.agg_dopo, null)
+                .show()
+            return
+        }
+        avvisa("Scarico la ${nuova.versione}…")
+        lifecycleScope.launch {
+            try {
+                var ultimoDetto = 0
+                Aggiornamenti.scaricaEInstalla(this@MainActivity, nuova) { percento ->
+                    // Un avviso ogni quarto, non cento: sarebbero cento toast.
+                    if (percento >= ultimoDetto + 25 && percento < 100) {
+                        ultimoDetto = percento
+                        runOnUiThread { avvisa("$percento%") }
+                    }
+                }
+            } catch (e: Exception) {
+                avvisa(e.message ?: "Non sono riuscito a scaricarla.")
+            }
+        }
+    }
+
+    private fun pesa(b: Long): String = when {
+        b >= 1_048_576 -> String.format(java.util.Locale.ITALIAN, "%.1f MB", b / 1_048_576.0)
+        b > 0 -> "${b / 1024} KB"
+        else -> ""
+    }
+
     /* ------------------------------------------------------------- lo stato */
 
     private fun aggiornaTestata() {
@@ -554,6 +650,7 @@ class MainActivity : AppCompatActivity() {
             appendLine("Indirizzo: ${Store.host(this@MainActivity) ?: "—"}")
             appendLine("Questo telefono: ${Store.nome(this@MainActivity)}")
             appendLine("Ruolo: ${if (Store.ePadrone(this@MainActivity)) "padrone" else "ospite"}")
+            appendLine("Versione dell'app: ${Aggiornamenti.versioneInstallata(this@MainActivity)}")
             appendLine()
             appendLine(if (raggiungibile) "Il PC risponde." else "Il PC non risponde adesso.")
             if (inCoda > 0) appendLine("$inCoda richieste aspettano qui sul telefono.")

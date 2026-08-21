@@ -10,6 +10,49 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ---
 
+## 0.5.2 — L'app del telefono si aggiorna da sola
+
+**22 agosto 2026.** Chiesto da Cammo: «fai in modo che anche l'app abbia un menu
+per aggiornarsi da sola».
+
+In fondo all'app c'è un terzo tasto, **Aggiorna**. Lo premi, lei guarda se su
+GitHub c'è una versione nuova, ti fa vedere cosa cambia, e se dici di sì la
+scarica e la installa. Come fa già la suite sul PC, che si aggiorna da sé dalla
+0.1.0.
+
+Guarda anche da sola, ma **una volta al giorno al massimo e in silenzio**: se
+non c'è niente non dice niente, se c'è compare una riga in cima che puoi
+premere. Non è un'app che ti tira per la manica.
+
+⚠ **È l'unica cosa che l'app manda fuori dalla tua rete**, ed è una domanda
+senza niente dentro: «qual è l'ultima versione?». Tutto il resto — richieste,
+risultati, notifiche — resta fra il telefono e il tuo computer, come prima.
+
+### Perché serviva anche una chiave
+
+Android rifiuta di aggiornare un'app se la **firma** non combacia con quella già
+installata. Finora l'APK era firmato con la chiave di *debug*, che ogni computer
+si genera per conto suo — e il computer che costruisce le Release pure. Ogni
+versione aveva una firma diversa, quindi un aggiornamento automatico non avrebbe
+potuto funzionare: avrebbe dato un generico «App non installata», e basta.
+
+Adesso c'è una chiave stabile nel repository (`apps/mobile/firma-sideload.jks`),
+con la sua password scritta lì accanto. **Non è un segreto e non deve esserlo**:
+serve solo a far combaciare le firme fra una versione e l'altra. Non protegge da
+niente — chiunque potrebbe firmare un finto «DaProd Suite» — ma poteva già farlo
+prima con la chiave di debug, che è pubblica e uguale per tutti. Non aggiunge un
+rischio, toglie un fastidio.
+
+> ⚠ **Un'ultima volta bisogna disinstallare.** L'APK della 0.5.1 era firmato con
+> la vecchia chiave, questo con quella nuova: Android non le fa combaciare.
+> Disinstalla l'app e reinstalla la 0.5.2 dalla Release. **Da qui in poi gli
+> aggiornamenti si fanno da soli** e questo non succede più.
+
+Se il telefono non ti lascia installare, l'app ti porta lei nella schermata
+giusta: è un permesso che su Android si concede una volta sola.
+
+---
+
 ## 0.5.1 — L'indirizzo giusto, e il QR al primo click
 
 **22 agosto 2026.** La 0.5.0 non funzionava, e per due motivi che si sommavano.

@@ -8,6 +8,9 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <!-- Le notifiche quando un lavoro finisce. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Per installare l'aggiornamento dell'app che si scarica da sola.
+         Su Android 8 e oltre va comunque concesso a mano una volta sola. -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <!-- Camera per inquadrare il QR. -->
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-feature android:name="android.hardware.camera" android:required="true" />
@@ -28,6 +31,19 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Il modo di passare l'APK scaricato all'installatore di Android:
+             da Android 7 un file non si consegna più come percorso. Espone una
+             cartella sola, quella degli aggiornamenti. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.file"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/percorsi_file" />
+        </provider>
 
         <!-- Lo scanner del QR: un'activity della libreria zxing. -->
         <activity
