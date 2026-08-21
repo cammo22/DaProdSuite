@@ -138,6 +138,28 @@ function lms(): string | null {
 export const puoiCaricare = (): boolean => lms() !== null;
 
 /**
+ * Quanto si aspetta `lms`, prima di considerarlo piantato.
+ *
+ * **Non sono numeri di prudenza, sono la toppa a un guasto vero.** `capture`
+ * senza `timeoutMs` aspetta per sempre, e queste tre chiamate stanno *dentro* al
+ * percorso di «Genera» di DaProdMusica, DaProdFoto e DaProdCinema: se `lms` non
+ * risponde — LM Studio chiuso a metà, il suo servizio che non riparte, il
+ * comando che aspetta qualcosa in una console che non c'è — il tasto Genera
+ * resta premuto e non succede mai niente. Nessun errore, nessun lavoro in coda,
+ * nessun modo di accorgersene: «quando mando a generare non va mai avanti».
+ *
+ * Scaduto il tempo, `run` ammazza il processo e la promessa si rompe: chi
+ * chiama prende l'errore, lo ignora e va avanti a generare. Al massimo si genera
+ * con la scheda meno libera del previsto, che è molto meglio di non generare.
+ *
+ * `ps` è una domanda e deve costare poco; `unload` scrive e può prendersi
+ * qualche secondo in più; `load` legge dei GB dal disco e ha un tempo suo.
+ */
+const ATTESA_PS_MS = 8_000;
+const ATTESA_UNLOAD_MS = 30_000;
+const ATTESA_LOAD_MS = 10 * 60_000;
+
+/**
  * Gli id che `lms ps` elenca come in memoria, o null se il comando non c'è.
  *
  * Si legge l'uscita così com'è invece di analizzarla colonna per colonna: le
@@ -148,7 +170,7 @@ async function caricatiSecondoLms(): Promise<string[] | null> {
   const exe = lms();
   if (!exe) return null;
   try {
-    const uscita = await capture(exe, ["ps"]);
+    const uscita = await capture(exe, ["ps"], { timeoutMs: ATTESA_PS_MS });
     return uscita
       .split(/\r?\n/)
       .filter((riga) => riga.trim() && !/^IDENTIFIER/i.test(riga.trim()))
@@ -170,15 +192,11 @@ export async function caricaModello(id: string, contesto: number): Promise<strin
   const exe = lms();
   if (!exe) return "Non trovo il comando di LM Studio: caricalo dalla sua finestra.";
   try {
-    await capture(exe, [
-      "load",
-      id,
-      "--context-length",
-      String(contesto),
-      "--gpu",
-      "max",
-      "--yes",
-    ]);
+    await capture(
+      exe,
+      ["load", id, "--context-length", String(contesto), "--gpu", "max", "--yes"],
+      { timeoutMs: ATTESA_LOAD_MS },
+    );
     nostro = id;
     return null;
   } catch (err) {
@@ -190,7 +208,7 @@ export async function scaricaModello(id: string): Promise<string | null> {
   const exe = lms();
   if (!exe) return "Non trovo il comando di LM Studio: scaricalo dalla sua finestra.";
   try {
-    await capture(exe, ["unload", id]);
+    await capture(exe, ["unload", id], { timeoutMs: ATTESA_UNLOAD_MS });
     if (nostro === id) nostro = null;
     return null;
   } catch (err) {

@@ -58,6 +58,29 @@ export function legaValore(id, uscita, formato = (v) => v) {
 }
 
 /**
+ * Il tasto si spegne e racconta cosa sta facendo.
+ *
+ * Fra il clic su «Crea» e il brano che entra davvero in coda passano dei
+ * secondi in cui non si vede niente: si spegne il modello che scrive in LM
+ * Studio, si svuota la scheda video, si manda la copertina. Finché quel tratto
+ * è muto, un tasto lento e un tasto rotto sono indistinguibili — e chi ripreme
+ * non recupera un clic perso, ne mette in coda un secondo.
+ *
+ * È lo stesso `occupa`/`libera` di DaProdFoto e DaProdCinema.
+ */
+export function occupa(bottone, testo) {
+  bottone.disabled = true;
+  bottone.dataset.prima = bottone.dataset.prima || bottone.textContent;
+  bottone.textContent = testo;
+}
+
+/** Lo rimette com'era. */
+export function libera(bottone) {
+  bottone.disabled = false;
+  if (bottone.dataset.prima) bottone.textContent = bottone.dataset.prima;
+}
+
+/**
  * Dice cosa è andato storto, dove l'utente sta guardando.
  *
  * Porta anche alla scheda Crea: il riquadro rosso sta lì, e un errore mostrato
