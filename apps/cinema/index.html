@@ -4,13 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <!--
-  Le stesse regole di DaProdFoto e DaProdMusica, con una aggiunta: `media-src`.
-  Qui i risultati sono video, e vanno guardati due volte — nell'anteprima della
-  riga e nel montaggio finale — sia dal motore su 127.0.0.1 sia dalla libreria
-  attraverso lo schema `daprod:`. Senza, i video non partono e non lo dicono.
+  Le stesse regole di DaProdFoto e DaProdMusica, con due aggiunte che qui
+  servono: `media-src` e `blob:` fra le immagini.
 
-  `connect-src` comprende `daprod:` perché il montaggio rilegge il brano dalla
-  libreria per rimandarlo dentro al motore.
+  I risultati sono video, e vanno guardati sia dal motore su 127.0.0.1 sia dalla
+  libreria attraverso lo schema `daprod:` — senza `media-src` non partono e non
+  lo dicono. `blob:` invece serve alle anteprime dei riferimenti: un file appena
+  scelto dal disco si mostra da un URL `blob:` prima ancora di essere caricato
+  nel motore.
 -->
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
@@ -29,95 +30,122 @@
 
 <header>
   <div class="logo">DaProd<span>Cinema</span></div>
-  <div class="stato">
+  <div class="status">
     <div class="mods" id="mods"></div>
     <span class="dot" id="dot"></span><span id="statusTxt">connessione…</span>
   </div>
 </header>
 
-<main>
-  <div class="two">
-    <!-- Colonna di sinistra: da cosa si parte e come deve venire. -->
-    <div>
-      <div class="panel">
-        <h2>Il brano</h2>
-        <div class="row">
-          <div class="field" style="flex:1">
-            <label>Da quale canzone</label>
-            <select id="brano"></select>
-          </div>
-          <div class="field">
-            <label>Dura</label>
-            <div class="inline"><b id="durataBrano">—</b>
-              <button class="mini" id="ricaricaBrani" title="rileggi la libreria">↻</button></div>
-          </div>
-        </div>
-        <div class="field">
-          <label>Il testo, con i suoi tag di sezione</label>
-          <textarea id="testoBrano" rows="8" placeholder="[Verse]&#10;…"></textarea>
-          <div class="hint">È da qui che esce la scaletta: <b>[Intro]</b>, <b>[Verse]</b>,
-            <b>[Chorus]</b>… Se il brano viene da DaProdMusica il testo è già suo, e
-            correggerlo qui cambia solo il video.</div>
-        </div>
-      </div>
+<!-- Il modello sta qui sopra, fuori da tutto il resto: è la scelta che decide
+     cosa si può dare in pasto (due fotogrammi o dei riferimenti), quanto può
+     durare la clip e quanti passi ci vogliono. In mezzo ai parametri vorrebbe
+     dire scoprire a metà pagina che i riquadri di sopra sono cambiati. -->
+<section class="barra-modello">
+  <label for="modello">Modello</label>
+  <select id="modello"></select>
+  <span class="hint" id="rigaModello"></span>
+</section>
+<div id="avvisoModello" class="manca" hidden></div>
 
-      <div class="panel">
-        <h2>Come deve venire</h2>
-        <div class="field">
-          <label>Look — l'identità visiva, uguale in tutte le inquadrature</label>
-          <select id="estetica"></select>
-          <textarea id="look" rows="2"></textarea>
-          <div class="hint">In inglese, e concreto: una pellicola, un'ora del giorno, un posto.
-            «cinematic, high quality» non vuol dire niente e ogni clip se lo interpreta a modo suo.</div>
-        </div>
-        <div class="row">
-          <div class="field">
-            <label>Modello</label>
-            <select id="modello"></select>
-            <div class="hint" id="rigaModello"></div>
-            <div class="hint" id="mancaModello" hidden></div>
-          </div>
-          <div class="field">
-            <label>Misura</label>
-            <select id="misura"></select>
-          </div>
-          <div class="field">
-            <label>Passi <span class="rangeval" id="passiVal">30</span></label>
-            <input type="range" id="passi" min="6" max="40" step="1" value="30">
-          </div>
-        </div>
-        <label class="switch"><input type="checkbox" id="continuita" checked>
-          Attacca le inquadrature: l'ultimo fotogramma di una è il primo della successiva</label>
-        <div class="hint">Spegnerlo rende ogni clip indipendente — più varia, meno un video solo.</div>
-      </div>
+<section class="tab on">
+ <div class="two">
+  <div>
+    <div class="panel">
+      <h2>Cosa vuoi vedere</h2>
+      <!-- Le pastiglie sono tue: il "+" ne aggiunge una, il tasto destro su una
+           di quelle che ci sono la modifica o la cancella. Le disegna il pezzo
+           comune in packages/ui, lo stesso di DaProdFoto e DaProdMusica. -->
+      <div class="chips" id="proposte"></div>
+      <textarea id="prompt" rows="4" placeholder="Es. an old car parked on an empty coastal road at sunset, slow push in"></textarea>
+      <div class="hint">In inglese, e <b>di' anche cosa fa la camera</b>: questi modelli il
+        movimento lo prendono da lì. «slow push in», «static wide shot», «handheld follow»
+        valgono più di dieci aggettivi. Il suono lo fanno da soli, e anche quello si può
+        chiedere a parole: «rain on umbrellas», «distant waves».</div>
     </div>
 
-    <!-- Colonna di destra: cosa verrà girato, e a che punto siamo. -->
-    <div>
-      <div class="panel">
-        <h2>La scaletta
-          <span class="right"><b id="quante">0</b> inquadrature · <b id="totale">0:00</b></span>
-        </h2>
-        <div class="scaletta" id="scaletta"></div>
+    <!-- Da dove parte, o i riferimenti: due pannelli diversi nello stesso posto,
+         perché è la stessa domanda fatta a due modelli che rispondono diverso.
+         Il titolo e il contenuto li scrive riferimenti.js. -->
+    <div class="panel">
+      <h2 id="titoloIngressi">Da dove parte</h2>
+      <div id="ingressi"></div>
+    </div>
+
+    <!-- Il tasto sta sopra la resa, non in fondo alla colonna: quello che si fa
+         quasi sempre è scrivere e premere, e le manopole si toccano una volta
+         ogni tanto. -->
+    <button class="btn wide" id="genera" style="margin-top:16px" disabled>Genera</button>
+    <div id="errore" class="err" style="display:none"></div>
+
+    <div class="panel">
+      <h2>Resa <span class="right"><button class="mini" id="toggleAdv">avanzati</button></span></h2>
+      <div class="resa">
+        <div class="voce">
+          <label>Durata <span class="rangeval" id="durataVal">5,04 s</span></label>
+          <input type="range" id="durata" min="2" max="10" step="1" value="5">
+        </div>
+        <div class="voce">
+          <label for="estetica">Estetica</label>
+          <select id="estetica"></select>
+        </div>
+        <div class="voce corta">
+          <label for="quante">Quanti</label>
+          <input type="number" id="quante" value="1" min="1" max="4">
+        </div>
+      </div>
+      <div class="resa">
+        <!-- Formato e risoluzione a pulsanti, come in DaProdFoto: sono sette
+             scelte in tutto, e in un menu costavano due clic per vederne una.
+             I pixel veri stanno scritti accanto, con quanto costano rispetto
+             al 480 — perché "1080p" non dice quanto ci mette. -->
+        <div class="voce larga">
+          <label>Formato <span class="misura" id="misura"></span></label>
+          <div class="gruppo">
+            <div class="serie" id="formati"></div>
+            <div class="serie" id="risoluzioni"></div>
+          </div>
+        </div>
       </div>
 
-      <div class="panel">
-        <h2>Gira</h2>
-        <div class="bar"><i class="p1" id="avanzamento" style="width:0%"></i></div>
-        <div class="hint" id="passoOra">Scegli un brano e premi Gira.</div>
-        <div style="margin-top:14px; display:flex; gap:10px">
-          <button class="btn wide" id="gira">Gira</button>
-          <button class="btn wide" id="ferma" disabled style="max-width:150px">Ferma</button>
-          <button class="btn wide cyan" id="monta" disabled style="max-width:180px">Monta il video</button>
+      <div id="avanzati" hidden>
+        <div class="resa">
+          <div class="voce">
+            <label>Passi <span class="rangeval" id="passiVal">8</span></label>
+            <input type="range" id="passi" min="4" max="20" step="1" value="8">
+            <div class="hint" id="notaPassi"></div>
+          </div>
         </div>
-        <div class="hint">Una clip per volta, in fila: sono minuti a inquadratura.
-          «Ferma» non butta via niente — «Gira» riprende da dove eravamo.</div>
-        <div class="manca" id="error" hidden></div>
-        <div class="finale" id="finale" hidden></div>
+        <div class="resa">
+          <!-- Larga: un seed sono dieci cifre, e nella casella stretta non se ne
+               vedono tre — cioè non serve a niente averlo. -->
+          <div class="voce seed">
+            <label for="seed">Seed</label>
+            <div class="inline"><input type="number" id="seed" min="0"><button class="mini" id="dado">&#127922;</button></div>
+          </div>
+          <label class="switch"><input type="checkbox" id="seedCasuale" checked> Seed casuale a ogni video</label>
+        </div>
+        <div class="voce">
+          <label for="negativo">Cosa non vuoi vedere</label>
+          <textarea id="negativo" rows="2"></textarea>
+          <div class="hint" id="notaNegativo"></div>
+        </div>
       </div>
     </div>
   </div>
-</main>
+
+  <div>
+    <div class="panel sticky">
+      <h2>Sessione
+        <span class="right">
+          <button class="mini" id="stop">interrompi</button>
+          <button class="mini danger" id="svuota">svuota coda</button>
+        </span>
+      </h2>
+      <div id="sessione" class="tracks"></div>
+    </div>
+  </div>
+ </div>
+</section>
 
 <script type="module" src="src/avvio.js"></script>
 </body>

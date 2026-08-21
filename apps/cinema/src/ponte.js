@@ -2,8 +2,8 @@
  * Tutto quello che sta fuori da questa pagina: il motore e la suite.
  *
  * È il gemello di `apps/foto/src/ponte.js` — stesso motore, stessa libreria —
- * meno il ritocco e più due cose che servono solo qui: caricare **video e
- * audio** dentro al motore, e leggere l'ultimo fotogramma di una clip.
+ * meno il ritocco e più una cosa che serve solo qui: caricare dentro al motore
+ * anche **video e audio**, e non solo immagini.
  */
 
 const suite = window.daprodSuite;
@@ -40,11 +40,20 @@ export async function invia(grafo) {
     body: JSON.stringify({ prompt: grafo, client_id: CLIENTE }),
   });
   const esito = await risposta.json();
-  if (!risposta.ok) throw new Error(JSON.stringify(esito.node_errors ?? esito.error ?? esito, null, 1));
+  if (!risposta.ok) {
+    throw new Error(JSON.stringify(esito.node_errors ?? esito.error ?? esito, null, 1));
+  }
   return esito.prompt_id;
 }
 
 export const interrompi = () => fetch(`${motore}/interrupt`, { method: "POST" });
+
+export const togliDallaCoda = (id) =>
+  fetch(`${motore}/queue`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ delete: [id] }),
+  });
 
 export async function svuotaCoda() {
   await fetch(`${motore}/queue`, {
@@ -53,6 +62,11 @@ export async function svuotaCoda() {
     body: JSON.stringify({ clear: true }),
   });
   await interrompi();
+}
+
+export async function lavoriVivi() {
+  const q = await (await fetch(`${motore}/queue`, { cache: "no-store" })).json();
+  return new Set([...(q.queue_running || []), ...(q.queue_pending || [])].map((x) => x[1]));
 }
 
 export async function risultati(id) {
@@ -76,10 +90,15 @@ export function vista(file) {
 /**
  * Mette un file dentro al motore, e torna il nome con cui il grafo lo ritrova.
  *
- * `/upload/image` si chiama così per ragioni storiche ma accetta qualunque
- * file e lo scrive nella cartella `input`: è da lì che `LoadVideo` e `LoadAudio`
- * pescano, e il montaggio finale ha bisogno di tutte e due — le clip appena
- * girate e il brano su cui vanno.
+ * `/upload/image` si chiama così per ragioni storiche ma accetta qualunque file
+ * e lo scrive nella cartella `input`: è da lì che `LoadImage`, `LoadVideo` e
+ * `LoadAudio` pescano, e i riferimenti di MiniMax H3 sono tutte e tre le cose.
+ *
+ * Il nome torna con la sottocartella davanti (`daprodcinema/xyz.png`), e va
+ * bene: quei tre nodi hanno un `validate_inputs` loro che controlla se il file
+ * **esiste**, invece del controllo di serie che pretende un nome preso da un
+ * elenco. Senza quello, un file appena caricato in una sottocartella verrebbe
+ * rifiutato con «Value not in list».
  */
 export async function carica(blob, nome, sottocartella = "daprodcinema") {
   const modulo = new FormData();
@@ -92,13 +111,6 @@ export async function carica(blob, nome, sottocartella = "daprodcinema") {
 
   const esito = await risposta.json();
   return esito.subfolder ? `${esito.subfolder}/${esito.name}` : esito.name;
-}
-
-/** Scarica dal motore un file che ha appena prodotto, per rimandarglielo dentro. */
-export async function leggi(file) {
-  const risposta = await fetch(vista(file));
-  if (!risposta.ok) throw new Error(`Non riesco a rileggere ${file.filename}.`);
-  return risposta.blob();
 }
 
 export async function modelliInVram() {
@@ -117,11 +129,10 @@ export const scaricaDallaVram = (nome) =>
   });
 
 /**
- * Toglie tutto dalla VRAM prima di cominciare a girare.
+ * Toglie tutto dalla VRAM prima di chiedere un video.
  *
- * Qui conta più che altrove: un video sono diciassette lavori di fila, e se il
- * primo parte con la scheda mezza occupata da un modello di un'altra app non
- * fallisce il primo — falliscono tutti e diciassette, uno dopo l'altro.
+ * Qui conta più che altrove: vedi `memoria.js`. Un modello di un'altra app
+ * rimasto in memoria non rallenta la generazione, la fa fallire a metà.
  */
 export const svuotaVram = () =>
   fetch(`${motore}/daprod/scarica`, {
@@ -135,15 +146,12 @@ export const liberaMemoriaLlm = () => suite.llm.liberaMemoria();
 
 /* ---------------------------------------------------------------- libreria */
 
-/** I brani da cui si parte: quelli di DaProdMusica, e qualunque altro audio. */
-export const brani = () => suite.libreria.elenco({ tipo: "audio" });
 export const video = () => suite.libreria.elenco({ tipo: "video", app: "cinema" });
 export const scriviMeta = (id, meta) => suite.libreria.meta(id, meta);
 export const mostraNellaCartella = (id) => suite.libreria.mostraNellaCartella(id);
 export const suLibreriaCambiata = (azione) => suite.libreria.onCambiata(azione);
-export const suConsegna = (azione) => suite.onConsegna(azione);
 
-/* ---------------------------------------------------------------- modelli */
+/* ----------------------------------------------------------------- modelli */
 
 export const statoModelli = (ids) => suite.modelli.stato(ids);
 export const scaricaModelli = (ids) => suite.modelli.scarica(ids);

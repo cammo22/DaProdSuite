@@ -1,136 +1,315 @@
 /**
- * Aspettare il motore, un lavoro per volta.
+ * I lavori in corso, e i video che ne escono.
  *
- * **Perché uno per volta e non tutti in coda.** DaProdMusica e DaProdFoto
- * mandano al motore tutto quello che chiedi e lasciano che se la sbrighi lui:
- * lì i lavori sono indipendenti, e otto immagini in coda sono otto immagini.
- * Qui no. Le inquadrature sono una catena — l'ultimo fotogramma di una è il
- * primo della successiva — e la seconda non si può nemmeno costruire prima che
- * la prima sia finita.
+ * È il gemello di `apps/foto/src/coda.js` con due aggiunte che qui servono e lì
+ * no, e tutte e due per la stessa ragione: **una clip sono minuti, non secondi.**
  *
- * E anche se si potesse: diciassette lavori video insieme su una scheda da 8 GB
- * non sono più veloci, sono la stessa cosa più il rischio che a metà finisca la
- * memoria. Una per volta vuol dire anche che «Ferma» ferma davvero, e che
- * riprendere da dove si era rimasti è possibile.
+ * 1. **La barra sa a che punto è.** Con `FASI` si traduce «sta lavorando il nodo
+ *    6» in «genero il movimento», e si sa che quel nodo occupa dal 14% all'85%
+ *    del lavoro. Senza, la barra starebbe ferma per minuti e poi salterebbe alla
+ *    fine, che è il modo più veloce di far credere che sia tutto piantato.
+ * 2. **Il risultato resta qui sotto.** Un video finito si guarda dove lo si è
+ *    chiesto, non in un'altra scheda: sotto ai lavori in corso c'è la fila di
+ *    quelli usciti, con i comandi del lettore.
  *
- * Questo modulo è il pezzo che traduce i messaggi del motore in una promessa:
- * `attendi(id)` finisce quando quel lavoro è finito, o si rompe se si rompe.
+ * Il riallineamento è quello di DaProdFoto, parola per parola nel senso che
+ * conta: un lavoro che non è più nella coda del motore può essere *finito*, non
+ * solo sparito, e il messaggio che lo racconta viaggia su un WebSocket che ogni
+ * tanto si riapre. Prima di buttarlo si guarda la cronologia; se ha prodotto un
+ * file, lo si conclude come se il messaggio fosse arrivato.
  */
 
+import { durata, el, escapeHtml } from "./dom.js";
 import { FASI } from "./grafi.js";
+import * as ponte from "./ponte.js";
 
-/** I messaggi che dicono com'è andata, e che quindi non si possono perdere. */
-const ATTESI = new Set(["executed", "execution_error", "execution_interrupted", "executing"]);
+const lavori = new Map();
+let ordine = [];
+/** I video usciti in questa sessione, il più recente per primo. */
+let fatti = [];
+let ultimoDisegno = "";
 
-/** I lavori che stiamo aspettando, per prompt_id. */
-const attese = new Map();
+const lavoro = (id) => lavori.get(id);
+const inCorso = () => ordine.map(lavoro).find((l) => l && l.stato === "in-corso");
 
-/**
- * I messaggi arrivati **prima** che ci mettessimo in ascolto.
- *
- * C'è una corsa, ed è reale anche se stretta: `invia` manda il grafo con una
- * POST, e `attendi` può registrarsi solo dopo che quella POST ha risposto con
- * l'id. Il motore però comincia a lavorare — e a parlare sul WebSocket — appena
- * riceve il grafo, non appena il client legge la risposta. Un lavoro corto può
- * finire in quella finestra, e allora la promessa non si scioglie più e l'app
- * resta ferma per sempre su un lavoro che è già andato a buon fine.
- *
- * Qui i messaggi di un id sconosciuto si tengono da parte invece di buttarli, e
- * `attendi` se li rigioca appena si registra.
- */
-const anticipati = new Map();
-
-/** Chi vuole sapere a che punto è: lo chiama la pagina per disegnare la barra. */
-let osservatore = () => {};
-
-export function guarda(azione) {
-  osservatore = azione;
+export function aggiungiLavoro(id, descrizione, meta) {
+  lavori.set(id, {
+    id,
+    descrizione,
+    meta,
+    stato: "in-attesa",
+    avanzamento: 0,
+    passo: "in coda",
+    inizio: null,
+  });
+  ordine.push(id);
+  disegnaSessione();
 }
 
-/**
- * Una promessa che si scioglie quando quel lavoro è finito.
- *
- * Torna i file prodotti, nella forma in cui li dà ComfyUI. Se il motore manda
- * un errore per quel lavoro, la promessa si rompe con il testo dell'errore: è
- * quello che l'utente deve leggere, non un "non ha funzionato".
- */
-export function attendi(promptId) {
-  return new Promise((risolvi, rifiuta) => {
-    attese.set(promptId, { risolvi, rifiuta, uscite: {} });
-    // Quello che era arrivato mentre non guardavamo, nell'ordine in cui è
-    // arrivato: fra questi può esserci già la fine del lavoro.
-    const arretrati = anticipati.get(promptId);
-    if (!arretrati) return;
-    anticipati.delete(promptId);
-    for (const messaggio of arretrati) messaggioDalMotore(messaggio);
+function togliLavoro(id) {
+  lavori.delete(id);
+  ordine = ordine.filter((x) => x !== id);
+  disegnaSessione();
+}
+
+/* ------------------------------------------------------------- il pannello */
+
+export function disegnaSessione() {
+  const attivi = ordine.map(lavoro).filter(Boolean);
+
+  let html = attivi.length
+    ? attivi.map(riquadro).join("")
+    : `<div class="empty">Niente in lavorazione. Scrivi cosa vuoi vedere e premi <b>Genera</b>.</div>`;
+
+  if (fatti.length) html += fatti.map(riquadroFatto).join("");
+
+  // Ridisegnare un HTML identico farebbe ripartire i video da capo a ogni
+  // secondo: qui dentro si passa una volta al secondo, per far scorrere i tempi.
+  if (html === ultimoDisegno) return;
+  ultimoDisegno = html;
+  el.sessione.innerHTML = html;
+
+  el.sessione.querySelectorAll("[data-annulla]").forEach((b) => {
+    b.onclick = () => void annulla(b.dataset.annulla);
+  });
+  el.sessione.querySelectorAll("[data-cartella]").forEach((b) => {
+    b.onclick = () => ponte.mostraNellaCartella(b.dataset.cartella);
   });
 }
 
-/** Smette di aspettare tutto: lo chiama «Ferma». */
-export function lasciaPerdere() {
-  for (const { rifiuta } of attese.values()) rifiuta(new Error("fermato"));
-  attese.clear();
-  anticipati.clear();
+/** Forza il prossimo disegno anche se l'HTML non è cambiato. */
+export function scordaDisegno() {
+  ultimoDisegno = "";
 }
 
 /**
- * Un messaggio dal motore.
+ * Un lavoro in corso.
  *
- * ComfyUI parla per eventi, e i tre che contano sono `executing` (sto lavorando
- * su questo nodo), `progress` (a che punto è il nodo lungo) ed `executed` (ecco
- * cosa è uscito). La fine di un lavoro si riconosce da `executing` con `node`
- * nullo: è il modo in cui ComfyUI dice «ho finito», e non c'è un evento più
- * esplicito di così.
+ * La riga sotto dice **quanto è passato** e, quando c'è abbastanza avanzamento
+ * per non mentire, quanto manca. Sotto il 5% la stima è un numero inventato e
+ * non si scrive: su un lavoro da dieci minuti sbagliare all'inizio vuol dire
+ * scrivere «due minuti» a chi ne aspetterà dodici.
  */
-export function messaggioDalMotore(messaggio) {
-  const { type, data } = messaggio;
-  const attesa = data?.prompt_id ? attese.get(data.prompt_id) : null;
+function riquadro(l) {
+  const corre = l.stato === "in-corso";
+  const secondi = l.inizio ? Math.floor((Date.now() - l.inizio) / 1000) : 0;
+  const restano = corre && l.avanzamento > 0.05 ? Math.round(secondi / l.avanzamento - secondi) : null;
 
-  // Un messaggio con un id che non stiamo (ancora) aspettando: se è uno di
-  // quelli che raccontano la sorte del lavoro, si mette da parte. `progress` e
-  // gli altri no — servono solo a muovere la barra, e una barra vecchia di
-  // mezzo secondo non serve a nessuno.
-  if (!attesa && data?.prompt_id && ATTESI.has(type)) {
-    if (!anticipati.has(data.prompt_id)) anticipati.set(data.prompt_id, []);
-    anticipati.get(data.prompt_id).push(messaggio);
-    return;
-  }
+  const sotto = corre
+    ? `${escapeHtml(l.passo)} &middot; ${durata(secondi)}${restano !== null ? ` &middot; ~${durata(restano)} alla fine` : ""}`
+    : "in attesa";
 
-  if (type === "executed" && attesa) {
-    // Le uscite arrivano nodo per nodo: si tengono tutte, e chi aspetta
-    // sceglierà quella che gli serve.
-    Object.assign(attesa.uscite, { [data.node]: data.output });
-    return;
-  }
+  return `<div class="track">
+    <div class="thumb shimmer"></div>
+    <div class="tmeta">
+      <div class="tt">${escapeHtml(l.descrizione)}</div>
+      <div class="tsub">${sotto}</div>
+      <div class="bar"><i class="p1" style="width:${(l.avanzamento * 100).toFixed(1)}%"></i></div>
+    </div>
+    <div class="tact"><button class="del" data-annulla="${escapeHtml(l.id)}" title="annulla">&#10005;</button></div>
+  </div>`;
+}
 
-  if (type === "execution_error" && attesa) {
-    attese.delete(data.prompt_id);
-    attesa.rifiuta(new Error(data.exception_message || "il motore si è fermato"));
-    return;
-  }
+/** Un video uscito: si guarda, si sente, e si trova sul disco. */
+function riquadroFatto(v) {
+  return `<div class="uscito">
+    <video src="${escapeHtml(v.url)}" controls preload="metadata" playsinline></video>
+    <div class="sotto">
+      <div class="tt" title="${escapeHtml(v.descrizione)}">${escapeHtml(v.descrizione)}</div>
+      <div class="tsub">${escapeHtml(v.riga)}</div>
+      ${v.id ? `<button class="mini" data-cartella="${escapeHtml(v.id)}">mostra nella cartella</button>` : ""}
+    </div>
+  </div>`;
+}
 
-  if (type === "execution_interrupted" && attesa) {
-    attese.delete(data.prompt_id);
-    attesa.rifiuta(new Error("fermato"));
-    return;
-  }
+async function annulla(id) {
+  const l = lavoro(id);
+  if (!l) return;
+  if (l.stato === "in-corso") await ponte.interrompi();
+  else await ponte.togliDallaCoda(id);
+  togliLavoro(id);
+}
 
-  if (type === "executing") {
-    if (data.node === null && attesa) {
-      attese.delete(data.prompt_id);
-      attesa.risolvi(attesa.uscite);
-      return;
+/* ------------------------------------------------ quello che dice il motore */
+
+export function messaggioDalMotore(msg) {
+  const d = msg.data || {};
+  const l = d.prompt_id ? lavoro(d.prompt_id) : null;
+
+  switch (msg.type) {
+    case "execution_start":
+      if (l) {
+        l.stato = "in-corso";
+        l.inizio = Date.now();
+        l.passo = "avvio";
+        disegnaSessione();
+      }
+      break;
+
+    case "executing":
+      if (l && d.node) {
+        l.stato = "in-corso";
+        l.inizio = l.inizio || Date.now();
+        const fase = FASI[String(d.node)];
+        if (fase) {
+          l.passo = fase.label;
+          // Mai indietro: i nodi non finiscono nell'ordine in cui li abbiamo
+          // numerati, e una barra che torna indietro sembra un errore.
+          l.avanzamento = Math.max(l.avanzamento, fase.da);
+        }
+        disegnaSessione();
+      }
+      break;
+
+    case "progress": {
+      // Un avanzamento con un prompt_id sconosciuto arriva da un lavoro già
+      // chiuso: applicarlo lo farebbe finire sulla barra sbagliata.
+      const suo = d.prompt_id ? l : inCorso();
+      if (!suo || !d.max) break;
+      suo.stato = "in-corso";
+      suo.inizio = suo.inizio || Date.now();
+      const fase = FASI[String(d.node)] ?? FASI["6"];
+      suo.passo = fase.label;
+      suo.avanzamento = Math.max(suo.avanzamento, fase.da + (fase.a - fase.da) * (d.value / d.max));
+      disegnaSessione();
+      break;
     }
-    const fase = FASI[data.node];
-    if (fase) osservatore({ passo: fase.label, quota: fase.da });
-    return;
-  }
 
-  if (type === "progress" && data.max) {
-    const fase = FASI[String(data.node)] ?? FASI["6"];
-    osservatore({
-      passo: fase.label,
-      quota: fase.da + (fase.a - fase.da) * (data.value / data.max),
+    case "execution_success":
+      if (l) void concludi(l);
+      break;
+
+    case "execution_interrupted":
+      if (l) togliLavoro(l.id);
+      break;
+
+    case "execution_error":
+      mostraGuasto(d);
+      if (l) togliLavoro(l.id);
+      break;
+
+    case "status":
+      if (d.status && !inCorso()) {
+        el.statusTxt.textContent = d.status.exec_info?.queue_remaining ? "in coda" : "pronto";
+      }
+      break;
+  }
+}
+
+/**
+ * L'errore del motore, scritto dove si guarda.
+ *
+ * Il tipo del nodo per primo: su un grafo di venti nodi «quale» conta quanto
+ * «cosa», e senza si finisce a leggere il log del motore per saperlo.
+ */
+function mostraGuasto(d) {
+  const pezzi = [
+    d.node_type ? `Nel nodo ${d.node_type}:` : null,
+    d.exception_message || "il motore si è fermato senza dire perché",
+  ].filter(Boolean);
+  el.errore.style.display = "block";
+  el.errore.textContent = pezzi.join("\n");
+}
+
+/* ------------------------------------------------------------- la chiusura */
+
+async function concludi(l) {
+  // Ci si arriva da due strade — il messaggio del motore e il riallineamento —
+  // e possono capitare insieme.
+  if (l.concluso) return;
+  l.concluso = true;
+
+  const secondi = l.inizio ? Math.round((Date.now() - l.inizio) / 1000) : 0;
+  const uscite = await ponte.risultati(l.id);
+  const prodotti = Object.values(uscite).flatMap((o) => o.images ?? o.video ?? []);
+
+  for (const file of prodotti) {
+    const id = ponte.idLibreria(file);
+    try {
+      // I parametri restano accanto al video: senza, «com'è che l'avevo fatto?»
+      // è una domanda senza risposta il giorno dopo.
+      await ponte.scriviMeta(id, { ...l.meta, secs: secondi, ts: Date.now() });
+    } catch {
+      // Il video c'è comunque: i metadati sono un di più, non il risultato.
+    }
+    fatti.unshift({
+      id,
+      url: ponte.vista(file),
+      descrizione: l.descrizione,
+      riga: [l.meta?.modello, l.meta?.misura, `${Number(l.meta?.secondi ?? 0).toFixed(1)} s`, `fatto in ${durata(secondi)}`]
+        .filter(Boolean)
+        .join(" · "),
     });
   }
+  fatti = fatti.slice(0, 12);
+
+  togliLavoro(l.id);
+}
+
+/**
+ * Rimette in fila la sessione con quello che il motore ha davvero.
+ *
+ * Vedi il commento in cima al file: «non è più in coda» vuol dire anche
+ * *finito*, e buttare via un lavoro finito qui vorrebbe dire un video generato
+ * per davvero — dieci minuti di scheda — che non compare da nessuna parte.
+ */
+export async function riallinea() {
+  try {
+    const vivi = await ponte.lavoriVivi();
+
+    for (const id of ordine.slice()) {
+      if (vivi.has(id)) continue;
+      const l = lavoro(id);
+      if (!l || l.concluso) continue;
+
+      const uscite = await ponte.risultati(id);
+      const prodotti = Object.values(uscite).flatMap((o) => o.images ?? o.video ?? []);
+      if (prodotti.length) await concludi(l);
+      else togliLavoro(id);
+    }
+  } catch {
+    // Motore spento: se ne riparla al prossimo giro.
+  }
+}
+
+/**
+ * Rimette sotto i video già fatti, riaprendo l'app.
+ *
+ * Li legge dalla libreria della suite e non da una lista nostra: la libreria è
+ * la sola che sappia cosa c'è davvero sul disco, e un video cancellato a mano
+ * dalla cartella qui non deve ricomparire con un lettore rotto.
+ */
+export async function caricaUltimi() {
+  try {
+    const elenco = await ponte.video();
+    fatti = elenco.slice(0, 6).map((v) => ({
+      id: v.id,
+      url: v.url,
+      descrizione: String(v.meta?.prompt || v.nome),
+      // Testo semplice: a metterlo nella pagina ci pensa `riquadroFatto`, che lo
+      // passa da `escapeHtml`. Scriverci dentro delle entità HTML vorrebbe dire
+      // vederle scritte per esteso.
+      riga: [v.meta?.modello, v.meta?.misura, v.meta?.secs ? `fatto in ${durata(Number(v.meta.secs))}` : null]
+        .filter(Boolean)
+        .join(" · "),
+    }));
+    scordaDisegno();
+    disegnaSessione();
+  } catch {
+    // La suite non risponde: la sessione parte vuota e si riempie generando.
+  }
+}
+
+export function collegaComandiCoda() {
+  el.stop.onclick = () => ponte.interrompi();
+  el.svuota.onclick = async () => {
+    await ponte.svuotaCoda();
+    ordine.slice().forEach(togliLavoro);
+  };
+
+  // Un secondo: basta per far scorrere i tempi trascorsi e le stime.
+  setInterval(() => {
+    disegnaSessione();
+    if (ordine.length) void riallinea();
+  }, 1000);
 }
