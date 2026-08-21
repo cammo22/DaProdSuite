@@ -170,7 +170,7 @@
     "h3-ref-dit": {
       "label": "MiniMax H3 Ref2VA — modello video (W4A8, potato)",
       "kind": "file",
-      "$comment": "La versione REF2VA: riferimenti (immagini, video, audio) verso video+audio. È quella che serve, perché primo e ultimo fotogramma li fa già LTX 2.5 con metà del peso. Potata e quantizzata: 11,0 GB invece dei 19,5 della int8 ufficiale di Comfy-Org, che resta l'alternativa quando la scheda cresce.",
+      "$comment": "La versione REF2VA: riferimenti (immagini, video, audio) verso video+audio. È quella che serve, perché primo e ultimo fotogramma li fa già LTX 2.5 con metà del peso. Potata e quantizzata: 11,0 GB invece dei 19,5 della int8 ufficiale di Comfy-Org, che resta l'alternativa quando la scheda cresce. È anche la più piccola che esista per questa variante: cercate il 21 agosto 2026, la fl2va dello stesso repo pesa 12,5 GB e la W4A8 di AX1Y2JP 12,5; i GGUF sarebbero più piccoli ma li carica un nodo custom che questa famiglia non la conosce.",
       "dir": "diffusion_models",
       "file": "minimax_h3_ref2va_pruned_w4a8_mixed.safetensors",
       "url": "https://huggingface.co/Kijai/MiniMax-H3-experimental/resolve/main/minimax_h3_ref2va_pruned_w4a8_mixed.safetensors",
@@ -205,7 +205,7 @@
     "h3-lora-ref-turbo": {
       "label": "MiniMax H3 — LoRA turbo a quattro passi (ref2v)",
       "kind": "file",
-      "$comment": "Non è un extra: senza, H3 vuole venti passi per clip, cioè cinque volte il tempo. Ufficiale di Comfy-Org, ed è quello della variante ref2v — quello della fl2v è un altro file e non va su questo modello.",
+      "$comment": "Il LoRA del pulsante <4 passi>. Ufficiale di Comfy-Org, variante ref2v — quello della fl2v è un altro file e non va su questo modello. ⚠ È fermo alla v0.1, mentre la fl2v ha già la v1.0 e la v1.1: per ref2v, al 21 agosto 2026, un file migliore non esiste (controllati Comfy-Org e lightx2v). È il motivo per cui dalla 0.4.6 si parte a venti passi senza LoRA e il turbo è un pulsante accanto, non il modo di serie.",
       "dir": "loras",
       "file": "minimax_h3_ref2v_turbo_4step_v0.1_comfyui_bf16.safetensors",
       "url": "https://huggingface.co/Comfy-Org/MiniMax-H3/resolve/main/loras/minimax_h3_ref2v_turbo_4step_v0.1_comfyui_bf16.safetensors",

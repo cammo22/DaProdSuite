@@ -32,6 +32,7 @@
   <div class="logo">DaProd<span>Cinema</span></div>
   <nav>
     <button data-scheda="crea" class="on">Crea</button>
+    <button data-scheda="storia">Storia <span class="pill" id="navStoria">0</span></button>
     <button data-scheda="galleria">Galleria <span class="pill" id="navGal">0</span></button>
   </nav>
   <div class="status">
@@ -104,6 +105,13 @@
              scelte in tutto, e in un menu costavano due clic per vederne una.
              I pixel veri stanno scritti accanto, con quanto costano rispetto
              al 480 — perché "1080p" non dice quanto ci mette. -->
+        <!-- I due modi di generare, prima del formato: decidono il LoRA che
+             viene montato e quanto ci mette, cioè molto più della risoluzione.
+             Su LTX ce n'è uno solo e la voce sparisce. -->
+        <div class="voce larga" id="voceModi">
+          <label>Qualità <span class="misura" id="rigaModi"></span></label>
+          <div class="serie" id="modiPassi"></div>
+        </div>
         <div class="voce larga">
           <label>Formato <span class="misura" id="misura"></span></label>
           <div class="gruppo">
@@ -148,6 +156,73 @@
         </span>
       </h2>
       <div id="sessione" class="tracks"></div>
+    </div>
+  </div>
+ </div>
+</section>
+
+<!-- ============================== STORIA ============================== -->
+<!-- Mezz'ora di video non è una clip lunga: sono cento inquadrature con gli
+     stacchi in mezzo, come qualunque film. Qui si scrive il soggetto, il
+     modello di LM Studio lo spezza in scene, e poi si genera una alla volta —
+     una per volta, così una storia interrotta riprende da dove era. Il perché
+     di ogni scelta sta in src/storia.js. -->
+<section class="tab" id="scheda-storia">
+ <div class="two">
+  <div>
+    <div class="panel">
+      <h2>Cosa deve raccontare</h2>
+      <textarea id="storiaSoggetto" rows="6" placeholder="Es. Un uomo torna nel paese dove è cresciuto dopo vent'anni. Trova la casa vuota, cammina fino al mare, e alla fine si siede sul molo al tramonto."></textarea>
+      <div class="hint">Scrivilo in italiano, come lo racconteresti a una persona. I prompt in
+        inglese, con i movimenti di camera, li scrive il modello. Se c'è un personaggio che
+        torna, <b>descrivilo</b>: età, vestiti, capelli — è l'unico modo che il modello ha di
+        ritrovarlo, perché ogni inquadratura la genera da zero.</div>
+    </div>
+
+    <div class="panel">
+      <h2>Quanto deve durare</h2>
+      <div class="resa">
+        <div class="voce corta">
+          <label for="storiaMinuti">Minuti</label>
+          <input type="number" id="storiaMinuti" min="1" max="120" value="5">
+        </div>
+        <div class="voce corta">
+          <label for="storiaSecondi">Secondi per scena</label>
+          <input type="number" id="storiaSecondi" min="2" max="20" value="8">
+        </div>
+      </div>
+      <div class="hint" id="storiaConto"></div>
+      <div class="hint">Il modello, il formato e la qualità sono quelli scelti nella scheda
+        <b>Crea</b>: la storia usa le stesse impostazioni, così quello che hai provato lì è
+        quello che esce qui.</div>
+    </div>
+
+    <div class="panel">
+      <h2>Chi scrive le scene</h2>
+      <div id="storiaLlm"></div>
+      <div class="inline">
+        <button class="mini" id="storiaScrivi">Scrivi le scene</button>
+        <button class="mini danger" id="storiaAzzera">butta via la storia</button>
+      </div>
+      <div class="hint" id="storiaStato"></div>
+    </div>
+  </div>
+
+  <div>
+    <div class="panel">
+      <h2>Le inquadrature <span style="color:var(--dim);text-transform:none" id="storiaFatte"></span>
+        <span class="right">
+          <button class="mini" id="storiaGenera">Genera</button>
+          <button class="mini" id="storiaFerma">ferma</button>
+          <button class="mini" id="storiaCuci">cuci il film</button>
+        </span>
+      </h2>
+      <div id="storiaElenco" class="scene"></div>
+    </div>
+
+    <div class="panel" id="storiaFilm" hidden>
+      <h2>Il film</h2>
+      <video id="storiaFilmVideo" controls preload="metadata" playsinline></video>
     </div>
   </div>
  </div>

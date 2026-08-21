@@ -119,7 +119,22 @@ const LTX = {
    * fatto male. Il giorno che serve si aggiunge una seconda scala e si sceglie
    * fra le due; non si muove un cursore.
    */
-  passi: { min: 8, max: 8, valore: 8 },
+  /**
+   * Un modo solo: il distillato è già il modo veloce.
+   *
+   * I due pulsanti li ha H3, che è l'unico dei due ad avere davvero due
+   * strade — con il LoRA turbo e senza. Qui il pulsante c'è lo stesso, uno,
+   * e serve a non far sembrare che manchi qualcosa quando si cambia modello.
+   */
+  modi: [
+    {
+      id: "distillato",
+      nome: "8 passi",
+      riga: "il distillato lavora a otto passi e basta: è già il modo veloce.",
+      passi: { min: 8, max: 8, valore: 8 },
+      lora: null,
+    },
+  ],
   cfg: 1,
   /**
    * Da 2 a 20 secondi.
@@ -192,12 +207,50 @@ const H3 = {
   txt: "qwen3vl_32b_minimax_h3_int8_convrot.safetensors",
   vae: "minimax_h3_video_vae_int8_convrot.safetensors",
   vaeAudio: "minimax_h3_audio_vae_fp32.safetensors",
-  lora: "minimax_h3_ref2v_turbo_4step_v0.1_comfyui_bf16.safetensors",
   grafo: grafoH3,
   /** La lunghezza deve essere `17k+5`, e il modello è stato visto fra 124 e 362. */
   griglia: 17,
   base: 5,
-  passi: { min: 4, max: 20, valore: 4 },
+  /**
+   * I due modi di generare con H3, e i due pulsanti che li scelgono.
+   *
+   * Fino alla 0.4.5 c'era solo il turbo a quattro passi, ed era **il modo
+   * sbagliato di partire**: quattro passi su questo modello si vedono, e si
+   * vedono soprattutto nel movimento — scie, sfarfallio, oggetti che si
+   * rimpastano fra un fotogramma e l'altro. Chi apriva l'app per la prima
+   * volta giudicava H3 da quello.
+   *
+   * Adesso si parte da **venti passi senza LoRA**, che è come il modello è
+   * stato addestrato, e il turbo è un pulsante accanto — per quando serve una
+   * prova in fretta e non il risultato buono.
+   *
+   * ⚠ **Perché il turbo di H3 non è come quello di altri modelli.** Il LoRA
+   * ufficiale per la variante *ref2v* — quella che usiamo — è fermo alla
+   * **v0.1**, mentre la variante *fl2v* ha già la v1.0 e la v1.1. Non è una
+   * questione di trovare il file giusto: per ref2v un file migliore, oggi,
+   * non esiste. Quello che si può fare è usarlo com'è stato addestrato —
+   * `euler` + `simple`, forza 1,0, gli scarti di rumore 12/3 di
+   * `MiniMaxH3SigmaShift`, che il grafo fa già — e lasciare arrivare fino a
+   * otto passi, perché da sei in su si vede la differenza.
+   */
+  modi: [
+    {
+      id: "piena",
+      nome: "20 passi",
+      riga: "come il modello è stato addestrato. Lento, ma il movimento tiene.",
+      passi: { min: 12, max: 40, valore: 20 },
+      lora: null,
+    },
+    {
+      id: "turbo",
+      nome: "4 passi",
+      riga: "cinque volte più veloce, con il LoRA turbo. Per provare un'idea, non per il video buono.",
+      passi: { min: 4, max: 8, valore: 4 },
+      lora: "minimax_h3_ref2v_turbo_4step_v0.1_comfyui_bf16.safetensors",
+      /** Il LoRA è addestrato a 768p: sopra, il movimento si sfalda. */
+      altezzaIdeale: 768,
+    },
+  ],
   cfg: 1,
   /** Cinque secondi sono 125 fotogrammi: sotto, H3 non è stato addestrato. */
   durata: { min: 5, max: 15, valore: 5 },
@@ -428,14 +481,33 @@ function grafoH3(m, p) {
     "7": { class_type: "VAELoader", inputs: { vae_name: m.vae } },
     "14": { class_type: "VAELoader", inputs: { vae_name: m.vaeAudio } },
     "4": { class_type: "UNETLoader", inputs: { unet_name: m.dit, weight_dtype: "default" } },
-    "22": {
+  };
+
+  // Il LoRA turbo solo se il modo lo vuole. A venti passi non va montato:
+  // non è "un po' meno turbo", è una scala di rumore diversa da quella su cui
+  // il modello è stato addestrato, e il risultato è peggio di tutti e due.
+  //
+  // Forza 1,0, che è quella con cui è stato distillato: la si tocca per
+  // guarire un difetto preciso (sotto l'1 contro la grana troppo secca, sopra
+  // contro le scie), non per gusto, e allora è meglio che non sia una manopola.
+  let sorgente = ["4", 0];
+  if (p.lora) {
+    grafo["22"] = {
       class_type: "LoraLoaderModelOnly",
-      inputs: { model: ["4", 0], lora_name: m.lora, strength_model: 1 },
-    },
-    "10": {
-      class_type: "MiniMaxH3SigmaShift",
-      inputs: { model: ["22", 0], shift_video: m.shiftVideo, shift_audio: m.shiftAudio },
-    },
+      inputs: { model: ["4", 0], lora_name: p.lora, strength_model: 1 },
+    };
+    sorgente = ["22", 0];
+  }
+
+  // Gli scarti di rumore, e sono il pezzo che fa funzionare i quattro passi.
+  // H3 denoisa video e audio **insieme ma su due orologi diversi** (12 e 3):
+  // con un orologio solo l'audio viene sovra-campionato e a quattro passi
+  // esce sporco. `MiniMaxH3SigmaShift` installa `ModelSamplingAV`, che è il
+  // supporto nativo arrivato in ComfyUI ad agosto — prima ci voleva un nodo
+  // custom. Con quello a posto basta il campionatore di serie.
+  grafo["10"] = {
+    class_type: "MiniMaxH3SigmaShift",
+    inputs: { model: sorgente, shift_video: m.shiftVideo, shift_audio: m.shiftAudio },
   };
 
   const riferimenti = {};

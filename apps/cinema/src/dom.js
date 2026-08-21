@@ -20,10 +20,15 @@ for (const chiave of [
   "titoloIngressi", "ingressi",
   // la resa
   "durata", "durataVal", "notaDurata", "quante", "misura", "formati", "risoluzioni",
+  "voceModi", "rigaModi", "modiPassi",
   "toggleAdv", "avanzati", "passi", "passiVal", "notaPassi",
   "seed", "dado", "seedCasuale", "negativo", "notaNegativo",
   // cosa sta succedendo
   "sessione", "stop", "svuota",
+  // la storia
+  "navStoria", "storiaSoggetto", "storiaMinuti", "storiaSecondi", "storiaConto",
+  "storiaLlm", "storiaScrivi", "storiaStato", "storiaElenco", "storiaFatte",
+  "storiaGenera", "storiaFerma", "storiaCuci", "storiaAzzera", "storiaFilm", "storiaFilmVideo",
   // la galleria, e il video a schermo intero
   "navGal", "galleria", "conteggio", "aggiorna",
   "lente", "lenteVideo", "lenteInfo", "lenteChiudi",

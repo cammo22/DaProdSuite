@@ -18,6 +18,7 @@ al suo processo.
 import asyncio
 import logging
 import os
+import subprocess
 import threading
 import time
 from pathlib import Path
@@ -134,6 +135,138 @@ async def scarica(request):
             mm.current_loaded_models.remove(caricato)
     mm.soft_empty_cache(True)
     return web.json_response({"ok": True})
+
+
+# ------------------------------------------------------------------ cucire
+
+
+"""Cucire tante clip in un film solo.
+
+Sta qui e non nello shell per la stessa ragione dell'elenco della memoria: qui
+c'è già un Python acceso che sa dov'è la cartella dei risultati, e i file da
+cucire sono esattamente quelli che questo processo ha appena scritto. Passare
+dallo shell vorrebbe dire una rotta IPC nuova, un contratto nuovo e due posti
+che devono essere d'accordo su cosa sia un percorso valido.
+
+**FFmpeg non è nostro e non è nel PATH per forza.** Quello che c'è di sicuro è
+`imageio_ffmpeg`, che ne porta uno dentro l'ambiente Python della suite: si
+prova prima quello del sistema (di solito più aggiornato) e si ripiega su
+quello imbarcato. Se non c'è nessuno dei due si dice, invece di lasciare
+l'utente davanti a un pulsante che non fa niente.
+
+**Perché si ricodifica invece di concatenare e basta.** `-c copy` sarebbe
+istantaneo, ma pretende che tutte le clip abbiano esattamente lo stesso codec,
+la stessa misura e lo stesso ritmo di fotogrammi. In una storia lunga non è
+detto: si cambia risoluzione a metà, o si rigenera una scena con un altro
+modello. Ricodificare costa qualche minuto su mezz'ora di video — accanto alle
+ore che ci sono volute a generarlo — e in cambio il file esce sempre.
+"""
+
+
+def _ffmpeg() -> str | None:
+    from shutil import which
+
+    trovato = which("ffmpeg")
+    if trovato:
+        return trovato
+    try:
+        import imageio_ffmpeg
+
+        return imageio_ffmpeg.get_ffmpeg_exe()
+    except Exception:
+        return None
+
+
+def _dentro_i_risultati(nome: str) -> Path | None:
+    """Il percorso vero di una clip, se sta davvero fra i risultati.
+
+    Quello che arriva è un nome scelto dalla pagina, e una pagina può sbagliare
+    o essere convinta di cose non vere: si risolve, si controlla che stia sotto
+    la cartella delle uscite e solo allora lo si dà in pasto a ffmpeg.
+    """
+    import folder_paths
+
+    radice = Path(folder_paths.get_output_directory()).resolve()
+    candidato = (radice / nome).resolve()
+    if candidato != radice and radice not in candidato.parents:
+        return None
+    return candidato if candidato.is_file() else None
+
+
+def _riga_concat(percorso: Path) -> str:
+    """Una riga per il demuxer `concat` di ffmpeg.
+
+    Il formato è `file '<percorso>'`, e l'unico carattere che dà fastidio è
+    l'apice: dentro si chiude, si mette un apice protetto e si riapre.
+    """
+    dentro = str(percorso).replace("'", "'\\''")
+    return "file '" + dentro + "'\n"
+
+
+@routes.post("/daprod/cuci")
+async def cuci(request):
+    """Mette in fila le clip di una storia e ne fa un file solo.
+
+    `clip` sono percorsi relativi alla cartella dei risultati, nell'ordine in cui
+    vanno viste. `nome` è come si chiamerà il film; finisce accanto alle clip,
+    così la libreria della suite lo vede come vede tutto il resto.
+    """
+    dati = await request.json()
+    nomi = [str(x) for x in (dati.get("clip") or [])]
+    if not nomi:
+        return web.json_response({"ok": False, "motivo": "Non c'è niente da cucire."}, status=400)
+
+    binario = _ffmpeg()
+    if not binario:
+        return web.json_response(
+            {"ok": False, "motivo": "FFmpeg non si trova, né nel sistema né nell'ambiente della suite."},
+            status=503,
+        )
+
+    pezzi = []
+    for nome in nomi:
+        vero = _dentro_i_risultati(nome)
+        if vero is None:
+            return web.json_response({"ok": False, "motivo": f"Manca {nome}."}, status=404)
+        pezzi.append(vero)
+
+    import folder_paths
+
+    radice = Path(folder_paths.get_output_directory()).resolve()
+    uscita = radice / (dati.get("nome") or "video/daprodcinema/storia.mp4")
+    uscita.parent.mkdir(parents=True, exist_ok=True)
+
+    # L'elenco va su un file: una storia lunga sono centinaia di percorsi, e la
+    # riga di comando di Windows finisce molto prima.
+    elenco = uscita.with_suffix(".txt")
+    elenco.write_text(
+        "".join(_riga_concat(p) for p in pezzi),
+        encoding="utf-8",
+    )
+
+    comando = [
+        binario, "-y", "-hide_banner", "-loglevel", "error",
+        "-f", "concat", "-safe", "0", "-i", str(elenco),
+        "-c:v", "libx264", "-preset", "medium", "-crf", "18", "-pix_fmt", "yuv420p",
+        "-c:a", "aac", "-b:a", "192k",
+        str(uscita),
+    ]
+
+    def lavora():
+        return subprocess.run(comando, capture_output=True, text=True)
+
+    esito = await asyncio.get_running_loop().run_in_executor(None, lavora)
+    elenco.unlink(missing_ok=True)
+
+    if esito.returncode != 0:
+        logging.error("[daprod] cucitura fallita: %s", esito.stderr[-2000:])
+        return web.json_response(
+            {"ok": False, "motivo": (esito.stderr or "ffmpeg si è fermato").strip()[-500:]},
+            status=500,
+        )
+
+    logging.info("[daprod] storia cucita: %d clip in %s", len(pezzi), uscita.name)
+    return web.json_response({"ok": True, "file": str(uscita.relative_to(radice)).replace("\\", "/")})
 
 
 """Traduzione italiano → inglese.

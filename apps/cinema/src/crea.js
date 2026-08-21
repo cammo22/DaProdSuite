@@ -28,10 +28,11 @@ import {
 import { ESTETICHE, PROPOSTE } from "./dati/estetiche.js";
 import { NEGATIVO, grafoClip, secondiVeri } from "./grafi.js";
 import { collegaFormato, misuraScelta } from "./formato.js";
-import { collegaScelta, modelloCorrente, modelloUsabile } from "./scelta-modello.js";
+import { collegaScelta, modelloCorrente, modelloUsabile, modoCorrente } from "./scelta-modello.js";
 import { caricaIngressi, collegaIngressi } from "./riferimenti.js";
 import { faiSpazio } from "./memoria.js";
 import { aggiungiLavoro, collegaComandiCoda } from "./coda.js";
+import { storiaRileggiConti } from "./storia.js";
 import * as ponte from "./ponte.js";
 // Le pastiglie con le proposte sono di tutte le app, non di questa: stanno in
 // `packages/ui` e la suite le serve sotto `/comune/`, dalla stessa origine
@@ -49,6 +50,9 @@ function leggiModulo() {
     passi: parseInt(el.passi.value),
     negativo: el.negativo.value.trim() || NEGATIVO,
     seed: parseInt(el.seed.value) || 0,
+    // Il LoRA del modo scelto, o niente: è la differenza fra i quattro passi e
+    // i venti, e la decide il pulsante «Qualità», non il cursore dei passi.
+    lora: modoCorrente().lora,
   };
 }
 
@@ -140,6 +144,9 @@ export async function collegaCrea() {
   await collegaScelta(() => {
     accendiBottoni();
     raccontaDurata();
+    // Anche la Storia: la griglia dei fotogrammi cambia con il modello, e con
+    // lei quante inquadrature servono per gli stessi minuti.
+    storiaRileggiConti();
   });
 
   el.genera.onclick = () => void genera();
@@ -183,6 +190,9 @@ async function genera() {
         misura: parametri.misura,
         secondi: secondiVeri(parametri.secondi, m),
         passi: parametri.passi,
+        // Con o senza turbo: fra due video dello stesso modello è la differenza
+        // che si vede di più, e a distanza di giorni non ci si ricorda.
+        modo: modoCorrente().nome,
         seed: parametri.seed,
       });
     }

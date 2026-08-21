@@ -124,6 +124,40 @@ fermo avrebbe voluto dire non pubblicare niente aspettando un'app sola.
       vero (§ 0.7.0), e allora cambia il programma che le fa, non quello che le
       mostra.
 
+## 0.4.6 — La Storia, e H3 che parte come si deve ✅
+
+**Costruita il 21 agosto 2026.**
+
+- [x] **Scheda Storia in DaProdCinema** — *il soggetto in italiano, i minuti, e
+      il modello di LM Studio lo spezza in inquadrature con i prompt in inglese
+      e i movimenti di camera. Si generano una per volta (riprendibili: lo stato
+      sta nel localStorage), e alla fine `/daprod/cuci` le mette in un mp4 solo
+      con ffmpeg. Il conto delle ore è scritto **prima** di premere, e si rifà
+      sui tempi veri appena c'è una scena misurata.*
+- [x] **H3: due pulsanti, 20 passi di serie** — *quattro passi erano il modo di
+      partenza, e su questo modello si vedono nel movimento. Adesso si parte
+      dai venti senza LoRA (12-40 in avanzati) e il turbo è un pulsante accanto,
+      con il cursore fino a otto perché da sei in su tiene molto meglio.*
+- [x] **LTX fino a 20 secondi** — *già nella 0.4.5, ma vale la pena ripeterlo
+      qui: una scena della storia può durare fino a venti secondi.*
+
+### Cosa **non** è a posto, e va detto
+
+- **La Storia non è mai stata aperta.** L'algoritmo della cucitura sì: tre clip
+  vere di Cammo, 3 × 10,04 s → 30,17 s con video e audio a posto, con lo stesso
+  comando ffmpeg che usa la rotta. Ma la scheda dentro Electron, il modello che
+  scrive le scene e il giro lungo di generazione no.
+- **Il LoRA turbo di ref2v resta la v0.1.** Cercato su Comfy-Org e su lightx2v
+  il 21 agosto 2026: per la variante ref2v non esiste niente di più nuovo. La
+  fl2v ha la v1.0 e la v1.1, ma è un altro modello — non un'altra impostazione.
+  Il giorno che esce una ref2v v1.x, è un cambio di una riga in
+  `manifest/models.json` e uno in `grafi.js`.
+- **`larryvrh/MiniMax-H3-Turbo-Lora` non è stato provato.** È il turbo più
+  scaricato (591k) e la sua v4 dice di aver risolto l'aspetto plasticoso della
+  v1, ma nasce dal filone t2v: applicarlo alla ref2va è una scommessa, e una
+  scommessa non si mette di serie. È la prima cosa da provare se i quattro passi
+  restano brutti.
+
 ## 0.4.5 — Il video non muore più a metà ✅
 
 **Costruita il 21 agosto 2026.** Tre cose viste generando con la 0.4.4.
@@ -141,11 +175,11 @@ fermo avrebbe voluto dire non pubblicare niente aspettando un'app sola.
       dichiarato del modello. H3 resta a 15, che è la fine del suo addestramento
       (124-362 fotogrammi).*
 
-## Modalità storia, e i video lunghi — quello che si è trovato cercando
+## Modalità storia, e i video lunghi — la ricerca dietro la scheda Storia
 
-**Non è ancora un piano, è quello che c'è là fuori al 21 agosto 2026.** Scritto
-qui perché la domanda («si può fare mezz'ora?») torna, e la risposta ha bisogno
-di numeri e non di impressioni.
+**Questo è il perché della scheda Storia della 0.4.6**, ed è quello che c'era
+là fuori al 21 agosto 2026. Resta scritto perché la domanda («si può fare
+mezz'ora?») torna, e la risposta ha bisogno di numeri e non di impressioni.
 
 ### Quanto può durare una singola clip, davvero
 

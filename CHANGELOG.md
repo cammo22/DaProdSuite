@@ -10,6 +10,68 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ---
 
+## 0.4.6 — La Storia, e H3 che parte come si deve
+
+**Costruita il 21 agosto 2026.** La scheda che mancava per fare un film invece
+di una clip, e MiniMax H3 che smette di presentarsi male.
+
+### La Storia: mezz'ora di video, un'inquadratura per volta
+
+C'è una scheda nuova, **Storia**. Ci scrivi in italiano cosa deve raccontare —
+come lo diresti a una persona — dici quanti minuti deve durare, e il modello di
+LM Studio lo spezza in inquadrature: una per una, con il prompt in inglese, il
+movimento di camera e la luce. Le rileggi, cambi quelle che non ti piacciono, e
+premi Genera. Alla fine **«cuci il film»** le mette in fila in un mp4 solo.
+
+**Perché non è mezz'ora in una ripresa sola.** Perché non si può, non su una
+scheda da 8 GB e non con i modelli che ci sono oggi — la ricerca sta in
+[ROADMAP.md](docs/ROADMAP.md). Ma un film non è mai stato una ripresa sola: sono
+cento inquadrature con gli stacchi in mezzo, e cento inquadrature sono cento
+clip, cioè quello che DaProdCinema già sapeva fare.
+
+⚠ **Il tempo c'è scritto prima che tu prema.** Sotto ai due numeri compare
+quante inquadrature vengono fuori e quante ore ci vogliono — e non è una stima
+inventata: appena c'è una scena vera, il conto si rifà sui tempi tuoi. Mezz'ora
+di film è una notte di lavoro. Si preme la sera e si guarda la mattina.
+
+Si genera **una scena per volta**, e serve: se chiudi l'app, se manca la
+corrente, se premi «ferma», quello che è fatto resta. Ripremi Genera e riprende
+da dov'era, invece di ricominciare.
+
+### MiniMax H3: due pulsanti, e adesso parte da quello giusto
+
+Fino a ieri H3 generava a **quattro passi**, sempre. È il modo veloce, e su
+questo modello si vede — soprattutto nel movimento: scie, sfarfallio, cose che
+si rimpastano fra un fotogramma e l'altro. Chi apriva l'app giudicava H3 da
+quello, e giudicava male.
+
+Adesso sopra al formato ci sono **due pulsanti**:
+
+| | Cosa fa |
+|---|---|
+| **20 passi** | come il modello è stato addestrato, senza LoRA. È quello di partenza. In avanzati si può portare da 12 a 40 |
+| **4 passi** | cinque volte più veloce, con il LoRA turbo. Per provare un'idea, non per il video buono |
+
+**E i quattro passi sono fatti come vanno fatti**, che è la parte che era
+giusta anche prima e vale la pena scrivere: H3 genera video e audio *insieme ma
+su due orologi diversi* (scarti di rumore 12 e 3), e con un orologio solo
+l'audio viene sovra-campionato ed esce sporco. Il grafo usa `ModelSamplingAV`,
+che è il supporto nativo arrivato in ComfyUI ad agosto — prima ci voleva un
+nodo di terzi — con `euler`, `simple` e il LoRA a forza 1,0.
+
+⚠ **Quello che non si può aggiustare, e va detto.** Il LoRA turbo per la
+variante *ref2v* — la nostra — è fermo alla **v0.1**, mentre la variante *fl2v*
+ha già la v1.0 e la v1.1. Non è che non abbiamo trovato il file giusto: per
+ref2v, oggi, un file migliore non esiste. Per questo i quattro passi restano il
+pulsante veloce e non il modo di partenza, e il cursore adesso arriva a **otto**
+— da sei in su il movimento tiene molto meglio.
+
+Il modello, invece, resta quello: la versione potata che usiamo (11,0 GB) è
+**già la più piccola** che esista per questa variante. Cercato il 21 agosto: la
+fl2va dello stesso repo pesa 12,5 GB, la W4A8 di AX1Y2JP 12,5.
+
+---
+
 ## 0.4.5 — Il video non muore più a metà, e il cronometro dice la verità
 
 **Costruita il 21 agosto 2026.** Tre cose viste generando con la 0.4.4.

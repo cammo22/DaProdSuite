@@ -87,6 +87,25 @@ export async function motoreOccupato() {
   }
 }
 
+/**
+ * Cuce tante clip in un film solo.
+ *
+ * Lo fa il motore e non la suite: è lì che c'è un Python acceso che sa dov'è la
+ * cartella dei risultati, e ffmpeg — quello del sistema o quello che
+ * `imageio_ffmpeg` si porta dentro l'ambiente. Vedi `/daprod/cuci` in
+ * `services/comfy/nodi/daprod_ponte`.
+ */
+export async function cuci(clip, nome) {
+  const risposta = await fetch(`${motore}/daprod/cuci`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ clip, nome }),
+  });
+  // Anche gli errori arrivano in JSON, col motivo scritto per essere letto: si
+  // legge il corpo comunque, invece di dire "richiesta fallita".
+  return risposta.json().catch(() => ({ ok: false, motivo: "Il motore non ha risposto." }));
+}
+
 export async function risultati(id) {
   try {
     const storia = await (await fetch(`${motore}/history/${id}`)).json();
