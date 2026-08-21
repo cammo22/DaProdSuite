@@ -1,0 +1,16 @@
+{
+  "name": "@daprod/azioni",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Le cose che la suite sa fare, dichiarate una volta sola: le usano il gateway, la console web e il server MCP.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^22.18.0",
+    "typescript": "~5.9.3"
+  }
+}

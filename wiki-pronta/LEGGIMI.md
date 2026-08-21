@@ -16,9 +16,9 @@ un'azione da un account autenticato come proprietario del repo.
 
 ```bash
 git clone https://github.com/cammo22/DaProdSuite.wiki.git
-cp wiki-pronta/*.md DaProdSuite.wiki/
+cp wiki-pronta/*.md DaProdSuite.wiki/   # tranne LEGGIMI.md, che resta qui
 cd DaProdSuite.wiki
-git add -A && git commit -m "Wiki pubblica: Home, Installazione, Le app, FAQ"
+git add -A && git commit -m "Wiki pubblica: Home, Installazione, Le app, Da fuori, FAQ"
 git push
 ```
 
@@ -32,6 +32,7 @@ principale: il suo lavoro è finito.
 | `Home.md` | La pagina iniziale della wiki |
 | `Installazione.md` | Come si scarica, il primo avvio, i requisiti |
 | `Le-app.md` | Le app, una per una, con lo stato vero |
+| `Usarla-da-fuori.md` | Telefono, browser di un altro computer, MCP: come si accende e chi decide |
 | `Domande-frequenti.md` | Privacy, VRAM, licenza, dove segnalare un problema |
 | `_Sidebar.md` | La barra laterale — GitHub la riconosce da questo nome |
 | `_Footer.md` | Il piè di pagina di ogni pagina — stesso meccanismo |

@@ -8,6 +8,13 @@
 
 import type { AppDescriptor, AppId } from "./apps";
 import type { Consegna, ElementoLibreria, FiltroLibreria, Intenzione } from "./libreria";
+import type {
+  DispositivoRemoto,
+  EsitoDecisione,
+  InvitoRemoto,
+  StatoAccesso,
+  StatoRemoto,
+} from "./remoto";
 
 /* ------------------------------------------------------------------ stato app */
 
@@ -589,6 +596,34 @@ export interface SuiteApi {
     installAndRestart(): Promise<void>;
     onChanged(listener: (state: UpdateState) => void): Unsubscribe;
   };
+
+  /**
+   * L'accesso remoto: il pannello "Telefono" dell'hub.
+   *
+   * Il gateway vive nel main e ascolta sulla LAN; qui il renderer vede solo lo
+   * stato e le azioni. Il QR e il codice a otto cifre nascono nel main (dove
+   * c'è l'archivio), e il pannello li mostra.
+   */
+  remoto: {
+    /** Accende o spegne il gateway. `acceso` dice dove si sta. */
+    accendi(): Promise<StatoAccesso>;
+    spegni(): Promise<StatoAccesso>;
+    /** Lo stato attuale, la prima occhiata o dopo un cambio. */
+    stato(): Promise<StatoAccesso>;
+    /** Crea un nuovo invito per il ruolo dato: lo si mostra come QR/codice. */
+    nuovoInvito(ruolo: "admin" | "ospite"): Promise<InvitoRemoto>;
+    /** Revoca un dispositivo: il suo token smette di valere. */
+    revoca(id: string): Promise<DispositivoRemoto[]>;
+    /** Decide su una richiesta: "accettata", "scartata" (con motivo) o "in-lavoro". */
+    decidi(id: string, stato: Extract<StatoRemoto, "accettata" | "scartata" | "in-lavoro">, motivo?: string): Promise<EsitoDecisione>;
+    /**
+     * Marca una richiesta come pronta, indicando il file risultato già copiato
+     * nella cartella dei risultati remoti.
+     */
+    consegna(id: string, esito: { nome: string; percorso: string; tipo: string; bytes: number }): Promise<EsitoDecisione>;
+    /** Ogni volta che l'elenco cambia (invito nuovo, dispositivo, richieste). */
+    onChanged(listener: (stato: StatoAccesso) => void): Unsubscribe;
+  };
 }
 
 /**
@@ -853,4 +888,13 @@ export const CHANNELS = {
   appMacchina: "app:macchina",
   appApri: "app:apri",
   appChiudi: "app:chiudi",
+
+  remotoStato: "remoto:stato",
+  remotoAccendi: "remoto:accendi",
+  remotoSpegni: "remoto:spegni",
+  remotoNuovoInvito: "remoto:nuovo-invito",
+  remotoRevoca: "remoto:revoca",
+  remotoDecidi: "remoto:decidi",
+  remotoConsegna: "remoto:consegna",
+  remotoChanged: "remoto:changed",
 } as const;

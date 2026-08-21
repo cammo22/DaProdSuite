@@ -10,6 +10,106 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ---
 
+## 0.5.0 — La suite non è più solo quel computer
+
+**Costruita il 21 agosto 2026.** Il PC dove gira la suite smette di essere
+l'unico posto da cui la si usa: adesso la comandi dal telefono, dal browser di
+un altro computer, e da un programma.
+
+### Dal browser di un altro computer
+
+C'è un pannello nuovo in fondo all'hub, **Da fuori**. Premi **Accendi** e ti dà
+un indirizzo tipo `http://192.168.1.20:8790/`. Lo scrivi nel browser del
+portatile, batti il codice di otto cifre che ti mostra, e da lì usi la suite del
+PC fisso: chiedi un'immagine, un video, un brano, guardi cosa sta facendo la
+scheda video, e ti scarichi i risultati.
+
+**Serve proprio a quello.** Su un portatile la suite non gira bene — i modelli
+vogliono la scheda video del fisso, e non c'è verso. Ma non ti serve che ci
+giri: ti serve **comandare** quel PC, e per farlo basta un browser. Niente da
+installare sul portatile, niente da configurare, e funziona anche da un tablet.
+
+### L'app per il telefono
+
+C'è un'app Android in `apps/mobile`. Inquadri il QR sullo schermo del PC e da lì
+chiedi lavori mentre sei in giro.
+
+- Se il PC in quel momento non c'è, **quello che scrivi resta sul telefono** e
+  parte da solo quando torna raggiungibile.
+- Quando un lavoro finisce, **arriva una notifica** — anche ore dopo, anche con
+  l'app chiusa.
+- Il risultato **te lo porti nel telefono**: un'immagine finisce in galleria, un
+  brano fra la musica, un video in galleria. Non in una cartella dell'app da cui
+  poi non lo ritrovi.
+
+⚠ **L'app va compilata**, non c'è un APK da scaricare: serve Android Studio o
+l'SDK, e le istruzioni sono in [apps/mobile/README.md](apps/mobile/README.md).
+
+### Chi comanda resta chi sta al PC
+
+Una richiesta che arriva da fuori **non fa partire niente da sola**. Compare nel
+pannello **Da fuori**, e tu la accetti o la scarti. È voluto: su otto GB di
+scheda video ci sta un modello per volta, e un telefono in tasca che può far
+partire quattro generazioni «per provare» è un computer che non è più tuo.
+
+Il primo dispositivo che colleghi diventa **padrone** e vede tutto; gli altri
+sono **ospiti** e vedono solo le proprie richieste. Ognuno ha la sua chiave, e
+toglierla a uno non tocca gli altri.
+
+### Un'AI che usa il programma
+
+Quello che avevi chiesto guardando Needle 2 — «vorrei che un'AI possa usare il
+programma a suo piacimento, tipo MCP o altro» — adesso si può, tranne il modello.
+
+C'è un **server MCP**: Claude Code (o qualunque agente che parli MCP) si collega
+alla suite col codice di otto cifre come farebbe un telefono, e da lì può
+chiedere immagini, video, brani, leggere la libreria e guardare la coda. Le
+generazioni passano dalla stessa fila di tutti: anche a un'AI, il sì lo dai tu.
+
+**Il pezzo grosso, però, è un altro**: adesso la suite ha **un elenco scritto
+una volta sola di cosa sa fare**. Telefono, browser e agente leggono tutti
+quello. Vuol dire che il giorno che la suite impara a fare una cosa nuova, il
+telefono e il browser se la trovano da soli — senza aggiornare l'app.
+
+⚠ **Needle 2 non c'è ancora**, e non è una dimenticanza: il modello va provato
+sulle nostre azioni prima di prometterlo, perché è addestrato in inglese e le
+nostre si chiamano in italiano. Nel frattempo si è scoperto che gira anche in
+Node — quindi non toccherebbe l'ambiente Python, che era la preoccupazione.
+Tutto scritto in [docs/AZIONI-E-MCP.md](docs/AZIONI-E-MCP.md).
+
+### Cosa non è a posto, e va detto
+
+- **Vale dentro casa, non da Internet.** Il collegamento è in rete locale e
+  **non è cifrato**: chi è dentro la tua wifi e sa guardare il traffico vede
+  quello che passa. Prima del tunnel verso Internet va cifrato, non dopo.
+- **«Accettata» vuol dire «l'ho vista e va bene», non «sta partendo».** La
+  richiesta cambia stato, ma non apre l'app e non fa girare il motore: quello lo
+  fai tu. Il ponte fra una richiesta accettata e la generazione vera è il pezzo
+  che manca perché «da fuori» voglia dire davvero da fuori.
+- **Le notifiche sul telefono arrivano con un quarto d'ora di ritardo al
+  massimo**: è il telefono che chiede, non il PC che chiama.
+- **Niente di tutto questo l'hai ancora provato tu.** Da qui: le prove
+  automatiche girano (`pnpm run prova`, novanta controlli fra gateway e MCP), la
+  console web è stata guidata in un browser vero — accoppiamento, richiesta in
+  fila, download — e l'app Android compila. Quello che non è mai successo è il
+  giro completo dentro la suite: un telefono vero che inquadra un QR vero, e il
+  gateway acceso da Electron invece che da un banco di prova.
+
+### Cose che erano rotte
+
+- Il pannello nuovo **spaccava l'hub**: un import senza `.js` e la pagina non si
+  caricava più. Corretto prima che uscisse.
+- Il pannello non si aggiornava da solo: una richiesta arrivata dal telefono
+  compariva solo riaprendo la scheda.
+- Il PC **non poteva decidere sulle proprie richieste** se non c'era un telefono
+  collegato: cercava un padrone fra i dispositivi accoppiati e non ne trovava.
+- L'invito si poteva creare a gateway spento, e il QR conteneva un indirizzo
+  vuoto: adesso accendere è compreso nel gesto.
+- Il codice di invito non diceva quanto gli restava da vivere. Adesso c'è il
+  conto alla rovescia, e quando scade sparisce.
+
+---
+
 ## 0.4.6 — La Storia, e H3 che parte come si deve
 
 **Costruita il 21 agosto 2026.** La scheda che mancava per fare un film invece

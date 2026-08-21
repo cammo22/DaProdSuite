@@ -1,0 +1,242 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Una schermata sola, che scorre. Tre pezzi in ordine di domanda: a che PC sono
+  collegato, cosa gli chiedo, e come vanno le richieste che ho già mandato.
+
+  Il modulo della richiesta non è disegnato qui: i campi arrivano dalle azioni
+  che dichiara la suite (`/azioni`) e nascono a runtime dentro `campi_azione`.
+  È il motivo per cui l'app non va aggiornata quando la suite impara qualcosa.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/sfondo">
+
+    <!-- Testata: a chi siamo collegati -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:baselineAligned="false"
+        android:paddingHorizontal="20dp"
+        android:paddingTop="18dp"
+        android:paddingBottom="12dp">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/app_name"
+                android:textColor="@color/testo"
+                android:textSize="24sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/stato_connessione"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="@string/stato_offline"
+                android:textColor="@color/testo_debole"
+                android:textSize="13sp" />
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/btn_scollega"
+            style="?android:attr/borderlessButtonStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/btn_scollega"
+            android:textColor="@color/testo_debole"
+            android:textSize="13sp"
+            android:visibility="gone" />
+    </LinearLayout>
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:clipToPadding="false"
+        android:paddingBottom="12dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- Accoppiamento. Sparisce appena si è collegati. -->
+            <LinearLayout
+                android:id="@+id/scheda_accoppiamento"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginHorizontal="16dp"
+                android:layout_marginBottom="12dp"
+                android:padding="16dp"
+                android:background="@drawable/sfondo_carta">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/titolo_collega"
+                    android:textColor="@color/testo"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="@string/spiega_collega"
+                    android:textColor="@color/testo_debole"
+                    android:textSize="13sp" />
+
+                <Button
+                    android:id="@+id/btn_scansiona"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:text="@string/btn_scansiona"
+                    android:backgroundTint="@color/accento" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:orientation="horizontal"
+                    android:baselineAligned="false">
+
+                    <EditText
+                        android:id="@+id/campo_codice"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:hint="@string/hint_codice"
+                        android:inputType="number"
+                        android:maxLength="8"
+                        android:textColor="@color/testo"
+                        android:textColorHint="@color/testo_debole"
+                        android:importantForAutofill="no" />
+
+                    <Button
+                        android:id="@+id/btn_connetti"
+                        style="?android:attr/borderlessButtonStyle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:text="@string/btn_connetti"
+                        android:textColor="@color/accento" />
+                </LinearLayout>
+
+                <!-- Il codice da solo non basta la prima volta: senza indirizzo
+                     non si sa a quale computer bussare. Lo dice invece di
+                     lasciar premere a vuoto. -->
+                <TextView
+                    android:id="@+id/nota_codice"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:text="@string/nota_codice"
+                    android:textColor="@color/testo_debole"
+                    android:textSize="11sp" />
+            </LinearLayout>
+
+            <!-- La richiesta: azione + campi costruiti al volo. -->
+            <LinearLayout
+                android:id="@+id/scheda_richiesta"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginHorizontal="16dp"
+                android:layout_marginBottom="12dp"
+                android:padding="16dp"
+                android:background="@drawable/sfondo_carta"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/crea_richiesta"
+                    android:textColor="@color/testo"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <Spinner
+                    android:id="@+id/spinner_azione"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp" />
+
+                <TextView
+                    android:id="@+id/descrizione_azione"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:textColor="@color/testo_debole"
+                    android:textSize="12sp" />
+
+                <LinearLayout
+                    android:id="@+id/campi_azione"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" />
+
+                <Button
+                    android:id="@+id/btn_manda"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:text="@string/btn_invia"
+                    android:backgroundTint="@color/accento" />
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:layout_marginStart="20dp"
+                android:layout_marginBottom="6dp"
+                android:text="@string/titolo_coda"
+                android:textColor="@color/testo"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/coda_vuota"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="20dp"
+                android:layout_marginBottom="10dp"
+                android:text="@string/nessuna_richiesta"
+                android:textColor="@color/testo_debole"
+                android:textSize="13sp" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/lista_richieste"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingHorizontal="16dp"
+                android:clipToPadding="false"
+                android:nestedScrollingEnabled="false" />
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottom_bar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/carta"
+        app:menu="@menu/bottom_menu"
+        app:itemIconTint="@color/accento"
+        app:itemTextColor="@color/testo_debole"
+        app:labelVisibilityMode="labeled" />
+
+</LinearLayout>

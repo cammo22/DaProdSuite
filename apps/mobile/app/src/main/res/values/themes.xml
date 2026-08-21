@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="ThemeDaProdSuite" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/accento</item>
+        <item name="colorOnPrimary">@color/testo</item>
+        <item name="colorPrimaryContainer">@color/accento_scuro</item>
+        <item name="colorSecondary">@color/verde</item>
+        <item name="android:colorBackground">@color/sfondo</item>
+        <item name="colorSurface">@color/carta</item>
+        <item name="colorOnSurface">@color/testo</item>
+        <item name="android:statusBarColor">@color/sfondo</item>
+    </style>
+
+    <style name="ThemeDaProdSuite.Camera" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:colorBackground">@android:color/black</item>
+    </style>
+</resources>

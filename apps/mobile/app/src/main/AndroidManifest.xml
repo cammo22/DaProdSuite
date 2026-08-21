@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Rete locale: il gateway della suite sta nella LAN di casa. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Per vedere se il PC di casa è raggiungibile quando si è fuori. -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- Le notifiche quando un lavoro finisce. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Camera per inquadrare il QR. -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera" android:required="true" />
+
+    <application
+        android:label="DaProd Suite"
+        android:icon="@mipmap/ic_launcher"
+        android:theme="@style/ThemeDaProdSuite"
+        android:usesCleartextTraffic="true"
+        android:allowBackup="false"
+        android:supportsRtl="true">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- Lo scanner del QR: un'activity della libreria zxing. -->
+        <activity
+            android:name="com.journeyapps.barcodescanner.CaptureActivity"
+            android:screenOrientation="portrait"
+            android:theme="@style/ThemeDaProdSuite.Camera"
+            tools:replace="android:theme,android:screenOrientation"
+            android:exported="false" />
+    </application>
+</manifest>

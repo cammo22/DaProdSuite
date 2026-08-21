@@ -12,6 +12,7 @@ import { appManager } from "./app-manager";
 import { gpu } from "./gpu";
 import { spegniSeNostro } from "./llm";
 import { registerIpc } from "./ipc";
+import { spegniAccessoRemoto } from "./remoto";
 import { ICONA_SUITE, ensureDataDirs } from "./paths";
 import { updater } from "./updater";
 import { gestisciSchema, registraSchema } from "./file-scheme";
@@ -192,6 +193,9 @@ app.on("before-quit", async (event) => {
     // quattro GB che senza questo restavano in memoria dopo che l'utente ha
     // chiuso la suite, occupati da un programma che credeva chiuso.
     await spegniSeNostro().catch(() => {});
+    // Il gateway resterebbe in ascolto sulla porta 8790 anche a suite chiusa:
+    // chi si è accoppiato continuerebbe a vedere un PC che non c'è più.
+    await spegniAccessoRemoto().catch(() => {});
     await appManager.closeAll();
     app.quit();
   }

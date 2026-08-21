@@ -7,6 +7,12 @@ incollare da qualche parte, niente immagine, brano o testo che venga mandato
 a un server. L'unico traffico di rete è per scaricare i modelli la prima
 volta e per controllare se c'è un aggiornamento della suite.
 
+Vale anche per **[Usarla da fuori](Usarla-da-fuori)**, il pannello che dalla
+0.5.0 ti fa comandare il PC dal telefono o da un altro computer: il collegamento
+resta dentro la tua rete di casa e non passa da nessun servizio. Va acceso a
+mano, ogni apparecchio ha la sua chiave, e togliergliela lo chiude fuori
+all'istante.
+
 ### Ho meno di 8 GB di VRAM, posso usarla?
 
 Alcune app funzionano lo stesso ma più lentamente, altre hanno bisogno degli
@@ -72,6 +78,19 @@ lì e non nell'app.
 
 Con **Dettagli** vedi il rapporto per esteso e le righe di quello che sta
 succedendo, che sono anche quelle da incollare in una segnalazione.
+
+### Posso usarla dal telefono, o da un altro computer?
+
+Sì, dalla **0.5.0**, e dentro la tua rete di casa. Nell'hub c'è il pannello
+**Da fuori**: lo accendi, ti dà un indirizzo e un codice di otto cifre, e da lì
+comandi il PC dal browser di un portatile o dall'app Android.
+
+Quello che chiedi da fuori **non parte da solo**: compare nel pannello e chi sta
+al computer dice sì o no. Su otto GB di scheda video ci sta un modello per
+volta, e non è una cosa che si vuole far decidere a un telefono in tasca.
+
+Non funziona ancora **da Internet**, solo dalla stessa wifi, e il collegamento
+non è cifrato. Tutti i dettagli in **[Usarla da fuori](Usarla-da-fuori)**.
 
 ### Come segnalo un problema?
 

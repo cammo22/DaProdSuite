@@ -3,6 +3,7 @@
 - [Home](Home)
 - [Installazione](Installazione)
 - [Le app](Le-app)
+- [Usarla da fuori](Usarla-da-fuori)
 - [Domande frequenti](Domande-frequenti)
 
 ---

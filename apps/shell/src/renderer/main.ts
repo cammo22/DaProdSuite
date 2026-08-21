@@ -20,6 +20,7 @@ import type {
   Velocita,
   VoceSpazio,
 } from "@daprod/ipc";
+import { pannelloTelefono } from "./remoto-pannello.js";
 
 const api = window.daprod;
 
@@ -1150,7 +1151,7 @@ function escapeHtml(testo: string): string {
  * insieme vorrebbero dire scorrere per trovarne uno.
  */
 
-const PANNELLI = ["risultati", "modelli", "log", "memoria"] as const;
+const PANNELLI = ["risultati", "modelli", "log", "memoria", "telefono"] as const;
 type NomePannello = (typeof PANNELLI)[number];
 
 function sezione(nome: NomePannello): HTMLElement {
@@ -1170,6 +1171,7 @@ function mostraPannello(nome: NomePannello): void {
   if (nome === "modelli") void disegnaModelli();
   if (nome === "log") void apriLog();
   if (nome === "memoria") void disegnaMemoria();
+  if (nome === "telefono") void pannelloTelefono();
 }
 
 for (const bottone of document.querySelectorAll<HTMLButtonElement>("[data-pannello]")) {

@@ -1254,3 +1254,158 @@ li.modello .bottone {
   color: var(--testo-fioco);
   line-height: 1.55;
 }
+
+/* ---------------------------------------------------------- pannello «Da fuori» */
+
+/* Dove ci si collega dal browser di un altro computer. Sta in cima al pannello
+   perché è la prima domanda di chi apre questa scheda: «e adesso dove vado?». */
+.telefono-indirizzo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin: 4px 0 14px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: rgba(124, 92, 255, 0.08);
+  border: 1px solid var(--bordo-vivo);
+}
+
+.telefono-indirizzo strong {
+  display: block;
+  margin-top: 3px;
+  font-size: 20px;
+  color: var(--testo);
+  user-select: text;
+}
+
+.telefono-etichetta {
+  font-size: 12.5px;
+  color: var(--testo-tenue);
+}
+
+/* L'invito: QR accanto al codice. */
+.telefono-invito {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 4px 0 18px;
+  padding: 16px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--bordo);
+}
+
+.telefono-invito img {
+  width: 200px;
+  height: 200px;
+  border-radius: 10px;
+  background: white;
+  padding: 8px;
+}
+
+.telefono-codice {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--testo-tenue);
+}
+
+.telefono-codice strong {
+  font-size: 34px;
+  letter-spacing: 8px;
+  color: var(--testo);
+  user-select: text;
+}
+
+/* Le due liste (dispositivi e richieste) affiancate quando c'è spazio. */
+.telefono-sezioni {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 18px;
+  margin-top: 6px;
+}
+
+@media (max-width: 1000px) {
+  .telefono-sezioni {
+    grid-template-columns: 1fr;
+  }
+}
+
+.telefono-sezioni h3 {
+  margin: 0 0 8px;
+  font-size: 13.5px;
+}
+
+.telefono-nota {
+  margin: 18px 0 0;
+  font-size: 12.5px;
+  color: var(--testo-fioco);
+  line-height: 1.55;
+}
+
+.vuoto {
+  font-size: 12.5px;
+  color: var(--testo-fioco);
+  padding: 10px 0;
+}
+
+.voce-riga {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--bordo);
+  font-size: 13px;
+}
+
+.voce-riga .voce-titolo {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.voce-riga .voce-dettaglio {
+  color: var(--testo-tenue);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+/* I tasti di una richiesta stanno in fila sotto, non incolonnati. */
+.voce-azioni {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+
+/* Lo stato di una richiesta, a colpo d'occhio. */
+.voce-stato {
+  font-size: 11.5px;
+  padding: 2px 9px;
+  border-radius: 99px;
+  border: 1px solid var(--bordo-vivo);
+  color: var(--testo-tenue);
+  white-space: nowrap;
+}
+
+.voce-stato.pronta {
+  color: var(--ok);
+  border-color: var(--ok);
+}
+
+.voce-stato.attesa {
+  color: var(--attesa);
+  border-color: var(--attesa);
+}
+
+.voce-stato.brutto {
+  color: var(--errore);
+  border-color: var(--errore);
+}
