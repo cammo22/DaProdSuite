@@ -1,11 +1,14 @@
 /**
  * I modelli fra cui si sceglie, e i grafi che si mandano al motore.
  *
- * Due, con caratteri diversi. **Anima** è un turbo: CFG 1,0, 5,6 GB, ed è già sul
- * disco perché Musica la usa per le copertine — si genera subito, senza
- * scaricare niente. **FLUX.2 Klein** è il modello grosso: 11,2 GB fra pesi e
- * text encoder, capisce descrizioni lunghe e articolate. Costa
- * l'attesa dello scaricamento e qualche decina di secondi in più a immagine.
+ * Tre famiglie, con caratteri diversi. **Anima** è un turbo: CFG 1,0, 5,6 GB, ed
+ * è già sul disco perché Musica la usa per le copertine — si genera subito,
+ * senza scaricare niente. **Anima v2** è la stessa cresciuta: 2,9 miliardi di
+ * parametri invece di 2, addestrata su un milione e settecentomila immagini in
+ * più, e **divide con lei text encoder e VAE** — quindi costa 3,1 GB e basta.
+ * **FLUX.2 Klein** è il modello grosso: 11,2 GB fra pesi e text encoder, capisce
+ * descrizioni lunghe e articolate. Costa l'attesa dello scaricamento e qualche
+ * decina di secondi in più a immagine.
  *
  * I due non si somigliano nemmeno nei nodi. Anima gira sui nodi di serie del
  * motore; FLUX.2 in GGUF vuole `UnetLoaderGGUF` e `CLIPLoaderGGUF`, cioè il nodo
@@ -48,7 +51,7 @@ function immagineAnima(m, p) {
       inputs: {
         model: ["1", 0], positive: ["3", 0], negative: ["4", 0], latent_image: ["5", 0],
         seed: p.seed, steps: p.step, cfg: p.cfg,
-        sampler_name: "euler", scheduler: "simple", denoise: 1,
+        sampler_name: "euler", scheduler: m.scheduler ?? "simple", denoise: 1,
       },
     },
     "8": { class_type: "VAEDecode", inputs: { samples: ["6", 0], vae: ["7", 0] } },
@@ -77,7 +80,7 @@ function ritoccoAnima(m, p) {
       inputs: {
         model: ["1", 0], positive: ["3", 0], negative: ["4", 0], latent_image: ["13", 0],
         seed: p.seed, steps: p.step, cfg: p.cfg,
-        sampler_name: "euler", scheduler: "simple", denoise: p.denoise,
+        sampler_name: "euler", scheduler: m.scheduler ?? "simple", denoise: p.denoise,
       },
     },
     "8": { class_type: "VAEDecode", inputs: { samples: ["6", 0], vae: ["7", 0] } },
@@ -220,6 +223,8 @@ export const MODELLI = {
     cfg: { min: 1, max: 4, valore: 1 },
     /** A CFG 1,0 il negativo è ignorato, ma alzando il CFG torna a contare. */
     usaNegativo: true,
+    notaNegativo:
+      "Anima lavora a CFG 1,0, e a quel valore il negativo viene ignorato dal modello. Conta solo se alzi il CFG qui sopra.",
     // Anima capisce solo l'inglese: una descrizione in italiano non dà errore,
     // dà un'immagine che non c'entra niente.
     traduce: true,
@@ -227,6 +232,50 @@ export const MODELLI = {
     ritocco: ritoccoAnima,
     // Senza scheda video Anima ci mette molto, ma arriva in fondo: resta
     // l'unica strada su un computer senza NVIDIA, e quindi non si spegne.
+    serveScheda: false,
+  },
+  /**
+   * Anima v2 — il 2.9B di Gazingstars123, che è Anima con dodici blocchi in più.
+   *
+   * **Stessa famiglia, stessi nodi, stessi due file di contorno.** È una
+   * espansione in profondità della Anima di CircleStone Labs — da 28 a 40 blocchi
+   * di transformer, con i nuovi inizializzati a copia dei vicini e proiezione
+   * azzerata, cioè identici al modello di partenza il giorno zero — quindi legge
+   * il prompt con lo stesso Qwen3 0.6B e decodifica con lo stesso VAE. Chi ha
+   * DaProdFoto o DaProdMusica installate scarica **solo** i 3,1 GB del modello.
+   *
+   * **Non è un turbo, e questa è la differenza che si sente.** Anima Turbo fa
+   * un'immagine a CFG 1,0; questa vuole da 28 a 50 passi e un CFG fra 3,5 e 5,
+   * come dice chi l'ha addestrata. Costa di più a immagine e in cambio disegna
+   * meglio, e siccome il CFG è vero **il negativo conta davvero** — su Anima
+   * Turbo era lì per il giorno che si alzasse il CFG, qui lavora da subito.
+   *
+   * `sgm_uniform` e non `simple`: è lo scheduler consigliato dal modello, e con
+   * `euler` è la coppia che chi l'ha fatta usa tutti i giorni.
+   *
+   * **Prompt in stile Danbooru.** È un modello di anime e illustrazione: vuole
+   * tag di qualità, `1girl`/`1boy`, il nome della serie accanto al personaggio, e
+   * più dettagli ci metti meglio viene. Una frase di tre parole gli fa disegnare
+   * uno sfondo vuoto.
+   */
+  anima2: {
+    id: "anima2",
+    nome: "Anima v2 (2.9B)",
+    riga: "Anima cresciuta: 3,1 GB da aggiungere, il resto ce l'hai già. Anime e illustrazione, 28-50 step a CFG 4.",
+    dit: "Anima-2.9B-preview-v1_int8_convrot.safetensors",
+    txt: "qwen_3_06b_base.safetensors",
+    vae: "qwen_image_vae.safetensors",
+    catalogo: ["anima2-int8", "qwen3-06b-base", "qwen-image-vae"],
+    step: { min: 8, max: 50, valore: 30 },
+    cfg: { min: 1, max: 7, valore: 4 },
+    usaNegativo: true,
+    notaNegativo:
+      "Anima v2 lavora a CFG 4, cioè il negativo lo guarda davvero: quello che scrivi qui sotto cambia l'immagine.",
+    scheduler: "sgm_uniform",
+    traduce: true,
+    immagine: immagineAnima,
+    ritocco: ritoccoAnima,
+    // Come Anima: sulla CPU ci mette molto, ma arriva in fondo.
     serveScheda: false,
   },
   "flux2-4b": {

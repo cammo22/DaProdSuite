@@ -103,6 +103,7 @@ export const APP_IDS = [
   "musica",
   "foto",
   "cinema",
+  "voce",
   "dream",
   "companion",
   "iodigitale",
@@ -192,10 +193,20 @@ export const APPS: Record<AppId, AppDescriptor> = {
     // Klein dà di più ma pesa 12,4 GB ed è al limite degli 8 GB di VRAM, quindi
     // è una scelta, non un obbligo.
     models: ["anima-turbo", "qwen3-06b-base", "qwen-image-vae"],
-    // I due FLUX.2 Klein: il 4B e il 9B. Dividono solo il VAE — ognuno vuole il
-    // **suo** text encoder, Qwen3-4B contro Qwen3-8B, e scambiarli non dà
-    // un'immagine brutta: dà un errore di moltiplicazione fra matrici.
+    /**
+     * Quello che il menu dei modelli sa offrire in più, e che si scarica da lì.
+     *
+     * **Anima v2** (il 2.9B) è la più economica delle tre aggiunte: divide con
+     * Anima il text encoder e il VAE, quindi sono 3,1 GB e basta. La bf16 è lo
+     * stesso modello non compresso, per il giorno che la scheda video cresce.
+     *
+     * **I due FLUX.2 Klein**, il 4B e il 9B, dividono solo il VAE: ognuno vuole
+     * il **suo** text encoder, Qwen3-4B contro Qwen3-8B, e scambiarli non dà
+     * un'immagine brutta, dà un errore di moltiplicazione fra matrici.
+     */
     extraModels: [
+      "anima2-int8",
+      "anima2-bf16",
       "flux2-klein-4b-q5km",
       "flux2-4b-text-encoder",
       "flux2-klein-q4ks",
@@ -245,6 +256,49 @@ export const APPS: Record<AppId, AppDescriptor> = {
     gpuHeavy: true,
     // Video: un fotogramma per volta, e i fotogrammi sono centinaia.
     schedaVideo: "obbligatoria",
+  },
+  voce: {
+    id: "voce",
+    name: "DaProdVoce",
+    tagline: "Scrivi una frase e te la legge, con la voce che scegli tu.",
+    kind: "service",
+    accent: "#ffd23d",
+    service: {
+      id: "voce",
+      port: 8780,
+      entry: "avvio.py",
+      // Non carica niente all'avvio: il modello entra in memoria la prima volta
+      // che si preme Parla. Due minuti sono già larghi.
+      healthTimeoutMs: 120_000,
+    },
+    /**
+     * Audio8 TTS 0.1B: 1,58 GB fra il modello (170 milioni di parametri) e il
+     * decodificatore audio, che è il file grosso dei due.
+     *
+     * È il più piccolo modello di sintesi vocale che valga la pena far girare, e
+     * sa già fare la cosa che conta: **clonare una voce** da pochi secondi di
+     * audio, senza addestrare niente.
+     */
+    models: ["audio8-tts-01b"],
+    /**
+     * Il fratello da 0,6 miliardi di parametri, che si sceglie dal menu dentro
+     * l'app. In inglese e cinese la differenza è piccola; **in italiano è
+     * un'altra cosa** — nella tabella del modello l'errore passa da 14,5 a 4,8.
+     */
+    extraModels: ["audio8-tts-06b"],
+    /**
+     * `false`, ed è l'unica app con un modello che lo dice.
+     *
+     * Gli altri riempiono la scheda video: qui sono 1,5 GB scarsi di pesi, cioè
+     * il pezzo più piccolo di tutta la suite. Spegnere DaProdMusica per far
+     * parlare una frase sarebbe uno scambio che non conviene a nessuno. In
+     * cambio il motore si toglie dalla memoria da solo dopo cinque minuti che
+     * non lo si usa.
+     */
+    gpuHeavy: false,
+    // Sulla CPU parla lo stesso, molto più piano: il modello è piccolo ma il
+    // suo ramo Mamba, senza i nuclei compilati, è lento anche sulla scheda.
+    schedaVideo: "molto-meglio",
   },
   dream: {
     id: "dream",

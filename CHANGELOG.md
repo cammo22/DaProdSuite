@@ -10,7 +10,124 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ---
 
-## Non ancora pubblicato — sarà la 0.4.2
+## Non ancora pubblicato — sarà la 0.4.3
+
+**Costruita il 21 agosto 2026.** Una scheda nuova — **DaProdVoce**, che legge
+quello che scrivi con la voce che scegli tu — e tre cose viste usando la 0.4.2:
+la Galleria che a DaProdCinema mancava, MiniMax H3 che adesso genera anche dal
+solo testo, e **Anima v2** fra i modelli di DaProdFoto.
+
+### DaProdVoce: l'ottava scheda
+
+**Scrivi una frase e te la legge.** Anche un testo lungo: viene tagliato dove
+finiscono le frasi, letto un pezzo per volta e ricucito con un respiro in mezzo,
+senza che tu debba fare niente.
+
+**E può farlo con la voce che gli dai tu.** Nella scheda **Voci** metti un pezzo
+di audio in cui si sente parlare qualcuno — dai cinque ai quindici secondi
+bastano — e **la trascrizione di quello che dice**. Da quel momento quella voce
+sta nel menu. Non c'è niente da addestrare: il modello la copia al volo, ogni
+volta.
+
+⚠ **La trascrizione non è un'etichetta**, ed è la cosa da sapere di questa
+scheda: è il modo in cui il modello capisce come quella voce pronuncia le parole.
+Scriverla sbagliata peggiora la copia; lasciarla vuota dà un'altra voce. Per
+questo il campo è obbligatorio.
+
+| Modello | Da scaricare | Come legge l'italiano |
+|---|---|---|
+| **Audio8 TTS 0.1B** | 1,58 GB, installato con l'app | ogni tanto storpia una parola |
+| **Audio8 TTS 0.6B** | 2,39 GB, dal menu dentro l'app | **tre volte meglio** |
+
+I due modelli sono gli stessi con due taglie diverse. Il piccolo è quello che
+parte; il grande, in italiano, sbaglia tre volte meno (4,8 contro 14,5 nella
+tabella di chi l'ha fatto) e non è più lento. Se l'italiano ti serve davvero,
+scarica quello.
+
+**Un audio già in libreria può diventare una voce**: il tasto «prendilo dalla
+libreria» pesca fra tutto quello che hanno fatto le altre app. E dalla Galleria
+di DaProdVoce il tasto **«a Cinema»** manda una voce dentro DaProdCinema, dove
+diventa un riferimento audio di MiniMax H3 senza passare da salva-cerca-ricarica.
+
+**È l'unica app della suite che non pretende la scheda video per sé.** Sono uno o
+due GB di pesi, il pezzo più piccolo di tutta la suite, quindi si apre accanto
+alle altre invece di spegnerle. E dopo cinque minuti che non la usi, il modello
+lascia la memoria da solo — c'è anche un tasto in alto per farlo subito.
+
+Sui tempi va detto com'è: **una frase di cinque secondi ne prende venti o
+trenta** sulla scheda video. Non è un modello lento, è un modello piccolo che
+lavora senza i nuclei compilati che lo farebbero volare.
+
+### DaProdCinema: c'è la Galleria
+
+Mancava, e si sentiva: sotto la sessione c'erano gli ultimi sei video, e quello
+di ieri l'altro esisteva solo dentro Esplora risorse. Adesso c'è una scheda
+**Galleria** con tutti i video fatti, il conteggio accanto al nome, e per
+ognuno: guardalo a schermo intero, salvane una copia dove vuoi, aprilo nella
+cartella, buttalo via.
+
+**E c'è il tasto «riferimento».** Un video fatto qui è esattamente quello che
+MiniMax H3 vuole in pasto — un movimento di camera da copiare, un ambiente, una
+voce — e con un clic torna dentro fra i riferimenti, senza salvarlo e
+ricaricarlo a mano.
+
+### MiniMax H3 genera anche dal solo testo
+
+Era l'app a impedirlo, non il modello. Il ragionamento era: quaranta GB di
+modello per fare quello che LTX 2.5 fa con ventitré è tempo buttato. Vero a
+metà, e comunque **una decisione presa al posto di chi la suite la usa**: H3
+legge il prompt con un Qwen3-VL da 32 miliardi di parametri, e c'è chi lo vuole
+proprio per quello.
+
+Adesso il tasto Genera funziona, e il consiglio resta scritto sotto ai riquadri
+— dove si legge, senza spegnere niente.
+
+### DaProdFoto: c'è Anima v2
+
+Anima cresciuta: da 28 a 40 blocchi, 2,9 miliardi di parametri invece di 2, e un
+milione e settecentomila immagini di addestramento in più, con conoscenza
+aggiornata a luglio 2026. Disegna meglio, soprattutto anime e illustrazione.
+
+**Costa 3,1 GB e basta**, perché divide con Anima Turbo il text encoder e il VAE:
+chi ha DaProdFoto o DaProdMusica installate scarica solo il modello. Si prende
+dal menu dentro l'app, come FLUX.2.
+
+Non sostituisce niente: Anima Turbo resta quella che parte, perché è distillata e
+fa un'immagine in pochi passi. Anima v2 ne vuole da 28 a 50 e lavora a CFG 4 —
+cioè **il negativo torna a contare davvero**, e la riga sotto la casella adesso
+lo dice per il modello che hai scelto.
+
+### Cosa c'è sotto, per chi tiene il conto
+
+**Una libreria in versione diversa, solo per DaProdVoce.** Il modello Audio8 si
+porta dentro il proprio codice, scritto per `transformers` 4.57; l'ambiente della
+suite ha la 5.15, che è la versione con cui girano gli altri sei motori. Le due
+non vanno d'accordo, e il modo in cui non vanno d'accordo è il peggiore: non un
+errore, ma **una voce che non smette più di parlare**.
+
+Le strade sbagliate erano due — abbassare la versione per tutti (cioè rompere sei
+motori per farne funzionare uno, la notte del 19 agosto raccontata in
+`versioni.txt`) o un secondo ambiente Python intero (altri 2,5 GB di torch).
+Quella presa è la terza: **127 MB di librerie in una cartella a parte**, che se
+le mette nel percorso soltanto il processo di DaProdVoce. L'ambiente condiviso
+resta identico a prima, e gli altri motori non sanno nemmeno che esista.
+
+⚠ **Cosa non è stato provato.** Il motore di DaProdVoce sì: modello caricato,
+voce clonata, file scritti, testo lungo tagliato e ricucito, tutto sul PC di
+Cammo. **L'app dentro la suite no** — la finestra, il menu dei modelli, lo
+scaricamento dei pesi dall'hub e le due schede Voci e Galleria sono da provare
+aprendo il programma. Stessa cosa per la Galleria di DaProdCinema e per Anima v2,
+che sono state scritte e compilate ma non aperte.
+
+⚠ **DaProdVoce non ha ancora la sua illustrazione né la sua icona**: nell'hub la
+scheda mostra il colore dell'app al posto del disegno, e la finestra usa l'icona
+della suite. Si generano con Anima a motore acceso
+(`node apps/shell/scripts/genera-copertine.cjs voce` e
+`pnpm --filter @daprod/shell icone`), e vanno fatte da qui.
+
+---
+
+## 0.4.2 — DaProdCinema da capo, e un tasto che non si pianta
 
 **Costruita il 21 agosto 2026.** Due cose, e tutte e due nascono da quello che
 hai visto usandola: DaProdCinema rifatto da capo, e il tasto **Crea** di

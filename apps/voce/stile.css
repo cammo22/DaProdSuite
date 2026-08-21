@@ -1,20 +1,19 @@
-/* Foglio di stile di DaProdCinema.
+/* Foglio di stile di DaProdVoce.
  *
- * È quello di DaProdFoto con l'accento cambiato — il viola dichiarato nel
- * catalogo — piu' le poche regole che servono solo qui: la lista delle
- * inquadrature e il riquadro dell'anteprima video.
+ * E' quello di DaProdCinema con l'accento cambiato — il giallo dichiarato nel
+ * catalogo — meno quello che qui non serve (i riquadri dei riferimenti, la
+ * lente, la griglia delle miniature) e piu' le poche regole di questa scheda:
+ * l'elenco delle voci salvate e le righe di quello che si e' fatto dire.
  *
- * Sì, è la terza copia, e nel file di Foto c'è scritto che alla terza si smette:
- * «finché le app sono due, una copia si controlla; alla terza no». Vale, ed è
- * segnato in roadmap. Non si scioglie in `packages/ui` adesso perché rifare il
- * foglio comune mentre nasce una scheda vuol dire spostare tre app in un colpo
- * per far posto alla quarta, e allora il giorno che si rompe qualcosa non si sa
- * quale delle due cose l'ha rotta.
+ * Si', e' la quarta copia, ed e' la quarta volta che c'e' scritto che alla
+ * terza si smette. Vale ancora, ed e' segnato in roadmap: il foglio comune si
+ * fa quando si fa, non mentre nasce una scheda — se no il giorno che si rompe
+ * qualcosa non si sa quale delle due cose l'ha rotta.
  */
 
 :root{
   --bg:#08090d; --panel:#111319; --panel2:#161922; --line:#22262f; --line2:#2e3340;
-  --txt:#eceef4; --dim:#868c9e; --accent:#c05cff; --accent2:#22d3ee;
+  --txt:#eceef4; --dim:#868c9e; --accent:#ffd23d; --accent2:#22d3ee;
   --ok:#34d399; --err:#f87171; --radius:16px;
 }
 *{box-sizing:border-box}
@@ -23,7 +22,7 @@
    che dopo il contenuto. In Musica costava i pulsanti dell'ultimo pannello. */
 html{height:100%}
 body{margin:0; min-height:100%;
-  background:radial-gradient(1100px 560px at 85% -12%, #2a1040 0%, transparent 62%),
+  background:radial-gradient(1100px 560px at 85% -12%, #3a2c07 0%, transparent 62%),
              radial-gradient(900px 520px at -5% 105%, #052b3d 0%, transparent 58%), var(--bg);
   background-attachment:fixed;
   color:var(--txt); font:15px/1.55 "Segoe UI",system-ui,-apple-system,sans-serif;
@@ -50,8 +49,8 @@ nav button{
   background:none; border:0; color:var(--dim); font:inherit; font-weight:600; font-size:13.5px;
   padding:7px 15px; border-radius:10px; cursor:pointer; transition:.15s; display:flex; align-items:center; gap:7px}
 nav button:hover{color:var(--txt); background:#151822}
-nav button.on{background:linear-gradient(120deg,var(--accent),#7c3aed); color:#fff; box-shadow:0 3px 14px rgba(192,92,255,.35)}
-nav .pill{background:rgba(255,255,255,.2); border-radius:99px; font-size:11px; padding:1px 7px; font-weight:700}
+nav button.on{background:linear-gradient(120deg,var(--accent),#f59e0b); color:#231a02; box-shadow:0 3px 14px rgba(255,210,61,.32)}
+nav .pill{background:rgba(0,0,0,.22); border-radius:99px; font-size:11px; padding:1px 7px; font-weight:700}
 .status{margin-left:auto; display:flex; align-items:center; gap:12px; font-size:12.5px; color:var(--dim)}
 .dot{width:8px;height:8px;border-radius:50%;background:var(--err);transition:.3s}
 .dot.on{background:var(--ok); box-shadow:0 0 9px var(--ok)}
@@ -95,12 +94,12 @@ textarea,input,select{
   width:100%; background:#0b0d13; color:var(--txt); border:1px solid var(--line);
   border-radius:11px; padding:11px 13px; font:inherit; outline:none; transition:.15s}
 textarea{resize:vertical; font-size:14px; line-height:1.6}
-textarea:focus,input:focus,select:focus{border-color:var(--accent); box-shadow:0 0 0 3px rgba(255,166,61,.14)}
+textarea:focus,input:focus,select:focus{border-color:var(--accent); box-shadow:0 0 0 3px rgba(255,210,61,.16)}
 .chips{display:flex; flex-wrap:wrap; gap:7px; margin-bottom:12px}
 .chip{background:#0b0d13; border:1px solid var(--line); color:var(--dim); cursor:pointer;
   padding:5px 12px; border-radius:99px; font-size:12.5px; transition:.15s; display:inline-flex; gap:7px; align-items:center}
 .chip:hover{border-color:var(--accent); color:var(--txt)}
-.chip.on,.chip.mine{border-color:#7a5320; color:#ffd9a8; background:#241706}
+.chip.on,.chip.mine{border-color:#7a6520; color:#ffe9a8; background:#241f06}
 .chip.tag{font-family:ui-monospace,Consolas,monospace; font-size:11.5px}
 .chip.add{border-style:dashed; color:var(--accent2)}
 .chip .x{opacity:.5; font-size:14px; line-height:1}
@@ -151,7 +150,7 @@ input[type=range]{padding:0; height:24px; accent-color:var(--accent); background
   padding:6px 11px;cursor:pointer;font:inherit;font-size:12.5px; transition:.15s}
 .mini:hover{color:var(--txt);border-color:var(--accent)}
 .mini.danger:hover{color:var(--err);border-color:var(--err)}
-.mini.on{color:#fff;border-color:var(--accent);background:#2a1c08}
+.mini.on{color:#fff;border-color:var(--accent);background:#2a2408}
 .hint{font-size:12px; color:var(--dim); margin-top:7px; line-height:1.5}
 .empty{color:var(--dim); font-size:13px; padding:10px 2px}
 
@@ -181,9 +180,10 @@ input:disabled,textarea:disabled,select:disabled{opacity:.45; cursor:not-allowed
 .track{display:flex; gap:12px; align-items:center; background:#0b0d13; border:1px solid var(--line);
   border-radius:13px; padding:9px; transition:.15s}
 .track:hover{border-color:var(--line2); background:#0e111a}
-.track.playing{border-color:var(--accent); background:#120e21}
+.track.playing{border-color:var(--accent); background:#1b1705}
 .thumb{position:relative; width:58px; height:58px; flex:0 0 58px; border-radius:10px; overflow:hidden;
-  background:linear-gradient(135deg,#4a2f10,#07354a)}
+  background:linear-gradient(135deg,#4a3f10,#07354a); display:flex; align-items:center; justify-content:center;
+  font-size:23px; color:#ffe9a8}
 .thumb img{width:100%;height:100%;object-fit:cover;display:block}
 .thumb .pl{position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
   background:rgba(0,0,0,.42); color:#fff; border:0; cursor:pointer; opacity:0; transition:.15s; font-size:17px}
@@ -213,81 +213,6 @@ input:disabled,textarea:disabled,select:disabled{opacity:.45; cursor:not-allowed
 .phases .a{color:var(--accent)} .phases .b{color:var(--accent2)}
 .phases span.off{opacity:.4}
 
-/* ---------------------------------------- da dove parte / i riferimenti ---- */
-/* I riquadri in cui si mettono i fotogrammi di LTX o i riferimenti di H3.
-   Sono la stessa cosa disegnata due volte — un posto vuoto da riempire e un
-   posto pieno da svuotare — perché è la stessa cosa: un file che entra. */
-#ingressi.sopra{outline:2px dashed var(--accent); outline-offset:6px; border-radius:12px}
-
-.gruppo-rif{margin-top:14px}
-.gruppo-rif h3{font-size:13px; font-weight:650; margin:0 0 8px; display:flex; gap:8px;
-  align-items:baseline; flex-wrap:wrap}
-.gruppo-rif h3 span{font-size:11.5px; color:var(--dim); font-weight:400}
-
-.slots{display:grid; grid-template-columns:repeat(auto-fill,minmax(168px,1fr)); gap:9px}
-/* I due fotogrammi di LTX non sono una griglia che cresce: sono due, e vanno
-   affiancati grandi uguali finché ci stanno. */
-.slots.due{grid-template-columns:repeat(auto-fit,minmax(190px,1fr))}
-
-.slot{position:relative; border:1px solid var(--line); border-radius:12px; background:#0b0d13;
-  overflow:hidden; transition:.15s}
-.slot.pieno:hover{border-color:var(--line2)}
-
-.slot.vuoto{display:flex; flex-direction:column; align-items:center; justify-content:center;
-  gap:6px; min-height:104px; border-style:dashed; color:var(--dim); cursor:pointer;
-  font:inherit; font-size:12.5px; width:100%}
-.slot.vuoto:hover{border-color:var(--accent); color:var(--txt)}
-.slot.vuoto .piu{font-size:22px; line-height:1; color:var(--accent2)}
-
-.slot .vista{height:104px; background:#07080c; display:flex; align-items:center; justify-content:center}
-.slot .vista img,.slot .vista video{width:100%; height:100%; object-fit:cover; display:block}
-.slot .vista .nota{font-size:30px; color:var(--accent2)}
-.slot .dettagli{padding:8px 9px}
-.slot .nome{font-size:11.5px; color:var(--dim); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
-
-/* L'etichetta è un pulsante perché fa qualcosa: cliccarla la scrive nel
-   prompt dove hai il cursore. Un'etichetta da ricopiare a mano sarebbe il modo
-   piu' sicuro di sbagliare il numero. */
-.slot .tag{display:inline-block; margin-bottom:3px; padding:2px 8px; border-radius:7px;
-  border:1px solid #4a2a6b; background:#1b1030; color:#e7d3ff; cursor:pointer;
-  font:inherit; font-size:11.5px; font-weight:650; font-family:ui-monospace,Consolas,monospace}
-.slot .tag:hover{border-color:var(--accent); background:#2a1748}
-.slot .tag.fisso{cursor:default; border-color:var(--line); background:#12151d; color:var(--dim);
-  font-family:inherit; font-weight:600}
-
-.slot .via{position:absolute; top:6px; right:6px; width:24px; height:24px; border-radius:7px;
-  border:0; background:rgba(6,7,11,.72); color:#fff; cursor:pointer; font-size:12px; line-height:1;
-  opacity:0; transition:.15s}
-.slot:hover .via{opacity:1}
-.slot .via:hover{background:var(--err)}
-
-.mini-switch{margin-top:5px; font-size:11.5px; gap:6px}
-.mini-switch b{color:#e7d3ff; font-family:ui-monospace,Consolas,monospace}
-
-/* ------------------------------------------------------------ i risultati ---- */
-/* Un video finito si guarda dove lo si è chiesto. Con i comandi del lettore,
-   perché metà del risultato è il suono e senza comandi non si sente. */
-.uscito{border:1px solid var(--line); border-radius:13px; overflow:hidden; background:#0b0d13;
-  margin-top:9px}
-.uscito video{width:100%; display:block; background:#000; max-height:340px}
-.uscito .sotto{padding:9px 11px}
-.uscito .sotto .mini{margin-top:7px}
-
-/* ------------------------------------------------------------- galleria ---- */
-/* La griglia dei video fatti. Le stesse schede di DaProdFoto, con dentro un
-   lettore invece di una immagine: l'anteprima e' il primo fotogramma, e il
-   video vero si guarda a schermo intero. */
-.cards{display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:12px;
-  max-height:74vh; overflow:auto; padding-right:4px}
-.card{background:#0b0d13; border:1px solid var(--line); border-radius:13px; padding:9px; transition:.15s}
-.card:hover{border-color:var(--accent)}
-/* 16:9 e non quadrata: i video di questa scheda sono quasi sempre orizzontali, e
-   una miniatura quadrata li taglierebbe ai lati proprio dove sta l'inquadratura. */
-.card .art{width:100%; aspect-ratio:16/9; border-radius:10px; object-fit:cover; display:block;
-  background:#000; margin-bottom:8px; cursor:zoom-in}
-.card .nm{font-size:13px; font-weight:650; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
-.card .sub{font-size:11.5px; color:var(--dim); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
-
 /* I pulsanti sotto ogni scheda. Ognuno chiede 112px e poi si allarga a riempire
    la riga: in una finestra larga stanno in fila, in una stretta vanno a capo
    restando della stessa misura, senza mai uscire dal pannello. */
@@ -307,36 +232,42 @@ input:disabled,textarea:disabled,select:disabled{opacity:.45; cursor:not-allowed
    resta da solo in fondo e si allarga per tutta la riga. */
 .acts .del{color:#f0a9a9; border-color:#4a2226; background:#1a1113}
 .acts .del:hover{color:#fff; background:#2a1416; border-color:var(--err)}
-.card .acts{gap:6px; margin-top:9px}
-.card .acts a,.card .acts button{flex:1 1 76px; min-height:30px; padding:6px 8px; font-size:11.5px}
 
-/* Il consiglio sotto ai riquadri dei riferimenti: un consiglio, non un divieto.
-   Ha il bordo e non il fondo rosso apposta — non e' un errore, e non deve
-   sembrarlo. */
-.hint.consiglio{margin-top:12px; padding:9px 11px; border-radius:10px;
-  border:1px solid #3a2a52; background:#150f22; color:#c9b8e6}
-
-/* ------------------------------------------------------------ la lente ---- */
-/* Il video a schermo intero. Non si chiude cliccando ovunque, come quella di
-   DaProdFoto: qui sotto c'e' un lettore, e un clic su play o sulla barra di
-   scorrimento chiuderebbe quello che stai guardando. */
-.lente{position:fixed; inset:0; z-index:60; display:flex; flex-direction:column;
-  align-items:center; justify-content:center; gap:14px; padding:28px;
-  background:rgba(6,7,11,.94); backdrop-filter:blur(8px)}
-.lente[hidden]{display:none}
-.lente video{max-width:100%; max-height:calc(100vh - 150px); border-radius:12px;
-  background:#000; box-shadow:0 20px 60px rgba(0,0,0,.6)}
-.lente .didascalia{color:var(--dim); font-size:13px; text-align:center; max-width:900px}
-.chiudi-lente{position:absolute; top:18px; right:20px; width:38px; height:38px; border-radius:11px;
-  border:1px solid var(--line2); background:#141824; color:var(--txt); font-size:15px; cursor:pointer;
-  transition:.15s}
-.chiudi-lente:hover{border-color:var(--err); color:#fff; background:#2a1416}
-
-@media(max-width:760px){
-  .cards{grid-template-columns:repeat(auto-fill,minmax(180px,1fr))}
-}
-/* Piu' stretto di cosi' una scheda non regge due pulsanti per riga: meglio uno
-   solo e leggibile che due tagliati. */
+/* Piu' stretto di cosi' una riga non regge due pulsanti: meglio uno solo e
+   leggibile che due tagliati. */
 @media(max-width:560px){
-  .card .acts a,.card .acts button{flex:1 1 100%}
+  .acts a,.acts button{flex:1 1 100%}
 }
+
+/* -------------------------------------------------------------- le voci ---- */
+/* Una voce salvata e' due cose insieme: un pezzo di audio e la trascrizione di
+   quello che ci si sente dire. Si mostrano tutte e due, perche' la seconda e'
+   quella che si sbaglia — e quando la copia viene male e' quasi sempre li'. */
+.voci{display:flex; flex-direction:column; gap:9px}
+.vocina{border:1px solid var(--line); border-radius:13px; background:#0b0d13; padding:10px 11px;
+  transition:.15s}
+.vocina:hover{border-color:var(--line2)}
+.vocina .titolo{display:flex; align-items:baseline; gap:9px; flex-wrap:wrap}
+.vocina .titolo b{font-size:14.5px}
+.vocina .titolo span{font-size:11.5px; color:var(--dim)}
+.vocina .detto{font-size:12px; color:var(--dim); margin-top:5px; line-height:1.5;
+  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden}
+.vocina audio{width:100%; height:34px; margin-top:8px}
+.vocina .acts{margin-top:8px}
+
+/* Le righe di quello che si e' fatto dire: in sessione e in galleria sono la
+   stessa cosa, un lettore e due righe di testo. */
+.track audio{width:100%; height:34px; margin-top:6px}
+.track .tmeta{width:100%}
+.detta{display:flex; gap:12px; align-items:flex-start; background:#0b0d13; border:1px solid var(--line);
+  border-radius:13px; padding:10px; transition:.15s}
+.detta:hover{border-color:var(--line2)}
+.detta .tmeta{min-width:0; flex:1}
+
+/* La riga sotto al testo: quanti caratteri, e in quanti pezzi verra' tagliato.
+   Serve a capire prima quanto ci mettera', invece che dopo. */
+#conto{font-variant-numeric:tabular-nums}
+
+/* Il lettore audio del browser su fondo scuro resta chiaro: si scurisce, se no
+   e' l'unica cosa bianca della pagina. */
+audio{filter:invert(.92) hue-rotate(180deg); border-radius:9px}

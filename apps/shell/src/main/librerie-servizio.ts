@@ -30,10 +30,38 @@ const CARTELLA = join(RUNTIME_DIR, ".daprod-servizi");
 
 /** Il file dei requisiti di questo motore, o null se non ne dichiara. */
 export function fileRequisiti(id: AppId): string | null {
+  return fileDelServizio(id, "requisiti.txt");
+}
+
+/**
+ * I requisiti **privati**: librerie che questo motore vuole in una versione
+ * diversa da quella comune, e che non entrano nell'ambiente condiviso.
+ *
+ * Ne ha uno solo, oggi: DaProdVoce, il cui modello vuole `transformers` 4.57
+ * mentre gli altri cinque motori girano sulla 5.15. Finiscono in una cartella a
+ * parte (`cartellaLibreriePrivate`) e le vede solo chi se le mette in
+ * `sys.path` — cioe' quel motore e nessun altro. Il perche' per esteso sta in
+ * `installaLibreriePrivate`, in packages/runtime.
+ */
+export function fileRequisitiPrivati(id: AppId): string | null {
+  return fileDelServizio(id, "requisiti-privati.txt");
+}
+
+function fileDelServizio(id: AppId, nome: string): string | null {
   const servizio = APPS[id].service;
   if (!servizio) return null;
-  const percorso = join(SERVICES_DIR, servizio.id, "requisiti.txt");
+  const percorso = join(SERVICES_DIR, servizio.id, nome);
   return existsSync(percorso) ? percorso : null;
+}
+
+/**
+ * Dove stanno le librerie private di un motore.
+ *
+ * Accanto all'ambiente, come i segnaposti: cancellare l'ambiente se le porta
+ * via, che e' giusto — sono librerie Python, non roba dell'utente.
+ */
+export function cartellaLibreriePrivate(servizioId: string): string {
+  return join(RUNTIME_DIR, ".daprod-privato", servizioId);
 }
 
 /**
@@ -46,13 +74,21 @@ export function fileRequisiti(id: AppId): string | null {
  */
 export function librerieServizioPronte(id: AppId): boolean {
   const requisiti = fileRequisiti(id);
-  if (!requisiti) return true;
+  const privati = fileRequisitiPrivati(id);
+  if (!requisiti && !privati) return true;
 
   const segnaposto = percorsoSegnaposto(id);
   if (!segnaposto || !existsSync(segnaposto)) return false;
 
+  // Le librerie private stanno in una cartella a parte: se non c'e', il
+  // segnaposto sta mentendo — succede a chi cancella l'ambiente a mano.
+  if (privati) {
+    const servizio = APPS[id].service;
+    if (servizio && !existsSync(cartellaLibreriePrivate(servizio.id))) return false;
+  }
+
   try {
-    return readFileSync(segnaposto, "utf8").trim() === impronta(requisiti);
+    return readFileSync(segnaposto, "utf8").trim() === impronta(requisiti, privati);
   } catch {
     return false;
   }
@@ -61,12 +97,13 @@ export function librerieServizioPronte(id: AppId): boolean {
 /** Da chiamare a installazione riuscita: da qui in poi la scheda è pronta. */
 export function segnaLibrerieServizio(id: AppId): void {
   const requisiti = fileRequisiti(id);
+  const privati = fileRequisitiPrivati(id);
   const segnaposto = percorsoSegnaposto(id);
-  if (!requisiti || !segnaposto) return;
+  if ((!requisiti && !privati) || !segnaposto) return;
 
   try {
     mkdirSync(CARTELLA, { recursive: true });
-    writeFileSync(segnaposto, `${impronta(requisiti)}\n`, "utf8");
+    writeFileSync(segnaposto, `${impronta(requisiti, privati)}\n`, "utf8");
   } catch {
     // Non riuscire a scrivere il segnaposto non deve far fallire
     // un'installazione andata bene: al massimo si rifà, e uv in un secondo
@@ -87,9 +124,12 @@ function percorsoSegnaposto(id: AppId): string | null {
  * va a capire perché una scheda dice quello che dice, e sedici caratteri si
  * confrontano; duecento righe no.
  */
-function impronta(requisiti: string): string {
+function impronta(requisiti: string | null, privati: string | null): string {
   const hash = createHash("sha256");
-  hash.update(readFileSync(requisiti));
+  if (requisiti) hash.update(readFileSync(requisiti));
+  // Anche i privati: cambiare la versione di transformers di DaProdVoce deve
+  // far tornare la scheda «da installare», come cambiare le altre.
+  if (privati) hash.update(readFileSync(privati));
   if (existsSync(VINCOLI_REQUIREMENTS)) hash.update(readFileSync(VINCOLI_REQUIREMENTS));
   return hash.digest("hex").slice(0, 16);
 }

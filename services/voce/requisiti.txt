@@ -1,0 +1,17 @@
+# Le librerie che servono a DaProdVoce e che l'ambiente condiviso non ha già.
+#
+# Sono poche perché quasi tutto c'è: torch e torchaudio li mette `install.ts`
+# con la build CUDA giusta, fastapi e uvicorn stanno in `base.txt`, e soundfile
+# ha già un numero fissato in `versioni.txt`.
+#
+# **Quello che manca davvero — transformers 4.57 — non è qui**, ed è la cosa da
+# sapere di questo motore: sta in `requisiti-privati.txt`, che si installa in
+# una cartella a parte e non tocca l'ambiente delle altre app. Il perché è
+# scritto lì.
+#
+# I numeri esatti stanno in `packages/runtime/requirements/versioni.txt`, che
+# viene passato come vincolo a ogni installazione della suite. Qui resta il
+# minimo sotto al quale il motore non funziona.
+
+# Legge il wav di riferimento e scrive quello generato.
+soundfile>=0.12

@@ -11,7 +11,12 @@
  * | | Da cosa parte | Cosa esce |
  * |---|---|---|
  * | **LTX 2.5** | testo, e se vuoi il **primo** e l'**ultimo** fotogramma | video col suono dentro |
- * | **MiniMax H3** | testo più **immagini, video e audio di riferimento** | video col suono dentro |
+ * | **MiniMax H3** | testo, e se vuoi **immagini, video e audio di riferimento** | video col suono dentro |
+ *
+ * I riferimenti di H3 sono **facoltativi**, come i due fotogrammi di LTX: senza
+ * niente, `MiniMaxH3ReferenceToVideo` genera dal solo testo. Fino alla 0.4.2
+ * l'app lo impediva per far risparmiare tempo a chi non ne aveva bisogno, ed
+ * era una scelta fatta al posto di chi la suite la usa.
  *
  * LTX è quello che parte: è distillato — otto passi — e pesa la metà.
  *
@@ -150,7 +155,8 @@ const COMPRESSIONE = 18;
  * MiniMax H3, la versione **Ref2VA**: riferimenti verso video e audio.
  *
  * È quella che serve qui. `MiniMaxH3ReferenceToVideo` prende fino a nove
- * immagini, tre video (ognuno con la sua colonna sonora) e tre audio, e li
+ * immagini, tre video (ognuno con la sua colonna sonora) e tre audio — **tutti
+ * facoltativi**, e senza nessuno genera dal solo testo — e li
  * presenta al modello con delle etichette — `<Picture 1>`, `<Video 1>`,
  * `<Audio 1>` — che si possono **nominare nel prompt**. È così che si dice «la
  * donna di `<Picture 1>` cammina nella stanza di `<Picture 2>`»: senza le
@@ -200,7 +206,7 @@ export const MODELLI = {
     ...H3,
     id: "h3",
     nome: "MiniMax H3 (riferimenti)",
-    riga: "41,6 GB, di cui 25 di solo text encoder. Prende immagini, video e audio come riferimento. Nativo a 1344x768.",
+    riga: "41,6 GB, di cui 25 di solo text encoder. Prende immagini, video e audio come riferimento — o solo il testo. Nativo a 1344x768.",
   },
 };
 

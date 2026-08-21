@@ -24,8 +24,28 @@ for (const chiave of [
   "seed", "dado", "seedCasuale", "negativo", "notaNegativo",
   // cosa sta succedendo
   "sessione", "stop", "svuota",
+  // la galleria, e il video a schermo intero
+  "navGal", "galleria", "conteggio", "aggiorna",
+  "lente", "lenteVideo", "lenteInfo", "lenteChiudi",
 ]) {
   el[chiave] = $(chiave);
+}
+
+/**
+ * Le schede: Crea e Galleria.
+ *
+ * Le stesse due righe di DaProdFoto. `suApertura` serve a chi deve rileggere
+ * qualcosa quando la sua scheda torna in vista: la galleria si ricarica quando
+ * la si apre, non ogni secondo mentre si guarda altro.
+ */
+const allApertura = new Map();
+export const suApertura = (scheda, azione) => allApertura.set(scheda, azione);
+
+export function mostraScheda(nome) {
+  document.querySelectorAll(".tab").forEach((t) => t.classList.toggle("on", t.id === `scheda-${nome}`));
+  document.querySelectorAll("nav button").forEach((b) => b.classList.toggle("on", b.dataset.scheda === nome));
+  allApertura.get(nome)?.();
+  window.scrollTo({ top: 0 });
 }
 
 export const escapeHtml = (s) =>

@@ -116,9 +116,11 @@ function applicaPreferenze(m) {
     campo.dispatchEvent(new Event("input"));
   }
 
+  // La riga sotto al negativo la scrive il modello, non questa pagina: con tre
+  // modelli in menu una frase fissa su Anima era vera per uno solo dei tre.
   el.negativo.disabled = !m.usaNegativo;
   el.notaNegativo.textContent = m.usaNegativo
-    ? "Anima lavora a CFG 1,0, e a quel valore il negativo viene ignorato dal modello. Conta solo se alzi il CFG qui sopra."
+    ? (m.notaNegativo ?? `${m.nome} guarda il negativo: quello che scrivi qui sotto conta.`)
     : `${m.nome} è distillato: lavora sempre a CFG 1,0 e non guarda mai il negativo.`;
 }
 

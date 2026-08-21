@@ -70,6 +70,8 @@ due.
 **MiniMax H3** (41,6 GB) lavora in un altro modo: prende dei **riferimenti**.
 Non «comincia così», ma «questa è la faccia, questo è il posto, questo è il
 movimento, questa è la voce» — fino a nove immagini, tre video e tre audio.
+Sono tutti facoltativi: senza niente, H3 genera dal solo testo come LTX, e ci
+mette solo molto di più.
 
 > ⚠️ Con H3 i riferimenti vanno **chiamati per nome nel prompt**, altrimenti il
 > modello riceve dei file e nessuna istruzione su cosa prendere da quale. Ogni
@@ -80,11 +82,49 @@ movimento, questa è la voce» — fino a nove immagini, tre video e tre audio.
 Il suono lo fanno tutti e due da soli, e anche quello si può chiedere a parole
 nel prompt: «rain on umbrellas», «distant waves».
 
+Nella scheda **Galleria** ci sono tutti i video che hai fatto: si guardano a
+schermo intero, si salvano dove vuoi, e con il tasto **«riferimento»** tornano
+dentro fra gli ingressi di H3 senza passare dal disco.
+
 ⏱️ **Aspettati minuti a clip, non secondi.** Su una scheda da 8 GB questi modelli
 lavorano spostando i pesi fra scheda e RAM. Accanto alla misura c'è scritto
 quanto costa: il 720 è circa 2,3 volte il lavoro del 480, il 1080p circa 5,2.
 **La prima prova falla a 480, cinque secondi, senza immagini**: così sai quanto
 costa prima di impegnare un pomeriggio.
+
+## 🎙️ DaProdVoce — *disponibile*
+
+Scrivi una frase e te la legge. Anche un testo lungo: viene tagliato dove
+finiscono le frasi, letto un pezzo per volta e ricucito con un respiro in mezzo,
+senza che tu debba fare niente.
+
+**E può farlo con la voce che gli dai tu.** Nella scheda **Voci** metti un pezzo
+di audio in cui si sente parlare qualcuno — cinque o quindici secondi bastano — e
+la trascrizione di quello che dice. Da quel momento quella voce sta nel menu, e
+la puoi usare per qualunque testo. Non c'è niente da addestrare né da aspettare:
+il modello la copia al volo, ogni volta.
+
+> ⚠️ **La trascrizione non è un'etichetta.** È il modo in cui il modello capisce
+> come quella voce pronuncia le parole: scriverla sbagliata peggiora la copia,
+> lasciarla vuota dà un'altra voce. Per questo è obbligatoria.
+
+| Modello | Da scaricare | Come legge l'italiano |
+|---|---|---|
+| **Audio8 TTS 0.1B** | 1,58 GB, viene con l'app | ogni tanto storpia una parola |
+| **Audio8 TTS 0.6B** | 2,39 GB, dal menu dentro l'app | **tre volte meglio** |
+
+Sono lo stesso modello in due taglie. Se l'italiano ti serve davvero, scarica il
+grande: non è più lento, occupa un giga in più.
+
+**Si parla con le altre app.** Un audio già in libreria — una battuta
+dell'avatar, un pezzo di una canzone — può diventare una voce di riferimento col
+tasto «prendilo dalla libreria». E dalla Galleria il tasto **«a Cinema»** manda
+una voce dentro DaProdCinema, dove diventa un riferimento audio di MiniMax H3.
+
+⏱️ **Una frase di cinque secondi ne prende venti o trenta.** È un modello
+piccolo, non un modello veloce. In compenso è l'unica scheda che **non pretende
+la scheda video per sé**: si apre accanto alle altre invece di spegnerle, e dopo
+cinque minuti che non la usi lascia la memoria da sola.
 
 ## 🤖 DaProdCompanion — *in arrivo*
 

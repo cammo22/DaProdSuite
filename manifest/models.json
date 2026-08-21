@@ -237,6 +237,25 @@
       "bytes": 253806246
     },
 
+    "anima2-int8": {
+      "label": "Anima v2 (2.9B) — anime e illustrazione (int8 ConvRot)",
+      "kind": "file",
+      "$comment": "Anima cresciuta: da 28 a 40 blocchi di transformer, 2,9 miliardi di parametri invece di 2, e 1,7 milioni di immagini di addestramento in piu' con conoscenza aggiornata a luglio 2026. Non sostituisce Anima Turbo, le sta accanto: quella e' distillata e fa un'immagine in pochi passi, questa ne vuole da 28 a 50 e in cambio disegna meglio. **Divide con lei text encoder e VAE** — gli stessi due file di 'qwen3-06b-base' e 'qwen-image-vae' — quindi chi ha gia' DaProdFoto o DaProdMusica installate aggiunge solo questo. Il formato e' int8 ConvRot, quello che ComfyUI 0.33.1 sa dequantizzare da se': 3,1 GB invece dei 5,8 della bf16, e su una scheda da 8 GB lascia spazio al text encoder. Se un giorno il motore non sapesse piu' leggerlo, la bf16 e' qui sotto ed e' lo stesso modello.",
+      "dir": "diffusion_models",
+      "file": "Anima-2.9B-preview-v1_int8_convrot.safetensors",
+      "url": "https://huggingface.co/Gazingstars123/Anima-2.9B/resolve/main/Anima-2.9B-preview-v1_int8_convrot.safetensors",
+      "bytes": 3082486758
+    },
+    "anima2-bf16": {
+      "label": "Anima v2 (2.9B) — piena qualita' (bf16, non compressa)",
+      "kind": "file",
+      "$comment": "Lo stesso modello senza compressione: 5,8 GB. Su 8 GB di VRAM ci sta ma stretto, e la differenza rispetto all'int8 si vede poco. Sta nel catalogo perche' e' il file ufficiale, ed e' il primo posto dove guardare se la versione compressa dovesse dare noie o se la scheda video cresce.",
+      "dir": "diffusion_models",
+      "file": "Anima-2.9B-preview-v1.safetensors",
+      "url": "https://huggingface.co/Gazingstars123/Anima-2.9B/resolve/main/Anima-2.9B-preview-v1.safetensors",
+      "bytes": 5843204206
+    },
+
     "flux2-klein-4b-q5km": {
       "label": "FLUX.2 Klein 4B — Q5_K_M (il più leggero dei due)",
       "kind": "file",
@@ -372,6 +391,25 @@
       "$comment": "I modelli di immagini capiscono l'inglese: una descrizione in italiano dà un'immagine che non c'entra niente. Questo traduce prima di generare. È MarianMT, gira in CPU in meno di un secondo e non toglie VRAM al modello che deve fare il lavoro vero. Licenza CC-BY-4.0. Gli 'include' lasciano fuori i pesi TensorFlow, che sono più di metà del repo e non servono. Fino alla 0.3.4 qui c'era 'opus-mt-it-en', il fratello piccolo da 330 MB: traduceva 'luce calda' con 'hot light', e a un modello di immagini quello è un'altra cosa. Il motore usa ancora il piccolo se è l'unico che trova sul disco, così chi aggiorna non resta senza traduttore mentre scarica.",
       "include": ["*.json", "*.spm", "pytorch_model.bin"],
       "bytes": 578792253
+    },
+
+    "audio8-tts-01b": {
+      "label": "Audio8 TTS 0.1B — la voce di DaProdVoce",
+      "kind": "hf-repo",
+      "dir": "audio8/tts-0.1b",
+      "repo": "Audio8/Audio8-TTS-Preview-0.1b",
+      "$comment": "Il piu' piccolo modello di sintesi vocale che valga la pena far girare: 170 milioni di parametri per la voce piu' 120 per il decodificatore audio, che sta tutto in 'codec.pth'. Clona una voce da pochi secondi di audio, senza addestrare niente. Gli 'include' lasciano fuori solo l'immagine di copertina e il README: i file .py servono davvero, perche' questo modello si porta il proprio codice e transformers lo esegue (trust_remote_code). Il codec e' lo stesso file del 0.6B ed e' scaricato due volte, 1,35 GB: si potrebbe dividere, ma vorrebbe dire una cartella che non e' piu' lo specchio del repo, e allora un aggiornamento del modello diventa un caso speciale.",
+      "include": ["*.json", "*.py", "*.jinja", "*.safetensors", "*.pth", "LICENSE"],
+      "bytes": 1696264636
+    },
+    "audio8-tts-06b": {
+      "label": "Audio8 TTS 0.6B — la voce grande (piu' brava con l'italiano)",
+      "kind": "hf-repo",
+      "dir": "audio8/tts-0.6b",
+      "repo": "Audio8/Audio8-TTS-Preview-0.6b",
+      "$comment": "Lo stesso modello con 0,6 miliardi di parametri invece di 0,17. In inglese e cinese la differenza e' piccola; **in italiano e' tre volte meglio** (14,5 di errore contro 4,8 nella tabella del modello), ed e' il motivo per cui sta qui. Un giga in piu' di scaricamento e altrettanta VRAM: su una scheda da 8 GB ci sta comodo, e chi ha DaProdVoce installata lo prende dal menu dentro l'app.",
+      "include": ["*.json", "*.py", "*.jinja", "*.safetensors", "*.pth", "LICENSE"],
+      "bytes": 2565453079
     },
 
     "lmstudio-cervello": {

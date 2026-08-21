@@ -1,5 +1,5 @@
 /**
- * Stato e ciclo di vita delle sei app.
+ * Stato e ciclo di vita delle otto app.
  *
  * Un'app è utilizzabile quando ci sono l'ambiente Python condiviso e i suoi
  * modelli. Aprirla significa: chiedere la GPU se è un motore pesante, avviare il
@@ -32,6 +32,7 @@ import * as visualizer from "./apps/visualizer";
 import * as musica from "./apps/musica";
 import * as foto from "./apps/foto";
 import * as cinema from "./apps/cinema";
+import * as voce from "./apps/voce";
 import * as dream from "./apps/dream";
 import * as iodigitale from "./apps/iodigitale";
 import * as companion from "./apps/companion";
@@ -47,6 +48,7 @@ const MIGRATED = new Set<AppId>([
   "musica",
   "foto",
   "cinema",
+  "voce",
   "dream",
   "iodigitale",
   "companion",
@@ -80,6 +82,11 @@ const FINESTRE: Partial<Record<AppId, Finestra>> = {
     apri: cinema.apri,
     chiudi: cinema.chiudi,
     laFinestra: cinema.laFinestra,
+  },
+  voce: {
+    apri: voce.apri,
+    chiudi: voce.chiudi,
+    laFinestra: voce.laFinestra,
   },
   dream: {
     apri: dream.apri,

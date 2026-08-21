@@ -30,6 +30,10 @@
 
 <header>
   <div class="logo">DaProd<span>Cinema</span></div>
+  <nav>
+    <button data-scheda="crea" class="on">Crea</button>
+    <button data-scheda="galleria">Galleria <span class="pill" id="navGal">0</span></button>
+  </nav>
   <div class="status">
     <div class="mods" id="mods"></div>
     <span class="dot" id="dot"></span><span id="statusTxt">connessione…</span>
@@ -47,7 +51,8 @@
 </section>
 <div id="avvisoModello" class="manca" hidden></div>
 
-<section class="tab on">
+<!-- ============================== CREA ============================== -->
+<section class="tab on" id="scheda-crea">
  <div class="two">
   <div>
     <div class="panel">
@@ -146,6 +151,28 @@
   </div>
  </div>
 </section>
+
+<!-- ============================= GALLERIA ============================= -->
+<!-- I video fatti qui, tutti, non solo gli ultimi della sessione. È la stessa
+     scheda di DaProdFoto: non un album del programma, ma la cartella dei
+     risultati della suite vista da questa app. -->
+<section class="tab" id="scheda-galleria">
+  <div class="panel">
+    <h2>I tuoi video <span id="conteggio" style="color:var(--dim);text-transform:none"></span>
+      <span class="right"><button class="mini" id="aggiorna">aggiorna</button></span>
+    </h2>
+    <div class="cards" id="galleria"></div>
+  </div>
+</section>
+
+<!-- Il video a schermo intero. Si chiude con la X o con Esc — non cliccando
+     ovunque come in DaProdFoto: qui sotto c'è un lettore, e ogni clic su play,
+     pausa o barra di scorrimento chiuderebbe quello che stai guardando. -->
+<div class="lente" id="lente" hidden>
+  <video id="lenteVideo" controls playsinline></video>
+  <div class="didascalia" id="lenteInfo"></div>
+  <button class="chiudi-lente" id="lenteChiudi" type="button" title="chiudi">&#10005;</button>
+</div>
 
 <script type="module" src="src/avvio.js"></script>
 </body>

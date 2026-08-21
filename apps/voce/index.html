@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!--
+  Le stesse regole di DaProdFoto e DaProdCinema, con una porta diversa: qui il
+  motore è quello di DaProdVoce, su 8780, e non ComfyUI.
+
+  `media-src` comprende `daprod:` perché le voci fatte si ascoltano dalla
+  libreria della suite, e `blob:` perché una voce appena scelta dal disco si fa
+  sentire prima ancora di essere caricata nel motore.
+-->
+<meta http-equiv="Content-Security-Policy" content="
+  default-src 'self';
+  script-src 'self';
+  style-src 'self' 'unsafe-inline';
+  img-src 'self' daprod: data: blob:;
+  media-src 'self' daprod: blob:;
+  connect-src 'self' daprod: blob: data: http://127.0.0.1:8780;
+  object-src 'none';
+  base-uri 'none';
+">
+<title>DaProdVoce</title>
+<link rel="stylesheet" href="stile.css">
+</head>
+<body>
+
+<header>
+  <div class="logo">DaProd<span>Voce</span></div>
+  <nav>
+    <button data-scheda="parla" class="on">Parla</button>
+    <button data-scheda="voci">Voci <span class="pill" id="navVoci">0</span></button>
+    <button data-scheda="galleria">Galleria <span class="pill" id="navGal">0</span></button>
+  </nav>
+  <div class="status">
+    <button class="mini" id="libera" title="toglie il modello dalla scheda video">libera la memoria</button>
+    <span class="dot" id="dot"></span><span id="statusTxt">connessione…</span>
+  </div>
+</header>
+
+<!-- Il modello sta in cima e fuori dalle schede, come in tutte le altre app:
+     decide quanto bene viene letto l'italiano, e vale per tutto quello che si
+     fa sotto. -->
+<section class="barra-modello">
+  <label for="modello">Modello</label>
+  <select id="modello"></select>
+  <span class="hint" id="rigaModello"></span>
+</section>
+<div id="avvisoModello" class="manca" hidden></div>
+
+<!-- ============================== PARLA ============================== -->
+<section class="tab on" id="scheda-parla">
+ <div class="two">
+  <div>
+    <div class="panel">
+      <h2>Cosa deve dire</h2>
+      <textarea id="testo" rows="7" placeholder="Scrivi qui quello che vuoi sentire. Anche lungo: il testo viene letto un pezzo per volta e ricucito da solo."></textarea>
+      <div class="hint" id="conto"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Con che voce</h2>
+      <select id="voce"></select>
+      <div class="hint" id="notaVoce"></div>
+    </div>
+
+    <button class="btn wide" id="parla" style="margin-top:16px" disabled>Parla</button>
+    <div id="errore" class="err" style="display:none"></div>
+
+    <div class="panel">
+      <h2>Resa <span class="right"><button class="mini" id="toggleAdv">avanzati</button></span></h2>
+      <div id="avanzati" hidden>
+        <div class="resa">
+          <div class="voce">
+            <label>Quanto varia <span class="rangeval" id="temperaturaVal">0,70</span></label>
+            <input type="range" id="temperatura" min="0.2" max="1.2" step="0.05" value="0.7">
+            <div class="hint">Basso legge piatto e sicuro, alto mette più intonazione e ogni
+              tanto sbaglia una parola.</div>
+          </div>
+          <div class="voce">
+            <label>Massimo per pezzo <span class="rangeval" id="secondiVal">30 s</span></label>
+            <input type="range" id="secondiMassimi" min="10" max="60" step="5" value="30">
+            <div class="hint">Il tetto oltre il quale un singolo pezzo di testo viene
+              interrotto. Serve solo se il modello si impunta e non smette.</div>
+          </div>
+        </div>
+        <div class="resa">
+          <div class="voce seed">
+            <label for="seme">Seed</label>
+            <div class="inline"><input type="number" id="seme" min="0"><button class="mini" id="dado">&#127922;</button></div>
+          </div>
+          <label class="switch"><input type="checkbox" id="semeCasuale" checked> Seed casuale a ogni frase</label>
+        </div>
+      </div>
+      <div class="hint" id="notaResa">Le manopole sono poche di proposito: quello che cambia
+        davvero il risultato è il modello qui sopra e la voce di riferimento.</div>
+    </div>
+  </div>
+
+  <div>
+    <div class="panel sticky">
+      <h2>Sessione</h2>
+      <div id="sessione" class="tracks"></div>
+    </div>
+  </div>
+ </div>
+</section>
+
+<!-- =============================== VOCI =============================== -->
+<section class="tab" id="scheda-voci">
+ <div class="two">
+  <div class="panel">
+    <h2>Aggiungi una voce</h2>
+    <div class="hint">Serve un pezzo di audio in cui si sente parlare quella voce — dai
+      cinque ai quindici secondi bastano — e <b>la trascrizione di quello che dice</b>.
+      La trascrizione non è un'etichetta: è come il modello capisce il modo in cui quella
+      voce pronuncia le parole. Sbagliarla peggiora la copia.</div>
+
+    <div class="field" style="margin-top:14px">
+      <label for="nomeVoce">Come si chiama</label>
+      <input type="text" id="nomeVoce" placeholder="Es. Narratore, Nonna, Io">
+    </div>
+    <div class="field">
+      <label>L'audio</label>
+      <div class="acts">
+        <button id="scegliAudio">scegli un file</button>
+        <button id="dallaLibreria">prendilo dalla libreria</button>
+      </div>
+      <div class="hint" id="fileScelto">Nessun audio scelto. Vanno bene wav, mp3, flac e ogg.</div>
+      <audio id="ascoltaScelto" controls hidden></audio>
+    </div>
+    <div class="field">
+      <label for="testoVoce">Cosa dice, parola per parola</label>
+      <textarea id="testoVoce" rows="3" placeholder="Es. Ciao, oggi vi racconto una storia che mi hanno raccontato tanti anni fa."></textarea>
+    </div>
+    <button class="btn wide" id="salvaVoce">Salva questa voce</button>
+    <div id="erroreVoci" class="err" style="display:none"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Le tue voci <span id="contoVoci" style="color:var(--dim);text-transform:none"></span></h2>
+    <div id="elencoVoci"></div>
+  </div>
+ </div>
+</section>
+
+<!-- ============================= GALLERIA ============================= -->
+<section class="tab" id="scheda-galleria">
+  <div class="panel">
+    <h2>Quello che hai fatto dire <span id="conteggio" style="color:var(--dim);text-transform:none"></span>
+      <span class="right"><button class="mini" id="aggiorna">aggiorna</button></span>
+    </h2>
+    <div id="galleria" class="tracks"></div>
+  </div>
+</section>
+
+<input type="file" id="sceltaFile" accept="audio/*" style="display:none">
+
+<script type="module" src="src/avvio.js"></script>
+</body>
+</html>

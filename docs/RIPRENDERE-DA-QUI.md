@@ -1,7 +1,7 @@
 # Riprendere da qui
 
 Documento di passaggio fra una sessione e l'altra. Aggiornato il **21 agosto
-2026**, con la 0.4.1 pubblicata e la 0.4.2 costruita.
+2026**, con la 0.4.2 pubblicata e la 0.4.3 costruita.
 
 **Se stai leggendo questo all'inizio di una conversazione nuova**: leggi anche
 [COME-SI-LAVORA.md](COME-SI-LAVORA.md) e [ROADMAP.md](ROADMAP.md), poi vai al
@@ -67,11 +67,65 @@ Repo pubblico: **https://github.com/cammo22/DaProdSuite**
 | **0.4.1 pubblicata** | fatto il 21 agosto: tag `v0.4.1`, PR #10 |
 | **Cinema rifatto da capo (0.4.2)** | grafi ricostruiti sul flusso ufficiale e sul sorgente dei nodi; interfaccia provata in un browser con i ponti finti. **Nessuna clip vera**: è la prima cosa da fare, e LTX 2.5 è già sul disco |
 | **Musica: «Crea» non si pianta più** | fatto: `lms` aveva chiamate senza timeout dentro al percorso di Genera. **Da provare tu**, perché il blocco non si è riprodotto qui |
+| **0.4.2 pubblicata** | fatto il 21 agosto: tag `v0.4.2`, PR #11 |
+| **DaProdVoce, l'ottava scheda (0.4.3)** | motore **provato davvero** sul PC: modello caricato, voce clonata, testo lungo tagliato e ricucito, wav scritti. **L'app dentro la suite non è mai stata aperta** |
+| **Librerie private per un motore solo** | fatto: `requisiti-privati.txt` + `uv pip install --target`. Nasce perché il modello Audio8 vuole transformers 4.57 e la suite ha la 5.15 |
+| **Cinema: la Galleria** | fatta, **da provare tu**: mai aperta in Electron |
+| **H3 genera anche dal solo testo** | fatto: il divieto era dell'app, non del modello |
+| **Anima v2 (2.9B) in Foto** | in catalogo e nel menu, **mai generata un'immagine**: 3,1 GB da scaricare |
 
 Si lavora su un ramo per release e una PR: `release-0.2.0` è stata unita con le
 PR #3 e #4, la 0.3.1 con la #5, la 0.3.2 con la #6, la 0.3.3 con la #7, la
-0.3.4 con la #8, la 0.4.0 con la #9, la 0.4.1 con la #10, e questo giro sta su
-`release-0.4.2`.
+0.3.4 con la #8, la 0.4.0 con la #9, la 0.4.1 con la #10, la 0.4.2 con la #11,
+e questo giro sta su `release-0.4.3`.
+
+### Com'è fatto il giro della 0.4.3
+
+**DaProdVoce è l'ottava scheda**, e la cosa che vale la pena raccontare non è
+l'app: è **come ci gira dentro il modello**.
+
+Il modello (Audio8 TTS, 0.1B e 0.6B) si porta il proprio codice, che transformers
+esegue con `trust_remote_code`. Quel codice è scritto per **transformers 4.57**;
+l'ambiente della suite ha la **5.15**, che è la versione con cui girano gli altri
+sei motori e che sta scritta in `versioni.txt`. Le due non vanno d'accordo su un
+punto solo — `FalconHybridMambaAttentionDynamicCache`, la cache dei modelli
+ibridi attenzione+Mamba, che nella 5 non esiste più perché le cache sono state
+unificate in `DynamicCache`.
+
+**Provato, non dedotto** (21 agosto 2026, stesso testo, stesso PC):
+
+| | Risultato |
+|---|---|
+| transformers 4.57.5 | 35 fotogrammi, si ferma da sé, i codici sono tutti diversi |
+| transformers 5.15.0 + toppa sulla cache | 512 fotogrammi, non si ferma mai, `1539, 1875, 1539, 1875…` |
+
+La toppa che rimappa la vecchia classe sulla nuova **fa passare l'importazione e
+non fa funzionare il modello**: è il caso peggiore, perché non è un errore ma una
+voce che non smette più di parlare, e sembra un difetto del modello.
+
+Da lì la scelta, che è la novità di struttura di questo giro:
+**`services/<id>/requisiti-privati.txt`**. Si installa con `uv pip install
+--target` in `runtime/.daprod-privato/<servizio>` — **senza** il file dei
+vincoli, che è tutto il punto — e a metterselo in `sys.path` è soltanto
+`services/voce/avvio.py`. Centoventisette MB, e l'ambiente condiviso non cambia
+di una riga: gli altri motori non sanno nemmeno che quella cartella esista.
+
+Le due strade scartate, scritte perché non vengano riprese per sbaglio:
+abbassare `transformers` per tutti (cioè la notte del 19 agosto di nuovo) e un
+secondo ambiente Python intero (altri 2,5 GB di torch).
+
+**Il resto del giro è roba vista usando la 0.4.2**: la Galleria che a Cinema
+mancava, il divieto di generare senza riferimenti tolto da H3 (era dell'app, non
+del modello), e Anima v2 fra i modelli di Foto — che costa 3,1 GB perché divide
+text encoder e VAE con Anima Turbo.
+
+**Cosa è stato provato davvero, e cosa no.** Il motore di DaProdVoce sì, fuori
+da Electron ma con l'ambiente vero della suite: `/health`, `/api/stato`, un
+lavoro in coda con l'avanzamento, un wav da 9,47 s scritto sul disco, una voce
+salvata e riusata per clonare, il testo lungo tagliato in tre pezzi. **Tutto il
+resto no**: la finestra, il menu dei modelli, lo scaricamento dall'hub, la
+Galleria di Cinema, Anima v2. Sono scritti e compilano, e non sono mai stati
+aperti.
 
 ### Com'è fatto il giro della 0.4.2
 
@@ -992,11 +1046,25 @@ conversazione — che dipende dal modello che sceglie lui, non da noi.
 
 ## Il prossimo passo
 
-**Prima di tutto, e prima di qualunque altra cosa: far uscire una clip da
-DaProdCinema.** Non è una voce di lista fra le altre, è il debito della 0.4.1:
-sono stati scritti un video musicale automatico, una scaletta, un montaggio e
-due grafi sopra a una generazione che non aveva mai prodotto un file. LTX 2.5 è
-già sul disco (23,2 GB, scaricati): 480, cinque secondi, niente immagini. Finché
+**Prima di tutto: aprire il programma e provare le due cose nuove.** La 0.4.3
+aggiunge una scheda intera e un modo nuovo di installare librerie, e nessuna
+delle due è mai passata da Electron.
+
+1. **DaProdVoce dall'hub.** L'installazione deve fare tre cose di fila: i pesi
+   (1,58 GB), le librerie del motore, e — la parte nuova — le librerie private in
+   `runtime/.daprod-privato/voce`. Se quella cartella non compare, il motore
+   parte lo stesso e lo scrive nel log: *«Nessuna cartella di librerie private»*,
+   e la voce non si fermerà più. È il primo posto da guardare.
+2. **Una frase corta, poi una lunga.** Corta per vedere che esce; lunga per
+   vedere il taglio in pezzi e il respiro fra l'uno e l'altro.
+3. **Una voce clonata.** Serve un audio con la sua trascrizione: il tasto
+   «prendilo dalla libreria» pesca un brano già fatto, e per quelli fatti da
+   DaProdVoce la trascrizione si riempie da sé.
+
+**E poi resta il debito della 0.4.1, che è ancora aperto: far uscire una clip da
+DaProdCinema.** Sono stati scritti un video musicale automatico, una scaletta, un
+montaggio e due grafi sopra a una generazione che non aveva mai prodotto un file.
+LTX 2.5 è già sul disco (23,2 GB): 480, cinque secondi, niente immagini. Finché
 non esce quel mp4, **niente di nuovo su Cinema**.
 
 Poi, in ordine di quello che resta aperto:
@@ -1015,6 +1083,14 @@ Poi, in ordine di quello che resta aperto:
    casa per IoDigitale.
 5. **L'accesso da fuori e Android** (§ 0.5.0 e § 0.6.0), che è un progetto a sé.
 6. **Il video musicale di Cinema, di nuovo** (§ 0.7.0): dopo, non prima.
+7. **La copertina e l'icona di DaProdVoce**, che vanno generate con Anima a
+   motore acceso (`node apps/shell/scripts/genera-copertine.cjs voce` e
+   `pnpm --filter @daprod/shell icone`). Vanno fatte **da qui**: dentro una
+   sandbox i file finiscono in una cartella finta.
+8. **Un modo di comandare la suite da fuori** — l'MCP che ha chiesto Cammo il 21
+   agosto, con Needle 2 come traduttore fra una frase e una chiamata. Il piano è
+   in roadmap, § «Un'AI che usa il programma da sola»: il lavoro vero non è il
+   modello, è dichiarare una volta sola le azioni che le app già sanno fare.
 
 ## Com'è entrato DaProdIoDigitale
 

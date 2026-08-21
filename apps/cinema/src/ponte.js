@@ -149,7 +149,12 @@ export const liberaMemoriaLlm = () => suite.llm.liberaMemoria();
 export const video = () => suite.libreria.elenco({ tipo: "video", app: "cinema" });
 export const scriviMeta = (id, meta) => suite.libreria.meta(id, meta);
 export const mostraNellaCartella = (id) => suite.libreria.mostraNellaCartella(id);
+export const eliminaElemento = (id) => suite.libreria.elimina(id);
+/** Ne porta fuori una copia, scegliendo dove con la finestra di Windows. */
+export const salvaCopia = (id) => suite.libreria.salva(id);
 export const suLibreriaCambiata = (azione) => suite.libreria.onCambiata(azione);
+/** Quando un'altra app manda qui qualcosa: un'immagine, un video, un audio. */
+export const suConsegna = (azione) => suite.onConsegna(azione);
 
 /* ----------------------------------------------------------------- modelli */
 
