@@ -16,6 +16,7 @@
 import { APPS, type AppId, type AppService } from "@daprod/ipc";
 import { ProcessSupervisor } from "./process-supervisor";
 import { impostazioni } from "./impostazioni";
+import { cartellaLibreriePrivate } from "./librerie-servizio";
 import { createLogger } from "./logging";
 import { libreria } from "./libreria";
 import { CACHE_DIR, ENGINES_DIR, MODELS_DIR, PYTHON_EXE, SERVICES_DIR, cartellaApp } from "./paths";
@@ -297,6 +298,18 @@ function ambiente(id: AppId, servizio: AppService): NodeJS.ProcessEnv {
     // Serve a chi la propria pagina se la serve da solo (DaProdDream): gli
     // altri motori la ignorano.
     DAPROD_INTERFACCIA: cartellaApp(id),
+    /**
+     * Le librerie che questo motore vuole in una versione diversa da quella
+     * comune, se ne ha dichiarate (`services/<id>/requisiti-privati.txt`).
+     *
+     * Si passa il percorso e basta: **e' il motore** a metterselo davanti a
+     * `sys.path`, e nessun altro processo lo fa. Cosi' DaProdVoce puo' girare su
+     * transformers 4.57 mentre gli altri cinque restano sulla 5.15, senza che
+     * l'ambiente condiviso cambi di una riga.
+     */
+    ...(existsSync(cartellaLibreriePrivate(servizio.id))
+      ? { DAPROD_LIBRERIE_PRIVATE: cartellaLibreriePrivate(servizio.id) }
+      : {}),
     ...(servizio.engine ? { DAPROD_MOTORE: join(ENGINES_DIR, servizio.engine) } : {}),
   };
 }

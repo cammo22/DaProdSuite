@@ -116,6 +116,68 @@ export async function installaRequisiti(options: InstallaRequisitiOptions): Prom
   }
 }
 
+export interface LibreriePrivateOptions {
+  /** Percorso di uv, da `ensureUv`. */
+  uv: string;
+  /** Cartella del venv condiviso: serve solo a dire a uv per quale Python. */
+  runtimeDir: string;
+  /** File dei requisiti privati del motore. */
+  requisiti: string;
+  /** Cartella dove finiscono, fuori dall'ambiente condiviso. */
+  destinazione: string;
+  timeoutMs?: number;
+  segnale?: AbortSignal;
+  onLine?: (riga: string) => void;
+}
+
+/**
+ * Librerie che un motore vuole **in una versione diversa** da quella comune.
+ *
+ * Nasce il 21 agosto 2026 con DaProdVoce, e la ragione va scritta perché è
+ * l'eccezione a una regola che vale ancora:
+ *
+ * Il modello di sintesi vocale Audio8 si porta il proprio codice, e quel codice
+ * è scritto per `transformers` 4.57. L'ambiente della suite ha la 5.15, che è la
+ * versione con cui girano gli altri cinque motori. Le due non sono compatibili
+ * su questo punto — la 5 ha unificato le cache dei modelli ibridi, e sul modello
+ * Audio8 il risultato non è un errore ma **una voce che non smette più di
+ * parlare**, il che è peggio: sembra un difetto del modello. Provato il 21
+ * agosto 2026, con le due versioni una accanto all'altra.
+ *
+ * Le due strade sbagliate erano: **abbassare la versione comune** (cioè rompere
+ * gli altri cinque motori per farne funzionare uno) e **un secondo ambiente
+ * intero** (cioè altri 2,5 GB di torch). Questa è la terza: `uv pip install
+ * --target`, che scrive in una **cartella normale** invece che nel venv, e il
+ * motore se la mette davanti a `sys.path` all'avvio. Centoquindici MB, e
+ * l'ambiente condiviso resta identico a prima — gli altri motori non vedono mai
+ * quella cartella, perché è il processo di DaProdVoce a metterla nel proprio
+ * percorso, nessun altro.
+ *
+ * **Niente file dei vincoli qui, ed è il punto.** `versioni.txt` è la legge
+ * dell'ambiente condiviso; questa cartella non è l'ambiente condiviso, e
+ * applicare la legge di là vorrebbe dire ottenere di nuovo la 5.15 — cioè
+ * niente. Quello che entra qui sta scritto per esteso in
+ * `services/<id>/requisiti-privati.txt`, con i numeri fissi.
+ */
+export async function installaLibreriePrivate(options: LibreriePrivateOptions): Promise<void> {
+  const { uv, runtimeDir, requisiti, destinazione, timeoutMs, segnale, onLine } = options;
+
+  await run(
+    uv,
+    [
+      "pip",
+      "install",
+      "--python",
+      join(runtimeDir, "Scripts", "python.exe"),
+      "--target",
+      destinazione,
+      "-r",
+      requisiti,
+    ],
+    { segnale, onLine, timeoutMs },
+  );
+}
+
 /**
  * Qualcosa pretende una versione diversa da quella che abbiamo provato.
  *

@@ -57,6 +57,9 @@ extraResources:
   # daprod://. Il sorgente è già la versione da spedire.
   - from: ../cinema
     to: apps/cinema
+  # Voce come Cinema: HTML, CSS e moduli ES serviti dallo schema daprod://.
+  - from: ../voce
+    to: apps/voce
   # Dream la serve il suo motore, non lo schema daprod://: la cartella deve
   # restare leggibile da Python, non finire nell'asar.
   - from: ../dream

@@ -1,0 +1,273 @@
+/* Foglio di stile di DaProdVoce.
+ *
+ * E' quello di DaProdCinema con l'accento cambiato — il giallo dichiarato nel
+ * catalogo — meno quello che qui non serve (i riquadri dei riferimenti, la
+ * lente, la griglia delle miniature) e piu' le poche regole di questa scheda:
+ * l'elenco delle voci salvate e le righe di quello che si e' fatto dire.
+ *
+ * Si', e' la quarta copia, ed e' la quarta volta che c'e' scritto che alla
+ * terza si smette. Vale ancora, ed e' segnato in roadmap: il foglio comune si
+ * fa quando si fa, non mentre nasce una scheda — se no il giorno che si rompe
+ * qualcosa non si sa quale delle due cose l'ha rotta.
+ */
+
+:root{
+  --bg:#08090d; --panel:#111319; --panel2:#161922; --line:#22262f; --line2:#2e3340;
+  --txt:#eceef4; --dim:#868c9e; --accent:#ffd23d; --accent2:#22d3ee;
+  --ok:#34d399; --err:#f87171; --radius:16px;
+}
+*{box-sizing:border-box}
+/* `min-height` e non `height`: con l'altezza fissa al 100% il corpo finirebbe
+   dove finisce la prima schermata, e lo spazio in fondo si sederebbe lì invece
+   che dopo il contenuto. In Musica costava i pulsanti dell'ultimo pannello. */
+html{height:100%}
+body{margin:0; min-height:100%;
+  background:radial-gradient(1100px 560px at 85% -12%, #3a2c07 0%, transparent 62%),
+             radial-gradient(900px 520px at -5% 105%, #052b3d 0%, transparent 58%), var(--bg);
+  background-attachment:fixed;
+  color:var(--txt); font:15px/1.55 "Segoe UI",system-ui,-apple-system,sans-serif;
+  padding-bottom:24px;
+}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:var(--line2);border-radius:99px;border:3px solid transparent;background-clip:content-box}
+::-webkit-scrollbar-track{background:transparent}
+
+/* ------------------------------------------------------------ header ---- */
+header{
+  display:flex; align-items:center; gap:20px; padding:11px 22px;
+  border-bottom:1px solid var(--line); position:sticky; top:0; z-index:30;
+  backdrop-filter:blur(14px); background:rgba(8,9,13,.82);
+}
+.logo{font-size:19px; font-weight:800; letter-spacing:-.03em; white-space:nowrap}
+.logo span{background:linear-gradient(90deg,var(--accent),var(--accent2));
+  -webkit-background-clip:text; background-clip:text; color:transparent}
+/* Le due schede: Crea e Galleria. Stesse regole di DaProdFoto, con l'accento
+   viola di questa app: il numero accanto a "Galleria" e' quanti video ci sono,
+   e si vede senza entrarci. */
+nav{display:flex; gap:3px; background:#0d0f15; border:1px solid var(--line); border-radius:13px; padding:4px}
+nav button{
+  background:none; border:0; color:var(--dim); font:inherit; font-weight:600; font-size:13.5px;
+  padding:7px 15px; border-radius:10px; cursor:pointer; transition:.15s; display:flex; align-items:center; gap:7px}
+nav button:hover{color:var(--txt); background:#151822}
+nav button.on{background:linear-gradient(120deg,var(--accent),#f59e0b); color:#231a02; box-shadow:0 3px 14px rgba(255,210,61,.32)}
+nav .pill{background:rgba(0,0,0,.22); border-radius:99px; font-size:11px; padding:1px 7px; font-weight:700}
+.status{margin-left:auto; display:flex; align-items:center; gap:12px; font-size:12.5px; color:var(--dim)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--err);transition:.3s}
+.dot.on{background:var(--ok); box-shadow:0 0 9px var(--ok)}
+.mods{display:flex; gap:5px}
+.mods button{
+  width:27px; height:27px; border-radius:8px; border:1px solid var(--line); cursor:pointer;
+  background:#0d0f15; color:#fff; font:inherit; font-size:11.5px; font-weight:800;
+  display:flex; align-items:center; justify-content:center; transition:.15s}
+.mods button:hover{transform:translateY(-1px); filter:brightness(1.2)}
+.mods button::after{content:"×"; position:absolute; margin:-18px 0 0 20px; font-size:12px; opacity:0; transition:.15s}
+.mods button:hover::after{opacity:1}
+.mods .m-musica{background:linear-gradient(135deg,#7c2d12,#f59e0b); border-color:#f59e0b}
+.mods .m-testo{background:linear-gradient(135deg,#155e75,#0891b2); border-color:#0891b2}
+.mods .m-immagini{background:linear-gradient(135deg,#166534,#22c55e); border-color:#22c55e}
+.mods .m-vae{background:linear-gradient(135deg,#78350f,#d97706); border-color:#d97706}
+/* Il traduttore: sta nella RAM e non nella VRAM, ma occupa memoria e fa
+   aspettare come gli altri, quindi il suo quadratino ce l'ha anche lui. */
+.mods .m-lingua{background:linear-gradient(135deg,#3730a3,#6366f1); border-color:#6366f1; font-size:9.5px}
+
+/* -------------------------------------------------------------- tabs ---- */
+.tab{display:none; padding:22px 22px 40px; max-width:1560px; margin:0 auto}
+.tab.on{display:block}
+.two{display:grid; grid-template-columns:minmax(0,1.05fr) minmax(0,1fr); gap:20px; align-items:start}
+@media(max-width:1150px){ .two{grid-template-columns:1fr} }
+/* Un pannello appiccicato in alto non scorre con la pagina: se il suo contenuto
+   è più alto dello schermo, quello che sta in fondo — di solito i pulsanti —
+   finisce sotto il bordo e non si raggiunge in nessun modo. Con un'altezza
+   massima si scorre lui, non la pagina. */
+.sticky{position:sticky; top:80px; max-height:calc(100vh - 104px);
+  overflow:auto; scrollbar-gutter:stable}
+
+.panel{background:linear-gradient(180deg,var(--panel),var(--panel2)); border:1px solid var(--line);
+  border-radius:var(--radius); padding:18px}
+.panel + .panel{margin-top:16px}
+h2{margin:0 0 13px; font-size:12.5px; letter-spacing:.09em; text-transform:uppercase; color:var(--dim);
+   font-weight:700; display:flex; align-items:center; gap:8px}
+h2 .right{margin-left:auto; display:flex; gap:7px; text-transform:none; letter-spacing:0}
+h3{margin:0 0 4px; font-size:15px}
+label{display:block; font-size:12px; color:var(--dim); margin-bottom:6px}
+textarea,input,select{
+  width:100%; background:#0b0d13; color:var(--txt); border:1px solid var(--line);
+  border-radius:11px; padding:11px 13px; font:inherit; outline:none; transition:.15s}
+textarea{resize:vertical; font-size:14px; line-height:1.6}
+textarea:focus,input:focus,select:focus{border-color:var(--accent); box-shadow:0 0 0 3px rgba(255,210,61,.16)}
+.chips{display:flex; flex-wrap:wrap; gap:7px; margin-bottom:12px}
+.chip{background:#0b0d13; border:1px solid var(--line); color:var(--dim); cursor:pointer;
+  padding:5px 12px; border-radius:99px; font-size:12.5px; transition:.15s; display:inline-flex; gap:7px; align-items:center}
+.chip:hover{border-color:var(--accent); color:var(--txt)}
+.chip.on,.chip.mine{border-color:#7a6520; color:#ffe9a8; background:#241f06}
+.chip.tag{font-family:ui-monospace,Consolas,monospace; font-size:11.5px}
+.chip.add{border-style:dashed; color:var(--accent2)}
+.chip .x{opacity:.5; font-size:14px; line-height:1}
+.chip .x:hover{opacity:1; color:var(--err)}
+.row{display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:12px}
+.field{margin-bottom:14px}
+
+/* La resa, stretta. Le manopole sono sette e si guardano tutte insieme: in
+   righe che vanno a capo da sole occupano metà dello spazio che occupavano in
+   una griglia di campi alti, e il tasto Genera resta in vista mentre le muovi. */
+.resa{display:flex; flex-wrap:wrap; gap:9px 14px; align-items:flex-end; margin-bottom:10px}
+.resa:last-child{margin-bottom:0}
+.resa .voce{flex:1 1 150px; min-width:0}
+.resa .voce.corta{flex:0 0 86px}
+/* Il seed vuole spazio: sono dieci cifre, e in una casella stretta non se ne
+   leggono tre. Non si stringe sotto i 150 px nemmeno in finestra piccola. */
+.resa .voce.seed{flex:1 1 230px; min-width:150px}
+.resa .voce.seed input{font-variant-numeric:tabular-nums; letter-spacing:.02em}
+/* I pulsanti non si stringono: o ci stanno in riga, o vanno a capo interi. */
+.resa .voce.larga{flex:0 1 auto; min-width:330px}
+.resa label{margin-bottom:5px; display:flex; align-items:baseline; gap:8px}
+.resa label .rangeval{float:none; margin-left:auto; font-size:12px}
+.resa .misura{margin-left:auto; font-size:11px; color:var(--dim); font-variant-numeric:tabular-nums}
+.resa select,.resa input{padding:8px 10px; font-size:13.5px}
+.resa .switch{flex:1 1 auto; margin-bottom:9px}
+.resa textarea{font-size:13.5px}
+/* Formato e risoluzione: due file di pulsanti attaccate, uno acceso per fila.
+   Lo spazio più largo fra le due file è quello che dice che sono due scelte
+   diverse — senza scriverci sopra due etichette e una riga in più. */
+.gruppo{display:flex; gap:4px 14px; flex-wrap:wrap}
+.serie{display:flex; gap:4px; flex-wrap:wrap}
+.gruppo .mini{padding:6px 9px; font-size:12.5px; flex:0 0 auto}
+.rangeval{float:right; color:var(--txt); font-variant-numeric:tabular-nums}
+input[type=range]{padding:0; height:24px; accent-color:var(--accent); background:transparent; border:0; box-shadow:none}
+.inline{display:flex; gap:8px; align-items:center}
+.switch{display:flex; align-items:center; gap:9px; font-size:13px; color:var(--dim); cursor:pointer; user-select:none}
+.switch input{width:auto; accent-color:var(--accent)}
+.btn{border:0; border-radius:12px; padding:13px 18px; font:inherit; font-weight:700; cursor:pointer;
+  background:linear-gradient(120deg,var(--accent),#f97316); color:#fff; transition:.15s;
+  box-shadow:0 6px 20px rgba(249,115,22,.28)}
+.btn:hover{filter:brightness(1.12); transform:translateY(-1px)}
+.btn:active{transform:none}
+.btn.wide{width:100%; font-size:16px; padding:15px}
+.btn.cyan{background:linear-gradient(120deg,#0e7490,var(--accent2)); box-shadow:0 6px 20px rgba(34,211,238,.22)}
+.btn.ghost{background:#0b0d13; border:1px solid var(--line); color:var(--dim); box-shadow:none; font-weight:600}
+.btn.ghost:hover{color:var(--txt); border-color:var(--accent)}
+.mini{background:#0b0d13;border:1px solid var(--line);color:var(--dim);border-radius:9px;
+  padding:6px 11px;cursor:pointer;font:inherit;font-size:12.5px; transition:.15s}
+.mini:hover{color:var(--txt);border-color:var(--accent)}
+.mini.danger:hover{color:var(--err);border-color:var(--err)}
+.mini.on{color:#fff;border-color:var(--accent);background:#2a2408}
+.hint{font-size:12px; color:var(--dim); margin-top:7px; line-height:1.5}
+.empty{color:var(--dim); font-size:13px; padding:10px 2px}
+
+/* Un pulsante spento deve sembrare spento: col modello non ancora scaricato
+   "Genera" c'è ancora, ma premerlo darebbe solo un errore del motore. */
+.btn:disabled,.mini:disabled{opacity:.4; cursor:not-allowed; filter:none; box-shadow:none}
+.btn:disabled:hover,.mini:disabled:hover{transform:none; filter:none; border-color:var(--line)}
+input:disabled,textarea:disabled,select:disabled{opacity:.45; cursor:not-allowed}
+
+/* Con che cosa si genera: sopra tutto, perché vale per ogni scheda. */
+.barra-modello{display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+  padding:10px 26px; border-bottom:1px solid var(--line); background:#0b0d13}
+.barra-modello label{margin:0; font-size:12px; letter-spacing:.06em; text-transform:uppercase}
+.barra-modello select{width:auto; min-width:190px; padding:7px 10px}
+.barra-modello .hint{margin:0}
+
+/* Il modello scelto non è sul disco: cosa manca e come si rimedia. */
+.manca{background:#1c1608; border:1px solid #5c4520; border-radius:12px; padding:12px 13px;
+  margin:14px 26px 0; font-size:13px; line-height:1.5}
+.manca .hint{margin-top:5px}
+.manca .err{margin-top:0}
+.err{background:#2a1416; border:1px solid #5c2226; color:#fca5a5; padding:10px 12px; border-radius:11px;
+  font-size:13px; white-space:pre-wrap; margin-top:12px; max-height:190px; overflow:auto}
+
+/* ------------------------------------------------------------ tracce ---- */
+.tracks{display:flex; flex-direction:column; gap:9px}
+.track{display:flex; gap:12px; align-items:center; background:#0b0d13; border:1px solid var(--line);
+  border-radius:13px; padding:9px; transition:.15s}
+.track:hover{border-color:var(--line2); background:#0e111a}
+.track.playing{border-color:var(--accent); background:#1b1705}
+.thumb{position:relative; width:58px; height:58px; flex:0 0 58px; border-radius:10px; overflow:hidden;
+  background:linear-gradient(135deg,#4a3f10,#07354a); display:flex; align-items:center; justify-content:center;
+  font-size:23px; color:#ffe9a8}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.thumb .pl{position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+  background:rgba(0,0,0,.42); color:#fff; border:0; cursor:pointer; opacity:0; transition:.15s; font-size:17px}
+.track:hover .thumb .pl,.track.playing .thumb .pl{opacity:1}
+.tmeta{min-width:0; flex:1}
+.tt{font-weight:650; font-size:14.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.tsub{font-size:12px; color:var(--dim); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.tact{display:flex; gap:8px; align-items:center}
+.tact button,.tact a{background:none;border:0;color:var(--dim);cursor:pointer;font-size:15px;
+  text-decoration:none; padding:4px; border-radius:7px; transition:.15s}
+.tact button:hover,.tact a:hover{color:var(--txt); background:#171b26}
+.tact .del:hover{color:var(--err)}
+
+.shimmer{position:relative; overflow:hidden}
+.shimmer::after{content:""; position:absolute; inset:0;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.09),transparent);
+  animation:sh 1.4s infinite}
+@keyframes sh{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
+
+.bar{position:relative; height:6px; background:#080a0f; border-radius:99px; overflow:hidden;
+  border:1px solid var(--line); margin-top:7px}
+.bar i{position:absolute; top:0; bottom:0; display:block; transition:width .3s ease-out}
+.bar .p1{left:0; background:linear-gradient(90deg,#f59e0b,var(--accent))}
+.bar .p2{background:linear-gradient(90deg,#0891b2,var(--accent2))}
+.bar b{position:absolute; top:-1px; bottom:-1px; width:2px; background:#08090d; opacity:.9}
+.phases{display:flex; justify-content:space-between; font-size:10.5px; color:var(--dim); margin-top:4px}
+.phases .a{color:var(--accent)} .phases .b{color:var(--accent2)}
+.phases span.off{opacity:.4}
+
+/* I pulsanti sotto ogni scheda. Ognuno chiede 112px e poi si allarga a riempire
+   la riga: in una finestra larga stanno in fila, in una stretta vanno a capo
+   restando della stessa misura, senza mai uscire dal pannello. */
+.acts{display:flex; flex-wrap:wrap; gap:8px; margin-top:12px}
+.acts a,.acts button{
+  flex:1 1 112px; min-width:0;
+  display:inline-flex; align-items:center; justify-content:center; gap:6px;
+  min-height:34px; padding:8px 12px; border-radius:10px;
+  border:1px solid var(--line2); background:#141824; color:var(--txt);
+  font:inherit; font-size:12.5px; font-weight:600; line-height:1.25;
+  text-align:center; text-decoration:none; cursor:pointer; transition:.15s}
+.acts a:hover,.acts button:hover{border-color:var(--accent); background:#1b2132; color:#fff}
+.acts button:active{transform:translateY(1px)}
+.acts button:disabled{opacity:.4; cursor:not-allowed; color:var(--dim); border-color:var(--line)}
+.acts button:disabled:hover{background:#141824; color:var(--dim); border-color:var(--line)}
+/* Un pulsante che cancella non deve sembrare quello principale, anche quando
+   resta da solo in fondo e si allarga per tutta la riga. */
+.acts .del{color:#f0a9a9; border-color:#4a2226; background:#1a1113}
+.acts .del:hover{color:#fff; background:#2a1416; border-color:var(--err)}
+
+/* Piu' stretto di cosi' una riga non regge due pulsanti: meglio uno solo e
+   leggibile che due tagliati. */
+@media(max-width:560px){
+  .acts a,.acts button{flex:1 1 100%}
+}
+
+/* -------------------------------------------------------------- le voci ---- */
+/* Una voce salvata e' due cose insieme: un pezzo di audio e la trascrizione di
+   quello che ci si sente dire. Si mostrano tutte e due, perche' la seconda e'
+   quella che si sbaglia — e quando la copia viene male e' quasi sempre li'. */
+.voci{display:flex; flex-direction:column; gap:9px}
+.vocina{border:1px solid var(--line); border-radius:13px; background:#0b0d13; padding:10px 11px;
+  transition:.15s}
+.vocina:hover{border-color:var(--line2)}
+.vocina .titolo{display:flex; align-items:baseline; gap:9px; flex-wrap:wrap}
+.vocina .titolo b{font-size:14.5px}
+.vocina .titolo span{font-size:11.5px; color:var(--dim)}
+.vocina .detto{font-size:12px; color:var(--dim); margin-top:5px; line-height:1.5;
+  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden}
+.vocina audio{width:100%; height:34px; margin-top:8px}
+.vocina .acts{margin-top:8px}
+
+/* Le righe di quello che si e' fatto dire: in sessione e in galleria sono la
+   stessa cosa, un lettore e due righe di testo. */
+.track audio{width:100%; height:34px; margin-top:6px}
+.track .tmeta{width:100%}
+.detta{display:flex; gap:12px; align-items:flex-start; background:#0b0d13; border:1px solid var(--line);
+  border-radius:13px; padding:10px; transition:.15s}
+.detta:hover{border-color:var(--line2)}
+.detta .tmeta{min-width:0; flex:1}
+
+/* La riga sotto al testo: quanti caratteri, e in quanti pezzi verra' tagliato.
+   Serve a capire prima quanto ci mettera', invece che dopo. */
+#conto{font-variant-numeric:tabular-nums}
+
+/* Il lettore audio del browser su fondo scuro resta chiaro: si scurisce, se no
+   e' l'unica cosa bianca della pagina. */
+audio{filter:invert(.92) hue-rotate(180deg); border-radius:9px}

@@ -34,6 +34,7 @@ import {
   giaScaricato,
   installaMotore,
   installaNodo,
+  installaLibreriePrivate,
   installaRequisiti,
   motoreAggiornato,
   motorePresente,
@@ -56,7 +57,12 @@ import {
   VINCOLI_REQUIREMENTS,
 } from "./paths";
 import { runtime } from "./runtime";
-import { fileRequisiti, segnaLibrerieServizio } from "./librerie-servizio";
+import {
+  cartellaLibreriePrivate,
+  fileRequisiti,
+  fileRequisitiPrivati,
+  segnaLibrerieServizio,
+} from "./librerie-servizio";
 import * as servizi from "./servizi";
 
 /** Un'installazione per app, con il modo di fermarla. */
@@ -276,20 +282,49 @@ interface Corsa {
  */
 async function installaLibrerieServizio(id: AppId, corsa: Corsa): Promise<void> {
   const requisiti = fileRequisiti(id);
-  if (!requisiti) return;
+  const privati = fileRequisitiPrivati(id);
+  if (!requisiti && !privati) return;
 
-  corsa.avanzamento(0, 0, `Installo le librerie di ${APPS[id].name}`);
-  corsa.scrivi(`Librerie del motore da ${requisiti}`);
   const uv = await ensureUv({ toolsDir: TOOLS_DIR, onLine: corsa.scrivi });
-  await installaRequisiti({
-    uv,
-    runtimeDir: RUNTIME_DIR,
-    requisiti,
-    vincoli: VINCOLI_REQUIREMENTS,
-    segnale: corsa.segnale,
-    onLine: corsa.scrivi,
-    timeoutMs: 60 * 60_000,
-  });
+
+  if (requisiti) {
+    corsa.avanzamento(0, 0, `Installo le librerie di ${APPS[id].name}`);
+    corsa.scrivi(`Librerie del motore da ${requisiti}`);
+    await installaRequisiti({
+      uv,
+      runtimeDir: RUNTIME_DIR,
+      requisiti,
+      vincoli: VINCOLI_REQUIREMENTS,
+      segnale: corsa.segnale,
+      onLine: corsa.scrivi,
+      timeoutMs: 60 * 60_000,
+    });
+  }
+
+  /**
+   * Le librerie private, se il motore ne dichiara.
+   *
+   * Non finiscono nell'ambiente condiviso ma in una cartella accanto, e **senza
+   * il file dei vincoli**: sono lì proprio perché vogliono una versione diversa
+   * da quella comune. Le vede solo il processo di quel motore, che se le mette
+   * in `sys.path` all'avvio. Vedi `installaLibreriePrivate` in packages/runtime:
+   * c'è scritto per esteso perché DaProdVoce ne ha bisogno.
+   */
+  const servizio = APPS[id].service;
+  if (privati && servizio) {
+    const destinazione = cartellaLibreriePrivate(servizio.id);
+    corsa.avanzamento(0, 0, `Librerie riservate a ${APPS[id].name}`);
+    corsa.scrivi(`Librerie private da ${privati} verso ${destinazione}`);
+    await installaLibreriePrivate({
+      uv,
+      runtimeDir: RUNTIME_DIR,
+      requisiti: privati,
+      destinazione,
+      segnale: corsa.segnale,
+      onLine: corsa.scrivi,
+      timeoutMs: 60 * 60_000,
+    });
+  }
 
   // Solo adesso: se qualcosa è andato storto sopra, la scheda resta «da
   // installare» e il prossimo tentativo rifà il giro invece di credersi a posto.

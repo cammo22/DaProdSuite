@@ -16,8 +16,10 @@ export {
 export {
   VincoliInConflitto,
   ensureUv,
+  installaLibreriePrivate,
   installaRequisiti,
   type InstallaRequisitiOptions,
+  type LibreriePrivateOptions,
   type UvOptions,
 } from "./uv";
 export {

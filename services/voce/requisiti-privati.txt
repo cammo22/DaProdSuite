@@ -1,0 +1,45 @@
+# Le librerie che DaProdVoce vuole in una versione diversa da quella comune.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# NON VANNO NELL'AMBIENTE CONDIVISO. Finiscono in
+# %LOCALAPPDATA%\DaProdSuite\runtime\.daprod-privato\voce, e a metterle nel
+# proprio `sys.path` è **solo** il processo di questo motore (`avvio.py`). Gli
+# altri cinque motori non le vedono e continuano a girare su quello che c'era.
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# **Perché serve.** Il modello Audio8 TTS si porta dentro il proprio codice, che
+# transformers esegue (`trust_remote_code`). Quel codice è scritto per la 4.57 e
+# usa `FalconHybridMambaAttentionDynamicCache`, la cache dei modelli ibridi
+# attenzione+Mamba. Nella 5 quella classe non esiste più: le cache sono state
+# unificate in `DynamicCache`.
+#
+# **Provato il 21 agosto 2026**, con le due versioni una accanto all'altra e lo
+# stesso testo:
+#
+#   transformers 4.57.5  →  35 fotogrammi, si ferma da sé, la frase è quella
+#   transformers 5.15.0  →  512 fotogrammi, non si ferma mai, codici che si
+#                           ripetono in cerchio (1539, 1875, 1539, 1875…)
+#
+# Una toppa che rimappasse la vecchia classe sulla nuova fa **passare
+# l'importazione** e non fa funzionare il modello: è stata provata, e il
+# risultato è la seconda riga qui sopra. È il caso peggiore — non un errore, ma
+# una voce che non smette più di parlare, che sembra un difetto del modello.
+#
+# **Le due strade che non si sono prese.** Abbassare `transformers` per tutti
+# vorrebbe dire rompere gli altri cinque motori per farne funzionare uno (ed è
+# esattamente la notte del 19 agosto raccontata in `versioni.txt`). Un secondo
+# ambiente Python intero vorrebbe dire altri 2,5 GB di torch. Questa cartella
+# pesa 127 MB e non tocca niente.
+#
+# **I numeri sono fissi**, come in `versioni.txt` e per la stessa ragione. Le
+# tre righe dopo transformers non sono di troppo: uv le installerebbe comunque
+# come dipendenze, e scriverle qui alla **stessa versione dell'ambiente
+# condiviso** è quello che rende innocuo il fatto che questa cartella stia
+# davanti nel percorso. Se un giorno `versioni.txt` sposta uno di quei numeri,
+# va spostato anche qui.
+
+transformers==4.57.5
+huggingface-hub==0.36.2
+tokenizers==0.22.2
+safetensors==0.8.0
+numpy==2.5.2
