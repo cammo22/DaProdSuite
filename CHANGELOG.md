@@ -10,9 +10,111 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ---
 
-## Non ancora pubblicato — sarà la 0.4.1
+## Non ancora pubblicato — sarà la 0.4.2
 
-**Costruita il 20 agosto 2026, da provare.** Il giro dopo la 0.4.0, e quasi
+**Costruita il 21 agosto 2026.** Due cose, e tutte e due nascono da quello che
+hai visto usandola: DaProdCinema rifatto da capo, e il tasto **Crea** di
+DaProdMusica che non resta più premuto a vuoto.
+
+### DaProdCinema: rifatto da capo, e adesso fa una cosa sola
+
+**Il video musicale automatico non c'è più.** La scheda prendeva una canzone
+dalla libreria, ne leggeva i `[Verse]` e i `[Chorus]`, scriveva una scaletta di
+diciassette inquadrature e le girava una dopo l'altra. Era una bella idea
+costruita **sopra a una generazione base che non aveva mai funzionato**: nel
+grafo di LTX 2.5 il latente che tiene insieme video e audio non veniva separato
+prima di decodificarlo, e quello non è un video brutto, è un errore del motore.
+Diciassette inquadrature di un pezzo che non gira sono diciassette errori.
+
+Adesso la scheda fa **la generazione base, e solo quella**: scrivi cosa vuoi
+vedere, scegli forma e misura, premi. Il video musicale torna quando ci sarà
+sotto qualcosa che ha girato davvero.
+
+**Il modello si sceglie per primo**, in cima e fuori da tutto il resto — come in
+DaProdMusica e in DaProdFoto. Non è una preferenza fra le altre: decide cosa
+puoi dargli in pasto, quanto può durare la clip e quanti passi ci vogliono.
+
+| Modello | Da scaricare | Da cosa parte |
+|---|---|---|
+| **LTX 2.5 22B distillato** | 23,2 GB | testo, e se vuoi **il primo e l'ultimo fotogramma** |
+| **MiniMax H3 (riferimenti)** | 41,6 GB | testo più **immagini, video e audio di riferimento** |
+
+**LTX 2.5: da testo, o da due immagini.** Metti solo la prima e il video parte
+da lì; mettile tutte e due e diventa il passaggio da una all'altra; non mettere
+niente e se lo inventa dal testo. Sono facoltative tutte e due.
+
+**MiniMax H3: i riferimenti.** Qui cambia il modo di ragionare — non «comincia
+così», ma «questa è la faccia, questo è il posto, questo è il movimento, questa è
+la voce». Fino a **nove immagini, tre video e tre audio**, e i video possono
+portarsi dietro la loro colonna sonora.
+
+E c'è una cosa da sapere, perché senza non funziona: **i riferimenti vanno
+chiamati per nome nel prompt**. Il modello riceve dei file e nessuna istruzione
+su cosa prendere da quale, a meno che tu non scriva «the woman in `<Picture 1>`
+walks through `<Picture 2>`, camera moves like `<Video 1>`». Ogni riquadro ha la
+sua etichetta scritta sopra: **cliccala e te la scrivo nel prompt** dove hai il
+cursore. La regola con cui si numerano è di quelle che a mente non si tengono —
+la colonna sonora di un video prende un numero d'audio *prima* degli audio
+sciolti — e infatti il conto lo fa l'app.
+
+**Formato e risoluzione come in DaProdFoto**: due file di pulsanti, 16:9 · 9:16 ·
+4:3 · 1:1 per la forma, 480 · 720 · 1080p per la misura. Accanto ci sono i pixel
+veri e **quanto costa**: il 720 è circa 2,3 volte il lavoro del 480, il 1080p
+circa 5,2. Su una scheda da 8 GB quel numero è la differenza fra una pausa caffè
+e un pomeriggio.
+
+**Il video finito resta lì sotto**, con i comandi del lettore — metà del
+risultato è il suono, e senza comandi non si sente. Riaprendo la scheda ci sono
+ancora gli ultimi che hai fatto.
+
+**Di MiniMax H3 cambia il file da scaricare**, e va detto perché sono GB: la
+suite adesso prende la variante **ref2va** (11,0 GB) invece della fl2va (11,7).
+Sono due rifiniture diverse dello stesso modello — una fa primo e ultimo
+fotogramma, l'altra fa i riferimenti — e primo e ultimo fotogramma li fa già LTX
+con metà del peso. Se avevi scaricato la fl2va nella 0.4.1 puoi cancellare due
+file: `minimax_h3_fl2va_pruned_w4a8_mixed.safetensors` da `diffusion_models` e
+`minimax_h3_fl2v_turbo_4step_v1.0_768p_comfyui_bf16.safetensors` da `loras`.
+
+⚠ **Non è ancora uscita una clip vera.** I due grafi sono stati rifatti sui nodi
+del motore che hai installato e ricalcati sul flusso ufficiale di Lightricks per
+la 2.5 distillata — scala di rumore compresa, che è il pezzo che il grafo
+precedente sbagliava insieme al latente — e l'interfaccia l'ho provata pezzo per
+pezzo in un browser. Ma da lì a «esce un mp4» c'è di mezzo la tua scheda video, e
+LTX 2.5 lo hai già sul disco: **è la prima cosa da provare.** Comincia con
+480, cinque secondi, senza immagini.
+
+### DaProdMusica: «Crea» non resta più premuto a vuoto
+
+**Il difetto**: premevi Crea e non andava mai avanti. Nessun errore, niente in
+coda, niente da nessuna parte — con tutti e tre i modelli.
+
+Prima di mandare il brano al motore la scheda fa due cose che non si vedono:
+spegne il modello che scrive in LM Studio e svuota la scheda video. La prima
+passa dal comando `lms`, e quel comando **non aveva una scadenza**: se non
+rispondeva — LM Studio chiuso a metà, il suo servizio che non riparte — si
+restava lì per sempre. Un tasto lento e un tasto rotto, da fuori, sono la stessa
+cosa.
+
+Adesso: `lms` ha una scadenza (otto secondi per la domanda, trenta per lo
+spegnimento), scaduta la quale si tira dritto e si genera lo stesso — al massimo
+con la scheda meno libera del previsto, che è molto meglio che non generare. E
+**il tasto racconta cosa sta facendo** mentre lo fa: «libero la memoria…»,
+«disegno la copertina…», «mando al motore…». Vale anche per «Solo nuova resa».
+
+Stessa scadenza in DaProdFoto e in DaProdCinema, che passano di lì uguale.
+
+**E un brano finito non si perde più.** Se il messaggio di «ho finito» si perdeva
+per strada — succede quando la connessione col motore si riapre — il brano era
+stato generato davvero ma spariva dalla sessione senza mai comparire in libreria.
+Adesso, prima di buttare via un lavoro, si guarda cosa ha prodotto: se c'è un
+file, si conclude come se il messaggio fosse arrivato. Era già così in
+DaProdFoto, adesso è così anche qui.
+
+---
+
+## 0.4.1 — Il modello si sceglie per primo
+
+**Pubblicata il 21 agosto 2026.** Il giro dopo la 0.4.0, e quasi
 tutto viene da quello che hai visto usandola: il modello in cima invece che in
 fondo, il 4 bit che se ne va, la lingua del canto a pastiglie, DaProdCinema che
 torna ai modelli decisi, e una barra che dice cosa sta arrivando mentre arriva.

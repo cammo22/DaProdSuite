@@ -1,7 +1,7 @@
 # Riprendere da qui
 
-Documento di passaggio fra una sessione e l'altra. Aggiornato il **20 agosto
-2026**, con la 0.4.0 pubblicata e la 0.4.1 costruita.
+Documento di passaggio fra una sessione e l'altra. Aggiornato il **21 agosto
+2026**, con la 0.4.1 pubblicata e la 0.4.2 costruita.
 
 **Se stai leggendo questo all'inizio di una conversazione nuova**: leggi anche
 [COME-SI-LAVORA.md](COME-SI-LAVORA.md) e [ROADMAP.md](ROADMAP.md), poi vai al
@@ -62,12 +62,96 @@ Repo pubblico: **https://github.com/cammo22/DaProdSuite**
 | **0.3.4 costruita** | **da provare**, e poi si pubblica |
 | **0.4.0 pubblicata** | fatto il 20 agosto: tag `v0.4.0`, con DaProdCinema e ACE-Step |
 | **Musica: modello in cima, 4 bit via, lingua a pastiglie** | fatto, **da provare tu**: la lingua con MiniMax è un suggerimento nel prompt, non un interruttore |
-| **Cinema: LTX 2.5 e MiniMax H3 al posto di Wan 2.2** | grafi **verificati contro `/object_info`**, ma **nessuna clip vera**: 23 GB da scaricare prima di saperlo |
+| **Cinema: LTX 2.5 e MiniMax H3 al posto di Wan 2.2** | fatto nella 0.4.1, e **i grafi erano rotti**: vedi la riga qui sotto |
 | **Barra di scaricamento in tutte le app** | fatto: `packages/ui/src/scaricamento.js`, più l'hub |
+| **0.4.1 pubblicata** | fatto il 21 agosto: tag `v0.4.1`, PR #10 |
+| **Cinema rifatto da capo (0.4.2)** | grafi ricostruiti sul flusso ufficiale e sul sorgente dei nodi; interfaccia provata in un browser con i ponti finti. **Nessuna clip vera**: è la prima cosa da fare, e LTX 2.5 è già sul disco |
+| **Musica: «Crea» non si pianta più** | fatto: `lms` aveva chiamate senza timeout dentro al percorso di Genera. **Da provare tu**, perché il blocco non si è riprodotto qui |
 
 Si lavora su un ramo per release e una PR: `release-0.2.0` è stata unita con le
 PR #3 e #4, la 0.3.1 con la #5, la 0.3.2 con la #6, la 0.3.3 con la #7, la
-0.3.4 con la #8, la 0.4.0 con la #9, e questo giro sta su `release-0.4.1`.
+0.3.4 con la #8, la 0.4.0 con la #9, la 0.4.1 con la #10, e questo giro sta su
+`release-0.4.2`.
+
+### Com'è fatto il giro della 0.4.2
+
+**DaProdCinema è stato rifatto da capo**, e la ragione è una sola: la
+generazione base non aveva mai funzionato, e sopra ci era stato costruito il
+video musicale automatico. Il difetto vero, in una riga: il latente audio-video
+di LTX 2.5 è una **coppia annidata** e va aperto con `LTXVSeparateAVLatent`
+prima di decodificarlo — quel nodo non c'era, e `VAEDecodeTiled` un tensore
+annidato lo rifiuta. Nessuna clip poteva uscire, e la verifica contro
+`/object_info` non poteva accorgersene: dice che gli ingressi esistono, non cosa
+ci scorre dentro. **La lezione, scritta in MODELLI-E-STRATEGIA § 5.2: si legge
+il sorgente del nodo, non solo la sua firma.**
+
+- **`apps/cinema/src/grafi.js`** — riscritto. Due grafi, numerazione condivisa
+  come prima (1 testo, 2 il prompt, 4 modello video, 6 la parte lunga, 8 i
+  fotogrammi, 12 il file), così `FASI` vale per tutti e due. Cose da sapere:
+  - **LTX 2.5 distillato vuole `euler_ancestral` e `ManualSigmas`** con gli otto
+    valori del flusso ufficiale di Lightricks. `LTXVScheduler` con `euler` — che
+    è quello che c'era — genera qualcosa, ma non quello che il modello sa fare.
+    Per questo il cursore dei passi con LTX è **spento**: cambiarne il numero
+    senza cambiare la scala peggiora e basta.
+  - **Primo e ultimo fotogramma: `LTXVAddGuide`** con `frame_idx` 0 e -1,
+    incatenati (positivo, negativo e latente si spostano a ogni guida), e
+    `LTXVCropGuides` dopo il campionamento. `LTXVImgToVideoInplace` sa scrivere
+    solo l'inizio.
+  - **Le immagini di guida passano da `LTXVPreprocess`** (`img_compression: 18`):
+    ricomprimerle è voluto, il modello è addestrato su fotogrammi compressi.
+  - **H3 è passato alla variante ref2va**, con `MiniMaxH3ReferenceToVideo`. Gli
+    ingressi dei riferimenti sono una famiglia `Autogrow`: nel grafo API si
+    chiamano `ref_image_0`…`ref_image_8`, `ref_video_0`, `ref_video_audio_0`,
+    `ref_audio_0`, **contati da zero**, mentre le etichette del prompt partono da
+    uno. E `LTXVSeparateAVLatent` serve anche a lui: la sua descrizione dice
+    «any AV model», H3 compreso.
+  - **Le lunghezze**: `8n+1` per LTX, `17k+5` per H3, tutte e due a **24 fps**
+    (prima LTX era segnato a 25).
+- **`apps/cinema/src/riferimenti.js`** — i riquadri in cui entrano i file, e il
+  conto delle etichette. Il conto è la parte che vale: la colonna sonora di un
+  video di riferimento prende un numero d'`Audio` **prima** degli audio sciolti,
+  ed è una regola che a mente non si tiene. Cliccando l'etichetta finisce nel
+  prompt dove sta il cursore. I file restano `File` del browser finché non si
+  preme Genera: caricare 30 MB per poi cambiare idea è tempo buttato.
+- **`apps/cinema/src/formato.js`** — gemello di quello di DaProdFoto, con misure
+  multiple di 32 e la riga che dice quanto costa una misura rispetto al 480.
+- **`apps/cinema/src/scelta-modello.js`**, **`memoria.js`**, **`coda.js`** —
+  copiati nello spirito da DaProdFoto: il modello in cima con la barra di
+  scaricamento sotto, la VRAM svuotata prima di generare, e `riallinea` che
+  guarda la cronologia prima di buttare via un lavoro.
+- **Tolti**: `regista.js` (la tabella sezione → funzione e camera) e
+  `dati/look.js`. Il ragionamento del regista era buono e resta nella storia di
+  `git`, fino alla 0.4.1: si riprende **dopo** che la generazione base ha
+  prodotto un mp4.
+- **Come è stata provata l'interfaccia.** Un server statico che serve
+  `apps/cinema` e `packages/ui/src` sotto `/comune/`, più uno script che finge
+  `window.daprodSuite` e `window.daprodCinema`, e la pagina aperta in un browser:
+  cambio modello, riquadri che si ridisegnano, file trascinati dentro, etichette
+  che si rinumerano, i due messaggi di «non posso partire». Zero errori in
+  console. **Non è una clip**, ma è tutto quello che si può provare senza scheda.
+
+**DaProdMusica: «Crea» non va mai avanti.** Il sintomo riferito da Cammo — con
+tutti e tre i modelli — e la causa più probabile, trovata leggendo il percorso:
+`liberaMemoriaLlm()` chiama `lms ps` e `lms unload` attraverso `capture()`, e
+`capture()` **senza `timeoutMs` aspetta per sempre**. Quelle chiamate stanno
+dentro al percorso di Genera di *tre* app. Se `lms` non risponde, il tasto resta
+premuto: nessun errore, niente in coda, niente da nessuna parte.
+
+- **`apps/shell/src/main/llm.ts`** — timeout su tutte e tre le chiamate a `lms`
+  (8s per `ps`, 30s per `unload`, 10 min per `load`). Scaduto il tempo `run`
+  ammazza il processo e la promessa si rompe, e chi chiama l'errore lo ignora.
+- **`apps/musica/src/crea.js`** — `occupa`/`libera` sul tasto, con i passaggi
+  raccontati («libero la memoria…», «disegno la copertina…», «mando al
+  motore…»), e il `try` che comincia **prima** di tutto quello che può metterci.
+  `liberaMemoriaLlm()` adesso ha il suo `.catch()`.
+- **`apps/musica/src/coda.js`** — `riallinea` guarda la cronologia prima di
+  buttare via un lavoro sparito dalla coda, come faceva già DaProdFoto: «sparito»
+  vuol dire anche «finito» quando il WebSocket si riapre.
+
+⚠ **Il blocco non si è riprodotto su questo PC**: `lms ps` risponde in un
+secondo e LM Studio era acceso. Quindi la causa è la più probabile, non una
+misurata. Se dopo questo giro «Crea» si pianta ancora, la cosa da guardare è
+**dove** si ferma: adesso il tasto lo scrive.
 
 ### Com'è fatto il giro della 0.3.3
 
@@ -908,21 +992,29 @@ conversazione — che dipende dal modello che sceglie lui, non da noi.
 
 ## Il prossimo passo
 
-**Prima di tutto: la 0.3.2 va provata.** Cosa guardare per primo sta in fondo,
-in «Cosa aspetta un giudizio di Cammo».
+**Prima di tutto, e prima di qualunque altra cosa: far uscire una clip da
+DaProdCinema.** Non è una voce di lista fra le altre, è il debito della 0.4.1:
+sono stati scritti un video musicale automatico, una scaletta, un montaggio e
+due grafi sopra a una generazione che non aveva mai prodotto un file. LTX 2.5 è
+già sul disco (23,2 GB, scaricati): 480, cinque secondi, niente immagini. Finché
+non esce quel mp4, **niente di nuovo su Cinema**.
 
 Poi, in ordine di quello che resta aperto:
 
-1. **L'aggiornamento automatico sul secondo PC.** Adesso si può davvero: la
-   0.2.0 è pubblicata, quindi da una 0.1.0 installata l'aggiornamento ha
-   finalmente qualcosa da vedere. È la cosa per cui quel computer è stato
-   installato.
-2. **DaProdCinema**, la settima e ultima scheda (§ 0.7.0 della roadmap per quello che resta). Due
-   strade, e quella breve — registrare gli effetti del Visualizer su un brano —
-   non ha bisogno di nessun modello nuovo.
-3. **La voce del Companion**, con Piper e faster-whisper che la suite ha già in
+1. **La stessa cosa con un primo fotogramma**, e poi con primo e ultimo. È il
+   pezzo dove il grafo fa la cosa più delicata (`LTXVAddGuide` +
+   `LTXVCropGuides`): se i fotogrammi di guida restassero nel video si vedrebbe
+   subito, in testa alla clip.
+2. **MiniMax H3**, che sono 41,6 GB e non ne è stato scaricato nessuno. Ha senso
+   solo dopo che LTX ha funzionato: se qualcosa non va, con LTX già provato si sa
+   dove guardare.
+3. **L'aggiornamento automatico sul secondo PC.** Adesso si può davvero: da una
+   0.1.0 installata l'aggiornamento ha finalmente qualcosa da vedere. È la cosa
+   per cui quel computer è stato installato.
+4. **La voce del Companion**, con Piper e faster-whisper che la suite ha già in
    casa per IoDigitale.
-4. **L'accesso da fuori e Android** (§ 0.5.0 e § 0.6.0), che è un progetto a sé.
+5. **L'accesso da fuori e Android** (§ 0.5.0 e § 0.6.0), che è un progetto a sé.
+6. **Il video musicale di Cinema, di nuovo** (§ 0.7.0): dopo, non prima.
 
 ## Com'è entrato DaProdIoDigitale
 

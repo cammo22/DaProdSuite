@@ -70,7 +70,7 @@ Tutto in locale: nessun account, nessuna API, nessun dato che esce dal computer.
 | 🟠 | **DaProdFoto** | Crei immagini scrivendo cosa vuoi vedere, poi ne cambi un pezzo | Anima Turbo · FLUX.2 Klein | ✅ disponibile |
 | 🩵 | **DaProdDream** | Trasformi un video mentre scorre: webcam, un file, o lo schermo | SD-Turbo · Anima | ✅ disponibile |
 | 🟥 | **DaProdIoDigitale** | Carichi la foto di un volto e ci parli: ti risponde a voce | LeapTalk | ✅ disponibile |
-| 🟪 | **DaProdCinema** | Da una canzone al suo video musicale, scena per scena | LTX 2.5 · MiniMax H3 | ✅ disponibile |
+| 🟪 | **DaProdCinema** | Video con il suono dentro, da una descrizione o da un'immagine | LTX 2.5 · MiniMax H3 | ✅ disponibile |
 | 🟢 | **DaProdCompanion** | Un assistente sul desktop che si ricorda delle conversazioni di prima | un modello a scelta via LM Studio | ⏳ in arrivo |
 
 Questa non è una lista chiusa: continuiamo a testare modelli nuovi e ad
@@ -89,8 +89,8 @@ lo stesso.
 
 ## A che punto siamo
 
-> **0.4.0 pubblicata — tutte e sette le schede sono dentro, e nella 0.4.1 in
-> prova DaProdCinema torna ai due modelli decisi.**
+> **0.4.1 pubblicata — tutte e sette le schede sono dentro, e nella 0.4.2 in
+> prova DaProdCinema è rifatto da capo: fa la generazione base, e la fa bene.**
 >
 > **DaProdVisualizer, DaProdMusica, DaProdFoto, DaProdDream,
 > DaProdIoDigitale** e **DaProdCinema** sono nella suite e funzionano. Si installano da sole, motore e
@@ -112,7 +112,18 @@ lo stesso.
 > corto, il prompt intero dentro. Premendo Genera la memoria video viene
 > liberata da sola da quello che non serve.
 >
-> Con la 0.4.1 (in prova) **il modello si sceglie per primo** in DaProdMusica,
+> Con la 0.4.2 (in prova) **DaProdCinema è rifatto da capo.** Il video musicale
+> automatico non c'è più: era costruito sopra a una generazione base che non
+> aveva mai funzionato. Adesso la scheda fa una cosa sola — scrivi cosa vuoi
+> vedere, scegli forma e misura come in DaProdFoto, premi — e il modello si
+> sceglie per primo, in cima. **LTX 2.5** parte dal testo e, se vuoi, dal primo e
+> dall'ultimo fotogramma; **MiniMax H3** prende immagini, video e audio di
+> riferimento, che nel prompt si chiamano per nome (`<Picture 1>`, `<Video 1>`).
+> Sempre nella 0.4.2, in **DaProdMusica** il tasto Crea non resta più premuto a
+> vuoto: il comando di LM Studio adesso ha una scadenza, e il tasto racconta cosa
+> sta facendo mentre lo fa.
+>
+> Con la 0.4.1 **il modello si sceglie per primo** in DaProdMusica,
 > la **lingua del canto** è una fila di pastiglie sopra il testo, il MiniMax a 4
 > bit è stato tolto e **DaProdCinema gira con LTX 2.5 o MiniMax H3** al posto di
 > Wan 2.2. E quando scarichi un modello da dentro un'app adesso c'è **una barra
@@ -123,12 +134,10 @@ lo stesso.
 > senza dipingere niente, o dipingendo quello che vuoi tenere e premendo
 > **inverti**.
 >
-> Nella versione in prova, la 0.4.0, **c'è la settima scheda**: DaProdCinema
-> prende una canzone dalla libreria, legge i suoi `[Verse]` e `[Chorus]`, e ne
-> ricava la scaletta delle inquadrature — quanto dura ognuna, cosa ci succede
-> dentro, come si muove la camera. Poi le gira una per una e le monta sopra il
-> brano. **Sono minuti a inquadratura**: un video da un minuto e mezzo è più di
-> un'ora di scheda video, ed è una cosa da sapere prima di premere Gira.
+> Con la 0.4.0 era arrivata **la settima scheda**, DaProdCinema, che allora
+> prendeva una canzone dalla libreria e ne ricavava la scaletta delle
+> inquadrature. Quel modo di lavorare è stato tolto nella 0.4.2 — vedi qui sopra —
+> perché stava in piedi sopra a una generazione base che non funzionava.
 >
 > Sempre nella 0.4.0, **DaProdMusica ha un secondo modo di fare una canzone** —
 > ACE-Step 1.5, in otto passi invece di trenta, accanto a MiniMax Music 3 — e il
@@ -253,7 +262,7 @@ non vengono mai riscaricati né cancellati**, nemmeno disinstallando.
 | DaProdFoto | 5,6 GB | +6,3 GB FLUX.2 Klein 4B · +12,0 GB il 9B |
 | DaProdMusica | 13,7 GB | +8,0 GB MiniMax Music 3 · +9,3 GB ACE-Step XL · +5,6 GB per le copertine con Anima* |
 | DaProdIoDigitale | 10,4 GB | +6,0 GB modello Pro |
-| DaProdCinema | 23,2 GB | +42,3 GB MiniMax H3 |
+| DaProdCinema | 23,2 GB | +41,6 GB MiniMax H3 |
 
 <sub>* zero se hai già DaProdFoto o DaProdDream: i pesi di Anima sono gli stessi,
 condivisi.</sub>

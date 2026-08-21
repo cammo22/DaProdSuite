@@ -57,29 +57,34 @@ italiano, e la voce è generata anche lei in locale.
 
 ## 🎬 DaProdCinema — *disponibile*
 
-Da una canzone al suo video musicale, scena per scena. Scegli un brano dalla
-libreria — di solito uno fatto in DaProdMusica — e la scheda legge i suoi tag
-di sezione (`[Verse]`, `[Chorus]`…) per ricavarne **la scaletta**: una riga per
-inquadratura, con quanto dura, cosa deve succederci dentro e come si muove la
-camera. Poi le gira una per una e le monta sopra il brano.
+Video con il suono dentro, da una descrizione o da un'immagine. Scrivi cosa vuoi
+vedere, scegli forma e misura come in DaProdFoto, premi. **Il modello si sceglie
+per primo**, in cima, perché decide tutto quello che c'è sotto: cosa puoi dargli
+in pasto, quanto può durare la clip e quanti passi ci vogliono.
 
-Quello che decidi tu è il **look**: una riga in inglese — una pellicola, un'ora
-del giorno, un posto — che resta uguale in tutte le clip ed è quella che tiene
-insieme il video. La regia invece è già scritta: l'apertura stabilisce il mondo
-con un campo lungo fermo, la strofa mostra il dettaglio con una lenta spinta in
-avanti, il ritornello è il picco con una corsa bassa.
+**LTX 2.5** (23,2 GB, quello che parte) genera dal testo. Se vuoi puoi dargli
+anche il **primo fotogramma** — e il video parte da lì — e l'**ultimo**: allora
+la clip diventa il passaggio da un'immagine all'altra. Sono facoltativi tutti e
+due.
 
-I modelli sono due, e si scelgono dal menu: **LTX 2.5** (23,2 GB da scaricare,
-quello che parte) e **MiniMax H3** (42,3 GB). Fanno tutti e due il video **con
-il suono dentro**; nel montaggio finale però sopra ci va la canzone, quindi
-quella traccia si sente solo nelle anteprime delle singole clip.
+**MiniMax H3** (41,6 GB) lavora in un altro modo: prende dei **riferimenti**.
+Non «comincia così», ma «questa è la faccia, questo è il posto, questo è il
+movimento, questa è la voce» — fino a nove immagini, tre video e tre audio.
 
-⏱️ **Aspettati minuti a inquadratura.** Su una scheda da 8 GB questi modelli
-lavorano spostando i pesi fra scheda e RAM, e un video da un minuto e mezzo sono
-diciassette inquadrature. Si gira una clip per volta, e «Ferma» non butta via
-quello che è già fatto — riprendi da lì. **La prima prova falla su una sola
-inquadratura**, alla misura più piccola: così sai quanto costa prima di
-impegnare un pomeriggio.
+> ⚠️ Con H3 i riferimenti vanno **chiamati per nome nel prompt**, altrimenti il
+> modello riceve dei file e nessuna istruzione su cosa prendere da quale. Ogni
+> riquadro ha la sua etichetta scritta sopra: cliccala e finisce nel prompt dove
+> hai il cursore. Si scrive così: *«the woman in `<Picture 1>` walks through
+> `<Picture 2>`, camera moves like `<Video 1>`»*.
+
+Il suono lo fanno tutti e due da soli, e anche quello si può chiedere a parole
+nel prompt: «rain on umbrellas», «distant waves».
+
+⏱️ **Aspettati minuti a clip, non secondi.** Su una scheda da 8 GB questi modelli
+lavorano spostando i pesi fra scheda e RAM. Accanto alla misura c'è scritto
+quanto costa: il 720 è circa 2,3 volte il lavoro del 480, il 1080p circa 5,2.
+**La prima prova falla a 480, cinque secondi, senza immagini**: così sai quanto
+costa prima di impegnare un pomeriggio.
 
 ## 🤖 DaProdCompanion — *in arrivo*
 

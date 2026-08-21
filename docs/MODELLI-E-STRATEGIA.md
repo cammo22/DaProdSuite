@@ -312,11 +312,11 @@ Cosa c'è nel catalogo adesso, e perché proprio quei file:
 | LTX 2.5 encoder | `gemma4-12b-with-proj-ltx-2.5-w4a8_convrot` | 9,9 GB | si porta dentro le proiezioni, quindi basta `CLIPLoader` tipo `ltxv` |
 | LTX 2.5 VAE video | `ltx-2.5-video-vae-conv-bf16` | 1,35 GB | il decoder «conv», quello veloce, che è anche il predefinito di WanGP |
 | LTX 2.5 VAE audio | `ltx-2.5-audio-vae-bf16` | 0,34 GB | **va in `checkpoints`**: contiene autoencoder *e* vocoder, e `LTXVAudioVAELoader` legge da lì |
-| H3 DiT | `minimax_h3_fl2va_pruned_w4a8_mixed` | 11,7 GB | la variante FL2VA, che è quella che attacca le inquadrature |
+| H3 DiT | `minimax_h3_ref2va_pruned_w4a8_mixed` | 11,0 GB | la variante **REF2VA**: quella dei riferimenti. Vedi § 5.2 |
 | H3 encoder | `qwen3vl_32b_minimax_h3_int8_convrot` | 25,3 GB | il pezzo che decide tutto: più piccolo non si può, vedi sotto |
 | H3 VAE video | `minimax_h3_video_vae_int8_convrot` | 2,95 GB | si taglia i blocchi da solo, quindi `VAEDecode` e non la versione a blocchi |
 | H3 VAE audio | `minimax_h3_audio_vae_fp32` | 0,56 GB | |
-| H3 LoRA turbo | `minimax_h3_fl2v_turbo_4step_v1.0_768p` | 1,82 GB | quattro passi invece di decine: senza, diciassette clip sono una notte |
+| H3 LoRA turbo | `minimax_h3_ref2v_turbo_4step_v0.1` | 1,82 GB | quattro passi invece di venti. È quello della variante ref2v: sull'altra non va |
 
 **Tre cose imparate scegliendoli**, che valgono per la prossima volta:
 
@@ -340,6 +340,62 @@ non manchi nessun obbligatorio e che nessun collegamento punti a un nodo che non
 c'è. Passano tutti e due, con le due varianti (con e senza primo fotogramma).
 **Non è la stessa cosa di una clip uscita davvero**: quella richiede 23 GB
 scaricati e minuti di scheda video, e resta la prima cosa da fare.
+
+⚠ **E infatti non bastava.** Nella 0.4.2 i grafi sono stati rifatti da capo,
+perché quella verifica dice che i nodi esistono e che gli ingressi tornano, e
+non dice niente su cosa scorre dentro ai collegamenti. Il grafo LTX passava il
+latente audio-video **unito** a `VAEDecodeTiled`: un `class_type` giusto, un
+ingresso previsto, un tensore annidato che quel nodo non sa aprire — cioè un
+errore del motore, a valle di tutta la generazione. La lezione sta in § 5.2.
+
+### 5.2 Rifatti da capo, il 21 agosto 2026 (0.4.2)
+
+**Cosa era sbagliato**, e non si vedeva dalla verifica di § 5.1:
+
+1. **Il latente audio-video non veniva separato.** LTX 2.5 campiona un latente
+   unico che tiene video e audio annidati (`LTXVConcatAVLatent`), e prima di
+   decodificarlo va aperto con `LTXVSeparateAVLatent`. Quel nodo non c'era: il
+   latente unito finiva dritto in `VAEDecodeTiled`, che lo rifiuta. Nessuna
+   clip poteva uscire, mai.
+2. **La scala di rumore era quella sbagliata.** Il grafo usava `LTXVScheduler`
+   con `euler`. Il distillato 2.5 è messo a punto su `euler_ancestral` e su
+   **otto sigma scritti a mano** (`ManualSigmas`, dal flusso ufficiale di
+   Lightricks): non è una curva che uno scheduler possa ricavare — i primi
+   quattro passi si muovono di pochissimo, gli ultimi tre di moltissimo.
+3. **Il primo fotogramma entrava con `LTXVImgToVideoInplace`**, che sa scrivere
+   solo l'inizio. Per avere anche l'ultimo serve `LTXVAddGuide` con `frame_idx`
+   a `-1`, e dopo il campionamento `LTXVCropGuides` per togliere i fotogrammi
+   di guida — che altrimenti restano nel video.
+
+**Cosa si fa adesso, e come lo si verifica.** I grafi sono ricalcati sul flusso
+ufficiale che Lightricks pubblica per la 2.5 distillata
+(`ComfyUI-LTXVideo/example_workflows/2.5/`), letto nodo per nodo insieme al
+sorgente dei nodi installati (`comfy_extras/nodes_lt.py`, `nodes_lt_audio.py`,
+`nodes_minimax_h3.py`). **Leggere il sorgente del nodo batte interrogare
+`/object_info`**: `/object_info` dice che un ingresso `LATENT` esiste, il
+sorgente dice che quel `LATENT` dev'essere annidato o piatto.
+
+**Perché H3 è passato da FL2VA a REF2VA.** Sono due rifiniture dello stesso
+modello, non due quantizzazioni:
+
+| Variante | Nodo | Cosa prende |
+|---|---|---|
+| FL2VA | `MiniMaxH3ImageToVideo` | prompt + primo e ultimo fotogramma |
+| REF2VA | `MiniMaxH3ReferenceToVideo` | prompt + 9 immagini, 3 video (con colonna sonora), 3 audio |
+
+Primo e ultimo fotogramma li fa **già LTX 2.5**, con 23 GB invece di 41. I
+riferimenti no: sono la cosa che solo H3 sa fare, e quindi sono la ragione per
+cui H3 sta nel catalogo. Il file costa uguale (11,0 GB contro 11,7) e il LoRA
+turbo cambia insieme al modello — quello della fl2v su ref2v non va.
+
+**Una trappola dei riferimenti, per chi ci tornerà.** Gli ingressi di
+`MiniMaxH3ReferenceToVideo` sono una famiglia `Autogrow` con prefisso: nel grafo
+API si chiamano `ref_image_0`…`ref_image_8`, **contati da zero**. Le etichette
+che il modello si aspetta nel prompt partono invece da **uno** (`<Picture 1>`), e
+la colonna sonora di un video di riferimento prende un numero d'`Audio`
+*prima* degli audio sciolti. Sono tre convenzioni diverse nello stesso nodo: per
+questo l'etichetta la calcola e la scrive l'app (`apps/cinema/src/riferimenti.js`)
+invece di lasciarla contare a chi scrive il prompt.
 
 ---
 
