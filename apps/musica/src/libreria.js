@@ -10,11 +10,13 @@
 import { $, el, escapeHtml, fmtTime, mostraErrore, mostraScheda } from "./dom.js";
 import { annuncia, ascolta } from "./bus.js";
 import { stato } from "./stato.js";
-import { collegaRighe, rigaBrano } from "./righe.js";
+import { aggiornaRiga, collegaRighe, rigaBrano } from "./righe.js";
+// La lista che si aggiorna senza rifarsi da capo, comune a tutta la suite.
+import { disegnaLista } from "/comune/lista-viva.js";
 import { impostaCoda, riproduciId } from "./lettore.js";
 import { grafoImmagine, promptCopertina } from "./grafi.js";
 import { ESTETICHE } from "./dati/estetiche.js";
-import { aggiungiLavoro, scordaDisegno, disegnaSessione } from "./coda.js";
+import { aggiungiLavoro, disegnaSessione } from "./coda.js";
 import { applicaMeta, nuovaResa } from "./crea.js";
 import { animaPronta } from "./anima.js";
 import * as ponte from "./ponte.js";
@@ -33,14 +35,21 @@ export async function aggiornaLibreria() {
 
   disegnaElenco();
   disegnaDettaglio();
-  scordaDisegno();
   disegnaSessione();
 }
 
 function disegnaElenco() {
-  el.libList.innerHTML = stato.brani.length
-    ? stato.brani.map(rigaBrano).join("")
-    : `<div class="empty">Ancora nessun brano.</div>`;
+  // Anche qui a chiavi: l'elenco si ridisegna a ogni play e a ogni pausa, e
+  // rifarlo tutto voleva dire ricaricare ogni copertina per un puntino che si
+  // accende.
+  const voci = stato.brani.map((b) => ({
+    chiave: `brano:${b.id}`,
+    html: rigaBrano(b),
+    aggiorna: (nodo) => aggiornaRiga(nodo, b),
+  }));
+  if (!voci.length) voci.push({ chiave: "vuoto", html: `<div class="empty">Ancora nessun brano.</div>` });
+
+  if (!disegnaLista(el.libList, voci)) return;
 
   collegaRighe(el.libList);
   el.libList.querySelectorAll("[data-brano]").forEach((riga) => {
@@ -206,7 +215,6 @@ export function collegaLibreria() {
   ascolta("libreria-cambiata", () => void aggiornaLibreria());
   ascolta("ascolto-cambiato", () => {
     disegnaElenco();
-    scordaDisegno();
     disegnaSessione();
   });
 

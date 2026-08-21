@@ -15,7 +15,7 @@ import { el, escapeHtml, mostraScheda } from "./dom.js";
 import { annuncia, ascolta } from "./bus.js";
 import { mostraLente } from "./lente.js";
 import { stato } from "./stato.js";
-import { disegnaSessione, scordaDisegno } from "./coda.js";
+import { disegnaSessione } from "./coda.js";
 import * as ponte from "./ponte.js";
 
 let immagini = [];
@@ -45,9 +45,8 @@ export async function aggiornaGalleria() {
 
   collega();
 
-  // La sessione mostra le stesse immagini: se non lo si dice, la striscia sotto
-  // i lavori resta a quelle di prima finché non cambia qualcos'altro.
-  scordaDisegno();
+  // La sessione mostra le stesse immagini: la striscia sotto i lavori si
+  // riallinea a quelle appena rilette.
   disegnaSessione();
 
   // Adesso `stato.immagini` è aggiornato: chi mostra le ultime — la striscia del

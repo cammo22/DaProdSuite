@@ -10,7 +10,7 @@ Un programma solo per fare musica, immagini, video, voci e parlare con un avatar
 Ogni app la installi quando ti serve e la disinstalli quando non ti serve più.
 Gira sul tuo computer: niente account, niente chiavi API, codice aperto.
 
-[![versione](https://img.shields.io/badge/versione-0.4.3-7c5cff)](https://github.com/cammo22/DaProdSuite/releases)
+[![versione](https://img.shields.io/badge/versione-0.4.4-7c5cff)](https://github.com/cammo22/DaProdSuite/releases)
 [![licenza](https://img.shields.io/badge/licenza-MIT-5cff9d)](LICENSE)
 [![piattaforma](https://img.shields.io/badge/Windows-x64-3ddbff)](#requisiti)
 [![sito](https://img.shields.io/badge/sito-cammo22.github.io-ffa63d)](https://cammo22.github.io/DaProdSuite/)
@@ -90,8 +90,9 @@ lo stesso.
 
 ## A che punto siamo
 
-> **0.4.2 pubblicata, e nella 0.4.3 in prova arriva l'ottava scheda:
-> DaProdVoce, che legge quello che scrivi con la voce che scegli tu.**
+> **0.4.3 pubblicata — l'ottava scheda, DaProdVoce, che legge quello che
+> scrivi con la voce che scegli tu — e nella 0.4.4 il pannello dei lavori in
+> corso non ricarica più quello che hai già fatto.**
 >
 > **DaProdVisualizer, DaProdMusica, DaProdFoto, DaProdDream, DaProdIoDigitale,
 > DaProdCinema** e **DaProdVoce** sono nella suite e funzionano. Si installano da sole, motore e
@@ -113,7 +114,14 @@ lo stesso.
 > corto, il prompt intero dentro. Premendo Genera la memoria video viene
 > liberata da sola da quello che non serve.
 >
-> Con la 0.4.3 (in prova) arriva **DaProdVoce**: scrivi una frase e te la legge,
+> Con la 0.4.4 **quello che hai già fatto resta dov'è mentre generi.** Il
+> pannello dei lavori in corso si rifaceva da capo una volta al secondo, per
+> far scorrere il tempo e la barra, e si portava dietro anche i risultati: a
+> DaProdCinema un video ripartiva da zero ogni secondo e non c'era verso di
+> guardarlo mentre il prossimo generava, a DaProdMusica e DaProdFoto
+> ricaricavano copertine e miniature. Adesso no.
+>
+> Con la 0.4.3 arriva **DaProdVoce**: scrivi una frase e te la legge,
 > anche lunga — viene tagliata dove finiscono le frasi e ricucita da sola. E può
 > farlo **con la voce che gli dai tu**: un pezzo di audio in cui si sente parlare
 > qualcuno, la trascrizione di quello che dice, e quella voce entra nel menu.

@@ -1,7 +1,7 @@
 # Riprendere da qui
 
 Documento di passaggio fra una sessione e l'altra. Aggiornato il **21 agosto
-2026**, con la 0.4.2 pubblicata e la 0.4.3 costruita.
+2026**, con la 0.4.3 pubblicata e la 0.4.4 in lavorazione.
 
 **Se stai leggendo questo all'inizio di una conversazione nuova**: leggi anche
 [COME-SI-LAVORA.md](COME-SI-LAVORA.md) e [ROADMAP.md](ROADMAP.md), poi vai al
@@ -73,11 +73,50 @@ Repo pubblico: **https://github.com/cammo22/DaProdSuite**
 | **Cinema: la Galleria** | fatta, **da provare tu**: mai aperta in Electron |
 | **H3 genera anche dal solo testo** | fatto: il divieto era dell'app, non del modello |
 | **Anima v2 (2.9B) in Foto** | in catalogo e nel menu, **mai generata un'immagine**: 3,1 GB da scaricare |
+| **0.4.3 pubblicata** | fatto il 21 agosto: tag `v0.4.3`, PR #12 |
+| **Il pannello Sessione non ricarica più i risultati** | fatto: `packages/ui/src/lista-viva.js`, usato da Cinema, Musica e Foto. **Da provare tu** con un video che suona mentre il prossimo genera |
 
 Si lavora su un ramo per release e una PR: `release-0.2.0` è stata unita con le
 PR #3 e #4, la 0.3.1 con la #5, la 0.3.2 con la #6, la 0.3.3 con la #7, la
 0.3.4 con la #8, la 0.4.0 con la #9, la 0.4.1 con la #10, la 0.4.2 con la #11,
-e questo giro sta su `release-0.4.3`.
+la 0.4.3 con la #12, e questo giro sta su `release-0.4.4`.
+
+### Com'è fatto il giro della 0.4.4
+
+**Il pannello Sessione si rifaceva da capo una volta al secondo.** Serviva a
+far scorrere il tempo trascorso e la barra di avanzamento, e il modo era un
+`innerHTML` su tutto il contenitore, con una memoria della stringa disegnata
+per saltare i giri identici. Ma la stringa **cambia** ogni secondo, perché ci
+sono dentro i secondi: il salto non scattava mai, e ogni secondo sparivano e
+tornavano anche i risultati già finiti. A Cinema quello voleva dire un `<video>`
+nuovo ogni secondo — dare play mentre qualcosa generava era impossibile — a
+Musica e Foto le copertine e le miniature che ricaricavano.
+
+La soluzione era già in casa: **DaProdVoce** faceva un riquadro per lavoro fin
+dal primo giorno, proprio perché ogni riga finita contiene un lettore audio.
+Quella idea è diventata `packages/ui/src/lista-viva.js`, servito a tutte le app
+sotto `/comune/`:
+
+- ogni voce ha una **chiave** (l'id del lavoro, l'id del brano) e un nodo suo;
+- voce identica al giro prima → il nodo non si tocca, e il video continua;
+- voce che sa aggiornarsi (`aggiorna(nodo)`) → si cambiano solo il testo e la
+  larghezza della barra, così nemmeno l'animazione della miniatura riparte;
+- voce nuova o cambiata davvero → si rifà **solo quel nodo**;
+- voce sparita → via quel nodo.
+
+Spostare un nodo con `insertBefore` non lo distrugge: un video che scende di
+posto perché ne è arrivato uno più recente continua a suonare.
+
+Con questo è sparito `scordaDisegno()` da tutte e tre le app: serviva solo a
+ingannare quella memoria della stringa, e senza quella memoria non ha più
+niente da fare.
+
+L'algoritmo è stato provato a parte, con un DOM finto: dodici casi — ordine,
+inserimento in cima, rimozione, inversione, aggiornamento in casa — e in tutti
+i nodi riusati sono rimasti **lo stesso oggetto**, che è la cosa che tiene vivo
+il video.
+
+---
 
 ### Com'è fatto il giro della 0.4.3
 

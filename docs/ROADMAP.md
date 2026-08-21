@@ -124,6 +124,20 @@ fermo avrebbe voluto dire non pubblicare niente aspettando un'app sola.
       vero (§ 0.7.0), e allora cambia il programma che le fa, non quello che le
       mostra.
 
+## 0.4.4 — Il pannello Sessione che non ricarica più i risultati ✅
+
+**Costruita il 21 agosto 2026.** Un difetto visto usando la 0.4.3, e vale per tre schede.
+
+- [x] **Il video non riparte da capo ogni secondo** — *il pannello Sessione si
+      rifaceva tutto una volta al secondo per far scorrere i tempi e la barra,
+      e si portava dietro i risultati già fatti: a DaProdCinema il `<video>`
+      veniva ricostruito ogni secondo, e dare play mentre qualcosa generava
+      era impossibile. A DaProdMusica e DaProdFoto ricaricavano le copertine e
+      le miniature. Adesso ogni riga ha la sua chiave e il suo nodo
+      (`packages/ui/src/lista-viva.js`): il lavoro in corso si aggiorna dove
+      sta, i risultati non si toccano. **Da provare tu**: un video che suona
+      mentre il prossimo genera.*
+
 ## 0.4.3 — L'ottava scheda, e tre cose viste usando la 0.4.2 ✅
 
 **Costruita il 21 agosto 2026.** Una scheda nuova e tre aggiustamenti chiesti

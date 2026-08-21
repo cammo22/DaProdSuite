@@ -8,6 +8,9 @@
  */
 
 import { el, escapeHtml, fmtTime } from "./dom.js";
+// La lista che si aggiorna senza rifarsi da capo: vale per tutte le app, quindi
+// sta in `packages/ui` e la suite la serve sotto `/comune/`.
+import { disegnaLista } from "/comune/lista-viva.js";
 import { annuncia } from "./bus.js";
 import { stato } from "./stato.js";
 import { mostraLente } from "./lente.js";
@@ -15,7 +18,6 @@ import * as ponte from "./ponte.js";
 
 const lavori = new Map();
 let ordine = [];
-let ultimoDisegno = "";
 
 const lavoro = (id) => lavori.get(id);
 const inCorso = () => ordine.map(lavoro).find((l) => l && l.stato === "in-corso");
@@ -38,23 +40,37 @@ export function disegnaSessione() {
   // si è chiesto, senza cambiare scheda per andarlo a cercare.
   const ultime = stato.immagini.slice(0, 8);
 
-  let html = attivi.length
-    ? attivi.map(riquadro).join("")
-    : `<div class="empty">Niente in lavorazione. Scrivi cosa vuoi vedere e premi <b>Genera</b>.</div>`;
+  // Ogni pezzo con la sua chiave: il lavoro in corso si aggiorna in casa —
+  // scorrono il tempo e la barra — e la striscia delle ultime immagini resta
+  // dov'è. Rifare tutto a ogni secondo, com'era prima, voleva dire ricaricare
+  // quelle immagini una volta al secondo.
+  const voci = attivi.map((l) => ({
+    chiave: `lavoro:${l.id}`,
+    html: riquadro(l),
+    aggiorna: (nodo) => aggiornaRiquadro(nodo, l),
+  }));
 
-  if (ultime.length) {
-    html += `<div class="ultime">${ultime
-      .map(
-        (i) =>
-          `<img src="${escapeHtml(i.url)}" alt="" loading="lazy" data-lente="${escapeHtml(i.id)}"
-             title="${escapeHtml(i.meta?.testo ?? i.nome)}">`,
-      )
-      .join("")}</div>`;
+  if (!voci.length) {
+    voci.push({
+      chiave: "vuoto",
+      html: `<div class="empty">Niente in lavorazione. Scrivi cosa vuoi vedere e premi <b>Genera</b>.</div>`,
+    });
   }
 
-  if (html === ultimoDisegno) return;
-  ultimoDisegno = html;
-  el.sessione.innerHTML = html;
+  if (ultime.length) {
+    voci.push({
+      chiave: "ultime",
+      html: `<div class="ultime">${ultime
+        .map(
+          (i) =>
+            `<img src="${escapeHtml(i.url)}" alt="" loading="lazy" data-lente="${escapeHtml(i.id)}"
+             title="${escapeHtml(i.meta?.testo ?? i.nome)}">`,
+        )
+        .join("")}</div>`,
+    });
+  }
+
+  if (!disegnaLista(el.sessione, voci)) return;
 
   el.sessione.querySelectorAll("[data-annulla]").forEach((b) => {
     b.onclick = () => annulla(b.dataset.annulla);
@@ -67,20 +83,28 @@ export function disegnaSessione() {
   });
 }
 
-/** Forza il prossimo disegno anche se l'HTML non è cambiato. */
-export function scordaDisegno() {
-  ultimoDisegno = "";
+function sottotitolo(l) {
+  const secondi = l.inizio ? Math.floor((Date.now() - l.inizio) / 1000) : 0;
+  return l.stato === "in-corso" ? `in lavorazione &middot; ${fmtTime(secondi)}` : "in attesa";
+}
+
+/**
+ * Cambia il tempo e la barra lasciando in piedi il riquadro: così la miniatura
+ * non ricomincia la sua animazione a ogni secondo.
+ */
+function aggiornaRiquadro(nodo, l) {
+  const sub = nodo.querySelector(".tsub");
+  const barra = nodo.querySelector(".p1");
+  if (sub) sub.innerHTML = sottotitolo(l);
+  if (barra) barra.style.width = `${(l.avanzamento * 100).toFixed(1)}%`;
 }
 
 function riquadro(l) {
-  const corre = l.stato === "in-corso";
-  const secondi = l.inizio ? Math.floor((Date.now() - l.inizio) / 1000) : 0;
-
   return `<div class="track">
     <div class="thumb shimmer"></div>
     <div class="tmeta">
       <div class="tt">${escapeHtml(l.descrizione)}</div>
-      <div class="tsub">${corre ? `in lavorazione &middot; ${fmtTime(secondi)}` : "in attesa"}</div>
+      <div class="tsub">${sottotitolo(l)}</div>
       <div class="bar"><i class="p1" style="width:${(l.avanzamento * 100).toFixed(1)}%"></i></div>
     </div>
     <div class="tact"><button class="del" data-annulla="${escapeHtml(l.id)}" title="annulla">&#10005;</button></div>
