@@ -45,6 +45,17 @@ let ultimo = localStorage.getItem(RICORDO) || null;
  */
 export async function faiSpazio(modello, racconta = () => {}) {
   try {
+    // Non mentre il motore sta lavorando: scaricare un modello dalla scheda lo
+    // toglie **anche** all'immagine che si sta generando in quel momento, e
+    // quella muore nel VAE («Input type torch.cuda.HalfTensor and weight type
+    // torch.HalfTensor»). Con la fila piena si genera con la scheda com'è: il
+    // lavoro nuovo userà comunque i pesi già caricati per quello in corso.
+    if (await ponte.motoreOccupato()) {
+      ultimo = modello.id;
+      localStorage.setItem(RICORDO, ultimo);
+      return;
+    }
+
     racconta("libero la memoria…");
     // Anche se non l'abbiamo caricato noi: chi preme Genera vuole la scheda
     // libera, e non gli interessa — giustamente — chi ce l'aveva messo.

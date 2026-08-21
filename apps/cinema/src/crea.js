@@ -95,6 +95,11 @@ function raccontaDurata() {
   const chiesti = Number(el.durata.value);
   const veri = secondiVeri(chiesti, m);
   el.durataVal.textContent = `${veri.toFixed(2).replace(".", ",")} s`;
+
+  // Sopra i dieci secondi la memoria del campionatore diventa il collo di
+  // bottiglia, e il modo di non finirla è scendere di risoluzione. Meglio dirlo
+  // qui che farglielo scoprire da un errore dopo otto minuti.
+  el.notaDurata.textContent = chiesti > 10 ? "sopra i 10 s conviene stare a 720p" : "";
 }
 
 /** «Genera» si accende solo se con questo modello si può davvero generare. */

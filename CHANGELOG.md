@@ -10,6 +10,59 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ---
 
+## 0.4.5 — Il video non muore più a metà, e il cronometro dice la verità
+
+**Costruita il 21 agosto 2026.** Tre cose viste generando con la 0.4.4.
+
+### Chiedere il secondo video non ammazza più il primo
+
+**Il difetto.** Premere *Genera* svuota la scheda video: su 8 GB è quello che
+permette a LTX di far entrare 23 GB di pesi passando dalla RAM. Solo che
+svuotava **sempre**, anche quando il motore stava ancora lavorando — e i pesi
+venivano tolti da sotto ai piedi del video in corso. Quel video non moriva
+subito: andava avanti fino all'ultimo passaggio e poi si spaccava lì, con
+`Nel nodo VAEDecode: Input type (torch.cuda.HalfTensor) and weight type
+(torch.HalfTensor) should be the same` — che tradotto vuol dire: i dati sono
+sulla scheda, i pesi no.
+
+Succedeva in un caso solo, ed è quello normale: **chiedere la clip successiva
+mentre la prima sta ancora andando.**
+
+**Adesso** se il motore ha qualcosa in mano non si tocca niente, e il lavoro
+nuovo si mette in fila: userà comunque gli stessi pesi di quello in corso, per
+cui non c'era niente da liberare. Vale per **DaProdCinema, DaProdMusica e
+DaProdFoto**, che facevano tutte e tre la stessa cosa.
+
+### Un tempo solo, da quando premi a quando il file è pronto
+
+Il cronometro partiva quando il **motore** prendeva in mano il lavoro, non
+quando lo chiedevi tu. Con due clip in coda voleva dire vederlo azzerarsi fra
+una e l'altra, e leggere «12 s» dopo tre minuti di attesa.
+
+Adesso ce ne sono due, e si vede quello giusto:
+
+- **quello che scorre** parte quando premi Genera e non si azzera mai — in coda
+  scorre già («in coda · 1:20»), e quando il motore parte continua da lì;
+- **«~2:10 alla fine»** invece guarda solo il tempo di lavoro vero, se no la
+  stima avrebbe contato anche l'attesa e avrebbe detto il triplo.
+
+Il «fatto in» scritto sotto al video è il tempo intero, dalla pressione del
+tasto al file sul disco. È il numero che serve per farsi un'idea di quanto
+costa davvero una clip.
+
+### LTX arriva a 20 secondi
+
+Il cursore si fermava a dieci per prudenza. Venti è il limite vero del modello
+— è quello che Lightricks dichiara per la 2.5, ed è dove si ferma di serie la
+testa che indovina la durata — e il distillato a otto passi è abbastanza veloce
+da renderli sensati. Sopra i dieci secondi compare la riga che dice di stare a
+720p: raddoppiando i secondi raddoppiano i fotogrammi, e con loro la memoria.
+
+MiniMax H3 resta a 15, e non è prudenza: è stato addestrato fra 124 e 362
+fotogrammi, cioè fra 5 e 15 secondi. Sopra, nessuno sa cosa fa.
+
+---
+
 ## 0.4.4 — Quello che hai già fatto resta dov'è
 
 **Costruita il 21 agosto 2026.** Un difetto solo, visto usando la 0.4.3, ma si

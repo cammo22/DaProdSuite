@@ -10,7 +10,7 @@ Un programma solo per fare musica, immagini, video, voci e parlare con un avatar
 Ogni app la installi quando ti serve e la disinstalli quando non ti serve più.
 Gira sul tuo computer: niente account, niente chiavi API, codice aperto.
 
-[![versione](https://img.shields.io/badge/versione-0.4.4-7c5cff)](https://github.com/cammo22/DaProdSuite/releases)
+[![versione](https://img.shields.io/badge/versione-0.4.5-7c5cff)](https://github.com/cammo22/DaProdSuite/releases)
 [![licenza](https://img.shields.io/badge/licenza-MIT-5cff9d)](LICENSE)
 [![piattaforma](https://img.shields.io/badge/Windows-x64-3ddbff)](#requisiti)
 [![sito](https://img.shields.io/badge/sito-cammo22.github.io-ffa63d)](https://cammo22.github.io/DaProdSuite/)
@@ -90,9 +90,8 @@ lo stesso.
 
 ## A che punto siamo
 
-> **0.4.3 pubblicata — l'ottava scheda, DaProdVoce, che legge quello che
-> scrivi con la voce che scegli tu — e nella 0.4.4 il pannello dei lavori in
-> corso non ricarica più quello che hai già fatto.**
+> **0.4.5: chiedere il secondo video non ammazza più il primo, il cronometro
+> conta da quando premi, e LTX arriva a 20 secondi.**
 >
 > **DaProdVisualizer, DaProdMusica, DaProdFoto, DaProdDream, DaProdIoDigitale,
 > DaProdCinema** e **DaProdVoce** sono nella suite e funzionano. Si installano da sole, motore e
@@ -113,6 +112,14 @@ lo stesso.
 > 480, 720 o 1080p), e le proposte sopra la casella te le scrivi tu — un titolo
 > corto, il prompt intero dentro. Premendo Genera la memoria video viene
 > liberata da sola da quello che non serve.
+>
+> Con la 0.4.5 **puoi chiedere la clip successiva senza rovinare quella in
+> corso.** Premere Genera svuota la scheda video — su 8 GB è quello che fa
+> entrare 23 GB di modello — ma lo faceva anche mentre il motore stava
+> lavorando, e il video in corso moriva all'ultimo passaggio. Adesso, se c'è
+> qualcosa in coda, la scheda non si tocca. Nella stessa versione il
+> cronometro conta **da quando premi il tasto** e non da quando parte il
+> motore, e il cursore della durata di LTX arriva a **20 secondi**.
 >
 > Con la 0.4.4 **quello che hai già fatto resta dov'è mentre generi.** Il
 > pannello dei lavori in corso si rifaceva da capo una volta al secondo, per

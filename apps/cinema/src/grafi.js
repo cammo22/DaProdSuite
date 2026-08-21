@@ -121,8 +121,21 @@ const LTX = {
    */
   passi: { min: 8, max: 8, valore: 8 },
   cfg: 1,
-  /** Da 2 a 10 secondi: sopra, una clip su questa scheda diventa una serata. */
-  durata: { min: 2, max: 10, valore: 5 },
+  /**
+   * Da 2 a 20 secondi.
+   *
+   * Venti è il limite del modello, non un numero scelto da noi: la testa che
+   * indovina la durata (`LTXVDurationPredictor`) si ferma lì di serie, e venti
+   * è quello che Lightricks dichiara per la 2.5. Fino alla 0.4.4 il cursore si
+   * fermava a dieci per prudenza — «sopra, una clip diventa una serata» — ma
+   * il distillato a otto passi va molto più veloce di così, e dieci secondi
+   * tagliati a metà di una scena sono un problema peggiore dell'attesa.
+   *
+   * ⚠ Il tempo di generazione **non** cresce lineare: raddoppiando i secondi
+   * raddoppiano i fotogrammi, e con loro la memoria che serve al campionatore.
+   * Sopra i dieci secondi conviene stare a 720p.
+   */
+  durata: { min: 2, max: 20, valore: 5 },
   /** Cosa gli si può dare in pasto, oltre al testo. Decide mezza interfaccia. */
   ingressi: "fotogrammi",
   catalogo: ["ltx25-dit", "ltx25-text-encoder", "ltx25-vae", "ltx25-audio-vae"],

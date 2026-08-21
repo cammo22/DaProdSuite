@@ -14,12 +14,28 @@
  *
  * `racconta` scrive sul tasto Genera: svuotare la scheda può prendere qualche
  * secondo, ed è esattamente il genere di attesa muta che fa ripremere il tasto.
+ *
+ * ⚠ **Ma non mentre il motore sta lavorando.** `unload_all_models` non chiede
+ * permesso a nessuno: toglie i pesi dalla scheda anche al video che si sta
+ * generando in quel momento. Quel video non muore subito — va avanti finché
+ * qualcuno non prova a usare un pezzo che non c'è più — e finisce nel VAE con
+ * «Input type (torch.cuda.HalfTensor) and weight type (torch.HalfTensor) should
+ * be the same», che vuol dire: i dati sono sulla scheda, i pesi no.
+ *
+ * Succede in un caso solo, ed è quello normale: chiedi il secondo video mentre
+ * il primo sta ancora andando. Se il motore ha qualcosa in mano, quindi, non si
+ * tocca niente — e non serve nemmeno, perché il lavoro nuovo userà **gli stessi
+ * pesi** di quello in corso.
  */
 
 import * as ponte from "./ponte.js";
 
 export async function faiSpazio(racconta = () => {}) {
   try {
+    // Prima di tutto: c'è qualcosa in ballo? Se sì si esce, e il lavoro nuovo si
+    // mette in fila dietro all'altro senza che nessuno tocchi la scheda.
+    if (await ponte.motoreOccupato()) return;
+
     racconta("libero la memoria…");
     // Anche quello che non abbiamo caricato noi, e anche il modello che scrive
     // in LM Studio: chi preme Genera vuole la scheda libera, e non gli interessa

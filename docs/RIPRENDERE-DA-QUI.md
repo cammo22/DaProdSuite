@@ -1,7 +1,7 @@
 # Riprendere da qui
 
 Documento di passaggio fra una sessione e l'altra. Aggiornato il **21 agosto
-2026**, con la 0.4.3 pubblicata e la 0.4.4 in lavorazione.
+2026**, con la 0.4.4 pubblicata e la 0.4.5 in lavorazione.
 
 **Se stai leggendo questo all'inizio di una conversazione nuova**: leggi anche
 [COME-SI-LAVORA.md](COME-SI-LAVORA.md) e [ROADMAP.md](ROADMAP.md), poi vai al
@@ -75,11 +75,57 @@ Repo pubblico: **https://github.com/cammo22/DaProdSuite**
 | **Anima v2 (2.9B) in Foto** | in catalogo e nel menu, **mai generata un'immagine**: 3,1 GB da scaricare |
 | **0.4.3 pubblicata** | fatto il 21 agosto: tag `v0.4.3`, PR #12 |
 | **Il pannello Sessione non ricarica più i risultati** | fatto: `packages/ui/src/lista-viva.js`, usato da Cinema, Musica e Foto. **Da provare tu** con un video che suona mentre il prossimo genera |
+| **0.4.4 pubblicata** | fatto il 21 agosto: tag `v0.4.4`, PR #13. **Provata da Cammo**: il video non ricarica più |
+| **Il video non muore più a metà (0.4.5)** | fatto: `faiSpazio` svuotava la VRAM anche a motore acceso. **Da provare tu**: due clip di fila senza aspettare la prima |
+| **Cronometro unico + LTX a 20 s** | fatto, **da provare tu** |
 
 Si lavora su un ramo per release e una PR: `release-0.2.0` è stata unita con le
 PR #3 e #4, la 0.3.1 con la #5, la 0.3.2 con la #6, la 0.3.3 con la #7, la
 0.3.4 con la #8, la 0.4.0 con la #9, la 0.4.1 con la #10, la 0.4.2 con la #11,
-la 0.4.3 con la #12, e questo giro sta su `release-0.4.4`.
+la 0.4.3 con la #12, la 0.4.4 con la #13, e questo giro sta su `release-0.4.5`.
+
+### Com'è fatto il giro della 0.4.5
+
+**Il difetto era nostro, non del modello.** Cammo ha visto
+`Nel nodo VAEDecode: Input type (torch.cuda.HalfTensor) and weight type
+(torch.HalfTensor) should be the same` a metà di una serie di clip. Quel
+messaggio vuol dire una cosa sola: i dati sono sulla scheda e i pesi no.
+
+Il colpevole è `apps/cinema/src/memoria.js`. `faiSpazio()` chiama
+`/daprod/scarica {tutti:true}`, che dentro al motore è `mm.unload_all_models()`
+— e quello **non chiede permesso a nessuno**: toglie i pesi dalla GPU anche al
+lavoro che ComfyUI sta eseguendo in quel momento. Il video in corso continua
+finché non serve un pezzo che non c'è più, e quel punto è il VAE: l'ultimo
+nodo, dopo minuti di lavoro già fatto.
+
+Si innesca solo premendo Genera con qualcosa già in coda — che è il modo
+normale di usare l'app. La guardia è una riga: `if (await
+ponte.motoreOccupato()) return`. E non si perde niente, perché il lavoro nuovo
+userà **gli stessi pesi** di quello in corso: non c'era spazio da fare.
+
+Lo stesso schema c'era in Musica (`crea.js`) e in Foto (`memoria.js`):
+`motoreOccupato()` sta nei tre `ponte.js`, e se il motore non risponde torna
+**`true`** — fra non liberare la memoria e ammazzare un video a metà, il
+secondo è peggio.
+
+**I due orologi.** Il cronometro partiva da `execution_start`, cioè da quando
+il motore prende in mano il lavoro: con due clip in coda si azzerava fra l'una
+e l'altra. Adesso ogni lavoro ha `chiesto` (quando hai premuto, mai riscritto)
+e `inizio` (quando il motore ha cominciato). Si mostra `chiesto`, si stima su
+`inizio` — mescolarli darebbe una stima che conta anche l'attesa in coda, cioè
+il triplo del vero. `execution_start` adesso fa `l.inizio = l.inizio ||
+Date.now()`, perché arriva anche quando un lavoro riprende.
+
+**I limiti veri dei due modelli**, letti dal sorgente dei nodi e non dedotti:
+LTX 2.5 arriva a **20 s** (`max_seconds` di `LTXVDurationPredictor`), H3 a
+**15 s** (addestrato fra 124 e 362 fotogrammi, dice il tooltip di
+`nodes_minimax_h3.py`). Il cursore di LTX era fermo a 10 per prudenza nostra.
+
+Sulla **modalità storia** e sui video da mezz'ora: la ricerca sta in
+[ROADMAP.md](ROADMAP.md), col riassunto onesto — in una ripresa sola non si fa
+su questa scheda, come **storia di inquadrature** sì, ma è una notte di lavoro.
+
+---
 
 ### Com'è fatto il giro della 0.4.4
 

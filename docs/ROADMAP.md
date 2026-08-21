@@ -124,6 +124,89 @@ fermo avrebbe voluto dire non pubblicare niente aspettando un'app sola.
       vero (§ 0.7.0), e allora cambia il programma che le fa, non quello che le
       mostra.
 
+## 0.4.5 — Il video non muore più a metà ✅
+
+**Costruita il 21 agosto 2026.** Tre cose viste generando con la 0.4.4.
+
+- [x] **Chiedere il secondo video non ammazza più il primo** — *`faiSpazio`
+      svuotava la VRAM anche a motore in lavorazione, e i pesi sparivano da
+      sotto ai piedi della clip in corso: moriva nel VAE con «Input type
+      (torch.cuda.HalfTensor) and weight type (torch.HalfTensor)». Adesso se il
+      motore ha qualcosa in coda non si tocca niente. Cinema, Musica e Foto.*
+- [x] **Un cronometro solo, da quando premi a quando il file è pronto** — *il
+      tempo partiva quando il motore prendeva in mano il lavoro, quindi si
+      azzerava fra una clip e l'altra. Adesso `chiesto` non si azzera mai e la
+      stima «alla fine» resta calcolata sul solo tempo di lavoro.*
+- [x] **LTX fino a 20 secondi** — *era fermo a 10 per prudenza; 20 è il limite
+      dichiarato del modello. H3 resta a 15, che è la fine del suo addestramento
+      (124-362 fotogrammi).*
+
+## Modalità storia, e i video lunghi — quello che si è trovato cercando
+
+**Non è ancora un piano, è quello che c'è là fuori al 21 agosto 2026.** Scritto
+qui perché la domanda («si può fare mezz'ora?») torna, e la risposta ha bisogno
+di numeri e non di impressioni.
+
+### Quanto può durare una singola clip, davvero
+
+| | Limite | Da dove si sa |
+|---|---|---|
+| **LTX 2.5 distillato** | **20 s** | è il `max_seconds` di serie di `LTXVDurationPredictor`, ed è quello che Lightricks dichiara per la 2.5 |
+| **MiniMax H3** | **15 s** | il nodo lo scrive: addestrato fra 124 e 362 fotogrammi a 24 fps, «longer is untested» |
+
+Sopra quei numeri non c'è un divieto, c'è un modello che non è mai stato visto
+là. Il cursore adesso arriva esattamente lì.
+
+### Mezz'ora in una ripresa sola: **no, non oggi, non su questa scheda**
+
+Il modo con cui si allunga un video è **incatenare**: l'ultima parte di una
+clip diventa l'inizio della prossima. Per H3 esiste già fatto — il flusso
+*MiniMax-H3 Multishot* su Hugging Face — e funziona. Ma:
+
+- gira su **nodi custom** che non sono quelli nativi di ComfyUI;
+- vuole il checkpoint **fl2va** (primo e ultimo fotogramma), e noi abbiamo il
+  **ref2va**: sono due modelli diversi, non due impostazioni;
+- è tarato su **schede da 16-24 GB**;
+- e soprattutto **deriva**: chi l'ha scritto dice di stare entro ~4 incatenate
+  (30-40 secondi), perché la grana dell'immagine si accumula a ogni salto e
+  l'audio si spegne. Oltre le sette è visibile.
+
+Quindi la mezz'ora in una ripresa sola non è una manopola da alzare: è una
+ricerca aperta. I modelli che ci arrivano davvero (LongLive, Helios) misurano
+le loro prestazioni su H100, e sono altri modelli.
+
+### Mezz'ora **come storia**: quella si può fare
+
+Una storia non è una ripresa sola: sono cento inquadrature con gli stacchi in
+mezzo, che è come è fatto qualunque film. E cento inquadrature sono cento clip,
+cioè esattamente quello che DaProdCinema già sa fare — quello che manca è chi
+le scrive, chi le mette in fila e chi le cuce.
+
+Il pezzo grosso è il **tempo**, e va detto prima di cominciare: dai file
+generati il 21 agosto passano **fra i 2 e i 5 minuti fra una clip e l'altra**.
+Mezz'ora di video sono 90-120 inquadrature, cioè **una notte di lavoro**, non
+un pomeriggio. Se la modalità storia si fa, si fa con quel patto scritto in
+faccia: si preme la sera e si guarda la mattina.
+
+I pezzi che servono, e che ci sono già:
+
+- **chi scrive le inquadrature**: LM Studio è già collegato alla suite, e
+  spezzare un soggetto in N scene con un prompt per ognuna è esattamente quello
+  che sa fare (è il mestiere di Bonsai in DaProdMusica);
+- **chi tiene lo stesso personaggio in tutte le scene**: le etichette
+  `<Picture 1>` di H3 — un'immagine del personaggio che entra in ogni clip — e,
+  dal lato LTX, l'IC-LoRA *Ingredients*, che è nei flussi ufficiali di
+  Lightricks e serve proprio a questo;
+- **chi le cuce**: ffmpeg, che sta già nella suite.
+
+E una cosa piccola che conviene prendere comunque, storia o no: la testa che
+indovina la durata (`ltx-2.5-duration-head-bf16.safetensors`) pesa **3,8 MB** e
+fa scegliere al modello quanto deve durare l'inquadratura invece di imporglielo
+col cursore.
+
+⚠ Niente di tutto questo è stato provato: è ricerca, non un collaudo. La regola
+resta quella di sempre — prima la generazione base, poi le funzioni sopra.
+
 ## 0.4.4 — Il pannello Sessione che non ricarica più i risultati ✅
 
 **Costruita il 21 agosto 2026.** Un difetto visto usando la 0.4.3, e vale per tre schede.

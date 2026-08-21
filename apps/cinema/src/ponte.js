@@ -69,6 +69,24 @@ export async function lavoriVivi() {
   return new Set([...(q.queue_running || []), ...(q.queue_pending || [])].map((x) => x[1]));
 }
 
+/**
+ * Il motore ha qualcosa in mano?
+ *
+ * Serve a chi sta per liberare la memoria video: `unload_all_models` toglie i
+ * pesi anche al lavoro in corso, e quello poi muore nel VAE dicendo che i dati
+ * sono sulla scheda e i pesi no. Se qui torna `true`, la scheda non si tocca.
+ *
+ * Se il motore non risponde si dice **occupato**: fra il rischio di non liberare
+ * la memoria e quello di ammazzare un video a metà, il secondo è peggio.
+ */
+export async function motoreOccupato() {
+  try {
+    return (await lavoriVivi()).size > 0;
+  } catch {
+    return true;
+  }
+}
+
 export async function risultati(id) {
   try {
     const storia = await (await fetch(`${motore}/history/${id}`)).json();
