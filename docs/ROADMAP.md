@@ -124,6 +124,65 @@ fermo avrebbe voluto dire non pubblicare niente aspettando un'app sola.
       vero (§ 0.7.0), e allora cambia il programma che le fa, non quello che le
       mostra.
 
+## 0.4.3 — L'ottava scheda, e tre cose viste usando la 0.4.2 ✅
+
+**Costruita il 21 agosto 2026.** Una scheda nuova e tre aggiustamenti chiesti
+dopo aver usato la 0.4.2.
+
+- [x] **DaProdVoce** — *l'ottava scheda: si scrive una frase e la legge, con la
+      voce di serie o con una copiata da un audio di riferimento. Modelli Audio8
+      TTS 0.1B (installato con l'app) e 0.6B (dal menu). Motore FastAPI su 8780,
+      `services/voce`, con i lavori in coda e l'avanzamento a pezzi — una frase
+      di cinque secondi ne prende venti sulla scheda video, e un POST appeso per
+      venti secondi è un tasto che sembra rotto.*
+- [x] **Il testo lungo si taglia da solo** — *il modello ha 2048 posizioni fra
+      testo e audio, cioè una frase alla volta. Il motore taglia dove finiscono
+      le frasi, genera un pezzo per volta e ricuce con 0,18 s di respiro, con una
+      passata di volume sull'intero e non pezzo per pezzo.*
+- [x] **Le voci salvate stanno nei risultati, non fra i temporanei** —
+      *`output/voce/voci/`, con la trascrizione nel `.json` accanto secondo la
+      convenzione della libreria. I temporanei la suite li cancella quando le
+      pare, e una voce registrata non si rigenera da nessuna parte.*
+- [x] **Librerie private per un motore solo** — *`services/<id>/requisiti-privati.txt`,
+      installate con `uv pip install --target` in
+      `runtime/.daprod-privato/<servizio>` e messe in `sys.path` **solo** dal
+      processo di quel motore. Nasce perché il codice del modello Audio8 e'
+      scritto per transformers 4.57 e la suite ha la 5.15: sulla 5 il modello non
+      dà errore, non smette più di parlare (provato, 21 agosto 2026, con le due
+      versioni una accanto all'altra). L'ambiente condiviso resta intatto.*
+- [x] **DaProdCinema: la Galleria** — *mancava. Tutti i video fatti, il
+      conteggio accanto al nome della scheda, la lente a schermo intero, e il
+      tasto «riferimento» che rimette un video fra gli ingressi di H3. Quello che
+      arriva da un'altra app entra fra i riferimenti invece di aprire e basta.*
+- [x] **MiniMax H3 genera anche dal solo testo** — *il divieto era dell'app, non
+      del modello: `cosaManca` spegneva Genera quando i riquadri erano vuoti.
+      Adesso il consiglio (usa LTX, costa meno) sta scritto sotto ai riquadri e
+      il tasto funziona.*
+- [x] **Anima v2 (2.9B) in DaProdFoto** — *l'espansione in profondità di Anima:
+      40 blocchi invece di 28, int8 ConvRot, 3,1 GB perché divide text encoder e
+      VAE con Anima Turbo. Non è un turbo: 28-50 passi, CFG 4, scheduler
+      `sgm_uniform`, e il negativo torna a contare davvero. La riga sotto la
+      casella del negativo adesso la scrive il modello, non la pagina.*
+
+### Cosa **non** è a posto, e va detto
+
+- **L'app dentro la suite non è stata aperta.** Il motore di DaProdVoce sì:
+  modello caricato, voce clonata, testo lungo tagliato e ricucito, file scritti,
+  tutto sul PC di Cammo con l'ambiente vero. Ma la finestra, il menu dei modelli,
+  lo scaricamento dei pesi dall'hub e le due schede Voci e Galleria sono da
+  provare aprendo il programma. Stessa cosa per la Galleria di DaProdCinema e per
+  Anima v2: scritte, compilate, mai viste.
+- **DaProdVoce non ha copertina né icona.** Vanno generate con Anima a motore
+  acceso (`genera-copertine.cjs voce`, `pnpm --filter @daprod/shell icone`), da
+  qui: farlo dentro una sandbox scriverebbe i file in una cartella finta.
+- **La sintesi è lenta**: circa quattro volte il tempo reale sulla scheda video.
+  Il ramo Mamba del modello gira nella versione «naive» perché i nuclei
+  compilati (`causal-conv1d`, `mamba-ssm`) su Windows non si installano senza un
+  compilatore. Si può guardare, ma non è scontato che valga la pena.
+- **Il quarto foglio di stile copiato.** `apps/voce/stile.css` è il quarto
+  discendente di quello di DaProdFoto. Il foglio comune in `packages/ui` resta da
+  fare, ed è segnato più sotto.
+
 ## 0.4.2 — DaProdCinema da capo, e un tasto che non si pianta ✅
 
 **Costruita il 21 agosto 2026.** Due cose sole, e tutte e due nate da come la
@@ -390,6 +449,46 @@ Vedi [ACCESSO-REMOTO.md](ACCESSO-REMOTO.md).
 - [ ] Interfacce adattate allo schermo del telefono
 
 ## Chiesto e da fare, senza ancora una versione
+
+### Un'AI che usa il programma da sola
+
+**Chiesto da Cammo il 21 agosto 2026**, guardando
+[Cactus-Compute/needle2](https://huggingface.co/Cactus-Compute/needle2): «in
+futuro vorrei che un'AI possa usare il programma a suo piacimento, tipo MCP o
+altro».
+
+**Cos'è Needle 2.** Un modello da 45 milioni di parametri — 14 MB di file, 28 MB
+di RAM in tutto — che non serve a conversare: sa **scegliere lo strumento giusto
+in un elenco e riempirne i campi**, con l'uscita costretta a essere JSON valido
+da una grammatica. Apache 2.0, gira in CPU a centinaia di token al secondo, e
+sta dentro una finestra di 256 posizioni con gli strumenti agganciati.
+
+**Perché c'entra con la suite.** Quello che manca oggi non è il modello: è il
+fatto che le app non hanno **un modo di essere comandate da fuori**. Ogni
+finestra parla col proprio motore e con la libreria, e nessuno dei due espone un
+elenco di «cose che si possono chiedere». Il lavoro vero è quello, ed è anche
+il più utile da fare per primo: serve a un'AI e serve a noi, per gli script.
+
+L'ordine in cui ha senso, se e quando:
+
+1. **Un elenco di azioni, scritto una volta sola.** «Fai un'immagine così»,
+   «leggi questo testo con questa voce», «mettilo in coda», «dammi gli ultimi
+   dieci risultati». Sono cose che le app già fanno: quello che manca e'
+   dichiararle in un posto solo, con i loro campi.
+2. **Un server MCP dentro lo shell**, che quelle azioni le espone. A quel punto
+   qualunque programma capace di MCP — Claude Code, un agente locale — può
+   guidare la suite, e la suite resta locale come è sempre stata.
+3. **Needle 2 al posto giusto: dentro.** E' lì che il modello piccolo diventa
+   interessante — non come cervello, ma come **traduttore fra una frase e una
+   chiamata**. Quattordici MB che stanno accesi sempre senza togliere niente alla
+   scheda video, e che sanno riempire un modulo senza sbagliare la sintassi. Il
+   cervello resta LM Studio, quando serve.
+
+⚠ **Da verificare prima di prometterlo**: Needle 2 è addestrato in inglese e
+sugli strumenti standard; le nostre azioni hanno nomi italiani e campi nostri, e
+quanto ci prenda bene si sa solo provandolo. E la libreria si chiama
+`cactus-needle`: un'altra dipendenza nell'ambiente condiviso, che ormai sappiamo
+non essere gratis.
 
 ### Il PC senza scheda video
 

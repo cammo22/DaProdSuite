@@ -108,7 +108,7 @@ Il patto fra shell e motore è sempre lo stesso, per tutti:
 Rispettato questo, il motore può essere fatto come gli pare: lo shell non guarda
 dentro. È lo stesso patto che
 [`process-supervisor.ts`](../apps/shell/src/main/process-supervisor.ts) già
-applica, e per questo funziona uguale per sei app diverse.
+applica, e per questo funziona uguale per otto app diverse.
 
 ### Perché una per volta
 
@@ -151,11 +151,29 @@ Sei passi, in quest'ordine. Nessuno è saltabile.
 6. **Aggiungi il colore all'icona** rilanciando
    `pnpm --filter @daprod/shell icon`.
 
+### Se il motore vuole una libreria in una versione diversa
+
+Non si tocca `versioni.txt`: quel file è la legge dell'ambiente condiviso, e
+spostarci un numero vuol dire rimettere le mani sotto agli altri sette motori.
+
+Si dichiara invece un **`services/<id>/requisiti-privati.txt`**. La suite lo
+installa in `runtime/.daprod-privato/<servizio>` — una cartella normale, non il
+venv — e il motore se la mette in `sys.path` all'avvio, da solo. La vede quel
+processo e nessun altro.
+
+È una porta stretta, e va tenuta stretta: sono decine di MB di librerie doppie e
+un percorso di ricerca in più da avere in testa quando si legge un traceback. Ci
+si passa **dopo** aver provato davvero che la versione comune non basta, e nel
+file va scritto **cosa succede senza** — non «serve la 4.57», ma «con la 5 il
+modello non smette più di parlare». Vedi
+[`services/voce/requisiti-privati.txt`](../services/voce/requisiti-privati.txt),
+che è l'unico caso finora.
+
 ---
 
 ## 5. Il design resta lo stesso
 
-Le sei app devono sembrare figlie della stessa mano, altrimenti tanto valeva
+Le otto app devono sembrare figlie della stessa mano, altrimenti tanto valeva
 lasciarle cartelle separate.
 
 **Da dove si prende l'aspetto:** `packages/ui`. Colori, tipografia, spaziature e

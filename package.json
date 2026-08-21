@@ -1,8 +1,8 @@
 {
   "name": "daprodsuite",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "private": true,
-  "description": "La suite DaProd: sette app AI locali in un solo programma.",
+  "description": "La suite DaProd: otto app AI locali in un solo programma.",
   "author": "DaProdProduzioni",
   "license": "MIT",
   "type": "module",

@@ -6,11 +6,11 @@
 
 **I migliori modelli AI, selezionati per te — pronti in due clic.**
 
-Un programma solo per fare musica, immagini, video e parlare con un avatar.
+Un programma solo per fare musica, immagini, video, voci e parlare con un avatar.
 Ogni app la installi quando ti serve e la disinstalli quando non ti serve più.
 Gira sul tuo computer: niente account, niente chiavi API, codice aperto.
 
-[![versione](https://img.shields.io/badge/versione-0.2.0-7c5cff)](https://github.com/cammo22/DaProdSuite/releases)
+[![versione](https://img.shields.io/badge/versione-0.4.3-7c5cff)](https://github.com/cammo22/DaProdSuite/releases)
 [![licenza](https://img.shields.io/badge/licenza-MIT-5cff9d)](LICENSE)
 [![piattaforma](https://img.shields.io/badge/Windows-x64-3ddbff)](#requisiti)
 [![sito](https://img.shields.io/badge/sito-cammo22.github.io-ffa63d)](https://cammo22.github.io/DaProdSuite/)
@@ -71,6 +71,7 @@ Tutto in locale: nessun account, nessuna API, nessun dato che esce dal computer.
 | 🩵 | **DaProdDream** | Trasformi un video mentre scorre: webcam, un file, o lo schermo | SD-Turbo · Anima | ✅ disponibile |
 | 🟥 | **DaProdIoDigitale** | Carichi la foto di un volto e ci parli: ti risponde a voce | LeapTalk | ✅ disponibile |
 | 🟪 | **DaProdCinema** | Video con il suono dentro, da una descrizione o da un'immagine | LTX 2.5 · MiniMax H3 | ✅ disponibile |
+| 🟡 | **DaProdVoce** | Scrivi una frase e te la legge, con la voce che scegli tu | Audio8 TTS 0.1B · 0.6B | ✅ disponibile |
 | 🟢 | **DaProdCompanion** | Un assistente sul desktop che si ricorda delle conversazioni di prima | un modello a scelta via LM Studio | ⏳ in arrivo |
 
 Questa non è una lista chiusa: continuiamo a testare modelli nuovi e ad
@@ -89,11 +90,11 @@ lo stesso.
 
 ## A che punto siamo
 
-> **0.4.1 pubblicata — tutte e sette le schede sono dentro, e nella 0.4.2 in
-> prova DaProdCinema è rifatto da capo: fa la generazione base, e la fa bene.**
+> **0.4.2 pubblicata, e nella 0.4.3 in prova arriva l'ottava scheda:
+> DaProdVoce, che legge quello che scrivi con la voce che scegli tu.**
 >
-> **DaProdVisualizer, DaProdMusica, DaProdFoto, DaProdDream,
-> DaProdIoDigitale** e **DaProdCinema** sono nella suite e funzionano. Si installano da sole, motore e
+> **DaProdVisualizer, DaProdMusica, DaProdFoto, DaProdDream, DaProdIoDigitale,
+> DaProdCinema** e **DaProdVoce** sono nella suite e funzionano. Si installano da sole, motore e
 > modelli compresi, e riprendono da dove erano se cade la rete. In DaProdFoto e
 > DaProdDream scegli tu con quale modello generare. Ogni app ha un terminale con
 > le ultime righe del motore, e nell'hub ci sono i pannelli per vedere risultati,
@@ -112,7 +113,20 @@ lo stesso.
 > corto, il prompt intero dentro. Premendo Genera la memoria video viene
 > liberata da sola da quello che non serve.
 >
-> Con la 0.4.2 (in prova) **DaProdCinema è rifatto da capo.** Il video musicale
+> Con la 0.4.3 (in prova) arriva **DaProdVoce**: scrivi una frase e te la legge,
+> anche lunga — viene tagliata dove finiscono le frasi e ricucita da sola. E può
+> farlo **con la voce che gli dai tu**: un pezzo di audio in cui si sente parlare
+> qualcuno, la trascrizione di quello che dice, e quella voce entra nel menu.
+> Niente da addestrare. Due modelli: quello piccolo si installa con l'app, quello
+> grande (2,39 GB) legge l'italiano tre volte meglio. È anche l'unica app che non
+> pretende la scheda video per sé: si apre accanto alle altre invece di
+> spegnerle. Sempre nella 0.4.3, **DaProdCinema ha la Galleria** che gli mancava —
+> con il tasto che rimette un video fra i riferimenti di MiniMax H3 — **H3 genera
+> anche dal solo testo** (prima era l'app a impedirlo, non il modello), e in
+> **DaProdFoto** c'è **Anima v2**: Anima cresciuta a 2,9 miliardi di parametri,
+> che costa 3,1 GB perché divide con lei text encoder e VAE.
+>
+> Con la 0.4.2 **DaProdCinema è rifatto da capo.** Il video musicale
 > automatico non c'è più: era costruito sopra a una generazione base che non
 > aveva mai funzionato. Adesso la scheda fa una cosa sola — scrivi cosa vuoi
 > vedere, scegli forma e misura come in DaProdFoto, premi — e il modello si

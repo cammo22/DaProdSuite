@@ -17,7 +17,7 @@ serve per usarla bene.
 ## In due righe
 
 DaProd Suite è un programma per Windows che mette insieme musica, immagini,
-video, un avatar parlante e un compagno digitale — ogni scheda
+video, voci, un avatar parlante e un compagno digitale — ogni scheda
 un'esperienza completa attorno a un modello scelto con cura. Nuove schede
 arrivano nel tempo: la suite non è mai davvero finita. Tutto gira **sul
 tuo computer**: nessun account, nessuna chiave API, nessun dato che esce dalla

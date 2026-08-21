@@ -60,7 +60,7 @@ LM Studio per una risposta più rapida.
 ### Un'app non si apre e parla di librerie: cosa faccio?
 
 In cima all'hub c'è una riga con un pallino: è l'**ambiente Python**, quello che
-fa partire cinque app su sette. Se il pallino è rosso o giallo, il problema è
+fa partire sei app su otto. Se il pallino è rosso o giallo, il problema è
 lì e non nell'app.
 
 1. Premi **Controlla**: guarda e non tocca niente, ci mette qualche decina di
