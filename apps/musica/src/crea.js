@@ -306,9 +306,16 @@ async function creaBrano(p, racconta = () => {}) {
   // `ATTESA_PS_MS` in `apps/shell/src/main/llm.ts`) e qui l'errore si ignora: al
   // massimo si genera con la scheda meno libera del previsto, che è molto meglio
   // che non generare.
-  racconta("libero la memoria…");
-  await ponte.liberaMemoriaLlm().catch(() => {});
-  await ponte.svuotaVram();
+  // **E nemmeno mentre il motore sta già lavorando.** `unload_all_models` toglie
+  // i pesi dalla scheda anche al brano che si sta generando in quel momento, e
+  // quello poi muore nel VAE: «Input type (torch.cuda.HalfTensor) and weight type
+  // (torch.HalfTensor)», cioè i dati sono sulla scheda e i pesi no. Se c'è
+  // qualcosa in coda, il lavoro nuovo si mette in fila e usa gli stessi pesi.
+  if (!(await ponte.motoreOccupato())) {
+    racconta("libero la memoria…");
+    await ponte.liberaMemoriaLlm().catch(() => {});
+    await ponte.svuotaVram();
+  }
 
   let idCopertina = null;
   if (el.autoCover.checked) {

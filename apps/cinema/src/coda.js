@@ -42,6 +42,12 @@ export function aggiungiLavoro(id, descrizione, meta) {
     stato: "in-attesa",
     avanzamento: 0,
     passo: "in coda",
+    // I due orologi. `chiesto` parte adesso, quando hai premuto Genera, e non
+    // si azzera mai più: è quello che finisce scritto sotto al video, perché è
+    // il tempo che hai aspettato davvero — coda compresa. `inizio` è quando il
+    // motore ha preso in mano questo lavoro, e serve solo a indovinare quanto
+    // manca: mescolare i due dava una stima sbagliata di tutta la coda.
+    chiesto: Date.now(),
     inizio: null,
   });
   ordine.push(id);
@@ -98,13 +104,20 @@ export function disegnaSessione() {
  * «due minuti» a chi ne aspetterà dodici.
  */
 function sottotitolo(l) {
-  const corre = l.stato === "in-corso";
-  const secondi = l.inizio ? Math.floor((Date.now() - l.inizio) / 1000) : 0;
-  const restano = corre && l.avanzamento > 0.05 ? Math.round(secondi / l.avanzamento - secondi) : null;
+  // Da quando hai premuto, sempre: in coda scorre già, e quando il motore parte
+  // non riparte da zero. Prima ripartiva, e la stessa clip finiva per dire «12 s»
+  // dopo tre minuti di attesa.
+  const aspettato = durata(Math.floor((Date.now() - l.chiesto) / 1000));
 
-  return corre
-    ? `${escapeHtml(l.passo)} &middot; ${durata(secondi)}${restano !== null ? ` &middot; ~${durata(restano)} alla fine` : ""}`
-    : "in attesa";
+  if (l.stato !== "in-corso") return `in coda &middot; ${aspettato}`;
+
+  // La stima invece guarda solo il tempo di lavoro vero: l'avanzamento è la
+  // frazione di **questo** lavoro, e dividerlo per un tempo che comprende la coda
+  // direbbe che manca il triplo.
+  const lavorati = l.inizio ? Math.floor((Date.now() - l.inizio) / 1000) : 0;
+  const restano = l.avanzamento > 0.05 ? Math.round(lavorati / l.avanzamento - lavorati) : null;
+
+  return `${escapeHtml(l.passo)} &middot; ${aspettato}${restano !== null ? ` &middot; ~${durata(restano)} alla fine` : ""}`;
 }
 
 /**
@@ -166,7 +179,9 @@ export function messaggioDalMotore(msg) {
     case "execution_start":
       if (l) {
         l.stato = "in-corso";
-        l.inizio = Date.now();
+        // `||=` e non `=`: il motore manda `execution_start` anche quando riprende
+        // un lavoro, e riscriverlo faceva ripartire il cronometro da capo.
+        l.inizio = l.inizio || Date.now();
         l.passo = "avvio";
         disegnaSessione();
       }
@@ -245,7 +260,9 @@ async function concludi(l) {
   if (l.concluso) return;
   l.concluso = true;
 
-  const secondi = l.inizio ? Math.round((Date.now() - l.inizio) / 1000) : 0;
+  // Dal momento in cui l'hai chiesto a adesso, che è quando il file è sul disco:
+  // è questo il numero che si scrive sotto al video e che finisce nei metadati.
+  const secondi = Math.round((Date.now() - l.chiesto) / 1000);
   const uscite = await ponte.risultati(l.id);
   const prodotti = Object.values(uscite).flatMap((o) => o.images ?? o.video ?? []);
 

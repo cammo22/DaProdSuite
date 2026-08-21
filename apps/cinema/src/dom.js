@@ -19,7 +19,7 @@ for (const chiave of [
   // da dove parte / i riferimenti
   "titoloIngressi", "ingressi",
   // la resa
-  "durata", "durataVal", "quante", "misura", "formati", "risoluzioni",
+  "durata", "durataVal", "notaDurata", "quante", "misura", "formati", "risoluzioni",
   "toggleAdv", "avanzati", "passi", "passiVal", "notaPassi",
   "seed", "dado", "seedCasuale", "negativo", "notaNegativo",
   // cosa sta succedendo

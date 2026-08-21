@@ -23,7 +23,18 @@ const lavoro = (id) => lavori.get(id);
 const inCorso = () => ordine.map(lavoro).find((l) => l && l.stato === "in-corso");
 
 export function aggiungiLavoro(id, descrizione, meta) {
-  lavori.set(id, { id, descrizione, meta, stato: "in-attesa", avanzamento: 0, inizio: null });
+  // I due orologi: `chiesto` parte quando hai premuto Genera e non si azzera mai
+  // — coda compresa — mentre `inizio` è quando il motore ha preso in mano questo
+  // lavoro.
+  lavori.set(id, {
+    id,
+    descrizione,
+    meta,
+    stato: "in-attesa",
+    avanzamento: 0,
+    chiesto: Date.now(),
+    inizio: null,
+  });
   ordine.push(id);
   disegnaSessione();
 }
@@ -84,8 +95,8 @@ export function disegnaSessione() {
 }
 
 function sottotitolo(l) {
-  const secondi = l.inizio ? Math.floor((Date.now() - l.inizio) / 1000) : 0;
-  return l.stato === "in-corso" ? `in lavorazione &middot; ${fmtTime(secondi)}` : "in attesa";
+  const aspettato = fmtTime(Math.floor((Date.now() - l.chiesto) / 1000));
+  return l.stato === "in-corso" ? `in lavorazione &middot; ${aspettato}` : `in coda &middot; ${aspettato}`;
 }
 
 /**
@@ -127,7 +138,9 @@ export function messaggioDalMotore(msg) {
     case "execution_start":
       if (l) {
         l.stato = "in-corso";
-        l.inizio = Date.now();
+        // `|| Date.now()`: `execution_start` arriva anche quando il motore riprende
+        // un lavoro, e riscriverlo azzerava il cronometro.
+        l.inizio = l.inizio || Date.now();
         disegnaSessione();
       }
       break;

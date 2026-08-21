@@ -44,6 +44,10 @@ export function aggiungiLavoro(id, parametri, extra = {}) {
     avanzamento: 0,
     passo: "in coda",
     fase: 1,
+    // I due orologi: `chiesto` parte quando hai premuto Crea e non si azzera più
+    // — è il tempo che hai aspettato davvero, coda compresa — mentre `inizio` è
+    // quando il motore ha preso in mano questo lavoro, e serve solo alla stima.
+    chiesto: Date.now(),
     inizio: null,
     daCache: false,
     specie: "brano",
@@ -101,15 +105,21 @@ export function disegnaSessione() {
 /** Le poche cose che cambiano mentre il lavoro corre: testo, barre, fasi. */
 function avanzamento(l) {
   const corre = l.stato === "in-corso";
-  const secondi = l.inizio ? Math.floor((Date.now() - l.inizio) / 1000) : 0;
-  const restano = corre && l.avanzamento > 0.02 ? Math.round(secondi / l.avanzamento - secondi) : null;
+  // Da quando l'hai chiesto, sempre: in coda scorre già, e quando il motore parte
+  // non riparte da zero.
+  const aspettato = Math.floor((Date.now() - l.chiesto) / 1000);
+  // La stima invece guarda il solo tempo di lavoro: l'avanzamento è la frazione
+  // di **questo** brano, e dividerlo per un tempo che comprende la coda direbbe
+  // che manca molto più di quanto manca.
+  const lavorati = l.inizio ? Math.floor((Date.now() - l.inizio) / 1000) : 0;
+  const restano = corre && l.avanzamento > 0.02 ? Math.round(lavorati / l.avanzamento - lavorati) : null;
 
   return {
     larghezza1: (Math.min(l.avanzamento, SEPARAZIONE) / SEPARAZIONE) * (SEPARAZIONE * 100),
     larghezza2: (Math.max(0, l.avanzamento - SEPARAZIONE) / (1 - SEPARAZIONE)) * ((1 - SEPARAZIONE) * 100),
     sotto: corre
-      ? `${l.passo} &middot; ${fmtTime(secondi)}${restano !== null ? ` &middot; ~${fmtTime(restano)} alla fine` : ""}`
-      : "in attesa",
+      ? `${l.passo} &middot; ${fmtTime(aspettato)}${restano !== null ? ` &middot; ~${fmtTime(restano)} alla fine` : ""}`
+      : `in coda &middot; ${fmtTime(aspettato)}`,
   };
 }
 
@@ -194,7 +204,9 @@ export function messaggioDalMotore(msg) {
     case "execution_start":
       if (l) {
         l.stato = "in-corso";
-        l.inizio = Date.now();
+        // `|| Date.now()` e non `=`: il motore manda `execution_start` anche
+        // quando riprende un lavoro, e riscriverlo azzerava il cronometro.
+        l.inizio = l.inizio || Date.now();
         l.passo = l.specie === "copertina" ? "disegno la copertina" : "avvio";
         disegnaSessione();
       }
@@ -277,7 +289,9 @@ async function concludi(l) {
   if (l.concluso) return;
   l.concluso = true;
 
-  const secondi = l.inizio ? Math.round((Date.now() - l.inizio) / 1000) : 0;
+  // Da quando l'hai chiesto a adesso, che è quando il file è sul disco: è questo
+  // il numero che finisce nei metadati come «generato in».
+  const secondi = Math.round((Date.now() - l.chiesto) / 1000);
   const uscite = await ponte.risultati(l.id);
 
   if (l.specie === "immagine") {
