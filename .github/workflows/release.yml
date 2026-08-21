@@ -43,6 +43,13 @@ jobs:
       - name: Controllo dei tipi
         run: pnpm run typecheck
 
+      # L'accesso remoto è l'unico pezzo che si può sbagliare in silenzio: un
+      # controllo che non scatta non rompe niente, apre. Queste due prove
+      # accendono un gateway vero e un server MCP vero, senza Electron e senza
+      # scheda video, e girano in una decina di secondi.
+      - name: Prova il gateway e l'MCP
+        run: pnpm run prova
+
       - name: Crea l'installer
         run: pnpm run dist
 

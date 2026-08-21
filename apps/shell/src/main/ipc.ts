@@ -35,6 +35,7 @@ import { elencoLog, leggiLog } from "./log-lettura";
 import { avviaInPiu } from "./servizi";
 import { elencoVram, scaricaDallaVram } from "./vram";
 import { requisitiDiQuestaMacchina } from "./requisiti-macchina";
+import { accessoRemoto } from "./remoto";
 import { LOGS_DIR, MODELS_DIR, OUTPUT_DIR } from "./paths";
 import { rivela } from "./rivela";
 
@@ -359,6 +360,24 @@ export function registerIpc(getHub: () => BrowserWindow | null): void {
 
   ipcMain.handle(CHANNELS.appChiudi, (_e, id: AppId) => appManager.close(id));
 
+  /* ---------------------------------------------------------- accesso remoto */
+
+  ipcMain.handle(CHANNELS.remotoStato, () => accessoRemoto.stato());
+  ipcMain.handle(CHANNELS.remotoAccendi, () => accessoRemoto.accendi());
+  ipcMain.handle(CHANNELS.remotoSpegni, () => accessoRemoto.spegni());
+  ipcMain.handle(CHANNELS.remotoNuovoInvito, (_e, ruolo: "admin" | "ospite") =>
+    accessoRemoto.nuovoInvito(ruolo),
+  );
+  ipcMain.handle(CHANNELS.remotoRevoca, (_e, id: string) => accessoRemoto.revoca(id));
+  ipcMain.handle(CHANNELS.remotoDecidi, (_e, id: string, stato: "accettata" | "scartata" | "in-lavoro", motivo?: string) =>
+    accessoRemoto.decidi(id, stato, motivo),
+  );
+  ipcMain.handle(
+    CHANNELS.remotoConsegna,
+    (_e, id: string, esito: { nome: string; percorso: string; tipo: string; bytes: number }) =>
+      accessoRemoto.consegna(id, esito),
+  );
+
   /* ------------------------------------------------- notifiche al renderer */
 
   const send = (channel: string, payload: unknown) => {
@@ -370,6 +389,11 @@ export function registerIpc(getHub: () => BrowserWindow | null): void {
   runtime.on("changed", (state) => send(CHANNELS.runtimeChanged, state));
   gpu.on("changed", (state) => send(CHANNELS.gpuChanged, state));
   updater.on("changed", (state) => send(CHANNELS.updateChanged, state));
+
+  // L'accesso remoto non è un EventEmitter: si iscrive e basta. Senza questa
+  // riga il pannello "Telefono" resterebbe fermo finché non lo si riapre, e una
+  // richiesta arrivata dal telefono non comparirebbe da sola.
+  accessoRemoto.onChanged(() => send(CHANNELS.remotoChanged, accessoRemoto.stato()));
 
   const aTutte = (channel: string, payload: unknown) => {
     for (const finestra of BrowserWindow.getAllWindows()) {

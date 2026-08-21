@@ -11,6 +11,8 @@ serve per usarla bene.
 - **[Installazione](Installazione)** — come si scarica, cosa succede al primo
   avvio, e quanto spazio serve davvero.
 - **[Le app](Le-app)** — cosa fa ognuna, con cosa genera, e a che punto è.
+- **[Usarla da fuori](Usarla-da-fuori)** — dal browser di un altro computer, dal
+  telefono, o da un'AI: come si accende e chi decide.
 - **[Domande frequenti](Domande-frequenti)** — VRAM, privacy, disinstallare
   una scheda sola, dove segnalare un problema.
 

@@ -1,0 +1,19 @@
+{
+  "name": "@daprod/mcp",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Server MCP della suite: espone a un agente le azioni di @daprod/azioni, passando dal gateway.",
+  "main": "dist/cli.js",
+  "bin": {
+    "daprod-mcp": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "@daprod/azioni": "workspace:*",
+    "@types/node": "^22.18.0",
+    "typescript": "~5.9.3"
+  }
+}

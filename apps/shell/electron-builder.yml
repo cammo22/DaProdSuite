@@ -9,11 +9,19 @@ directories:
 files:
   - out/**
   - package.json
-  # @daprod/ipc è un pacchetto del workspace: senza questo, electron-builder
-  # segue il symlink di pnpm e non lo impacchetta.
+  # I pacchetti del workspace: senza queste righe electron-builder segue il
+  # symlink di pnpm e non li impacchetta. Il main li richiede davvero a runtime
+  # — @daprod/gateway è l'accesso remoto, e lui a sua volta richiede
+  # @daprod/azioni per sapere cosa si può chiedere.
   - "!node_modules/@daprod/ipc"
   - node_modules/@daprod/ipc/dist/**
   - node_modules/@daprod/ipc/package.json
+  - "!node_modules/@daprod/azioni"
+  - node_modules/@daprod/azioni/dist/**
+  - node_modules/@daprod/azioni/package.json
+  - "!node_modules/@daprod/gateway"
+  - node_modules/@daprod/gateway/dist/**
+  - node_modules/@daprod/gateway/package.json
 
 # Manifest, requirements e servizi Python non entrano nell'asar: devono restare
 # file veri su disco perché uv e il processo Python li leggano ed eseguano.
@@ -69,6 +77,13 @@ extraResources:
     to: apps/iodigitale
   - from: ../companion
     to: apps/companion
+  # Il server MCP. Fuori dall'asar perché lo lancia un **altro** programma
+  # (Claude Code, un agente) con `node <percorso>`: dentro l'archivio nessuno
+  # saprebbe come arrivarci. Non ha dipendenze da portarsi dietro — è la
+  # ragione per cui i nomi degli strumenti stanno in packages/mcp e non in
+  # packages/azioni.
+  - from: ../../packages/mcp/dist
+    to: mcp
 
 win:
   target:

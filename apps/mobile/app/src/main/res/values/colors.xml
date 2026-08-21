@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="sfondo">#0d0f14</color>
+    <color name="carta">#151821</color>
+    <color name="tratto">#262b3a</color>
+    <color name="testo">#e8eaf0</color>
+    <color name="testo_debole">#8a93a6</color>
+    <color name="accento">#7c5cff</color>
+    <color name="accento_scuro">#5a3fd8</color>
+    <color name="verde">#5cff9d</color>
+    <color name="rosso">#ff5c7a</color>
+</resources>

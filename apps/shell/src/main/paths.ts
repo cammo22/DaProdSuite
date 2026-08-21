@@ -36,6 +36,10 @@ export const LOGS_DIR = join(DATA_ROOT, "logs");
 /** Impostazioni della suite. */
 export const SETTINGS_FILE = join(DATA_ROOT, "settings.json");
 
+/** Accesso remoto: inviti, dispositivi, richieste e risultati da scaricare. */
+export const REMOTO_DIR = join(DATA_ROOT, "remoto");
+export const REMOTO_ARCHIVIO = join(REMOTO_DIR, "remoto.json");
+
 /** Interprete dell'ambiente condiviso. */
 export const PYTHON_EXE = join(RUNTIME_DIR, "Scripts", "python.exe");
 
@@ -124,7 +128,7 @@ export function iconaApp(id: string): string | undefined {
 export function ensureDataDirs(): void {
   // RUNTIME_DIR non si crea qui: `uv venv` vuole creare lui la cartella e una
   // cartella vuota preesistente gli fa sospettare un ambiente rotto.
-  for (const dir of [DATA_ROOT, MODELS_DIR, OUTPUT_DIR, LOGS_DIR, TOOLS_DIR, ENGINES_DIR, CACHE_DIR]) {
+  for (const dir of [DATA_ROOT, MODELS_DIR, OUTPUT_DIR, LOGS_DIR, TOOLS_DIR, ENGINES_DIR, CACHE_DIR, REMOTO_DIR]) {
     mkdirSync(dir, { recursive: true });
   }
 }

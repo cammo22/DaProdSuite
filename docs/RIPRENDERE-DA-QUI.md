@@ -1,7 +1,7 @@
 # Riprendere da qui
 
 Documento di passaggio fra una sessione e l'altra. Aggiornato il **21 agosto
-2026**, con la 0.4.5 pubblicata e la 0.4.6 in lavorazione.
+2026**, con la 0.4.6 pubblicata e la 0.5.0 in lavorazione.
 
 **Se stai leggendo questo all'inizio di una conversazione nuova**: leggi anche
 [COME-SI-LAVORA.md](COME-SI-LAVORA.md) e [ROADMAP.md](ROADMAP.md), poi vai al
@@ -81,6 +81,13 @@ Repo pubblico: **https://github.com/cammo22/DaProdSuite**
 | **0.4.5 pubblicata** | fatto il 21 agosto: tag `v0.4.5`, PR #14 |
 | **Scheda Storia (0.4.6)** | fatta: soggetto → scene con LM Studio → una clip per volta → `/daprod/cuci`. **Mai aperta nella suite**; la sola cucitura è provata su tre clip vere |
 | **H3: due pulsanti, 20 passi di serie** | fatto, **da provare tu**: è la risposta al «4 step fa schifo» |
+| **0.4.6 pubblicata** | fatto il 21 agosto: tag `v0.4.6`, PR #15 |
+| **Le azioni: `packages/azioni` (0.5.0)** | fatto. Nove azioni con campi, controlli e schemi JSON, dichiarate una volta sola. È il pezzo su cui poggia tutto il resto della 0.5.0 |
+| **Gateway HTTP: `packages/gateway`** | fatto e **provato in automatico**: 55 controlli in `apps/shell/scripts/prova-gateway.mjs`, senza Electron |
+| **Console web servita dal gateway** | fatta e **guidata in un browser vero** contro un gateway vero: accoppiamento col codice, moduli disegnati dalle azioni, richiesta messa in fila, lettura della libreria, download del file, stato vivo in streaming. Zero errori in console, e a 375 px non scorre di lato. **Mai vista da Cammo** |
+| **App Android: `apps/mobile`** | rifatta sulla bozza. **Compila** (`gradlew.bat assembleDebug`, APK da 8,1 MB), **mai installata su un telefono** |
+| **Server MCP: `packages/mcp`** | fatto e **provato in automatico**: 35 controlli in `prova-mcp.mjs`, parlando JSON-RPC su stdio come farebbe Claude Code |
+| **Needle 2** | **non fatto, e apposta**: manca solo lui dei tre passi della roadmap. Vedi [AZIONI-E-MCP.md](AZIONI-E-MCP.md) |
 
 Si lavora su un ramo per release e una PR: `release-0.2.0` è stata unita con le
 PR #3 e #4, la 0.3.1 con la #5, la 0.3.2 con la #6, la 0.3.3 con la #7, la
@@ -1184,22 +1191,38 @@ conversazione — che dipende dal modello che sceglie lui, non da noi.
 
 ## Il prossimo passo
 
-**Prima di tutto: aprire il programma e provare le due cose nuove.** La 0.4.3
-aggiunge una scheda intera e un modo nuovo di installare librerie, e nessuna
-delle due è mai passata da Electron.
+**La 0.5.0 non è mai stata usata da una persona.** Le prove automatiche girano —
+`pnpm run prova`, 55 controlli sul gateway e 35 sull'MCP — e l'app Android
+compila, ma il gateway non ha mai visto un telefono e la console non è mai stata
+aperta in un browser. Quindi, nell'ordine, e tutto da fare **fuori dalla
+sandbox**, sul PC vero:
 
-1. **DaProdVoce dall'hub.** L'installazione deve fare tre cose di fila: i pesi
-   (1,58 GB), le librerie del motore, e — la parte nuova — le librerie private in
-   `runtime/.daprod-privato/voce`. Se quella cartella non compare, il motore
-   parte lo stesso e lo scrive nel log: *«Nessuna cartella di librerie private»*,
-   e la voce non si fermerà più. È il primo posto da guardare.
-2. **Una frase corta, poi una lunga.** Corta per vedere che esce; lunga per
-   vedere il taglio in pezzi e il respiro fra l'uno e l'altro.
-3. **Una voce clonata.** Serve un audio con la sua trascrizione: il tasto
-   «prendilo dalla libreria» pesca un brano già fatto, e per quelli fatti da
-   DaProdVoce la trascrizione si riempie da sé.
+1. **Accendere «Da fuori» e aprire la console dal telefono o dal portatile.**
+   Basta il browser: l'indirizzo lo dà il pannello. La console è già stata
+   guidata in un browser vero contro un gateway vero — accoppiamento, moduli,
+   richiesta in fila, download — quindi quello che manca è il pezzo che quel
+   banco non aveva: **il gateway dentro Electron**, con lo stato vero delle app
+   e il pannello dell'hub dall'altra parte. Il giro più corto che tocca tutti i
+   pezzi nuovi insieme è: accendi, apri la console, chiedi un'immagine, e
+   guarda se compare nel pannello del PC.
+2. **Installare l'APK su un telefono e inquadrare il QR.** `gradlew.bat
+   assembleDebug` da `apps/mobile`, poi l'APK sul telefono. Le cose che si
+   scoprono solo lì: se il QR si legge davvero a quella dimensione, se la
+   notifica arriva, e se un file scaricato finisce in galleria dove uno se lo
+   aspetta.
+3. **Provare l'MCP da Claude Code**, con `--accoppia` e il codice del pannello.
+   Trentacinque controlli dicono che il protocollo è giusto; non dicono se un
+   agente vero capisce le descrizioni delle azioni, che sono in italiano.
 
-**E poi resta il debito della 0.4.1, che è ancora aperto: far uscire una clip da
+**Poi il pezzo che manca perché «da fuori» voglia dire davvero da fuori**: oggi
+accettare una richiesta cambia uno stato e basta. Non apre l'app, non fa girare
+il motore, e il file non torna indietro da solo. Il ponte è
+`accessoRemoto.consegna(...)`, che esiste ed è cablato ma non lo chiama nessuno:
+serve che l'app che genera, finito il lavoro, copi il file in
+`REMOTO_DIR/risultati` e chiami quella. Da fare **dopo** che il giro corto ha
+funzionato, non prima.
+
+**E resta il debito della 0.4.1, che è ancora aperto: far uscire una clip da
 DaProdCinema.** Sono stati scritti un video musicale automatico, una scaletta, un
 montaggio e due grafi sopra a una generazione che non aveva mai prodotto un file.
 LTX 2.5 è già sul disco (23,2 GB): 480, cinque secondi, niente immagini. Finché
@@ -1207,28 +1230,52 @@ non esce quel mp4, **niente di nuovo su Cinema**.
 
 Poi, in ordine di quello che resta aperto:
 
-1. **La stessa cosa con un primo fotogramma**, e poi con primo e ultimo. È il
+1. **La cifratura dell'accesso remoto**, prima del tunnel verso Internet. Oggi è
+   HTTP in chiaro sulla wifi di casa; un tunnel sopra un canale in chiaro non
+   aggiusta niente.
+2. **Una clip da Cinema con un primo fotogramma**, e poi con primo e ultimo. È il
    pezzo dove il grafo fa la cosa più delicata (`LTXVAddGuide` +
    `LTXVCropGuides`): se i fotogrammi di guida restassero nel video si vedrebbe
    subito, in testa alla clip.
-2. **MiniMax H3**, che sono 41,6 GB e non ne è stato scaricato nessuno. Ha senso
+3. **MiniMax H3**, che sono 41,6 GB e non ne è stato scaricato nessuno. Ha senso
    solo dopo che LTX ha funzionato: se qualcosa non va, con LTX già provato si sa
    dove guardare.
-3. **L'aggiornamento automatico sul secondo PC.** Adesso si può davvero: da una
-   0.1.0 installata l'aggiornamento ha finalmente qualcosa da vedere. È la cosa
-   per cui quel computer è stato installato.
-4. **La voce del Companion**, con Piper e faster-whisper che la suite ha già in
+4. **L'aggiornamento automatico sul secondo PC.** È la cosa per cui quel computer
+   è stato installato.
+5. **La voce del Companion**, con Piper e faster-whisper che la suite ha già in
    casa per IoDigitale.
-5. **L'accesso da fuori e Android** (§ 0.5.0 e § 0.6.0), che è un progetto a sé.
 6. **Il video musicale di Cinema, di nuovo** (§ 0.7.0): dopo, non prima.
 7. **La copertina e l'icona di DaProdVoce**, che vanno generate con Anima a
    motore acceso (`node apps/shell/scripts/genera-copertine.cjs voce` e
    `pnpm --filter @daprod/shell icone`). Vanno fatte **da qui**: dentro una
    sandbox i file finiscono in una cartella finta.
-8. **Un modo di comandare la suite da fuori** — l'MCP che ha chiesto Cammo il 21
-   agosto, con Needle 2 come traduttore fra una frase e una chiamata. Il piano è
-   in roadmap, § «Un'AI che usa il programma da sola»: il lavoro vero non è il
-   modello, è dichiarare una volta sola le azioni che le app già sanno fare.
+8. **Needle 2**, il terzo passo dell'«AI che usa il programma da sola» — gli
+   altri due sono fatti nella 0.5.0. Non prima che ci sia una casella di testo
+   sola dove scrivere la frase: finché ci sono i moduli, riempirli a mano è più
+   veloce. Vedi [AZIONI-E-MCP.md](AZIONI-E-MCP.md).
+
+### Com'è fatta la 0.5.0, in breve
+
+```
+packages/azioni     l'elenco di cosa la suite sa fare, con i controlli
+packages/gateway    il server HTTP: accoppiamento, azioni, fila, console web
+packages/mcp        il server MCP su stdio, senza dipendenze
+apps/shell/src/main/remoto.ts        possiede il gateway ed esegue le azioni
+apps/shell/src/renderer/remoto-pannello.ts   il pannello «Da fuori»
+apps/mobile         l'app Android
+```
+
+Tre cose da sapere prima di toccarlo:
+
+- **`packages/azioni` non conosce nessuno.** Niente dipendenze, niente rete,
+  niente MCP: i nomi degli strumenti stanno in `packages/mcp/src/nomi.ts`. È il
+  motivo per cui l'installer può spedire `packages/mcp/dist` da solo.
+- **La divisione fra chi va in fila e chi risponde subito** sta nel campo `coda`
+  del catalogo, e da nessun'altra parte. Un'azione che occupa la scheda video
+  non deve poter partire senza un sì.
+- **Le due prove sono la rete di sicurezza vera.** L'accesso remoto è l'unico
+  pezzo della suite che si può sbagliare in silenzio: un controllo che non
+  scatta non rompe niente, apre. Girano anche in CI, prima di ogni release.
 
 ## Com'è entrato DaProdIoDigitale
 

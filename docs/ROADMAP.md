@@ -564,29 +564,71 @@ smette di essere sei programmi che si somigliano.
       agosto 2026 col pannello **Risultati** dell'hub: audio, immagini e video di
       tutte le app insieme, con i filtri per app e per tipo.*
 
-## 0.5.0 — La suite fuori dal PC
+## 0.5.0 — La suite fuori dal PC ✅
 
-Vedi [ACCESSO-REMOTO.md](ACCESSO-REMOTO.md).
+**21 agosto 2026, pubblicata.** Vedi [ACCESSO-REMOTO.md](ACCESSO-REMOTO.md) per
+il progetto e [AZIONI-E-MCP.md](AZIONI-E-MCP.md) per come si comanda.
 
-- [ ] Gateway con autenticazione davanti ai motori
-- [ ] QR di accoppiamento con codice monouso
-- [ ] Rete locale
+- [x] Gateway con autenticazione davanti ai motori — *`packages/gateway`, porta
+      8790. Nessuna rotta raggiungibile senza token, e i motori restano su
+      127.0.0.1.*
+- [x] QR di accoppiamento con codice monouso — *otto cifre, cinque minuti, e un
+      limite di dieci tentativi sbagliati al minuto.*
+- [x] Rete locale
+- [x] Gestione dei dispositivi: permessi separati, revoca singola — *due ruoli,
+      padrone e ospite; revocare uno non tocca gli altri.*
+- [x] **Un elenco di cose che si possono chiedere** — *`packages/azioni`, non
+      era in programma per questa versione ed è diventato il pezzo centrale:
+      dichiarato una volta, lo usano telefono, console e MCP.*
+- [x] **La console web** — *la suite dal browser di un altro computer, servita
+      dal gateway. È la risposta al portatile.*
+- [x] **Un server MCP** — *`packages/mcp`, su stdio, senza dipendenze.*
 - [ ] Tunnel in uscita per l'accesso da Internet, acceso a mano
-- [ ] Gestione dei dispositivi: permessi separati, revoca singola
+- [ ] **Cifratura.** Oggi è HTTP in chiaro sulla wifi di casa. Va fatta prima
+      del tunnel, non dopo: un tunnel sopra un canale in chiaro non aggiusta
+      niente.
+- [ ] **La coda che fa partire davvero.** Accettare una richiesta cambia uno
+      stato; non apre l'app e non fa girare il motore. Chi sta al PC accetta e
+      poi la fa a mano. È il pezzo che manca perché «da fuori» voglia dire
+      davvero da fuori.
 
-## 0.6.0 — Android
+## 0.6.0 — Android ✅
 
-- [ ] App Android: lettore QR, credenziale nel portachiavi, notifiche, download
-- [ ] Interfacce adattate allo schermo del telefono
+**21 agosto 2026, uscita insieme alla 0.5.0.** Il codice del gateway e quello
+dell'app si tenevano per mano: separarli in due versioni avrebbe voluto dire
+pubblicare metà ponte.
+
+- [x] App Android: lettore QR, credenziale salvata, notifiche, download —
+      *`apps/mobile`. I risultati finiscono in galleria e fra la musica, non in
+      una cartella dell'app.*
+- [x] Interfacce adattate allo schermo del telefono — *una schermata sola, e il
+      modulo costruito dalle azioni che la suite dichiara: quando sul PC ne
+      compare una nuova, sul telefono c'è al collegamento dopo.*
+- [ ] **Notifiche push vere.** Adesso è il telefono a chiedere ogni quarto
+      d'ora, non il PC a chiamare. Va bene per un lavoro da minuti, meno per uno
+      che finisce in trenta secondi.
+- [ ] **L'app fuori da qui.** Si compila da `apps/mobile`; non c'è un APK
+      firmato né un posto da cui scaricarlo.
 
 ## Chiesto e da fare, senza ancora una versione
 
-### Un'AI che usa il programma da sola
+### Un'AI che usa il programma da sola — *due terzi fatti*
 
 **Chiesto da Cammo il 21 agosto 2026**, guardando
 [Cactus-Compute/needle2](https://huggingface.co/Cactus-Compute/needle2): «in
 futuro vorrei che un'AI possa usare il programma a suo piacimento, tipo MCP o
-altro».
+altro». **Fatto lo stesso giorno, tranne il modello.** Il racconto per esteso sta
+in [AZIONI-E-MCP.md](AZIONI-E-MCP.md); qui restano i tre passi e a che punto sono.
+
+1. ✅ **Un elenco di azioni, scritto una volta sola.** `packages/azioni`: nove
+   voci con i loro campi, i controlli e gli schemi JSON. Lo leggono il gateway,
+   la console web, l'app Android e il server MCP — e nessuno dei quattro ne ha
+   uno suo.
+2. ✅ **Un server MCP dentro la suite.** `packages/mcp`, su stdio, senza
+   dipendenze. Un agente si accoppia col codice di otto cifre come il telefono,
+   e da lì Claude Code guida la suite. Gli strumenti nascono dal catalogo: se ne
+   aggiungi uno lì, compare lì.
+3. ⬜ **Needle 2 al posto giusto: dentro.** Questo no.
 
 **Cos'è Needle 2.** Un modello da 45 milioni di parametri — 14 MB di file, 28 MB
 di RAM in tutto — che non serve a conversare: sa **scegliere lo strumento giusto
@@ -594,32 +636,30 @@ in un elenco e riempirne i campi**, con l'uscita costretta a essere JSON valido
 da una grammatica. Apache 2.0, gira in CPU a centinaia di token al secondo, e
 sta dentro una finestra di 256 posizioni con gli strumenti agganciati.
 
-**Perché c'entra con la suite.** Quello che manca oggi non è il modello: è il
-fatto che le app non hanno **un modo di essere comandate da fuori**. Ogni
-finestra parla col proprio motore e con la libreria, e nessuno dei due espone un
-elenco di «cose che si possono chiedere». Il lavoro vero è quello, ed è anche
-il più utile da fare per primo: serve a un'AI e serve a noi, per gli script.
+**Il lavoro che gli serviva è quello dei punti 1 e 2, ed è fatto.** Needle vuole
+un elenco di strumenti e uno schema JSON per ciascuno: `schemaDi()` produce
+esattamente quello, ed è già quello che mangia l'MCP. Manca solo il traduttore
+in mezzo, fra una frase e una chiamata.
 
-L'ordine in cui ha senso, se e quando:
+**Una cosa che si sa adesso e non si sapeva.** Il dubbio era: «la libreria si
+chiama `cactus-needle`, un'altra dipendenza nell'ambiente condiviso, che ormai
+sappiamo non essere gratis». Il repo pubblica anche `needle.js` + `needle.wasm`,
+cioè una build per Node: girerebbe **dentro lo shell Electron**, senza toccare
+l'ambiente Python e senza aggiungere niente ai 4 GB di torch. Il posto naturale
+è accanto al gateway, non in `services/`.
 
-1. **Un elenco di azioni, scritto una volta sola.** «Fai un'immagine così»,
-   «leggi questo testo con questa voce», «mettilo in coda», «dammi gli ultimi
-   dieci risultati». Sono cose che le app già fanno: quello che manca e'
-   dichiararle in un posto solo, con i loro campi.
-2. **Un server MCP dentro lo shell**, che quelle azioni le espone. A quel punto
-   qualunque programma capace di MCP — Claude Code, un agente locale — può
-   guidare la suite, e la suite resta locale come è sempre stata.
-3. **Needle 2 al posto giusto: dentro.** E' lì che il modello piccolo diventa
-   interessante — non come cervello, ma come **traduttore fra una frase e una
-   chiamata**. Quattordici MB che stanno accesi sempre senza togliere niente alla
-   scheda video, e che sanno riempire un modulo senza sbagliare la sintassi. Il
-   cervello resta LM Studio, quando serve.
+⚠ **Resta da verificare, e non è stato provato**: Needle 2 è addestrato in
+inglese e sugli strumenti standard; le nostre azioni hanno nomi italiani e campi
+nostri. Gli id e i nomi dei campi sono corti e regolari apposta, ma quanto ci
+prenda bene si sa solo provandolo. Finché non è provato **resta fuori dal
+catalogo dei modelli e dall'installer**: nessuno scarica 14 MB per una funzione
+che non c'è.
 
-⚠ **Da verificare prima di prometterlo**: Needle 2 è addestrato in inglese e
-sugli strumenti standard; le nostre azioni hanno nomi italiani e campi nostri, e
-quanto ci prenda bene si sa solo provandolo. E la libreria si chiama
-`cactus-needle`: un'altra dipendenza nell'ambiente condiviso, che ormai sappiamo
-non essere gratis.
+**E ha senso il giorno che c'è dove scrivere la frase.** Oggi telefono, console
+e MCP hanno tutti un modulo con dei campi, e riempirlo a mano è più veloce che
+descriverlo a parole. Needle diventa interessante quando c'è una casella di testo
+sola dove scrivi cosa vuoi e basta. Il cervello per le cose difficili resta LM
+Studio, quando serve.
 
 ### Il PC senza scheda video
 

@@ -212,6 +212,56 @@
           </div>
         </div>
       </section>
+
+      <!-- L'accesso da fuori: il QR e il codice per accoppiare telefono e
+           portatile, i dispositivi collegati e le richieste che arrivano. -->
+      <section class="pannello" id="telefono" hidden aria-label="Da fuori">
+        <div class="pannello-testa">
+          <h2>Da fuori</h2>
+          <p id="telefono-riassunto">—</p>
+          <div class="pannello-tasti">
+            <button class="bottone" id="telefono-interruttore">Accendi</button>
+            <button class="bottone secondario" id="telefono-invito-admin">Invita un padrone</button>
+            <button class="bottone secondario" id="telefono-invito-ospite">Invita un ospite</button>
+          </div>
+        </div>
+
+        <!-- Dove ci si collega: l'indirizzo da scrivere nel browser dell'altro
+             computer. Il telefono non ne ha bisogno, il portatile sì. -->
+        <div class="telefono-indirizzo" id="telefono-indirizzo-box" hidden>
+          <div>
+            <span class="telefono-etichetta">Dal browser di un altro computer</span>
+            <strong id="telefono-console">—</strong>
+          </div>
+          <button class="bottone secondario" id="telefono-copia">Copia</button>
+        </div>
+
+        <div class="telefono-invito" id="telefono-invito-box" hidden>
+          <img id="telefono-qr" alt="QR di invito" />
+          <div class="telefono-codice">
+            <span class="telefono-etichetta">Inquadra col telefono, oppure scrivi questo codice</span>
+            <strong id="telefono-codice-valore">—</strong>
+            <span id="telefono-codice-scade">—</span>
+          </div>
+        </div>
+
+        <div class="telefono-sezioni">
+          <div>
+            <h3>Dispositivi collegati</h3>
+            <ul class="voci" id="telefono-dispositivi"></ul>
+          </div>
+          <div>
+            <h3>Richieste arrivate</h3>
+            <ul class="voci" id="telefono-richieste"></ul>
+          </div>
+        </div>
+
+        <p class="telefono-nota">
+          Il collegamento è in <b>rete locale</b> e non è cifrato: vale dentro casa,
+          non da Internet. I motori restano su 127.0.0.1 — da fuori si passa sempre
+          da qui.
+        </p>
+      </section>
     </main>
 
     <footer class="pieddi">
@@ -242,6 +292,7 @@
         <button class="collegamento" data-pannello="memoria">Memoria video</button>
         <button class="collegamento" id="btn-llm">Modello che scrive</button>
         <button class="collegamento" id="btn-spazio">Spazio</button>
+        <button class="collegamento" data-pannello="telefono">Da fuori</button>
       </div>
     </footer>
 

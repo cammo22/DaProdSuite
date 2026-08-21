@@ -10,7 +10,7 @@ Un programma solo per fare musica, immagini, video, voci e parlare con un avatar
 Ogni app la installi quando ti serve e la disinstalli quando non ti serve più.
 Gira sul tuo computer: niente account, niente chiavi API, codice aperto.
 
-[![versione](https://img.shields.io/badge/versione-0.4.6-7c5cff)](https://github.com/cammo22/DaProdSuite/releases)
+[![versione](https://img.shields.io/badge/versione-0.5.0-7c5cff)](https://github.com/cammo22/DaProdSuite/releases)
 [![licenza](https://img.shields.io/badge/licenza-MIT-5cff9d)](LICENSE)
 [![piattaforma](https://img.shields.io/badge/Windows-x64-3ddbff)](#requisiti)
 [![sito](https://img.shields.io/badge/sito-cammo22.github.io-ffa63d)](https://cammo22.github.io/DaProdSuite/)
@@ -90,6 +90,38 @@ lo stesso.
 
 ## A che punto siamo
 
+> **0.5.0: la suite non è più solo quel computer.** La comandi dal telefono,
+> dal browser di un altro computer, e da un'AI.
+>
+> In fondo all'hub c'è un pannello nuovo, **Da fuori**. Lo accendi e ti dà un
+> indirizzo: lo scrivi nel browser del portatile, batti il codice di otto cifre,
+> e da lì usi la suite del PC fisso — chiedi un'immagine o un video, guardi cosa
+> sta facendo la scheda video, ti scarichi i risultati. Su un portatile la suite
+> non girerebbe bene, i modelli vogliono la scheda video del fisso; ma non ti
+> serve che ci giri, ti serve comandare quel PC.
+>
+> C'è anche un'**app Android**: inquadri il QR e chiedi lavori mentre sei in
+> giro. Se il PC non c'è, quello che scrivi resta sul telefono e parte da solo
+> quando torna; quando il lavoro finisce arriva una notifica anche ore dopo; e
+> il risultato te lo porti in galleria. *(L'app va compilata: non c'è ancora un
+> APK da scaricare.)*
+>
+> **Chi comanda resta chi sta al PC.** Una richiesta che arriva da fuori non fa
+> partire niente da sola: compare nel pannello e tu la accetti o la scarti. Su
+> otto GB di scheda video ci sta un modello per volta, e un telefono che può far
+> partire quattro generazioni per provare è un computer che non è più tuo.
+>
+> Nella stessa versione c'è un **server MCP**: Claude Code, o qualunque agente,
+> si collega come farebbe un telefono e può guidare la suite — passando dalla
+> stessa fila, con lo stesso sì. Sotto c'è la cosa che serviva davvero: **un
+> elenco scritto una volta sola di cosa la suite sa fare**, che leggono tutti e
+> tre. Quando la suite impara qualcosa di nuovo, telefono e browser se la
+> trovano da soli.
+>
+> ⚠ Vale **dentro casa, non da Internet**: il collegamento è in rete locale e
+> non è cifrato. E «accettata» oggi vuol dire «l'ho vista e va bene»: la
+> generazione la fai partire tu.
+>
 > **0.4.6: c'è la scheda Storia — scrivi cosa deve raccontare, dici quanti
 > minuti, e DaProdCinema lo gira un'inquadratura per volta e te lo cuce.**
 >

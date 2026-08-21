@@ -18,6 +18,7 @@ import {
   type FiltroLibreria,
   type GpuState,
   type RuntimeState,
+  type StatoAccesso,
   type SuiteApi,
   type Unsubscribe,
   type UpdateState,
@@ -119,6 +120,17 @@ const api: SuiteApi = {
     download: () => ipcRenderer.invoke(CHANNELS.updateDownload),
     installAndRestart: () => ipcRenderer.invoke(CHANNELS.updateInstall),
     onChanged: (listener) => subscribe<UpdateState>(CHANNELS.updateChanged, listener),
+  },
+
+  remoto: {
+    accendi: () => ipcRenderer.invoke(CHANNELS.remotoAccendi),
+    spegni: () => ipcRenderer.invoke(CHANNELS.remotoSpegni),
+    stato: () => ipcRenderer.invoke(CHANNELS.remotoStato),
+    nuovoInvito: (ruolo) => ipcRenderer.invoke(CHANNELS.remotoNuovoInvito, ruolo),
+    revoca: (id) => ipcRenderer.invoke(CHANNELS.remotoRevoca, id),
+    decidi: (id, stato, motivo) => ipcRenderer.invoke(CHANNELS.remotoDecidi, id, stato, motivo),
+    consegna: (id, esito) => ipcRenderer.invoke(CHANNELS.remotoConsegna, id, esito),
+    onChanged: (listener) => subscribe<StatoAccesso>(CHANNELS.remotoChanged, listener),
   },
 };
 

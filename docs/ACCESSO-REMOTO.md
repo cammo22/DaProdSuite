@@ -3,7 +3,9 @@
 Obiettivo: inquadri un QR con il telefono e usi la suite da lì. Da casa, ma anche
 da fuori. Stesso codice per telefono, tablet, un altro computer.
 
-Questo documento è il progetto della funzione, non ancora il suo codice.
+Questo documento era il progetto della funzione. Dalla **0.5.0** c'è anche il
+codice: in fondo, «Cos'è stato fatto davvero», con le differenze e con quello
+che ancora non c'è.
 
 ---
 
@@ -128,5 +130,78 @@ non usa Android non richiede un secondo progetto da mantenere.
 ## Quando
 
 Dopo la migrazione delle app. Il gateway ha senso quando c'è qualcosa da servire:
-prima è un ponte verso il nulla. Nella roadmap sta in **0.4**, l'app Android in
-**0.5**.
+prima è un ponte verso il nulla. Nella roadmap stava in **0.4**, l'app Android in
+**0.5**: sono usciti insieme nella **0.5.0**, il 21 agosto 2026.
+---
+
+## Cos'è stato fatto davvero (0.5.0, 21 agosto 2026)
+
+Questo documento era il **progetto**. Quello che c'è adesso è quasi tutto quel
+che dice, e queste sono le differenze — perché un progetto che non racconta dove
+si è discostato smette di essere utile.
+
+### Fatto
+
+| | Dove |
+|---|---|
+| Gateway HTTP con autenticazione davanti a tutto | `packages/gateway` |
+| Codice monouso a otto cifre, scade in 5 minuti | `remoto.ts` |
+| QR con dentro indirizzo e codice | pannello **Da fuori** dell'hub |
+| Una credenziale per dispositivo, revoca singola | `remoto.ts` · pannello |
+| I motori restano su `127.0.0.1` | il gateway inoltra, non apre |
+| Rete locale | `0.0.0.0:8790` |
+| **L'elenco di cosa si può chiedere** | `packages/azioni` |
+| **La console web** — la suite dal browser di un altro computer | `console.ts` |
+| **L'app Android** | `apps/mobile` |
+| **Il server MCP** | `packages/mcp` |
+
+Le ultime quattro righe non erano in questo documento: sono venute fuori
+strada facendo, e stanno in [AZIONI-E-MCP.md](AZIONI-E-MCP.md).
+
+### Cambiato rispetto al progetto
+
+**L'interfaccia non è «quella della suite servita dal gateway».** Il progetto
+diceva che l'app Android sarebbe stata un client sottile su pagine servite dal
+PC. Non è andata così, e per una ragione buona: le pagine delle app della suite
+sono fatte per uno schermo grande e per un motore che risponde su `127.0.0.1`,
+e servirle a un telefono avrebbe voluto dire riscriverle comunque.
+
+Quello che si serve dal gateway è **l'elenco delle azioni**, non le pagine. Il
+telefono e la console si disegnano i moduli da soli, e nessuno dei due va
+aggiornato quando la suite impara a fare una cosa nuova. È lo stesso vantaggio
+che cercava il progetto, ottenuto un piano più in basso.
+
+**I permessi sono due, non tre.** Il progetto voleva «Guardare / Generare /
+Companion» scelti per dispositivo. Adesso ci sono due ruoli — **padrone** e
+**ospite** — e il Companion non è raggiungibile da fuori in nessun modo. La
+memoria personale del Companion è la cosa più delicata che la suite contenga, e
+finché non c'è una ragione per aprirla resta chiusa: è più semplice da
+verificare di un permesso che si può concedere.
+
+### Non fatto, e va detto
+
+- **Il tunnel verso Internet.** Il gateway è **solo rete locale**.
+- **Il traffico non è cifrato.** HTTP in chiaro sulla wifi di casa: non c'è
+  certificato, e quindi non c'è nemmeno l'impronta nel QR che il progetto
+  voleva per riconoscere il PC. Chi è dentro la tua rete e sa guardare il
+  traffico vede quello che passa. Questa è **la** cosa da sistemare prima del
+  tunnel, non dopo: un tunnel sopra un canale in chiaro non aggiusta niente.
+- **La coda non è ancora quella vera.** Una richiesta accettata non fa partire
+  la generazione da sola: chi sta al PC la accetta e poi apre l'app e la fa.
+  Il ponte fra una richiesta accettata e il motore che gira è il prossimo passo,
+  e senza quello «accettata» vuol dire soltanto «l'ho vista e va bene».
+- **Le notifiche sono un giro ogni quarto d'ora**, non una push vera: il
+  telefono chiede, il PC non chiama. Va bene per un lavoro che dura minuti,
+  meno bene per uno che finisce in trenta secondi.
+
+### Le prove
+
+```bash
+pnpm run prova
+```
+
+Accende un gateway vero e un server MCP vero, senza Electron e senza scheda
+video, e prova quello che si rompe in silenzio: chi entra senza token, chi
+supera i propri permessi, chi prova mille codici, chi chiede un file fuori dalla
+cartella dei risultati. Sono in `apps/shell/scripts/prova-gateway.mjs` e
+`prova-mcp.mjs`, e girano anche nella CI prima di ogni release.

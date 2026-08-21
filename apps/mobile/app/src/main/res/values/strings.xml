@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">DaProd Suite</string>
+
+    <!-- Collegarsi -->
+    <string name="titolo_collega">Collega il telefono</string>
+    <string name="spiega_collega">Sul PC: DaProd Suite → «Da fuori» in fondo → Accendi → Invita. Poi inquadra il QR.</string>
+    <string name="btn_scansiona">Inquadra il QR</string>
+    <string name="hint_codice">Codice a 8 cifre</string>
+    <string name="btn_connetti">Collega</string>
+    <string name="nota_codice">Il codice da solo vale solo se ti eri già collegato a questo PC: la prima volta serve il QR, che dice anche dov\'è.</string>
+    <string name="btn_scollega">Scollega</string>
+
+    <!-- Stato -->
+    <string name="stato_offline">Nessun PC collegato</string>
+    <string name="stato_online">Collegato a</string>
+    <string name="stato_non_raggiungibile">non raggiungibile adesso</string>
+
+    <!-- Chiedere -->
+    <string name="crea_richiesta">Chiedi qualcosa</string>
+    <string name="btn_invia">Manda al PC</string>
+    <string name="in_fila">In fila sul PC. Adesso tocca a chi ci sta davanti.</string>
+    <string name="salvata_in_coda">PC non raggiungibile: la tengo qui e parte da sola quando torna.</string>
+
+    <!-- La coda -->
+    <string name="titolo_coda">Le tue richieste</string>
+    <string name="nessuna_richiesta">Ancora niente. Quello che chiedi compare qui.</string>
+    <string name="btn_scarica">Scarica nel telefono</string>
+
+    <!-- Notifiche -->
+    <string name="notifica_canale">Lavori DaProd Suite</string>
+    <string name="notifica_descrizione">Quando un lavoro finisce sul PC</string>
+</resources>
