@@ -10,14 +10,15 @@
 import { el, mostraScheda, suApertura } from "./dom.js";
 import { collegaCrea } from "./crea.js";
 import { aggiornaGalleria, collegaGalleria } from "./galleria.js";
+import { collegaStoria } from "./storia.js";
 import { caricaUltimi, messaggioDalMotore, riallinea } from "./coda.js";
 // I quadratini di cosa occupa la memoria: uguali in tutte le app, quindi stanno
 // in `packages/ui` e la suite li serve sotto `/comune/`.
 import { collegaModelliInMemoria } from "/comune/modelli-in-memoria.js";
 import { collega, modelliInVram, scaricaDallaVram, suLibreriaCambiata } from "./ponte.js";
 
-// Le due schede: Crea e Galleria. La galleria si rilegge quando la si apre —
-// non ogni secondo mentre si guarda altro.
+// Le tre schede: Crea, Storia e Galleria. La galleria si rilegge quando la si
+// apre — non ogni secondo mentre si guarda altro.
 document.querySelectorAll("nav button").forEach((b) => {
   b.onclick = () => mostraScheda(b.dataset.scheda);
 });
@@ -25,6 +26,9 @@ suApertura("galleria", () => void aggiornaGalleria());
 
 await collegaCrea();
 collegaGalleria();
+// Dopo `collegaCrea`: la storia legge il modello e il formato scelti lì, e
+// prima che quelli esistano il conto delle inquadrature non si può fare.
+collegaStoria();
 
 // I video di ieri, sotto la sessione: riaprire la scheda e vedere il vuoto dava
 // l'impressione che quello che si era fatto fosse andato perso.

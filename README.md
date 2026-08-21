@@ -10,7 +10,7 @@ Un programma solo per fare musica, immagini, video, voci e parlare con un avatar
 Ogni app la installi quando ti serve e la disinstalli quando non ti serve più.
 Gira sul tuo computer: niente account, niente chiavi API, codice aperto.
 
-[![versione](https://img.shields.io/badge/versione-0.4.5-7c5cff)](https://github.com/cammo22/DaProdSuite/releases)
+[![versione](https://img.shields.io/badge/versione-0.4.6-7c5cff)](https://github.com/cammo22/DaProdSuite/releases)
 [![licenza](https://img.shields.io/badge/licenza-MIT-5cff9d)](LICENSE)
 [![piattaforma](https://img.shields.io/badge/Windows-x64-3ddbff)](#requisiti)
 [![sito](https://img.shields.io/badge/sito-cammo22.github.io-ffa63d)](https://cammo22.github.io/DaProdSuite/)
@@ -90,8 +90,8 @@ lo stesso.
 
 ## A che punto siamo
 
-> **0.4.5: chiedere il secondo video non ammazza più il primo, il cronometro
-> conta da quando premi, e LTX arriva a 20 secondi.**
+> **0.4.6: c'è la scheda Storia — scrivi cosa deve raccontare, dici quanti
+> minuti, e DaProdCinema lo gira un'inquadratura per volta e te lo cuce.**
 >
 > **DaProdVisualizer, DaProdMusica, DaProdFoto, DaProdDream, DaProdIoDigitale,
 > DaProdCinema** e **DaProdVoce** sono nella suite e funzionano. Si installano da sole, motore e
@@ -112,6 +112,22 @@ lo stesso.
 > 480, 720 o 1080p), e le proposte sopra la casella te le scrivi tu — un titolo
 > corto, il prompt intero dentro. Premendo Genera la memoria video viene
 > liberata da sola da quello che non serve.
+>
+> Con la 0.4.6 arriva la **Storia**. Ci scrivi in italiano cosa deve
+> raccontare — come lo diresti a una persona — e quanti minuti deve durare. Il
+> modello che scrive lo spezza in inquadrature, una per una, con il movimento
+> di camera e la luce; tu le rileggi e cambi quelle che non ti piacciono; poi
+> si generano una alla volta e alla fine **si cuciono in un film solo**. Se
+> chiudi a metà, riprende da dov'era.
+>
+> ⚠ Quanto ci vuole c'è scritto **prima** che tu prema, in ore, e si rifà sui
+> tuoi tempi veri appena c'è una scena fatta. Mezz'ora di film è una notte di
+> lavoro: si preme la sera e si guarda la mattina.
+>
+> Sempre nella 0.4.6, **MiniMax H3 parte come si deve**: due pulsanti, *20
+> passi* (come il modello è stato addestrato) e *4 passi* (veloce, per provare
+> un'idea). Prima partiva dai quattro, e su quel modello i quattro passi si
+> vedono nel movimento.
 >
 > Con la 0.4.5 **puoi chiedere la clip successiva senza rovinare quella in
 > corso.** Premere Genera svuota la scheda video — su 8 GB è quello che fa

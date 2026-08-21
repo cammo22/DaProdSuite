@@ -1,7 +1,7 @@
 # Riprendere da qui
 
 Documento di passaggio fra una sessione e l'altra. Aggiornato il **21 agosto
-2026**, con la 0.4.4 pubblicata e la 0.4.5 in lavorazione.
+2026**, con la 0.4.5 pubblicata e la 0.4.6 in lavorazione.
 
 **Se stai leggendo questo all'inizio di una conversazione nuova**: leggi anche
 [COME-SI-LAVORA.md](COME-SI-LAVORA.md) e [ROADMAP.md](ROADMAP.md), poi vai al
@@ -78,11 +78,64 @@ Repo pubblico: **https://github.com/cammo22/DaProdSuite**
 | **0.4.4 pubblicata** | fatto il 21 agosto: tag `v0.4.4`, PR #13. **Provata da Cammo**: il video non ricarica più |
 | **Il video non muore più a metà (0.4.5)** | fatto: `faiSpazio` svuotava la VRAM anche a motore acceso. **Da provare tu**: due clip di fila senza aspettare la prima |
 | **Cronometro unico + LTX a 20 s** | fatto, **da provare tu** |
+| **0.4.5 pubblicata** | fatto il 21 agosto: tag `v0.4.5`, PR #14 |
+| **Scheda Storia (0.4.6)** | fatta: soggetto → scene con LM Studio → una clip per volta → `/daprod/cuci`. **Mai aperta nella suite**; la sola cucitura è provata su tre clip vere |
+| **H3: due pulsanti, 20 passi di serie** | fatto, **da provare tu**: è la risposta al «4 step fa schifo» |
 
 Si lavora su un ramo per release e una PR: `release-0.2.0` è stata unita con le
 PR #3 e #4, la 0.3.1 con la #5, la 0.3.2 con la #6, la 0.3.3 con la #7, la
 0.3.4 con la #8, la 0.4.0 con la #9, la 0.4.1 con la #10, la 0.4.2 con la #11,
-la 0.4.3 con la #12, la 0.4.4 con la #13, e questo giro sta su `release-0.4.5`.
+la 0.4.3 con la #12, la 0.4.4 con la #13, la 0.4.5 con la #14, e questo giro sta su `release-0.4.6`.
+
+### Com'è fatto il giro della 0.4.6
+
+Due cose, e nascono tutte e due da Cammo che genera: «a 4 step fa schifo» e
+«si può fare mezz'ora?».
+
+**H3 partiva dal modo sbagliato.** Quattro passi erano il valore di serie, e su
+questo modello si vedono — nel movimento, non nel dettaglio. La correzione non è
+un numero diverso: sono **due modi**, `MODELLI.h3.modi`, e il modo decide anche
+il grafo. A venti passi il `LoraLoaderModelOnly` **non viene montato affatto**:
+il LoRA turbo non è «un po' meno turbo», è una scala di rumore diversa da quella
+su cui il modello è stato addestrato, e tenerlo a venti passi è peggio di
+entrambi. Il modo viaggia fino al grafo come `p.lora`, non resta una preferenza
+dell'interfaccia.
+
+Cercato su Hugging Face cosa ci fosse di meglio per i quattro passi, e la
+risposta è scomoda: **per la variante ref2v il LoRA ufficiale è fermo alla
+v0.1**. La fl2v ha la v1.0 e la v1.1 (Comfy-Org e lightx2v, controllati file per
+file), ma la fl2v è un altro checkpoint. Quello che si poteva fare — ed era già
+fatto — è usarlo come va usato: `MiniMaxH3SigmaShift` installa `ModelSamplingAV`
+con gli scarti 12 e 3, che è il supporto nativo per i **due orologi** di H3
+(video e audio denoisati insieme su schedule diverse). Senza, l'audio a quattro
+passi esce sporco, ed era il difetto per cui esisteva un nodo di terzi fino ad
+agosto.
+
+**La Storia** è `apps/cinema/src/storia.js`, e le tre decisioni che contano:
+
+1. **una scena per volta, non cento in coda.** Sembra più lento e non lo è — la
+   scheda ne fa una alla volta comunque — ed è l'unica forma recuperabile: la
+   coda di ComfyUI non sopravvive a un riavvio, mentre l'elenco delle scene sta
+   nel `localStorage` e riprende da dov'era.
+2. **la cucitura sta nel motore**, `/daprod/cuci`, e non nello shell: lì c'è già
+   un Python che sa dov'è la cartella dei risultati, e ffmpeg — quello del
+   sistema o quello che `imageio_ffmpeg` si porta dentro l'ambiente. Si
+   ricodifica invece di `-c copy` perché in una storia lunga non è detto che
+   tutte le clip abbiano la stessa misura.
+3. **il tempo si dice prima.** La riga sotto ai due numeri scrive quante ore ci
+   vogliono, e appena c'è una scena vera il conto si rifà sui tempi misurati e
+   non sui tre minuti di partenza.
+
+L'elenco delle scene usa `lista-viva.js` della 0.4.4, e lì serve più che
+altrove: ogni riga ha una casella di testo, e ridisegnare tutto quando una clip
+finisce vorrebbe dire perdere il cursore mentre correggi la scena 34.
+
+**Provato:** la cucitura sul serio, con tre clip vere di Cammo — 3 × 10,04 s →
+30,17 s, video e audio a posto — con lo stesso comando che usa la rotta. E i due
+grafi di H3 in un banco a parte: a venti passi nessun `LoraLoaderModelOnly` e lo
+shift che prende il modello nudo, a quattro il LoRA in mezzo a forza 1,0.
+
+---
 
 ### Com'è fatto il giro della 0.4.5
 
