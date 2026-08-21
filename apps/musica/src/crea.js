@@ -6,7 +6,9 @@
  * autoregressiva e ci mette 17 secondi invece di 107.
  */
 
-import { el, escapeHtml, inserisciAlCursore, legaValore, mostraErrore, mostraScheda, rnd } from "./dom.js";
+import {
+  el, escapeHtml, inserisciAlCursore, legaValore, libera, mostraErrore, mostraScheda, occupa, rnd,
+} from "./dom.js";
 import { DEMO_LYRICS, PRESETS, STILI, TAGS } from "./dati/stili.js";
 import { ESTETICHE } from "./dati/estetiche.js";
 import { MODELLI, grafoBrano, grafoImmagine, modello, promptCopertina, titoloAuto, usaCampo } from "./grafi.js";
@@ -281,7 +283,7 @@ export function nuovaResa() {
   el.goAudio.click();
 }
 
-async function creaBrano(p) {
+async function creaBrano(p, racconta = () => {}) {
   p.titolo = p.titolo || titoloAuto(p.lyrics, p.caption);
 
   // **Prima la copertina, poi il brano.** Venti secondi contro dieci minuti:
@@ -297,11 +299,20 @@ async function creaBrano(p) {
   // testo" e "Crea" passano pochi secondi: senza questo, i suoi quattro GB e
   // mezzo sono ancora in memoria quando il modello musicale ne chiede cinque e
   // mezzo, e su una scheda da 8 non ci stanno insieme.
-  await ponte.liberaMemoriaLlm();
+  //
+  // **Ma non può impedire di generare.** Prima questa riga era un `await` nudo:
+  // se LM Studio non rispondeva, «Crea» restava premuto per sempre senza dire
+  // niente e senza mettere niente in coda. Adesso `lms` ha una scadenza (vedi
+  // `ATTESA_PS_MS` in `apps/shell/src/main/llm.ts`) e qui l'errore si ignora: al
+  // massimo si genera con la scheda meno libera del previsto, che è molto meglio
+  // che non generare.
+  racconta("libero la memoria…");
+  await ponte.liberaMemoriaLlm().catch(() => {});
   await ponte.svuotaVram();
 
   let idCopertina = null;
   if (el.autoCover.checked) {
+    racconta("disegno la copertina…");
     // Se Bonsai (o tu) hai scritto un'idea per la copertina, quella vince: è
     // scritta guardando la canzone intera, mentre i motivi la indovinano da
     // qualche parola del testo.
@@ -314,6 +325,7 @@ async function creaBrano(p) {
 
   // `conCopertina` dice alla coda che c'è una copertina per questo brano: se
   // arriva prima gli si attacca da sé, se arriva dopo lo ritrova in libreria.
+  racconta("mando al motore…");
   const idBrano = await ponte.invia(grafoBrano(modello(p.qualita), p));
   aggiungiLavoro(idBrano, p, { conCopertina: el.autoCover.checked });
 
@@ -389,21 +401,27 @@ export function collegaCrea() {
 
   el.go.onclick = async () => {
     el.error.style.display = "none";
-    const quanti = Math.max(1, Math.min(10, parseInt(el.batch.value) || 1));
-    for (let i = 0; i < quanti; i++) {
-      // Dal secondo in poi i seed cambiano comunque: dieci brani identici non
-      // sono dieci brani.
-      if (el.randomSeed.checked || i > 0) {
-        el.seed_text.value = rnd();
-        el.seed_audio.value = rnd();
+    if (!leggiModulo().caption) return mostraErrore("Scrivi almeno uno stile.");
+
+    // Il `try` comincia **prima** di tutto quello che può metterci, e il tasto
+    // si spegne subito: era l'altro modo in cui «Crea» poteva sembrare morto —
+    // un errore o un'attesa qui dentro non lasciavano traccia da nessuna parte.
+    occupa(el.go, "preparo…");
+    try {
+      const quanti = Math.max(1, Math.min(10, parseInt(el.batch.value) || 1));
+      for (let i = 0; i < quanti; i++) {
+        // Dal secondo in poi i seed cambiano comunque: dieci brani identici non
+        // sono dieci brani.
+        if (el.randomSeed.checked || i > 0) {
+          el.seed_text.value = rnd();
+          el.seed_audio.value = rnd();
+        }
+        await creaBrano(leggiModulo(), (detto) => occupa(el.go, detto));
       }
-      const p = leggiModulo();
-      if (!p.caption) return mostraErrore("Scrivi almeno uno stile.");
-      try {
-        await creaBrano(p);
-      } catch (e) {
-        return mostraErrore(String(e.message || e));
-      }
+    } catch (e) {
+      mostraErrore(String(e.message || e));
+    } finally {
+      libera(el.go);
     }
   };
 
@@ -413,10 +431,14 @@ export function collegaCrea() {
     const p = leggiModulo();
     if (!p.caption) return mostraErrore("Scrivi almeno uno stile.");
     p.titolo = p.titolo || titoloAuto(p.lyrics, p.caption);
+
+    occupa(el.goAudio, "mando al motore…");
     try {
       aggiungiLavoro(await ponte.invia(grafoBrano(modello(p.qualita), p)), p);
     } catch (e) {
       mostraErrore(String(e.message || e));
+    } finally {
+      libera(el.goAudio);
     }
   };
 }

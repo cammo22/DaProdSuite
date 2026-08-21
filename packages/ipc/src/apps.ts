@@ -210,7 +210,7 @@ export const APPS: Record<AppId, AppDescriptor> = {
   cinema: {
     id: "cinema",
     name: "DaProdCinema",
-    tagline: "Da una canzone al suo video musicale, scena per scena.",
+    tagline: "Video con il suono dentro, da una descrizione o da un'immagine.",
     kind: "service",
     accent: "#c05cff",
     service: {
@@ -233,11 +233,15 @@ export const APPS: Record<AppId, AppDescriptor> = {
      */
     models: ["ltx25-dit", "ltx25-text-encoder", "ltx25-vae", "ltx25-audio-vae"],
     /**
-     * MiniMax H3, l'altro della roadmap: 42,3 GB, di cui 25 di solo text
+     * MiniMax H3, l'altro della roadmap: 41,6 GB, di cui 25 di solo text
      * encoder (Qwen3-VL 32B). Si sceglie dal menu dentro l'app, che è anche il
      * posto dove si vede quanto costa prima di premere.
+     *
+     * È la variante **ref2va** e non la fl2va: quella che prende immagini, video
+     * e audio di riferimento. Primo e ultimo fotogramma li fa già LTX 2.5, con
+     * metà del peso; i riferimenti li sa fare solo lui.
      */
-    extraModels: ["h3-dit", "h3-text-encoder", "h3-vae", "h3-audio-vae", "h3-lora-turbo"],
+    extraModels: ["h3-ref-dit", "h3-text-encoder", "h3-vae", "h3-audio-vae", "h3-lora-ref-turbo"],
     gpuHeavy: true,
     // Video: un fotogramma per volta, e i fotogrammi sono centinaia.
     schedaVideo: "obbligatoria",

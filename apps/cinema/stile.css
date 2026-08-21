@@ -42,13 +42,6 @@ header{
 .logo{font-size:19px; font-weight:800; letter-spacing:-.03em; white-space:nowrap}
 .logo span{background:linear-gradient(90deg,var(--accent),var(--accent2));
   -webkit-background-clip:text; background-clip:text; color:transparent}
-nav{display:flex; gap:3px; background:#0d0f15; border:1px solid var(--line); border-radius:13px; padding:4px}
-nav button{
-  background:none; border:0; color:var(--dim); font:inherit; font-weight:600; font-size:13.5px;
-  padding:7px 15px; border-radius:10px; cursor:pointer; transition:.15s; display:flex; align-items:center; gap:7px}
-nav button:hover{color:var(--txt); background:#151822}
-nav button.on{background:linear-gradient(120deg,var(--accent),#f97316); color:#fff; box-shadow:0 3px 14px rgba(255,166,61,.35)}
-nav .pill{background:rgba(255,255,255,.2); border-radius:99px; font-size:11px; padding:1px 7px; font-weight:700}
 .status{margin-left:auto; display:flex; align-items:center; gap:12px; font-size:12.5px; color:var(--dim)}
 .dot{width:8px;height:8px;border-radius:50%;background:var(--err);transition:.3s}
 .dot.on{background:var(--ok); box-shadow:0 0 9px var(--ok)}
@@ -165,12 +158,6 @@ input:disabled,textarea:disabled,select:disabled{opacity:.45; cursor:not-allowed
 .barra-modello select{width:auto; min-width:190px; padding:7px 10px}
 .barra-modello .hint{margin:0}
 
-/* Le ultime immagini, sopra la tela del ritocco. */
-.recenti{display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap}
-.recenti img{width:64px; height:64px; object-fit:cover; border-radius:9px; cursor:pointer;
-  border:1px solid var(--line); transition:.15s}
-.recenti img:hover{border-color:var(--accent); transform:translateY(-2px)}
-
 /* Il modello scelto non è sul disco: cosa manca e come si rimedia. */
 .manca{background:#1c1608; border:1px solid #5c4520; border-radius:12px; padding:12px 13px;
   margin:14px 26px 0; font-size:13px; line-height:1.5}
@@ -216,193 +203,62 @@ input:disabled,textarea:disabled,select:disabled{opacity:.45; cursor:not-allowed
 .phases .a{color:var(--accent)} .phases .b{color:var(--accent2)}
 .phases span.off{opacity:.4}
 
-/* ---------------------------------------------------------- immagini ---- */
-.cards{display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:12px;
-  max-height:74vh; overflow:auto; padding-right:4px}
-.card{background:#0b0d13; border:1px solid var(--line); border-radius:13px; padding:9px; cursor:pointer; transition:.15s}
-.card:hover{border-color:var(--accent)}
-.card.sel{border-color:var(--accent); box-shadow:0 0 0 1px rgba(255,166,61,.4)}
-.card .art{width:100%; aspect-ratio:1; border-radius:10px; object-fit:cover; display:block;
-  background:linear-gradient(135deg,#4a2f10,#07354a); margin-bottom:8px}
-.card .nm{font-size:13px; font-weight:650; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
-.card .sub{font-size:11.5px; color:var(--dim)}
+/* ---------------------------------------- da dove parte / i riferimenti ---- */
+/* I riquadri in cui si mettono i fotogrammi di LTX o i riferimenti di H3.
+   Sono la stessa cosa disegnata due volte — un posto vuoto da riempire e un
+   posto pieno da svuotare — perché è la stessa cosa: un file che entra. */
+#ingressi.sopra{outline:2px dashed var(--accent); outline-offset:6px; border-radius:12px}
 
-.detail .art{width:100%; max-width:250px; aspect-ratio:1; border-radius:14px; object-fit:cover;
-  background:linear-gradient(135deg,#4a2f10,#07354a); display:block; margin-bottom:12px; cursor:pointer}
-.kv{display:grid; grid-template-columns:auto 1fr; gap:4px 14px; font-size:12.5px; margin:12px 0}
-.kv dt{color:var(--dim)} .kv dd{margin:0; font-variant-numeric:tabular-nums}
-.box{background:#0b0d13; border:1px solid var(--line); border-radius:11px; padding:10px 12px;
-  font-size:12.5px; white-space:pre-wrap; max-height:180px; overflow:auto; line-height:1.55}
-/* ------------------------------------------------------------ azioni ---- */
-/* Le azioni di una scheda o di un dettaglio erano scritte in grigio con una
-   riga tratteggiata sotto: in mezzo al nome e alla data sembravano didascalie,
-   non cose da premere. Adesso sono pulsanti veri.
-   Si dispongono da sé: ognuno chiede 112px e poi si allarga a riempire la
-   riga, quindi in una finestra larga stanno in fila e in una stretta vanno a
-   capo restando tutti della stessa misura, senza mai uscire dal pannello. */
-.acts{display:flex; flex-wrap:wrap; gap:8px; margin-top:12px}
-.acts a,.acts button{
-  flex:1 1 112px; min-width:0;
-  display:inline-flex; align-items:center; justify-content:center; gap:6px;
-  min-height:34px; padding:8px 12px; border-radius:10px;
-  border:1px solid var(--line2); background:#141824; color:var(--txt);
-  font:inherit; font-size:12.5px; font-weight:600; line-height:1.25;
-  text-align:center; text-decoration:none; cursor:pointer; transition:.15s}
-.acts a:hover,.acts button:hover{border-color:var(--accent); background:#1b2132; color:#fff}
-.acts button:active{transform:translateY(1px)}
-.acts button:disabled{opacity:.4; cursor:not-allowed; color:var(--dim); border-color:var(--line)}
-.acts button:disabled:hover{background:#141824; color:var(--dim); border-color:var(--line)}
-/* Un pulsante che cancella non deve sembrare quello principale, anche quando
-   resta da solo in fondo e si allarga per tutta la riga. */
-.acts .del{color:#f0a9a9; border-color:#4a2226; background:#1a1113}
-.acts .del:hover{color:#fff; background:#2a1416; border-color:var(--err)}
+.gruppo-rif{margin-top:14px}
+.gruppo-rif h3{font-size:13px; font-weight:650; margin:0 0 8px; display:flex; gap:8px;
+  align-items:baseline; flex-wrap:wrap}
+.gruppo-rif h3 span{font-size:11.5px; color:var(--dim); font-weight:400}
 
-/* Dentro una scheda della galleria lo spazio è quello di una colonna: pulsanti
-   più bassi e una misura minima più piccola, così ne restano due per riga
-   anche quando la colonna si stringe. */
-.card .acts{gap:6px; margin-top:9px}
-.card .acts a,.card .acts button{flex:1 1 76px; min-height:30px; padding:6px 8px; font-size:11.5px}
+.slots{display:grid; grid-template-columns:repeat(auto-fill,minmax(168px,1fr)); gap:9px}
+/* I due fotogrammi di LTX non sono una griglia che cresce: sono due, e vanno
+   affiancati grandi uguali finché ci stanno. */
+.slots.due{grid-template-columns:repeat(auto-fit,minmax(190px,1fr))}
 
-/* ---------------------------------------------------------- costruttore -- */
-fieldset{border:1px solid var(--line); border-radius:13px; padding:16px; margin:0 0 16px}
-legend{font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--accent2); padding:0 8px}
-.bfield{padding:13px 0; border-top:1px solid rgba(34,38,47,.7)}
-.bfield:first-of-type{border-top:0; padding-top:0}
-.bfield .desc{font-size:12px; color:var(--dim); margin:-2px 0 8px}
-.bfield .opts{display:flex; flex-wrap:wrap; gap:6px; margin-top:8px}
-.bfield .opts .chip{font-size:12px; padding:4px 10px}
-.preview{background:#0b0d13; border:1px dashed var(--line2); border-radius:11px; padding:12px;
-  font-size:13px; white-space:pre-wrap; min-height:60px; line-height:1.6}
+.slot{position:relative; border:1px solid var(--line); border-radius:12px; background:#0b0d13;
+  overflow:hidden; transition:.15s}
+.slot.pieno:hover{border-color:var(--line2)}
 
+.slot.vuoto{display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:6px; min-height:104px; border-style:dashed; color:var(--dim); cursor:pointer;
+  font:inherit; font-size:12.5px; width:100%}
+.slot.vuoto:hover{border-color:var(--accent); color:var(--txt)}
+.slot.vuoto .piu{font-size:22px; line-height:1; color:var(--accent2)}
 
-/* ------------------------------------------------------------- ritocco ---- */
-/* La tela del ritocco: due strati sovrapposti, l'immagine sotto e la maschera
-   sopra. Il contenitore si adatta all'immagine, così il pennello cade dove lo
-   vedi anche quando la foto è più grande dello schermo. */
-.tela{position:relative; display:inline-block; max-width:100%; line-height:0;
-  border-radius:12px; overflow:hidden; border:1px solid var(--line); background:#0b0d13}
-.tela canvas{display:block; max-width:100%; height:auto; touch-action:none}
-.tela .sotto{position:relative; z-index:1}
-.tela .sopra{position:absolute; inset:0; z-index:2; cursor:crosshair;
-  width:100%; height:100%; opacity:.55}
-.vuota{border:1px dashed var(--line2); border-radius:12px; padding:34px 18px;
-  text-align:center; color:var(--dim); font-size:13px}
-.pennello{display:flex; align-items:center; gap:12px; margin:12px 0}
-.pennello input[type=range]{flex:1}
+.slot .vista{height:104px; background:#07080c; display:flex; align-items:center; justify-content:center}
+.slot .vista img,.slot .vista video{width:100%; height:100%; object-fit:cover; display:block}
+.slot .vista .nota{font-size:30px; color:var(--accent2)}
+.slot .dettagli{padding:8px 9px}
+.slot .nome{font-size:11.5px; color:var(--dim); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
 
-/* -------------------------------------------------------------- lente ---- */
-/* L'immagine a schermo intero: si guarda quello che si è appena fatto senza
-   uscire dall'app e senza aprire un altro programma. */
-.lente{position:fixed; inset:0; z-index:60; display:flex; flex-direction:column;
-  align-items:center; justify-content:center; gap:14px; padding:28px;
-  background:rgba(6,7,11,.94); backdrop-filter:blur(8px); cursor:zoom-out}
-.lente[hidden]{display:none}
-.lente img{max-width:100%; max-height:calc(100vh - 110px); object-fit:contain;
-  border-radius:12px; box-shadow:0 20px 60px rgba(0,0,0,.6)}
-.lente .didascalia{color:var(--dim); font-size:13px; text-align:center; max-width:900px}
-.lente .btn{cursor:pointer}
-.lente img{max-height:calc(100vh - 170px)}
-.card .art{cursor:zoom-in}
+/* L'etichetta è un pulsante perché fa qualcosa: cliccarla la scrive nel
+   prompt dove hai il cursore. Un'etichetta da ricopiare a mano sarebbe il modo
+   piu' sicuro di sbagliare il numero. */
+.slot .tag{display:inline-block; margin-bottom:3px; padding:2px 8px; border-radius:7px;
+  border:1px solid #4a2a6b; background:#1b1030; color:#e7d3ff; cursor:pointer;
+  font:inherit; font-size:11.5px; font-weight:650; font-family:ui-monospace,Consolas,monospace}
+.slot .tag:hover{border-color:var(--accent); background:#2a1748}
+.slot .tag.fisso{cursor:default; border-color:var(--line); background:#12151d; color:var(--dim);
+  font-family:inherit; font-weight:600}
 
-/* Le ultime immagini fatte, sotto la sessione: si vede il risultato senza
-   cambiare scheda. */
-.ultime{display:grid; grid-template-columns:repeat(auto-fill,minmax(88px,1fr)); gap:8px; margin-top:12px}
-.ultime img{width:100%; aspect-ratio:1; object-fit:cover; border-radius:10px; cursor:zoom-in;
-  border:1px solid var(--line); background:#0b0d13}
+.slot .via{position:absolute; top:6px; right:6px; width:24px; height:24px; border-radius:7px;
+  border:0; background:rgba(6,7,11,.72); color:#fff; cursor:pointer; font-size:12px; line-height:1;
+  opacity:0; transition:.15s}
+.slot:hover .via{opacity:1}
+.slot .via:hover{background:var(--err)}
 
-/* --------------------------------------------------- trascinamento ------- */
-/* Compare solo mentre si tiene un file sopra la finestra. Copre tutto perché
-   il bersaglio è tutta la pagina: chiedere di centrare un riquadro è un modo
-   di far fallire un gesto che dovrebbe essere ovvio. */
-.velo-trascina{position:fixed; inset:0; z-index:80; display:flex;
-  align-items:center; justify-content:center; pointer-events:none;
-  background:rgba(6,7,11,.82); backdrop-filter:blur(6px)}
-.velo-trascina[hidden]{display:none}
-.velo-trascina span{padding:22px 34px; border-radius:16px; font-size:16px;
-  color:var(--txt); border:2px dashed var(--accent); background:rgba(0,0,0,.35)}
+.mini-switch{margin-top:5px; font-size:11.5px; gap:6px}
+.mini-switch b{color:#e7d3ff; font-family:ui-monospace,Consolas,monospace}
 
-/* La lingua: l'interruttore e la riga che dice cosa è stato mandato davvero.
-   Vedere la traduzione serve a dare la colpa alla parola giusta quando
-   l'immagine non è quella che avevi in testa. */
-/* Stanno nella barra del modello, in riga con lui: la lingua è un modo di
-   parlare a quel modello, non un'impostazione della scheda in cui sei. */
-.riga-traduci{display:flex; align-items:center; gap:8px; margin:0;
-  font-size:13px; color:var(--dim); cursor:pointer; white-space:nowrap}
-.riga-traduci input{width:auto}
-.barra-modello .tradotto{margin:0; padding:5px 9px; font-size:12px}
-.riga-traduci input{accent-color:var(--accent); cursor:pointer}
-.tradotto{margin-top:8px; padding:8px 10px; border-radius:10px;
-  background:var(--panel2); border:1px solid var(--line); color:var(--txt)}
-.tradotto.guasto{color:var(--err); border-color:var(--err)}
-/* Mentre traduce: una riga che dice cosa sta facendo e la barra sotto. Nella
-   barra del modello si prende lo spazio che serve alla barra per essere una
-   barra, senza mangiarsi il menu dei modelli. */
-.barra-modello .tradotto{flex:1 1 280px; max-width:560px}
-.tradotto .detto{font-size:12px; color:var(--dim)}
-.tradotto .detto b{color:var(--txt); font-variant-numeric:tabular-nums}
-.tradotto .bar{margin-top:6px}
-/* Quando non si sa quanto manca — leggere 330 MB dal disco non ha una
-   percentuale — la barra va avanti e indietro invece di inventarsi un numero. */
-.bar i.scorre{width:34%; animation:scorre 1.15s ease-in-out infinite alternate}
-@keyframes scorre{from{left:0} to{left:66%}}
-
-/* ------------------------------------------------- finestre strette ---- */
-/* La suite si usa anche a mezzo schermo, con la finestra accostata a un lato.
-   Sotto una certa larghezza l'intestazione non ci sta più in una riga sola: le
-   schede vanno a capo per intero e scorrono di lato invece di schiacciarsi.
-   La barra del modello perde i margini larghi, che a quel punto sono spazio
-   tolto alla galleria. */
-@media(max-width:860px){
-  header{flex-wrap:wrap; gap:9px 14px; padding:10px 14px}
-  nav{order:3; width:100%; overflow-x:auto; scrollbar-width:none}
-  nav::-webkit-scrollbar{display:none}
-  nav button{white-space:nowrap}
-  .tab{padding:16px 14px 34px}
-  .panel{padding:15px}
-  .barra-modello{padding:10px 14px}
-  .manca{margin:14px 14px 0}
-  .cards{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
-}
-/* Più stretto di così una scheda non regge due pulsanti per riga: meglio uno
-   solo e leggibile che due tagliati. */
-@media(max-width:560px){
-  .cards{grid-template-columns:repeat(auto-fill,minmax(126px,1fr))}
-  .card .acts a,.card .acts button{flex:1 1 100%}
-  .acts a,.acts button{flex:1 1 100%}
-}
-
-/* Il selettore del modello che scrive: stessa cosa dell'hub, in una riga.
-   Gemello di quello in apps/musica/stile.css — si fondono in packages/ui. */
-.selettore-llm{display:flex; align-items:center; gap:9px; flex-wrap:wrap; margin-top:12px;
-  padding:9px 11px; border:1px solid var(--line); border-radius:11px; background:#0b0d13}
-.selettore-llm select{width:auto; min-width:180px; max-width:100%; padding:6px 9px; font-size:12.5px}
-.selettore-llm .llm-pallino{width:9px; height:9px; border-radius:50%; background:var(--line2)}
-.selettore-llm .llm-pallino.acceso{background:#5cff9d}
-.selettore-llm .llm-detto{font-size:12px; color:var(--dim)}
-.selettore-llm .llm-contesti{display:flex; gap:5px; margin-left:auto}
-.selettore-llm .llm-spento{font-size:12.5px; color:var(--err)}
-
-/* La riga che dice se il modello che scrive c'e' o no. */
-.hint.guasto{color:var(--err)}
-
-/* ------------------------------------------- le inquadrature del video ---- */
-/* La lista che il regista scrive prima di girare: una riga per clip, con il
-   suo posto nella canzone. Si legge dall'alto in basso come una scaletta. */
-.scaletta{display:flex; flex-direction:column; gap:6px; margin-top:12px}
-.scatto{
-  display:grid; grid-template-columns:64px 1fr auto; gap:12px; align-items:center;
-  padding:9px 12px; border:1px solid var(--line); border-radius:12px;
-  background:var(--panel2);
-}
-.scatto.fatto{border-color:color-mix(in srgb, var(--ok) 45%, var(--line))}
-.scatto.incorso{border-color:var(--accent)}
-.scatto.guasto{border-color:var(--err)}
-.scatto .quando{color:var(--dim); font-variant-numeric:tabular-nums; font-size:13px}
-.scatto .passo{font-weight:650}
-.scatto .camera{color:var(--dim); font-size:13px}
-.scatto .durata{color:var(--dim); font-variant-numeric:tabular-nums; font-size:13px}
-.scatto video{width:120px; border-radius:8px; display:block}
-
-/* Il video finito: grande, perche' e' il risultato. */
-.finale{margin-top:14px; border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; background:#000}
-.finale video{width:100%; display:block}
+/* ------------------------------------------------------------ i risultati ---- */
+/* Un video finito si guarda dove lo si è chiesto. Con i comandi del lettore,
+   perché metà del risultato è il suono e senza comandi non si sente. */
+.uscito{border:1px solid var(--line); border-radius:13px; overflow:hidden; background:#0b0d13;
+  margin-top:9px}
+.uscito video{width:100%; display:block; background:#000; max-height:340px}
+.uscito .sotto{padding:9px 11px}
+.uscito .sotto .mini{margin-top:7px}

@@ -225,6 +225,11 @@ export function messaggioDalMotore(msg) {
 /* ------------------------------------------------------------- la chiusura */
 
 async function concludi(l) {
+  // Ci si arriva da due strade — il messaggio del motore e il riallineamento
+  // qui sotto — e possono capitare insieme.
+  if (l.concluso) return;
+  l.concluso = true;
+
   const secondi = l.inizio ? Math.round((Date.now() - l.inizio) / 1000) : 0;
   const uscite = await ponte.risultati(l.id);
 
@@ -294,17 +299,36 @@ async function vestiBrano(idBrano, immagine) {
 /* ----------------------------------------------------------- manutenzione */
 
 /**
- * Ributta via i lavori che il motore non ha più.
+ * Rimette in fila la sessione con quello che il motore ha davvero.
  *
  * Serve dopo un ricaricamento della pagina o un riavvio del motore: senza,
  * resterebbero barre di avanzamento ferme per sempre su lavori inesistenti.
+ *
+ * **Ma prima buttava via troppo**, ed è lo stesso difetto che DaProdFoto si è
+ * tolto: un lavoro che non è più nella coda del motore veniva cancellato e
+ * basta — solo che «non è più in coda» vuol dire anche *finito*, e il messaggio
+ * che lo racconta viaggia su un WebSocket che ogni tanto si riapre. Quando quel
+ * messaggio si perdeva, il brano era stato generato davvero: sparito dalla
+ * sessione, mai comparso in libreria (che si aggiorna proprio lì), e da fuori si
+ * vedeva come «ho premuto Crea e non è successo niente».
+ *
+ * Adesso, prima di buttarlo, si chiede la cronologia al motore: se quel lavoro
+ * ha prodotto qualcosa lo si conclude come se il messaggio fosse arrivato.
  */
 export async function riallinea() {
   try {
     const vivi = await ponte.lavoriVivi();
-    ordine.slice().forEach((id) => {
-      if (!vivi.has(id)) togliLavoro(id);
-    });
+
+    for (const id of ordine.slice()) {
+      if (vivi.has(id)) continue;
+      const l = lavoro(id);
+      if (!l || l.concluso) continue;
+
+      const uscite = await ponte.risultati(id);
+      const prodotti = Object.values(uscite).flatMap((o) => o.audio || o.images || []);
+      if (prodotti.length) await concludi(l);
+      else togliLavoro(id);
+    }
   } catch {
     // Motore spento: se ne riparla al prossimo giro.
   }

@@ -1,409 +1,190 @@
 /**
- * La scheda: da un brano al suo video, inquadratura per inquadratura.
+ * La scheda: dal testo a un video.
  *
- * Il giro è questo, e ogni passo sta in una funzione che si legge da sola:
+ * DaProdCinema faceva un'altra cosa, fino alla 0.4.1: prendeva una canzone dalla
+ * libreria, ne leggeva i `[Verse]` e i `[Chorus]`, scriveva una scaletta di
+ * diciassette inquadrature e le girava una dopo l'altra. Era un video musicale
+ * automatico costruito sopra a una generazione base che non era mai stata
+ * provata — e infatti non funzionava: il latente audio-video non veniva
+ * separato prima di decodificarlo, che è un errore del motore, non un video
+ * brutto.
  *
- * 1. si sceglie un brano dalla libreria — di solito uno fatto in DaProdMusica
- * 2. il regista legge i suoi `[Verse]` e `[Chorus]` e scrive la scaletta
- * 3. si gira una clip per riga, **una per volta**, in fila
- * 4. si monta tutto sopra la canzone
+ * Adesso la scheda fa **la generazione base, e solo quella**. Si scrive cosa si
+ * vuole vedere, si scelgono forma e misura come in DaProdFoto, si preme. Il
+ * video musicale tornerà quando ci sarà sotto qualcosa che funziona: costruire
+ * il piano su un pezzo mai provato è esattamente l'errore che è stato fatto.
  *
- * Il passo 2 è la ragione per cui questa scheda può esistere: la struttura della
- * canzone non va indovinata analizzando l'audio, è già scritta nel testo. Vedi
- * `regista.js`, che è dove sta il ragionamento vero.
+ * Il giro è corto e sta tutto qui sotto:
+ *
+ * 1. si legge il modulo e si controlla che ci sia il minimo per partire
+ * 2. si svuota la scheda video (`memoria.js`)
+ * 3. si caricano nel motore i fotogrammi o i riferimenti (`riferimenti.js`)
+ * 4. si manda il grafo e si mette il lavoro nella sessione (`coda.js`)
  */
 
-import { el, escapeHtml, legaValore, minuti, mostraErrore, nascondiErrore, rnd } from "./dom.js";
-import { LOOK, MASSIMO_CLIP, MINIMO_CLIP } from "./dati/look.js";
-import { MISURE, MODELLI, grafoClip, grafoMontaggio, modello } from "./grafi.js";
-import { attacchi, inquadrature } from "./regista.js";
-import { attendi, guarda, lasciaPerdere } from "./coda.js";
-// La barra di quello che sta arrivando: uguale in tutte le app, quindi sta in
-// `packages/ui` e la suite la serve sotto `/comune/`.
-import { collegaScaricamento } from "/comune/scaricamento.js";
+import {
+  el, escapeHtml, libera, mostraErrore, nascondiErrore, occupa, rnd,
+} from "./dom.js";
+import { ESTETICHE, PROPOSTE } from "./dati/estetiche.js";
+import { NEGATIVO, grafoClip, secondiVeri } from "./grafi.js";
+import { collegaFormato, misuraScelta } from "./formato.js";
+import { collegaScelta, modelloCorrente, modelloUsabile } from "./scelta-modello.js";
+import { caricaIngressi, collegaIngressi, cosaManca } from "./riferimenti.js";
+import { faiSpazio } from "./memoria.js";
+import { aggiungiLavoro, collegaComandiCoda } from "./coda.js";
 import * as ponte from "./ponte.js";
+// Le pastiglie con le proposte sono di tutte le app, non di questa: stanno in
+// `packages/ui` e la suite le serve sotto `/comune/`, dalla stessa origine
+// della pagina. Qui si dice solo cosa proporre e dove finisce quello che clicchi.
+import { collegaProposte } from "/comune/proposte.js";
 
-const RICORDO_LOOK = "daprod.cinema.look";
-const RICORDO_MISURA = "daprod.cinema.misura";
-const RICORDO_MODELLO = "daprod.cinema.modello";
-
-/** Il brano scelto e quello che se ne sa. */
-let brano = null;
-/** La scaletta di adesso: una riga per clip. */
-let scaletta = [];
-/** Le clip già girate, per indice: `{ filename, subfolder, type }` del motore. */
-const girate = new Map();
-/** Vero mentre si gira, così «Gira» non si può premere due volte. */
-let inCorso = false;
-
-/* --------------------------------------------------------------- il brano */
-
-export async function aggiornaBrani() {
-  const elenco = await ponte.brani().catch(() => []);
-  el.brano.innerHTML = elenco.length
-    ? elenco.map((b) => `<option value="${escapeHtml(b.id)}">${escapeHtml(b.nome)}</option>`).join("")
-    : `<option value="">Nessun brano in libreria — fanne uno con DaProdMusica</option>`;
-  el.gira.disabled = !elenco.length;
-  if (elenco.length) await scegliBrano(elenco[0].id, elenco);
+function leggiModulo() {
+  const { larghezza, altezza, etichetta } = misuraScelta();
+  return {
+    prompt: el.prompt.value.trim(),
+    larghezza,
+    altezza,
+    misura: etichetta,
+    secondi: Number(el.durata.value),
+    passi: parseInt(el.passi.value),
+    negativo: el.negativo.value.trim() || NEGATIVO,
+    seed: parseInt(el.seed.value) || 0,
+  };
 }
 
 /**
- * La durata vera del brano, misurata dal file.
+ * L'estetica si scrive nella casella, non dietro le quinte.
  *
- * Nei metadati di DaProdMusica c'è `duration`, ma è la durata **massima**
- * chiesta al modello, non quella che è venuta fuori: un brano da «60 secondi»
- * ne dura 54 o 63. Il video deve stare sulla canzone che c'è, non su quella che
- * era stata ordinata, quindi si misura.
+ * Stessa scelta di DaProdFoto, e per la stessa ragione: un menu che attacca le
+ * sue parole in fondo al prompt senza dirlo fa somigliare tutti i video fra loro
+ * senza che si capisca perché. Così invece le vedi, le correggi, le cancelli — e
+ * di suo non c'è niente, che è quello che dà più varietà al modello.
  */
-function durataVera(url) {
-  return new Promise((risolvi) => {
-    const audio = new Audio();
-    audio.preload = "metadata";
-    audio.onloadedmetadata = () => risolvi(audio.duration || 0);
-    audio.onerror = () => risolvi(0);
-    audio.src = url;
-  });
-}
+function collegaEstetica() {
+  el.estetica.innerHTML = [
+    `<option value="">nessuna</option>`,
+    ...Object.keys(ESTETICHE).map((k) => `<option>${escapeHtml(k)}</option>`),
+  ].join("");
+  el.estetica.value = "";
 
-async function scegliBrano(id, elenco) {
-  const tutti = elenco ?? (await ponte.brani().catch(() => []));
-  brano = tutti.find((b) => b.id === id) ?? null;
-  if (!brano) return;
+  let ultima = "";
+  el.estetica.onchange = () => {
+    const parole = ESTETICHE[el.estetica.value] ?? "";
+    const testo = el.prompt.value;
 
-  const secondi = (await durataVera(brano.url)) || Number(brano.meta?.duration) || 60;
-  brano.secondi = secondi;
-  brano.testo = String(brano.meta?.lyrics || "");
-
-  el.durataBrano.textContent = minuti(secondi);
-  el.testoBrano.value = brano.testo;
-  riscriviScaletta();
-}
-
-/* ------------------------------------------------------------- la scaletta */
-
-/** Rifà la scaletta con quello che c'è nel modulo adesso. */
-export function riscriviScaletta() {
-  if (!brano) return;
-  girate.clear();
-
-  scaletta = inquadrature({
-    testo: el.testoBrano.value,
-    look: el.look.value.trim(),
-    secondi: brano.secondi,
-    minimoClip: MINIMO_CLIP,
-    massimoClip: MASSIMO_CLIP,
-  });
-
-  disegnaScaletta();
-}
-
-function disegnaScaletta() {
-  const da = attacchi(scaletta);
-  el.quante.textContent = String(scaletta.length);
-  el.totale.textContent = minuti(scaletta.reduce((s, q) => s + q.secondi, 0));
-  el.monta.disabled = true;
-
-  el.scaletta.innerHTML = scaletta
-    .map(
-      (q, i) => `
-    <div class="scatto" id="scatto-${i}" title="${escapeHtml(q.prompt)}">
-      <div class="quando">${minuti(da[i])}</div>
-      <div>
-        <div class="passo">${escapeHtml(q.passo)}</div>
-        <div class="camera">${escapeHtml(q.camera)}</div>
-      </div>
-      <div class="durata">${q.secondi.toFixed(1)} s</div>
-    </div>`,
-    )
-    .join("");
-}
-
-function segna(i, classe) {
-  const riga = document.getElementById(`scatto-${i}`);
-  if (!riga) return;
-  riga.classList.remove("incorso", "fatto", "guasto");
-  if (classe) riga.classList.add(classe);
-}
-
-/** Attacca l'anteprima della clip alla sua riga, quando è pronta. */
-function mostraClip(i, file) {
-  const riga = document.getElementById(`scatto-${i}`);
-  if (!riga) return;
-  const video = document.createElement("video");
-  video.src = ponte.vista(file);
-  video.muted = true;
-  video.loop = true;
-  video.autoplay = true;
-  video.playsInline = true;
-  riga.appendChild(video);
-}
-
-/* ---------------------------------------------------------------- girare */
-
-/**
- * L'ultimo fotogramma di una clip, come immagine da dare alla successiva.
- *
- * È il pezzo che tiene insieme il video. Si legge il file appena prodotto con
- * un `<video>`, ci si porta sull'ultimo istante e lo si disegna su una tela: da
- * lì esce un PNG che torna dentro al motore come `start_image`.
- *
- * `currentTime` sull'ultimo fotogramma esatto non è affidabile — dipende dal
- * codec — quindi ci si mette un decimo di secondo prima della fine, che è la
- * stessa immagine e si trova sempre.
- */
-function ultimoFotogramma(file) {
-  return new Promise((risolvi, rifiuta) => {
-    const video = document.createElement("video");
-    video.muted = true;
-    video.crossOrigin = "anonymous";
-    video.onerror = () => rifiuta(new Error("non riesco a rileggere la clip appena fatta"));
-    video.onloadeddata = () => {
-      video.currentTime = Math.max(0, video.duration - 0.1);
-    };
-    video.onseeked = () => {
-      const tela = document.createElement("canvas");
-      tela.width = video.videoWidth;
-      tela.height = video.videoHeight;
-      tela.getContext("2d").drawImage(video, 0, 0);
-      tela.toBlob((b) => (b ? risolvi(b) : rifiuta(new Error("tela vuota"))), "image/png");
-    };
-    video.src = ponte.vista(file);
-  });
+    // Si toglie quella di prima invece di accumularle: cambiare tre volte idea
+    // non deve lasciare tre estetiche in fila dentro la stessa descrizione.
+    const pulito = ultima
+      ? testo.replace(ultima, "").replace(/,\s*,/g, ",").replace(/,\s*$/, "").trim()
+      : testo.trim();
+    el.prompt.value = [pulito, parole].filter(Boolean).join(", ");
+    ultima = parole;
+  };
 }
 
 /**
- * Gira tutte le inquadrature, una dopo l'altra.
+ * La riga sotto al cursore della durata.
  *
- * Riprende da dove si era rimasti: le clip già in `girate` si saltano. È il
- * motivo per cui «Ferma» non butta via il lavoro fatto — un video sono decine di
- * minuti, e ricominciare da capo perché si è chiuso un menu sarebbe crudele.
+ * Dice i **fotogrammi veri**, non quelli chiesti. Nessuno dei due modelli prende
+ * un numero qualunque — LTX vuole `8n+1`, H3 vuole `17k+5` — e la differenza fra
+ * i due numeri è il motivo per cui un video di «10 secondi» ne dura 10,04 o 9,7.
+ * Scriverlo qui costa una riga e toglie di mezzo una domanda.
  */
-export async function gira() {
-  if (inCorso || !brano || !scaletta.length) return;
-  const m = modello(el.modello.value);
-  const cartella = String(brano.nome || "video").replace(/[^\p{L}\p{N}_-]+/gu, "_").slice(0, 40);
-
-  inCorso = true;
-  nascondiErrore();
-  el.gira.disabled = true;
-  el.ferma.disabled = false;
-
-  // Prima di tutto, la scheda sgombra: diciassette lavori di fila non
-  // sopravvivono a un modello di un'altra app rimasto in memoria.
-  await ponte.liberaMemoriaLlm().catch(() => {});
-  await ponte.svuotaVram();
-
-  try {
-    for (const [i, q] of scaletta.entries()) {
-      if (girate.has(i)) continue;
-      segna(i, "incorso");
-      el.passoOra.textContent = `${q.passo} — ${i + 1} di ${scaletta.length}`;
-
-      let primoFotogramma;
-      if (el.continuita.checked && i > 0 && girate.has(i - 1)) {
-        const png = await ultimoFotogramma(girate.get(i - 1));
-        primoFotogramma = await ponte.carica(png, `attacco_${i}.png`);
-      }
-
-      const id = await ponte.invia(
-        grafoClip(m, {
-          prompt: q.prompt,
-          secondi: q.secondi,
-          misura: el.misura.value,
-          passi: parseInt(el.passi.value),
-          seed: rnd(),
-          cartella,
-          primoFotogramma,
-        }),
-      );
-
-      const uscite = await attendi(id);
-      const file = Object.values(uscite).flatMap((u) => u.images ?? u.video ?? [])[0];
-      if (!file) throw new Error(`L'inquadratura ${i + 1} non ha prodotto nessun file.`);
-
-      girate.set(i, file);
-      segna(i, "fatto");
-      mostraClip(i, file);
-      avanzamentoTotale();
-    }
-
-    el.passoOra.textContent = "Tutte le inquadrature sono girate.";
-    el.monta.disabled = false;
-  } catch (errore) {
-    if (String(errore.message) !== "fermato") {
-      mostraErrore(String(errore.message || errore));
-      const rimasta = scaletta.findIndex((_, i) => !girate.has(i));
-      if (rimasta >= 0) segna(rimasta, "guasto");
-    }
-    el.monta.disabled = girate.size !== scaletta.length;
-  } finally {
-    inCorso = false;
-    el.gira.disabled = false;
-    el.ferma.disabled = true;
-  }
+function raccontaDurata() {
+  const m = modelloCorrente();
+  const chiesti = Number(el.durata.value);
+  const veri = secondiVeri(chiesti, m);
+  el.durataVal.textContent = `${veri.toFixed(2).replace(".", ",")} s`;
 }
 
-/** La barra grande: quanto manca al video intero, non alla clip di adesso. */
-function avanzamentoTotale(dentroLaClip = 0) {
-  const quota = (girate.size + dentroLaClip) / Math.max(1, scaletta.length);
-  el.avanzamento.style.width = `${(quota * 100).toFixed(1)}%`;
+/** «Genera» si accende solo se con questo modello si può davvero generare. */
+function accendiBottoni() {
+  el.genera.disabled = !modelloUsabile();
 }
-
-export function ferma() {
-  lasciaPerdere();
-  void ponte.svuotaCoda();
-  el.passoOra.textContent = "Fermato. «Gira» riprende da dove eravamo.";
-}
-
-/* -------------------------------------------------------------- montaggio */
-
-/**
- * Le clip una dietro l'altra, sopra la canzone.
- *
- * Le clip il motore le ha prodotte nella sua cartella `output`, e `LoadVideo`
- * legge da `input`: vanno rilette e rimesse dentro. Sembra un giro inutile ed è
- * il prezzo di far fare il montaggio al motore invece che alla pagina — che un
- * mp4 non lo sa scrivere.
- */
-export async function monta() {
-  if (!brano || girate.size !== scaletta.length) return;
-  nascondiErrore();
-  el.monta.disabled = true;
-  el.passoOra.textContent = "Preparo il montaggio…";
-
-  try {
-    const cartella = String(brano.nome || "video").replace(/[^\p{L}\p{N}_-]+/gu, "_").slice(0, 40);
-
-    const dentro = [];
-    for (const [i, file] of [...girate.entries()].sort((a, b) => a[0] - b[0])) {
-      dentro.push(await ponte.carica(await ponte.leggi(file), `clip_${String(i).padStart(3, "0")}.mp4`));
-    }
-
-    const audio = await fetch(brano.url).then((r) => r.blob());
-    const dentroBrano = await ponte.carica(audio, "brano.mp3");
-
-    el.passoOra.textContent = "Monto il video…";
-    // I fotogrammi al secondo sono quelli del modello che ha girato le clip: LTX
-    // gira a 25 e H3 a 24, e rimontare a un ritmo diverso da quello con cui
-    // sono nate vuol dire un video che scivola via dalla canzone.
-    const id = await ponte.invia(
-      grafoMontaggio({ clip: dentro, brano: dentroBrano, cartella, fps: modello(el.modello.value).fps }),
-    );
-    const uscite = await attendi(id);
-
-    const file = Object.values(uscite).flatMap((u) => u.images ?? u.video ?? [])[0];
-    if (!file) throw new Error("Il montaggio non ha prodotto nessun file.");
-
-    el.finale.hidden = false;
-    el.finale.innerHTML = `<video src="${ponte.vista(file)}" controls autoplay></video>`;
-    el.passoOra.textContent = "Fatto. Il video è anche in libreria.";
-
-    await ponte
-      .scriviMeta(ponte.idLibreria(file), {
-        brano: brano.nome,
-        look: el.look.value.trim(),
-        inquadrature: scaletta.length,
-        misura: el.misura.value,
-        modello: modello(el.modello.value).nome,
-      })
-      .catch(() => {});
-  } catch (errore) {
-    mostraErrore(String(errore.message || errore));
-    el.monta.disabled = false;
-  }
-}
-
-/* ------------------------------------------------------------ collegamenti */
 
 export async function collegaCrea() {
-  el.look.innerHTML = "";
-  el.estetica.innerHTML = Object.keys(LOOK)
-    .map((nome) => `<option value="${escapeHtml(nome)}">${nome || "— nessuno —"}</option>`)
-    .join("");
-  el.look.value = localStorage.getItem(RICORDO_LOOK) ?? LOOK["Super-8 anni ottanta"];
-
-  el.misura.innerHTML = Object.values(MISURE)
-    .map((m) => `<option value="${m.id}">${escapeHtml(m.nome)}</option>`)
-    .join("");
-  el.misura.value = localStorage.getItem(RICORDO_MISURA) ?? "provino";
-
-  el.modello.innerHTML = Object.values(MODELLI)
-    .map((m) => `<option value="${m.id}">${escapeHtml(m.nome)}</option>`)
-    .join("");
-  el.modello.value = modello(localStorage.getItem(RICORDO_MODELLO)).id;
-
-  legaValore("passi", "passiVal");
-  // Cambiare modello cambia il punto di lavoro: LTX 2.5 è distillato e vuole
-  // otto passi, H3 col LoRA turbo ne vuole quattro. Lasciare il cursore dov'era
-  // vuol dire generare male col modello appena scelto.
-  el.modello.onchange = () => {
-    localStorage.setItem(RICORDO_MODELLO, el.modello.value);
-    applicaModello();
-    void controllaModello();
-  };
-
-  // L'estetica non si incolla in fondo: **riscrive la casella**, come in
-  // DaProdFoto. Così la vedi, la cambi e la togli, invece che subirla.
-  el.estetica.onchange = () => {
-    el.look.value = LOOK[el.estetica.value] ?? "";
-    salvaERifai();
-  };
-  el.look.oninput = salvaERifai;
-  el.testoBrano.oninput = riscriviScaletta;
-  el.misura.onchange = () => localStorage.setItem(RICORDO_MISURA, el.misura.value);
-  el.brano.onchange = () => void scegliBrano(el.brano.value);
-  el.ricaricaBrani.onclick = () => void aggiornaBrani();
-  el.gira.onclick = () => void gira();
-  el.ferma.onclick = ferma;
-  el.monta.onclick = () => void monta();
-
-  guarda(({ passo, quota }) => {
-    el.passoOra.textContent = passo;
-    avanzamentoTotale(quota);
+  collegaEstetica();
+  collegaFormato();
+  collegaProposte(el.proposte, {
+    chiave: "daprod.cinema.proposte",
+    difetto: PROPOSTE,
+    applica: (prompt) => (el.prompt.value = prompt),
+    // Il "+" parte da quello che hai appena scritto: la proposta che vale la
+    // pena salvare è quasi sempre quella con cui è appena uscito un video buono.
+    testoCorrente: () => el.prompt.value.trim(),
   });
 
-  applicaModello();
-  void controllaModello();
+  el.negativo.value = NEGATIVO;
+  el.seed.value = rnd();
+  el.dado.onclick = () => (el.seed.value = rnd());
+  el.durata.addEventListener("input", raccontaDurata);
+  el.passi.addEventListener("input", () => (el.passiVal.textContent = el.passi.value));
 
-  await aggiornaBrani();
-}
+  el.toggleAdv.onclick = () => {
+    el.avanzati.hidden = !el.avanzati.hidden;
+    el.toggleAdv.classList.toggle("on", !el.avanzati.hidden);
+  };
 
-function salvaERifai() {
-  localStorage.setItem(RICORDO_LOOK, el.look.value);
-  riscriviScaletta();
-}
+  // I riquadri di sopra si ridisegnano quando cambia il modello e quando cambia
+  // il loro contenuto: le etichette `<Picture 1>` dipendono da quanti ce n'è.
+  collegaIngressi(modelloCorrente(), raccontaDurata);
+  collegaComandiCoda();
 
-/** Il punto di lavoro del modello scelto: la riga sotto al menu e i passi. */
-function applicaModello() {
-  const m = modello(el.modello.value);
-  el.rigaModello.textContent = m.riga;
-  el.passi.min = m.passi.min;
-  el.passi.max = m.passi.max;
-  el.passi.value = m.passi.valore;
-  el.passi.dispatchEvent(new Event("input"));
-  // La scaletta si rifà: la griglia dei fotogrammi non è la stessa per i due
-  // modelli, e nemmeno i fotogrammi al secondo.
-  riscriviScaletta();
-}
-
-/**
- * Se i pesi non ci sono, si scaricano da qui — con la barra sotto il menu.
- *
- * Il riquadro se lo disegna il pezzo comune di `packages/ui`: qui sono decine di
- * GB, e «l'avanzamento è nell'hub» (che è quello che c'era scritto fino alla
- * 0.4.0) vuol dire chiedere a chi scarica di guardare da un'altra parte per
- * mezz'ora.
- */
-let barraModello = null;
-
-async function controllaModello() {
-  const m = modello(el.modello.value);
-  barraModello ??= collegaScaricamento(el.mancaModello, {
-    stato: ponte.statoModelli,
-    scarica: ponte.scaricaModelli,
-    annulla: ponte.annullaScaricamento,
-    onAvanzamento: ponte.suAvanzamentoModelli,
-    io: ponte.io,
+  // Per ultimo: è il menu dei modelli che decide durata, passi e riquadri, e
+  // quando arriva deve trovare tutto il resto già in piedi.
+  await collegaScelta(() => {
+    accendiBottoni();
+    raccontaDurata();
   });
-  await barraModello.controlla({ ids: m.catalogo, nome: m.nome });
+
+  el.genera.onclick = () => void genera();
+}
+
+async function genera() {
+  nascondiErrore();
+  const m = modelloCorrente();
+  const p = leggiModulo();
+
+  if (!p.prompt) return mostraErrore("Scrivi cosa vuoi vedere.");
+  const manca = cosaManca(m);
+  if (manca) return mostraErrore(manca);
+
+  // Da qui in poi il tasto è spento e racconta. Il `try` comincia **prima** di
+  // tutto quello che può metterci: un errore fuori dal try uscirebbe di qui
+  // senza scrivere niente da nessuna parte, e il tasto sembrerebbe morto.
+  occupa(el.genera, "preparo…");
+  try {
+    // **Adesso, non prima.** Fra lo scrivere il prompt e il premere passano
+    // pochi secondi, e in quei secondi la scheda può essere ancora occupata da
+    // un'altra app o dal modello che scrive.
+    await faiSpazio((detto) => occupa(el.genera, detto));
+
+    const dentro = await caricaIngressi(m, (detto) => occupa(el.genera, detto));
+
+    occupa(el.genera, "mando al motore…");
+    const quante = Math.max(1, Math.min(4, parseInt(el.quante.value) || 1));
+    for (let i = 0; i < quante; i++) {
+      // Dalla seconda in poi il seed cambia comunque: quattro copie dello stesso
+      // video non sono quattro video.
+      if (el.seedCasuale.checked || i > 0) el.seed.value = rnd();
+      const parametri = { ...leggiModulo(), ...dentro };
+
+      const id = await ponte.invia(grafoClip(m, parametri));
+      aggiungiLavoro(id, p.prompt, {
+        modello: m.nome,
+        prompt: parametri.prompt,
+        estetica: el.estetica.value,
+        misura: parametri.misura,
+        secondi: secondiVeri(parametri.secondi, m),
+        passi: parametri.passi,
+        seed: parametri.seed,
+      });
+    }
+  } catch (e) {
+    mostraErrore(String(e.message || e));
+  } finally {
+    // Non `disabled = false` e basta: mentre lavorava, il controllo dei modelli
+    // può aver deciso che con quello scelto non si genera più.
+    libera(el.genera, !modelloUsabile());
+  }
 }

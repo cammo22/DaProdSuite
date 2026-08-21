@@ -124,9 +124,69 @@ fermo avrebbe voluto dire non pubblicare niente aspettando un'app sola.
       vero (§ 0.7.0), e allora cambia il programma che le fa, non quello che le
       mostra.
 
+## 0.4.2 — DaProdCinema da capo, e un tasto che non si pianta ✅
+
+**Costruita il 21 agosto 2026.** Due cose sole, e tutte e due nate da come la
+suite si comporta davvero addosso a chi la usa.
+
+- [x] **DaProdCinema rifatto da capo** — *il video musicale automatico è stato
+      tolto. Era una bella idea costruita sopra a una generazione base che non
+      aveva mai funzionato: nel grafo LTX il latente audio-video non veniva
+      separato prima di decodificarlo (`LTXVSeparateAVLatent` mancava del tutto),
+      e diciassette inquadrature di un pezzo che non gira sono diciassette
+      errori. Adesso la scheda fa la generazione base, e solo quella.*
+- [x] **Il modello in cima anche qui** — *fuori dalle schede, come in
+      DaProdMusica e DaProdFoto: decide cosa si può dare in pasto, quanto può
+      durare la clip e quanti passi ci vogliono.*
+- [x] **LTX 2.5: testo, primo e ultimo fotogramma** — *`LTXVAddGuide` con
+      `frame_idx` 0 e -1, incatenati, e `LTXVCropGuides` dopo il campionamento.
+      Il grafo è ricalcato sul flusso ufficiale di Lightricks per la 2.5
+      distillata: `euler_ancestral` con la scala di rumore a otto valori scritta
+      a mano (`ManualSigmas`), che è l'altra cosa che il grafo precedente
+      sbagliava. Il cursore dei passi è spento di proposito — quel modello è
+      distillato su quella scala, e cambiare il numero senza cambiare la scala
+      peggiora e basta.*
+- [x] **MiniMax H3: i riferimenti** — *`MiniMaxH3ReferenceToVideo`, fino a nove
+      immagini, tre video (ognuno con la sua colonna sonora) e tre audio. Gli
+      ingressi sono una famiglia `Autogrow` con prefisso, quindi nel grafo API si
+      chiamano `ref_image_0`, `ref_video_0`, `ref_video_audio_0`, `ref_audio_0` —
+      contati da zero — mentre le etichette del prompt partono da uno. L'app
+      scrive l'etichetta accanto a ogni riquadro e la mette nel prompt al clic,
+      perché la regola con cui si numerano non si tiene a mente: la colonna
+      sonora di un video prende un numero d'audio prima degli audio sciolti.*
+- [x] **Il modello di H3 passa da fl2va a ref2va** — *11,0 GB invece di 11,7,
+      più il LoRA turbo della variante ref2v. Non è una sostituzione di un
+      modello deciso: è l'altra rifinitura dello stesso, quella che fa la cosa
+      per cui H3 sta nella suite. Primo e ultimo fotogramma li fa già LTX con
+      metà del peso.*
+- [x] **Formato e risoluzione come in DaProdFoto** — *due file di pulsanti, tutte
+      misure multiple di 32, con i pixel veri e quanto costano rispetto al 480
+      scritti accanto.*
+- [x] **DaProdMusica: «Crea» non resta più premuto a vuoto** — *le chiamate a
+      `lms` non avevano una scadenza, e stavano dentro al percorso di Genera di
+      tre app: LM Studio che non risponde voleva dire un tasto premuto per sempre,
+      senza errore e senza niente in coda. Adesso hanno un timeout e l'errore si
+      ignora, e il tasto racconta cosa sta facendo mentre lo fa.*
+- [x] **Un brano finito non si perde più** — *`riallinea` in DaProdMusica
+      cancellava i lavori spariti dalla coda del motore, ma «sparito» vuol dire
+      anche «finito» quando il WebSocket si riapre. Adesso guarda la cronologia
+      prima di buttare, come faceva già DaProdFoto.*
+
+### Cosa **non** è a posto, e va detto
+
+- **Non è ancora uscita una clip vera.** I grafi sono verificati sui nodi del
+  motore installato e ricalcati sul flusso ufficiale, e l'interfaccia è stata
+  provata pezzo per pezzo in un browser con i ponti verso la suite finti. Ma da
+  lì a «esce un mp4» c'è di mezzo la scheda video. LTX 2.5 è già sul disco: è la
+  prima cosa da provare, a 480 e cinque secondi.
+- **Di MiniMax H3 non c'è niente sul disco**, e sono 41,6 GB. Il modo onesto di
+  provarlo è dopo che LTX ha prodotto un video.
+- **Il video musicale non c'è più**, e chi lo stava usando non lo ritrova. Era
+  l'unica scelta possibile: non funzionava.
+
 ## 0.4.1 — Quello che si è visto usandola ✅
 
-**Costruita il 20 agosto 2026, da provare.** Nessuna funzione nuova grossa: un
+**Pubblicata il 21 agosto 2026.** Nessuna funzione nuova grossa: un
 giro su quello che è venuto fuori provando la 0.4.0, più il ritorno ai due
 modelli video decisi.
 
@@ -413,26 +473,31 @@ rotte e sono state corrette (vedi il changelog della 0.2.0); queste restano.
 
 ## 0.7.0 — DaProdCinema: le due strade che restano
 
-**La scheda è nata nella 0.4.0** e nella 0.4.1 ha preso i suoi modelli: LTX 2.5
-e MiniMax H3, quelli decisi qui sotto. Questa sezione è quello che resta da
-fare, e le prime voci sono quelle che non sono mai state provate.
+**La scheda è nata nella 0.4.0**, nella 0.4.1 ha preso i suoi modelli — LTX 2.5 e
+MiniMax H3, quelli decisi qui sotto — e nella 0.4.2 è stata rifatta da capo:
+adesso fa la generazione base e basta, perché il resto era costruito sopra a un
+grafo che non girava. **Questa sezione è quello che resta da fare, e il primo
+punto è quello che sblocca tutti gli altri.**
 
-- [ ] **Il montaggio finale su clip vere.** Il grafo c'è ed è verificato contro
-      `object_info`, ma da «il grafo è giusto» a «esce un mp4 con la canzone
-      sopra» c'è di mezzo un video intero girato — più di un'ora di scheda video.
+- [ ] **Una clip vera, con l'uno e con l'altro.** Finché non esce un mp4 dal
+      disco, tutto quello che c'è sotto è un piano su un pezzo mai provato — che
+      è esattamente l'errore costato la 0.4.1. LTX 2.5 è già scaricato: 480,
+      cinque secondi, niente immagini. Poi la stessa cosa con un primo fotogramma.
 - [ ] **Le prove di tempistica**, che le fa Cammo: quanto costa una clip a ogni
-      misura e a ogni numero di passi, e da lì si decide il punto di lavoro.
-- [ ] **Una clip vera, con l'uno e con l'altro.** I grafi sono verificati contro
-      `/object_info`, i pesi sono nel catalogo con i byte veri, ma da lì a un mp4
-      ci sono 23 GB di scaricamento e minuti di scheda video.
+      misura, e da lì si decide il punto di lavoro predefinito.
+- [ ] **Il video musicale, di nuovo** — *era la strada lunga, fatta nella 0.4.0 e
+      tolta nella 0.4.2.* Da un brano della libreria alla scaletta delle
+      inquadrature, una clip per riga, e il montaggio sopra la canzone. Il
+      ragionamento del regista era buono e sta nella storia di `git`
+      (`apps/cinema/src/regista.js` fino alla 0.4.1): si riprende **dopo** che la
+      generazione base ha prodotto qualcosa, non prima.
 - [ ] **Le finestre di contesto** (`LTXVContextWindows` per LTX 2.5,
-      `ContextWindowsManual` per H3) per le inquadrature lunghe: oggi una sezione
-      lunga si taglia in più clip, che è anche più giusto di montaggio, ma le
-      finestre servono il giorno che si vuole un piano sequenza vero.
-- [ ] **Il suono che i modelli generano da soli**: tutti e due fanno video *e*
-      audio, e oggi la traccia generata si butta via perché sopra ci va la
-      canzone. Un giorno può servire — un'inquadratura con un rumore d'ambiente
-      sotto il brano non è la stessa cosa di un'inquadratura muta.
+      `ContextWindowsManual` per H3) per le clip lunghe: servono il giorno che si
+      vuole un piano sequenza vero invece di più clip attaccate.
+- [ ] **Il resto di quello che i due modelli sanno fare**, e che oggi la scheda
+      non offre: gli IC-LoRA di LTX (inpaint, outpaint, motion track), la voce di
+      riferimento con `LTXVReferenceAudio`, il secondo stadio di ingrandimento.
+      Una cosa per volta, e ognuna dopo che quella prima ha funzionato.
 
 Sotto restano le due strade come erano state pensate. **Due strade, non una.**
 
