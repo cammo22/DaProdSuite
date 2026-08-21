@@ -10,6 +10,58 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ---
 
+## 0.5.1 — L'indirizzo giusto, e il QR al primo click
+
+**22 agosto 2026.** La 0.5.0 non funzionava, e per due motivi che si sommavano.
+Trovati provando la suite vera sul PC di Cammo.
+
+### Ti dava un indirizzo che il telefono non poteva raggiungere
+
+Il tuo computer ha **quattro** indirizzi di rete:
+
+```
+100.88.254.19    Tailscale
+172.18.32.1      scheda virtuale (Hyper-V)
+192.168.1.8      Ethernet          ← l'unico che il telefono può usare
+172.28.176.1     scheda virtuale (WSL)
+```
+
+La suite prendeva **il primo** che trovava, cioè Tailscale. Il QR conteneva
+`100.88.254.19`, che dalla wifi di casa non esiste: l'accoppiamento non poteva
+riuscire in nessun modo, e non c'era niente da fare di diverso.
+
+Adesso li mette in ordine e sceglie quello di casa. E se sbaglia lo puoi
+cambiare: sotto l'indirizzo c'è un menu con tutti quelli disponibili, ognuno con
+scritto cos'è — «rete di casa», «scheda virtuale — il telefono non ci arriva»,
+«rete virtuale tipo Tailscale — solo da chi ne fa parte». Cambiandolo il QR si
+rifà, perché un QR è la fotografia di un indirizzo.
+
+### «Accendi» non dava il QR
+
+Premevi Accendi, comparivano un indirizzo e tre bottoni, e il QR — che è la
+ragione per cui quel pannello esiste — voleva un secondo click che nessuno ti
+diceva di fare.
+
+Adesso **Accendi basta**: accende e ti mette lì il QR con il codice e il conto
+alla rovescia. Se non c'è ancora nessun dispositivo collegato l'invito è da
+padrone; dal secondo in poi è da ospite.
+
+### L'app del telefono si scarica
+
+Nella Release c'è **`DaProdSuite-telefono-0.5.1.apk`**, 5,6 MB. Prima bisognava
+compilarsela, e non l'avevo detto abbastanza chiaramente.
+
+È firmata con la chiave di **debug** di Android — non è la chiave di nessuno, è
+quella che Android genera uguale su ogni computer. Serve solo a rendere l'APK
+installabile; il telefono ti avviserà che viene da fuori dal Play Store, ed è
+normale. Una chiave vera è roba tua: la password non può stare in un repository
+pubblico.
+
+⚠ Resta vero il resto: vale **dentro casa** e **non è cifrato**, e «accettata»
+vuol dire «l'ho vista e va bene», non «sta partendo».
+
+---
+
 ## 0.5.0 — La suite non è più solo quel computer
 
 **Costruita il 21 agosto 2026.** Il PC dove gira la suite smette di essere

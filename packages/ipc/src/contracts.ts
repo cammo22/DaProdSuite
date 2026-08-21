@@ -614,6 +614,14 @@ export interface SuiteApi {
     nuovoInvito(ruolo: "admin" | "ospite"): Promise<InvitoRemoto>;
     /** Revoca un dispositivo: il suo token smette di valere. */
     revoca(id: string): Promise<DispositivoRemoto[]>;
+    /**
+     * Sceglie su quale indirizzo farsi trovare, fra quelli di `StatoAccesso.reti`.
+     *
+     * Serve quando la scelta automatica sbaglia: su una macchina con Tailscale o
+     * con macchine virtuali gli indirizzi sono quattro, e solo uno è quello che
+     * il telefono può raggiungere.
+     */
+    scegliRete(ip: string): Promise<StatoAccesso>;
     /** Decide su una richiesta: "accettata", "scartata" (con motivo) o "in-lavoro". */
     decidi(id: string, stato: Extract<StatoRemoto, "accettata" | "scartata" | "in-lavoro">, motivo?: string): Promise<EsitoDecisione>;
     /**
@@ -896,5 +904,6 @@ export const CHANNELS = {
   remotoRevoca: "remoto:revoca",
   remotoDecidi: "remoto:decidi",
   remotoConsegna: "remoto:consegna",
+  remotoScegliRete: "remoto:scegli-rete",
   remotoChanged: "remoto:changed",
 } as const;

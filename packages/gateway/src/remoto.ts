@@ -77,6 +77,21 @@ export class Remoto {
     return invito;
   }
 
+  /**
+   * Butta tutti gli inviti, anche quelli ancora vivi.
+   *
+   * Serve quando cambia l'indirizzo su cui il gateway si fa trovare: un QR è
+   * una fotografia dell'indirizzo di quel momento, e un codice che punta a una
+   * scheda di rete che non usiamo più è peggio di nessun codice — sembra buono
+   * e non funziona.
+   */
+  buttaInviti(): void {
+    const dati = this.archivio.datiCorrenti;
+    if (dati.inviti.length === 0) return;
+    dati.inviti = [];
+    this.archivio.salva();
+  }
+
   /** Svuota gli invii scaduti: chiamata a ogni giro, costa pochissimo. */
   spazzaInviti(): void {
     const dati = this.archivio.datiCorrenti;

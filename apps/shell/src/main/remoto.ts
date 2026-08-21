@@ -13,7 +13,6 @@
  */
 
 import { app } from "electron";
-import { networkInterfaces } from "node:os";
 import * as QRCode from "qrcode";
 import {
   Archivio,
@@ -36,6 +35,7 @@ import type {
 import { appManager } from "./app-manager";
 import { libreria } from "./libreria";
 import { REMOTO_ARCHIVIO, REMOTO_DIR } from "./paths";
+import { ipLocale, reti } from "./reti";
 
 /** Su quale porta ascolta il gateway. */
 const PORTA = 8790;
@@ -101,23 +101,34 @@ function osNome(): string {
   return process.env.COMPUTERNAME ?? "questo computer";
 }
 
-/** L'indirizzo LAN del PC: il primo IP privato che troviamo. */
-function ipLocale(): string {
-  const reti = networkInterfaces();
-  for (const nome of Object.keys(reti)) {
-    for (const net of reti[nome] ?? []) {
-      if (net.family === "IPv4" && !net.internal) {
-        return net.address;
-      }
-    }
-  }
-  return "127.0.0.1";
-}
+/**
+ * L'indirizzo scelto a mano, se ce n'è uno.
+ *
+ * Vive quanto la sessione: cambiarlo è un gesto raro, e ricordarlo per sempre
+ * vorrebbe dire che una scheda staccata mesi fa continua a rompere il pannello.
+ * Se non c'è, decide la classifica in `reti.ts`.
+ */
+let reteScelta: string | undefined;
 
 /** Cos'è il gateway visto dalla rete: ip:porta. */
 function indirizzo(): string {
   if (!gateway) return "";
-  return `${ipLocale()}:${portaReale || PORTA}`;
+  return `${ipLocale(reteScelta)}:${portaReale || PORTA}`;
+}
+
+/**
+ * Cambia l'indirizzo su cui farsi trovare.
+ *
+ * Gli inviti già dati **restano validi ma puntano all'indirizzo vecchio**: un
+ * QR è una fotografia. Quindi si buttano, e chi guarda il pannello vede che
+ * deve rifarne uno invece di inquadrare un codice che non porta più da nessuna
+ * parte.
+ */
+function scegliRete(ip: string): StatoAccesso {
+  reteScelta = reti().some((r) => r.ip === ip) ? ip : undefined;
+  remoto.buttaInviti();
+  sveglia();
+  return statoPannello();
 }
 
 /* ---------------------------------------------------------- l'esecutore */
@@ -233,10 +244,13 @@ function statoPannello(): StatoAccesso {
     }))
     .sort((a, b) => b.quando - a.quando);
 
+  const elenco = reti();
   return {
     acceso: gateway !== null,
     indirizzo: indirizzo(),
     console: gateway ? `http://${indirizzo()}/` : "",
+    reti: elenco.map((r) => ({ ip: r.ip, scheda: r.scheda, che: r.che })),
+    rete: ipLocale(reteScelta),
     computer: osNome(),
     dispositivi,
     richieste,
@@ -371,6 +385,7 @@ export const accessoRemoto = {
   spegni,
   stato: statoPannello,
   nuovoInvito,
+  scegliRete,
   revoca,
   decidi,
   consegna,

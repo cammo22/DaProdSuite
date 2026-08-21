@@ -128,6 +128,7 @@ const api: SuiteApi = {
     stato: () => ipcRenderer.invoke(CHANNELS.remotoStato),
     nuovoInvito: (ruolo) => ipcRenderer.invoke(CHANNELS.remotoNuovoInvito, ruolo),
     revoca: (id) => ipcRenderer.invoke(CHANNELS.remotoRevoca, id),
+    scegliRete: (ip) => ipcRenderer.invoke(CHANNELS.remotoScegliRete, ip),
     decidi: (id, stato, motivo) => ipcRenderer.invoke(CHANNELS.remotoDecidi, id, stato, motivo),
     consegna: (id, esito) => ipcRenderer.invoke(CHANNELS.remotoConsegna, id, esito),
     onChanged: (listener) => subscribe<StatoAccesso>(CHANNELS.remotoChanged, listener),

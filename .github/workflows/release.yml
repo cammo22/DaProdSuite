@@ -86,3 +86,39 @@ jobs:
           # Una Release in bozza non la vede nessuno e l'aggiornamento automatico
           # non la trova: alla 0.1.0 è successo e si è dovuta pubblicare a mano.
           gh release edit "${{ github.ref_name }}" --draft=false
+
+  # L'app del telefono. Un job a sé, su Linux, perché non ha niente a che vedere
+  # con l'installer di Windows e non deve poter far fallire quello: se un giorno
+  # Gradle si rompe, la suite esce lo stesso e manca solo l'APK.
+  android:
+    # Dopo il job di Windows, non insieme: è quello che **crea** la Release, e
+    # caricarci dentro un file prima che esista non funziona.
+    needs: windows
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Compila l'APK
+        working-directory: apps/mobile
+        run: ./gradlew assembleRelease --no-daemon
+
+      # Il nome che vede chi scarica. `app-release.apk` non dice né cos'è né di
+      # che versione.
+      - name: Dagli il nome giusto
+        run: |
+          v="${GITHUB_REF_NAME#v}"
+          cp apps/mobile/app/build/outputs/apk/release/app-release.apk "DaProdSuite-telefono-$v.apk"
+
+      - name: Allega alla Release
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload "$GITHUB_REF_NAME" DaProdSuite-telefono-*.apk --clobber

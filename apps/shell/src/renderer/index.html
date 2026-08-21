@@ -236,6 +236,15 @@
           <button class="bottone secondario" id="telefono-copia">Copia</button>
         </div>
 
+        <!-- Un computer ha spesso quattro indirizzi e solo uno arriva al
+             telefono. La suite sceglie, ma se sbaglia si cambia da qui: senza
+             questo, su una macchina con Tailscale o con macchine virtuali non
+             c'era modo di accorgersene né di rimediare. -->
+        <div class="telefono-rete" id="telefono-rete-box" hidden>
+          <label for="telefono-rete">Il telefono non lo raggiunge? Prova un altro indirizzo:</label>
+          <select id="telefono-rete"></select>
+        </div>
+
         <div class="telefono-invito" id="telefono-invito-box" hidden>
           <img id="telefono-qr" alt="QR di invito" />
           <div class="telefono-codice">

@@ -88,6 +88,10 @@ Repo pubblico: **https://github.com/cammo22/DaProdSuite**
 | **App Android: `apps/mobile`** | rifatta sulla bozza. **Compila** (`gradlew.bat assembleDebug`, APK da 8,1 MB), **mai installata su un telefono** |
 | **Server MCP: `packages/mcp`** | fatto e **provato in automatico**: 35 controlli in `prova-mcp.mjs`, parlando JSON-RPC su stdio come farebbe Claude Code |
 | **Needle 2** | **non fatto, e apposta**: manca solo lui dei tre passi della roadmap. Vedi [AZIONI-E-MCP.md](AZIONI-E-MCP.md) |
+| **0.5.0 pubblicata** | fatto il 21 agosto: tag `v0.5.0`, PR #16. **Non funzionava**: vedi la riga sotto |
+| **La 0.5.0 provata sul PC vero (0.5.1)** | due difetti, e si sommavano. **`ipLocale()` prendeva il primo IPv4 non interno**, che su questa macchina è Tailscale (`100.88.254.19`): il QR conteneva un indirizzo irraggiungibile dalla wifi di casa, e l'accoppiamento non poteva riuscire in nessun modo. E **«Accendi» non creava l'invito**: il QR voleva un secondo click che nessuno diceva di fare. Corretti in `apps/shell/src/main/reti.ts` (classifica degli indirizzi + menu nel pannello) e nel pannello |
+| **Come sono stati trovati** | non leggendo il codice: aprendo una **seconda istanza** con `--user-data-dir` e `--remote-debugging-port=9222` e parlandole in CDP da Node. È la strada da rifare quando «non funziona niente»: vedi il paragrafo qui sotto |
+| **APK nella Release** | fatto: `assembleRelease` firmato con la chiave di debug (non `debuggable`), 5,6 MB, e un job `android` nella CI che lo costruisce e lo allega a ogni tag |
 
 Si lavora su un ramo per release e una PR: `release-0.2.0` è stata unita con le
 PR #3 e #4, la 0.3.1 con la #5, la 0.3.2 con la #6, la 0.3.3 con la #7, la
@@ -1253,6 +1257,36 @@ Poi, in ordine di quello che resta aperto:
    altri due sono fatti nella 0.5.0. Non prima che ci sia una casella di testo
    sola dove scrivere la frase: finché ci sono i moduli, riempirli a mano è più
    veloce. Vedi [AZIONI-E-MCP.md](AZIONI-E-MCP.md).
+
+### Come si guarda dentro la suite che gira
+
+Serve quando arriva «non funziona niente» e il codice sembra a posto. Il 22
+agosto è stato l'unico modo di trovare i due difetti della 0.5.0: leggendo il
+sorgente sembrava tutto giusto, ed era giusto — sbagliava l'**ambiente**.
+
+Si apre una **seconda istanza**, senza toccare quella di Cammo. Il lock di
+istanza singola è per cartella utente, quindi basta dargliene una sua:
+
+```bash
+cd apps/shell
+./node_modules/.bin/electron . --user-data-dir=/una/cartella/a/caso --remote-debugging-port=9222
+```
+
+I dati della suite (`%LOCALAPPDATA%\DaProdSuite`) restano gli stessi: `DATA_ROOT`
+non dipende da `userData`. Poi da Node si parla alla finestra in CDP —
+`fetch("http://127.0.0.1:9222/json")` per trovare il bersaglio, e da lì un
+`WebSocket` (globale in Node 22+) con `Runtime.evaluate`. Si possono premere i
+bottoni veri (`document.getElementById(...).click()`), leggere il DOM, e
+raccogliere gli errori con `Log.enable` e `Network.enable`.
+
+Due trappole viste quel giorno:
+
+- **lo stato resta fra una prova e l'altra.** Il primo giro aveva acceso il
+  gateway; il secondo, premendo lo stesso tasto, lo **spegneva** — e sembrava
+  che il tasto non funzionasse. Se una prova cambia stato, si riparte puliti.
+- **la cattura schermo non serve.** `computer-use` maschera tutto ciò che non è
+  in elenco e la finestra non si vedeva: il CDP dice molto di più e non chiede
+  niente a nessuno.
 
 ### Com'è fatta la 0.5.0, in breve
 

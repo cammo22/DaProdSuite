@@ -14,14 +14,24 @@ stessa wifi. Da Internet non ancora.
 Nell'hub, in fondo, c'è il pulsante **Da fuori**. Apri il pannello e premi
 **Accendi**.
 
-Compaiono due cose:
+Compaiono tre cose:
 
 - un **indirizzo**, tipo `http://192.168.1.20:8790/` — serve al browser;
-- i due tasti **Invita un padrone** e **Invita un ospite**, che danno un QR e un
-  codice di otto cifre.
+- il **QR** con sotto un codice di otto cifre, già pronto;
+- i due tasti **Invita un padrone** e **Invita un ospite**, per quando ti serve
+  un secondo invito.
 
 Il codice **vale una volta sola e scade in cinque minuti**: il pannello ti dice
 quanto gli resta. Se scade, ne chiedi un altro.
+
+### Se il telefono non lo raggiunge
+
+Un computer ha spesso più di un indirizzo — la rete di casa, le schede virtuali
+di WSL o di Hyper-V, Tailscale — e **solo uno arriva al telefono**. La suite
+sceglie quello di casa, ma se ha sbagliato sotto l'indirizzo c'è un menu con
+tutti gli altri, ognuno con scritto cos'è. Cambiandolo il QR si rifà: un QR è la
+fotografia di un indirizzo, e quello vecchio non porterebbe più da nessuna
+parte.
 
 ### Padrone o ospite?
 
@@ -55,11 +65,13 @@ serve che ci giri — ti serve **comandare** quel PC, e per farlo basta un brows
 
 ## Dal telefono
 
-C'è un'app Android. **Va compilata**: non c'è ancora un APK pronto da scaricare,
-e le istruzioni sono
-[nel repository](https://github.com/cammo22/DaProdSuite/tree/main/apps/mobile).
+C'è un'app Android: si scarica dalla
+[Release](https://github.com/cammo22/DaProdSuite/releases/latest), il file
+`DaProdSuite-telefono-<versione>.apk`.
 
-Una volta installata: **Inquadra il QR** sullo schermo del PC, e sei collegato.
+Il telefono ti avviserà che viene da fuori dal Play Store e ti chiederà di
+permetterlo: è normale per un'app che non passa da un negozio. Una volta
+installata: **Inquadra il QR** sullo schermo del PC, e sei collegato.
 
 Cosa sa fare:
 
