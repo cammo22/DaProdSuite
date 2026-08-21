@@ -19,6 +19,7 @@ object Store {
     private const val KEY_NOME = "nome"
     private const val KEY_COMPUTER = "computer"
     private const val KEY_RUOLO = "ruolo"
+    private const val KEY_AGG = "ultimo_controllo_aggiornamenti"
 
     private fun prefs(context: Context) =
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
@@ -60,6 +61,13 @@ object Store {
     fun ruolo(context: Context): String = prefs(context).getString(KEY_RUOLO, "ospite") ?: "ospite"
 
     fun ePadrone(context: Context): Boolean = ruolo(context) == "admin"
+
+    /** Quando si è guardato l'ultima volta se c'è una versione nuova dell'app. */
+    fun ultimoControlloAgg(context: Context): Long = prefs(context).getLong(KEY_AGG, 0)
+
+    fun segnaControlloAgg(context: Context) {
+        prefs(context).edit().putLong(KEY_AGG, System.currentTimeMillis()).apply()
+    }
 
     /**
      * Dimentica l'accoppiamento.

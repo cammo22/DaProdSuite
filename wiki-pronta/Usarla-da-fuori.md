@@ -73,6 +73,12 @@ Il telefono ti avviserà che viene da fuori dal Play Store e ti chiederà di
 permetterlo: è normale per un'app che non passa da un negozio. Una volta
 installata: **Inquadra il QR** sullo schermo del PC, e sei collegato.
 
+**Poi si aggiorna da sola.** In fondo c'è il tasto **Aggiorna**: guarda se ce
+n'è una nuova, ti fa vedere cosa cambia, e se dici di sì la scarica e la
+installa. Guarda anche per conto suo, una volta al giorno al massimo, e se non
+c'è niente non ti dice niente. È l'unica cosa che l'app manda fuori dalla tua
+rete: una domanda a GitHub su quale sia l'ultima versione, senza niente dentro.
+
 Cosa sa fare:
 
 - **chiedere lavori** — e il modulo lo prende dalla suite, quindi quando il PC

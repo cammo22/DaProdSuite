@@ -92,6 +92,10 @@ Repo pubblico: **https://github.com/cammo22/DaProdSuite**
 | **La 0.5.0 provata sul PC vero (0.5.1)** | due difetti, e si sommavano. **`ipLocale()` prendeva il primo IPv4 non interno**, che su questa macchina è Tailscale (`100.88.254.19`): il QR conteneva un indirizzo irraggiungibile dalla wifi di casa, e l'accoppiamento non poteva riuscire in nessun modo. E **«Accendi» non creava l'invito**: il QR voleva un secondo click che nessuno diceva di fare. Corretti in `apps/shell/src/main/reti.ts` (classifica degli indirizzi + menu nel pannello) e nel pannello |
 | **Come sono stati trovati** | non leggendo il codice: aprendo una **seconda istanza** con `--user-data-dir` e `--remote-debugging-port=9222` e parlandole in CDP da Node. È la strada da rifare quando «non funziona niente»: vedi il paragrafo qui sotto |
 | **APK nella Release** | fatto: `assembleRelease` firmato con la chiave di debug (non `debuggable`), 5,6 MB, e un job `android` nella CI che lo costruisce e lo allega a ogni tag |
+| **0.5.1 pubblicata** | fatto il 22 agosto: tag `v0.5.1`, PR #17 |
+| **L'app si aggiorna da sola (0.5.2)** | fatto: `Aggiornamenti.kt` chiede a `api.github.com` l'ultima Release, confronta le versioni numero per numero, scarica e passa l'APK all'installatore via FileProvider. Tasto **Aggiorna** in fondo, più un giro automatico al massimo una volta al giorno. **Provate a mano** la forma della risposta di GitHub e il confronto delle versioni; **il giro vero su un telefono no** |
+| **Chiave di firma stabile** | `apps/mobile/firma-sideload.jks`, password nel `build.gradle.kts`. **Serviva**: senza, ogni Release ha una firma diversa (la chiave di debug se la genera ogni macchina) e Android rifiuta l'aggiornamento. Non è un segreto e non protegge niente — la chiave di debug era pubblica lo stesso |
+| **Un'ultima disinstallazione** | passando dalla 0.5.1 alla 0.5.2 la firma cambia, quindi l'app va disinstallata una volta sola. Da lì in poi non succede più |
 
 Si lavora su un ramo per release e una PR: `release-0.2.0` è stata unita con le
 PR #3 e #4, la 0.3.1 con la #5, la 0.3.2 con la #6, la 0.3.3 con la #7, la
