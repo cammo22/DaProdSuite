@@ -14,7 +14,7 @@
     "build": "pnpm --filter @daprod/ipc build && pnpm --filter @daprod/azioni build && pnpm --filter @daprod/gateway build && pnpm --filter @daprod/mcp build && pnpm --filter @daprod/runtime build && pnpm --filter @daprod/visualizer build && pnpm --filter @daprod/shell build",
     "dist": "pnpm run build && pnpm --filter @daprod/shell dist",
     "typecheck": "pnpm -r typecheck",
-    "prova": "node apps/shell/scripts/prova-gateway.mjs && node apps/shell/scripts/prova-mcp.mjs"
+    "prova": "node apps/shell/scripts/prova-cicli.mjs && node apps/shell/scripts/prova-gateway.mjs && node apps/shell/scripts/prova-mcp.mjs"
   },
   "devDependencies": {
     "typescript": "~5.9.3"

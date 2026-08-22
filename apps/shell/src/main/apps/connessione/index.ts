@@ -27,15 +27,35 @@
  * e da lì è un dispositivo come gli altri.
  */
 
-import { BrowserWindow, app, shell } from "electron";
+import { BrowserWindow, shell } from "electron";
 import { readBounds, writeState } from "../../app-state";
 import { registraConsole } from "../../finestre";
 import { iconaApp } from "../../paths";
-import { indirizzoConsole, tokenDiCasa } from "../../remoto";
 
 const PREDEFINITI = { width: 1100, height: 860, maximized: false };
 
 let finestra: BrowserWindow | null = null;
+
+/**
+ * Chi sa dire dove sta la console, e con quale credenziale aprirla.
+ *
+ * **Perché non lo chiediamo direttamente a `remoto.ts`.** Perché sarebbe un
+ * cerchio, e un cerchio che si chiude male: `app-manager` importa questo file
+ * per sapere come aprire la scheda, e `remoto.ts` importa `app-manager` per
+ * aprire le app quando arriva una richiesta da fuori. Con un `import` diretto,
+ * caricando la suite si entrava in `remoto.ts` **mentre** `app-manager` stava
+ * ancora inizializzandosi: `appManager` era ancora `undefined`, e la riga che
+ * gli si iscrive agli eventi faceva morire il programma all'avvio.
+ *
+ * Quindi la dipendenza si gira: questa finestra non sa niente di nessuno, e chi
+ * accende la suite (`index.ts`, che conosce già tutti e due) le dice dove
+ * guardare.
+ */
+let dammiIndirizzo: () => string = () => "about:blank";
+
+export function collegaSorgente(fn: () => string): void {
+  dammiIndirizzo = fn;
+}
 
 export function apri(onClose: () => void): void {
   if (finestra && !finestra.isDestroyed()) {
@@ -102,18 +122,7 @@ export function apri(onClose: () => void): void {
     onClose();
   });
 
-  /**
-   * Il token viaggia nel **frammento**, dopo il `#`.
-   *
-   * Non viene mandato al server, non finisce nei log e non finisce in un
-   * Referer; la pagina lo legge, lo mette da parte e lo cancella
-   * dall'indirizzo. È lo stesso meccanismo con cui l'app del telefono apre
-   * questa pagina — un modo solo, non due.
-   */
-  const dove = `${indirizzoConsole()}#t=${encodeURIComponent(tokenDiCasa())}&u=${encodeURIComponent(
-    process.env.COMPUTERNAME ?? "questo computer",
-  )}&r=admin`;
-  void win.loadURL(dove);
+  void win.loadURL(dammiIndirizzo());
 }
 
 export function chiudi(): void {
@@ -124,6 +133,3 @@ export function chiudi(): void {
 export function laFinestra(): BrowserWindow | null {
   return finestra && !finestra.isDestroyed() ? finestra : null;
 }
-
-/** Non serve a niente qui, ma il registro delle finestre lo chiede a tutte. */
-export const nome = app.getName();

@@ -13,7 +13,8 @@ import { gpu } from "./gpu";
 import { impostazioni } from "./impostazioni";
 import { spegniSeNostro } from "./llm";
 import { registerIpc } from "./ipc";
-import { riprendiAccessoRemoto, spegniAccessoRemoto } from "./remoto";
+import { collegaSorgente } from "./apps/connessione";
+import { indirizzoConsole, riprendiAccessoRemoto, spegniAccessoRemoto, tokenDiCasa } from "./remoto";
 import { ICONA_SUITE, ensureDataDirs } from "./paths";
 import { updater } from "./updater";
 import { gestisciSchema, registraSchema } from "./file-scheme";
@@ -65,6 +66,25 @@ async function start(): Promise<void> {
   // suo). **Prima** dell'attesa qui sotto e senza `await`: chi apre l'app del
   // telefono mentre il PC sta ancora contando i modelli deve trovare un
   // computer che risponde, non uno che risponderà fra un minuto.
+  /**
+   * DaProdConnessione apre la console del gateway, con la credenziale che
+   * questo computer si dà da solo.
+   *
+   * Il token viaggia nel **frammento**, dopo il `#`: non viene mandato al
+   * server, non finisce nei log e non finisce in un Referer. La pagina lo
+   * legge, lo mette da parte e lo cancella dall'indirizzo — lo stesso
+   * meccanismo con cui l'app del telefono apre questa pagina, un modo solo e
+   * non due.
+   *
+   * Il cablaggio sta qui e non dentro la finestra per non chiudere un cerchio
+   * fra i moduli: vedi `collegaSorgente` in `apps/connessione`.
+   */
+  collegaSorgente(
+    () =>
+      `${indirizzoConsole()}#t=${encodeURIComponent(tokenDiCasa())}` +
+      `&u=${encodeURIComponent(process.env.COMPUTERNAME ?? "questo computer")}`,
+  );
+
   riprendiAccessoRemoto();
 
   await appManager.prontoAlPrimoAvvio;
