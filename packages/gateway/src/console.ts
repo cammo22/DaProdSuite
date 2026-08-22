@@ -1,35 +1,46 @@
 /**
- * La suite vista da fuori: dal browser di un portatile, e dal telefono.
+ * La suite vista da fuori — e, dalla 0.7.0, anche da dentro.
  *
- * Nasce da una cosa detta chiaramente — «magari ho un portatile, voglio che
- * gira bene». Un portatile la suite non la può far girare: i modelli vogliono
- * la scheda video del PC fisso. Ma non gli serve. Gli serve **comandare** quel
- * PC, e per farlo basta un browser.
+ * **Una pagina sola per tre posti.** La aprono:
  *
- * **Dalla 0.6.0 questa pagina è anche l'app Android.** Non una copia: la stessa
- * pagina. L'app apre una WebView su di qui e ci mette dentro il token che ha
- * ottenuto col QR — vedi `apps/mobile`. Il motivo è quello che Cammo ha detto
- * in due frasi: «deve mostrare le pagine in stile della suite» e «niente
- * funziona sul device a livello di risorse ma fa tutto il pc». Se il telefono è
- * un vetro sul PC, allora l'interfaccia deve stare **sul PC**: una sola da
- * scrivere, una sola da tenere allineata alle azioni, e quando sul PC compare
- * una scheda nuova compare anche sul telefono senza pubblicare un APK.
+ * - **DaProdConnessione**, la scheda della suite sul PC, in una finestra;
+ * - il **browser di un portatile**, che la suite non la farebbe girare ma non
+ *   gli serve: gli serve comandare il PC fisso;
+ * - l'**app del telefono**, in una WebView, con il token preso col QR.
  *
- * Regole di questa pagina, che sono anche il motivo per cui è un file di
- * testo dentro un .ts e non una cartella di sorgenti:
+ * Non è pigrizia: è la cura di un difetto vero. Prima la stessa roba stava in
+ * due posti — il pannello «Da fuori» in fondo all'hub e questa pagina — e i due
+ * non dicevano mai la stessa cosa: uno sapeva del firewall e l'altro no, uno si
+ * aggiornava da solo e l'altro andava riaperto. Una verità sola non si ottiene
+ * scrivendone una terza: si ottiene togliendone una.
+ *
+ * ## Come è fatta, e perché così
+ *
+ * **A quadrati.** Chiesto così: «voglio grafiche a quadrati facili da usare e
+ * schermate varie intuitive per telefono». Cinque schermate, una barra in
+ * fondo, e in cima alla prima un quadrone che dice **se tutto funziona** —
+ * verde o rosso, con scritto cosa manca e il tasto per rimediare.
+ *
+ * **Le parole sono quelle di chi la usa.** Niente «padrone» e niente «ospite»:
+ * si dice cosa uno **può fare**, non cosa **è**. Niente «Da fuori», che non
+ * voleva dire niente. Niente «Come siamo messi»: si chiama «Stato della
+ * connessione», perché è quello.
+ *
+ * **Dal vivo.** Il gateway spinge lo stato su una connessione aperta (SSE) a
+ * ogni cambiamento, e a ogni spinta la pagina rilegge quel poco che le serve.
+ * Niente tasto «aggiorna» da nessuna parte.
+ *
+ * ## Regole di questo file
  *
  * - **si serve da sé**: niente CDN, niente font esterni, niente immagini. Una
- *   pagina che chiama fuori è una pagina che non funziona sulla wifi di casa
- *   quando la linea è giù, ed è il momento in cui serve di più.
- * - **il token sta nel browser** (`localStorage`), come sta nel portachiavi del
- *   telefono. Chi apre la pagina senza essersi accoppiato non vede niente.
+ *   pagina che chiama fuori è una pagina che non funziona quando la linea è
+ *   giù, cioè quando serve di più.
  * - **le azioni non sono scritte qui**: si chiedono a `/azioni` e i moduli si
- *   disegnano da soli. Aggiungere un'azione al catalogo la fa comparire qui
- *   senza toccare questo file.
- * - **niente template literal nel JavaScript qui dentro.** Sembra un capriccio
- *   di stile e non lo è: questo file *è* un template literal, e ogni backtick
- *   dentro andrebbe protetto. Le stringhe si concatenano con `+`, come nel 2010,
- *   e in cambio il file non si rompe per un accento sbagliato.
+ *   disegnano da soli. Aggiungere un'azione al catalogo la fa comparire qui.
+ * - **niente template literal, e niente backtick, nel JavaScript qui dentro.**
+ *   Sembra un capriccio e non lo è: questo file *è* un template literal, e ogni
+ *   backtick dentro lo chiuderebbe. Le stringhe si concatenano con `+`, e in
+ *   cambio il file non si rompe per un accento.
  */
 
 export function paginaConsole(): string {
@@ -61,104 +72,124 @@ const PAGINA = `<!doctype html>
     --ok: #34d399;
     --attesa: #fbbf24;
     --err: #f87171;
-    --radius: 16px;
-    --fondo-alto: 62px;
+    --raggio: 18px;
+    --fondo-alto: 64px;
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body { height: 100%; }
   body {
     margin: 0;
     color: var(--txt);
-    /* Le due luci negli angoli: sono la faccia della suite da quando esiste
-       DaProdMusica, e sono la cosa che si riconosce prima di leggere. */
     background:
       radial-gradient(1100px 560px at 85% -12%, #1d1348 0%, transparent 62%),
       radial-gradient(900px 520px at -5% 105%, #052b3d 0%, transparent 58%),
       var(--bg);
     background-attachment: fixed;
-    font: 15px/1.55 "Segoe UI", system-ui, -apple-system, sans-serif;
+    font: 15px/1.5 "Segoe UI", system-ui, -apple-system, sans-serif;
     padding-bottom: calc(var(--fondo-alto) + env(safe-area-inset-bottom));
   }
 
   /* ------------------------------------------------------------ testata */
   header {
     position: sticky; top: 0; z-index: 20;
-    display: flex; align-items: center; gap: 12px;
-    padding: 13px 16px calc(13px) 16px;
-    padding-top: calc(13px + env(safe-area-inset-top));
-    background: #0a0c11ee;
-    backdrop-filter: blur(10px);
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 16px;
+    padding-top: calc(12px + env(safe-area-inset-top));
+    background: #0a0c11ee; backdrop-filter: blur(10px);
     border-bottom: 1px solid var(--line);
   }
-  .marchio { font-weight: 700; letter-spacing: .2px; font-size: 16px; }
+  .marchio { font-weight: 700; font-size: 16px; letter-spacing: .2px; }
   .marchio span { color: var(--accent); }
   .cresci { flex: 1; }
-  .vivo { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--dim); }
-  .pallino { width: 8px; height: 8px; border-radius: 50%; background: var(--line2); flex: none; }
-  .pallino.on { background: var(--ok); box-shadow: 0 0 0 3px #34d3992a; }
   .chi {
-    font-size: 12px; color: var(--txt); background: var(--panel2);
-    border: 1px solid var(--line2); border-radius: 99px; padding: 4px 11px; cursor: pointer;
+    font-size: 12.5px; color: var(--txt); background: var(--panel2);
+    border: 1px solid var(--line2); border-radius: 99px; padding: 5px 12px; cursor: pointer;
   }
 
   /* -------------------------------------------------------------- pagine */
-  main { max-width: 900px; margin: 0 auto; padding: 16px; }
+  main { max-width: 920px; margin: 0 auto; padding: 14px 14px 22px; }
   .pagina { display: none; }
   .pagina.on { display: block; }
-  h2 { margin: 0 0 4px; font-size: 15px; letter-spacing: .02em; }
-  h3 { margin: 22px 0 10px; font-size: 13px; text-transform: uppercase;
-       letter-spacing: .09em; color: var(--dim); font-weight: 650; }
-  p.sotto { margin: 0 0 14px; color: var(--dim); font-size: 13px; }
+  h2 { margin: 0 0 3px; font-size: 15px; }
+  h3 {
+    margin: 24px 0 10px; font-size: 12px; text-transform: uppercase;
+    letter-spacing: .1em; color: var(--dim); font-weight: 650;
+  }
+  p.sotto { margin: 0 0 12px; color: var(--dim); font-size: 13px; }
 
   .scheda {
     background: linear-gradient(180deg, var(--panel), var(--panel2));
-    border: 1px solid var(--line); border-radius: var(--radius);
-    padding: 16px; margin-bottom: 14px;
+    border: 1px solid var(--line); border-radius: var(--raggio);
+    padding: 16px; margin-bottom: 12px;
   }
 
+  /* ------------------------------------------------------- il semaforo */
+  /* Il quadrone in cima: la risposta alla sola domanda che conta, che è
+     «funziona?». Verde o rosso, e se è rosso c'è scritto cosa fare. */
+  .semaforo {
+    border-radius: var(--raggio); padding: 18px 18px 16px; margin-bottom: 12px;
+    border: 1px solid var(--line2); background: var(--panel);
+    display: flex; gap: 14px; align-items: flex-start; flex-wrap: wrap;
+  }
+  .semaforo .faccia { font-size: 30px; line-height: 1; }
+  .semaforo .dentro { flex: 1 1 200px; min-width: 0; }
+  .semaforo b { display: block; font-size: 17px; margin-bottom: 3px; }
+  .semaforo .perche { color: var(--dim); font-size: 13px; }
+  .semaforo.bene { border-color: #34d39955; background: linear-gradient(180deg, #0f2019, var(--panel)); }
+  .semaforo.male { border-color: #f8717166; background: linear-gradient(180deg, #231214, var(--panel)); }
+  .semaforo.aspetta { border-color: #fbbf2455; background: linear-gradient(180deg, #221c0e, var(--panel)); }
+
+  /* --------------------------------------------------------- i quadrati */
+  .quadrati { display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 10px; }
+  .quadrato {
+    text-align: left; padding: 14px; border-radius: 15px; min-height: 92px;
+    background: var(--panel2); border: 1px solid var(--line2); color: var(--txt);
+    display: flex; flex-direction: column; gap: 4px; font: inherit; cursor: pointer;
+  }
+  .quadrato:hover { border-color: var(--accent); }
+  .quadrato .segno { font-size: 21px; line-height: 1; }
+  .quadrato .grande { font-size: 25px; font-weight: 700; line-height: 1.1; }
+  .quadrato .nome { font-weight: 600; font-size: 14px; }
+  .quadrato small { color: var(--fioco); font-size: 11.5px; line-height: 1.35; }
+  .quadrato.spento { cursor: default; }
+  .quadrato.spento:hover { border-color: var(--line2); }
+  .quadrato.verde .grande, .quadrato.verde .segno { color: var(--ok); }
+  .quadrato.giallo .grande, .quadrato.giallo .segno { color: var(--attesa); }
+  .quadrato.rosso .grande, .quadrato.rosso .segno { color: var(--err); }
+
+  /* ------------------------------------------------------------- moduli */
   label { display: block; margin: 13px 0 5px; font-size: 12.5px; color: var(--dim); }
   input, textarea, select {
     font: inherit; color: var(--txt); background: #0b0d13;
-    border: 1px solid var(--line2); border-radius: 11px; padding: 11px 12px; width: 100%;
+    border: 1px solid var(--line2); border-radius: 12px; padding: 12px; width: 100%;
   }
   input:focus, textarea:focus, select:focus { outline: none; border-color: var(--accent); }
-  textarea { min-height: 92px; resize: vertical; }
+  textarea { min-height: 96px; resize: vertical; }
 
   button {
-    font: inherit; font-weight: 600; cursor: pointer;
+    font: inherit; font-weight: 600; cursor: pointer; border: 0; color: #fff;
     background: linear-gradient(180deg, #9b6cff, #7c3aed);
-    border: 0; color: #fff; border-radius: 11px; padding: 11px 18px;
+    border-radius: 12px; padding: 12px 18px;
   }
   button:active { transform: translateY(1px); }
   button:disabled { opacity: .45; cursor: default; }
-  button.piano {
-    background: var(--panel2); border: 1px solid var(--line2); color: var(--txt); font-weight: 500;
+  button.piano { background: var(--panel2); border: 1px solid var(--line2); color: var(--txt); font-weight: 500; }
+  button.mini {
+    padding: 7px 12px; font-size: 12.5px; font-weight: 500;
+    background: var(--panel2); border: 1px solid var(--line2); color: var(--txt); border-radius: 10px;
   }
-  button.mini { padding: 6px 11px; font-size: 12.5px; font-weight: 500;
-                background: var(--panel2); border: 1px solid var(--line2); color: var(--txt); }
   button.mini:hover { border-color: var(--accent); }
   button.mini.male:hover { border-color: var(--err); color: var(--err); }
-  .fila { display: flex; gap: 9px; flex-wrap: wrap; align-items: center; margin-top: 16px; }
-
-  /* --------------------------------------------------------- le schede app */
-  .tessere { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 11px; }
-  .tessera {
-    text-align: left; padding: 15px 14px; border-radius: 14px;
-    background: var(--panel2); border: 1px solid var(--line2); color: var(--txt);
-    font-weight: 600; display: flex; flex-direction: column; gap: 5px; min-height: 96px;
-  }
-  .tessera:hover { border-color: var(--accent); }
-  .tessera .segno { font-size: 21px; line-height: 1; }
-  .tessera small { color: var(--fioco); font-weight: 400; font-size: 11.5px; line-height: 1.4; }
+  .fila { display: flex; gap: 9px; flex-wrap: wrap; align-items: center; margin-top: 14px; }
 
   /* ------------------------------------------------------------- elenchi */
   ul.voci { list-style: none; margin: 0; padding: 0; }
   ul.voci li {
     border-top: 1px solid var(--line); padding: 13px 0;
-    display: flex; gap: 12px; align-items: flex-start; flex-wrap: wrap;
+    display: flex; gap: 11px; align-items: flex-start; flex-wrap: wrap;
   }
   ul.voci li:first-child { border-top: 0; }
-  .cresce { flex: 1 1 220px; min-width: 0; }
+  .cresce { flex: 1 1 200px; min-width: 0; }
   .titolo { font-weight: 600; overflow-wrap: anywhere; }
   .dettaglio { color: var(--dim); font-size: 12.5px; overflow-wrap: anywhere; margin-top: 2px; }
   .pillola {
@@ -173,48 +204,52 @@ const PAGINA = `<!doctype html>
   .avviso { margin-top: 12px; font-size: 13px; min-height: 20px; }
   .avviso.male { color: var(--err); }
   .avviso.bene { color: var(--ok); }
-  .nota { color: var(--fioco); font-size: 12px; margin-top: 14px; line-height: 1.5; }
+  .nota { color: var(--fioco); font-size: 12px; margin-top: 12px; line-height: 1.5; }
+  code {
+    font: 12.5px ui-monospace, Consolas, monospace; background: #0b0d13;
+    border: 1px solid var(--line); border-radius: 8px; padding: 2px 7px;
+    overflow-wrap: anywhere; user-select: all;
+  }
 
   /* ------------------------------------------------------------ galleria */
-  .filtri { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 14px; }
+  .filtri { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 12px; }
   .filtri button.on { border-color: var(--accent); color: var(--txt); background: #1b1533; }
-  .quadri { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; }
-  .quadro {
-    border: 1px solid var(--line); border-radius: 13px; overflow: hidden; background: #0b0d13;
-  }
-  .quadro img, .quadro video { width: 100%; display: block; aspect-ratio: 16/10;
-                               object-fit: cover; background: #000; }
+  .quadri { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 11px; }
+  .quadro { border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: #0b0d13; }
+  .quadro img, .quadro video { width: 100%; display: block; aspect-ratio: 16/10; object-fit: cover; background: #000; }
   .quadro audio { width: 100%; display: block; margin-top: 8px; }
   .quadro .sotto { padding: 9px 11px 11px; }
-  .quadro .nome { font-size: 12.5px; font-weight: 600; overflow: hidden;
-                  text-overflow: ellipsis; white-space: nowrap; }
+  .quadro .nome { font-size: 12.5px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .quadro .riga { font-size: 11px; color: var(--fioco); margin-top: 3px; }
+
+  /* --------------------------------------------------------- il QR */
+  .qr { display: flex; gap: 16px; flex-wrap: wrap; align-items: center; margin-top: 12px; }
+  .qr img { width: 190px; height: 190px; border-radius: 14px; background: #fff; padding: 8px; }
+  .qr .codice { font-size: 32px; font-weight: 700; letter-spacing: .12em; user-select: all; }
 
   /* --------------------------------------------------------- barra in fondo */
   nav.fondo {
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
-    display: grid; grid-template-columns: repeat(4, 1fr);
+    display: grid; grid-template-columns: repeat(5, 1fr);
     background: #0a0c11f2; backdrop-filter: blur(10px);
-    border-top: 1px solid var(--line);
-    padding-bottom: env(safe-area-inset-bottom);
+    border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom);
   }
   nav.fondo button {
     background: none; border: 0; border-radius: 0; color: var(--dim);
-    font-size: 11.5px; font-weight: 500; padding: 9px 4px 10px;
+    font-size: 10.5px; font-weight: 500; padding: 9px 2px 10px;
     display: flex; flex-direction: column; align-items: center; gap: 3px;
   }
   nav.fondo button .segno { font-size: 17px; line-height: 1; }
   nav.fondo button.on { color: var(--txt); }
-  nav.fondo button.on .segno { filter: drop-shadow(0 0 8px #8b5cf6aa); }
+  nav.fondo button.on .segno { color: var(--accent); }
   nav.fondo .bollo {
-    position: absolute; transform: translate(14px, -4px);
+    position: absolute; transform: translate(16px, -5px);
     background: var(--accent); color: #fff; font-size: 10px; font-weight: 700;
     border-radius: 99px; padding: 0 5px; min-width: 16px; text-align: center;
   }
-
   @media (min-width: 760px) {
-    nav.fondo { grid-template-columns: repeat(4, auto); justify-content: center; gap: 18px; }
-    nav.fondo button { flex-direction: row; padding: 12px 16px; font-size: 13px; }
+    nav.fondo { grid-template-columns: repeat(5, auto); justify-content: center; gap: 10px; }
+    nav.fondo button { flex-direction: row; padding: 13px 18px; font-size: 13px; }
   }
 
   [hidden] { display: none !important; }
@@ -226,26 +261,23 @@ const PAGINA = `<!doctype html>
   <div class="marchio">DaProd<span>Suite</span></div>
   <div class="cresci"></div>
   <button class="chi" id="chi" hidden></button>
-  <div class="vivo"><span class="pallino" id="pallino"></span><span id="statoTesto">—</span></div>
 </header>
 
 <main>
 
-  <!-- Prima di tutto: dire chi sei. Senza token non si vede niente. -->
+  <!-- ============================== ENTRARE ============================== -->
   <section class="pagina on" id="pag-entra">
     <div class="scheda">
       <h2>Collega questo dispositivo</h2>
       <p class="sotto">
-        Sul PC dove gira la suite: <b>Da fuori</b>, in fondo all'hub, poi
-        <b>Accendi</b> e <b>Invita</b>. Compare un codice di otto cifre: scrivilo
-        qui. Vale una volta sola e dura cinque minuti.
+        Sul computer apri <b>DaProdConnessione</b> e premi <b>Invita</b>: compare
+        un codice di otto cifre. Scrivilo qui. Vale pochi minuti.
       </p>
-      <label for="nome">Chi sei</label>
-      <input id="nome" maxlength="40" autocomplete="off" placeholder="Cammo, portatile, telefono di Anna…">
+      <label for="nome">Come ti chiami</label>
+      <input id="nome" maxlength="40" autocomplete="off" placeholder="Cammo">
       <p class="nota" style="margin-top:6px">
-        Questo nome compare accanto a tutto quello che chiedi, sul PC e negli altri
-        dispositivi. Serve a sapere chi ha chiesto cosa quando in fila ci sono tre
-        lavori di tre persone.
+        Questo nome compare accanto a tutto quello che chiedi. Serve a sapere chi
+        ha chiesto cosa quando in fila ci sono tre lavori di tre persone.
       </p>
       <label for="codice">Codice di otto cifre</label>
       <input id="codice" inputmode="numeric" maxlength="8" autocomplete="off" placeholder="12345678">
@@ -254,62 +286,109 @@ const PAGINA = `<!doctype html>
     </div>
   </section>
 
-  <!-- ------------------------------------------------------------ la suite -->
-  <section class="pagina" id="pag-suite">
-    <div class="scheda">
-      <h2 id="titolo-suite">Il computer</h2>
-      <p class="sotto" id="sotto-suite">—</p>
-      <ul class="voci" id="attivita"></ul>
+  <!-- =============================== CASA ================================ -->
+  <section class="pagina" id="pag-casa">
+    <div class="semaforo" id="semaforo">
+      <span class="faccia" id="semaforo-faccia">&#9679;</span>
+      <div class="dentro">
+        <b id="semaforo-titolo">Guardo com'è messa…</b>
+        <div class="perche" id="semaforo-perche"></div>
+      </div>
+      <button class="mini" id="semaforo-tasto" hidden></button>
     </div>
 
+    <div class="quadrati" id="numeri"></div>
+
     <h3>Cosa vuoi fare</h3>
-    <div class="tessere" id="tessere"></div>
+    <div class="quadrati" id="tessere"></div>
 
     <p class="nota" id="nota-versione"></p>
   </section>
 
-  <!-- ------------------------------------------------------------- chiedi -->
+  <!-- ============================== CHIEDI =============================== -->
   <section class="pagina" id="pag-chiedi">
     <div class="scheda">
-      <h2>Chiedi qualcosa alla suite</h2>
-      <p class="sotto">Le azioni sono quelle che la suite dichiara. Chi decide resta chi sta al PC.</p>
-      <div class="tessere" id="elenco-azioni"></div>
+      <h2>Chiedi qualcosa</h2>
+      <p class="sotto">Lo fa il computer. Tu scrivi cosa vuoi e lui lo mette in lavorazione.</p>
+      <div class="quadrati" id="elenco-azioni"></div>
       <form id="modulo" hidden onsubmit="return false"></form>
       <div class="fila" id="fila-manda" hidden>
-        <button id="manda">Manda al PC</button>
+        <button id="manda">Mandalo al computer</button>
         <button class="piano" id="annulla" type="button">Lascia stare</button>
       </div>
       <div class="avviso" id="avviso-azione"></div>
     </div>
   </section>
 
-  <!-- ---------------------------------------------------------------- fila -->
-  <section class="pagina" id="pag-fila">
+  <!-- ============================== LAVORI =============================== -->
+  <section class="pagina" id="pag-lavori">
     <div class="scheda">
-      <h2>La fila</h2>
-      <p class="sotto">Le richieste mandate da qui e dagli altri dispositivi, dalla più recente.</p>
+      <h2>I lavori</h2>
+      <p class="sotto" id="sotto-lavori">Quello che è stato chiesto, dal più recente.</p>
       <ul class="voci" id="coda"></ul>
     </div>
   </section>
 
-  <!-- ------------------------------------------------------------ galleria -->
+  <!-- ============================= GALLERIA ============================== -->
   <section class="pagina" id="pag-galleria">
     <div class="scheda">
-      <h2>Quello che il PC ha fatto</h2>
-      <p class="sotto">La libreria della suite: immagini, video e brani di tutte le schede insieme.</p>
+      <h2>Quello che il computer ha fatto</h2>
+      <p class="sotto">Immagini, video e brani di tutte le schede insieme.</p>
       <div class="filtri" id="filtri"></div>
       <div class="quadri" id="quadri"></div>
       <div class="vuoto" id="galleria-vuota" hidden>Ancora niente qui dentro.</div>
     </div>
   </section>
 
+  <!-- =========================== COLLEGAMENTO ============================ -->
+  <section class="pagina" id="pag-collegamento">
+    <div class="scheda">
+      <h2>Stato della connessione</h2>
+      <p class="sotto" id="sotto-collegamento">—</p>
+      <div class="quadrati" id="quadrati-rete"></div>
+    </div>
+
+    <div class="scheda" id="scheda-invita" hidden>
+      <h2>Invita qualcuno</h2>
+      <p class="sotto">Il codice dura pochi minuti. Chi lo usa entra con il suo nome.</p>
+      <div class="fila">
+        <button class="mini" id="invita-uno">Per una persona</button>
+        <button class="mini" id="invita-tanti">Per dieci persone</button>
+        <button class="mini" id="invita-decide">Per chi deve anche decidere</button>
+      </div>
+      <div class="qr" id="riquadro-qr" hidden>
+        <img id="qr" alt="Codice da inquadrare">
+        <div>
+          <div class="codice" id="codice-invito">—</div>
+          <div class="dettaglio" id="scade-invito"></div>
+        </div>
+      </div>
+      <div class="avviso" id="avviso-invito"></div>
+    </div>
+
+    <div class="scheda">
+      <h2>Chi è collegato</h2>
+      <ul class="voci" id="dispositivi"></ul>
+    </div>
+
+    <div class="scheda">
+      <h2>Da dove si arriva</h2>
+      <ul class="voci" id="indirizzi"></ul>
+      <p class="nota">
+        Sulla rete di casa il collegamento è in chiaro: va bene dentro casa. Con
+        Tailscale o con la strada da Internet è cifrato.
+      </p>
+    </div>
+  </section>
+
 </main>
 
 <nav class="fondo" id="fondo" hidden>
-  <button data-pagina="suite" class="on"><span class="segno">&#9673;</span>Suite</button>
+  <button data-pagina="casa" class="on"><span class="segno">&#9673;</span>Casa</button>
   <button data-pagina="chiedi"><span class="segno">&#10010;</span>Chiedi</button>
-  <button data-pagina="fila"><span class="segno">&#9776;</span>Fila<span class="bollo" id="bollo" hidden></span></button>
+  <button data-pagina="lavori"><span class="segno">&#9776;</span>Lavori<span class="bollo" id="bollo" hidden></span></button>
   <button data-pagina="galleria"><span class="segno">&#9635;</span>Galleria</button>
+  <button data-pagina="collegamento"><span class="segno">&#9736;</span>Collegamento</button>
 </nav>
 
 <script>
@@ -317,38 +396,38 @@ const PAGINA = `<!doctype html>
   "use strict";
 
   var CHIAVE = "daprod.token";
-  var CHIAVE_RUOLO = "daprod.ruolo";
   var CHIAVE_NOME = "daprod.nome";
   var $ = function (id) { return document.getElementById(id); };
 
   var token = localStorage.getItem(CHIAVE) || "";
-  var ruolo = localStorage.getItem(CHIAVE_RUOLO) || "ospite";
   var ioNome = localStorage.getItem(CHIAVE_NOME) || "";
+  var puoiDecidere = false;
   var azioni = [];
   var scelta = null;
   var flusso = null;
-  var pagina = "suite";
+  var pagina = "casa";
   var filtro = "";
-  var ultimaGalleria = 0;
+  var pannello = null;
+  var suite = null;
+  var richieste = [];
+  var orologioInvito = null;
 
   /**
    * Il token e il nome possono arrivare dall'indirizzo.
    *
-   * È così che l'app Android apre questa pagina: si è accoppiata lei col QR, e
-   * passa quello che ha ottenuto. Sta nel **frammento** (dopo il #) e non nella
-   * query di proposito: il frammento non viene mandato al server, non finisce
-   * nei log e non finisce in un Referer. Letto una volta, si cancella
-   * dall'indirizzo, così non resta nella cronologia.
+   * È così che aprono questa pagina l'app del telefono e DaProdConnessione:
+   * si sono accoppiati loro, e passano quello che hanno ottenuto. Sta nel
+   * **frammento** (dopo il #) di proposito: il frammento non viene mandato al
+   * server, non finisce nei log e non finisce in un Referer. Letto una volta,
+   * si cancella dall'indirizzo.
    */
   (function dallIndirizzo() {
     if (!location.hash) return;
     var pezzi = new URLSearchParams(location.hash.slice(1));
     var t = pezzi.get("t");
     var u = pezzi.get("u");
-    var r = pezzi.get("r");
     if (t) { token = t; localStorage.setItem(CHIAVE, t); }
     if (u) { ioNome = u; localStorage.setItem(CHIAVE_NOME, u); }
-    if (r) { ruolo = r; localStorage.setItem(CHIAVE_RUOLO, r); }
     history.replaceState(null, "", location.pathname);
   })();
 
@@ -358,7 +437,6 @@ const PAGINA = `<!doctype html>
     opzioni = opzioni || {};
     var testate = { "Content-Type": "application/json" };
     if (token) testate.Authorization = "Bearer " + token;
-    for (var k in (opzioni.headers || {})) testate[k] = opzioni.headers[k];
 
     var risposta = await fetch(percorso, {
       method: opzioni.method || "GET",
@@ -369,8 +447,8 @@ const PAGINA = `<!doctype html>
     var corpo = null;
     try { corpo = testo ? JSON.parse(testo) : null; } catch (e) { corpo = null; }
     if (!risposta.ok) {
-      // 401 vuol dire che il PC non ci riconosce più: il dispositivo è stato
-      // revocato, o la suite è stata reinstallata. Si riparte dall'invito.
+      // 401 vuol dire che il computer non ci riconosce più: il collegamento è
+      // stato tolto, o la suite è stata reinstallata. Si riparte dall'invito.
       if (risposta.status === 401) scollega(true);
       throw new Error((corpo && corpo.errore) || ("Errore " + risposta.status));
     }
@@ -380,14 +458,12 @@ const PAGINA = `<!doctype html>
   /**
    * Pianta il biscotto di sessione.
    *
-   * Serve a una cosa sola e non se ne può fare a meno: un tag «<img>» o
-   * «<video>» non sa mettere l'header «Authorization». Senza biscotto la
-   * galleria dovrebbe scaricare ogni file in memoria per mostrarlo — niente
-   * anteprime pigre, niente barra di scorrimento su un video da cento MB.
+   * Serve a una cosa sola e non se ne può fare a meno: un tag img o video non
+   * sa mettere l'header con la credenziale. Senza, la galleria dovrebbe
+   * scaricare ogni file in memoria per mostrarlo — niente anteprime pigre,
+   * niente barra di scorrimento su un video da cento MB.
    *
-   * Il gateway lo accetta **solo sulle GET** e lo marca «SameSite=Strict»:
-   * nessun altro sito può farlo partire, e niente che cambi qualcosa passa da
-   * lì. Vedi «chiE» in «server.ts».
+   * Il gateway lo accetta **solo in lettura** e lo marca SameSite=Strict.
    */
   async function piantaSessione() {
     try { await chiama("/sessione", { method: "POST", body: "{}" }); } catch (e) { /* si vedrà */ }
@@ -401,7 +477,7 @@ const PAGINA = `<!doctype html>
     var avviso = $("avviso-entra");
     avviso.className = "avviso";
     if (!nome) {
-      avviso.textContent = "Scrivi chi sei: è il nome che comparirà accanto a quello che chiedi.";
+      avviso.textContent = "Scrivi come ti chiami: è il nome che si vedrà accanto a quello che chiedi.";
       avviso.className = "avviso male";
       return;
     }
@@ -417,13 +493,9 @@ const PAGINA = `<!doctype html>
         body: JSON.stringify({ codice: codice, nome: nome }),
       });
       token = esito.token;
-      ruolo = (esito.dispositivo && esito.dispositivo.ruolo) || "ospite";
       ioNome = nome;
       localStorage.setItem(CHIAVE, token);
-      localStorage.setItem(CHIAVE_RUOLO, ruolo);
       localStorage.setItem(CHIAVE_NOME, nome);
-      avviso.textContent = "Collegato a " + (esito.computer || "il PC") + ".";
-      avviso.className = "avviso bene";
       await entra();
     } catch (e) {
       avviso.textContent = e.message;
@@ -436,15 +508,17 @@ const PAGINA = `<!doctype html>
   function scollega(automatico) {
     token = "";
     localStorage.removeItem(CHIAVE);
-    localStorage.removeItem(CHIAVE_RUOLO);
     if (flusso) { flusso.close(); flusso = null; }
     for (var s of document.querySelectorAll(".pagina")) s.classList.remove("on");
     $("pag-entra").classList.add("on");
     $("fondo").hidden = true;
     $("chi").hidden = true;
     $("nome").value = ioNome;
-    $("statoTesto").textContent = automatico ? "il PC non ci riconosce più" : "scollegato";
-    $("pallino").classList.remove("on");
+    if (automatico) {
+      var avviso = $("avviso-entra");
+      avviso.textContent = "Il computer non ci riconosce più: fatti dare un codice nuovo.";
+      avviso.className = "avviso male";
+    }
   }
 
   /* ---------------------------------------------------------- navigazione */
@@ -457,24 +531,125 @@ const PAGINA = `<!doctype html>
       b.classList.toggle("on", b.dataset.pagina === quale);
     }
     window.scrollTo({ top: 0 });
-    // La galleria si rilegge quando la si apre, e non più di una volta ogni
-    // dieci secondi: è l'unica pagina che chiede una lista di file.
-    if (quale === "galleria" && Date.now() - ultimaGalleria > 10000) leggiGalleria();
+    if (quale === "galleria") leggiGalleria();
+  }
+
+  /* ------------------------------------------------------- il semaforo */
+
+  /**
+   * La risposta alla sola domanda che conta: **funziona?**
+   *
+   * Non un elenco di spie da interpretare: una frase, e se qualcosa non va il
+   * tasto per rimediare accanto. L'ordine dei controlli è quello di quanto
+   * fanno male: senza gateway non funziona niente, col firewall chiuso non
+   * arriva nessuno, senza Tailscale né tunnel funziona solo in casa.
+   */
+  function disegnaSemaforo() {
+    if (!pannello) return;
+    var box = $("semaforo");
+    var tasto = $("semaforo-tasto");
+    tasto.hidden = true;
+    box.className = "semaforo bene";
+    $("semaforo-faccia").textContent = "\\u2713";
+
+    var fuoriCasa = pannello.indirizzi.some(function (i) { return i.dove === "ovunque"; });
+    /**
+     * Il firewall conta **anche con Tailscale**, e per un pelo non me ne
+     * accorgevo: una regola di Windows vale per la porta, non per la scheda di
+     * rete da cui si arriva, quindi blocca allo stesso modo chi entra dalla
+     * wifi e chi entra dalla rete virtuale. L'unico che lo scavalca è il
+     * tunnel, perché quella connessione **esce** dal computer invece di
+     * entrarci: quando è acceso, la porta chiusa non fa alcun danno.
+     */
+    var passaDalTunnel = pannello.tunnel.fase === "acceso";
+
+    if (pannello.tunnel.fase === "scarico" || pannello.tunnel.fase === "accendo") {
+      box.className = "semaforo aspetta";
+      $("semaforo-faccia").textContent = "\\u22EF";
+      $("semaforo-titolo").textContent = "Sto aprendo la strada da fuori";
+      $("semaforo-perche").textContent =
+        pannello.tunnel.fase === "scarico"
+          ? "Scarico quello che serve, una volta sola" +
+            (pannello.tunnel.quota ? " — " + Math.round(pannello.tunnel.quota * 100) + "%" : "") + "…"
+          : "Ci vuole qualche secondo.";
+      return;
+    }
+
+    if (pannello.firewall && !pannello.firewall.aperta && !pannello.firewall.incerto && !passaDalTunnel) {
+      box.className = "semaforo male";
+      $("semaforo-faccia").textContent = "\\u2715";
+      $("semaforo-titolo").textContent = "Windows sta bloccando";
+      $("semaforo-perche").textContent =
+        "Il computer risponde, ma il firewall non lascia entrare nessuno dalla rete. " +
+        "È il motivo per cui dal telefono sembra spento.";
+      if (pannello.puoiDecidere) {
+        tasto.hidden = false;
+        tasto.textContent = "Sblocca";
+        tasto.onclick = sbloccaLaPorta;
+      }
+      return;
+    }
+
+    if (pannello.tunnel.fase === "guasto") {
+      box.className = "semaforo aspetta";
+      $("semaforo-faccia").textContent = "!";
+      $("semaforo-titolo").textContent = "In casa funziona, fuori no";
+      $("semaforo-perche").textContent = pannello.tunnel.motivo || "La strada da fuori non si è aperta.";
+      return;
+    }
+
+    $("semaforo-titolo").textContent = fuoriCasa ? "Tutto a posto, anche fuori casa" : "Tutto a posto";
+    $("semaforo-perche").textContent = fuoriCasa
+      ? "Questo computer si raggiunge da qualunque rete."
+      : "Si raggiunge dalla rete di casa. Per usarlo anche fuori, guarda Collegamento.";
+  }
+
+  /** I quadrati con i numeri: quanti collegati, quanti lavori, com'è la strada. */
+  function disegnaNumeri() {
+    var dove = $("numeri");
+    dove.innerHTML = "";
+    if (!pannello || !suite) return;
+
+    var inAttesa = richieste.filter(function (r) { return r.stato === "in-attesa"; }).length;
+    var inLavoro = richieste.filter(function (r) {
+      return r.stato === "accettata" || r.stato === "in-lavoro";
+    }).length;
+    var pronte = richieste.filter(function (r) { return r.stato === "pronta"; }).length;
+
+    quadratoNumero(dove, pannello.dispositivi.length, "collegati", inAttesa ? "" : "verde", "collegamento");
+    quadratoNumero(dove, inLavoro, inLavoro === 1 ? "in lavorazione" : "in lavorazione", inLavoro ? "giallo" : "", "lavori");
+    quadratoNumero(dove, pronte, "pronti", pronte ? "verde" : "", "lavori");
+    quadratoNumero(dove, inAttesa, "aspettano il sì", inAttesa ? "rosso" : "", "lavori");
+  }
+
+  function quadratoNumero(dove, numero, testo, colore, vai) {
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "quadrato " + (colore || "");
+    var n = document.createElement("span");
+    n.className = "grande";
+    n.textContent = String(numero);
+    var t = document.createElement("span");
+    t.className = "nome";
+    t.textContent = testo;
+    b.append(n, t);
+    b.addEventListener("click", function () { vaiA(vai); });
+    dove.append(b);
   }
 
   /* ------------------------------------------------------------- le azioni */
 
-  /** Come si chiama una scheda della suite, e il suo segno. */
-  //
-  // Sono caratteri del piano base e non emoji, e non è una scelta di stile: un
-  // emoji fuori dal piano base si scrive con due unità, e scritto con la
-  // vecchia forma a quattro cifre diventa un carattere sbagliato più un «3» —
-  // che è esattamente quello che compariva accanto a «Leggi un testo». Questi
-  // si vedono uguali su ogni telefono e non hanno quel problema.
+  /**
+   * Come si chiama una scheda della suite, e il suo segno.
+   *
+   * Sono caratteri del piano base e non emoji: un emoji fuori dal piano base
+   * scritto con quattro cifre diventa un carattere sbagliato più una cifra —
+   * ed è esattamente quello che compariva accanto a «Leggi un testo».
+   */
   var SCHEDE = {
-    foto: { nome: "DaProdFoto", segno: "\\u25C9", che: "immagini da una descrizione" },
-    cinema: { nome: "DaProdCinema", segno: "\\u25B6", che: "clip video, col suono dentro" },
-    musica: { nome: "DaProdMusica", segno: "\\u266B", che: "canzoni, anche cantate" },
+    foto: { nome: "DaProdFoto", segno: "\\u25C9", che: "un'immagine da una descrizione" },
+    cinema: { nome: "DaProdCinema", segno: "\\u25B6", che: "una clip video, col suono" },
+    musica: { nome: "DaProdMusica", segno: "\\u266B", che: "una canzone, anche cantata" },
     voce: { nome: "DaProdVoce", segno: "\\u275E", che: "un testo letto ad alta voce" },
     suite: { nome: "La suite", segno: "\\u25A6", che: "leggere e decidere" },
   };
@@ -482,26 +657,9 @@ const PAGINA = `<!doctype html>
   function disegnaTessere() {
     var dove = $("tessere");
     dove.innerHTML = "";
-    // Le tessere sono le azioni che occupano la scheda video: quelle che una
-    // persona vuole chiedere da qui. Le altre — leggere la libreria, decidere —
-    // sono roba da console e da agenti, e stanno nella pagina «Chiedi».
     for (var a of azioni.filter(function (x) { return x.coda; })) {
       var scheda = SCHEDE[a.app] || SCHEDE.suite;
-      var b = document.createElement("button");
-      b.type = "button";
-      b.className = "tessera";
-      var segno = document.createElement("span");
-      segno.className = "segno";
-      segno.textContent = scheda.segno;
-      var titolo = document.createElement("span");
-      titolo.textContent = a.titolo;
-      var sotto = document.createElement("small");
-      sotto.textContent = scheda.nome + " — " + scheda.che;
-      b.append(segno, titolo, sotto);
-      b.addEventListener("click", (function (azione) {
-        return function () { vaiA("chiedi"); scegli(azione); };
-      })(a));
-      dove.append(b);
+      dove.append(quadratoAzione(a, scheda.segno, scheda.che));
     }
   }
 
@@ -509,19 +667,28 @@ const PAGINA = `<!doctype html>
     var elenco = $("elenco-azioni");
     elenco.innerHTML = "";
     for (var a of azioni) {
-      var b = document.createElement("button");
-      b.type = "button";
-      b.className = "tessera";
-      var titolo = document.createElement("span");
-      titolo.textContent = a.titolo;
-      var s = document.createElement("small");
-      s.textContent = a.coda ? "occupa la scheda video · va in fila" : "risponde subito";
-      b.append(titolo, s);
-      b.addEventListener("click", (function (azione) {
-        return function () { scegli(azione); };
-      })(a));
-      elenco.append(b);
+      var scheda = SCHEDE[a.app] || SCHEDE.suite;
+      elenco.append(
+        quadratoAzione(a, scheda.segno, a.coda ? "lo fa la scheda video" : "risponde subito"),
+      );
     }
+  }
+
+  function quadratoAzione(a, segno, sotto) {
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "quadrato";
+    var s = document.createElement("span");
+    s.className = "segno";
+    s.textContent = segno;
+    var n = document.createElement("span");
+    n.className = "nome";
+    n.textContent = a.titolo;
+    var p = document.createElement("small");
+    p.textContent = sotto;
+    b.append(s, n, p);
+    b.addEventListener("click", function () { vaiA("chiedi"); scegli(a); });
+    return b;
   }
 
   /** Costruisce il modulo dai campi dichiarati: qui non si sa cosa siano. */
@@ -587,7 +754,7 @@ const PAGINA = `<!doctype html>
 
     modulo.hidden = false;
     $("fila-manda").hidden = false;
-    $("manda").textContent = a.coda ? "Manda al PC" : a.titolo;
+    $("manda").textContent = a.coda ? "Mandalo al computer" : a.titolo;
     $("avviso-azione").textContent = "";
     $("avviso-azione").className = "avviso";
     modulo.scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -616,14 +783,10 @@ const PAGINA = `<!doctype html>
         body: JSON.stringify(valori),
       });
       if (esito.esito === "in-coda") {
-        avviso.textContent = "In fila sul PC. Adesso tocca a chi ci sta davanti.";
-        avviso.className = "avviso bene";
         chiudiModulo();
         await leggiCoda();
-        vaiA("fila");
+        vaiA("lavori");
       } else {
-        avviso.className = "avviso";
-        avviso.textContent = "";
         mostraRisposta(esito.risultato);
       }
     } catch (e) {
@@ -634,31 +797,29 @@ const PAGINA = `<!doctype html>
     }
   }
 
-  /** La risposta di un'azione che risponde subito: un elenco, di solito. */
   function mostraRisposta(risultato) {
-    var modulo = $("modulo");
     var box = document.createElement("pre");
     box.style.cssText =
-      "margin-top:16px;padding:12px;border:1px solid var(--line);border-radius:11px;" +
+      "margin-top:16px;padding:12px;border:1px solid var(--line);border-radius:12px;" +
       "background:#0b0d13;font-size:12px;overflow:auto;max-height:340px;white-space:pre-wrap";
     box.textContent = typeof risultato === "string" ? risultato : JSON.stringify(risultato, null, 2);
-    modulo.append(box);
+    $("modulo").append(box);
     box.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }
 
-  /* ---------------------------------------------------------------- coda */
+  /* ---------------------------------------------------------------- lavori */
 
   var NOMI_STATO = {
     "in-attesa": ["attesa", "aspetta il sì"],
-    accettata: ["lavoro", "accettata"],
-    "in-lavoro": ["lavoro", "in lavorazione"],
-    pronta: ["pronta", "pronta"],
-    scartata: ["brutto", "scartata"],
-    scaduta: ["brutto", "scaduta"],
+    accettata: ["lavoro", "in partenza"],
+    "in-lavoro": ["lavoro", "ci sta lavorando"],
+    pronta: ["pronta", "pronto"],
+    scartata: ["brutto", "non fatto"],
+    scaduta: ["brutto", "scaduto"],
   };
 
   async function leggiCoda() {
-    var richieste = await chiama("/richieste");
+    richieste = await chiama("/richieste");
     var elenco = $("coda");
     elenco.innerHTML = "";
 
@@ -676,6 +837,10 @@ const PAGINA = `<!doctype html>
 
     $("bollo").hidden = attesa === 0;
     $("bollo").textContent = attesa;
+    $("sotto-lavori").textContent = puoiDecidere
+      ? "Quello che è stato chiesto. Quando dici di sì, il computer lo fa da solo."
+      : "Quello che hai chiesto, dal più recente.";
+    disegnaNumeri();
   }
 
   function rigaRichiesta(r) {
@@ -688,7 +853,8 @@ const PAGINA = `<!doctype html>
     t.textContent = r.testo;
     var d = document.createElement("div");
     d.className = "dettaglio";
-    d.textContent = [r.app, r.daNome, quando(r.quando), r.motivoScarto].filter(Boolean).join(" · ");
+    d.textContent = [nomeScheda(r.app), r.daNome, quando(r.quando), r.motivoScarto]
+      .filter(Boolean).join(" · ");
     corpo.append(t, d);
 
     var stato = NOMI_STATO[r.stato] || ["", r.stato];
@@ -701,25 +867,27 @@ const PAGINA = `<!doctype html>
     if (r.stato === "pronta" && r.risultato) {
       var giu = document.createElement("button");
       giu.className = "mini";
-      giu.textContent = "scarica";
+      giu.textContent = "tieni";
       giu.addEventListener("click", function () { scarica(r.risultato.nome); });
       li.append(giu);
     }
 
-    // Solo il padrone decide. A un ospite due bottoni che rispondono «non puoi»
-    // sono peggio di nessun bottone.
-    if (ruolo === "admin" && r.stato === "in-attesa") {
+    if (puoiDecidere && r.stato === "in-attesa") {
       var si = document.createElement("button");
       si.className = "mini";
-      si.textContent = "accetta";
+      si.textContent = "fallo";
       si.addEventListener("click", function () { decidi(r.id, "accettata"); });
       var no = document.createElement("button");
       no.className = "mini male";
-      no.textContent = "scarta";
+      no.textContent = "lascia perdere";
       no.addEventListener("click", function () { decidi(r.id, "scartata"); });
       li.append(si, no);
     }
     return li;
+  }
+
+  function nomeScheda(app) {
+    return (SCHEDE[app] || {}).nome || app;
   }
 
   async function decidi(id, stato) {
@@ -735,18 +903,13 @@ const PAGINA = `<!doctype html>
   }
 
   /**
-   * Scarica un risultato pronto.
+   * Porta un file nel dispositivo.
    *
-   * Passa da «fetch» e non da un link diretto perché il file vuole il token, e
-   * un «<a href>» l'header non lo mette. Il biscotto di sessione lo farebbe,
-   * ma un download va anche **nominato**: così il file arriva col suo nome
-   * invece che con l'id.
+   * Dentro l'app Android lo tira giù **lei**: ha già la credenziale, e sa
+   * mettere un video in galleria e un brano fra la musica invece che in una
+   * cartella dell'app.
    */
   async function scarica(nome) {
-    // Dentro l'app Android il file lo tira giù **lei**, non questa pagina: ha
-    // già il token, e sa mettere un video in galleria e un brano fra la musica
-    // invece che in una cartella dell'app. Passare cento MB di base64 da qui a
-    // lì sarebbe la strada lunga e fragile per un risultato peggiore.
     if (window.DaProdApp && window.DaProdApp.scaricaRisultato) {
       window.DaProdApp.scaricaRisultato(nome);
       return;
@@ -791,7 +954,6 @@ const PAGINA = `<!doctype html>
   }
 
   async function leggiGalleria() {
-    ultimaGalleria = Date.now();
     var dove = $("quadri");
     try {
       var risposta = await chiama("/libreria?quanti=48" + (filtro ? "&tipo=" + filtro : ""));
@@ -834,7 +996,7 @@ const PAGINA = `<!doctype html>
     nome.title = v.nome;
     var riga = document.createElement("div");
     riga.className = "riga";
-    riga.textContent = [v.app, quando(v.creato), pesa(v.bytes)].filter(Boolean).join(" · ");
+    riga.textContent = [nomeScheda(v.app), quando(v.creato), pesa(v.bytes)].filter(Boolean).join(" · ");
     sotto.append(nome, riga);
 
     if (v.tipo === "audio") {
@@ -845,9 +1007,6 @@ const PAGINA = `<!doctype html>
       sotto.append(au);
     }
 
-    // Solo dentro l'app Android: da un browser il file si salva col tasto
-    // destro, dal telefono no — e «guardalo qui» non è la stessa cosa di
-    // «tienilo con le tue foto».
     if (window.DaProdApp && window.DaProdApp.scaricaLibreria) {
       var tieni = document.createElement("button");
       tieni.className = "mini";
@@ -863,50 +1022,233 @@ const PAGINA = `<!doctype html>
     return box;
   }
 
+  /* --------------------------------------------------------- collegamento */
+
+  async function leggiPannello() {
+    pannello = await chiama("/pannello");
+    puoiDecidere = pannello.puoiDecidere === true;
+    disegnaSemaforo();
+    disegnaNumeri();
+    disegnaCollegamento();
+  }
+
+  function disegnaCollegamento() {
+    if (!pannello) return;
+
+    $("sotto-collegamento").textContent =
+      pannello.computer + " · " + pannello.dispositivi.length + " collegati";
+    $("scheda-invita").hidden = !puoiDecidere;
+
+    // I quadrati della rete: uno per cosa, col suo colore.
+    var q = $("quadrati-rete");
+    q.innerHTML = "";
+
+    // Due strade diverse per la stessa cosa, e vanno distinte: con Tailscale ci
+    // si arriva già da fuori, e il tunnel non serve. Scrivere solo «sì» accanto
+    // a un tasto «apri» faceva sembrare che mancasse qualcosa.
+    var conTailscale = pannello.indirizzi.some(function (i) {
+      return i.dove === "ovunque" && i.base.indexOf("trycloudflare") < 0;
+    });
+    var conTunnel = pannello.tunnel.fase === "acceso";
+    quadratoStato(q, "\\u2302", "Rete di casa", "sempre", "verde", null);
+    quadratoStato(
+      q,
+      "\\u2708",
+      "Da fuori casa",
+      conTailscale ? "sì, con Tailscale" : conTunnel ? "sì, dal tunnel" : "no",
+      conTailscale || conTunnel ? "verde" : "",
+      puoiDecidere
+        ? {
+            testo: conTunnel
+              ? "chiudi il tunnel"
+              : conTailscale
+                ? "apri anche il tunnel"
+                : "apri il tunnel",
+            fai: cambiaTunnel,
+          }
+        : null,
+    );
+    var muro = pannello.firewall || { incerto: true };
+    quadratoStato(
+      q,
+      "\\u26E8",
+      "Firewall",
+      muro.incerto ? "non lo so" : muro.aperta ? "lascia entrare" : "blocca",
+      muro.incerto ? "" : muro.aperta ? "verde" : "rosso",
+      puoiDecidere && !muro.aperta && !muro.incerto ? { testo: "sblocca", fai: sbloccaLaPorta } : null,
+    );
+    quadratoStato(
+      q,
+      "\\u25B8",
+      "I lavori partono da soli",
+      pannello.codaAutomatica ? "sì" : "no",
+      pannello.codaAutomatica ? "verde" : "giallo",
+      null,
+    );
+
+    // Chi è collegato.
+    var elenco = $("dispositivi");
+    elenco.innerHTML = "";
+    for (var d of pannello.dispositivi) elenco.append(rigaDispositivo(d));
+    if (!pannello.dispositivi.length) {
+      var vuoto = document.createElement("li");
+      vuoto.className = "vuoto";
+      vuoto.textContent = "Nessuno, per adesso. Premi «Invita qualcuno».";
+      elenco.append(vuoto);
+    }
+
+    // Da dove si arriva.
+    var dove = $("indirizzi");
+    dove.innerHTML = "";
+    for (var i of pannello.indirizzi) {
+      var li = document.createElement("li");
+      var corpo = document.createElement("div");
+      corpo.className = "cresce";
+      var c = document.createElement("code");
+      c.textContent = i.base;
+      var d2 = document.createElement("div");
+      d2.className = "dettaglio";
+      d2.textContent = i.che;
+      corpo.append(c, d2);
+      var p = document.createElement("span");
+      p.className = "pillola" + (i.dove === "ovunque" ? " pronta" : "");
+      p.textContent = i.dove === "ovunque" ? "ovunque" : "in casa";
+      li.append(corpo, p);
+      dove.append(li);
+    }
+  }
+
+  function quadratoStato(dove, segno, nome, valore, colore, azione) {
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "quadrato " + (colore || "") + (azione ? "" : " spento");
+    var s = document.createElement("span");
+    s.className = "segno";
+    s.textContent = segno;
+    var n = document.createElement("span");
+    n.className = "nome";
+    n.textContent = nome;
+    var v = document.createElement("small");
+    v.textContent = valore;
+    b.append(s, n, v);
+    if (azione) {
+      var t = document.createElement("small");
+      t.style.color = "var(--accent)";
+      t.textContent = azione.testo;
+      b.append(t);
+      b.addEventListener("click", azione.fai);
+    }
+    dove.append(b);
+  }
+
+  function rigaDispositivo(d) {
+    var li = document.createElement("li");
+    var corpo = document.createElement("div");
+    corpo.className = "cresce";
+    var t = document.createElement("div");
+    t.className = "titolo";
+    t.textContent = d.nome;
+    var s = document.createElement("div");
+    s.className = "dettaglio";
+    // Cosa **può fare**, non cosa **è**: «padrone» e «ospite» non dicevano
+    // niente a chi legge, e uno dei due suonava pure male.
+    s.textContent =
+      (d.ruolo === "admin" ? "può anche decidere" : "può chiedere") +
+      " · visto " + quando(d.ultimoAccesso);
+    corpo.append(t, s);
+    li.append(corpo);
+
+    if (puoiDecidere) {
+      var via = document.createElement("button");
+      via.className = "mini male";
+      via.textContent = "togli";
+      via.addEventListener("click", function () {
+        if (!confirm("Togliere il collegamento a " + d.nome + "?")) return;
+        chiama("/dispositivi/" + encodeURIComponent(d.id), { method: "DELETE" })
+          .then(leggiPannello)
+          .catch(function (e) { alert(e.message); });
+      });
+      li.append(via);
+    }
+    return li;
+  }
+
+  async function cambiaTunnel() {
+    var acceso = pannello && pannello.tunnel.fase === "acceso";
+    try {
+      await chiama("/pannello/tunnel", {
+        method: "POST",
+        body: JSON.stringify({ acceso: !acceso }),
+      });
+      await leggiPannello();
+    } catch (e) {
+      alert(e.message);
+    }
+  }
+
+  async function sbloccaLaPorta() {
+    try {
+      var esito = await chiama("/pannello/porta", { method: "POST", body: "{}" });
+      if (esito && esito.errore) alert(esito.errore);
+      await leggiPannello();
+    } catch (e) {
+      alert(e.message);
+    }
+  }
+
+  async function invita(ruolo, quante) {
+    var avviso = $("avviso-invito");
+    avviso.className = "avviso";
+    avviso.textContent = "";
+    try {
+      var invito = await chiama("/pannello/invito", {
+        method: "POST",
+        body: JSON.stringify({ ruolo: ruolo, quante: quante }),
+      });
+      $("riquadro-qr").hidden = false;
+      $("qr").src = invito.qr;
+      $("codice-invito").textContent = invito.codice;
+      contaAllaRovescia(invito.scade, invito.restano);
+      await leggiPannello();
+    } catch (e) {
+      avviso.textContent = e.message;
+      avviso.className = "avviso male";
+    }
+  }
+
+  /**
+   * Il conto alla rovescia dell'invito.
+   *
+   * Senza, chi torna qui mezz'ora dopo vede un codice che sembra buono e non
+   * funziona più: meglio vederlo scadere sotto gli occhi.
+   */
+  function contaAllaRovescia(scade, restano) {
+    if (orologioInvito) clearInterval(orologioInvito);
+    var battito = function () {
+      var secondi = Math.round((scade - Date.now()) / 1000);
+      if (secondi <= 0) {
+        clearInterval(orologioInvito);
+        orologioInvito = null;
+        $("riquadro-qr").hidden = true;
+        return;
+      }
+      $("scade-invito").textContent =
+        "Vale ancora " + Math.floor(secondi / 60) + ":" + String(secondi % 60).padStart(2, "0") +
+        (restano > 1 ? " · per " + restano + " persone" : "");
+    };
+    battito();
+    orologioInvito = setInterval(battito, 1000);
+  }
+
   /* -------------------------------------------------------------- lo stato */
 
   function disegnaStato(s) {
     if (!s) return;
-    $("pallino").classList.toggle("on", !!s.attiva);
-    $("statoTesto").textContent = s.computer || "il PC";
-    $("titolo-suite").textContent = s.computer || "Il computer";
-
-    var pezzi = [];
-    if (s.coda) {
-      if (s.coda.attesa) pezzi.push(s.coda.attesa + " in attesa");
-      if (s.coda.lavoro) pezzi.push(s.coda.lavoro + " in lavorazione");
-      if (s.coda.pronte) pezzi.push(s.coda.pronte + " pronte");
-    }
-    $("sotto-suite").textContent = pezzi.length ? pezzi.join(" · ") : "Niente in fila.";
-
-    var elenco = $("attivita");
-    elenco.innerHTML = "";
-    for (var a of (s.attivita || [])) {
-      var li = document.createElement("li");
-      var corpo = document.createElement("div");
-      corpo.className = "cresce";
-      var t = document.createElement("div");
-      t.className = "titolo";
-      t.textContent = a.nome;
-      var d = document.createElement("div");
-      d.className = "dettaglio";
-      d.textContent = a.dettaglio || "";
-      corpo.append(t, d);
-      var p = document.createElement("span");
-      p.className = "pillola lavoro";
-      p.textContent = a.stato;
-      li.append(corpo, p);
-      elenco.append(li);
-    }
-    if (!(s.attivita || []).length) {
-      var vuoto = document.createElement("li");
-      vuoto.className = "vuoto";
-      vuoto.textContent = "Nessuna scheda accesa in questo momento.";
-      elenco.append(vuoto);
-    }
-
+    suite = s;
     $("nota-versione").textContent =
-      "DaProd Suite " + (s.versione || "") + " · questa pagina la serve il PC, e i modelli girano lì.";
+      "DaProd Suite " + (s.versione || "") + " su " + (s.computer || "questo computer") +
+      " · questa pagina la serve il computer, e i modelli girano lì.";
+    disegnaNumeri();
   }
 
   /* ---------------------------------------------------------------- entra */
@@ -914,52 +1256,54 @@ const PAGINA = `<!doctype html>
   async function entra() {
     for (var s of document.querySelectorAll(".pagina")) s.classList.remove("on");
     $("fondo").hidden = false;
-    vaiA("suite");
+    vaiA("casa");
 
     await piantaSessione();
 
-    // Chi sono, chiesto al PC e non ricordato dal browser: se il nome è stato
-    // cambiato di là, qui si vede quello vero.
     try {
       var io = await chiama("/io");
       ioNome = io.nome || ioNome;
-      ruolo = io.ruolo || ruolo;
       localStorage.setItem(CHIAVE_NOME, ioNome);
-      localStorage.setItem(CHIAVE_RUOLO, ruolo);
     } catch (e) { /* si riprova al giro dopo */ }
 
     $("chi").hidden = false;
-    $("chi").textContent = ioNome + (ruolo === "admin" ? " · padrone" : "");
+    $("chi").textContent = ioNome;
 
     try {
       azioni = await chiama("/azioni");
       disegnaTessere();
       disegnaAzioni();
-    } catch (e) { /* senza azioni restano la fila e la galleria */ }
+    } catch (e) { /* senza azioni restano i lavori e la galleria */ }
 
     disegnaFiltri();
     try { await leggiCoda(); } catch (e) { /* offline */ }
     try { disegnaStato(await chiama("/stato")); } catch (e) { /* offline */ }
+    try { await leggiPannello(); } catch (e) { /* offline */ }
     apriFlusso();
   }
 
   /**
-   * Lo stato vivo, in streaming.
+   * Lo stato dal vivo.
    *
-   * «EventSource» non sa mettere header: fino alla 0.5.2 il token andava in
-   * query. Adesso c'è il biscotto di sessione, che vale per le GET, e il token
-   * in query resta solo come ripiego per un browser che i biscotti non li
-   * tiene.
+   * Il gateway spinge su una connessione aperta a ogni cambiamento: una
+   * richiesta nuova, un lavoro che parte, il tunnel che si alza, il firewall che
+   * si apre. A ogni spinta si rilegge quel poco che serve — due chiamate corte
+   * — invece di avere un tasto «aggiorna» da nessuna parte.
    */
   function apriFlusso() {
     if (flusso) flusso.close();
     flusso = new EventSource("/stato/stream?token=" + encodeURIComponent(token));
     flusso.onmessage = function (ev) {
-      try { disegnaStato(JSON.parse(ev.data)); } catch (e) { /* battito */ }
+      try { disegnaStato(JSON.parse(ev.data)); } catch (e) { return; }
+      leggiCoda().catch(function () {});
+      leggiPannello().catch(function () {});
     };
     flusso.onerror = function () {
-      $("pallino").classList.remove("on");
-      $("statoTesto").textContent = "non raggiungibile";
+      var box = $("semaforo");
+      box.className = "semaforo male";
+      $("semaforo-faccia").textContent = "\\u2715";
+      $("semaforo-titolo").textContent = "Non riesco a parlare col computer";
+      $("semaforo-perche").textContent = "Provo a riprendere da solo…";
     };
   }
 
@@ -967,12 +1311,11 @@ const PAGINA = `<!doctype html>
 
   function quando(ms) {
     if (!ms) return "";
-    var d = new Date(ms);
     var passati = (Date.now() - ms) / 1000;
     if (passati < 60) return "adesso";
     if (passati < 3600) return Math.round(passati / 60) + " min fa";
     if (passati < 86400) return Math.round(passati / 3600) + " h fa";
-    return d.toLocaleDateString("it-IT", { day: "numeric", month: "short" });
+    return new Date(ms).toLocaleDateString("it-IT", { day: "numeric", month: "short" });
   }
 
   function pesa(b) {
@@ -987,11 +1330,10 @@ const PAGINA = `<!doctype html>
   $("codice").addEventListener("keydown", function (ev) { if (ev.key === "Enter") collega(); });
   $("manda").addEventListener("click", manda);
   $("annulla").addEventListener("click", chiudiModulo);
-  $("chi").addEventListener("click", function () {
-    if (confirm("Scollegare questo dispositivo? Il PC lo tiene nell'elenco finché non lo togli da lì.")) {
-      scollega(false);
-    }
-  });
+  $("invita-uno").addEventListener("click", function () { invita("ospite", 1); });
+  $("invita-tanti").addEventListener("click", function () { invita("ospite", 10); });
+  $("invita-decide").addEventListener("click", function () { invita("admin", 1); });
+  $("chi").addEventListener("click", function () { vaiA("collegamento"); });
   for (var b of document.querySelectorAll("nav.fondo button")) {
     b.addEventListener("click", (function (quale) {
       return function () { vaiA(quale); };
@@ -1000,9 +1342,11 @@ const PAGINA = `<!doctype html>
 
   // Tornare sulla pagina è il momento in cui si vuole sapere com'è andata.
   document.addEventListener("visibilitychange", function () {
-    if (document.visibilityState === "visible" && token) {
-      leggiCoda().catch(function () {});
-    }
+    if (document.visibilityState !== "visible" || !token) return;
+    leggiCoda().catch(function () {});
+    leggiPannello().catch(function () {});
+    // Il flusso, dopo un po' in secondo piano, il telefono lo chiude: si riapre.
+    if (!flusso || flusso.readyState === 2) apriFlusso();
   });
 
   $("nome").value = ioNome;

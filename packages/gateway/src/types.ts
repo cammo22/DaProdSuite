@@ -127,28 +127,52 @@ export interface Invito {
   ruolo: Ruolo;
   /** Data di scadenza, in millisecondi. */
   scade: number;
+  /**
+   * Quante persone può ancora far entrare.
+   *
+   * Nasce da «più di venti persone collegate, di picco»: con un codice a testa
+   * servirebbero venti giri al pannello, e ogni codice vive cinque minuti. Un
+   * invito che vale per dieci si mostra una volta e lo inquadrano tutti.
+   *
+   * Resta **a tempo**, che è la protezione vera: un codice che vale per sempre
+   * è una password scritta su un muro. Gli inviti vecchi, senza questo campo,
+   * valgono per uno — è quello che facevano.
+   */
+  restano?: number;
 }
 
 /**
  * Payload da mettere nel QR: l'app lo legge per sapere dove e con cosa parlare.
  *
- * **La versione 2 aggiunge `base`, e serviva.** Fino alla 1 nel QR c'era solo
- * `host` — «192.168.1.20:8790» — e l'app ci costruiva davanti `http://`. Con il
- * tunnel su Internet l'indirizzo è `https://qualcosa.trycloudflare.com`: non ha
- * una porta, non è HTTP, e non entra in un campo che si chiama host. `base` è
- * l'indirizzo completo, con lo schema, ed è quello che l'app deve usare.
+ * **Tre versioni, e ogni volta il campo nuovo risolve un guasto vero.**
  *
- * `host` resta, e resta giusto: è l'indirizzo **sulla rete di casa**, che
- * funziona anche quando il tunnel è spento. Un'app vecchia legge quello e
- * continua a funzionare in casa; una nuova preferisce `base`.
+ * - `v1` aveva solo `host`, «192.168.1.20:8790», e l'app ci costruiva davanti
+ *   `http://`. Funzionava finché si restava in casa.
+ * - `v2` ha aggiunto `base`, l'indirizzo **completo con lo schema**: con il
+ *   tunnel il gateway sta su `https://…`, che non ha una porta e non è HTTP.
+ * - `v3` ha aggiunto `basi`, cioè **tutti** gli indirizzi insieme. È la
+ *   risposta al difetto che si vedeva usandola: un indirizzo solo è una
+ *   fotografia, e appena il PC cambia rete — o riavvia il tunnel, che ogni
+ *   volta prende un nome nuovo — quella fotografia non vale più e il telefono
+ *   dice «non raggiungibile» per sempre. Con l'elenco, l'app li prova tutti e
+ *   si ricorda quale ha risposto.
+ *
+ * `host` e `base` restano compilati: un'app vecchia continua a funzionare.
  */
 export interface InvitoQr {
-  /** Versione della struttura: 1 al primo giro, 2 da quando c'è `base`. */
-  v: 1 | 2;
+  /** Versione della struttura. */
+  v: 1 | 2 | 3;
   /** Indirizzo del gateway sulla rete locale, es. "192.168.1.20:8790". */
   host: string;
-  /** L'indirizzo completo da usare, con lo schema. Presente dalla v2. */
+  /** L'indirizzo completo più promettente, con lo schema. Dalla v2. */
   base?: string;
+  /**
+   * Tutti gli indirizzi, dal più promettente. Dalla v3.
+   *
+   * L'ordine conta: Tailscale per primo se c'è (funziona anche fuori casa),
+   * poi la rete di casa, poi il tunnel. Chi legge li prova in quest'ordine.
+   */
+  basi?: string[];
   /** Codice a otto cifre, monouso. */
   codice: string;
   /** Ruolo che questo invito concede. */
@@ -186,4 +210,71 @@ export interface FornitoreLibreria {
   elenco(filtro: { tipo?: string; app?: string; quanti?: number }): VoceLibreria[];
   /** Il file di una voce: percorso sul disco e come si chiama. Null se non c'è. */
   file(id: string): { percorso: string; nome: string; mime: string; bytes: number } | null;
+}
+
+/* -------------------------------------------------------------- il pannello */
+
+/**
+ * Tutto quello che serve a sapere **se la connessione funziona**, in un colpo.
+ *
+ * È quello che DaProdConnessione disegna a quadrati: un quadrato per cosa, con
+ * il suo colore e la sua frase. Sta qui e non nell'hub perché la stessa pagina
+ * la aprono il PC, il portatile e il telefono — e le tre cose devono dire la
+ * stessa identica verità.
+ */
+export interface StatoPannello {
+  computer: string;
+  versione: string;
+  /** Gli indirizzi su cui questo PC si fa trovare, dal più promettente. */
+  indirizzi: IndirizzoPubblico[];
+  /** Com'è messa la strada da Internet. */
+  tunnel: { fase: string; indirizzo: string; motivo?: string; quota?: number };
+  /** Windows lascia entrare sulla porta? `incerto` quando non si è riusciti a guardare. */
+  firewall: { aperta: boolean; incerto: boolean };
+  /** Chi è collegato adesso. */
+  dispositivi: DispositivoPubblico[];
+  /** L'invito vivo, se ce n'è uno. */
+  invito?: InvitoVivo;
+  /** Chi guarda può decidere sulla fila, o solo chiedere. */
+  puoiDecidere: boolean;
+  /** Vero se la coda fa partire davvero le generazioni su questo computer. */
+  codaAutomatica: boolean;
+}
+
+export interface IndirizzoPubblico {
+  /** L'indirizzo completo, con lo schema. */
+  base: string;
+  /** Una riga che dice cos'è: «la rete di casa», «Tailscale», «da Internet». */
+  che: string;
+  /** Fin dove arriva. */
+  dove: "ovunque" | "casa" | "internet";
+}
+
+export interface InvitoVivo {
+  codice: string;
+  ruolo: Ruolo;
+  scade: number;
+  /** Il QR già disegnato, come data URL PNG. */
+  qr: string;
+  /** Quante persone possono ancora usarlo. */
+  restano: number;
+}
+
+/**
+ * Chi sa rispondere sul pannello: lo passa lo shell al gateway.
+ *
+ * Come per la libreria, il gateway non sa **come** si accende un tunnel o si
+ * apre una porta: sa solo che c'è qualcuno che lo sa fare. Così le stesse
+ * quattro azioni valgono per il PC, per il portatile e per il telefono senza
+ * scriverle tre volte.
+ */
+export interface FornitorePannello {
+  stato(dispositivo: Dispositivo): StatoPannello;
+  invita(opzioni: { ruolo: Ruolo; quante: number }): Promise<InvitoVivo>;
+  tunnel(acceso: boolean): Promise<void>;
+  /** Chiede a Windows di lasciar entrare. Torna il motivo se non è andata. */
+  apriLaPorta(): Promise<string | null>;
+  revoca(id: string): void;
+  /** Cambia il nome di un dispositivo collegato. */
+  rinomina(id: string, nome: string): void;
 }

@@ -23,7 +23,13 @@ import {
   type Velocita,
   type VoceModello,
 } from "@daprod/ipc";
-import { impostaProfilo, impostaVelocita, impostazioni, segnaGuidaFatta } from "./impostazioni";
+import {
+  impostaConnessione,
+  impostaProfilo,
+  impostaVelocita,
+  impostazioni,
+  segnaGuidaFatta,
+} from "./impostazioni";
 import {
   caricaModello,
   chiediAllLlm,
@@ -44,7 +50,7 @@ import { elencoLog, leggiLog } from "./log-lettura";
 import { avviaInPiu } from "./servizi";
 import { elencoVram, scaricaDallaVram } from "./vram";
 import { requisitiDiQuestaMacchina } from "./requisiti-macchina";
-import { accessoRemoto } from "./remoto";
+import { rispostaDallaScheda } from "./esecuzione";
 import { LOGS_DIR, MODELS_DIR, OUTPUT_DIR } from "./paths";
 import { rivela } from "./rivela";
 
@@ -92,6 +98,9 @@ export function registerIpc(getHub: () => BrowserWindow | null): void {
     impostaProfilo(scelta),
   );
   ipcMain.handle(CHANNELS.impostazioniGuida, () => segnaGuidaFatta());
+  ipcMain.handle(CHANNELS.impostazioniConnessione, (_e, accesa: boolean) =>
+    impostaConnessione(accesa === true),
+  );
 
   /* -------------------------------------------------------------- runtime */
 
@@ -351,34 +360,19 @@ export function registerIpc(getHub: () => BrowserWindow | null): void {
   // Un'app che ne apre un'altra: la stessa strada dell'hub, quindi passa dagli
   // stessi controlli — l'arbitro della GPU, il motore avviato prima della
   // finestra, lo stato della scheda che si aggiorna.
+  /**
+   * La scheda dice se il lavoro chiesto da fuori è partito.
+   *
+   * Senza questa riga la fila resterebbe ad aspettare per un minuto e poi
+   * direbbe «la scheda non ha risposto» anche quando era partito benissimo.
+   */
+  ipcMain.handle(CHANNELS.appRichiestaPartita, (_e, id: string, errore?: string) => {
+    rispostaDallaScheda(String(id), typeof errore === "string" ? errore : undefined);
+  });
+
   ipcMain.handle(CHANNELS.appApri, (_e, destinazione: AppId) => appManager.open(destinazione));
 
   ipcMain.handle(CHANNELS.appChiudi, (_e, id: AppId) => appManager.close(id));
-
-  /* ---------------------------------------------------------- accesso remoto */
-
-  ipcMain.handle(CHANNELS.remotoStato, () => accessoRemoto.stato());
-  ipcMain.handle(CHANNELS.remotoAccendi, () => accessoRemoto.accendi());
-  ipcMain.handle(CHANNELS.remotoSpegni, () => accessoRemoto.spegni());
-  // La strada da Internet: un interruttore a parte, perché è una decisione a
-  // parte. Accendere il gateway vuol dire «anche dalla wifi di casa»;
-  // accendere questo vuol dire «anche dal mondo», e va detto e voluto.
-  ipcMain.handle(CHANNELS.remotoAccendiInternet, () => accessoRemoto.accendiInternet());
-  ipcMain.handle(CHANNELS.remotoSpegniInternet, () => accessoRemoto.spegniInternet());
-  ipcMain.handle(CHANNELS.remotoApriPorta, () => accessoRemoto.sbloccaLaPorta());
-  ipcMain.handle(CHANNELS.remotoNuovoInvito, (_e, ruolo: "admin" | "ospite") =>
-    accessoRemoto.nuovoInvito(ruolo),
-  );
-  ipcMain.handle(CHANNELS.remotoRevoca, (_e, id: string) => accessoRemoto.revoca(id));
-  ipcMain.handle(CHANNELS.remotoScegliRete, (_e, ip: string) => accessoRemoto.scegliRete(ip));
-  ipcMain.handle(CHANNELS.remotoDecidi, (_e, id: string, stato: "accettata" | "scartata" | "in-lavoro", motivo?: string) =>
-    accessoRemoto.decidi(id, stato, motivo),
-  );
-  ipcMain.handle(
-    CHANNELS.remotoConsegna,
-    (_e, id: string, esito: { nome: string; percorso: string; tipo: string; bytes: number }) =>
-      accessoRemoto.consegna(id, esito),
-  );
 
   /* ------------------------------------------------- notifiche al renderer */
 
@@ -391,11 +385,6 @@ export function registerIpc(getHub: () => BrowserWindow | null): void {
   runtime.on("changed", (state) => send(CHANNELS.runtimeChanged, state));
   gpu.on("changed", (state) => send(CHANNELS.gpuChanged, state));
   updater.on("changed", (state) => send(CHANNELS.updateChanged, state));
-
-  // L'accesso remoto non è un EventEmitter: si iscrive e basta. Senza questa
-  // riga il pannello "Telefono" resterebbe fermo finché non lo si riapre, e una
-  // richiesta arrivata dal telefono non comparirebbe da sola.
-  accessoRemoto.onChanged(() => send(CHANNELS.remotoChanged, accessoRemoto.stato()));
 
   const aTutte = (channel: string, payload: unknown) => {
     for (const finestra of BrowserWindow.getAllWindows()) {

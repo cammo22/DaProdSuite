@@ -21,7 +21,7 @@ import org.json.JSONObject
  *
  * **Un profilo è una credenziale, non un'etichetta.** Cambiare persona non
  * cambia un'intestazione: cambia il token con cui si parla al PC. Chi è ospite
- * resta ospite anche se il telefono è di chi è padrone, e togliere una persona
+ * resta ospite anche sul telefono di chi decide, e togliere una persona
  * da qui toglie davvero il suo accesso da questo telefono.
  */
 data class Profilo(
@@ -29,8 +29,22 @@ data class Profilo(
     val id: String,
     /** Come si presenta al PC. È quello che compare nella fila, accanto a ogni richiesta. */
     val nome: String,
-    /** L'indirizzo completo del gateway, con lo schema: `http://…` o `https://…`. */
+    /**
+     * L'indirizzo che ha funzionato l'ultima volta, con lo schema.
+     *
+     * È il primo che si prova, e viene riscritto ogni volta che ne risponde un
+     * altro: così il telefono impara da sé dove sta il computer invece di
+     * restare fermo su una fotografia vecchia.
+     */
     val base: String,
+    /**
+     * Tutti gli indirizzi che quel computer aveva quando ci si è collegati.
+     *
+     * Casa, Tailscale, il tunnel. Il telefono li prova finché uno risponde —
+     * vedi `Indirizzi.kt`. Senza questo elenco, cambiare rete voleva dire
+     * perdere il computer per sempre.
+     */
+    val basi: List<String> = emptyList(),
     val token: String,
     val ruolo: String,
     /** Come si chiama il computer a cui è collegata questa persona. */
@@ -117,6 +131,7 @@ object Profili {
                     .put("id", p.id)
                     .put("nome", p.nome)
                     .put("base", p.base)
+                    .put("basi", JSONArray().also { a -> for (b in p.basi) a.put(b) })
                     .put("token", p.token)
                     .put("ruolo", p.ruolo)
                     .put("computer", p.computer)
@@ -126,13 +141,35 @@ object Profili {
         prefs(context).edit().putString(CHIAVE, arr.toString()).apply()
     }
 
-    private fun daJson(j: JSONObject) = Profilo(
+    private fun daJson(j: JSONObject): Profilo {
+        val basi = mutableListOf<String>()
+        j.optJSONArray("basi")?.let { arr ->
+            for (i in 0 until arr.length()) basi.add(arr.getString(i))
+        }
+        return profiloDa(j, basi)
+    }
+
+    private fun profiloDa(j: JSONObject, basi: List<String>) = Profilo(
         id = j.optString("id"),
         nome = j.optString("nome"),
         base = j.optString("base"),
+        basi = basi,
         token = j.optString("token"),
         ruolo = j.optString("ruolo", "ospite"),
         computer = j.optString("computer"),
         ultimoUso = j.optLong("ultimoUso"),
     )
+
+    /**
+     * Segna quale indirizzo ha risposto, senza toccare il resto.
+     *
+     * Si chiama ogni volta che il telefono ritrova il computer da un'altra
+     * parte: la prossima volta si parte da lì, e non si rifà il giro.
+     */
+    fun ricordaBase(context: Context, id: String, base: String) {
+        val tutti = tutti(context)
+        val chi = tutti.firstOrNull { it.id == id } ?: return
+        if (chi.base == base) return
+        scrivi(context, tutti.map { if (it.id == id) it.copy(base = base) else it })
+    }
 }

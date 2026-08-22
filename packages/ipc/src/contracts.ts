@@ -8,13 +8,6 @@
 
 import type { AppDescriptor, AppId } from "./apps";
 import type { Consegna, ElementoLibreria, FiltroLibreria, Intenzione } from "./libreria";
-import type {
-  DispositivoRemoto,
-  EsitoDecisione,
-  InvitoRemoto,
-  StatoAccesso,
-  StatoRemoto,
-} from "./remoto";
 
 /* ------------------------------------------------------------------ stato app */
 
@@ -135,6 +128,34 @@ export interface Impostazioni {
    * deciso, e riproporgliela a ogni avvio vorrebbe dire non avergli creduto.
    */
   guidaFatta: boolean;
+  /**
+   * La connessione da fuori resta accesa, e si riaccende al prossimo avvio.
+   *
+   * **Accesa di suo, dalla 0.7.0.** Prima c'era un interruttore «Accendi» in
+   * fondo all'hub e bisognava ricordarsi di premerlo a ogni avvio: chi apriva
+   * l'app del telefono trovava un computer che non rispondeva, senza sapere
+   * perché. Un accesso che vuole un token per ogni singola richiesta non ha
+   * bisogno di essere anche spento per essere sicuro — ha bisogno di essere
+   * **visibile**, ed è quello che fa DaProdConnessione.
+   *
+   * Chi non lo vuole lo spegne da lì, e resta spento.
+   */
+  connessione: boolean;
+  /** La strada da Internet (il tunnel) si riaccende da sola al prossimo avvio. */
+  internet: boolean;
+  /**
+   * Il motore si accende da solo appena la suite è pronta.
+   *
+   * **Perché.** Aprire DaProdFoto voleva dire aspettare che partisse Python,
+   * che si importasse torch e che ComfyUI leggesse i suoi nodi: quaranta
+   * secondi in cui la finestra c'era e non rispondeva. Quei quaranta secondi
+   * sono gli stessi che il computer passa fermo a guardare l'hub, e tanto vale
+   * spenderli lì.
+   *
+   * Non carica **pesi** in memoria video: quelli restano a chi genera davvero,
+   * uno alla volta. Scalda il processo, non la scheda.
+   */
+  precarica: boolean;
 }
 
 /* ----------------------------------------------------------------------- llm */
@@ -184,6 +205,30 @@ export interface AllegatoLlm {
   mime: string;
   /** Come si chiama, per poterne parlare nel testo. */
   nome?: string;
+}
+
+/**
+ * Un lavoro chiesto da fuori, consegnato alla scheda che lo deve fare.
+ *
+ * **È il pezzo che mancava perché «da fuori» volesse dire davvero da fuori.**
+ * Fino alla 0.6.0 accettare una richiesta cambiava uno stato e basta: chi stava
+ * al PC doveva aprire l'app e rifare la cosa a mano. Adesso la suite apre la
+ * scheda giusta, le passa questo, e la scheda genera come se avessi premuto tu.
+ *
+ * I campi sono quelli dell'azione (`packages/azioni`), non un secondo formato:
+ * `opzioni` è esattamente quello che ha scritto chi ha chiesto.
+ */
+export interface RichiestaDaFuori {
+  /** L'id della richiesta, per poterla poi dichiarare pronta. */
+  id: string;
+  /** L'azione del catalogo: `genera.immagine`, `genera.video`… */
+  azione: string;
+  /** Il testo principale: il prompt, la descrizione, le parole da leggere. */
+  testo: string;
+  /** Gli altri campi, come li ha mandati chi ha chiesto. */
+  opzioni: Record<string, string>;
+  /** Chi l'ha chiesta, per poterlo scrivere accanto al lavoro. */
+  da: string;
 }
 
 /** Un frammento di risposta mentre arriva: o testo vero, o ragionamento. */
@@ -585,6 +630,14 @@ export interface SuiteApi {
     profilo(scelta: ProfiloMemoria): Promise<Impostazioni>;
     /** Segna che la procedura guidata è stata vista: non si ripresenta più. */
     guidaFatta(): Promise<Impostazioni>;
+    /**
+     * Accende o spegne la connessione da fuori, e se lo ricorda.
+     *
+     * Non c'è più un interruttore in fondo all'hub: la connessione è accesa di
+     * suo e si governa da DaProdConnessione. Questo canale resta perché quella
+     * scheda possa spegnerla davvero, e perché la scelta sopravviva al riavvio.
+     */
+    connessione(accesa: boolean): Promise<Impostazioni>;
   };
 
   gpu: {
@@ -643,62 +696,6 @@ export interface SuiteApi {
     onChanged(listener: (state: UpdateState) => void): Unsubscribe;
   };
 
-  /**
-   * L'accesso remoto: il pannello "Telefono" dell'hub.
-   *
-   * Il gateway vive nel main e ascolta sulla LAN; qui il renderer vede solo lo
-   * stato e le azioni. Il QR e il codice a otto cifre nascono nel main (dove
-   * c'è l'archivio), e il pannello li mostra.
-   */
-  remoto: {
-    /** Accende o spegne il gateway. `acceso` dice dove si sta. */
-    accendi(): Promise<StatoAccesso>;
-    spegni(): Promise<StatoAccesso>;
-    /**
-     * Apre (o chiude) la strada da Internet.
-     *
-     * Accende un tunnel in uscita con `cloudflared` e ne torna l'indirizzo
-     * pubblico in `StatoAccesso.internet`. Non apre porte sul router e non
-     * chiede account: la connessione la fa il PC verso Cloudflare, e da fuori
-     * si arriva in HTTPS.
-     *
-     * La prima volta scarica `cloudflared` (~40 MB): la fase `scarico` dello
-     * stato serve a raccontarlo invece di sembrare piantata.
-     */
-    accendiInternet(): Promise<StatoAccesso>;
-    spegniInternet(): Promise<StatoAccesso>;
-    /**
-     * Chiede a Windows di lasciar entrare sulla porta del gateway.
-     *
-     * Mostra il riquadro dell'amministratore: una volta sola. Torna `null` se
-     * è andata, o il motivo — «hai detto di no» compreso, che è una risposta
-     * legittima e va raccontata invece di sparire.
-     */
-    apriLaPorta(): Promise<string | null>;
-    /** Lo stato attuale, la prima occhiata o dopo un cambio. */
-    stato(): Promise<StatoAccesso>;
-    /** Crea un nuovo invito per il ruolo dato: lo si mostra come QR/codice. */
-    nuovoInvito(ruolo: "admin" | "ospite"): Promise<InvitoRemoto>;
-    /** Revoca un dispositivo: il suo token smette di valere. */
-    revoca(id: string): Promise<DispositivoRemoto[]>;
-    /**
-     * Sceglie su quale indirizzo farsi trovare, fra quelli di `StatoAccesso.reti`.
-     *
-     * Serve quando la scelta automatica sbaglia: su una macchina con Tailscale o
-     * con macchine virtuali gli indirizzi sono quattro, e solo uno è quello che
-     * il telefono può raggiungere.
-     */
-    scegliRete(ip: string): Promise<StatoAccesso>;
-    /** Decide su una richiesta: "accettata", "scartata" (con motivo) o "in-lavoro". */
-    decidi(id: string, stato: Extract<StatoRemoto, "accettata" | "scartata" | "in-lavoro">, motivo?: string): Promise<EsitoDecisione>;
-    /**
-     * Marca una richiesta come pronta, indicando il file risultato già copiato
-     * nella cartella dei risultati remoti.
-     */
-    consegna(id: string, esito: { nome: string; percorso: string; tipo: string; bytes: number }): Promise<EsitoDecisione>;
-    /** Ogni volta che l'elenco cambia (invito nuovo, dispositivo, richieste). */
-    onChanged(listener: (stato: StatoAccesso) => void): Unsubscribe;
-  };
 }
 
 /**
@@ -837,6 +834,25 @@ export interface ApiApp {
   onConsegna(listener: (consegna: Consegna) => void): Unsubscribe;
 
   /**
+   * Riceve un lavoro chiesto da fuori: dal telefono, dalla console, da un agente.
+   *
+   * La scheda lo esegue **come se l'avesse chiesto chi sta al PC**: stesso
+   * percorso, stesso codice, stessi controlli. Non c'è una seconda strada di
+   * generazione da tenere allineata alla prima — sarebbe la prima cosa a
+   * divergere.
+   *
+   * Chi lo riceve risponde con `partita()` appena il lavoro è nella coda del
+   * motore, o con l'errore se non è potuto partire. Il file che ne esce lo
+   * ritrova la suite da sé, dalla libreria.
+   */
+  onRichiestaDaFuori(
+    listener: (richiesta: RichiestaDaFuori) => void,
+  ): Unsubscribe;
+
+  /** Dice alla suite com'è andata la consegna di un lavoro da fuori. */
+  richiestaPartita(id: string, errore?: string): Promise<void>;
+
+  /**
    * Accende un motore che quest'app usa **solo a volte**, e ne torna
    * l'indirizzo.
    *
@@ -903,6 +919,7 @@ export const CHANNELS = {
   impostazioniLeggi: "impostazioni:leggi",
   impostazioniVelocita: "impostazioni:velocita",
   impostazioniProfilo: "impostazioni:profilo",
+  impostazioniConnessione: "impostazioni:connessione",
   impostazioniGuida: "impostazioni:guida-fatta",
 
   runtimeState: "runtime:state",
@@ -955,21 +972,11 @@ export const CHANNELS = {
   libreriaCambiata: "libreria:cambiata",
   appInvia: "app:invia",
   appConsegna: "app:consegna",
+  appRichiestaDaFuori: "app:richiesta-da-fuori",
+  appRichiestaPartita: "app:richiesta-partita",
   appMotoreInPiu: "app:motore-in-piu",
   appMacchina: "app:macchina",
   appApri: "app:apri",
   appChiudi: "app:chiudi",
 
-  remotoStato: "remoto:stato",
-  remotoAccendi: "remoto:accendi",
-  remotoSpegni: "remoto:spegni",
-  remotoAccendiInternet: "remoto:accendi-internet",
-  remotoSpegniInternet: "remoto:spegni-internet",
-  remotoApriPorta: "remoto:apri-porta",
-  remotoNuovoInvito: "remoto:nuovo-invito",
-  remotoRevoca: "remoto:revoca",
-  remotoDecidi: "remoto:decidi",
-  remotoConsegna: "remoto:consegna",
-  remotoScegliRete: "remoto:scegli-rete",
-  remotoChanged: "remoto:changed",
 } as const;

@@ -18,7 +18,6 @@ import {
   type FiltroLibreria,
   type GpuState,
   type RuntimeState,
-  type StatoAccesso,
   type SuiteApi,
   type Unsubscribe,
   type UpdateState,
@@ -87,6 +86,8 @@ const api: SuiteApi = {
     velocita: (scelta) => ipcRenderer.invoke(CHANNELS.impostazioniVelocita, scelta),
     profilo: (scelta) => ipcRenderer.invoke(CHANNELS.impostazioniProfilo, scelta),
     guidaFatta: () => ipcRenderer.invoke(CHANNELS.impostazioniGuida),
+    connessione: (accesa: boolean) =>
+      ipcRenderer.invoke(CHANNELS.impostazioniConnessione, accesa),
   },
 
   gpu: {
@@ -122,20 +123,6 @@ const api: SuiteApi = {
     onChanged: (listener) => subscribe<UpdateState>(CHANNELS.updateChanged, listener),
   },
 
-  remoto: {
-    accendi: () => ipcRenderer.invoke(CHANNELS.remotoAccendi),
-    spegni: () => ipcRenderer.invoke(CHANNELS.remotoSpegni),
-    accendiInternet: () => ipcRenderer.invoke(CHANNELS.remotoAccendiInternet),
-    spegniInternet: () => ipcRenderer.invoke(CHANNELS.remotoSpegniInternet),
-    apriLaPorta: () => ipcRenderer.invoke(CHANNELS.remotoApriPorta),
-    stato: () => ipcRenderer.invoke(CHANNELS.remotoStato),
-    nuovoInvito: (ruolo) => ipcRenderer.invoke(CHANNELS.remotoNuovoInvito, ruolo),
-    revoca: (id) => ipcRenderer.invoke(CHANNELS.remotoRevoca, id),
-    scegliRete: (ip) => ipcRenderer.invoke(CHANNELS.remotoScegliRete, ip),
-    decidi: (id, stato, motivo) => ipcRenderer.invoke(CHANNELS.remotoDecidi, id, stato, motivo),
-    consegna: (id, esito) => ipcRenderer.invoke(CHANNELS.remotoConsegna, id, esito),
-    onChanged: (listener) => subscribe<StatoAccesso>(CHANNELS.remotoChanged, listener),
-  },
 };
 
 contextBridge.exposeInMainWorld("daprod", api);

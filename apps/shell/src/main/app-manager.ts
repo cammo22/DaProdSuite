@@ -28,6 +28,7 @@ import { runtime } from "./runtime";
 import { missingModelsGb } from "./models";
 import { ENGINES_DIR } from "./paths";
 import * as servizi from "./servizi";
+import * as connessione from "./apps/connessione";
 import * as visualizer from "./apps/visualizer";
 import * as musica from "./apps/musica";
 import * as foto from "./apps/foto";
@@ -44,6 +45,7 @@ import * as companion from "./apps/companion";
  * ancora inclusa — meglio di una scheda che sembra pronta e poi non apre niente.
  */
 const MIGRATED = new Set<AppId>([
+  "connessione",
   "visualizer",
   "musica",
   "foto",
@@ -63,6 +65,11 @@ interface Finestra {
 
 /** Come si apre, si chiude e si raggiunge ogni app migrata. */
 const FINESTRE: Partial<Record<AppId, Finestra>> = {
+  connessione: {
+    apri: connessione.apri,
+    chiudi: connessione.chiudi,
+    laFinestra: connessione.laFinestra,
+  },
   visualizer: {
     apri: visualizer.apri,
     chiudi: visualizer.chiudi,
@@ -285,6 +292,57 @@ class AppManager extends EventEmitter {
     }
   }
 
+  /**
+   * Accende il motore di un'app **senza aprirne la finestra**.
+   *
+   * Chiesto così: «la suite non credo carichi i modelli in quello stato,
+   * dobbiamo fare in modo che già in quella schermata sia tutto ben caricato,
+   * in modo anche da velocizzare l'apertura generale delle app».
+   *
+   * Quello che si può scaldare davvero è **il processo**, non i pesi: far
+   * partire Python, importare torch e leggere i nodi di ComfyUI sono i
+   * quaranta secondi che si aspettano aprendo DaProdFoto, e sono gli stessi
+   * quaranta secondi in cui il computer sta fermo a guardare l'hub. I pesi in
+   * memoria video restano fuori di proposito: ce ne sta uno per volta, e
+   * caricarne uno adesso vorrebbe dire toglierlo a chi genera dopo.
+   *
+   * Tre condizioni, e servono tutte e tre:
+   *
+   * - l'app dev'essere **pronta** — non a metà scaricamento, non in errore;
+   * - la scheda video dev'essere **libera**: scaldare non deve mai togliere il
+   *   motore a un'app che qualcuno sta usando;
+   * - dev'essere **la prima**: si scalda un motore solo, e chi lo divide con
+   *   altre schede (ComfyUI è di Musica, Foto e Cinema) le scalda tutte.
+   */
+  async scalda(id: AppId): Promise<void> {
+    const stato = this.states.get(id);
+    if (!stato || stato.status !== "pronta") return;
+    if (!APPS[id].service) return;
+    if (gpu.getState().holder !== null) return;
+
+    if (APPS[id].gpuHeavy) {
+      await gpu.acquire(id, async (previous) => {
+        await this.close(previous);
+      });
+    }
+
+    try {
+      await servizi.avvia(id, (motivo) => {
+        this.morto(id, motivo);
+        gpu.release(id);
+      });
+      // Lo stato **non** diventa "attiva": non c'è nessuna finestra aperta, e
+      // dire il contrario farebbe comparire «chiudi» su una scheda che non ha
+      // niente da chiudere.
+      this.emit("changed", this.list());
+    } catch {
+      // Non è partito: pazienza, si riproverà quando qualcuno apre l'app
+      // davvero — e allora l'errore lo vedrà, invece di leggerlo qui.
+      await servizi.ferma(id).catch(() => {});
+      gpu.release(id);
+    }
+  }
+
   async close(id: AppId): Promise<void> {
     FINESTRE[id]?.chiudi();
     // Il motore si spegne dopo la finestra e solo se non serve a un'altra app:
@@ -302,6 +360,17 @@ class AppManager extends EventEmitter {
   }
 
   /** Almeno un'app aperta: la suite non deve chiudersi mentre si sta lavorando. */
+  /**
+   * La finestra viva di un'app, se c'è.
+   *
+   * Serve a chi le deve mandare qualcosa senza passare da `consegna` — la fila
+   * delle richieste da fuori, che non consegna un elemento della libreria ma un
+   * lavoro da fare.
+   */
+  laFinestra(id: AppId): BrowserWindow | null {
+    return FINESTRE[id]?.laFinestra() ?? null;
+  }
+
   qualcunaAperta(): boolean {
     return APP_LIST.some((app) => FINESTRE[app.id]?.laFinestra() !== null);
   }

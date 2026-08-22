@@ -1,25 +1,31 @@
 /**
- * Quale indirizzo dare al telefono.
+ * Su quali indirizzi il PC si fa trovare, e quale conviene provare per primo.
  *
  * Sembra una riga di codice e non lo è. Un computer ha **un** nome ma spesso
- * quattro indirizzi, e solo uno di quelli è raggiungibile dal telefono che sta
- * sul divano. Sul PC di Cammo, il 21 agosto 2026:
+ * quattro indirizzi, e non tutti portano dove serve. Sul PC di Cammo, il 21
+ * agosto 2026:
  *
  *     100.88.254.19    Tailscale
  *     172.18.32.1      vEthernet (Default Switch)
- *     192.168.1.8      Ethernet            ← l'unico buono
+ *     192.168.1.8      Ethernet            ← la rete di casa
  *     172.28.176.1     vEthernet (WSL (Hyper-V firewall))
  *
  * La prima stesura prendeva **il primo IPv4 non interno** che trovava, cioè
  * Tailscale: il QR conteneva un indirizzo che dalla wifi di casa non esiste, e
- * l'accoppiamento non poteva riuscire in nessun modo. Non c'era niente da
- * sbagliare da parte di chi lo usava — era sbagliato l'indirizzo.
+ * l'accoppiamento non poteva riuscire in nessun modo.
  *
- * Quindi qui non si indovina e basta: si **ordinano** i candidati con le
- * ragioni scritte, si sceglie il primo, e si lasciano vedere tutti gli altri
- * nel pannello, perché nessuna euristica è giusta su ogni macchina e chi guarda
- * lo schermo sa cose che noi non sappiamo — se ha due schede sulla stessa rete
- * di casa, quale sia quella attaccata al router lo sa lui.
+ * **Come è cambiata la domanda.** Fino alla 0.6.0 bisognava sceglierne *uno*,
+ * perché nel QR ci stava un indirizzo solo: da lì la classifica, e il menu nel
+ * pannello per correggerla a mano. Dalla 0.7.0 nel QR ci stanno **tutti**, e il
+ * telefono li prova finché uno risponde (vedi `Indirizzi.kt`). Quindi qui non
+ * si sceglie più: si **ordina**, perché provare per primo quello che ha più
+ * probabilità di funzionare è la differenza fra collegarsi subito e collegarsi
+ * dopo tre timeout.
+ *
+ * **Tailscale è passato davanti a tutti**, ed è la scelta di chi la usa: è
+ * l'unico indirizzo che funziona **anche fuori casa**, è cifrato, e non mette
+ * niente su Internet. Chi non ha Tailscale sul telefono non lo raggiunge — e
+ * non è un problema, perché subito dopo c'è quello di casa.
  *
  * *(Una nota per chi verrà: il trucco del socket UDP “connesso” a 8.8.8.8 per
  * farsi dire la scheda di uscita è stato provato e tolto. `connect` è
@@ -36,7 +42,9 @@ export interface Rete {
   scheda: string;
   /** Una riga che dice cos'è, per chi legge il pannello. */
   che: string;
-  /** Più alto = più probabile che sia quello giusto. */
+  /** Fin dove arriva: da questa stanza, da casa, o da ovunque. */
+  dove: "ovunque" | "casa" | "virtuale";
+  /** Più alto = si prova prima. */
   punteggio: number;
 }
 
@@ -51,12 +59,15 @@ const CASA = /^(192\.168\.|10\.|172\.(1[6-9]|2\d|3[01])\.)/;
 
 /**
  * 100.64.0.0/10, lo spazio del NAT degli operatori. Ci vivono Tailscale e
- * simili: utilissimi, ma raggiungibili **solo** da un altro dispositivo della
- * stessa rete virtuale — non dal telefono sulla wifi di casa.
+ * simili: raggiungibili **solo** da un altro dispositivo della stessa rete
+ * virtuale, ma da lì raggiungibili **ovunque**, che è il punto.
  */
-const VIRTUALE_PRIVATA = /^100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\./;
+const RETE_VIRTUALE_PRIVATA = /^100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\./;
 
-/** Tutti i posti in cui il gateway può farsi trovare, dal più probabile. */
+/** Il nome che Tailscale dà alla sua scheda, quando lo dice. */
+const TAILSCALE = /tailscale|^ts\d/i;
+
+/** Tutti i posti in cui il gateway può farsi trovare, dal più promettente. */
 export function reti(): Rete[] {
   const trovate: Rete[] = [];
 
@@ -67,23 +78,27 @@ export function reti(): Rete[] {
 
       let punteggio = 0;
       let che = "rete";
+      let dove: Rete["dove"] = "casa";
 
       if (CASA.test(net.address)) {
         punteggio += 100;
-        che = "rete di casa";
+        che = "la rete di casa";
       }
-      if (VIRTUALE_PRIVATA.test(net.address)) {
-        // Non si butta via: se il telefono ha Tailscale funziona **ovunque**,
-        // ed è l'unico modo che c'è oggi di usare la suite fuori casa.
-        punteggio -= 60;
-        che = "rete virtuale, tipo Tailscale — solo da chi ne fa parte";
+      if (RETE_VIRTUALE_PRIVATA.test(net.address) || TAILSCALE.test(scheda)) {
+        // **Davanti a tutti.** È l'unico che funziona anche fuori casa, ed è
+        // cifrato: chi ce l'ha sul telefono non deve fare altro. Chi non ce
+        // l'ha non lo raggiunge, e prova quello sotto — che è quello di casa.
+        punteggio += 200;
+        che = "Tailscale — funziona anche fuori casa";
+        dove = "ovunque";
       }
-      if (VIRTUALI.test(scheda)) {
-        punteggio -= 80;
+      if (VIRTUALI.test(scheda) && !TAILSCALE.test(scheda)) {
+        punteggio -= 300;
         che = "scheda virtuale — il telefono non ci arriva";
+        dove = "virtuale";
       }
 
-      trovate.push({ ip: net.address, scheda, che, punteggio });
+      trovate.push({ ip: net.address, scheda, che, dove, punteggio });
     }
   }
 
@@ -91,7 +106,20 @@ export function reti(): Rete[] {
 }
 
 /**
- * L'indirizzo da usare, se non ne è stato scelto uno a mano.
+ * Gli indirizzi da mettere nell'invito, in ordine di quale provare prima.
+ *
+ * Le schede virtuali restano fuori: metterle vorrebbe dire far aspettare al
+ * telefono un timeout per ognuna prima di arrivare a quella buona.
+ */
+export function indirizziBuoni(porta: number): string[] {
+  return reti()
+    .filter((r) => r.dove !== "virtuale")
+    .map((r) => `http://${r.ip}:${porta}`);
+}
+
+/**
+ * L'indirizzo da mostrare quando ne va scritto **uno**, per chi lo deve battere
+ * a mano nel browser.
  *
  * `preferito` è quello che l'utente ha scelto nel pannello: vince sempre, ma
  * solo se esiste ancora — una scheda si può staccare, e un indirizzo salvato
@@ -100,5 +128,8 @@ export function reti(): Rete[] {
 export function ipLocale(preferito?: string): string {
   const elenco = reti();
   if (preferito && elenco.some((r) => r.ip === preferito)) return preferito;
-  return elenco[0]?.ip ?? "127.0.0.1";
+  // Per chi lo deve **scrivere** conta quello di casa, non Tailscale: chi apre
+  // il browser del portatile in salotto è sulla stessa wifi.
+  const casa = elenco.find((r) => r.dove === "casa");
+  return casa?.ip ?? elenco[0]?.ip ?? "127.0.0.1";
 }

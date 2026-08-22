@@ -1,13 +1,13 @@
 # Riprendere da qui
 
 Documento di passaggio fra una sessione e l'altra. Aggiornato il **22 agosto
-2026**, con la **0.6.0** appena chiusa.
+2026**, con la **0.7.0** appena chiusa.
 
-> **Il prossimo passo è provare la 0.6.0 sul PC vero.** È un giro grosso e
-> quasi niente è passato per le mani di chi la usa: il tunnel non è mai stato
-> acceso su una linea, l'app non è mai stata aperta su un telefono, e la scheda
-> Storia non ha mai girato contro il motore acceso. L'elenco preciso di cosa
-> provare sta in fondo al [CHANGELOG](../CHANGELOG.md) § 0.6.0.
+> **Il prossimo passo è provare sul PC vero, e la prima cosa è una sola:**
+> accettare un lavoro dal telefono e vederlo partire. È la ragione di tutto
+> l'ultimo giro, e non è mai girata contro un motore acceso. Dietro c'è il resto
+> della 0.6.0 e della 0.7.0, che è tanto e quasi tutto non provato: l'elenco sta
+> in fondo al [CHANGELOG](../CHANGELOG.md), § 0.7.0 e § 0.6.0.
 
 **Se stai leggendo questo all'inizio di una conversazione nuova**: leggi anche
 [COME-SI-LAVORA.md](COME-SI-LAVORA.md) e [ROADMAP.md](ROADMAP.md), poi vai al
@@ -110,11 +110,96 @@ Repo pubblico: **https://github.com/cammo22/DaProdSuite**
 | **App Android rifatta** | quattro schermate: chi sei, collega, la suite (WebView), senza PC. Compila in debug e in release. **Mai aperta su un telefono** |
 | **Storia di DaProdCinema** | barra per scena e per film, clip nella riga, cucitura da sola, resa sua, riferimenti al modello che scrive. **Mai girata contro il motore acceso** |
 | **Il modello che scrive** | risposta in diretta (SSE) e memoria liberata a ogni risposta. **Da misurare** |
+| **0.6.0 pubblicata** | fatto il 22 agosto: tag `v0.6.0`, PR #19 |
+| **La 0.6.0 provata sul telefono** | l'app «inizia a sembrare decente», e sono venute fuori sei cose: la fila che non fa partire niente, l'app che non si ricollega, l'interfaccia, le parole, il firewall che dice sempre la stessa cosa, e l'idea di DaProdConnessione |
+| **La 0.7.0: la nona scheda e la fila che parte** | fatto il 22 agosto. Il dettaglio sta nel paragrafo «Com'è fatto il giro della 0.7.0» qui sotto |
 
 Si lavora su un ramo per release e una PR: `release-0.2.0` è stata unita con le
 PR #3 e #4, la 0.3.1 con la #5, la 0.3.2 con la #6, la 0.3.3 con la #7, la
 0.3.4 con la #8, la 0.4.0 con la #9, la 0.4.1 con la #10, la 0.4.2 con la #11,
 la 0.4.3 con la #12, la 0.4.4 con la #13, la 0.4.5 con la #14, e questo giro sta su `release-0.4.6`.
+
+### Com'è fatto il giro della 0.7.0
+
+Nasce dalla 0.6.0 provata sul telefono. La frase che tiene insieme tutto è
+**«quando accetto un lavoro non funziona»**, e non era l'unica cosa.
+
+| Chiesto | Fatto | Provato? |
+|---|---|---|
+| «quando accetto un lavoro non funziona» | `esecuzione.ts`: apre la scheda, le passa il lavoro, riconosce il file | **no, mai contro un motore acceso** |
+| «se chiudo l'app poi non si ricollega» | il QR porta tutti gli indirizzi, l'app li prova (`Indirizzi.kt`) | **no** |
+| «l'interfaccia fa schifo… voglio grafiche a quadrati» | console rifatta: semaforo + quadrati, cinque schermate | **sì**, in un browser vero |
+| «"da fuori" è un nome orribile» | via il nome e via il pannello: c'è DaProdConnessione | la pagina sì, la scheda **no** |
+| «creiamo DaProdConnessione… stile dashboard» | nona scheda, `apps/shell/src/main/apps/connessione/` | **no, mai aperta** |
+| «togliamo quel tasto, di default si vede nel programma» | connessione accesa di suo e ricordata | **no** |
+| «tutta la sintassi va rivista» | fatte le parole del collegamento e del telefono; il resto no | — |
+| «"come siamo messi" → "stato della connessione"» | fatto, in app e nel pannello | — |
+| «i messaggi non sono dinamici» | il firewall si rilegge ogni venti secondi, e la pagina è in SSE | **no** |
+| «più di 20 persone collegate, picco» | invito per dieci, e le rotte reggono i pezzi | **no** |
+| «usiamo tailscale» | primo negli indirizzi, e nel QR | **no** |
+| «già in quella schermata sia tutto ben caricato» | `appManager.scalda()` all'avvio dell'hub | **no, da misurare** |
+
+### Le decisioni che vale la pena ricordare
+
+**DaProdConnessione non ha pagine sue.** È una finestra su
+`http://127.0.0.1:8790/`, cioè sulla console che il gateway già serviva. Non è
+pigrizia: prima la stessa roba stava in due posti che non dicevano mai la stessa
+cosa. Il conto: +120 righe la scheda, −739 il pannello dell'hub, e con lui sono
+andate via anche le dodici rotte IPC `remoto:*` che nessuno chiamava più.
+
+**Il gateway è sempre in ascolto; l'interruttore decide su cosa.** Acceso
+`0.0.0.0`, spento `127.0.0.1`. Se «spegnere» avesse chiuso il server, avrebbe
+chiuso anche la pagina che contiene l'interruttore — e non ci sarebbe stato modo
+di riaccenderlo.
+
+**Il PC si accoppia con sé stesso.** `tokenDiCasa()`: un dispositivo
+`questo-computer`, che non compare nell'elenco dei collegati. L'alternativa era
+un'eccezione per `127.0.0.1`, cioè permettere a qualunque programma sulla
+macchina di chiedere una generazione senza essere stato invitato.
+
+**La fila genera passando dalla scheda, non dal motore.** Riempie il modulo e
+preme il tasto. Sarebbe stato più diretto costruire il grafo in `esecuzione.ts`,
+e sarebbe stata la seconda strada per fare la stessa cosa: la prima a divergere
+il giorno che una scheda impara un modello nuovo.
+
+**Il file si riconosce dalla libreria**, e funziona *perché* si lavora una
+richiesta per volta. È anche il limite: se generi a mano nello stesso momento,
+il file può finire attaccato alla richiesta di un altro.
+
+**Tailscale davanti al tunnel.** Il quick tunnel cambia indirizzo a ogni
+riavvio, e quello è il difetto che faceva «non si ricollega». Tailscale è fisso,
+cifrato e privato. Il tunnel resta per chi non lo vuole installare.
+
+### Un errore trovato provando, e vale la pena averlo scritto
+
+Il semaforo nascondeva l'avviso del firewall quando c'era Tailscale. Sbagliato:
+una regola di Windows vale per **la porta**, non per la scheda di rete, quindi
+blocca anche Tailscale. L'unico che la scavalca è il tunnel, perché quella
+connessione **esce**. Corretto in `console.ts`.
+
+### Cosa toccare, se qualcosa non va
+
+| Sintomo | Dove guardare |
+|---|---|
+| Accetto e non parte niente | `esecuzione.ts` (log in `logs/fila.log`), e l'adattatore in fondo a `apps/<app>/src/avvio.js` |
+| Parte ma non diventa mai «pronto» | `aspettaIlFile()`: guarda la libreria, e la libreria guarda `OUTPUT_DIR` |
+| DaProdConnessione si apre bianca | il gateway non è in ascolto: `riprendiAccessoRemoto()` in `index.ts` |
+| Il telefono non trova il PC | `Indirizzi.kt` sul telefono, `basi()` in `remoto.ts` sul computer |
+| Il semaforo dice una cosa sbagliata | `disegnaSemaforo()` in `console.ts` |
+| Le schede si aprono ancora lente | `appManager.scalda()`, e `impostazioni().precarica` |
+
+### Le prove
+
+`pnpm run prova` è passato da 79 a **97** controlli: il pannello e chi può
+usarlo, l'invito che vale per più persone (e il quarto che resta fuori),
+togliere sé stessi, rinominare un collegato.
+
+La console è stata guidata in un browser vero contro un gateway vero: il
+semaforo rosso col firewall chiuso, i quadrati, l'invito per dieci con il conto
+alla rovescia, l'elenco di chi è collegato con «può anche decidere», gli
+indirizzi con Tailscale in cima.
+
+---
 
 ### Com'è fatto il giro della 0.6.0
 

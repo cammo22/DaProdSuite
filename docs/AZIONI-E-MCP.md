@@ -60,8 +60,8 @@ telefono e fra gli strumenti MCP: nessuno dei tre ha un elenco suo.
 | `libreria.ultimi` | gli ultimi risultati di tutte le app | no |
 | `suite.stato` | cosa è acceso, quanta fila c'è | no |
 | `coda.elenco` | le richieste arrivate da fuori | no |
-| `coda.decidi` | accetta, manda in lavorazione, scarta (solo padrone) | no |
-| `app.apri` | apre una finestra sul PC (solo padrone) | no |
+| `coda.decidi` | accetta, manda in lavorazione, scarta (solo chi può decidere) | no |
+| `app.apri` | apre una finestra sul PC (solo chi può decidere) | no |
 
 ### La regola che divide la tabella in due
 
@@ -112,7 +112,8 @@ chiunque altro.
 
 ### Come si accende
 
-Sul PC, nel pannello **Da fuori**: **Accendi**, poi **Invita un padrone**.
+Sul PC, nella scheda **DaProdConnessione**: **Invita qualcuno** → **per chi
+deve anche decidere**.
 Compare un codice. Poi, una volta sola:
 
 ```bash

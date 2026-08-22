@@ -36,7 +36,9 @@ import it.daprod.suite.data.Profilo
 import it.daprod.suite.data.Richiesta
 import it.daprod.suite.data.Store
 import it.daprod.suite.databinding.ActivityMainBinding
+import it.daprod.suite.net.Accoppiamento
 import it.daprod.suite.net.GatewayClient
+import it.daprod.suite.net.Indirizzi
 import it.daprod.suite.net.GatewayException
 import it.daprod.suite.ui.RichiesteAdapter
 import kotlinx.coroutines.Job
@@ -101,11 +103,11 @@ class MainActivity : AppCompatActivity() {
     /** Lo scanner del QR: il contenuto è l'invito della suite. */
     private val scannerQr = registerForActivityResult(ScanContract()) { risultato ->
         val contenuto = risultato.contents ?: return@registerForActivityResult
-        val indirizzo = estraiBase(contenuto)
+        val indirizzi = estraiIndirizzi(contenuto)
         val codice = estraiCodice(contenuto)
-        if (indirizzo != null && codice != null) {
-            Store.ricordaBase(this, indirizzo)
-            connetti(indirizzo, codice)
+        if (indirizzi.isNotEmpty() && codice != null) {
+            Store.ricordaBase(this, indirizzi.first())
+            connetti(indirizzi, codice)
         } else {
             avvisa("Questo QR non è un invito della suite.")
         }
@@ -283,7 +285,7 @@ class MainActivity : AppCompatActivity() {
             text = buildString {
                 append(p.computer.ifBlank { "un computer" })
                 append(" · ")
-                append(if (p.ePadrone) "padrone" else "ospite")
+                append(if (p.ePadrone) "può anche decidere" else "può chiedere")
                 append(" · ")
                 append(quandoUltimo(p.ultimoUso))
             }
@@ -380,27 +382,33 @@ class MainActivity : AppCompatActivity() {
             avvisa("Non so ancora a quale computer bussare: la prima volta inquadra il QR.")
             return
         }
-        connetti(indirizzo, codice)
+        connetti(listOf(indirizzo), codice)
     }
 
-    private fun connetti(indirizzo: String, codice: String) {
+    private fun connetti(indirizzi: List<String>, codice: String) {
         val nome = nomeInCorso.ifBlank { Store.nomeProposto() }
         lifecycleScope.launch {
             try {
-                val esito = GatewayClient.accoppia(indirizzo, codice, nome)
+                // **Il codice vale una volta sola**: si prova ad accoppiarsi
+                // con il primo indirizzo che risponde, e se sbagliassimo a
+                // provarne uno morto per primo il codice sarebbe bruciato. Per
+                // questo l'accoppiamento parte dal primo che dà una risposta
+                // vera, non dal primo dell'elenco.
+                val esito = accoppiaDoveRisponde(indirizzi, codice, nome)
                 val profilo = Profilo(
                     id = UUID.randomUUID().toString(),
                     nome = nome,
-                    base = indirizzo,
-                    token = esito.token,
-                    ruolo = esito.ruolo,
-                    computer = esito.computer,
+                    base = esito.second,
+                    basi = indirizzi,
+                    token = esito.first.token,
+                    ruolo = esito.first.ruolo,
+                    computer = esito.first.computer,
                     ultimoUso = System.currentTimeMillis(),
                 )
                 Profili.salva(this@MainActivity, profilo)
                 binding.campoCodice.text?.clear()
                 nomeInCorso = ""
-                avvisa("Collegato a ${esito.computer}.")
+                avvisa("Collegato a ${esito.first.computer}.")
                 entra(profilo)
             } catch (e: Exception) {
                 avvisa(spiega(e))
@@ -408,7 +416,57 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    /** Dal contenuto del QR (JSON o URL) tira fuori l'indirizzo completo. */
+    /**
+     * Si accoppia con il primo indirizzo che dà una risposta, e dice quale.
+     *
+     * L'ordine conta perché **il codice vale una volta sola**. Un errore di
+     * rete non lo brucia — non è mai arrivato al computer — quindi si può
+     * passare al prossimo indirizzo. Un rifiuto del computer invece sì: il
+     * codice è stato usato o è sbagliato, e insistere sugli altri indirizzi
+     * darebbe lo stesso «no» tre volte, con tre attese in mezzo.
+     */
+    private suspend fun accoppiaDoveRisponde(
+        indirizzi: List<String>,
+        codice: String,
+        nome: String,
+    ): Pair<Accoppiamento, String> {
+        var ultimo: Exception? = null
+        for (base in indirizzi) {
+            try {
+                return GatewayClient.accoppia(base, codice, nome) to base
+            } catch (e: GatewayException) {
+                // Il computer ha risposto e ha detto di no: è una risposta.
+                throw e
+            } catch (e: Exception) {
+                ultimo = e
+            }
+        }
+        throw ultimo ?: Exception("Nessuno di quegli indirizzi risponde.")
+    }
+
+    /**
+     * Dal contenuto del QR tira fuori **tutti** gli indirizzi, in ordine.
+     *
+     * La v3 dell'invito porta `basi`: casa, Tailscale, il tunnel. È quello che
+     * permette al telefono di ritrovare il computer quando cambia rete, invece
+     * di restare fermo su un indirizzo che non esiste più.
+     *
+     * Le versioni precedenti ne portavano uno solo: si legge lo stesso, e
+     * l'elenco è di un elemento.
+     */
+    private fun estraiIndirizzi(contenuto: String): List<String> {
+        val tutti = mutableListOf<String>()
+
+        // v3: "basi":["http://…","http://…"]
+        Regex("\"basi\"\\s*:\\s*\\[([^\\]]*)]").find(contenuto)?.groupValues?.get(1)?.let { dentro ->
+            for (m in Regex("\"([^\"]+)\"").findAll(dentro)) tutti.add(m.groupValues[1])
+        }
+
+        estraiBase(contenuto)?.let { tutti.add(it) }
+        return tutti.map { it.trim().trimEnd('/') }.filter { it.isNotBlank() }.distinct()
+    }
+
+    /** L'indirizzo singolo, come lo portavano la v1 e la v2. */
     private fun estraiBase(contenuto: String): String? {
         // La v2 dell'invito porta `base`: l'indirizzo intero, schema compreso.
         // È l'unico che funzioni con il tunnel su Internet, dove il gateway sta
@@ -457,36 +515,43 @@ class MainActivity : AppCompatActivity() {
         val cl = client ?: return@launch
 
         binding.attesa.visibility = View.VISIBLE
-        val risponde = cl.raggiungibile()
+        // **Quale indirizzo risponde adesso**, non quale rispondeva l'altra
+        // volta: è tutto il motivo per cui l'app adesso si ricollega da sola.
+        val dove = Indirizzi.quale(persona.basi, persona.base, persona.token)
         binding.attesa.visibility = View.GONE
 
-        if (!risponde) {
+        if (dove == null) {
             mostra(Dove.OFFLINE)
             return@launch
         }
+        if (dove != persona.base) {
+            // Trovato altrove: la prossima volta si parte da qui.
+            Profili.ricordaBase(this@MainActivity, persona.id, dove)
+            chi = persona.copy(base = dove)
+            client = GatewayClient(dove, persona.token)
+        }
+        val attuale = chi ?: persona
 
         // Le azioni si rileggono a ogni entrata: servono al modulo di quando il
         // PC sparisce, e vanno tenute fresche mentre il PC c'è.
-        aggiornaAzioni(persona)
+        aggiornaAzioni(attuale)
 
         // Il token viaggia nel **frammento** dell'indirizzo, dopo il #: non
         // viene mandato al server, non finisce nei log e non finisce in un
         // Referer. La pagina lo legge, lo mette da parte e lo cancella
         // dall'indirizzo. Vedi `console.ts`.
         val indirizzo = buildString {
-            append(persona.base.trimEnd('/'))
+            append(attuale.base.trimEnd('/'))
             append("/#t=")
-            append(android.net.Uri.encode(persona.token))
+            append(android.net.Uri.encode(attuale.token))
             append("&u=")
-            append(android.net.Uri.encode(persona.nome))
-            append("&r=")
-            append(android.net.Uri.encode(persona.ruolo))
+            append(android.net.Uri.encode(attuale.nome))
         }
         binding.web.loadUrl(indirizzo)
         mostra(Dove.SUITE)
 
         // La coda scritta senza PC parte adesso, che il PC c'è.
-        mandaLaCoda(cl)
+        mandaLaCoda(client ?: cl)
     }
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -541,9 +606,14 @@ class MainActivity : AppCompatActivity() {
                 view: WebView?,
                 request: android.webkit.WebResourceRequest?,
             ): Boolean {
-                val nostro = chi?.base?.trimEnd('/') ?: return true
                 val chiesto = request?.url?.toString() ?: return true
-                return !chiesto.startsWith(nostro)
+                // Vanno bene **tutti** gli indirizzi di questo computer: dopo
+                // un cambio di rete la pagina sta su un altro di loro, e un
+                // controllo sul solo `base` la bloccherebbe.
+                val nostri = (chi?.basi.orEmpty() + listOfNotNull(chi?.base))
+                    .map { it.trimEnd('/') }
+                    .filter { it.isNotBlank() }
+                return nostri.none { chiesto.startsWith(it) }
             }
 
             override fun onReceivedError(
@@ -599,7 +669,10 @@ class MainActivity : AppCompatActivity() {
             appendLine("Sei: ${persona.nome}")
             appendLine("Computer: ${persona.computer}")
             appendLine("Indirizzo: ${persona.base}")
-            appendLine("Ruolo: ${if (persona.ePadrone) "padrone" else "ospite"}")
+            appendLine(
+                if (persona.ePadrone) "Puoi anche decidere sui lavori degli altri."
+                else "Puoi chiedere lavori.",
+            )
             appendLine(
                 if (persona.base.startsWith("https://")) "Il collegamento è cifrato (HTTPS)."
                 else "Il collegamento è in chiaro: vale sulla wifi di casa.",
@@ -610,7 +683,7 @@ class MainActivity : AppCompatActivity() {
             if (inCoda > 0) appendLine("$inCoda richieste aspettano qui sul telefono.")
         }
         AlertDialog.Builder(this)
-            .setTitle("Come siamo messi")
+            .setTitle("Stato della connessione")
             .setMessage(messaggio)
             .setPositiveButton("Va bene", null)
             .show()

@@ -16,6 +16,12 @@
  *   POST /richieste/:id/stato { stato, motivo?, risultato? } → decide (solo admin)
  *   GET  /risultati/:nome                       → scarica un file pronto
  *   POST /sessione                              → pianta il biscotto per le GET
+ *   GET  /pannello                              → la connessione, tutta in un colpo
+ *   POST /pannello/invito  { ruolo, quante }     → un invito nuovo (chi decide)
+ *   POST /pannello/tunnel  { acceso }            → apre o chiude la strada da Internet
+ *   POST /pannello/porta                        → chiede a Windows di lasciar entrare
+ *   POST /dispositivi/:id  { nome }              → rinomina un collegato
+ *   DELETE /dispositivi/:id                     → lo scollega
  *   GET  /io                                    → chi sono, che ruolo ho, che PC è
  *   GET  /libreria?tipo=&app=&quanti=           → cosa ha prodotto la suite
  *   GET  /libreria/file/:id                     → il file, con supporto a Range
@@ -44,6 +50,7 @@ import type {
   Dispositivo,
   DispositivoPubblico,
   FornitoreLibreria,
+  FornitorePannello,
   StatoRichiesta,
   StatoSuite,
 } from "./types";
@@ -69,6 +76,13 @@ export interface GatewayOpzioni {
    * questa suite le ha o no.
    */
   libreria?: FornitoreLibreria;
+  /**
+   * Chi sa rispondere sul pannello della connessione.
+   *
+   * Facoltativo come la libreria: senza, le rotte `/pannello` dicono 501 invece
+   * di sparire. Un client che le chiama non deve indovinare se ci sono.
+   */
+  pannello?: FornitorePannello;
 }
 
 /** Ogni quanto il gateway manda un segno di vita a chi è in ascolto. */
@@ -89,6 +103,7 @@ export class Gateway {
   private versione: string;
   private computer: string;
   private libreria: FornitoreLibreria | undefined;
+  private pannello: FornitorePannello | undefined;
 
   constructor(opzioni: GatewayOpzioni) {
     this.remoto = opzioni.remoto;
@@ -97,16 +112,27 @@ export class Gateway {
     this.versione = opzioni.versione;
     this.computer = opzioni.computer;
     this.libreria = opzioni.libreria;
+    this.pannello = opzioni.pannello;
     this.server = createServer((req, res) => {
       void this.maneggia(req, res);
     });
   }
 
-  /** Si mette in ascolto; risolve con la porta reale (utile se 0 = random). */
-  ascolta(porta: number): Promise<number> {
+  /**
+   * Si mette in ascolto; risolve con la porta reale (utile se 0 = random).
+   *
+   * `su` decide **chi può arrivare**: `0.0.0.0` vuol dire tutta la rete,
+   * `127.0.0.1` vuol dire soltanto questo computer.
+   *
+   * È il modo in cui «spegnere la connessione» non spegne anche il pannello che
+   * la governa: DaProdConnessione è una pagina servita da qui, e un pannello
+   * che sparisce quando premi il suo interruttore è un pannello che non si può
+   * più riaccendere. Spenta, la porta resta aperta solo verso l'interno.
+   */
+  ascolta(porta: number, su = "0.0.0.0"): Promise<number> {
     return new Promise((resolve, reject) => {
       this.server.once("error", reject);
-      this.server.listen(porta, "0.0.0.0", () => {
+      this.server.listen(porta, su, () => {
         const indirizzo = this.server.address() as AddressInfo;
         resolve(indirizzo.port);
       });
@@ -328,6 +354,74 @@ export class Gateway {
       const dallaLibreria = percorso.match(/^\/libreria\/file\/(.+)$/);
       if (dallaLibreria && (req.method === "GET" || req.method === "HEAD")) {
         this.serviLibreria(req, res, decodeURIComponent(dallaLibreria[1] ?? ""));
+        return;
+      }
+
+      /* ------------------------------------------------ il pannello */
+
+      // Tutto quello che serve a sapere se la connessione funziona, in un
+      // colpo: indirizzi, tunnel, firewall, chi è collegato, l'invito vivo.
+      // Lo disegna DaProdConnessione, e lo stesso identico stato lo vedono il
+      // portatile e il telefono — non tre verità diverse.
+      if (percorso === "/pannello" && req.method === "GET") {
+        if (!this.pannello) return this.errore(res, 501, "Questa suite non ha il pannello.");
+        this.json(res, 200, this.pannello.stato(dispositivo));
+        return;
+      }
+
+      const azionePannello = percorso.match(/^\/pannello\/(invito|tunnel|porta)$/);
+      if (azionePannello && req.method === "POST") {
+        if (!this.pannello) return this.errore(res, 501, "Questa suite non ha il pannello.");
+        // Invitare qualcuno, accendere un tunnel e aprire una porta nel
+        // firewall cambiano **il computer**, non una richiesta: le può fare
+        // solo chi ha il permesso di decidere.
+        if (dispositivo.ruolo !== "admin") {
+          return this.errore(res, 403, "Questo lo può fare solo chi ha il permesso di decidere.");
+        }
+        const dati = (corpo ?? {}) as { ruolo?: string; quante?: number; acceso?: boolean };
+
+        if (azionePannello[1] === "invito") {
+          const invito = await this.pannello.invita({
+            ruolo: dati.ruolo === "admin" ? "admin" : "ospite",
+            // Un invito per più persone: con venti collegati, uno alla volta
+            // vorrebbe dire venti giri al pannello.
+            quante: Math.max(1, Math.min(50, Number(dati.quante) || 1)),
+          });
+          this.json(res, 201, invito);
+          this.aggiorna();
+          return;
+        }
+        if (azionePannello[1] === "tunnel") {
+          await this.pannello.tunnel(dati.acceso === true);
+          this.json(res, 200, this.pannello.stato(dispositivo));
+          this.aggiorna();
+          return;
+        }
+        const errore = await this.pannello.apriLaPorta();
+        this.json(res, 200, { ok: errore === null, errore: errore ?? undefined });
+        this.aggiorna();
+        return;
+      }
+
+      const suUnDispositivo = percorso.match(/^\/dispositivi\/([^/]+)$/);
+      if (suUnDispositivo && (req.method === "DELETE" || req.method === "POST")) {
+        if (!this.pannello) return this.errore(res, 501, "Questa suite non ha il pannello.");
+        const id = suUnDispositivo[1] ?? "";
+        // **Chiunque può togliere sé stesso.** Per gli altri serve il permesso
+        // di decidere: se no, con venti collegati, chiunque potrebbe buttare
+        // fuori chiunque.
+        const suoStesso = id === dispositivo.id;
+        if (!suoStesso && dispositivo.ruolo !== "admin") {
+          return this.errore(res, 403, "Puoi togliere solo te stesso.");
+        }
+        const nome = (corpo as { nome?: string } | null)?.nome;
+        if (req.method === "POST" && typeof nome === "string" && nome.trim()) {
+          this.pannello.rinomina(id, nome.trim().slice(0, 40));
+        } else {
+          this.pannello.revoca(id);
+        }
+        this.json(res, 200, { ok: true });
+        this.aggiorna();
         return;
       }
 

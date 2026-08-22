@@ -10,6 +10,137 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ---
 
+## 0.7.0 — DaProdConnessione, e i lavori che partono davvero
+
+**22 agosto 2026.** Tutto quello che è venuto fuori provando la 0.6.0 sul
+telefono. La frase che tiene insieme il giro è una: **«quando accetto un lavoro
+non funziona»** — ed era vero, e non era l'unica cosa.
+
+---
+
+### La nona scheda: DaProdConnessione
+
+C'è un riquadro nuovo nell'hub. Lo apri e vedi **se tutto funziona**: un
+quadrone verde o rosso in cima, e sotto i quadrati con chi è collegato, da dove
+si arriva, e cosa manca. Se qualcosa non va, il tasto per rimediare è lì
+accanto.
+
+Sostituisce il pannello **«Da fuori»** in fondo all'hub, che è sparito — nome
+compreso, che non voleva dire niente. E non è una terza interfaccia: è **la
+stessa pagina** che vedono il browser di un portatile e l'app del telefono.
+Prima erano due, e non dicevano mai la stessa cosa: una sapeva del firewall e
+l'altra no, una si aggiornava da sola e l'altra andava riaperta.
+
+Il conto delle righe, che è la cosa che era stata chiesta: la scheda nuova ne
+ha aggiunte **120**, e ne ha tolte **739** all'hub.
+
+### La connessione è accesa, e resta accesa
+
+Niente più interruttore da premere a ogni avvio. La suite si accende con la
+connessione già aperta, e se la spegni resta spenta — se lo ricorda.
+
+Da spenta il pannello continua a funzionare: il gateway resta in ascolto **solo
+su questo computer**, così l'interruttore non fa sparire la pagina che lo
+contiene.
+
+### Quando accetti, il lavoro parte
+
+Il pezzo che mancava da sempre. Fino alla 0.6.0 «accettata» voleva dire «l'ho
+vista»: chi stava al PC doveva aprire la scheda, ricopiare quello che era stato
+chiesto e premere Genera.
+
+Adesso accettare vuol dire **fallo**: la suite apre la scheda giusta, le passa
+il lavoro, e quando il file esce lo dichiara pronto a chi aspettava. Vale per
+DaProdFoto, DaProdCinema, DaProdMusica e DaProdVoce.
+
+Una per volta, e non è prudenza: su otto GB di scheda video ci sta un modello
+alla volta, e due generazioni insieme non sono più veloci — sono due
+generazioni che falliscono.
+
+> ⚠ Se **mentre la fila lavora** generi anche tu qualcosa a mano nella stessa
+> scheda, il primo file che esce potrebbe finire attaccato alla richiesta di un
+> altro. Non si perde niente, ma chi aspettava riceve la cosa sbagliata. È
+> scritto anche nel codice, e si chiuderà quando le schede sapranno dire «questo
+> l'ho fatto per quella richiesta».
+
+### Il telefono non perde più il computer
+
+«Se chiudo l'app poi non si ricollega.» La causa era una sola: il telefono si
+ricordava **un** indirizzo, e un indirizzo è una fotografia. Cambia la rete,
+passi dal wifi ai dati, il computer riavvia il tunnel — e da lì «non
+raggiungibile» per sempre.
+
+Adesso il QR ne porta **tutti** — Tailscale, la rete di casa, il tunnel — e
+l'app li prova finché uno risponde: prima quello che funzionava, poi gli altri
+tutti insieme. Quando ne trova un altro, se lo ricorda.
+
+**Tailscale è il primo della fila**, ed è la strada consigliata: funziona in
+casa e fuori, è cifrato, e non mette niente su Internet. Basta averlo anche sul
+telefono.
+
+### Le parole
+
+- **«Padrone» e «ospite» non ci sono più.** Si dice cosa uno **può fare** —
+  «può chiedere», «può anche decidere» — non cosa è.
+- **«Da fuori»** è diventato **Collegamento**.
+- **«Come siamo messi»** è diventato **Stato della connessione**.
+- «La fila» sono **I lavori**; «accetta» e «scarta» sono **fallo** e **lascia
+  perdere**.
+
+### Un invito per più persone
+
+Chiesto: «più di venti persone collegate, di picco». Con un codice a testa
+servivano venti giri al pannello, e ogni codice vive cinque minuti. Adesso un
+invito può valere **per dieci persone**: si mostra una volta e lo inquadrano
+tutti. Resta a tempo, che è la protezione vera.
+
+### Windows che blocca, detto quando succede
+
+Il messaggio del firewall prima si scriveva una volta all'accensione e non
+cambiava più: chi sbloccava la porta continuava a leggere «Windows sta
+bloccando» per sempre. Adesso la suite ricontrolla da sola ogni venti secondi, e
+l'avviso sparisce quando sparisce il problema.
+
+Corretto anche un errore di ragionamento: l'avviso non compariva se c'era
+Tailscale. Sbagliato — una regola del firewall vale per **la porta**, non per la
+scheda di rete, quindi blocca anche Tailscale. L'unico che lo scavalca è il
+tunnel, perché quella connessione esce invece di entrare.
+
+### Il motore si scalda da solo
+
+Aprire DaProdFoto voleva dire aspettare che partisse Python, che si importasse
+torch e che ComfyUI leggesse i suoi nodi: quaranta secondi in cui la finestra
+c'era e non rispondeva. Adesso quei quaranta secondi il computer li spende
+**mentre guardi l'hub**, e quando apri la scheda è già pronta.
+
+Non carica pesi in memoria video: scalda il processo, non la scheda. Quelli
+restano a chi genera davvero, uno alla volta.
+
+---
+
+### Cosa è provato e cosa no
+
+**Provato davvero**: la console nuova, guidata in un browser vero contro un
+gateway vero — accoppiamento, il semaforo che diventa rosso quando il firewall
+blocca e verde quando no, i quadrati, l'invito per dieci persone, l'elenco di
+chi è collegato, gli indirizzi con Tailscale davanti. Le prove del gateway sono
+passate da 79 a **97**: il pannello, chi può fare cosa, l'invito multiplo,
+togliere sé stessi. Compilano suite, pacchetti e APK.
+
+Un difetto trovato e corretto proprio lì: il semaforo nascondeva l'avviso del
+firewall quando c'era Tailscale.
+
+**Da provare tu, e sono le cose che contano**:
+
+- **accettare un lavoro dal telefono e vederlo partire** sul computer: è la
+  ragione di tutto il giro, e non è mai girata contro un motore acceso;
+- DaProdConnessione aperta davvero, dall'hub;
+- il telefono che si ricollega dopo un cambio di rete;
+- Tailscale sul telefono;
+- il motore che si scalda da solo, e quanto fa risparmiare davvero.
+
+---
+
 ## 0.6.0 — Il telefono è la suite, e la Storia si vede lavorare
 
 **22 agosto 2026.** Nasce da una sessione di prove vere sulla 0.5.1, e da un
