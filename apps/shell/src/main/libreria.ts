@@ -266,10 +266,10 @@ class Libreria extends EventEmitter {
    * un'etichetta in un archivio: aprendo la cartella si legge la stessa cosa —
    * e accanto resta scritto chi l'ha chiesto e con che parole esatte.
    */
-  intitola(
+  async intitola(
     id: string,
     dati: { titolo: string; chi?: string; chiNome?: string; extra?: Record<string, unknown> },
-  ): ElementoLibreria | null {
+  ): Promise<ElementoLibreria | null> {
     const elemento = this.trova(id);
     if (!elemento) return null;
 
@@ -290,10 +290,34 @@ class Libreria extends EventEmitter {
       JSON.stringify(meta, null, 1),
       "utf8",
     );
-    // Prima i metadati, poi il nome: `rinomina` si porta dietro il `.json`, e
-    // scriverlo dopo vorrebbe dire scriverlo accanto a un file che non c'e'
-    // piu'.
-    return this.rinomina(id, titolo) ?? this.trova(id) ?? null;
+    /**
+     * Prima i metadati, poi il nome: `rinomina` si porta dietro il `.json`, e
+     * scriverlo dopo vorrebbe dire scriverlo accanto a un file che non c'e'
+     * piu'.
+     *
+     * **E il nome puo' non riuscire, senza che sia un guaio.** Il 23 agosto
+     * 2026, sul PC vero: «a volte i video non li manda correttamente». Nel log
+     * c'era scritto tutto — `EBUSY: resource busy or locked, rename
+     * clip_00020_.mp4` — e la conseguenza era la peggiore possibile: il video
+     * c'era, era finito, e la richiesta risultava **fallita** perche' non si
+     * era riusciti a cambiargli nome. Windows tiene il file bloccato finche' il
+     * motore non lo lascia andare, e su un video da cento MB quel momento
+     * arriva dopo.
+     *
+     * Adesso ci si riprova qualche volta, e se proprio non si puo' **si tiene
+     * il nome del motore**: il titolo e' gia' scritto nei metadati, quindi in
+     * galleria, sul telefono e nella fila si legge lo stesso il prompt. Cambia
+     * solo come si chiama il file dentro la cartella, che e' la meta' meno
+     * importante della cosa.
+     */
+    for (let tentativo = 0; tentativo < 4; tentativo += 1) {
+      try {
+        return this.rinomina(id, titolo) ?? this.trova(id) ?? null;
+      } catch {
+        await new Promise((r) => setTimeout(r, 1500));
+      }
+    }
+    return this.trova(id) ?? null;
   }
 
   /**

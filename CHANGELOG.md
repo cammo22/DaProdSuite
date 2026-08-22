@@ -10,6 +10,138 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ---
 
+## 0.7.3 — I video arrivano, e la scheda video torna libera
+
+**23 agosto 2026.** Tutto quello che è venuto fuori usando la 0.7.2 per un
+pomeriggio. Una di queste cose era rotta per colpa mia, ed è la prima.
+
+---
+
+### I video non arrivavano
+
+«A volte i video non li manda correttamente.» Era vero, e il motivo stava
+scritto nel registro della suite:
+
+> `EBUSY: resource busy or locked, rename 'clip_00020_.mp4' → 'Una ragazza corre in bagno.mp4'`
+
+L'ho messo io nella 0.7.2, insieme ai nomi presi dal prompt. Windows tiene un
+file bloccato finché il programma che lo scrive non lo lascia andare, e su un
+video da cento MB quel momento arriva dopo: **cambiargli nome falliva, e il
+lavoro risultava fallito con il video già pronto sul disco.** Su un'immagine non
+capitava quasi mai — è piccola, il motore la molla subito. Sui video sì.
+
+Adesso il file si prende quando ha **smesso di crescere**, si riprova quattro
+volte a dargli il nome, e se proprio non si può si tiene quello del motore: il
+prompt è già scritto accanto, quindi in galleria e sul telefono si legge lo
+stesso. Un nome non può far fallire un lavoro finito.
+
+Nella stessa passata: i risultati si scaricano **a pezzi**, come la galleria. Un
+video si può scorrere senza aspettare che arrivi tutto, e una linea che cade
+riprende da dove era invece di ricominciare.
+
+### Le schede si chiudono quando hanno finito
+
+Era la cosa detta «importantissima», e ha ragione: finché la scheda resta aperta
+il suo motore resta acceso, e i pesi restano nella scheda video. Su otto GB vuol
+dire che la generazione dopo non trova posto.
+
+Adesso, **quando la fila finisce, quello che ha aperto lei lo richiude** — e con
+la finestra si spegne il motore. Quello che hai aperto tu resta dov'è: se stai
+lavorando in DaProdFoto non te la chiude in faccia. E se in coda c'è un altro
+lavoro per la stessa scheda, non la chiude e riapre per niente.
+
+### Quello che conta è arrivarci da fuori
+
+«L'app connessione deve funzionare solo su internet, non ci interessa la LAN.»
+
+Quindi la rete di casa non è più una risposta: se da fuori non ci si arriva, il
+quadrone in cima **non è verde** — dice che da fuori casa non ci si arriva, con
+il tasto per aprire la strada lì accanto. Anche il QR e l'app adesso preferiscono
+l'indirizzo che funziona ovunque: prima Tailscale, poi il tunnel, e la wifi di
+casa per ultima. Un telefono che si ricorda l'indirizzo di casa smette di
+funzionare appena esce dalla porta.
+
+### Sul telefono basta il codice
+
+Il codice dice *chi sei*, non *a chi bussare*: quello lo portava il QR, ed era il
+motivo per cui senza inquadrare non si entrava. Adesso nella schermata di
+collegamento c'è anche la casella dell'indirizzo — già piena con quello
+dell'ultima volta — e sul computer, sotto al QR, c'è scritto **cosa copiare**:
+l'indirizzo e le otto cifre.
+
+### Quello che scrivi col computer spento parte da solo
+
+Prima la coda partiva solo riaprendo l'app e aspettando la schermata: se il
+telefono restava in tasca, quello che avevi scritto restava lì. Adesso ci pensa
+il lavoro in background — ogni quarto d'ora guarda **quale indirizzo risponde
+adesso** e manda le richieste di ognuno con il suo collegamento. Quando partono,
+te lo dice con una notifica.
+
+E se il computer non l'hai mai raggiunto, quella schermata non mostra più un menu
+vuoto e un tasto che non fa niente: dice cosa manca.
+
+### Le persone hanno la loro pagina
+
+In fondo c'era «Collegamento», e cominciava dai quadrati della rete: chi cercava
+*dove gestisco chi è collegato* non la apriva nemmeno. Adesso si chiama
+**Persone** e comincia da chi c'è, con:
+
+- **Admin** o **Utente** scritto accanto al nome — sono queste le due parole, e
+  il tasto adesso dice «rendilo admin» o «rendilo utente»;
+- **disconnetti** al posto di «togli»;
+- **mandagli un file**: si trascina sul nome, o si sceglie col tasto — perché su
+  un telefono non si trascina niente.
+
+La roba della rete è rimasta, sotto, che è quanto conta una volta che funziona.
+
+### I file che ti mandano stanno in galleria
+
+Non più in un riquadro loro nella prima pagina: in **galleria**, terza linguetta
+«arrivati per me», accanto alle tue cose e alla bacheca. Il pacco che si apre con
+l'animazione resta, la prima volta che arriva.
+
+### Dal computer si vede tutto
+
+La galleria di chi sta al PC mostra le cose di tutti: sono sul suo disco, e le
+schede della suite già le mostrano tutte. La separazione serve fra le persone
+collegate da fuori, non per nascondere a chi ospita quello che ospita.
+
+### L'AI scrive anche la canzone
+
+Chiedendo un brano dal telefono, **Usa l'AI** adesso scrive due cose: com'è
+fatta la canzone e **cosa dice** — con i tag `[Verse]`, `[Chorus]`, `[Bridge]`,
+come li vuole DaProdMusica. Le parole finiscono nella loro casella solo se è
+vuota: se ci avevi già scritto qualcosa, resta la tua.
+
+Il tasto, dovunque sia, adesso si chiama **Usa l'AI**.
+
+---
+
+### Provato sul PC vero
+
+Il giro del video, dall'inizio alla fine, con il motore acceso: un telefono
+chiede «una barca entra in porto all'alba», chi sta al PC accetta, DaProdCinema
+si apre e genera. **Centocinquanta secondi dopo** il file c'è, si chiama come il
+prompt, si scarica intero e a pezzi, è un mp4 vero e lungo quanto dice, sta nella
+galleria di chi l'ha chiesto — e **DaProdCinema si è chiusa da sola**, con il suo
+motore. Nel registro della fila si legge la riga che lo dice.
+
+Prima di questa release, lo stesso giro finiva con «fallita».
+
+### Cosa **non** è a posto, e va detto
+
+- **Il tasto dell'AI ci mette un minuto o due**: Bonsai si carica a 64K e
+  ragiona. È il prezzo di un 27B su una scheda da 8 GB.
+- **Due telefoni veri accesi insieme non li ha ancora visti nessuno.**
+- **La coda che parte con l'app chiusa** dipende da quando Android decide di far
+  girare il lavoro in background: il quarto d'ora è il minimo che il sistema
+  accetta, non una promessa.
+- Se generi a mano in una scheda **mentre la fila lavora**, il primo file che
+  esce può finire attaccato alla richiesta di un altro. È scritto nel codice da
+  sempre e non è ancora chiuso.
+
+---
+
 ## 0.7.2 — Ognuno le sue cose, e il menu quando arriva una richiesta
 
 **22 agosto 2026.** La 0.7.1 funziona: il telefono chiede, il computer fa, il

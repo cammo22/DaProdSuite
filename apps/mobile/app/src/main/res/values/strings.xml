@@ -42,6 +42,9 @@
 
     <!-- La coda -->
     <string name="titolo_coda">Quello che aspetta qui</string>
+    <string name="oppure_a_mano">Oppure scrivi a mano indirizzo e codice, come li vedi sul computer</string>
+    <string name="hint_indirizzo">https://qualcosa.trycloudflare.com</string>
+    <string name="niente_azioni_ricordate">Non so ancora cosa sa fare questo computer: collegati una volta con lui acceso, e da lì in poi potrai scrivere richieste anche da spento.</string>
     <string name="nessuna_richiesta">Niente in attesa. Quello che scrivi senza PC compare qui.</string>
     <string name="btn_scarica">Scarica nel telefono</string>
 

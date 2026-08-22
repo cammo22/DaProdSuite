@@ -42,6 +42,7 @@
  */
 
 import { copyFile, mkdir } from "node:fs/promises";
+import { statSync } from "node:fs";
 import { basename, extname, join } from "node:path";
 import type { AppId, ElementoLibreria, RichiestaDaFuori } from "@daprod/ipc";
 import { CHANNELS } from "@daprod/ipc";
@@ -54,6 +55,15 @@ const annota = (riga: string): void => log.write(`${riga}\n`, false);
 
 /** Quanto si aspetta un file, prima di dire che quel lavoro non è arrivato. */
 const ATTESA_FILE_MS = 45 * 60_000;
+
+/**
+ * Quanto si aspetta che un file smetta di crescere.
+ *
+ * Cinque minuti sono più del tempo che ci mette qualunque motore a scrivere su
+ * disco quello che ha già in memoria — anche mezz'ora di video. Oltre, si
+ * consegna comunque: meglio un file forse a metà che nessun file.
+ */
+const ATTESA_FILE_FERMO_MS = 5 * 60_000;
 
 /** Quanto si aspetta che la finestra della scheda sia pronta a ricevere. */
 const ATTESA_FINESTRA_MS = 90_000;
@@ -101,6 +111,15 @@ export const collegaEsecuzione = (c: Cablaggio): void => {
 const fila: DaEseguire[] = [];
 let inCorso: DaEseguire | null = null;
 
+/**
+ * Le schede aperte **dalla fila**, non da chi sta al computer.
+ *
+ * È la differenza che decide se a lavoro finito si chiudono: una scheda che ha
+ * aperto l'utente resta aperta — ci sta lavorando — una che ha aperto la fila
+ * per eseguire la richiesta di un telefono ha finito il suo mestiere.
+ */
+const aperteDaNoi = new Set<AppId>();
+
 /** Cosa sta facendo la fila adesso: lo mostra DaProdConnessione. */
 export const filaInCorso = (): { id: string; app: string; testo: string } | null =>
   inCorso ? { id: inCorso.id, app: inCorso.app, testo: inCorso.testo } : null;
@@ -146,6 +165,39 @@ async function giraLaFila(): Promise<void> {
     inCorso = null;
     // La prossima parte adesso, non fra un giro di orologio.
     if (fila.length) void giraLaFila();
+    else await chiudiQuelloCheAbbiamoAperto();
+  }
+}
+
+/**
+ * A fila vuota, le schede aperte da noi si chiudono. **E questa è la VRAM.**
+ *
+ * Chiesto il 23 agosto 2026, e detto «importantissimo»: «quando i programmi
+ * terminano un lavoro devono anche chiudersi così da liberare la vram». Ha
+ * ragione, ed è più di una comodità: chiudere una scheda spegne il suo motore
+ * (`appManager.close`), e finché il motore è acceso i pesi restano nella scheda
+ * video. Su otto GB vuol dire che la generazione dopo — o il modello che scrive
+ * — non trova posto.
+ *
+ * **Solo quelle aperte dalla fila**, e **solo a fila vuota**: se chi sta al PC
+ * ha aperto DaProdFoto per lavorarci, chiudergliela in faccia perché è arrivata
+ * una richiesta da un telefono sarebbe peggio del problema. E se ci sono altre
+ * richieste in coda per la stessa scheda, chiuderla e riaprirla vorrebbe dire
+ * ricaricare i pesi due volte.
+ */
+async function chiudiQuelloCheAbbiamoAperto(): Promise<void> {
+  if (!aperteDaNoi.size) return;
+  const quali = [...aperteDaNoi];
+  aperteDaNoi.clear();
+  for (const app of quali) {
+    try {
+      annota(`chiudo ${app}: la fila ha finito, la scheda video torna libera`);
+      await appManager.close(app);
+    } catch (err) {
+      // Una scheda che non si chiude non è un lavoro fallito: il file è già
+      // consegnato. Si scrive e si va avanti.
+      annota(`non sono riuscito a chiudere ${app}: ${err instanceof Error ? err.message : String(err)}`);
+    }
   }
 }
 
@@ -190,13 +242,33 @@ async function esegui(richiesta: DaEseguire): Promise<void> {
    * disco dice di no — il lavoro non fallisce per questo: si consegna quello
    * che c'è. Un nome brutto è meglio di un lavoro perso.
    */
-  const battezzato =
-    libreria.intitola(uscito.id, {
-      titolo: richiesta.testo,
-      chi: richiesta.daId,
-      chiNome: richiesta.da,
-      extra: { richiesta: richiesta.id, azione: richiesta.azione },
-    }) ?? uscito;
+  /**
+   * Un respiro prima di rinominare, e serve.
+   *
+   * La scheda scrive i suoi parametri **accanto** al file — modello, seed,
+   * passi — un attimo dopo aver finito di generare. Rinominare in quel momento
+   * vuol dire che quella scrittura arriva su un nome che non esiste piu' e si
+   * perde in silenzio: il file resta, i parametri no. Due secondi bastano, e
+   * `intitola` tiene quello che trova invece di sovrascriverlo.
+   */
+  await pausa(2000);
+
+  let battezzato = uscito;
+  try {
+    battezzato =
+      (await libreria.intitola(uscito.id, {
+        titolo: richiesta.testo,
+        chi: richiesta.daId,
+        chiNome: richiesta.da,
+        extra: { richiesta: richiesta.id, azione: richiesta.azione },
+      })) ?? uscito;
+  } catch (err) {
+    // **Un nome non e' un lavoro.** Qui dentro si consegna quello che il motore
+    // ha prodotto: se dargli un nome non riesce si scrive perche' e si va
+    // avanti con quello che c'e'. Prima questa riga poteva far risultare
+    // fallita una generazione riuscita, ed e' successo davvero.
+    annota(`non sono riuscito a rinominare ${uscito.id}: ${err instanceof Error ? err.message : String(err)}`);
+  }
 
   const copiato = await portaNeiRisultati(battezzato);
   cablaggio?.consegna(richiesta.id, copiato);
@@ -212,7 +284,11 @@ async function esegui(richiesta: DaEseguire): Promise<void> {
  * fra «la prima richiesta dopo l'avvio non parte mai» e «parte».
  */
 async function apriEAspetta(app: AppId): Promise<Electron.BrowserWindow | null> {
+  // Chi c'era prima di noi resta: si segna solo quello che apriamo noi, ed è
+  // quello che a fila finita si richiude per liberare la scheda video.
+  const giaAperta = appManager.laFinestra(app) !== null;
   await appManager.open(app);
+  if (!giaAperta) aperteDaNoi.add(app);
 
   const scaduta = Date.now() + ATTESA_FINESTRA_MS;
   for (;;) {
@@ -250,11 +326,23 @@ function attendiRisposta(id: string): Promise<string> {
 }
 
 /**
- * Il primo file nuovo di quell'app dopo il momento `da`.
+ * Il primo file nuovo di quell'app dopo il momento `da`, **finito di scrivere**.
  *
  * Si guarda la libreria e basta: è già l'elenco di tutto quello che esce, e
  * poiché si lavora una richiesta per volta il primo elemento nuovo è quello
  * giusto. Vedi il commento in cima al file per il caso che resta aperto.
+ *
+ * **Perché non basta che il file esista**, detto da chi l'ha visto: «a volte i
+ * video non li manda correttamente». Ed era vero, e questo è il motivo. Un file
+ * compare nella cartella **appena il motore comincia a scriverlo**: per
+ * un'immagine da un mega la differenza fra «c'è» e «è finito» è un istante e
+ * non si nota mai, per un video da cento è mezzo minuto. In quel mezzo minuto
+ * la fila copiava un file a metà e lo dichiarava pronto — e chi aspettava
+ * scaricava un video che non si apre.
+ *
+ * Adesso si aspetta che **smetta di crescere**: due letture di fila con la
+ * stessa dimensione, e non zero. Costa qualche secondo in più e toglie di mezzo
+ * una consegna sbagliata su tre.
  */
 async function aspettaIlFile(app: AppId, da: number): Promise<ElementoLibreria | null> {
   const scaduta = da + ATTESA_FILE_MS;
@@ -264,9 +352,41 @@ async function aspettaIlFile(app: AppId, da: number): Promise<ElementoLibreria |
       .cerca({ app })
       .filter((e) => e.creato > da)
       .sort((a, b) => a.creato - b.creato);
-    if (nuovi.length) return nuovi[0] ?? null;
+    const primo = nuovi[0];
+    if (!primo) continue;
+    const fermo = await aspettaCheSiaFermo(primo.percorso);
+    if (fermo) return libreria.trova(primo.id) ?? primo;
+    // Ha smesso di esistere mentre lo guardavamo — capita con i file
+    // temporanei di certi motori: si riparte dal giro dopo.
   }
   return null;
+}
+
+/**
+ * Aspetta che un file smetta di crescere.
+ *
+ * Non c'è un modo pulito di chiedere a Windows «questo lo sta ancora scrivendo
+ * qualcuno?» che valga per tutti i motori: si guarda la dimensione, che è la
+ * cosa che cambia mentre scrivono. Due letture uguali a un secondo e mezzo di
+ * distanza, e non zero, vogliono dire finito.
+ */
+async function aspettaCheSiaFermo(percorso: string): Promise<boolean> {
+  let prima = -1;
+  const scaduta = Date.now() + ATTESA_FILE_FERMO_MS;
+  while (Date.now() < scaduta) {
+    let adesso: number;
+    try {
+      adesso = statSync(percorso).size;
+    } catch {
+      return false;
+    }
+    if (adesso > 0 && adesso === prima) return true;
+    prima = adesso;
+    await pausa(1500);
+  }
+  // Scaduto il tempo si consegna lo stesso: un file che cresce da cinque minuti
+  // è un motore che scrive piano, non un file rotto.
+  return true;
 }
 
 /**

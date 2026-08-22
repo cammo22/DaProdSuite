@@ -27,6 +27,15 @@ class CodaOffline(context: Context) {
         val testo: String,
         val valori: Map<String, String>,
         val quando: Long,
+        /**
+         * Di chi è, sullo stesso telefono.
+         *
+         * Serve da quando la coda parte **anche con l'app chiusa**: il lavoro
+         * in background gira per tutte le persone del telefono, e una richiesta
+         * scritta da uno non deve arrivare al PC a nome di un altro. Vuoto vuol
+         * dire: scritta prima della 0.7.3, va a chi sta usando l'app.
+         */
+        val chi: String = "",
     )
 
     fun tutte(): List<Voce> {
@@ -39,11 +48,20 @@ class CodaOffline(context: Context) {
         }
     }
 
-    fun aggiungi(azione: String, titolo: String, testo: String, valori: Map<String, String>) {
+    fun aggiungi(
+        azione: String,
+        titolo: String,
+        testo: String,
+        valori: Map<String, String>,
+        chi: String,
+    ) {
         val quando = System.currentTimeMillis()
-        val voce = Voce("offline-$quando", azione, titolo, testo, valori, quando)
+        val voce = Voce("offline-$quando", azione, titolo, testo, valori, quando, chi)
         salva(tutte() + voce)
     }
+
+    /** Quelle di una persona, più quelle vecchie che non sanno di chi sono. */
+    fun sue(chi: String): List<Voce> = tutte().filter { it.chi.isBlank() || it.chi == chi }
 
     fun rimuovi(voce: Voce) {
         salva(tutte().filterNot { it.id == voce.id })
@@ -63,7 +81,8 @@ class CodaOffline(context: Context) {
                     .put("titolo", v.titolo)
                     .put("testo", v.testo)
                     .put("valori", valori)
-                    .put("quando", v.quando),
+                    .put("quando", v.quando)
+                    .put("chi", v.chi),
             )
         }
         prefs.edit().putString("voci", arr.toString()).apply()
@@ -82,6 +101,7 @@ class CodaOffline(context: Context) {
             testo = j.optString("testo", ""),
             valori = valori,
             quando = quando,
+            chi = j.optString("chi", ""),
         )
     }
 }

@@ -191,10 +191,21 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="18dp"
-                    android:text="@string/hint_codice"
+                    android:layout_marginTop="20dp"
+                    android:text="@string/oppure_a_mano"
                     android:textColor="@color/testo_debole"
                     android:textSize="12sp" />
+
+                <EditText
+                    android:id="@+id/campo_indirizzo"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:inputType="textUri"
+                    android:hint="@string/hint_indirizzo"
+                    android:importantForAutofill="no"
+                    android:textColor="@color/testo"
+                    android:textColorHint="@color/testo_debole" />
 
                 <EditText
                     android:id="@+id/campo_codice"

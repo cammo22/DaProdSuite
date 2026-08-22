@@ -375,13 +375,24 @@ export class Gateway {
             return this.errore(res, 403, "Questo lo puo' fare solo chi ha il permesso di decidere.");
           }
           const partenza = ((corpo ?? {}) as { testo?: string }).testo?.trim() || richiesta.testo;
-          let scritto: string;
+          let scritto: { testo: string; parole?: string };
           try {
             scritto = await this.ai.migliora({ testo: partenza, app: richiesta.app });
           } catch (err) {
             return this.errore(res, 502, err instanceof Error ? err.message : "Il modello non ha risposto.");
           }
-          const male = this.remoto.riscrivi(id, dispositivo, scritto, "ai");
+          /**
+           * Per un brano il modello scrive **anche le parole**, e finiscono
+           * nella richiesta insieme alla descrizione: chi ha chiesto «una
+           * canzone sul mare» dal telefono non ha nessuna voglia di scriversi
+           * tre strofe su una tastiera piccola.
+           *
+           * Se aveva già scritto un testo suo, quello resta: il modello
+           * riempie un vuoto, non sovrascrive una scelta.
+           */
+          const parole =
+            scritto.parole && !richiesta.opzioni?.testo ? { testo: scritto.parole } : undefined;
+          const male = this.remoto.riscrivi(id, dispositivo, scritto.testo, "ai", parole);
           if (male) return this.errore(res, 403, male);
         } else {
           const testo = ((corpo ?? {}) as { testo?: string }).testo ?? "";
@@ -435,7 +446,9 @@ export class Gateway {
             testo: dati.testo.trim().slice(0, 4000),
             app: dati.app ?? "foto",
           });
-          this.json(res, 200, { testo: scritto });
+          // `parole` c'è solo per i brani: è il testo da cantare, e la pagina
+          // lo mette nella sua casella se è ancora vuota.
+          this.json(res, 200, scritto);
         } catch (err) {
           this.errore(res, 502, err instanceof Error ? err.message : "Il modello non ha risposto.");
         }
@@ -507,13 +520,13 @@ export class Gateway {
 
       // Scaricare il file di un risultato.
       const file = percorso.match(/^\/risultati\/(.+)$/);
-      if (file && req.method === "GET") {
+      if (file && (req.method === "GET" || req.method === "HEAD")) {
         const nome = file[1];
         if (!nome) {
           this.errore(res, 404, "File non trovato.");
           return;
         }
-        this.scarica(res, dispositivo, decodeURIComponent(nome));
+        this.scarica(req, res, dispositivo, decodeURIComponent(nome));
         return;
       }
 
@@ -769,7 +782,12 @@ export class Gateway {
    * si risolve dentro la cartella e ci si resta. Chiunque può scaricare il
    * file di una propria richiesta pronta.
    */
-  private scarica(res: ServerResponse, dispositivo: Dispositivo, nome: string): void {
+  private scarica(
+    req: IncomingMessage,
+    res: ServerResponse,
+    dispositivo: Dispositivo,
+    nome: string,
+  ): void {
     const richiesta = this.remoto.richiesteDi(dispositivo).find(
       (r) => r.risultato && r.risultato.nome === nome,
     );
@@ -782,17 +800,21 @@ export class Gateway {
       this.errore(res, 403, "Percorso fuori dalla cartella dei risultati.");
       return;
     }
-    try {
-      const stat = statSync(assoluto);
-      res.writeHead(200, {
-        "Content-Type": richiesta.risultato.tipo,
-        "Content-Length": stat.size,
-        "Content-Disposition": `attachment; filename="${richiesta.risultato.nome.replace(/"/g, "")}"`,
-      });
-      createReadStream(assoluto).pipe(res);
-    } catch {
-      this.errore(res, 404, "File non trovato.");
-    }
+    /**
+     * **A pezzi, se il client li chiede.** Prima qui si mandava tutto insieme,
+     * e per un video voleva dire due cose: che non si poteva spostare la barra
+     * di scorrimento, e che un telefono con la linea ballerina ricominciava da
+     * capo a ogni intoppo invece di riprendere da dove era. È la stessa
+     * gestione della galleria, che adesso è scritta in un posto solo.
+     */
+    this.mandaConPezzi(
+      req,
+      res,
+      assoluto,
+      richiesta.risultato.tipo,
+      richiesta.risultato.bytes,
+      richiesta.risultato.nome,
+    );
   }
 
   /**
