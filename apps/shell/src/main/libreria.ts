@@ -154,10 +154,21 @@ class Libreria extends EventEmitter {
       n += 1;
     }
 
+    /**
+     * **Prima il file, poi quello che gli sta accanto.**
+     *
+     * L'ordine era il contrario, e si è visto cosa vuol dire il 23 agosto 2026:
+     * su un video che Windows teneva ancora bloccato, i metadati si spostavano
+     * al nome nuovo e il video restava al vecchio. Risultato: un `.json`
+     * orfano, e un video senza più i suoi parametri accanto.
+     *
+     * Spostando prima il file, se non si può non si è mosso ancora niente e si
+     * può riprovare da capo — che è quello che fa `intitola`.
+     */
+    renameSync(elemento.percorso, destinazione);
     for (const [prima, dopo] of accompagnatori(elemento.percorso, destinazione)) {
       if (existsSync(prima)) renameSync(prima, dopo);
     }
-    renameSync(elemento.percorso, destinazione);
 
     this.segnalaNovita();
     return this.trova(relative(OUTPUT_DIR, destinazione).replace(/\\/g, "/")) ?? null;
