@@ -117,10 +117,12 @@
         <p class="llm-nota">
           64K è il contesto consigliato: più contesto vuol dire più memoria per la
           cache e meno per il modello. Dalla 0.6.0 <b>la memoria si libera a ogni
-          risposta</b>, in tutte le schede: appena il modello ha finito di scrivere,
-          i suoi GB tornano ai modelli di immagini, musica e video, che vivono sulla
-          stessa scheda. Due domande di fila lo fanno ricaricare — è il prezzo, ed è
-          molto meno di una generazione che muore a metà.
+          risposta</b>: appena il modello ha finito di scrivere, i suoi GB tornano ai
+          modelli di immagini, musica e video, che vivono sulla stessa scheda. Due
+          domande di fila lo fanno ricaricare — è il prezzo, ed è molto meno di una
+          generazione che muore a metà. Il Companion fa eccezione mentre ci parli,
+          perché sta conversando: il suo modello si libera appena premi Genera in
+          un'altra scheda.
         </p>
         <p class="llm-nota">
           <b>Va bene qualunque modello</b> tu abbia installato in LM Studio: l'elenco

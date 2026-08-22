@@ -131,6 +131,20 @@ Resta da scegliere finestra e overlap e da misurare cosa regge in 8 GB.
 
 ## Chiesto e da fare, senza ancora una versione
 
+Quello che è stato chiesto e non è ancora dentro, o è dentro a metà.
+
+### Il Companion e la memoria del modello
+
+Dalla 0.6.0 il modello che scrive si libera a ogni risposta — ma solo per le app
+che passano dal ponte della suite. Il Companion parla a LM Studio dal suo Python
+e tiene il modello caricato mentre conversi, il che è giusto: scaricarlo dopo
+ogni battuta vorrebbe dire ricaricare quattro GB fra una frase e l'altra.
+
+Il suo modello viene liberato lo stesso quando un'altra scheda preme Genera
+(`faiSpazio()` svuota tutto). Quello che manca è il contrario: **il Companion
+che si accorge di essere rimasto acceso** e molla la presa da solo dopo un po'
+che nessuno gli parla. Oggi lo fa solo chiudendo la sua finestra.
+
 ### Un'AI che usa il programma da sola — *due terzi fatti*
 
 **Chiesto da Cammo il 21 agosto 2026**, guardando

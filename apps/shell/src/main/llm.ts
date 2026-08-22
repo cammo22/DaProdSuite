@@ -253,7 +253,15 @@ export async function liberaMemoriaLlm(): Promise<void> {
 }
 
 /**
- * A risposta finita, la memoria torna libera. **Ogni volta, in tutte le app.**
+ * A risposta finita, la memoria torna libera. **Ogni volta.**
+ *
+ * Vale per tutte le app che passano di qui — Cinema, Musica, Foto, Dream — e
+ * **non** per il Companion, che parla a LM Studio per conto suo dal suo Python.
+ * Non è una dimenticanza: lui sta conversando, e scaricare il modello dopo ogni
+ * battuta vorrebbe dire ricaricare quattro GB fra una frase e l'altra. Il suo
+ * modello lo libera comunque `liberaMemoriaLlm()`, che è quello che ogni app
+ * chiama un attimo prima di generare: da lì in poi la scheda è sgombra per
+ * tutti.
  *
  * Fino alla 0.5.2 qui c'era un timer da quarantacinque secondi, con una ragione
  * scritta: chi lavora fa domande a raffica, e ricaricare quattro GB a ogni giro

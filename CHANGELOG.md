@@ -159,8 +159,17 @@ sono esattamente la finestra in cui uno rilegge le scene appena scritte e preme
 Genera: la generazione partiva con quattro GB e mezzo già presi.
 
 Adesso appena il modello ha finito di scrivere, i suoi GB tornano liberi. Vale
-in tutte le schede. Il prezzo c'è ed è onesto dirlo: due domande di fila lo fanno
-ricaricare. È molto meno di una generazione che muore a metà.
+in tutte le schede che chiedono alla suite: Cinema, Musica, Foto, Dream. Il
+prezzo c'è ed è onesto dirlo: due domande di fila lo fanno ricaricare. È molto
+meno di una generazione che muore a metà.
+
+**Il Companion fa eccezione, e deve farla.** Lui parla a LM Studio per conto
+suo, e sta *conversando*: liberare la memoria dopo ogni battuta vorrebbe dire
+ricaricare quattro GB fra una frase e l'altra, cioè rendere impossibile la cosa
+per cui esiste. Il suo modello resta caricato finché ci stai parlando — e viene
+liberato lo stesso, senza che tu faccia niente, **nel momento in cui premi
+Genera in un'altra scheda**: quel tasto svuota la scheda video di tutto quello
+che c'è sopra, da sempre.
 
 ---
 
