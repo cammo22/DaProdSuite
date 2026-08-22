@@ -5,6 +5,7 @@
  * funziona anche a motore spento — le immagini di ieri si guardano comunque.
  */
 
+import { collegaLavoriDaFuori, numero, premi, scrivi } from "/comune/da-fuori.js";
 import { el, mostraErrore, mostraScheda, suApertura } from "./dom.js";
 import { ascolta } from "./bus.js";
 import { collegaComandiCoda, messaggioDalMotore, riallinea } from "./coda.js";
@@ -72,3 +73,22 @@ await collega(
   },
   messaggioDalMotore,
 );
+
+/**
+ * I lavori chiesti da fuori: dal telefono, dalla console, da un agente.
+ *
+ * Poche righe, e sono tutte «metti questo lì»: la generazione è quella di
+ * sempre, perché si preme lo stesso tasto che premeresti tu. Il perché di
+ * questa scelta — invece di costruire il grafo qui — sta in
+ * `packages/ui/src/da-fuori.js`.
+ */
+collegaLavoriDaFuori((richiesta) => {
+  mostraScheda("crea");
+  scrivi(el.prompt, richiesta.testo);
+  if (richiesta.opzioni.negativo) scrivi(el.negativo, richiesta.opzioni.negativo);
+  scrivi(el.quante, String(numero(richiesta.opzioni.quante, 1, 4, 1)));
+  premi(
+    el.genera,
+    "Il modello di DaProdFoto non è pronto: apri la scheda sul computer e guarda cosa manca.",
+  );
+});

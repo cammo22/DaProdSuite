@@ -26,38 +26,45 @@ file si scrive quale delle due metà manca.
 
 ## A che punto siamo — 22 agosto 2026
 
-**Ultima pubblicata: 0.6.0.** Otto app dentro la suite, un ambiente Python solo,
-l'accesso da fuori che adesso esce anche di casa.
+**Ultima pubblicata: 0.7.0.** Nove schede dentro la suite, un ambiente Python
+solo, e la connessione che si accende da sola e si racconta da sola.
 
 | Pezzo | Come sta |
 |---|---|
 | Guscio, hub, arbitro GPU, supervisore | fatto e provato a lungo |
 | Ambiente Python unico (4,05 GB invece di 14,7) | fatto e provato |
 | Installer NSIS + aggiornamento da GitHub Releases | fatto e provato |
-| Le otto schede dentro la suite | dentro tutte; DaProdCinema è quella che si sta ancora costruendo |
+| Le nove schede dentro la suite | dentro tutte; DaProdCinema è quella che si sta ancora costruendo |
 | Libreria condivisa e scambio fra app | fatto e provato |
 | Accesso da fuori: gateway, azioni, console, MCP | fatto e provato |
-| **Accesso da Internet (tunnel in uscita)** | fatto, **mai acceso su una linea vera** |
-| **App Android: persone, pagine della suite, galleria** | compila; **mai aperta su un telefono** |
-| **DaProdCinema — Storia: barra, anteprime, cucitura da sola** | scritto; **mai girato contro il motore acceso** |
-| Il modello che scrive (LM Studio) | fatto e provato; lo scarico a ogni risposta è nuovo e **da misurare** |
+| **DaProdConnessione: la scheda che dice se funziona** | fatta, **mai aperta dall'hub** |
+| **La fila che fa partire davvero i lavori** | scritta, **mai girata contro un motore acceso** |
+| **Il telefono che si ricollega da solo** | scritto, **mai provato su un telefono** |
+| **Tailscale come strada principale** | scritto, **mai provato col telefono** |
+| Accesso da Internet (tunnel in uscita) | fatto, **mai acceso su una linea vera** |
+| App Android: persone, pagine della suite, galleria | compila; **mai aperta su un telefono** |
+| DaProdCinema — Storia: barra, anteprime, cucitura da sola | scritto; **mai girato contro il motore acceso** |
+| Il modello che scrive (LM Studio) | fatto e provato; lo scarico a ogni risposta è **da misurare** |
 
 ### Il prossimo passo
 
-**Provare la 0.6.0 sul PC vero.** Sono cinque cose, in quest'ordine, e stanno
-scritte per esteso in fondo al [CHANGELOG](../CHANGELOG.md) § 0.6.0:
+**Provare sul PC vero.** Quasi niente di quello che è uscito nella 0.6.0 e nella
+0.7.0 è passato per le mani di chi la usa. In quest'ordine, perché è l'ordine di
+quanto contano:
 
-1. il tunnel acceso e un telefono che entra da fuori casa;
-2. l'app aperta su un telefono vero, con due persone;
-3. una storia intera generata guardando la barra;
-4. lo scarico della memoria fra una risposta e una generazione;
-5. una faccia data in pasto a un modello che sa vedere.
+1. **accettare un lavoro dal telefono e vederlo partire** — è la ragione di
+   tutto l'ultimo giro;
+2. DaProdConnessione aperta dall'hub: il semaforo dice il vero?
+3. il telefono, con due persone, e dopo un cambio di rete;
+4. Tailscale sul telefono;
+5. una storia intera generata guardando la barra;
+6. lo scarico della memoria fra una risposta e una generazione.
 
 ---
 
 # Quello che resta da fare
 
-## 0.7.0 — DaProdCinema: le due strade che restano
+## 0.8.0 — DaProdCinema: le due strade che restano
 
 **La scheda è nata nella 0.4.0**, nella 0.4.1 ha preso i suoi modelli — LTX 2.5 e
 MiniMax H3, quelli decisi qui sotto — e nella 0.4.2 è stata rifatta da capo:
@@ -132,6 +139,19 @@ Resta da scegliere finestra e overlap e da misurare cosa regge in 8 GB.
 ## Chiesto e da fare, senza ancora una versione
 
 Quello che è stato chiesto e non è ancora dentro, o è dentro a metà.
+
+### Le parole di tutta la suite
+
+**Chiesto il 22 agosto 2026**: «in generale tutta la sintassi va rivista, tante
+cose sono poco intuibili».
+
+La 0.7.0 ha rifatto le parole del collegamento e del telefono — via «padrone»,
+via «Da fuori», «Come siamo messi» è diventato «Stato della connessione» — ma
+sono uno degli angoli. Restano le altre otto schede, l'hub, e i messaggi
+d'errore, che sono la parte che si legge nel momento peggiore.
+
+Non è un giro di sostituzioni: è una regola. **Si scrive cosa una cosa fa, non
+come si chiama dentro**, e si scrive per chi la legge una volta sola.
 
 ### Il Companion e la memoria del modello
 
@@ -372,6 +392,68 @@ funzionare e non funzionare.
 
 Dalla più recente. Ogni sezione dice cosa è stato fatto **e** cosa
 di quello era stato provato davvero.
+
+---
+
+## 0.7.0 — DaProdConnessione, e i lavori che partono davvero ✅
+
+**22 agosto 2026, pubblicata.** Tutto quello che è venuto fuori provando la
+0.6.0 sul telefono, in un giro solo. Il racconto per chi la usa sta nel
+[CHANGELOG](../CHANGELOG.md).
+
+### La nona scheda
+
+- [x] **DaProdConnessione**, la scheda che dice se tutto funziona: un quadrone
+      verde o rosso in cima, i quadrati sotto, e il tasto per rimediare accanto
+      al problema. *Chiesto così: «creiamo proprio una nuova app della suite
+      DaProdConnessione che quando aperta siamo sicuri che tutto sta funzionando
+      correttamente, stile dashboard».* **Da provare tu.**
+- [x] **Non ha pagine sue**: apre la console che il gateway serve, la stessa che
+      vedono il portatile e il telefono. Nasce per togliere un doppione, non per
+      aggiungerne uno: +120 righe la scheda, −739 il pannello dell'hub.
+- [x] **Via il pannello «Da fuori»**, nome compreso.
+
+### Quello che non funzionava
+
+- [x] **Accettare un lavoro adesso lo fa partire.** Era il difetto grosso: fino
+      alla 0.6.0 «accettata» voleva dire «l'ho vista». Adesso la suite apre la
+      scheda giusta, le passa il lavoro e ne riconosce il file. Vale per Foto,
+      Cinema, Musica e Voce. **Mai girato contro un motore acceso.**
+- [x] **Il telefono non perde più il computer.** Il QR porta tutti gli
+      indirizzi e l'app li prova finché uno risponde. Era «se chiudo l'app poi
+      non si ricollega», e la causa era che se ne ricordava uno solo.
+- [x] **La connessione è accesa di suo e si ricorda.** Niente interruttore da
+      premere a ogni avvio. Da spenta il gateway resta in ascolto solo su
+      127.0.0.1, così il pannello non sparisce quando lo spegni.
+- [x] **Il messaggio del firewall è vivo**: si ricontrolla ogni venti secondi e
+      sparisce quando sparisce il problema. Prima si scriveva una volta e
+      restava lì per sempre.
+
+### Le parole
+
+- [x] Via **«padrone»** e **«ospite»**: si dice cosa uno *può fare*.
+- [x] «Da fuori» → **Collegamento**. «Come siamo messi» → **Stato della
+      connessione**. «La fila» → **I lavori**.
+- [ ] **Il resto della suite.** «In generale tutta la sintassi va rivista, tante
+      cose sono poco intuibili»: questo giro ha rifatto le parole del
+      collegamento e del telefono. Le altre otto schede no.
+
+### Più persone, e file grandi
+
+- [x] **Un invito può valere per dieci persone.** Chiesto: «più di venti
+      persone collegate, di picco». Resta a tempo.
+- [x] **Tailscale davanti a tutti** negli indirizzi: funziona in casa e fuori,
+      è cifrato, e non mette niente su Internet. **Da provare tu**, col telefono.
+- [ ] **Venti collegati davvero, e file grandi.** Il gateway manda i file a
+      pezzi e non li tiene in memoria, quindi in teoria regge; ma venti telefoni
+      insieme su questa macchina non li ha mai provati nessuno.
+
+### Più veloce ad aprirsi
+
+- [x] **Il motore si scalda mentre guardi l'hub.** *Chiesto: «fare in modo che
+      già in quella schermata sia tutto ben caricato, per velocizzare
+      l'apertura generale delle app».* Scalda il processo, non la scheda video:
+      i pesi restano a chi genera. **Da misurare quanto fa risparmiare.**
 
 ---
 

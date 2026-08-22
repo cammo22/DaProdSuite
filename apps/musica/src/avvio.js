@@ -16,6 +16,7 @@ import { aggiornaLibreria, collegaLibreria } from "./libreria.js";
 import { aggiornaImmagini, collegaImmagini } from "./immagini.js";
 // I quadratini di cosa occupa la memoria: uguali in tutte le app, quindi
 // stanno in `packages/ui` e la suite li serve sotto `/comune/`.
+import { collegaLavoriDaFuori, numero, premi, scrivi } from "/comune/da-fuori.js";
 import { collegaModelliInMemoria } from "/comune/modelli-in-memoria.js";
 import { collegaBonsai } from "./bonsai.js";
 import { collega, macchina, modelliInVram, scaricaDallaVram } from "./ponte.js";
@@ -73,3 +74,21 @@ await collega(
   },
   messaggioDalMotore,
 );
+
+/**
+ * I lavori chiesti da fuori: dal telefono, dalla console, da un agente.
+ *
+ * Poche righe, e sono tutte «metti questo lì»: la generazione è quella di
+ * sempre, perché si preme lo stesso tasto che premeresti tu. Il perché sta in
+ * `packages/ui/src/da-fuori.js`.
+ */
+collegaLavoriDaFuori((richiesta) => {
+  scrivi(el.caption, richiesta.testo);
+  // Il testo da cantare è facoltativo: vuoto vuol dire strumentale, ed è
+  // quello che dice anche il catalogo delle azioni.
+  scrivi(el.lyrics, richiesta.opzioni.testo || "");
+  if (richiesta.opzioni.secondi) {
+    scrivi(el.duration, String(numero(richiesta.opzioni.secondi, 15, 300, 60)));
+  }
+  premi(el.go, "DaProdMusica non è pronta a generare: apri la scheda e guarda cosa manca.");
+});

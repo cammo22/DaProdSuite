@@ -7,6 +7,7 @@
  * che uno fa la prima volta che apre questa scheda.
  */
 
+import { collegaLavoriDaFuori, numero, premi, scrivi } from "/comune/da-fuori.js";
 import { el, mostraScheda, suApertura } from "./dom.js";
 import { collegaCrea } from "./crea.js";
 import { aggiornaGalleria, collegaGalleria } from "./galleria.js";
@@ -57,3 +58,23 @@ await collega(
   },
   messaggioDalMotore,
 );
+
+/**
+ * I lavori chiesti da fuori: dal telefono, dalla console, da un agente.
+ *
+ * Poche righe, e sono tutte «metti questo lì»: la generazione è quella di
+ * sempre, perché si preme lo stesso tasto che premeresti tu. Il perché di
+ * questa scelta — invece di costruire il grafo qui — sta in
+ * `packages/ui/src/da-fuori.js`.
+ */
+collegaLavoriDaFuori((richiesta) => {
+  // La clip la fa la scheda Crea, con le impostazioni che ci sono: chi chiede
+  // da un telefono dice cosa vuole vedere e quanto deve durare, il resto lo ha
+  // già deciso chi ha preparato la scheda.
+  mostraScheda("crea");
+  scrivi(el.prompt, richiesta.testo);
+  if (richiesta.opzioni.secondi) {
+    scrivi(el.durata, String(numero(richiesta.opzioni.secondi, 2, 20, 5)));
+  }
+  premi(el.genera, "DaProdCinema non è pronta a generare: manca il modello, o la scheda video.");
+});

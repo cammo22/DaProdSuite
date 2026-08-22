@@ -1,0 +1,75 @@
+/**
+ * Un lavoro chiesto da fuori, eseguito dalla scheda che lo sa fare.
+ *
+ * **Il difetto che questo file cura**, detto da chi l'ha visto: «quando accetto
+ * un lavoro non funziona». Ed era vero. Accettare cambiava una parola in un
+ * elenco — da «in attesa» a «accettata» — e poi non succedeva niente: chi stava
+ * al PC doveva aprire la scheda, ricopiare quello che era stato chiesto e
+ * premere Genera. Da fuori sembrava un programma rotto, e a ragione.
+ *
+ * **La scelta che rende tutto corto.** Qui non si genera niente: si **riempie
+ * il modulo della scheda e si preme il suo tasto**. Sarebbe stato più diretto
+ * costruire il grafo e mandarlo al motore, e sarebbe stata la seconda strada
+ * per fare la stessa cosa — la prima a divergere, il giorno che la scheda
+ * impara un modello nuovo. Così invece è lo stesso codice, gli stessi
+ * controlli, gli stessi errori: se la generazione funziona quando premi tu,
+ * funziona anche quando preme il telefono.
+ *
+ * Ogni scheda ci mette dieci righe: quali caselle riempire, e quale tasto
+ * premere. Il resto — la fila, l'apertura della finestra, il riconoscimento del
+ * file che esce — lo fa lo shell (`apps/shell/src/main/esecuzione.ts`).
+ */
+
+const suite = window.daprodSuite;
+
+/**
+ * Aggancia la scheda ai lavori che arrivano da fuori.
+ *
+ * `riempi(richiesta)` deve mettere quello che è stato chiesto nelle caselle e
+ * far partire la generazione. Se non si può — il modello non è scaricato, non
+ * c'è la scheda video — sollevi un errore con dentro **il motivo scritto per
+ * una persona**: quel testo arriva fino al telefono di chi aveva chiesto.
+ */
+export function collegaLavoriDaFuori(riempi) {
+  if (!suite?.onRichiestaDaFuori) return;
+
+  suite.onRichiestaDaFuori(async (richiesta) => {
+    try {
+      await riempi(richiesta);
+      await suite.richiestaPartita(richiesta.id);
+    } catch (e) {
+      // Il motivo torna indietro invece di restare in una console che nessuno
+      // guarda: chi ha chiesto legge perché non si è fatto.
+      await suite.richiestaPartita(richiesta.id, String(e?.message || e));
+    }
+  });
+}
+
+/**
+ * Preme un tasto, ma solo se è premibile.
+ *
+ * Un tasto «Genera» spento vuol dire qualcosa di preciso — il modello non c'è,
+ * il motore non risponde — e cliccarlo lo stesso non produce niente **e non
+ * dice niente**: la richiesta resterebbe in lavorazione fino a scadere. Meglio
+ * fermarsi subito con il motivo.
+ */
+export function premi(bottone, perche) {
+  if (!bottone) throw new Error("Questa scheda non sa ancora eseguire da sola.");
+  if (bottone.disabled) throw new Error(perche || "La scheda non è pronta a generare adesso.");
+  bottone.click();
+}
+
+/** Un numero che sta fra due estremi, o il valore di prima se non è un numero. */
+export function numero(valore, minimo, massimo, difetto) {
+  const n = Number(valore);
+  if (!Number.isFinite(n)) return difetto;
+  return Math.max(minimo, Math.min(massimo, Math.round(n)));
+}
+
+/** Scrive in una casella **e lo dice**: certe pagine reagiscono solo all'evento. */
+export function scrivi(campo, testo) {
+  if (!campo) return;
+  campo.value = testo;
+  campo.dispatchEvent(new Event("input", { bubbles: true }));
+  campo.dispatchEvent(new Event("change", { bubbles: true }));
+}

@@ -41,6 +41,17 @@ export class Remoto {
   /** Quando sono stati fatti i tentativi di accoppiamento andati male. */
   private tentativi: number[] = [];
 
+  /**
+   * Chi vuole sapere che una richiesta è stata accettata.
+   *
+   * Serve a una cosa sola e importante: **accettare deve far partire il
+   * lavoro.** La decisione può arrivare da tre parti — il pannello sul PC, la
+   * console, il telefono — e tutte e tre passano da `cambiaStato`. Un
+   * ascoltatore qui è l'unico posto in cui la cosa si scrive una volta sola;
+   * negli altri due si sarebbe dimenticata.
+   */
+  private accettatori: ((richiesta: Richiesta) => void)[] = [];
+
   constructor(
     private archivio: Archivio,
     rootRisultati: string,
@@ -59,17 +70,15 @@ export class Remoto {
    * Crea un invito per il ruolo richiesto. Se c'è già un admin e qualcuno
    * chiede un altro invito admin, si rifiuta: un solo padrone della suite.
    */
-  nuovoInvito(ruolo: "admin" | "ospite"): Invito {
+  nuovoInvito(ruolo: "admin" | "ospite", quante = 1): Invito {
     const dati = this.archivio.datiCorrenti;
-    if (ruolo === "admin" && dati.dispositivi.some((d) => d.ruolo === "admin")) {
-      throw new Error("C'è già un admin accoppiato.");
-    }
     // Gli inviti scaduti spariscono da soli: non riempiono il file.
     const vivi = dati.inviti.filter((i) => i.scade > Date.now());
     const invito: Invito = {
       codice: nuovoCodice(),
       ruolo: ruolo,
       scade: Date.now() + SCADENZA_INVITO_MS,
+      restano: Math.max(1, Math.min(50, Math.floor(quante))),
     };
     vivi.push(invito);
     dati.inviti = vivi;
@@ -130,9 +139,20 @@ export class Remoto {
       this.tentativi.push(Date.now());
       return { errore: "Codice non trovato o già usato." };
     }
-    // L'invito vale una volta sola: si consuma anche se poi qualcosa va male,
-    // così due dispositivi non possono usare la stessa scatto.
-    dati.inviti.splice(indice, 1);
+    /**
+     * Si consuma un posto, non l'invito intero.
+     *
+     * Un invito nasce con `restano` posti (uno, di suo). Ogni accoppiamento ne
+     * toglie uno, e quando finiscono l'invito sparisce. Si toglie **prima** di
+     * creare il dispositivo, anche se poi qualcosa va male: due telefoni non
+     * devono poter usare lo stesso posto.
+     *
+     * Gli inviti scritti da una versione precedente non hanno `restano`: per
+     * loro vale uno, che è quello che facevano.
+     */
+    const posti = (invito.restano ?? 1) - 1;
+    if (posti <= 0) dati.inviti.splice(indice, 1);
+    else invito.restano = posti;
     this.archivio.salva();
 
     const dispositivo: Dispositivo = {
@@ -146,6 +166,11 @@ export class Remoto {
     dati.dispositivi.push(dispositivo);
     this.archivio.salva();
     return { dispositivo, token: dispositivo.token };
+  }
+
+  /** Chi eseguirà le richieste accettate. Lo aggancia lo shell. */
+  suAccettata(fn: (richiesta: Richiesta) => void): void {
+    this.accettatori.push(fn);
   }
 
   /** Da un token al dispositivo: il gateway usa solo questo per riconoscere. */
@@ -178,6 +203,21 @@ export class Remoto {
       return true;
     }
     return false;
+  }
+
+  /**
+   * Cambia il nome di un dispositivo.
+   *
+   * Serve a chi si è accoppiato di fretta scrivendo «asd» e poi si ritrova
+   * quella parola accanto a ogni richiesta che manda. Il nome è l'unica cosa
+   * che, in una fila di venti lavori, dice chi ha chiesto cosa.
+   */
+  rinomina(id: string, nome: string): boolean {
+    const dispositivo = this.archivio.datiCorrenti.dispositivi.find((d) => d.id === id);
+    if (!dispositivo || !nome.trim()) return false;
+    dispositivo.nome = nome.trim().slice(0, 40);
+    this.archivio.salva();
+    return true;
   }
 
   listaDispositivi(): Dispositivo[] {
@@ -243,6 +283,12 @@ export class Remoto {
     if (stato === "scartata") richiesta.motivoScarto = extra?.motivo;
     if (stato === "pronta" && extra?.risultato) richiesta.risultato = extra.risultato;
     this.archivio.salva();
+
+    // Accettata vuol dire **falla**, non «l'ho vista»: chi esegue lo sente da
+    // qui, da qualunque parte sia arrivata la decisione.
+    if (stato === "accettata") {
+      for (const fn of this.accettatori) fn(richiesta);
+    }
     this.notifica({
       dispositivoId: richiesta.daDispositivo,
       richiestaId: richiesta.id,

@@ -67,6 +67,26 @@ const gateway = new G.Gateway({
     coda: { attesa: 0, lavoro: 0, pronte: 0 },
   }),
   libreria: fintaLibreria,
+  pannello: {
+    stato: (d) => ({
+      computer: "PC-DI-PROVA",
+      versione: "0.7.0",
+      indirizzi: [{ base: "http://192.168.1.8:8790", che: "la rete di casa", dove: "casa" }],
+      tunnel: { fase: "spento", indirizzo: "" },
+      firewall: { aperta: true, incerto: false },
+      dispositivi: remoto.listaDispositivi().map(({ token, ...resto }) => resto),
+      puoiDecidere: d.ruolo === "admin",
+      codaAutomatica: true,
+    }),
+    invita: async ({ ruolo, quante }) => {
+      const i = remoto.nuovoInvito(ruolo, quante);
+      return { codice: i.codice, ruolo: i.ruolo, scade: i.scade, qr: "", restano: i.restano ?? 1 };
+    },
+    tunnel: async () => {},
+    apriLaPorta: async () => null,
+    revoca: (id) => remoto.revoca(id),
+    rinomina: (id, nome) => remoto.rinomina(id, nome),
+  },
   esegui: async (id, valori, dispositivo) => {
     eseguite.push({ id, valori, chi: dispositivo.nome });
     if (id === "libreria.ultimi") return [{ nome: "brano.mp3", tipo: "audio" }];
@@ -350,6 +370,88 @@ let biscotto;
     headers: { Cookie: "daprod_token=inventato" },
   });
   dice("un biscotto falso non apre niente", r.status === 401, `→ ${r.status}`);
+}
+
+console.log("\n— il pannello —");
+{
+  const r = await chiama("/pannello", { token: tokenAdmin });
+  dice("chi decide lo vede", r.stato === 200 && r.dati.computer === "PC-DI-PROVA", `→ ${r.stato}`);
+  dice("dice se puoi decidere", r.dati.puoiDecidere === true);
+  dice("elenca gli indirizzi", Array.isArray(r.dati.indirizzi) && r.dati.indirizzi.length > 0);
+}
+{
+  const r = await chiama("/pannello", { token: tokenOspite });
+  dice("lo vede anche chi non decide", r.stato === 200);
+  dice("ma sa che non decide", r.dati.puoiDecidere === false);
+}
+{
+  const r = await chiama("/pannello/invito", {
+    metodo: "POST", token: tokenOspite, corpo: { ruolo: "ospite", quante: 1 },
+  });
+  dice("chi non decide non invita", r.stato === 403, `→ ${r.stato}`);
+}
+{
+  const r = await chiama("/pannello/tunnel", {
+    metodo: "POST", token: tokenOspite, corpo: { acceso: true },
+  });
+  dice("e non tocca il tunnel", r.stato === 403, `→ ${r.stato}`);
+}
+
+console.log("\n— un invito per più persone —");
+{
+  // Venti persone di picco, e un codice a testa vorrebbe dire venti giri al
+  // pannello con cinque minuti di scadenza ognuno.
+  const invito = remoto.nuovoInvito("ospite", 3);
+  dice("nasce con i suoi posti", invito.restano === 3, `→ ${invito.restano}`);
+
+  const nomi = ["uno", "due", "tre"];
+  let entrati = 0;
+  for (const nome of nomi) {
+    const r = await chiama("/accoppiamento", { metodo: "POST", corpo: { codice: invito.codice, nome } });
+    if (r.stato === 201) entrati += 1;
+  }
+  dice("entrano in tre con lo stesso codice", entrati === 3, `→ ${entrati}`);
+
+  const quarto = await chiama("/accoppiamento", { metodo: "POST", corpo: { codice: invito.codice, nome: "quattro" } });
+  dice("il quarto no: i posti sono finiti", quarto.stato === 403, `→ ${quarto.stato}`);
+}
+{
+  // Gli inviti vecchi non hanno `restano`: per loro vale uno, che è quello che
+  // facevano prima che esistesse il campo.
+  const invito = remoto.nuovoInvito("ospite");
+  dice("un invito normale vale per uno", invito.restano === 1);
+  const primo = await chiama("/accoppiamento", { metodo: "POST", corpo: { codice: invito.codice, nome: "solo" } });
+  const secondo = await chiama("/accoppiamento", { metodo: "POST", corpo: { codice: invito.codice, nome: "ladro" } });
+  dice("e non due", primo.stato === 201 && secondo.stato === 403, `→ ${primo.stato}/${secondo.stato}`);
+}
+
+console.log("\n— chi si può togliere —");
+{
+  const tutti = remoto.listaDispositivi();
+  const altrui = tutti.find((d) => d.nome === "uno");
+  const r = await chiama(`/dispositivi/${altrui.id}`, { metodo: "DELETE", token: tokenOspite });
+  dice("chi non decide non toglie gli altri", r.stato === 403, `→ ${r.stato}`);
+}
+{
+  // Ma togliere sé stessi si può sempre: è il proprio collegamento.
+  const io = remoto.listaDispositivi().find((d) => d.nome === "due");
+  const suo = remoto.nuovoInvito("ospite");
+  const entrato = await chiama("/accoppiamento", { metodo: "POST", corpo: { codice: suo.codice, nome: "se-stesso" } });
+  const chi = remoto.listaDispositivi().find((d) => d.nome === "se-stesso");
+  const r = await chiama(`/dispositivi/${chi.id}`, { metodo: "DELETE", token: entrato.dati.token });
+  dice("ma sé stesso sì", r.stato === 200, `→ ${r.stato}`);
+  const dopo = await chiama("/stato", { token: entrato.dati.token });
+  dice("e da lì non entra più", dopo.stato === 401, `→ ${dopo.stato}`);
+  dice("gli altri restano", remoto.listaDispositivi().some((d) => d.id === io.id));
+}
+{
+  const chi = remoto.listaDispositivi().find((d) => d.nome === "uno");
+  const r = await chiama(`/dispositivi/${chi.id}`, {
+    metodo: "POST", token: tokenAdmin, corpo: { nome: "Telefono di Anna" },
+  });
+  dice("chi decide può rinominare", r.stato === 200, `→ ${r.stato}`);
+  dice("e il nome cambia davvero",
+    remoto.listaDispositivi().some((d) => d.nome === "Telefono di Anna"));
 }
 
 console.log("\n— revoca —");

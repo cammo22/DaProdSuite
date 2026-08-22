@@ -13,6 +13,7 @@
  */
 
 import { app } from "electron";
+import { randomBytes } from "node:crypto";
 import * as QRCode from "qrcode";
 import {
   Archivio,
@@ -21,8 +22,11 @@ import {
   type Dispositivo,
   type Esecutore,
   type FornitoreLibreria,
+  type FornitorePannello,
   type InvitoQr,
+  type InvitoVivo,
   type Risultato,
+  type StatoPannello,
   type StatoSuite,
 } from "@daprod/gateway";
 import { APPS, APP_IDS, type AppId, type AppStatus, type TipoElemento } from "@daprod/ipc";
@@ -36,7 +40,9 @@ import type {
 import { appManager } from "./app-manager";
 import { libreria } from "./libreria";
 import { REMOTO_ARCHIVIO, REMOTO_DIR } from "./paths";
-import { ipLocale, reti } from "./reti";
+import { indirizziBuoni, ipLocale, reti } from "./reti";
+import { impostaConnessione, impostaInternet, impostazioni } from "./impostazioni";
+import { accoda, collegaEsecuzione } from "./esecuzione";
 import { accendiTunnel, spegniTunnel, statoTunnel, suTunnelCambiato } from "./tunnel";
 import { apriLaPorta, statoFirewall, type StatoFirewall } from "./firewall";
 
@@ -128,10 +134,31 @@ function indirizzo(): string {
  * Spento, è l'indirizzo sulla wifi, in chiaro, come è sempre stato.
  */
 function base(): string {
-  if (!gateway) return "";
+  return basi()[0] ?? "";
+}
+
+/**
+ * **Tutti** gli indirizzi su cui questo PC si fa trovare, dal più promettente.
+ *
+ * È il cuore di «se chiudo l'app poi non si ricollega». Un indirizzo solo è una
+ * fotografia: cambia la rete, riavvia il tunnel, passi dal wifi ai dati, e
+ * quella fotografia non vale più. Il telefono li riceve tutti e li prova finché
+ * uno risponde — e da quel momento usa quello.
+ *
+ * L'ordine non è casuale:
+ *
+ * 1. **Tailscale**, se c'è. È l'unico che funziona sia in casa sia fuori, è
+ *    cifrato, e non mette niente su Internet. Chi ce l'ha ha finito qui.
+ * 2. **La rete di casa.** Il salto più corto e più veloce, per chi è sul divano.
+ * 3. **Il tunnel**, se acceso. Funziona ovunque ma passa da Cloudflare e cambia
+ *    nome a ogni riavvio: è il ripiego, non la prima scelta.
+ */
+function basi(): string[] {
+  if (!gateway) return [];
+  const elenco = indirizziBuoni(portaReale || PORTA);
   const fuori = statoTunnel();
-  if (fuori.fase === "acceso" && fuori.indirizzo) return fuori.indirizzo;
-  return `http://${indirizzo()}`;
+  if (fuori.fase === "acceso" && fuori.indirizzo) elenco.push(fuori.indirizzo);
+  return elenco;
 }
 
 /**
@@ -370,18 +397,30 @@ function statoPannello(): StatoAccesso {
  * vuoto è un QR che non porta da nessuna parte, ed era il modo più facile di
  * far fallire l'accoppiamento senza capire perché.
  */
-export async function nuovoInvito(ruolo: "admin" | "ospite"): Promise<InvitoRemoto> {
+export async function nuovoInvito(
+  ruolo: "admin" | "ospite",
+  quante = 1,
+): Promise<InvitoRemoto> {
   if (!gateway) await accendi();
-  const invito = remoto.nuovoInvito(ruolo);
+  const invito = remoto.nuovoInvito(ruolo, quante);
   const host = indirizzo();
-  const dove = base();
-  // `base` è l'indirizzo che vale davvero — con il tunnel acceso è quello su
-  // Internet — e `host` resta l'indirizzo di casa: un'app vecchia legge quello
-  // e continua a funzionare sulla wifi. Vedi `InvitoQr` in @daprod/gateway.
-  const urlo = `daprod://accoppia?base=${encodeURIComponent(dove)}&host=${host}&codice=${invito.codice}&ruolo=${ruolo}&v=2`;
-  const dentroIlQr: InvitoQr = { v: 2, host, base: dove, codice: invito.codice, ruolo };
+  const tutti = basi();
+  const dove = tutti[0] ?? `http://${host}`;
+  // Nel QR ci vanno **tutti** gli indirizzi: `basi` è quello che conta, `base` e
+  // `host` restano compilati perché un'app vecchia continui a funzionare in
+  // casa. Vedi `InvitoQr` in @daprod/gateway.
+  const urlo = `daprod://accoppia?base=${encodeURIComponent(dove)}&host=${host}&codice=${invito.codice}&ruolo=${ruolo}&v=3`;
+  const dentroIlQr: InvitoQr = { v: 3, host, base: dove, basi: tutti, codice: invito.codice, ruolo };
   const qr = await disegnaQr(JSON.stringify(dentroIlQr));
+  invitoVivo = {
+    codice: invito.codice,
+    ruolo: invito.ruolo,
+    scade: invito.scade,
+    qr,
+    restano: invito.restano ?? 1,
+  };
   sveglia();
+  gateway?.aggiorna();
   return { codice: invito.codice, ruolo: invito.ruolo, scade: invito.scade, url: urlo, qr };
 }
 
@@ -405,8 +444,12 @@ async function accendi(): Promise<StatoAccesso> {
     stato: statoSuite,
     esegui,
     libreria: fornitoreLibreria,
+    pannello: fornitorePannello,
   });
-  portaReale = await nuovo.ascolta(PORTA);
+  // Chi può arrivare: tutta la rete se la connessione è accesa, solo questo
+  // computer se è spenta. In tutti e due i casi il gateway **c'è**, perché è
+  // lui a servire la pagina di DaProdConnessione.
+  portaReale = await nuovo.ascolta(PORTA, impostazioni().connessione ? "0.0.0.0" : "127.0.0.1");
   gateway = nuovo;
   sveglia();
   // Si guarda **adesso**, non prima: la porta vera la si conosce solo dopo che
@@ -417,13 +460,65 @@ async function accendi(): Promise<StatoAccesso> {
   return statoPannello();
 }
 
-async function spegni(): Promise<StatoAccesso> {
+/* ------------------------------------------------- accendere e ricordare */
+
+/**
+ * L'accensione voluta: accende **e se lo ricorda**.
+ *
+ * `accendi` da sola serve anche a chi la chiama di passaggio — chiedere un
+ * invito accende il gateway se era spento, e non è una scelta dell'utente.
+ * Questa invece è il gesto: da qui in poi la connessione si riaccende a ogni
+ * avvio, che è quello che era stato chiesto («se si è avviato una volta si
+ * avvia sempre in rete e si connette»).
+ */
+async function accendiEricorda(): Promise<StatoAccesso> {
+  impostaConnessione(true);
+  await riapri();
+  return statoPannello();
+}
+
+async function spegniEricorda(): Promise<StatoAccesso> {
+  impostaConnessione(false);
+  impostaInternet(false);
+  await spegniTunnel();
+  await riapri();
+  return statoPannello();
+}
+
+/**
+ * Rimette in ascolto sull'interfaccia giusta.
+ *
+ * Un server già in ascolto non cambia indirizzo: si chiude e si riapre. Dura
+ * un istante, e le connessioni aperte (lo stato in streaming) si riaprono da
+ * sole — è la stessa cosa che succede quando la wifi salta.
+ */
+async function riapri(): Promise<void> {
   if (gateway) {
     await gateway.chiudi();
     gateway = null;
   }
-  sveglia();
-  return statoPannello();
+  await accendi();
+}
+
+/**
+ * All'avvio della suite: si riaccende da sé quello che era acceso.
+ *
+ * Non aspetta niente e non blocca l'apertura dell'hub: se il tunnel ci mette un
+ * minuto, la suite è già usabile e il pannello racconta la fase.
+ */
+export function riprendiAccessoRemoto(): void {
+  const scelte = impostazioni();
+  void (async () => {
+    try {
+      // Sempre, anche a connessione spenta: da spenta ascolta solo su
+      // 127.0.0.1, e serve comunque la pagina di DaProdConnessione.
+      await accendi();
+      if (scelte.connessione && scelte.internet) await accendiInternet();
+    } catch {
+      // Porta occupata, rete assente: il pannello lo dirà. Non è un motivo per
+      // non far partire la suite.
+    }
+  })();
 }
 
 /* ----------------------------------------------------------- firewall */
@@ -439,9 +534,34 @@ async function spegni(): Promise<StatoAccesso> {
  */
 let muroDiWindows: StatoFirewall = { aperta: false, incerto: true };
 
+/**
+ * Ogni quanto si torna a guardare il firewall.
+ *
+ * **Serviva.** Prima si guardava una volta sola, all'accensione: chi apriva la
+ * porta da fuori la suite — o rispondeva al riquadro di Windows comparso da
+ * solo — continuava a leggere «Windows sta bloccando» per sempre. Un avviso che
+ * non sa più di cosa parla è peggio di nessun avviso.
+ */
+const OGNI_TANTO_MS = 20_000;
+let guardia: NodeJS.Timeout | null = null;
+
 async function rileggiFirewall(): Promise<void> {
+  const prima = muroDiWindows;
   muroDiWindows = await statoFirewall();
-  sveglia();
+  if (prima.aperta !== muroDiWindows.aperta || prima.incerto !== muroDiWindows.incerto) {
+    sveglia();
+    gateway?.aggiorna();
+  }
+  if (!guardia && gateway) {
+    guardia = setInterval(() => void rileggiFirewall(), OGNI_TANTO_MS);
+    guardia.unref?.();
+  }
+}
+
+/** Alla chiusura della suite: la guardia non deve tenerla sveglia. */
+function fermaGuardiaFirewall(): void {
+  if (guardia) clearInterval(guardia);
+  guardia = null;
 }
 
 async function sbloccaLaPorta(): Promise<string | null> {
@@ -547,12 +667,188 @@ appManager.on("changed", () => {
   gateway?.aggiorna();
 });
 
+/**
+ * Dove sta la console, per chi la deve aprire in una finestra.
+ *
+ * Sempre `127.0.0.1`, mai l'indirizzo di rete: DaProdConnessione gira **su
+ * questo computer**, e farla passare dalla scheda di rete vorrebbe dire che il
+ * pannello smette di aprirsi quando la connessione è spenta — che è esattamente
+ * il momento in cui uno lo apre.
+ */
+export function indirizzoConsole(): string {
+  return `http://127.0.0.1:${portaReale || PORTA}/`;
+}
+
+/* ----------------------------------------------- il token di questo PC */
+
+/** Come si chiama il dispositivo che è il computer stesso. */
+const ID_DI_CASA = "questo-computer";
+
+/**
+ * La credenziale del PC su sé stesso.
+ *
+ * DaProdConnessione è una finestra che apre la pagina del gateway, e il gateway
+ * non risponde a nessuno senza token — nemmeno a chi gira sulla stessa
+ * macchina. Fare un'eccezione per `127.0.0.1` sarebbe stata la strada corta e
+ * sbagliata: qualunque programma sul PC avrebbe potuto chiedere una
+ * generazione o leggere la libreria senza che nessuno l'avesse invitato.
+ *
+ * Invece il computer si accoppia con sé stesso, una volta sola, e da lì è un
+ * dispositivo come gli altri — con la differenza che non compare nell'elenco
+ * dei collegati: non è «uno che si è collegato», è la casa.
+ */
+export function tokenDiCasa(): string {
+  const dati = remoto.archivi.datiCorrenti;
+  const gia = dati.dispositivi.find((d) => d.id === ID_DI_CASA);
+  if (gia) return gia.token;
+
+  dati.dispositivi.push({
+    id: ID_DI_CASA,
+    nome: osNome(),
+    ruolo: "admin",
+    token: nuovoTokenDiCasa(),
+    accoppiato: Date.now(),
+    ultimoAccesso: Date.now(),
+  });
+  remoto.archivi.salva();
+  return dati.dispositivi.find((d) => d.id === ID_DI_CASA)!.token;
+}
+
+/** Sessantaquattro cifre esadecimali, come quelli che il gateway dà ai telefoni. */
+function nuovoTokenDiCasa(): string {
+  return randomBytes(32).toString("hex");
+}
+
+/* ---------------------------------------------------------- il pannello */
+
+/**
+ * Il pannello, come lo vede chi guarda — da qualunque parte guardi.
+ *
+ * Le stesse quattro azioni valgono per DaProdConnessione sul PC, per il browser
+ * di un portatile e per il telefono: sono scritte qui una volta, e il gateway le
+ * espone su `/pannello`. Prima stavano solo nell'hub, in IPC, e il telefono non
+ * poteva né invitare nessuno né sapere perché non lo raggiungeva.
+ */
+const fornitorePannello: FornitorePannello = {
+  stato(dispositivo) {
+    const fuori = statoTunnel();
+    const elenco: StatoPannello["indirizzi"] = reti()
+      .filter((r) => r.dove !== "virtuale")
+      .map((r) => ({
+        base: `http://${r.ip}:${portaReale || PORTA}`,
+        che: r.che,
+        dove: r.dove === "ovunque" ? "ovunque" : "casa",
+      }));
+    if (fuori.fase === "acceso" && fuori.indirizzo) {
+      elenco.push({ base: fuori.indirizzo, che: "da Internet, cifrato", dove: "ovunque" });
+    }
+
+    return {
+      computer: osNome(),
+      versione: app.getVersion(),
+      indirizzi: elenco,
+      tunnel: {
+        fase: fuori.fase,
+        indirizzo: fuori.indirizzo,
+        motivo: fuori.motivo,
+        quota: fuori.quota,
+      },
+      firewall: muroDiWindows,
+      dispositivi: remoto
+        .listaDispositivi()
+        .filter((d) => d.id !== ID_DI_CASA)
+        .map(({ token: _t, ...resto }) => resto),
+      invito: invitoVivo,
+      puoiDecidere: dispositivo.ruolo === "admin",
+      codaAutomatica: true,
+    };
+  },
+
+  async invita({ ruolo, quante }) {
+    await nuovoInvito(ruolo, quante);
+    // `nuovoInvito` lo mette da parte con il QR già disegnato: qui si torna
+    // quello, che è la stessa cosa senza ridisegnare l'immagine.
+    if (!invitoVivo) throw new Error("L'invito non è stato creato.");
+    return invitoVivo;
+  },
+
+  async tunnel(acceso) {
+    if (acceso) await accendiInternet();
+    else await spegniInternet();
+  },
+
+  apriLaPorta: () => sbloccaLaPorta(),
+
+  revoca(id) {
+    revoca(id);
+  },
+
+  rinomina(id, nome) {
+    remoto.rinomina(id, nome);
+    sveglia();
+    gateway?.aggiorna();
+  },
+};
+
+/**
+ * L'ultimo invito creato, finché vive.
+ *
+ * Si tiene qui e non nell'archivio perché contiene il **QR disegnato**, che è
+ * un'immagine da 20 KB: salvarla su disco a ogni invito vorrebbe dire far
+ * crescere un file che non ha nessun motivo di crescere.
+ */
+let invitoVivo: InvitoVivo | undefined;
+
+/* ------------------------------------------------------- la fila che parte */
+
+/**
+ * Il cablaggio fra la fila e l'archivio delle richieste.
+ *
+ * `esecuzione.ts` sa aprire una scheda e riconoscere il file che esce; non sa
+ * cosa sia una richiesta né dove vada scritto che è pronta. Questi quattro
+ * metodi sono tutto quello che gli serve sapere.
+ */
+collegaEsecuzione({
+  cartellaRisultati: remoto.risultatiDir,
+  inLavoro(id) {
+    remoto.cambiaStato(id, adminDiCasa(), "in-lavoro");
+    gateway?.aggiorna();
+    sveglia();
+  },
+  consegna(id, file) {
+    consegna(id, file);
+  },
+  fallita(id, motivo) {
+    remoto.cambiaStato(id, adminDiCasa(), "scartata", { motivo });
+    gateway?.aggiorna();
+    sveglia();
+  },
+});
+
+/**
+ * Accettata vuol dire **falla**.
+ *
+ * Da qualunque parte arrivi la decisione — il pannello, la console, il telefono
+ * — finisce qui, e da qui la scheda giusta si apre e genera. È il pezzo che
+ * mancava perché «da fuori» volesse dire davvero da fuori.
+ */
+remoto.suAccettata((richiesta) => {
+  accoda({
+    id: richiesta.id,
+    app: richiesta.app,
+    azione: richiesta.opzioni?.azione ?? "",
+    testo: richiesta.testo,
+    opzioni: richiesta.opzioni ?? {},
+    da: richiesta.daNome,
+  });
+});
+
 /* ------------------------------------------------------------- il ponte */
 
 /** Il ponte fra main e renderer: l'ipc.ts registra i canali su questo. */
 export const accessoRemoto = {
-  accendi,
-  spegni,
+  accendi: accendiEricorda,
+  spegni: spegniEricorda,
   accendiInternet,
   spegniInternet,
   sbloccaLaPorta,
@@ -570,6 +866,7 @@ export const accessoRemoto = {
 
 /** Alla chiusura della suite il gateway si spegne con tutto il resto. */
 export async function spegniAccessoRemoto(): Promise<void> {
+  fermaGuardiaFirewall();
   // Prima il tunnel: è un processo figlio, e lasciarlo vivo vorrebbe dire un
   // indirizzo su Internet che punta a una porta che sta per chiudersi.
   await spegniTunnel();

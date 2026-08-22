@@ -70,7 +70,7 @@ class GatewayClient(
         }
     }
 
-    /** Le richieste visibili a questo dispositivo (il padrone le vede tutte). */
+    /** Le richieste visibili a questo dispositivo (chi decide le vede tutte). */
     suspend fun richieste(): List<Richiesta> = withContext(Dispatchers.IO) {
         val req = conToken().url(a("/richieste")).build()
         condiviso.newCall(req).execute().use { res ->
@@ -89,10 +89,21 @@ class GatewayClient(
      * codice — che è esattamente quello che questa app esiste per evitare.
      * Meglio chiedere prima e dire in italiano cosa succede.
      */
-    suspend fun raggiungibile(): Boolean = withContext(Dispatchers.IO) {
+    suspend fun raggiungibile(attesaMs: Long = 0): Boolean = withContext(Dispatchers.IO) {
         try {
             val req = conToken().url(a("/io")).build()
-            condiviso.newCall(req).execute().use { it.isSuccessful }
+            // Bussare non è chiedere: quando si sta cercando quale indirizzo
+            // risponde, aspettare sessanta secondi per ognuno non ha senso.
+            val cliente =
+                if (attesaMs > 0) {
+                    condiviso.newBuilder()
+                        .connectTimeout(attesaMs, TimeUnit.MILLISECONDS)
+                        .readTimeout(attesaMs, TimeUnit.MILLISECONDS)
+                        .build()
+                } else {
+                    condiviso
+                }
+            cliente.newCall(req).execute().use { it.isSuccessful }
         } catch (_: Exception) {
             false
         }

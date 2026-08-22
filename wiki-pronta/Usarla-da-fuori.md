@@ -9,27 +9,50 @@ mostra più un modulo: mostra le pagine della suite.
 
 ---
 
-## Accenderla
+## DaProdConnessione
 
-Nell'hub, in fondo, c'è il pulsante **Da fuori**. Apri il pannello e premi
-**Accendi**.
+Dalla **0.7.0** non c'è più niente da accendere: la suite si apre già collegata.
+Nell'hub c'è una scheda, **DaProdConnessione**, e serve a una cosa sola —
+**sapere se funziona**.
 
-Compaiono:
+Dentro trovi:
 
-- un **indirizzo**, tipo `http://192.168.1.20:8790/` — serve al browser;
-- il **QR** con sotto un codice di otto cifre, già pronto;
-- l'interruttore **Anche da fuori casa**, che vedi qui sotto;
-- i due tasti **Invita un padrone** e **Invita un ospite**, per quando ti serve
-  un secondo invito.
+- un **quadrone** in cima: verde se va tutto, rosso se manca qualcosa, con
+  scritto cosa e il tasto per rimediare;
+- i **quadrati**: la rete di casa, se ci si arriva da fuori, il firewall, e se i
+  lavori partono da soli;
+- **chi è collegato**, e da quanto;
+- **da dove si arriva**: gli indirizzi, con Tailscale in cima se ce l'hai;
+- il tasto **Invita qualcuno**.
 
-Il codice **vale una volta sola e scade in cinque minuti**: il pannello ti dice
-quanto gli resta. Se scade, ne chiedi un altro.
+È la **stessa pagina** che vedi dal browser di un portatile e dall'app del
+telefono: quello che leggi qui è quello che leggono lì.
 
-### Anche da fuori casa
+### Invitare
 
-È il secondo interruttore. Acceso, il PC apre da solo una strada verso Internet
-e la suite diventa raggiungibile da qualunque parte, all'indirizzo
-`https://qualcosa.trycloudflare.com` che compare lì accanto.
+**Invita qualcuno** ti dà un codice di otto cifre e un QR. Tre scelte:
+
+- **per una persona** — il codice si consuma al primo che lo usa;
+- **per dieci persone** — utile quando siete in tanti: lo mostri una volta e lo
+  inquadrano tutti;
+- **per chi deve anche decidere** — quella persona potrà anche dire sì o no ai
+  lavori degli altri.
+
+Il codice **dura pochi minuti** in tutti e tre i casi: è quella la protezione,
+non il numero di persone.
+
+### Da fuori casa: Tailscale, o il tunnel
+
+Due strade, e la prima è meglio.
+
+**Tailscale** (consigliata). Se ce l'hai sul computer e lo installi anche sul
+telefono, il computer ha un indirizzo **fisso, cifrato e privato** che funziona
+in casa e fuori. Non c'è niente da accendere e niente su Internet: lo trovi già
+in cima a «Da dove si arriva».
+
+**Il tunnel.** Nel quadrato «Da fuori casa» c'è «apri il tunnel». Acceso, il PC
+apre da solo una strada verso Internet e la suite diventa raggiungibile da
+qualunque parte, all'indirizzo `https://qualcosa.trycloudflare.com`.
 
 - **Non apre nessuna porta sul router** e non devi sapere l'indirizzo di casa
   tua: è il computer che si collega verso fuori, non il contrario.
@@ -43,9 +66,10 @@ Due cose da sapere:
 - **quell'indirizzo è pubblico.** Chi lo indovinasse arriverebbe alla schermata
   di collegamento, non alle tue cose: senza codice non si entra, e i tentativi
   sono limitati. Ma è su Internet, ed è giusto saperlo;
-- **cambia ogni volta che lo accendi.** Per questo, accendendolo, gli inviti in
-  corso si buttano e ne compare uno nuovo: un QR è la fotografia di un
-  indirizzo.
+- **cambia ogni volta che lo accendi.** È il motivo per cui Tailscale è meglio:
+  con il tunnel, se il computer si riavvia mentre sei fuori, l'indirizzo di
+  prima non esiste più. (L'app prova comunque tutti quelli che conosce prima di
+  arrendersi.)
 
 ### Se il telefono non lo raggiunge
 
@@ -66,18 +90,20 @@ c'è un menu con tutti gli altri, ognuno con scritto cos'è.
 bisogno né del firewall né dell'indirizzo giusto: il collegamento lo fa il PC
 verso l'esterno, e il telefono ci arriva da qualunque rete.
 
-### Padrone o ospite?
+### Chi può fare cosa
 
-| | Padrone | Ospite |
+Non ci sono ruoli con un nome: c'è quello che uno **può fare**.
+
+| | Chi può chiedere | Chi può anche decidere |
 |---|---|---|
 | Chiedere lavori | sì | sì |
-| Vedere la galleria del PC | sì | sì |
-| Vedere le richieste degli altri | sì | no |
-| Accettare o scartare | sì | no |
-| Aprire un'app sul PC | sì | no |
+| Vedere la galleria del computer | sì | sì |
+| Vedere le richieste degli altri | no | sì |
+| Dire sì o no ai lavori | no | sì |
+| Invitare, e togliere collegamenti | no | sì |
 
-Il tuo telefono e il tuo portatile li inviti come padroni. Un amico che vuole
-provare, come ospite.
+Il tuo telefono e il tuo portatile invitali come «chi deve anche decidere». Un
+amico che vuole provare, no.
 
 ---
 
@@ -113,7 +139,8 @@ Le **pagine della suite**, le stesse che vedrebbe un portatile:
 - **Suite** — cosa sta facendo il computer adesso, e le schede da cui chiedere;
 - **Chiedi** — il modulo, che la suite si disegna da sola: quando il PC impara a
   fare una cosa nuova, la trovi qui senza aggiornare l'app;
-- **Fila** — le richieste, con lo stato. Se sei padrone, accetti e scarti da qui;
+- **Lavori** — le richieste, con lo stato. Se puoi decidere, dici **fallo** o
+  **lascia perdere** da qui, e il computer lo fa;
 - **Galleria** — quello che il PC ha fatto. Le immagini si guardano, i video
   partono e si scorrono, i brani si ascoltano — **senza scaricarli prima**. Con
   «tieni nel telefono» te li porti dietro: un'immagine e un video finiscono in
@@ -149,10 +176,14 @@ serve che ci giri — ti serve **comandare** quel PC, e per farlo basta un brows
 
 ---
 
-## Chi decide resta chi sta al PC
+## Chi decide, e cosa succede quando dice di sì
 
-Una richiesta che arriva da fuori **non fa partire niente da sola**. Compare nel
-pannello **Da fuori**, e chi è davanti al computer la accetta o la scarta.
+Una richiesta che arriva da fuori **non parte da sola**: compare nei **Lavori**,
+e qualcuno che può decidere le dice **fallo** o **lascia perdere**.
+
+Dalla 0.7.0, quando dici «fallo», **il computer lo fa davvero**: apre la scheda
+giusta, la fa generare, e quando il file è pronto lo dice a chi aspettava. Prima
+bisognava andare al computer e rifare la cosa a mano.
 
 Non è diffidenza: su otto GB di scheda video ci sta **un modello per volta**, e
 una clip video è un quarto d'ora in cui il PC non fa altro. Un telefono in tasca
@@ -189,8 +220,10 @@ dai tu. Le istruzioni sono
   guardare il traffico vede quello che passa. Su una wifi di casa con una
   password è un rischio piccolo; su quella di un bar accendi «Anche da fuori
   casa», che è cifrato.
-- **«Accettata» non vuol dire «sta partendo».** Per adesso significa «l'ho vista
-  e va bene»: la generazione la fa partire chi sta al PC, aprendo l'app.
+- **Un lavoro per volta.** Su otto GB di scheda video ci sta un modello alla
+  volta: se ne accetti tre, si fanno in fila. E se **mentre la fila lavora**
+  generi anche tu qualcosa a mano nella stessa scheda, può capitare che il file
+  finisca attaccato alla richiesta sbagliata.
 - **La notifica sul telefono può tardare fino a un quarto d'ora.** È il telefono
   che chiede al PC, non il PC che chiama.
 - **Se spegni la suite, l'accesso si chiude** — tunnel compreso. Non resta

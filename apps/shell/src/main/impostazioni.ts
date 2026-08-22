@@ -19,6 +19,12 @@ const PREDEFINITE: Impostazioni = {
   // Quello con cui abbiamo generato finora: il metro di paragone.
   profilo: "bilanciato",
   guidaFatta: false,
+  // Accesa di suo: vedi il commento sul campo in @daprod/ipc.
+  connessione: true,
+  // Il tunnel no: costa quaranta MB la prima volta e mette un indirizzo su
+  // Internet. Quello lo si accende sapendo cosa si sta facendo.
+  internet: false,
+  precarica: true,
 };
 
 let cache: Impostazioni | null = null;
@@ -39,6 +45,12 @@ export function impostazioni(): Impostazioni {
             ? lette.profilo
             : "bilanciato",
         guidaFatta: lette.guidaFatta === true,
+        // `!== false` e non `=== true`: un file scritto da una versione
+        // precedente non ha questo campo, e per chi aggiorna la connessione
+        // deve risultare accesa come per chi installa adesso.
+        connessione: lette.connessione !== false,
+        internet: lette.internet === true,
+        precarica: lette.precarica !== false,
       };
       return cache;
     } catch {
@@ -70,6 +82,22 @@ export function impostaVelocita(velocita: Velocita): Impostazioni {
  */
 export function impostaProfilo(profilo: ProfiloMemoria): Impostazioni {
   return salva({ profilo });
+}
+
+/**
+ * Accende o spegne la connessione da fuori.
+ *
+ * Si ricorda, ed è tutto il punto: «se si è avviato una volta si avvia sempre
+ * in rete e si connette». Chi la spegne la ritrova spenta, chi la lascia accesa
+ * non deve premere niente mai più.
+ */
+export function impostaConnessione(accesa: boolean): Impostazioni {
+  return salva({ connessione: accesa });
+}
+
+/** Il tunnel verso Internet, ricordato allo stesso modo. */
+export function impostaInternet(acceso: boolean): Impostazioni {
+  return salva({ internet: acceso });
 }
 
 /** La procedura guidata è stata vista: non si ripresenta al prossimo avvio. */

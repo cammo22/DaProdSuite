@@ -99,6 +99,7 @@ export type RichiestaSchedaVideo =
   | "non-serve";
 
 export const APP_IDS = [
+  "connessione",
   "visualizer",
   "musica",
   "foto",
@@ -112,6 +113,24 @@ export const APP_IDS = [
 export type AppId = (typeof APP_IDS)[number];
 
 export const APPS: Record<AppId, AppDescriptor> = {
+  /**
+   * La scheda che dice se tutto funziona.
+   *
+   * **Non ha pagine sue**: apre la console che il gateway serve, la stessa che
+   * vedono il portatile e il telefono. Nasce per togliere un doppione, non per
+   * aggiungerne uno — prima la stessa roba stava nel pannello «Da fuori»
+   * dell'hub *e* in quella pagina, e i due non dicevano mai la stessa cosa.
+   */
+  connessione: {
+    id: "connessione",
+    name: "DaProdConnessione",
+    tagline: "Chi è collegato, da dove, e se tutto funziona davvero.",
+    kind: "renderer",
+    accent: "#22d3ee",
+    models: [],
+    gpuHeavy: false,
+    schedaVideo: "non-serve",
+  },
   visualizer: {
     id: "visualizer",
     name: "DaProdVisualizer",

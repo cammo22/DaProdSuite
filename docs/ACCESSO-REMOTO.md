@@ -1,4 +1,4 @@
-# Accesso remoto — QR e app Android
+# Accesso remoto — DaProdConnessione, QR e app Android
 
 Obiettivo: inquadri un QR con il telefono e usi la suite da lì. Da casa, ma anche
 da fuori. Stesso codice per telefono, tablet, un altro computer.
@@ -230,8 +230,14 @@ che la 0.5.0 non aveva: **la galleria**, cioè poter guardare quello che il PC h
 fatto senza scaricarlo prima.
 
 **I permessi sono due, non tre.** Il progetto voleva «Guardare / Generare /
-Companion» scelti per dispositivo. Adesso ci sono due ruoli — **padrone** e
-**ospite** — e il Companion non è raggiungibile da fuori in nessun modo. La
+Companion» scelti per dispositivo. Adesso c'è una differenza sola — chi può
+**solo chiedere** e chi può **anche decidere** — e il Companion non è
+raggiungibile da fuori in nessun modo.
+
+*(Nella 0.7.0 quei due ruoli hanno perso il nome. Si chiamavano «padrone» e
+«ospite», e sono stati tolti perché non dicono niente a chi legge: adesso
+l'interfaccia scrive cosa uno può fare. Dentro il codice restano `admin` e
+`ospite`, che sono nomi per chi programma, non per chi usa.)* La
 memoria personale del Companion è la cosa più delicata che la suite contenga, e
 finché non c'è una ragione per aprirla resta chiusa: è più semplice da
 verificare di un permesso che si può concedere.
@@ -255,16 +261,66 @@ valesse anche sulle POST, la pagina di un altro sito potrebbe far partire una
 generazione dal browser di chi è collegato — il classico CSRF. Limitandolo alla
 lettura quella strada non esiste, e c'è una prova che lo tiene fermo.
 
+### DaProdConnessione (0.7.0)
+
+La nona scheda della suite, e **non ha pagine sue**: apre questa stessa console
+in una finestra, con il token che il computer si dà da solo (`tokenDiCasa()`).
+
+Nasce per togliere un doppione. Prima la stessa roba stava nel pannello «Da
+fuori» dell'hub *e* in questa pagina, e i due non dicevano mai la stessa cosa:
+uno sapeva del firewall e l'altro no, uno si aggiornava da solo e l'altro andava
+riaperto. Una verità sola non si ottiene scrivendone una terza: si ottiene
+togliendone una. Il pannello dell'hub è sparito — 739 righe — e la scheda nuova
+ne ha aggiunte 120.
+
+Le azioni del pannello (invitare, accendere il tunnel, sbloccare la porta,
+togliere un collegamento) sono diventate **rotte del gateway** invece che canali
+IPC dell'hub. Conseguenza voluta: adesso si possono fare anche dal telefono e
+dal portatile, non solo stando davanti al computer.
+
+**Il gateway è sempre in ascolto**, e l'interruttore decide su cosa: acceso
+`0.0.0.0`, spento `127.0.0.1`. Se lo spegnesse del tutto, spegnerebbe anche la
+pagina che contiene l'interruttore.
+
+### La fila che parte davvero (0.7.0)
+
+Era il punto rimasto aperto dalla 0.5.0, e il difetto che si sentiva di più:
+«accettata» voleva dire «l'ho vista». Adesso accettare apre la scheda giusta, le
+passa il lavoro e ne riconosce il file — vedi `apps/shell/src/main/esecuzione.ts`.
+
+Tre scelte, e stanno scritte per esteso lì dentro:
+
+1. **genera la scheda, non lo shell** — altrimenti sarebbero due strade per fare
+   la stessa cosa, e la seconda divergerebbe alla prima novità;
+2. **una per volta** — su otto GB ci sta un modello alla volta;
+3. **il file si riconosce dalla libreria**, che è già l'elenco di tutto quello
+   che esce. Funziona *perché* si lavora una per volta.
+
+⚠ Il caso che resta aperto: se mentre la fila lavora generi anche tu a mano
+nella stessa scheda, il primo file che esce può finire attaccato alla richiesta
+di un altro.
+
+### Tailscale, e perché è la strada consigliata (0.7.0)
+
+Il tunnel funziona ma ha un difetto strutturale: **l'indirizzo cambia a ogni
+riavvio**, quindi il telefono lo perde. Tailscale no — è un indirizzo fisso,
+cifrato, privato, che funziona in casa e fuori senza mettere niente su Internet.
+
+Da qui due cose: negli indirizzi Tailscale sta **davanti a tutti**
+(`reti.ts`), e il QR li porta **tutti** invece di uno solo (`InvitoQr` v3), così
+l'app li prova finché uno risponde e si ricorda quale ha funzionato.
+
 ### Non fatto, e va detto
 
 - **In casa il traffico resta in chiaro.** HTTP sulla wifi: chi è già dentro la
   tua rete e sa guardare il traffico vede quello che passa. Da fuori no — quello
   passa dal tunnel ed è HTTPS. Un certificato sulla rete locale è il passo che
   manca.
-- **La coda non è ancora quella vera.** Una richiesta accettata non fa partire
-  la generazione da sola: chi sta al PC la accetta e poi apre l'app e la fa.
-  Il ponte fra una richiesta accettata e il motore che gira è il prossimo passo,
-  e senza quello «accettata» vuol dire soltanto «l'ho vista e va bene».
+- ~~**La coda non è ancora quella vera.**~~ — fatta nella **0.7.0**. Resta il
+  caso di due generazioni insieme, scritto qui sopra.
+- **Venti persone insieme non le ha provate nessuno.** Il gateway manda i file a
+  pezzi e non li tiene in memoria, quindi in teoria regge; ma «in teoria» in
+  questo file non è mai bastato.
 - **Le notifiche sono un giro ogni quarto d'ora**, non una push vera: il
   telefono chiede, il PC non chiama. Va bene per un lavoro che dura minuti,
   meno bene per uno che finisce in trenta secondi.

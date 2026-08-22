@@ -7,12 +7,13 @@
 
 import { BrowserWindow, Menu, app, screen, shell } from "electron";
 import { join } from "node:path";
-import { APP_IDS, type AppId } from "@daprod/ipc";
+import { APPS, APP_IDS, type AppId } from "@daprod/ipc";
 import { appManager } from "./app-manager";
 import { gpu } from "./gpu";
+import { impostazioni } from "./impostazioni";
 import { spegniSeNostro } from "./llm";
 import { registerIpc } from "./ipc";
-import { spegniAccessoRemoto } from "./remoto";
+import { riprendiAccessoRemoto, spegniAccessoRemoto } from "./remoto";
 import { ICONA_SUITE, ensureDataDirs } from "./paths";
 import { updater } from "./updater";
 import { gestisciSchema, registraSchema } from "./file-scheme";
@@ -59,7 +60,27 @@ async function start(): Promise<void> {
   // creata `createHub()`) e la sua prima richiesta deve trovare la promessa
   // già lì, non ancora `undefined`.
   appManager.prontoAlPrimoAvvio = appManager.refreshAll();
+
+  // La connessione da fuori si riaccende da sé, se era accesa (ed è accesa di
+  // suo). **Prima** dell'attesa qui sotto e senza `await`: chi apre l'app del
+  // telefono mentre il PC sta ancora contando i modelli deve trovare un
+  // computer che risponde, non uno che risponderà fra un minuto.
+  riprendiAccessoRemoto();
+
   await appManager.prontoAlPrimoAvvio;
+
+  /**
+   * Il motore si scalda mentre guardi l'hub.
+   *
+   * Non appena si sa cosa c'è sul disco: la prima app pronta che ha un motore
+   * lo fa partire, senza aprire nessuna finestra. Sono i quaranta secondi di
+   * Python e torch spesi adesso invece che al primo clic. Vedi
+   * `AppManager.scalda`.
+   */
+  if (impostazioni().precarica) {
+    const daScaldare = appManager.list().find((s) => s.status === "pronta" && APPS[s.id].service);
+    if (daScaldare) void appManager.scalda(daScaldare.id);
+  }
 
   creaTray({
     mostraHub: () => {

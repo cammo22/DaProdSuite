@@ -7,6 +7,7 @@
  * prime che si fanno la prima volta che si apre questa scheda.
  */
 
+import { collegaLavoriDaFuori, premi, scrivi } from "/comune/da-fuori.js";
 import { el, mostraScheda, suApertura } from "./dom.js";
 import { accendiBottoni, collegaParla, motoreCollegato } from "./parla.js";
 import { caricaVoci, collegaVoci } from "./voci.js";
@@ -40,4 +41,19 @@ await collega((vivo) => {
   // Il motore che torna su può aver finito qualcosa mentre non c'eravamo, e le
   // voci le tiene lui: si rileggono.
   if (vivo) void caricaVoci();
+});
+
+/**
+ * I lavori chiesti da fuori: dal telefono, dalla console, da un agente.
+ *
+ * Poche righe, e sono tutte «metti questo lì»: la generazione è quella di
+ * sempre, perché si preme lo stesso tasto che premeresti tu. Il perché di
+ * questa scelta — invece di costruire il grafo qui — sta in
+ * `packages/ui/src/da-fuori.js`.
+ */
+collegaLavoriDaFuori((richiesta) => {
+  mostraScheda("parla");
+  scrivi(el.testo, richiesta.testo);
+  if (richiesta.opzioni.voce && el.voce) scrivi(el.voce, richiesta.opzioni.voce);
+  premi(el.parla, "DaProdVoce non è pronta: apri la scheda sul computer e guarda cosa manca.");
 });

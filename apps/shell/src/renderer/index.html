@@ -216,88 +216,6 @@
         </div>
       </section>
 
-      <!-- L'accesso da fuori: il QR e il codice per accoppiare telefono e
-           portatile, i dispositivi collegati e le richieste che arrivano. -->
-      <section class="pannello" id="telefono" hidden aria-label="Da fuori">
-        <div class="pannello-testa">
-          <h2>Da fuori</h2>
-          <p id="telefono-riassunto">—</p>
-          <div class="pannello-tasti">
-            <button class="bottone" id="telefono-interruttore">Accendi</button>
-            <button class="bottone secondario" id="telefono-invito-admin">Invita un padrone</button>
-            <button class="bottone secondario" id="telefono-invito-ospite">Invita un ospite</button>
-          </div>
-        </div>
-
-        <!-- La strada da Internet. È un interruttore a parte da quello sopra,
-             perché è una decisione a parte: «Accendi» vuol dire anche dalla
-             wifi di casa, questo vuol dire anche dal mondo. -->
-        <div class="telefono-internet" id="telefono-internet-box" hidden>
-          <div>
-            <span class="telefono-etichetta">Anche da fuori casa</span>
-            <strong id="telefono-internet-stato">Spento: si arriva solo dalla wifi di casa.</strong>
-          </div>
-          <button class="bottone secondario" id="telefono-internet">Accendi</button>
-        </div>
-
-        <!-- Dove ci si collega: l'indirizzo da scrivere nel browser dell'altro
-             computer. Il telefono non ne ha bisogno, il portatile sì. -->
-        <div class="telefono-indirizzo" id="telefono-indirizzo-box" hidden>
-          <div>
-            <span class="telefono-etichetta">Dal browser di un altro computer</span>
-            <strong id="telefono-console">—</strong>
-          </div>
-          <button class="bottone secondario" id="telefono-copia">Copia</button>
-        </div>
-
-        <!-- Il guasto più silenzioso di questo pannello: la suite dice «in
-             ascolto», il QR si inquadra, e dal telefono non arriva niente
-             perché Windows blocca in entrata senza dirlo a nessuno. Compare
-             solo quando la regola manca davvero. -->
-        <div class="telefono-internet guasto" id="telefono-muro-box" hidden>
-          <div>
-            <span class="telefono-etichetta">Windows sta bloccando</span>
-            <strong id="telefono-muro-stato">Il firewall non lascia entrare nessuno sulla porta della suite.</strong>
-          </div>
-          <button class="bottone secondario" id="telefono-muro">Sblocca la porta</button>
-        </div>
-
-        <!-- Un computer ha spesso quattro indirizzi e solo uno arriva al
-             telefono. La suite sceglie, ma se sbaglia si cambia da qui: senza
-             questo, su una macchina con Tailscale o con macchine virtuali non
-             c'era modo di accorgersene né di rimediare. -->
-        <div class="telefono-rete" id="telefono-rete-box" hidden>
-          <label for="telefono-rete">Il telefono non lo raggiunge? Prova un altro indirizzo:</label>
-          <select id="telefono-rete"></select>
-        </div>
-
-        <div class="telefono-invito" id="telefono-invito-box" hidden>
-          <img id="telefono-qr" alt="QR di invito" />
-          <div class="telefono-codice">
-            <span class="telefono-etichetta">Inquadra col telefono, oppure scrivi questo codice</span>
-            <strong id="telefono-codice-valore">—</strong>
-            <span id="telefono-codice-scade">—</span>
-          </div>
-        </div>
-
-        <div class="telefono-sezioni">
-          <div>
-            <h3>Dispositivi collegati</h3>
-            <ul class="voci" id="telefono-dispositivi"></ul>
-          </div>
-          <div>
-            <h3>Richieste arrivate</h3>
-            <ul class="voci" id="telefono-richieste"></ul>
-          </div>
-        </div>
-
-        <p class="telefono-nota" id="telefono-nota">
-          Sulla wifi di casa il collegamento è <b>in chiaro</b>: va bene dentro casa.
-          Con «Anche da fuori casa» acceso si passa da un tunnel in uscita e da fuori
-          si arriva in <b>HTTPS</b>, senza aprire porte sul router. I motori restano
-          su 127.0.0.1 in tutti e due i casi — da fuori si passa sempre da qui.
-        </p>
-      </section>
     </main>
 
     <footer class="pieddi">
@@ -328,7 +246,6 @@
         <button class="collegamento" data-pannello="memoria">Memoria video</button>
         <button class="collegamento" id="btn-llm">Modello che scrive</button>
         <button class="collegamento" id="btn-spazio">Spazio</button>
-        <button class="collegamento" data-pannello="telefono">Da fuori</button>
       </div>
     </footer>
 

@@ -19,6 +19,7 @@ import {
   type FiltroLibreria,
   type Intenzione,
   type PezzoLlm,
+  type RichiestaDaFuori,
   type Unsubscribe,
 } from "@daprod/ipc";
 
@@ -89,6 +90,12 @@ export function esponiApiApp(io: AppId): void {
       ipcRenderer.invoke(CHANNELS.appInvia, destinazione, elementoId, intenzione),
 
     onConsegna: (listener) => subscribe<Consegna>(CHANNELS.appConsegna, listener),
+
+    onRichiestaDaFuori: (listener) =>
+      subscribe<RichiestaDaFuori>(CHANNELS.appRichiestaDaFuori, listener),
+
+    richiestaPartita: (id: string, errore?: string) =>
+      ipcRenderer.invoke(CHANNELS.appRichiestaPartita, id, errore),
 
     // L'id dell'app lo mette il preload, come per i modelli: la pagina dice
     // solo *quale* motore vuole, e il catalogo decide se può averlo.

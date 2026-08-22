@@ -1259,148 +1259,15 @@ li.modello .bottone {
 
 /* Dove ci si collega dal browser di un altro computer. Sta in cima al pannello
    perché è la prima domanda di chi apre questa scheda: «e adesso dove vado?». */
-.telefono-indirizzo {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
-  margin: 4px 0 14px;
-  padding: 14px 16px;
-  border-radius: 14px;
-  background: rgba(124, 92, 255, 0.08);
-  border: 1px solid var(--bordo-vivo);
-}
-
-.telefono-indirizzo strong {
-  display: block;
-  margin-top: 3px;
-  font-size: 20px;
-  color: var(--testo);
-  user-select: text;
-}
-
-.telefono-etichetta {
-  font-size: 12.5px;
-  color: var(--testo-tenue);
-}
 
 /* La scelta dell'indirizzo, quando ce n'è più d'uno. */
 /* La strada da Internet: stessa forma del riquadro dell'indirizzo, colore
    diverso — è una cosa che esce di casa, e deve saltare all'occhio quando è
    accesa. */
-.telefono-internet {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
-  margin: -6px 0 14px;
-  padding: 13px 16px;
-  border-radius: 14px;
-  background: rgba(34, 211, 238, 0.06);
-  border: 1px solid var(--bordo-vivo);
-}
-
-.telefono-internet.acceso {
-  background: rgba(52, 211, 153, 0.09);
-  border-color: rgba(52, 211, 153, 0.45);
-}
-
-.telefono-internet.guasto {
-  background: rgba(248, 113, 113, 0.08);
-  border-color: rgba(248, 113, 113, 0.45);
-}
-
-.telefono-internet strong {
-  display: block;
-  margin-top: 3px;
-  font-size: 14px;
-  color: var(--testo);
-  user-select: text;
-  font-weight: 500;
-}
-
-.telefono-rete {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  margin: -6px 0 14px;
-  font-size: 12.5px;
-  color: var(--testo-tenue);
-}
-
-.telefono-rete select {
-  background: var(--fondo-alto);
-  color: var(--testo);
-  border: 1px solid var(--bordo-vivo);
-  border-radius: 8px;
-  padding: 6px 9px;
-  font: inherit;
-  max-width: 100%;
-}
 
 /* L'invito: QR accanto al codice. */
-.telefono-invito {
-  display: flex;
-  gap: 18px;
-  align-items: center;
-  flex-wrap: wrap;
-  margin: 4px 0 18px;
-  padding: 16px;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid var(--bordo);
-}
-
-.telefono-invito img {
-  width: 200px;
-  height: 200px;
-  border-radius: 10px;
-  background: white;
-  padding: 8px;
-}
-
-.telefono-codice {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  font-size: 13px;
-  color: var(--testo-tenue);
-}
-
-.telefono-codice strong {
-  font-size: 34px;
-  letter-spacing: 8px;
-  color: var(--testo);
-  user-select: text;
-}
 
 /* Le due liste (dispositivi e richieste) affiancate quando c'è spazio. */
-.telefono-sezioni {
-  display: grid;
-  grid-template-columns: 1fr 2fr;
-  gap: 18px;
-  margin-top: 6px;
-}
-
-@media (max-width: 1000px) {
-  .telefono-sezioni {
-    grid-template-columns: 1fr;
-  }
-}
-
-.telefono-sezioni h3 {
-  margin: 0 0 8px;
-  font-size: 13.5px;
-}
-
-.telefono-nota {
-  margin: 18px 0 0;
-  font-size: 12.5px;
-  color: var(--testo-fioco);
-  line-height: 1.55;
 }
 
 .vuoto {

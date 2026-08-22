@@ -60,7 +60,7 @@ export type Produce =
 export type Permesso =
   /** Chiunque sia accoppiato, ospiti compresi. */
   | "tutti"
-  /** Solo il dispositivo admin (quello del padrone di casa). */
+  /** Solo un dispositivo che può decidere. */
   | "admin";
 
 export interface Azione {

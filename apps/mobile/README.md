@@ -44,7 +44,7 @@ entra dritti; con più di una si sceglie.
 
 Un profilo **non è un'etichetta, è una credenziale**: ha il suo token, il suo
 ruolo e il suo PC. Chi è ospite resta ospite anche se il telefono è di chi è
-padrone, e togliere una persona toglie davvero il suo accesso da quel telefono
+può decidere, e togliere una persona toglie davvero il suo accesso da quel telefono
 (non dal PC: là si toglie dal pannello «Da fuori» — sono due gesti diversi).
 
 Prima della 0.6.0 il telefono aveva un accoppiamento solo e si presentava al PC
@@ -89,8 +89,8 @@ questa.
 
 ## Cosa non fa
 
-- **Non decide.** Accettare o scartare una richiesta resta di chi è padrone —
-  dal PC, dalla console o da qui, ma con il ruolo giusto.
+- **Non decide, se non ne ha il permesso.** Dire «fallo» a una richiesta resta
+  di chi può decidere — dal computer, dalla console o da qui.
 - **Non calcola niente.** Nessun modello gira sul telefono, e non è previsto che
   giri: i pesi vogliono la scheda video del fisso.
 - **Non ha notifiche push vere.** È il telefono a chiedere ogni quarto d'ora, non
