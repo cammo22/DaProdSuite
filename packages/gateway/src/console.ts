@@ -405,12 +405,22 @@ const PAGINA = `<!doctype html>
     </div>
   </section>
 
-  <!-- =========================== COLLEGAMENTO ============================ -->
-  <section class="pagina" id="pag-collegamento">
+  <!-- ============================== PERSONE ============================== -->
+  <!--
+    La pagina delle persone, dalla 0.7.3. Prima si chiamava «Collegamento» e
+    cominciava dai quadrati della rete: chi cercava «dove gestisco chi è
+    collegato» non la apriva nemmeno. Adesso comincia da chi c'è — con cosa può
+    fare, il tasto per disconnetterlo e il posto dove lasciargli cadere un file
+    — e la roba della rete sta sotto, che è quanto conta una volta che funziona.
+  -->
+  <section class="pagina" id="pag-persone">
     <div class="scheda">
-      <h2>Stato della connessione</h2>
-      <p class="sotto" id="sotto-collegamento">—</p>
-      <div class="quadrati" id="quadrati-rete"></div>
+      <h2>Le persone collegate</h2>
+      <p class="sotto" id="sotto-collegati">
+        Trascina un file sul nome di una persona per mandarglielo — o usa il tasto.
+      </p>
+      <ul class="voci" id="dispositivi"></ul>
+      <div class="avviso" id="avviso-invio"></div>
     </div>
 
     <div class="scheda" id="scheda-invita" hidden>
@@ -438,12 +448,9 @@ const PAGINA = `<!doctype html>
     </div>
 
     <div class="scheda">
-      <h2>Chi è collegato</h2>
-      <p class="sotto" id="sotto-collegati">
-        Trascina un file sul nome di una persona per mandarglielo.
-      </p>
-      <ul class="voci" id="dispositivi"></ul>
-      <div class="avviso" id="avviso-invio"></div>
+      <h2>Come sta la connessione</h2>
+      <p class="sotto" id="sotto-collegamento">—</p>
+      <div class="quadrati" id="quadrati-rete"></div>
     </div>
 
     <div class="scheda">
@@ -463,7 +470,7 @@ const PAGINA = `<!doctype html>
   <button data-pagina="chiedi"><span class="segno">&#10010;</span>Chiedi</button>
   <button data-pagina="lavori"><span class="segno">&#9776;</span>Lavori<span class="bollo" id="bollo" hidden></span></button>
   <button data-pagina="galleria"><span class="segno">&#9635;</span>Galleria</button>
-  <button data-pagina="collegamento"><span class="segno">&#9736;</span>Collegamento</button>
+  <button data-pagina="persone"><span class="segno">&#9787;</span>Persone</button>
 </nav>
 
 <script>
@@ -737,7 +744,7 @@ const PAGINA = `<!doctype html>
     }).length;
     var pronte = richieste.filter(function (r) { return r.stato === "pronta"; }).length;
 
-    quadratoNumero(dove, pannello.dispositivi.length, "collegati", inAttesa ? "" : "verde", "collegamento");
+    quadratoNumero(dove, pannello.dispositivi.length, "collegati", inAttesa ? "" : "verde", "persone");
     quadratoNumero(dove, inLavoro, inLavoro === 1 ? "in lavorazione" : "in lavorazione", inLavoro ? "giallo" : "", "lavori");
     quadratoNumero(dove, pronte, "pronti", pronte ? "verde" : "", "lavori");
     quadratoNumero(dove, inAttesa, "aspettano il sì", inAttesa ? "rosso" : "", "lavori");
@@ -2298,7 +2305,7 @@ const PAGINA = `<!doctype html>
   $("invita-uno").addEventListener("click", function () { invita("ospite", 1); });
   $("invita-tanti").addEventListener("click", function () { invita("ospite", 10); });
   $("invita-decide").addEventListener("click", function () { invita("admin", 1); });
-  $("chi").addEventListener("click", function () { vaiA("collegamento"); });
+  $("chi").addEventListener("click", function () { vaiA("persone"); });
   for (var b of document.querySelectorAll("nav.fondo button")) {
     b.addEventListener("click", (function (quale) {
       return function () { vaiA(quale); };

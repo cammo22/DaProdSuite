@@ -101,7 +101,7 @@ console.log("\n— la pagina della console —");
     dice("non è rimasto a metà", html.trim().endsWith("</html>"));
   }
   // Le pagine che la barra in fondo promette devono esistere davvero.
-  for (const quale of ["casa", "chiedi", "lavori", "galleria", "collegamento"]) {
+  for (const quale of ["casa", "chiedi", "lavori", "galleria", "persone"]) {
     dice(`la pagina "${quale}" c'è`, html.includes(`id="pag-${quale}"`));
   }
 }

@@ -242,13 +242,33 @@ async function esegui(richiesta: DaEseguire): Promise<void> {
    * disco dice di no — il lavoro non fallisce per questo: si consegna quello
    * che c'è. Un nome brutto è meglio di un lavoro perso.
    */
-  const battezzato =
-    libreria.intitola(uscito.id, {
-      titolo: richiesta.testo,
-      chi: richiesta.daId,
-      chiNome: richiesta.da,
-      extra: { richiesta: richiesta.id, azione: richiesta.azione },
-    }) ?? uscito;
+  /**
+   * Un respiro prima di rinominare, e serve.
+   *
+   * La scheda scrive i suoi parametri **accanto** al file — modello, seed,
+   * passi — un attimo dopo aver finito di generare. Rinominare in quel momento
+   * vuol dire che quella scrittura arriva su un nome che non esiste piu' e si
+   * perde in silenzio: il file resta, i parametri no. Due secondi bastano, e
+   * `intitola` tiene quello che trova invece di sovrascriverlo.
+   */
+  await pausa(2000);
+
+  let battezzato = uscito;
+  try {
+    battezzato =
+      (await libreria.intitola(uscito.id, {
+        titolo: richiesta.testo,
+        chi: richiesta.daId,
+        chiNome: richiesta.da,
+        extra: { richiesta: richiesta.id, azione: richiesta.azione },
+      })) ?? uscito;
+  } catch (err) {
+    // **Un nome non e' un lavoro.** Qui dentro si consegna quello che il motore
+    // ha prodotto: se dargli un nome non riesce si scrive perche' e si va
+    // avanti con quello che c'e'. Prima questa riga poteva far risultare
+    // fallita una generazione riuscita, ed e' successo davvero.
+    annota(`non sono riuscito a rinominare ${uscito.id}: ${err instanceof Error ? err.message : String(err)}`);
+  }
 
   const copiato = await portaNeiRisultati(battezzato);
   cablaggio?.consegna(richiesta.id, copiato);
