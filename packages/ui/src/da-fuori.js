@@ -66,6 +66,48 @@ export function numero(valore, minimo, massimo, difetto) {
   return Math.max(minimo, Math.min(massimo, Math.round(n)));
 }
 
+/**
+ * Sceglie una voce in un menu a tendina, se quella voce c'è.
+ *
+ * **Perché serve.** Dalla 0.7.2 chi chiede da fuori può dire con che modello
+ * vuole che si faccia: «fammi un'immagine con FLUX.2 Klein 9B». L'elenco delle
+ * scelte sta in `packages/azioni`, e gli id sono gli stessi che la scheda ha
+ * nel suo menu — quindi qui basta metterci quello che è arrivato.
+ *
+ * Un id che il menu non conosce si ignora invece di far fallire il lavoro: fra
+ * generare con il modello scelto adesso e non generare, la prima è meglio.
+ * Vuoto vuol dire proprio «quello che c'è adesso», ed è il caso normale.
+ */
+export function scegliInMenu(menu, id) {
+  if (!menu || !id) return false;
+  const esiste = [...menu.options].some((o) => o.value === id);
+  if (!esiste) return false;
+  if (menu.value === id) return true;
+  menu.value = id;
+  menu.dispatchEvent(new Event("change", { bubbles: true }));
+  return true;
+}
+
+/**
+ * Aspetta che un tasto torni premibile, al massimo `ms`.
+ *
+ * Cambiare modello non è istantaneo: la scheda va a chiedere alla suite se
+ * quei pesi sono sul disco, e finché non lo sa tiene Genera spento. Senza
+ * questa attesa, un lavoro che sceglie il modello fallirebbe **sempre** con
+ * «la scheda non è pronta», e la ragione sarebbe che non le abbiamo dato il
+ * tempo di guardare.
+ *
+ * Se allo scadere è ancora spento non si solleva niente: sarà `premi` a dire
+ * perché, con le sue parole, che arrivano fino a chi ha chiesto.
+ */
+export async function aspettaPremibile(bottone, ms = 10000) {
+  if (!bottone) return;
+  const fine = Date.now() + ms;
+  while (bottone.disabled && Date.now() < fine) {
+    await new Promise((r) => setTimeout(r, 200));
+  }
+}
+
 /** Scrive in una casella **e lo dice**: certe pagine reagiscono solo all'evento. */
 export function scrivi(campo, testo) {
   if (!campo) return;

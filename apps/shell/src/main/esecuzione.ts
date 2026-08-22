@@ -69,6 +69,14 @@ export interface DaEseguire {
   testo: string;
   opzioni: Record<string, string>;
   da: string;
+  /**
+   * L'id del dispositivo che l'ha chiesta.
+   *
+   * Non e' un doppione di `da`, che e' il nome da scrivere accanto al lavoro:
+   * questo e' il padrone, e finisce accanto al file. E' quello che permette
+   * alla galleria di mostrare a ognuno le sue cose - vedi `libreria.intitola`.
+   */
+  daId: string;
 }
 
 /** Chi ci dice com'è andata, e dove mettere il risultato. */
@@ -170,7 +178,27 @@ async function esegui(richiesta: DaEseguire): Promise<void> {
   const uscito = await aspettaIlFile(app, da);
   if (!uscito) throw new Error("Il lavoro è partito ma non ne è uscito niente.");
 
-  const copiato = await portaNeiRisultati(uscito);
+  /**
+   * Il file prende il nome di quello che era stato chiesto, e il suo padrone.
+   *
+   * Prima usciva `daprod_00042_.png`, e quel numero era tutto quello che si
+   * leggeva in galleria e nella cartella. Adesso si chiama come il prompt, e
+   * accanto c'è scritto chi l'ha chiesto: è quello che rende possibile mostrare
+   * a ognuno le sue cose.
+   *
+   * Se il nome non si riesce a cambiare — il file è aperto da qualcun altro, il
+   * disco dice di no — il lavoro non fallisce per questo: si consegna quello
+   * che c'è. Un nome brutto è meglio di un lavoro perso.
+   */
+  const battezzato =
+    libreria.intitola(uscito.id, {
+      titolo: richiesta.testo,
+      chi: richiesta.daId,
+      chiNome: richiesta.da,
+      extra: { richiesta: richiesta.id, azione: richiesta.azione },
+    }) ?? uscito;
+
+  const copiato = await portaNeiRisultati(battezzato);
   cablaggio?.consegna(richiesta.id, copiato);
   annota(`pronta ${richiesta.id}: ${copiato.nome}`);
 }
@@ -255,10 +283,18 @@ async function portaNeiRisultati(
   if (!dove) throw new Error("Non so dove mettere il risultato.");
   await mkdir(dove, { recursive: true });
 
-  // Il nome deve essere unico dentro quella cartella e non deve contenere
-  // percorsi: quello che arriva dalla libreria è un id con le barre dentro.
+  /**
+   * Il nome della copia: **leggibile davanti, unico in fondo.**
+   *
+   * Deve essere unico dentro quella cartella — due richieste con lo stesso
+   * prompt sono due file diversi — e non deve contenere percorsi, perché quello
+   * che arriva dalla libreria è un id con le barre dentro. Ma deve anche
+   * arrivare così com'è sul telefono di chi scarica: `daprod_00042_.png` non
+   * dice niente, `un faro sulla scogliera-lq3f8.png` sì.
+   */
   const coda = extname(elemento.percorso) || ".bin";
-  const nome = `${Date.now().toString(36)}-${basename(elemento.percorso)}`.replace(/[/\\]/g, "-");
+  const senzaCoda = basename(elemento.percorso, coda).replace(/[/\\]/g, "-");
+  const nome = `${senzaCoda.slice(0, 70)}-${Date.now().toString(36)}${coda}`;
   await copyFile(elemento.percorso, join(dove, nome));
 
   return {

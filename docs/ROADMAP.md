@@ -26,8 +26,12 @@ file si scrive quale delle due metà manca.
 
 ## A che punto siamo — 22 agosto 2026
 
-**Ultima pubblicata: 0.7.0.** Nove schede dentro la suite, un ambiente Python
-solo, e la connessione che si accende da sola e si racconta da sola.
+**Ultima pubblicata: 0.7.2.** Nove schede dentro la suite, un ambiente Python
+solo, e il giro che conta — chiedo dal telefono, il computer fa, il file torna —
+**provato da chi la usa**, sul suo PC e sul suo telefono.
+
+Parole sue, provando la 0.7.1: «funziona molto bene, sia l'app android che pc
+fanno quello che ti ho chiesto».
 
 | Pezzo | Come sta |
 |---|---|
@@ -37,28 +41,32 @@ solo, e la connessione che si accende da sola e si racconta da sola.
 | Le nove schede dentro la suite | dentro tutte; DaProdCinema è quella che si sta ancora costruendo |
 | Libreria condivisa e scambio fra app | fatto e provato |
 | Accesso da fuori: gateway, azioni, console, MCP | fatto e provato |
-| **DaProdConnessione: la scheda che dice se funziona** | fatta, **mai aperta dall'hub** |
-| **La fila che fa partire davvero i lavori** | scritta, **mai girata contro un motore acceso** |
-| **Il telefono che si ricollega da solo** | scritto, **mai provato su un telefono** |
-| **Tailscale come strada principale** | scritto, **mai provato col telefono** |
+| DaProdConnessione: la scheda che dice se funziona | fatta e **provata** |
+| La fila che fa partire davvero i lavori | **provata**: si accetta e parte |
+| Il telefono che si ricollega da solo | **provato** |
+| App Android: persone, pagine della suite, galleria | **provata sul telefono** |
+| **Ognuno vede le sue cose, e la bacheca** | fatto e **provato**, con un secondo dispositivo finto |
+| **Il menu sulle richieste, con e senza AI** | fatto e **provato**; l'AI ci mette un minuto o due |
+| **I regali: un file trascinato su una persona** | provato dal codice; **il trascinamento vero no** |
+| **Modelli e preset dal telefono** | **provato contro il motore acceso**: FLUX.2 4B chiesto da fuori, e usato |
+| Tailscale come strada principale | scritto, **mai provato col telefono** |
 | Accesso da Internet (tunnel in uscita) | fatto, **mai acceso su una linea vera** |
-| App Android: persone, pagine della suite, galleria | compila; **mai aperta su un telefono** |
 | DaProdCinema — Storia: barra, anteprime, cucitura da sola | scritto; **mai girato contro il motore acceso** |
 | Il modello che scrive (LM Studio) | fatto e provato; lo scarico a ogni risposta è **da misurare** |
 
 ### Il prossimo passo
 
-**Provare sul PC vero.** Quasi niente di quello che è uscito nella 0.6.0 e nella
-0.7.0 è passato per le mani di chi la usa. In quest'ordine, perché è l'ordine di
-quanto contano:
+Adesso che il giro base regge, quello che resta è **la stessa cura data alle
+altre otto schede**. In quest'ordine:
 
-1. **accettare un lavoro dal telefono e vederlo partire** — è la ragione di
-   tutto l'ultimo giro;
-2. DaProdConnessione aperta dall'hub: il semaforo dice il vero?
-3. il telefono, con due persone, e dopo un cambio di rete;
-4. Tailscale sul telefono;
-5. una storia intera generata guardando la barra;
-6. lo scarico della memoria fra una risposta e una generazione.
+1. **le parole di tutta la suite** — la 0.7.0 ha sistemato il collegamento e il
+   telefono, la 0.7.2 la fila e la galleria; l'hub e le altre schede no
+   (§ «Le parole di tutta la suite», qui sotto);
+2. **provare i regali e la bacheca con due persone vere**, che è l'unica cosa
+   che questa release non ha potuto fare;
+3. Tailscale sul telefono, fuori casa;
+4. una storia intera generata guardando la barra;
+5. lo scarico della memoria fra una risposta e una generazione.
 
 ---
 
@@ -152,6 +160,24 @@ d'errore, che sono la parte che si legge nel momento peggiore.
 
 Non è un giro di sostituzioni: è una regola. **Si scrive cosa una cosa fa, non
 come si chiama dentro**, e si scrive per chi la legge una volta sola.
+
+### Chi ha fatto cosa — *fatto nella 0.7.2*
+
+**Chiesto il 22 agosto 2026**, provando la 0.7.1: utenti separati fra chi
+decide e chi chiede, ognuno che vede solo le proprie generazioni, la possibilità
+di pubblicare, i nomi presi dal prompt, il menu sulle richieste con e senza AI,
+i modelli e i preset dal telefono, e i file mandati a mano trascinandoli.
+
+È tutto dentro la 0.7.2. Quello che resta aperto di quel giro:
+
+- **provarlo con due persone vere**, che è la cosa che qui non si può fare da
+  soli;
+- **la bacheca non ha altro**, e non deve averlo: niente cuori, niente
+  commenti. Serve a vedere chi ha fatto cosa;
+- **il nome del file per quello che generi tu** al computer resta quello del
+  motore: in galleria si legge il prompt, sul disco no. Rinominarlo mentre la
+  scheda ce l'ha ancora in mano vuol dire anteprime che si rompono, e va fatto
+  quando le schede sapranno dire «questo l'ho appena finito».
 
 ### Il Companion e la memoria del modello
 
@@ -392,6 +418,51 @@ funzionare e non funzionare.
 
 Dalla più recente. Ogni sezione dice cosa è stato fatto **e** cosa
 di quello era stato provato davvero.
+
+---
+
+## 0.7.2 — Ognuno le sue cose, e il menu sulle richieste ✅
+
+**22 agosto 2026, pubblicata.** La prima release nata da una suite che
+funziona: la 0.7.1 è stata provata sul PC e sul telefono, e questa è la lista di
+rifiniture che ne è venuta fuori. Il racconto per chi la usa sta nel
+[CHANGELOG](../CHANGELOG.md).
+
+**Cosa c'è dentro**
+
+- **Un padrone per ogni cosa prodotta.** Accanto al file c'è scritto chi l'ha
+  chiesta; la galleria mostra a ognuno le sue, e degli altri solo quello che
+  hanno messo **in bacheca**. Il controllo sta nel gateway e vale anche sui
+  file: prima bastava indovinare un nome.
+- **Chi decide genera subito, chi chiede aspetta.** È l'unica differenza fra i
+  due ruoli, ed è scritta in un posto solo (`creaRichiesta`). Il ruolo si cambia
+  da DaProdConnessione.
+- **Il menu su una richiesta ferma**: falla, falla riscrivere al modello,
+  riscrivila a mano (e poi con o senza AI), dille di no con la ragione. Quello
+  che aveva scritto la persona non si perde mai.
+- **I nomi.** Quello che esce da una richiesta si chiama come il prompt, sul
+  disco e in tutte le interfacce.
+- **Modelli e preset da fuori.** Il campo `modello` sta nel catalogo delle
+  azioni, con gli id veri delle schede; i preset stanno sul computer
+  (`preset.json`) e non nel browser, che è la ragione per cui prima il telefono
+  non li vedeva.
+- **I regali**: un file trascinato sul nome di una persona, scritto sul disco
+  mentre arriva, con la notifica e il pacco che si apre.
+
+**Cosa era provato, e cosa no**
+
+Le prove automatiche sono sessanta in più: permessi della libreria, ruoli,
+riscrittura, regali, e un banco nuovo (`prova-azioni.mjs`) che confronta i
+modelli dichiarati con quelli veri delle schede — due elenchi che, divergendo,
+non romperebbero niente e farebbero generare col modello sbagliato in silenzio.
+
+**Provato sul PC vero**, con un secondo dispositivo finto: il giro intero — una
+richiesta con FLUX.2 Klein 4B accettata, generata in cento secondi, col file che
+si chiama come il prompt e appartiene a chi l'ha chiesta — più il pacco, i
+permessi della libreria, i ruoli e i preset.
+
+Non è stato provato: **due telefoni veri accesi insieme**, l'animazione del
+pacco su Android, e il trascinamento di un file da una cartella di Windows.
 
 ---
 

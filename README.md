@@ -90,6 +90,34 @@ lo stesso.
 
 ## A che punto siamo
 
+> **0.7.2: ognuno vede le sue cose, e quando arriva una richiesta c'è un menu.**
+>
+> La galleria non è più di tutti: **ogni cosa prodotta sa chi l'ha chiesta**, e
+> ognuno vede le sue. Quello che vuoi far vedere lo metti **in bacheca**, e lì
+> compare con scritto chi l'ha fatto — che era la ragione di tutto: vedere chi
+> ha fatto quale immagine, ordinati. Vale anche per chi può decidere.
+>
+> **Chi decide genera subito, chi chiede aspetta un sì**, ed è l'unica
+> differenza fra i due. Il permesso adesso si cambia con un tasto in
+> DaProdConnessione, senza rifare l'accoppiamento.
+>
+> **Il menu sulle richieste.** Sotto una richiesta ferma non ci sono più «sì» e
+> «no»: c'è *fallo così com'è*, *fallo scrivere meglio e poi fallo*, *scrivila
+> io* — e poi mandala con o senza AI — e *no*, con la ragione. Se qualcuno l'ha
+> riscritta, resta scritto com'era arrivata.
+>
+> **I file si chiamano come quello che hai chiesto**, invece di
+> `daprod_00042_.png`. **Dal telefono si sceglie il modello** — Anima, FLUX.2,
+> LTX 2.5, H3 — e ci sono **i tuoi soliti**, i modi di generare salvati con un
+> nome, che stanno sul computer e quindi si vedono da tutte le parti.
+>
+> E: **trascina un file sul nome di una persona collegata e glielo mandi**, con
+> il pacco che si apre sul suo telefono. I lavori finiti si mettono via o si
+> buttano.
+>
+> ⚠ Provato con un dispositivo solo: cosa è provato e cosa no sta in fondo al
+> [CHANGELOG](CHANGELOG.md) § 0.7.2.
+>
 > **0.7.0: c'è DaProdConnessione, e quando accetti un lavoro parte davvero.**
 >
 > Nell'hub c'è un riquadro nuovo: lo apri e vedi **se tutto funziona** — un
@@ -400,6 +428,15 @@ suite impara qualcosa il telefono ce l'ha al collegamento dopo.
 
 **All'avvio scegli chi sei.** Più persone sullo stesso telefono, ognuna col suo
 collegamento e il suo nome: sul PC la fila dice chi ha chiesto cosa.
+
+**Chiedi con il modello che vuoi.** Nel modulo si sceglie fra i modelli veri
+delle schede — Anima, Anima v2, FLUX.2 Klein, LTX 2.5, MiniMax H3 — chiamati
+come si chiamano, non con il loro id. E ci sono **i tuoi soliti**: un modo di
+generare salvato con un nome, che sta sul computer e si ritrova ovunque.
+
+**Vedi le tue cose.** La galleria mostra quello che hai chiesto tu; degli altri
+vedi solo quello che hanno messo in bacheca. Chi sta al computer può mandarti un
+file quando vuole: arriva una notifica, e il pacco si apre nell'app.
 
 **Sulla wifi di casa, o da fuori.** Con «Anche da fuori casa» acceso la suite
 apre un tunnel in uscita e diventa raggiungibile in HTTPS da qualunque parte,

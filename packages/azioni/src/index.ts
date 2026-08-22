@@ -6,7 +6,7 @@
  * server MCP (che le espone a un agente). Nessuno dei tre conosce gli altri.
  */
 
-export { APP_REMOTE, AZIONI, azione, azioniPer } from "./catalogo";
+export { APP_REMOTE, AZIONI, MODELLI_DICHIARATI, azione, azioniPer } from "./catalogo";
 export { schemaDi } from "./schema";
 export type { Proprieta, Schema } from "./schema";
 export { opzioni, testoPrincipale, verifica } from "./verifica";

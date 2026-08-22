@@ -589,6 +589,19 @@ class MainActivity : AppCompatActivity() {
                 fun scaricaLibreria(id: String, nome: String) {
                     runOnUiThread { scaricaDaRete(nome, dallaLibreria = id) }
                 }
+
+                /**
+                 * Un regalo, tenuto nel telefono.
+                 *
+                 * Passa da qui e non dal browser della WebView per la stessa
+                 * ragione delle altre due: l'app sa mettere un video in
+                 * galleria e un brano fra la musica, una cartella dei
+                 * download no.
+                 */
+                @JavascriptInterface
+                fun scaricaRegalo(id: String, nome: String) {
+                    runOnUiThread { scaricaDaRete(nome, dallaLibreria = null, ilRegalo = id) }
+                }
             },
             "DaProdApp",
         )
@@ -779,7 +792,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun controllo(campo: Campo): View = when {
         campo.tipo == "scelta" -> Spinner(this).apply {
-            val voci = (if (campo.obbligatorio) emptyList() else listOf("—")) + campo.scelte
+            // Nel menu si legge la frase, non l'id: «Anima v2» invece di
+            // «anima2». L'id torna al momento di mandare, in [leggiValori].
+            val voci = (if (campo.obbligatorio) emptyList() else listOf(campo.niente)) +
+                campo.scelte.map { campo.mostra(it) }
             adapter = ArrayAdapter(
                 this@MainActivity,
                 android.R.layout.simple_spinner_dropdown_item,
@@ -830,9 +846,12 @@ class MainActivity : AppCompatActivity() {
         for (i in 0 until binding.campiAzione.childCount) {
             val vista = binding.campiAzione.getChildAt(i)
             val nome = vista.tag as? String ?: continue
+            val campo = azioneScelta?.campi?.firstOrNull { it.nome == nome }
             val valore = when (vista) {
                 is EditText -> vista.text.toString().trim()
-                is Spinner -> vista.selectedItem?.toString()?.takeIf { it != "—" } ?: ""
+                is Spinner ->
+                    vista.selectedItem?.toString()?.takeIf { it != (campo?.niente ?: "—") }
+                        ?.let { campo?.idDa(it) ?: it } ?: ""
                 else -> ""
             }
             if (valore.isNotBlank()) valori[nome] = valore
@@ -916,14 +935,21 @@ class MainActivity : AppCompatActivity() {
      * Un'immagine finisce in galleria, un video in galleria, un brano fra la
      * musica: sotto «DaProd Suite», dove poi si ritrovano senza riaprire l'app.
      */
-    private fun scaricaDaRete(nome: String, dallaLibreria: String?, mime: String? = null) {
+    private fun scaricaDaRete(
+        nome: String,
+        dallaLibreria: String?,
+        mime: String? = null,
+        ilRegalo: String? = null,
+    ) {
         val cl = client ?: return avvisa("Serve il PC collegato per scaricarlo.")
         avvisa("Lo sto scaricando…")
         lifecycleScope.launch {
             try {
-                val byte =
-                    if (dallaLibreria != null) cl.scaricaDallaLibreria(dallaLibreria)
-                    else cl.scaricaRisultato(nome)
+                val byte = when {
+                    ilRegalo != null -> cl.scaricaRegalo(ilRegalo)
+                    dallaLibreria != null -> cl.scaricaDallaLibreria(dallaLibreria)
+                    else -> cl.scaricaRisultato(nome)
+                }
                 val dove = Scarica.salva(
                     this@MainActivity,
                     nome,

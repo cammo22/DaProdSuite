@@ -44,7 +44,16 @@ export type StatoRichiesta =
   | "pronta"
   | "scartata"
   /** L'invito è scaduto o la richiesta è stata ritirata. */
-  | "scaduta";
+  | "scaduta"
+  /**
+   * Finita e messa via.
+   *
+   * Non è «cancellata»: il lavoro c'è stato e il file resta. È il modo di
+   * togliere dalla lista quello che si è già guardato, senza buttarlo — chiesto
+   * il 22 agosto 2026 («possibilità di cancellare lavori dalle app anche vecchi,
+   * archiviarli»). Le richieste archiviate si vedono solo aprendo «i vecchi».
+   */
+  | "archiviata";
 
 /** Una richiesta di lavoro, come la vede il server. */
 export interface Richiesta {
@@ -67,6 +76,17 @@ export interface Richiesta {
   risultato?: Risultato;
   /** Nota di chi l'ha scartata, per dire perché. */
   motivoScarto?: string;
+  /**
+   * Com'era scritta quando è arrivata, se poi qualcuno l'ha cambiata.
+   *
+   * Chi sta al PC può riscrivere a mano una richiesta prima di farla partire, o
+   * farla riscrivere al modello. In tutti e due i casi quello che aveva scritto
+   * la persona non si perde: senza, chi ha chiesto una cosa e ne riceve
+   * un'altra non ha modo di sapere che è successo.
+   */
+  testoOriginale?: string;
+  /** Chi l'ha riscritta: `mano` o `ai`. Vuoto se è ancora come è arrivata. */
+  riscrittaDa?: "mano" | "ai";
 }
 
 /** Un file finito, pronto da scaricare. */
@@ -202,14 +222,81 @@ export interface VoceLibreria {
   bytes: number;
   /** Il tipo MIME, per sapere con che tag mostrarla. */
   mime: string;
+  /**
+   * Chi l'ha chiesta: l'id del dispositivo, o `questo-computer` se è stata
+   * fatta stando davanti al PC.
+   *
+   * È il campo che regge tutta la separazione fra le persone: la galleria
+   * mostra le tue, e le altrui solo se qualcuno le ha messe in bacheca.
+   */
+  chi?: string;
+  /** Il nome di chi l'ha chiesta, copiato per poterlo scrivere sotto. */
+  chiNome?: string;
+  /** Vero se è stata messa in bacheca, cioè se la possono vedere tutti. */
+  pubblicato?: boolean;
+  /** Vero se è tua: lo decide il gateway guardando chi sta chiedendo. */
+  mia?: boolean;
 }
 
 /** Chi sa rispondere sulla libreria: lo passa lo shell al gateway. */
 export interface FornitoreLibreria {
-  /** Le ultime cose prodotte, filtrate come chiede chi guarda. */
-  elenco(filtro: { tipo?: string; app?: string; quanti?: number }): VoceLibreria[];
-  /** Il file di una voce: percorso sul disco e come si chiama. Null se non c'è. */
-  file(id: string): { percorso: string; nome: string; mime: string; bytes: number } | null;
+  /**
+   * Le ultime cose prodotte, filtrate come chiede chi guarda.
+   *
+   * `chi` è il dispositivo che sta guardando, e non è un filtro fra gli altri:
+   * è quello che decide **cosa ha il diritto di vedere**. `dove` sceglie fra le
+   * proprie cose e la bacheca; senza, valgono le proprie.
+   */
+  elenco(filtro: {
+    tipo?: string;
+    app?: string;
+    quanti?: number;
+    chi: string;
+    dove?: "mie" | "bacheca";
+  }): VoceLibreria[];
+  /**
+   * Il file di una voce: percorso sul disco e come si chiama. Null se non c'è
+   * **o se non è roba che questo dispositivo può vedere.**
+   */
+  file(id: string, chi: string): { percorso: string; nome: string; mime: string; bytes: number } | null;
+  /** Mette o toglie dalla bacheca. Solo il padrone della voce può farlo. */
+  pubblica(id: string, chi: string, pubblicato: boolean): boolean;
+  /** Butta via una voce. Solo il padrone della voce può farlo. */
+  elimina(id: string, chi: string): boolean;
+}
+
+/* ------------------------------------------------------------- i regali */
+
+/**
+ * Un file mandato da chi sta al PC a una persona collegata.
+ *
+ * Chiesto il 22 agosto 2026: «dall'app connessione devo poter interagire e
+ * mandare file agli utenti quando voglio trascinando il file all'interno, e
+ * l'utente riceverà la notifica che ha ricevuto qualcosa».
+ *
+ * Non è un pezzo di libreria: la libreria è quello che la suite **produce**, e
+ * questo è quello che una persona **manda a un'altra**. Tenerli separati vuol
+ * dire che un regalo non compare nella galleria di chi lo manda né in quella di
+ * chi lo riceve, e che cancellarlo non cancella niente di generato.
+ */
+export interface Invio {
+  id: string;
+  /** A chi è destinato: l'id del dispositivo. */
+  aDispositivo: string;
+  /** Chi l'ha mandato, per poterlo scrivere sul pacco. */
+  daNome: string;
+  /** Come si chiama il file. */
+  nome: string;
+  /** Il tipo MIME, per sapere se si può mostrare o solo scaricare. */
+  mime: string;
+  bytes: number;
+  /** Il nome del file dentro la cartella dei regali. Non esce mai da qui. */
+  percorso: string;
+  /** Due righe da leggere aprendo il pacco. Facoltative. */
+  messaggio?: string;
+  quando: number;
+  /** Vero quando chi l'ha ricevuto l'ha aperto: il pacco non si apre due volte. */
+  aperto: boolean;
 }
 
 /* -------------------------------------------------------------- il pannello */
@@ -277,4 +364,67 @@ export interface FornitorePannello {
   revoca(id: string): void;
   /** Cambia il nome di un dispositivo collegato. */
   rinomina(id: string, nome: string): void;
+}
+
+/* ------------------------------------------------------------ il modello */
+
+/**
+ * Chi sa far scrivere il modello: lo passa lo shell al gateway.
+ *
+ * Serve a due gesti che sono lo stesso gesto visto da due parti:
+ *
+ * - il tasto **Miglioralo** accanto a una casella, per chi sta scrivendo una
+ *   richiesta dal telefono o dalla console;
+ * - la voce **Miglioralo e fallo** nel menu di una richiesta in attesa, per chi
+ *   sta al PC e decide.
+ *
+ * **L'AI non parte mai da sola.** Il modello si accende quando qualcuno preme
+ * un tasto, e LM Studio lo lascia andare appena ha finito di rispondere: quattro
+ * GB di scheda video non restano occupati per un forse.
+ */
+export interface FornitoreAi {
+  /** Null se si può chiedere, il motivo scritto per una persona se no. */
+  disponibile(): Promise<string | null>;
+  /**
+   * Riscrive un testo perché il modello che genera lo capisca meglio.
+   *
+   * `app` decide il mestiere: a DaProdFoto serve una descrizione fotografica in
+   * inglese, a DaProdMusica un genere con gli strumenti, a DaProdVoce un testo
+   * che si legga bene ad alta voce.
+   */
+  migliora(opzioni: { testo: string; app: string }): Promise<string>;
+}
+
+/* ------------------------------------------------------------- i preset */
+
+/**
+ * Un modo di generare messo da parte, con un nome.
+ *
+ * Chiesto il 22 agosto 2026 insieme ai modelli: «l'app android deve poter
+ * scegliere i vari modelli della suite con anche la possibilità dei preset».
+ *
+ * Stanno **sul PC** e non nel browser di chi guarda: un preset salvato al
+ * computer deve comparire sul telefono, e `localStorage` è una cosa del
+ * telefono. Vale la regola di sempre — quello che la suite sa fare vale per
+ * tutte le schede, non per una.
+ */
+export interface Preset {
+  id: string;
+  /** Per quale scheda: `foto`, `cinema`, `musica`, `voce`. */
+  app: string;
+  nome: string;
+  /** Il testo principale: il prompt, la descrizione, le parole da leggere. */
+  testo: string;
+  /** Gli altri campi dell'azione, già riempiti. */
+  campi?: Record<string, string>;
+  /** Chi l'ha salvato. Vuoto vuol dire: c'era già, è di tutti. */
+  chi?: string;
+  quando: number;
+}
+
+/** Chi sa rispondere sui preset: lo passa lo shell al gateway. */
+export interface FornitorePreset {
+  elenco(app?: string): Preset[];
+  salva(preset: Omit<Preset, "id" | "quando">): Preset;
+  elimina(id: string, chi: string): boolean;
 }

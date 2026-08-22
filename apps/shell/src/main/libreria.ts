@@ -35,6 +35,14 @@ import { OUTPUT_DIR } from "./paths";
 
 const SUFFISSO_COPERTINA = ".cover.jpg";
 
+/**
+ * Chi possiede quello che e' stato fatto stando davanti al computer.
+ *
+ * E' lo stesso id con cui la suite si accoppia con se' stessa in `remoto.ts`:
+ * il PC e' un dispositivo come gli altri, e le sue cose sono sue.
+ */
+export const PADRONE_DI_CASA = "questo-computer";
+
 /** Cosa può stare nel nome di un file rinominato dall'utente. */
 const NOME_PULITO = /[^\p{L}\p{N} _.,()[\]&'-]+/gu;
 
@@ -189,11 +197,118 @@ class Libreria extends EventEmitter {
     return true;
   }
 
-  /** Scrive il `.json` che accompagna un elemento: descrizione, testo, seed, parametri. */
+  /**
+   * Scrive il `.json` che accompagna un elemento: descrizione, testo, seed,
+   * parametri — e, se non gliel'ha già dato nessuno, **un nome leggibile**.
+   *
+   * **Il difetto che cura**, detto il 22 agosto 2026: «spesso i file vengono
+   * salvati con nomi diversi; si devono chiamare e apparire nelle interfacce
+   * come il prompt usato». Il motore scrive `daprod_00042_.png`, e quel numero
+   * era l'unica cosa che si leggeva in galleria, sul telefono e nella cartella.
+   *
+   * Qui il nome si prende da quello che è stato chiesto, in quest'ordine: il
+   * testo scritto dalla persona, la descrizione, il prompt vero e proprio. Chi
+   * un titolo ce l'ha già — DaProdMusica, che chiede come si chiama il brano —
+   * non viene toccato: il suo è migliore di qualunque cosa possiamo dedurre.
+   */
   scriviMeta(id: string, meta: Record<string, unknown>): boolean {
     const elemento = this.trova(id);
     if (!elemento) return false;
 
+    const conNome = { ...meta };
+    if (!daLeggere(conNome["titolo"])) {
+      const chiesto =
+        daLeggere(conNome["testo"]) ?? daLeggere(conNome["descrizione"]) ?? daLeggere(conNome["prompt"]);
+      if (chiesto) conNome["titolo"] = unaRiga(chiesto);
+    }
+
+    writeFileSync(
+      senzaEstensione(elemento.percorso) + ".json",
+      JSON.stringify(conNome, null, 1),
+      "utf8",
+    );
+    this.segnalaNovita();
+    return true;
+  }
+
+  /**
+   * Chi ha chiesto una cosa. Vuoto vuol dire: e' stata fatta stando al PC.
+   *
+   * **Perche' il PC e' un autore come gli altri.** Dalla 0.7.2 la galleria che
+   * si vede da fuori mostra a ognuno le sue cose, e «le sue» ha bisogno di un
+   * padrone scritto da qualche parte. Sta nel `.json` accanto al file, insieme
+   * al resto dei parametri: cosi' non c'e' un secondo elenco da tenere
+   * allineato, e una cosa spostata a mano si porta dietro il suo autore.
+   *
+   * Quello che c'era prima della 0.7.2 non ha nessun autore scritto, ed e'
+   * giusto che risulti del computer: e' li' che e' stato fatto.
+   */
+  padrone(elemento: ElementoLibreria): string {
+    const chi = elemento.meta?.["chi"];
+    return typeof chi === "string" && chi ? chi : PADRONE_DI_CASA;
+  }
+
+  /** Vero se questa cosa l'ha messa in bacheca chi l'ha fatta. */
+  inBacheca(elemento: ElementoLibreria): boolean {
+    return elemento.meta?.["pubblicato"] === true;
+  }
+
+  /**
+   * Da' un nome a una cosa appena prodotta, e dice di chi e'.
+   *
+   * **Il difetto che cura**, detto il 22 agosto 2026: «facciamo attenzione ai
+   * nomi, spesso i file vengono salvati con nomi diversi; si devono chiamare e
+   * apparire nelle interfacce come il prompt usato». Ed era vero: il motore
+   * scriveva `daprod_00042_.png`, e quel numero era l'unica cosa che si leggeva
+   * in galleria, sul telefono e nella cartella.
+   *
+   * Adesso il file **si chiama** come quello che e' stato chiesto — non
+   * un'etichetta in un archivio: aprendo la cartella si legge la stessa cosa —
+   * e accanto resta scritto chi l'ha chiesto e con che parole esatte.
+   */
+  intitola(
+    id: string,
+    dati: { titolo: string; chi?: string; chiNome?: string; extra?: Record<string, unknown> },
+  ): ElementoLibreria | null {
+    const elemento = this.trova(id);
+    if (!elemento) return null;
+
+    const titolo = unaRiga(dati.titolo);
+    const meta: Record<string, unknown> = {
+      ...(elemento.meta ?? {}),
+      ...(dati.extra ?? {}),
+      titolo,
+      // Il prompt intero resta scritto: il nome del file lo taglia a ottanta
+      // battute, e la descrizione vera puo' essere lunga il triplo.
+      testo: dati.titolo.trim() || titolo,
+    };
+    if (dati.chi) meta["chi"] = dati.chi;
+    if (dati.chiNome) meta["chiNome"] = dati.chiNome;
+
+    writeFileSync(
+      senzaEstensione(elemento.percorso) + ".json",
+      JSON.stringify(meta, null, 1),
+      "utf8",
+    );
+    // Prima i metadati, poi il nome: `rinomina` si porta dietro il `.json`, e
+    // scriverlo dopo vorrebbe dire scriverlo accanto a un file che non c'e'
+    // piu'.
+    return this.rinomina(id, titolo) ?? this.trova(id) ?? null;
+  }
+
+  /**
+   * Mette una cosa in bacheca, o la toglie. Solo chi l'ha fatta.
+   *
+   * La bacheca e' l'unico modo in cui una persona vede il lavoro di un'altra:
+   * senza, ognuno vede le sue e basta. E' una decisione di chi ha generato, e
+   * per questo il controllo sta qui e non nell'interfaccia.
+   */
+  pubblica(id: string, chi: string, pubblicato: boolean): boolean {
+    const elemento = this.trova(id);
+    if (!elemento) return false;
+    if (this.padrone(elemento) !== chi) return false;
+
+    const meta = { ...(elemento.meta ?? {}), pubblicato };
     writeFileSync(
       senzaEstensione(elemento.percorso) + ".json",
       JSON.stringify(meta, null, 1),
@@ -219,6 +334,28 @@ class Libreria extends EventEmitter {
     this.segnalaNovita();
     return true;
   }
+}
+
+/**
+ * Un prompt ridotto a un nome di file leggibile.
+ *
+ * Non e' una ripulitura qualunque: e' quello che si legge in galleria, sul
+ * telefono e nella cartella. Si toglie quello che Windows non accetta, si
+ * schiacciano gli a capo, e si taglia a ottanta battute su un confine di
+ * parola - «un faro sulla scogliera al…» si legge, «un faro sulla scogl» no.
+ */
+function unaRiga(testo: string): string {
+  const pulito = testo.replace(/\s+/gu, " ").replace(NOME_PULITO, "").trim();
+  if (!pulito) return "senza nome";
+  if (pulito.length <= 80) return pulito;
+  const tagliato = pulito.slice(0, 80);
+  const spazio = tagliato.lastIndexOf(" ");
+  return (spazio > 40 ? tagliato.slice(0, spazio) : tagliato).trim();
+}
+
+/** Il valore se è una stringa con dentro qualcosa, altrimenti niente. */
+function daLeggere(valore: unknown): string | undefined {
+  return typeof valore === "string" && valore.trim() ? valore.trim() : undefined;
 }
 
 function senzaEstensione(percorso: string): string {
@@ -304,11 +441,27 @@ function leggiMeta(file: string): Record<string, unknown> | undefined {
   }
 }
 
-/** Titolo scritto nei metadati, se c'è: è meglio del nome del file. */
+/**
+ * Come si chiama una cosa, per chi la guarda.
+ *
+ * Prima si guardava solo `titolo`, e chi non ce l'aveva restava
+ * `daprod_00048_` — che è il nome che dà il motore, e non dice niente. Adesso,
+ * se il titolo non c'è, **vale quello che è stato chiesto**: il testo scritto
+ * dalla persona, la descrizione, il prompt.
+ *
+ * Vale anche per quello che c'era prima della 0.7.2: i parametri accanto ai
+ * file li scrivevano già le schede, quindi novantaquattro immagini fatte ieri
+ * hanno smesso di chiamarsi con un numero senza che nessuno rinominasse niente.
+ */
 function leggiTitolo(file: string): string | undefined {
   const meta = leggiMeta(file);
-  const titolo = meta?.["titolo"] ?? meta?.["title"];
-  return typeof titolo === "string" && titolo.trim() ? titolo.trim() : undefined;
+  const scritto =
+    daLeggere(meta?.["titolo"]) ??
+    daLeggere(meta?.["title"]) ??
+    daLeggere(meta?.["testo"]) ??
+    daLeggere(meta?.["descrizione"]) ??
+    daLeggere(meta?.["prompt"]);
+  return scritto ? unaRiga(scritto) : undefined;
 }
 
 export const libreria = new Libreria();

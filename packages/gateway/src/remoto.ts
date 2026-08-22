@@ -11,14 +11,16 @@
  * - il token identifica il dispositivo, e revocarlo ne chiude l'accesso.
  */
 
-import { Archivio, cartellaRisultati } from "./archivio";
+import { Archivio, cartellaInvii, cartellaRisultati } from "./archivio";
 import { nuovoCodice, nuovoId, nuovoToken } from "./casuale";
 import type {
   Dispositivo,
+  Invio,
   Invito,
   Notifica,
   Richiesta,
   Risultato,
+  Ruolo,
   StatoRichiesta,
 } from "./types";
 
@@ -37,6 +39,8 @@ const TENTATIVI_AL_MINUTO = 10;
 
 export class Remoto {
   readonly risultatiDir: string;
+  /** Dove finiscono i file mandati a mano a qualcuno. */
+  readonly inviiDir: string;
 
   /** Quando sono stati fatti i tentativi di accoppiamento andati male. */
   private tentativi: number[] = [];
@@ -57,6 +61,7 @@ export class Remoto {
     rootRisultati: string,
   ) {
     this.risultatiDir = cartellaRisultati(rootRisultati);
+    this.inviiDir = cartellaInvii(rootRisultati);
   }
 
   /** L'archivio sottostante: per chi deve leggere richieste e dispositivi. */
@@ -220,6 +225,32 @@ export class Remoto {
     return true;
   }
 
+  /**
+   * Cambia cosa puo' fare un collegato: decidere tutto, oppure solo chiedere.
+   *
+   * **Perche' non basta piu' il ruolo dell'invito.** Fino alla 0.7.1 lo si
+   * sceglieva una volta sola, al momento di inquadrare il QR: uno che si era
+   * collegato come ospite restava ospite per sempre, e l'unico modo di
+   * promuoverlo era scollegarlo e rifargli l'accoppiamento. Con piu' persone in
+   * casa e' il gesto che serve piu' spesso, ed e' quello che rende vera la
+   * differenza fra i due ruoli - vedi `creaRichiesta`.
+   */
+  cambiaRuolo(id: string, ruolo: Ruolo): boolean {
+    const dispositivo = this.archivio.datiCorrenti.dispositivi.find((d) => d.id === id);
+    if (!dispositivo) return false;
+    dispositivo.ruolo = ruolo;
+    this.archivio.salva();
+    this.notifica({
+      dispositivoId: dispositivo.id,
+      titolo: ruolo === "admin" ? "Adesso puoi decidere" : "Adesso puoi chiedere",
+      corpo:
+        ruolo === "admin"
+          ? "Quello che chiedi parte da solo, e puoi dire si' o no alle richieste degli altri."
+          : "Quello che chiedi va a chi sta al computer, che decide se farlo.",
+    });
+    return true;
+  }
+
   listaDispositivi(): Dispositivo[] {
     this.spazzaInviti();
     return [...this.archivio.datiCorrenti.dispositivi];
@@ -235,6 +266,19 @@ export class Remoto {
     daDispositivo: Dispositivo;
   }): Richiesta {
     const dati = this.archivio.datiCorrenti;
+    /**
+     * **La differenza fra chi decide e chi chiede, ed e' l'unica.**
+     *
+     * Detta il 22 agosto 2026: «gli admin possono generare automaticamente
+     * tutto, gli utenti possono mandare richieste, questa e' l'unica
+     * differenza». Quindi una richiesta di chi decide nasce gia' accettata e va
+     * in fila da sola; quella di chi chiede aspetta un si'.
+     *
+     * La fila resta una sola e resta seria: accettata non vuol dire «adesso»,
+     * vuol dire «quando tocca a te». Su otto GB di scheda video ci sta un
+     * modello per volta, e questo non cambia con il ruolo di chi ha chiesto.
+     */
+    const decide = opzioni.daDispositivo.ruolo === "admin";
     const richiesta: Richiesta = {
       id: nuovoId("r"),
       tipo: opzioni.tipo,
@@ -243,11 +287,18 @@ export class Remoto {
       opzioni: opzioni.opzioni,
       daDispositivo: opzioni.daDispositivo.id,
       daNome: opzioni.daDispositivo.nome,
-      stato: "in-attesa",
+      stato: decide ? "accettata" : "in-attesa",
       quando: Date.now(),
     };
     dati.richieste.push(richiesta);
     this.archivio.salva();
+
+    if (decide) {
+      // Nessuna notifica a nessuno: l'ha chiesta chi poteva gia' dire di si', e
+      // dirglielo sarebbe raccontargli quello che ha appena fatto.
+      for (const fn of this.accettatori) fn(richiesta);
+      return richiesta;
+    }
 
     // Chi decide deve saperlo. Se l'admin è un telefono in tasca, questa è
     // l'unica cosa che gli dice che c'è qualcosa da guardare; se l'admin è il
@@ -262,6 +313,157 @@ export class Remoto {
       });
     }
     return richiesta;
+  }
+
+  /**
+   * Riscrive il testo di una richiesta ferma, prima di farla partire.
+   *
+   * Due strade, e la seconda e' il motivo per cui esiste la prima: **a mano**,
+   * perche' chi sta al PC vede subito che «un gatto» non dara' mai niente di
+   * buono, e **con il modello**, che quella stessa frase la apre in una
+   * descrizione fatta come si deve. In tutti e due i casi si tiene da parte
+   * com'era scritta: chi ha chiesto deve poter vedere cos'e' cambiato.
+   *
+   * Solo su una richiesta che non e' ancora partita: riscrivere il testo di un
+   * lavoro gia' in corso vorrebbe dire raccontare una cosa diversa da quella
+   * che la scheda sta facendo davvero.
+   */
+  riscrivi(id: string, da: Dispositivo, testo: string, chi: "mano" | "ai"): string | null {
+    if (da.ruolo !== "admin") return "Questo lo puo' fare solo chi ha il permesso di decidere.";
+    const richiesta = this.richiesta(id);
+    if (!richiesta) return "Richiesta non trovata.";
+    if (richiesta.stato !== "in-attesa") return "Si puo' riscrivere solo una richiesta ancora ferma.";
+    const pulito = testo.trim();
+    if (!pulito) return "Il testo non puo' restare vuoto.";
+
+    if (!richiesta.testoOriginale) richiesta.testoOriginale = richiesta.testo;
+    richiesta.testo = pulito.slice(0, 4000);
+    richiesta.riscrittaDa = chi;
+    /**
+     * Le opzioni viaggiano con la richiesta e sono quelle che la scheda legge:
+     * se il testo principale resta anche li' dentro, la scheda userebbe quello
+     * vecchio e la riscrittura non servirebbe a niente.
+     */
+    if (richiesta.opzioni) {
+      for (const campo of ["prompt", "testo", "descrizione"]) {
+        if (campo in richiesta.opzioni) delete richiesta.opzioni[campo];
+      }
+    }
+    this.archivio.salva();
+    return null;
+  }
+
+  /**
+   * Mette via una richiesta, o la butta.
+   *
+   * `archiviata` la toglie dalla lista senza toccare il file; cancellare la fa
+   * sparire dall'archivio. Ognuno puo' farlo con le proprie; chi decide anche
+   * con quelle degli altri - e' lui che si ritrova la lista lunga.
+   *
+   * **Mettere via si puo' solo a lavoro finito, buttare sempre.** Non e' una
+   * distinzione da pignoli: una richiesta puo' restare «in lavorazione» per
+   * sempre se la suite viene chiusa mentre generava, e se anche buttarla
+   * volesse un lavoro finito quella riga non se ne andrebbe piu'. Visto sul PC
+   * vero il 22 agosto 2026: due lavori fermi li' da ore, e nessun modo di
+   * toglierli.
+   */
+  metti(id: string, da: Dispositivo, come: "archivia" | "cancella"): string | null {
+    const dati = this.archivio.datiCorrenti;
+    const richiesta = this.richiesta(id);
+    if (!richiesta) return "Richiesta non trovata.";
+    if (da.ruolo !== "admin" && richiesta.daDispositivo !== da.id) {
+      return "Puoi togliere solo le tue.";
+    }
+    if (come === "archivia") {
+      const lavora =
+        richiesta.stato === "in-attesa" ||
+        richiesta.stato === "accettata" ||
+        richiesta.stato === "in-lavoro";
+      if (lavora) return "Questa sta ancora lavorando: aspetta che finisca, o dille di no.";
+      richiesta.stato = "archiviata";
+    } else {
+      dati.richieste = dati.richieste.filter((r) => r.id !== id);
+      dati.notifiche = dati.notifiche.filter((n) => n.richiestaId !== id);
+    }
+    this.archivio.salva();
+    return null;
+  }
+
+  /* ------------------------------------------------------------ i regali */
+
+  /**
+   * Registra un file mandato a una persona, e glielo dice.
+   *
+   * Il file l'ha gia' scritto su disco chi ha ricevuto l'invio: qui si tiene il
+   * conto di chi e', e si accende la notifica. E' quella che sul telefono fa
+   * comparire il pacco.
+   */
+  regala(opzioni: {
+    a: string;
+    daNome: string;
+    nome: string;
+    mime: string;
+    bytes: number;
+    percorso: string;
+    messaggio?: string;
+  }): Invio | { errore: string } {
+    const dati = this.archivio.datiCorrenti;
+    const a = dati.dispositivi.find((d) => d.id === opzioni.a);
+    if (!a) return { errore: "Questa persona non e' piu' collegata." };
+
+    const invio: Invio = {
+      id: nuovoId("i"),
+      aDispositivo: a.id,
+      daNome: opzioni.daNome,
+      nome: opzioni.nome,
+      mime: opzioni.mime,
+      bytes: opzioni.bytes,
+      percorso: opzioni.percorso,
+      messaggio: opzioni.messaggio,
+      quando: Date.now(),
+      aperto: false,
+    };
+    dati.invii.push(invio);
+    this.archivio.salva();
+
+    this.notifica({
+      dispositivoId: a.id,
+      titolo: "Hai ricevuto qualcosa",
+      corpo: `${opzioni.daNome} ti ha mandato "${opzioni.nome}".`,
+    });
+    return invio;
+  }
+
+  /** I regali di un dispositivo, dal piu' recente. */
+  inviiDi(dispositivo: Dispositivo): Invio[] {
+    return this.archivio.datiCorrenti.invii
+      .filter((i) => i.aDispositivo === dispositivo.id)
+      .sort((a, b) => b.quando - a.quando);
+  }
+
+  /** Un regalo dal suo id, ma solo se e' di chi lo chiede. */
+  invio(id: string, dispositivo: Dispositivo): Invio | undefined {
+    const trovato = this.archivio.datiCorrenti.invii.find((i) => i.id === id);
+    return trovato && trovato.aDispositivo === dispositivo.id ? trovato : undefined;
+  }
+
+  /** Segna che il pacco e' stato aperto: l'animazione non si rifa' ogni volta. */
+  apri(id: string, dispositivo: Dispositivo): boolean {
+    const invio = this.invio(id, dispositivo);
+    if (!invio) return false;
+    invio.aperto = true;
+    this.archivio.salva();
+    return true;
+  }
+
+  /** Toglie un regalo dall'elenco. Torna quello tolto, per cancellarne il file. */
+  scordaInvio(id: string, dispositivo: Dispositivo): Invio | null {
+    const invio = this.invio(id, dispositivo);
+    if (!invio) return null;
+    const dati = this.archivio.datiCorrenti;
+    dati.invii = dati.invii.filter((i) => i.id !== id);
+    this.archivio.salva();
+    return invio;
   }
 
   /** Le richieste visibili a un dispositivo: l'admin vede tutto, l'ospite le sue. */

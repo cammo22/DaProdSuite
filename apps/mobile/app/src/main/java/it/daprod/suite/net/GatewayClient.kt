@@ -158,6 +158,16 @@ class GatewayClient(
         prendi(a("/libreria/file/${percorsoSicuro(id)}"))
     }
 
+    /**
+     * Scarica un regalo: un file che una persona ti ha mandato dal computer.
+     *
+     * Non e' roba della libreria e non e' il risultato di una richiesta: e'
+     * qualcosa che ti hanno dato, e il gateway lo lascia prendere solo a te.
+     */
+    suspend fun scaricaRegalo(id: String): ByteArray = withContext(Dispatchers.IO) {
+        prendi(a("/invii/${percorsoSicuro(id)}/file"))
+    }
+
     private fun prendi(url: String): ByteArray {
         val req = conToken().url(url).build()
         condiviso.newCall(req).execute().use { res ->

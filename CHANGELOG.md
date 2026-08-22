@@ -10,6 +10,168 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ---
 
+## 0.7.2 — Ognuno le sue cose, e il menu quando arriva una richiesta
+
+**22 agosto 2026.** La 0.7.1 funziona: il telefono chiede, il computer fa, il
+file torna indietro. Questa release è tutta rifinitura di quel giro — quello che
+si vede solo dopo averlo usato per davvero, con più di una persona collegata.
+
+---
+
+### Ognuno vede le sue cose
+
+Fino a ieri la galleria era di tutti: chiunque fosse collegato vedeva quello che
+avevano fatto gli altri, e poteva scaricarselo. Adesso no.
+
+**Ogni cosa prodotta sa chi l'ha chiesta.** In galleria ci sono due tasti in
+cima: **le mie cose** e **in bacheca**. Le tue le vedi solo tu. Quello che vuoi
+far vedere lo metti in bacheca, e lì compare **con scritto chi l'ha fatto** —
+che era la ragione di tutto: vedere chi ha fatto quale immagine, ordinati.
+
+Vale anche per chi può decidere: il permesso è sulla fila dei lavori, non sulle
+cose degli altri.
+
+Non è solo l'elenco: **anche il file** adesso esce solo per chi ne ha diritto.
+Prima bastava indovinare il nome.
+
+Quello che c'era prima di questa versione risulta del computer, ed è giusto: è
+lì che è stato fatto.
+
+### Chi decide e chi chiede, ed è l'unica differenza
+
+**Chi decide genera subito**: quello che chiede parte da solo, senza aspettare
+il proprio sì. **Chi chiede** manda una richiesta e aspetta.
+
+Il permesso adesso si cambia da DaProdConnessione, con un tasto sulla riga della
+persona: prima si sceglieva una volta sola inquadrando il QR, e per promuovere
+qualcuno bisognava scollegarlo e rifargli tutto l'accoppiamento.
+
+La fila resta una sola e resta seria: accettata non vuol dire «adesso», vuol
+dire «quando tocca a te». Su otto GB di scheda video ci sta un modello per
+volta, e questo non cambia con il ruolo di chi ha chiesto.
+
+### Il menu quando arriva una richiesta
+
+Sotto una richiesta ferma non ci sono più «sì» e «no». C'è **che ne faccio?**, e
+dentro quattro cose:
+
+- **fallo così com'è**;
+- **fallo scrivere meglio, poi fallo** — il modello riapre la richiesta in una
+  descrizione fatta come si deve, e poi parte;
+- **scrivila io** — la casella si apre già piena di quello che aveva scritto
+  l'altro, e poi scegli: mandala così, o mandala con l'AI;
+- **no**, con la ragione, che arriva a chi aveva chiesto.
+
+Se una richiesta è stata riscritta, sotto resta scritto **com'era arrivata**: chi
+chiede una cosa e ne riceve un'altra deve poter vedere cos'è successo.
+
+**L'AI non parte mai da sola**, ed è voluto. Il modello che scrive e il modello
+che genera vivono sulla stessa scheda: quattro GB e mezzo occupati per riscrivere
+una frase sono quattro GB e mezzo in meno per la generazione. Si accende quando
+premi, con i suoi 64K di contesto, e LM Studio lo lascia andare appena ha
+finito.
+
+Lo stesso tasto — **fallo scrivere meglio** — sta anche sotto la casella quando
+sei tu a chiedere qualcosa, e vale su tutte le schede: alla foto scrive da
+direttore della fotografia, al brano da produttore, alla voce sistema il testo
+perché si legga bene ad alta voce.
+
+### I file si chiamano come quello che hai chiesto
+
+«Spesso i file vengono salvati con nomi diversi.» Era vero: il motore scriveva
+`daprod_00042_.png`, e quel numero era l'unica cosa che si leggeva in galleria,
+sul telefono e nella cartella.
+
+Adesso quello che esce da una richiesta **si chiama come il prompt**, e non è
+un'etichetta in un archivio: aprendo la cartella si legge la stessa cosa. Anche
+quello che scarichi dal telefono arriva con quel nome.
+
+Quello che generi tu, stando al computer, in galleria si legge come quello che
+hai scritto; il file sul disco tiene il nome del motore. È una scelta prudente e
+va detta: rinominarlo mentre la scheda ce l'ha ancora in mano vuol dire
+anteprime che si rompono.
+
+### Dal telefono si sceglie il modello, e ci sono i tuoi soliti
+
+Chiedere un'immagine dal telefono adesso vuol dire poter dire **con che
+modello**: Anima, Anima v2, FLUX.2 Klein 4B o 9B. Lo stesso per i video (LTX 2.5
+o MiniMax H3) e per i brani. Vuoto vuol dire «quello scelto adesso sul
+computer», che resta il caso normale.
+
+Nel menu si legge come si chiama il modello, non il suo id.
+
+E ci sono **i tuoi soliti**: un modo di generare si salva con un nome e si
+ritrova nel modulo, anche dal telefono. Stanno sul computer e non nel browser,
+che è la ragione per cui prima gli stili salvati in una scheda non li vedeva
+nessun altro.
+
+### Mandare un file a una persona
+
+Da DaProdConnessione, **trascina un file sul nome di chi è collegato e glielo
+mandi**. Con la barra che dice a che punto è, perché su un video da cento MB una
+pagina ferma sembra rotta.
+
+A chi lo riceve arriva la notifica sul telefono, e il pacco **si apre in mezzo
+allo schermo**, una volta sola. Dentro c'è l'anteprima, se è roba che si può
+guardare, e il tasto per tenerlo.
+
+### I lavori si mettono via
+
+Tre pile in cima ai lavori: **adesso**, **finiti**, **messi via**. Quelli finiti
+si archiviano con un tasto, o si buttano. Anche le cose in galleria si buttano,
+ma solo le proprie.
+
+---
+
+### Cosa è stato provato davvero
+
+Sul PC di casa, con la suite vera accesa e un secondo dispositivo collegato per
+finta (un programma che si accoppia come farebbe un telefono):
+
+- **il giro intero**: un dispositivo chiede un'immagine **con FLUX.2 Klein 4B**,
+  chi sta al PC accetta, DaProdFoto si apre, sceglie quel modello e genera. Cento
+  secondi dopo il file c'è, **si chiama «un faro sulla scogliera al tramonto,
+  luce calda»**, ed è di chi l'aveva chiesto — che nella sua galleria lo vede, e
+  in quella di chi sta al PC no;
+- **il pacco**: mandato, arrivato, notificato, aperto con la sua animazione,
+  scaricato e buttato;
+- i permessi della libreria, la bacheca, il cambio di permesso, i preset, la
+  riscrittura a mano e quella del modello.
+
+**Il tasto dell'AI ci mette un minuto o due.** Provato: Bonsai si carica a 64K,
+ragiona, e risponde in circa cento secondi la prima volta. Non è un difetto ed è
+il prezzo di un 27B su una scheda da 8 GB — ma è bene saperlo prima di premere.
+Mentre lavora il tasto lo dice.
+
+### Cosa **non** è a posto, e va detto
+
+- **Due telefoni veri accesi insieme non li ha ancora visti nessuno.** Il
+  secondo dispositivo delle prove era un programma, non una persona: quello che
+  non è passato per mani vere è l'animazione del pacco su Android e il
+  trascinamento di un file da una cartella di Windows.
+- **Il tasto dell'AI vuole LM Studio acceso.** Se non c'è, il tasto è spento e
+  dice perché, ma il modello non si accende da solo.
+- **La bacheca non ha niente di social oltre a questo**: non ci sono cuori, non
+  ci sono commenti, e non è previsto che ci siano. Serve a vedere chi ha fatto
+  cosa, ordinati.
+- Un file mandato a una persona non può superare i **512 MB**.
+- **DaProdVoce non sceglie il modello da fuori**: sceglie la voce, che è la cosa
+  che ha.
+
+### Due cose viste guardando, e sistemate
+
+- **I lavori rimasti a mezz'aria.** Sul PC c'erano due richieste ferme su «ci sta
+  lavorando» da ore: la suite era stata chiusa mentre generava, e la fila vive in
+  memoria. Adesso all'avvio si chiudono da sole, dicendolo a chi le aspettava. E
+  **buttare una richiesta si può sempre**, anche una che dice di star lavorando:
+  se no quella riga non se ne andava più.
+- **I nomi delle cose fatte prima.** Le novantaquattro immagini già in libreria
+  si chiamavano `daprod_00048_`. Adesso si leggono col prompt che le ha fatte,
+  senza che nessuno abbia rinominato niente: i parametri accanto ai file
+  c'erano già, bastava guardarli.
+
+---
+
 ## 0.7.1 — Il tasto del firewall funziona
 
 **22 agosto 2026.** Tre cose viste subito dopo aver pubblicato la 0.7.0.

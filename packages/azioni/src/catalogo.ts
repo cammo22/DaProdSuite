@@ -19,6 +19,68 @@ export const APP_REMOTE = ["foto", "cinema", "musica", "voce"] as const;
 /** Quanto può essere lungo un prompt che arriva da fuori. */
 const PROMPT_MAX = 2000;
 
+/**
+ * I modelli fra cui si sceglie, scheda per scheda.
+ *
+ * **Perché stanno qui.** Chiesto il 22 agosto 2026: «l'app android deve poter
+ * scegliere i vari modelli della suite». Un elenco dentro l'app Android
+ * sarebbe la seconda verità sui modelli, e la prima a divergere il giorno che
+ * ne entra uno nuovo; questo file invece lo leggono già tutti e quattro i
+ * clienti. Aggiungere un modello a una scheda vuol dire aggiungere una riga
+ * qui, e compare da sola sul telefono, nella console e per l'agente.
+ *
+ * Gli id sono quelli veri delle schede (`MODELLI` in `grafi.js`): se qui ne
+ * comparisse uno che la scheda non conosce, la generazione partirebbe con il
+ * modello sbagliato senza dirlo a nessuno. Per questo c'è una prova che li
+ * confronta uno per uno — `apps/shell/scripts/prova-azioni.mjs`.
+ *
+ * Lasciare vuoto il campo vuol dire **quello che è scelto adesso sul PC**: chi
+ * chiede da fuori non è tenuto a sapere che modelli ci sono.
+ */
+const MODELLI_FOTO = {
+  scelte: ["anima", "anima2", "flux2-4b", "flux2-9b"],
+  etichette: {
+    anima: "Anima — pronta, veloce",
+    anima2: "Anima v2 — anime e illustrazione",
+    "flux2-4b": "FLUX.2 Klein 4B — leggero",
+    "flux2-9b": "FLUX.2 Klein 9B — il più bravo con le descrizioni lunghe",
+  },
+} as const;
+
+const MODELLI_CINEMA = {
+  scelte: ["ltx25", "h3"],
+  etichette: {
+    ltx25: "LTX 2.5 — video e suono insieme",
+    h3: "MiniMax H3 — parte da immagini di riferimento",
+  },
+} as const;
+
+const MODELLI_MUSICA = {
+  scelte: ["ace-turbo", "ace-xl-turbo", "migliore"],
+  etichette: {
+    "ace-turbo": "ACE-Step Turbo — otto passi, il più veloce",
+    "ace-xl-turbo": "ACE-Step XL — più grande, più lento",
+    migliore: "MiniMax Music 3 — il più bello, il più lento",
+  },
+} as const;
+
+/** Il campo «con cosa lo faccio», uguale in tutte le schede che scelgono. */
+function campoModello(quali: {
+  readonly scelte: readonly string[];
+  readonly etichette: Readonly<Record<string, string>>;
+}) {
+  return {
+    nome: "modello",
+    etichetta: "Con che modello",
+    descrizione: "Vuoto vuol dire: quello scelto adesso sul computer.",
+    tipo: "scelta",
+    obbligatorio: false,
+    scelte: quali.scelte,
+    etichette: quali.etichette,
+    vuoto: "\u2014 quello scelto sul computer \u2014",
+  } as const;
+}
+
 export const AZIONI: readonly Azione[] = [
   /* ------------------------------------------------------------ generare */
 
@@ -61,6 +123,7 @@ export const AZIONI: readonly Azione[] = [
         max: 4,
         predefinito: 1,
       },
+      campoModello(MODELLI_FOTO),
     ],
   },
 
@@ -95,6 +158,7 @@ export const AZIONI: readonly Azione[] = [
         max: 10,
         predefinito: 5,
       },
+      campoModello(MODELLI_CINEMA),
     ],
   },
 
@@ -137,6 +201,7 @@ export const AZIONI: readonly Azione[] = [
         max: 240,
         predefinito: 60,
       },
+      campoModello(MODELLI_MUSICA),
     ],
   },
 
@@ -274,7 +339,13 @@ export const AZIONI: readonly Azione[] = [
         descrizione: "La decisione.",
         tipo: "scelta",
         obbligatorio: true,
-        scelte: ["accettata", "in-lavoro", "scartata"],
+        scelte: ["accettata", "in-lavoro", "scartata", "archiviata"],
+        etichette: {
+          accettata: "Fallo",
+          "in-lavoro": "Segnala come in lavorazione",
+          scartata: "No",
+          archiviata: "Mettila via",
+        },
       },
       {
         nome: "motivo",
@@ -317,6 +388,16 @@ export const AZIONI: readonly Azione[] = [
     ],
   },
 ] as const;
+
+/**
+ * I modelli dichiarati, scheda per scheda: li legge la prova che li confronta
+ * con quelli veri delle schede.
+ */
+export const MODELLI_DICHIARATI: Readonly<Record<string, readonly string[]>> = {
+  foto: MODELLI_FOTO.scelte,
+  cinema: MODELLI_CINEMA.scelte,
+  musica: MODELLI_MUSICA.scelte,
+};
 
 /** Un'azione dal suo id, se esiste. */
 export function azione(id: string): Azione | undefined {

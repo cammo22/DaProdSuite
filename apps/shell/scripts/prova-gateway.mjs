@@ -38,20 +38,73 @@ writeFileSync(join(remoto.risultatiDir, "finto.png"), "non e' davvero un png");
 const cartellaLibreria = join(radice, "libreria");
 mkdirSync(cartellaLibreria, { recursive: true });
 writeFileSync(join(cartellaLibreria, "quadro.png"), "abcdefghijklmnopqrst");
+/**
+ * Chi possiede il quadro finto, e se sta in bacheca.
+ *
+ * Dalla 0.7.2 la libreria non è più di tutti: ognuno vede le sue cose, e degli
+ * altri vede solo quello che gli altri hanno messo in mostra. Qui si finge
+ * esattamente quella regola, perché è quella che va provata — un permesso che
+ * non scatta non rompe niente, apre.
+ */
+let padroneQuadro = "nessuno";
+let quadroInBacheca = false;
+
+const voceQuadro = () => ({
+  id: "foto/quadro.png",
+  nome: "quadro.png",
+  tipo: "immagine",
+  app: "foto",
+  creato: 1_700_000_000_000,
+  bytes: 20,
+  mime: "image/png",
+  chi: padroneQuadro,
+  chiNome: "chi l'ha fatto",
+  pubblicato: quadroInBacheca,
+});
+
 const fintaLibreria = {
-  elenco: () => [{
-    id: "foto/quadro.png",
-    nome: "quadro.png",
-    tipo: "immagine",
-    app: "foto",
-    creato: 1_700_000_000_000,
-    bytes: 20,
-    mime: "image/png",
-  }],
-  file: (id) =>
-    id === "foto/quadro.png"
+  elenco: ({ chi, dove }) => {
+    const mio = padroneQuadro === chi;
+    const siVede = dove === "bacheca" ? quadroInBacheca : mio;
+    return siVede ? [{ ...voceQuadro(), mia: mio }] : [];
+  },
+  file: (id, chi) =>
+    id === "foto/quadro.png" && (padroneQuadro === chi || quadroInBacheca)
       ? { percorso: join(cartellaLibreria, "quadro.png"), nome: "quadro.png", mime: "image/png", bytes: 20 }
       : null,
+  pubblica: (id, chi, pubblicato) => {
+    if (id !== "foto/quadro.png" || padroneQuadro !== chi) return false;
+    quadroInBacheca = pubblicato;
+    return true;
+  },
+  elimina: (id, chi) => id === "foto/quadro.png" && padroneQuadro === chi,
+};
+
+/** Un finto modello che scrive: non serve LM Studio per provare le rotte. */
+let aiSpenta = false;
+const fintaAi = {
+  disponibile: async () => (aiSpenta ? "LM Studio non risponde." : null),
+  migliora: async ({ testo, app }) => {
+    if (aiSpenta) throw new Error("LM Studio non risponde.");
+    return `[${app}] ${testo}, scritto meglio`;
+  },
+};
+
+/** I preset, tenuti in memoria per la durata della prova. */
+const fintiPreset = [];
+const fintoPreset = {
+  elenco: (app) => fintiPreset.filter((x) => !app || x.app === app),
+  salva: (preset) => {
+    const nuovo = { ...preset, id: "p" + (fintiPreset.length + 1), quando: Date.now() };
+    fintiPreset.push(nuovo);
+    return nuovo;
+  },
+  elimina: (id, chi) => {
+    const dentro = fintiPreset.findIndex((x) => x.id === id && (!x.chi || x.chi === chi));
+    if (dentro < 0) return false;
+    fintiPreset.splice(dentro, 1);
+    return true;
+  },
 };
 
 let eseguite = [];
@@ -67,6 +120,8 @@ const gateway = new G.Gateway({
     coda: { attesa: 0, lavoro: 0, pronte: 0 },
   }),
   libreria: fintaLibreria,
+  ai: fintaAi,
+  preset: fintoPreset,
   pannello: {
     stato: (d) => ({
       computer: "PC-DI-PROVA",
@@ -298,6 +353,12 @@ console.log("\n— chi sono —");
 
 console.log("\n— la libreria —");
 {
+  // Da qui in poi il quadro finto è del telefono: è quello che rende vere le
+  // prove dei permessi qui sotto.
+  const io = await chiama("/io", { token: tokenOspite });
+  padroneQuadro = io.dati.id;
+}
+{
   const r = await chiama("/libreria", { token: tokenOspite });
   dice("l'elenco arriva", r.stato === 200 && r.dati.voci.length === 1, `→ ${r.testo}`);
   dice("con il tipo MIME", r.dati.voci[0].mime === "image/png");
@@ -327,6 +388,263 @@ console.log("\n— la libreria —");
 {
   const r = await fetch(base + "/libreria/file/" + encodeURIComponent("foto/quadro.png"));
   dice("senza token il file non esce", r.status === 401, `→ ${r.status}`);
+}
+
+console.log("\n— ognuno vede le sue —");
+{
+  const suo = await chiama("/libreria", { token: tokenOspite });
+  dice("il padrone la vede", suo.dati.voci.length === 1 && suo.dati.voci[0].mia === true);
+  const altro = await chiama("/libreria", { token: tokenAdmin });
+  dice("un altro no", altro.dati.voci.length === 0, `→ ${altro.dati.voci.length}`);
+}
+{
+  const r = await fetch(base + "/libreria/file/" + encodeURIComponent("foto/quadro.png"), {
+    headers: { Authorization: "Bearer " + tokenAdmin },
+  });
+  dice("e non ne prende nemmeno il file", r.status === 404, `→ ${r.status}`);
+}
+{
+  const r = await chiama("/libreria/" + encodeURIComponent("foto/quadro.png") + "/pubblica", {
+    metodo: "POST", token: tokenAdmin, corpo: { pubblicato: true },
+  });
+  dice("in bacheca ce la mette solo chi l'ha fatta", r.stato === 403, `→ ${r.stato}`);
+}
+{
+  const r = await chiama("/libreria/" + encodeURIComponent("foto/quadro.png") + "/pubblica", {
+    metodo: "POST", token: tokenOspite, corpo: { pubblicato: true },
+  });
+  dice("il padrone la mette in bacheca", r.stato === 200 && quadroInBacheca === true);
+  const altro = await chiama("/libreria?dove=bacheca", { token: tokenAdmin });
+  dice("e adesso la vedono tutti", altro.dati.voci.length === 1, `→ ${altro.dati.voci.length}`);
+  dice("con scritto di chi è", altro.dati.voci[0].chiNome === "chi l'ha fatto");
+  dice("ma non è sua", altro.dati.voci[0].mia === false);
+  const file = await fetch(base + "/libreria/file/" + encodeURIComponent("foto/quadro.png"), {
+    headers: { Authorization: "Bearer " + tokenAdmin },
+  });
+  dice("e il file adesso esce", file.status === 200, `→ ${file.status}`);
+}
+{
+  const r = await chiama("/libreria/" + encodeURIComponent("foto/quadro.png"), {
+    metodo: "DELETE", token: tokenAdmin,
+  });
+  dice("buttarla la può solo chi l'ha fatta", r.stato === 403, `→ ${r.stato}`);
+}
+
+console.log("\n— chi decide genera subito —");
+{
+  const prima = (await chiama("/richieste", { token: tokenAdmin })).dati.length;
+  const r = await chiama("/azioni/genera.immagine", {
+    metodo: "POST", token: tokenAdmin, corpo: { prompt: "una barca all'alba" },
+  });
+  dice("la richiesta di chi decide nasce accettata", r.dati?.richiesta?.stato === "accettata", `→ ${r.dati?.richiesta?.stato}`);
+  const dopo = (await chiama("/richieste", { token: tokenAdmin })).dati;
+  dice("ed è in elenco", dopo.length === prima + 1);
+  const sua = await chiama("/azioni/genera.immagine", {
+    metodo: "POST", token: tokenOspite, corpo: { prompt: "un gatto" },
+  });
+  dice("quella di chi chiede aspetta", sua.dati?.richiesta?.stato === "in-attesa", `→ ${sua.dati?.richiesta?.stato}`);
+}
+
+console.log("\n— il modello si sceglie da fuori —");
+{
+  const r = await chiama("/azioni", { token: tokenOspite });
+  const immagine = r.dati.find((a) => a.id === "genera.immagine");
+  const modello = immagine.campi.find((c) => c.nome === "modello");
+  dice("c'è il campo del modello", !!modello, "");
+  dice("con le scelte vere", (modello?.scelte || []).includes("flux2-9b"));
+  dice("e come si chiamano per una persona", !!modello?.etichette?.["flux2-9b"]);
+}
+{
+  const r = await chiama("/azioni/genera.immagine", {
+    metodo: "POST", token: tokenOspite, corpo: { prompt: "un faro", modello: "flux2-9b" },
+  });
+  dice("il modello scelto viaggia con la richiesta", r.dati?.richiesta?.opzioni?.modello === "flux2-9b", `→ ${r.testo}`);
+}
+{
+  const r = await chiama("/azioni/genera.immagine", {
+    metodo: "POST", token: tokenOspite, corpo: { prompt: "x", modello: "inventato" },
+  });
+  dice("un modello che non esiste si rifiuta", r.stato === 400, `→ ${r.stato}`);
+}
+
+console.log("\n— riscrivere una richiesta —");
+let daRiscrivere;
+{
+  const r = await chiama("/azioni/genera.immagine", {
+    metodo: "POST", token: tokenOspite, corpo: { prompt: "un gatto" },
+  });
+  daRiscrivere = r.dati.richiesta.id;
+}
+{
+  const r = await chiama(`/richieste/${daRiscrivere}/testo`, {
+    metodo: "POST", token: tokenOspite, corpo: { testo: "quello che voglio io" },
+  });
+  dice("chi chiede non riscrive", r.stato === 403, `→ ${r.stato}`);
+}
+{
+  const r = await chiama(`/richieste/${daRiscrivere}/testo`, {
+    metodo: "POST", token: tokenAdmin, corpo: { testo: "un gatto nero sul cofano" },
+  });
+  dice("chi decide riscrive a mano", r.stato === 200 && r.dati.testo === "un gatto nero sul cofano", `→ ${r.testo}`);
+  dice("e com'era resta scritto", r.dati.testoOriginale === "un gatto", `→ ${r.dati.testoOriginale}`);
+  dice("con chi l'ha riscritta", r.dati.riscrittaDa === "mano");
+}
+{
+  const r = await chiama(`/richieste/${daRiscrivere}/migliora`, { metodo: "POST", token: tokenAdmin, corpo: {} });
+  dice("il modello la riscrive", r.stato === 200 && /scritto meglio/.test(r.dati.testo), `→ ${r.testo}`);
+  dice("e l'originale è ancora il primo", r.dati.testoOriginale === "un gatto");
+  dice("adesso è dell'AI", r.dati.riscrittaDa === "ai");
+}
+{
+  const r = await chiama("/ai/migliora", {
+    metodo: "POST", token: tokenOspite, corpo: { testo: "due parole", app: "foto" },
+  });
+  dice("i tasti dell'AI non sono di chi chiede", r.stato === 403, `→ ${r.stato}`);
+}
+{
+  const r = await chiama("/ai/migliora", {
+    metodo: "POST", token: tokenAdmin, corpo: { testo: "due parole", app: "musica" },
+  });
+  dice("chi decide li usa", r.stato === 200 && r.dati.testo === "[musica] due parole, scritto meglio", `→ ${r.testo}`);
+}
+{
+  aiSpenta = true;
+  const stato = await chiama("/ai", { token: tokenAdmin });
+  dice("e quando il modello non c'è lo si sa prima", stato.dati.ok === false && !!stato.dati.motivo);
+  const r = await chiama("/ai/migliora", { metodo: "POST", token: tokenAdmin, corpo: { testo: "x", app: "foto" } });
+  dice("con LM Studio spento si spiega, non si esplode", r.stato === 502 && /LM Studio/.test(r.dati.errore), `→ ${r.stato}`);
+  aiSpenta = false;
+}
+{
+  // Una richiesta già partita non si riscrive: la scheda sta facendo l'altra.
+  await chiama(`/richieste/${daRiscrivere}/stato`, { metodo: "POST", token: tokenAdmin, corpo: { stato: "accettata" } });
+  const r = await chiama(`/richieste/${daRiscrivere}/testo`, {
+    metodo: "POST", token: tokenAdmin, corpo: { testo: "troppo tardi" },
+  });
+  dice("una già partita non si riscrive", r.stato === 403, `→ ${r.stato}`);
+}
+
+console.log("\n— mettere via e buttare —");
+{
+  const r = await chiama(`/richieste/${daRiscrivere}`, { metodo: "PATCH", token: tokenAdmin });
+  dice("una che lavora non si mette via", r.stato === 403, `→ ${r.stato}`);
+  await chiama(`/richieste/${daRiscrivere}/stato`, { metodo: "POST", token: tokenAdmin, corpo: { stato: "scartata" } });
+  const dopo = await chiama(`/richieste/${daRiscrivere}`, { metodo: "PATCH", token: tokenAdmin });
+  dice("una finita sì", dopo.stato === 200, `→ ${dopo.stato}`);
+  const elenco = await chiama("/richieste", { token: tokenAdmin });
+  dice("ed è archiviata", elenco.dati.find((x) => x.id === daRiscrivere)?.stato === "archiviata");
+}
+{
+  const r = await chiama(`/richieste/${daRiscrivere}`, { metodo: "DELETE", token: tokenOspite });
+  dice("la propria si butta", r.stato === 200, `→ ${r.stato}`);
+  const elenco = await chiama("/richieste", { token: tokenAdmin });
+  dice("e sparisce davvero", !elenco.dati.some((x) => x.id === daRiscrivere));
+}
+
+console.log("\n— i regali —");
+let idOspite;
+let idRegalo;
+{
+  idOspite = (await chiama("/io", { token: tokenOspite })).dati.id;
+}
+{
+  const r = await fetch(base + "/invii?a=" + encodeURIComponent(idOspite) + "&nome=foto.png", {
+    method: "POST",
+    headers: { Authorization: "Bearer " + tokenOspite, "Content-Type": "image/png" },
+    body: "un regalo",
+  });
+  dice("mandare un file non è di chi chiede", r.status === 403, `→ ${r.status}`);
+}
+{
+  const r = await fetch(base + "/invii?a=" + encodeURIComponent(idOspite) + "&nome=" + encodeURIComponent("un regalo.png"), {
+    method: "POST",
+    headers: { Authorization: "Bearer " + tokenAdmin, "Content-Type": "image/png" },
+    body: "questo e' il regalo",
+  });
+  const dati = await r.json();
+  idRegalo = dati.id;
+  dice("chi decide lo manda", r.status === 201 && dati.bytes === 19, `→ ${r.status} ${JSON.stringify(dati)}`);
+  dice("col nome vero", dati.nome === "un regalo.png");
+}
+{
+  const suoi = await chiama("/invii", { token: tokenOspite });
+  dice("arriva a chi doveva", suoi.dati.invii.length === 1 && suoi.dati.invii[0].id === idRegalo);
+  dice("e non è ancora aperto", suoi.dati.invii[0].aperto === false);
+  const altri = await chiama("/invii", { token: tokenAdmin });
+  dice("chi l'ha mandato non se lo ritrova", altri.dati.invii.length === 0);
+  const avvisi = await chiama("/notifiche", { token: tokenOspite });
+  dice("e chi lo riceve viene avvisato", avvisi.dati.some((n) => /ricevuto/i.test(n.titolo)));
+}
+{
+  const r = await fetch(base + "/invii/" + idRegalo + "/file", {
+    headers: { Authorization: "Bearer " + tokenOspite },
+  });
+  const corpo = await r.text();
+  dice("chi l'ha ricevuto lo scarica", r.status === 200 && corpo === "questo e' il regalo", `→ ${r.status}`);
+  dice("e arriva col suo nome", /un regalo\.png/.test(r.headers.get("content-disposition") || ""));
+}
+{
+  const r = await fetch(base + "/invii/" + idRegalo + "/file", {
+    headers: { Authorization: "Bearer " + tokenAdmin },
+  });
+  dice("nessun altro lo scarica", r.status === 404, `→ ${r.status}`);
+}
+{
+  const r = await chiama("/invii/" + idRegalo + "/aperto", { metodo: "POST", token: tokenOspite, corpo: {} });
+  dice("si segna aperto", r.stato === 200 && r.dati.ok === true);
+  const dopo = await chiama("/invii", { token: tokenOspite });
+  dice("e resta aperto", dopo.dati.invii[0].aperto === true);
+}
+{
+  const r = await chiama("/invii/" + idRegalo, { metodo: "DELETE", token: tokenAdmin });
+  dice("un altro non lo butta", r.stato === 404, `→ ${r.stato}`);
+  const suo = await chiama("/invii/" + idRegalo, { metodo: "DELETE", token: tokenOspite });
+  dice("chi ce l'ha sì", suo.stato === 200);
+  const dopo = await chiama("/invii", { token: tokenOspite });
+  dice("e sparisce", dopo.dati.invii.length === 0);
+}
+
+console.log("\n— chi può decidere —");
+{
+  const r = await chiama("/dispositivi/" + idOspite, {
+    metodo: "POST", token: tokenOspite, corpo: { ruolo: "admin" },
+  });
+  dice("nessuno si promuove da solo", r.stato === 403, `→ ${r.stato}`);
+}
+{
+  const r = await chiama("/dispositivi/" + idOspite, {
+    metodo: "POST", token: tokenAdmin, corpo: { ruolo: "admin" },
+  });
+  dice("chi decide promuove", r.stato === 200);
+  const io = await chiama("/io", { token: tokenOspite });
+  dice("e il ruolo è cambiato davvero", io.dati.ruolo === "admin", `→ ${io.dati.ruolo}`);
+  const avvisi = await chiama("/notifiche", { token: tokenOspite });
+  dice("e glielo si dice", avvisi.dati.some((n) => /decidere/i.test(n.titolo)));
+}
+{
+  const r = await chiama("/dispositivi/" + idOspite, {
+    metodo: "POST", token: tokenAdmin, corpo: { ruolo: "ospite" },
+  });
+  dice("e ci ripensa", r.stato === 200);
+  const io = await chiama("/io", { token: tokenOspite });
+  dice("tornando indietro", io.dati.ruolo === "ospite");
+}
+
+console.log("\n— i tuoi soliti —");
+{
+  const r = await chiama("/preset", {
+    metodo: "POST", token: tokenOspite,
+    corpo: { app: "foto", nome: "il mio stile", testo: "luce calda, pellicola", campi: { quante: "2" } },
+  });
+  dice("si salva un modo di generare", r.stato === 201 && r.dati.nome === "il mio stile", `→ ${r.testo}`);
+  const elenco = await chiama("/preset?app=foto", { token: tokenAdmin });
+  dice("e lo vedono anche gli altri dispositivi", elenco.dati.preset.length === 1);
+  const altro = await chiama("/preset?app=musica", { token: tokenOspite });
+  dice("ma solo per la scheda giusta", altro.dati.preset.length === 0);
+}
+{
+  const r = await chiama("/preset", { metodo: "POST", token: tokenOspite, corpo: { app: "foto", nome: "" } });
+  dice("uno senza nome si rifiuta", r.stato === 400, `→ ${r.stato}`);
 }
 
 console.log("\n— il biscotto di sessione —");

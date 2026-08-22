@@ -7,6 +7,9 @@ un'AI.
 Dalla **0.6.0** funziona **anche quando non sei in casa**, e il telefono non
 mostra più un modulo: mostra le pagine della suite.
 
+Dalla **0.7.2** ognuno vede **le proprie cose**, e quello che vuole far vedere
+lo mette in bacheca.
+
 ---
 
 ## DaProdConnessione
@@ -21,7 +24,8 @@ Dentro trovi:
   scritto cosa e il tasto per rimediare;
 - i **quadrati**: la rete di casa, se ci si arriva da fuori, il firewall, e se i
   lavori partono da soli;
-- **chi è collegato**, e da quanto;
+- **chi è collegato**, e da quanto — con il tasto per cambiare cosa può fare, e
+  il posto dove **trascinare un file per mandarglielo**;
 - **da dove si arriva**: gli indirizzi, con Tailscale in cima se ce l'hai;
 - il tasto **Invita qualcuno**.
 
@@ -97,13 +101,28 @@ Non ci sono ruoli con un nome: c'è quello che uno **può fare**.
 | | Chi può chiedere | Chi può anche decidere |
 |---|---|---|
 | Chiedere lavori | sì | sì |
-| Vedere la galleria del computer | sì | sì |
+| **Farli partire senza aspettare un sì** | no | sì |
+| Vedere le proprie cose | sì | sì |
+| Vedere le cose degli altri | solo quelle in bacheca | solo quelle in bacheca |
 | Vedere le richieste degli altri | no | sì |
 | Dire sì o no ai lavori | no | sì |
+| **Riscrivere una richiesta, o farla riscrivere all'AI** | no | sì |
+| **Usare i tasti dell'AI mentre scrivi** | no | sì |
+| **Mandare un file a qualcuno** | no | sì |
 | Invitare, e togliere collegamenti | no | sì |
+| **Cambiare cosa può fare un altro** | no | sì |
 
 Il tuo telefono e il tuo portatile invitali come «chi deve anche decidere». Un
 amico che vuole provare, no.
+
+**Ci si ripensa senza rifare niente.** Dalla 0.7.2, sulla riga di chi è
+collegato c'è un tasto: *fagli decidere tutto*, oppure *fagli solo chiedere*.
+Prima si sceglieva una volta sola, inquadrando il QR.
+
+**La differenza vera è una sola.** Chi decide fa partire quello che chiede senza
+aspettare; chi chiede manda una richiesta e aspetta un sì. Tutto il resto —
+vedere le proprie cose, la bacheca, la galleria — funziona uguale per tutti e
+due.
 
 ---
 
@@ -139,12 +158,52 @@ Le **pagine della suite**, le stesse che vedrebbe un portatile:
 - **Suite** — cosa sta facendo il computer adesso, e le schede da cui chiedere;
 - **Chiedi** — il modulo, che la suite si disegna da sola: quando il PC impara a
   fare una cosa nuova, la trovi qui senza aggiornare l'app;
-- **Lavori** — le richieste, con lo stato. Se puoi decidere, dici **fallo** o
-  **lascia perdere** da qui, e il computer lo fa;
-- **Galleria** — quello che il PC ha fatto. Le immagini si guardano, i video
-  partono e si scorrono, i brani si ascoltano — **senza scaricarli prima**. Con
-  «tieni nel telefono» te li porti dietro: un'immagine e un video finiscono in
-  galleria, un brano fra la musica, sotto «DaProd Suite».
+- **Lavori** — le richieste, in tre pile: *adesso*, *finiti*, *messi via*. Se
+  puoi decidere, sotto una richiesta ferma trovi **che ne faccio?** (vedi qui
+  sotto). Quelli finiti si mettono via con un tasto, o si buttano;
+- **Galleria** — due tasti in cima: **le mie cose** e **in bacheca**. Le tue le
+  vedi solo tu; per far vedere qualcosa agli altri la metti in bacheca, e lì
+  compare con scritto chi l'ha fatta. Le immagini si guardano, i video partono e
+  si scorrono, i brani si ascoltano — **senza scaricarli prima**. Con «tieni nel
+  telefono» te li porti dietro: un'immagine e un video finiscono in galleria, un
+  brano fra la musica, sotto «DaProd Suite».
+
+### Che ne faccio? — il menu di una richiesta
+
+Quando arriva una richiesta e tu puoi decidere, non ci sono solo «sì» e «no».
+Sotto la richiesta c'è **che ne faccio?**, e dentro quattro cose:
+
+- **fallo così com'è** — parte subito;
+- **fallo scrivere meglio, poi fallo** — il modello riapre quello che è stato
+  chiesto in una descrizione fatta come si deve, e poi parte. Serve
+  [LM Studio](https://lmstudio.ai) acceso: se non c'è, il tasto è spento e dice
+  perché;
+- **scrivila io** — la casella si apre già piena, la sistemi tu, e poi scegli se
+  mandarla così o passarla comunque all'AI;
+- **no** — con la ragione, che arriva a chi aveva chiesto.
+
+Se una richiesta è stata riscritta, sotto resta scritto **com'era arrivata**.
+
+Lo stesso tasto — **fallo scrivere meglio** — sta anche sotto la casella quando
+sei tu a chiedere qualcosa.
+
+### I tuoi soliti, e con che modello
+
+Nel modulo si sceglie **con che modello** deve essere fatta la cosa: per le
+immagini Anima, Anima v2 o FLUX.2 Klein; per i video LTX 2.5 o MiniMax H3; per i
+brani i tre di DaProdMusica. Lasciarlo vuoto vuol dire «quello scelto adesso sul
+computer», ed è il caso normale.
+
+Un modo di generare che ti piace si salva con un nome — **i tuoi soliti** — e lo
+ritrovi in cima al modulo, anche da un altro dispositivo: stanno sul computer,
+non nel telefono.
+
+### Quando ti arriva un regalo
+
+Chi sta al computer può mandarti un file quando vuole: lo trascina sul tuo nome
+in DaProdConnessione e ti arriva. Ricevi la notifica, e il **pacco si apre in
+mezzo allo schermo** la prima volta che apri l'app: dentro c'è l'anteprima, se è
+roba che si può guardare, e il tasto per tenerlo nel telefono.
 
 ### E le altre cose che fa
 

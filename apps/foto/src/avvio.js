@@ -5,7 +5,14 @@
  * funziona anche a motore spento — le immagini di ieri si guardano comunque.
  */
 
-import { collegaLavoriDaFuori, numero, premi, scrivi } from "/comune/da-fuori.js";
+import {
+  aspettaPremibile,
+  collegaLavoriDaFuori,
+  numero,
+  premi,
+  scegliInMenu,
+  scrivi,
+} from "/comune/da-fuori.js";
 import { el, mostraErrore, mostraScheda, suApertura } from "./dom.js";
 import { ascolta } from "./bus.js";
 import { collegaComandiCoda, messaggioDalMotore, riallinea } from "./coda.js";
@@ -82,11 +89,15 @@ await collega(
  * questa scelta — invece di costruire il grafo qui — sta in
  * `packages/ui/src/da-fuori.js`.
  */
-collegaLavoriDaFuori((richiesta) => {
+collegaLavoriDaFuori(async (richiesta) => {
   mostraScheda("crea");
   scrivi(el.prompt, richiesta.testo);
   if (richiesta.opzioni.negativo) scrivi(el.negativo, richiesta.opzioni.negativo);
   scrivi(el.quante, String(numero(richiesta.opzioni.quante, 1, 4, 1)));
+  // Il modello si può scegliere da fuori dalla 0.7.2. Cambiarlo fa ripartire il
+  // controllo dei pesi sul disco, che tiene Genera spento finché non risponde:
+  // per questo si aspetta invece di premere subito.
+  if (scegliInMenu(el.modello, richiesta.opzioni.modello)) await aspettaPremibile(el.genera);
   premi(
     el.genera,
     "Il modello di DaProdFoto non è pronto: apri la scheda sul computer e guarda cosa manca.",
