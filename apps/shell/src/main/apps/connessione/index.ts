@@ -122,7 +122,70 @@ export function apri(onClose: () => void): void {
     onClose();
   });
 
+  apriLaPagina(win, 0);
+}
+
+/**
+ * Carica la pagina, e se non c'è ancora riprova.
+ *
+ * **Il caso che questa funzione esiste per non lasciare bianco.** La pagina la
+ * serve il gateway, che parte insieme alla suite: se qualcuno apre questa
+ * scheda nel mezzo secondo prima, o se la porta 8790 è occupata da un ComfyUI
+ * rimasto acceso da ieri, `loadURL` fallisce e Chromium mostra la sua pagina di
+ * errore — in inglese, con un codice, e senza dire niente di utile. Che è
+ * esattamente il contrario di quello che questa scheda deve fare.
+ *
+ * Quindi si riprova qualche volta — il gateway parte in un attimo, quando parte
+ * — e se davvero non c'è si scrive **cosa è successo**, in italiano.
+ */
+function apriLaPagina(win: BrowserWindow, tentativo: number): void {
+  if (win.isDestroyed()) return;
+
+  win.webContents.once("did-fail-load", (_e, codice, _descrizione, url, principale) => {
+    // Un'immagine che non arriva non è un motivo per buttare via la pagina.
+    if (!principale || win.isDestroyed()) return;
+    // -3 è «l'ho fermata io», e succede quando si ricarica di proposito.
+    if (codice === -3) return;
+
+    if (tentativo < 12) {
+      setTimeout(() => apriLaPagina(win, tentativo + 1), 700);
+      return;
+    }
+    void win.loadURL(paginaDiScusa(url));
+  });
+
   void win.loadURL(dammiIndirizzo());
+}
+
+/**
+ * Quando proprio non si riesce: una pagina che dice cosa guardare.
+ *
+ * Scritta a mano e non servita da nessuno, perché il problema è precisamente
+ * che non c'è nessuno a servirla.
+ */
+function paginaDiScusa(url: string): string {
+  const porta = /:(\d+)/.exec(url)?.[1] ?? "8790";
+  const html = `<!doctype html><meta charset="utf-8">
+<title>DaProdConnessione</title>
+<style>
+  body{margin:0;height:100vh;display:grid;place-items:center;background:#08090d;
+       color:#eceef4;font:15px/1.6 "Segoe UI",system-ui,sans-serif;padding:24px}
+  div{max-width:34em}
+  h1{font-size:19px;margin:0 0 10px}
+  p{color:#868c9e;margin:0 0 10px}
+  code{background:#161922;border:1px solid #2e3340;border-radius:7px;padding:2px 7px}
+</style>
+<div>
+  <h1>Non riesco ad aprire il pannello</h1>
+  <p>Questa pagina la serve la suite stessa, sulla porta <code>${porta}</code> di
+     questo computer, e in questo momento non risponde.</p>
+  <p>Quasi sempre è perché quella porta è occupata da un altro programma —
+     tipicamente una copia di ComfyUI rimasta accesa. Chiudila e riapri questa
+     scheda.</p>
+  <p>Le righe di quello che è successo stanno nel log
+     <code>connessione-pagina</code>, che trovi dal pulsante <b>Log</b> dell'hub.</p>
+</div>`;
+  return "data:text/html;charset=utf-8," + encodeURIComponent(html);
 }
 
 export function chiudi(): void {
