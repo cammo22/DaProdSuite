@@ -16,7 +16,14 @@ import { aggiornaLibreria, collegaLibreria } from "./libreria.js";
 import { aggiornaImmagini, collegaImmagini } from "./immagini.js";
 // I quadratini di cosa occupa la memoria: uguali in tutte le app, quindi
 // stanno in `packages/ui` e la suite li serve sotto `/comune/`.
-import { collegaLavoriDaFuori, numero, premi, scrivi } from "/comune/da-fuori.js";
+import {
+  aspettaPremibile,
+  collegaLavoriDaFuori,
+  numero,
+  premi,
+  scegliInMenu,
+  scrivi,
+} from "/comune/da-fuori.js";
 import { collegaModelliInMemoria } from "/comune/modelli-in-memoria.js";
 import { collegaBonsai } from "./bonsai.js";
 import { collega, macchina, modelliInVram, scaricaDallaVram } from "./ponte.js";
@@ -82,7 +89,7 @@ await collega(
  * sempre, perché si preme lo stesso tasto che premeresti tu. Il perché sta in
  * `packages/ui/src/da-fuori.js`.
  */
-collegaLavoriDaFuori((richiesta) => {
+collegaLavoriDaFuori(async (richiesta) => {
   scrivi(el.caption, richiesta.testo);
   // Il testo da cantare è facoltativo: vuoto vuol dire strumentale, ed è
   // quello che dice anche il catalogo delle azioni.
@@ -90,5 +97,8 @@ collegaLavoriDaFuori((richiesta) => {
   if (richiesta.opzioni.secondi) {
     scrivi(el.duration, String(numero(richiesta.opzioni.secondi, 15, 300, 60)));
   }
+  // Qui il menu dei modelli si chiama «qualità», che è il nome che ha nella
+  // pagina: gli id però sono gli stessi del catalogo delle azioni.
+  if (scegliInMenu(el.qualita, richiesta.opzioni.modello)) await aspettaPremibile(el.go);
   premi(el.go, "DaProdMusica non è pronta a generare: apri la scheda e guarda cosa manca.");
 });

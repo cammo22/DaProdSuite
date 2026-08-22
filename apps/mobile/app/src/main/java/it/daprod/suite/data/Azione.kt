@@ -72,6 +72,14 @@ data class Campo(
     val tipo: String,
     val obbligatorio: Boolean,
     val scelte: List<String>,
+    /**
+     * Come si chiamano le scelte per una persona.
+     *
+     * Le scelte sono id — `anima2`, `flux2-9b` — e non vogliono dire niente a
+     * chi li legge. Nel menu si mostra la frase, e quando si manda si rimette
+     * l'id: vedi [mostra] e [idDa].
+     */
+    val etichette: Map<String, String>,
     val min: Int?,
     val max: Int?,
     val maxLunghezza: Int?,
@@ -82,6 +90,12 @@ data class Campo(
     val eLungo: Boolean
         get() = tipo == "testo" && (maxLunghezza ?: 0) > 200
 
+    /** Come si scrive una scelta nel menu. */
+    fun mostra(id: String): String = etichette[id] ?: id
+
+    /** Dalla frase del menu all'id da mandare. */
+    fun idDa(mostrato: String): String = scelte.firstOrNull { mostra(it) == mostrato } ?: mostrato
+
     fun aJson(): JSONObject {
         val j = JSONObject()
             .put("nome", nome)
@@ -90,6 +104,7 @@ data class Campo(
             .put("tipo", tipo)
             .put("obbligatorio", obbligatorio)
             .put("scelte", JSONArray().also { arr -> for (s in scelte) arr.put(s) })
+            .put("etichette", JSONObject().also { o -> for ((k, v) in etichette) o.put(k, v) })
         if (min != null) j.put("min", min)
         if (max != null) j.put("max", max)
         if (maxLunghezza != null) j.put("maxLunghezza", maxLunghezza)
@@ -104,6 +119,10 @@ data class Campo(
             j.optJSONArray("scelte")?.let { arr ->
                 for (i in 0 until arr.length()) scelte.add(arr.getString(i))
             }
+            val etichette = mutableMapOf<String, String>()
+            j.optJSONObject("etichette")?.let { o ->
+                for (chiave in o.keys()) etichette[chiave] = o.optString(chiave)
+            }
             return Campo(
                 nome = j.getString("nome"),
                 etichetta = j.optString("etichetta", j.getString("nome")),
@@ -111,6 +130,7 @@ data class Campo(
                 tipo = j.optString("tipo", "testo"),
                 obbligatorio = j.optBoolean("obbligatorio", false),
                 scelte = scelte,
+                etichette = etichette,
                 min = if (j.has("min")) j.optInt("min") else null,
                 max = if (j.has("max")) j.optInt("max") else null,
                 maxLunghezza = if (j.has("maxLunghezza")) j.optInt("maxLunghezza") else null,

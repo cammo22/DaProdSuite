@@ -197,14 +197,34 @@ class Libreria extends EventEmitter {
     return true;
   }
 
-  /** Scrive il `.json` che accompagna un elemento: descrizione, testo, seed, parametri. */
+  /**
+   * Scrive il `.json` che accompagna un elemento: descrizione, testo, seed,
+   * parametri — e, se non gliel'ha già dato nessuno, **un nome leggibile**.
+   *
+   * **Il difetto che cura**, detto il 22 agosto 2026: «spesso i file vengono
+   * salvati con nomi diversi; si devono chiamare e apparire nelle interfacce
+   * come il prompt usato». Il motore scrive `daprod_00042_.png`, e quel numero
+   * era l'unica cosa che si leggeva in galleria, sul telefono e nella cartella.
+   *
+   * Qui il nome si prende da quello che è stato chiesto, in quest'ordine: il
+   * testo scritto dalla persona, la descrizione, il prompt vero e proprio. Chi
+   * un titolo ce l'ha già — DaProdMusica, che chiede come si chiama il brano —
+   * non viene toccato: il suo è migliore di qualunque cosa possiamo dedurre.
+   */
   scriviMeta(id: string, meta: Record<string, unknown>): boolean {
     const elemento = this.trova(id);
     if (!elemento) return false;
 
+    const conNome = { ...meta };
+    if (!daLeggere(conNome["titolo"])) {
+      const chiesto =
+        daLeggere(conNome["testo"]) ?? daLeggere(conNome["descrizione"]) ?? daLeggere(conNome["prompt"]);
+      if (chiesto) conNome["titolo"] = unaRiga(chiesto);
+    }
+
     writeFileSync(
       senzaEstensione(elemento.percorso) + ".json",
-      JSON.stringify(meta, null, 1),
+      JSON.stringify(conNome, null, 1),
       "utf8",
     );
     this.segnalaNovita();
@@ -331,6 +351,11 @@ function unaRiga(testo: string): string {
   const tagliato = pulito.slice(0, 80);
   const spazio = tagliato.lastIndexOf(" ");
   return (spazio > 40 ? tagliato.slice(0, spazio) : tagliato).trim();
+}
+
+/** Il valore se è una stringa con dentro qualcosa, altrimenti niente. */
+function daLeggere(valore: unknown): string | undefined {
+  return typeof valore === "string" && valore.trim() ? valore.trim() : undefined;
 }
 
 function senzaEstensione(percorso: string): string {
