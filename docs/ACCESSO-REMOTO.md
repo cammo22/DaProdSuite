@@ -85,15 +85,33 @@ tuo PC.
 
 ### Cosa può fare un dispositivo accoppiato
 
-Non tutto per forza. Ogni dispositivo ha i suoi permessi, scelti da te:
+Due ruoli, e **una sola differenza fra i due** (dalla 0.7.2):
 
-- **Guardare** — libreria dei brani, immagini, video già generati
-- **Generare** — mettere in coda nuovi lavori
-- **Companion** — parlare con il companion e leggerne la memoria
+- **chi può chiedere** (`ospite`) manda una richiesta, e chi sta al PC dice sì o
+  no;
+- **chi può anche decidere** (`admin`) fa partire quello che chiede **senza
+  aspettare**, e decide sulle richieste degli altri.
 
-Il terzo è staccato dagli altri di proposito: la memoria personale del Companion
-è la cosa più delicata che la suite contenga, e va concessa una volta per
-dispositivo, non ereditata insieme al resto.
+Tutto il resto è uguale per tutti e due, e non dipende dal ruolo ma dal
+**padrone della cosa**:
+
+- **la propria roba** — ognuno vede le cose che ha chiesto lui, e nessun altro.
+  Vale anche per chi decide: il permesso è sulla fila, non sulle cose altrui;
+- **la bacheca** — quello che una persona ha deciso di far vedere, con scritto
+  chi l'ha fatto. È l'unico modo in cui una cosa attraversa il confine fra due
+  persone;
+- **i regali** — un file mandato a mano da chi decide a una persona precisa.
+  Lo scarica solo lei.
+
+Il controllo sta nel gateway e vale **anche sui file**, non solo sugli elenchi:
+fino alla 0.7.1 chi indovinava un nome scaricava la roba di chiunque.
+
+Il ruolo si sceglie al momento dell'invito e **si cambia dopo**, dalla riga
+della persona in DaProdConnessione. Prima era per sempre, e per promuovere
+qualcuno bisognava scollegarlo e rifargli l'accoppiamento.
+
+**Il Companion resta fuori da tutto questo**: la sua memoria personale è la cosa
+più delicata che la suite contenga, e da fuori non si raggiunge.
 
 ---
 
@@ -261,6 +279,37 @@ valesse anche sulle POST, la pagina di un altro sito potrebbe far partire una
 generazione dal browser di chi è collegato — il classico CSRF. Limitandolo alla
 lettura quella strada non esiste, e c'è una prova che lo tiene fermo.
 
+### Chi ha fatto cosa, e i regali (0.7.2)
+
+Tre cose nuove nel contratto, e tutte e tre nascono dalla stessa domanda:
+**«di chi è questa roba?»**
+
+**Il padrone.** Accanto a ogni file prodotto, nel suo `.json`, c'è `chi` — l'id
+del dispositivo che l'ha chiesto — e `chiNome`. Chi genera stando al PC è
+`questo-computer`, che è un dispositivo come gli altri (lo stesso con cui la
+suite si accoppia con sé stessa per servire DaProdConnessione). Quello prodotto
+prima della 0.7.2 non ha nessun padrone scritto e risulta del computer, che è
+dove è stato fatto.
+
+`GET /libreria` vuole quindi sapere **chi sta guardando**, e `dove`: `mie`
+oppure `bacheca`. `GET /libreria/file/:id` fa lo stesso controllo — è la parte
+che conta, perché un indirizzo si scrive a mano.
+
+**La riscrittura.** `POST /richieste/:id/testo` e `POST /richieste/:id/migliora`
+cambiano quello che una richiesta ferma chiede, prima di farla partire. La
+seconda passa da LM Studio (vedi `apps/shell/src/main/migliora.ts`), con il
+modello consigliato caricato a 64K se non c'era già. In tutti e due i casi
+`testoOriginale` tiene com'era arrivata: chi chiede una cosa e ne riceve
+un'altra deve poter vedere cos'è successo.
+
+**I regali.** `POST /invii` è l'unica rotta il cui corpo **non è JSON**: è il
+file, e va dal socket al disco senza passare per la memoria (le altre hanno un
+tetto di un mega, giusto per un modulo e impossibile per un video). Il tetto qui
+è mezzo giga, ed è una difesa: senza, chiunque sia collegato potrebbe riempire
+il disco con un invio che non finisce mai. Il nome che arriva non si crede mai —
+quello che finisce sul disco è fatto dal gateway, senza barre e senza punti in
+testa.
+
 ### DaProdConnessione (0.7.0)
 
 La nona scheda della suite, e **non ha pagine sue**: apre questa stessa console
@@ -326,6 +375,12 @@ l'app li prova finché uno risponde e si ricorda quale ha funzionato.
   meno bene per uno che finisce in trenta secondi.
 - **Il tunnel non è mai stato acceso su una linea vera.** Il codice c'è e
   compila; l'indirizzo pubblico non l'ha ancora visto nessuno.
+- **La separazione fra persone non è stata provata con due persone.** Le prove
+  automatiche coprono ogni rotta — elenco, file, bacheca, regali, ruoli — ma due
+  telefoni veri accesi insieme non li ha ancora visti nessuno (0.7.2).
+- **Un regalo non si può mandare dal telefono**: solo da chi sta al computer,
+  trascinando il file nella finestra. È una scelta, non una mancanza — il file
+  parte da un disco, e il disco è lì.
 
 ### Le prove
 
