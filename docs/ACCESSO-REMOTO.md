@@ -279,6 +279,31 @@ valesse anche sulle POST, la pagina di un altro sito potrebbe far partire una
 generazione dal browser di chi è collegato — il classico CSRF. Limitandolo alla
 lettura quella strada non esiste, e c'è una prova che lo tiene fermo.
 
+### Da fuori, non in casa (0.7.3)
+
+L'ordine degli indirizzi e' cambiato, ed e' una decisione presa guardando come
+si usa: **prima quelli che funzionano ovunque** (Tailscale, poi il tunnel), la
+rete di casa per ultima. Vale per il QR (`basi` dell'invito), per l'elenco del
+pannello e per l'indirizzo che la pagina scrive sotto al QR da copiare a mano.
+
+La ragione, detta da chi la usa: «l'app connessione deve funzionare solo su
+internet, non ci interessa su lan». Un telefono che si ricorda l'indirizzo di
+casa smette di funzionare appena esce dalla porta — e la meta' delle volte che
+uno apre l'app e' proprio perche' non e' in casa.
+
+Conseguenza nel pannello: **se non c'e' nessun indirizzo che funziona da fuori,
+il semaforo non e' verde**, anche se in salotto va tutto.
+
+**Il codice senza il QR.** Il codice dice chi sei, non a chi bussare: l'app ha
+adesso una casella per l'indirizzo accanto a quella del codice, e la pagina
+scrive sotto al QR l'indirizzo da copiare. Sono le due meta' della stessa cosa,
+e prima una delle due si poteva avere solo inquadrando.
+
+**La coda parte anche ad app chiusa.** `SyncWorker` non guarda piu' solo le
+notifiche: fa lo stesso giro di indirizzi dell'app, e manda le richieste rimaste
+in coda **per ogni persona del telefono, con il suo collegamento**. Per questo
+ogni voce della coda adesso sa di chi e'.
+
 ### Chi ha fatto cosa, e i regali (0.7.2)
 
 Tre cose nuove nel contratto, e tutte e tre nascono dalla stessa domanda:

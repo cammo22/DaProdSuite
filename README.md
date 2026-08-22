@@ -90,6 +90,29 @@ lo stesso.
 
 ## A che punto siamo
 
+> **0.7.3: i video arrivano, e la scheda video torna libera.**
+>
+> **Le schede si chiudono quando la fila ha finito**, e con la finestra si
+> spegne il motore: su otto GB è la differenza fra la generazione dopo che parte
+> e una che non trova posto.
+>
+> **I video adesso arrivano.** Il file si prende quando ha smesso di crescere, e
+> se Windows non lascia rinominarlo si tiene il nome del motore invece di far
+> fallire un lavoro finito. E si scaricano a pezzi: un video si scorre senza
+> aspettare che arrivi tutto.
+>
+> **Quello che conta è arrivarci da fuori.** Se da fuori casa non ci si arriva il
+> quadrone non è verde, e il QR preferisce l'indirizzo che funziona ovunque.
+> Sul telefono **basta il codice**: l'indirizzo si scrive accanto, e sul computer
+> c'è scritto cosa copiare.
+>
+> **Le persone hanno la loro pagina**: Admin o Utente accanto al nome,
+> *disconnetti*, e un file da mandare trascinandolo o col tasto. Quello che ti
+> mandano finisce **in galleria**.
+>
+> E: quello che scrivi col computer spento **parte da solo** anche ad app
+> chiusa; l'AI scrive anche il testo della canzone.
+>
 > **0.7.2: ognuno vede le sue cose, e quando arriva una richiesta c'è un menu.**
 >
 > La galleria non è più di tutti: **ogni cosa prodotta sa chi l'ha chiesta**, e
@@ -436,7 +459,12 @@ generare salvato con un nome, che sta sul computer e si ritrova ovunque.
 
 **Vedi le tue cose.** La galleria mostra quello che hai chiesto tu; degli altri
 vedi solo quello che hanno messo in bacheca. Chi sta al computer può mandarti un
-file quando vuole: arriva una notifica, e il pacco si apre nell'app.
+file quando vuole: arriva una notifica, il pacco si apre nell'app, e da lì in poi
+sta in galleria sotto «arrivati per me».
+
+**Anche col computer spento.** L'app si apre lo stesso e quello che scrivi resta
+in coda: parte da solo appena il computer torna raggiungibile, senza bisogno di
+riaprire niente.
 
 **Sulla wifi di casa, o da fuori.** Con «Anche da fuori casa» acceso la suite
 apre un tunnel in uscita e diventa raggiungibile in HTTPS da qualunque parte,

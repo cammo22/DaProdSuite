@@ -26,7 +26,7 @@ file si scrive quale delle due metà manca.
 
 ## A che punto siamo — 22 agosto 2026
 
-**Ultima pubblicata: 0.7.2.** Nove schede dentro la suite, un ambiente Python
+**Ultima pubblicata: 0.7.3.** Nove schede dentro la suite, un ambiente Python
 solo, e il giro che conta — chiedo dal telefono, il computer fa, il file torna —
 **provato da chi la usa**, sul suo PC e sul suo telefono.
 
@@ -48,6 +48,9 @@ fanno quello che ti ho chiesto».
 | **Ognuno vede le sue cose, e la bacheca** | fatto e **provato**, con un secondo dispositivo finto |
 | **Il menu sulle richieste, con e senza AI** | fatto e **provato**; l'AI ci mette un minuto o due |
 | **I regali: un file trascinato su una persona** | provato dal codice; **il trascinamento vero no** |
+| **Le schede che si chiudono a lavoro finito** | fatto e **provato**: nel registro si legge, e la VRAM torna libera |
+| **I video che arrivano fino in fondo** | il difetto era la rinomina, **trovato nel log e chiuso** |
+| **La coda del telefono che parte ad app chiusa** | scritta; **dipende da quando Android fa girare il lavoro** |
 | **Modelli e preset dal telefono** | **provato contro il motore acceso**: FLUX.2 4B chiesto da fuori, e usato |
 | Tailscale come strada principale | scritto, **mai provato col telefono** |
 | Accesso da Internet (tunnel in uscita) | fatto, **mai acceso su una linea vera** |
@@ -418,6 +421,33 @@ funzionare e non funzionare.
 
 Dalla più recente. Ogni sezione dice cosa è stato fatto **e** cosa
 di quello era stato provato davvero.
+
+---
+
+## 0.7.3 — I video arrivano, e la scheda video torna libera ✅
+
+**23 agosto 2026, pubblicata.** Un pomeriggio d'uso della 0.7.2, e undici cose
+da sistemare. Il racconto per chi la usa sta nel [CHANGELOG](../CHANGELOG.md).
+
+**Il difetto vero, e come si è trovato.** «A volte i video non li manda
+correttamente» era una regressione della 0.7.2: `intitola` rinominava il file col
+prompt, su un video Windows lo teneva ancora bloccato (`EBUSY`), l'eccezione
+usciva da tutto `esegui()` e la richiesta risultava fallita **con il video già
+pronto**. Non si sarebbe trovato leggendo il codice: si è trovato nel registro
+della fila, sul PC vero, dopo che ci aveva generato dentro per un pomeriggio.
+
+Da lì tre regole che restano:
+
+- **un nome non è un lavoro**: niente di cosmetico può far fallire una
+  generazione finita;
+- **un file esiste prima di essere finito**: si aspetta che smetta di crescere,
+  se no si consegna una copia a metà;
+- **quello che apre la fila, la fila lo chiude**: è l'unico modo di liberare
+  davvero la scheda video, perché il motore muore con la finestra.
+
+Il resto: la connessione guardata da fuori invece che dalla LAN, la pagina
+**Persone**, i file ricevuti in galleria, il codice senza QR, la coda che parte
+ad app chiusa, e l'AI che scrive anche il testo della canzone.
 
 ---
 

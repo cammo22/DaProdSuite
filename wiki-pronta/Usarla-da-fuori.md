@@ -10,6 +10,9 @@ mostra più un modulo: mostra le pagine della suite.
 Dalla **0.7.2** ognuno vede **le proprie cose**, e quello che vuole far vedere
 lo mette in bacheca.
 
+Dalla **0.7.3** quello che conta è **arrivarci da fuori**: la rete di casa da
+sola non è più una risposta, e il pannello lo dice.
+
 ---
 
 ## DaProdConnessione
@@ -24,8 +27,10 @@ Dentro trovi:
   scritto cosa e il tasto per rimediare;
 - i **quadrati**: la rete di casa, se ci si arriva da fuori, il firewall, e se i
   lavori partono da soli;
-- **chi è collegato**, e da quanto — con il tasto per cambiare cosa può fare, e
-  il posto dove **trascinare un file per mandarglielo**;
+- **le persone collegate** (è la prima cosa che si vede, dalla 0.7.3): Admin o
+  Utente accanto al nome, il tasto per cambiarglielo, **disconnetti**, e il
+  posto dove **trascinare un file per mandarglielo** — o il tasto, se stai su un
+  telefono e non hai niente da trascinare;
 - **da dove si arriva**: gli indirizzi, con Tailscale in cima se ce l'hai;
 - il tasto **Invita qualcuno**.
 
@@ -98,7 +103,7 @@ verso l'esterno, e il telefono ci arriva da qualunque rete.
 
 Non ci sono ruoli con un nome: c'è quello che uno **può fare**.
 
-| | Chi può chiedere | Chi può anche decidere |
+| | Utente | Admin |
 |---|---|---|
 | Chiedere lavori | sì | sì |
 | **Farli partire senza aspettare un sì** | no | sì |
@@ -115,9 +120,9 @@ Non ci sono ruoli con un nome: c'è quello che uno **può fare**.
 Il tuo telefono e il tuo portatile invitali come «chi deve anche decidere». Un
 amico che vuole provare, no.
 
-**Ci si ripensa senza rifare niente.** Dalla 0.7.2, sulla riga di chi è
-collegato c'è un tasto: *fagli decidere tutto*, oppure *fagli solo chiedere*.
-Prima si sceglieva una volta sola, inquadrando il QR.
+**Ci si ripensa senza rifare niente.** Sulla riga di chi è collegato c'è un
+tasto: *rendilo admin*, oppure *rendilo utente*. Prima si sceglieva una volta
+sola, inquadrando il QR.
 
 **La differenza vera è una sola.** Chi decide fa partire quello che chiede senza
 aspettare; chi chiede manda una richiesta e aspetta un sì. Tutto il resto —
@@ -136,6 +141,11 @@ Il telefono ti avviserà che viene da fuori dal Play Store e ti chiederà di
 permetterlo: è normale per un'app che non passa da un negozio. Una volta
 installata: scrivi **come ti chiami**, **inquadra il QR** sullo schermo del PC,
 e sei dentro.
+
+**Se il QR non va**, sotto al QR sul computer ci sono due cose scritte:
+l'indirizzo e un numero di otto cifre. Si copiano nelle due caselle in fondo
+alla schermata di collegamento, ed è lo stesso. (Il codice da solo non basta:
+dice chi sei, non a quale computer bussare.)
 
 ### Chi sei
 
@@ -174,18 +184,19 @@ Quando arriva una richiesta e tu puoi decidere, non ci sono solo «sì» e «no�
 Sotto la richiesta c'è **che ne faccio?**, e dentro quattro cose:
 
 - **fallo così com'è** — parte subito;
-- **fallo scrivere meglio, poi fallo** — il modello riapre quello che è stato
-  chiesto in una descrizione fatta come si deve, e poi parte. Serve
-  [LM Studio](https://lmstudio.ai) acceso: se non c'è, il tasto è spento e dice
-  perché;
+- **usa l'AI, poi fallo** — il modello riapre quello che è stato chiesto in una
+  descrizione fatta come si deve, e poi parte. Per un brano scrive **anche il
+  testo da cantare**, se non c'era. Serve [LM Studio](https://lmstudio.ai)
+  acceso: se non c'è, il tasto è spento e dice perché. Ci mette un minuto o due:
+  carica un modello da 27 miliardi di parametri e lo lascia ragionare;
 - **scrivila io** — la casella si apre già piena, la sistemi tu, e poi scegli se
   mandarla così o passarla comunque all'AI;
 - **no** — con la ragione, che arriva a chi aveva chiesto.
 
 Se una richiesta è stata riscritta, sotto resta scritto **com'era arrivata**.
 
-Lo stesso tasto — **fallo scrivere meglio** — sta anche sotto la casella quando
-sei tu a chiedere qualcosa.
+Lo stesso tasto — **Usa l'AI** — sta anche sotto la casella quando sei tu a
+chiedere qualcosa.
 
 ### I tuoi soliti, e con che modello
 
@@ -201,16 +212,22 @@ non nel telefono.
 ### Quando ti arriva un regalo
 
 Chi sta al computer può mandarti un file quando vuole: lo trascina sul tuo nome
-in DaProdConnessione e ti arriva. Ricevi la notifica, e il **pacco si apre in
-mezzo allo schermo** la prima volta che apri l'app: dentro c'è l'anteprima, se è
-roba che si può guardare, e il tasto per tenerlo nel telefono.
+nella pagina **Persone**, o lo sceglie col tasto. Ricevi la notifica, e il
+**pacco si apre in mezzo allo schermo** la prima volta che apri l'app: dentro
+c'è l'anteprima, se è roba che si può guardare, e il tasto per tenerlo nel
+telefono.
+
+Da lì in poi lo ritrovi **in galleria**, terza linguetta: «arrivati per me».
 
 ### E le altre cose che fa
 
 - **avvisa quando un lavoro finisce**, anche ore dopo e con l'app chiusa. Se sul
   telefono ci sono più persone, la notifica dice di chi è;
 - **tiene quello che scrivi quando il PC non c'è** — resta sul telefono e parte
-  da solo appena il computer torna raggiungibile;
+  da solo appena il computer torna raggiungibile, **anche con l'app chiusa**:
+  ci pensa il lavoro in background, e quando parte te lo dice con una notifica.
+  L'app si apre lo stesso col computer spento, e la schermata che compare è
+  quella per scrivere le richieste che aspettano;
 - **si aggiorna da sola.** Dal menu **⋮**, «Aggiorna l'app». Guarda anche per
   conto suo, una volta al giorno al massimo, e se non c'è niente non ti dice
   niente. È l'unica cosa che l'app manda fuori dalla tua rete: una domanda a
