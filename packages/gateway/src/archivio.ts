@@ -18,7 +18,7 @@
 
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
-import type { Dispositivo, Invito, Notifica, Richiesta } from "./types";
+import type { Dispositivo, Invio, Invito, Notifica, Richiesta } from "./types";
 
 export interface DatiRemoto {
   versione: 1;
@@ -26,9 +26,18 @@ export interface DatiRemoto {
   richieste: Richiesta[];
   notifiche: Notifica[];
   inviti: Invito[];
+  /** I file mandati a mano a qualcuno. Vuoto negli archivi scritti prima della 0.7.2. */
+  invii: Invio[];
 }
 
-const VUOTI: DatiRemoto = { versione: 1, dispositivi: [], richieste: [], notifiche: [], inviti: [] };
+const VUOTI: DatiRemoto = {
+  versione: 1,
+  dispositivi: [],
+  richieste: [],
+  notifiche: [],
+  inviti: [],
+  invii: [],
+};
 
 /** Quanto si aspetta prima di scrivere davvero: mezzo secondo. */
 const ATTESA_SCRITTURA_MS = 500;
@@ -42,7 +51,9 @@ export class Archivio {
   }
 
   private carica(): DatiRemoto {
-    if (!existsSync(this.file)) return { ...VUOTI, dispositivi: [], richieste: [], notifiche: [], inviti: [] };
+    if (!existsSync(this.file)) {
+      return { ...VUOTI, dispositivi: [], richieste: [], notifiche: [], inviti: [], invii: [] };
+    }
     try {
       const letto = JSON.parse(readFileSync(this.file, "utf8")) as Partial<DatiRemoto>;
       return {
@@ -51,6 +62,9 @@ export class Archivio {
         richieste: Array.isArray(letto.richieste) ? letto.richieste : [],
         notifiche: Array.isArray(letto.notifiche) ? letto.notifiche : [],
         inviti: Array.isArray(letto.inviti) ? letto.inviti : [],
+        // Un archivio scritto da una versione precedente non ce l'ha: si parte
+        // da vuoto invece di rifiutarlo.
+        invii: Array.isArray(letto.invii) ? letto.invii : [],
       };
     } catch {
       return { ...VUOTI };
@@ -100,4 +114,15 @@ export class Archivio {
 /** Cartella dei file di risultato pronti da scaricare. */
 export function cartellaRisultati(root: string): string {
   return join(root, "risultati");
+}
+
+/**
+ * Cartella dei file mandati a mano a qualcuno.
+ *
+ * Separata dai risultati di proposito: quella è roba che la suite ha prodotto e
+ * che il gateway lascia scaricare a chi l'aveva chiesta, questa è roba che
+ * arriva da un disco e va a una persona sola.
+ */
+export function cartellaInvii(root: string): string {
+  return join(root, "invii");
 }

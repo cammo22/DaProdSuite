@@ -14,17 +14,33 @@
  *   POST /richieste        { tipo, app, testo, opzioni? }   → crea (ospiti e admin)
  *   GET  /richieste/:id                         → dettaglio
  *   POST /richieste/:id/stato { stato, motivo?, risultato? } → decide (solo admin)
+ *   POST /richieste/:id/testo { testo }          → riscrivila a mano (chi decide)
+ *   POST /richieste/:id/migliora                → falla riscrivere al modello
+ *   PATCH  /richieste/:id                       → mettila via (archiviata)
+ *   DELETE /richieste/:id                       → buttala
+ *   GET  /ai                                    → c'è qualcuno a cui chiedere?
+ *   POST /ai/migliora     { testo, app }         → riscrive un testo (chi decide)
+ *   GET  /preset?app=                           → i modi di generare messi da parte
+ *   POST /preset      { app, nome, testo, campi? } → salvane uno
+ *   DELETE /preset/:id                          → toglilo
+ *   GET  /invii                                 → i regali arrivati a te
+ *   POST /invii?a=&nome=&messaggio=             → mandane uno (il corpo è il file)
+ *   GET  /invii/:id/file                        → scaricalo
+ *   POST /invii/:id/aperto                      → il pacco è stato aperto
+ *   DELETE /invii/:id                           → toglilo, e con lui il file
  *   GET  /risultati/:nome                       → scarica un file pronto
  *   POST /sessione                              → pianta il biscotto per le GET
  *   GET  /pannello                              → la connessione, tutta in un colpo
  *   POST /pannello/invito  { ruolo, quante }     → un invito nuovo (chi decide)
  *   POST /pannello/tunnel  { acceso }            → apre o chiude la strada da Internet
  *   POST /pannello/porta                        → chiede a Windows di lasciar entrare
- *   POST /dispositivi/:id  { nome }              → rinomina un collegato
+ *   POST /dispositivi/:id  { nome } | { ruolo }  → rinomina, o cambia cosa può fare
  *   DELETE /dispositivi/:id                     → lo scollega
  *   GET  /io                                    → chi sono, che ruolo ho, che PC è
- *   GET  /libreria?tipo=&app=&quanti=           → cosa ha prodotto la suite
+ *   GET  /libreria?tipo=&app=&quanti=&dove=     → le tue cose, o la bacheca
  *   GET  /libreria/file/:id                     → il file, con supporto a Range
+ *   POST /libreria/:id/pubblica { pubblicato }   → mettila in bacheca, o toglila
+ *   DELETE /libreria/:id                        → buttala (solo le tue)
  *   GET  /notifiche                             → notifiche non lette
  *   POST /notifiche/:id/letta                   → segna letta
  *
@@ -41,7 +57,7 @@
 
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import type { AddressInfo } from "node:net";
-import { createReadStream, statSync } from "node:fs";
+import { createReadStream, createWriteStream, mkdirSync, rmSync, statSync } from "node:fs";
 import { join, normalize } from "node:path";
 import { elencoAzioni, eseguiAzione, type Esecutore } from "./azioni";
 import { paginaConsole } from "./console";
@@ -49,8 +65,10 @@ import { Remoto } from "./remoto";
 import type {
   Dispositivo,
   DispositivoPubblico,
+  FornitoreAi,
   FornitoreLibreria,
   FornitorePannello,
+  FornitorePreset,
   StatoRichiesta,
   StatoSuite,
 } from "./types";
@@ -83,10 +101,29 @@ export interface GatewayOpzioni {
    * di sparire. Un client che le chiama non deve indovinare se ci sono.
    */
   pannello?: FornitorePannello;
+  /**
+   * Chi sa far scrivere il modello, se questa suite ce l'ha.
+   *
+   * Facoltativo come gli altri: senza, le rotte dell'AI rispondono che qui non
+   * c'e' nessuno a cui chiedere, invece di sparire.
+   */
+  ai?: FornitoreAi;
+  /** Chi sa rispondere sui modi di generare messi da parte. */
+  preset?: FornitorePreset;
 }
 
 /** Ogni quanto il gateway manda un segno di vita a chi è in ascolto. */
 const BATTITO_SSE_MS = 20_000;
+
+/**
+ * Quanto può pesare un file mandato a mano a qualcuno: mezzo giga.
+ *
+ * Non è un limite tecnico ma una difesa: la rotta scrive sul disco quello
+ * che le arriva, e senza un tetto chiunque sia collegato potrebbe riempire il
+ * disco del computer con un unico invio che non finisce mai. Mezzo giga è
+ * più di qualunque cosa la suite produca.
+ */
+const MASSIMO_REGALO = 512 * 1024 * 1024;
 
 /** Una connessione SSE aperta: il gateway le tiene d'occhio per spingere. */
 interface SseClient {
@@ -104,6 +141,8 @@ export class Gateway {
   private computer: string;
   private libreria: FornitoreLibreria | undefined;
   private pannello: FornitorePannello | undefined;
+  private ai: FornitoreAi | undefined;
+  private preset: FornitorePreset | undefined;
 
   constructor(opzioni: GatewayOpzioni) {
     this.remoto = opzioni.remoto;
@@ -113,6 +152,8 @@ export class Gateway {
     this.computer = opzioni.computer;
     this.libreria = opzioni.libreria;
     this.pannello = opzioni.pannello;
+    this.ai = opzioni.ai;
+    this.preset = opzioni.preset;
     this.server = createServer((req, res) => {
       void this.maneggia(req, res);
     });
@@ -168,6 +209,28 @@ export class Gateway {
       // procura lei accoppiandosi, come fa il telefono.
       if ((percorso === "/" || percorso === "/console") && req.method === "GET") {
         this.pagina(res, paginaConsole());
+        return;
+      }
+
+      /**
+       * Il file di un regalo, letto **prima** di tutto il resto.
+       *
+       * `leggiCorpo` mette in memoria fino a un mega e poi butta: e' quello che
+       * serve a un JSON e sarebbe la fine di un video da duecento. Qui il corpo
+       * non e' JSON, e' il file: si controlla chi sta mandando e lo si scrive
+       * sul disco mentre arriva, senza tenerlo in memoria.
+       */
+      if (percorso === "/invii" && req.method === "POST") {
+        const chi = this.chiE(req, url);
+        if (!chi) {
+          this.errore(res, 401, "Token mancante o non riconosciuto.");
+          return;
+        }
+        if (chi.ruolo !== "admin") {
+          this.errore(res, 403, "Mandare un file lo puo' fare solo chi ha il permesso di decidere.");
+          return;
+        }
+        await this.ricevi(req, res, chi, url);
         return;
       }
 
@@ -291,6 +354,157 @@ export class Gateway {
         return;
       }
 
+      /**
+       * Riscrivere una richiesta ferma, prima di farla partire.
+       *
+       * Le due strade del menu chiesto il 22 agosto 2026: `/testo` e' «scrivilo
+       * io», `/migliora` e' «fallo riscrivere al modello». Le due si possono
+       * anche usare di fila — riscrivo a mano, poi chiedo al modello di aprire
+       * quello che ho scritto — e in tutti e due i casi quello che aveva scritto
+       * la persona resta da parte.
+       */
+      const riscrittura = percorso.match(/^\/richieste\/([^/]+)\/(testo|migliora)$/);
+      if (riscrittura && req.method === "POST") {
+        const id = riscrittura[1] ?? "";
+        const come = riscrittura[2];
+        if (come === "migliora") {
+          if (!this.ai) return this.errore(res, 501, "Questa suite non ha un modello a cui chiedere.");
+          const richiesta = this.remoto.richiesta(id);
+          if (!richiesta) return this.errore(res, 404, "Richiesta non trovata.");
+          if (dispositivo.ruolo !== "admin") {
+            return this.errore(res, 403, "Questo lo puo' fare solo chi ha il permesso di decidere.");
+          }
+          const partenza = ((corpo ?? {}) as { testo?: string }).testo?.trim() || richiesta.testo;
+          let scritto: string;
+          try {
+            scritto = await this.ai.migliora({ testo: partenza, app: richiesta.app });
+          } catch (err) {
+            return this.errore(res, 502, err instanceof Error ? err.message : "Il modello non ha risposto.");
+          }
+          const male = this.remoto.riscrivi(id, dispositivo, scritto, "ai");
+          if (male) return this.errore(res, 403, male);
+        } else {
+          const testo = ((corpo ?? {}) as { testo?: string }).testo ?? "";
+          const male = this.remoto.riscrivi(id, dispositivo, testo, "mano");
+          if (male) return this.errore(res, 403, male);
+        }
+        this.json(res, 200, this.remoto.richiesta(id));
+        this.aggiorna();
+        return;
+      }
+
+      // Mettere via una richiesta finita, o buttarla del tutto.
+      const daTogliere = percorso.match(/^\/richieste\/([^/]+)$/);
+      if (daTogliere && (req.method === "DELETE" || req.method === "PATCH")) {
+        const id = daTogliere[1] ?? "";
+        const male = this.remoto.metti(id, dispositivo, req.method === "DELETE" ? "cancella" : "archivia");
+        if (male) return this.errore(res, 403, male);
+        this.json(res, 200, { ok: true });
+        this.aggiorna();
+        return;
+      }
+
+      /* ----------------------------------------------------- il modello */
+
+      // C'e' qualcuno a cui chiedere di scrivere? Lo chiede la pagina per
+      // decidere se mostrare i tasti dell'AI o dire perche' non ci sono.
+      if (percorso === "/ai" && req.method === "GET") {
+        if (!this.ai) return this.json(res, 200, { ok: false, motivo: "Questa suite non ha un modello." });
+        const motivo = await this.ai.disponibile();
+        this.json(res, 200, { ok: motivo === null, motivo: motivo ?? undefined });
+        return;
+      }
+
+      /**
+       * Il tasto **Miglioralo**, quello che sta accanto alle caselle.
+       *
+       * Solo per chi decide, e non e' prudenza sui contenuti: e' che quattro GB
+       * di scheda video occupati per riscrivere una frase sono quattro GB in
+       * meno per la generazione che sta girando, e chi non decide non ha modo
+       * di sapere cosa sta facendo il computer in quel momento.
+       */
+      if (percorso === "/ai/migliora" && req.method === "POST") {
+        if (!this.ai) return this.errore(res, 501, "Questa suite non ha un modello a cui chiedere.");
+        if (dispositivo.ruolo !== "admin") {
+          return this.errore(res, 403, "I tasti dell'AI li puo' usare chi ha il permesso di decidere.");
+        }
+        const dati = (corpo ?? {}) as { testo?: string; app?: string };
+        if (!dati.testo?.trim()) return this.errore(res, 400, "Scrivi prima qualcosa, anche due parole.");
+        try {
+          const scritto = await this.ai.migliora({
+            testo: dati.testo.trim().slice(0, 4000),
+            app: dati.app ?? "foto",
+          });
+          this.json(res, 200, { testo: scritto });
+        } catch (err) {
+          this.errore(res, 502, err instanceof Error ? err.message : "Il modello non ha risposto.");
+        }
+        return;
+      }
+
+      /* ------------------------------------------------------ i preset */
+
+      if (percorso === "/preset" && req.method === "GET") {
+        this.json(res, 200, { preset: this.preset?.elenco(url.searchParams.get("app") || undefined) ?? [] });
+        return;
+      }
+      if (percorso === "/preset" && req.method === "POST") {
+        if (!this.preset) return this.errore(res, 501, "Questa suite non tiene i preset.");
+        const dati = (corpo ?? {}) as { app?: string; nome?: string; testo?: string; campi?: Record<string, string> };
+        if (!dati.app || !dati.nome?.trim() || !dati.testo?.trim()) {
+          return this.errore(res, 400, "Un preset vuole la scheda, un nome e cosa deve dire.");
+        }
+        this.json(res, 201, this.preset.salva({
+          app: dati.app,
+          nome: dati.nome.trim().slice(0, 40),
+          testo: dati.testo.trim().slice(0, 4000),
+          campi: dati.campi,
+          chi: dispositivo.id,
+        }));
+        return;
+      }
+      const preset = percorso.match(/^\/preset\/([^/]+)$/);
+      if (preset && req.method === "DELETE") {
+        if (!this.preset) return this.errore(res, 501, "Questa suite non tiene i preset.");
+        const tolto = this.preset.elimina(preset[1] ?? "", dispositivo.id);
+        this.json(res, tolto ? 200 : 403, { ok: tolto });
+        return;
+      }
+
+      /* ------------------------------------------------------- i regali */
+
+      if (percorso === "/invii" && req.method === "GET") {
+        this.json(res, 200, { invii: this.remoto.inviiDi(dispositivo) });
+        return;
+      }
+      const sulRegalo = percorso.match(/^\/invii\/([^/]+)(\/file|\/aperto)?$/);
+      if (sulRegalo) {
+        const id = sulRegalo[1] ?? "";
+        const coda = sulRegalo[2] ?? "";
+        if (coda === "/file" && (req.method === "GET" || req.method === "HEAD")) {
+          this.mandaRegalo(req, res, dispositivo, id);
+          return;
+        }
+        if (coda === "/aperto" && req.method === "POST") {
+          this.json(res, 200, { ok: this.remoto.apri(id, dispositivo) });
+          this.aggiorna();
+          return;
+        }
+        if (!coda && req.method === "DELETE") {
+          const tolto = this.remoto.scordaInvio(id, dispositivo);
+          if (tolto) {
+            try {
+              rmSync(join(this.remoto.inviiDir, tolto.percorso));
+            } catch {
+              // Il file poteva gia' non esserci: l'elenco e' comunque a posto.
+            }
+          }
+          this.json(res, tolto ? 200 : 404, { ok: Boolean(tolto) });
+          this.aggiorna();
+          return;
+        }
+      }
+
       // Scaricare il file di un risultato.
       const file = percorso.match(/^\/risultati\/(.+)$/);
       if (file && req.method === "GET") {
@@ -347,13 +561,43 @@ export class Gateway {
               tipo: url.searchParams.get("tipo") || undefined,
               app: url.searchParams.get("app") || undefined,
               quanti: Number(url.searchParams.get("quanti")) || 60,
+              // Chi guarda decide cosa vede: le sue, o quelle che qualcuno ha
+              // messo in bacheca. Non e' un filtro comodo, e' il permesso.
+              chi: dispositivo.id,
+              dove: url.searchParams.get("dove") === "bacheca" ? "bacheca" : "mie",
             }) ?? [],
         });
         return;
       }
       const dallaLibreria = percorso.match(/^\/libreria\/file\/(.+)$/);
       if (dallaLibreria && (req.method === "GET" || req.method === "HEAD")) {
-        this.serviLibreria(req, res, decodeURIComponent(dallaLibreria[1] ?? ""));
+        this.serviLibreria(req, res, decodeURIComponent(dallaLibreria[1] ?? ""), dispositivo);
+        return;
+      }
+
+      /**
+       * Mettere una cosa in bacheca, o toglierla.
+       *
+       * E' il gesto che regge tutta la parte «social» chiesta il 22 agosto:
+       * ognuno vede le sue, e quello che vede degli altri e' quello che gli
+       * altri hanno **deciso** di far vedere.
+       */
+      const inBacheca = percorso.match(/^\/libreria\/(.+)\/pubblica$/);
+      if (inBacheca && req.method === "POST") {
+        if (!this.libreria) return this.errore(res, 501, "Questa suite non ha la libreria.");
+        const id = decodeURIComponent(inBacheca[1] ?? "");
+        const voluto = ((corpo ?? {}) as { pubblicato?: boolean }).pubblicato !== false;
+        const fatto = this.libreria.pubblica(id, dispositivo.id, voluto);
+        this.json(res, fatto ? 200 : 403, { ok: fatto, pubblicato: voluto });
+        this.aggiorna();
+        return;
+      }
+      const daButtare = percorso.match(/^\/libreria\/(.+)$/);
+      if (daButtare && req.method === "DELETE") {
+        if (!this.libreria) return this.errore(res, 501, "Questa suite non ha la libreria.");
+        const fatto = this.libreria.elimina(decodeURIComponent(daButtare[1] ?? ""), dispositivo.id);
+        this.json(res, fatto ? 200 : 403, { ok: fatto });
+        this.aggiorna();
         return;
       }
 
@@ -414,11 +658,21 @@ export class Gateway {
         if (!suoStesso && dispositivo.ruolo !== "admin") {
           return this.errore(res, 403, "Puoi togliere solo te stesso.");
         }
-        const nome = (corpo as { nome?: string } | null)?.nome;
-        if (req.method === "POST" && typeof nome === "string" && nome.trim()) {
-          this.pannello.rinomina(id, nome.trim().slice(0, 40));
-        } else {
+        const dati = (corpo ?? {}) as { nome?: string; ruolo?: string };
+        if (req.method === "POST" && (dati.ruolo === "admin" || dati.ruolo === "ospite")) {
+          // Cambiare cosa puo' fare un altro e' un gesto da chi decide, e non
+          // lo puo' fare su se' stesso: togliersi il permesso da soli vuol dire
+          // restare chiusi fuori dal proprio computer.
+          if (dispositivo.ruolo !== "admin" || suoStesso) {
+            return this.errore(res, 403, "Il permesso di un altro lo cambia chi decide, e non su di se'.");
+          }
+          this.remoto.cambiaRuolo(id, dati.ruolo);
+        } else if (req.method === "POST" && typeof dati.nome === "string" && dati.nome.trim()) {
+          this.pannello.rinomina(id, dati.nome.trim().slice(0, 40));
+        } else if (req.method === "DELETE") {
           this.pannello.revoca(id);
+        } else {
+          return this.errore(res, 400, "Non ho capito cosa cambiare di questa persona.");
         }
         this.json(res, 200, { ok: true });
         this.aggiorna();
@@ -552,29 +806,56 @@ export class Gateway {
    * Dal gateway esce **solo** un percorso che la libreria ha riconosciuto da un
    * id suo: quello che arriva da Internet è l'id, mai un percorso.
    */
-  private serviLibreria(req: IncomingMessage, res: ServerResponse, id: string): void {
-    const voce = this.libreria?.file(id);
+  private serviLibreria(
+    req: IncomingMessage,
+    res: ServerResponse,
+    id: string,
+    chi: Dispositivo,
+  ): void {
+    const voce = this.libreria?.file(id, chi.id);
     if (!voce) {
       this.errore(res, 404, "Non trovo questo file nella libreria.");
       return;
     }
 
-    let dimensione = voce.bytes;
+    this.mandaConPezzi(req, res, voce.percorso, voce.mime, voce.bytes);
+  }
+
+  /**
+   * Manda un file, **a pezzi se il client li chiede**.
+   *
+   * Nata dentro la galleria e tirata fuori quando sono arrivati i regali: un
+   * video ricevuto da una persona si guarda come uno generato dalla suite, e
+   * scrivere due volte la stessa gestione di `Range` voleva dire due modi
+   * diversi di sbagliarla.
+   */
+  private mandaConPezzi(
+    req: IncomingMessage,
+    res: ServerResponse,
+    percorso: string,
+    mime: string,
+    bytesAttesi: number,
+    scaricaCome?: string,
+  ): void {
+    let dimensione = bytesAttesi;
     try {
-      dimensione = statSync(voce.percorso).size;
+      dimensione = statSync(percorso).size;
     } catch {
       this.errore(res, 404, "Il file non è più sul disco.");
       return;
     }
 
-    const comuni = {
-      "Content-Type": voce.mime,
+    const comuni: Record<string, string | number> = {
+      "Content-Type": mime,
       "Accept-Ranges": "bytes",
       "X-Content-Type-Options": "nosniff",
       // È roba di casa e non cambia mai: farla richiedere di nuovo a ogni
       // scorrimento della galleria costa banda per niente.
       "Cache-Control": "private, max-age=86400",
     };
+    if (scaricaCome) {
+      comuni["Content-Disposition"] = `attachment; filename="${scaricaCome.replace(/"/g, "")}"`;
+    }
 
     if (req.method === "HEAD") {
       res.writeHead(200, { ...comuni, "Content-Length": dimensione });
@@ -596,12 +877,134 @@ export class Gateway {
         "Content-Length": a - da + 1,
         "Content-Range": `bytes ${da}-${a}/${dimensione}`,
       });
-      createReadStream(voce.percorso, { start: da, end: a }).pipe(res);
+      createReadStream(percorso, { start: da, end: a }).pipe(res);
       return;
     }
 
     res.writeHead(200, { ...comuni, "Content-Length": dimensione });
-    createReadStream(voce.percorso).pipe(res);
+    createReadStream(percorso).pipe(res);
+  }
+
+  /* ------------------------------------------------------------- i regali */
+
+  /**
+   * Riceve il file di un regalo e lo scrive sul disco mentre arriva.
+   *
+   * **Perché non passa dal JSON.** Il corpo delle altre rotte si legge in
+   * memoria con un tetto di un mega: giusto per un modulo, impossibile per un
+   * video. Qui il corpo è il file, e va dal socket al disco senza tappe.
+   *
+   * Il nome arriva da chi manda e non lo si crede: quello che finisce sul disco
+   * è un nome fatto qui, senza barre e senza punti in testa. Il nome vero
+   * resta nell'archivio, ed è quello che legge chi riceve.
+   */
+  private async ricevi(
+    req: IncomingMessage,
+    res: ServerResponse,
+    da: Dispositivo,
+    url: URL,
+  ): Promise<void> {
+    const a = url.searchParams.get("a") ?? "";
+    const nome = (url.searchParams.get("nome") ?? "file").slice(0, 120);
+    const messaggio = (url.searchParams.get("messaggio") ?? "").slice(0, 300) || undefined;
+    const mime = String(req.headers["content-type"] ?? "application/octet-stream").split(";")[0]!.trim();
+
+    if (!a) {
+      this.errore(res, 400, "Manca a chi mandarlo.");
+      req.destroy();
+      return;
+    }
+    const atteso = Number(req.headers["content-length"] ?? 0);
+    if (atteso > MASSIMO_REGALO) {
+      this.errore(res, 413, `Un file più grande di ${Math.round(MASSIMO_REGALO / 1_000_000)} MB non passa di qui.`);
+      req.destroy();
+      return;
+    }
+
+    mkdirSync(this.remoto.inviiDir, { recursive: true });
+    const suDisco = `${Date.now().toString(36)}-${nome.replace(/[^\p{L}\p{N} _.()\[\]-]+/gu, "_")}`.replace(
+      /^\.+/,
+      "",
+    );
+    const dove = join(this.remoto.inviiDir, suDisco);
+
+    let scritti = 0;
+    try {
+      await new Promise<void>((risolvi, rifiuta) => {
+        const fuori = createWriteStream(dove);
+        req.on("data", (pezzo: Buffer) => {
+          scritti += pezzo.length;
+          if (scritti > MASSIMO_REGALO) {
+            fuori.destroy();
+            req.destroy();
+            rifiuta(new Error("Il file è troppo grande."));
+          }
+        });
+        req.on("error", rifiuta);
+        fuori.on("error", rifiuta);
+        fuori.on("finish", () => risolvi());
+        req.pipe(fuori);
+      });
+    } catch (err) {
+      try {
+        rmSync(dove);
+      } catch {
+        // Non c'era, o non si lascia togliere: non cambia la risposta.
+      }
+      this.errore(res, 400, err instanceof Error ? err.message : "Il file non è arrivato intero.");
+      return;
+    }
+
+    if (scritti === 0) {
+      try {
+        rmSync(dove);
+      } catch {
+        // Idem: era vuoto comunque.
+      }
+      this.errore(res, 400, "Il file era vuoto.");
+      return;
+    }
+
+    const esito = this.remoto.regala({
+      a,
+      daNome: da.nome,
+      nome,
+      mime,
+      bytes: scritti,
+      percorso: suDisco,
+      messaggio,
+    });
+    if ("errore" in esito) {
+      try {
+        rmSync(dove);
+      } catch {
+        // Il regalo non parte: il file non serve a nessuno.
+      }
+      this.errore(res, 404, esito.errore);
+      return;
+    }
+    this.json(res, 201, esito);
+    this.aggiorna();
+  }
+
+  /** Il file di un regalo, a chi era destinato e a nessun altro. */
+  private mandaRegalo(
+    req: IncomingMessage,
+    res: ServerResponse,
+    dispositivo: Dispositivo,
+    id: string,
+  ): void {
+    const invio = this.remoto.invio(id, dispositivo);
+    if (!invio) {
+      this.errore(res, 404, "Nessun pacco con questo nome, e di sicuro non tuo.");
+      return;
+    }
+    const assoluto = normalize(join(this.remoto.inviiDir, invio.percorso));
+    if (!assoluto.startsWith(this.remoto.inviiDir)) {
+      this.errore(res, 403, "Percorso fuori dalla cartella dei regali.");
+      return;
+    }
+    this.mandaConPezzi(req, res, assoluto, invio.mime, invio.bytes, invio.nome);
   }
 
   /* ------------------------------------------------------------ SSE */

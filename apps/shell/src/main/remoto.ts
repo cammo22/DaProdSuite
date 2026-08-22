@@ -21,8 +21,10 @@ import {
   Remoto,
   type Dispositivo,
   type Esecutore,
+  type FornitoreAi,
   type FornitoreLibreria,
   type FornitorePannello,
+  type FornitorePreset,
   type InvitoQr,
   type InvitoVivo,
   type Risultato,
@@ -38,7 +40,9 @@ import type {
   StatoAccesso,
 } from "@daprod/ipc";
 import { appManager } from "./app-manager";
-import { libreria } from "./libreria";
+import { PADRONE_DI_CASA, libreria } from "./libreria";
+import { aiDisponibile, migliora } from "./migliora";
+import { elencoPreset, eliminaPreset, salvaPreset } from "./preset";
 import { REMOTO_ARCHIVIO, REMOTO_DIR } from "./paths";
 import { indirizziBuoni, ipLocale, reti } from "./reti";
 import { impostaConnessione, impostaInternet, impostazioni } from "./impostazioni";
@@ -273,12 +277,29 @@ const esegui: Esecutore = async (id, valori, dispositivo) => {
  * libreria non riconosce non produce nessun percorso, e la rotta risponde 404.
  */
 const fornitoreLibreria: FornitoreLibreria = {
+  /**
+   * **Ognuno vede le sue, e della bacheca quello che gli altri hanno voluto.**
+   *
+   * Chiesto il 22 agosto 2026: «ogni utente può vedere solo le sue generazioni
+   * e non quelle degli altri», e insieme «voglio farlo sembrare tipo un social
+   * network dove poi gli utenti possono decidere quale pubblicare». Le due cose
+   * stanno insieme in un filtro solo: `mie` sono quelle di chi guarda, `bacheca`
+   * quelle che qualcuno ha messo in mostra — quelle sì, con scritto di chi sono.
+   *
+   * Vale anche per chi decide: «anche gli admin possono vedere ognuno solo le
+   * proprie foto». Il permesso di decidere è sulla fila, non sulle cose degli
+   * altri.
+   */
   elenco(filtro) {
     const cerca: { tipo?: TipoElemento; app?: AppId } = {};
     if (filtro.tipo) cerca.tipo = filtro.tipo as TipoElemento;
     if (filtro.app) cerca.app = filtro.app as AppId;
+    const bacheca = filtro.dove === "bacheca";
     return libreria
       .cerca(cerca)
+      .filter((e) =>
+        bacheca ? libreria.inBacheca(e) : libreria.padrone(e) === filtro.chi,
+      )
       .slice(0, Math.max(1, Math.min(200, filtro.quanti ?? 60)))
       .map((e) => ({
         id: e.id,
@@ -288,12 +309,24 @@ const fornitoreLibreria: FornitoreLibreria = {
         creato: e.creato,
         bytes: e.bytes,
         mime: mimeDi(e.percorso, e.tipo),
+        chi: libreria.padrone(e),
+        chiNome: typeof e.meta?.["chiNome"] === "string" ? (e.meta["chiNome"] as string) : undefined,
+        pubblicato: libreria.inBacheca(e),
+        mia: libreria.padrone(e) === filtro.chi,
       }));
   },
 
-  file(id) {
+  /**
+   * Il file, ma **solo se è roba che questo dispositivo può vedere.**
+   *
+   * Il controllo sta qui e non nella pagina: un indirizzo si scrive a mano, e
+   * fino alla 0.7.1 chiunque fosse collegato poteva scaricare qualunque cosa
+   * avesse prodotto la suite, se ne indovinava il nome.
+   */
+  file(id, chi) {
     const elemento = libreria.trova(id);
     if (!elemento) return null;
+    if (libreria.padrone(elemento) !== chi && !libreria.inBacheca(elemento)) return null;
     return {
       percorso: elemento.percorso,
       nome: elemento.nome,
@@ -301,6 +334,42 @@ const fornitoreLibreria: FornitoreLibreria = {
       mime: mimeDi(elemento.percorso, elemento.tipo),
     };
   },
+
+  pubblica(id, chi, pubblicato) {
+    const fatto = libreria.pubblica(id, chi, pubblicato);
+    if (fatto) sveglia();
+    return fatto;
+  },
+
+  /** Buttare una cosa la può fare solo chi l'ha fatta. */
+  elimina(id, chi) {
+    const elemento = libreria.trova(id);
+    if (!elemento || libreria.padrone(elemento) !== chi) return false;
+    const fatto = libreria.elimina(id);
+    if (fatto) sveglia();
+    return fatto;
+  },
+};
+
+/* ------------------------------------------------------------ il modello */
+
+/**
+ * Chi sa far riscrivere una richiesta al modello.
+ *
+ * Il mestiere vero sta in `migliora.ts`; qui c'è solo il collegamento, perché
+ * il gateway non deve sapere che esiste LM Studio — sa che esiste qualcuno a
+ * cui si può chiedere di scrivere.
+ */
+const fornitoreAi: FornitoreAi = {
+  disponibile: () => aiDisponibile(),
+  migliora: (opzioni) => migliora(opzioni),
+};
+
+/** Chi sa rispondere sui modi di generare messi da parte. */
+const fornitorePreset: FornitorePreset = {
+  elenco: (app) => elencoPreset(app),
+  salva: (preset) => salvaPreset(preset),
+  elimina: (id, chi) => eliminaPreset(id, chi),
 };
 
 /**
@@ -445,6 +514,8 @@ async function accendi(): Promise<StatoAccesso> {
     esegui,
     libreria: fornitoreLibreria,
     pannello: fornitorePannello,
+    ai: fornitoreAi,
+    preset: fornitorePreset,
   });
   // Chi può arrivare: tutta la rete se la connessione è accesa, solo questo
   // computer se è spenta. In tutti e due i casi il gateway **c'è**, perché è
@@ -681,8 +752,14 @@ export function indirizzoConsole(): string {
 
 /* ----------------------------------------------- il token di questo PC */
 
-/** Come si chiama il dispositivo che è il computer stesso. */
-const ID_DI_CASA = "questo-computer";
+/**
+ * Come si chiama il dispositivo che è il computer stesso.
+ *
+ * Lo stesso id con cui la libreria firma quello che viene fatto stando davanti
+ * al PC: se i due divergessero, le proprie cose smetterebbero di essere le
+ * proprie. Per questo si legge da lì e non si riscrive qui.
+ */
+const ID_DI_CASA = PADRONE_DI_CASA;
 
 /**
  * La credenziale del PC su sé stesso.
@@ -840,6 +917,9 @@ remoto.suAccettata((richiesta) => {
     testo: richiesta.testo,
     opzioni: richiesta.opzioni ?? {},
     da: richiesta.daNome,
+    // Chi l'ha chiesta resta attaccato al file che ne esce: è quello che fa
+    // sì che nella galleria ognuno veda le sue cose.
+    daId: richiesta.daDispositivo,
   });
 });
 

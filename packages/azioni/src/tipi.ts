@@ -30,6 +30,18 @@ export interface Campo {
   obbligatorio: boolean;
   /** Per `tipo: "scelta"`: i valori ammessi, e nessun altro. */
   scelte?: readonly string[];
+  /**
+   * Come si chiamano quelle scelte per una persona.
+   *
+   * `scelte` sono gli id che viaggiano nel JSON — `anima2`, `flux2-9b` — e non
+   * vogliono dire niente a chi li legge una volta sola. Qui accanto c'è la
+   * frase da mettere nel menu: «Anima v2», «FLUX.2 Klein 9B». Una scelta senza
+   * etichetta si mostra com'è, che è quello che si faceva prima.
+   *
+   * Vale la regola di tutta la suite: si scrive cosa una cosa fa, non come si
+   * chiama dentro.
+   */
+  etichette?: Readonly<Record<string, string>>;
   /** Per `tipo: "numero"`: gli estremi, inclusi. */
   min?: number;
   max?: number;
