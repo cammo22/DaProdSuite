@@ -869,16 +869,28 @@ function nuovoTokenDiCasa(): string {
 const fornitorePannello: FornitorePannello = {
   stato(dispositivo) {
     const fuori = statoTunnel();
-    const elenco: StatoPannello["indirizzi"] = reti()
-      .filter((r) => r.dove !== "virtuale")
-      .map((r) => ({
-        base: `http://${r.ip}:${portaReale || PORTA}`,
-        che: r.che,
-        dove: r.dove === "ovunque" ? "ovunque" : "casa",
-      }));
+    /**
+     * **In cima quello che funziona anche fuori casa.**
+     *
+     * Lo stesso ordine di `basi()`, e per la stessa ragione: quello che conta è
+     * arrivarci da fuori. Il primo di questo elenco è quello che la pagina
+     * scrive sotto al QR, per chi lo deve copiare a mano sul telefono — e
+     * scrivere l'indirizzo della wifi di casa vorrebbe dire dare a qualcuno un
+     * indirizzo che smette di funzionare appena esce dalla porta.
+     */
+    const schede = reti().filter((r) => r.dove !== "virtuale");
+    const daScheda = (r: { ip: string; che: string; dove: string }) => ({
+      base: `http://${r.ip}:${portaReale || PORTA}`,
+      che: r.che,
+      dove: (r.dove === "ovunque" ? "ovunque" : "casa") as "ovunque" | "casa",
+    });
+    const elenco: StatoPannello["indirizzi"] = schede
+      .filter((r) => r.dove === "ovunque")
+      .map(daScheda);
     if (fuori.fase === "acceso" && fuori.indirizzo) {
       elenco.push({ base: fuori.indirizzo, che: "da Internet, cifrato", dove: "ovunque" });
     }
+    elenco.push(...schede.filter((r) => r.dove !== "ovunque").map(daScheda));
 
     return {
       computer: osNome(),

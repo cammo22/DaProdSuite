@@ -6,8 +6,11 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
+import it.daprod.suite.data.CodaOffline
 import it.daprod.suite.data.Profili
 import it.daprod.suite.net.GatewayClient
+import it.daprod.suite.net.GatewayException
+import it.daprod.suite.net.Indirizzi
 import java.util.concurrent.TimeUnit
 
 /**
@@ -31,9 +34,51 @@ class SyncWorker(context: Context, params: WorkerParameters) : CoroutineWorker(c
         val persone = Profili.tutti(ctx)
         if (persone.isEmpty()) return Result.success()
 
+        val coda = CodaOffline(ctx)
         var qualcunaFallita = false
+
         for (persona in persone) {
-            val client = GatewayClient(persona.base, persona.token)
+            /**
+             * **Quale indirizzo risponde adesso**, non quello di ieri.
+             *
+             * Lo stesso giro che fa l'app quando la apri: senza, il lavoro in
+             * background continuerebbe a bussare a un indirizzo morto mentre il
+             * computer è raggiungibile da un'altra parte.
+             */
+            val dove = Indirizzi.quale(persona.basi, persona.base, persona.token)
+            if (dove == null) {
+                qualcunaFallita = true
+                continue
+            }
+            if (dove != persona.base) Profili.ricordaBase(ctx, persona.id, dove)
+            val client = GatewayClient(dove, persona.token)
+
+            /**
+             * **Quello che ha scritto col PC spento parte adesso**, anche se
+             * l'app è chiusa.
+             *
+             * Chiesto il 23 agosto 2026: «le persone da android devono poter
+             * accedere all'app anche se l'app pc è disconnessa, in modo
+             * comunque da mandare richieste, che quando viene riaperta l'app pc
+             * compariranno». Prima la coda partiva solo riaprendo l'app e
+             * aspettando la schermata: se il telefono restava in tasca, quello
+             * che avevi scritto restava lì.
+             */
+            for (voce in coda.sue(persona.id)) {
+                try {
+                    client.eseguiAzione(voce.azione, voce.valori)
+                    coda.rimuovi(voce)
+                    Notifiche.mostra(ctx, persona.nome, "«${voce.titolo}» è partita: il computer è tornato.")
+                } catch (e: GatewayException) {
+                    // Il computer l'ha rifiutata: tenerla per sempre non aiuta.
+                    coda.rimuovi(voce)
+                    Notifiche.mostra(ctx, persona.nome, "«${voce.titolo}» non è stata accettata: ${e.message}")
+                } catch (_: Exception) {
+                    qualcunaFallita = true
+                    break
+                }
+            }
+
             try {
                 for ((id, testo) in client.notificheNonLette()) {
                     // Con più persone il nome serve: «pronto» da chi, se no.

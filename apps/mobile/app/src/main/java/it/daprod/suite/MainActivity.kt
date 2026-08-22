@@ -337,6 +337,9 @@ class MainActivity : AppCompatActivity() {
     private fun vaiAllaCollega() {
         binding.campoNome.setText(nomeInCorso.ifBlank { "" })
         binding.campoCodice.text?.clear()
+        // L'indirizzo dell'ultima volta: chi si ricollega allo stesso computer
+        // deve solo battere le otto cifre.
+        binding.campoIndirizzo.setText(Store.base(this) ?: "")
         binding.btnTornaUtenti.visibility =
             if (Profili.tutti(this).isEmpty()) View.GONE else View.VISIBLE
         mostra(Dove.COLLEGA)
@@ -377,9 +380,26 @@ class MainActivity : AppCompatActivity() {
             avvisa("Il codice è di otto cifre.")
             return
         }
-        val indirizzo = Store.base(this)
-        if (indirizzo == null) {
-            avvisa("Non so ancora a quale computer bussare: la prima volta inquadra il QR.")
+        /**
+         * **Il codice basta, se si dice anche dove.**
+         *
+         * Chiesto il 23 agosto 2026: «al primo accesso si può inserire anche il
+         * codice, non per forza il QR». Il codice però dice solo *chi sei*, non
+         * *a chi bussare*: quello lo portava il QR. Adesso c'è una casella per
+         * l'indirizzo, già piena con quello dell'ultima volta — e la prima
+         * volta si copia dal computer, dove sta scritto sotto al QR.
+         */
+        val scritto = binding.campoIndirizzo.text.toString().trim().trimEnd('/')
+        val indirizzo = when {
+            scritto.isBlank() -> Store.base(this)
+            scritto.startsWith("http") -> scritto
+            // «casa.trycloudflare.com» senza schema: si mette https, che è
+            // quello che serve da Internet. Un ip:porta di casa resta http.
+            Regex("^\\d{1,3}(\\.\\d{1,3}){3}(:\\d+)?$").matches(scritto) -> "http://$scritto"
+            else -> "https://$scritto"
+        }
+        if (indirizzo.isNullOrBlank()) {
+            avvisa("Scrivi anche l'indirizzo del computer: lo trovi sotto al QR, sulla sua schermata.")
             return
         }
         connetti(listOf(indirizzo), codice)
@@ -747,7 +767,19 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun disegnaSpinner() {
-        if (azioni.isEmpty()) return
+        /**
+         * Senza l'elenco di cosa sa fare il computer non c'è modulo da
+         * disegnare — e prima qui si usciva in silenzio, lasciando una
+         * schermata con un menu vuoto e un tasto che non faceva niente. Adesso
+         * si dice cosa manca e perché.
+         */
+        binding.spinnerAzione.visibility = if (azioni.isEmpty()) View.GONE else View.VISIBLE
+        binding.btnManda.visibility = if (azioni.isEmpty()) View.GONE else View.VISIBLE
+        if (azioni.isEmpty()) {
+            binding.descrizioneAzione.text = getString(R.string.niente_azioni_ricordate)
+            binding.campiAzione.removeAllViews()
+            return
+        }
         binding.spinnerAzione.adapter = ArrayAdapter(
             this,
             android.R.layout.simple_spinner_dropdown_item,
@@ -875,7 +907,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         val principale = valori[azione.campi.firstOrNull { it.obbligatorio }?.nome] ?: azione.titolo
-        codaOffline.aggiungi(azione.id, azione.titolo, principale, valori)
+        codaOffline.aggiungi(azione.id, azione.titolo, principale, valori, chi?.id ?: "")
         svuotaModulo()
         mostraCoda()
         avvisa(getString(R.string.salvata_in_coda))
@@ -898,7 +930,9 @@ class MainActivity : AppCompatActivity() {
      */
     private fun mandaLaCoda(cl: GatewayClient): Job = lifecycleScope.launch {
         var partitaQualcuna = false
-        for (voce in codaOffline.tutte()) {
+        // Solo le proprie: sullo stesso telefono ci possono essere le richieste
+        // di un'altra persona, e partiranno con il suo collegamento.
+        for (voce in codaOffline.sue(chi?.id ?: "")) {
             try {
                 cl.eseguiAzione(voce.azione, voce.valori)
                 codaOffline.rimuovi(voce)

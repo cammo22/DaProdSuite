@@ -426,6 +426,12 @@ const PAGINA = `<!doctype html>
         <div>
           <div class="codice" id="codice-invito">—</div>
           <div class="dettaglio" id="scade-invito"></div>
+          <div class="dettaglio" style="margin-top:10px">
+            Se il QR non va, sul telefono si scrivono <b>questi due</b>:
+          </div>
+          <div class="dettaglio" style="margin-top:4px">
+            <code id="indirizzo-invito">—</code>
+          </div>
         </div>
       </div>
       <div class="avviso" id="avviso-invito"></div>
@@ -2153,6 +2159,11 @@ const PAGINA = `<!doctype html>
       $("riquadro-qr").hidden = false;
       $("qr").src = invito.qr;
       $("codice-invito").textContent = invito.codice;
+      // L'indirizzo da battere a mano: il primo dell'elenco, che è quello che
+      // funziona anche fuori casa. È l'altra metà del codice — da solo, il
+      // codice dice chi sei ma non a chi bussare.
+      var primo = (pannello && pannello.indirizzi && pannello.indirizzi[0]) || null;
+      $("indirizzo-invito").textContent = primo ? primo.base : "—";
       contaAllaRovescia(invito.scade, invito.restano);
       await leggiPannello();
     } catch (e) {
