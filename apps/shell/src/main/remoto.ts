@@ -161,8 +161,27 @@ function basi(): string[] {
   if (!gateway) return [];
   const elenco = indirizziBuoni(portaReale || PORTA);
   const fuori = statoTunnel();
-  if (fuori.fase === "acceso" && fuori.indirizzo) elenco.push(fuori.indirizzo);
-  return elenco;
+  if (fuori.fase !== "acceso" || !fuori.indirizzo) return elenco;
+
+  /**
+   * **Il tunnel prima della rete di casa**, dalla 0.7.3.
+   *
+   * Fino a ieri l'ordine era: Tailscale, la wifi di casa, il tunnel. Aveva una
+   * sua logica — il salto più corto per primo — ed è sbagliata per come la
+   * suite viene usata davvero: «l'app connessione deve funzionare solo su
+   * internet, non ci interessa su lan». Un telefono che si ricorda l'indirizzo
+   * di casa smette di funzionare appena esce dalla porta; uno che si ricorda
+   * l'indirizzo da Internet funziona in tutti e due i posti.
+   *
+   * Tailscale resta il primo di tutti: fa la stessa cosa del tunnel senza
+   * mettere niente su Internet. La rete di casa resta in fondo — non si toglie,
+   * perché è quella che funziona quando Internet è giù.
+   */
+  const porta = portaReale || PORTA;
+  const schede = reti().filter((r) => r.dove !== "virtuale");
+  const ovunque = schede.filter((r) => r.dove === "ovunque").map((r) => `http://${r.ip}:${porta}`);
+  const casa = schede.filter((r) => r.dove !== "ovunque").map((r) => `http://${r.ip}:${porta}`);
+  return [...ovunque, fuori.indirizzo, ...casa];
 }
 
 /**
@@ -295,10 +314,21 @@ const fornitoreLibreria: FornitoreLibreria = {
     if (filtro.tipo) cerca.tipo = filtro.tipo as TipoElemento;
     if (filtro.app) cerca.app = filtro.app as AppId;
     const bacheca = filtro.dove === "bacheca";
+    /**
+     * **Il computer vede tutto.**
+     *
+     * Chiesto il 23 agosto 2026: «sulla suite devono essere presenti in
+     * galleria i file di tutti gli utenti, dalla suite su PC si vede tutto».
+     * Ed è giusto così: i file stanno sul suo disco, le schede della suite li
+     * mostrano già tutti, e chi sta davanti al computer è quello che deve poter
+     * fare ordine. La separazione serve fra le persone collegate da fuori, non
+     * a nascondere a chi ospita quello che ospita.
+     */
+    const eIlComputer = filtro.chi === PADRONE_DI_CASA;
     return libreria
       .cerca(cerca)
       .filter((e) =>
-        bacheca ? libreria.inBacheca(e) : libreria.padrone(e) === filtro.chi,
+        eIlComputer ? true : bacheca ? libreria.inBacheca(e) : libreria.padrone(e) === filtro.chi,
       )
       .slice(0, Math.max(1, Math.min(200, filtro.quanti ?? 60)))
       .map((e) => ({
@@ -326,7 +356,9 @@ const fornitoreLibreria: FornitoreLibreria = {
   file(id, chi) {
     const elemento = libreria.trova(id);
     if (!elemento) return null;
-    if (libreria.padrone(elemento) !== chi && !libreria.inBacheca(elemento)) return null;
+    // Il computer vede tutto quello che ha sul disco, come sopra.
+    const suo = libreria.padrone(elemento) === chi || chi === PADRONE_DI_CASA;
+    if (!suo && !libreria.inBacheca(elemento)) return null;
     return {
       percorso: elemento.percorso,
       nome: elemento.nome,
@@ -341,10 +373,14 @@ const fornitoreLibreria: FornitoreLibreria = {
     return fatto;
   },
 
-  /** Buttare una cosa la può fare solo chi l'ha fatta. */
+  /**
+   * Buttare una cosa la può fare chi l'ha fatta — e il computer, che è quello
+   * che si ritrova il disco pieno.
+   */
   elimina(id, chi) {
     const elemento = libreria.trova(id);
-    if (!elemento || libreria.padrone(elemento) !== chi) return false;
+    const suo = elemento && (libreria.padrone(elemento) === chi || chi === PADRONE_DI_CASA);
+    if (!elemento || !suo) return false;
     const fatto = libreria.elimina(id);
     if (fatto) sveglia();
     return fatto;

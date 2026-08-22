@@ -328,7 +328,14 @@ export class Remoto {
    * lavoro gia' in corso vorrebbe dire raccontare una cosa diversa da quella
    * che la scheda sta facendo davvero.
    */
-  riscrivi(id: string, da: Dispositivo, testo: string, chi: "mano" | "ai"): string | null {
+  riscrivi(
+    id: string,
+    da: Dispositivo,
+    testo: string,
+    chi: "mano" | "ai",
+    /** Altri campi da riempire insieme: per un brano, le parole da cantare. */
+    extra?: Record<string, string>,
+  ): string | null {
     if (da.ruolo !== "admin") return "Questo lo puo' fare solo chi ha il permesso di decidere.";
     const richiesta = this.richiesta(id);
     if (!richiesta) return "Richiesta non trovata.";
@@ -348,6 +355,9 @@ export class Remoto {
       for (const campo of ["prompt", "testo", "descrizione"]) {
         if (campo in richiesta.opzioni) delete richiesta.opzioni[campo];
       }
+    }
+    if (extra) {
+      richiesta.opzioni = { ...(richiesta.opzioni ?? {}), ...extra };
     }
     this.archivio.salva();
     return null;

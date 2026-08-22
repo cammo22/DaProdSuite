@@ -392,7 +392,7 @@ export interface FornitoreAi {
    * inglese, a DaProdMusica un genere con gli strumenti, a DaProdVoce un testo
    * che si legga bene ad alta voce.
    */
-  migliora(opzioni: { testo: string; app: string }): Promise<string>;
+  migliora(opzioni: { testo: string; app: string }): Promise<{ testo: string; parole?: string }>;
 }
 
 /* ------------------------------------------------------------- i preset */

@@ -85,17 +85,23 @@ VIETATO:
 - Scritte o loghi dentro l'immagine.
 - Cambiare il soggetto che ti viene dato.`,
 
-  musica: `Sei un produttore musicale che scrive la descrizione di un brano per un modello che genera musica.
+  musica: `Sei un produttore musicale. Ti danno l'idea di una canzone e ne scrivi DUE cose: com'è fatta, e cosa dice.
 
-COM'È FATTA UNA BUONA DESCRIZIONE:
+LA DESCRIZIONE (campo "testo"):
 - Una riga sola, da 10 a 25 parole, fatta di virgole.
 - Genere, strumenti veri, andatura (lento, medio, veloce), atmosfera.
 - Se ti danno una lingua per il canto, tienila.
 
+IL TESTO DA CANTARE (campo "parole"):
+- In italiano, a meno che l'idea non sia scritta in un'altra lingua: allora in quella.
+- Con i tag fra parentesi quadre a dire dove va cosa: [Verse], [Chorus], [Bridge].
+- Due strofe e un ritornello che torna. Corto: si canta, non si legge.
+- Righe brevi, parole che si possono cantare, niente frasi da manuale.
+
 VIETATO:
 - Nomi di artisti o di canzoni esistenti.
 - Parole vuote come "capolavoro", "bellissimo", "epico".
-- Cambiare il genere che ti viene dato: lo precisi, non lo sostituisci.`,
+- Cambiare il genere o l'argomento che ti vengono dati: li precisi, non li sostituisci.`,
 
   voce: `Sei un editor che prepara un testo perché venga letto ad alta voce da una voce sintetica.
 
@@ -120,6 +126,33 @@ const SCHEMA = {
     },
   },
   required: ["testo"],
+};
+
+/**
+ * Per un brano si chiedono **due** cose.
+ *
+ * Chiesto il 23 agosto 2026: «da telefono, quando fai un brano, l'AI dovrebbe
+ * scrivere anche il testo». Ha ragione: una canzone senza parole è uno
+ * strumentale, e chi chiede «una canzone sul mare» dal telefono non ha nessuna
+ * voglia di scriversi tre strofe a mano su una tastiera piccola.
+ *
+ * Restano due campi separati e non un testo solo perché sono due caselle
+ * diverse in DaProdMusica, e finiscono in due posti diversi del grafo: la
+ * descrizione decide come suona, le parole decidono cosa canta.
+ */
+const SCHEMA_BRANO = {
+  type: "object",
+  properties: {
+    testo: {
+      type: "string",
+      description: "come deve suonare: una riga di generi, strumenti e atmosfera",
+    },
+    parole: {
+      type: "string",
+      description: "il testo da cantare, con i tag [Verse] [Chorus] [Bridge]",
+    },
+  },
+  required: ["testo", "parole"],
 };
 
 /** Null se si può chiedere, il motivo scritto per una persona se no. */
@@ -160,10 +193,14 @@ async function conChiParlo(): Promise<string | undefined> {
  * Solleva con il motivo scritto per una persona: quel testo arriva fino al
  * pannello di chi ha premuto il tasto, e «502» non è una spiegazione.
  */
-export async function migliora(opzioni: { testo: string; app: string }): Promise<string> {
+export async function migliora(opzioni: {
+  testo: string;
+  app: string;
+}): Promise<{ testo: string; parole?: string }> {
   const motivo = await aiDisponibile();
   if (motivo) throw new Error(motivo);
 
+  const brano = opzioni.app === "musica";
   const mestiere = MESTIERI[opzioni.app] ?? MESTIERI.foto!;
   const esito = await chiediAllLlm({
     modello: await conChiParlo(),
@@ -183,18 +220,20 @@ export async function migliora(opzioni: { testo: string; app: string }): Promise
      */
     pensa: true,
     sistema: mestiere,
-    utente:
-      `Riscrivi questa richiesta restando dentro l'idea di chi l'ha scritta. ` +
-      `Non cambiare il soggetto:\n\n"${opzioni.testo}"`,
-    schema: SCHEMA,
-    nomeSchema: "richiesta",
+    utente: brano
+      ? `Da questa idea scrivi come deve suonare la canzone e cosa deve cantare. ` +
+        `Resta dentro l'idea, non cambiarla:\n\n"${opzioni.testo}"`
+      : `Riscrivi questa richiesta restando dentro l'idea di chi l'ha scritta. ` +
+        `Non cambiare il soggetto:\n\n"${opzioni.testo}"`,
+    schema: brano ? SCHEMA_BRANO : SCHEMA,
+    nomeSchema: brano ? "canzone" : "richiesta",
   });
 
   if (!esito.ok) throw new Error(esito.motivo || "Il modello non ha risposto.");
 
-  const scritto = leggiTesto(esito.testo);
-  if (!scritto) throw new Error("Il modello ha risposto in un modo che non riesco a leggere.");
-  return scritto;
+  const dati = leggiRisposta(esito.testo);
+  if (!dati.testo) throw new Error("Il modello ha risposto in un modo che non riesco a leggere.");
+  return dati;
 }
 
 /**
@@ -204,18 +243,22 @@ export async function migliora(opzioni: { testo: string; app: string }): Promise
  * prima graffa e l'ultima invece di arrendersi al primo `JSON.parse`. È lo
  * stesso accorgimento di `bonsai.js` nelle schede, e serve davvero.
  */
-function leggiTesto(risposta: string): string {
-  const prova = (dentro: string): string => {
+function leggiRisposta(risposta: string): { testo: string; parole?: string } {
+  const vuota = { testo: "" };
+  const prova = (dentro: string): { testo: string; parole?: string } => {
     try {
-      const dati = JSON.parse(dentro) as { testo?: unknown };
-      return typeof dati.testo === "string" && dati.testo.trim() ? dati.testo.trim() : "";
+      const dati = JSON.parse(dentro) as { testo?: unknown; parole?: unknown };
+      if (typeof dati.testo !== "string" || !dati.testo.trim()) return vuota;
+      const fuori: { testo: string; parole?: string } = { testo: dati.testo.trim() };
+      if (typeof dati.parole === "string" && dati.parole.trim()) fuori.parole = dati.parole.trim();
+      return fuori;
     } catch {
-      return "";
+      return vuota;
     }
   };
 
   const diretto = prova(risposta);
-  if (diretto) return diretto;
+  if (diretto.testo) return diretto;
 
   /**
    * Le graffe si provano **dall'ultima**, non dalla prima.
@@ -238,8 +281,8 @@ function leggiTesto(risposta: string): string {
     for (const chiusura of [risposta.lastIndexOf("}"), fine]) {
       if (chiusura <= inizio) continue;
       const dentro = prova(risposta.slice(inizio, chiusura + 1));
-      if (dentro) return dentro;
+      if (dentro.testo) return dentro;
     }
   }
-  return "";
+  return vuota;
 }
