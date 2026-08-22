@@ -117,6 +117,17 @@ Il tasto, dovunque sia, adesso si chiama **Usa l'AI**.
 
 ---
 
+### Provato sul PC vero
+
+Il giro del video, dall'inizio alla fine, con il motore acceso: un telefono
+chiede «una barca entra in porto all'alba», chi sta al PC accetta, DaProdCinema
+si apre e genera. **Centocinquanta secondi dopo** il file c'è, si chiama come il
+prompt, si scarica intero e a pezzi, è un mp4 vero e lungo quanto dice, sta nella
+galleria di chi l'ha chiesto — e **DaProdCinema si è chiusa da sola**, con il suo
+motore. Nel registro della fila si legge la riga che lo dice.
+
+Prima di questa release, lo stesso giro finiva con «fallita».
+
 ### Cosa **non** è a posto, e va detto
 
 - **Il tasto dell'AI ci mette un minuto o due**: Bonsai si carica a 64K e
