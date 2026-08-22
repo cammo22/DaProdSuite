@@ -86,7 +86,10 @@ const fintaAi = {
   disponibile: async () => (aiSpenta ? "LM Studio non risponde." : null),
   migliora: async ({ testo, app }) => {
     if (aiSpenta) throw new Error("LM Studio non risponde.");
-    return `[${app}] ${testo}, scritto meglio`;
+    // Per un brano il modello scrive due cose: come suona, e cosa canta.
+    return app === "musica"
+      ? { testo: `[${app}] ${testo}, scritto meglio`, parole: "[Verse] due parole cantate" }
+      : { testo: `[${app}] ${testo}, scritto meglio` };
   },
 };
 
@@ -506,6 +509,19 @@ let daRiscrivere;
     metodo: "POST", token: tokenAdmin, corpo: { testo: "due parole", app: "musica" },
   });
   dice("chi decide li usa", r.stato === 200 && r.dati.testo === "[musica] due parole, scritto meglio", `→ ${r.testo}`);
+  dice("e per un brano scrive anche le parole", r.dati.parole === "[Verse] due parole cantate", `→ ${r.testo}`);
+}
+{
+  // Le parole finiscono **dentro la richiesta**, nella casella del testo da
+  // cantare: chi ha chiesto una canzone dal telefono non se la scrive a mano.
+  const chiesta = await chiama("/azioni/genera.brano", {
+    metodo: "POST", token: tokenOspite, corpo: { descrizione: "una canzone sul mare" },
+  });
+  const idBrano = chiesta.dati.richiesta.id;
+  const r = await chiama(`/richieste/${idBrano}/migliora`, { metodo: "POST", token: tokenAdmin, corpo: {} });
+  dice("il brano si fa riscrivere", r.stato === 200 && /scritto meglio/.test(r.dati.testo), `→ ${r.testo}`);
+  dice("e le parole entrano nella richiesta", r.dati.opzioni?.testo === "[Verse] due parole cantate", `→ ${JSON.stringify(r.dati.opzioni)}`);
+  await chiama(`/richieste/${idBrano}`, { metodo: "DELETE", token: tokenAdmin });
 }
 {
   aiSpenta = true;
