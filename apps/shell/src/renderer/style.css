@@ -1286,6 +1286,41 @@ li.modello .bottone {
 }
 
 /* La scelta dell'indirizzo, quando ce n'è più d'uno. */
+/* La strada da Internet: stessa forma del riquadro dell'indirizzo, colore
+   diverso — è una cosa che esce di casa, e deve saltare all'occhio quando è
+   accesa. */
+.telefono-internet {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin: -6px 0 14px;
+  padding: 13px 16px;
+  border-radius: 14px;
+  background: rgba(34, 211, 238, 0.06);
+  border: 1px solid var(--bordo-vivo);
+}
+
+.telefono-internet.acceso {
+  background: rgba(52, 211, 153, 0.09);
+  border-color: rgba(52, 211, 153, 0.45);
+}
+
+.telefono-internet.guasto {
+  background: rgba(248, 113, 113, 0.08);
+  border-color: rgba(248, 113, 113, 0.45);
+}
+
+.telefono-internet strong {
+  display: block;
+  margin-top: 3px;
+  font-size: 14px;
+  color: var(--testo);
+  user-select: text;
+  font-weight: 500;
+}
+
 .telefono-rete {
   display: flex;
   align-items: center;

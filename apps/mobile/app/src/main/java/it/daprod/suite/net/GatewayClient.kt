@@ -15,10 +15,18 @@ import java.util.concurrent.TimeUnit
 /**
  * Il client del gateway della suite.
  *
- * Tutte le chiamate vanno a `http://<host>/…` con il token del dispositivo
+ * Tutte le chiamate vanno a `<base>/…` con il token del dispositivo
  * nell'header Authorization. Se il PC non è raggiungibile, ogni chiamata
  * fallisce con un errore di rete: l'app lo usa per distinguere online da
  * offline, e per decidere se una richiesta parte o resta in coda sul telefono.
+ *
+ * **`base` è un indirizzo completo, con lo schema.** Fino alla 0.5.2 era
+ * `ip:porta` e l'app ci metteva davanti `http://` da sé. Con il tunnel su
+ * Internet il gateway sta su `https://qualcosa.trycloudflare.com`: non ha una
+ * porta, non è HTTP, e non entrava in un campo che si chiamava host. Adesso
+ * l'indirizzo arriva intero dal QR e l'app non ci mette niente di suo — che è
+ * anche il solo modo di **non** far parlare in chiaro un telefono che crede di
+ * essere su Internet.
  *
  * Il client HTTP è **uno solo** (`condiviso`): OkHttp tiene un pool di
  * connessioni e un thread di pulizia per istanza, e crearne uno per chiamata —
@@ -26,16 +34,18 @@ import java.util.concurrent.TimeUnit
  * stretta di mano TCP a ogni giro su una wifi di casa.
  */
 class GatewayClient(
-    private val host: String,
+    private val base: String,
     private val token: String,
 ) {
+    private fun a(percorso: String) = "${base.trimEnd('/')}$percorso"
+
     /** Crea una richiesta di generazione da un'azione. Torna l'esito. */
     suspend fun eseguiAzione(id: String, valori: Map<String, String>): Esito =
         withContext(Dispatchers.IO) {
             val corpo = JSONObject()
             for ((chiave, valore) in valori) corpo.put(chiave, valore)
             val req = conToken()
-                .url("http://$host/azioni/${id}")
+                .url(a("/azioni/$id"))
                 .post(corpo.toString().toRequestBody(JSON))
                 .build()
             condiviso.newCall(req).execute().use { res ->
@@ -51,7 +61,7 @@ class GatewayClient(
 
     /** Cosa la suite sa fare adesso. L'app non lo sa da sé: lo chiede. */
     suspend fun azioni(): List<Azione> = withContext(Dispatchers.IO) {
-        val req = conToken().url("http://$host/azioni").build()
+        val req = conToken().url(a("/azioni")).build()
         condiviso.newCall(req).execute().use { res ->
             val testo = res.body?.string().orEmpty()
             if (!res.isSuccessful) throw GatewayException(messaggioDi(testo, res.code))
@@ -62,7 +72,7 @@ class GatewayClient(
 
     /** Le richieste visibili a questo dispositivo (il padrone le vede tutte). */
     suspend fun richieste(): List<Richiesta> = withContext(Dispatchers.IO) {
-        val req = conToken().url("http://$host/richieste").build()
+        val req = conToken().url(a("/richieste")).build()
         condiviso.newCall(req).execute().use { res ->
             val testo = res.body?.string().orEmpty()
             if (!res.isSuccessful) throw GatewayException(messaggioDi(testo, res.code))
@@ -71,9 +81,26 @@ class GatewayClient(
         }
     }
 
+    /**
+     * Un colpetto per sapere se il PC risponde.
+     *
+     * Serve prima di aprire la pagina della suite: una WebView che non riesce a
+     * caricare mostra la pagina di errore del browser, in inglese e con un
+     * codice — che è esattamente quello che questa app esiste per evitare.
+     * Meglio chiedere prima e dire in italiano cosa succede.
+     */
+    suspend fun raggiungibile(): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val req = conToken().url(a("/io")).build()
+            condiviso.newCall(req).execute().use { it.isSuccessful }
+        } catch (_: Exception) {
+            false
+        }
+    }
+
     /** Le novità che il PC ci ha lasciato: id e testo da mostrare. */
     suspend fun notificheNonLette(): List<Pair<String, String>> = withContext(Dispatchers.IO) {
-        val req = conToken().url("http://$host/notifiche").build()
+        val req = conToken().url(a("/notifiche")).build()
         condiviso.newCall(req).execute().use { res ->
             val testo = res.body?.string().orEmpty()
             if (!res.isSuccessful) return@withContext emptyList()
@@ -87,7 +114,7 @@ class GatewayClient(
 
     suspend fun segnaNotificaLetta(id: String) {
         withContext(Dispatchers.IO) {
-            val req = conToken().url("http://$host/notifiche/$id/letta")
+            val req = conToken().url(a("/notifiche/$id/letta"))
                 .post("{}".toRequestBody(JSON))
                 .build()
             try {
@@ -106,10 +133,25 @@ class GatewayClient(
      * da decine di MB, quindi si tiene in memoria solo il tempo di scriverlo.
      */
     suspend fun scaricaRisultato(nome: String): ByteArray = withContext(Dispatchers.IO) {
-        val req = conToken().url("http://$host/risultati/${nome.replace(" ", "%20")}").build()
+        prendi(a("/risultati/${percorsoSicuro(nome)}"))
+    }
+
+    /**
+     * Scarica una cosa della libreria: un'immagine, un video, un brano.
+     *
+     * È la stessa strada del risultato di una richiesta, ma parte dalla
+     * galleria: sul PC la libreria è di tutta la suite, e da qui si prende
+     * quello che si vuole portare nel telefono anche se l'ha chiesto un altro.
+     */
+    suspend fun scaricaDallaLibreria(id: String): ByteArray = withContext(Dispatchers.IO) {
+        prendi(a("/libreria/file/${percorsoSicuro(id)}"))
+    }
+
+    private fun prendi(url: String): ByteArray {
+        val req = conToken().url(url).build()
         condiviso.newCall(req).execute().use { res ->
             if (!res.isSuccessful) throw GatewayException("Non riesco a scaricarlo (${res.code})")
-            res.body?.bytes() ?: throw GatewayException("Il file è arrivato vuoto.")
+            return res.body?.bytes() ?: throw GatewayException("Il file è arrivato vuoto.")
         }
     }
 
@@ -127,16 +169,24 @@ class GatewayClient(
 
         /** Un client solo per tutta l'app: il pool di connessioni si riusa. */
         private val condiviso = OkHttpClient.Builder()
-            .connectTimeout(5, TimeUnit.SECONDS)
-            .readTimeout(30, TimeUnit.SECONDS)
+            // Il tunnel su Internet fa due salti in più di una wifi di casa: i
+            // cinque secondi di prima erano tarati su «il PC è nella stanza
+            // accanto», e da fuori facevano sembrare irraggiungibile un PC che
+            // stava solo rispondendo da più lontano.
+            .connectTimeout(12, TimeUnit.SECONDS)
+            .readTimeout(60, TimeUnit.SECONDS)
             .build()
 
-        /** L'accoppiamento: l'unica chiamata senza token. */
+        /**
+         * L'accoppiamento: l'unica chiamata senza token.
+         *
+         * `base` è l'indirizzo completo del gateway, schema compreso.
+         */
         suspend fun accoppia(base: String, codice: String, nome: String): Accoppiamento =
             withContext(Dispatchers.IO) {
                 val corpo = JSONObject().put("codice", codice).put("nome", nome).toString()
                 val req = Request.Builder()
-                    .url("http://$base/accoppiamento")
+                    .url("${base.trimEnd('/')}/accoppiamento")
                     .post(corpo.toRequestBody(JSON))
                     .build()
                 condiviso.newCall(req).execute().use { res ->
@@ -150,6 +200,16 @@ class GatewayClient(
                     )
                 }
             }
+
+        /**
+         * Un pezzo di percorso, senza sorprese.
+         *
+         * Gli id della libreria contengono le barre delle sottocartelle
+         * (`cinema/clip_003.mp4`) e quelle devono restare barre; tutto il resto
+         * — spazi, accenti, parentesi — va codificato, o OkHttp rifiuta l'URL.
+         */
+        private fun percorsoSicuro(nome: String): String =
+            nome.split("/").joinToString("/") { android.net.Uri.encode(it) }
 
         /**
          * Il messaggio del gateway, se ce n'è uno.

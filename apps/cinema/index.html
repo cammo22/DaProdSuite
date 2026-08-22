@@ -166,7 +166,11 @@
      stacchi in mezzo, come qualunque film. Qui si scrive il soggetto, il
      modello di LM Studio lo spezza in scene, e poi si genera una alla volta —
      una per volta, così una storia interrotta riprende da dove era. Il perché
-     di ogni scelta sta in src/storia.js. -->
+     di ogni scelta sta in src/storia.js.
+
+     La resa (modello, forma, misura, qualità) è **sua** e non quella della
+     scheda Crea: in Crea si prova a 480, il film lo si vuole nella misura
+     buona, e con una scelta sola una delle due cose andava sempre storta. -->
 <section class="tab" id="scheda-storia">
  <div class="two">
   <div>
@@ -179,8 +183,40 @@
         ritrovarlo, perché ogni inquadratura la genera da zero.</div>
     </div>
 
+    <!-- I riferimenti: una faccia, un posto, una voce. Li guarda il modello che
+         scrive (se sa vedere), e MiniMax H3 li usa dentro ogni clip. -->
     <div class="panel">
-      <h2>Quanto deve durare</h2>
+      <h2>Immagini e audio di riferimento
+        <span class="right"><button class="mini" id="storiaRifAggiungi">aggiungi</button></span>
+      </h2>
+      <input type="file" id="storiaRifFile" accept="image/*,audio/*" multiple hidden>
+      <div id="storiaRifElenco" class="rif-zona"></div>
+      <div class="hint" id="storiaRifRiga"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Come deve venire</h2>
+      <div class="resa">
+        <div class="voce larga">
+          <label for="storiaModello">Modello</label>
+          <select id="storiaModello"></select>
+          <div class="hint" id="storiaRigaModello"></div>
+        </div>
+      </div>
+      <div id="storiaAvvisoModello" class="manca" hidden></div>
+      <div class="resa">
+        <div class="voce larga" id="storiaVoceModi">
+          <label>Qualità <span class="misura" id="storiaRigaModi"></span></label>
+          <div class="serie" id="storiaModi"></div>
+        </div>
+        <div class="voce larga">
+          <label>Formato <span class="misura" id="storiaMisura"></span></label>
+          <div class="gruppo">
+            <div class="serie" id="storiaFormati"></div>
+            <div class="serie" id="storiaRisoluzioni"></div>
+          </div>
+        </div>
+      </div>
       <div class="resa">
         <div class="voce corta">
           <label for="storiaMinuti">Minuti</label>
@@ -192,9 +228,7 @@
         </div>
       </div>
       <div class="hint" id="storiaConto"></div>
-      <div class="hint">Il modello, il formato e la qualità sono quelli scelti nella scheda
-        <b>Crea</b>: la storia usa le stesse impostazioni, così quello che hai provato lì è
-        quello che esce qui.</div>
+      <label class="switch"><input type="checkbox" id="storiaAuto" checked> Cuci il film da solo quando l'ultima scena è pronta</label>
     </div>
 
     <div class="panel">
@@ -204,6 +238,10 @@
         <button class="mini" id="storiaScrivi">Scrivi le scene</button>
         <button class="mini danger" id="storiaAzzera">butta via la storia</button>
       </div>
+      <!-- Qui dentro compare la finestrella coi token in diretta: un modello
+           che ragiona per due minuti dietro a un tasto spento è indistinguibile
+           da uno piantato. La disegna /comune/pensiero-llm.js. -->
+      <div id="storiaPensiero"></div>
       <div class="hint" id="storiaStato"></div>
     </div>
   </div>
@@ -217,6 +255,10 @@
           <button class="mini" id="storiaCuci">cuci il film</button>
         </span>
       </h2>
+      <!-- A che punto è **il film**, non la clip: è la barra che dice se andare
+           a dormire. Quella della clip sta dentro ogni riga. -->
+      <div class="bar" id="storiaBarra" hidden><i></i></div>
+      <div class="hint" id="storiaAvanti"></div>
       <div id="storiaElenco" class="scene"></div>
     </div>
 

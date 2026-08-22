@@ -125,6 +125,9 @@ const api: SuiteApi = {
   remoto: {
     accendi: () => ipcRenderer.invoke(CHANNELS.remotoAccendi),
     spegni: () => ipcRenderer.invoke(CHANNELS.remotoSpegni),
+    accendiInternet: () => ipcRenderer.invoke(CHANNELS.remotoAccendiInternet),
+    spegniInternet: () => ipcRenderer.invoke(CHANNELS.remotoSpegniInternet),
+    apriLaPorta: () => ipcRenderer.invoke(CHANNELS.remotoApriPorta),
     stato: () => ipcRenderer.invoke(CHANNELS.remotoStato),
     nuovoInvito: (ruolo) => ipcRenderer.invoke(CHANNELS.remotoNuovoInvito, ruolo),
     revoca: (id) => ipcRenderer.invoke(CHANNELS.remotoRevoca, id),

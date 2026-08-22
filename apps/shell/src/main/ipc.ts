@@ -12,8 +12,10 @@ import { basename, extname } from "node:path";
 import {
   APP_LIST,
   CHANNELS,
+  type AllegatoLlm,
   type AppId,
   type CosaResettare,
+  type DomandaLlm,
   type FiltroLibreria,
   type Intenzione,
   type ProfiloMemoria,
@@ -22,7 +24,14 @@ import {
   type VoceModello,
 } from "@daprod/ipc";
 import { impostaProfilo, impostaVelocita, impostazioni, segnaGuidaFatta } from "./impostazioni";
-import { caricaModello, chiediAllLlm, liberaMemoriaLlm, scaricaModello, statoLlm } from "./llm";
+import {
+  caricaModello,
+  chiediAllLlm,
+  chiediInDirettaAllLlm,
+  liberaMemoriaLlm,
+  scaricaModello,
+  statoLlm,
+} from "./llm";
 import { appManager } from "./app-manager";
 import { annulla, installaApp, installaModelli, installaTutte, scaricamenti } from "./scaricamenti";
 import { libreria } from "./libreria";
@@ -191,35 +200,21 @@ export function registerIpc(getHub: () => BrowserWindow | null): void {
   );
   ipcMain.handle(CHANNELS.llmScarica, (_e, id: string) => scaricaModello(String(id)));
   ipcMain.handle(CHANNELS.llmLibera, () => liberaMemoriaLlm());
-  ipcMain.handle(
-    CHANNELS.llmChiedi,
-    (
-      _e,
-      domanda: {
-        sistema?: string;
-        utente?: string;
-        schema?: Record<string, unknown>;
-        nomeSchema?: string;
-        modello?: string;
-        pensa?: boolean;
-      },
-    ) =>
-      chiediAllLlm({
-        sistema: String(domanda?.sistema ?? ""),
-        utente: String(domanda?.utente ?? ""),
-        schema: domanda?.schema,
-        nomeSchema: domanda?.nomeSchema,
-        /**
-         * **Queste due righe mancavano, e si vedeva.** Le app mandano da sempre
-         * il modello scelto nel loro menu e se lasciarlo ragionare; qui dentro
-         * i due campi venivano buttati via, e `chiediAllLlm` ripiegava sul
-         * consigliato — Bonsai 27B — che LM Studio si caricava sul momento.
-         * Da fuori sembrava che i tasti «allarga» e «proponi» pretendessero
-         * Bonsai: non era vero, era questa funzione che non passava la scelta.
-         */
-        modello: typeof domanda?.modello === "string" ? domanda.modello : undefined,
-        pensa: typeof domanda?.pensa === "boolean" ? domanda.pensa : undefined,
-      }),
+  ipcMain.handle(CHANNELS.llmChiedi, (_e, domanda: unknown) => chiediAllLlm(leggiDomanda(domanda)));
+
+  /**
+   * La stessa domanda, con i token che tornano indietro mentre arrivano.
+   *
+   * Il `canale` lo inventa il preload a ogni chiamata: due schede che chiedono
+   * insieme ricevono ognuna i propri pezzi, e non quelli dell'altra. Se la
+   * finestra si chiude a metà risposta i pezzi si buttano invece di scrivere
+   * su un webContents morto.
+   */
+  ipcMain.handle(CHANNELS.llmChiediDiretta, (e, canale: string, domanda: unknown) =>
+    chiediInDirettaAllLlm(leggiDomanda(domanda), (pezzo) => {
+      if (e.sender.isDestroyed()) return;
+      e.sender.send(CHANNELS.llmPezzo, { canale: String(canale), pezzo });
+    }),
   );
 
   /* ------------------------------------------------------------- libreria */
@@ -365,6 +360,12 @@ export function registerIpc(getHub: () => BrowserWindow | null): void {
   ipcMain.handle(CHANNELS.remotoStato, () => accessoRemoto.stato());
   ipcMain.handle(CHANNELS.remotoAccendi, () => accessoRemoto.accendi());
   ipcMain.handle(CHANNELS.remotoSpegni, () => accessoRemoto.spegni());
+  // La strada da Internet: un interruttore a parte, perché è una decisione a
+  // parte. Accendere il gateway vuol dire «anche dalla wifi di casa»;
+  // accendere questo vuol dire «anche dal mondo», e va detto e voluto.
+  ipcMain.handle(CHANNELS.remotoAccendiInternet, () => accessoRemoto.accendiInternet());
+  ipcMain.handle(CHANNELS.remotoSpegniInternet, () => accessoRemoto.spegniInternet());
+  ipcMain.handle(CHANNELS.remotoApriPorta, () => accessoRemoto.sbloccaLaPorta());
   ipcMain.handle(CHANNELS.remotoNuovoInvito, (_e, ruolo: "admin" | "ospite") =>
     accessoRemoto.nuovoInvito(ruolo),
   );
@@ -412,3 +413,38 @@ export function registerIpc(getHub: () => BrowserWindow | null): void {
   scaricamenti.on("avanzamento", (stato) => aTutte(CHANNELS.modelliAvanzamento, stato));
 }
 
+/**
+ * Quel che arriva dal renderer, ripulito.
+ *
+ * **Le due righe del modello e del ragionamento erano state dimenticate una
+ * volta, e si vedeva**: le app mandavano da sempre il modello scelto nel loro
+ * menu, qui veniva buttato via, e `chiediAllLlm` ripiegava sul consigliato —
+ * Bonsai 27B — che LM Studio si caricava sul momento. Da fuori sembrava che i
+ * tasti «allarga» e «proponi» pretendessero Bonsai: non era vero, era il ponte
+ * che non passava la scelta. Adesso il lettore è uno solo per tutte e due le
+ * rotte, così non può succedere a metà.
+ */
+function leggiDomanda(grezza: unknown): DomandaLlm {
+  const d = (grezza ?? {}) as Partial<DomandaLlm>;
+  const allegati = Array.isArray(d.allegati)
+    ? d.allegati
+        .filter((a): a is AllegatoLlm => Boolean(a) && typeof a.base64 === "string")
+        .slice(0, 8)
+        .map((a) => ({
+          genere: a.genere === "audio" ? ("audio" as const) : ("immagine" as const),
+          base64: String(a.base64),
+          mime: String(a.mime || (a.genere === "audio" ? "audio/wav" : "image/png")),
+          nome: a.nome ? String(a.nome) : undefined,
+        }))
+    : undefined;
+
+  return {
+    sistema: String(d.sistema ?? ""),
+    utente: String(d.utente ?? ""),
+    schema: d.schema,
+    nomeSchema: d.nomeSchema,
+    modello: typeof d.modello === "string" ? d.modello : undefined,
+    pensa: typeof d.pensa === "boolean" ? d.pensa : undefined,
+    ...(allegati?.length ? { allegati } : {}),
+  };
+}

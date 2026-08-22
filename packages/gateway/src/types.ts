@@ -129,14 +129,61 @@ export interface Invito {
   scade: number;
 }
 
-/** Payload da mettere nel QR: l'app lo legge per sapere dove e con cosa parlare. */
+/**
+ * Payload da mettere nel QR: l'app lo legge per sapere dove e con cosa parlare.
+ *
+ * **La versione 2 aggiunge `base`, e serviva.** Fino alla 1 nel QR c'era solo
+ * `host` — «192.168.1.20:8790» — e l'app ci costruiva davanti `http://`. Con il
+ * tunnel su Internet l'indirizzo è `https://qualcosa.trycloudflare.com`: non ha
+ * una porta, non è HTTP, e non entra in un campo che si chiama host. `base` è
+ * l'indirizzo completo, con lo schema, ed è quello che l'app deve usare.
+ *
+ * `host` resta, e resta giusto: è l'indirizzo **sulla rete di casa**, che
+ * funziona anche quando il tunnel è spento. Un'app vecchia legge quello e
+ * continua a funzionare in casa; una nuova preferisce `base`.
+ */
 export interface InvitoQr {
-  /** Versione della struttura: 1 al primo giro. */
-  v: 1;
-  /** Indirizzo del gateway, es. "192.168.1.20:8790". */
+  /** Versione della struttura: 1 al primo giro, 2 da quando c'è `base`. */
+  v: 1 | 2;
+  /** Indirizzo del gateway sulla rete locale, es. "192.168.1.20:8790". */
   host: string;
+  /** L'indirizzo completo da usare, con lo schema. Presente dalla v2. */
+  base?: string;
   /** Codice a otto cifre, monouso. */
   codice: string;
   /** Ruolo che questo invito concede. */
   ruolo: Ruolo;
+}
+
+/* ------------------------------------------------------------- la libreria */
+
+/**
+ * Una cosa prodotta dalla suite, vista da fuori.
+ *
+ * **Perché il gateway la conosce solo così.** La libreria vera vive nello
+ * shell, che sa dove stanno i file sul disco. Il gateway non deve saperlo: gli
+ * basta un elenco di voci con un id, e la possibilità di farsi dare il percorso
+ * di quell'id quando qualcuno lo chiede. Così l'unica cosa che attraversa il
+ * confine è un id, e non un percorso che arriva da Internet.
+ */
+export interface VoceLibreria {
+  id: string;
+  nome: string;
+  /** "audio", "immagine", "video". */
+  tipo: string;
+  /** L'app che l'ha prodotta. */
+  app: string;
+  /** Quando, in millisecondi. */
+  creato: number;
+  bytes: number;
+  /** Il tipo MIME, per sapere con che tag mostrarla. */
+  mime: string;
+}
+
+/** Chi sa rispondere sulla libreria: lo passa lo shell al gateway. */
+export interface FornitoreLibreria {
+  /** Le ultime cose prodotte, filtrate come chiede chi guarda. */
+  elenco(filtro: { tipo?: string; app?: string; quanti?: number }): VoceLibreria[];
+  /** Il file di una voce: percorso sul disco e come si chiama. Null se non c'è. */
+  file(id: string): { percorso: string; nome: string; mime: string; bytes: number } | null;
 }

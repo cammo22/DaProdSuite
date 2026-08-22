@@ -1,0 +1,80 @@
+/* Il modello che pensa: la finestrella coi token in diretta.
+ *
+ * Un foglio a sé e non un pezzo di `tema.css` perché **lo carica il componente**
+ * (`pensiero-llm.js`), non la pagina: DaProdCinema e DaProdFoto hanno ancora il
+ * loro foglio e non prendono il tema comune, e una finestrella che arriva senza
+ * i suoi colori sarebbe peggio di non averla. Chi importa il modulo si porta
+ * dietro lo stile, sempre, senza ricordarsi di aggiungere una riga nell'HTML.
+ */
+
+/* ------------------------------------------------ il modello che pensa ----
+ *
+ * La finestrella di `pensiero-llm.js`: pallino che batte, cronometro, e i
+ * token che escono mentre arrivano. Sta qui e non in un'app perché il
+ * ragionamento non è di una scheda — è del modello, che è uno per tutta la
+ * suite.
+ */
+.pensiero {
+  margin-top: 10px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #0d0f15;
+  overflow: hidden;
+}
+.pensiero.vivo {
+  border-color: var(--accent);
+}
+.pensiero.male {
+  border-color: var(--err);
+}
+.pensiero-testa {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 11px;
+  font-size: 12.5px;
+  color: var(--dim);
+}
+.pensiero-testa b {
+  color: var(--txt);
+  font-weight: 600;
+}
+.pensiero-conto {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+}
+.pensiero-pallino {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--line2);
+  flex: none;
+}
+/* Batte finché il modello scrive. È l'unica cosa che distingue «sta pensando»
+   da «si è piantato», e per questo è la prima cosa che si vede. */
+.pensiero-pallino.batte {
+  background: var(--accent);
+  animation: pensiero-battito 1.1s ease-in-out infinite;
+}
+@keyframes pensiero-battito {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.35; transform: scale(0.72); }
+}
+.pensiero-flusso {
+  margin: 0;
+  padding: 10px 12px 12px;
+  max-height: 190px;
+  overflow: auto;
+  border-top: 1px solid var(--line);
+  font: 11.5px/1.55 ui-monospace, "Cascadia Mono", Consolas, monospace;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+/* Il ragionamento più smorto della risposta: sono due cose diverse, e si
+   devono distinguere con la coda dell'occhio senza dover leggere. */
+.pensiero-flusso code.ragiona {
+  color: var(--dim);
+}
+.pensiero-flusso code.risposta {
+  color: var(--txt);
+}

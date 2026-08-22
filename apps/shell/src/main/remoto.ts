@@ -20,6 +20,7 @@ import {
   Remoto,
   type Dispositivo,
   type Esecutore,
+  type FornitoreLibreria,
   type InvitoQr,
   type Risultato,
   type StatoSuite,
@@ -36,6 +37,8 @@ import { appManager } from "./app-manager";
 import { libreria } from "./libreria";
 import { REMOTO_ARCHIVIO, REMOTO_DIR } from "./paths";
 import { ipLocale, reti } from "./reti";
+import { accendiTunnel, spegniTunnel, statoTunnel, suTunnelCambiato } from "./tunnel";
+import { apriLaPorta, statoFirewall, type StatoFirewall } from "./firewall";
 
 /** Su quale porta ascolta il gateway. */
 const PORTA = 8790;
@@ -110,10 +113,25 @@ function osNome(): string {
  */
 let reteScelta: string | undefined;
 
-/** Cos'è il gateway visto dalla rete: ip:porta. */
+/** Cos'è il gateway visto dalla rete di casa: ip:porta. */
 function indirizzo(): string {
   if (!gateway) return "";
   return `${ipLocale(reteScelta)}:${portaReale || PORTA}`;
+}
+
+/**
+ * L'indirizzo da mettere nel QR e da dare a chi si collega.
+ *
+ * Con il tunnel acceso è quello pubblico su Internet, e vince: è l'unico che
+ * funziona **anche** da fuori casa, e in casa funziona lo stesso — passa da
+ * Cloudflare e torna giù, che costa qualche millisecondo e non si sente.
+ * Spento, è l'indirizzo sulla wifi, in chiaro, come è sempre stato.
+ */
+function base(): string {
+  if (!gateway) return "";
+  const fuori = statoTunnel();
+  if (fuori.fase === "acceso" && fuori.indirizzo) return fuori.indirizzo;
+  return `http://${indirizzo()}`;
 }
 
 /**
@@ -215,6 +233,83 @@ const esegui: Esecutore = async (id, valori, dispositivo) => {
   }
 };
 
+/* ------------------------------------------------------- la libreria */
+
+/**
+ * Come il gateway vede la libreria della suite.
+ *
+ * **Attraversa il confine solo un id.** Il gateway riceve richieste da
+ * Internet: se accettasse un percorso, prima o poi qualcuno gli passerebbe
+ * `..\..\Windows`. Qui invece gli si dà un elenco di voci con un id — che è il
+ * percorso *relativo* dentro la cartella dei risultati, come lo conosce già la
+ * libreria — e una funzione che da quell'id ricava il file. Un id che la
+ * libreria non riconosce non produce nessun percorso, e la rotta risponde 404.
+ */
+const fornitoreLibreria: FornitoreLibreria = {
+  elenco(filtro) {
+    const cerca: { tipo?: TipoElemento; app?: AppId } = {};
+    if (filtro.tipo) cerca.tipo = filtro.tipo as TipoElemento;
+    if (filtro.app) cerca.app = filtro.app as AppId;
+    return libreria
+      .cerca(cerca)
+      .slice(0, Math.max(1, Math.min(200, filtro.quanti ?? 60)))
+      .map((e) => ({
+        id: e.id,
+        nome: e.nome,
+        tipo: e.tipo,
+        app: e.app,
+        creato: e.creato,
+        bytes: e.bytes,
+        mime: mimeDi(e.percorso, e.tipo),
+      }));
+  },
+
+  file(id) {
+    const elemento = libreria.trova(id);
+    if (!elemento) return null;
+    return {
+      percorso: elemento.percorso,
+      nome: elemento.nome,
+      bytes: elemento.bytes,
+      mime: mimeDi(elemento.percorso, elemento.tipo),
+    };
+  },
+};
+
+/**
+ * Il tipo MIME dall'estensione.
+ *
+ * Serve al browser per sapere che farne: senza, un mp4 arriva come
+ * `application/octet-stream` e il `<video>` non lo suona nemmeno provando. Si
+ * guarda l'estensione e non il contenuto perché questi file li abbiamo scritti
+ * noi, e sappiamo cosa sono.
+ */
+function mimeDi(percorso: string, tipo: string): string {
+  const coda = percorso.slice(percorso.lastIndexOf(".") + 1).toLowerCase();
+  const noti: Record<string, string> = {
+    png: "image/png",
+    jpg: "image/jpeg",
+    jpeg: "image/jpeg",
+    webp: "image/webp",
+    gif: "image/gif",
+    mp4: "video/mp4",
+    webm: "video/webm",
+    mkv: "video/x-matroska",
+    mp3: "audio/mpeg",
+    wav: "audio/wav",
+    flac: "audio/flac",
+    ogg: "audio/ogg",
+    m4a: "audio/mp4",
+  };
+  if (noti[coda]) return noti[coda];
+  // Non lo conosciamo: si dice almeno di che famiglia è, che basta al browser
+  // per scegliere se provare a mostrarlo o offrirlo da scaricare.
+  if (tipo === "immagine") return "image/*";
+  if (tipo === "video") return "video/*";
+  if (tipo === "audio") return "audio/*";
+  return "application/octet-stream";
+}
+
 /* ------------------------------------------------------------ stato */
 
 /** Lo stato da dare al pannello dell'hub. */
@@ -245,13 +340,21 @@ function statoPannello(): StatoAccesso {
     .sort((a, b) => b.quando - a.quando);
 
   const elenco = reti();
+  const fuori = statoTunnel();
   return {
     acceso: gateway !== null,
     indirizzo: indirizzo(),
-    console: gateway ? `http://${indirizzo()}/` : "",
+    console: gateway ? `${base()}/` : "",
     reti: elenco.map((r) => ({ ip: r.ip, scheda: r.scheda, che: r.che })),
     rete: ipLocale(reteScelta),
     computer: osNome(),
+    internet: {
+      fase: fuori.fase,
+      indirizzo: fuori.indirizzo,
+      motivo: fuori.motivo,
+      quota: fuori.quota,
+    },
+    firewall: muroDiWindows,
     dispositivi,
     richieste,
     attesa: richieste.filter((r) => r.stato === "in-attesa").length,
@@ -271,8 +374,12 @@ export async function nuovoInvito(ruolo: "admin" | "ospite"): Promise<InvitoRemo
   if (!gateway) await accendi();
   const invito = remoto.nuovoInvito(ruolo);
   const host = indirizzo();
-  const urlo = `daprod://accoppia?host=${host}&codice=${invito.codice}&ruolo=${ruolo}&v=1`;
-  const dentroIlQr: InvitoQr = { v: 1, host, codice: invito.codice, ruolo };
+  const dove = base();
+  // `base` è l'indirizzo che vale davvero — con il tunnel acceso è quello su
+  // Internet — e `host` resta l'indirizzo di casa: un'app vecchia legge quello
+  // e continua a funzionare sulla wifi. Vedi `InvitoQr` in @daprod/gateway.
+  const urlo = `daprod://accoppia?base=${encodeURIComponent(dove)}&host=${host}&codice=${invito.codice}&ruolo=${ruolo}&v=2`;
+  const dentroIlQr: InvitoQr = { v: 2, host, base: dove, codice: invito.codice, ruolo };
   const qr = await disegnaQr(JSON.stringify(dentroIlQr));
   sveglia();
   return { codice: invito.codice, ruolo: invito.ruolo, scade: invito.scade, url: urlo, qr };
@@ -297,10 +404,16 @@ async function accendi(): Promise<StatoAccesso> {
     computer: osNome(),
     stato: statoSuite,
     esegui,
+    libreria: fornitoreLibreria,
   });
   portaReale = await nuovo.ascolta(PORTA);
   gateway = nuovo;
   sveglia();
+  // Si guarda **adesso**, non prima: la porta vera la si conosce solo dopo che
+  // il server è in ascolto. Non si aspetta la risposta — `netsh` è un processo
+  // e il pannello deve comparire subito — e quando arriva il pannello si
+  // ridisegna da sé.
+  void rileggiFirewall();
   return statoPannello();
 }
 
@@ -312,6 +425,63 @@ async function spegni(): Promise<StatoAccesso> {
   sveglia();
   return statoPannello();
 }
+
+/* ----------------------------------------------------------- firewall */
+
+/**
+ * L'ultima cosa che sappiamo del firewall.
+ *
+ * Si tiene da parte invece di chiederlo a ogni disegno del pannello: `netsh` è
+ * un processo, e il pannello si ridisegna a ogni cambiamento — a ogni battito
+ * del tunnel, a ogni richiesta che arriva. Si guarda quando si accende il
+ * gateway e quando si prova ad aprire la porta, che sono i due momenti in cui
+ * la risposta può essere cambiata.
+ */
+let muroDiWindows: StatoFirewall = { aperta: false, incerto: true };
+
+async function rileggiFirewall(): Promise<void> {
+  muroDiWindows = await statoFirewall();
+  sveglia();
+}
+
+async function sbloccaLaPorta(): Promise<string | null> {
+  const errore = await apriLaPorta(portaReale || PORTA);
+  await rileggiFirewall();
+  return errore;
+}
+
+/* ----------------------------------------------------------- internet */
+
+/**
+ * Accende il tunnel e rifà i conti.
+ *
+ * Il gateway si accende da sé se era spento: un tunnel davanti a una porta
+ * chiusa è una pagina di errore su Internet, che è peggio di niente.
+ *
+ * **Gli inviti in corso si buttano.** L'indirizzo cambia — da `192.168.1.8:8790`
+ * a `https://qualcosa.trycloudflare.com` — e un QR è la fotografia di un
+ * indirizzo: quello vecchio continuerebbe a funzionare in casa e a non
+ * funzionare fuori, che è il modo più sicuro di far sbagliare chi lo inquadra.
+ */
+async function accendiInternet(): Promise<StatoAccesso> {
+  if (!gateway) await accendi();
+  await accendiTunnel(portaReale || PORTA);
+  remoto.buttaInviti();
+  sveglia();
+  return statoPannello();
+}
+
+async function spegniInternet(): Promise<StatoAccesso> {
+  await spegniTunnel();
+  remoto.buttaInviti();
+  sveglia();
+  return statoPannello();
+}
+
+// Il tunnel racconta da sé come sta andando — scarico, accendo, acceso, guasto
+// — e il pannello deve vederlo scorrere invece di restare fermo su «accendo»
+// per un minuto e mezzo.
+suTunnelCambiato(() => sveglia());
 
 /* ------------------------------------------------------- decisioni */
 
@@ -383,6 +553,9 @@ appManager.on("changed", () => {
 export const accessoRemoto = {
   accendi,
   spegni,
+  accendiInternet,
+  spegniInternet,
+  sbloccaLaPorta,
   stato: statoPannello,
   nuovoInvito,
   scegliRete,
@@ -397,6 +570,9 @@ export const accessoRemoto = {
 
 /** Alla chiusura della suite il gateway si spegne con tutto il resto. */
 export async function spegniAccessoRemoto(): Promise<void> {
+  // Prima il tunnel: è un processo figlio, e lasciarlo vivo vorrebbe dire un
+  // indirizzo su Internet che punta a una porta che sta per chiudersi.
+  await spegniTunnel();
   if (gateway) await gateway.chiudi();
   gateway = null;
   // L'archivio salva in differita: alla chiusura non c'è un "poco dopo".

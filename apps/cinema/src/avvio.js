@@ -26,9 +26,11 @@ suApertura("galleria", () => void aggiornaGalleria());
 
 await collegaCrea();
 collegaGalleria();
-// Dopo `collegaCrea`: la storia legge il modello e il formato scelti lì, e
-// prima che quelli esistano il conto delle inquadrature non si può fare.
-collegaStoria();
+// La storia ha la sua resa — modello, forma, misura, qualità — e se la monta
+// da sé: da questa versione non prende più in prestito quella della scheda
+// Crea. Si aspetta perché il conto delle inquadrature vuole sapere con quale
+// modello si gira, e quello arriva dal disco.
+await collegaStoria();
 
 // I video di ieri, sotto la sessione: riaprire la scheda e vedere il vuoto dava
 // l'impressione che quello che si era fatto fosse andato perso.

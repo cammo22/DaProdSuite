@@ -42,12 +42,49 @@ export interface StatoAccesso {
   rete: string;
   /** Il nome del computer, mostrato al telefono. */
   computer: string;
+  /**
+   * L'accesso da Internet: com'è messo il tunnel in uscita.
+   *
+   * È la cosa che la 0.5.0 aveva lasciato indietro — «non esce dalla rete
+   * locale» — e che dalla 0.6.0 si accende con un interruttore. Il pannello
+   * mostra la fase così com'è, perché scaricare quaranta MB di `cloudflared` e
+   * aspettare che Cloudflare risponda sono due attese diverse, e una che non
+   * dice quale delle due è sembra un programma piantato.
+   */
+  internet: StatoInternet;
+  /**
+   * Il firewall di Windows davanti alla porta del gateway.
+   *
+   * È il guasto più silenzioso che questo pannello possa avere: la suite dice
+   * «in ascolto», il QR si inquadra, e dal telefono non arriva niente perché
+   * Windows blocca in entrata senza dirlo a nessuno. Qui si racconta, e si dà
+   * il tasto per rimediare.
+   */
+  firewall: { aperta: boolean; incerto: boolean };
   /** L'invito attivo, se c'è. */
   invito?: InvitoRemoto;
   dispositivi: DispositivoRemoto[];
   richieste: RichiestaRemota[];
   /** Quante richieste nuove (in attesa) ci sono: per il pallino sul pannello. */
   attesa: number;
+}
+
+/** Come sta il tunnel che porta la suite fuori di casa. */
+export interface StatoInternet {
+  /**
+   * - `spento`: si lavora solo sulla wifi di casa, come prima;
+   * - `scarico`: sta arrivando `cloudflared` (una volta sola, ~40 MB);
+   * - `accendo`: il tunnel si sta alzando e Cloudflare non ha ancora dato un nome;
+   * - `acceso`: c'è un indirizzo pubblico e funziona da fuori;
+   * - `guasto`: non è riuscito, e `motivo` dice perché.
+   */
+  fase: "spento" | "scarico" | "accendo" | "acceso" | "guasto";
+  /** L'indirizzo pubblico completo, con `https://`. Vuoto se non c'è. */
+  indirizzo: string;
+  /** Cosa è andato storto, in italiano. */
+  motivo?: string;
+  /** Quanto è arrivato dello scaricamento, da 0 a 1. Solo durante `scarico`. */
+  quota?: number;
 }
 
 /** Un indirizzo su cui il gateway può farsi trovare. */
