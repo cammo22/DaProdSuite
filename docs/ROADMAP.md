@@ -26,7 +26,7 @@ file si scrive quale delle due metà manca.
 
 ## A che punto siamo — 22 agosto 2026
 
-**Ultima pubblicata: 0.7.3.** Nove schede dentro la suite, un ambiente Python
+**Ultima pubblicata: 0.7.4.** Nove schede dentro la suite, un ambiente Python
 solo, e il giro che conta — chiedo dal telefono, il computer fa, il file torna —
 **provato da chi la usa**, sul suo PC e sul suo telefono.
 

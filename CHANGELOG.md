@@ -10,6 +10,25 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ---
 
+## 0.7.4 — Il file si sposta prima dei suoi metadati
+
+**23 agosto 2026.** Una riga sola, vista pulendo dopo la 0.7.3.
+
+Quando una cosa prodotta prende il nome del prompt, accanto al file si sposta
+anche il foglietto con i parametri — modello, seed, passi. Lo spostamento era
+nell'ordine sbagliato: **prima il foglietto, poi il file.** Su un video che
+Windows teneva ancora bloccato il foglietto partiva e il video restava indietro,
+e alla fine c'erano un `.json` orfano col nome giusto e un video col nome del
+motore, senza più i suoi parametri.
+
+Adesso si sposta prima il file. Se non si può, non si è mosso ancora niente e si
+riprova da capo — che è quello che la 0.7.3 aveva già imparato a fare.
+
+**Se ti è capitato:** un video che in galleria si chiama ancora `clip_00020_` è
+quello. Il file c'è ed è intero, gli manca solo il nome.
+
+---
+
 ## 0.7.3 — I video arrivano, e la scheda video torna libera
 
 **23 agosto 2026.** Tutto quello che è venuto fuori usando la 0.7.2 per un
