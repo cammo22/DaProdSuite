@@ -10,6 +10,46 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ---
 
+## 0.7.1 — Il tasto del firewall funziona
+
+**22 agosto 2026.** Tre cose viste subito dopo aver pubblicato la 0.7.0.
+
+### «Windows non ha aperto la porta: powershell.exe è uscito con codice 1»
+
+Il tasto **Sblocca** non ha mai funzionato, e il messaggio non diceva niente.
+
+La regola si chiamava **«DaProd Suite (da fuori)»**, con gli spazi. Il comando
+di Windows che la crea riceveva quel nome **spezzato in quattro parole**, perché
+il modo in cui PowerShell lancia un programma come amministratore non protegge
+gli spazi dentro un argomento. Per Windows era una frase senza senso, e
+rispondeva «1».
+
+Adesso la regola si chiama `DaProdSuite`, senza spazi, e quel tipo di errore non
+può più capitare. E se qualcosa va storto lo stesso, **si legge cosa ha detto
+Windows** invece di un numero.
+
+Una cosa in più che è venuta fuori guardando: il tasto poteva anche dire di aver
+funzionato quando non aveva fatto niente. Adesso non si fida di quello che
+risponde il comando — **va a guardare se la regola c'è.**
+
+### DaProdConnessione non si apre più bianca
+
+Se la porta 8790 è occupata — di solito da un ComfyUI rimasto acceso — la scheda
+mostrava la pagina di errore del browser, in inglese e con un codice. Adesso
+riprova qualche volta e poi scrive cosa guardare.
+
+### Due prove che avrebbero fermato il guasto di ieri
+
+La 0.7.0 è stata pubblicata e ritirata nel giro di pochi minuti: conteneva un
+giro fra i moduli che avrebbe **ammazzato la suite all'avvio**. Compilava e
+passava tutte le prove.
+
+Adesso ce ne sono due che partono prima delle altre: una carica davvero tutti i
+pezzi del programma, l'altra cerca i giri viziosi. Messe alla prova rimettendo il
+guasto: la seconda **non funzionava**, e adesso funziona.
+
+---
+
 ## 0.7.0 — DaProdConnessione, e i lavori che partono davvero
 
 **22 agosto 2026.** Tutto quello che è venuto fuori provando la 0.6.0 sul

@@ -29,8 +29,29 @@
 
 import { capture } from "@daprod/runtime";
 
-/** Come si chiama la regola. Fissa: è anche il modo di ritrovarla. */
-const NOME_REGOLA = "DaProd Suite (da fuori)";
+/**
+ * Come si chiama la regola. Fissa: è anche il modo di ritrovarla.
+ *
+ * **Senza spazi, e non è una questione di gusto.** Si chiamava «DaProd Suite
+ * (da fuori)», e il tasto non funzionava mai: `Start-Process -ArgumentList`
+ * unisce gli elementi con uno spazio e **non li protegge**, quindi netsh
+ * riceveva `name=DaProd Suite (da fuori)` come quattro parole separate. Errore
+ * di sintassi, codice 1, e un riquadro che diceva soltanto «powershell.exe è
+ * uscito con codice 1».
+ *
+ * Si può proteggere il quoting in tre modi diversi, tutti fragili. Oppure si
+ * può togliere lo spazio, e la classe di errore non esiste più.
+ */
+const NOME_REGOLA = "DaProdSuite";
+
+/**
+ * Come si chiamava prima.
+ *
+ * Su una macchina dove per caso la regola vecchia esiste, va riconosciuta:
+ * altrimenti la suite direbbe «Windows sta bloccando» davanti a una porta che
+ * è già aperta.
+ */
+const NOMI_VECCHI = ["DaProd Suite (da fuori)"];
 
 /** Leggere le regole non costa permessi; scriverle sì. */
 const ATTESA_LETTURA_MS = 6_000;
@@ -58,17 +79,24 @@ export interface StatoFirewall {
  * messa noi e fa quello che deve.
  */
 export async function statoFirewall(): Promise<StatoFirewall> {
+  for (const nome of [NOME_REGOLA, ...NOMI_VECCHI]) {
+    if (await esiste(nome)) return { aperta: true, incerto: false };
+  }
+  return { aperta: false, incerto: false };
+}
+
+async function esiste(nome: string): Promise<boolean> {
   try {
     const uscita = await capture(
       "netsh",
-      ["advfirewall", "firewall", "show", "rule", `name=${NOME_REGOLA}`],
+      ["advfirewall", "firewall", "show", "rule", `name=${nome}`],
       { timeoutMs: ATTESA_LETTURA_MS },
     );
-    return { aperta: uscita.includes(NOME_REGOLA), incerto: false };
+    return uscita.includes(nome);
   } catch {
     // `netsh` esce con un codice diverso da zero anche solo perché la regola
     // non c'è: non è un guasto, è la risposta «no».
-    return { aperta: false, incerto: false };
+    return false;
   }
 }
 
@@ -91,42 +119,63 @@ export async function statoFirewall(): Promise<StatoFirewall> {
  * minuto. Chi non vuole aprire niente usa il tunnel, che non tocca il firewall.
  */
 export async function apriLaPorta(porta: number): Promise<string | null> {
-  const argomenti = [
-    "advfirewall",
-    "firewall",
-    "add",
-    "rule",
-    `name=${NOME_REGOLA}`,
-    "dir=in",
-    "action=allow",
-    "protocol=TCP",
-    `localport=${porta}`,
-    "profile=any",
-  ];
+  const comando =
+    `netsh advfirewall firewall add rule name=${NOME_REGOLA} dir=in action=allow ` +
+    `protocol=TCP localport=${porta} profile=any`;
 
-  // Si passa da PowerShell solo per `-Verb RunAs`: è quello che fa comparire il
-  // riquadro di Windows. Gli argomenti vanno in un array di stringhe fra apici
-  // singoli — dentro c'è uno spazio, nel nome della regola — e PowerShell li
-  // consegna a netsh già separati, senza rimescolarli.
-  const lista = argomenti.map((a) => `'${a.replace(/'/g, "''")}'`).join(",");
-  const script =
-    `$e = Start-Process -FilePath netsh -ArgumentList @(${lista}) ` +
-    `-Verb RunAs -Wait -WindowStyle Hidden -PassThru; exit $e.ExitCode`;
+  /**
+   * Si passa da PowerShell solo per `-Verb RunAs`: è quello che fa comparire il
+   * riquadro di Windows. Poi da `cmd /c`, e non direttamente da netsh, per una
+   * ragione sola: **serve sapere cosa ha detto netsh**, e con `-Verb RunAs`
+   * PowerShell non lascia reindirizzare l'uscita. Allora la reindirizza il
+   * comando stesso, in un file che si rilegge subito dopo.
+   *
+   * E si esce **sempre con zero**, scrivendo l'esito vero nella prima riga.
+   * Il codice di uscita di `Start-Process` non è affidabile in nessuna delle due
+   * direzioni: quando non riesce a lanciare niente l'errore è non-terminante e
+   * `$e` resta nullo, quindi `exit $e.ExitCode` esce **zero** — cioè un guasto
+   * si presenterebbe come una riuscita. Meglio leggere una riga di testo.
+   */
+  const script = [
+    `$log = Join-Path $env:TEMP 'daprod-firewall.txt'`,
+    `Remove-Item $log -ErrorAction SilentlyContinue`,
+    `$riga = '${comando}' + ' > "' + $log + '" 2>&1'`,
+    `try { $e = Start-Process -FilePath cmd.exe -ArgumentList '/c', $riga ` +
+      `-Verb RunAs -Wait -WindowStyle Hidden -PassThru -ErrorAction Stop } catch { $e = $null }`,
+    `if ($null -eq $e) { Write-Output 'ESITO=annullato' } else { Write-Output ("ESITO=" + $e.ExitCode) }`,
+    `if (Test-Path $log) { Get-Content $log -Raw }`,
+    `exit 0`,
+  ].join("; ");
 
+  let detto = "";
   try {
-    await capture("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command", script], {
+    detto = await capture("powershell.exe", ["-NoProfile", "-Command", script], {
       timeoutMs: ATTESA_SCRITTURA_MS,
     });
   } catch (err) {
-    const motivo = err instanceof Error ? err.message : String(err);
-    // Il caso normale non è un errore di sistema: è un «no» dato al riquadro.
-    return /1223|cancell|annull|Operation.*cancel/i.test(motivo)
-      ? "Hai detto di no al riquadro di Windows. La porta resta chiusa: puoi riprovare, oppure accendere «Anche da fuori casa», che non tocca il firewall."
-      : `Windows non ha aperto la porta: ${motivo}`;
+    detto = err instanceof Error ? err.message : String(err);
   }
 
-  const dopo = await statoFirewall();
-  return dopo.aperta
-    ? null
-    : "Il comando è andato ma la regola non c'è. Prova ad accendere «Anche da fuori casa», che non ha bisogno del firewall.";
+  // **La verità è la regola, non il codice di uscita.** Se dopo il giro la
+  // regola c'è, è andata — comunque sia andata.
+  if ((await statoFirewall()).aperta) return null;
+
+  if (/ESITO=annullato/.test(detto)) {
+    return (
+      "Hai detto di no al riquadro di Windows, o non è comparso. La porta resta " +
+      "chiusa: puoi riprovare, oppure usare Tailscale o il tunnel, che il firewall " +
+      "non lo toccano."
+    );
+  }
+
+  const parole = detto
+    .split(/\r?\n/)
+    .map((r) => r.trim())
+    .filter((r) => r && !r.startsWith("ESITO="))
+    .join(" ")
+    .slice(0, 220);
+
+  return parole
+    ? `Windows non ha aperto la porta: ${parole}`
+    : "Windows non ha aperto la porta, e non ha detto perché. Puoi usare Tailscale o il tunnel, che il firewall non lo toccano.";
 }
