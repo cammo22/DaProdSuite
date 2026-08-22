@@ -211,7 +211,68 @@ const PAGINA = `<!doctype html>
     overflow-wrap: anywhere; user-select: all;
   }
 
+  /* ------------------------------------------------ il menu di una richiesta */
+  /* Chiesto il 22 agosto 2026: sotto a una richiesta ferma non bastano «sì» e
+     «no». Ci sono quattro cose che si vogliono fare, e stanno in colonna
+     perché su un telefono quattro tasti in fila diventano quattro tasti
+     sbagliati. */
+  .menu {
+    width: 100%; margin-top: 10px; padding: 10px;
+    border: 1px solid var(--line2); border-radius: 14px; background: #0b0d13;
+    display: flex; flex-direction: column; gap: 7px;
+  }
+  .menu button { text-align: left; }
+  .menu textarea { min-height: 84px; }
+  .menu .come-era {
+    font-size: 12px; color: var(--fioco); border-left: 2px solid var(--line2);
+    padding-left: 9px; overflow-wrap: anywhere;
+  }
+
   /* ------------------------------------------------------------ galleria */
+  .spilla {
+    display: inline-block; font-size: 10.5px; padding: 2px 8px; border-radius: 99px;
+    border: 1px solid var(--line2); color: var(--dim); margin-top: 6px;
+  }
+  .spilla.in-bacheca { color: var(--accent2); border-color: #22d3ee55; }
+  .quadro .attrezzi { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 9px; }
+
+  /* ----------------------------------------------------------- i regali */
+  /* Un file che arriva da una persona non è una riga in un elenco: è un
+     pacco. Chiesto così — «poi appare con una bella animazione tipo regalo» —
+     e il pacco si apre una volta sola, quando arriva. */
+  .pacco {
+    position: fixed; inset: 0; z-index: 60; display: grid; place-items: center;
+    background: #05060af2; backdrop-filter: blur(6px); padding: 22px;
+    animation: entra .25s ease-out;
+  }
+  .pacco .dentro {
+    max-width: 420px; width: 100%; text-align: center;
+    background: linear-gradient(180deg, var(--panel), var(--panel2));
+    border: 1px solid var(--line2); border-radius: 22px; padding: 26px 22px 20px;
+  }
+  .pacco .fiocco { font-size: 74px; line-height: 1; animation: scuoti 1.1s ease-in-out infinite; }
+  .pacco.aperto .fiocco { animation: apri .5s ease-out forwards; }
+  .pacco h2 { font-size: 19px; margin: 12px 0 4px; }
+  .pacco .da { color: var(--dim); font-size: 13px; margin-bottom: 4px; }
+  .pacco .messaggio { color: var(--txt); font-size: 13.5px; margin: 10px 0 0; }
+  .pacco .anteprima { margin-top: 14px; }
+  .pacco .anteprima img, .pacco .anteprima video { width: 100%; border-radius: 14px; display: block; }
+  .pacco .fila { justify-content: center; }
+  @keyframes entra { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes scuoti {
+    0%, 100% { transform: rotate(-6deg) scale(1); }
+    50% { transform: rotate(6deg) scale(1.06); }
+  }
+  @keyframes apri {
+    0% { transform: scale(1); }
+    45% { transform: scale(1.35) rotate(8deg); }
+    100% { transform: scale(1) rotate(0); }
+  }
+
+  /* Dove si lascia cadere un file: la riga di una persona collegata. */
+  ul.voci li.cade { border-radius: 12px; outline: 2px dashed var(--accent); outline-offset: 3px; }
+  .barra-invio { width: 100%; height: 5px; border-radius: 99px; background: var(--line2); margin-top: 9px; }
+  .barra-invio i { display: block; height: 100%; border-radius: 99px; background: var(--accent); width: 0; }
   .filtri { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 12px; }
   .filtri button.on { border-color: var(--accent); color: var(--txt); background: #1b1533; }
   .quadri { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 11px; }
@@ -299,6 +360,12 @@ const PAGINA = `<!doctype html>
 
     <div class="quadrati" id="numeri"></div>
 
+    <div class="scheda" id="scheda-regali" hidden>
+      <h2>Arrivato per te</h2>
+      <p class="sotto">Roba che ti ha mandato chi sta al computer.</p>
+      <ul class="voci" id="regali"></ul>
+    </div>
+
     <h3>Cosa vuoi fare</h3>
     <div class="quadrati" id="tessere"></div>
 
@@ -325,6 +392,7 @@ const PAGINA = `<!doctype html>
     <div class="scheda">
       <h2>I lavori</h2>
       <p class="sotto" id="sotto-lavori">Quello che è stato chiesto, dal più recente.</p>
+      <div class="filtri" id="filtri-lavori"></div>
       <ul class="voci" id="coda"></ul>
     </div>
   </section>
@@ -332,8 +400,11 @@ const PAGINA = `<!doctype html>
   <!-- ============================= GALLERIA ============================== -->
   <section class="pagina" id="pag-galleria">
     <div class="scheda">
-      <h2>Quello che il computer ha fatto</h2>
-      <p class="sotto">Immagini, video e brani di tutte le schede insieme.</p>
+      <h2>Quello che hai fatto fare</h2>
+      <p class="sotto" id="sotto-galleria">
+        Le tue cose. Quelle degli altri si vedono solo se le mettono in bacheca.
+      </p>
+      <div class="filtri" id="filtri-dove"></div>
       <div class="filtri" id="filtri"></div>
       <div class="quadri" id="quadri"></div>
       <div class="vuoto" id="galleria-vuota" hidden>Ancora niente qui dentro.</div>
@@ -368,7 +439,11 @@ const PAGINA = `<!doctype html>
 
     <div class="scheda">
       <h2>Chi è collegato</h2>
+      <p class="sotto" id="sotto-collegati">
+        Trascina un file sul nome di una persona per mandarglielo.
+      </p>
       <ul class="voci" id="dispositivi"></ul>
+      <div class="avviso" id="avviso-invio"></div>
     </div>
 
     <div class="scheda">
@@ -401,6 +476,8 @@ const PAGINA = `<!doctype html>
 
   var token = localStorage.getItem(CHIAVE) || "";
   var ioNome = localStorage.getItem(CHIAVE_NOME) || "";
+  /** L'id di questo dispositivo: serve a non offrire di cambiare permesso a sé stessi. */
+  var ioId = "";
   var puoiDecidere = false;
   var azioni = [];
   var scelta = null;
@@ -411,6 +488,17 @@ const PAGINA = `<!doctype html>
   var suite = null;
   var richieste = [];
   var orologioInvito = null;
+  /** Galleria: le proprie cose, oppure quelle che qualcuno ha messo in mostra. */
+  var dove = "mie";
+  /** Lavori: quelli che stanno lavorando, quelli finiti, o quelli messi via. */
+  var filtroLavori = "vivi";
+  /** I modi di generare messi da parte, come li tiene il computer. */
+  var preset = [];
+  /** Se c'è qualcuno a cui chiedere di scrivere. Null vuol dire: non lo so ancora. */
+  var aiMotivo = "non lo so ancora";
+  /** I regali arrivati, e quale pacco è aperto adesso. */
+  var regali = [];
+  var paccoAperto = null;
 
   /**
    * Il token e il nome possono arrivare dall'indirizzo.
@@ -532,6 +620,17 @@ const PAGINA = `<!doctype html>
     }
     window.scrollTo({ top: 0 });
     if (quale === "galleria") leggiGalleria();
+    // Chi apre LM Studio a suite gia' accesa deve ritrovare i tasti accesi
+    // senza riaprire niente: si richiede quando si va dove servono.
+    if (quale === "chiedi" || quale === "lavori") void guardaAi();
+  }
+
+  /** C'e' qualcuno a cui chiedere di scrivere? Vuoto vuol dire di si'. */
+  async function guardaAi() {
+    try {
+      var ai = await chiama("/ai");
+      aiMotivo = ai && ai.ok ? "" : (ai && ai.motivo) || "";
+    } catch (e) { /* si riprova la prossima volta */ }
   }
 
   /* ------------------------------------------------------- il semaforo */
@@ -703,6 +802,10 @@ const PAGINA = `<!doctype html>
     spiega.textContent = a.descrizione;
     modulo.append(spiega);
 
+    // I modi di generare messi da parte per questa scheda: si toccano e il
+    // modulo si riempie. Stanno sul computer, quindi ci sono anche qui.
+    modulo.append(rigaPreset(a));
+
     for (var campo of a.campi) {
       var etichetta = document.createElement("label");
       etichetta.htmlFor = "campo-" + campo.nome;
@@ -721,7 +824,9 @@ const PAGINA = `<!doctype html>
         for (var opt of (campo.scelte || [])) {
           var o = document.createElement("option");
           o.value = opt;
-          o.textContent = opt;
+          // Il nome per una persona se il catalogo ce l'ha: «anima2» non vuol
+          // dire niente a chi lo legge una volta sola, «Anima v2» sì.
+          o.textContent = (campo.etichette && campo.etichette[opt]) || opt;
           controllo.append(o);
         }
       } else if (campo.tipo === "numero") {
@@ -741,7 +846,14 @@ const PAGINA = `<!doctype html>
       }
       controllo.id = "campo-" + campo.nome;
       controllo.dataset.campo = campo.nome;
+      if (campo.principale) controllo.dataset.principale = "1";
       modulo.append(controllo);
+
+      // Il tasto dell'AI sta **sotto la casella che è la richiesta**, non in
+      // cima alla pagina: è quello che riscrive, e si deve vedere cosa
+      // riscrive. Solo per chi decide, perché accende il modello sulla stessa
+      // scheda video che sta generando.
+      if (campo.principale && puoiDecidere) modulo.append(rigaAi(a, controllo));
 
       if (campo.descrizione) {
         var nota = document.createElement("div");
@@ -752,12 +864,167 @@ const PAGINA = `<!doctype html>
       }
     }
 
+    // Salvare quello che si è appena scritto, per ritrovarlo domani.
+    if (a.coda) modulo.append(rigaSalvaPreset(a));
+
     modulo.hidden = false;
     $("fila-manda").hidden = false;
     $("manda").textContent = a.coda ? "Mandalo al computer" : a.titolo;
     $("avviso-azione").textContent = "";
     $("avviso-azione").className = "avviso";
     modulo.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+
+  /**
+   * La riga dei preset di una scheda.
+   *
+   * Vuota se non ce ne sono: un titolo «I tuoi soliti» sopra a niente è una
+   * promessa non mantenuta.
+   */
+  function rigaPreset(a) {
+    var box = document.createElement("div");
+    var miei = preset.filter(function (x) { return x.app === a.app; });
+    if (!a.app || !miei.length) return box;
+
+    var titolo = document.createElement("label");
+    titolo.textContent = "I tuoi soliti";
+    box.append(titolo);
+
+    var fila = document.createElement("div");
+    fila.className = "filtri";
+    for (var x of miei) {
+      fila.append(bottonePreset(x));
+    }
+    box.append(fila);
+    return box;
+  }
+
+  function bottonePreset(x) {
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "mini";
+    b.textContent = x.nome;
+    b.title = x.testo;
+    b.addEventListener("click", function (ev) {
+      // Col tasto destro, o tenendo premuto, lo si toglie: un preset sbagliato
+      // salvato per sempre è peggio di nessun preset.
+      if (ev.shiftKey) { void togliPreset(x); return; }
+      riempiCon(x);
+    });
+    b.addEventListener("contextmenu", function (ev) {
+      ev.preventDefault();
+      void togliPreset(x);
+    });
+    return b;
+  }
+
+  function riempiCon(x) {
+    for (var c of $("modulo").querySelectorAll("[data-campo]")) {
+      if (c.dataset.principale) { c.value = x.testo; continue; }
+      var da = (x.campi || {})[c.dataset.campo];
+      if (da !== undefined) c.value = da;
+    }
+  }
+
+  async function togliPreset(x) {
+    if (!confirm("Togliere «" + x.nome + "» dai tuoi soliti?")) return;
+    try {
+      await chiama("/preset/" + encodeURIComponent(x.id), { method: "DELETE" });
+      await leggiPreset();
+      if (scelta) scegli(scelta);
+    } catch (e) { alert(e.message); }
+  }
+
+  /** Il tasto che fa riscrivere al modello quello che c'è nella casella. */
+  function rigaAi(a, casella) {
+    var fila = document.createElement("div");
+    fila.className = "fila";
+    fila.style.marginTop = "8px";
+
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "mini";
+    b.textContent = "\u2728 fallo scrivere meglio";
+    var nota = document.createElement("small");
+    nota.style.color = "var(--fioco)";
+    // Se non c'e' nessuno a cui chiedere si dice **perche'**, invece di
+    // lasciare un tasto che risponde male solo dopo che l'hai premuto.
+    if (aiMotivo) {
+      b.disabled = true;
+      nota.textContent = aiMotivo;
+    }
+
+    b.addEventListener("click", async function () {
+      var testo = casella.value.trim();
+      if (!testo) { nota.textContent = "Scrivi prima qualcosa, anche due parole."; return; }
+      b.disabled = true;
+      var prima = b.textContent;
+      b.textContent = "sto scrivendo…";
+      nota.textContent = "";
+      try {
+        var esito = await chiama("/ai/migliora", {
+          method: "POST",
+          body: JSON.stringify({ testo: testo, app: a.app || "foto" }),
+        });
+        casella.value = esito.testo;
+        nota.textContent = "riscritto: se non ti piace, rimettici mano";
+      } catch (e) {
+        nota.textContent = e.message;
+      } finally {
+        b.disabled = false;
+        b.textContent = prima;
+      }
+    });
+
+    fila.append(b, nota);
+    return fila;
+  }
+
+  /** «Salvalo fra i tuoi soliti»: un nome e via. */
+  function rigaSalvaPreset(a) {
+    var fila = document.createElement("div");
+    fila.className = "fila";
+
+    var nome = document.createElement("input");
+    nome.type = "text";
+    nome.maxLength = 40;
+    nome.placeholder = "salvalo coi tuoi soliti, con che nome?";
+    nome.style.flex = "1 1 200px";
+
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "mini";
+    b.textContent = "salva";
+    b.addEventListener("click", async function () {
+      var comeSiChiama = nome.value.trim();
+      if (!comeSiChiama) { nome.focus(); return; }
+      var campi = {};
+      var testo = "";
+      for (var c of $("modulo").querySelectorAll("[data-campo]")) {
+        if (c.dataset.principale) { testo = c.value.trim(); continue; }
+        if (c.value.trim()) campi[c.dataset.campo] = c.value.trim();
+      }
+      if (!testo) { alert("Scrivi prima cosa vuoi: è quello che si salva."); return; }
+      try {
+        await chiama("/preset", {
+          method: "POST",
+          body: JSON.stringify({ app: a.app, nome: comeSiChiama, testo: testo, campi: campi }),
+        });
+        nome.value = "";
+        await leggiPreset();
+        if (scelta) scegli(scelta);
+      } catch (e) { alert(e.message); }
+    });
+
+    fila.append(nome, b);
+    return fila;
+  }
+
+  async function leggiPreset() {
+    try {
+      var risposta = await chiama("/preset");
+      preset = (risposta && risposta.preset) || [];
+    } catch (e) { preset = []; }
   }
 
   function chiudiModulo() {
@@ -816,7 +1083,26 @@ const PAGINA = `<!doctype html>
     pronta: ["pronta", "pronto"],
     scartata: ["brutto", "non fatto"],
     scaduta: ["brutto", "scaduto"],
+    archiviata: ["", "messo via"],
   };
+
+  /**
+   * Le tre pile in cui si guardano i lavori.
+   *
+   * Non è un filtro per pignoli: dopo una settimana di lavori la lista è lunga
+   * cinquanta righe, e quello che serve sapere è sempre e solo «cosa sta
+   * succedendo adesso». Il resto si va a cercare.
+   */
+  var PILE = [
+    { id: "vivi", nome: "adesso", stati: ["in-attesa", "accettata", "in-lavoro"] },
+    { id: "fatti", nome: "finiti", stati: ["pronta", "scartata", "scaduta"] },
+    { id: "vecchi", nome: "messi via", stati: ["archiviata"] },
+  ];
+
+  function pila(id) {
+    for (var p of PILE) if (p.id === id) return p;
+    return PILE[0];
+  }
 
   async function leggiCoda() {
     richieste = await chiama("/richieste");
@@ -824,16 +1110,26 @@ const PAGINA = `<!doctype html>
     elenco.innerHTML = "";
 
     var attesa = 0;
+    var quali = pila(filtroLavori).stati;
+    var mostrate = 0;
     for (var r of richieste) {
       if (r.stato === "in-attesa") attesa += 1;
+      if (quali.indexOf(r.stato) < 0) continue;
+      mostrate += 1;
       elenco.append(rigaRichiesta(r));
     }
-    if (!richieste.length) {
+    if (!mostrate) {
       var vuoto = document.createElement("li");
       vuoto.className = "vuoto";
-      vuoto.textContent = "Ancora niente. Quello che chiedi compare qui.";
+      vuoto.textContent =
+        filtroLavori === "vivi"
+          ? "Niente in lavorazione. Quello che chiedi compare qui."
+          : filtroLavori === "fatti"
+            ? "Ancora niente di finito."
+            : "Niente messo via.";
       elenco.append(vuoto);
     }
+    disegnaFiltriLavori();
 
     $("bollo").hidden = attesa === 0;
     $("bollo").textContent = attesa;
@@ -841,6 +1137,22 @@ const PAGINA = `<!doctype html>
       ? "Quello che è stato chiesto. Quando dici di sì, il computer lo fa da solo."
       : "Quello che hai chiesto, dal più recente.";
     disegnaNumeri();
+  }
+
+  function disegnaFiltriLavori() {
+    var dove2 = $("filtri-lavori");
+    dove2.innerHTML = "";
+    for (var p of PILE) {
+      var quante = richieste.filter(function (r) { return p.stati.indexOf(r.stato) >= 0; }).length;
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "mini" + (p.id === filtroLavori ? " on" : "");
+      b.textContent = p.nome + (quante ? " (" + quante + ")" : "");
+      b.addEventListener("click", (function (quale) {
+        return function () { filtroLavori = quale; leggiCoda().catch(function () {}); };
+      })(p.id));
+      dove2.append(b);
+    }
   }
 
   function rigaRichiesta(r) {
@@ -857,12 +1169,24 @@ const PAGINA = `<!doctype html>
       .filter(Boolean).join(" · ");
     corpo.append(t, d);
 
+    // Se qualcuno l'ha riscritta, com'era arrivata resta scritto: chi ha
+    // chiesto una cosa e ne riceve un'altra deve poter vedere cos'è successo.
+    if (r.testoOriginale) {
+      var era = document.createElement("div");
+      era.className = "come-era";
+      era.style.marginTop = "6px";
+      era.textContent =
+        (r.riscrittaDa === "ai" ? "riscritta dal modello · " : "riscritta a mano · ") +
+        "era: " + r.testoOriginale;
+      corpo.append(era);
+    }
+    li.append(corpo);
+
     var stato = NOMI_STATO[r.stato] || ["", r.stato];
     var pillola = document.createElement("span");
     pillola.className = "pillola " + stato[0];
     pillola.textContent = stato[1];
-
-    li.append(corpo, pillola);
+    li.append(pillola);
 
     if (r.stato === "pronta" && r.risultato) {
       var giu = document.createElement("button");
@@ -872,29 +1196,175 @@ const PAGINA = `<!doctype html>
       li.append(giu);
     }
 
+    // **Il menu**, chiesto il 22 agosto 2026. Un tasto solo che si apre in
+    // quattro: falla, falla riscrivere, riscrivila tu, dille di no. Su un
+    // telefono quattro tasti in fila sono quattro tasti sbagliati.
     if (puoiDecidere && r.stato === "in-attesa") {
-      var si = document.createElement("button");
-      si.className = "mini";
-      si.textContent = "fallo";
-      si.addEventListener("click", function () { decidi(r.id, "accettata"); });
-      var no = document.createElement("button");
-      no.className = "mini male";
-      no.textContent = "lascia perdere";
-      no.addEventListener("click", function () { decidi(r.id, "scartata"); });
-      li.append(si, no);
+      var menu = costruisciMenu(r);
+      var apri = document.createElement("button");
+      apri.className = "mini";
+      apri.textContent = "che ne faccio?";
+      apri.addEventListener("click", function () {
+        menu.hidden = !menu.hidden;
+        apri.textContent = menu.hidden ? "che ne faccio?" : "chiudi";
+      });
+      li.append(apri, menu);
+    }
+
+    // Finito vuol dire che si può mettere via. Chi decide può farlo con tutte,
+    // ognuno con le sue: la lista lunga è di chi guarda.
+    if (["pronta", "scartata", "scaduta"].indexOf(r.stato) >= 0) {
+      var via = document.createElement("button");
+      via.className = "mini";
+      via.textContent = "metti via";
+      via.addEventListener("click", function () { void togliRichiesta(r, "archivia"); });
+      li.append(via);
+    }
+    if (["pronta", "scartata", "scaduta", "archiviata"].indexOf(r.stato) >= 0) {
+      var butta = document.createElement("button");
+      butta.className = "mini male";
+      butta.textContent = "butta";
+      butta.addEventListener("click", function () { void togliRichiesta(r, "cancella"); });
+      li.append(butta);
     }
     return li;
+  }
+
+  /**
+   * Il menu di una richiesta ferma.
+   *
+   * Le quattro voci, nell'ordine in cui si usano davvero: la prima è quella
+   * che si preme nove volte su dieci.
+   */
+  function costruisciMenu(r) {
+    var menu = document.createElement("div");
+    menu.className = "menu";
+    menu.hidden = true;
+
+    var avviso = document.createElement("div");
+    avviso.className = "nota";
+
+    var subito = document.createElement("button");
+    subito.className = "mini";
+    subito.textContent = "\u25B6 fallo così com'è";
+    subito.addEventListener("click", function () { void decidi(r.id, "accettata"); });
+
+    var conAi = document.createElement("button");
+    conAi.className = "mini";
+    conAi.textContent = "\u2728 fallo scrivere meglio, poi fallo";
+    if (aiMotivo) {
+      conAi.disabled = true;
+      conAi.title = aiMotivo;
+    }
+    conAi.addEventListener("click", async function () {
+      conAi.disabled = true;
+      var prima = conAi.textContent;
+      conAi.textContent = "sto scrivendo…";
+      avviso.textContent = "";
+      try {
+        await chiama("/richieste/" + encodeURIComponent(r.id) + "/migliora", {
+          method: "POST",
+          body: "{}",
+        });
+        await decidi(r.id, "accettata");
+      } catch (e) {
+        avviso.textContent = e.message;
+        conAi.disabled = false;
+        conAi.textContent = prima;
+      }
+    });
+
+    // Scrivila tu: la casella compare qui sotto, già piena di quello che aveva
+    // scritto chi ha chiesto.
+    var aMano = document.createElement("button");
+    aMano.className = "mini";
+    aMano.textContent = "\u270E scrivila io";
+
+    var casella = document.createElement("textarea");
+    casella.hidden = true;
+    casella.value = r.testo;
+
+    var filaMano = document.createElement("div");
+    filaMano.className = "fila";
+    filaMano.hidden = true;
+    filaMano.style.marginTop = "0";
+
+    var mandaCosi = document.createElement("button");
+    mandaCosi.className = "mini";
+    mandaCosi.textContent = "manda così";
+    mandaCosi.addEventListener("click", function () { void mandaRiscritta(r, casella, false, avviso); });
+
+    var mandaConAi = document.createElement("button");
+    mandaConAi.className = "mini";
+    mandaConAi.textContent = "\u2728 manda con l'AI";
+    mandaConAi.addEventListener("click", function () { void mandaRiscritta(r, casella, true, avviso); });
+
+    filaMano.append(mandaCosi, mandaConAi);
+    aMano.addEventListener("click", function () {
+      casella.hidden = !casella.hidden;
+      filaMano.hidden = casella.hidden;
+      if (!casella.hidden) casella.focus();
+    });
+
+    // Il no, con la ragione: quella riga arriva sul telefono di chi aveva
+    // chiesto, ed è l'unica cosa che gli dice perché.
+    var perche = document.createElement("input");
+    perche.type = "text";
+    perche.maxLength = 200;
+    perche.placeholder = "perché no (glielo scrivo)";
+
+    var no = document.createElement("button");
+    no.className = "mini male";
+    no.textContent = "\u2715 no";
+    no.addEventListener("click", function () {
+      void decidi(r.id, "scartata", perche.value.trim());
+    });
+
+    menu.append(subito, conAi, aMano, casella, filaMano, perche, no, avviso);
+    return menu;
+  }
+
+  /** Salva quello che è stato riscritto a mano, poi manda (con o senza AI). */
+  async function mandaRiscritta(r, casella, conAi, avviso) {
+    var testo = casella.value.trim();
+    if (!testo) { avviso.textContent = "Il testo non può restare vuoto."; return; }
+    avviso.textContent = "un attimo…";
+    try {
+      await chiama("/richieste/" + encodeURIComponent(r.id) + "/testo", {
+        method: "POST",
+        body: JSON.stringify({ testo: testo }),
+      });
+      if (conAi) {
+        await chiama("/richieste/" + encodeURIComponent(r.id) + "/migliora", {
+          method: "POST",
+          body: "{}",
+        });
+      }
+      await decidi(r.id, "accettata");
+    } catch (e) {
+      avviso.textContent = e.message;
+    }
+  }
+
+  async function togliRichiesta(r, come) {
+    if (come === "cancella" && !confirm("Buttare via questo lavoro dall'elenco?")) return;
+    try {
+      await chiama("/richieste/" + encodeURIComponent(r.id), {
+        method: come === "cancella" ? "DELETE" : "PATCH",
+      });
+      await leggiCoda();
+    } catch (e) { alert(e.message); }
   }
 
   function nomeScheda(app) {
     return (SCHEDE[app] || {}).nome || app;
   }
 
-  async function decidi(id, stato) {
+  async function decidi(id, stato, motivo) {
     try {
       await chiama("/richieste/" + encodeURIComponent(id) + "/stato", {
         method: "POST",
-        body: JSON.stringify({ stato: stato }),
+        body: JSON.stringify({ stato: stato, motivo: motivo || undefined }),
       });
       await leggiCoda();
     } catch (e) {
@@ -938,6 +1408,37 @@ const PAGINA = `<!doctype html>
     { id: "audio", nome: "brani" },
   ];
 
+  /**
+   * Le tue cose, o quelle che gli altri hanno messo in mostra.
+   *
+   * È la parte «social» chiesta il 22 agosto 2026, e sta tutta in questi due
+   * tasti: ognuno vede le sue, e degli altri vede quello che gli altri hanno
+   * **deciso** di far vedere. Vale anche per chi può decidere sulla fila: il
+   * permesso è sui lavori, non sulle cose degli altri.
+   */
+  function disegnaFiltriDove() {
+    var box = $("filtri-dove");
+    box.innerHTML = "";
+    var pezzi = [
+      { id: "mie", nome: "le mie cose" },
+      { id: "bacheca", nome: "in bacheca" },
+    ];
+    for (var x of pezzi) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "mini" + (x.id === dove ? " on" : "");
+      b.textContent = x.nome;
+      b.addEventListener("click", (function (quale) {
+        return function () { dove = quale; disegnaFiltriDove(); leggiGalleria(); };
+      })(x.id));
+      box.append(b);
+    }
+    $("sotto-galleria").textContent =
+      dove === "mie"
+        ? "Le tue cose. Mettine una in bacheca per farla vedere agli altri."
+        : "Quello che gli altri hanno messo in mostra, con scritto chi l'ha fatto.";
+  }
+
   function disegnaFiltri() {
     var dove = $("filtri");
     dove.innerHTML = "";
@@ -954,15 +1455,21 @@ const PAGINA = `<!doctype html>
   }
 
   async function leggiGalleria() {
-    var dove = $("quadri");
+    var casella = $("quadri");
     try {
-      var risposta = await chiama("/libreria?quanti=48" + (filtro ? "&tipo=" + filtro : ""));
+      var risposta = await chiama(
+        "/libreria?quanti=48&dove=" + dove + (filtro ? "&tipo=" + filtro : ""),
+      );
       var voci = (risposta && risposta.voci) || [];
-      dove.innerHTML = "";
+      casella.innerHTML = "";
       $("galleria-vuota").hidden = voci.length > 0;
-      for (var v of voci) dove.append(quadro(v));
+      $("galleria-vuota").textContent =
+        dove === "bacheca"
+          ? "In bacheca non c'è ancora niente."
+          : "Ancora niente di tuo. Quello che chiedi finisce qui.";
+      for (var v of voci) casella.append(quadro(v));
     } catch (e) {
-      dove.innerHTML = "";
+      casella.innerHTML = "";
       $("galleria-vuota").hidden = false;
       $("galleria-vuota").textContent = e.message;
     }
@@ -971,12 +1478,12 @@ const PAGINA = `<!doctype html>
   function quadro(v) {
     var box = document.createElement("div");
     box.className = "quadro";
-    var dove = "/libreria/file/" + encodeURIComponent(v.id);
+    var indirizzo = "/libreria/file/" + encodeURIComponent(v.id);
 
     if (v.tipo === "immagine") {
       var img = document.createElement("img");
       img.loading = "lazy";
-      img.src = dove;
+      img.src = indirizzo;
       img.alt = v.nome;
       box.append(img);
     } else if (v.tipo === "video") {
@@ -984,7 +1491,7 @@ const PAGINA = `<!doctype html>
       vid.controls = true;
       vid.preload = "metadata";
       vid.playsInline = true;
-      vid.src = dove;
+      vid.src = indirizzo;
       box.append(vid);
     }
 
@@ -1003,23 +1510,254 @@ const PAGINA = `<!doctype html>
       var au = document.createElement("audio");
       au.controls = true;
       au.preload = "none";
-      au.src = dove;
+      au.src = indirizzo;
       sotto.append(au);
     }
+
+    // Di chi è, e se è in mostra. Nella bacheca è la cosa che si guarda per
+    // prima: «chi ha fatto quale immagine» era la domanda da cui è nato tutto.
+    if (!v.mia && v.chiNome) {
+      var chi = document.createElement("span");
+      chi.className = "spilla";
+      chi.textContent = "di " + v.chiNome;
+      sotto.append(chi);
+    } else if (v.mia && v.pubblicato) {
+      var mostra = document.createElement("span");
+      mostra.className = "spilla in-bacheca";
+      mostra.textContent = "in bacheca";
+      sotto.append(mostra);
+    }
+
+    var attrezzi = document.createElement("div");
+    attrezzi.className = "attrezzi";
 
     if (window.DaProdApp && window.DaProdApp.scaricaLibreria) {
       var tieni = document.createElement("button");
       tieni.className = "mini";
-      tieni.style.marginTop = "9px";
       tieni.textContent = "tieni nel telefono";
       tieni.addEventListener("click", function () {
         window.DaProdApp.scaricaLibreria(v.id, v.nome);
       });
-      sotto.append(tieni);
+      attrezzi.append(tieni);
     }
+
+    if (v.mia) {
+      var pubblica = document.createElement("button");
+      pubblica.className = "mini";
+      pubblica.textContent = v.pubblicato ? "togli dalla bacheca" : "mettila in bacheca";
+      pubblica.addEventListener("click", async function () {
+        pubblica.disabled = true;
+        try {
+          await chiama("/libreria/" + encodeURIComponent(v.id) + "/pubblica", {
+            method: "POST",
+            body: JSON.stringify({ pubblicato: !v.pubblicato }),
+          });
+          await leggiGalleria();
+        } catch (e) { alert(e.message); pubblica.disabled = false; }
+      });
+
+      var butta = document.createElement("button");
+      butta.className = "mini male";
+      butta.textContent = "butta";
+      butta.addEventListener("click", async function () {
+        if (!confirm("Cancellare «" + v.nome + "» dal computer? Non si torna indietro.")) return;
+        try {
+          await chiama("/libreria/" + encodeURIComponent(v.id), { method: "DELETE" });
+          await leggiGalleria();
+        } catch (e) { alert(e.message); }
+      });
+
+      attrezzi.append(pubblica, butta);
+    }
+
+    if (attrezzi.children.length) sotto.append(attrezzi);
 
     box.append(sotto);
     return box;
+  }
+
+  /* ---------------------------------------------------------- i regali */
+
+  /**
+   * La roba che ti ha mandato una persona.
+   *
+   * Chiesto il 22 agosto 2026: «dall'app connessione devo poter interagire e
+   * mandare file agli utenti quando voglio trascinando il file all'interno, e
+   * l'utente riceverà la notifica che ha ricevuto qualcosa, tipo poi appare con
+   * una bella animazione tipo regalo».
+   *
+   * Quindi non è una riga in un elenco: la prima volta che arriva **si apre in
+   * mezzo allo schermo**, e da lì in poi resta in un riquadro nella prima
+   * pagina, che è dove uno lo va a cercare.
+   */
+  async function leggiRegali() {
+    try {
+      var risposta = await chiama("/invii");
+      regali = (risposta && risposta.invii) || [];
+    } catch (e) { return; }
+
+    $("scheda-regali").hidden = regali.length === 0;
+    var elenco = $("regali");
+    elenco.innerHTML = "";
+    for (var i of regali) elenco.append(rigaRegalo(i));
+
+    // Il pacco si apre da solo una volta sola: quello arrivato e mai aperto.
+    var nuovo = regali.filter(function (x) { return !x.aperto; })[0];
+    if (nuovo && (!paccoAperto || paccoAperto !== nuovo.id)) mostraPacco(nuovo);
+  }
+
+  function rigaRegalo(i) {
+    var li = document.createElement("li");
+    var corpo = document.createElement("div");
+    corpo.className = "cresce";
+    var t = document.createElement("div");
+    t.className = "titolo";
+    t.textContent = i.nome;
+    var d = document.createElement("div");
+    d.className = "dettaglio";
+    d.textContent = ["da " + i.daNome, quando(i.quando), pesa(i.bytes), i.messaggio]
+      .filter(Boolean).join(" · ");
+    corpo.append(t, d);
+    li.append(corpo);
+
+    var apri = document.createElement("button");
+    apri.className = "mini";
+    apri.textContent = i.aperto ? "riguardalo" : "apri";
+    apri.addEventListener("click", function () { mostraPacco(i); });
+
+    var butta = document.createElement("button");
+    butta.className = "mini male";
+    butta.textContent = "butta";
+    butta.addEventListener("click", async function () {
+      if (!confirm("Buttare via " + i.nome + "?")) return;
+      try {
+        await chiama("/invii/" + encodeURIComponent(i.id), { method: "DELETE" });
+        await leggiRegali();
+      } catch (e) { alert(e.message); }
+    });
+
+    li.append(apri, butta);
+    return li;
+  }
+
+  /** Il pacco in mezzo allo schermo, che si scuote finché non lo apri. */
+  function mostraPacco(i) {
+    if (document.querySelector(".pacco")) return;
+    paccoAperto = i.id;
+
+    var fuori = document.createElement("div");
+    fuori.className = "pacco";
+    var dentro = document.createElement("div");
+    dentro.className = "dentro";
+
+    var fiocco = document.createElement("div");
+    fiocco.className = "fiocco";
+    fiocco.textContent = "\uD83C\uDF81";
+
+    var titolo = document.createElement("h2");
+    titolo.textContent = i.aperto ? i.nome : "Hai ricevuto qualcosa";
+    var da = document.createElement("div");
+    da.className = "da";
+    da.textContent = "da " + i.daNome + " · " + pesa(i.bytes);
+
+    dentro.append(fiocco, titolo, da);
+
+    if (i.messaggio) {
+      var m = document.createElement("p");
+      m.className = "messaggio";
+      m.textContent = i.messaggio;
+      dentro.append(m);
+    }
+
+    var anteprima = document.createElement("div");
+    anteprima.className = "anteprima";
+    dentro.append(anteprima);
+
+    var fila = document.createElement("div");
+    fila.className = "fila";
+
+    var apri = document.createElement("button");
+    apri.textContent = i.aperto ? "guardalo" : "apri";
+    apri.addEventListener("click", async function () {
+      fuori.classList.add("aperto");
+      titolo.textContent = i.nome;
+      apri.hidden = true;
+      tieni.hidden = false;
+      mostraDentro(anteprima, i);
+      if (!i.aperto) {
+        try {
+          await chiama("/invii/" + encodeURIComponent(i.id) + "/aperto", { method: "POST", body: "{}" });
+          i.aperto = true;
+          await leggiRegali();
+        } catch (e) { /* si riproverà: il pacco è già aperto sullo schermo */ }
+      }
+    });
+
+    var tieni = document.createElement("button");
+    tieni.className = "piano";
+    tieni.textContent = "tienilo";
+    tieni.hidden = !i.aperto;
+    tieni.addEventListener("click", function () { scaricaRegalo(i); });
+
+    var dopo = document.createElement("button");
+    dopo.className = "piano";
+    dopo.textContent = "chiudi";
+    dopo.addEventListener("click", function () { fuori.remove(); });
+
+    fila.append(apri, tieni, dopo);
+    dentro.append(fila);
+    fuori.append(dentro);
+    document.body.append(fuori);
+
+    if (i.aperto) {
+      fuori.classList.add("aperto");
+      apri.hidden = true;
+      mostraDentro(anteprima, i);
+    }
+  }
+
+  /** Quello che si può guardare qui dentro si guarda qui dentro. */
+  function mostraDentro(box, i) {
+    box.innerHTML = "";
+    var indirizzo = "/invii/" + encodeURIComponent(i.id) + "/file";
+    if (i.mime.indexOf("image/") === 0) {
+      var img = document.createElement("img");
+      img.src = indirizzo;
+      img.alt = i.nome;
+      box.append(img);
+    } else if (i.mime.indexOf("video/") === 0) {
+      var vid = document.createElement("video");
+      vid.controls = true;
+      vid.playsInline = true;
+      vid.src = indirizzo;
+      box.append(vid);
+    } else if (i.mime.indexOf("audio/") === 0) {
+      var au = document.createElement("audio");
+      au.controls = true;
+      au.style.width = "100%";
+      au.src = indirizzo;
+      box.append(au);
+    }
+  }
+
+  async function scaricaRegalo(i) {
+    if (window.DaProdApp && window.DaProdApp.scaricaRegalo) {
+      window.DaProdApp.scaricaRegalo(i.id, i.nome);
+      return;
+    }
+    var risposta = await fetch("/invii/" + encodeURIComponent(i.id) + "/file", {
+      headers: { Authorization: "Bearer " + token },
+    });
+    if (!risposta.ok) { alert("Non riesco a scaricarlo."); return; }
+    var blob = await risposta.blob();
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = i.nome;
+    document.body.append(a);
+    a.click();
+    a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 20000);
   }
 
   /* --------------------------------------------------------- collegamento */
@@ -1159,6 +1897,33 @@ const PAGINA = `<!doctype html>
     li.append(corpo);
 
     if (puoiDecidere) {
+      /**
+       * Cambiare cosa può fare una persona.
+       *
+       * Fino alla 0.7.1 lo si sceglieva una volta sola, inquadrando il QR: per
+       * promuovere qualcuno bisognava scollegarlo e rifargli l'accoppiamento.
+       * È il gesto che serve più spesso, e adesso è un tasto.
+       */
+      if (d.id !== ioId) {
+        var permesso = document.createElement("button");
+        permesso.className = "mini";
+        permesso.textContent = d.ruolo === "admin" ? "fagli solo chiedere" : "fagli decidere tutto";
+        permesso.addEventListener("click", function () {
+          var nuovo = d.ruolo === "admin" ? "ospite" : "admin";
+          var domanda = nuovo === "admin"
+            ? d.nome + " potrà far partire i lavori da solo e decidere su quelli degli altri. Sicuro?"
+            : d.nome + " potrà solo chiedere, e aspetterà il tuo sì. Va bene?";
+          if (!confirm(domanda)) return;
+          chiama("/dispositivi/" + encodeURIComponent(d.id), {
+            method: "POST",
+            body: JSON.stringify({ ruolo: nuovo }),
+          })
+            .then(leggiPannello)
+            .catch(function (e) { alert(e.message); });
+        });
+        li.append(permesso);
+      }
+
       var via = document.createElement("button");
       via.className = "mini male";
       via.textContent = "togli";
@@ -1169,8 +1934,74 @@ const PAGINA = `<!doctype html>
           .catch(function (e) { alert(e.message); });
       });
       li.append(via);
+
+      // **Trascinaci sopra un file e glielo mandi.** Chiesto così, ed è il
+      // gesto più corto che ci sia: niente moduli, niente «scegli file».
+      var barra = document.createElement("div");
+      barra.className = "barra-invio";
+      barra.hidden = true;
+      var dentro = document.createElement("i");
+      barra.append(dentro);
+      li.append(barra);
+
+      li.addEventListener("dragover", function (ev) {
+        ev.preventDefault();
+        li.classList.add("cade");
+      });
+      li.addEventListener("dragleave", function () { li.classList.remove("cade"); });
+      li.addEventListener("drop", function (ev) {
+        ev.preventDefault();
+        li.classList.remove("cade");
+        var file = ev.dataTransfer && ev.dataTransfer.files && ev.dataTransfer.files[0];
+        if (file) mandaFile(d, file, barra, dentro);
+      });
     }
     return li;
+  }
+
+  /**
+   * Manda un file a una persona collegata.
+   *
+   * Con XMLHttpRequest e non con fetch, per una ragione sola: fetch non sa
+   * dire a che punto è. Su un video da cento MB, una pagina ferma e nessuna
+   * barra dicono la stessa cosa — cioè che si è rotto qualcosa.
+   */
+  function mandaFile(d, file, barra, dentro) {
+    var avviso = $("avviso-invio");
+    avviso.className = "avviso";
+    avviso.textContent = "Mando " + file.name + " a " + d.nome + "…";
+    barra.hidden = false;
+    dentro.style.width = "0";
+
+    var xhr = new XMLHttpRequest();
+    xhr.open(
+      "POST",
+      "/invii?a=" + encodeURIComponent(d.id) + "&nome=" + encodeURIComponent(file.name),
+    );
+    xhr.setRequestHeader("Authorization", "Bearer " + token);
+    xhr.setRequestHeader("Content-Type", file.type || "application/octet-stream");
+    xhr.upload.onprogress = function (ev) {
+      if (!ev.lengthComputable) return;
+      dentro.style.width = Math.round((ev.loaded / ev.total) * 100) + "%";
+    };
+    xhr.onload = function () {
+      barra.hidden = true;
+      if (xhr.status >= 200 && xhr.status < 300) {
+        avviso.className = "avviso bene";
+        avviso.textContent = file.name + " è arrivato a " + d.nome + ".";
+        return;
+      }
+      var motivo = "";
+      try { motivo = (JSON.parse(xhr.responseText) || {}).errore || ""; } catch (e) { motivo = ""; }
+      avviso.className = "avviso male";
+      avviso.textContent = motivo || "Non sono riuscito a mandarlo.";
+    };
+    xhr.onerror = function () {
+      barra.hidden = true;
+      avviso.className = "avviso male";
+      avviso.textContent = "Il collegamento si è interrotto mentre lo mandavo.";
+    };
+    xhr.send(file);
   }
 
   async function cambiaTunnel() {
@@ -1263,6 +2094,7 @@ const PAGINA = `<!doctype html>
     try {
       var io = await chiama("/io");
       ioNome = io.nome || ioNome;
+      ioId = io.id || "";
       localStorage.setItem(CHIAVE_NOME, ioNome);
     } catch (e) { /* si riprova al giro dopo */ }
 
@@ -1275,8 +2107,12 @@ const PAGINA = `<!doctype html>
       disegnaAzioni();
     } catch (e) { /* senza azioni restano i lavori e la galleria */ }
 
+    disegnaFiltriDove();
     disegnaFiltri();
+    await leggiPreset();
+    await guardaAi();
     try { await leggiCoda(); } catch (e) { /* offline */ }
+    try { await leggiRegali(); } catch (e) { /* offline */ }
     try { disegnaStato(await chiama("/stato")); } catch (e) { /* offline */ }
     try { await leggiPannello(); } catch (e) { /* offline */ }
     apriFlusso();
@@ -1297,6 +2133,7 @@ const PAGINA = `<!doctype html>
       try { disegnaStato(JSON.parse(ev.data)); } catch (e) { return; }
       leggiCoda().catch(function () {});
       leggiPannello().catch(function () {});
+      leggiRegali().catch(function () {});
     };
     flusso.onerror = function () {
       var box = $("semaforo");
@@ -1345,9 +2182,20 @@ const PAGINA = `<!doctype html>
     if (document.visibilityState !== "visible" || !token) return;
     leggiCoda().catch(function () {});
     leggiPannello().catch(function () {});
+    leggiRegali().catch(function () {});
     // Il flusso, dopo un po' in secondo piano, il telefono lo chiude: si riapre.
     if (!flusso || flusso.readyState === 2) apriFlusso();
   });
+
+  /**
+   * Un file lasciato cadere **fuori** da una riga non deve aprirsi.
+   *
+   * Senza queste due righe, il browser (e la finestra di DaProdConnessione, che
+   * è un browser) al posto della pagina mostra il file: il pannello sparisce e
+   * bisogna riaprirlo. Con venti file da mandare, capita una volta su tre.
+   */
+  document.addEventListener("dragover", function (ev) { ev.preventDefault(); });
+  document.addEventListener("drop", function (ev) { ev.preventDefault(); });
 
   $("nome").value = ioNome;
   if (token) entra();
