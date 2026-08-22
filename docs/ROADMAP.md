@@ -45,10 +45,10 @@ fanno quello che ti ho chiesto».
 | La fila che fa partire davvero i lavori | **provata**: si accetta e parte |
 | Il telefono che si ricollega da solo | **provato** |
 | App Android: persone, pagine della suite, galleria | **provata sul telefono** |
-| **Ognuno vede le sue cose, e la bacheca** | scritto nella 0.7.2, **provato con un dispositivo solo** |
-| **Il menu sulle richieste, con e senza AI** | scritto nella 0.7.2, **provato con un dispositivo solo** |
-| **I regali: un file trascinato su una persona** | scritto nella 0.7.2, **mai provato fra due telefoni** |
-| **Modelli e preset dal telefono** | scritto nella 0.7.2, **mai visto contro un motore acceso** |
+| **Ognuno vede le sue cose, e la bacheca** | fatto e **provato**, con un secondo dispositivo finto |
+| **Il menu sulle richieste, con e senza AI** | fatto e **provato**; l'AI ci mette un minuto o due |
+| **I regali: un file trascinato su una persona** | provato dal codice; **il trascinamento vero no** |
+| **Modelli e preset dal telefono** | **provato contro il motore acceso**: FLUX.2 4B chiesto da fuori, e usato |
 | Tailscale come strada principale | scritto, **mai provato col telefono** |
 | Accesso da Internet (tunnel in uscita) | fatto, **mai acceso su una linea vera** |
 | DaProdCinema — Storia: barra, anteprime, cucitura da sola | scritto; **mai girato contro il motore acceso** |
@@ -456,8 +456,13 @@ riscrittura, regali, e un banco nuovo (`prova-azioni.mjs`) che confronta i
 modelli dichiarati con quelli veri delle schede — due elenchi che, divergendo,
 non romperebbero niente e farebbero generare col modello sbagliato in silenzio.
 
-Non è stato provato: **due persone collegate insieme**, i regali fra due
-telefoni, e la scelta del modello contro un motore acceso.
+**Provato sul PC vero**, con un secondo dispositivo finto: il giro intero — una
+richiesta con FLUX.2 Klein 4B accettata, generata in cento secondi, col file che
+si chiama come il prompt e appartiene a chi l'ha chiesta — più il pacco, i
+permessi della libreria, i ruoli e i preset.
+
+Non è stato provato: **due telefoni veri accesi insieme**, l'animazione del
+pacco su Android, e il trascinamento di un file da una cartella di Windows.
 
 ---
 

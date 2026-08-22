@@ -123,12 +123,32 @@ ma solo le proprie.
 
 ---
 
+### Cosa è stato provato davvero
+
+Sul PC di casa, con la suite vera accesa e un secondo dispositivo collegato per
+finta (un programma che si accoppia come farebbe un telefono):
+
+- **il giro intero**: un dispositivo chiede un'immagine **con FLUX.2 Klein 4B**,
+  chi sta al PC accetta, DaProdFoto si apre, sceglie quel modello e genera. Cento
+  secondi dopo il file c'è, **si chiama «un faro sulla scogliera al tramonto,
+  luce calda»**, ed è di chi l'aveva chiesto — che nella sua galleria lo vede, e
+  in quella di chi sta al PC no;
+- **il pacco**: mandato, arrivato, notificato, aperto con la sua animazione,
+  scaricato e buttato;
+- i permessi della libreria, la bacheca, il cambio di permesso, i preset, la
+  riscrittura a mano e quella del modello.
+
+**Il tasto dell'AI ci mette un minuto o due.** Provato: Bonsai si carica a 64K,
+ragiona, e risponde in circa cento secondi la prima volta. Non è un difetto ed è
+il prezzo di un 27B su una scheda da 8 GB — ma è bene saperlo prima di premere.
+Mentre lavora il tasto lo dice.
+
 ### Cosa **non** è a posto, e va detto
 
-- **Niente di tutto questo è stato provato con due telefoni veri.** Le prove
-  automatiche coprono i permessi (chi vede cosa, chi può cosa) e sono
-  sessanta in più di ieri; la suite vera è stata aperta e guardata, ma con un
-  dispositivo solo.
+- **Due telefoni veri accesi insieme non li ha ancora visti nessuno.** Il
+  secondo dispositivo delle prove era un programma, non una persona: quello che
+  non è passato per mani vere è l'animazione del pacco su Android e il
+  trascinamento di un file da una cartella di Windows.
 - **Il tasto dell'AI vuole LM Studio acceso.** Se non c'è, il tasto è spento e
   dice perché, ma il modello non si accende da solo.
 - **La bacheca non ha niente di social oltre a questo**: non ci sono cuori, non
@@ -137,6 +157,18 @@ ma solo le proprie.
 - Un file mandato a una persona non può superare i **512 MB**.
 - **DaProdVoce non sceglie il modello da fuori**: sceglie la voce, che è la cosa
   che ha.
+
+### Due cose viste guardando, e sistemate
+
+- **I lavori rimasti a mezz'aria.** Sul PC c'erano due richieste ferme su «ci sta
+  lavorando» da ore: la suite era stata chiusa mentre generava, e la fila vive in
+  memoria. Adesso all'avvio si chiudono da sole, dicendolo a chi le aspettava. E
+  **buttare una richiesta si può sempre**, anche una che dice di star lavorando:
+  se no quella riga non se ne andava più.
+- **I nomi delle cose fatte prima.** Le novantaquattro immagini già in libreria
+  si chiamavano `daprod_00048_`. Adesso si leggono col prompt che le ha fatte,
+  senza che nessuno abbia rinominato niente: i parametri accanto ai file
+  c'erano già, bastava guardarli.
 
 ---
 

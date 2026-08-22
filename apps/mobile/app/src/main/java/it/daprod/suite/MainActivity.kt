@@ -794,7 +794,7 @@ class MainActivity : AppCompatActivity() {
         campo.tipo == "scelta" -> Spinner(this).apply {
             // Nel menu si legge la frase, non l'id: «Anima v2» invece di
             // «anima2». L'id torna al momento di mandare, in [leggiValori].
-            val voci = (if (campo.obbligatorio) emptyList() else listOf("—")) +
+            val voci = (if (campo.obbligatorio) emptyList() else listOf(campo.niente)) +
                 campo.scelte.map { campo.mostra(it) }
             adapter = ArrayAdapter(
                 this@MainActivity,
@@ -850,7 +850,7 @@ class MainActivity : AppCompatActivity() {
             val valore = when (vista) {
                 is EditText -> vista.text.toString().trim()
                 is Spinner ->
-                    vista.selectedItem?.toString()?.takeIf { it != "—" }
+                    vista.selectedItem?.toString()?.takeIf { it != (campo?.niente ?: "—") }
                         ?.let { campo?.idDa(it) ?: it } ?: ""
                 else -> ""
             }

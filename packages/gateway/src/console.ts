@@ -818,7 +818,9 @@ const PAGINA = `<!doctype html>
         if (!campo.obbligatorio) {
           var vuoto = document.createElement("option");
           vuoto.value = "";
-          vuoto.textContent = "— tutte —";
+          // Cosa vuol dire lasciarlo vuoto lo dice il campo: su un filtro
+          // «tutte», sul modello «quello scelto sul computer».
+          vuoto.textContent = campo.vuoto || "— tutte —";
           controllo.append(vuoto);
         }
         for (var opt of (campo.scelte || [])) {
@@ -1220,7 +1222,9 @@ const PAGINA = `<!doctype html>
       via.addEventListener("click", function () { void togliRichiesta(r, "archivia"); });
       li.append(via);
     }
-    if (["pronta", "scartata", "scaduta", "archiviata"].indexOf(r.stato) >= 0) {
+    // Buttare si puo' sempre, anche una che dice di star lavorando: se la suite
+    // e' stata chiusa mentre generava, quella riga resta li' per sempre.
+    {
       var butta = document.createElement("button");
       butta.className = "mini male";
       butta.textContent = "butta";
@@ -2158,6 +2162,9 @@ const PAGINA = `<!doctype html>
   function pesa(b) {
     if (!b) return "";
     if (b >= 1048576) return (b / 1048576).toFixed(1).replace(".", ",") + " MB";
+    // Sotto il chilo si scrivono i byte: un file da settanta byte che dice
+    // «0 KB» sembra un file rotto, e visto sul pacco di prova lo sembrava.
+    if (b < 1024) return b + " byte";
     return Math.round(b / 1024) + " KB";
   }
 

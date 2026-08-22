@@ -167,10 +167,21 @@ export async function migliora(opzioni: { testo: string; app: string }): Promise
   const mestiere = MESTIERI[opzioni.app] ?? MESTIERI.foto!;
   const esito = await chiediAllLlm({
     modello: await conChiParlo(),
-    // Niente ragionamento: riscrivere una frase è un lavoro corto, e col
-    // pensiero acceso lo stesso modello ci mette decine di secondi invece di
-    // uno. È la stessa scelta fatta nel tasto «Allarga» di DaProdFoto.
-    pensa: false,
+    /**
+     * **Lo lasciamo pensare**, ed è costato una prova per capirlo.
+     *
+     * Il tasto «Allarga» delle schede spegne il ragionamento: riscrivere una
+     * frase è un lavoro corto. Provato sul PC vero il 22 agosto 2026, con
+     * Bonsai, spegnerlo non funziona: il modello **ragiona lo stesso** —
+     * `enable_thinking: false` lo ignora — e i 900 token del budget corto
+     * finiscono dentro al pensiero. La risposta esce vuota, e chi ha premuto
+     * legge «il modello ha risposto in un modo che non riesco a leggere».
+     *
+     * Acceso, pensa e poi risponde: mezzo minuto invece di dieci secondi, e la
+     * risposta arriva. Vedi `preparaDomanda` in llm.ts, dove la stessa cosa era
+     * già scritta per le canzoni.
+     */
+    pensa: true,
     sistema: mestiere,
     utente:
       `Riscrivi questa richiesta restando dentro l'idea di chi l'ha scritta. ` +
@@ -197,7 +208,7 @@ function leggiTesto(risposta: string): string {
   const prova = (dentro: string): string => {
     try {
       const dati = JSON.parse(dentro) as { testo?: unknown };
-      return typeof dati.testo === "string" ? dati.testo.trim() : "";
+      return typeof dati.testo === "string" && dati.testo.trim() ? dati.testo.trim() : "";
     } catch {
       return "";
     }
@@ -206,8 +217,29 @@ function leggiTesto(risposta: string): string {
   const diretto = prova(risposta);
   if (diretto) return diretto;
 
-  const inizio = risposta.indexOf("{");
-  const fine = risposta.lastIndexOf("}");
-  if (inizio < 0 || fine <= inizio) return "";
-  return prova(risposta.slice(inizio, fine + 1));
+  /**
+   * Le graffe si provano **dall'ultima**, non dalla prima.
+   *
+   * Se la risposta arriva dentro al ragionamento c'e' dentro di tutto — righe
+   * di ragionamento con le graffe, esempi, ripensamenti — e prendere dalla
+   * prima graffa all'ultima da' quasi sempre una cosa che non e' JSON. Quello
+   * buono e' l'ultimo blocco chiuso: e' la conclusione.
+   */
+  const aperture: number[] = [];
+  for (let i = 0; i < risposta.length; i++) {
+    if (risposta[i] === "{") aperture.push(i);
+  }
+  for (let i = aperture.length - 1; i >= 0; i--) {
+    const inizio = aperture[i]!;
+    const fine = risposta.indexOf("}", inizio);
+    if (fine < 0) continue;
+    // Un oggetto puo' contenerne altri: si prova prima quello chiuso piu'
+    // avanti, poi si stringe.
+    for (const chiusura of [risposta.lastIndexOf("}"), fine]) {
+      if (chiusura <= inizio) continue;
+      const dentro = prova(risposta.slice(inizio, chiusura + 1));
+      if (dentro) return dentro;
+    }
+  }
+  return "";
 }

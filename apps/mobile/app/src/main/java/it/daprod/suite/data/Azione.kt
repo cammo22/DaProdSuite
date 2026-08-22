@@ -80,6 +80,8 @@ data class Campo(
      * l'id: vedi [mostra] e [idDa].
      */
     val etichette: Map<String, String>,
+    /** Cosa vuol dire lasciarlo vuoto: «— tutte —» non va bene per tutti. */
+    val vuoto: String?,
     val min: Int?,
     val max: Int?,
     val maxLunghezza: Int?,
@@ -89,6 +91,10 @@ data class Campo(
     /** Un campo lungo vuole più di una riga: è il prompt, non un numero. */
     val eLungo: Boolean
         get() = tipo == "testo" && (maxLunghezza ?: 0) > 200
+
+    /** La voce che vuol dire «non scelgo niente». */
+    val niente: String
+        get() = vuoto ?: "—"
 
     /** Come si scrive una scelta nel menu. */
     fun mostra(id: String): String = etichette[id] ?: id
@@ -105,6 +111,7 @@ data class Campo(
             .put("obbligatorio", obbligatorio)
             .put("scelte", JSONArray().also { arr -> for (s in scelte) arr.put(s) })
             .put("etichette", JSONObject().also { o -> for ((k, v) in etichette) o.put(k, v) })
+            .also { if (vuoto != null) it.put("vuoto", vuoto) }
         if (min != null) j.put("min", min)
         if (max != null) j.put("max", max)
         if (maxLunghezza != null) j.put("maxLunghezza", maxLunghezza)
@@ -131,6 +138,7 @@ data class Campo(
                 obbligatorio = j.optBoolean("obbligatorio", false),
                 scelte = scelte,
                 etichette = etichette,
+                vuoto = j.optString("vuoto").takeIf { it.isNotBlank() },
                 min = if (j.has("min")) j.optInt("min") else null,
                 max = if (j.has("max")) j.optInt("max") else null,
                 maxLunghezza = if (j.has("maxLunghezza")) j.optInt("maxLunghezza") else null,

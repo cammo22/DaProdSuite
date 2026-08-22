@@ -441,11 +441,27 @@ function leggiMeta(file: string): Record<string, unknown> | undefined {
   }
 }
 
-/** Titolo scritto nei metadati, se c'è: è meglio del nome del file. */
+/**
+ * Come si chiama una cosa, per chi la guarda.
+ *
+ * Prima si guardava solo `titolo`, e chi non ce l'aveva restava
+ * `daprod_00048_` — che è il nome che dà il motore, e non dice niente. Adesso,
+ * se il titolo non c'è, **vale quello che è stato chiesto**: il testo scritto
+ * dalla persona, la descrizione, il prompt.
+ *
+ * Vale anche per quello che c'era prima della 0.7.2: i parametri accanto ai
+ * file li scrivevano già le schede, quindi novantaquattro immagini fatte ieri
+ * hanno smesso di chiamarsi con un numero senza che nessuno rinominasse niente.
+ */
 function leggiTitolo(file: string): string | undefined {
   const meta = leggiMeta(file);
-  const titolo = meta?.["titolo"] ?? meta?.["title"];
-  return typeof titolo === "string" && titolo.trim() ? titolo.trim() : undefined;
+  const scritto =
+    daLeggere(meta?.["titolo"]) ??
+    daLeggere(meta?.["title"]) ??
+    daLeggere(meta?.["testo"]) ??
+    daLeggere(meta?.["descrizione"]) ??
+    daLeggere(meta?.["prompt"]);
+  return scritto ? unaRiga(scritto) : undefined;
 }
 
 export const libreria = new Libreria();

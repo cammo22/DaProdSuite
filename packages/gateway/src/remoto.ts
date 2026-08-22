@@ -359,6 +359,13 @@ export class Remoto {
    * `archiviata` la toglie dalla lista senza toccare il file; cancellare la fa
    * sparire dall'archivio. Ognuno puo' farlo con le proprie; chi decide anche
    * con quelle degli altri - e' lui che si ritrova la lista lunga.
+   *
+   * **Mettere via si puo' solo a lavoro finito, buttare sempre.** Non e' una
+   * distinzione da pignoli: una richiesta puo' restare «in lavorazione» per
+   * sempre se la suite viene chiusa mentre generava, e se anche buttarla
+   * volesse un lavoro finito quella riga non se ne andrebbe piu'. Visto sul PC
+   * vero il 22 agosto 2026: due lavori fermi li' da ore, e nessun modo di
+   * toglierli.
    */
   metti(id: string, da: Dispositivo, come: "archivia" | "cancella"): string | null {
     const dati = this.archivio.datiCorrenti;

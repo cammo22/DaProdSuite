@@ -42,6 +42,16 @@ export interface Campo {
    * chiama dentro.
    */
   etichette?: Readonly<Record<string, string>>;
+  /**
+   * Cosa vuol dire **non scegliere niente**, per un campo che si può lasciare
+   * vuoto.
+   *
+   * Non è la stessa cosa per tutti: su un filtro «— tutte —» è giusto, sul
+   * modello no — lì vuoto vuol dire «quello scelto adesso sul computer», che è
+   * un'altra cosa e va detta. Senza, il menu del modello diceva «— tutte —»,
+   * che non vuol dire niente.
+   */
+  vuoto?: string;
   /** Per `tipo: "numero"`: gli estremi, inclusi. */
   min?: number;
   max?: number;

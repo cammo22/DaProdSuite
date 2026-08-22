@@ -579,6 +579,7 @@ async function riapri(): Promise<void> {
  */
 export function riprendiAccessoRemoto(): void {
   const scelte = impostazioni();
+  chiudiIlavoriRimastiAmezzAria();
   void (async () => {
     try {
       // Sempre, anche a connessione spenta: da spenta ascolta solo su
@@ -590,6 +591,29 @@ export function riprendiAccessoRemoto(): void {
       // non far partire la suite.
     }
   })();
+}
+
+/**
+ * I lavori rimasti a mezz'aria dalla volta scorsa.
+ *
+ * **La fila vive in memoria**, in `esecuzione.ts`: chiudere la suite la svuota.
+ * Le richieste invece stanno su disco, e una che era «accettata» o «in
+ * lavorazione» quando la suite si e' chiusa resta li' a dire che sta lavorando
+ * per sempre — nessuno la fara' mai, e chi aspetta non lo sa.
+ *
+ * Visto sul PC vero il 22 agosto 2026: due lavori fermi in «ci sta lavorando»
+ * da ore. All'avvio si chiudono, dicendo la verita' a chi le aveva chieste.
+ */
+function chiudiIlavoriRimastiAmezzAria(): void {
+  const rimaste = remoto.archivi.datiCorrenti.richieste.filter(
+    (r) => r.stato === "accettata" || r.stato === "in-lavoro",
+  );
+  if (!rimaste.length) return;
+  for (const r of rimaste) {
+    remoto.cambiaStato(r.id, adminDiCasa(), "scartata", {
+      motivo: "Il computer si e' spento mentre ci lavorava. Richiedilo, se ti serve ancora.",
+    });
+  }
 }
 
 /* ----------------------------------------------------------- firewall */

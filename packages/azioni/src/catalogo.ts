@@ -77,6 +77,7 @@ function campoModello(quali: {
     obbligatorio: false,
     scelte: quali.scelte,
     etichette: quali.etichette,
+    vuoto: "\u2014 quello scelto sul computer \u2014",
   } as const;
 }
 
