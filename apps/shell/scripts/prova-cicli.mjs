@@ -34,15 +34,21 @@ for (const file of tuttiIFile(radice)) {
   const testo = readFileSync(file, "utf8");
   const vicini = new Set();
   for (const m of testo.matchAll(/require\("(\.[^"]+)"\)/g)) {
-    let dove = resolve(dirname(file), m[1]);
-    if (!dove.endsWith(".js")) dove += ".js";
-    try {
-      statSync(dove);
-    } catch {
-      const indice = dove.replace(/\.js$/, "/index.js");
-      try { statSync(indice); dove = indice; } catch { continue; }
+    // `resolve` a ogni passo, e non una concatenazione: su Windows i percorsi
+    // hanno la barra rovescia, e un `"/index.js"` attaccato a mano produce una
+    // stringa che il disco accetta ma che **non è uguale** alla chiave della
+    // mappa. Con quella disuguaglianza il grafo restava spezzato e i cerchi
+    // erano invisibili — che è esattamente il modo in cui questa prova ha
+    // mancato, alla prima stesura, il cerchio che era stata scritta per
+    // trovare.
+    const chiesto = resolve(dirname(file), m[1]);
+    let dove = null;
+    for (const forse of [chiesto, chiesto + ".js", resolve(chiesto, "index.js")]) {
+      try {
+        if (statSync(forse).isFile()) { dove = forse; break; }
+      } catch { /* non è questo */ }
     }
-    vicini.add(dove);
+    if (dove) vicini.add(dove);
   }
   archi.set(file, [...vicini]);
 }
