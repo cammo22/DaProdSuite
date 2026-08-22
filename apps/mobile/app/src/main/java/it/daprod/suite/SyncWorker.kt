@@ -6,7 +6,7 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
-import it.daprod.suite.data.Store
+import it.daprod.suite.data.Profili
 import it.daprod.suite.net.GatewayClient
 import java.util.concurrent.TimeUnit
 
@@ -19,21 +19,33 @@ class SyncWorker(context: Context, params: WorkerParameters) : CoroutineWorker(c
 
     override suspend fun doWork(): Result {
         val ctx = applicationContext
-        val host = Store.host(ctx) ?: return Result.success()
-        val token = Store.token(ctx) ?: return Result.success()
 
-        val client = GatewayClient(host, token)
-        return try {
-            val notifiche = client.notificheNonLette()
-            for ((id, testo) in notifiche) {
-                Notifiche.mostra(ctx, ctx.getString(R.string.app_name), testo)
-                client.segnaNotificaLetta(id)
+        /**
+         * **Tutte le persone di questo telefono, non solo quella attiva.**
+         *
+         * Se in casa il telefono lo usano in due e il PC finisce il lavoro di
+         * chi in quel momento non è entrato nell'app, la notifica deve arrivare
+         * lo stesso: chi l'ha chiesto sta aspettando, e non ha nessun modo di
+         * sapere che avrebbe dovuto cambiare profilo per essere avvisato.
+         */
+        val persone = Profili.tutti(ctx)
+        if (persone.isEmpty()) return Result.success()
+
+        var qualcunaFallita = false
+        for (persona in persone) {
+            val client = GatewayClient(persona.base, persona.token)
+            try {
+                for ((id, testo) in client.notificheNonLette()) {
+                    // Con più persone il nome serve: «pronto» da chi, se no.
+                    Notifiche.mostra(ctx, persona.nome, testo)
+                    client.segnaNotificaLetta(id)
+                }
+            } catch (_: Exception) {
+                // PC spento o fuori rete: si riprova alla prossima finestra.
+                qualcunaFallita = true
             }
-            Result.success()
-        } catch (_: Exception) {
-            // PC spento o fuori rete: si riprova alla prossima finestra.
-            Result.retry()
         }
+        return if (qualcunaFallita) Result.retry() else Result.success()
     }
 
     companion object {

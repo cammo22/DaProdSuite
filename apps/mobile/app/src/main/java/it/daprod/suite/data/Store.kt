@@ -3,64 +3,49 @@ package it.daprod.suite.data
 import android.content.Context
 
 /**
- * Cosa l'app ricorda fra un avvio e l'altro.
+ * Le poche cose che l'app ricorda e che **non** sono di una persona sola.
  *
- * Poche cose, tutte dell'accoppiamento: dove sta il PC, il token che ci fa
- * entrare, come si chiama questo telefono e come si chiama quel computer.
+ * L'accoppiamento non sta più qui: sta in [Profili], perché da questa versione
+ * il telefono può avere più persone e ognuna ha il suo token, il suo ruolo e il
+ * suo PC. Qui restano due cose che valgono per l'app intera:
  *
- * I due nomi sono **due cose diverse** e la prima stesura li confondeva: il
- * nome del PC finiva nella casella del nome del telefono, e al secondo
- * accoppiamento il telefono si presentava alla suite col nome del computer.
+ * - **l'ultimo indirizzo visto**, anche prima di essere accoppiati. Serve al
+ *   codice a otto cifre battuto a mano: senza il QR non si saprebbe a quale
+ *   computer bussare;
+ * - **quando si è guardato l'ultima volta** se c'è una versione nuova dell'app,
+ *   che è l'unica cosa che questa app manda fuori dalla tua rete e non deve
+ *   diventare un pettegolezzo continuo.
  */
 object Store {
     private const val PREFS = "daprod_suite"
-    private const val KEY_TOKEN = "token"
-    private const val KEY_HOST = "host"
-    private const val KEY_NOME = "nome"
-    private const val KEY_COMPUTER = "computer"
-    private const val KEY_RUOLO = "ruolo"
+    private const val KEY_BASE = "base"
     private const val KEY_AGG = "ultimo_controllo_aggiornamenti"
 
     private fun prefs(context: Context) =
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
-    fun salvaAccoppiamento(
-        context: Context,
-        host: String,
-        token: String,
-        /** Come si chiama **questo telefono**, quello che la suite mostrerà. */
-        nome: String,
-        /** Come si chiama **il PC** a cui ci si è collegati. */
-        computer: String,
-        ruolo: String,
-    ) {
-        prefs(context).edit()
-            .putString(KEY_HOST, host)
-            .putString(KEY_TOKEN, token)
-            .putString(KEY_NOME, nome)
-            .putString(KEY_COMPUTER, computer)
-            .putString(KEY_RUOLO, ruolo)
-            .apply()
+    /**
+     * L'ultimo indirizzo del PC visto, con lo schema davanti.
+     *
+     * Dalla 0.6.0 è un URL completo e non più `ip:porta`: con il tunnel acceso
+     * il gateway sta su `https://qualcosa.trycloudflare.com`, che una porta non
+     * ce l'ha e HTTP non è. Un indirizzo salvato dalla versione precedente —
+     * «192.168.1.8:8790» — si legge lo stesso: gli si mette davanti `http://`,
+     * che è quello che l'app faceva prima.
+     */
+    fun base(context: Context): String? {
+        val salvato = prefs(context).getString(KEY_BASE, null)?.trim()?.trimEnd('/')
+        if (salvato.isNullOrBlank()) return null
+        return if (salvato.startsWith("http://") || salvato.startsWith("https://")) {
+            salvato
+        } else {
+            "http://$salvato"
+        }
     }
 
-    /** L'ultimo indirizzo visto, anche prima di essere accoppiati (dal QR). */
-    fun ricordaHost(context: Context, host: String) {
-        prefs(context).edit().putString(KEY_HOST, host).apply()
+    fun ricordaBase(context: Context, base: String) {
+        prefs(context).edit().putString(KEY_BASE, base.trim().trimEnd('/')).apply()
     }
-
-    fun token(context: Context): String? = prefs(context).getString(KEY_TOKEN, null)
-
-    fun host(context: Context): String? = prefs(context).getString(KEY_HOST, null)
-
-    /** Il nome di questo telefono. La prima volta lo propone Android. */
-    fun nome(context: Context): String =
-        prefs(context).getString(KEY_NOME, null) ?: android.os.Build.MODEL ?: "telefono"
-
-    fun computer(context: Context): String? = prefs(context).getString(KEY_COMPUTER, null)
-
-    fun ruolo(context: Context): String = prefs(context).getString(KEY_RUOLO, "ospite") ?: "ospite"
-
-    fun ePadrone(context: Context): Boolean = ruolo(context) == "admin"
 
     /** Quando si è guardato l'ultima volta se c'è una versione nuova dell'app. */
     fun ultimoControlloAgg(context: Context): Long = prefs(context).getLong(KEY_AGG, 0)
@@ -70,13 +55,24 @@ object Store {
     }
 
     /**
-     * Dimentica l'accoppiamento.
+     * Le azioni che il PC dichiarava l'ultima volta che ha risposto.
      *
-     * Non è la stessa cosa della revoca dal PC: qui il telefono si scorda il
-     * token, ma il dispositivo resta nell'elenco della suite finché non lo si
-     * toglie da lì. Vale la pena dirlo a chi preme.
+     * Si tengono per una ragione sola: **senza, offline non si può chiedere
+     * niente**. Il modulo di una richiesta nasce dalle azioni che la suite
+     * dichiara, e se il PC non risponde non c'è nessuna azione da cui farlo
+     * nascere — cioè la coda offline, che è la ragione per cui questa app
+     * serve anche a computer spento, resterebbe una lista vuota.
+     *
+     * Sono per persona: due profili possono stare su due computer diversi, con
+     * due suite di versioni diverse.
      */
-    fun scollega(context: Context) {
-        prefs(context).edit().clear().apply()
+    fun ricordaAzioni(context: Context, profilo: String, json: String) {
+        prefs(context).edit().putString("azioni:$profilo", json).apply()
     }
+
+    fun azioniRicordate(context: Context, profilo: String): String? =
+        prefs(context).getString("azioni:$profilo", null)
+
+    /** Il nome che Android propone per una persona nuova, la prima volta. */
+    fun nomeProposto(): String = android.os.Build.MODEL ?: "telefono"
 }

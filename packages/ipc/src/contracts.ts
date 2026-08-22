@@ -169,6 +169,52 @@ export interface EsitoLlm {
   motivo?: string;
 }
 
+/**
+ * Un'immagine o un audio dati in pasto al modello insieme alla domanda.
+ *
+ * Serve a chi allega dei riferimenti e vuole che il modello **li guardi** invece
+ * di indovinare: la Storia di DaProdCinema ne è il primo uso, e se il modello
+ * caricato non è multimodale la suite lo dice con parole invece di far finta.
+ */
+export interface AllegatoLlm {
+  genere: "immagine" | "audio";
+  /** Il contenuto in base64, senza il prefisso `data:`. */
+  base64: string;
+  /** Il tipo MIME: `image/png`, `audio/wav`… */
+  mime: string;
+  /** Come si chiama, per poterne parlare nel testo. */
+  nome?: string;
+}
+
+/** Un frammento di risposta mentre arriva: o testo vero, o ragionamento. */
+export interface PezzoLlm {
+  testo?: string;
+  pensiero?: string;
+}
+
+/** Cosa si chiede al modello. Uguale per la risposta muta e per quella in diretta. */
+export interface DomandaLlm {
+  /** Chi deve essere il modello mentre risponde. */
+  sistema: string;
+  /** Cosa gli si chiede. */
+  utente: string;
+  /**
+   * La forma che la risposta deve avere, come JSON Schema.
+   *
+   * Serve quando la risposta deve riempire dei campi invece di essere letta da
+   * una persona: con quello il modello non *può* rispondere di fantasia.
+   */
+  schema?: Record<string, unknown>;
+  /** Come si chiama quella forma. Serve solo a LM Studio per i suoi log. */
+  nomeSchema?: string;
+  /** Quale modello, se l'app ne ha uno scelto. Un id sconosciuto viene ignorato. */
+  modello?: string;
+  /** Se lasciarlo ragionare prima di rispondere. Acceso di suo. */
+  pensa?: boolean;
+  /** Le immagini e gli audio da fargli vedere e sentire. */
+  allegati?: AllegatoLlm[];
+}
+
 /* ------------------------------------------------------------------- modelli */
 
 /**
@@ -608,6 +654,27 @@ export interface SuiteApi {
     /** Accende o spegne il gateway. `acceso` dice dove si sta. */
     accendi(): Promise<StatoAccesso>;
     spegni(): Promise<StatoAccesso>;
+    /**
+     * Apre (o chiude) la strada da Internet.
+     *
+     * Accende un tunnel in uscita con `cloudflared` e ne torna l'indirizzo
+     * pubblico in `StatoAccesso.internet`. Non apre porte sul router e non
+     * chiede account: la connessione la fa il PC verso Cloudflare, e da fuori
+     * si arriva in HTTPS.
+     *
+     * La prima volta scarica `cloudflared` (~40 MB): la fase `scarico` dello
+     * stato serve a raccontarlo invece di sembrare piantata.
+     */
+    accendiInternet(): Promise<StatoAccesso>;
+    spegniInternet(): Promise<StatoAccesso>;
+    /**
+     * Chiede a Windows di lasciar entrare sulla porta del gateway.
+     *
+     * Mostra il riquadro dell'amministratore: una volta sola. Torna `null` se
+     * è andata, o il motivo — «hai detto di no» compreso, che è una risposta
+     * legittima e va raccontata invece di sparire.
+     */
+    apriLaPorta(): Promise<string | null>;
     /** Lo stato attuale, la prima occhiata o dopo un cambio. */
     stato(): Promise<StatoAccesso>;
     /** Crea un nuovo invito per il ruolo dato: lo si mostra come QR/codice. */
@@ -722,28 +789,22 @@ export interface ApiApp {
      * campi invece di essere letta da una persona: con quello il modello non
      * *può* rispondere di fantasia, e non c'è niente da interpretare.
      */
-    chiedi(domanda: {
-      sistema: string;
-      utente: string;
-      schema?: Record<string, unknown>;
-      nomeSchema?: string;
-      /**
-       * Quale modello, se l'app ne ha uno scelto.
-       *
-       * E' quello del selettore che le app mostrano in cima: senza, la suite
-       * prendeva sempre il consigliato — cioe' Bonsai 27B, che su questa
-       * macchina ragiona per minuti — e il menu che l'utente aveva appena usato
-       * non contava niente. Un id sconosciuto viene ignorato.
-       */
-      modello?: string;
-      /**
-       * Se lasciarlo ragionare prima di rispondere. Acceso di suo.
-       *
-       * Per una canzone il ragionamento vale il minuto che costa; per allargare
-       * la descrizione di un'immagine e' un minuto buttato.
-       */
-      pensa?: boolean;
-    }): Promise<EsitoLlm>;
+    chiedi(domanda: DomandaLlm): Promise<EsitoLlm>;
+
+    /**
+     * La stessa domanda, ma i token si vedono arrivare.
+     *
+     * `onPezzo` viene chiamata a ogni frammento — prima il ragionamento, poi la
+     * risposta — e alla fine torna lo stesso `EsitoLlm` della versione muta.
+     *
+     * Serve perché un modello che pensa per due minuti dietro a un cerchietto
+     * che gira e un modello piantato sono indistinguibili. Con questa, chi
+     * guarda vede le parole uscire e sa quanto ci sta mettendo.
+     */
+    chiediInDiretta(
+      domanda: DomandaLlm,
+      onPezzo: (pezzo: PezzoLlm) => void,
+    ): Promise<EsitoLlm>;
 
     /** Lo carica con il contesto scelto (64K, 128K, 256K), GPU al massimo. */
     carica(id: string, contesto: number): Promise<string | null>;
@@ -875,6 +936,8 @@ export const CHANNELS = {
 
   llmStato: "llm:stato",
   llmChiedi: "llm:chiedi",
+  llmChiediDiretta: "llm:chiedi-diretta",
+  llmPezzo: "llm:pezzo",
   llmCarica: "llm:carica",
   llmScarica: "llm:scarica",
   llmLibera: "llm:libera",
@@ -900,6 +963,9 @@ export const CHANNELS = {
   remotoStato: "remoto:stato",
   remotoAccendi: "remoto:accendi",
   remotoSpegni: "remoto:spegni",
+  remotoAccendiInternet: "remoto:accendi-internet",
+  remotoSpegniInternet: "remoto:spegni-internet",
+  remotoApriPorta: "remoto:apri-porta",
   remotoNuovoInvito: "remoto:nuovo-invito",
   remotoRevoca: "remoto:revoca",
   remotoDecidi: "remoto:decidi",

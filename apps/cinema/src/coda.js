@@ -171,9 +171,31 @@ async function annulla(id) {
 
 /* ------------------------------------------------ quello che dice il motore */
 
+/**
+ * Chi vuole seguire un lavoro che non sta in questo pannello.
+ *
+ * La scheda Storia manda le sue clip da sé — una per volta, per la ragione
+ * scritta in `storia.js` — e non le mette nella Sessione: sono novanta, e
+ * novanta riquadri nel pannello di Crea non li guarda nessuno. Ma
+ * l'avanzamento vero il motore lo racconta **qui**, su questo WebSocket, ed è
+ * l'unico posto in cui passa. Senza questa riga la Storia poteva solo chiedere
+ * ogni due secondi «è finita?» e mostrare una barra che sta ferma per cinque
+ * minuti — che è esattamente quello che si vedeva.
+ */
+const osservatori = new Map();
+
+export function osservaLavoro(id, fn) {
+  osservatori.set(id, fn);
+  return () => osservatori.delete(id);
+}
+
 export function messaggioDalMotore(msg) {
   const d = msg.data || {};
   const l = d.prompt_id ? lavoro(d.prompt_id) : null;
+
+  // Prima di tutto il resto: chi sta seguendo questo lavoro lo sente comunque,
+  // anche se non è uno dei riquadri qui sotto.
+  if (d.prompt_id) osservatori.get(d.prompt_id)?.(msg);
 
   switch (msg.type) {
     case "execution_start":

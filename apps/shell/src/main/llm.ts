@@ -218,52 +218,66 @@ export async function scaricaModello(id: string): Promise<string | null> {
 
 /* --------------------------------------------------- spegnerlo da soli ----- */
 
-/** Il modello che abbiamo caricato noi: solo quello ci prendiamo la libertà di spegnere. */
+/** L'ultimo modello a cui abbiamo chiesto qualcosa. Serve solo alla chiusura. */
 let nostro: string | null = null;
-let timerScarico: NodeJS.Timeout | null = null;
 
 /**
- * Quanto aspettare, finita una risposta, prima di liberare la memoria.
+ * Quante domande stanno aspettando una risposta **adesso**.
  *
- * Non zero: quando si sta lavorando le domande arrivano a raffica — finisci il
- * testo, cambia una strofa, rifallo — e ricaricare quattro GB a ogni giro
- * costerebbe più di quello che fa risparmiare. Due minuti sono abbastanza per
- * non accorgersene e poco per non tenere occupata la scheda mentre si genera
- * un'immagine.
+ * Serve a una cosa sola, ed è importante: non togliere i pesi da sotto a una
+ * risposta che sta ancora arrivando. Due app che chiedono insieme — la Storia
+ * che scrive le scene e il Companion che risponde — sono due domande in volo, e
+ * la memoria si libera quando è finita l'ultima, non la prima.
  */
-const ATTESA_SCARICO_MS = 45_000;
+let inVolo = 0;
 
 /**
- * Libera la memoria **adesso**, senza aspettare il timer.
+ * Libera la memoria **adesso**, senza aspettare niente.
  *
- * La chiama un'app un attimo prima di far partire una generazione pesante, ed è
- * il punto di tutto il meccanismo: scrivere il testo con Bonsai e poi premere
- * Genera succede nel giro di pochi secondi: con la sola attesa, il modello
- * musicale trovava quattro GB e mezzo già occupati dal modello che aveva appena
- * finito di scrivere. Su una scheda da 8 GB non è un dettaglio, è la differenza
- * fra generare e non generare.
+ * La chiama un'app un attimo prima di far partire una generazione pesante, e la
+ * chiama la suite da sé alla fine di ogni risposta. È il punto di tutto il
+ * meccanismo: scrivere il testo con Bonsai e poi premere Genera succede nel giro
+ * di pochi secondi, e senza questo il modello musicale trovava quattro GB e
+ * mezzo già occupati dal modello che aveva appena finito di scrivere. Su una
+ * scheda da 8 GB non è un dettaglio, è la differenza fra generare e non generare.
+ *
+ * **Tutto quello che è in memoria, non solo quello che abbiamo caricato noi.**
+ * Chi preme Genera vuole la scheda libera, e non gliene importa — giustamente —
+ * di chi ce l'aveva messo: un modello acceso a mano in LM Studio occupa
+ * esattamente gli stessi quattro GB.
  */
 export async function liberaMemoriaLlm(): Promise<void> {
-  if (timerScarico) clearTimeout(timerScarico);
-
-  // **Tutto quello che è in memoria, non solo quello che abbiamo caricato noi.**
-  // Chi preme Genera vuole la scheda libera, e non gliene importa — giustamente —
-  // di chi ce l'aveva messo: un modello acceso a mano in LM Studio occupa
-  // esattamente gli stessi quattro GB.
   const caricati = (await caricatiSecondoLms()) ?? (nostro ? [nostro] : []);
   for (const id of caricati) await scaricaModello(id);
   nostro = null;
 }
 
-function programmaScarico(): void {
-  if (timerScarico) clearTimeout(timerScarico);
-  if (!nostro) return;
-  timerScarico = setTimeout(() => {
-    const id = nostro;
-    if (id) void scaricaModello(id);
-  }, ATTESA_SCARICO_MS);
-  // Non deve tenere sveglia la suite alla chiusura.
-  timerScarico.unref?.();
+/**
+ * A risposta finita, la memoria torna libera. **Ogni volta, in tutte le app.**
+ *
+ * Fino alla 0.5.2 qui c'era un timer da quarantacinque secondi, con una ragione
+ * scritta: chi lavora fa domande a raffica, e ricaricare quattro GB a ogni giro
+ * costa più di quello che fa risparmiare. Sul PC vero quella ragione non ha
+ * retto. Il modello che scrive e il modello che genera vivono sulla **stessa**
+ * scheda da 8 GB, e quei quarantacinque secondi sono esattamente la finestra in
+ * cui uno legge le scene appena scritte e preme Genera: la generazione partiva
+ * con quattro GB e mezzo già presi, e falliva a metà nel VAE.
+ *
+ * Il costo c'è ed è onesto dirlo: due domande di fila ricaricano il modello, e
+ * su un 27B sono decine di secondi. Il guadagno è che una generazione non muore
+ * mai perché qualcuno aveva scritto qualcosa un minuto prima.
+ *
+ * Non tocca niente se un'altra domanda è ancora in volo.
+ */
+async function liberaDopoLaRisposta(): Promise<void> {
+  if (inVolo > 0) return;
+  try {
+    await liberaMemoriaLlm();
+  } catch {
+    // LM Studio chiuso a metà, `lms` che non risponde: la memoria resta
+    // occupata, ma la risposta è già arrivata a chi l'aveva chiesta e non si
+    // rovina per un comando che non è andato.
+  }
 }
 
 /**
@@ -273,7 +287,6 @@ function programmaScarico(): void {
  * l'utente si ritrovava la scheda occupata da un programma che credeva chiuso.
  */
 export async function spegniSeNostro(): Promise<void> {
-  if (timerScarico) clearTimeout(timerScarico);
   if (nostro) await scaricaModello(nostro);
 }
 
@@ -320,6 +333,135 @@ function postJson(url: string, corpo: unknown, timeoutMs: number): Promise<{ sta
   });
 }
 
+/** Un pezzo di risposta mentre arriva: o testo vero, o ragionamento. */
+export interface PezzoLlm {
+  testo?: string;
+  pensiero?: string;
+}
+
+/**
+ * La stessa POST, ma letta **mentre arriva**.
+ *
+ * LM Studio con `stream: true` risponde in SSE: righe `data: {...}`, una per
+ * token o giù di lì, e `data: [DONE]` alla fine. Si legge il socket a pezzi, si
+ * spezza sulle righe vuote e si passa fuori quello che c'è dentro.
+ *
+ * Serve a una cosa che dal PC di Cammo era stata chiesta chiaramente: quando un
+ * modello sta pensando **si deve vedere**, e si devono vedere i token uscire.
+ * Su un 27B che ragiona per due minuti, una finestra ferma e un cerchietto che
+ * gira dicono la stessa identica cosa — cioè niente.
+ */
+function postJsonStream(
+  url: string,
+  corpo: unknown,
+  timeoutMs: number,
+  onPezzo: (pezzo: PezzoLlm) => void,
+): Promise<{ status: number; testo: string; pensiero: string; motivoFine: string }> {
+  return new Promise((risolvi, rifiuta) => {
+    const dati = Buffer.from(JSON.stringify(corpo), "utf8");
+    const indirizzo = new URL(url);
+
+    const richiesta = request(
+      {
+        hostname: indirizzo.hostname,
+        port: indirizzo.port,
+        path: indirizzo.pathname + indirizzo.search,
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Content-Length": dati.length,
+          Accept: "text/event-stream",
+        },
+        timeout: timeoutMs,
+      },
+      (risposta) => {
+        const stato = risposta.statusCode ?? 0;
+
+        // Un errore non arriva in streaming: arriva come un JSON solo, e va
+        // letto tutto insieme per poterlo raccontare.
+        if (stato < 200 || stato >= 300) {
+          const pezzi: Buffer[] = [];
+          risposta.on("data", (p: Buffer) => pezzi.push(p));
+          risposta.on("end", () =>
+            risolvi({
+              status: stato,
+              testo: Buffer.concat(pezzi).toString("utf8"),
+              pensiero: "",
+              motivoFine: "",
+            }),
+          );
+          return;
+        }
+
+        let avanzo = "";
+        let testo = "";
+        let pensiero = "";
+        let motivoFine = "";
+
+        risposta.setEncoding("utf8");
+        risposta.on("data", (chunk: string) => {
+          avanzo += chunk;
+          // Le righe intere si consumano; l'ultima, che può essere a metà,
+          // resta nell'avanzo e si completa col pezzo dopo.
+          let taglio = avanzo.indexOf("\n");
+          while (taglio >= 0) {
+            const riga = avanzo.slice(0, taglio).trim();
+            avanzo = avanzo.slice(taglio + 1);
+            taglio = avanzo.indexOf("\n");
+            if (!riga.startsWith("data:")) continue;
+
+            const carico = riga.slice(5).trim();
+            if (!carico || carico === "[DONE]") continue;
+
+            try {
+              const evento = JSON.parse(carico) as {
+                choices?: {
+                  finish_reason?: string | null;
+                  delta?: { content?: string; reasoning_content?: string };
+                }[];
+              };
+              const delta = evento.choices?.[0]?.delta;
+              if (evento.choices?.[0]?.finish_reason) {
+                motivoFine = evento.choices[0].finish_reason ?? "";
+              }
+              if (delta?.content) {
+                testo += delta.content;
+                onPezzo({ testo: delta.content });
+              }
+              if (delta?.reasoning_content) {
+                pensiero += delta.reasoning_content;
+                onPezzo({ pensiero: delta.reasoning_content });
+              }
+            } catch {
+              // Una riga che non è JSON: LM Studio ogni tanto ci mette dei
+              // commenti di tenuta. Si salta, non è un errore.
+            }
+          }
+        });
+        risposta.on("end", () => risolvi({ status: stato, testo, pensiero, motivoFine }));
+      },
+    );
+
+    richiesta.on("timeout", () => {
+      richiesta.destroy(new Error("timed out"));
+    });
+    richiesta.on("error", rifiuta);
+    richiesta.end(dati);
+  });
+}
+
+/** Un'immagine o un audio dati in pasto al modello insieme alla domanda. */
+export interface AllegatoLlm {
+  /** `immagine` o `audio`: decide in che forma il modello se lo aspetta. */
+  genere: "immagine" | "audio";
+  /** Il contenuto in base64, senza il prefisso `data:`. */
+  base64: string;
+  /** Il tipo MIME (`image/png`, `audio/wav`…), per costruire il data URL. */
+  mime: string;
+  /** Come si chiama, per poterne parlare nel testo. */
+  nome?: string;
+}
+
 export interface DomandaLlm {
   /** Il modello scelto dall'app, se ne ha uno. Ignorato se LM Studio non ce l'ha. */
   modello?: string;
@@ -327,6 +469,16 @@ export interface DomandaLlm {
   sistema: string;
   /** Cosa gli si chiede. */
   utente: string;
+  /**
+   * Le immagini e gli audio da fargli **vedere** e **sentire**.
+   *
+   * Vanno nel messaggio come parti separate, che è la forma che i modelli
+   * multimodali si aspettano (`image_url` per le immagini, `input_audio` per
+   * l'audio). Un modello che non è multimodale non li capisce: LM Studio
+   * risponde con un errore, e quell'errore arriva scritto a chi ha premuto,
+   * invece di una risposta che parla di un'immagine mai vista.
+   */
+  allegati?: AllegatoLlm[];
   /**
    * La forma che la risposta deve avere, come JSON Schema.
    *
@@ -359,17 +511,19 @@ export interface DomandaLlm {
 }
 
 /**
- * Una domanda sola, una risposta sola.
+ * Chi risponde, e con quale corpo di richiesta.
  *
- * Niente conversazione: le app chiedono cose finite ("finiscimi questo testo"),
- * e una cronologia da mantenere sarebbe stato in più per nessun vantaggio. Il
- * giorno che serve una chat vera — DaProdCinema la vuole — si aggiunge accanto,
- * non al posto di questa.
+ * Lo stesso conto serve alla domanda normale e a quella in diretta, ed era
+ * l'unico pezzo che avrebbe potuto divergere fra le due: la regola di chi
+ * risponde è una sola e sta qui.
  */
-export async function chiediAllLlm(domanda: DomandaLlm): Promise<EsitoLlm> {
+async function preparaDomanda(
+  domanda: DomandaLlm,
+  inDiretta: boolean,
+): Promise<{ errore: string } | { scelto: string; corpo: Record<string, unknown> }> {
   const stato = await statoLlm();
   if (!stato.acceso || stato.modelli.length === 0) {
-    return { ok: false, testo: "", motivo: stato.motivo ?? "LM Studio non è disponibile." };
+    return { errore: stato.motivo ?? "LM Studio non è disponibile." };
   }
 
   /**
@@ -396,15 +550,35 @@ export async function chiediAllLlm(domanda: DomandaLlm): Promise<EsitoLlm> {
     stato.modelli[0] ??
     MODELLO_CONSIGLIATO;
 
-  // Se lo carica LM Studio su nostra richiesta, siamo noi a doverlo spegnere.
-  if (!stato.caricati?.includes(scelto)) nostro = scelto;
-  if (timerScarico) clearTimeout(timerScarico);
+  nostro = scelto;
 
-  const corpo = {
+  /**
+   * Il messaggio dell'utente: testo solo, o testo più quello che gli si mostra.
+   *
+   * Senza allegati resta una stringa, che è la forma che capiscono **tutti** i
+   * modelli, anche i più vecchi. Con gli allegati diventa un elenco di parti,
+   * che è la forma dei modelli multimodali. Mandare sempre l'elenco sarebbe
+   * stato più regolare e avrebbe rotto i modelli di testo.
+   */
+  const contenuto: unknown = domanda.allegati?.length
+    ? [
+        { type: "text", text: domanda.utente },
+        ...domanda.allegati.map((a) =>
+          a.genere === "immagine"
+            ? { type: "image_url", image_url: { url: `data:${a.mime};base64,${a.base64}` } }
+            : {
+                type: "input_audio",
+                input_audio: { data: a.base64, format: formatoAudio(a.mime) },
+              },
+        ),
+      ]
+    : domanda.utente;
+
+  const corpo: Record<string, unknown> = {
     model: scelto,
     messages: [
       { role: "system", content: domanda.sistema },
-      { role: "user", content: domanda.utente },
+      { role: "user", content: contenuto },
     ],
     temperature: 0.8,
     /**
@@ -420,11 +594,8 @@ export async function chiediAllLlm(domanda: DomandaLlm): Promise<EsitoLlm> {
      * modello la lascia lì.
      */
     chat_template_kwargs: { enable_thinking: domanda.pensa !== false },
-    // Largo per il ragionamento **e** per la risposta: con 64K di contesto
-    // questi sono un sesto del totale, e il resto resta per la domanda. Senza
-    // ragionamento non serve tutto quello spazio, e un tetto piu' basso e'
-    // anche una rete: un modello che parte per la tangente si ferma prima.
     max_tokens: domanda.pensa === false ? 900 : 10_000,
+    ...(inDiretta ? { stream: true } : {}),
     ...(domanda.schema
       ? {
           response_format: {
@@ -439,12 +610,32 @@ export async function chiediAllLlm(domanda: DomandaLlm): Promise<EsitoLlm> {
       : {}),
   };
 
+  return { scelto, corpo };
+}
+
+/** `audio/wav` diventa `wav`: è così che l'API vuole il formato. */
+function formatoAudio(mime: string): string {
+  const coda = mime.split("/")[1] ?? "wav";
+  return coda === "mpeg" ? "mp3" : coda.replace(/[^a-z0-9]/gi, "");
+}
+
+/**
+ * Una domanda sola, una risposta sola.
+ *
+ * Niente conversazione: le app chiedono cose finite ("finiscimi questo testo"),
+ * e una cronologia da mantenere sarebbe stato in più per nessun vantaggio.
+ */
+export async function chiediAllLlm(domanda: DomandaLlm): Promise<EsitoLlm> {
+  const preparata = await preparaDomanda(domanda, false);
+  if ("errore" in preparata) return { ok: false, testo: "", motivo: preparata.errore };
+
+  inVolo += 1;
   try {
     // Un 27B che ragiona su una macchina con 8 GB di VRAM può metterci minuti:
     // il limite è generoso di proposito, e chi chiama mostra che sta lavorando.
     const risposta = await postJson(
       `${BASE}/chat/completions`,
-      corpo,
+      preparata.corpo,
       domanda.timeoutMs ?? 5 * 60_000,
     );
 
@@ -452,7 +643,7 @@ export async function chiediAllLlm(domanda: DomandaLlm): Promise<EsitoLlm> {
       return {
         ok: false,
         testo: "",
-        motivo: `LM Studio ha risposto ${risposta.status}: ${risposta.testo.slice(0, 200)}`,
+        motivo: spiegaErrore(risposta.status, risposta.testo, Boolean(domanda.allegati?.length)),
       };
     }
 
@@ -470,31 +661,89 @@ export async function chiediAllLlm(domanda: DomandaLlm): Promise<EsitoLlm> {
       ? scelta.message.content
       : (scelta?.message?.reasoning_content ?? "");
 
-    if (!testo.trim()) {
-      const finito = scelta?.finish_reason;
+    if (!testo.trim()) return { ok: false, testo: "", motivo: aVuoto(scelta?.finish_reason) };
+    return { ok: true, testo: ripulisci(testo), modello: preparata.scelto };
+  } catch (err) {
+    return { ok: false, testo: "", motivo: spiegaEccezione(err) };
+  } finally {
+    inVolo -= 1;
+    void liberaDopoLaRisposta();
+  }
+}
+
+/**
+ * La stessa domanda, ma i token si vedono arrivare.
+ *
+ * `onPezzo` viene chiamata a ogni frammento, sia del ragionamento sia della
+ * risposta. Alla fine torna lo stesso `EsitoLlm` della versione muta, così chi
+ * chiama tratta le due allo stesso modo e la differenza è solo quello che si
+ * vede mentre aspetta.
+ */
+export async function chiediInDirettaAllLlm(
+  domanda: DomandaLlm,
+  onPezzo: (pezzo: PezzoLlm) => void,
+): Promise<EsitoLlm> {
+  const preparata = await preparaDomanda(domanda, true);
+  if ("errore" in preparata) return { ok: false, testo: "", motivo: preparata.errore };
+
+  inVolo += 1;
+  try {
+    const risposta = await postJsonStream(
+      `${BASE}/chat/completions`,
+      preparata.corpo,
+      domanda.timeoutMs ?? 5 * 60_000,
+      onPezzo,
+    );
+
+    if (risposta.status < 200 || risposta.status >= 300) {
       return {
         ok: false,
         testo: "",
-        motivo:
-          finito === "length"
-            ? "Il modello ha finito lo spazio prima di rispondere: in LM Studio spegni il ragionamento o carica un modello più piccolo."
-            : "Il modello ha risposto, ma a vuoto.",
+        motivo: spiegaErrore(risposta.status, risposta.testo, Boolean(domanda.allegati?.length)),
       };
     }
-    // Finito: la memoria si libera da sé fra poco, se nel frattempo non arriva
-    // un'altra domanda.
-    programmaScarico();
-    return { ok: true, testo: ripulisci(testo), modello: scelto };
+
+    const testo = risposta.testo.trim() ? risposta.testo : risposta.pensiero;
+    if (!testo.trim()) return { ok: false, testo: "", motivo: aVuoto(risposta.motivoFine) };
+    return { ok: true, testo: ripulisci(testo), modello: preparata.scelto };
   } catch (err) {
-    const motivo = err instanceof Error ? err.message : String(err);
-    return {
-      ok: false,
-      testo: "",
-      motivo: motivo.includes("timed out")
-        ? "Il modello ci sta mettendo troppo: prova con un modello più piccolo in LM Studio."
-        : motivo,
-    };
+    return { ok: false, testo: "", motivo: spiegaEccezione(err) };
+  } finally {
+    inVolo -= 1;
+    void liberaDopoLaRisposta();
   }
+}
+
+/**
+ * Perché LM Studio ha detto di no, in italiano.
+ *
+ * Il caso che vale la pena riconoscere è **il modello che non sa vedere**: chi
+ * ha appena allegato tre foto e riceve un 400 pieno di inglese non ha modo di
+ * capire che il problema è il modello caricato, non le foto.
+ */
+function spiegaErrore(stato: number, corpo: string, conAllegati: boolean): string {
+  const dentro = corpo.slice(0, 300);
+  if (conAllegati && /image|vision|multimodal|content.*array|input_audio/i.test(dentro)) {
+    return (
+      "Il modello caricato in LM Studio non sa guardare immagini o sentire audio. " +
+      "Caricane uno che lo sappia fare (in LM Studio hanno l'occhio accanto al nome), " +
+      `oppure togli gli allegati. LM Studio ha risposto ${stato}: ${dentro}`
+    );
+  }
+  return `LM Studio ha risposto ${stato}: ${dentro}`;
+}
+
+function aVuoto(motivoFine?: string | null): string {
+  return motivoFine === "length"
+    ? "Il modello ha finito lo spazio prima di rispondere: in LM Studio spegni il ragionamento o carica un modello più piccolo."
+    : "Il modello ha risposto, ma a vuoto.";
+}
+
+function spiegaEccezione(err: unknown): string {
+  const motivo = err instanceof Error ? err.message : String(err);
+  return motivo.includes("timed out")
+    ? "Il modello ci sta mettendo troppo: prova con un modello più piccolo in LM Studio."
+    : motivo;
 }
 
 /**

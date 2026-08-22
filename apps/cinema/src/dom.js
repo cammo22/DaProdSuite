@@ -25,9 +25,15 @@ for (const chiave of [
   "seed", "dado", "seedCasuale", "negativo", "notaNegativo",
   // cosa sta succedendo
   "sessione", "stop", "svuota",
-  // la storia
-  "navStoria", "storiaSoggetto", "storiaMinuti", "storiaSecondi", "storiaConto",
-  "storiaLlm", "storiaScrivi", "storiaStato", "storiaElenco", "storiaFatte",
+  // la storia: il soggetto, la sua resa (che non e' quella di Crea), i
+  // riferimenti, chi scrive, e l'elenco delle inquadrature
+  "navStoria", "storiaSoggetto", "storiaMinuti", "storiaSecondi", "storiaConto", "storiaAuto",
+  "storiaModello", "storiaRigaModello", "storiaAvvisoModello",
+  "storiaVoceModi", "storiaModi", "storiaRigaModi",
+  "storiaFormati", "storiaRisoluzioni", "storiaMisura",
+  "storiaRifAggiungi", "storiaRifFile", "storiaRifElenco", "storiaRifRiga",
+  "storiaLlm", "storiaScrivi", "storiaPensiero", "storiaStato",
+  "storiaElenco", "storiaFatte", "storiaBarra", "storiaAvanti",
   "storiaGenera", "storiaFerma", "storiaCuci", "storiaAzzera", "storiaFilm", "storiaFilmVideo",
   // la galleria, e il video a schermo intero
   "navGal", "galleria", "conteggio", "aggiorna",

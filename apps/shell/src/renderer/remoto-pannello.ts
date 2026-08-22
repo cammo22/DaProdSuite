@@ -23,6 +23,12 @@ const indirizzoBox = document.getElementById("telefono-indirizzo-box") as HTMLEl
 const indirizzoConsole = document.getElementById("telefono-console") as HTMLElement;
 const bottoneCopia = document.getElementById("telefono-copia") as HTMLButtonElement;
 const reteBox = document.getElementById("telefono-rete-box") as HTMLElement;
+const internetBox = document.getElementById("telefono-internet-box") as HTMLElement;
+const internetStato = document.getElementById("telefono-internet-stato") as HTMLElement;
+const bottoneInternet = document.getElementById("telefono-internet") as HTMLButtonElement;
+const muroBox = document.getElementById("telefono-muro-box") as HTMLElement;
+const muroStato = document.getElementById("telefono-muro-stato") as HTMLElement;
+const bottoneMuro = document.getElementById("telefono-muro") as HTMLButtonElement;
 const sceltaRete = document.getElementById("telefono-rete") as HTMLSelectElement;
 const invitoBox = document.getElementById("telefono-invito-box") as HTMLElement;
 const qr = document.getElementById("telefono-qr") as HTMLImageElement;
@@ -79,6 +85,54 @@ sceltaRete.addEventListener("change", () => {
     nascondiInvito();
     disegna();
     if (stato.acceso) await invitaGiusto();
+  })();
+});
+
+/**
+ * Sblocca la porta nel firewall di Windows.
+ *
+ * Il riquadro dell'amministratore lo mostra Windows, non noi: una volta sola.
+ * Dire di no è una risposta legittima, e viene raccontata invece di sparire.
+ */
+bottoneMuro.addEventListener("click", () => {
+  void (async () => {
+    bottoneMuro.disabled = true;
+    bottoneMuro.textContent = "Chiedo a Windows…";
+    try {
+      const errore = await api.remoto.apriLaPorta();
+      if (errore) muroStato.textContent = errore;
+      stato = await api.remoto.stato();
+      disegna();
+    } finally {
+      bottoneMuro.disabled = false;
+      bottoneMuro.textContent = "Sblocca la porta";
+    }
+  })();
+});
+
+/**
+ * La strada da Internet.
+ *
+ * Accenderla e spegnerla butta gli inviti in corso, per la stessa ragione per
+ * cui li butta cambiare rete: l'indirizzo dentro il QR cambia, e quello vecchio
+ * continuerebbe a funzionare in casa e a non funzionare fuori — cioè il modo
+ * più sicuro di far sbagliare chi lo inquadra. Quindi si rifà l'invito subito,
+ * così chi stava per collegarsi ne trova uno buono invece di un buco.
+ */
+bottoneInternet.addEventListener("click", () => {
+  void (async () => {
+    bottoneInternet.disabled = true;
+    try {
+      const acceso = stato?.internet.fase === "acceso";
+      stato = acceso ? await api.remoto.spegniInternet() : await api.remoto.accendiInternet();
+      nascondiInvito();
+      disegna();
+      if (stato.acceso) await invitaGiusto();
+    } catch (e) {
+      riassunto.textContent = `Non riesco: ${(e as Error).message}`;
+    } finally {
+      bottoneInternet.disabled = false;
+    }
   })();
 });
 
@@ -201,6 +255,8 @@ function disegna(): void {
   indirizzoBox.hidden = !acceso;
   indirizzoConsole.textContent = stato?.console ?? "";
   disegnaReti(acceso);
+  disegnaInternet(acceso);
+  disegnaMuro(acceso);
 
   riassunto.textContent = acceso
     ? `In ascolto · ${contati(stato?.dispositivi.length ?? 0, "dispositivo", "dispositivi")} · ${
@@ -210,6 +266,61 @@ function disegna(): void {
 
   disegnaDispositivi();
   disegnaRichieste();
+}
+
+/**
+ * Com'è messa la strada da Internet, raccontata mentre succede.
+ *
+ * Le fasi sono quattro e sono attese diverse: scaricare quaranta MB di
+ * `cloudflared` la prima volta, alzare il tunnel, esserci, o non esserci
+ * riuscito. Scriverle tutte «sto lavorando» vorrebbe dire un pannello fermo per
+ * un minuto e mezzo senza dire su cosa.
+ */
+function disegnaInternet(acceso: boolean): void {
+  internetBox.hidden = !acceso;
+  if (!acceso) return;
+
+  const fuori = stato?.internet ?? { fase: "spento" as const, indirizzo: "" };
+  internetBox.classList.toggle("acceso", fuori.fase === "acceso");
+  internetBox.classList.toggle("guasto", fuori.fase === "guasto");
+
+  const inCorso = fuori.fase === "scarico" || fuori.fase === "accendo";
+  bottoneInternet.disabled = inCorso;
+  bottoneInternet.textContent = fuori.fase === "acceso" ? "Spegni" : "Accendi";
+
+  switch (fuori.fase) {
+    case "acceso":
+      internetStato.textContent = `Acceso: ${fuori.indirizzo} — funziona anche fuori casa, in HTTPS.`;
+      break;
+    case "scarico":
+      internetStato.textContent = `Scarico cloudflared, una volta sola${
+        fuori.quota ? ` — ${Math.round(fuori.quota * 100)}%` : ""
+      }…`;
+      break;
+    case "accendo":
+      internetStato.textContent = "Alzo il tunnel: Cloudflare deve darmi un indirizzo…";
+      break;
+    case "guasto":
+      internetStato.textContent = fuori.motivo ?? "Non è riuscito. Riprova.";
+      break;
+    default:
+      internetStato.textContent = "Spento: si arriva solo dalla wifi di casa.";
+  }
+}
+
+/**
+ * L'avviso del firewall, che compare solo quando serve davvero.
+ *
+ * Non si mostra se il gateway è spento (non c'è ancora niente da bloccare), se
+ * la porta è già aperta, o se non si è riusciti a guardare: avvisare di un
+ * problema che potrebbe non esserci è peggio che tacere. E non si mostra
+ * nemmeno con il tunnel acceso, perché in quel caso la porta **non serve**: la
+ * connessione la fa il PC verso l'esterno, e il firewall non c'entra.
+ */
+function disegnaMuro(acceso: boolean): void {
+  const muro = stato?.firewall;
+  const conTunnel = stato?.internet.fase === "acceso";
+  muroBox.hidden = !acceso || conTunnel || !muro || muro.incerto || muro.aperta;
 }
 
 function contati(n: number, uno: string, molti: string): string {

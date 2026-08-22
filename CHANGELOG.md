@@ -10,6 +10,206 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ---
 
+## 0.6.0 — Il telefono è la suite, e la Storia si vede lavorare
+
+**22 agosto 2026.** Nasce da una sessione di prove vere sulla 0.5.1, e da un
+elenco di cose che non andavano detto tutto d'un fiato. Sono state prese una per
+una. Le due grosse sono il telefono e la scheda Storia.
+
+---
+
+### Il telefono adesso mostra la suite, non un modulo
+
+«Deve mostrare le pagine in stile della suite per pc», e «niente funziona sul
+device a livello di risorse ma fa tutto il pc».
+
+Le due frasi insieme decidono tutto. Se il telefono non calcola niente e il PC
+calcola tutto, allora anche **l'interfaccia** deve stare sul PC. Quindi l'app
+non disegna più moduli suoi: apre le pagine che il computer serve — le stesse
+che vede il portatile — con le schede, la fila, e **la galleria**.
+
+Cosa vuol dire in pratica:
+
+- **si vede quello che il PC ha fatto**, senza scaricarlo prima. Le immagini si
+  guardano, i video partono e si possono far scorrere avanti e indietro, i brani
+  si ascoltano. Prima l'app diceva «pronta» e basta: per sapere com'era venuta
+  bisognava salvarla nel telefono e aprire un'altra app;
+- **c'è la fila, e chi è padrone accetta o scarta da lì**;
+- **quando sul PC compare una scheda nuova, sul telefono c'è al collegamento
+  dopo**, senza pubblicare un'app aggiornata.
+
+Il tasto **tieni nel telefono** è rimasto dov'era: un'immagine finisce in
+galleria, un brano fra la musica.
+
+### All'avvio si sceglie chi sei
+
+«All'avvio dell'app devo poter scegliere un user così da capire chi è chi.»
+
+Prima il telefono aveva **un** collegamento solo, e il nome che arrivava al PC
+era quello del modello Android: in una casa con tre persone la fila diceva tre
+volte «SM-A536B». Adesso il telefono tiene un **elenco di persone**, ognuna col
+suo collegamento: la si sceglie all'avvio, si cambia in due tocchi, e sul PC
+ognuna compare col proprio nome.
+
+Non è un'etichetta: **è una credenziale**. Chi è ospite resta ospite anche se il
+telefono è di chi è padrone, e togliere una persona toglie davvero il suo
+accesso da quel telefono. Con una persona sola non si chiede niente e si entra
+dritti.
+
+### E funziona anche da fuori casa
+
+Nel pannello **Da fuori** c'è un secondo interruttore: **Anche da fuori casa**.
+Acceso, la suite apre un tunnel in **uscita** verso Cloudflare e riceve un
+indirizzo `https://…` che punta al gateway.
+
+- **Niente porte da aprire sul router**, niente indirizzo di casa da sapere,
+  niente account da fare.
+- **Da fuori il traffico è cifrato** (HTTPS). Era la cosa che la roadmap chiedeva
+  di fare *prima* del tunnel, e il tunnel è il modo in cui è stata fatta: in casa
+  resta HTTP sulla wifi, come prima.
+- La prima volta la suite scarica `cloudflared` (circa 40 MB) e lo dice mentre
+  lo fa.
+
+Due cose da sapere, e stanno scritte anche nel pannello: **l'indirizzo è
+pubblico** — chi lo indovinasse arriverebbe alla pagina di accoppiamento, non ai
+contenuti: senza token il gateway risponde di no a tutto, e il codice a otto
+cifre vive cinque minuti con un tetto di dieci tentativi al minuto — e **cambia a
+ogni accensione**, quindi gli inviti in corso si rifanno.
+
+### Quando è Windows a bloccare, adesso te lo dice
+
+Il guasto più silenzioso che questo pannello potesse avere: la suite dice «in
+ascolto», il QR si inquadra, e dal telefono non arriva niente. Nei log non c'è
+niente perché non è la suite — è il firewall di Windows, che blocca in entrata
+senza dire niente a nessuno (di solito perché al primo avvio è comparso un
+riquadro «Consentire l'accesso?» e ha ricevuto un «Annulla»).
+
+Adesso la suite **guarda** se la regola c'è, e se manca lo scrive con un tasto
+per rimediare: un riquadro di Windows, una volta sola. E se non vuoi toccare il
+firewall, con «Anche da fuori casa» acceso non serve: la connessione la fa il
+PC verso l'esterno.
+
+---
+
+### DaProdCinema, la Storia: adesso si vede lavorare
+
+La scheda funzionava e non si vedeva niente. Quattro cose, tutte trovate
+usandola davvero.
+
+**La barra c'è.** Una clip sono minuti, e per tutti quei minuti l'elenco diceva
+«in attesa» senza muoversi; il tempo compariva solo a scena finita. Adesso ogni
+inquadratura ha la sua barra e dice cosa sta facendo — «genero il movimento»,
+«rendo il suono» — e sopra l'elenco c'è la barra **del film**: a che scena siamo,
+a che percentuale, e quanto manca. Sono due cose diverse e servono tutte e due:
+la prima dice se il motore si è piantato adesso, la seconda se andare a dormire.
+
+**Il video si vede appena esce.** Compare nella riga della sua scena, con i
+comandi del lettore. Prima finiva sul disco e per sapere com'era venuta bisognava
+andare in Galleria — che su novanta inquadrature vuol dire non guardarle.
+
+**Il film si cuce da solo.** Quando l'ultima scena è pronta, la cucitura parte
+senza premere niente: chi lascia lavorare il PC tutta la notte non è lì alle
+quattro del mattino per premere un bottone. Il tasto resta, per rifarlo, e c'è
+un interruttore per spegnere la cosa.
+
+**Modello, formato e misura si scelgono qui.** Prima erano quelli della scheda
+Crea, con scritto nell'interfaccia che era un pregio. Non lo era: in Crea si
+prova, e provare vuol dire 480p — poi il film intero usciva in 480. Adesso la
+Storia ha la sua resa, ricordata a parte, con il conto delle ore che cambia
+insieme.
+
+### Immagini e audio da dare alla storia
+
+Nella Storia c'è un pannello dove trascinare una faccia, un posto, una voce. Ci
+fanno due cose diverse, e sono scritte perché non si confondano:
+
+- **il modello che scrive le scene le guarda**, se quello caricato in LM Studio
+  sa vedere. Da lì scrive prompt che descrivono il personaggio che gli hai
+  mostrato invece di inventarselo;
+- **MiniMax H3 le usa dentro ogni inquadratura**, come riferimento vero. LTX 2.5
+  no — non ha quegli ingressi — e la riga sotto al pannello lo dice invece di
+  lasciar credere che finiscano nel video.
+
+Se il modello caricato non sa guardare, la suite lo scrive in italiano invece di
+far finta di niente.
+
+### Si vede quando il modello sta pensando, e i token che escono
+
+Un modello locale che ragiona su una scheda da 8 GB ci mette da venti secondi a
+due minuti. In quei due minuti si vedeva un tasto spento: e un modello che pensa
+e un modello piantato, da fuori, sono la stessa identica cosa.
+
+Adesso compare una finestrella con un pallino che batte, il cronometro, **i
+token che arrivano uno a uno** e quanti al secondo ne sta facendo. Quel numero
+non è un vezzo: è il solo modo di capire che il modello caricato è troppo lento
+per questa macchina.
+
+Nasce nella Storia ma sta fra i pezzi comuni: le altre schede la agganciano con
+due righe.
+
+### La memoria del modello che scrive si libera a ogni risposta
+
+Prima si liberava dopo quarantacinque secondi, con una ragione scritta: chi
+lavora fa domande a raffica, e ricaricare quattro GB a ogni giro costa più di
+quello che fa risparmiare.
+
+Sul PC vero quella ragione non ha retto. Il modello che scrive e il modello che
+genera vivono sulla **stessa** scheda da 8 GB, e quei quarantacinque secondi
+sono esattamente la finestra in cui uno rilegge le scene appena scritte e preme
+Genera: la generazione partiva con quattro GB e mezzo già presi.
+
+Adesso appena il modello ha finito di scrivere, i suoi GB tornano liberi. Vale
+in tutte le schede. Il prezzo c'è ed è onesto dirlo: due domande di fila lo fanno
+ricaricare. È molto meno di una generazione che muore a metà.
+
+---
+
+### Sotto il cofano
+
+- **La console web è stata rifatta**, ed è la stessa pagina che apre il telefono:
+  quattro sezioni — la suite, chiedi, la fila, la galleria — con i colori e la
+  faccia dell'hub sul PC. Si serve da sé, senza chiamare niente da fuori.
+- **Due rotte nuove nel gateway**: `/libreria` e `/libreria/file/:id`, con il
+  supporto ai **pezzi** (`Range`). Senza quello un video in una pagina si può
+  solo scaricare tutto prima di partire, e non si può spostare la barra di
+  scorrimento.
+- **Un biscotto di sessione** per le anteprime, perché un `<img>` non sa mettere
+  un header. Vale **solo in lettura** ed è `SameSite=Strict`: tutto ciò che
+  cambia qualcosa vuole ancora la credenziale nell'header, quindi la pagina di
+  un altro sito non può far partire una generazione dal browser di chi è
+  collegato. C'è una prova che lo tiene fermo.
+- **Il QR porta un indirizzo completo**, schema compreso, e non più `ip:porta`:
+  è quello che permette al telefono di parlare in HTTPS attraverso il tunnel. I
+  vecchi QR continuano a funzionare in casa.
+- **Le prove del gateway** sono passate da 57 a 79: chi sono, la libreria, i
+  pezzi di un file, il biscotto e il CSRF che non passa.
+
+---
+
+### Cosa è provato e cosa no
+
+Onestà, come sempre in questo file.
+
+**Provato davvero**: la console, accoppiandosi da un browser vero contro un
+gateway vero — la fila, i moduli costruiti dalle azioni, la galleria che carica
+un'immagine attraverso il biscotto, il video chiesto a pezzi. Le 79 prove del
+gateway e quelle dell'MCP. La compilazione di tutto, l'APK di debug e quello di
+release.
+
+**Da provare tu, e sono le cose che contano**:
+
+- il **tunnel** che si accende davvero e un telefono che entra da fuori casa: qui
+  non c'è una linea con cui provarlo;
+- l'**app sul telefono**, che compila ma non è mai stata aperta su un apparecchio;
+- la **Storia** contro il motore acceso: la barra, il video nella riga, la
+  cucitura automatica;
+- lo **scarico della memoria a ogni risposta** con LM Studio vero;
+- le **immagini date al modello che scrive**, con un modello che sa vedere
+  caricato in LM Studio;
+- il tasto del **firewall**, che chiede l'amministratore a Windows.
+
+---
+
 ## 0.5.2 — L'app del telefono si aggiorna da sola
 
 **22 agosto 2026.** Chiesto da Cammo: «fai in modo che anche l'app abbia un menu

@@ -357,3 +357,36 @@ input:disabled,textarea:disabled,select:disabled{opacity:.45; cursor:not-allowed
 .scena .rotta{color:#ff7a7a; font-size:11px}
 .scena .attesa{color:var(--dim); font-size:11px}
 #storiaFilm video{width:100%; display:block; border-radius:11px; background:#000; max-height:420px}
+.scena .lavora{color:var(--accent); font-size:11px}
+
+/* La barra della singola inquadratura, e il passo che sta facendo.
+   Prima qui non c'era niente: una clip sono minuti, e per tutti quei minuti la
+   riga diceva «in attesa» senza muoversi. Adesso dice a che punto è. */
+.scena .scena-barra{margin-top:7px}
+.scena .scena-passo{margin-top:5px; font-size:11px; color:var(--dim)}
+/* La clip appena esce, dentro la sua riga: prima bisognava andare in Galleria
+   per sapere com'era venuta, che su novanta scene vuol dire non guardarle. */
+.scena .scena-video{margin-top:8px}
+.scena .scena-video video{width:100%; max-width:340px; display:block; border-radius:9px; background:#000}
+
+/* I riferimenti: le facce, i posti e le voci che si danno alla storia. */
+.rif-zona{border:1px dashed var(--line2); border-radius:11px; padding:11px; transition:border-color .15s}
+.rif-zona.sopra{border-color:var(--accent); background:#150f22}
+.rif-zona .hint{margin:0}
+.rif-griglia{display:flex; gap:9px; flex-wrap:wrap}
+.rif{position:relative; width:96px}
+.rif img{width:96px; height:70px; object-fit:cover; border-radius:9px; display:block; background:#000}
+.rif-audio{width:96px; height:70px; border-radius:9px; background:#161a24; color:var(--accent2);
+           display:flex; align-items:center; justify-content:center; font-size:26px}
+.rif-nome{font-size:10.5px; color:var(--dim); margin-top:4px; overflow:hidden;
+          text-overflow:ellipsis; white-space:nowrap}
+.rif-via{position:absolute; top:4px; right:4px; width:20px; height:20px; padding:0; line-height:1;
+         border-radius:6px; border:1px solid var(--line2); background:#0b0d13cc; color:var(--txt);
+         cursor:pointer; font-size:11px}
+.rif-via:hover{border-color:var(--err); color:var(--err)}
+
+/* La resa della Storia sta dentro il suo pannello, non nella barra in cima:
+   in questa scheda il modello è una scelta fra le altre, non quella che
+   ridisegna la pagina. */
+#scheda-storia .manca:empty{display:none}
+#scheda-storia select{width:100%}

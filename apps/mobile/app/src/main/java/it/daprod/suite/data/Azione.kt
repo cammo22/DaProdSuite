@@ -1,5 +1,6 @@
 package it.daprod.suite.data
 
+import org.json.JSONArray
 import org.json.JSONObject
 
 /**
@@ -24,6 +25,24 @@ data class Azione(
     val campi: List<Campo>,
 ) {
     override fun toString(): String = titolo
+
+    /**
+     * L'azione riscritta in JSON, per tenerla da parte.
+     *
+     * Serve a una cosa sola: **poter scrivere una richiesta con il PC spento.**
+     * Il modulo nasce dalle azioni che la suite dichiara, e se il computer non
+     * risponde non c'è nessuna azione da cui farlo nascere. Si ricorda l'ultima
+     * risposta buona e la si rilegge da lì, che è quello che rende la coda
+     * offline una cosa vera e non una lista di richieste che non si possono
+     * scrivere. Vedi `Store.ricordaAzioni`.
+     */
+    fun aJson(): JSONObject = JSONObject()
+        .put("id", id)
+        .put("titolo", titolo)
+        .put("descrizione", descrizione)
+        .put("app", app ?: JSONObject.NULL)
+        .put("coda", coda)
+        .put("campi", JSONArray().also { arr -> for (c in campi) arr.put(c.aJson()) })
 
     companion object {
         fun daJson(j: JSONObject): Azione {
@@ -62,6 +81,22 @@ data class Campo(
     /** Un campo lungo vuole più di una riga: è il prompt, non un numero. */
     val eLungo: Boolean
         get() = tipo == "testo" && (maxLunghezza ?: 0) > 200
+
+    fun aJson(): JSONObject {
+        val j = JSONObject()
+            .put("nome", nome)
+            .put("etichetta", etichetta)
+            .put("descrizione", descrizione)
+            .put("tipo", tipo)
+            .put("obbligatorio", obbligatorio)
+            .put("scelte", JSONArray().also { arr -> for (s in scelte) arr.put(s) })
+        if (min != null) j.put("min", min)
+        if (max != null) j.put("max", max)
+        if (maxLunghezza != null) j.put("maxLunghezza", maxLunghezza)
+        if (predefinito != null) j.put("predefinito", predefinito)
+        if (esempio != null) j.put("esempio", esempio)
+        return j
+    }
 
     companion object {
         fun daJson(j: JSONObject): Campo {

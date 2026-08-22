@@ -10,7 +10,7 @@ Un programma solo per fare musica, immagini, video, voci e parlare con un avatar
 Ogni app la installi quando ti serve e la disinstalli quando non ti serve più.
 Gira sul tuo computer: niente account, niente chiavi API, codice aperto.
 
-[![versione](https://img.shields.io/badge/versione-0.5.2-7c5cff)](https://github.com/cammo22/DaProdSuite/releases)
+[![versione](https://img.shields.io/badge/versione-0.6.0-7c5cff)](https://github.com/cammo22/DaProdSuite/releases)
 [![licenza](https://img.shields.io/badge/licenza-MIT-5cff9d)](LICENSE)
 [![piattaforma](https://img.shields.io/badge/Windows-x64-3ddbff)](#requisiti)
 [![sito](https://img.shields.io/badge/sito-cammo22.github.io-ffa63d)](https://cammo22.github.io/DaProdSuite/)
@@ -90,40 +90,46 @@ lo stesso.
 
 ## A che punto siamo
 
-> **0.5.2: la suite non è più solo quel computer.** La comandi dal telefono,
-> dal browser di un altro computer, e da un'AI. *(La 0.5.0 dava un indirizzo di
-> rete che il telefono non poteva raggiungere e non mostrava il QR al primo
-> click: se hai provato quella, aggiorna.)*
+> **0.6.0: il telefono mostra la suite, e la suite esce di casa.**
 >
-> In fondo all'hub c'è un pannello nuovo, **Da fuori**. Lo accendi e ti dà un
-> indirizzo: lo scrivi nel browser del portatile, batti il codice di otto cifre,
-> e da lì usi la suite del PC fisso — chiedi un'immagine o un video, guardi cosa
-> sta facendo la scheda video, ti scarichi i risultati. Su un portatile la suite
-> non girerebbe bene, i modelli vogliono la scheda video del fisso; ma non ti
-> serve che ci giri, ti serve comandare quel PC.
+> L'app Android non disegna più moduli suoi: apre **le pagine che il PC serve**
+> — le stesse che vede il browser di un portatile — con le schede, la fila e la
+> **galleria**. Le immagini si guardano, i video partono e si scorrono, i brani
+> si ascoltano: senza scaricarli prima. E quando sul PC compare una scheda
+> nuova, sul telefono c'è al collegamento dopo, senza pubblicare un'app.
 >
-> C'è anche un'**app Android**: inquadri il QR e chiedi lavori mentre sei in
-> giro. Se il PC non c'è, quello che scrivi resta sul telefono e parte da solo
-> quando torna; quando il lavoro finisce arriva una notifica anche ore dopo; e
-> il risultato te lo porti in galleria. L'APK si scarica dalla
-> [Release](https://github.com/cammo22/DaProdSuite/releases/latest), e da lì in
-> poi **l'app si aggiorna da sola**: c'è «Aggiorna» in fondo.
+> **All'avvio si sceglie chi sei.** Più persone sullo stesso telefono, ognuna
+> col suo collegamento: sul PC la fila dice chi ha chiesto cosa, invece di
+> ripetere tre volte il modello del telefono.
+>
+> **E funziona anche da fuori casa.** Nel pannello «Da fuori» c'è un secondo
+> interruttore: acceso, la suite apre un tunnel in *uscita* verso Cloudflare e
+> riceve un indirizzo `https://…`. Niente porte da aprire sul router, niente
+> account, e da fuori il traffico è **cifrato** — che era la cosa che mancava
+> alla 0.5.0. In casa resta in chiaro sulla wifi, e il pannello lo dice.
+>
+> Nella stessa versione, **DaProdCinema — Storia** si vede lavorare: ogni
+> inquadratura ha la sua barra e dice cosa sta facendo, la clip compare nella
+> sua riga appena esce, e il film **si cuce da solo** quando l'ultima scena è
+> pronta. Modello, formato e misura sono suoi, non presi in prestito dalla
+> scheda Crea. E il **modello che scrive si vede pensare**, coi token che
+> escono uno a uno.
+>
+> ⚠ **Da provare sul PC vero**: il tunnel su una linea vera, l'app su un
+> telefono, e la Storia contro il motore acceso. Cosa è provato e cosa no sta
+> scritto in fondo al [CHANGELOG](CHANGELOG.md) § 0.6.0.
+>
+> **0.5.0-0.5.2: la suite non è più solo quel computer.** In fondo all'hub c'è
+> il pannello **Da fuori**: lo accendi e ti dà un indirizzo e un QR. Da lì
+> comandi il PC fisso dal browser di un portatile, dal telefono, o da un'AI —
+> c'è un **server MCP** con cui Claude Code guida la suite. Sotto c'è la cosa
+> che serviva davvero: **un elenco scritto una volta sola di cosa la suite sa
+> fare**, che leggono tutti e tre.
 >
 > **Chi comanda resta chi sta al PC.** Una richiesta che arriva da fuori non fa
 > partire niente da sola: compare nel pannello e tu la accetti o la scarti. Su
 > otto GB di scheda video ci sta un modello per volta, e un telefono che può far
 > partire quattro generazioni per provare è un computer che non è più tuo.
->
-> Nella stessa versione c'è un **server MCP**: Claude Code, o qualunque agente,
-> si collega come farebbe un telefono e può guidare la suite — passando dalla
-> stessa fila, con lo stesso sì. Sotto c'è la cosa che serviva davvero: **un
-> elenco scritto una volta sola di cosa la suite sa fare**, che leggono tutti e
-> tre. Quando la suite impara qualcosa di nuovo, telefono e browser se la
-> trovano da soli.
->
-> ⚠ Vale **dentro casa, non da Internet**: il collegamento è in rete locale e
-> non è cifrato. E «accettata» oggi vuol dire «l'ho vista e va bene»: la
-> generazione la fai partire tu.
 >
 > **0.4.6: c'è la scheda Storia — scrivi cosa deve raccontare, dici quanti
 > minuti, e DaProdCinema lo gira un'inquadratura per volta e te lo cuce.**
@@ -361,16 +367,28 @@ quelli veri — misurati sul file, non stimati.
 
 <img src="docs/media/logo.svg" width="46" align="right" alt="">
 
-Inquadri un QR e usi la suite dal telefono o dal tablet — sulla stessa wifi, o da
-fuori casa attraverso un tunnel che si accende a mano.
+Inquadri un QR e la suite è nel telefono: le stesse pagine del PC, con le schede,
+la fila e la galleria. Il telefono non calcola niente — **fa tutto il computer** —
+e per questo anche l'interfaccia sta di là: una sola da scrivere, e quando la
+suite impara qualcosa il telefono ce l'ha al collegamento dopo.
+
+**All'avvio scegli chi sei.** Più persone sullo stesso telefono, ognuna col suo
+collegamento e il suo nome: sul PC la fila dice chi ha chiesto cosa.
+
+**Sulla wifi di casa, o da fuori.** Con «Anche da fuori casa» acceso la suite
+apre un tunnel in uscita e diventa raggiungibile in HTTPS da qualunque parte,
+senza aprire porte sul router.
 
 Il QR non contiene una password permanente: contiene un invito che **scade in
 cinque minuti** e vale una volta sola. Ogni dispositivo ottiene la sua credenziale,
 con i suoi permessi, revocabile da sola. I motori restano su `127.0.0.1` e non
 sono mai raggiungibili da fuori: passa tutto da un gateway che autentica.
 
-Progetto completo: [docs/ACCESSO-REMOTO.md](docs/ACCESSO-REMOTO.md) — in arrivo
-con la 0.4, l'app Android con la 0.5.
+L'APK sta nella
+[Release](https://github.com/cammo22/DaProdSuite/releases/latest), e da lì in poi
+**l'app si aggiorna da sola**.
+
+Progetto completo: [docs/ACCESSO-REMOTO.md](docs/ACCESSO-REMOTO.md).
 
 ---
 
@@ -407,7 +425,7 @@ Il ragionamento completo è in
 | [COME-SI-LAVORA.md](docs/COME-SI-LAVORA.md) | Regole della repo, versioni, come si aggiunge un'app |
 | [MODELLI-E-STRATEGIA.md](docs/MODELLI-E-STRATEGIA.md) | Quali modelli, quanto pesano, cosa si è compattato |
 | [VERIFICA-AMBIENTE-UNIFICATO.md](docs/VERIFICA-AMBIENTE-UNIFICATO.md) | La prova che i quattro motori girano su un solo torch |
-| [ACCESSO-REMOTO.md](docs/ACCESSO-REMOTO.md) | QR, gateway, app Android |
+| [ACCESSO-REMOTO.md](docs/ACCESSO-REMOTO.md) | QR, gateway, console web, tunnel, app Android |
 | [ROADMAP.md](docs/ROADMAP.md) | Dove si sta andando |
 | [RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md) | Stato del lavoro e prossimo passo, fra una sessione e l'altra |
 

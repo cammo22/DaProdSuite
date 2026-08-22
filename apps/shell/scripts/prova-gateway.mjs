@@ -33,6 +33,27 @@ const remoto = new G.Remoto(archivio, radice);
 mkdirSync(remoto.risultatiDir, { recursive: true });
 writeFileSync(join(remoto.risultatiDir, "finto.png"), "non e' davvero un png");
 
+// Una finta libreria: un file solo, con dentro venti lettere, che basta per
+// provare i pezzi (Range) e l'id che non esiste.
+const cartellaLibreria = join(radice, "libreria");
+mkdirSync(cartellaLibreria, { recursive: true });
+writeFileSync(join(cartellaLibreria, "quadro.png"), "abcdefghijklmnopqrst");
+const fintaLibreria = {
+  elenco: () => [{
+    id: "foto/quadro.png",
+    nome: "quadro.png",
+    tipo: "immagine",
+    app: "foto",
+    creato: 1_700_000_000_000,
+    bytes: 20,
+    mime: "image/png",
+  }],
+  file: (id) =>
+    id === "foto/quadro.png"
+      ? { percorso: join(cartellaLibreria, "quadro.png"), nome: "quadro.png", mime: "image/png", bytes: 20 }
+      : null,
+};
+
 let eseguite = [];
 const gateway = new G.Gateway({
   remoto,
@@ -45,6 +66,7 @@ const gateway = new G.Gateway({
     attivita: [{ app: "foto", nome: "DaProdFoto", stato: "accesa" }],
     coda: { attesa: 0, lavoro: 0, pronte: 0 },
   }),
+  libreria: fintaLibreria,
   esegui: async (id, valori, dispositivo) => {
     eseguite.push({ id, valori, chi: dispositivo.nome });
     if (id === "libreria.ultimi") return [{ nome: "brano.mp3", tipo: "audio" }];
@@ -240,6 +262,94 @@ console.log("\n— scaricare —");
 {
   const r = await fetch(base + "/risultati/finto.png");
   dice("senza token non si scarica", r.status === 401);
+}
+
+console.log("\n— chi sono —");
+{
+  const r = await chiama("/io", { token: tokenOspite });
+  dice("dice come mi chiamo", r.dati?.nome === "telefono", `→ ${r.testo}`);
+  dice("e che ruolo ho", r.dati?.ruolo === "ospite");
+  dice("e su che computer sono", r.dati?.computer === "PC-DI-PROVA");
+}
+{
+  const r = await chiama("/io");
+  dice("senza token non si sa chi sono", r.stato === 401);
+}
+
+console.log("\n— la libreria —");
+{
+  const r = await chiama("/libreria", { token: tokenOspite });
+  dice("l'elenco arriva", r.stato === 200 && r.dati.voci.length === 1, `→ ${r.testo}`);
+  dice("con il tipo MIME", r.dati.voci[0].mime === "image/png");
+}
+{
+  const r = await fetch(base + "/libreria/file/" + encodeURIComponent("foto/quadro.png"), {
+    headers: { Authorization: "Bearer " + tokenOspite },
+  });
+  const corpo = await r.text();
+  dice("il file arriva intero", r.status === 200 && corpo === "abcdefghijklmnopqrst", `→ ${r.status}`);
+  dice("col suo tipo", r.headers.get("content-type") === "image/png");
+  dice("e dice che accetta i pezzi", r.headers.get("accept-ranges") === "bytes");
+}
+{
+  // Senza i pezzi un <video> non si può scorrere: o si scarica tutto, o niente.
+  const r = await fetch(base + "/libreria/file/" + encodeURIComponent("foto/quadro.png"), {
+    headers: { Authorization: "Bearer " + tokenOspite, Range: "bytes=5-9" },
+  });
+  const corpo = await r.text();
+  dice("un pezzo si può chiedere", r.status === 206 && corpo === "fghij", `→ ${r.status} ${corpo}`);
+  dice("e dice quale pezzo è", r.headers.get("content-range") === "bytes 5-9/20");
+}
+{
+  const r = await chiama("/libreria/file/inventato.png", { token: tokenOspite });
+  dice("un id che non esiste dà 404", r.stato === 404, `→ ${r.stato}`);
+}
+{
+  const r = await fetch(base + "/libreria/file/" + encodeURIComponent("foto/quadro.png"));
+  dice("senza token il file non esce", r.status === 401, `→ ${r.status}`);
+}
+
+console.log("\n— il biscotto di sessione —");
+let biscotto;
+{
+  const r = await fetch(base + "/sessione", {
+    method: "POST",
+    headers: { Authorization: "Bearer " + tokenOspite, "Content-Type": "application/json" },
+    body: "{}",
+  });
+  const messo = r.headers.get("set-cookie") || "";
+  dice("si pianta con il token nell'header", r.status === 200 && messo.includes("daprod_token="), `→ ${r.status} ${messo}`);
+  dice("è HttpOnly", /HttpOnly/i.test(messo));
+  dice("è SameSite=Strict", /SameSite=Strict/i.test(messo));
+  biscotto = messo.split(";")[0];
+}
+{
+  // È tutto il motivo per cui esiste: un <img> non sa mettere un header.
+  const r = await fetch(base + "/libreria/file/" + encodeURIComponent("foto/quadro.png"), {
+    headers: { Cookie: biscotto },
+  });
+  dice("col biscotto un <img> vede il file", r.status === 200, `→ ${r.status}`);
+}
+{
+  const r = await fetch(base + "/sessione", { method: "POST", headers: { Cookie: biscotto } });
+  dice("ma il biscotto da solo non scrive niente", r.status === 401, `→ ${r.status}`);
+}
+{
+  // Il CSRF, detto in prova: se il biscotto valesse anche sulle POST, la pagina
+  // di un altro sito potrebbe far partire una generazione dal browser di chi è
+  // collegato. Vale solo in lettura, e questa riga lo tiene fermo.
+  const r = await fetch(base + "/azioni/genera.immagine", {
+    method: "POST",
+    headers: { Cookie: biscotto, "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt: "da un altro sito" }),
+  });
+  dice("e non fa partire una generazione", r.status === 401, `→ ${r.status}`);
+}
+{
+  const r = await fetch(base + "/libreria/file/" + encodeURIComponent("foto/quadro.png"), {
+    headers: { Cookie: "daprod_token=inventato" },
+  });
+  dice("un biscotto falso non apre niente", r.status === 401, `→ ${r.status}`);
 }
 
 console.log("\n— revoca —");

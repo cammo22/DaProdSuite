@@ -14,6 +14,7 @@ export type {
   Attivita,
   Dispositivo,
   DispositivoPubblico,
+  FornitoreLibreria,
   Invito,
   InvitoQr,
   Notifica,
@@ -22,4 +23,5 @@ export type {
   Ruolo,
   StatoRichiesta,
   StatoSuite,
+  VoceLibreria,
 } from "./types";

@@ -18,6 +18,7 @@ import {
   type ElementoLibreria,
   type FiltroLibreria,
   type Intenzione,
+  type PezzoLlm,
   type Unsubscribe,
 } from "@daprod/ipc";
 
@@ -60,6 +61,25 @@ export function esponiApiApp(io: AppId): void {
     llm: {
       stato: () => ipcRenderer.invoke(CHANNELS.llmStato),
       chiedi: (domanda) => ipcRenderer.invoke(CHANNELS.llmChiedi, domanda),
+
+      /**
+       * La domanda con i token che si vedono arrivare.
+       *
+       * Il canale se lo inventa qui, a ogni chiamata: due pagine che chiedono
+       * insieme non si mescolano i pezzi, e l'ascolto si stacca appena la
+       * risposta e' finita — anche se e' finita male.
+       */
+      chiediInDiretta: (domanda, onPezzo) => {
+        const canale = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+        const ascolta = (_e: unknown, carico: { canale: string; pezzo: PezzoLlm }) => {
+          if (carico?.canale === canale) onPezzo(carico.pezzo);
+        };
+        ipcRenderer.on(CHANNELS.llmPezzo, ascolta);
+        return ipcRenderer
+          .invoke(CHANNELS.llmChiediDiretta, canale, domanda)
+          .finally(() => ipcRenderer.off(CHANNELS.llmPezzo, ascolta));
+      },
+
       carica: (id: string, contesto: number) => ipcRenderer.invoke(CHANNELS.llmCarica, id, contesto),
       scarica: (id: string) => ipcRenderer.invoke(CHANNELS.llmScarica, id),
       liberaMemoria: () => ipcRenderer.invoke(CHANNELS.llmLibera),

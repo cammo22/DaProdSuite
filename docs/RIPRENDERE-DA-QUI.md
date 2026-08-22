@@ -1,7 +1,13 @@
 # Riprendere da qui
 
-Documento di passaggio fra una sessione e l'altra. Aggiornato il **21 agosto
-2026**, con la 0.4.6 pubblicata e la 0.5.0 in lavorazione.
+Documento di passaggio fra una sessione e l'altra. Aggiornato il **22 agosto
+2026**, con la **0.6.0** appena chiusa.
+
+> **Il prossimo passo è provare la 0.6.0 sul PC vero.** È un giro grosso e
+> quasi niente è passato per le mani di chi la usa: il tunnel non è mai stato
+> acceso su una linea, l'app non è mai stata aperta su un telefono, e la scheda
+> Storia non ha mai girato contro il motore acceso. L'elenco preciso di cosa
+> provare sta in fondo al [CHANGELOG](../CHANGELOG.md) § 0.6.0.
 
 **Se stai leggendo questo all'inizio di una conversazione nuova**: leggi anche
 [COME-SI-LAVORA.md](COME-SI-LAVORA.md) e [ROADMAP.md](ROADMAP.md), poi vai al
@@ -96,11 +102,107 @@ Repo pubblico: **https://github.com/cammo22/DaProdSuite**
 | **L'app si aggiorna da sola (0.5.2)** | fatto: `Aggiornamenti.kt` chiede a `api.github.com` l'ultima Release, confronta le versioni numero per numero, scarica e passa l'APK all'installatore via FileProvider. Tasto **Aggiorna** in fondo, più un giro automatico al massimo una volta al giorno. **Provate a mano** la forma della risposta di GitHub e il confronto delle versioni; **il giro vero su un telefono no** |
 | **Chiave di firma stabile** | `apps/mobile/firma-sideload.jks`, password nel `build.gradle.kts`. **Serviva**: senza, ogni Release ha una firma diversa (la chiave di debug se la genera ogni macchina) e Android rifiuta l'aggiornamento. Non è un segreto e non protegge niente — la chiave di debug era pubblica lo stesso |
 | **Un'ultima disinstallazione** | passando dalla 0.5.1 alla 0.5.2 la firma cambia, quindi l'app va disinstallata una volta sola. Da lì in poi non succede più |
+| **0.5.2 pubblicata** | fatto il 22 agosto: tag `v0.5.2`, PR #18 |
+| **La 0.6.0: il telefono, il tunnel, la Storia** | fatto il 22 agosto, tutto in un giro. Il dettaglio sta nel paragrafo «Com'è fatto il giro della 0.6.0» qui sotto |
+| **Console web rifatta** | quattro sezioni (suite, chiedi, fila, galleria), i colori dell'hub, ed è **la stessa pagina che apre il telefono**. Provata in un browser vero contro un gateway vero |
+| **Tunnel `cloudflared`** | `apps/shell/src/main/tunnel.ts`. Scarica l'eseguibile da sé, legge l'indirizzo dallo stderr, e lo spegne alla chiusura della suite. **Mai acceso su una linea vera** |
+| **Firewall di Windows** | `apps/shell/src/main/firewall.ts`: guarda se la regola c'è (leggere non costa permessi) e dà il tasto per crearla con `Start-Process -Verb RunAs`. **Da provare tu** |
+| **App Android rifatta** | quattro schermate: chi sei, collega, la suite (WebView), senza PC. Compila in debug e in release. **Mai aperta su un telefono** |
+| **Storia di DaProdCinema** | barra per scena e per film, clip nella riga, cucitura da sola, resa sua, riferimenti al modello che scrive. **Mai girata contro il motore acceso** |
+| **Il modello che scrive** | risposta in diretta (SSE) e memoria liberata a ogni risposta. **Da misurare** |
 
 Si lavora su un ramo per release e una PR: `release-0.2.0` è stata unita con le
 PR #3 e #4, la 0.3.1 con la #5, la 0.3.2 con la #6, la 0.3.3 con la #7, la
 0.3.4 con la #8, la 0.4.0 con la #9, la 0.4.1 con la #10, la 0.4.2 con la #11,
 la 0.4.3 con la #12, la 0.4.4 con la #13, la 0.4.5 con la #14, e questo giro sta su `release-0.4.6`.
+
+### Com'è fatto il giro della 0.6.0
+
+Nasce da una sessione di prove sulla 0.5.1: un elenco di cose che non andavano,
+dette tutte d'un fiato. Sono qui, con quello che è stato fatto per ognuna e — la
+riga che conta — se è stato provato.
+
+| Chiesto | Fatto | Provato? |
+|---|---|---|
+| «deve mostrare le pagine in stile della suite per pc» | L'app apre la console del gateway in una WebView | la console sì, in un browser vero; **sul telefono no** |
+| «fa tutto il pc» | Niente calcolo sul telefono, per definizione: la pagina la serve il PC | — |
+| «deve funzionare anche su internet» | Tunnel `cloudflared` in uscita, `tunnel.ts` | **no, mai acceso su una linea vera** |
+| «l'app comunque non funziona» | Tre cause possibili coperte: il firewall di Windows (avviso + tasto), l'indirizzo (già dalla 0.5.1), il tunnel che scavalca tutti e due | **no** |
+| «all'avvio devo poter scegliere un user» | `data/Profili.kt`: più persone, ognuna col suo token | compila; **mai aperta** |
+| «non si vede un caricamento delle clip» | Barra per inquadratura e barra del film, dal WebSocket del motore | **no, mai contro il motore acceso** |
+| «il video non appare quando pronto» | La clip compare nella riga della sua scena appena esce | **no** |
+| «deve cucire il film senza il pulsante» | `cuci()` chiamata da sola a fine giro, con interruttore per spegnerla | **no** |
+| «i modelli lmstudio devono scaricarsi ogni volta» | `liberaDopoLaRisposta()` in `llm.ts`, sempre, con un contatore per le domande in volo | **no, mai con LM Studio vero** |
+| «non c'è la possibilità di decidere il modello e risoluzioni» | `storia-resa.js`: resa sua, ricordata a parte | **no** |
+| «quando un modello sta pensando dovrebbe vedersi un caricamento» | `packages/ui/pensiero-llm.js`, con i token in diretta | **no** |
+| «magari una finestra con i token generati in tempo reale» | `chiediInDirettaAllLlm()` in `llm.ts`, SSE da LM Studio | **no** |
+| «si dovrebbero poter dare immagini o audio, e se è vision li deve vedere» | `storia-riferimenti.js` + `allegati` nella domanda al modello | **no** |
+
+### Le decisioni che valgono la pena di essere ricordate
+
+**Il telefono è un vetro, non un secondo programma.** È la scelta da cui deriva
+tutto il resto del giro. La 0.5.0 aveva fatto il contrario — moduli disegnati
+dall'app — con una ragione che sembrava buona e che sta scritta in
+[ACCESSO-REMOTO.md](ACCESSO-REMOTO.md): «le pagine delle app sono fatte per uno
+schermo grande». Vero, ma era la risposta a un'altra domanda: non si servono al
+telefono le pagine di DaProdCinema, si serve **una pagina della suite fatta per
+il telefono**. Che è la console, che serve già al portatile. Quindi una sola.
+
+Conseguenza pratica: l'app Android ha perso metà del suo codice e ha guadagnato
+la galleria.
+
+**Il tunnel *è* la cifratura.** La roadmap diceva «prima la cifratura, poi il
+tunnel: un tunnel sopra un canale in chiaro non aggiusta niente». Giusto in
+generale, sbagliato in questo caso: con un quick tunnel di Cloudflare la tratta
+su Internet è HTTPS con un certificato valido, e quello che resta in chiaro è
+solo il salto sulla wifi di casa — che è lo stesso di prima. Quindi i due punti
+si sono chiusi insieme, e non nell'ordine scritto.
+
+**Il biscotto vale solo in lettura.** La galleria ha portato un problema che le
+rotte JSON non avevano: un `<img>` non sa mettere un header. La soluzione è un
+biscotto di sessione, e la sua unica regola importante è che valga **solo su GET
+e HEAD**: se valesse anche sulle POST, un altro sito potrebbe far partire una
+generazione dal browser di chi è collegato. C'è una prova apposta.
+
+**Lo scarico del modello a ogni risposta costa, e va detto.** Prima c'era un
+timer da 45 secondi con una ragione scritta bene: chi lavora fa domande a
+raffica. Sul PC vero quella ragione non regge, perché quei 45 secondi sono
+esattamente il tempo che passa fra «leggo le scene» e «premo Genera». Il prezzo
+— due domande di fila ricaricano il modello — è molto meno di una generazione
+che muore a metà. Se dovesse dare fastidio, il posto dove cambiarlo è
+`liberaDopoLaRisposta()` in `apps/shell/src/main/llm.ts`.
+
+**Il firewall era il sospetto numero uno per «l'app non funziona».** Non è
+dimostrato: è un candidato molto forte, e il costo di coprirlo era basso. La
+suite adesso **guarda** se la regola c'è e dà il tasto per crearla. Non la crea
+da sé perché l'installer è senza UAC apposta.
+
+### Cosa toccare, se qualcosa non va
+
+| Sintomo | Dove guardare |
+|---|---|
+| Il telefono non entra | `tunnel.ts` (log in `%LOCALAPPDATA%\\DaProdSuite\\logs\\tunnel.log`), poi il firewall, poi `reti.ts` |
+| La pagina si apre ma è vuota | `console.ts`, e la console del browser: la pagina non chiama niente da fuori, quindi un errore è nostro |
+| Le anteprime non si vedono | il biscotto: `POST /sessione` e `chiE()` in `server.ts` |
+| La barra della Storia sta ferma | `osservaLavoro()` in `coda.js` e le `FASI` in `grafi.js` |
+| Il film non si cuce da solo | fine di `generaStoria()` in `storia.js`, e `storia.auto` |
+| Il modello non vede le immagini | `preparaDomanda()` in `llm.ts`, parte `contenuto` |
+
+### Le prove
+
+`pnpm run prova` è passato da 57 a 79 controlli sul gateway: chi sono, la
+libreria, i pezzi di un file (`Range`), il biscotto, e il CSRF che non passa.
+Girano in una decina di secondi e stanno nella CI prima di ogni release.
+
+La console è stata **guidata in un browser vero** contro un gateway vero
+(`packages/gateway/dist` + un banco con una libreria finta): accoppiamento,
+home con lo stato vivo in streaming, moduli disegnati dalle azioni, fila con i
+tasti di chi è padrone, galleria con l'immagine caricata attraverso il biscotto
+e il video chiesto a pezzi (206). Un difetto trovato e corretto lì: il segno
+della scheda Voce era un emoji fuori dal piano base scritto con quattro cifre, e
+usciva come un carattere sbagliato più un «3».
+
+---
 
 ### Com'è fatto il giro della 0.4.6
 

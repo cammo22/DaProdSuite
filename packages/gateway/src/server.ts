@@ -15,6 +15,10 @@
  *   GET  /richieste/:id                         → dettaglio
  *   POST /richieste/:id/stato { stato, motivo?, risultato? } → decide (solo admin)
  *   GET  /risultati/:nome                       → scarica un file pronto
+ *   POST /sessione                              → pianta il biscotto per le GET
+ *   GET  /io                                    → chi sono, che ruolo ho, che PC è
+ *   GET  /libreria?tipo=&app=&quanti=           → cosa ha prodotto la suite
+ *   GET  /libreria/file/:id                     → il file, con supporto a Range
  *   GET  /notifiche                             → notifiche non lette
  *   POST /notifiche/:id/letta                   → segna letta
  *
@@ -36,7 +40,13 @@ import { join, normalize } from "node:path";
 import { elencoAzioni, eseguiAzione, type Esecutore } from "./azioni";
 import { paginaConsole } from "./console";
 import { Remoto } from "./remoto";
-import type { Dispositivo, DispositivoPubblico, StatoRichiesta, StatoSuite } from "./types";
+import type {
+  Dispositivo,
+  DispositivoPubblico,
+  FornitoreLibreria,
+  StatoRichiesta,
+  StatoSuite,
+} from "./types";
 
 /** Chi fornisce lo stato vivo della suite: lo passa lo shell. */
 export type StatoProvider = () => StatoSuite;
@@ -51,6 +61,14 @@ export interface GatewayOpzioni {
   versione: string;
   /** Nome del computer, mostrato durante l'accoppiamento. */
   computer: string;
+  /**
+   * Chi sa rispondere sulla libreria dei risultati.
+   *
+   * Facoltativo: senza, le rotte `/libreria` rispondono che non c'è niente
+   * invece di sparire. Un client che le chiama non deve dover indovinare se
+   * questa suite le ha o no.
+   */
+  libreria?: FornitoreLibreria;
 }
 
 /** Ogni quanto il gateway manda un segno di vita a chi è in ascolto. */
@@ -70,6 +88,7 @@ export class Gateway {
   private esecutore: Esecutore;
   private versione: string;
   private computer: string;
+  private libreria: FornitoreLibreria | undefined;
 
   constructor(opzioni: GatewayOpzioni) {
     this.remoto = opzioni.remoto;
@@ -77,6 +96,7 @@ export class Gateway {
     this.esecutore = opzioni.esegui;
     this.versione = opzioni.versione;
     this.computer = opzioni.computer;
+    this.libreria = opzioni.libreria;
     this.server = createServer((req, res) => {
       void this.maneggia(req, res);
     });
@@ -257,6 +277,60 @@ export class Gateway {
         return;
       }
 
+      /**
+       * Pianta il biscotto di sessione, con il token che è già stato mostrato
+       * nell'header.
+       *
+       * Serve alla galleria: un `<img>` o un `<video>` non sa mettere
+       * `Authorization`, e senza biscotto ogni anteprima andrebbe scaricata in
+       * memoria dal JavaScript. Il biscotto vale **solo per le GET** (vedi
+       * `chiE`) ed è `SameSite=Strict`, quindi nessun altro sito può farlo
+       * partire e niente che cambi qualcosa passa da lì.
+       */
+      if (percorso === "/sessione" && req.method === "POST") {
+        res.setHeader(
+          "Set-Cookie",
+          `daprod_token=${encodeURIComponent(dispositivo.token)}; Path=/; Max-Age=2592000; SameSite=Strict; HttpOnly`,
+        );
+        this.json(res, 200, { ok: true });
+        return;
+      }
+
+      // Chi sono io, per la pagina che si è appena aperta.
+      //
+      // La console mostra il nome accanto a tutto quello che si chiede — «chi è
+      // chi» era la domanda di Cammo — e senza questa rotta doveva indovinarlo
+      // da quello che aveva scritto al momento dell'accoppiamento, cioè da un
+      // ricordo del browser che si perde svuotando la cronologia.
+      if (percorso === "/io" && req.method === "GET") {
+        this.json(res, 200, {
+          id: dispositivo.id,
+          nome: dispositivo.nome,
+          ruolo: dispositivo.ruolo,
+          computer: this.computer,
+          versione: this.versione,
+        });
+        return;
+      }
+
+      // La libreria: cosa ha prodotto la suite, e i file per guardarla.
+      if (percorso === "/libreria" && req.method === "GET") {
+        this.json(res, 200, {
+          voci:
+            this.libreria?.elenco({
+              tipo: url.searchParams.get("tipo") || undefined,
+              app: url.searchParams.get("app") || undefined,
+              quanti: Number(url.searchParams.get("quanti")) || 60,
+            }) ?? [],
+        });
+        return;
+      }
+      const dallaLibreria = percorso.match(/^\/libreria\/file\/(.+)$/);
+      if (dallaLibreria && (req.method === "GET" || req.method === "HEAD")) {
+        this.serviLibreria(req, res, decodeURIComponent(dallaLibreria[1] ?? ""));
+        return;
+      }
+
       // Notifiche: elenco e spunta "letta".
       if (percorso === "/notifiche" && req.method === "GET") {
         this.json(res, 200, this.remoto.notificheDi(dispositivo));
@@ -314,6 +388,26 @@ export class Gateway {
   private chiE(req: IncomingMessage, url: URL): Dispositivo | undefined {
     const testa = req.headers.authorization ?? "";
     let token = testa.startsWith("Bearer ") ? testa.slice(7) : "";
+
+    /**
+     * Il biscotto, e perché **solo in lettura**.
+     *
+     * Un tag `<img>` o `<video>` non sa mettere un header: senza biscotto la
+     * galleria della console non potrebbe mostrare niente senza scaricare ogni
+     * file in memoria. Il biscotto lo pianta `/sessione`, che il token ce
+     * l'aveva nell'header, ed è `SameSite=Strict`.
+     *
+     * Accettarlo anche sulle POST vorrebbe dire che una pagina di un altro sito
+     * potrebbe far partire una generazione dal browser di chi è collegato — il
+     * classico CSRF. Limitandolo a GET e HEAD quella strada non esiste: tutto
+     * ciò che cambia qualcosa vuole ancora l'header, che solo il nostro
+     * JavaScript sa mettere.
+     */
+    const soloLettura = req.method === "GET" || req.method === "HEAD";
+    if (!token && soloLettura) token = biscotto(req, "daprod_token");
+
+    // `EventSource` non sa mettere header e non sempre porta i biscotti: per la
+    // sola rotta dello stato si accetta anche il token in query.
     if (!token && url.pathname === "/stato/stream") {
       token = url.searchParams.get("token") ?? "";
     }
@@ -351,6 +445,69 @@ export class Gateway {
     } catch {
       this.errore(res, 404, "File non trovato.");
     }
+  }
+
+  /**
+   * Manda un file della libreria, **a pezzi se il client li chiede**.
+   *
+   * Il supporto a `Range` non è un lusso: senza, un `<video>` in una pagina web
+   * può solo scaricare tutto il file prima di partire, e non si può spostare la
+   * barra di scorrimento. Su un film di mezz'ora vuol dire aspettare i cento MB
+   * e non poter saltare a metà — cioè una galleria che non si guarda.
+   *
+   * Dal gateway esce **solo** un percorso che la libreria ha riconosciuto da un
+   * id suo: quello che arriva da Internet è l'id, mai un percorso.
+   */
+  private serviLibreria(req: IncomingMessage, res: ServerResponse, id: string): void {
+    const voce = this.libreria?.file(id);
+    if (!voce) {
+      this.errore(res, 404, "Non trovo questo file nella libreria.");
+      return;
+    }
+
+    let dimensione = voce.bytes;
+    try {
+      dimensione = statSync(voce.percorso).size;
+    } catch {
+      this.errore(res, 404, "Il file non è più sul disco.");
+      return;
+    }
+
+    const comuni = {
+      "Content-Type": voce.mime,
+      "Accept-Ranges": "bytes",
+      "X-Content-Type-Options": "nosniff",
+      // È roba di casa e non cambia mai: farla richiedere di nuovo a ogni
+      // scorrimento della galleria costa banda per niente.
+      "Cache-Control": "private, max-age=86400",
+    };
+
+    if (req.method === "HEAD") {
+      res.writeHead(200, { ...comuni, "Content-Length": dimensione });
+      res.end();
+      return;
+    }
+
+    const chiesto = /^bytes=(\d*)-(\d*)$/.exec(String(req.headers.range ?? ""));
+    if (chiesto) {
+      const da = chiesto[1] ? Number(chiesto[1]) : 0;
+      const a = chiesto[2] ? Math.min(Number(chiesto[2]), dimensione - 1) : dimensione - 1;
+      if (!(da >= 0 && a >= da && da < dimensione)) {
+        res.writeHead(416, { "Content-Range": `bytes */${dimensione}` });
+        res.end();
+        return;
+      }
+      res.writeHead(206, {
+        ...comuni,
+        "Content-Length": a - da + 1,
+        "Content-Range": `bytes ${da}-${a}/${dimensione}`,
+      });
+      createReadStream(voce.percorso, { start: da, end: a }).pipe(res);
+      return;
+    }
+
+    res.writeHead(200, { ...comuni, "Content-Length": dimensione });
+    createReadStream(voce.percorso).pipe(res);
   }
 
   /* ------------------------------------------------------------ SSE */
@@ -398,8 +555,13 @@ export class Gateway {
       "Content-Length": Buffer.byteLength(html),
       // La console non carica niente da fuori: se un giorno qualcuno ce lo
       // mettesse, questa riga lo fermerebbe prima che arrivi in rete.
+      // `media-src` è arrivato con la galleria: senza, i `<video>` e gli
+      // `<audio>` della libreria non partono e non dicono perché. `blob:` serve
+      // ai download, che passano da un oggetto in memoria per poter avere il
+      // nome giusto del file.
       "Content-Security-Policy":
-        "default-src 'none'; connect-src 'self'; img-src 'self' data: blob:; style-src 'unsafe-inline'; script-src 'unsafe-inline'",
+        "default-src 'none'; connect-src 'self'; img-src 'self' data: blob:; " +
+        "media-src 'self' blob:; style-src 'unsafe-inline'; script-src 'unsafe-inline'",
       "Referrer-Policy": "no-referrer",
       "X-Content-Type-Options": "nosniff",
     });
@@ -454,4 +616,17 @@ function leggiCorpo(req: IncomingMessage): Promise<unknown> {
     });
     req.on("error", () => resolve({}));
   });
+}
+
+/** Il valore di un biscotto nella richiesta, o stringa vuota. */
+function biscotto(req: IncomingMessage, nome: string): string {
+  const riga = req.headers.cookie;
+  if (!riga) return "";
+  for (const pezzo of riga.split(";")) {
+    const taglio = pezzo.indexOf("=");
+    if (taglio < 0) continue;
+    if (pezzo.slice(0, taglio).trim() !== nome) continue;
+    return decodeURIComponent(pezzo.slice(taglio + 1).trim());
+  }
+  return "";
 }

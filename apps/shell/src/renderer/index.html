@@ -116,10 +116,11 @@
         </div>
         <p class="llm-nota">
           64K è il contesto consigliato: più contesto vuol dire più memoria per la
-          cache e meno per il modello. Quello che carichi qui si spegne da sé
-          quarantacinque secondi dopo l'ultima domanda, prima di ogni generazione
-          pesante e alla chiusura della suite: quei GB servono ai modelli di immagini
-          e musica.
+          cache e meno per il modello. Dalla 0.6.0 <b>la memoria si libera a ogni
+          risposta</b>, in tutte le schede: appena il modello ha finito di scrivere,
+          i suoi GB tornano ai modelli di immagini, musica e video, che vivono sulla
+          stessa scheda. Due domande di fila lo fanno ricaricare — è il prezzo, ed è
+          molto meno di una generazione che muore a metà.
         </p>
         <p class="llm-nota">
           <b>Va bene qualunque modello</b> tu abbia installato in LM Studio: l'elenco
@@ -226,6 +227,17 @@
           </div>
         </div>
 
+        <!-- La strada da Internet. È un interruttore a parte da quello sopra,
+             perché è una decisione a parte: «Accendi» vuol dire anche dalla
+             wifi di casa, questo vuol dire anche dal mondo. -->
+        <div class="telefono-internet" id="telefono-internet-box" hidden>
+          <div>
+            <span class="telefono-etichetta">Anche da fuori casa</span>
+            <strong id="telefono-internet-stato">Spento: si arriva solo dalla wifi di casa.</strong>
+          </div>
+          <button class="bottone secondario" id="telefono-internet">Accendi</button>
+        </div>
+
         <!-- Dove ci si collega: l'indirizzo da scrivere nel browser dell'altro
              computer. Il telefono non ne ha bisogno, il portatile sì. -->
         <div class="telefono-indirizzo" id="telefono-indirizzo-box" hidden>
@@ -234,6 +246,18 @@
             <strong id="telefono-console">—</strong>
           </div>
           <button class="bottone secondario" id="telefono-copia">Copia</button>
+        </div>
+
+        <!-- Il guasto più silenzioso di questo pannello: la suite dice «in
+             ascolto», il QR si inquadra, e dal telefono non arriva niente
+             perché Windows blocca in entrata senza dirlo a nessuno. Compare
+             solo quando la regola manca davvero. -->
+        <div class="telefono-internet guasto" id="telefono-muro-box" hidden>
+          <div>
+            <span class="telefono-etichetta">Windows sta bloccando</span>
+            <strong id="telefono-muro-stato">Il firewall non lascia entrare nessuno sulla porta della suite.</strong>
+          </div>
+          <button class="bottone secondario" id="telefono-muro">Sblocca la porta</button>
         </div>
 
         <!-- Un computer ha spesso quattro indirizzi e solo uno arriva al
@@ -265,10 +289,11 @@
           </div>
         </div>
 
-        <p class="telefono-nota">
-          Il collegamento è in <b>rete locale</b> e non è cifrato: vale dentro casa,
-          non da Internet. I motori restano su 127.0.0.1 — da fuori si passa sempre
-          da qui.
+        <p class="telefono-nota" id="telefono-nota">
+          Sulla wifi di casa il collegamento è <b>in chiaro</b>: va bene dentro casa.
+          Con «Anche da fuori casa» acceso si passa da un tunnel in uscita e da fuori
+          si arriva in <b>HTTPS</b>, senza aprire porte sul router. I motori restano
+          su 127.0.0.1 in tutti e due i casi — da fuori si passa sempre da qui.
         </p>
       </section>
     </main>
