@@ -109,6 +109,32 @@ class GatewayClient(
         }
     }
 
+    /**
+     * Dove si fa trovare il computer **adesso**.
+     *
+     * La stessa rotta del colpetto, letta invece che buttata via. Il PC ci
+     * mette dentro tutti i suoi indirizzi di questo momento, tunnel compreso —
+     * e il tunnel e' quello che cambia a ogni sua accensione. Chiamarla quando
+     * si e' gia' collegati e' il modo in cui il telefono resta raggiungibile da
+     * fuori senza che nessuno rifaccia un QR.
+     *
+     * Torna una lista vuota se qualcosa va storto: e' un di piu', non un
+     * passaggio obbligato, e non deve poter impedire di aprire la suite.
+     */
+    suspend fun indirizziDiAdesso(): List<String> = withContext(Dispatchers.IO) {
+        try {
+            val req = conToken().url(a("/io")).build()
+            condiviso.newCall(req).execute().use { res ->
+                if (!res.isSuccessful) return@withContext emptyList()
+                val arr = JSONObject(res.body?.string().orEmpty()).optJSONArray("basi")
+                    ?: return@withContext emptyList()
+                (0 until arr.length()).mapNotNull { arr.optString(it).takeIf { s -> s.isNotBlank() } }
+            }
+        } catch (_: Exception) {
+            emptyList()
+        }
+    }
+
     /** Le novità che il PC ci ha lasciato: id e testo da mostrare. */
     suspend fun notificheNonLette(): List<Pair<String, String>> = withContext(Dispatchers.IO) {
         val req = conToken().url(a("/notifiche")).build()

@@ -24,9 +24,9 @@ file si scrive quale delle due metà manca.
 
 ---
 
-## A che punto siamo — 22 agosto 2026
+## A che punto siamo — 23 agosto 2026
 
-**Ultima pubblicata: 0.7.4.** Nove schede dentro la suite, un ambiente Python
+**Ultima pubblicata: 0.7.5.** Nove schede dentro la suite, un ambiente Python
 solo, e il giro che conta — chiedo dal telefono, il computer fa, il file torna —
 **provato da chi la usa**, sul suo PC e sul suo telefono.
 
@@ -53,7 +53,7 @@ fanno quello che ti ho chiesto».
 | **La coda del telefono che parte ad app chiusa** | scritta; **dipende da quando Android fa girare il lavoro** |
 | **Modelli e preset dal telefono** | **provato contro il motore acceso**: FLUX.2 4B chiesto da fuori, e usato |
 | Tailscale come strada principale | scritto, **mai provato col telefono** |
-| Accesso da Internet (tunnel in uscita) | fatto, **mai acceso su una linea vera** |
+| Accesso da Internet (tunnel in uscita) | **acceso di suo dalla 0.7.5**, si rialza da solo, e il telefono impara l’indirizzo nuovo; **da provare col telefono fuori casa** |
 | DaProdCinema — Storia: barra, anteprime, cucitura da sola | scritto; **mai girato contro il motore acceso** |
 | Il modello che scrive (LM Studio) | fatto e provato; lo scarico a ogni risposta è **da misurare** |
 

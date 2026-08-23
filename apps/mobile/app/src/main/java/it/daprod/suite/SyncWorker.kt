@@ -54,6 +54,16 @@ class SyncWorker(context: Context, params: WorkerParameters) : CoroutineWorker(c
             val client = GatewayClient(dove, persona.token)
 
             /**
+             * **E gli indirizzi di oggi**, gia' che si e' arrivati.
+             *
+             * Il tunnel del PC cambia nome a ogni sua accensione. Farsi dire
+             * qui dove si fa trovare adesso vuol dire che il telefono impara
+             * l'indirizzo nuovo **mentre sta in tasca**, sulla wifi di casa, e
+             * quando poi si esce quello buono ce l'ha gia'.
+             */
+            Profili.ricordaBasi(ctx, persona.id, client.indirizziDiAdesso())
+
+            /**
              * **Quello che ha scritto col PC spento parte adesso**, anche se
              * l'app è chiusa.
              *

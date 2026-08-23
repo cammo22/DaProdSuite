@@ -348,6 +348,13 @@ console.log("\n— chi sono —");
   dice("dice come mi chiamo", r.dati?.nome === "telefono", `→ ${r.testo}`);
   dice("e che ruolo ho", r.dati?.ruolo === "ospite");
   dice("e su che computer sono", r.dati?.computer === "PC-DI-PROVA");
+  // Gli indirizzi qui dentro sono come il telefono impara il tunnel nuovo:
+  // senza, da fuori casa resta fermo su quello del giorno del QR.
+  dice(
+    "e dove trovare il PC adesso",
+    Array.isArray(r.dati?.basi) && r.dati.basi[0] === "http://192.168.1.8:8790",
+    `→ ${r.testo}`,
+  );
 }
 {
   const r = await chiama("/io");

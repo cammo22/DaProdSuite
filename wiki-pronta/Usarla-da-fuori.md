@@ -59,9 +59,14 @@ telefono, il computer ha un indirizzo **fisso, cifrato e privato** che funziona
 in casa e fuori. Non c'è niente da accendere e niente su Internet: lo trovi già
 in cima a «Da dove si arriva».
 
-**Il tunnel.** Nel quadrato «Da fuori casa» c'è «apri il tunnel». Acceso, il PC
-apre da solo una strada verso Internet e la suite diventa raggiungibile da
-qualunque parte, all'indirizzo `https://qualcosa.trycloudflare.com`.
+**Il tunnel.** Dalla 0.7.5 è **già acceso**: parte con la suite, e nel quadrato
+«Da fuori casa» trovi «chiudi il tunnel» se non lo vuoi. Acceso, il PC apre da
+solo una strada verso Internet e la suite diventa raggiungibile da qualunque
+parte, all'indirizzo `https://qualcosa.trycloudflare.com`.
+
+Prima era spento di suo, e il risultato era che restava spento: dal telefono
+fuori casa non si arrivava, e sembrava un problema di firewall. Non lo era: la
+strada non era mai stata aperta.
 
 - **Non apre nessuna porta sul router** e non devi sapere l'indirizzo di casa
   tua: è il computer che si collega verso fuori, non il contrario.
@@ -75,10 +80,18 @@ Due cose da sapere:
 - **quell'indirizzo è pubblico.** Chi lo indovinasse arriverebbe alla schermata
   di collegamento, non alle tue cose: senza codice non si entra, e i tentativi
   sono limitati. Ma è su Internet, ed è giusto saperlo;
-- **cambia ogni volta che lo accendi.** È il motivo per cui Tailscale è meglio:
-  con il tunnel, se il computer si riavvia mentre sei fuori, l'indirizzo di
-  prima non esiste più. (L'app prova comunque tutti quelli che conosce prima di
-  arrendersi.)
+- **cambia ogni volta che si riaccende la suite.** Da questa versione non è
+  più un problema: ogni volta che l'app del telefono arriva al computer si fa
+  dire anche «adesso mi trovi qui» e se lo scrive. Basta aprirla **una volta
+  stando in casa** dopo un aggiornamento, e l'indirizzo di stasera è già in
+  tasca — anche ad app chiusa, dal controllo che gira per conto suo.
+
+  Resta un caso scoperto, ed è il motivo per cui Tailscale resta meglio: se il
+  computer si riavvia **mentre sei già fuori**, quel giro non l'hai fatto e
+  l'indirizzo nuovo non lo sa nessuno.
+- **se cade, si riapre da solo.** Linea che salta, computer che si sveglia dalla
+  sospensione: prima il tunnel restava giù finché qualcuno non tornava a
+  premere l'interruttore. Adesso riprova da sé, sempre.
 
 ### Se il telefono non lo raggiunge
 
@@ -95,9 +108,15 @@ rete di casa, le schede virtuali di WSL o di Hyper-V, Tailscale — e **solo uno
 arriva al telefono**. La suite sceglie quello di casa, ma se ha sbagliato sotto
 c'è un menu con tutti gli altri, ognuno con scritto cos'è.
 
-**3. Accendi «Anche da fuori casa».** Funziona pure stando in casa, e non ha
-bisogno né del firewall né dell'indirizzo giusto: il collegamento lo fa il PC
-verso l'esterno, e il telefono ci arriva da qualunque rete.
+**3. Guarda che «Anche da fuori casa» sia acceso.** Dalla 0.7.5 lo è di suo.
+Funziona pure stando in casa, e non ha bisogno né del firewall né dell'indirizzo
+giusto: il collegamento lo fa il PC verso l'esterno, e il telefono ci arriva da
+qualunque rete.
+
+**4. Sei fuori e non risale?** Vuol dire che il telefono ha in tasca un
+indirizzo vecchio: apri l'app **una volta quando torni in casa** — basta quello
+per imparare quello nuovo. Se è un accoppiamento di prima della 0.7.5, rifai il
+QR una volta sola.
 
 ### Chi può fare cosa
 

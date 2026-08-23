@@ -82,6 +82,48 @@ export interface StatoTunnel {
 
 let processo: ChildProcess | null = null;
 let stato: StatoTunnel = { fase: "spento", indirizzo: "" };
+
+/**
+ * Il tunnel si rialza da solo.
+ *
+ * **Il difetto che questo pezzo cura.** `cloudflared` puo' morire: la linea
+ * cade per un minuto, Cloudflare chiude la connessione, il portatile va in
+ * sospensione. Fino alla 0.7.4 il processo usciva, lo stato diventava «guasto»
+ * e restava li' — il PC acceso, la suite aperta, e da fuori niente finche'
+ * qualcuno non tornava davanti allo schermo a premere l'interruttore. Ma da
+ * fuori casa quel qualcuno non c'e' per definizione: e' tutto il punto.
+ *
+ * Adesso, se il tunnel era acceso e cade, si riaccende da se'. Con un'attesa
+ * che cresce, perche' se la linea e' giu' riprovare cinque volte al secondo
+ * non la rimette su, e senza mai smettere: il momento in cui serve e' proprio
+ * quello in cui nessuno puo' premere niente.
+ */
+let vogliamoAcceso = false;
+/** La porta davanti a cui rialzarlo. */
+let portaUltima = 0;
+/** Quante volte e' caduto di fila: decide quanto si aspetta prima di ritentare. */
+let cadute = 0;
+let risveglio: NodeJS.Timeout | null = null;
+
+/** Le attese fra un tentativo e l'altro, in secondi. Poi si resta sull'ultima. */
+const RIPROVE_S = [3, 5, 10, 20, 30, 60];
+
+function programmaRisveglio(): void {
+  if (!vogliamoAcceso || risveglio) return;
+  const attesa = RIPROVE_S[Math.min(cadute, RIPROVE_S.length - 1)] ?? 60;
+  annota(`il tunnel e' caduto: riprovo fra ${attesa}s`);
+  risveglio = setTimeout(() => {
+    risveglio = null;
+    if (!vogliamoAcceso) return;
+    void accendiTunnel(portaUltima, true);
+  }, attesa * 1000);
+  risveglio.unref?.();
+}
+
+function fermaRisveglio(): void {
+  if (risveglio) clearTimeout(risveglio);
+  risveglio = null;
+}
 const ascoltatori = new Set<(s: StatoTunnel) => void>();
 
 export const statoTunnel = (): StatoTunnel => ({ ...stato });
@@ -153,9 +195,12 @@ async function assicuraEseguibile(): Promise<void> {
  * linea è giù, GitHub non risponde, Cloudflare rifiuta — e chi guarda il
  * pannello deve leggerne il motivo, non vedere la suite andare in errore.
  */
-export async function accendiTunnel(porta: number): Promise<StatoTunnel> {
+export async function accendiTunnel(porta: number, rialzo = false): Promise<StatoTunnel> {
   if (stato.fase === "acceso" && processo) return statoTunnel();
-  await spegniTunnel();
+  await spegniTunnel(true);
+  vogliamoAcceso = true;
+  portaUltima = porta;
+  if (!rialzo) cadute = 0;
 
   try {
     await assicuraEseguibile();
@@ -166,6 +211,8 @@ export async function accendiTunnel(porta: number): Promise<StatoTunnel> {
       quota: undefined,
       motivo: err instanceof Error ? err.message : String(err),
     });
+    cadute += 1;
+    programmaRisveglio();
     return statoTunnel();
   }
 
@@ -215,6 +262,7 @@ export async function accendiTunnel(porta: number): Promise<StatoTunnel> {
       if (!trovato || deciso) return;
       deciso = true;
       clearTimeout(scadenza);
+      cadute = 0;
       cambia({ fase: "acceso", indirizzo: trovato[0], motivo: undefined });
       risolvi(statoTunnel());
     };
@@ -228,6 +276,8 @@ export async function accendiTunnel(porta: number): Promise<StatoTunnel> {
       clearTimeout(scadenza);
       cambia({ fase: "guasto", indirizzo: "", motivo: err.message });
       processo = null;
+      cadute += 1;
+      programmaRisveglio();
       risolvi(statoTunnel());
     });
 
@@ -237,12 +287,14 @@ export async function accendiTunnel(porta: number): Promise<StatoTunnel> {
       clearTimeout(scadenza);
       // Se muore dopo essere partito, l'indirizzo non vale più niente: dirlo è
       // meglio che lasciare in giro un QR verso un tunnel che non c'è.
+      cadute += 1;
       if (deciso) {
         cambia({
           fase: "guasto",
           indirizzo: "",
-          motivo: `Il tunnel si è chiuso (codice ${codice ?? "?"}). Riaccendilo.`,
+          motivo: `Il tunnel si è chiuso (codice ${codice ?? "?"}). Lo sto riaprendo.`,
         });
+        programmaRisveglio();
         return;
       }
       deciso = true;
@@ -251,12 +303,21 @@ export async function accendiTunnel(porta: number): Promise<StatoTunnel> {
         indirizzo: "",
         motivo: `cloudflared è uscito subito (codice ${codice ?? "?"}).`,
       });
+      programmaRisveglio();
       risolvi(statoTunnel());
     });
   });
 }
 
-export async function spegniTunnel(): Promise<void> {
+export async function spegniTunnel(perRiaccendere = false): Promise<void> {
+  // Spegnere per davvero vuol dire anche smettere di rialzarlo: l'interruttore
+  // del pannello deve vincere sul rialzo automatico, se no non e' un
+  // interruttore.
+  if (!perRiaccendere) {
+    vogliamoAcceso = false;
+    cadute = 0;
+  }
+  fermaRisveglio();
   const figlio = processo;
   processo = null;
   if (figlio && !figlio.killed) {

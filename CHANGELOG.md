@@ -10,6 +10,48 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ---
 
+## 0.7.5 — Da fuori casa, davvero
+
+**23 agosto 2026.** «Funziona bene, ma solo in rete locale.» Detto così sembra
+un problema di firewall o di permessi. Non lo era: la strada da Internet
+c'era, ed era **spenta**.
+
+**Il tunnel adesso è acceso di suo.** Era nato spento — «lo si accende sapendo
+cosa si sta facendo» — e il risultato è che non lo accendeva nessuno: il QR
+conteneva solo `192.168.1.8:8790`, che fuori dalla porta di casa non esiste, e
+dal telefono in giro non si arrivava. Da questa versione parte con la suite. Si
+spegne da DaProdConnessione, e la scelta resta.
+
+**E si rialza da solo.** Se la linea cade per un minuto, o Cloudflare chiude, o
+il computer si sveglia dalla sospensione, `cloudflared` muore. Prima restava
+morto: il pannello diceva «guasto» e qualcuno doveva tornare davanti allo
+schermo a premere l'interruttore — ma quando serve la strada da fuori, davanti
+allo schermo non c'è nessuno per definizione. Adesso si riapre da sé, con
+un'attesa che cresce e senza mai smettere.
+
+**Il telefono impara l'indirizzo nuovo.** Questo era il difetto vero, quello che
+restava anche col tunnel acceso: l'indirizzo su Internet **cambia a ogni
+accensione della suite**, e il telefono si ricordava quello letto nel QR il
+giorno dell'accoppiamento. Fuori casa bussava a un indirizzo che non esisteva
+più e diceva «non raggiungibile» per sempre; l'unica cura era rifare il QR,
+cioè tornare davanti al computer — proprio quello che non si può fare quando si
+è fuori. Adesso il computer, ogni volta che gli si bussa, risponde anche «e
+comunque adesso mi trovi qui»: basta arrivarci **una volta**, dalla wifi di
+casa, e l'indirizzo di stasera è già in tasca. Vale anche ad app chiusa, dal
+lavoro in background.
+
+**Cosa devi fare tu.** Aggiorna la suite e l'app del telefono (menu ›
+Aggiorna), poi apri l'app **una volta stando in casa**: è il giro in cui si
+prende l'indirizzo nuovo. Da lì in poi funziona anche fuori, senza rifare
+niente. Se l'accoppiamento è vecchio e non risale, rifai il QR una volta sola.
+
+**Ricordati che l'indirizzo è pubblico.** È sempre stato scritto nel pannello e
+vale adesso più di prima: chi lo indovinasse arriverebbe alla pagina di
+accoppiamento, non ai tuoi contenuti — senza token il gateway risponde 401 a
+tutto, e il codice a otto cifre vive cinque minuti.
+
+---
+
 ## 0.7.4 — Il file si sposta prima dei suoi metadati
 
 **23 agosto 2026.** Una riga sola, vista pulendo dopo la 0.7.3.
