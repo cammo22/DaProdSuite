@@ -21,9 +21,20 @@ const PREDEFINITE: Impostazioni = {
   guidaFatta: false,
   // Accesa di suo: vedi il commento sul campo in @daprod/ipc.
   connessione: true,
-  // Il tunnel no: costa quaranta MB la prima volta e mette un indirizzo su
-  // Internet. Quello lo si accende sapendo cosa si sta facendo.
-  internet: false,
+  /**
+   * Anche il tunnel, dalla 0.7.5.
+   *
+   * Prima era spento di suo, «lo si accende sapendo cosa si sta facendo». Il
+   * risultato, visto sul PC vero: nessuno lo accendeva mai, il QR conteneva
+   * soltanto `192.168.1.8:8790`, e dal telefono fuori casa non si arrivava —
+   * la connessione «funzionava, ma solo in casa». Che e' esattamente la cosa
+   * che il tunnel esisteva per risolvere.
+   *
+   * Acceso di suo costa quaranta MB la prima volta e mette su Internet un
+   * indirizzo che senza token risponde 401 a tutto. Si spegne dal pannello di
+   * DaProdConnessione, e la scelta resta.
+   */
+  internet: true,
   precarica: true,
 };
 
@@ -49,7 +60,10 @@ export function impostazioni(): Impostazioni {
         // precedente non ha questo campo, e per chi aggiorna la connessione
         // deve risultare accesa come per chi installa adesso.
         connessione: lette.connessione !== false,
-        internet: lette.internet === true,
+        // Come `connessione`, e per la stessa ragione: chi aggiorna da una
+        // versione in cui il campo non c'era deve trovare la strada da fuori
+        // aperta come chi installa adesso.
+        internet: lette.internet !== false,
         precarica: lette.precarica !== false,
       };
       return cache;

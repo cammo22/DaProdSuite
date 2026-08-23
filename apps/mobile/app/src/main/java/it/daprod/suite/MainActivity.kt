@@ -550,7 +550,30 @@ class MainActivity : AppCompatActivity() {
             chi = persona.copy(base = dove)
             client = GatewayClient(dove, persona.token)
         }
-        val attuale = chi ?: persona
+        var attuale = chi ?: persona
+
+        /**
+         * **Dove si fa trovare adesso**, prima di aprire la pagina.
+         *
+         * L'indirizzo del tunnel cambia a ogni accensione della suite: quello
+         * che sta scritto qui dentro e' quello di quando si e' inquadrato il
+         * QR, e da fuori casa e' un indirizzo morto. Adesso appena si arriva al
+         * PC — di solito dalla wifi di casa — ci si fa dire i suoi indirizzi di
+         * oggi e si scrivono. La prossima volta che si esce, quello buono c'e'
+         * gia'.
+         *
+         * Non blocca niente: se non risponde, si apre la suite lo stesso.
+         */
+        // Il client di **adesso**, non quello con cui si e' entrati: se ha
+        // risposto un altro indirizzo, `client` e' stato appena rifatto e `cl`
+        // punta a quello che non risponde piu'.
+        val adesso = (client ?: cl).indirizziDiAdesso()
+        if (adesso.isNotEmpty()) {
+            Profili.ricordaBasi(this@MainActivity, attuale.id, adesso)
+            val unite = (adesso + attuale.basi).distinct()
+            attuale = attuale.copy(basi = unite)
+            chi = attuale
+        }
 
         // Le azioni si rileggono a ogni entrata: servono al modulo di quando il
         // PC sparisce, e vanno tenute fresche mentre il PC c'è.

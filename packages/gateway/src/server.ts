@@ -556,12 +556,27 @@ export class Gateway {
       // da quello che aveva scritto al momento dell'accoppiamento, cioè da un
       // ricordo del browser che si perde svuotando la cronologia.
       if (percorso === "/io" && req.method === "GET") {
+        /**
+         * **Qui dentro ci vanno anche gli indirizzi**, dalla 0.7.5.
+         *
+         * Il difetto, visto sul telefono: l'indirizzo del tunnel cambia a ogni
+         * accensione della suite, ma il telefono si ricorda quelli che gli
+         * erano stati dati inquadrando il QR. Da fuori casa provava un
+         * indirizzo Cloudflare morto e diceva «non raggiungibile» per sempre,
+         * e l'unico modo di rimetterlo a posto era rifare l'accoppiamento.
+         *
+         * `/io` e' la porta a cui l'app bussa ogni volta che si apre. Farle
+         * dire anche «e comunque adesso mi trovi qui» costa niente e chiude il
+         * cerchio: basta che il telefono arrivi **una volta** — dalla wifi di
+         * casa, di solito — e si porta a casa il tunnel nuovo da solo.
+         */
         this.json(res, 200, {
           id: dispositivo.id,
           nome: dispositivo.nome,
           ruolo: dispositivo.ruolo,
           computer: this.computer,
           versione: this.versione,
+          basi: this.pannello?.stato(dispositivo).indirizzi.map((i) => i.base) ?? [],
         });
         return;
       }

@@ -172,4 +172,32 @@ object Profili {
         if (chi.base == base) return
         scrivi(context, tutti.map { if (it.id == id) it.copy(base = base) else it })
     }
+
+    /**
+     * Gli indirizzi nuovi che il computer ci ha appena detto di avere.
+     *
+     * **Il guasto che questo metodo chiude.** L'indirizzo del tunnel cambia a
+     * ogni accensione della suite, ma il telefono si ricordava quelli letti nel
+     * QR il giorno dell'accoppiamento. Fuori casa provava un indirizzo
+     * Cloudflare che non esisteva piu' e diceva «non raggiungibile» per sempre:
+     * l'unica cura era rifare il QR, cioe' tornare davanti al PC — proprio la
+     * cosa che non si puo' fare quando si e' fuori.
+     *
+     * Adesso `/io` risponde anche con gli indirizzi di adesso, e quelli si
+     * scrivono qui. Basta arrivarci **una volta** da qualunque parte — la wifi
+     * di casa va benissimo — e il tunnel di stasera e' gia' in tasca.
+     *
+     * I nuovi vanno **davanti** ai vecchi e i vecchi non si buttano: un
+     * indirizzo che oggi non c'e' potrebbe esserci domani (Tailscale acceso a
+     * giorni alterni), e toglierlo vorrebbe dire ricominciare a perdere il PC.
+     */
+    fun ricordaBasi(context: Context, id: String, basi: List<String>) {
+        val puliti = basi.map { it.trim().trimEnd('/') }.filter { it.isNotBlank() }
+        if (puliti.isEmpty()) return
+        val tutti = tutti(context)
+        val chi = tutti.firstOrNull { it.id == id } ?: return
+        val unite = (puliti + chi.basi).distinct().take(12)
+        if (unite == chi.basi) return
+        scrivi(context, tutti.map { if (it.id == id) it.copy(basi = unite) else it })
+    }
 }
