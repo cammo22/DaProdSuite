@@ -1,13 +1,24 @@
 # Riprendere da qui
 
-Documento di passaggio fra una sessione e l'altra. Aggiornato il **22 agosto
-2026**, con la **0.7.0** appena chiusa.
+Documento di passaggio fra una sessione e l'altra. Aggiornato il **26 agosto
+2026**, con la **0.7.6** appena chiusa.
 
-> **Il prossimo passo è provare sul PC vero, e la prima cosa è una sola:**
-> accettare un lavoro dal telefono e vederlo partire. È la ragione di tutto
-> l'ultimo giro, e non è mai girata contro un motore acceso. Dietro c'è il resto
-> della 0.6.0 e della 0.7.0, che è tanto e quasi tutto non provato: l'elenco sta
-> in fondo al [CHANGELOG](../CHANGELOG.md), § 0.7.0 e § 0.6.0.
+> **Il prossimo passo è provare la 0.7.6 sul PC vero e sul telefono vero**, e le
+> cose da guardare sono quattro, in quest'ordine:
+>
+> 1. **si chiude davvero?** Apri e chiudi la suite tre volte, poi guarda il
+>    Gestione attività: se non resta niente, il pezzo più fastidioso è chiuso.
+> 2. **la chiacchierata contro LM Studio vero.** Qui è girata solo contro un
+>    modello finto: quello che non si sa è se un modello piccolo rispetta lo
+>    schema del piano.
+> 3. **le anteprime e la copertina cucita**, che vogliono FFmpeg installato: un
+>    video con il suo fotogramma in galleria, e un mp3 che mostra la copertina
+>    nel lettore del telefono.
+> 4. **lo specchio offline sul telefono**: apri l'app in casa una volta, poi
+>    spegni la suite e riapri. Deve essere la stessa app, non un'altra.
+>
+> Il dettaglio di cosa è provato e cosa no sta in fondo al
+> [CHANGELOG](../CHANGELOG.md), § 0.7.6.
 
 **Se stai leggendo questo all'inizio di una conversazione nuova**: leggi anche
 [COME-SI-LAVORA.md](COME-SI-LAVORA.md) e [ROADMAP.md](ROADMAP.md), poi vai al
@@ -114,10 +125,91 @@ Repo pubblico: **https://github.com/cammo22/DaProdSuite**
 | **La 0.6.0 provata sul telefono** | l'app «inizia a sembrare decente», e sono venute fuori sei cose: la fila che non fa partire niente, l'app che non si ricollega, l'interfaccia, le parole, il firewall che dice sempre la stessa cosa, e l'idea di DaProdConnessione |
 | **La 0.7.0: la nona scheda e la fila che parte** | fatto il 22 agosto. Il dettaglio sta nel paragrafo «Com'è fatto il giro della 0.7.0» qui sotto |
 
+| **La 0.7.6: due facce, lo specchio offline, la macchina che resta tua** | fatto il 26 agosto. Il dettaglio sta nel paragrafo «Com'è fatto il giro della 0.7.6» qui sotto |
+
 Si lavora su un ramo per release e una PR: `release-0.2.0` è stata unita con le
 PR #3 e #4, la 0.3.1 con la #5, la 0.3.2 con la #6, la 0.3.3 con la #7, la
 0.3.4 con la #8, la 0.4.0 con la #9, la 0.4.1 con la #10, la 0.4.2 con la #11,
 la 0.4.3 con la #12, la 0.4.4 con la #13, la 0.4.5 con la #14, e questo giro sta su `release-0.4.6`.
+
+### Com'è fatto il giro della 0.7.6
+
+Sei pezzi, e conviene leggerli in quest'ordine perché il primo regge il secondo.
+
+**1. `apps/shell/src/main/processi.ts` — il libro dei processi.** Ogni figlio
+che apriamo (motori Python, `cloudflared`, `ffmpeg`, `uv`, `powershell`) viene
+scritto in `%LOCALAPPDATA%\DaProdSuite\processi.json` **subito**, in modo
+sincrono. Serve a due cose: ammazzare l'albero intero alla chiusura
+(`taskkill /T`, perché su Windows un segnale al padre lascia vivi i figli) e —
+la parte che toglie di mezzo il terminale — **ripulire all'avvio** quello che è
+rimasto da una chiusura andata male. Il controllo sul nome dell'immagine non è
+un vezzo: un PID si ricicla, e senza quel controllo un riavvio del computer
+basterebbe a far ammazzare alla suite il programma di qualcun altro.
+`packages/runtime/src/exec.ts` ha un gancio (`sorvegliaProcessi`) che lo shell
+aggancia una volta all'avvio.
+
+**2. `apps/shell/src/main/turno.ts` — il turno della macchina.** Prima c'erano
+due file che non si conoscevano: `esecuzione.ts` (le generazioni, serie) e
+`llm.ts` (le domande al modello, che non avevano fila e svuotavano la VRAM prima
+di rispondere). Adesso il turno è uno. Tre cose che valgono la pena:
+
+- la **corsia `subito`** entra davanti a chi aspetta, mai davanti a chi lavora;
+- la **guardia** (`vram.motoreOccupato`) è la risposta al caso che questa fila
+  da sola non vedrebbe: chi sta al computer preme Genera in DaProdFoto, e quel
+  lavoro non passa da qui ma occupa la stessa scheda;
+- la **sveglia** su ogni turno è la rete sotto: un turno perso è una fila ferma
+  per sempre, e da fuori sembra un programma che ha smesso di funzionare senza
+  dirlo. Meglio togliere d'ufficio un turno a torto che restare bloccati.
+
+**3. Le regole della fila.** `Impostazioni` guadagna quattro campi
+(`accettaDaSola`, `limiteFila`, `limitePersona`, `inPausa`) e il gateway li
+**chiede** invece di tenerli (`Remoto.decideLaFila`). È così che «il pc è il vero
+admin» diventa una riga di codice: non esiste una rotta HTTP che arrivi a quei
+quattro numeri. `rivediTrattenute()` è la contropartita onesta dei tetti — senza,
+sarebbero una porta che non si riapre.
+
+**4. `packages/gateway/src/console/` — la pagina, in sei pezzi.** Era un file da
+2300 righe. Il `modo` (`telefono` / `computer`) lo passa l'app nel frammento
+(`m=telefono`), ed è l'unica che lo sa per certo; `sonoLaCasa` viene da
+`/macchina` e gate gli interruttori. Le cinque schede hanno cambiato nome perché
+il nome era sbagliato: la tabella sta in cima a `pagine.ts`.
+
+**5. `chiacchierata.ts` — dieci minuti col modello.** Le tre righe che la
+reggono su 8 GB: **prende il turno prima di caricare** (caricare e poi scoprire
+che la macchina generava vorrebbe dire averla rovinata), **`turnoGiaPreso`** a
+ogni battuta (se no il modello verrebbe scaricato e ricaricato fra una frase e
+l'altra), e **accettare il piano chiude la sessione** — che è il momento in cui i
+quattro GB tornano liberi giusto in tempo per la generazione che parte. Il piano
+si legge con uno schema JSON e si **rilegge senza fidarsi**: un modello piccolo
+in difficoltà scrive ancora azioni che non esistono.
+
+**6. Il telefono: `Deposito` + `ServitoreOffline`.** La schermata «senza PC» non
+c'è più. Il telefono tiene la pagina e le risposte **così come arrivano** — non
+le rilegge, non le ricostruisce: una seconda implementazione del contratto è
+quella che diverge — e quando il computer sparisce
+`WebViewClient.shouldInterceptRequest` le ridà alla stessa pagina di sempre.
+
+⚠ Un vincolo della piattaforma da ricordare: **Android non fa leggere il corpo
+di una POST intercettata**. Per questo, dentro l'app, la console manda i campi
+di un'azione **anche in coda all'indirizzo** (`anchePerIndirizzo`). Non è un
+doppione elegante: è l'unica strada che c'è.
+
+### Due difetti trovati guardando, non leggendo
+
+**Il `dist` che vinceva sul sorgente.** Spostata la console da `console.ts` a
+`console/`, il vecchio `dist/console.js` è rimasto lì — e `require("./console")`
+preferisce il file alla cartella. La suite serviva la pagina di ieri e **le prove
+passavano lo stesso**, perché controllavano il `dist`. Adesso la compilazione del
+gateway pulisce prima. È il genere di cosa che non si trova rileggendo il codice.
+
+**Le anteprime dichiarate `image/jpeg`.** Sembrava ovvio: le anteprime dei video
+le scrive FFmpeg in JPEG, le copertine sono `.cover.jpg`. Ma l'anteprima di
+un'immagine **è** l'immagine — un PNG — e quelle risposte escono con
+`X-Content-Type-Options: nosniff`, che vieta al browser di indovinare. In
+galleria le immagini restavano riquadri vuoti. Trovato aprendo la pagina in un
+browser vero e guardando `naturalWidth`.
+
+---
 
 ### Com'è fatto il giro della 0.7.0
 

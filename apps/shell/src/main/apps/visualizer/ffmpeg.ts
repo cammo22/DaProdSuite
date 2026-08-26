@@ -11,30 +11,21 @@
 import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, renameSync, rmSync, statSync, type Stats } from "node:fs";
-import { delimiter, join, sep } from "node:path";
+import { join } from "node:path";
 import { DATA_ROOT } from "../../paths";
+import { registra } from "../../processi";
+import { findFfmpeg } from "../../ffmpeg";
 
-let risolto: string | null | undefined;
-
-export function findFfmpeg(): string | null {
-  if (risolto !== undefined) return risolto;
-
-  const candidati = [
-    join(process.env.LOCALAPPDATA ?? "", "Microsoft", "WinGet", "Links", "ffmpeg.exe"),
-  ];
-  for (const dir of (process.env.PATH ?? "").split(delimiter)) {
-    if (dir) candidati.push(join(dir, "ffmpeg.exe"));
-  }
-
-  risolto = null;
-  for (const candidato of candidati) {
-    if (candidato.includes(sep) && existsSync(candidato)) {
-      risolto = candidato;
-      break;
-    }
-  }
-  return risolto;
-}
+/**
+ * La ricerca del binario **non sta più qui**, e sta bene così.
+ *
+ * Dalla 0.7.6 FFmpeg lo usano in tre — questa transcodifica, il fotogramma di
+ * anteprima di un video e la copertina cucita dentro un brano — e cercarlo era
+ * l'unica cosa che avevano in comune. Sta in `main/ffmpeg.ts`; qui si
+ * ri-esporta perché il resto del Visualizer lo chiedeva a questo modulo, e non
+ * c'è motivo di far cambiare riga a chi non è cambiato.
+ */
+export { findFfmpeg };
 
 function cacheDir(): string {
   const dir = join(DATA_ROOT, "cache", "visualizer", "transcoded");
@@ -75,6 +66,7 @@ export async function transcodeToWav(source: string): Promise<string | null> {
       ["-hide_banner", "-loglevel", "error", "-i", source, "-vn", "-c:a", "pcm_s16le", "-y", temp],
       { windowsHide: true },
     );
+    registra(child, "ffmpeg (conversione audio)");
     child.on("error", () => resolve(false));
     child.on("close", (code) => resolve(code === 0));
   });

@@ -1,4 +1,11 @@
-export { CommandError, capture, run, type RunOptions } from "./exec";
+export {
+  CommandError,
+  capture,
+  run,
+  sorvegliaProcessi,
+  type RunOptions,
+  type Sorveglianza,
+} from "./exec";
 export {
   PYTHON_VERSION,
   installRuntime,

@@ -19,6 +19,10 @@ import { ICONA_SUITE, ensureDataDirs } from "./paths";
 import { updater } from "./updater";
 import { gestisciSchema, registraSchema } from "./file-scheme";
 import { creaTray, distruggiTray } from "./tray";
+import { sorvegliaProcessi } from "@daprod/runtime";
+import { registra, ripulisciAvanzi, uccidiTutti } from "./processi";
+import { turno } from "./turno";
+import { motoreOccupato } from "./vram";
 
 // Gli schemi privilegiati vanno dichiarati prima che l'app sia pronta: dopo,
 // Electron ha già deciso i privilegi e la registrazione non ha effetto. Per
@@ -48,6 +52,33 @@ async function start(): Promise<void> {
   Menu.setApplicationMenu(null);
 
   ensureDataDirs();
+
+  /**
+   * **Prima di tutto: si sgombera il campo.**
+   *
+   * Se la sessione precedente è finita male — un crash, un «termina attività»,
+   * l'aggiornamento che si è preso l'eseguibile — i motori Python e il tunnel
+   * sono rimasti vivi, e sono loro che tengono occupate le porte 8188 e 8790.
+   * Era la ragione per cui la suite «non ripartiva finché non aprivi il
+   * terminale»: adesso lo fa lei, e lo fa *qui*, prima di provare ad aprire una
+   * qualunque di quelle porte.
+   */
+  const avanzi = ripulisciAvanzi();
+  if (avanzi) console.log(`[processi] spenti ${avanzi} processi rimasti dalla volta scorsa`);
+
+  // Da adesso anche `uv`, `pip` e `powershell` finiscono nel libro: sono
+  // comandi che durano minuti, e chiudere la suite in mezzo ne lasciava uno.
+  sorvegliaProcessi((figlio, comando) => registra(figlio, comando));
+
+  /**
+   * La fila impara a guardare fuori dalla propria finestra.
+   *
+   * Chi sta al computer e preme Genera in DaProdFoto non passa dalla fila — va
+   * dalla finestra dritto al motore — ma la scheda video è la stessa. Da qui in
+   * poi il turno lo sa: prima di caricare il modello che scrive, chiede al
+   * motore se ha qualcosa in mano, e se ce l'ha aspetta.
+   */
+  turno.metteGuardia(motoreOccupato);
   // Lo schema serve anche all'hub, non solo alle app: il pannello Risultati
   // mostra le anteprime dei file, e quelle stanno su `daprod://file/...`.
   // Prima lo accendeva la prima app che si apriva, quindi l'hub appena avviato
@@ -222,14 +253,43 @@ app.on("window-all-closed", () => {
   app.quit();
 });
 
-app.on("before-quit", async (event) => {
+/**
+ * Quanto si aspetta che i motori si spengano con garbo, prima di insistere.
+ *
+ * **È un tetto, non un'attesa.** Prima non c'era: `closeAll()` chiama
+ * `/shutdown` su ogni motore e ognuno può prendersi i suoi secondi; se uno non
+ * risponde — ed è proprio il caso in cui i processi restano — la chiusura non
+ * finiva mai e la finestra spariva lasciando tutto acceso. Dodici secondi sono
+ * più di quanto ci mette un ComfyUI sano a chiudersi; oltre, si passa alle
+ * maniere forti.
+ */
+const ATTESA_CHIUSURA_MS = 12_000;
+
+let shuttingDown = false;
+
+app.on("before-quit", (event) => {
   // I servizi Python sono processi figli: senza spegnerli restano orfani e
   // continuano a tenersi la VRAM anche dopo che la finestra è sparita.
-  if (!shuttingDown) {
-    event.preventDefault();
-    shuttingDown = true;
-    gpu.stopPolling();
-    distruggiTray();
+  if (shuttingDown) return;
+  event.preventDefault();
+  shuttingDown = true;
+  void chiudiTutto();
+});
+
+/**
+ * La chiusura, in tre tempi, e nessuno dei tre può bloccare gli altri.
+ *
+ * 1. **Con garbo**: si chiede a ognuno di spegnersi da sé, e si dà tempo.
+ * 2. **A tempo scaduto**: quello che è ancora vivo si ammazza per l'albero
+ *    intero, figli compresi — che è quello che mancava.
+ * 3. **Si esce comunque**: `app.exit()` e non `app.quit()`, perché a questo
+ *    punto non deve esserci un altro giro di `before-quit` che rimandi ancora.
+ */
+async function chiudiTutto(): Promise<void> {
+  gpu.stopPolling();
+  distruggiTray();
+
+  const conGarbo = (async () => {
     // Anche il modello che scrive: se l'abbiamo caricato noi in LM Studio, sono
     // quattro GB che senza questo restavano in memoria dopo che l'utente ha
     // chiuso la suite, occupati da un programma che credeva chiuso.
@@ -237,9 +297,21 @@ app.on("before-quit", async (event) => {
     // Il gateway resterebbe in ascolto sulla porta 8790 anche a suite chiusa:
     // chi si è accoppiato continuerebbe a vedere un PC che non c'è più.
     await spegniAccessoRemoto().catch(() => {});
-    await appManager.closeAll();
-    app.quit();
-  }
-});
+    await appManager.closeAll().catch(() => {});
+  })();
 
-let shuttingDown = false;
+  await Promise.race([conGarbo, pausa(ATTESA_CHIUSURA_MS)]);
+
+  /**
+   * L'ultima parola, e serve sempre.
+   *
+   * Anche quando la via educata è andata a buon fine: un motore che risponde
+   * «mi sto chiudendo» ha comunque figli suoi — i lavoratori di ComfyUI — che
+   * nessuno gli ha detto di chiudere. Sono i «circa 4 processi in background».
+   * Qui il libro dei processi li conosce tutti per nome, e li spegne.
+   */
+  uccidiTutti();
+  app.exit(0);
+}
+
+const pausa = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));

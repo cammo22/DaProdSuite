@@ -13,6 +13,10 @@ lo mette in bacheca.
 Dalla **0.7.3** quello che conta è **arrivarci da fuori**: la rete di casa da
 sola non è più una risposta, e il pannello lo dice.
 
+Dalla **0.7.6** il telefono e il computer **non vedono più la stessa cosa**: dal
+telefono si vede quello che serve a fare, dal computer quello che serve a
+governare. E col computer spento l'app **non cambia faccia**.
+
 ---
 
 ## DaProdConnessione
@@ -157,14 +161,20 @@ C'è un'app Android: si scarica dalla
 `DaProdSuite-telefono-<versione>.apk`.
 
 Il telefono ti avviserà che viene da fuori dal Play Store e ti chiederà di
-permetterlo: è normale per un'app che non passa da un negozio. Una volta
-installata: scrivi **come ti chiami**, **inquadra il QR** sullo schermo del PC,
-e sei dentro.
+permetterlo: è normale per un'app che non passa da un negozio.
 
-**Se il QR non va**, sotto al QR sul computer ci sono due cose scritte:
-l'indirizzo e un numero di otto cifre. Si copiano nelle due caselle in fondo
-alla schermata di collegamento, ed è lo stesso. (Il codice da solo non basta:
-dice chi sei, non a quale computer bussare.)
+Una volta installata, la prima schermata è **la registrazione**, e sono due
+caselle:
+
+1. **come vuoi farti chiamare** — dev'essere un nome libero: se è già di
+   qualcun altro te lo dice lì, e ne scegli un altro. Serve perché quel nome è
+   chi sei in **DaProd**, non solo un'etichetta accanto a una richiesta;
+2. **il codice di otto cifre** che compare sul computer premendo *Invita*, e
+   sotto **l'indirizzo** (la prima volta si copia da lì; le volte dopo è già
+   scritto).
+
+**Il QR resta**, ma è la seconda strada: il tasto sta sotto, e serve a chi non
+ha voglia di battere otto cifre. Dalla 0.7.6 il codice basta e avanza.
 
 ### Chi sei
 
@@ -173,8 +183,8 @@ sul PC accanto a tutto quello che chiedi, e serve a sapere **chi ha chiesto
 cosa** quando in fila ci sono tre lavori di tre persone.
 
 Se il telefono lo usa più di una persona, ognuna ha il suo collegamento: si
-sceglie all'avvio, si cambia dal menu **⋮** in alto a destra. Con una persona
-sola non ti chiede niente e entri dritto.
+sceglie all'avvio, e si cambia dalla **rotella ⚙** in alto a destra → *Cambia
+persona*. Con una persona sola non ti chiede niente e entri dritto.
 
 Togliere una persona (tienila premuta nell'elenco) butta via il **suo**
 collegamento da quel telefono. Sul PC resta nell'elenco finché non la togli
@@ -182,20 +192,78 @@ anche da lì: sono due gesti diversi.
 
 ### Cosa vedi
 
-Le **pagine della suite**, le stesse che vedrebbe un portatile:
+Cinque schede in fondo. Dalla **0.7.6** sono queste, e tre hanno cambiato nome
+perché il nome vecchio prometteva un'altra cosa:
 
-- **Suite** — cosa sta facendo il computer adesso, e le schede da cui chiedere;
-- **Chiedi** — il modulo, che la suite si disegna da sola: quando il PC impara a
-  fare una cosa nuova, la trovi qui senza aggiornare l'app;
-- **Lavori** — le richieste, in tre pile: *adesso*, *finiti*, *messi via*. Se
-  puoi decidere, sotto una richiesta ferma trovi **che ne faccio?** (vedi qui
-  sotto). Quelli finiti si mettono via con un tasto, o si buttano;
-- **Galleria** — due tasti in cima: **le mie cose** e **in bacheca**. Le tue le
-  vedi solo tu; per far vedere qualcosa agli altri la metti in bacheca, e lì
-  compare con scritto chi l'ha fatta. Le immagini si guardano, i video partono e
-  si scorrono, i brani si ascoltano — **senza scaricarli prima**. Con «tieni nel
-  telefono» te li porti dietro: un'immagine e un video finiscono in galleria, un
-  brano fra la musica, sotto «DaProd Suite».
+- **Casa** — in cima un quadrone che dice se funziona; scorrendo, **le ultime
+  cose venute fuori** e i tasti per farne un'altra;
+- **Produzione** (era «Chiedi») — quattro tasti grossi e colorati: **Produzione
+  Immagini**, **Video**, **Musica**, **Audio**. Tocchi e si apre il modulo, che
+  la suite disegna da sola: quando il PC impara a fare una cosa nuova, la trovi
+  qui senza aggiornare l'app. Sotto c'è **parla con un modello** (vedi più
+  giù);
+- **Riepilogo** (era «Lavori») — quattro numeri in cima — in lavorazione, in
+  fila, pronti, aspettano il sì — e sotto **cosa sta girando adesso**, con chi
+  c'è dietro e a che posto sei. Le richieste stanno in tre pile: *adesso*,
+  *finiti*, *messi via*;
+- **Galleria** — due tasti in cima: **Le mie Produzioni** e **Pensieri** (quello
+  che ti hanno mandato). Poi i filtri: tutto, immagini, video, musica e voce.
+  **I video hanno il loro fotogramma** e **i brani la loro copertina**: si vede
+  cosa c'è senza premere play. Tocchi una cosa e si apre **a schermo intero**,
+  con due tasti: *salva nel telefono* e *condividi*;
+- **DaProd** — la bacheca, e il tuo profilo. Vedi sotto.
+
+### DaProd, e il tuo profilo
+
+È la scheda che prima si chiamava «Persone» e mostrava i quadrati della rete.
+Adesso mostra **quello che le persone hanno voluto far vedere**: la faccia di
+chi l'ha fatto, la cosa, e sotto due tasti.
+
+- **♥ mi piace** — su qualunque cosa in bacheca;
+- **☆ tieni** — la fa comparire fra le tue cose. Non è una copia: il file resta
+  di chi l'ha fatto, e se lui la toglie dalla bacheca sparisce anche da te;
+- **il tuo profilo**, in cima: nome, **foto** e una riga sotto al nome. Si cambia
+  tutto con *Modifica*;
+- **Metti una cosa tua** — carichi un file dal telefono e finisce in bacheca,
+  anche se non l'ha generato il computer.
+
+Per mettere in bacheca una cosa che hai generato: aprila a schermo intero dalla
+Galleria e premi **Metti in DaProd**.
+
+### Le impostazioni
+
+La **rotella ⚙** in alto a destra, da qualunque scheda. Dentro c'è tutto quello
+che prima stava sparso fra il menu a tre puntini e la scheda «Persone»:
+
+- **Ricarica** — quando qualcosa sembra fermo. *(E dalla 0.7.6 ricarica davvero:
+  prima, se il computer rispondeva subito, non succedeva niente di visibile.)*
+- **Come siamo messi** — la rete di casa, se ci si arriva da fuori, il firewall,
+  e gli indirizzi;
+- **Le persone** — chi è collegato, cosa può fare, e il tasto per mandargli un
+  file *(solo se puoi decidere)*;
+- **Aggiungi una persona** — il codice e il QR *(solo se puoi decidere)*;
+- **Il computer** — la pausa e i limiti della fila. **Compare solo aprendo la
+  pagina dal computer**: vedi «Chi decide, e cosa succede quando dice di sì»;
+- **Cambia persona** e **Aggiorna l'app** — solo dentro l'app del telefono;
+- **Scollega questo dispositivo**, in fondo e in rosso.
+
+### Parla con un modello (dieci minuti)
+
+In fondo alla scheda **Produzione**. Scegli con chi parlare fra i modelli
+installati sul computer e premi *Comincia a parlare*: da lì hai **dieci minuti**.
+
+Gli dici cosa vorresti — «vorrei una foto di una macchina, e anche un video» — e
+lui prepara **un piano**: uno o più lavori, con le descrizioni già scritte per
+bene. Tu **spunti quelli che vuoi** e premi *Sì, fallo*.
+
+Tre cose da sapere:
+
+- **il modello non fa partire niente da solo.** Propone; decidi tu.
+- **accettare il piano chiude la chiacchierata**, ed è voluto: quel modello
+  occupa metà della scheda video, che è la stessa che serve a generare. Appena i
+  lavori partono, se ne va.
+- **se il computer sta generando**, la chiacchierata aspetta il suo turno e te lo
+  dice. Non si mette a caricare un modello sopra a un video a metà.
 
 ### Che ne faccio? — il menu di una richiesta
 
@@ -231,23 +299,27 @@ non nel telefono.
 ### Quando ti arriva un regalo
 
 Chi sta al computer può mandarti un file quando vuole: lo trascina sul tuo nome
-nella pagina **Persone**, o lo sceglie col tasto. Ricevi la notifica, e il
-**pacco si apre in mezzo allo schermo** la prima volta che apri l'app: dentro
+in **impostazioni → Le persone**, o lo sceglie col tasto. Ricevi la notifica, e
+il **pacco si apre in mezzo allo schermo** la prima volta che apri l'app: dentro
 c'è l'anteprima, se è roba che si può guardare, e il tasto per tenerlo nel
 telefono.
 
-Da lì in poi lo ritrovi **in galleria**, terza linguetta: «arrivati per me».
+Da lì in poi lo ritrovi in **Galleria → Pensieri**. *(Dalla 0.7.6 si chiamano
+così: «regalo» dice che c'è un'occasione, «pensiero» dice solo che qualcuno si è
+ricordato di te.)*
 
 ### E le altre cose che fa
 
 - **avvisa quando un lavoro finisce**, anche ore dopo e con l'app chiusa. Se sul
   telefono ci sono più persone, la notifica dice di chi è;
-- **tiene quello che scrivi quando il PC non c'è** — resta sul telefono e parte
-  da solo appena il computer torna raggiungibile, **anche con l'app chiusa**:
-  ci pensa il lavoro in background, e quando parte te lo dice con una notifica.
-  L'app si apre lo stesso col computer spento, e la schermata che compare è
-  quella per scrivere le richieste che aspettano;
-- **si aggiorna da sola.** Dal menu **⋮**, «Aggiorna l'app». Guarda anche per
+- **funziona col computer spento, e non cambia faccia.** Dalla 0.7.6 non c'è
+  più una schermata di ripiego: è la stessa app, con quello che si è tenuta
+  mentre la linea c'era — le anteprime di tutto, i file che ci stanno, i
+  pensieri arrivati. In cima una riga dice che il computer adesso non risponde.
+  Quello che chiedi si mette in coda e parte da solo appena torna, **anche con
+  l'app chiusa**. E quello che è già nel telefono si salva in galleria anche
+  senza linea;
+- **si aggiorna da sola.** Dalla rotella **⚙**, «Aggiorna l'app». Guarda anche per
   conto suo, una volta al giorno al massimo, e se non c'è niente non ti dice
   niente. È l'unica cosa che l'app manda fuori dalla tua rete: una domanda a
   GitHub su quale sia l'ultima versione, senza niente dentro.
@@ -288,12 +360,43 @@ più di chi ci sta davanti.
 Le cose che non costano niente — guardare la libreria, vedere cosa è acceso,
 leggere la fila — rispondono subito, senza chiedere il permesso a nessuno.
 
+### Il computer resta tuo (0.7.6)
+
+Fin qui la regola era una sola: chi è **admin** genera subito, gli altri
+aspettano. Con quattro persone collegate quella regola da sola vuol dire venti
+generazioni accodate in due minuti, e un computer che per due ore non è più di
+chi ci sta davanti.
+
+Dalla 0.7.6, aprendo **DaProdConnessione sul computer** → rotella ⚙ → **Il
+computer**, ci sono tre interruttori:
+
+- **«Sto usando il computer»** — non parte più niente di nuovo. Quello che sta
+  già girando **si finisce**, ed è voluto: fermare a metà una generazione da
+  mezz'ora vuol dire buttarla via. Si ricorda anche dopo aver chiuso la suite, e
+  dal telefono si legge una riga che dice perché la propria roba aspetta;
+- **chi genera senza aspettare il tuo sì** — *nessuno*, *chi è admin*, oppure
+  *tutti*;
+- **i due tetti** — quanti lavori possono stare in fila in tutto, e quanti a
+  testa. Zero vuol dire senza tetto.
+
+Sopra il tetto **una richiesta non si perde e non si rifiuta**: resta in attesa
+con scritto perché, e **parte da sola** quando la fila si sgombra.
+
+> ⚠ **Questi tre interruttori si vedono solo aprendo la pagina dal computer.**
+> Non è una dimenticanza: un telefono con i permessi da admin decide sulle
+> richieste degli altri — quello sì — ma non può alzarsi i limiti a cui è
+> sottoposto lui. Se potesse, non sarebbero limiti.
+
+E una cosa che si sente e non si vede: **quello che chiedi tu, stando al
+computer, passa davanti**. Non scavalca un lavoro già partito, ma non si mette
+in fila dietro a tre telefoni.
+
 ---
 
 ## Togliere l'accesso a un apparecchio
 
-Nel pannello, sotto **Dispositivi collegati**, ogni riga ha **Togli l'accesso**.
-Vale all'istante e solo per quello: gli altri restano dove sono.
+Impostazioni ⚙ → **Le persone**: ogni riga ha **disconnetti**. Vale all'istante e
+solo per quello: gli altri restano dove sono.
 
 ---
 

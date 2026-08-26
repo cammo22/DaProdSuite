@@ -24,9 +24,9 @@ file si scrive quale delle due metà manca.
 
 ---
 
-## A che punto siamo — 23 agosto 2026
+## A che punto siamo — 26 agosto 2026
 
-**Ultima pubblicata: 0.7.5.** Nove schede dentro la suite, un ambiente Python
+**Ultima pubblicata: 0.7.6.** Nove schede dentro la suite, un ambiente Python
 solo, e il giro che conta — chiedo dal telefono, il computer fa, il file torna —
 **provato da chi la usa**, sul suo PC e sul suo telefono.
 
@@ -56,20 +56,34 @@ fanno quello che ti ho chiesto».
 | Accesso da Internet (tunnel in uscita) | **acceso di suo dalla 0.7.5**, si rialza da solo, e il telefono impara l’indirizzo nuovo; **da provare col telefono fuori casa** |
 | DaProdCinema — Storia: barra, anteprime, cucitura da sola | scritto; **mai girato contro il motore acceso** |
 | Il modello che scrive (LM Studio) | fatto e provato; lo scarico a ogni risposta è **da misurare** |
+| **Telefono e computer con due facce diverse** | fatto, e **guidato in un browser vero** a 375 px: le due facce, il nome unico, la chiacchierata, il foglio delle impostazioni |
+| **Lo specchio offline: la stessa app a computer spento** | scritto e **compila**; il giro vero su un telefono **no** |
+| **DaProd: bacheca, mi piace, tieni, profilo con foto** | fatto e provato in un browser vero; **con due persone vere no** |
+| **Anteprime: fotogramma dei video, copertina dei brani** | le rotte sono provate; l'estrazione con FFmpeg su un video vero **no** |
+| **La copertina cucita dentro il brano** | scritta; **mai fatta su un mp3 vero** (vuole FFmpeg installato) |
+| **Dieci minuti col modello, e il piano che si accetta** | il giro è provato con un modello finto; **contro LM Studio vero no** |
+| **Un turno solo per generazioni e modello** | fatto; la fila si prova da sola, l'effetto su una generazione vera **da misurare** |
+| **I limiti della fila, e solo dal PC** | fatto e provato: le due rotte dicono di no anche a un admin |
+| **La suite che si chiude davvero (albero dei processi)** | scritto; **il giro vero, con ComfyUI acceso, no** |
 
 ### Il prossimo passo
 
 Adesso che il giro base regge, quello che resta è **la stessa cura data alle
 altre otto schede**. In quest'ordine:
 
-1. **le parole di tutta la suite** — la 0.7.0 ha sistemato il collegamento e il
-   telefono, la 0.7.2 la fila e la galleria; l'hub e le altre schede no
-   (§ «Le parole di tutta la suite», qui sotto);
-2. **provare i regali e la bacheca con due persone vere**, che è l'unica cosa
-   che questa release non ha potuto fare;
-3. Tailscale sul telefono, fuori casa;
-4. una storia intera generata guardando la barra;
-5. lo scarico della memoria fra una risposta e una generazione.
+1. **provare la 0.7.6 sul PC vero e sul telefono vero.** È il giro più grosso
+   dalla 0.7.0 e tocca tre cose che qui non si potevano provare: la
+   chiacchierata contro LM Studio, le anteprime e la copertina cucita con
+   FFmpeg, e lo specchio offline su un telefono. In quest'ordine, perché in
+   quest'ordine si vedono;
+2. **guardare se restano ancora processi** dopo tre aperture e tre chiusure. Se
+   il libro dei processi fa il suo mestiere, il terminale non serve più;
+3. **la bacheca con due persone vere**: i mi piace e il «tieni» hanno senso solo
+   in due, e finora sono stati provati da uno solo;
+4. **le parole di tutta la suite** — il telefono e il collegamento sono a posto;
+   l'hub e le altre schede no (§ «Le parole di tutta la suite», qui sotto);
+5. Tailscale sul telefono, fuori casa;
+6. una storia intera generata guardando la barra.
 
 ---
 
@@ -211,6 +225,14 @@ in [AZIONI-E-MCP.md](AZIONI-E-MCP.md); qui restano i tre passi e a che punto son
    e da lì Claude Code guida la suite. Gli strumenti nascono dal catalogo: se ne
    aggiungi uno lì, compare lì.
 3. ⬜ **Needle 2 al posto giusto: dentro.** Questo no.
+
+⚠ **Nota del 26 agosto 2026.** Chiesto: «se needle sta funzionando bene
+sfruttiamolo ancora di più». Needle 2 **non è mai stato costruito** — è questa
+riga, ed è l'unico dei tre passi che manca. Quello che funziona bene, e che è
+stato sfruttato di più nella 0.7.6, è un'altra cosa con un nome simile: il
+**supervisore dei processi**, che adesso tiene un libro di quello che apre e sa
+spegnere un albero intero. Vale la pena non confonderli il giorno che si
+riprende in mano questo punto.
 
 **Cos'è Needle 2.** Un modello da 45 milioni di parametri — 14 MB di file, 28 MB
 di RAM in tutto — che non serve a conversare: sa **scegliere lo strumento giusto

@@ -73,3 +73,35 @@ export async function scaricaDallaVram(nome?: string): Promise<void> {
 function qualcunoAcceso(): boolean {
   return acceso("musica") || acceso("foto") || acceso("cinema");
 }
+
+/**
+ * Il motore ha qualcosa in mano adesso?
+ *
+ * **La stessa domanda che si fa la finestra prima di liberare la memoria**
+ * (`motoreOccupato` in `ponte.js`), fatta però dal processo principale — perché
+ * qui serve a un'altra cosa: a non far partire il modello che scrive mentre chi
+ * sta al computer ha una generazione in corso. Vedi la «guardia» in
+ * `turno.ts`.
+ *
+ * Se il motore non risponde si dice **occupato**: fra aspettare qualche secondo
+ * di troppo e caricare quattro GB sopra a un video a metà, il secondo è peggio.
+ * A motore spento invece è libero davvero, e dirlo occupato bloccherebbe la
+ * fila su una macchina dove non sta girando niente.
+ */
+export async function motoreOccupato(): Promise<boolean> {
+  if (!qualcunoAcceso()) return false;
+  try {
+    const risposta = await fetch(`${MOTORE}/queue`, {
+      headers: { "Cache-Control": "no-store" },
+      signal: AbortSignal.timeout(3000),
+    });
+    if (!risposta.ok) return true;
+    const coda = (await risposta.json()) as {
+      queue_running?: unknown[];
+      queue_pending?: unknown[];
+    };
+    return (coda.queue_running?.length ?? 0) + (coda.queue_pending?.length ?? 0) > 0;
+  } catch {
+    return true;
+  }
+}

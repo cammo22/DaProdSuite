@@ -6,7 +6,54 @@
  * fino all'interfaccia invece di finire in un buffer.
  */
 
-import { spawn } from "node:child_process";
+import { execFileSync, spawn, type ChildProcess } from "node:child_process";
+
+/**
+ * Chi tiene il conto dei processi che apriamo, se qualcuno lo tiene.
+ *
+ * Questo pacchetto non sa niente di Electron né di dove stiano i dati
+ * dell'utente: non può scriverselo da solo. Lo shell, che lo sa, si registra
+ * qui una volta all'avvio — e da quel momento anche `pip`, `uv` e `powershell`
+ * finiscono nel libro dei processi insieme ai motori. Serve perché un
+ * `uv pip install` di torch dura minuti: se la suite si chiude in mezzo, quel
+ * processo resta a scrivere dentro l'ambiente Python di nessuno.
+ *
+ * Torna la funzione da chiamare quando il comando è finito.
+ */
+export type Sorveglianza = (figlio: ChildProcess, comando: string) => () => void;
+
+let sorveglia: Sorveglianza | null = null;
+
+/** Lo shell dice chi tiene il libro. `null` lo stacca. */
+export function sorvegliaProcessi(chi: Sorveglianza | null): void {
+  sorveglia = chi;
+}
+
+/**
+ * Ammazza un processo **e i suoi figli**.
+ *
+ * `child.kill()` su Windows uccide solo chi abbiamo lanciato noi. Un
+ * `uv pip install` lancia a sua volta il compilatore, e quello sopravviveva al
+ * padre: è uno dei processi che restavano in giro. `taskkill /T` scende per
+ * tutto l'albero.
+ */
+function ammazzaAlbero(figlio: ChildProcess): void {
+  const pid = figlio.pid;
+  if (!pid) return;
+  if (process.platform !== "win32") {
+    figlio.kill("SIGKILL");
+    return;
+  }
+  try {
+    execFileSync("taskkill", ["/PID", String(pid), "/T", "/F"], {
+      stdio: "ignore",
+      timeout: 5000,
+      windowsHide: true,
+    });
+  } catch {
+    figlio.kill();
+  }
+}
 
 export interface RunOptions {
   cwd?: string;
@@ -46,6 +93,7 @@ export async function run(
 
   await new Promise<void>((resolve, reject) => {
     const child = spawn(command, args, { cwd, env, windowsHide: true });
+    const dimentica = sorveglia?.(child, command) ?? (() => {});
 
     // Le ultime righe servono al messaggio d'errore: tenerle tutte per un
     // comando che stampa migliaia di righe sarebbe solo memoria sprecata.
@@ -57,7 +105,7 @@ export async function run(
 
     const timer = timeoutMs
       ? setTimeout(() => {
-          child.kill();
+          ammazzaAlbero(child);
           reject(
             new CommandError(
               `${command} non è finito entro ${Math.round(timeoutMs / 1000)}s.`,
@@ -71,7 +119,7 @@ export async function run(
     let annullato = false;
     const interrompi = () => {
       annullato = true;
-      child.kill();
+      ammazzaAlbero(child);
     };
     segnale?.addEventListener("abort", interrompi, { once: true });
 
@@ -103,6 +151,7 @@ export async function run(
     const finito = () => {
       if (timer) clearTimeout(timer);
       segnale?.removeEventListener("abort", interrompi);
+      dimentica();
     };
 
     child.on("error", (err) => {

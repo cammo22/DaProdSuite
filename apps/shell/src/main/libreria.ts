@@ -28,9 +28,11 @@ import {
   statSync,
   writeFileSync,
 } from "node:fs";
+import { copyFileSync, renameSync as spostaFile } from "node:fs";
 import { basename, dirname, extname, join, relative } from "node:path";
 import { APP_IDS, type AppId, type ElementoLibreria, type TipoElemento } from "@daprod/ipc";
 import { codificaUrl } from "./file-scheme";
+import { cuciLaCopertina } from "./anteprime";
 import { OUTPUT_DIR } from "./paths";
 
 const SUFFISSO_COPERTINA = ".cover.jpg";
@@ -205,6 +207,31 @@ class Libreria extends EventEmitter {
 
     writeFileSync(copertina, dati);
     this.segnalaNovita();
+
+    /**
+     * **E poi la si cuce dentro il brano.**
+     *
+     * Chiesto il 26 agosto 2026: «facciamo in modo che nella suite quando una
+     * canzone è completa viene unita l'immagine al file». Il `.cover.jpg`
+     * accanto è una convenzione della suite, e quando il brano finisce nel
+     * telefono di qualcuno quella convenzione non lo segue: un mp3 con la
+     * copertina **dentro** la mostra ovunque.
+     *
+     * Senza `await`, e apposta: chi ha appena generato una copertina la deve
+     * vedere comparire subito nella sua scheda, non fra due secondi di FFmpeg.
+     * Il file accanto resta comunque — è quello che la galleria usa come
+     * anteprima — quindi se la cucitura non riesce non si è perso niente.
+     */
+    if (elemento.tipo === "audio") {
+      void cuciLaCopertina(elemento.percorso)
+        .then((fatto) => {
+          if (fatto) this.segnalaNovita();
+        })
+        .catch(() => {
+          // FFmpeg assente o file occupato: il brano resta com'era, con la sua
+          // copertina di fianco. È esattamente quello che faceva prima.
+        });
+    }
     return true;
   }
 
@@ -353,6 +380,153 @@ class Libreria extends EventEmitter {
     return true;
   }
 
+  /* ------------------------------------------------------------- DaProd */
+
+  /**
+   * Mette o toglie il mi piace di una persona. Torna quanti sono adesso.
+   *
+   * **Sta nel `.json` accanto al file**, come tutto il resto: niente secondo
+   * elenco da tenere allineato, e una cosa spostata a mano si porta dietro i
+   * suoi mi piace. È la stessa regola che vale per l'autore e per la bacheca —
+   * la cartella *è* la libreria.
+   *
+   * Si può mettere su qualunque cosa si abbia il diritto di **vedere**: le
+   * proprie, e quelle che qualcuno ha messo in bacheca. Il controllo sul
+   * diritto di vedere lo fa chi chiama (`remoto.ts`), che è l'unico a sapere
+   * chi sta guardando.
+   */
+  miPiace(id: string, chi: string, mi: boolean): number | null {
+    const elemento = this.trova(id);
+    if (!elemento) return null;
+
+    const prima = leggiElenco(elemento.meta?.["miPiace"]);
+    const dopo = mi ? [...new Set([...prima, chi])] : prima.filter((x) => x !== chi);
+    this.aggiornaMeta(elemento, { miPiace: dopo });
+    return dopo.length;
+  }
+
+  /** Quanti mi piace ha, e se ce l'ha messo questa persona. */
+  miPiaceDi(elemento: ElementoLibreria, chi: string): { quanti: number; mio: boolean } {
+    const elenco = leggiElenco(elemento.meta?.["miPiace"]);
+    return { quanti: elenco.length, mio: elenco.includes(chi) };
+  }
+
+  /**
+   * Tiene da parte una cosa di qualcun altro, o smette di tenerla.
+   *
+   * **Non è una copia.** Il file resta uno e resta di chi l'ha fatto: tenerla
+   * vuol dire farla comparire fra le proprie cose, come un segnalibro. Se chi
+   * l'ha fatta la toglie dalla bacheca, sparisce anche da qui — ed è giusto:
+   * era sua, e ha cambiato idea.
+   */
+  tieni(id: string, chi: string, tenere: boolean): boolean {
+    const elemento = this.trova(id);
+    if (!elemento) return false;
+
+    const prima = leggiElenco(elemento.meta?.["tenutaDa"]);
+    const dopo = tenere ? [...new Set([...prima, chi])] : prima.filter((x) => x !== chi);
+    this.aggiornaMeta(elemento, { tenutaDa: dopo });
+    return true;
+  }
+
+  /** Vero se questa persona l'ha tenuta da parte. */
+  laTiene(elemento: ElementoLibreria, chi: string): boolean {
+    return leggiElenco(elemento.meta?.["tenutaDa"]).includes(chi);
+  }
+
+  /** Vero se è un file caricato a mano da una persona, non generato dalla suite. */
+  eCaricata(elemento: ElementoLibreria): boolean {
+    return elemento.meta?.["caricata"] === true;
+  }
+
+  /**
+   * Una cosa caricata a mano, messa in bacheca.
+   *
+   * **Perché finisce fra i risultati di DaProdConnessione.** La libreria è la
+   * cartella, e la cartella è divisa per scheda: un file caricato da una
+   * persona non è di DaProdFoto né di DaProdMusica, è della scheda che *è* la
+   * bacheca. Non c'è nessun motore che scriva lì dentro, quindi non si
+   * mescola con niente.
+   *
+   * Nasce **già in bacheca**: chi carica un file per la bacheca non deve poi
+   * anche pubblicarlo, sarebbe chiedergli due volte la stessa cosa.
+   */
+  aggiungi(dati: {
+    percorso: string;
+    nome: string;
+    bytes: number;
+    chi: string;
+    chiNome: string;
+    didascalia?: string;
+  }): ElementoLibreria | null {
+    const coda = extname(dati.nome).toLowerCase();
+    // Solo quello che la libreria sa mostrare: un `.exe` in bacheca non è un
+    // contenuto, è un modo di far girare qualcosa sul computer di un altro.
+    if (!TIPI[coda]) return null;
+
+    const dove = this.cartella("connessione");
+    const titolo = unaRiga(dati.didascalia?.trim() || basename(dati.nome, coda));
+    let destinazione = join(dove, `${titolo.slice(0, 70)}${coda}`);
+    for (let n = 2; existsSync(destinazione) && n < 200; n += 1) {
+      destinazione = join(dove, `${titolo.slice(0, 66)} (${n})${coda}`);
+    }
+
+    try {
+      // `rename` fra due cartelle dello stesso disco è istantaneo; se sono
+      // dischi diversi Windows dice di no, e allora si copia e si butta.
+      try {
+        spostaFile(dati.percorso, destinazione);
+      } catch {
+        copyFileSync(dati.percorso, destinazione);
+        rmSync(dati.percorso, { force: true });
+      }
+      writeFileSync(
+        senzaEstensione(destinazione) + ".json",
+        JSON.stringify(
+          {
+            titolo,
+            testo: dati.didascalia?.trim() || titolo,
+            chi: dati.chi,
+            chiNome: dati.chiNome,
+            pubblicato: true,
+            caricata: true,
+          },
+          null,
+          1,
+        ),
+        "utf8",
+      );
+    } catch {
+      return null;
+    }
+
+    this.segnalaNovita();
+    return this.elenco(true).find((e) => e.percorso === destinazione) ?? null;
+  }
+
+  /**
+   * Riscrive il `.json` di un elemento cambiando solo quello che serve.
+   *
+   * Tre gesti diversi scrivevano gli stessi metadati in tre modi diversi — la
+   * bacheca, i mi piace, il «tengo» — e ognuno rischiava di sovrascrivere il
+   * lavoro degli altri due leggendo una copia vecchia. Qui si legge quello che
+   * c'è **adesso** sul disco e ci si sovrappone.
+   */
+  private aggiornaMeta(elemento: ElementoLibreria, cambi: Record<string, unknown>): void {
+    const dove = senzaEstensione(elemento.percorso) + ".json";
+    let attuali: Record<string, unknown> = elemento.meta ?? {};
+    try {
+      if (existsSync(dove)) {
+        attuali = JSON.parse(readFileSync(dove, "utf8")) as Record<string, unknown>;
+      }
+    } catch {
+      // Metadati illeggibili: si riparte da quelli in cache invece di perdere
+      // il gesto che l'utente ha appena fatto.
+    }
+    writeFileSync(dove, JSON.stringify({ ...attuali, ...cambi }, null, 1), "utf8");
+    this.segnalaNovita();
+  }
+
   /** Cancella un elemento con i suoi metadati e la sua copertina. */
   elimina(id: string): boolean {
     const elemento = this.trova(id);
@@ -386,6 +560,18 @@ function unaRiga(testo: string): string {
   const tagliato = pulito.slice(0, 80);
   const spazio = tagliato.lastIndexOf(" ");
   return (spazio > 40 ? tagliato.slice(0, spazio) : tagliato).trim();
+}
+
+/**
+ * Un elenco di id salvato nei metadati, letto senza fidarsi.
+ *
+ * Quei `.json` si possono aprire con il blocco note, e una versione futura può
+ * scriverci dentro qualcos'altro: quello che non è una lista di stringhe vale
+ * come lista vuota, invece di far scoppiare la galleria.
+ */
+function leggiElenco(valore: unknown): string[] {
+  if (!Array.isArray(valore)) return [];
+  return valore.filter((x): x is string => typeof x === "string" && x.length > 0);
 }
 
 /** Il valore se è una stringa con dentro qualcosa, altrimenti niente. */

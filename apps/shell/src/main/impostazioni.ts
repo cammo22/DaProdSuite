@@ -11,7 +11,7 @@
  */
 
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
-import type { Impostazioni, ProfiloMemoria, Velocita } from "@daprod/ipc";
+import type { ChiPassaSubito, Impostazioni, ProfiloMemoria, Velocita } from "@daprod/ipc";
 import { SETTINGS_FILE } from "./paths";
 
 const PREDEFINITE: Impostazioni = {
@@ -36,6 +36,26 @@ const PREDEFINITE: Impostazioni = {
    */
   internet: true,
   precarica: true,
+  /**
+   * Di suo, chi ha i permessi da admin genera subito.
+   *
+   * È quello che è stato chiesto — «un account admin può generare subito senza
+   * aspettare l'ok del pc» — e ha senso: dare a qualcuno i permessi da admin
+   * vuol già dire fidarsi. Gli ospiti no: la loro richiesta resta in attesa
+   * finché qualcuno non la guarda.
+   */
+  accettaDaSola: "admin",
+  /**
+   * Sei in fila, e non è un numero tirato a caso.
+   *
+   * Una generazione lunga sta su questa macchina venti minuti buoni: sei
+   * vogliono dire che l'ultimo della fila aspetta due ore. Oltre, la richiesta
+   * non si perde — resta «in attesa» — ma non parte da sola.
+   */
+  limiteFila: 6,
+  /** Due a testa: uno che genera e uno che aspetta. Il terzo si accetta a mano. */
+  limitePersona: 2,
+  inPausa: false,
 };
 
 let cache: Impostazioni | null = null;
@@ -65,6 +85,13 @@ export function impostazioni(): Impostazioni {
         // aperta come chi installa adesso.
         internet: lette.internet !== false,
         precarica: lette.precarica !== false,
+        accettaDaSola:
+          lette.accettaDaSola === "mai" || lette.accettaDaSola === "tutti"
+            ? lette.accettaDaSola
+            : "admin",
+        limiteFila: numeroSano(lette.limiteFila, PREDEFINITE.limiteFila),
+        limitePersona: numeroSano(lette.limitePersona, PREDEFINITE.limitePersona),
+        inPausa: lette.inPausa === true,
       };
       return cache;
     } catch {
@@ -112,6 +139,43 @@ export function impostaConnessione(accesa: boolean): Impostazioni {
 /** Il tunnel verso Internet, ricordato allo stesso modo. */
 export function impostaInternet(acceso: boolean): Impostazioni {
   return salva({ internet: acceso });
+}
+
+/**
+ * Chi può generare senza aspettare il sì. **Si cambia solo dal computer.**
+ *
+ * Non c'è una rotta del gateway che arrivi qui, e non è una dimenticanza: se un
+ * telefono con i permessi da admin potesse alzarsi da solo i limiti, i limiti
+ * non sarebbero limiti. Il PC è il vero admin.
+ */
+export function impostaAccettaDaSola(chi: ChiPassaSubito): Impostazioni {
+  return salva({ accettaDaSola: chi });
+}
+
+/** I due tetti della fila: quanti lavori in tutto, e quanti a testa. */
+export function impostaLimiti(fila: number, persona: number): Impostazioni {
+  return salva({
+    limiteFila: numeroSano(fila, PREDEFINITE.limiteFila),
+    limitePersona: numeroSano(persona, PREDEFINITE.limitePersona),
+  });
+}
+
+/** «Sto usando il computer»: si ricorda, come tutto il resto qui dentro. */
+export function impostaPausa(inPausa: boolean): Impostazioni {
+  return salva({ inPausa });
+}
+
+/**
+ * Un numero che abbia senso come tetto: intero, non negativo, non assurdo.
+ *
+ * Zero è legittimo e vuol dire «senza tetto»; cento è più di quanto questa
+ * macchina possa generare in un giorno, e serve solo a impedire che un errore
+ * di battitura diventi una fila infinita.
+ */
+function numeroSano(valore: unknown, difetto: number): number {
+  const n = Number(valore);
+  if (!Number.isFinite(n) || n < 0) return difetto;
+  return Math.min(100, Math.floor(n));
 }
 
 /** La procedura guidata è stata vista: non si ripresenta al prossimo avvio. */

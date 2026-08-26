@@ -2,25 +2,26 @@
 <resources>
     <string name="app_name">DaProd Suite</string>
     <string name="menu_puntini">⋮</string>
+    <string name="stemma">◉</string>
+    <string name="claim">Il computer di casa genera immagini, video, musica e voce.\nTu, da qui, gli dici cosa fare.</string>
 
     <!-- Chi sei: la prima schermata -->
     <string name="chi_sei">Chi sei?</string>
-    <string name="chi_sei_perche">Il nome che scegli compare sul PC accanto a tutto quello che chiedi. Se il telefono lo usa più di una persona, ognuna ha il suo — e la fila sul computer dice chi ha chiesto cosa.</string>
+    <string name="chi_sei_perche">Il nome che scegli compare in DaProd accanto a tutto quello che fai. Se il telefono lo usa più di una persona, ognuna ha il suo — e sul computer la fila dice chi ha chiesto cosa.</string>
     <string name="aggiungi_persona">Aggiungi una persona</string>
     <string name="torna_indietro">Torna indietro</string>
     <string name="mai_usato">mai usato</string>
     <string name="usato_adesso">usato adesso</string>
 
-    <!-- Collegarsi -->
-    <string name="titolo_collega">Collega al computer</string>
-    <string name="spiega_collega">Sul PC: DaProd Suite → «Da fuori» in fondo → Accendi → Invita. Poi inquadra il QR. Se sul PC accendi anche «Anche da fuori casa», questo collegamento funziona pure quando sei in giro.</string>
-    <string name="come_ti_chiami">Come ti chiami</string>
-    <string name="hint_nome">Cammo</string>
-    <string name="nota_nome">Serve al PC per sapere chi sei. Puoi scriverlo come vuoi.</string>
-    <string name="btn_scansiona">Inquadra il QR</string>
-    <string name="hint_codice">Codice a 8 cifre</string>
-    <string name="btn_connetti">Ho già il computer: uso solo il codice</string>
-    <string name="nota_codice">Il codice da solo vale solo se ti eri già collegato a questo PC: la prima volta serve il QR, che dice anche dov\'è.</string>
+    <!-- Entrare -->
+    <string name="passo_uno">1 · SCEGLI COME FARTI CHIAMARE</string>
+    <string name="passo_due">2 · BATTI IL CODICE DEL COMPUTER</string>
+    <string name="hint_nome">Il tuo nome</string>
+    <string name="nota_nome">Dev\'essere libero: se è già di qualcuno te lo dico e ne scegli un altro.</string>
+    <string name="btn_scansiona">Oppure inquadra il QR</string>
+    <string name="hint_codice">00000000</string>
+    <string name="btn_entra">Entra</string>
+    <string name="nota_codice">Sul computer apri DaProdConnessione e premi Invita: compare un codice di otto cifre e l\'indirizzo da scrivere qui sopra. Vale pochi minuti.</string>
     <string name="btn_scollega">Scollega</string>
 
     <!-- Stato -->
@@ -28,25 +29,13 @@
     <string name="stato_online">Collegato a</string>
     <string name="stato_non_raggiungibile">non raggiungibile adesso</string>
 
-    <!-- Senza PC -->
-    <string name="senza_pc">Il PC non risponde</string>
-    <string name="senza_pc_spiega">È acceso, con la suite aperta e l\'accesso «Da fuori» acceso? Se sei fuori casa serve anche «Anche da fuori casa» acceso sul PC.</string>
-    <string name="riprova">Riprova adesso</string>
-    <string name="scrivi_lo_stesso">Scrivilo lo stesso</string>
+    <!-- Senza computer -->
+    <string name="senza_pc_avviso">Il computer non risponde: vedi quello che è arrivato fin qui, e quello che chiedi parte da solo appena torna.</string>
+    <string name="senza_copia">Il computer non risponde e su questo telefono non c\'è ancora una copia della sua pagina. Collegati una volta con lui acceso.</string>
 
     <!-- Chiedere -->
-    <string name="crea_richiesta">Chiedi qualcosa</string>
-    <string name="btn_invia">Tieni da parte per quando torna</string>
-    <string name="in_fila">In fila sul PC. Adesso tocca a chi ci sta davanti.</string>
     <string name="salvata_in_coda">PC non raggiungibile: la tengo qui e parte da sola quando torna.</string>
-
-    <!-- La coda -->
-    <string name="titolo_coda">Quello che aspetta qui</string>
-    <string name="oppure_a_mano">Oppure scrivi a mano indirizzo e codice, come li vedi sul computer</string>
     <string name="hint_indirizzo">https://qualcosa.trycloudflare.com</string>
-    <string name="niente_azioni_ricordate">Non so ancora cosa sa fare questo computer: collegati una volta con lui acceso, e da lì in poi potrai scrivere richieste anche da spento.</string>
-    <string name="nessuna_richiesta">Niente in attesa. Quello che scrivi senza PC compare qui.</string>
-    <string name="btn_scarica">Scarica nel telefono</string>
 
     <!-- Il menu dei tre puntini -->
     <string name="menu_cambia">Cambia persona</string>
@@ -64,6 +53,9 @@
     <string name="agg_permesso">Per installare l\'aggiornamento il telefono deve lasciarmelo fare. Ti porto nelle impostazioni: cerca «DaProd Suite» e accendi il permesso, poi torna qui.</string>
     <string name="agg_vai">Portami lì</string>
     <string name="agg_banner">C\'è la versione %1$s</string>
+
+    <!-- Condividere -->
+    <string name="condividi_con">Condividi</string>
 
     <!-- Notifiche -->
     <string name="notifica_canale">Lavori DaProd Suite</string>

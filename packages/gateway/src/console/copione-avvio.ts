@@ -1,0 +1,159 @@
+/**
+ * Il copione, ultima parte: entrare, restare aggiornati, i tasti.
+ *
+ * **Lo stato è vivo, e non c'è un tasto «aggiorna» da nessuna parte.** Il
+ * gateway spinge su una connessione aperta (SSE) a ogni cambiamento — una
+ * richiesta nuova, un lavoro che parte, il tunnel che si alza, il firewall che
+ * si apre — e a ogni spinta si rilegge quel poco che serve.
+ *
+ * Il tasto «Ricarica» nelle impostazioni non serve a questo: serve a quando
+ * qualcosa *sembra* fermo, che è un'altra cosa e capita lo stesso.
+ */
+export const COPIONE_AVVIO = `
+  /* -------------------------------------------------------------- lo stato */
+
+  function disegnaStato(s) {
+    if (!s) return;
+    suite = s;
+    $("nota-versione").textContent =
+      "DaProd Suite " + (s.versione || "") + " su " + (s.computer || "questo computer") +
+      " \\u00b7 questa pagina la serve il computer, e i modelli girano l\\u00ec.";
+    disegnaNumeri();
+  }
+
+  /* ---------------------------------------------------------------- entra */
+
+  async function entra() {
+    for (var s of document.querySelectorAll(".pagina")) s.classList.remove("on");
+    $("fondo").hidden = false;
+    $("apri-impostazioni").hidden = false;
+    vaiA("casa");
+
+    await piantaSessione();
+
+    try {
+      var io = await chiama("/io");
+      ioNome = io.nome || ioNome;
+      ioId = io.id || "";
+      ioFoto = io.foto || "";
+      ioMotto = io.motto || "";
+      localStorage.setItem(CHIAVE_NOME, ioNome);
+    } catch (e) { /* si riprova al giro dopo */ }
+
+    $("chi").hidden = false;
+    disegnaMioProfilo();
+
+    try {
+      azioni = await chiama("/azioni");
+      disegnaTessere();
+      disegnaAzioni();
+    } catch (e) { /* senza azioni restano i lavori e la galleria */ }
+
+    disegnaDueTasti();
+    disegnaFiltri();
+    disegnaFiltriDaprod();
+    await leggiPreset();
+    await guardaAi();
+    try { await leggiMacchina(); } catch (e) { /* offline */ }
+    try { await leggiCoda(); } catch (e) { /* offline */ }
+    try { await leggiRegali(); } catch (e) { /* offline */ }
+    try { disegnaStato(await chiama("/stato")); } catch (e) { /* offline */ }
+    try { await leggiPannello(); } catch (e) { /* offline */ }
+    try { await leggiChiacchierata(); } catch (e) { /* offline */ }
+    apriFlusso();
+  }
+
+  /**
+   * Lo stato dal vivo.
+   *
+   * A ogni spinta si rileggono quattro cose corte. Non è uno spreco: sono
+   * quattro GET su una rete di casa, e in cambio non esiste un momento in cui
+   * la pagina racconta una cosa che non è più vera.
+   */
+  function apriFlusso() {
+    if (flusso) flusso.close();
+    flusso = new EventSource("/stato/stream?token=" + encodeURIComponent(token));
+    flusso.onmessage = function (ev) {
+      try { disegnaStato(JSON.parse(ev.data)); } catch (e) { return; }
+      leggiCoda().catch(function () {});
+      leggiMacchina().catch(function () {});
+      leggiPannello().catch(function () {});
+      leggiRegali().catch(function () {});
+    };
+    flusso.onerror = function () {
+      var box = $("semaforo");
+      box.className = "semaforo male";
+      $("semaforo-faccia").textContent = "\\u2715";
+      $("semaforo-titolo").textContent = "Non riesco a parlare col computer";
+      $("semaforo-perche").textContent = "Provo a riprendere da solo\\u2026";
+    };
+  }
+
+  /* ------------------------------------------------------------- aggancio */
+
+  $("collega").addEventListener("click", collega);
+  $("codice").addEventListener("keydown", function (ev) { if (ev.key === "Enter") collega(); });
+  $("nome").addEventListener("keydown", function (ev) { if (ev.key === "Enter") $("codice").focus(); });
+  $("manda").addEventListener("click", manda);
+  $("annulla").addEventListener("click", chiudiModulo);
+  $("apri-impostazioni").addEventListener("click", apriImpostazioni);
+  $("chi").addEventListener("click", function () { vaiA("daprod"); });
+  $("apri-profilo").addEventListener("click", apriIlProfilo);
+  $("comincia-chiacchiera").addEventListener("click", cominciaChiacchierata);
+  $("chiudi-chiacchiera").addEventListener("click", chiudiLaChiacchierata);
+  $("dillo").addEventListener("click", dilloAlModello);
+  $("cosa-dico").addEventListener("keydown", function (ev) {
+    // Invio manda, invio col maiuscolo va a capo: è quello che fa ogni chat, e
+    // aspettarsi il contrario da questa sarebbe una sorpresa gratis.
+    if (ev.key === "Enter" && !ev.shiftKey) { ev.preventDefault(); dilloAlModello(); }
+  });
+  $("carica-in-bacheca").addEventListener("click", function () { $("file-in-bacheca").click(); });
+  $("file-in-bacheca").addEventListener("change", function () {
+    var file = $("file-in-bacheca").files && $("file-in-bacheca").files[0];
+    $("file-in-bacheca").value = "";
+    if (file) void caricaInBacheca(file);
+  });
+
+  for (var b of document.querySelectorAll("nav.fondo button")) {
+    b.addEventListener("click", (function (quale) {
+      return function () { vaiA(quale); };
+    })(b.dataset.pagina));
+  }
+
+  // Il tasto «indietro» del telefono, e il tasto Esc: chiudono quello che è
+  // aperto sopra la pagina prima di uscire dall'app.
+  document.addEventListener("keydown", function (ev) {
+    if (ev.key !== "Escape") return;
+    var lente = document.querySelector(".lente");
+    if (lente) { lente.remove(); return; }
+    chiudiFoglio();
+  });
+
+  // Tornare sulla pagina è il momento in cui si vuole sapere com'è andata.
+  document.addEventListener("visibilitychange", function () {
+    if (document.visibilityState !== "visible" || !token) return;
+    leggiCoda().catch(function () {});
+    leggiMacchina().catch(function () {});
+    leggiPannello().catch(function () {});
+    leggiRegali().catch(function () {});
+    // Il flusso, dopo un po' in secondo piano, il telefono lo chiude: si riapre.
+    if (!flusso || flusso.readyState === 2) apriFlusso();
+  });
+
+  /**
+   * Un file lasciato cadere **fuori** da una riga non deve aprirsi.
+   *
+   * Senza queste due righe, il browser (e la finestra di DaProdConnessione, che
+   * è un browser) al posto della pagina mostra il file: il pannello sparisce e
+   * bisogna riaprirlo. Con venti file da mandare, capita una volta su tre.
+   */
+  document.addEventListener("dragover", function (ev) { ev.preventDefault(); });
+  document.addEventListener("drop", function (ev) { ev.preventDefault(); });
+
+  // Dal telefono il QR non lo si inquadra da qui: lo fa l'app, con la camera.
+  // Dirlo in una pagina che non può farlo sarebbe una promessa a vuoto.
+  if (window.DaProdApp) $("nota-qr").hidden = true;
+
+  $("nome").value = ioNome;
+  if (token) entra();
+`;

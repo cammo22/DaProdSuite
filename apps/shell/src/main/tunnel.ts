@@ -36,6 +36,7 @@
  */
 
 import { spawn, type ChildProcess } from "node:child_process";
+import { registra, uccidiAlbero } from "./processi";
 import { chmodSync, existsSync, mkdirSync, renameSync, statSync, unlinkSync } from "node:fs";
 import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
@@ -232,6 +233,9 @@ export async function accendiTunnel(porta: number, rialzo = false): Promise<Stat
       { windowsHide: true, stdio: ["ignore", "pipe", "pipe"] },
     );
     processo = figlio;
+    // Nel libro dei processi: `cloudflared` era uno dei quattro che restavano
+    // in giro quando la suite si chiudeva male.
+    registra(figlio, "cloudflared (strada da Internet)");
 
     let deciso = false;
     const scadenza = setTimeout(() => {
@@ -322,9 +326,11 @@ export async function spegniTunnel(perRiaccendere = false): Promise<void> {
   processo = null;
   if (figlio && !figlio.killed) {
     figlio.kill();
-    // Un attimo per lasciargli chiudere la connessione con garbo. Se non basta
-    // pazienza: è un processo suo, e non tiene niente di nostro aperto.
-    await new Promise((r) => setTimeout(r, 200));
+    // Un attimo per lasciargli chiudere la connessione con garbo.
+    await new Promise((r) => setTimeout(r, 300));
+    // Se non è bastato, si scende per l'albero: `cloudflared` apre un processo
+    // suo per il tunnel vero, e quello sopravviveva al padre.
+    if (figlio.exitCode === null && figlio.pid) uccidiAlbero(figlio.pid);
   }
   if (stato.fase !== "spento") cambia({ fase: "spento", indirizzo: "", quota: undefined });
 }

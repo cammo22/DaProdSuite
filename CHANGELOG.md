@@ -10,6 +10,248 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ---
 
+## 0.7.6 — Due programmi invece di uno, e la macchina che resta tua
+
+**26 agosto 2026.** Il giro più grosso dalla 0.7.0, e nasce da una frase sola:
+«ho visto che è identica all'app che si apre su pc, ma io vorrei una versione
+android e una pc». Aveva ragione, e non per una questione di gusto: chi apre
+questa roba **dal computer** la apre per governare — chi è collegato, chi passa
+davanti, quanti lavori accettare, il firewall. Chi la apre **dal telefono** la
+apre per fare una cosa. Mostrare gli stessi diciotto comandi a tutti e due vuol
+dire dare a uno metà dei suoi e all'altro il doppio di quello che gli serve.
+
+---
+
+### Il telefono adesso ha la sua faccia
+
+**Cinque schede, e tre hanno cambiato nome perché il nome era sbagliato.**
+
+| prima | adesso | a che domanda risponde |
+|---|---|---|
+| Casa | **Casa** | funziona? e cos'ho fatto |
+| Chiedi | **Produzione** | voglio fare una cosa nuova |
+| Lavori | **Riepilogo** | la mia roba a che punto è |
+| Galleria | **Galleria** | fammi vedere quello che è venuto fuori |
+| Persone | **DaProd** | cosa hanno fatto gli altri |
+
+**Produzione** ha quattro tasti grossi e colorati — Immagini, Video, Musica,
+Audio — e basta. Le azioni di servizio (gli ultimi risultati, com'è messa la
+suite, la fila delle richieste) dal telefono non ci sono più: erano cinque voci
+su nove, con lo stesso peso delle quattro per cui uno apre l'app.
+
+**Riepilogo** era un elenco lungo di righe e adesso è quattro numeri in cima —
+in lavorazione, in fila, pronti, aspettano il sì — e sotto **cosa sta girando
+adesso**, con chi c'è dietro e a che posto sei.
+
+**Galleria** ha due tasti: *Le mie Produzioni* e *Pensieri*. I regali si
+chiamano così adesso, ed è meglio: «regalo» dice che c'è un'occasione,
+«pensiero» dice solo che qualcuno si è ricordato di te.
+
+**Casa**, da utente, non mostra più quanti sono collegati né quante richieste
+aspettano il tuo sì: sono numeri di chi governa la fila, non di chi ci sta
+dentro. Al loro posto, scorrendo, ci sono le ultime cose venute fuori.
+
+**Le impostazioni sono un posto solo.** C'era un menu a tre puntini nell'app con
+cinque voci e una scheda nella pagina con altre cinque cose: due posti per la
+stessa famiglia di gesti, e nessuno dei due completo. Adesso c'è la rotella in
+alto a destra, da qualunque scheda: ricarica, come siamo messi, le persone,
+aggiungi una persona, il computer, aggiorna l'app, scollegati.
+
+**E il tasto Ricarica adesso ricarica.** Prima rifaceva il giro degli indirizzi
+e poi *forse* riapriva la pagina: quando il computer rispondeva subito non
+succedeva niente di visibile, ed era esattamente il momento in cui uno lo
+premeva.
+
+---
+
+### Col computer spento non cambia più niente
+
+Questa è la cosa che si sente di più usandola.
+
+Prima, se il computer non rispondeva, l'app mostrava **un'altra schermata**: un
+menu a tendina, un modulo e una lista. Uscivi di casa, aprivi, e al posto della
+tua galleria trovavi uno spinner. Era, letteralmente, un altro programma.
+
+Adesso **è la stessa pagina**. La Casa, la Produzione, il Riepilogo, la
+Galleria, i Pensieri: tutto al suo posto, con quello che è arrivato fin lì. In
+cima una riga dice che il computer adesso non risponde, e quello che chiedi si
+mette in coda e parte da solo appena torna.
+
+Funziona così: mentre la linea c'è, il telefono **si tiene** quello che riceve —
+la pagina stessa, le risposte del computer, le anteprime di tutto e i file che
+ci stanno (fino a 40 MB l'uno). Quando il computer sparisce, a rispondere alla
+pagina è il telefono. Quello che non si può fare senza computer lo dice con una
+frase invece che con un errore di rete.
+
+E da lì si può **salvare in galleria** anche senza linea, se il file è già in
+casa.
+
+---
+
+### La registrazione, e il nome che è tuo
+
+All'avvio c'è una **pagina d'ingresso**: un nome, un codice, un tasto. Il QR è
+sceso alla riga sotto — «il login è obbligatorio il QR, ma lo vorrei opzionale,
+il codice va benissimo».
+
+**Il nome adesso è unico.** Se ne scegli uno già preso te lo dico lì, con il
+cursore già nella casella giusta, e non dopo — quando quel nome sarebbe già
+sotto a tutto quello che hai chiesto. Serviva perché da questa versione il nome
+non è più un'etichetta accanto a una richiesta: è chi sei in DaProd.
+
+---
+
+### DaProd: la bacheca diventa un posto
+
+La scheda che si chiamava «Persone» mostrava i quadrati della rete. Adesso
+mostra **quello che le persone hanno deciso di far vedere**, con la faccia di
+chi l'ha fatto, il cuore e il tasto per tenerlo da parte.
+
+- **Mi piace** su qualunque cosa in bacheca. Senza, chi ci mette una cosa non sa
+  se l'ha guardata qualcuno, e la volta dopo non ce la mette.
+- **Tieni** una cosa di un altro: compare fra le tue, come un segnalibro. Non è
+  una copia — se chi l'ha fatta la toglie dalla bacheca, sparisce anche da te.
+- **Il tuo profilo**: nome, foto, e una riga sotto al nome. Si cambia tutto.
+- **Carica una cosa tua** in bacheca, anche se non l'ha generata il computer.
+
+---
+
+### Si vede quello che c'è
+
+Tre riquadri neri in meno.
+
+- **I video hanno il loro fotogramma.** Un `<video>` senza poster è un
+  rettangolo nero finché non premi play: dodici rettangoli neri non sono una
+  galleria, sono un indovinello. Adesso il computer estrae un fotogramma e lo
+  tiene da parte.
+- **I brani hanno la loro copertina**, e non solo in galleria: quando una
+  canzone è completa **l'immagine viene cucita dentro il file**. Un mp3 che
+  finisce nel tuo telefono la mostra nel lettore, in macchina, ovunque.
+- **Toccando una cosa si apre a schermo intero**, con il tasto per salvarla nel
+  telefono e quello per condividerla con le altre app.
+
+Il fotogramma e la cucitura vogliono FFmpeg installato sul computer. Se non c'è,
+non si rompe niente: si torna a com'era.
+
+---
+
+### Dieci minuti con un modello, che può usare la suite
+
+Dalla Produzione, in fondo: **parla con un modello** fra quelli installati sul
+computer. Gli dici cosa vorresti — «vorrei una foto di una macchina, e anche un
+video» — e lui prepara **un piano**: uno o più lavori, scritti per bene, con le
+descrizioni già fatte. Tu spunti quelli che vuoi e dici di sì.
+
+Tre cose lo rendono possibile su una scheda da 8 GB, e sono le stesse tre che
+lo rendono onesto:
+
+1. **Dura dieci minuti.** Quei quattro GB e mezzo sono gli stessi che servono a
+   generare: un modello caricato «per ogni evenienza» è una generazione che non
+   parte.
+2. **Tiene la macchina per sé** mentre parla, quindi non c'è modo che una
+   generazione parta a metà frase e gli porti via i pesi da sotto.
+3. **Accettare il piano chiude la chiacchierata.** Nell'istante in cui i lavori
+   partono, il modello non serve più e la sua memoria sì. Non è un effetto
+   collaterale: è il punto.
+
+E il modello non fa partire niente da solo. Propone; decidi tu.
+
+---
+
+### Il computer resta tuo
+
+«Io devo poter usare comunque il computer mentre queste persone sono
+collegate.» Adesso si può, e in tre modi.
+
+**Il turno.** Fino alla 0.7.5 c'erano due file che non si conoscevano: le
+generazioni, serie, una per volta; e le domande al modello che scrive, che non
+avevano nessuna fila e prima di rispondere svuotavano la memoria video — anche
+mentre una generazione la stava usando. Su otto GB non è un dettaglio di
+eleganza: è la ragione per cui un video moriva a metà se qualcuno, nello stesso
+momento, chiedeva al modello di riscrivere un prompt. Adesso il turno è **uno**,
+e chi lavora lavora da solo.
+
+**Chi sta al computer passa davanti.** Quello che chiedi tu non si mette in fila
+dietro a tre telefoni. Non scavalca un lavoro già partito — fermarlo a metà
+vorrebbe dire buttarlo via — ma non aspetta il suo turno per cortesia.
+
+**«Sto usando il computer».** Un interruttore che non interrompe niente: finisce
+quello che c'è e non ne fa partire altro. Si ricorda fra un avvio e l'altro, e
+dal telefono si vede una riga che dice perché la propria roba aspetta.
+
+**E i limiti li mette solo il PC.** Chi genera senza aspettare il tuo sì
+(nessuno / chi è admin / tutti), quanti lavori possono stare in fila in tutto, e
+quanti a testa. Un telefono con i permessi da admin decide sulle richieste degli
+altri — quello sì — ma non può alzarsi i limiti a cui è sottoposto lui: se
+potesse, non sarebbero limiti. Le due rotte che li cambiano rispondono «questo
+si cambia solo dal computer» a chiunque non sia questa macchina.
+
+Sopra il tetto una richiesta **non si perde e non si rifiuta**: resta in attesa
+con scritto perché, e parte da sola quando la fila si sgombra.
+
+---
+
+### La suite si chiude davvero
+
+«A volte quando si apre e chiude rimangono circa 4 processi in background, e
+ogni volta per farla ripartire devo andare nel terminale e terminarli.»
+
+Erano due cose che si sommavano.
+
+**Uccidere un processo non uccideva la sua famiglia.** Windows fa così: si
+ammazzava `python.exe`, e ComfyUI moriva davvero — ma i lavoratori che aveva
+aperto lui, e il compilatore che apriva `uv`, restavano orfani con la scheda
+video in mano. Adesso si scende per tutto l'albero.
+
+**E se la suite moriva male, non spegneva niente.** Un crash, un «termina
+attività», un aggiornamento andato storto: il codice di chiusura non girava, e
+quei processi restavano lì fino al riavvio del computer. Ecco perché serviva il
+terminale.
+
+Adesso la suite **tiene un libro di chi apre**, e al prossimo avvio spegne quello
+che è rimasto — prima di provare ad aprire le stesse porte. Con un controllo che
+non è un dettaglio: un numero di processo si ricicla, quindi accanto si scrive
+anche di chi dovrebbe essere, e prima di ammazzare si chiede a Windows chi è
+quel numero adesso. Se non torna, si lascia stare.
+
+E la chiusura ha un tetto: dodici secondi per spegnersi con garbo, poi le
+maniere forti, poi si esce comunque. Prima, se un motore non rispondeva, la
+finestra spariva e la chiusura non finiva mai.
+
+---
+
+### Sotto il cofano
+
+- La pagina della console era un file da 2300 righe e stava per diventarne
+  4000: adesso sono sei pezzi con un mestiere ciascuno, sotto
+  `packages/gateway/src/console/`.
+- La compilazione del gateway **pulisce prima di ricompilare**. Serviva: dopo
+  aver spostato la console in una cartella, il vecchio file compilato restava in
+  `dist` e vinceva su quello nuovo — la suite serviva la pagina di ieri e le
+  prove passavano lo stesso. Trovato così.
+- Le anteprime uscivano tutte dichiarate `image/jpeg`, ma l'anteprima di
+  un'immagine **è** l'immagine — quasi sempre un PNG — e con `nosniff` il
+  browser la rifiutava. Adesso il tipo si legge dal file. Trovato guardando la
+  galleria in un browser vero, non leggendo il codice.
+- 349 prove automatiche, 44 in più della 0.7.5: il nome unico che non brucia il
+  codice, le rotte della macchina che dicono di no a chi non è il PC, i mi
+  piace, il profilo, il giro intero della chiacchierata.
+
+---
+
+### Cosa devi fare tu
+
+Aggiorna la suite e l'app del telefono. La prima volta apri l'app **stando in
+casa**: è il giro in cui il telefono si porta a casa la pagina nuova e le
+anteprime. Da lì in poi funziona anche col computer spento.
+
+⚠ **Da provare tu**, perché qui non si è potuto: la chiacchierata contro LM
+Studio vero, la copertina cucita dentro un brano vero (vuole FFmpeg), il
+fotogramma di un video vero, e l'app su un telefono. Il resto è stato guidato in
+un browser vero contro un gateway vero.
+
+---
+
 ## 0.7.5 — Da fuori casa, davvero
 
 **23 agosto 2026.** «Funziona bene, ma solo in rete locale.» Detto così sembra

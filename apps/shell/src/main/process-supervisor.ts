@@ -10,6 +10,7 @@
 
 import { spawn, type ChildProcess } from "node:child_process";
 import type { ServiceLogger } from "./logging";
+import { registra, uccidiAlbero } from "./processi";
 
 /**
  * Quante righe di stderr tenere da parte per raccontare una morte in avvio.
@@ -68,6 +69,8 @@ export class ProcessSupervisor {
   private ultimeRighe: string[] = [];
   /** Si risolve quando il processo e' finito **e** i suoi stream sono chiusi. */
   private chiuso: Promise<void> = Promise.resolve();
+  /** Toglie questo processo dal libro dei processi quando muore. */
+  private dimentica: () => void = () => {};
 
   get running(): boolean {
     return this.child !== null && this.child.exitCode === null;
@@ -85,7 +88,19 @@ export class ProcessSupervisor {
       cwd: this.config.cwd,
       env: this.config.env,
       windowsHide: true,
+      /**
+       * Fuori Windows, un gruppo tutto suo.
+       *
+       * Serve a poter ammazzare il motore **e i suoi figli** con un colpo solo
+       * (`kill(-pid)`): senza, i lavoratori che ComfyUI apre restano orfani. Su
+       * Windows la stessa cosa la fa `taskkill /T`, che non ha bisogno di
+       * niente al momento dell'avvio.
+       */
+      detached: process.platform !== "win32",
     });
+    // Segnato nel libro *subito*: se la suite muore adesso, al prossimo avvio
+    // questo numero va spento prima di riprovare ad aprire la stessa porta.
+    this.dimentica = registra(this.child, this.config.name);
 
     // `exit` arriva **prima** che le ultime righe di stderr siano state lette:
     // sono due code diverse, e un processo che muore in avvio le scrive proprio
@@ -195,14 +210,28 @@ export class ProcessSupervisor {
     if (!this.child) return;
 
     try {
-      await fetch(this.config.shutdownUrl, { method: "POST" });
+      await fetch(this.config.shutdownUrl, { method: "POST", signal: AbortSignal.timeout(4000) });
     } catch {
       // può essere già morto o non ancora pronto: si passa al kill
     }
     await this.waitForExit(5000);
-    if (this.child && this.child.exitCode === null) {
-      this.child.kill();
+    /**
+     * **L'albero, non il capofamiglia.**
+     *
+     * `child.kill()` mandava un segnale a `python.exe` e basta. Python moriva,
+     * e i processi che aveva aperto lui — i lavoratori di ComfyUI, il
+     * compilatore di `uv` — restavano vivi con la VRAM in mano: sono i
+     * «circa 4 processi in background» che costringevano ad aprire il
+     * terminale a ogni riavvio della suite. `uccidiAlbero` scende fino in
+     * fondo.
+     */
+    const pid = this.child?.pid;
+    if (pid && this.child && this.child.exitCode === null) {
+      this.config.logger.write(`non si è chiuso da solo: spengo l'albero di ${pid}
+`, true);
+      uccidiAlbero(pid);
     }
+    this.dimentica();
     this.child = null;
     this.config.logger.close();
   }

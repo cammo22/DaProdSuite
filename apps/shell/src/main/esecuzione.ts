@@ -49,6 +49,7 @@ import { CHANNELS } from "@daprod/ipc";
 import { appManager } from "./app-manager";
 import { libreria } from "./libreria";
 import { createLogger } from "./logging";
+import { turno, type Corsia } from "./turno";
 
 const log = createLogger("fila");
 const annota = (riga: string): void => log.write(`${riga}\n`, false);
@@ -87,6 +88,15 @@ export interface DaEseguire {
    * alla galleria di mostrare a ognuno le sue cose - vedi `libreria.intitola`.
    */
   daId: string;
+  /**
+   * In che corsia sta.
+   *
+   * Chi sta al computer passa davanti a chi arriva da fuori: è la risposta a
+   * «devo poter usare comunque il computer mentre queste persone sono
+   * collegate». Non scavalca un lavoro **già partito** — quello si finisce —
+   * ma non si mette nemmeno dietro a tre telefoni per generare una cosa sua.
+   */
+  corsia?: Corsia;
 }
 
 /** Chi ci dice com'è andata, e dove mettere il risultato. */
@@ -126,6 +136,57 @@ export const filaInCorso = (): { id: string; app: string; testo: string } | null
 
 export const filaInAttesa = (): number => fila.length;
 
+/**
+ * Tutta la fila, in ordine di partenza: quello che sta girando e chi aspetta.
+ *
+ * Serve al riepilogo — sul telefono e sul pannello del PC — perché «tre in
+ * attesa» non dice niente a chi vuole sapere **se la sua** è la prossima.
+ */
+export const filaCompleta = (): {
+  id: string;
+  app: string;
+  testo: string;
+  da: string;
+  corsia: Corsia;
+  posto: number;
+}[] => [
+  ...(inCorso
+    ? [
+        {
+          id: inCorso.id,
+          app: inCorso.app,
+          testo: inCorso.testo,
+          da: inCorso.da,
+          corsia: inCorso.corsia ?? ("in-fila" as Corsia),
+          posto: 0,
+        },
+      ]
+    : []),
+  ...fila.map((r, i) => ({
+    id: r.id,
+    app: r.app,
+    testo: r.testo,
+    da: r.da,
+    corsia: r.corsia ?? ("in-fila" as Corsia),
+    posto: i + 1,
+  })),
+];
+
+/**
+ * Toglie dalla fila un lavoro non ancora partito.
+ *
+ * Quello che sta girando non si tocca: interromperlo a metà vuol dire buttare
+ * via il tempo di scheda video già speso, e chi lo ha chiesto lo scoprirebbe
+ * senza nemmeno un file. Torna vero se c'era ed è stato tolto.
+ */
+export function togliDallaFila(id: string): boolean {
+  const dove = fila.findIndex((r) => r.id === id);
+  if (dove < 0) return false;
+  fila.splice(dove, 1);
+  annota(`tolto dalla fila: ${id}`);
+  return true;
+}
+
 /** Questa app sa eseguire da sola quello che le viene chiesto? */
 export const sannoFarlo = (app: string): boolean => SANNO_FARLO.includes(app as AppId);
 
@@ -155,13 +216,32 @@ async function giraLaFila(): Promise<void> {
   if (!prossima) return;
 
   inCorso = prossima;
+  /**
+   * **Prima il turno, poi il lavoro.**
+   *
+   * Qui dentro si aspetta che la macchina sia libera: che non stia rispondendo
+   * il modello che scrive, e che chi sta al computer non abbia messo in pausa.
+   * Fino alla 0.7.5 questa attesa non c'era e le due cose partivano insieme —
+   * su otto GB di scheda video vuol dire che ne falliva una.
+   *
+   * Il biglietto si rilascia nel `finally` di `colTurno`, sempre: anche se la
+   * generazione fallisce, anche se la scheda non risponde.
+   */
+  let biglietto = null as Awaited<ReturnType<typeof turno.prendi>> | null;
   try {
+    biglietto = await turno.prendi({
+      mestiere: "generazione",
+      corsia: prossima.corsia ?? "in-fila",
+      che: `${maiuscola(prossima.app)}: ${prossima.testo.slice(0, 50)}`,
+      chi: prossima.da,
+    });
     await esegui(prossima);
   } catch (err) {
     const motivo = err instanceof Error ? err.message : String(err);
     annota(`fallita ${prossima.id}: ${motivo}`);
     cablaggio?.fallita(prossima.id, motivo);
   } finally {
+    turno.rilascia(biglietto);
     inCorso = null;
     // La prossima parte adesso, non fra un giro di orologio.
     if (fila.length) void giraLaFila();

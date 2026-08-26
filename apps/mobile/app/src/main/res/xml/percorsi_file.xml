@@ -2,10 +2,20 @@
 <!--
   Cosa questa app è disposta a passare a un'altra app.
 
-  Una sola cartella: quella dove finisce l'APK dell'aggiornamento, che va
-  consegnato all'installatore di Android. Niente altro — il token che apre il PC
-  di casa sta nelle preferenze, e da qui non si raggiunge.
+  Due cartelle, e nessuna delle due contiene niente di segreto.
+
+  1. **aggiornamenti**: dove finisce l'APK che l'app si scarica da sola, e che
+     va consegnato all'installatore di Android — da Android 7 un file non si
+     passa più come percorso.
+  2. **condivisi**: la copia temporanea di una cosa che si sta condividendo con
+     un'altra app. Chiesto il 26 agosto 2026 («un pulsante condividi»): per
+     mandare una foto su WhatsApp bisogna dargliela, e per dargliela bisogna
+     avere un posto da cui gliela si può passare.
+
+  Niente altro — il token che apre il PC di casa sta nelle preferenze, e da qui
+  non si raggiunge.
 -->
 <paths>
     <cache-path name="aggiornamenti" path="aggiornamenti/" />
+    <cache-path name="condivisi" path="condivisi/" />
 </paths>

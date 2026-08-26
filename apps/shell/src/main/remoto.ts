@@ -22,7 +22,9 @@ import {
   type Dispositivo,
   type Esecutore,
   type FornitoreAi,
+  type FornitoreChiacchierata,
   type FornitoreLibreria,
+  type FornitoreMacchina,
   type FornitorePannello,
   type FornitorePreset,
   type InvitoQr,
@@ -45,8 +47,26 @@ import { aiDisponibile, migliora } from "./migliora";
 import { elencoPreset, eliminaPreset, salvaPreset } from "./preset";
 import { REMOTO_ARCHIVIO, REMOTO_DIR } from "./paths";
 import { indirizziBuoni, ipLocale, reti } from "./reti";
-import { impostaConnessione, impostaInternet, impostazioni } from "./impostazioni";
-import { accoda, collegaEsecuzione } from "./esecuzione";
+import {
+  impostaAccettaDaSola,
+  impostaConnessione,
+  impostaInternet,
+  impostaLimiti,
+  impostaPausa,
+  impostazioni,
+} from "./impostazioni";
+import { accoda, collegaEsecuzione, filaCompleta, togliDallaFila } from "./esecuzione";
+import { turno } from "./turno";
+import { anteprimaDi, puoAvereAnteprima } from "./anteprime";
+import {
+  accettaIlPiano,
+  battuta,
+  chiudiChiacchierata,
+  collegaChiacchierata,
+  cominciaChiacchierata,
+  miaChiacchierata,
+  modelliPerChiacchierare,
+} from "./chiacchierata";
 import { accendiTunnel, spegniTunnel, statoTunnel, suTunnelCambiato } from "./tunnel";
 import { apriLaPorta, statoFirewall, type StatoFirewall } from "./firewall";
 
@@ -56,6 +76,25 @@ const PORTA = 8790;
 /** Un solo archivio per tutta la vita della suite: i dati non si perdono. */
 const archivio = new Archivio(REMOTO_ARCHIVIO);
 const remoto = new Remoto(archivio, REMOTO_DIR);
+
+/**
+ * Come si comporta la fila su questo computer.
+ *
+ * Il gateway la chiede, non la tiene: le impostazioni stanno qui e si cambiano
+ * solo dal PC. È il modo in cui «il pc è il vero admin» smette di essere una
+ * buona intenzione — non esiste una rotta HTTP che arrivi a questi quattro
+ * numeri, quindi nemmeno un telefono con i permessi da admin può alzarsi i
+ * propri limiti.
+ */
+remoto.decideLaFila(() => {
+  const scelte = impostazioni();
+  return {
+    chiPassaSubito: scelte.accettaDaSola,
+    limiteFila: scelte.limiteFila,
+    limitePersona: scelte.limitePersona,
+    inPausa: scelte.inPausa,
+  };
+});
 
 let gateway: Gateway | null = null;
 let portaReale = 0;
@@ -327,9 +366,20 @@ const fornitoreLibreria: FornitoreLibreria = {
     const eIlComputer = filtro.chi === PADRONE_DI_CASA;
     return libreria
       .cerca(cerca)
-      .filter((e) =>
-        eIlComputer ? true : bacheca ? libreria.inBacheca(e) : libreria.padrone(e) === filtro.chi,
-      )
+      .filter((e) => {
+        if (eIlComputer) return true;
+        if (bacheca) return libreria.inBacheca(e);
+        /**
+         * **Le tue, e quelle che hai tenuto da parte.**
+         *
+         * Tenere una cosa di un altro non ne fa una copia: la fa comparire fra
+         * le proprie, come un segnalibro. E smette di comparire nell'istante in
+         * cui chi l'ha fatta la toglie dalla bacheca — era sua, ha cambiato
+         * idea, e un segnalibro non è un diritto acquisito.
+         */
+        if (libreria.padrone(e) === filtro.chi) return true;
+        return libreria.laTiene(e, filtro.chi) && libreria.inBacheca(e);
+      })
       .slice(0, Math.max(1, Math.min(200, filtro.quanti ?? 60)))
       .map((e) => ({
         id: e.id,
@@ -343,6 +393,16 @@ const fornitoreLibreria: FornitoreLibreria = {
         chiNome: typeof e.meta?.["chiNome"] === "string" ? (e.meta["chiNome"] as string) : undefined,
         pubblicato: libreria.inBacheca(e),
         mia: libreria.padrone(e) === filtro.chi,
+        quantiMiPiace: libreria.miPiaceDi(e, filtro.chi).quanti,
+        mioMiPiace: libreria.miPiaceDi(e, filtro.chi).mio,
+        tenuta: libreria.laTiene(e, filtro.chi),
+        caricata: libreria.eCaricata(e),
+        didascalia:
+          typeof e.meta?.["testo"] === "string" ? (e.meta["testo"] as string) : undefined,
+        // Se c'è un fotogramma o una copertina, la galleria lo sa **prima** di
+        // chiederlo: chiedere un'anteprima che non esiste vuol dire dodici 404
+        // a ogni schermata.
+        anteprima: puoAvereAnteprima(e),
       }));
   },
 
@@ -385,7 +445,201 @@ const fornitoreLibreria: FornitoreLibreria = {
     if (fatto) sveglia();
     return fatto;
   },
+
+  /**
+   * L'anteprima: stesso permesso del file vero.
+   *
+   * Non è un dettaglio: un fotogramma di un video è **il video**, ridotto a
+   * un'immagine. Se si potesse chiedere l'anteprima di una cosa che non si può
+   * vedere, la separazione fra le persone sarebbe finta.
+   */
+  async anteprima(id, chi) {
+    const elemento = libreria.trova(id);
+    if (!elemento) return null;
+    const suo = libreria.padrone(elemento) === chi || chi === PADRONE_DI_CASA;
+    const vista = suo || libreria.inBacheca(elemento);
+    if (!vista) return null;
+    return anteprimaDi(elemento);
+  },
+
+  /** Mi piace: su quello che si ha il diritto di vedere, e su niente altro. */
+  miPiace(id, chi, mi) {
+    const elemento = libreria.trova(id);
+    if (!elemento) return null;
+    const suo = libreria.padrone(elemento) === chi || chi === PADRONE_DI_CASA;
+    if (!suo && !libreria.inBacheca(elemento)) return null;
+    const quanti = libreria.miPiace(id, chi, mi);
+    if (quanti !== null) sveglia();
+    return quanti;
+  },
+
+  /** Tenere da parte vale solo su quello che sta in bacheca: le tue le hai già. */
+  tieni(id, chi, tenere) {
+    const elemento = libreria.trova(id);
+    if (!elemento || !libreria.inBacheca(elemento)) return false;
+    const fatto = libreria.tieni(id, chi, tenere);
+    if (fatto) sveglia();
+    return fatto;
+  },
+
+  aggiungi(dati) {
+    const voce = libreria.aggiungi({
+      percorso: dati.percorso,
+      nome: dati.nome,
+      bytes: dati.bytes,
+      chi: dati.chi,
+      chiNome: dati.chiNome,
+      didascalia: dati.didascalia,
+    });
+    if (!voce) return null;
+    sveglia();
+    return {
+      id: voce.id,
+      nome: voce.nome,
+      tipo: voce.tipo,
+      app: voce.app,
+      creato: voce.creato,
+      bytes: voce.bytes,
+      mime: mimeDi(voce.percorso, voce.tipo),
+      chi: dati.chi,
+      chiNome: dati.chiNome,
+      pubblicato: true,
+      mia: true,
+      caricata: true,
+      didascalia: dati.didascalia,
+      anteprima: puoAvereAnteprima(voce),
+    };
+  },
 };
+
+/* ------------------------------------------------------------ la macchina */
+
+/**
+ * Com'è messo il computer, e chi può cambiarlo.
+ *
+ * **La riga che conta è `sonoLaCasa`.** Lo stato lo leggono tutti — chi aspetta
+ * ha diritto di sapere perché aspetta — ma gli interruttori li vede e li preme
+ * soltanto DaProdConnessione, cioè il computer stesso. È così che «il pc è il
+ * vero admin» smette di essere una buona intenzione: un telefono con i permessi
+ * da admin decide sulle richieste degli altri, ma non può alzarsi i limiti a
+ * cui è sottoposto lui.
+ */
+const fornitoreMacchina: FornitoreMacchina = {
+  stato(dispositivo) {
+    const scelte = impostazioni();
+    const stato = turno.stato();
+    const lavori = filaCompleta();
+    const trattenute = remoto.archivi.datiCorrenti.richieste.filter(
+      (r) => r.stato === "in-attesa" && r.trattenuta,
+    );
+
+    return {
+      adesso: stato.adesso
+        ? { che: stato.adesso.che, chi: stato.adesso.chi, mestiere: stato.adesso.mestiere }
+        : null,
+      fila: [
+        // Prima quello che il turno conosce (le domande al modello), poi la
+        // fila delle generazioni: sono due elenchi perché sono due cose, ma
+        // chi guarda ne deve vedere uno solo.
+        ...stato.fila.map((b) => ({
+          id: b.id,
+          che: b.che,
+          chi: b.chi,
+          mestiere: b.mestiere as string,
+          tuo: b.chi === dispositivo.nome,
+        })),
+        ...lavori
+          .filter((l) => l.posto > 0)
+          .map((l) => ({
+            id: l.id,
+            che: `${nomeScheda(l.app)}: ${l.testo.slice(0, 60)}`,
+            chi: l.da,
+            mestiere: "generazione",
+            tuo: l.da === dispositivo.nome,
+          })),
+      ],
+      inPausa: stato.sospesa,
+      motivoPausa: stato.motivoSospensione,
+      trattenute: trattenute.map((r) => ({
+        id: r.id,
+        testo: r.testo.slice(0, 120),
+        perche: r.trattenuta ?? "",
+        tuo: r.daDispositivo === dispositivo.id,
+      })),
+      regole: {
+        chiPassaSubito: scelte.accettaDaSola,
+        limiteFila: scelte.limiteFila,
+        limitePersona: scelte.limitePersona,
+      },
+      sonoLaCasa: dispositivo.id === ID_DI_CASA,
+    };
+  },
+
+  pausa(inPausa) {
+    accessoRemoto.pausa(inPausa);
+  },
+
+  regole(opzioni) {
+    accessoRemoto.chiPassaSubito(opzioni.chiPassaSubito);
+    accessoRemoto.limiti(opzioni.limiteFila, opzioni.limitePersona);
+  },
+
+  togli(id) {
+    const esito = accessoRemoto.togliDallaFila(id);
+    return esito.ok ? null : (esito.errore ?? "Non sono riuscito a toglierlo.");
+  },
+};
+
+/** Come si chiama una scheda, per scriverlo accanto a un lavoro in fila. */
+function nomeScheda(app: string): string {
+  const id = app as AppId;
+  return APPS[id]?.name ?? app;
+}
+
+/* ------------------------------------------------------ la chiacchierata */
+
+/**
+ * Dieci minuti col modello: qui c'è solo il collegamento.
+ *
+ * Il mestiere sta in `chiacchierata.ts`, che sa di LM Studio e del turno. Il
+ * gateway non deve sapere né l'una né l'altra cosa: sa che c'è qualcuno che
+ * regge una conversazione e che sa mettere in fila quello che ne esce.
+ */
+const fornitoreChiacchierata: FornitoreChiacchierata = {
+  modelli: () => modelliPerChiacchierare(),
+  comincia: (opzioni) => cominciaChiacchierata(opzioni),
+  dico: (opzioni) => battuta(opzioni),
+  mia: (dispositivoId) => miaChiacchierata(dispositivoId),
+  chiudi: (id, dispositivoId) => chiudiChiacchierata(id, dispositivoId),
+  accetta: (opzioni) => accettaIlPiano(opzioni),
+};
+
+/**
+ * Quello che il modello propone, messo in fila come qualunque altra richiesta.
+ *
+ * **Nessuna corsia preferenziale**, e ci tengo: una richiesta nata da una
+ * chiacchierata passa dagli stessi tetti e dallo stesso ordine di una scritta a
+ * mano. Se bastasse chiedere a un modello per scavalcare la fila, i tetti
+ * sarebbero una porta con la chiave attaccata.
+ */
+collegaChiacchierata({
+  chiedi(opzioni) {
+    const chi = remoto
+      .listaDispositivi()
+      .find((d) => d.id === opzioni.dispositivoId);
+    if (!chi) return "Non ti riconosco più.";
+    remoto.creaRichiesta({
+      tipo: opzioni.app,
+      app: opzioni.app,
+      testo: opzioni.testo,
+      opzioni: { ...opzioni.campi, azione: opzioni.azione },
+      daDispositivo: chi,
+    });
+    gateway?.aggiorna();
+    sveglia();
+    return null;
+  },
+});
 
 /* ------------------------------------------------------------ il modello */
 
@@ -552,6 +806,8 @@ async function accendi(): Promise<StatoAccesso> {
     pannello: fornitorePannello,
     ai: fornitoreAi,
     preset: fornitorePreset,
+    macchina: fornitoreMacchina,
+    chiacchierata: fornitoreChiacchierata,
   });
   // Chi può arrivare: tutta la rete se la connessione è accesa, solo questo
   // computer se è spenta. In tutti e due i casi il gateway **c'è**, perché è
@@ -616,6 +872,9 @@ async function riapri(): Promise<void> {
 export function riprendiAccessoRemoto(): void {
   const scelte = impostazioni();
   chiudiIlavoriRimastiAmezzAria();
+  // La pausa si ricorda: chi ha messo in pausa ieri sera non deve ritrovare
+  // tre telefoni che generano stamattina senza averlo chiesto.
+  if (scelte.inPausa) turno.sospendi(true, "era in pausa dalla volta scorsa");
   void (async () => {
     try {
       // Sempre, anche a connessione spenta: da spenta ascolta solo su
@@ -966,13 +1225,26 @@ collegaEsecuzione({
   },
   consegna(id, file) {
     consegna(id, file);
+    // La fila si è accorciata: qualcuno che aspettava per via di un tetto può
+    // partire adesso. Senza questa riga i tetti sarebbero una porta che non si
+    // riapre — vedi `rivediTrattenute`.
+    liberaLaFila();
   },
   fallita(id, motivo) {
     remoto.cambiaStato(id, adminDiCasa(), "scartata", { motivo });
     gateway?.aggiorna();
     sveglia();
+    liberaLaFila();
   },
 });
+
+/** Un posto si è liberato: chi era trattenuto da un tetto può passare. */
+function liberaLaFila(): void {
+  const partite = remoto.rivediTrattenute();
+  if (!partite.length) return;
+  gateway?.aggiorna();
+  sveglia();
+}
 
 /**
  * Accettata vuol dire **falla**.
@@ -992,6 +1264,16 @@ remoto.suAccettata((richiesta) => {
     // Chi l'ha chiesta resta attaccato al file che ne esce: è quello che fa
     // sì che nella galleria ognuno veda le sue cose.
     daId: richiesta.daDispositivo,
+    /**
+     * **Chi sta al computer passa davanti.**
+     *
+     * Chiesto il 26 agosto 2026: «se sono in modalità che sto ricevendo devo
+     * poter mandare in coda anche i miei prompt». Poterli mandare non basta:
+     * se finissero dietro a tre telefoni, chi ospita aspetterebbe un'ora per
+     * una cosa sua sul proprio computer. Non scavalca un lavoro **già
+     * partito** — quello si finisce — ma non si mette nemmeno in fondo.
+     */
+    corsia: richiesta.daDispositivo === ID_DI_CASA ? "subito" : "in-fila",
   });
 });
 
@@ -1010,6 +1292,53 @@ export const accessoRemoto = {
   revoca,
   decidi,
   consegna,
+  /* ------------------------------------------------- il governo della fila */
+  /**
+   * «Sto usando il computer».
+   *
+   * Due cose insieme, e devono restare insieme: il turno smette di far partire
+   * lavori nuovi *e* le richieste che arrivano non si accettano più da sole.
+   * Farne una sola vorrebbe dire una pausa che si scavalca da fuori.
+   */
+  pausa(inPausa: boolean): { ok: true } {
+    impostaPausa(inPausa);
+    turno.sospendi(inPausa, "chi sta al computer lo sta usando");
+    if (!inPausa) liberaLaFila();
+    gateway?.aggiorna();
+    sveglia();
+    return { ok: true };
+  },
+  /** Chi genera senza aspettare un sì: mai, solo chi decide, o tutti. */
+  chiPassaSubito(chi: "mai" | "admin" | "tutti"): { ok: true } {
+    impostaAccettaDaSola(chi);
+    liberaLaFila();
+    gateway?.aggiorna();
+    sveglia();
+    return { ok: true };
+  },
+  /** I due tetti: quanti lavori in fila in tutto, e quanti a testa. */
+  limiti(fila: number, persona: number): { ok: true } {
+    impostaLimiti(fila, persona);
+    liberaLaFila();
+    gateway?.aggiorna();
+    sveglia();
+    return { ok: true };
+  },
+  /** Toglie dalla fila un lavoro non ancora partito, e lo dice a chi aspettava. */
+  togliDallaFila(id: string): EsitoDecisione {
+    togliDallaFila(id);
+    const errore = remoto.cambiaStato(id, adminDiCasa(), "scartata", {
+      motivo: "Tolto dalla fila da chi sta al computer.",
+    });
+    gateway?.aggiorna();
+    sveglia();
+    liberaLaFila();
+    return errore ? { ok: false, errore } : { ok: true };
+  },
+  /** Com'è messa la macchina adesso: chi lavora, chi aspetta, se è in pausa. */
+  comeVaLaMacchina() {
+    return { turno: turno.stato(), fila: filaCompleta(), scelte: impostazioni() };
+  },
   onChanged(fn: () => void): () => void {
     ascoltatori.add(fn);
     return () => ascoltatori.delete(fn);

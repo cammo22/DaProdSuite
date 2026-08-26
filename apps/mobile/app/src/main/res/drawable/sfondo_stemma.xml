@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Lo stemma della schermata d'ingresso: lo stesso quadrato smussato viola della
+  pagina web, così la prima cosa che si vede aprendo l'app e la prima cosa che
+  si vede aprendo la console sono la stessa cosa.
+
+  Una sfumatura e non un colore pieno: il colore pieno su un fondo scuro sembra
+  un riquadro di errore.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <gradient
+        android:startColor="#9b6cff"
+        android:centerColor="#6d28d9"
+        android:endColor="#0e7490"
+        android:angle="300" />
+    <corners android:radius="24dp" />
+</shape>

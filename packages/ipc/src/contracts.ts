@@ -156,7 +156,43 @@ export interface Impostazioni {
    * uno alla volta. Scalda il processo, non la scheda.
    */
   precarica: boolean;
+  /**
+   * Chi può far partire un lavoro senza aspettare il sì di chi sta al computer.
+   *
+   * **Questa scelta si fa solo qui, sul PC.** È il punto di «il pc è il vero
+   * admin»: un telefono con i permessi da admin decide sulle richieste degli
+   * altri, ma *quanto* può fare da solo lo stabilisce la macchina, e nessuna
+   * rotta del gateway permette di cambiarlo da fuori.
+   *
+   * - `mai`: tutto passa dal sì di chi sta al computer, com'era prima;
+   * - `admin`: chi ha i permessi da admin genera subito, gli ospiti aspettano;
+   * - `tutti`: chiunque sia collegato genera subito.
+   */
+  accettaDaSola: ChiPassaSubito;
+  /**
+   * Quanti lavori possono aspettare in fila, in tutto. `0` vuol dire senza tetto.
+   *
+   * Serve a tenere il computer usabile: venti richieste accettate in automatico
+   * sono venti generazioni di fila, e nel frattempo la macchina non è più di
+   * nessuno. Oltre il tetto le richieste non spariscono — restano «in attesa» e
+   * le si accetta a mano quando la fila si è svuotata.
+   */
+  limiteFila: number;
+  /** Quanti lavori può avere in fila una persona sola. `0` vuol dire senza tetto. */
+  limitePersona: number;
+  /**
+   * «Sto usando il computer»: non parte più niente di nuovo.
+   *
+   * Quello che sta già girando **si finisce** — fermare a metà una generazione
+   * da mezz'ora vorrebbe dire buttarla via — ma da lì in poi la fila aspetta.
+   * Si ricorda fra un avvio e l'altro: chi ha messo in pausa ieri sera non
+   * vuole ritrovare tre telefoni che generano stamattina.
+   */
+  inPausa: boolean;
 }
+
+/** Chi può far partire un lavoro senza il sì di chi sta al computer. */
+export type ChiPassaSubito = "mai" | "admin" | "tutti";
 
 /* ----------------------------------------------------------------------- llm */
 

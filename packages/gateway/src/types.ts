@@ -27,6 +27,15 @@ export interface Dispositivo {
   accoppiato: number;
   /** Ultima volta che ha parlato col gateway. */
   ultimoAccesso: number;
+  /**
+   * La foto del profilo: il nome del file, dentro la cartella degli invii.
+   *
+   * Dalla 0.7.6, con DaProd. Un nome senza faccia, in una bacheca, è una riga
+   * di testo che si scorre via.
+   */
+  foto?: string;
+  /** La riga sotto al nome, scritta da chi sta dietro a quel nome. */
+  motto?: string;
 }
 
 /** Il dispositivo senza il token: è quel che si può mostrare in giro. */
@@ -87,7 +96,33 @@ export interface Richiesta {
   testoOriginale?: string;
   /** Chi l'ha riscritta: `mano` o `ai`. Vuoto se è ancora come è arrivata. */
   riscrittaDa?: "mano" | "ai";
+  /**
+   * Perché non è partita da sola, se poteva.
+   *
+   * Vuoto vuol dire «aspetta un sì, come tutte le richieste degli ospiti».
+   * Compilato vuol dire che il computer *avrebbe* potuto farla partire e ha
+   * scelto di no — la fila è piena, ne hai già due, chi ci sta davanti sta
+   * lavorando — e chi ha chiesto merita di leggere quale delle tre.
+   */
+  trattenuta?: string;
 }
+
+/**
+ * Come si comporta la fila su questa macchina, chiesto al computer.
+ *
+ * Il gateway non tiene queste scelte e non le può cambiare: le legge quando gli
+ * servono. Sono le impostazioni della suite, e si toccano solo dal PC.
+ */
+export type RegolaFila = () => {
+  /** `mai`, `admin` o `tutti`: chi genera senza aspettare un sì. */
+  chiPassaSubito: "mai" | "admin" | "tutti";
+  /** Quanti lavori possono stare in fila in tutto. `0` = senza tetto. */
+  limiteFila: number;
+  /** Quanti ne può avere in fila una persona sola. `0` = senza tetto. */
+  limitePersona: number;
+  /** Chi sta al computer lo sta usando: niente parte da solo. */
+  inPausa: boolean;
+};
 
 /** Un file finito, pronto da scaricare. */
 export interface Risultato {
@@ -236,6 +271,28 @@ export interface VoceLibreria {
   pubblicato?: boolean;
   /** Vero se è tua: lo decide il gateway guardando chi sta chiedendo. */
   mia?: boolean;
+  /**
+   * Quanti hanno messo mi piace, e se ce l'hai messo tu.
+   *
+   * Nasce con DaProd, la bacheca: senza un segno che dica «l'ho vista e mi è
+   * piaciuta», una bacheca è una cartella condivisa con lo sfondo scuro.
+   */
+  quantiMiPiace?: number;
+  mioMiPiace?: boolean;
+  /** Tenuta da parte da chi guarda: compare fra le sue cose anche se non è sua. */
+  tenuta?: boolean;
+  /**
+   * C'è un'anteprima pronta per questa voce.
+   *
+   * Vale per i video (un fotogramma) e per i brani (la copertina): senza, la
+   * galleria del telefono mostra un rettangolo nero finché non premi play — che
+   * è esattamente quello che è stato chiesto di togliere.
+   */
+  anteprima?: boolean;
+  /** Un file caricato a mano da una persona, non generato dalla suite. */
+  caricata?: boolean;
+  /** Le due righe scritte sotto da chi l'ha messa in bacheca. */
+  didascalia?: string;
 }
 
 /** Chi sa rispondere sulla libreria: lo passa lo shell al gateway. */
@@ -263,6 +320,35 @@ export interface FornitoreLibreria {
   pubblica(id: string, chi: string, pubblicato: boolean): boolean;
   /** Butta via una voce. Solo il padrone della voce può farlo. */
   elimina(id: string, chi: string): boolean;
+  /**
+   * L'anteprima di una voce: il fotogramma di un video, la copertina di un brano.
+   *
+   * Torna il percorso di un'immagine già pronta, o null se per quella voce non
+   * ce n'è. **Si fa una volta e si tiene**: estrarre un fotogramma costa un
+   * `ffmpeg`, e una galleria che ne lancia venti scorrendo è una galleria che
+   * non scorre.
+   */
+  anteprima?(id: string, chi: string): Promise<string | null>;
+  /** Mette o toglie il mi piace di questa persona. Torna quanti sono adesso. */
+  miPiace?(id: string, chi: string, mi: boolean): number | null;
+  /** Tiene da parte una cosa di qualcun altro, o smette di tenerla. */
+  tieni?(id: string, chi: string, tenere: boolean): boolean;
+  /**
+   * Un file caricato a mano da una persona, da mettere in bacheca.
+   *
+   * È l'altra metà di DaProd: una bacheca dove si può solo mostrare quello che
+   * il computer ha generato è una vetrina, non un posto dove si sta. Il file
+   * arriva già scritto sul disco; qui gli si dà un posto in libreria.
+   */
+  aggiungi?(opzioni: {
+    percorso: string;
+    nome: string;
+    mime: string;
+    bytes: number;
+    chi: string;
+    chiNome: string;
+    didascalia?: string;
+  }): VoceLibreria | null;
 }
 
 /* ------------------------------------------------------------- i regali */
@@ -427,4 +513,170 @@ export interface FornitorePreset {
   elenco(app?: string): Preset[];
   salva(preset: Omit<Preset, "id" | "quando">): Preset;
   elimina(id: string, chi: string): boolean;
+}
+
+/* ------------------------------------------------------------ la macchina */
+
+/**
+ * Com'è messo il computer adesso: chi lavora, chi aspetta, cosa è permesso.
+ *
+ * **Perché è una cosa sola e non tre.** Chi guarda vuole rispondere a una
+ * domanda — *la mia roba quando parte?* — e per rispondere servono insieme il
+ * turno, la fila e le regole. Tre rotte separate vorrebbero dire tre risposte
+ * che arrivano in tre momenti diversi e non tornano mai del tutto.
+ */
+export interface StatoMacchina {
+  /** Cosa sta lavorando adesso. Null vuol dire: il computer è libero. */
+  adesso: { che: string; chi: string; mestiere: string } | null;
+  /** Chi aspetta, in ordine di partenza. */
+  fila: { id: string; che: string; chi: string; mestiere: string; tuo: boolean }[];
+  /** Chi sta al computer lo sta usando: non parte niente di nuovo. */
+  inPausa: boolean;
+  /** Perché è in pausa, se è stato detto. */
+  motivoPausa?: string;
+  /** Le richieste ferme per via di un tetto, con il loro perché. */
+  trattenute: { id: string; testo: string; perche: string; tuo: boolean }[];
+  /**
+   * Le regole di questa macchina.
+   *
+   * Ci sono sempre — chi aspetta ha diritto di sapere *perché* aspetta — ma si
+   * **cambiano solo dal computer**: vedi `sonoLaCasa`.
+   */
+  regole: {
+    chiPassaSubito: "mai" | "admin" | "tutti";
+    limiteFila: number;
+    limitePersona: number;
+  };
+  /**
+   * Chi sta guardando è il computer stesso.
+   *
+   * Solo lui vede — e può premere — gli interruttori delle regole. È la riga
+   * che rende vero «il pc è il vero admin»: un telefono con i permessi da admin
+   * decide sulle richieste, ma non sui limiti a cui è sottoposto.
+   */
+  sonoLaCasa: boolean;
+}
+
+/** Chi sa rispondere sulla macchina: lo passa lo shell. */
+export interface FornitoreMacchina {
+  stato(dispositivo: Dispositivo): StatoMacchina;
+  /** «Sto usando il computer». Solo dal computer. */
+  pausa(inPausa: boolean): void;
+  /** Chi genera senza aspettare un sì, e i due tetti. Solo dal computer. */
+  regole(opzioni: {
+    chiPassaSubito: "mai" | "admin" | "tutti";
+    limiteFila: number;
+    limitePersona: number;
+  }): void;
+  /** Toglie dalla fila un lavoro non ancora partito. Torna il motivo se non va. */
+  togli(id: string): string | null;
+}
+
+/* -------------------------------------------------------- la chiacchierata */
+
+/**
+ * Dieci minuti col modello, e il modello può usare la suite.
+ *
+ * **Cosa è stato chiesto, testualmente:** «puoi fare richiesta al pc di parlare
+ * per 10 minuti con un modello, quel modello mentre parli ha la possibilità di
+ * usare la suite: se io gli scrivo *vorrei fare una foto di una macchina*, il
+ * modello potrà creare tutto un piano e lo invia all'utente; se l'utente lo
+ * accetta il modello fa partire la richiesta e nel frattempo viene scaricato
+ * dalla memoria».
+ *
+ * Le tre cose che rendono questa cosa possibile su una scheda da 8 GB:
+ *
+ * **1. È a tempo.** Il modello resta caricato per la durata della sessione e
+ * poi se ne va. Non è avarizia: quei quattro GB sono gli stessi che servono a
+ * generare, e un modello che resta caricato «per ogni evenienza» è una
+ * generazione che non parte.
+ *
+ * **2. Tiene il turno.** Per tutta la sessione la macchina è sua — vedi
+ * `turno.ts` nello shell — quindi non c'è modo che una generazione parta a metà
+ * frase e porti via i pesi da sotto.
+ *
+ * **3. Accettare il piano la chiude.** È il punto: nell'istante in cui i lavori
+ * partono, il modello serve a niente e i suoi GB servono a tutto. «Nel frattempo
+ * viene scaricato dalla memoria» è esattamente questo.
+ */
+export interface Chiacchierata {
+  id: string;
+  /** Il dispositivo che sta parlando. */
+  dispositivoId: string;
+  /** Il modello scelto, come lo chiama LM Studio. */
+  modello: string;
+  /** Quando scade, in millisecondi. */
+  scade: number;
+  /** Le battute, dalla prima. */
+  battute: BattutaChiacchierata[];
+  /** Il piano proposto dal modello e non ancora deciso, se ce n'è uno. */
+  piano?: PianoLavori;
+}
+
+export interface BattutaChiacchierata {
+  /** Chi ha parlato: `io` è la persona, `modello` è il modello. */
+  chi: "io" | "modello";
+  testo: string;
+  quando: number;
+}
+
+/**
+ * Quello che il modello propone di far fare al computer.
+ *
+ * Non parte niente finché la persona non dice di sì: un modello che accende la
+ * scheda video da solo, mentre chiacchiera, è esattamente il genere di sorpresa
+ * che questo programma non deve fare.
+ */
+export interface PianoLavori {
+  id: string;
+  /** Una riga che dice cosa si è capito, con le parole di chi legge. */
+  riassunto: string;
+  lavori: LavoroDelPiano[];
+}
+
+export interface LavoroDelPiano {
+  /** L'azione del catalogo: `genera.immagine`, `genera.video`… */
+  azione: string;
+  /** L'app che la esegue: foto, cinema, musica, voce. */
+  app: string;
+  /** Cosa mostrare a chi deve dire di sì: «una foto di una macchina rossa». */
+  che: string;
+  /** I campi già riempiti, pronti da mandare in fila. */
+  campi: Record<string, string>;
+}
+
+/** Chi sa reggere una chiacchierata: lo passa lo shell. */
+export interface FornitoreChiacchierata {
+  /** I modelli installati su questo computer, fra cui scegliere. */
+  modelli(): Promise<{ id: string; caricato: boolean }[]>;
+  /**
+   * Comincia una sessione. Torna il motivo se non si può — modello assente,
+   * macchina in pausa, un'altra chiacchierata già in corso.
+   */
+  comincia(opzioni: {
+    dispositivoId: string;
+    chiNome: string;
+    modello: string;
+  }): Promise<{ sessione: Chiacchierata } | { errore: string }>;
+  /** Una battuta. Torna la sessione aggiornata, col piano se ne ha fatto uno. */
+  dico(opzioni: {
+    id: string;
+    dispositivoId: string;
+    testo: string;
+  }): Promise<{ sessione: Chiacchierata } | { errore: string }>;
+  /** La sessione di questo dispositivo, se ce n'è una viva. */
+  mia(dispositivoId: string): Chiacchierata | null;
+  /** Chiude la sessione e libera la memoria. */
+  chiudi(id: string, dispositivoId: string): void;
+  /**
+   * Accetta il piano: i lavori vanno in fila e il modello se ne va.
+   *
+   * `quali` sono gli indici dei lavori da fare: chi ne vuole due su tre non
+   * deve accettare tutto o niente.
+   */
+  accetta(opzioni: {
+    id: string;
+    dispositivoId: string;
+    quali: number[];
+  }): Promise<{ quanti: number } | { errore: string }>;
 }
