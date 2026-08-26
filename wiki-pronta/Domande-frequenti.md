@@ -66,6 +66,46 @@ stessa scheda video e rallenta parecchio — non è rotto, sta condividendo la
 GPU. Aspetta che l'altro lavoro finisca, o scegli un modello più piccolo in
 LM Studio per una risposta più rapida.
 
+### Ho chiuso la suite e non riparte: cosa succede?
+
+**Dalla 0.7.6 non dovrebbe più succedere**, e vale la pena sapere cos'era.
+
+I motori della suite sono programmi separati (Python, ComfyUI, il tunnel). Fino
+alla 0.7.5, chiudendo la suite, si spegnevano loro ma **non i programmi che
+avevano aperto a loro volta**: restavano tre o quattro processi in giro con la
+scheda video occupata, e siccome tenevano ancora le porte, la suite riaperta non
+riusciva a ripartire. L'unico modo era aprire il Gestione attività e chiuderli a
+mano.
+
+Adesso la suite tiene un elenco di tutto quello che apre e, alla chiusura,
+spegne l'albero intero. E se la chiusura è andata male — un crash, un «termina
+attività», un aggiornamento interrotto — **al prossimo avvio ripulisce lei**,
+prima di provare ad aprire le stesse porte.
+
+Se ti capita ancora: chiudi la suite, aspetta una decina di secondi, e riaprila.
+Il giro di pulizia è la prima cosa che fa.
+
+### Sono in tanti a usarla e il computer non è più mio
+
+È esattamente la cosa che la **0.7.6** è andata a sistemare. Apri
+**DaProdConnessione sul computer** → rotella ⚙ → **Il computer**:
+
+- **«Sto usando il computer»** ferma i lavori nuovi. Quello che sta già girando
+  si finisce — fermarlo a metà vorrebbe dire buttarlo via — ma da lì in poi si
+  aspetta;
+- **chi genera senza aspettare il tuo sì**: nessuno, solo chi è admin, o tutti;
+- **quanti lavori in fila** in tutto, e **quanti a testa**.
+
+Sopra il tetto le richieste non si perdono: restano in attesa con scritto
+perché, e partono da sole quando la fila si sgombra.
+
+Questi tre interruttori **si vedono solo dal computer**: un telefono con i
+permessi da admin decide sulle richieste degli altri, ma non può alzarsi i
+limiti a cui è sottoposto lui.
+
+E quello che chiedi tu, stando al computer, **passa davanti** a quello che
+arriva dai telefoni.
+
 ### Un'app non si apre e parla di librerie: cosa faccio?
 
 In cima all'hub c'è una riga con un pallino: è l'**ambiente Python**, quello che

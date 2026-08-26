@@ -1,7 +1,5 @@
 package it.daprod.suite.net
 
-import it.daprod.suite.data.Azione
-import it.daprod.suite.data.Richiesta
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
@@ -59,27 +57,66 @@ class GatewayClient(
             }
         }
 
-    /** Cosa la suite sa fare adesso. L'app non lo sa da sé: lo chiede. */
-    suspend fun azioni(): List<Azione> = withContext(Dispatchers.IO) {
-        val req = conToken().url(a("/azioni")).build()
+    /**
+     * La pagina della console, così come il computer la serve.
+     *
+     * Serve allo specchio: senza una copia della pagina, col computer spento
+     * non c'è niente da caricare. Si richiede a ogni collegamento riuscito, così
+     * quando la suite si aggiorna il telefono se ne accorge da solo.
+     */
+    suspend fun paginaConsole(): String = withContext(Dispatchers.IO) {
+        val req = conToken().url(a("/")).build()
         condiviso.newCall(req).execute().use { res ->
-            val testo = res.body?.string().orEmpty()
-            if (!res.isSuccessful) throw GatewayException(messaggioDi(testo, res.code))
-            val arr = JSONArray(testo)
-            (0 until arr.length()).map { Azione.daJson(arr.getJSONObject(it)) }
+            if (!res.isSuccessful) throw GatewayException("La pagina non è arrivata (${res.code}).")
+            res.body?.string().orEmpty()
         }
     }
 
-    /** Le richieste visibili a questo dispositivo (chi decide le vede tutte). */
-    suspend fun richieste(): List<Richiesta> = withContext(Dispatchers.IO) {
-        val req = conToken().url(a("/richieste")).build()
-        condiviso.newCall(req).execute().use { res ->
-            val testo = res.body?.string().orEmpty()
-            if (!res.isSuccessful) throw GatewayException(messaggioDi(testo, res.code))
-            val arr = JSONArray(testo)
-            (0 until arr.length()).map { Richiesta.daJson(arr.getJSONObject(it)) }
+    /**
+     * Una rotta qualunque, presa così com'è: i byte e il tipo.
+     *
+     * **È il mattone dello specchio.** Le risposte del gateway si tengono nel
+     * formato in cui arrivano e si ridanno uguali: rileggerle e ricostruirle
+     * vorrebbe dire una seconda implementazione del contratto, e la seconda
+     * implementazione è quella che diverge il giorno che il gateway aggiunge un
+     * campo.
+     */
+    suspend fun prendiGrezzo(percorso: String): Pair<ByteArray, String> =
+        withContext(Dispatchers.IO) {
+            val req = conToken().url(a(percorso)).build()
+            condiviso.newCall(req).execute().use { res ->
+                if (!res.isSuccessful) throw GatewayException("Non arriva (${res.code}): $percorso")
+                val tipo = res.header("Content-Type") ?: "application/octet-stream"
+                val corpo = res.body?.bytes() ?: throw GatewayException("È arrivato vuoto: $percorso")
+                corpo to tipo
+            }
+        }
+
+    /** Quello che c'è in libreria, ridotto a cosa serve per decidere se tenerlo. */
+    suspend fun vociDellaLibreria(rotta: String): List<VoceLib> = withContext(Dispatchers.IO) {
+        val (corpo, _) = prendiGrezzo(rotta)
+        val arr = JSONObject(String(corpo)).optJSONArray("voci") ?: return@withContext emptyList()
+        (0 until arr.length()).mapNotNull { i ->
+            val o = arr.optJSONObject(i) ?: return@mapNotNull null
+            val id = o.optString("id")
+            if (id.isBlank()) null
+            else VoceLib(id, o.optLong("bytes"), o.optBoolean("anteprima"))
         }
     }
+
+    /** I pensieri arrivati: id e nome, per portarseli dietro senza linea. */
+    suspend fun pensieri(): List<Pair<String, String>> = withContext(Dispatchers.IO) {
+        val (corpo, _) = prendiGrezzo("/invii")
+        val arr = JSONObject(String(corpo)).optJSONArray("invii") ?: return@withContext emptyList()
+        (0 until arr.length()).mapNotNull { i ->
+            val o = arr.optJSONObject(i) ?: return@mapNotNull null
+            val id = o.optString("id")
+            if (id.isBlank()) null else id to o.optString("nome", "pensiero")
+        }
+    }
+
+    /** Una voce di libreria, per lo specchio: cosa è, quanto pesa, se ha una faccia. */
+    data class VoceLib(val id: String, val bytes: Long, val anteprima: Boolean)
 
     /**
      * Un colpetto per sapere se il PC risponde.
@@ -170,7 +207,7 @@ class GatewayClient(
      * da decine di MB, quindi si tiene in memoria solo il tempo di scriverlo.
      */
     suspend fun scaricaRisultato(nome: String): ByteArray = withContext(Dispatchers.IO) {
-        prendi(a("/risultati/${percorsoSicuro(nome)}"))
+        prendi(a("/risultati/${pezzoSicuro(nome)}"))
     }
 
     /**
@@ -181,7 +218,7 @@ class GatewayClient(
      * quello che si vuole portare nel telefono anche se l'ha chiesto un altro.
      */
     suspend fun scaricaDallaLibreria(id: String): ByteArray = withContext(Dispatchers.IO) {
-        prendi(a("/libreria/file/${percorsoSicuro(id)}"))
+        prendi(a("/libreria/file/${pezzoSicuro(id)}"))
     }
 
     /**
@@ -191,7 +228,7 @@ class GatewayClient(
      * qualcosa che ti hanno dato, e il gateway lo lascia prendere solo a te.
      */
     suspend fun scaricaRegalo(id: String): ByteArray = withContext(Dispatchers.IO) {
-        prendi(a("/invii/${percorsoSicuro(id)}/file"))
+        prendi(a("/invii/${pezzoSicuro(id)}/file"))
     }
 
     private fun prendi(url: String): ByteArray {
@@ -255,7 +292,7 @@ class GatewayClient(
          * (`cinema/clip_003.mp4`) e quelle devono restare barre; tutto il resto
          * — spazi, accenti, parentesi — va codificato, o OkHttp rifiuta l'URL.
          */
-        private fun percorsoSicuro(nome: String): String =
+        fun pezzoSicuro(nome: String): String =
             nome.split("/").joinToString("/") { android.net.Uri.encode(it) }
 
         /**

@@ -110,6 +110,44 @@ Il ruolo si sceglie al momento dell'invito e **si cambia dopo**, dalla riga
 della persona in DaProdConnessione. Prima era per sempre, e per promuovere
 qualcuno bisognava scollegarlo e rifargli l'accoppiamento.
 
+### E poi c'è un terzo, che non è un ruolo (0.7.6)
+
+**La casa.** Il computer su cui gira la suite si accoppia con sé stesso — vedi
+`tokenDiCasa` — e quel dispositivo è l'unico per cui `StatoMacchina.sonoLaCasa`
+è vero. Non è un ruolo più alto di `admin`: è **un'altra cosa**, e serve a una
+domanda sola.
+
+> «Vorrei mettere **solo su pc** la possibilità di accettare le richieste in
+> automatico e limitarle con un pulsante», e «il pc è il vero admin».
+
+Un telefono con i permessi da admin decide sulle richieste degli altri — quello
+sì — ma **non può alzarsi i limiti a cui è sottoposto lui**: se potesse, non
+sarebbero limiti. Le due rotte che governano la macchina
+(`POST /macchina/pausa` e `POST /macchina/regole`) rispondono 403 a chiunque non
+sia la casa, admin compresi. E le quattro scelte che cambiano vivono nelle
+impostazioni della suite: **non esiste una rotta HTTP che ci arrivi**.
+
+Quello che tutti possono fare su `/macchina` è **leggere**: chi aspetta ha
+diritto di sapere perché aspetta.
+
+### Il nome è unico (0.7.6)
+
+Fino alla 0.7.5 il nome era un'etichetta accanto a una richiesta e due «Marco»
+non davano fastidio a nessuno. Dalla 0.7.6 il nome è **chi sei in DaProd**: ha
+una faccia, mette un mi piace, ha un profilo. Due Marco sono due profili che si
+scambiano le cose a vicenda.
+
+Quindi `POST /accoppiamento` rifiuta un nome già preso, senza guardare maiuscole
+e spazi. Due dettagli che valgono la pena:
+
+- il controllo si fa **prima** di consumare un posto dell'invito: un nome già
+  preso non deve bruciare il codice a chi lo sta scrivendo;
+- e **non conta come tentativo sbagliato**, perché non lo è — il limite contro
+  la forza bruta non deve scattare per un errore di battitura.
+
+Vale anche per `POST /io/profilo` quando cambia il nome: rinominarsi come un
+altro sarebbe il modo più semplice di aggirare il controllo.
+
 **Il Companion resta fuori da tutto questo**: la sua memoria personale è la cosa
 più delicata che la suite contenga, e da fuori non si raggiunge.
 
@@ -120,15 +158,56 @@ più delicata che la suite contenga, e da fuori non si raggiunge.
 Un client sottile: l'interfaccia è quella della suite, servita dal gateway. Sul
 telefono serve nativo solo ciò che il browser non fa bene:
 
-- lettore di QR per l'accoppiamento
+- **la registrazione**, che è l'unica schermata che *deve* essere nativa: prima
+  di accoppiarsi non si sa a quale computer bussare, quindi non c'è nessuna
+  pagina da caricare
+- lettore di QR per l'accoppiamento (dalla 0.7.6 è la seconda strada: la prima
+  è battere il codice)
 - custodia della credenziale nel portachiavi di sistema
 - **la scelta di chi sei**, quando il telefono lo usa più di una persona
 - notifica quando un lavoro lungo finisce
-- scaricamento dei risultati nella galleria
-- la coda di quello che si scrive mentre il PC non c'è
+- scaricamento dei risultati nella galleria, e la condivisione con le altre app
+- **lo specchio**: quello che è arrivato resta qui, e a computer spento è il
+  telefono a rispondere alla pagina (vedi sotto)
 
 Così l'app non va riscritta ogni volta che cambia un'interfaccia, e una app che
 non usa Android non richiede un secondo progetto da mantenere.
+
+### Lo specchio, e perché non è una seconda app (0.7.6)
+
+Fino alla 0.7.5, col computer spento, l'app mostrava **un'altra schermata**: un
+menu a tendina, un modulo e una lista. Detto da chi la usava: «al momento se il
+pc non è raggiungibile mostra un'altra schermata, questa cosa non va bene e non
+mi piace nemmeno quella schermata».
+
+Il difetto vero non era l'estetica: era che a computer spento l'app diventava un
+altro programma, senza galleria, senza bacheca, senza niente di quello che uno
+aveva appena guardato.
+
+L'idea che lo chiude sta in una riga: **la pagina resta la stessa; a rispondere,
+invece del computer, è il telefono.** La console parla col gateway per rotte
+HTTP, quindi basta che qualcuno risponda a quelle rotte. Due pezzi:
+
+- **`Deposito`** tiene la pagina e le risposte **così come sono arrivate**. Non
+  le rilegge e non le ricostruisce, ed è una scelta: rileggerle vorrebbe dire
+  una seconda implementazione del contratto, e la seconda implementazione è
+  quella che diverge il giorno che il gateway aggiunge un campo. Tiene anche le
+  anteprime di tutto (decine di KB l'una) e i file fino a 40 MB — un telefono
+  non è un disco di riserva.
+- **`ServitoreOffline`** risponde, agganciato a
+  `WebViewClient.shouldInterceptRequest`, e **solo quando siamo offline**:
+  avendo l'originale a portata di mano, servire una copia vecchia sarebbe
+  assurdo.
+
+Quello che non si può fare senza computer si dice con **503 e una frase in
+italiano**, che la console mostra dove mostrerebbe qualunque altro rifiuto. Non
+finge: un mi piace accettato e mai arrivato sarebbe una bugia con conseguenze.
+
+⚠ **Un vincolo della piattaforma, da ricordare.** Android **non fa leggere il
+corpo** di una POST intercettata: `WebResourceRequest` espone metodo, indirizzo
+e intestazioni, e basta. Per questo, *dentro l'app*, la console manda i campi di
+un'azione **anche in coda all'indirizzo**. Il gateway vero li ignora — legge il
+corpo, come ha sempre fatto — quindi online non cambia niente.
 
 *Questa pagina descriveva il progetto. La 0.5.0 ha fatto il contrario — moduli
 disegnati dall'app — e la 0.6.0 è tornata qui. Il perché del giro sta più in
@@ -405,7 +484,18 @@ l'app li prova finché uno risponde e si ricorda quale ha funzionato.
   telefoni veri accesi insieme non li ha ancora visti nessuno (0.7.2).
 - **Un regalo non si può mandare dal telefono**: solo da chi sta al computer,
   trascinando il file nella finestra. È una scelta, non una mancanza — il file
-  parte da un disco, e il disco è lì.
+  parte da un disco, e il disco è lì. *(Dalla 0.7.6 però una cosa tua la puoi
+  mettere in bacheca dal telefono: `POST /bacheca`. Quella la vedono tutti, ed è
+  un gesto diverso dal mandare un file a una persona.)*
+- **Lo specchio offline non è mai stato provato su un telefono** (0.7.6).
+  Compila, e il pezzo che risponde è scritto contro rotte che le prove
+  automatiche coprono — ma il giro vero, con la suite spenta e l'app in mano,
+  no.
+- **La chiacchierata non è mai girata contro LM Studio vero** (0.7.6). Il giro —
+  comincia, dici, propone, accetti, si chiude — è provato con un modello finto.
+  Quello che resta da vedere è se un modello piccolo rispetta lo schema del
+  piano; se non lo rispetta, `leggiRisposta` butta quello che non riconosce e
+  resta una risposta a parole, che è il caso peggiore accettabile.
 
 ### Le prove
 

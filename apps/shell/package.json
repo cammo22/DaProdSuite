@@ -1,6 +1,6 @@
 {
   "name": "@daprod/shell",
-  "version": "0.7.5",
+  "version": "0.7.6",
   "private": true,
   "description": "Guscio della suite: hub, installazione, aggiornamenti, avvio delle app.",
   "main": "out/main/index.js",
@@ -12,6 +12,7 @@
     "typecheck": "tsc -p tsconfig.main.json --noEmit && tsc -p tsconfig.renderer.json --noEmit"
   },
   "dependencies": {
+    "@daprod/azioni": "workspace:*",
     "@daprod/gateway": "workspace:*",
     "@daprod/ipc": "workspace:*",
     "@daprod/runtime": "workspace:*",

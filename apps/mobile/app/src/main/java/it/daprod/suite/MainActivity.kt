@@ -2,21 +2,19 @@ package it.daprod.suite
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import android.text.InputType
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.JavascriptInterface
+import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.webkit.WebViewClient
-import android.widget.AdapterView
-import android.widget.ArrayAdapter
-import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.PopupMenu
-import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
@@ -24,63 +22,76 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import androidx.lifecycle.lifecycleScope
-import androidx.recyclerview.widget.LinearLayoutManager
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
-import it.daprod.suite.data.Azione
-import it.daprod.suite.data.Campo
 import it.daprod.suite.data.CodaOffline
+import it.daprod.suite.data.Deposito
 import it.daprod.suite.data.Profili
 import it.daprod.suite.data.Profilo
-import it.daprod.suite.data.Richiesta
 import it.daprod.suite.data.Store
 import it.daprod.suite.databinding.ActivityMainBinding
 import it.daprod.suite.net.Accoppiamento
 import it.daprod.suite.net.GatewayClient
-import it.daprod.suite.net.Indirizzi
 import it.daprod.suite.net.GatewayException
-import it.daprod.suite.ui.RichiesteAdapter
+import it.daprod.suite.net.Indirizzi
+import it.daprod.suite.net.ServitoreOffline
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import org.json.JSONArray
+import java.io.File
 import java.util.UUID
 
 /**
- * L'app, che è un vetro sul PC.
+ * L'app, che è un vetro sul PC — **anche quando il PC non c'è.**
  *
- * **Cosa è cambiato nella 0.6.0, e perché.** Fino alla 0.5.2 questa era una
- * schermata sola con un menu a tendina e un modulo: chiedevi una cosa, e per
- * vederla dovevi scaricarla. Provandola, Cammo ha detto due cose che insieme
- * decidono tutto: «deve mostrare le pagine in stile della suite per pc» e
- * «niente funziona sul device a livello di risorse ma fa tutto il pc».
+ * ## Cosa era, fino alla 0.7.5
  *
- * Se il telefono non calcola niente e il PC calcola tutto, allora anche
- * l'**interfaccia** deve stare sul PC. Quindi la parte grossa di questa app è
- * una WebView sulla console che il gateway serve: le stesse pagine che vede il
- * portatile, con le schede, i moduli e la galleria. Una sola interfaccia da
- * scrivere, una sola da tenere allineata alle azioni, e quando sul PC compare
- * una scheda nuova compare anche qui senza pubblicare un APK.
+ * Una WebView sulla console che il gateway serve, più tre schermate native:
+ * chi sei, collega, e **senza PC**. Quest'ultima era un menu a tendina, un
+ * modulo e una lista di richieste in attesa: funzionava, ma era un'altra app.
+ * Uscivi di casa, aprivi, e al posto della tua galleria trovavi uno spinner.
  *
- * Quello che resta nativo è **quello che una pagina web non può fare**:
+ * ## Cosa è, dalla 0.7.6
  *
- * - **scegliere chi sei** all'avvio, che era l'altra cosa chiesta: più persone
- *   sullo stesso telefono, ognuna col suo accoppiamento (vedi [Profili]);
- * - accoppiarsi col QR, perché serve la camera;
- * - le notifiche quando un lavoro finisce, anche ad app chiusa;
- * - mettere un video in galleria e un brano fra la musica;
- * - aggiornarsi da sola;
- * - **la coda quando il PC non c'è**: una pagina web, con il computer spento,
- *   non si carica nemmeno.
+ * Detto da chi la usava, il 26 agosto 2026:
+ *
+ * > «quando il pc non è raggiungibile deve comunque funzionare la stessa
+ * > interfaccia e app; tutto quello che si riceve automaticamente viene salvato
+ * > offline, poi se uno vuole li può salvare in galleria. Al momento se il pc
+ * > non è raggiungibile mostra un'altra schermata: questa cosa non va bene, e
+ * > non mi piace nemmeno quella schermata.»
+ *
+ * Adesso la pagina è **sempre la stessa**. Col computer acceso la serve lui;
+ * col computer spento la serve il telefono, dalla copia che ha tenuto — e alle
+ * domande che la pagina fa (`/io`, `/azioni`, `/libreria`, `/invii`…) risponde
+ * [ServitoreOffline] leggendo dal [Deposito]. Chi guarda vede la sua Casa, la
+ * sua Galleria, i suoi Pensieri, e in cima una riga che dice che il computer
+ * adesso non risponde. Quello che chiede si mette in coda e parte da solo.
+ *
+ * ## Cosa resta nativo, e perché ognuna delle cose
+ *
+ * Solo quello che una pagina web, dentro una WebView, **non può fare**:
+ *
+ * - **scegliere chi sei** all'avvio: più persone sullo stesso telefono, ognuna
+ *   col suo accoppiamento (vedi [Profili]);
+ * - **entrare la prima volta**: prima di accoppiarsi non si sa a quale computer
+ *   bussare, quindi non c'è nessuna pagina da caricare;
+ * - **il QR**, perché serve la camera;
+ * - **le notifiche** quando un lavoro finisce, anche ad app chiusa;
+ * - **mettere un video in galleria** e un brano fra la musica;
+ * - **condividere** con le altre app del telefono;
+ * - **aggiornarsi** da sola;
+ * - **lo specchio**: tenere qui quello che è arrivato, che è la ragione per cui
+ *   tutto il resto funziona anche a computer spento.
  */
 private const val GIORNO = 24L * 60 * 60 * 1000
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
-    private lateinit var adapter: RichiesteAdapter
     private lateinit var codaOffline: CodaOffline
 
     /** Chi sta usando l'app adesso. Null vuol dire: siamo alla scelta. */
@@ -88,16 +99,25 @@ class MainActivity : AppCompatActivity() {
     private var client: GatewayClient? = null
     private var polling: Job? = null
 
-    /** Le azioni, per il modulo di quando il PC non risponde. */
-    private var azioni: List<Azione> = emptyList()
-    private var azioneScelta: Azione? = null
+    /** Lo specchio del computer per la persona di adesso. */
+    private var deposito: Deposito? = null
+    private var servitore: ServitoreOffline? = null
+
+    /**
+     * Se in questo momento stiamo rispondendo noi al posto del computer.
+     *
+     * Comanda l'intercettazione: quando il computer c'è, le richieste della
+     * pagina vanno in rete come sempre — sarebbe assurdo servire una copia
+     * vecchia avendo l'originale a portata di mano.
+     */
+    private var stiamoOffline = false
 
     /** Dove stiamo: la schermata visibile adesso. */
-    private enum class Dove { UTENTI, COLLEGA, SUITE, OFFLINE }
+    private enum class Dove { UTENTI, ENTRA, SUITE }
 
     private var dove = Dove.UTENTI
 
-    /** Il nome scritto nella schermata di accoppiamento, tenuto da parte. */
+    /** Il nome scritto nella schermata d'ingresso, tenuto da parte. */
     private var nomeInCorso = ""
 
     /** Lo scanner del QR: il contenuto è l'invito della suite. */
@@ -136,9 +156,6 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         codaOffline = CodaOffline(this)
-        adapter = RichiesteAdapter(mutableListOf()) { scaricaRisultato(it) }
-        binding.listaRichieste.adapter = adapter
-        binding.listaRichieste.layoutManager = LinearLayoutManager(this)
 
         Notifiche.creaCanale(this)
         SyncWorker.programma(this)
@@ -152,20 +169,10 @@ class MainActivity : AppCompatActivity() {
         preparaWeb()
 
         binding.btnMenu.setOnClickListener { apriMenu() }
-        binding.btnNuovoUtente.setOnClickListener { vaiAllaCollega() }
+        binding.btnNuovoUtente.setOnClickListener { vaiAdEntrare() }
         binding.btnTornaUtenti.setOnClickListener { mostra(Dove.UTENTI) }
         binding.btnScansiona.setOnClickListener { apriScanner() }
         binding.btnConnetti.setOnClickListener { connettiDaCodice() }
-        binding.btnManda.setOnClickListener { manda() }
-        binding.btnRiprova.setOnClickListener { apriSuite() }
-
-        binding.spinnerAzione.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(p: AdapterView<*>?, v: View?, posizione: Int, id: Long) {
-                azioni.getOrNull(posizione)?.let { disegnaCampi(it) }
-            }
-
-            override fun onNothingSelected(p: AdapterView<*>?) {}
-        }
 
         // Il tasto «indietro» del telefono: dentro la suite torna indietro
         // nella pagina, e solo quando non c'è più niente dietro chiude l'app.
@@ -173,7 +180,7 @@ class MainActivity : AppCompatActivity() {
             override fun handleOnBackPressed() {
                 when {
                     dove == Dove.SUITE && binding.web.canGoBack() -> binding.web.goBack()
-                    dove == Dove.COLLEGA -> mostra(Dove.UTENTI)
+                    dove == Dove.ENTRA -> mostra(Dove.UTENTI)
                     dove != Dove.UTENTI && Profili.tutti(this@MainActivity).size > 1 -> {
                         Profili.esci(this@MainActivity)
                         chi = null
@@ -210,15 +217,17 @@ class MainActivity : AppCompatActivity() {
         when {
             salvato != null -> entra(salvato)
             tutti.size == 1 -> entra(tutti.first())
-            tutti.isEmpty() -> vaiAllaCollega()
+            tutti.isEmpty() -> vaiAdEntrare()
             else -> mostra(Dove.UTENTI)
         }
     }
 
     override fun onResume() {
         super.onResume()
-        // Tornare sull'app è il momento in cui si vuole sapere com'è andata.
-        if (dove == Dove.OFFLINE) apriSuite()
+        // Tornare sull'app è il momento in cui si vuole sapere com'è andata: se
+        // eravamo senza computer si riprova, e se stavolta risponde la pagina
+        // torna quella vera senza che nessuno prema niente.
+        if (dove == Dove.SUITE && stiamoOffline) apriSuite()
     }
 
     /* ------------------------------------------------------ le schermate */
@@ -226,12 +235,13 @@ class MainActivity : AppCompatActivity() {
     private fun mostra(quale: Dove) {
         dove = quale
         binding.schermoUtenti.visibility = if (quale == Dove.UTENTI) View.VISIBLE else View.GONE
-        binding.schermoCollega.visibility = if (quale == Dove.COLLEGA) View.VISIBLE else View.GONE
+        binding.schermoCollega.visibility = if (quale == Dove.ENTRA) View.VISIBLE else View.GONE
         binding.web.visibility = if (quale == Dove.SUITE) View.VISIBLE else View.GONE
-        binding.schermoOffline.visibility = if (quale == Dove.OFFLINE) View.VISIBLE else View.GONE
+        // Dentro la suite la barra sparisce: la pagina ha la sua testata, con il
+        // nome, la faccia e la rotella. Due intestazioni sono una di troppo.
+        binding.barra.visibility = if (quale == Dove.SUITE) View.GONE else View.VISIBLE
         if (quale != Dove.SUITE) binding.attesa.visibility = View.GONE
         if (quale == Dove.UTENTI) disegnaUtenti()
-        if (quale == Dove.OFFLINE) mostraCoda()
         aggiornaBarra()
     }
 
@@ -239,7 +249,6 @@ class MainActivity : AppCompatActivity() {
         val persona = chi
         binding.chiSono.text = when {
             persona == null -> getString(R.string.app_name)
-            dove == Dove.OFFLINE -> "${persona.nome} · ${getString(R.string.stato_non_raggiungibile)}"
             else -> "${persona.nome} · ${persona.computer}"
         }
     }
@@ -249,10 +258,7 @@ class MainActivity : AppCompatActivity() {
     private fun disegnaUtenti() {
         val elenco = binding.elencoUtenti
         elenco.removeAllViews()
-
-        for (p in Profili.tutti(this)) {
-            elenco.addView(rigaPersona(p))
-        }
+        for (p in Profili.tutti(this)) elenco.addView(rigaPersona(p))
     }
 
     /**
@@ -318,23 +324,25 @@ class MainActivity : AppCompatActivity() {
         AlertDialog.Builder(this)
             .setTitle("Togliere ${p.nome} da questo telefono?")
             .setMessage(
-                "Il telefono si scorda il suo collegamento. Nell'elenco della suite resta " +
-                    "finché non lo togli anche da lì, dal pannello «Da fuori».",
+                "Il telefono si scorda il suo collegamento e quello che aveva tenuto da parte. " +
+                    "Nell'elenco della suite resta finché non lo togli anche da lì.",
             )
             .setPositiveButton("Togli") { _, _ ->
                 Profili.rimuovi(this, p.id)
                 if (chi?.id == p.id) {
                     chi = null
                     client = null
+                    deposito = null
+                    servitore = null
                     polling?.cancel()
                 }
-                if (Profili.tutti(this).isEmpty()) vaiAllaCollega() else mostra(Dove.UTENTI)
+                if (Profili.tutti(this).isEmpty()) vaiAdEntrare() else mostra(Dove.UTENTI)
             }
             .setNegativeButton("Lascia stare", null)
             .show()
     }
 
-    private fun vaiAllaCollega() {
+    private fun vaiAdEntrare() {
         binding.campoNome.setText(nomeInCorso.ifBlank { "" })
         binding.campoCodice.text?.clear()
         // L'indirizzo dell'ultima volta: chi si ricollega allo stesso computer
@@ -342,7 +350,7 @@ class MainActivity : AppCompatActivity() {
         binding.campoIndirizzo.setText(Store.base(this) ?: "")
         binding.btnTornaUtenti.visibility =
             if (Profili.tutti(this).isEmpty()) View.GONE else View.VISIBLE
-        mostra(Dove.COLLEGA)
+        mostra(Dove.ENTRA)
     }
 
     /* ---------------------------------------------------- accoppiamento */
@@ -350,7 +358,7 @@ class MainActivity : AppCompatActivity() {
     private fun apriScanner() {
         nomeInCorso = binding.campoNome.text.toString().trim()
         if (nomeInCorso.isBlank()) {
-            avvisa("Scrivi prima come ti chiami: è il nome che vedrà il PC.")
+            avvisa("Scrivi prima come vuoi farti chiamare.")
             return
         }
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
@@ -372,12 +380,14 @@ class MainActivity : AppCompatActivity() {
     private fun connettiDaCodice() {
         nomeInCorso = binding.campoNome.text.toString().trim()
         if (nomeInCorso.isBlank()) {
-            avvisa("Scrivi prima come ti chiami: è il nome che vedrà il PC.")
+            avvisa("Scrivi prima come vuoi farti chiamare: è il nome che vedranno gli altri.")
+            binding.campoNome.requestFocus()
             return
         }
         val codice = binding.campoCodice.text.toString().trim()
         if (codice.length != 8 || !codice.all { it.isDigit() }) {
             avvisa("Il codice è di otto cifre.")
+            binding.campoCodice.requestFocus()
             return
         }
         /**
@@ -385,7 +395,7 @@ class MainActivity : AppCompatActivity() {
          *
          * Chiesto il 23 agosto 2026: «al primo accesso si può inserire anche il
          * codice, non per forza il QR». Il codice però dice solo *chi sei*, non
-         * *a chi bussare*: quello lo portava il QR. Adesso c'è una casella per
+         * *a chi bussare*: quello lo portava il QR. C'è una casella per
          * l'indirizzo, già piena con quello dell'ultima volta — e la prima
          * volta si copia dal computer, dove sta scritto sotto al QR.
          */
@@ -399,7 +409,8 @@ class MainActivity : AppCompatActivity() {
             else -> "https://$scritto"
         }
         if (indirizzo.isNullOrBlank()) {
-            avvisa("Scrivi anche l'indirizzo del computer: lo trovi sotto al QR, sulla sua schermata.")
+            avvisa("Scrivi anche l'indirizzo del computer: lo trovi sotto al codice, sulla sua schermata.")
+            binding.campoIndirizzo.requestFocus()
             return
         }
         connetti(listOf(indirizzo), codice)
@@ -407,13 +418,12 @@ class MainActivity : AppCompatActivity() {
 
     private fun connetti(indirizzi: List<String>, codice: String) {
         val nome = nomeInCorso.ifBlank { Store.nomeProposto() }
+        binding.btnConnetti.isEnabled = false
         lifecycleScope.launch {
             try {
                 // **Il codice vale una volta sola**: si prova ad accoppiarsi
                 // con il primo indirizzo che risponde, e se sbagliassimo a
-                // provarne uno morto per primo il codice sarebbe bruciato. Per
-                // questo l'accoppiamento parte dal primo che dà una risposta
-                // vera, non dal primo dell'elenco.
+                // provarne uno morto per primo il codice sarebbe bruciato.
                 val esito = accoppiaDoveRisponde(indirizzi, codice, nome)
                 val profilo = Profilo(
                     id = UUID.randomUUID().toString(),
@@ -431,7 +441,22 @@ class MainActivity : AppCompatActivity() {
                 avvisa("Collegato a ${esito.first.computer}.")
                 entra(profilo)
             } catch (e: Exception) {
-                avvisa(spiega(e))
+                /**
+                 * **Il nome già preso non è un errore come gli altri.**
+                 *
+                 * È l'unico caso in cui la persona deve cambiare una delle due
+                 * caselle, e sa già quale. Il messaggio arriva dal computer
+                 * scritto in italiano; qui si mette il cursore dove serve
+                 * invece di lasciarla a indovinare.
+                 */
+                val detto = spiega(e)
+                if (detto.contains("già di qualcun altro")) {
+                    binding.campoNome.requestFocus()
+                    binding.campoNome.selectAll()
+                }
+                avvisa(detto)
+            } finally {
+                binding.btnConnetti.isEnabled = true
             }
         }
     }
@@ -470,34 +495,23 @@ class MainActivity : AppCompatActivity() {
      * La v3 dell'invito porta `basi`: casa, Tailscale, il tunnel. È quello che
      * permette al telefono di ritrovare il computer quando cambia rete, invece
      * di restare fermo su un indirizzo che non esiste più.
-     *
-     * Le versioni precedenti ne portavano uno solo: si legge lo stesso, e
-     * l'elenco è di un elemento.
      */
     private fun estraiIndirizzi(contenuto: String): List<String> {
         val tutti = mutableListOf<String>()
-
-        // v3: "basi":["http://…","http://…"]
         Regex("\"basi\"\\s*:\\s*\\[([^\\]]*)]").find(contenuto)?.groupValues?.get(1)?.let { dentro ->
             for (m in Regex("\"([^\"]+)\"").findAll(dentro)) tutti.add(m.groupValues[1])
         }
-
         estraiBase(contenuto)?.let { tutti.add(it) }
         return tutti.map { it.trim().trimEnd('/') }.filter { it.isNotBlank() }.distinct()
     }
 
     /** L'indirizzo singolo, come lo portavano la v1 e la v2. */
     private fun estraiBase(contenuto: String): String? {
-        // La v2 dell'invito porta `base`: l'indirizzo intero, schema compreso.
-        // È l'unico che funzioni con il tunnel su Internet, dove il gateway sta
-        // su https e non ha una porta.
         val completo = Regex("\"base\"\\s*:\\s*\"([^\"]+)\"").find(contenuto)?.groupValues?.get(1)
             ?: Regex("base=([^&]+)").find(contenuto)?.groupValues?.get(1)
         if (!completo.isNullOrBlank()) {
             return android.net.Uri.decode(completo).trim().trimEnd('/')
         }
-        // La v1 aveva solo `host`, che era `ip:porta` in chiaro: ci si mette
-        // davanti `http://`, che è quello che faceva l'app prima.
         val host = Regex("\"host\"\\s*:\\s*\"([^\"]+)\"").find(contenuto)?.groupValues?.get(1)
             ?: Regex("host=([^&]+)").find(contenuto)?.groupValues?.get(1)
         val pulito = host?.trim()?.trimEnd('/')?.takeIf { it.isNotBlank() } ?: return null
@@ -516,19 +530,24 @@ class MainActivity : AppCompatActivity() {
         Profili.scegli(this, profilo.id)
         Store.ricordaBase(this, profilo.base)
         client = GatewayClient(profilo.base, profilo.token)
-        leggiAzioniRicordate(profilo)
+        deposito = Deposito(this, profilo.id).also { d ->
+            servitore = ServitoreOffline(d, codaOffline, profilo.id)
+        }
         apriSuite()
         avviaPolling()
     }
 
     /**
-     * Apre la suite, se il PC risponde.
+     * Apre la suite. **Sempre la suite**, col computer o senza.
      *
-     * **Si bussa prima di aprire la pagina.** Una WebView che non riesce a
-     * caricare mostra la pagina di errore del browser: in inglese, con un
-     * codice, e senza nessun consiglio utile. Un giro di rete in più costa
-     * mezzo secondo e in cambio, quando il PC è spento, si legge una frase che
-     * dice cosa fare.
+     * Due strade, e la seconda è la novità della 0.7.6:
+     *
+     * 1. **Il computer risponde**: si carica la sua pagina, e in sottofondo si
+     *    aggiorna lo specchio — la pagina stessa, le risposte, i file nuovi.
+     * 2. **Il computer non risponde**: si carica la copia tenuta qui, con lo
+     *    **stesso indirizzo di base**. È la parte che conta: `localStorage` è
+     *    per origine, quindi la pagina ritrova il suo token e non chiede di
+     *    rifare l'accesso. Da lì in poi risponde [ServitoreOffline].
      */
     private fun apriSuite(): Job = lifecycleScope.launch {
         val persona = chi ?: return@launch
@@ -536,19 +555,20 @@ class MainActivity : AppCompatActivity() {
 
         binding.attesa.visibility = View.VISIBLE
         // **Quale indirizzo risponde adesso**, non quale rispondeva l'altra
-        // volta: è tutto il motivo per cui l'app adesso si ricollega da sola.
-        val dove = Indirizzi.quale(persona.basi, persona.base, persona.token)
+        // volta: è tutto il motivo per cui l'app si ricollega da sola.
+        val vivo = Indirizzi.quale(persona.basi, persona.base, persona.token)
         binding.attesa.visibility = View.GONE
 
-        if (dove == null) {
-            mostra(Dove.OFFLINE)
+        if (vivo == null) {
+            apriDallaCopia(persona)
             return@launch
         }
-        if (dove != persona.base) {
+
+        if (vivo != persona.base) {
             // Trovato altrove: la prossima volta si parte da qui.
-            Profili.ricordaBase(this@MainActivity, persona.id, dove)
-            chi = persona.copy(base = dove)
-            client = GatewayClient(dove, persona.token)
+            Profili.ricordaBase(this@MainActivity, persona.id, vivo)
+            chi = persona.copy(base = vivo)
+            client = GatewayClient(vivo, persona.token)
         }
         var attuale = chi ?: persona
 
@@ -556,46 +576,174 @@ class MainActivity : AppCompatActivity() {
          * **Dove si fa trovare adesso**, prima di aprire la pagina.
          *
          * L'indirizzo del tunnel cambia a ogni accensione della suite: quello
-         * che sta scritto qui dentro e' quello di quando si e' inquadrato il
-         * QR, e da fuori casa e' un indirizzo morto. Adesso appena si arriva al
-         * PC — di solito dalla wifi di casa — ci si fa dire i suoi indirizzi di
-         * oggi e si scrivono. La prossima volta che si esce, quello buono c'e'
-         * gia'.
-         *
-         * Non blocca niente: se non risponde, si apre la suite lo stesso.
+         * scritto qui dentro è quello di quando si è battuto il codice, e da
+         * fuori casa è un indirizzo morto. Appena si arriva al PC — di solito
+         * dalla wifi di casa — ci si fa dire i suoi indirizzi di oggi.
          */
-        // Il client di **adesso**, non quello con cui si e' entrati: se ha
-        // risposto un altro indirizzo, `client` e' stato appena rifatto e `cl`
-        // punta a quello che non risponde piu'.
         val adesso = (client ?: cl).indirizziDiAdesso()
         if (adesso.isNotEmpty()) {
             Profili.ricordaBasi(this@MainActivity, attuale.id, adesso)
-            val unite = (adesso + attuale.basi).distinct()
-            attuale = attuale.copy(basi = unite)
+            attuale = attuale.copy(basi = (adesso + attuale.basi).distinct())
             chi = attuale
         }
 
-        // Le azioni si rileggono a ogni entrata: servono al modulo di quando il
-        // PC sparisce, e vanno tenute fresche mentre il PC c'è.
-        aggiornaAzioni(attuale)
-
-        // Il token viaggia nel **frammento** dell'indirizzo, dopo il #: non
-        // viene mandato al server, non finisce nei log e non finisce in un
-        // Referer. La pagina lo legge, lo mette da parte e lo cancella
-        // dall'indirizzo. Vedi `console.ts`.
-        val indirizzo = buildString {
-            append(attuale.base.trimEnd('/'))
-            append("/#t=")
-            append(android.net.Uri.encode(attuale.token))
-            append("&u=")
-            append(android.net.Uri.encode(attuale.nome))
-        }
-        binding.web.loadUrl(indirizzo)
+        stiamoOffline = false
+        binding.web.loadUrl(indirizzoDellaPagina(attuale))
         mostra(Dove.SUITE)
 
         // La coda scritta senza PC parte adesso, che il PC c'è.
         mandaLaCoda(client ?: cl)
+        // E si aggiorna lo specchio, senza fretta e senza bloccare niente.
+        specchia(attuale)
     }
+
+    /**
+     * L'indirizzo con cui si apre la console.
+     *
+     * Il token viaggia nel **frammento**, dopo il `#`: non viene mandato al
+     * server, non finisce nei log e non finisce in un Referer. La pagina lo
+     * legge, lo mette da parte e lo cancella dall'indirizzo.
+     *
+     * `m=telefono` è la novità della 0.7.6: dice alla pagina che faccia avere.
+     * È l'unica che lo sa per certo — un tablet largo aprirebbe la faccia da
+     * computer, e non sarebbe la sua.
+     */
+    private fun indirizzoDellaPagina(p: Profilo): String = buildString {
+        append(p.base.trimEnd('/'))
+        append("/#t=")
+        append(android.net.Uri.encode(p.token))
+        append("&u=")
+        append(android.net.Uri.encode(p.nome))
+        append("&m=telefono")
+    }
+
+    /**
+     * La pagina dalla copia tenuta qui, quando il computer non risponde.
+     *
+     * `loadDataWithBaseURL` con l'indirizzo vero come base: è quello che fa sì
+     * che la pagina resti **la stessa origine** di quando c'era la linea, e
+     * quindi ritrovi in `localStorage` il suo token. Senza, si sveglierebbe
+     * ogni volta credendo di non essersi mai collegata.
+     */
+    private fun apriDallaCopia(p: Profilo) {
+        val html = deposito?.paginaSalvata()
+        if (html.isNullOrBlank()) {
+            // Non c'è ancora niente da mostrare: è successo una volta sola, la
+            // prima, e si dice cosa fare invece di aprire una pagina vuota.
+            AlertDialog.Builder(this)
+                .setTitle("Il computer non risponde")
+                .setMessage(R.string.senza_copia)
+                .setPositiveButton("Riprova") { _, _ -> apriSuite() }
+                .setNegativeButton("Va bene", null)
+                .show()
+            return
+        }
+        stiamoOffline = true
+        binding.web.loadDataWithBaseURL(
+            p.base.trimEnd('/') + "/",
+            html,
+            "text/html",
+            "utf-8",
+            p.base.trimEnd('/') + "/",
+        )
+        mostra(Dove.SUITE)
+        avvisa(getString(R.string.senza_pc_avviso))
+    }
+
+    /* ------------------------------------------------------- lo specchio */
+
+    /**
+     * Tiene qui quello che è arrivato, perché domani ci sia lo stesso.
+     *
+     * **Non è un backup**: è la memoria di cosa si era visto. Si prende quello
+     * che serve a far vivere la pagina senza rete — la pagina stessa, le
+     * risposte alle rotte che legge, i file e le anteprime — e nient'altro.
+     *
+     * Gira in sottofondo e non blocca niente: se va storto, l'unica conseguenza
+     * è che la prossima volta senza linea si vede quello di ieri invece che
+     * quello di oggi.
+     */
+    private fun specchia(@Suppress("UNUSED_PARAMETER") p: Profilo) {
+        val cl = client ?: return
+        val d = deposito ?: return
+        lifecycleScope.launch {
+            runCatching { d.salvaPagina(cl.paginaConsole()) }
+
+            /**
+             * Le rotte che la console legge davvero, e nell'ordine in cui le
+             * legge. Le query sono quelle che scrive lei: una risposta salvata
+             * con una domanda diversa non le servirebbe.
+             */
+            val daTenere = listOf(
+                "/io",
+                "/azioni",
+                "/richieste",
+                "/invii",
+                "/pannello",
+                "/macchina",
+                "/stato",
+                "/preset",
+                "/modelli",
+                "/libreria?quanti=60&dove=mie",
+                "/libreria?quanti=6&dove=mie",
+            )
+            for (rotta in daTenere) {
+                runCatching {
+                    val (corpo, mime) = cl.prendiGrezzo(rotta)
+                    d.mettiRisposta(rotta, corpo, mime)
+                    if (rotta.startsWith("/libreria")) d.ricordaChiaveLibreria(rotta)
+                }
+            }
+
+            // I file e le anteprime per ultimi: pesano, e il resto della
+            // pagina deve essere già a posto prima che si cominci a scaricare.
+            portaGiuQuelloCheManca(cl, d)
+        }
+    }
+
+    /**
+     * Scarica quello che non abbiamo ancora: le anteprime di tutto, i file che
+     * ci stanno.
+     *
+     * **L'ordine è quello dell'utilità per byte speso.** Un'anteprima costa
+     * decine di KB e trasforma un riquadro nero in una cosa riconoscibile: si
+     * prendono tutte. Un file intero costa quanto costa: si prende se sta sotto
+     * il tetto del [Deposito], e se non ci sta resta sul computer con la sua
+     * anteprima qui — si vede che c'è, e si scarica quando la linea torna.
+     */
+    private suspend fun portaGiuQuelloCheManca(cl: GatewayClient, d: Deposito) {
+        val voci = runCatching { cl.vociDellaLibreria("/libreria?quanti=60&dove=mie") }
+            .getOrDefault(emptyList())
+        for (v in voci) {
+            if (v.anteprima && !d.ceLho(Deposito.anteprimaDi(v.id))) {
+                runCatching {
+                    val (corpo, mime) = cl.prendiGrezzo("/libreria/anteprima/${GatewayClient.pezzoSicuro(v.id)}")
+                    d.mettiFile(Deposito.anteprimaDi(v.id), corpo, mime)
+                }
+            }
+            if (!d.ceLho(v.id) && v.bytes in 1..Deposito.MASSIMO_FILE) {
+                runCatching {
+                    val (corpo, mime) = cl.prendiGrezzo("/libreria/file/${GatewayClient.pezzoSicuro(v.id)}")
+                    d.mettiFile(v.id, corpo, mime)
+                }
+            }
+        }
+
+        // I pensieri: quelli sì, tutti quelli che ci stanno. Sono cose che
+        // qualcuno ha mandato apposta a te, ed è la roba che più si vuole
+        // ritrovare guardando il telefono in treno.
+        val pensieri = runCatching { cl.pensieri() }.getOrDefault(emptyList())
+        for (p in pensieri) {
+            val chiave = "invio:${p.first}"
+            if (d.ceLho(chiave)) continue
+            runCatching {
+                val (corpo, mime) = cl.prendiGrezzo("/invii/${GatewayClient.pezzoSicuro(p.first)}/file")
+                d.mettiFile(chiave, corpo, mime)
+            }
+        }
+    }
+
+    /* ----------------------------------------------------------- la rete */
 
     @SuppressLint("SetJavaScriptEnabled")
     private fun preparaWeb() {
@@ -604,7 +752,7 @@ class MainActivity : AppCompatActivity() {
         w.settings.javaScriptEnabled = true
         // La console tiene il token e le preferenze nel `localStorage`, come fa
         // nel browser di un portatile: senza questo si scollegherebbe a ogni
-        // apertura.
+        // apertura — e senza, la pagina servita dalla copia non saprebbe chi è.
         w.settings.domStorageEnabled = true
         // Un video generato dalla suite deve poter partire con un tocco solo:
         // il gesto lo ha già fatto chi ha premuto play.
@@ -612,38 +760,81 @@ class MainActivity : AppCompatActivity() {
         w.settings.setSupportZoom(false)
 
         /**
-         * Il ponte verso l'app.
+         * Il ponte verso l'app: **solo quello che una pagina non sa fare.**
          *
-         * Solo due cose, e tutte e due sono cose che una pagina web dentro una
-         * WebView non sa fare bene: **portare un file nel telefono**. Un
-         * `<a download>` su un blob, in una WebView, non scarica niente; e
-         * anche se scaricasse, finirebbe in una cartella dell'app invece che
-         * in galleria o fra la musica. Il file lo tira giù l'app, che ha già
-         * il token, e lo mette dove uno se lo aspetta.
+         * Portare un file nel telefono, passarlo a un'altra app, ricaricarsi,
+         * aggiornarsi, cambiare persona. Tutto il resto lo fa la pagina, ed è
+         * giusto così: ogni cosa che passa di qui è una cosa che va tenuta
+         * allineata fra due programmi invece che uno.
          */
         w.addJavascriptInterface(
             object {
                 @JavascriptInterface
                 fun scaricaRisultato(nome: String) {
-                    runOnUiThread { scaricaDaRete(nome, dallaLibreria = null) }
+                    runOnUiThread { portaNelTelefono(nome, "/risultati/${GatewayClient.pezzoSicuro(nome)}", "risultato:$nome") }
                 }
 
                 @JavascriptInterface
                 fun scaricaLibreria(id: String, nome: String) {
-                    runOnUiThread { scaricaDaRete(nome, dallaLibreria = id) }
+                    runOnUiThread {
+                        portaNelTelefono(nome, "/libreria/file/${GatewayClient.pezzoSicuro(id)}", id)
+                    }
+                }
+
+                @JavascriptInterface
+                fun scaricaRegalo(id: String, nome: String) {
+                    runOnUiThread {
+                        portaNelTelefono(nome, "/invii/${GatewayClient.pezzoSicuro(id)}/file", "invio:$id")
+                    }
                 }
 
                 /**
-                 * Un regalo, tenuto nel telefono.
+                 * Passa una cosa alle altre app del telefono.
                  *
-                 * Passa da qui e non dal browser della WebView per la stessa
-                 * ragione delle altre due: l'app sa mettere un video in
-                 * galleria e un brano fra la musica, una cartella dei
-                 * download no.
+                 * Chiesto il 26 agosto 2026: «poi un pulsante condividi
+                 * sull'app». Una pagina web dentro una WebView non può farlo:
+                 * `navigator.share` con i file non c'è, e anche ci fosse non
+                 * avrebbe il file. Qui invece sì.
                  */
                 @JavascriptInterface
-                fun scaricaRegalo(id: String, nome: String) {
-                    runOnUiThread { scaricaDaRete(nome, dallaLibreria = null, ilRegalo = id) }
+                fun condividi(id: String, nome: String) {
+                    runOnUiThread {
+                        passaAdUnAltraApp(nome, "/libreria/file/${GatewayClient.pezzoSicuro(id)}", id)
+                    }
+                }
+
+                /**
+                 * **Ricarica, e questa volta ricarica davvero.**
+                 *
+                 * Il poscritto del 26 agosto: «ps: il tasto ricarica non
+                 * ricarica». Nel menu vecchio rifaceva il giro degli indirizzi
+                 * e poi *forse* riapriva la pagina: quando il computer
+                 * rispondeva subito non succedeva niente di visibile, ed era
+                 * esattamente il momento in cui uno lo premeva. Adesso
+                 * riapre, e se nel frattempo il computer è tornato riapre
+                 * quella vera invece della copia.
+                 */
+                @JavascriptInterface
+                fun ricarica() {
+                    runOnUiThread { apriSuite() }
+                }
+
+                @JavascriptInterface
+                fun aggiorna() {
+                    runOnUiThread { cercaAggiornamento(dilloSempre = true) }
+                }
+
+                @JavascriptInterface
+                fun cambiaPersona() {
+                    runOnUiThread {
+                        Profili.esci(this@MainActivity)
+                        chi = null
+                        client = null
+                        deposito = null
+                        servitore = null
+                        polling?.cancel()
+                        mostra(Dove.UTENTI)
+                    }
                 }
             },
             "DaProdApp",
@@ -660,286 +851,89 @@ class MainActivity : AppCompatActivity() {
              */
             override fun shouldOverrideUrlLoading(
                 view: WebView?,
-                request: android.webkit.WebResourceRequest?,
+                request: WebResourceRequest?,
             ): Boolean {
                 val chiesto = request?.url?.toString() ?: return true
-                // Vanno bene **tutti** gli indirizzi di questo computer: dopo
-                // un cambio di rete la pagina sta su un altro di loro, e un
-                // controllo sul solo `base` la bloccherebbe.
                 val nostri = (chi?.basi.orEmpty() + listOfNotNull(chi?.base))
                     .map { it.trimEnd('/') }
                     .filter { it.isNotBlank() }
                 return nostri.none { chiesto.startsWith(it) }
             }
 
+            /**
+             * **Quando il computer non c'è, rispondiamo noi.**
+             *
+             * È il cuore della 0.7.6 lato telefono, e sta in quattro righe: la
+             * pagina fa le sue domande come sempre, e se siamo offline le
+             * esaudisce [ServitoreOffline] leggendo dallo specchio. La pagina
+             * non sa di stare parlando con qualcun altro, e non deve saperlo:
+             * il giorno che il computer impara una rotta nuova, questa app non
+             * cambia di una riga.
+             */
+            override fun shouldInterceptRequest(
+                view: WebView?,
+                request: WebResourceRequest?,
+            ): WebResourceResponse? {
+                if (!stiamoOffline || request == null) return null
+                val nostro = (chi?.basi.orEmpty() + listOfNotNull(chi?.base))
+                    .map { it.trimEnd('/') }
+                    .any { it.isNotBlank() && request.url.toString().startsWith(it) }
+                if (!nostro) return null
+                return servitore?.rispondi(request)
+            }
+
+            /**
+             * Se cade la pagina principale si passa alla copia.
+             *
+             * Un'immagine che non arriva non è un motivo per cambiare tutto:
+             * conta solo il frame principale, che è la pagina stessa.
+             */
             override fun onReceivedError(
                 view: WebView?,
-                request: android.webkit.WebResourceRequest?,
+                request: WebResourceRequest?,
                 error: android.webkit.WebResourceError?,
             ) {
-                // Solo se a cadere è la pagina principale: un'immagine che non
-                // arriva non è un motivo per buttare fuori chi sta guardando.
-                if (request?.isForMainFrame == true) mostra(Dove.OFFLINE)
+                if (request?.isForMainFrame != true) return
+                if (stiamoOffline) return
+                chi?.let { apriDallaCopia(it) }
             }
         }
     }
 
     /* ----------------------------------------------------------- il menu */
 
+    /**
+     * Il menu dei tre puntini, ridotto all'osso.
+     *
+     * Quasi tutto quello che c'era è finito nelle **impostazioni della
+     * pagina**, dove è stato chiesto che stesse: ricarica, come siamo messi,
+     * aggiungi una persona, aggiorna l'app, scollegati. Qui restano le due
+     * cose che si fanno **fuori** dalla suite, cioè quando quella rotella non
+     * c'è: cambiare persona e aggiungerne una.
+     */
     private fun apriMenu() {
         val menu = PopupMenu(this, binding.btnMenu)
-        val persona = chi
-        if (dove == Dove.SUITE) menu.menu.add(0, 1, 0, R.string.menu_ricarica)
-        if (persona != null) {
-            menu.menu.add(0, 2, 1, R.string.menu_stato)
-            if (Profili.tutti(this).size > 1) menu.menu.add(0, 3, 2, R.string.menu_cambia)
-        }
-        menu.menu.add(0, 4, 3, R.string.aggiungi_persona)
-        menu.menu.add(0, 5, 4, R.string.menu_aggiorna)
-        if (persona != null) menu.menu.add(0, 6, 5, R.string.menu_scollega)
+        if (Profili.tutti(this).size > 1) menu.menu.add(0, 1, 0, R.string.menu_cambia)
+        menu.menu.add(0, 2, 1, R.string.aggiungi_persona)
+        menu.menu.add(0, 3, 2, R.string.menu_aggiorna)
 
         menu.setOnMenuItemClickListener { voce ->
             when (voce.itemId) {
-                1 -> apriSuite()
-                2 -> mostraStato()
-                3 -> {
+                1 -> {
                     Profili.esci(this)
                     chi = null
                     client = null
+                    deposito = null
+                    servitore = null
                     polling?.cancel()
                     mostra(Dove.UTENTI)
                 }
-                4 -> vaiAllaCollega()
-                5 -> cercaAggiornamento(dilloSempre = true)
-                6 -> persona?.let { chiediDiTogliere(it) }
+                2 -> vaiAdEntrare()
+                3 -> cercaAggiornamento(dilloSempre = true)
             }
             true
         }
         menu.show()
-    }
-
-    private fun mostraStato() {
-        val persona = chi ?: return
-        val inCoda = codaOffline.tutte().size
-        val messaggio = buildString {
-            appendLine("Sei: ${persona.nome}")
-            appendLine("Computer: ${persona.computer}")
-            appendLine("Indirizzo: ${persona.base}")
-            appendLine(
-                if (persona.ePadrone) "Puoi anche decidere sui lavori degli altri."
-                else "Puoi chiedere lavori.",
-            )
-            appendLine(
-                if (persona.base.startsWith("https://")) "Il collegamento è cifrato (HTTPS)."
-                else "Il collegamento è in chiaro: vale sulla wifi di casa.",
-            )
-            appendLine("Versione dell'app: ${Aggiornamenti.versioneInstallata(this@MainActivity)}")
-            appendLine()
-            appendLine(if (dove == Dove.SUITE) "Il PC risponde." else "Il PC non risponde adesso.")
-            if (inCoda > 0) appendLine("$inCoda richieste aspettano qui sul telefono.")
-        }
-        AlertDialog.Builder(this)
-            .setTitle("Stato della connessione")
-            .setMessage(messaggio)
-            .setPositiveButton("Va bene", null)
-            .show()
-    }
-
-    /* -------------------------------------------------------- le azioni */
-
-    /**
-     * Il modulo di quando il PC non c'è.
-     *
-     * I campi arrivano dalle azioni che la suite dichiara (`/azioni`), le stesse
-     * che vedono la console e il server MCP: quando sul PC se ne aggiunge una,
-     * qui compare da sola. Offline si usano quelle **ricordate** dall'ultima
-     * volta, perché senza non ci sarebbe niente da cui costruire il modulo.
-     */
-    private fun leggiAzioniRicordate(profilo: Profilo) {
-        val grezzo = Store.azioniRicordate(this, profilo.id) ?: return
-        azioni = leggiAzioni(grezzo)
-        disegnaSpinner()
-    }
-
-    private fun aggiornaAzioni(profilo: Profilo): Job = lifecycleScope.launch {
-        val cl = client ?: return@launch
-        try {
-            // Solo quelle che vanno in fila: le altre — leggere la libreria,
-            // decidere — sono roba da console e da agenti, e in un menu del
-            // telefono vorrebbero dire scegliere fra nove voci per arrivare a due.
-            val tutte = cl.azioni().filter { it.coda }
-            azioni = tutte
-            Store.ricordaAzioni(this@MainActivity, profilo.id, scriviAzioni(tutte))
-            disegnaSpinner()
-        } catch (_: Exception) {
-            // Restano quelle ricordate: meglio vecchie che nessuna.
-        }
-    }
-
-    private fun leggiAzioni(grezzo: String): List<Azione> = try {
-        val arr = JSONArray(grezzo)
-        (0 until arr.length()).map { Azione.daJson(arr.getJSONObject(it)) }
-    } catch (_: Exception) {
-        emptyList()
-    }
-
-    private fun scriviAzioni(elenco: List<Azione>): String {
-        val arr = JSONArray()
-        for (a in elenco) arr.put(a.aJson())
-        return arr.toString()
-    }
-
-    private fun disegnaSpinner() {
-        /**
-         * Senza l'elenco di cosa sa fare il computer non c'è modulo da
-         * disegnare — e prima qui si usciva in silenzio, lasciando una
-         * schermata con un menu vuoto e un tasto che non faceva niente. Adesso
-         * si dice cosa manca e perché.
-         */
-        binding.spinnerAzione.visibility = if (azioni.isEmpty()) View.GONE else View.VISIBLE
-        binding.btnManda.visibility = if (azioni.isEmpty()) View.GONE else View.VISIBLE
-        if (azioni.isEmpty()) {
-            binding.descrizioneAzione.text = getString(R.string.niente_azioni_ricordate)
-            binding.campiAzione.removeAllViews()
-            return
-        }
-        binding.spinnerAzione.adapter = ArrayAdapter(
-            this,
-            android.R.layout.simple_spinner_dropdown_item,
-            azioni.map { it.titolo },
-        )
-        disegnaCampi(azioneScelta?.let { scelta -> azioni.firstOrNull { it.id == scelta.id } }
-            ?: azioni.first())
-    }
-
-    /**
-     * Costruisce il modulo di un'azione.
-     *
-     * Un campo per riga: etichetta, controllo, e la sua spiegazione sotto. I
-     * tipi sono quattro e bastano — testo, numero, scelta, sì/no.
-     */
-    private fun disegnaCampi(azione: Azione) {
-        azioneScelta = azione
-        binding.descrizioneAzione.text = azione.descrizione
-        val contenitore = binding.campiAzione
-        contenitore.removeAllViews()
-
-        for (campo in azione.campi) {
-            contenitore.addView(etichetta(campo.etichetta + if (campo.obbligatorio) " *" else ""))
-            contenitore.addView(controllo(campo).also { it.tag = campo.nome })
-            if (campo.descrizione.isNotBlank()) contenitore.addView(nota(campo.descrizione))
-        }
-    }
-
-    private fun etichetta(testo: String): TextView = TextView(this).apply {
-        text = testo
-        setTextColor(getColor(R.color.testo_debole))
-        textSize = 13f
-        layoutParams = margini(top = 12)
-    }
-
-    private fun nota(testo: String): TextView = TextView(this).apply {
-        text = testo
-        setTextColor(getColor(R.color.testo_debole))
-        textSize = 11f
-        layoutParams = margini(top = 3)
-    }
-
-    private fun controllo(campo: Campo): View = when {
-        campo.tipo == "scelta" -> Spinner(this).apply {
-            // Nel menu si legge la frase, non l'id: «Anima v2» invece di
-            // «anima2». L'id torna al momento di mandare, in [leggiValori].
-            val voci = (if (campo.obbligatorio) emptyList() else listOf(campo.niente)) +
-                campo.scelte.map { campo.mostra(it) }
-            adapter = ArrayAdapter(
-                this@MainActivity,
-                android.R.layout.simple_spinner_dropdown_item,
-                voci,
-            )
-            layoutParams = margini(top = 4)
-        }
-
-        campo.tipo == "numero" -> EditText(this).apply {
-            inputType = InputType.TYPE_CLASS_NUMBER
-            setText(campo.predefinito ?: "")
-            applicaStile(campo)
-        }
-
-        campo.eLungo -> EditText(this).apply {
-            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE
-            minLines = 3
-            setText(campo.predefinito ?: "")
-            applicaStile(campo)
-        }
-
-        else -> EditText(this).apply {
-            inputType = InputType.TYPE_CLASS_TEXT
-            setText(campo.predefinito ?: "")
-            applicaStile(campo)
-        }
-    }
-
-    private fun EditText.applicaStile(campo: Campo) {
-        hint = campo.esempio ?: ""
-        setTextColor(getColor(R.color.testo))
-        setHintTextColor(getColor(R.color.testo_debole))
-        importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO
-        layoutParams = margini(top = 4)
-    }
-
-    private fun margini(top: Int): LinearLayout.LayoutParams =
-        LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.WRAP_CONTENT,
-        ).apply { topMargin = dp(top) }
-
-    private fun dp(quanti: Int): Int = (quanti * resources.displayMetrics.density).toInt()
-
-    /** Quel che l'utente ha scritto, campo per campo. */
-    private fun valoriDelModulo(azione: Azione): Map<String, String> {
-        val valori = mutableMapOf<String, String>()
-        for (i in 0 until binding.campiAzione.childCount) {
-            val vista = binding.campiAzione.getChildAt(i)
-            val nome = vista.tag as? String ?: continue
-            val campo = azioneScelta?.campi?.firstOrNull { it.nome == nome }
-            val valore = when (vista) {
-                is EditText -> vista.text.toString().trim()
-                is Spinner ->
-                    vista.selectedItem?.toString()?.takeIf { it != (campo?.niente ?: "—") }
-                        ?.let { campo?.idDa(it) ?: it } ?: ""
-                else -> ""
-            }
-            if (valore.isNotBlank()) valori[nome] = valore
-        }
-        return valori
-    }
-
-    /* ------------------------------------------------------- mandare */
-
-    private fun manda() {
-        val azione = azioneScelta ?: return
-        val valori = valoriDelModulo(azione)
-
-        // Il controllo vero lo fa il gateway, che è l'unico posto dove le regole
-        // stanno scritte una volta sola. Qui si guarda solo l'ovvio, per non far
-        // fare un giro di rete a una richiesta vuota.
-        val mancante = azione.campi.firstOrNull { it.obbligatorio && valori[it.nome].isNullOrBlank() }
-        if (mancante != null) {
-            avvisa("Manca «${mancante.etichetta}».")
-            return
-        }
-
-        val principale = valori[azione.campi.firstOrNull { it.obbligatorio }?.nome] ?: azione.titolo
-        codaOffline.aggiungi(azione.id, azione.titolo, principale, valori, chi?.id ?: "")
-        svuotaModulo()
-        mostraCoda()
-        avvisa(getString(R.string.salvata_in_coda))
-        // E si prova subito: se il PC è tornato nel frattempo, parte adesso.
-        apriSuite()
-    }
-
-    private fun svuotaModulo() {
-        azioneScelta?.let { disegnaCampi(it) }
     }
 
     /* ------------------------------------------------------------- la fila */
@@ -969,50 +963,31 @@ class MainActivity : AppCompatActivity() {
                 break
             }
         }
-        if (partitaQualcuna) avvisa("Quello che avevi scritto senza PC è partito.")
-        mostraCoda()
-    }
-
-    private fun mostraCoda() {
-        val offline = codaOffline.tutte().map { Richiesta.daCoda(it) }
-        adapter.sostituisci(offline)
-        binding.codaVuota.visibility = if (offline.isEmpty()) View.VISIBLE else View.GONE
+        if (partitaQualcuna) {
+            avvisa("Quello che avevi chiesto senza computer è partito.")
+            binding.web.reload()
+        }
     }
 
     /* --------------------------------------------------------- scaricare */
-
-    private fun scaricaRisultato(richiesta: Richiesta) {
-        val nome = richiesta.risultatoNome ?: return
-        scaricaDaRete(nome, dallaLibreria = null, mime = richiesta.risultatoMime)
-    }
 
     /**
      * Porta un file dentro il telefono.
      *
      * Un'immagine finisce in galleria, un video in galleria, un brano fra la
      * musica: sotto «DaProd Suite», dove poi si ritrovano senza riaprire l'app.
+     *
+     * **Funziona anche senza computer**, ed è una delle cose chieste: «tutto
+     * quello che si riceve automaticamente viene salvato offline, poi se uno
+     * vuole li può salvare in galleria». Se il file è nello specchio si prende
+     * da lì, e la rete non serve.
      */
-    private fun scaricaDaRete(
-        nome: String,
-        dallaLibreria: String?,
-        mime: String? = null,
-        ilRegalo: String? = null,
-    ) {
-        val cl = client ?: return avvisa("Serve il PC collegato per scaricarlo.")
-        avvisa("Lo sto scaricando…")
+    private fun portaNelTelefono(nome: String, rotta: String, chiaveLocale: String) {
+        avvisa("Lo sto salvando…")
         lifecycleScope.launch {
             try {
-                val byte = when {
-                    ilRegalo != null -> cl.scaricaRegalo(ilRegalo)
-                    dallaLibreria != null -> cl.scaricaDallaLibreria(dallaLibreria)
-                    else -> cl.scaricaRisultato(nome)
-                }
-                val dove = Scarica.salva(
-                    this@MainActivity,
-                    nome,
-                    mime ?: indovinaMime(nome),
-                    byte,
-                )
+                val (byte, mime) = prendiIByte(rotta, chiaveLocale)
+                val dove = Scarica.salva(this@MainActivity, nome, mimeBuono(mime, nome), byte)
                 avvisa("Salvato in $dove.")
             } catch (e: Exception) {
                 avvisa(spiega(e))
@@ -1020,17 +995,76 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    /** Dal nome del file, che è l'unica cosa che si ha quando arriva dalla pagina. */
-    private fun indovinaMime(nome: String): String = when (nome.substringAfterLast('.', "").lowercase()) {
-        "png" -> "image/png"
-        "jpg", "jpeg" -> "image/jpeg"
-        "webp" -> "image/webp"
-        "mp4" -> "video/mp4"
-        "webm" -> "video/webm"
-        "mp3" -> "audio/mpeg"
-        "wav" -> "audio/wav"
-        "flac" -> "audio/flac"
-        else -> "application/octet-stream"
+    /**
+     * Passa un file a un'altra app: WhatsApp, la posta, quello che c'è.
+     *
+     * Se ne fa una copia nella cache condivisa e si consegna quella: da Android
+     * 7 un file non si passa più come percorso, e la galleria di sistema non è
+     * un posto da cui si possa consegnare qualcosa a nome nostro.
+     */
+    private fun passaAdUnAltraApp(nome: String, rotta: String, chiaveLocale: String) {
+        lifecycleScope.launch {
+            try {
+                val (byte, mime) = prendiIByte(rotta, chiaveLocale)
+                val cartella = File(cacheDir, "condivisi").apply { mkdirs() }
+                // Una cartella che si svuota da sé: un file condiviso ieri non
+                // serve più a nessuno, e la cache non è un archivio.
+                cartella.listFiles()?.forEach { runCatching { it.delete() } }
+                val file = File(cartella, nome.replace(Regex("[\\\\/:*?\"<>|]"), "_"))
+                file.writeBytes(byte)
+
+                val uri = FileProvider.getUriForFile(
+                    this@MainActivity,
+                    "$packageName.file",
+                    file,
+                )
+                val intento = Intent(Intent.ACTION_SEND).apply {
+                    type = mimeBuono(mime, nome)
+                    putExtra(Intent.EXTRA_STREAM, uri)
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
+                startActivity(Intent.createChooser(intento, getString(R.string.condividi_con)))
+            } catch (e: Exception) {
+                avvisa(spiega(e))
+            }
+        }
+    }
+
+    /**
+     * I byte di una cosa: dallo specchio se ci sono, dal computer se no.
+     *
+     * Prima lo specchio, e non è pigrizia: è istantaneo, non consuma dati, e
+     * funziona in metropolitana. Il computer è la seconda strada, non la prima.
+     */
+    private suspend fun prendiIByte(rotta: String, chiaveLocale: String): Pair<ByteArray, String> {
+        deposito?.fileSalvato(chiaveLocale)?.let { return it }
+        val cl = client ?: throw GatewayException("Serve il computer per prenderlo.")
+        val preso = cl.prendiGrezzo(rotta)
+        // Già che c'è, resta: la seconda volta non si scarica più.
+        deposito?.mettiFile(chiaveLocale, preso.first, preso.second)
+        return preso
+    }
+
+    /**
+     * Il tipo del file: quello che dice il computer, o quello dell'estensione.
+     *
+     * Serve al telefono per sapere in che collezione metterlo. Un
+     * `application/octet-stream` finirebbe nei Download anche se è una foto.
+     */
+    private fun mimeBuono(dallaRete: String, nome: String): String {
+        val pulito = dallaRete.substringBefore(";").trim()
+        if (pulito.isNotBlank() && pulito != "application/octet-stream") return pulito
+        return when (nome.substringAfterLast('.', "").lowercase()) {
+            "png" -> "image/png"
+            "jpg", "jpeg" -> "image/jpeg"
+            "webp" -> "image/webp"
+            "mp4" -> "video/mp4"
+            "webm" -> "video/webm"
+            "mp3" -> "audio/mpeg"
+            "wav" -> "audio/wav"
+            "flac" -> "audio/flac"
+            else -> "application/octet-stream"
+        }
     }
 
     /* ------------------------------------------------------------- polling */
@@ -1038,10 +1072,10 @@ class MainActivity : AppCompatActivity() {
     /**
      * Le notifiche mentre l'app è davanti.
      *
-     * Con l'app chiusa il lavoro lo fa `SyncWorker`, che passa ogni quarto d'ora:
-     * è lui che porta la notifica ore dopo. Questo qui serve solo a chi sta
+     * Con l'app chiusa il lavoro lo fa `SyncWorker`, che passa ogni quarto
+     * d'ora: è lui che porta la notifica ore dopo. Questo qui serve a chi sta
      * guardando lo schermo mentre il PC lavora — e a riaccorgersi che il PC è
-     * tornato, quando si è nella schermata «senza PC».
+     * tornato, quando si sta guardando la copia.
      */
     private fun avviaPolling() {
         polling?.cancel()
@@ -1049,7 +1083,7 @@ class MainActivity : AppCompatActivity() {
             while (isActive) {
                 delay(20_000)
                 controllaNotifiche()
-                if (dove == Dove.OFFLINE) apriSuite()
+                if (dove == Dove.SUITE && stiamoOffline) apriSuite()
             }
         }
     }
@@ -1061,6 +1095,9 @@ class MainActivity : AppCompatActivity() {
                 Notifiche.mostra(this, getString(R.string.app_name), testo)
                 cl.segnaNotificaLetta(id)
             }
+            // Una notifica vuol quasi sempre dire «c'è una cosa nuova»: è il
+            // momento buono per portarsela qui, mentre la linea c'è.
+            chi?.let { specchia(it) }
         } catch (_: Exception) {
             // Offline: al giro dopo.
         }
@@ -1071,9 +1108,9 @@ class MainActivity : AppCompatActivity() {
     /**
      * Cerca una versione nuova.
      *
-     * `dilloSempre` è la differenza fra il giro automatico e la voce di menu:
-     * premendo **Aggiorna l'app** si vuole una risposta comunque, anche «sei già
-     * a posto»; all'avvio no, o sarebbe un messaggio a ogni apertura.
+     * `dilloSempre` è la differenza fra il giro automatico e il tasto: premendo
+     * **Aggiorna l'app** si vuole una risposta comunque, anche «sei già a
+     * posto»; all'avvio no, o sarebbe un messaggio a ogni apertura.
      */
     private fun cercaAggiornamento(dilloSempre: Boolean) {
         if (dilloSempre) avvisa(getString(R.string.agg_cerco))
@@ -1150,10 +1187,12 @@ class MainActivity : AppCompatActivity() {
 
     /* ---------------------------------------------------------- aiutini */
 
+    private fun dp(quanti: Int): Int = (quanti * resources.displayMetrics.density).toInt()
+
     /** Il messaggio del gateway se c'è, altrimenti quello che serve sapere. */
     private fun spiega(e: Exception): String =
         (e as? GatewayException)?.message
-            ?: "Non riesco a raggiungere il PC. È acceso, con la suite aperta e l'accesso «Da fuori» acceso?"
+            ?: "Non riesco a raggiungere il computer. È acceso, con la suite aperta?"
 
     private fun avvisa(testo: String) {
         Toast.makeText(this, testo, Toast.LENGTH_LONG).show()

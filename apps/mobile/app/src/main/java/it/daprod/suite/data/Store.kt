@@ -15,6 +15,11 @@ import android.content.Context
  * - **quando si è guardato l'ultima volta** se c'è una versione nuova dell'app,
  *   che è l'unica cosa che questa app manda fuori dalla tua rete e non deve
  *   diventare un pettegolezzo continuo.
+ *
+ * Fino alla 0.7.5 qui si tenevano anche **le azioni ricordate**, per costruire
+ * il modulo della schermata «senza PC». Quella schermata non c'è più: adesso a
+ * computer spento si vede la stessa pagina di sempre, e le azioni le tiene lo
+ * specchio insieme a tutto il resto (vedi `Deposito`).
  */
 object Store {
     private const val PREFS = "daprod_suite"
@@ -53,25 +58,6 @@ object Store {
     fun segnaControlloAgg(context: Context) {
         prefs(context).edit().putLong(KEY_AGG, System.currentTimeMillis()).apply()
     }
-
-    /**
-     * Le azioni che il PC dichiarava l'ultima volta che ha risposto.
-     *
-     * Si tengono per una ragione sola: **senza, offline non si può chiedere
-     * niente**. Il modulo di una richiesta nasce dalle azioni che la suite
-     * dichiara, e se il PC non risponde non c'è nessuna azione da cui farlo
-     * nascere — cioè la coda offline, che è la ragione per cui questa app
-     * serve anche a computer spento, resterebbe una lista vuota.
-     *
-     * Sono per persona: due profili possono stare su due computer diversi, con
-     * due suite di versioni diverse.
-     */
-    fun ricordaAzioni(context: Context, profilo: String, json: String) {
-        prefs(context).edit().putString("azioni:$profilo", json).apply()
-    }
-
-    fun azioniRicordate(context: Context, profilo: String): String? =
-        prefs(context).getString("azioni:$profilo", null)
 
     /** Il nome che Android propone per una persona nuova, la prima volta. */
     fun nomeProposto(): String = android.os.Build.MODEL ?: "telefono"

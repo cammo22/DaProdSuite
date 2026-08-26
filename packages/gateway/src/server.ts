@@ -43,6 +43,22 @@
  *   DELETE /libreria/:id                        → buttala (solo le tue)
  *   GET  /notifiche                             → notifiche non lette
  *   POST /notifiche/:id/letta                   → segna letta
+ *   GET  /macchina                              → chi lavora, chi aspetta, le regole
+ *   POST /macchina/pausa  { inPausa }            → «sto usando il computer» (solo il PC)
+ *   POST /macchina/regole { … }                  → chi passa subito e i tetti (solo il PC)
+ *   DELETE /macchina/fila/:id                   → toglie un lavoro non ancora partito
+ *   GET  /modelli                               → i modelli con cui si può parlare
+ *   GET  /chiacchierata                         → la tua sessione viva, se c'è
+ *   POST /chiacchierata   { modello }            → cominciane una (dieci minuti)
+ *   POST /chiacchierata/:id/dico  { testo }      → una battuta, e la risposta
+ *   POST /chiacchierata/:id/piano { quali }      → accetta il piano: i lavori partono
+ *   DELETE /chiacchierata/:id                   → chiudila e libera la memoria
+ *   POST /io/profilo      { motto }              → cambia la riga sotto al nome
+ *   POST /io/foto                               → la foto del profilo (il corpo è il file)
+ *   POST /bacheca?nome=&didascalia=             → carica una cosa tua in bacheca
+ *   GET  /libreria/anteprima/:id                → il fotogramma o la copertina
+ *   POST /libreria/:id/mipiace { mipiace }       → mi piace, o non più
+ *   POST /libreria/:id/tengo   { tengo }         → tienila fra le tue cose
  *
  * Tutte le rotte tranne `/` e `/accoppiamento` vogliono
  * `Authorization: Bearer <token>`. L'unica eccezione è `/stato/stream`, che
@@ -66,7 +82,9 @@ import type {
   Dispositivo,
   DispositivoPubblico,
   FornitoreAi,
+  FornitoreChiacchierata,
   FornitoreLibreria,
+  FornitoreMacchina,
   FornitorePannello,
   FornitorePreset,
   StatoRichiesta,
@@ -110,6 +128,14 @@ export interface GatewayOpzioni {
   ai?: FornitoreAi;
   /** Chi sa rispondere sui modi di generare messi da parte. */
   preset?: FornitorePreset;
+  /**
+   * Chi sa dire com'è messo il computer, e governarne la fila.
+   *
+   * Facoltativo come gli altri: senza, `/macchina` dice 501 invece di sparire.
+   */
+  macchina?: FornitoreMacchina;
+  /** Chi sa reggere una chiacchierata con un modello, se questa suite ce l'ha. */
+  chiacchierata?: FornitoreChiacchierata;
 }
 
 /** Ogni quanto il gateway manda un segno di vita a chi è in ascolto. */
@@ -124,6 +150,23 @@ const BATTITO_SSE_MS = 20_000;
  * più di qualunque cosa la suite produca.
  */
 const MASSIMO_REGALO = 512 * 1024 * 1024;
+
+/**
+ * Quanto può pesare una foto del profilo: quattro mega.
+ *
+ * È un quadratino da 200 px: quattro mega sono già una foto scattata col
+ * telefono senza pensarci. Oltre, non è una foto del profilo — è un errore.
+ */
+const MASSIMO_FOTO = 4 * 1024 * 1024;
+
+/**
+ * Quanto può pesare una cosa caricata a mano in bacheca: cento mega.
+ *
+ * Meno di un regalo, e apposta: un regalo va a **una** persona che lo ha
+ * chiesto, una cosa in bacheca la vedono tutti e resta lì. Cento mega sono un
+ * video di qualche minuto, che è quello che ha senso mostrare in una bacheca.
+ */
+const MASSIMO_IN_BACHECA = 100 * 1024 * 1024;
 
 /** Una connessione SSE aperta: il gateway le tiene d'occhio per spingere. */
 interface SseClient {
@@ -143,6 +186,8 @@ export class Gateway {
   private pannello: FornitorePannello | undefined;
   private ai: FornitoreAi | undefined;
   private preset: FornitorePreset | undefined;
+  private macchina: FornitoreMacchina | undefined;
+  private chiacchierata: FornitoreChiacchierata | undefined;
 
   constructor(opzioni: GatewayOpzioni) {
     this.remoto = opzioni.remoto;
@@ -154,6 +199,8 @@ export class Gateway {
     this.pannello = opzioni.pannello;
     this.ai = opzioni.ai;
     this.preset = opzioni.preset;
+    this.macchina = opzioni.macchina;
+    this.chiacchierata = opzioni.chiacchierata;
     this.server = createServer((req, res) => {
       void this.maneggia(req, res);
     });
@@ -231,6 +278,32 @@ export class Gateway {
           return;
         }
         await this.ricevi(req, res, chi, url);
+        return;
+      }
+
+      /**
+       * La foto del profilo, e le cose caricate a mano in bacheca.
+       *
+       * Stanno **qui**, insieme ai regali e prima di `leggiCorpo`, per la stessa
+       * ragione: il corpo è il file, non un JSON. Leggerlo in memoria per poi
+       * riscriverlo sul disco vorrebbe dire tenere cento mega in RAM per niente.
+       */
+      if (percorso === "/io/foto" && req.method === "POST") {
+        const chi = this.chiE(req, url);
+        if (!chi) {
+          this.errore(res, 401, "Token mancante o non riconosciuto.");
+          return;
+        }
+        await this.riceviFotoProfilo(req, res, chi, url);
+        return;
+      }
+      if (percorso === "/bacheca" && req.method === "POST") {
+        const chi = this.chiE(req, url);
+        if (!chi) {
+          this.errore(res, 401, "Token mancante o non riconosciuto.");
+          return;
+        }
+        await this.riceviInBacheca(req, res, chi, url);
         return;
       }
 
@@ -577,7 +650,50 @@ export class Gateway {
           computer: this.computer,
           versione: this.versione,
           basi: this.pannello?.stato(dispositivo).indirizzi.map((i) => i.base) ?? [],
+          // Il profilo, dalla 0.7.6: la faccia e la riga sotto al nome. Senza,
+          // in DaProd uno è una stringa di testo fra altre stringhe di testo.
+          foto: dispositivo.foto ? `/io/foto/${encodeURIComponent(dispositivo.id)}` : undefined,
+          motto: dispositivo.motto,
         });
+        return;
+      }
+
+      /** La riga sotto al nome. La cambia solo chi sta dietro a quel nome. */
+      if (percorso === "/io/profilo" && req.method === "POST") {
+        const dati = (corpo ?? {}) as { motto?: string; nome?: string };
+        if (typeof dati.nome === "string" && dati.nome.trim()) {
+          // Il nome resta unico, anche cambiandolo: vedi `rinomina`. Un no qui
+          // vuol dire «quel nome è di un altro», ed è l'unica ragione possibile.
+          if (!this.remoto.rinomina(dispositivo.id, dati.nome)) {
+            return this.errore(res, 409, `«${dati.nome.trim()}» è già di qualcun altro. Scegline un altro.`);
+          }
+        }
+        if (typeof dati.motto === "string") {
+          this.remoto.cambiaProfilo(dispositivo.id, { motto: dati.motto });
+        }
+        this.json(res, 200, { ok: true, nome: dispositivo.nome, motto: dispositivo.motto });
+        this.aggiorna();
+        return;
+      }
+
+      /**
+       * La foto di qualcuno, per mostrarla accanto alle sue cose in bacheca.
+       *
+       * La vedono tutti quelli collegati, e non è una svista: una bacheca in
+       * cui le facce si vedono solo a sé stessi non è una bacheca. Quello che
+       * non si vede da qui è tutto il resto di quella persona.
+       */
+      const laFotoDi = percorso.match(/^\/io\/foto\/([^/]+)$/);
+      if (laFotoDi && (req.method === "GET" || req.method === "HEAD")) {
+        const chi = this.remoto
+          .listaDispositivi()
+          .find((d) => d.id === decodeURIComponent(laFotoDi[1] ?? ""));
+        if (!chi?.foto) return this.errore(res, 404, "Questa persona non ha una foto.");
+        const assoluto = normalize(join(this.remoto.inviiDir, chi.foto));
+        if (!assoluto.startsWith(this.remoto.inviiDir)) {
+          return this.errore(res, 403, "Percorso fuori dalla cartella.");
+        }
+        this.mandaConPezzi(req, res, assoluto, "image/*", 0);
         return;
       }
 
@@ -597,6 +713,43 @@ export class Gateway {
         });
         return;
       }
+      /**
+       * L'anteprima: il fotogramma di un video, la copertina di un brano.
+       *
+       * **Il difetto che chiude, detto da chi lo vedeva:** «i video, la
+       * thumbnail — un frame si deve vedere, ora non lo hanno, poi se lo fai
+       * partire esce». Un `<video>` senza poster è un rettangolo nero finché
+       * non premi play: in una galleria di dodici riquadri neri non si
+       * riconosce niente.
+       *
+       * Chi non ha anteprima riceve un 404, non un errore: la pagina lo sa
+       * già dal campo `anteprima` dell'elenco e non la chiede nemmeno.
+       */
+      const anteprimaDi = percorso.match(/^\/libreria\/anteprima\/(.+)$/);
+      if (anteprimaDi && (req.method === "GET" || req.method === "HEAD")) {
+        if (!this.libreria?.anteprima) return this.errore(res, 404, "Niente anteprime qui.");
+        const percorsoFile = await this.libreria.anteprima(
+          decodeURIComponent(anteprimaDi[1] ?? ""),
+          dispositivo.id,
+        );
+        if (!percorsoFile) return this.errore(res, 404, "Per questa non c'è un'anteprima.");
+        /**
+         * **Il tipo si legge dal file, non si decide qui.**
+         *
+         * Prima era scritto `image/jpeg` fisso, e sembrava ragionevole: le
+         * anteprime dei video le scrive FFmpeg in JPEG, e le copertine dei
+         * brani sono `.cover.jpg`. Ma l'anteprima di **un'immagine è
+         * l'immagine stessa** — un PNG, quasi sempre — e queste risposte
+         * escono con `X-Content-Type-Options: nosniff`, che vieta al browser di
+         * indovinare. Risultato: un PNG dichiarato JPEG veniva rifiutato, e in
+         * galleria le immagini restavano dei riquadri vuoti.
+         *
+         * Visto in un browser vero il 26 agosto 2026, non leggendo il codice.
+         */
+        this.mandaConPezzi(req, res, percorsoFile, mimeDiUnImmagine(percorsoFile), 0);
+        return;
+      }
+
       const dallaLibreria = percorso.match(/^\/libreria\/file\/(.+)$/);
       if (dallaLibreria && (req.method === "GET" || req.method === "HEAD")) {
         this.serviLibreria(req, res, decodeURIComponent(dallaLibreria[1] ?? ""), dispositivo);
@@ -620,6 +773,41 @@ export class Gateway {
         this.aggiorna();
         return;
       }
+      /**
+       * Mi piace. **Su qualunque cosa si veda in bacheca, non solo sulle proprie.**
+       *
+       * È il gesto più piccolo di DaProd ed è quello che lo fa esistere: senza,
+       * chi mette una cosa in bacheca non sa se l'ha guardata qualcuno, e la
+       * volta dopo non ce la mette.
+       */
+      const ilMiPiace = percorso.match(/^\/libreria\/(.+)\/mipiace$/);
+      if (ilMiPiace && req.method === "POST") {
+        if (!this.libreria?.miPiace) return this.errore(res, 501, "Qui non si mette mi piace.");
+        const quanti = this.libreria.miPiace(
+          decodeURIComponent(ilMiPiace[1] ?? ""),
+          dispositivo.id,
+          ((corpo ?? {}) as { mipiace?: boolean }).mipiace !== false,
+        );
+        if (quanti === null) return this.errore(res, 404, "Questa non la trovo, o non la puoi vedere.");
+        this.json(res, 200, { ok: true, quanti });
+        this.aggiorna();
+        return;
+      }
+
+      /** Tenere da parte una cosa di un altro: compare fra le proprie. */
+      const daTenere = percorso.match(/^\/libreria\/(.+)\/tengo$/);
+      if (daTenere && req.method === "POST") {
+        if (!this.libreria?.tieni) return this.errore(res, 501, "Qui non si tiene niente da parte.");
+        const fatto = this.libreria.tieni(
+          decodeURIComponent(daTenere[1] ?? ""),
+          dispositivo.id,
+          ((corpo ?? {}) as { tengo?: boolean }).tengo !== false,
+        );
+        this.json(res, fatto ? 200 : 404, { ok: fatto });
+        this.aggiorna();
+        return;
+      }
+
       const daButtare = percorso.match(/^\/libreria\/(.+)$/);
       if (daButtare && req.method === "DELETE") {
         if (!this.libreria) return this.errore(res, 501, "Questa suite non ha la libreria.");
@@ -705,6 +893,145 @@ export class Gateway {
         this.json(res, 200, { ok: true });
         this.aggiorna();
         return;
+      }
+
+      /* ------------------------------------------------ la macchina */
+
+      /**
+       * Com'è messo il computer: chi lavora, chi aspetta, quali sono le regole.
+       *
+       * La leggono tutti — chi aspetta ha diritto di sapere **perché** aspetta
+       * — ma gli interruttori li vede e li preme solo il computer stesso.
+       */
+      if (percorso === "/macchina" && req.method === "GET") {
+        if (!this.macchina) return this.errore(res, 501, "Questa suite non governa la fila.");
+        this.json(res, 200, this.macchina.stato(dispositivo));
+        return;
+      }
+
+      const governo = percorso.match(/^\/macchina\/(pausa|regole)$/);
+      if (governo && req.method === "POST") {
+        if (!this.macchina) return this.errore(res, 501, "Questa suite non governa la fila.");
+        /**
+         * **Solo dal computer, e questa riga è tutto il punto.**
+         *
+         * Chiesto così: «vorrei mettere solo su pc la possibilità di accettare
+         * le richieste in automatico e limitarle con un pulsante», e «il pc è
+         * il vero admin». Un telefono con i permessi da admin decide sulle
+         * richieste degli altri — quello sì — ma non può alzarsi i limiti a cui
+         * è sottoposto: se potesse, non sarebbero limiti.
+         */
+        if (!this.macchina.stato(dispositivo).sonoLaCasa) {
+          return this.errore(
+            res,
+            403,
+            "Questo si cambia solo dal computer, da DaProdConnessione.",
+          );
+        }
+        const dati = (corpo ?? {}) as {
+          inPausa?: boolean;
+          chiPassaSubito?: string;
+          limiteFila?: number;
+          limitePersona?: number;
+        };
+        if (governo[1] === "pausa") {
+          this.macchina.pausa(dati.inPausa === true);
+        } else {
+          this.macchina.regole({
+            chiPassaSubito:
+              dati.chiPassaSubito === "mai" || dati.chiPassaSubito === "tutti"
+                ? dati.chiPassaSubito
+                : "admin",
+            limiteFila: Math.max(0, Math.min(100, Number(dati.limiteFila) || 0)),
+            limitePersona: Math.max(0, Math.min(100, Number(dati.limitePersona) || 0)),
+          });
+        }
+        this.json(res, 200, this.macchina.stato(dispositivo));
+        this.aggiorna();
+        return;
+      }
+
+      const dallaFila = percorso.match(/^\/macchina\/fila\/([^/]+)$/);
+      if (dallaFila && req.method === "DELETE") {
+        if (!this.macchina) return this.errore(res, 501, "Questa suite non governa la fila.");
+        if (dispositivo.ruolo !== "admin") {
+          return this.errore(res, 403, "Togliere un lavoro dalla fila lo fa chi decide.");
+        }
+        const errore = this.macchina.togli(decodeURIComponent(dallaFila[1] ?? ""));
+        this.json(res, errore ? 409 : 200, { ok: !errore, errore: errore ?? undefined });
+        this.aggiorna();
+        return;
+      }
+
+      /* ------------------------------------------- la chiacchierata */
+
+      /** Con chi si può parlare: i modelli installati su quel computer. */
+      if (percorso === "/modelli" && req.method === "GET") {
+        if (!this.chiacchierata) return this.json(res, 200, { modelli: [] });
+        this.json(res, 200, { modelli: await this.chiacchierata.modelli() });
+        return;
+      }
+
+      if (percorso === "/chiacchierata" && req.method === "GET") {
+        if (!this.chiacchierata) return this.json(res, 200, { sessione: null });
+        this.json(res, 200, { sessione: this.chiacchierata.mia(dispositivo.id) });
+        return;
+      }
+
+      if (percorso === "/chiacchierata" && req.method === "POST") {
+        if (!this.chiacchierata) {
+          return this.errore(res, 501, "Su questo computer non c'è nessuno con cui parlare.");
+        }
+        const dati = (corpo ?? {}) as { modello?: string };
+        const esito = await this.chiacchierata.comincia({
+          dispositivoId: dispositivo.id,
+          chiNome: dispositivo.nome,
+          modello: String(dati.modello ?? ""),
+        });
+        if ("errore" in esito) return this.errore(res, 409, esito.errore);
+        this.json(res, 201, esito);
+        this.aggiorna();
+        return;
+      }
+
+      const inChiacchierata = percorso.match(/^\/chiacchierata\/([^/]+)(\/dico|\/piano)?$/);
+      if (inChiacchierata) {
+        if (!this.chiacchierata) {
+          return this.errore(res, 501, "Su questo computer non c'è nessuno con cui parlare.");
+        }
+        const id = decodeURIComponent(inChiacchierata[1] ?? "");
+        const coda = inChiacchierata[2];
+
+        if (coda === "/dico" && req.method === "POST") {
+          const testo = String(((corpo ?? {}) as { testo?: string }).testo ?? "").trim();
+          if (!testo) return this.errore(res, 400, "Non hai scritto niente.");
+          const esito = await this.chiacchierata.dico({
+            id,
+            dispositivoId: dispositivo.id,
+            testo: testo.slice(0, 4000),
+          });
+          if ("errore" in esito) return this.errore(res, 409, esito.errore);
+          this.json(res, 200, esito);
+          return;
+        }
+        if (coda === "/piano" && req.method === "POST") {
+          const dati = (corpo ?? {}) as { quali?: number[] };
+          const esito = await this.chiacchierata.accetta({
+            id,
+            dispositivoId: dispositivo.id,
+            quali: Array.isArray(dati.quali) ? dati.quali.map(Number).filter(Number.isFinite) : [],
+          });
+          if ("errore" in esito) return this.errore(res, 409, esito.errore);
+          this.json(res, 201, esito);
+          this.aggiorna();
+          return;
+        }
+        if (!coda && req.method === "DELETE") {
+          this.chiacchierata.chiudi(id, dispositivo.id);
+          this.json(res, 200, { ok: true });
+          this.aggiorna();
+          return;
+        }
       }
 
       // Notifiche: elenco e spunta "letta".
@@ -1024,6 +1351,159 @@ export class Gateway {
     this.aggiorna();
   }
 
+  /**
+   * Scrive il corpo della richiesta sul disco mentre arriva, e dice quanto pesa.
+   *
+   * Tirata fuori quando i file da ricevere sono diventati tre — un regalo, una
+   * foto del profilo, una cosa da mettere in bacheca — e tutti e tre facevano
+   * la stessa identica cosa. Tre copie di questo ciclo sarebbero state tre modi
+   * diversi di dimenticarsi di cancellare il file quando qualcosa va storto.
+   *
+   * Torna il nome del file sul disco e i byte scritti, oppure il motivo.
+   */
+  private async scriviIlCorpo(
+    req: IncomingMessage,
+    nomeChiesto: string,
+    massimo: number,
+  ): Promise<{ suDisco: string; bytes: number } | { errore: string; codice: number }> {
+    const atteso = Number(req.headers["content-length"] ?? 0);
+    if (atteso > massimo) {
+      req.destroy();
+      return {
+        errore: `Un file più grande di ${Math.round(massimo / 1_000_000)} MB non passa di qui.`,
+        codice: 413,
+      };
+    }
+
+    mkdirSync(this.remoto.inviiDir, { recursive: true });
+    // Il nome arriva da fuori e non si crede: quello che finisce sul disco è un
+    // nome fatto qui, senza barre e senza punti in testa.
+    const suDisco = `${Date.now().toString(36)}-${nomeChiesto
+      .slice(0, 120)
+      .replace(/[^\p{L}\p{N} _.()\[\]-]+/gu, "_")}`.replace(/^\.+/, "");
+    const dove = join(this.remoto.inviiDir, suDisco);
+
+    let scritti = 0;
+    try {
+      await new Promise<void>((risolvi, rifiuta) => {
+        const fuori = createWriteStream(dove);
+        req.on("data", (pezzo: Buffer) => {
+          scritti += pezzo.length;
+          if (scritti > massimo) {
+            fuori.destroy();
+            req.destroy();
+            rifiuta(new Error("Il file è troppo grande."));
+          }
+        });
+        req.on("error", rifiuta);
+        fuori.on("error", rifiuta);
+        fuori.on("finish", () => risolvi());
+        req.pipe(fuori);
+      });
+    } catch (err) {
+      buttaIlFile(dove);
+      return {
+        errore: err instanceof Error ? err.message : "Il file non è arrivato intero.",
+        codice: 400,
+      };
+    }
+
+    if (scritti === 0) {
+      buttaIlFile(dove);
+      return { errore: "Il file era vuoto.", codice: 400 };
+    }
+    return { suDisco, bytes: scritti };
+  }
+
+  /**
+   * La foto del profilo.
+   *
+   * Sta nella cartella dei regali come un file qualunque: non serve un posto
+   * nuovo per un quadratino da 200 px, e quella cartella ha già le regole
+   * giuste — dentro ci si arriva solo per id, mai per percorso.
+   *
+   * La foto di prima si butta: chi ne mette una nuova non vuole tenere le
+   * vecchie, e senza questa riga la cartella crescerebbe a ogni ripensamento.
+   */
+  private async riceviFotoProfilo(
+    req: IncomingMessage,
+    res: ServerResponse,
+    chi: Dispositivo,
+    url: URL,
+  ): Promise<void> {
+    const mime = String(req.headers["content-type"] ?? "").split(";")[0]!.trim();
+    if (!mime.startsWith("image/")) {
+      this.errore(res, 415, "La foto del profilo dev'essere un'immagine.");
+      req.destroy();
+      return;
+    }
+    const esito = await this.scriviIlCorpo(
+      req,
+      url.searchParams.get("nome") ?? "profilo.jpg",
+      MASSIMO_FOTO,
+    );
+    if ("errore" in esito) {
+      this.errore(res, esito.codice, esito.errore);
+      return;
+    }
+    const prima = chi.foto;
+    this.remoto.cambiaProfilo(chi.id, { foto: esito.suDisco });
+    if (prima && prima !== esito.suDisco) buttaIlFile(join(this.remoto.inviiDir, prima));
+    this.json(res, 201, { ok: true, foto: `/io/foto/${encodeURIComponent(chi.id)}` });
+    this.aggiorna();
+  }
+
+  /**
+   * Una cosa caricata a mano, da mettere in bacheca.
+   *
+   * **Perché non è un regalo.** Un regalo va a una persona, si apre una volta e
+   * poi è suo. Questo entra in libreria, ha un autore e una didascalia, e lo
+   * vedono tutti: è un pezzo di DaProd, non un pacco.
+   *
+   * Nasce già pubblicata — chi carica un file *per la bacheca* non vuole poi
+   * doverlo anche pubblicare — e resta cancellabile solo da chi l'ha messa.
+   */
+  private async riceviInBacheca(
+    req: IncomingMessage,
+    res: ServerResponse,
+    chi: Dispositivo,
+    url: URL,
+  ): Promise<void> {
+    if (!this.libreria?.aggiungi) {
+      this.errore(res, 501, "Questa suite non ha la bacheca.");
+      req.destroy();
+      return;
+    }
+    const nome = (url.searchParams.get("nome") ?? "file").slice(0, 120);
+    const didascalia = (url.searchParams.get("didascalia") ?? "").slice(0, 300) || undefined;
+    const mime = String(req.headers["content-type"] ?? "application/octet-stream")
+      .split(";")[0]!
+      .trim();
+
+    const esito = await this.scriviIlCorpo(req, nome, MASSIMO_IN_BACHECA);
+    if ("errore" in esito) {
+      this.errore(res, esito.codice, esito.errore);
+      return;
+    }
+
+    const voce = this.libreria.aggiungi({
+      percorso: join(this.remoto.inviiDir, esito.suDisco),
+      nome,
+      mime,
+      bytes: esito.bytes,
+      chi: chi.id,
+      chiNome: chi.nome,
+      didascalia,
+    });
+    if (!voce) {
+      buttaIlFile(join(this.remoto.inviiDir, esito.suDisco));
+      this.errore(res, 400, "Non sono riuscito a metterla in bacheca.");
+      return;
+    }
+    this.json(res, 201, { ok: true, voce });
+    this.aggiorna();
+  }
+
   /** Il file di un regalo, a chi era destinato e a nessun altro. */
   private mandaRegalo(
     req: IncomingMessage,
@@ -1163,4 +1643,39 @@ function biscotto(req: IncomingMessage, nome: string): string {
     return decodeURIComponent(pezzo.slice(taglio + 1).trim());
   }
   return "";
+}
+
+/**
+ * Butta un file senza far storie se non c'era.
+ *
+ * Si chiama sempre nei rami in cui qualcosa è andato storto, dove sollevare un
+ * altro errore vorrebbe dire nascondere il primo.
+ */
+function buttaIlFile(percorso: string): void {
+  try {
+    rmSync(percorso);
+  } catch {
+    // Non c'era, o non si lascia togliere: non cambia la risposta a chi ha mandato.
+  }
+}
+
+/**
+ * Il tipo di un'immagine dall'estensione del file.
+ *
+ * Serve alle anteprime, che possono essere un JPEG (il fotogramma di un video,
+ * la copertina di un brano) o qualunque cosa sia l'immagine originale. Il
+ * fallback è `image/jpeg` e non `image/*`: un tipo con l'asterisco, con
+ * `nosniff` attivo, non è un tipo che il browser accetta.
+ */
+function mimeDiUnImmagine(percorso: string): string {
+  const coda = percorso.slice(percorso.lastIndexOf(".") + 1).toLowerCase();
+  const noti: Record<string, string> = {
+    png: "image/png",
+    jpg: "image/jpeg",
+    jpeg: "image/jpeg",
+    webp: "image/webp",
+    gif: "image/gif",
+    avif: "image/avif",
+  };
+  return noti[coda] ?? "image/jpeg";
 }

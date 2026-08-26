@@ -1,21 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Quattro schermate, una alla volta, nello stesso posto.
+  Tre schermate, una alla volta, nello stesso posto.
 
   1. **Chi sei** — l'elenco delle persone di questo telefono. È la prima cosa che
      si vede, perché era la prima cosa che mancava: sul PC la fila diceva tre
      volte «SM-A536B» e non c'era modo di sapere chi avesse chiesto cosa.
-  2. **Collega** — il QR e il codice, per una persona nuova.
-  3. **La suite** — una WebView sulla console che il PC serve. Non è un
-     ripiego: è la stessa pagina che vede il portatile, e quindi le stesse
-     schede, gli stessi moduli, la stessa galleria. Quando sul PC compare una
-     scheda nuova, qui c'è al collegamento dopo, senza pubblicare un APK.
-  4. **Senza PC** — quando il computer non risponde: quello che hai scritto
-     resta qui e parte da solo quando torna.
+  2. **Entra** — la registrazione: un nome e un codice. È l'unica schermata che
+     deve essere nativa, e per una ragione che non si aggira: prima di
+     accoppiarsi non si sa a quale computer bussare, quindi non c'è nessuna
+     pagina da caricare.
+  3. **La suite** — una WebView sulla console. Non è un ripiego: è la stessa
+     pagina che vede il portatile, e quindi le stesse schede, gli stessi moduli,
+     la stessa galleria. Quando sul PC compare una scheda nuova, qui c'è al
+     collegamento dopo, senza pubblicare un APK.
 
-  La barra in cima è alta poco e c'è sempre: la pagina web ha la sua testata, e
-  due intestazioni una sopra l'altra sono una di troppo. Qui ci stanno le due
-  cose che una pagina web non può fare — cambiare persona e aggiornare l'app.
+  ## Cosa è sparito nella 0.7.6, e perché
+
+  **La quarta schermata, «Senza PC».** Era un menu a tendina, un modulo e una
+  lista: un'app diversa da quella di due secondi prima, che compariva proprio nel
+  momento in cui uno si aspettava di ritrovare la sua roba. Detto così: «al
+  momento se il pc non è raggiungibile mostra un'altra schermata, questa cosa
+  non va bene e non mi piace nemmeno quella schermata».
+
+  Adesso la pagina resta la stessa e a rispondere, al posto del computer, è il
+  telefono — vedi `ServitoreOffline` e `Deposito`. Con lei se ne sono andati il
+  modulo nativo, la lista delle richieste e lo spinner delle azioni: c'erano
+  due modi di chiedere una cosa, ed è rimasto quello buono.
+
+  **La barra in cima, quando si è dentro la suite.** La pagina ha la sua
+  testata, con il nome, la faccia e la rotella delle impostazioni: due
+  intestazioni una sopra l'altra sono una di troppo. La barra torna quando si è
+  fuori dalla suite, cioè quando quella testata non c'è.
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
@@ -123,125 +138,165 @@
             </LinearLayout>
         </androidx.core.widget.NestedScrollView>
 
-        <!-- =============================== COLLEGA =============================== -->
+        <!-- ================================ ENTRA ================================
+             La registrazione, rifatta nella 0.7.6.
+
+             Chiesto così: «all'avvio dell'app voglio una specie di registrazione
+             molto semplice, nickname e codice o qr, ma farlo in una bella pagina
+             di login». È la stessa forma della pagina web — stemma, nome, due
+             passi numerati, un tasto grosso — perché è la stessa app, e la prima
+             schermata non deve sembrare di un altro programma.
+
+             **Il QR è sceso di grado, apposta.** «Il login è obbligatorio il QR,
+             ma lo vorrei opzionale, il codice va benissimo». Adesso il codice è
+             il primo cittadino e il QR è la riga sotto, per chi non ha voglia di
+             battere otto cifre.
+        -->
         <androidx.core.widget.NestedScrollView
             android:id="@+id/schermo_collega"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:visibility="gone"
-            android:paddingHorizontal="16dp">
+            android:paddingHorizontal="20dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:paddingBottom="28dp">
+                android:paddingBottom="32dp">
 
                 <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="24dp"
-                    android:text="@string/titolo_collega"
+                    android:layout_width="72dp"
+                    android:layout_height="72dp"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginTop="26dp"
+                    android:background="@drawable/sfondo_stemma"
+                    android:gravity="center"
+                    android:text="@string/stemma"
                     android:textColor="@color/testo"
-                    android:textSize="24sp"
+                    android:textSize="30sp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:gravity="center"
+                    android:text="@string/app_name"
+                    android:textColor="@color/testo"
+                    android:textSize="25sp"
                     android:textStyle="bold" />
 
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:layout_marginBottom="16dp"
-                    android:text="@string/spiega_collega"
+                    android:layout_marginTop="6dp"
+                    android:layout_marginBottom="22dp"
+                    android:gravity="center"
+                    android:text="@string/claim"
                     android:textColor="@color/testo_debole"
                     android:textSize="13sp" />
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/come_ti_chiami"
-                    android:textColor="@color/testo_debole"
-                    android:textSize="12sp" />
-
-                <EditText
-                    android:id="@+id/campo_nome"
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:inputType="textPersonName|textCapWords"
-                    android:hint="@string/hint_nome"
-                    android:autofillHints="name"
-                    android:textColor="@color/testo"
-                    android:textColorHint="@color/testo_debole" />
+                    android:orientation="vertical"
+                    android:background="@drawable/sfondo_carta"
+                    android:padding="16dp">
 
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:text="@string/nota_nome"
-                    android:textColor="@color/testo_debole"
-                    android:textSize="11sp" />
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/passo_uno"
+                        android:textColor="@color/accento"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+
+                    <EditText
+                        android:id="@+id/campo_nome"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:inputType="textPersonName|textCapWords"
+                        android:hint="@string/hint_nome"
+                        android:autofillHints="name"
+                        android:textColor="@color/testo"
+                        android:textColorHint="@color/testo_debole" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="@string/nota_nome"
+                        android:textColor="@color/testo_debole"
+                        android:textSize="11sp" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="20dp"
+                        android:text="@string/passo_due"
+                        android:textColor="@color/accento"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+
+                    <EditText
+                        android:id="@+id/campo_codice"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:inputType="number"
+                        android:maxLength="8"
+                        android:letterSpacing="0.3"
+                        android:gravity="center"
+                        android:textSize="21sp"
+                        android:hint="@string/hint_codice"
+                        android:importantForAutofill="no"
+                        android:textColor="@color/testo"
+                        android:textColorHint="@color/testo_debole" />
+
+                    <EditText
+                        android:id="@+id/campo_indirizzo"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:inputType="textUri"
+                        android:hint="@string/hint_indirizzo"
+                        android:importantForAutofill="no"
+                        android:textColor="@color/testo"
+                        android:textColorHint="@color/testo_debole"
+                        android:textSize="13sp" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="@string/nota_codice"
+                        android:textColor="@color/testo_debole"
+                        android:textSize="11sp" />
+
+                    <Button
+                        android:id="@+id/btn_connetti"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="18dp"
+                        android:text="@string/btn_entra" />
+                </LinearLayout>
 
                 <Button
                     android:id="@+id/btn_scansiona"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="18dp"
-                    android:text="@string/btn_scansiona" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="20dp"
-                    android:text="@string/oppure_a_mano"
-                    android:textColor="@color/testo_debole"
-                    android:textSize="12sp" />
-
-                <EditText
-                    android:id="@+id/campo_indirizzo"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:inputType="textUri"
-                    android:hint="@string/hint_indirizzo"
-                    android:importantForAutofill="no"
-                    android:textColor="@color/testo"
-                    android:textColorHint="@color/testo_debole" />
-
-                <EditText
-                    android:id="@+id/campo_codice"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:inputType="number"
-                    android:maxLength="8"
-                    android:hint="@string/hint_codice"
-                    android:importantForAutofill="no"
-                    android:textColor="@color/testo"
-                    android:textColorHint="@color/testo_debole" />
-
-                <Button
-                    android:id="@+id/btn_connetti"
                     style="?android:attr/borderlessButtonStyle"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
-                    android:text="@string/btn_connetti"
-                    android:textColor="@color/accento" />
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="@string/nota_codice"
+                    android:layout_marginTop="14dp"
+                    android:text="@string/btn_scansiona"
                     android:textColor="@color/testo_debole"
-                    android:textSize="11sp" />
+                    android:textSize="13sp" />
 
                 <Button
                     android:id="@+id/btn_torna_utenti"
                     style="?android:attr/borderlessButtonStyle"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
                     android:text="@string/torna_indietro"
                     android:textColor="@color/testo_debole"
                     android:textSize="13sp" />
@@ -249,8 +304,9 @@
         </androidx.core.widget.NestedScrollView>
 
         <!-- ============================== LA SUITE =============================== -->
-        <!-- La console che il PC serve. Tutto quello che si vede qui dentro è
-             disegnato di là: se la suite impara una scheda nuova, compare. -->
+        <!-- La console. Col computer acceso la serve lui; col computer spento la
+             serve il telefono, dalla copia che ha tenuto. In tutti e due i casi
+             è la stessa pagina: vedi `ServitoreOffline`. -->
         <WebView
             android:id="@+id/web"
             android:layout_width="match_parent"
@@ -264,110 +320,5 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:visibility="gone" />
-
-        <!-- ============================== SENZA PC =============================== -->
-        <androidx.core.widget.NestedScrollView
-            android:id="@+id/schermo_offline"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:visibility="gone"
-            android:paddingHorizontal="16dp">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:paddingBottom="28dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="24dp"
-                    android:text="@string/senza_pc"
-                    android:textColor="@color/testo"
-                    android:textSize="22sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/offline_spiega"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="@string/senza_pc_spiega"
-                    android:textColor="@color/testo_debole"
-                    android:textSize="13sp" />
-
-                <Button
-                    android:id="@+id/btn_riprova"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
-                    android:text="@string/riprova" />
-
-                <!-- Il modulo si costruisce dalle azioni **ricordate** dall'ultima
-                     volta che il PC ha risposto: senza, offline non si potrebbe
-                     chiedere niente, che è il momento in cui serve di più. -->
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="26dp"
-                    android:text="@string/scrivi_lo_stesso"
-                    android:textColor="@color/testo"
-                    android:textSize="15sp"
-                    android:textStyle="bold" />
-
-                <Spinner
-                    android:id="@+id/spinner_azione"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp" />
-
-                <TextView
-                    android:id="@+id/descrizione_azione"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
-                    android:textColor="@color/testo_debole"
-                    android:textSize="12sp" />
-
-                <LinearLayout
-                    android:id="@+id/campi_azione"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical" />
-
-                <Button
-                    android:id="@+id/btn_manda"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
-                    android:text="@string/btn_invia" />
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="26dp"
-                    android:text="@string/titolo_coda"
-                    android:textColor="@color/testo"
-                    android:textSize="15sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/coda_vuota"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="@string/nessuna_richiesta"
-                    android:textColor="@color/testo_debole"
-                    android:textSize="13sp" />
-
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/lista_richieste"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:nestedScrollingEnabled="false" />
-            </LinearLayout>
-        </androidx.core.widget.NestedScrollView>
     </FrameLayout>
 </LinearLayout>

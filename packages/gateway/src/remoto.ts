@@ -20,6 +20,7 @@ import type {
   Notifica,
   Richiesta,
   Risultato,
+  RegolaFila,
   Ruolo,
   StatoRichiesta,
 } from "./types";
@@ -55,6 +56,26 @@ export class Remoto {
    * negli altri due si sarebbe dimenticata.
    */
   private accettatori: ((richiesta: Richiesta) => void)[] = [];
+
+  /**
+   * La regola della fila, decisa **dal computer**.
+   *
+   * Il gateway non sa — e non deve sapere — quanti lavori regge questa
+   * macchina, né cosa ha scelto chi ci sta davanti. Sa solo chiedere. Lo shell
+   * risponde leggendo le impostazioni, che si cambiano solo dal PC: è il modo
+   * in cui «il pc è il vero admin» diventa una riga di codice invece di una
+   * buona intenzione.
+   *
+   * Senza regola agganciata vale quella di prima: chi ha i permessi da admin
+   * passa subito, gli altri aspettano. Serve alle prove automatiche, che
+   * costruiscono un gateway nudo.
+   */
+  private regola: RegolaFila | null = null;
+
+  /** Lo shell dice come si comporta la fila su questa macchina. */
+  decideLaFila(regola: RegolaFila | null): void {
+    this.regola = regola;
+  }
 
   constructor(
     private archivio: Archivio,
@@ -134,6 +155,30 @@ export class Remoto {
     }
 
     const dati = this.archivio.datiCorrenti;
+
+    /**
+     * **Il nome è tuo, e di nessun altro.**
+     *
+     * Chiesto il 26 agosto 2026: «i futuri utenti se scelgono un nick già
+     * esistente devono usare un altro nick». Non è pignoleria: da questa
+     * versione il nome non è più un'etichetta accanto a una richiesta, è
+     * l'identità con cui uno compare in bacheca, mette un like e ha un profilo.
+     * Due Marco sono due profili che si scambiano le cose a vicenda.
+     *
+     * Il controllo si fa **prima** di consumare un posto dell'invito: un nome
+     * già preso non deve bruciare il codice a chi lo sta scrivendo. È lo stesso
+     * motivo per cui non conta come tentativo sbagliato — non lo è.
+     */
+    const pulito = (nome ?? "").trim();
+    if (pulito) {
+      const gia = dati.dispositivi.find((d) => stessoNome(d.nome, pulito));
+      if (gia) {
+        return {
+          errore: `«${pulito}» è già di qualcun altro su questo computer. Scegline un altro.`,
+        };
+      }
+    }
+
     const indice = dati.inviti.findIndex((i) => i.codice === codice);
     if (indice < 0) {
       this.tentativi.push(Date.now());
@@ -162,7 +207,7 @@ export class Remoto {
 
     const dispositivo: Dispositivo = {
       id: nuovoId("tel"),
-      nome: nome || (invito.ruolo === "admin" ? "Telefono del padrone" : "Telefono"),
+      nome: pulito || nomeLibero(dati.dispositivi, invito.ruolo),
       ruolo: invito.ruolo,
       token: nuovoToken(),
       accoppiato: Date.now(),
@@ -220,7 +265,32 @@ export class Remoto {
   rinomina(id: string, nome: string): boolean {
     const dispositivo = this.archivio.datiCorrenti.dispositivi.find((d) => d.id === id);
     if (!dispositivo || !nome.trim()) return false;
-    dispositivo.nome = nome.trim().slice(0, 40);
+    const pulito = nome.trim().slice(0, 40);
+    // Anche qui il nome deve restare unico: rinominarsi come un altro sarebbe
+    // il modo più semplice di aggirare il controllo dell'accoppiamento.
+    const preso = this.archivio.datiCorrenti.dispositivi.some(
+      (d) => d.id !== id && stessoNome(d.nome, pulito),
+    );
+    if (preso) return false;
+    dispositivo.nome = pulito;
+    this.archivio.salva();
+    return true;
+  }
+
+  /**
+   * Il profilo: la faccia, la riga sotto al nome.
+   *
+   * Nasce con DaProd, la bacheca dove le cose hanno un autore: un nome senza
+   * faccia in una bacheca è una riga di testo, e la differenza fra una cosa che
+   * si guarda e una che si scorre via è tutta lì. La foto sta nella cartella
+   * degli invii come un file qualunque — non serve un posto nuovo per un
+   * quadratino da 200 px.
+   */
+  cambiaProfilo(id: string, cambi: { foto?: string; motto?: string }): boolean {
+    const dispositivo = this.archivio.datiCorrenti.dispositivi.find((d) => d.id === id);
+    if (!dispositivo) return false;
+    if (cambi.foto !== undefined) dispositivo.foto = cambi.foto || undefined;
+    if (cambi.motto !== undefined) dispositivo.motto = cambi.motto.trim().slice(0, 120) || undefined;
     this.archivio.salva();
     return true;
   }
@@ -278,7 +348,22 @@ export class Remoto {
      * vuol dire «quando tocca a te». Su otto GB di scheda video ci sta un
      * modello per volta, e questo non cambia con il ruolo di chi ha chiesto.
      */
-    const decide = opzioni.daDispositivo.ruolo === "admin";
+    /**
+     * **E poi la macchina ha imparato a dire di no, ed era ora.**
+     *
+     * Quella regola da sola bastava finché i telefoni erano uno. Con quattro
+     * persone collegate e i permessi da admin distribuiti, «chi decide genera
+     * subito» vuol dire venti generazioni accodate in due minuti e un computer
+     * che per due ore non è più di chi ci sta davanti. Da qui i due tetti — in
+     * tutto e a testa — e l'interruttore che li governa, che sta **solo sul
+     * PC**: vedi `Impostazioni.accettaDaSola` in `@daprod/ipc`.
+     *
+     * Quando il tetto è pieno la richiesta non si perde e non si rifiuta: resta
+     * «in attesa», che è la cosa onesta da fare. La si accetta a mano quando la
+     * fila si è sgombrata, e nel frattempo chi l'ha chiesta legge perché.
+     */
+    const verdetto = this.decidiSubito(opzioni.daDispositivo);
+    const decide = verdetto.subito;
     const richiesta: Richiesta = {
       id: nuovoId("r"),
       tipo: opzioni.tipo,
@@ -289,6 +374,7 @@ export class Remoto {
       daNome: opzioni.daDispositivo.nome,
       stato: decide ? "accettata" : "in-attesa",
       quando: Date.now(),
+      trattenuta: verdetto.trattenuta,
     };
     dati.richieste.push(richiesta);
     this.archivio.salva();
@@ -313,6 +399,101 @@ export class Remoto {
       });
     }
     return richiesta;
+  }
+
+  /**
+   * Ripassa le richieste trattenute: qualcuna può partire adesso.
+   *
+   * **Senza questo, i tetti sarebbero una porta che non si riapre.** Una
+   * richiesta ferma perché «hai già due lavori in fila» resterebbe ferma anche
+   * quando quei due sono finiti, e chi ha chiesto vedrebbe un computer libero
+   * che non fa la sua roba — che è peggio di non avere tetti.
+   *
+   * Si chiama quando la fila si accorcia: a ogni lavoro finito, e ogni volta
+   * che chi sta al computer toglie la pausa. Torna quelle fatte partire, così
+   * chi chiama può avvisare.
+   */
+  rivediTrattenute(): Richiesta[] {
+    const dati = this.archivio.datiCorrenti;
+    const ferme = dati.richieste.filter((r) => r.stato === "in-attesa" && r.trattenuta);
+    if (!ferme.length) return [];
+
+    const partite: Richiesta[] = [];
+    // Le più vecchie per prime: chi aspetta da più tempo passa prima.
+    for (const richiesta of [...ferme].sort((a, b) => a.quando - b.quando)) {
+      const chi = dati.dispositivi.find((d) => d.id === richiesta.daDispositivo);
+      if (!chi) continue;
+      const verdetto = this.decidiSubito(chi);
+      if (!verdetto.subito) {
+        // Il motivo può essere cambiato («la fila è piena» → «ne hai già due»):
+        // vale la pena riscriverlo, chi guarda legge quello.
+        richiesta.trattenuta = verdetto.trattenuta ?? richiesta.trattenuta;
+        continue;
+      }
+      richiesta.stato = "accettata";
+      richiesta.trattenuta = undefined;
+      partite.push(richiesta);
+    }
+    if (partite.length) this.archivio.salva();
+    for (const r of partite) {
+      for (const fn of this.accettatori) fn(r);
+      this.notifica({
+        dispositivoId: r.daDispositivo,
+        richiestaId: r.id,
+        titolo: "È il tuo turno",
+        corpo: `Il computer si è liberato: “${breve(r.testo)}” è partita.`,
+      });
+    }
+    return partite;
+  }
+
+  /**
+   * Questa richiesta parte da sola, o aspetta un sì?
+   *
+   * Tre domande in fila, e la prima che dice di no vince: chi è chi lo decide
+   * il computer, e i tetti valgono **anche per chi decide** — «limitare anche
+   * gli admin», che era il punto.
+   */
+  private decidiSubito(chi: Dispositivo): { subito: boolean; trattenuta?: string } {
+    const regola = this.regola;
+    if (!regola) return { subito: chi.ruolo === "admin" };
+
+    const scelte = regola();
+    if (scelte.chiPassaSubito === "mai") {
+      return {
+        subito: false,
+        trattenuta:
+          "Sul computer è stato scelto che ogni lavoro passa da un sì. La tua è in attesa.",
+      };
+    }
+    if (scelte.chiPassaSubito === "admin" && chi.ruolo !== "admin") {
+      return { subito: false };
+    }
+
+    const dati = this.archivio.datiCorrenti;
+    const inFila = dati.richieste.filter(
+      (r) => r.stato === "accettata" || r.stato === "in-lavoro",
+    );
+    if (scelte.limiteFila > 0 && inFila.length >= scelte.limiteFila) {
+      return {
+        subito: false,
+        trattenuta: `Il computer ha già ${inFila.length} lavori in corso: la tua aspetta che si liberi.`,
+      };
+    }
+    const suoi = inFila.filter((r) => r.daDispositivo === chi.id).length;
+    if (scelte.limitePersona > 0 && suoi >= scelte.limitePersona) {
+      return {
+        subito: false,
+        trattenuta: `Hai già ${suoi} lavori in fila: questo parte quando ne finisce uno.`,
+      };
+    }
+    if (scelte.inPausa) {
+      return {
+        subito: false,
+        trattenuta: "Chi sta al computer lo sta usando adesso. La tua richiesta è in attesa.",
+      };
+    }
+    return { subito: true };
   }
 
   /**
@@ -549,4 +730,33 @@ export class Remoto {
 function breve(testo: string): string {
   const pulito = testo.replace(/\s+/g, " ").trim();
   return pulito.length > 60 ? `${pulito.slice(0, 60)}…` : pulito;
+}
+
+/**
+ * Due nomi sono lo stesso nome?
+ *
+ * Senza guardare maiuscole e spazi ai bordi: «Cammo», «cammo » e «CAMMO» sono
+ * la stessa persona per chiunque li legga, e devono esserlo anche qui — se no
+ * il controllo sull'unicità si aggira battendo una lettera maiuscola.
+ */
+function stessoNome(a: string, b: string): boolean {
+  return a.trim().toLocaleLowerCase("it") === b.trim().toLocaleLowerCase("it");
+}
+
+/**
+ * Un nome di ripiego che non sia già di qualcun altro.
+ *
+ * Serve solo a chi si accoppia **senza** scrivere il proprio nome, che dalla
+ * 0.7.6 non capita più passando dalla pagina di ingresso — ma le rotte restano
+ * aperte anche a un client vecchio, e due «Telefono» sarebbero due profili
+ * indistinguibili.
+ */
+function nomeLibero(dispositivi: { nome: string }[], ruolo: Ruolo): string {
+  const radice = ruolo === "admin" ? "Telefono del padrone" : "Telefono";
+  if (!dispositivi.some((d) => stessoNome(d.nome, radice))) return radice;
+  for (let n = 2; n < 100; n += 1) {
+    const prova = `${radice} ${n}`;
+    if (!dispositivi.some((d) => stessoNome(d.nome, prova))) return prova;
+  }
+  return `${radice} ${Date.now().toString(36)}`;
 }

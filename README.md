@@ -90,6 +90,49 @@ lo stesso.
 
 ## A che punto siamo
 
+> **0.7.6: due programmi invece di uno, e il computer che resta tuo.**
+>
+> **Il telefono ha la sua faccia.** Cinque schede — Casa, **Produzione**,
+> **Riepilogo**, Galleria, **DaProd** — e da utente si vede solo quello che
+> serve a fare una cosa: quattro tasti grossi e colorati (immagini, video,
+> musica, audio), le ultime cose venute fuori, la propria roba a che punto è.
+> Tutto quello che governa la macchina è nella rotella delle impostazioni, e
+> alcune cose **solo dal computer**.
+>
+> **Col computer spento non cambia più niente.** Prima l'app mostrava un'altra
+> schermata: uscivi di casa e al posto della tua galleria trovavi uno spinner.
+> Adesso è la stessa pagina, con quello che il telefono si è tenuto — le
+> anteprime di tutto, i file che ci stanno, i pensieri arrivati — e quello che
+> chiedi parte da solo appena il computer torna.
+>
+> **Una registrazione, e un nome che è tuo.** Nome e codice (il QR resta, ma è
+> opzionale). Se il nome è già di qualcuno te lo dico subito: da questa versione
+> il nome è chi sei in **DaProd**, la bacheca dove le cose hanno un autore, un
+> cuore e un tasto per tenerle. C'è il tuo profilo, con la foto, e puoi metterci
+> anche roba tua che non ha generato il computer.
+>
+> **Si vede quello che c'è.** I video hanno il loro fotogramma, i brani la loro
+> copertina — cucita **dentro** il file, così si vede anche nel lettore del
+> telefono — e toccando una cosa si apre a schermo intero, con salva e
+> condividi.
+>
+> **Dieci minuti con un modello che può usare la suite.** Gli dici cosa
+> vorresti, lui prepara un piano — anche una foto e un video insieme — tu spunti
+> e dici di sì. Poi il modello se ne va dalla memoria, giusto in tempo perché la
+> generazione la usi.
+>
+> **E il computer resta tuo.** Un turno solo per generazioni e modello (prima
+> erano due file che non si conoscevano, ed è il motivo per cui un video moriva
+> a metà); chi sta al PC passa davanti; «sto usando il computer» ferma i lavori
+> nuovi senza buttare via quelli in corso; e i limiti — chi genera senza
+> chiedere, quanti lavori in fila, quanti a testa — **si mettono solo dal PC**.
+>
+> **La suite si chiude davvero.** Niente più quattro processi da terminare a
+> mano nel terminale: si scende per tutto l'albero, e al prossimo avvio si
+> spegne quello che è rimasto da una chiusura andata male.
+>
+> ⚠ Cosa è provato e cosa no sta in fondo al [CHANGELOG](CHANGELOG.md) § 0.7.6.
+>
 > **0.7.3: i video arrivano, e la scheda video torna libera.**
 >
 > **Le schede si chiudono quando la fila ha finito**, e con la finestra si
@@ -444,27 +487,48 @@ quelli veri — misurati sul file, non stimati.
 
 <img src="docs/media/logo.svg" width="46" align="right" alt="">
 
-Inquadri un QR e la suite è nel telefono: le stesse pagine del PC, con le schede,
-la fila e la galleria. Il telefono non calcola niente — **fa tutto il computer** —
-e per questo anche l'interfaccia sta di là: una sola da scrivere, e quando la
-suite impara qualcosa il telefono ce l'ha al collegamento dopo.
+Batti un nome e un codice di otto cifre — o inquadri il QR, se preferisci — e la
+suite è nel telefono. Il telefono non calcola niente, **fa tutto il computer**, e
+per questo anche l'interfaccia sta di là: una sola da tenere allineata, e quando
+la suite impara qualcosa il telefono ce l'ha al collegamento dopo.
+
+**Ma non è la stessa faccia.** Dalla 0.7.6 la pagina sa da dove la stai
+guardando. Dal telefono, da utente, vedi quello che serve a **fare una cosa**:
+
+- **Casa** — funziona? e cos'è venuto fuori mentre non guardavi;
+- **Produzione** — quattro tasti grossi e colorati: immagini, video, musica,
+  audio. E, sotto, dieci minuti di chiacchierata con un modello che può
+  proporti un piano di lavori;
+- **Riepilogo** — quattro numeri e cosa sta girando adesso, con il tuo posto in
+  fila;
+- **Galleria** — *Le mie Produzioni* e *Pensieri* (le cose che ti hanno
+  mandato). Tocchi e si apre a schermo intero, con salva e condividi;
+- **DaProd** — la bacheca: quello che gli altri hanno voluto far vedere, con la
+  loro faccia, il cuore e il tasto per tenerlo. E il tuo profilo.
+
+Chi è collegato, gli inviti, la rete e i limiti della macchina stanno nella
+rotella delle impostazioni — e alcune di quelle cose **si toccano solo dal
+computer**.
 
 **All'avvio scegli chi sei.** Più persone sullo stesso telefono, ognuna col suo
-collegamento e il suo nome: sul PC la fila dice chi ha chiesto cosa.
+collegamento e il suo nome — che è unico: se lo scegli già preso te lo dice
+subito.
 
 **Chiedi con il modello che vuoi.** Nel modulo si sceglie fra i modelli veri
 delle schede — Anima, Anima v2, FLUX.2 Klein, LTX 2.5, MiniMax H3 — chiamati
 come si chiamano, non con il loro id. E ci sono **i tuoi soliti**: un modo di
 generare salvato con un nome, che sta sul computer e si ritrova ovunque.
 
-**Vedi le tue cose.** La galleria mostra quello che hai chiesto tu; degli altri
-vedi solo quello che hanno messo in bacheca. Chi sta al computer può mandarti un
-file quando vuole: arriva una notifica, il pacco si apre nell'app, e da lì in poi
-sta in galleria sotto «arrivati per me».
+**Vedi le tue cose, e si vedono davvero.** I video hanno il loro fotogramma, i
+brani la loro copertina. Della roba degli altri vedi quello che hanno messo in
+bacheca; chi sta al computer può mandarti un file quando vuole, e il pacco si
+apre nell'app.
 
-**Anche col computer spento.** L'app si apre lo stesso e quello che scrivi resta
-in coda: parte da solo appena il computer torna raggiungibile, senza bisogno di
-riaprire niente.
+**Col computer spento non cambia niente.** Non c'è una schermata di ripiego: è
+la stessa app, con quello che il telefono si è tenuto mentre la linea c'era — le
+anteprime di tutto, i file che ci stanno, i pensieri arrivati. Quello che chiedi
+si mette in coda e parte da solo appena il computer torna, anche ad app chiusa.
+E quello che è già in casa si salva in galleria senza rete.
 
 **Sulla wifi di casa, o da fuori.** Con «Anche da fuori casa» acceso la suite
 apre un tunnel in uscita e diventa raggiungibile in HTTPS da qualunque parte,

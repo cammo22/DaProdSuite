@@ -100,10 +100,43 @@ console.log("\n— la pagina della console —");
     dice("e si legge senza errori", male === "", `→ ${male}`);
     dice("non è rimasto a metà", html.trim().endsWith("</html>"));
   }
-  // Le pagine che la barra in fondo promette devono esistere davvero.
-  for (const quale of ["casa", "chiedi", "lavori", "galleria", "persone"]) {
+  /**
+   * Le pagine che la barra in fondo promette devono esistere davvero.
+   *
+   * I nomi sono cambiati nella 0.7.6 — «Chiedi» è diventata «Produzione»,
+   * «Lavori» è diventata «Riepilogo», «Persone» è diventata «DaProd» — e
+   * questa riga è il posto che se ne accorge se un giorno la barra e le
+   * sezioni si disallineano: sarebbe un tasto che non porta da nessuna parte.
+   */
+  for (const quale of ["entra", "casa", "produzione", "riepilogo", "galleria", "daprod"]) {
     dice(`la pagina "${quale}" c'è`, html.includes(`id="pag-${quale}"`));
   }
+  for (const quale of ["casa", "produzione", "riepilogo", "galleria", "daprod"]) {
+    dice(`e la barra in fondo ci porta`, html.includes(`data-pagina="${quale}"`));
+  }
+
+  /**
+   * I pezzi della 0.7.6 che una svista farebbe sparire in silenzio.
+   *
+   * Non si prova che funzionino — per quello ci vuole un gateway vero, ed è
+   * `prova-gateway.mjs` — si prova che **ci siano**: un id sbagliato in una
+   * `$()` è un tasto morto che non dà nessun errore, e questa pagina la si
+   * guarda sul telefono di qualcun altro.
+   */
+  for (const pezzo of [
+    'id="apri-impostazioni"',
+    'id="quale-modello"',
+    'id="due-tasti"',
+    'id="bacheca"',
+    'id="apri-profilo"',
+    'id="carica-in-bacheca"',
+    'id="strisce"',
+  ]) {
+    dice(`c'è ${pezzo}`, html.includes(pezzo));
+  }
+  dice("il modo telefono si legge dall'indirizzo", html.includes('pezzi.get("m")'));
+  dice("le anteprime si chiedono al computer", html.includes("/libreria/anteprima/"));
+  dice("gli interruttori della macchina sono dietro sonoLaCasa", html.includes("if (sonoLaCasa)"));
 }
 
 console.log("\n— gli schemi per un agente —");

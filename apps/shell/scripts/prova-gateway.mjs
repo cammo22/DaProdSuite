@@ -78,7 +78,30 @@ const fintaLibreria = {
     return true;
   },
   elimina: (id, chi) => id === "foto/quadro.png" && padroneQuadro === chi,
+  /**
+   * I mi piace e il «tengo», dalla 0.7.6.
+   *
+   * Il permesso è lo stesso del file: si può mettere mi piace su quello che si
+   * ha il diritto di **vedere**, e su niente altro. Provarlo qui serve perché
+   * è un permesso che, se salta, non rompe niente: apre.
+   */
+  miPiace: (id, chi, mi) => {
+    if (id !== "foto/quadro.png") return null;
+    if (padroneQuadro !== chi && !quadroInBacheca) return null;
+    if (mi) cuori.add(chi);
+    else cuori.delete(chi);
+    return cuori.size;
+  },
+  tieni: (id, chi, tenere) => {
+    if (id !== "foto/quadro.png" || !quadroInBacheca) return false;
+    if (tenere) tenute.add(chi);
+    else tenute.delete(chi);
+    return true;
+  },
 };
+
+const cuori = new Set();
+const tenute = new Set();
 
 /** Un finto modello che scrive: non serve LM Studio per provare le rotte. */
 let aiSpenta = false;
@@ -110,6 +133,77 @@ const fintoPreset = {
   },
 };
 
+/**
+ * La macchina finta: le regole, la pausa, e chi è la casa.
+ *
+ * Qui `sonoLaCasa` è **sempre falso**, ed è il punto della prova: tutto quello
+ * che arriva da questa porta viene da fuori, anche quando ha i permessi da
+ * admin. Le rotte che governano la fila devono dire di no a tutti e due.
+ */
+const macchinaFinta = {
+  regole: { chiPassaSubito: "admin", limiteFila: 6, limitePersona: 2 },
+  inPausa: false,
+  stato: () => ({
+    adesso: null,
+    fila: [],
+    inPausa: macchinaFinta.inPausa,
+    trattenute: [],
+    regole: macchinaFinta.regole,
+    sonoLaCasa: false,
+  }),
+  pausa: (v) => { macchinaFinta.inPausa = v; },
+  regoleNuove: (v) => { macchinaFinta.regole = v; },
+  togli: () => null,
+};
+
+/**
+ * Un finto modello con cui parlare.
+ *
+ * Non serve LM Studio per provare le rotte: serve qualcuno che risponda e che,
+ * quando gli si chiede una foto, proponga un piano. Quello che si prova qui è
+ * il **giro** — comincia, dici, propone, accetti, si chiude — non la qualità
+ * di quello che scrive.
+ */
+let sessioneFinta = null;
+const fintaChiacchierata = {
+  modelli: async () => [{ id: "finto", caricato: false }],
+  comincia: async ({ dispositivoId, modello }) => {
+    if (sessioneFinta) return { errore: "C'è già qualcuno che parla." };
+    sessioneFinta = {
+      id: "ch-prova",
+      dispositivoId,
+      modello,
+      scade: Date.now() + 600_000,
+      battute: [],
+    };
+    return { sessione: sessioneFinta };
+  },
+  dico: async ({ id, testo }) => {
+    if (!sessioneFinta || sessioneFinta.id !== id) return { errore: "Finita." };
+    sessioneFinta.battute.push({ chi: "io", testo, quando: Date.now() });
+    sessioneFinta.battute.push({ chi: "modello", testo: "Ti propongo una foto.", quando: Date.now() });
+    sessioneFinta.piano = {
+      id: "pi-prova",
+      riassunto: "Ti propongo di fare una foto di una macchina.",
+      lavori: [{
+        azione: "genera.immagine",
+        app: "foto",
+        che: "una foto di una macchina",
+        campi: { prompt: "una macchina rossa su una strada di montagna" },
+      }],
+    };
+    return { sessione: sessioneFinta };
+  },
+  mia: (dispositivoId) =>
+    sessioneFinta && sessioneFinta.dispositivoId === dispositivoId ? sessioneFinta : null,
+  chiudi: () => { sessioneFinta = null; },
+  accetta: async ({ quali }) => {
+    const quanti = quali.length || 1;
+    sessioneFinta = null;
+    return { quanti };
+  },
+};
+
 let eseguite = [];
 const gateway = new G.Gateway({
   remoto,
@@ -125,6 +219,13 @@ const gateway = new G.Gateway({
   libreria: fintaLibreria,
   ai: fintaAi,
   preset: fintoPreset,
+  macchina: {
+    stato: macchinaFinta.stato,
+    pausa: macchinaFinta.pausa,
+    regole: macchinaFinta.regoleNuove,
+    togli: macchinaFinta.togli,
+  },
+  chiacchierata: fintaChiacchierata,
   pannello: {
     stato: (d) => ({
       computer: "PC-DI-PROVA",
@@ -214,6 +315,32 @@ let tokenAdmin;
 {
   const r = await chiama("/accoppiamento", { metodo: "POST", corpo: { codice: "abc", nome: "x" } });
   dice("un codice non numerico è rifiutato", r.stato === 400);
+}
+
+/**
+ * **Il nome è di uno solo**, dalla 0.7.6.
+ *
+ * Non è pignoleria: da questa versione il nome non è più un'etichetta accanto
+ * a una richiesta, è l'identità con cui uno compare in DaProd, mette un mi
+ * piace e ha un profilo. Due «portatile» sono due profili che si scambiano le
+ * cose a vicenda.
+ *
+ * E il codice **non si deve bruciare**: chi sbaglia nome deve poter riprovare
+ * con lo stesso invito, o gli tocca chiederne un altro per un errore di
+ * battitura.
+ */
+{
+  const invito = remoto.nuovoInvito("ospite");
+  const r = await chiama("/accoppiamento", { metodo: "POST", corpo: { codice: invito.codice, nome: "portatile" } });
+  dice("un nome già preso è rifiutato", r.stato >= 400, `→ ${r.stato}`);
+  dice("e si capisce perché", /gi\u00e0 di qualcun altro/.test(r.dati?.errore || ""), r.dati?.errore);
+
+  const ancora = await chiama("/accoppiamento", { metodo: "POST", corpo: { codice: invito.codice, nome: "PORTATILE" } });
+  dice("nemmeno con le maiuscole diverse", ancora.stato >= 400, `→ ${ancora.stato}`);
+
+  const buona = await chiama("/accoppiamento", { metodo: "POST", corpo: { codice: invito.codice, nome: "un altro nome" } });
+  dice("il codice non si è bruciato provando", buona.stato === 201, `→ ${buona.stato} ${buona.testo}`);
+  if (buona.dati?.dispositivo?.id) remoto.revoca(buona.dati.dispositivo.id);
 }
 
 console.log("\n— le azioni —");
@@ -819,6 +946,111 @@ console.log("\n— lo stato in streaming —");
 {
   const r = await fetch(base + "/stato/stream?token=sbagliato");
   dice("un token falso in query non passa", r.status === 401);
+}
+
+console.log("\n— la macchina —");
+{
+  const r = await chiama("/macchina", { token: tokenAdmin });
+  dice("lo stato della macchina si legge", r.stato === 200, `→ ${r.stato}`);
+  dice("dice chi passa subito", typeof r.dati?.regole?.chiPassaSubito === "string");
+  dice("dice se è in pausa", typeof r.dati?.inPausa === "boolean");
+  /**
+   * **Un telefono con i permessi da admin non è la casa.**
+   *
+   * È la riga che regge tutta la promessa «il pc è il vero admin»: chi decide
+   * sulle richieste degli altri non può alzarsi i limiti a cui è sottoposto
+   * lui. Se un giorno questo controllo salta, non si rompe niente — si apre.
+   */
+  dice("ma un telefono non è la casa", r.dati?.sonoLaCasa === false);
+}
+{
+  const r = await chiama("/macchina/pausa", { metodo: "POST", token: tokenAdmin, corpo: { inPausa: true } });
+  dice("mettere in pausa da fuori è vietato", r.stato === 403, `→ ${r.stato}`);
+  dice("e lo dice in italiano", /solo dal computer/.test(r.dati?.errore || ""), r.dati?.errore);
+}
+{
+  const r = await chiama("/macchina/regole", {
+    metodo: "POST", token: tokenAdmin,
+    corpo: { chiPassaSubito: "tutti", limiteFila: 0, limitePersona: 0 },
+  });
+  dice("cambiare i tetti da fuori è vietato", r.stato === 403, `→ ${r.stato}`);
+  dice("e i tetti non sono cambiati", macchinaFinta.regole.chiPassaSubito === "admin");
+}
+
+console.log("\n— DaProd: i mi piace e il tieni —");
+{
+  padroneQuadro = "altro";
+  quadroInBacheca = true;
+  const r = await chiama("/libreria/foto%2Fquadro.png/mipiace", {
+    metodo: "POST", token: tokenAdmin, corpo: { mipiace: true },
+  });
+  dice("si mette mi piace su una cosa in bacheca", r.stato === 200, `→ ${r.stato} ${r.testo}`);
+  dice("e torna quanti sono", r.dati?.quanti === 1, `→ ${r.dati?.quanti}`);
+
+  const via = await chiama("/libreria/foto%2Fquadro.png/mipiace", {
+    metodo: "POST", token: tokenAdmin, corpo: { mipiace: false },
+  });
+  dice("e si toglie", via.dati?.quanti === 0);
+}
+{
+  const r = await chiama("/libreria/foto%2Fquadro.png/tengo", {
+    metodo: "POST", token: tokenAdmin, corpo: { tengo: true },
+  });
+  dice("una cosa in bacheca si tiene da parte", r.stato === 200, `→ ${r.stato}`);
+}
+{
+  quadroInBacheca = false;
+  const r = await chiama("/libreria/foto%2Fquadro.png/mipiace", {
+    metodo: "POST", token: tokenAdmin, corpo: { mipiace: true },
+  });
+  dice("su una cosa non in bacheca non si mette", r.stato === 404, `→ ${r.stato}`);
+  quadroInBacheca = true;
+}
+
+console.log("\n— il profilo —");
+{
+  const r = await chiama("/io/profilo", { metodo: "POST", token: tokenAdmin, corpo: { motto: "faccio cose" } });
+  dice("la riga sotto al nome si cambia", r.stato === 200, `→ ${r.stato}`);
+  const io = await chiama("/io", { token: tokenAdmin });
+  dice("e si rilegge", io.dati?.motto === "faccio cose", `→ ${io.dati?.motto}`);
+}
+{
+  // Un secondo dispositivo, per provare che il nome resta di uno solo anche
+  // rinominandosi: sarebbe il modo più semplice di aggirare il controllo.
+  const invito = remoto.nuovoInvito("ospite");
+  const secondo = await chiama("/accoppiamento", { metodo: "POST", corpo: { codice: invito.codice, nome: "il secondo" } });
+  const suoToken = secondo.dati?.token;
+  const r = await chiama("/io/profilo", { metodo: "POST", token: suoToken, corpo: { nome: "portatile" } });
+  dice("non ci si può rinominare come un altro", r.stato === 409, `→ ${r.stato}`);
+  const buono = await chiama("/io/profilo", { metodo: "POST", token: suoToken, corpo: { nome: "il secondo bis" } });
+  dice("ma un nome libero sì", buono.stato === 200, `→ ${buono.stato}`);
+  if (secondo.dati?.dispositivo?.id) remoto.revoca(secondo.dati.dispositivo.id);
+}
+
+console.log("\n— la chiacchierata —");
+{
+  const r = await chiama("/modelli", { token: tokenAdmin });
+  dice("i modelli si elencano", r.stato === 200 && Array.isArray(r.dati?.modelli), `→ ${r.stato}`);
+}
+{
+  const r = await chiama("/chiacchierata", { token: tokenAdmin });
+  dice("senza sessione non c'è sessione", r.stato === 200 && r.dati?.sessione === null, `→ ${r.testo}`);
+}
+{
+  const r = await chiama("/chiacchierata", { metodo: "POST", token: tokenAdmin, corpo: { modello: "finto" } });
+  dice("si comincia a parlare", r.stato === 201, `→ ${r.stato} ${r.testo}`);
+  const id = r.dati?.sessione?.id;
+  const detto = await chiama(`/chiacchierata/${id}/dico`, {
+    metodo: "POST", token: tokenAdmin, corpo: { testo: "vorrei una foto di una macchina" },
+  });
+  dice("il modello risponde", detto.stato === 200, `→ ${detto.stato} ${detto.testo}`);
+  dice("e propone un piano", (detto.dati?.sessione?.piano?.lavori || []).length === 1);
+  const preso = await chiama(`/chiacchierata/${id}/piano`, {
+    metodo: "POST", token: tokenAdmin, corpo: { quali: [0] },
+  });
+  dice("accettare il piano mette in fila", preso.stato === 201 && preso.dati?.quanti === 1, `→ ${preso.testo}`);
+  const dopo = await chiama("/chiacchierata", { token: tokenAdmin });
+  dice("e la chiacchierata si chiude da sé", dopo.dati?.sessione === null);
 }
 
 console.log("\n— il limite dei tentativi —");

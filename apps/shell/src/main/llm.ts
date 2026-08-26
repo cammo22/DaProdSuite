@@ -24,6 +24,7 @@ import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { capture } from "@daprod/runtime";
+import { colTurno, turno, type Corsia } from "./turno";
 
 /** Dove ascolta LM Studio quando accendi il suo server locale. */
 const BASE = "http://127.0.0.1:1234/v1";
@@ -516,6 +517,24 @@ export interface DomandaLlm {
   pensa?: boolean;
   /** Oltre questo, meglio dire che ci sta mettendo troppo. */
   timeoutMs?: number;
+  /**
+   * In che corsia mettersi, mentre si aspetta la macchina.
+   *
+   * Chi sta al computer passa davanti: se apre DaProdCinema e chiede al modello
+   * di scrivergli tre scene, non deve aspettare che finisca il video che sta
+   * generando per un telefono. Chi arriva da fuori si mette in fila.
+   */
+  corsia?: Corsia;
+  /** Chi ha chiesto, per il pannello. Vuoto vuol dire: la suite stessa. */
+  chi?: string;
+  /**
+   * Il turno ce l'ha già chi chiama: non se ne prende un altro.
+   *
+   * Serve alla chiacchierata dal telefono, che tiene la macchina per tutta la
+   * sessione: se ogni frase si rimettesse in fila da capo, il modello verrebbe
+   * scaricato e ricaricato fra una battuta e l'altra — quattro GB per volta.
+   */
+  turnoGiaPreso?: boolean;
 }
 
 /**
@@ -634,6 +653,12 @@ function formatoAudio(mime: string): string {
  * e una cronologia da mantenere sarebbe stato in più per nessun vantaggio.
  */
 export async function chiediAllLlm(domanda: DomandaLlm): Promise<EsitoLlm> {
+  if (!domanda.turnoGiaPreso) {
+    return colTurno(
+      { mestiere: "modello", corsia: domanda.corsia ?? "in-fila", che: cheDomanda(domanda), chi: domanda.chi },
+      () => chiediAllLlm({ ...domanda, turnoGiaPreso: true }),
+    ).catch((err) => ({ ok: false as const, testo: "", motivo: spiegaAttesa(err) }));
+  }
   const preparata = await preparaDomanda(domanda, false);
   if ("errore" in preparata) return { ok: false, testo: "", motivo: preparata.errore };
 
@@ -691,6 +716,12 @@ export async function chiediInDirettaAllLlm(
   domanda: DomandaLlm,
   onPezzo: (pezzo: PezzoLlm) => void,
 ): Promise<EsitoLlm> {
+  if (!domanda.turnoGiaPreso) {
+    return colTurno(
+      { mestiere: "modello", corsia: domanda.corsia ?? "in-fila", che: cheDomanda(domanda), chi: domanda.chi },
+      () => chiediInDirettaAllLlm({ ...domanda, turnoGiaPreso: true }, onPezzo),
+    ).catch((err) => ({ ok: false as const, testo: "", motivo: spiegaAttesa(err) }));
+  }
   const preparata = await preparaDomanda(domanda, true);
   if ("errore" in preparata) return { ok: false, testo: "", motivo: preparata.errore };
 
@@ -720,6 +751,31 @@ export async function chiediInDirettaAllLlm(
     inVolo -= 1;
     void liberaDopoLaRisposta();
   }
+}
+
+/**
+ * Una riga che dica cosa sta chiedendo, per chi guarda la fila.
+ *
+ * Non il prompt intero: in un pannello serve riconoscere il proprio lavoro fra
+ * gli altri, non rileggerlo.
+ */
+function cheDomanda(domanda: DomandaLlm): string {
+  const prima = domanda.utente.trim().split(/\r?\n/)[0] ?? "";
+  return prima ? `Chiedo al modello: ${prima.slice(0, 50)}` : "Chiedo al modello";
+}
+
+/**
+ * Non è arrivato il turno: si dice quello, non un errore di rete.
+ *
+ * Il turno si può perdere in due modi soli — la fila era ferma da mezz'ora,
+ * oppure qualcuno ha annullato — e in tutti e due i casi chi ha premuto merita
+ * una frase che spieghi, non un «errore imprevisto».
+ */
+function spiegaAttesa(err: unknown): string {
+  const detto = err instanceof Error ? err.message : String(err);
+  return turno.eSospesa()
+    ? "Il computer è in pausa: chi ci sta davanti ha fermato i lavori nuovi. Riprova fra poco."
+    : `Non è arrivato il turno sulla scheda video: ${detto}`;
 }
 
 /**
