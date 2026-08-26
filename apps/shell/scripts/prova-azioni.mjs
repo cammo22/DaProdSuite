@@ -214,6 +214,133 @@ console.log("\n— gli stili sono gli stessi da tutte e due le parti —");
   );
 }
 
+/**
+ * Ogni cosa a cui la pagina assegna un valore deve essere **dichiarata**.
+ *
+ * ⚠ **Questa prova nasce da un difetto vero**, trovato col banco fra la 0.7.6 e
+ * la 0.7.7. Il copione della console è fatto di sette file che diventano un
+ * IIFE solo: le variabili di stato si dichiarano in `copione-base` e le usano
+ * gli altri sei. Ne erano state usate tre — `orologioAdesso`,
+ * `attesaChiacchiera`, `orologioFila` — che nessuno aveva dichiarato.
+ *
+ * In JavaScript quello **non è un errore che si vede**: alla prima lettura
+ * parte una `ReferenceError`, risale fino al `catch` vuoto di chi ha chiamato,
+ * e sparisce. Sullo schermo resta una parte di pagina vuota senza una riga in
+ * console — ed era esattamente «le ultime cose venute fuori», che non compariva
+ * mai.
+ *
+ * Il controllo è volutamente semplice e guarda **le assegnazioni a inizio
+ * istruzione**, che è la forma in cui il difetto si presenta: `nome = valore`
+ * senza un `var` da nessuna parte. Non è un analizzatore di ambiti e non pretende
+ * di esserlo: è la rete su una caduta che è già successa.
+ */
+/**
+ * Ogni pezzo che il copione va a cercare deve **esistere nella pagina**.
+ *
+ * ⚠ Un'altra caduta vera, dallo stesso giro: `$("stile-nuovo")` scritto nel
+ * copione e nessun elemento con quell'id nell'HTML. Non è un errore che si
+ * legge: `addEventListener` su `null` fa una `TypeError` all'avvio, e da lì in
+ * poi **tutto quello che veniva dopo non si aggancia più** — cioè la pagina si
+ * apre e metà dei tasti non fanno niente.
+ *
+ * Qui si prendono tutti gli id che il copione chiede e si guarda se stanno
+ * nella pagina. Costa una regex e chiude un buco che il compilatore non vede.
+ */
+console.log("\n— la pagina ha tutti i pezzi che il copione cerca —");
+{
+  const html = G.paginaConsole();
+  const copione = html.match(/<script>([\s\S]*?)<\/script>/)?.[1] ?? "";
+
+  const chiesti = new Set();
+  for (const m of copione.matchAll(/\$\("([a-z0-9-]+)"\)/g)) chiesti.add(m[1]);
+  for (const m of copione.matchAll(/getElementById\("([a-z0-9-]+)"\)/g)) chiesti.add(m[1]);
+
+  const ciSono = new Set();
+  for (const m of html.matchAll(/id="([a-z0-9-]+)"/g)) ciSono.add(m[1]);
+  // Quelli che il copione crea da sé e poi ricerca: esistono, ma non nell'HTML.
+  for (const nato of ["foglio", "dispositivi", "avviso-invio", "avviso-invito", "riquadro-qr", "qr", "codice-invito", "scade-invito", "indirizzo-invito", "sta-pensando"]) {
+    ciSono.add(nato);
+  }
+
+  const mancanti = [...chiesti].filter((x) => !ciSono.has(x));
+  dice("nessun id cercato a vuoto", mancanti.length === 0, `mancano: ${mancanti.join(", ")}`);
+}
+
+/**
+ * Ogni scheda che ha dei dati da leggere se li deve andare a prendere.
+ *
+ * ⚠ Terza caduta dello stesso giro: la scheda **Stili** c'era, la barra ci
+ * portava, e restava vuota — perché in `vaiA` mancava la riga che le dice di
+ * leggere. Una scheda che si apre su niente sembra rotta, e nessun controllo di
+ * tipi può accorgersene.
+ */
+console.log("\n— ogni scheda si va a prendere la sua roba —");
+{
+  const html = G.paginaConsole();
+  const copione = html.match(/<script>([\s\S]*?)<\/script>/)?.[1] ?? "";
+  const vaiA = copione.slice(copione.indexOf("function vaiA"), copione.indexOf("function vaiA") + 900);
+  for (const [scheda, chiamata] of [
+    ["galleria", "leggiGalleria()"],
+    ["daprod", "leggiBacheca()"],
+    ["stili", "leggiStili()"],
+  ]) {
+    dice(`«${scheda}» legge la sua roba aprendosi`, vaiA.includes(chiamata), `manca ${chiamata} in vaiA`);
+  }
+}
+
+console.log("\n— niente variabili nate per sbaglio —");
+{
+  const html = G.paginaConsole();
+  const copione = html.match(/<script>([\s\S]*?)<\/script>/)?.[1] ?? "";
+
+  // Senza commenti e senza stringhe: dentro c'è prosa italiana piena di «=».
+  const nudo = copione
+    .replace(/\/\*[\s\S]*?\*\//g, " ")
+    .replace(/(^|[^:])\/\/[^\n]*/g, "$1 ")
+    .replace(/"(?:[^"\\]|\\.)*"/g, '""')
+    .replace(/'(?:[^'\\]|\\.)*'/g, "''");
+
+  const dichiarate = new Set();
+  for (const m of nudo.matchAll(/\b(?:var|let|const)\s+([A-Za-z_$][\w$]*)/g)) dichiarate.add(m[1]);
+  for (const m of nudo.matchAll(/\bfunction\s+([A-Za-z_$][\w$]*)/g)) dichiarate.add(m[1]);
+  // I parametri: `function (a, b)`, `function nome(a, b)`, `(a, b) =>`.
+  for (const m of nudo.matchAll(/(?:function\s*[A-Za-z_$][\w$]*\s*|function\s*|\bcatch\s*)\(([^)]*)\)/g)) {
+    for (const p of m[1].split(",")) {
+      const n = p.trim().replace(/\s*=[\s\S]*$/, "");
+      if (/^[A-Za-z_$][\w$]*$/.test(n)) dichiarate.add(n);
+    }
+  }
+  for (const m of nudo.matchAll(/\(([^()]*)\)\s*=>/g)) {
+    for (const p of m[1].split(",")) {
+      const n = p.trim().replace(/\s*=[\s\S]*$/, "");
+      if (/^[A-Za-z_$][\w$]*$/.test(n)) dichiarate.add(n);
+    }
+  }
+  // `for (var x of …)` è già preso da `var`; `for (const [a, b] of …)` no.
+  for (const m of nudo.matchAll(/\b(?:var|let|const)\s*\[([^\]]*)\]/g)) {
+    for (const p of m[1].split(",")) {
+      const n = p.trim();
+      if (/^[A-Za-z_$][\w$]*$/.test(n)) dichiarate.add(n);
+    }
+  }
+
+  /** Quello che c'è già nel browser: assegnarci qualcosa è legittimo. */
+  const delBrowser = new Set(["location", "window", "document", "history", "self", "name"]);
+
+  const orfane = new Set();
+  for (const m of nudo.matchAll(/(?:^|[;{}()]|\breturn\b|\belse\b)\s*([A-Za-z_$][\w$]*)\s*=(?![=>])/gm)) {
+    const nome = m[1];
+    if (dichiarate.has(nome) || delBrowser.has(nome)) continue;
+    orfane.add(nome);
+  }
+
+  dice(
+    "ogni variabile assegnata è dichiarata",
+    orfane.size === 0,
+    `mai dichiarate: ${[...orfane].join(", ")}`,
+  );
+}
+
 console.log("\n— gli schemi per un agente —");
 for (const azione of A.AZIONI) {
   const schema = A.schemaDi(azione);

@@ -192,8 +192,9 @@ anche da lì: sono due gesti diversi.
 
 ### Cosa vedi
 
-Cinque schede in fondo. Dalla **0.7.6** sono queste, e tre hanno cambiato nome
-perché il nome vecchio prometteva un'altra cosa:
+**Sei** schede in fondo. Dalla **0.7.6** tre hanno cambiato nome — il nome
+vecchio prometteva un'altra cosa — e dalla **0.7.7** ce n'è una in più, gli
+**Stili**:
 
 - **Casa** — in cima un quadrone che dice se funziona; scorrendo, **le ultime
   cose venute fuori** e i tasti per farne un'altra;
@@ -202,16 +203,41 @@ perché il nome vecchio prometteva un'altra cosa:
   la suite disegna da sola: quando il PC impara a fare una cosa nuova, la trovi
   qui senza aggiornare l'app. Sotto c'è **parla con un modello** (vedi più
   giù);
-- **Riepilogo** (era «Lavori») — quattro numeri in cima — in lavorazione, in
-  fila, pronti, aspettano il sì — e sotto **cosa sta girando adesso**, con chi
-  c'è dietro e a che posto sei. Le richieste stanno in tre pile: *adesso*,
-  *finiti*, *messi via*;
+- **Stili** (dalla 0.7.7) — i ventiquattro stili musicali di partenza più
+  quelli che ti fai tu. **Toccane uno per usarlo**: ti porta in Produzione con la
+  descrizione già riempita. **Tienilo premuto** e escono le opzioni: modifica e
+  salva, fanne una copia, mettilo in vetrina, buttalo. La **vetrina** è quello
+  che gli altri hanno deciso di far provare: prenderne uno ne fa una copia tua,
+  e resta scritto di chi era. Sono tuoi e stanno sul computer, quindi li ritrovi
+  da qualunque telefono;
+- **Fila** (era «Lavori», poi «Riepilogo») — quattro numeri in cima — in
+  lavorazione, in fila, pronti, aspettano il sì — e sotto **cosa sta girando
+  adesso**, da quanto, per chi. Dalla 0.7.7 **ogni lavoro ha il suo numero**
+  (`#47`) e tu vedi **a che posto sei**: se cambi idea, «togli» ti fa uscire
+  dalla fila. Su un lavoro finito ci sono **rifallo** e **cambia e rifallo**. Le
+  richieste stanno in tre pile: *adesso*, *finiti*, *messi via*;
 - **Galleria** — due tasti in cima: **Le mie Produzioni** e **Pensieri** (quello
   che ti hanno mandato). Poi i filtri: tutto, immagini, video, musica e voce.
   **I video hanno il loro fotogramma** e **i brani la loro copertina**: si vede
   cosa c'è senza premere play. Tocchi una cosa e si apre **a schermo intero**,
   con due tasti: *salva nel telefono* e *condividi*;
 - **DaProd** — la bacheca, e il tuo profilo. Vedi sotto.
+
+### Quando chiedi una canzone
+
+Dalla **0.7.7** dal telefono c'è tutto quello che c'è sul computer, e sono
+**pulsanti**, non menu a tendina:
+
+- **uno stile pronto** — toccane uno e la descrizione si riempie da sola con le
+  parole giuste. Se non sai cosa scrivere in «che genere», parti da lì;
+- **le sezioni del testo** — `[Intro]`, `[Verse]`, `[Chorus]`… si toccano e
+  finiscono dove sta il cursore, con l'a capo giusto intorno;
+- **in che lingua canta** — italiano, inglese, e altre nove;
+- **quanto dura** — 30, 60, 80, 2:00, 3:40. La casella resta, se ne vuoi 137;
+- **con che modello** — anche quello a pulsanti.
+
+E **le caselle di testo si allungano mentre scrivi**: il testo di una canzone
+sono venti righe, e dentro una finestrella da tre non si rilegge mai niente.
 
 ### DaProd, e il tuo profilo
 

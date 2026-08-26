@@ -90,6 +90,36 @@ lo stesso.
 
 ## A che punto siamo
 
+> **0.7.7: provata a lungo, e sono venute fuori venti cose.**
+>
+> **Il collegamento non si perde più.** Era la cosa più fastidiosa: «chiudo e
+> apro l'app, e devo cancellare l'account e riscannerizzare il codice». Aveva due
+> cause — un accoppiamento che poteva non essere mai scritto su disco, e un solo
+> 401 che buttava via la credenziale — e sono chiuse tutte e due. La credenziale
+> vera adesso vive nel profilo del telefono, che è il posto durevole.
+>
+> **La fila ha i numeri.** `#47`, e non riparte mai: si legge, si dice a voce, si
+> ritrova. Accanto c'è il posto, che scende. Da lì: si esce dalla fila, si ferma
+> quello che gira (solo dal computer), si dà il sì a tutto con un tasto, e si
+> **rifà** un lavoro — uguale, o cambiandolo prima.
+>
+> **Pulsanti, non menu a tendina.** Nei moduli non c'è più un solo `<select>`:
+> modelli, stili, lingue e durate sono pastiglie che si vedono tutte insieme. Le
+> caselle di testo **crescono mentre scrivi**, che per il testo di una canzone
+> non è un dettaglio.
+>
+> **Gli Stili sono una scheda.** I ventiquattro di partenza più i tuoi, sul
+> computer e non nella memoria di un browser. Si tocca uno per usarlo, si tiene
+> premuto per il resto, e si può metterne uno **in vetrina** perché gli altri lo
+> provino.
+>
+> **Il modello sa cosa sta facendo.** Le istruzioni sono diventate un manuale con
+> gli esempi — che a un modello da 4B servono più di qualunque spiegazione — e il
+> piano di un brano adesso arriva completo: testo da cantare, stile, lingua,
+> durata. Quanto contesto dargli si sceglie: 32K, 64K, 128K, 256K.
+>
+> ⚠ Cosa è provato e cosa no sta in fondo al [CHANGELOG](CHANGELOG.md) § 0.7.7.
+>
 > **0.7.6: due programmi invece di uno, e il computer che resta tuo.**
 >
 > **Il telefono ha la sua faccia.** Cinque schede — Casa, **Produzione**,
@@ -131,7 +161,7 @@ lo stesso.
 > mano nel terminale: si scende per tutto l'albero, e al prossimo avvio si
 > spegne quello che è rimasto da una chiusura andata male.
 >
-> ⚠ Cosa è provato e cosa no sta in fondo al [CHANGELOG](CHANGELOG.md) § 0.7.6.
+> ⚠ Il dettaglio della 0.7.6 sta nel [CHANGELOG](CHANGELOG.md) § 0.7.6.
 >
 > **0.7.3: i video arrivano, e la scheda video torna libera.**
 >

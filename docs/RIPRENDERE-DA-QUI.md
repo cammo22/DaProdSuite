@@ -1,24 +1,37 @@
 # Riprendere da qui
 
 Documento di passaggio fra una sessione e l'altra. Aggiornato il **26 agosto
-2026**, con la **0.7.6** appena chiusa.
+2026**, con la **0.7.7** appena chiusa.
 
-> **Il prossimo passo è provare la 0.7.6 sul PC vero e sul telefono vero**, e le
-> cose da guardare sono quattro, in quest'ordine:
+> **Il prossimo passo è provare la 0.7.7 sul PC vero e sul telefono vero**, e le
+> cose da guardare sono cinque, in quest'ordine — la prima è quella che conta,
+> perché è la ragione per cui esiste questa versione:
 >
-> 1. **si chiude davvero?** Apri e chiudi la suite tre volte, poi guarda il
->    Gestione attività: se non resta niente, il pezzo più fastidioso è chiuso.
-> 2. **la chiacchierata contro LM Studio vero.** Qui è girata solo contro un
->    modello finto: quello che non si sa è se un modello piccolo rispetta lo
->    schema del piano.
-> 3. **le anteprime e la copertina cucita**, che vogliono FFmpeg installato: un
->    video con il suo fotogramma in galleria, e un mp3 che mostra la copertina
->    nel lettore del telefono.
-> 4. **lo specchio offline sul telefono**: apri l'app in casa una volta, poi
->    spegni la suite e riapri. Deve essere la stessa app, non un'altra.
+> 1. **il collegamento regge?** Apri e chiudi l'app dieci volte, spegni e
+>    riaccendi la suite in mezzo, cambia rete. Non deve mai chiedere di
+>    riscannerizzare il codice. Se succede ancora, il posto da guardare è
+>    `Archivio.salvaSubito` e `perdutaLaCredenziale` nel copione.
+> 2. **la chiacchierata contro LM Studio vero**, con **qwen3-4b** e con
+>    **bonsai-27b**: sono i due che Cammo ha installati, ed è su quelli che il
+>    manuale delle istruzioni va misurato. Quello che non si sa è se un modello
+>    da 4B rispetta lo schema del piano — qui è girato solo contro un finto.
+> 3. **un brano intero dal telefono**: stile, lingua, testo con i `[Verse]`,
+>    durata a pulsanti. Deve arrivare a DaProdMusica con tutto dentro.
+> 4. **le anteprime**: un video in galleria deve avere il suo fotogramma. Sul
+>    computer serve FFmpeg; **dal telefono no**, se quel video ce l'ha in casa —
+>    ed è la strada nuova da provare.
+> 5. **lo specchio offline**: apri l'app in casa una volta, poi spegni la suite e
+>    riapri. Deve essere la stessa app, non un'altra.
 >
 > Il dettaglio di cosa è provato e cosa no sta in fondo al
-> [CHANGELOG](../CHANGELOG.md), § 0.7.6.
+> [CHANGELOG](../CHANGELOG.md), § 0.7.7.
+
+> **C'è un attrezzo nuovo, e va usato**: `node apps/shell/scripts/banco-console.mjs`
+> accende un gateway vero con dati finti e stampa due indirizzi — uno «come
+> telefono», uno «come computer». Si aprono in un browser e si guarda la pagina
+> vera senza avere la suite accesa. Nella 0.7.7 ha trovato tre difetti che
+> nessuna prova automatica poteva vedere; adesso quei tre sono anche controllati
+> in `prova-azioni.mjs`.
 
 **Se stai leggendo questo all'inizio di una conversazione nuova**: leggi anche
 [COME-SI-LAVORA.md](COME-SI-LAVORA.md) e [ROADMAP.md](ROADMAP.md), poi vai al
@@ -126,6 +139,10 @@ Repo pubblico: **https://github.com/cammo22/DaProdSuite**
 | **La 0.7.0: la nona scheda e la fila che parte** | fatto il 22 agosto. Il dettaglio sta nel paragrafo «Com'è fatto il giro della 0.7.0» qui sotto |
 
 | **La 0.7.6: due facce, lo specchio offline, la macchina che resta tua** | fatto il 26 agosto. Il dettaglio sta nel paragrafo «Com'è fatto il giro della 0.7.6» qui sotto |
+| **0.7.6 provata a lungo** | ne sono usciti venti difetti veri: il dettaglio sta nel CHANGELOG § 0.7.7 |
+| **La 0.7.7: il collegamento che regge, la fila coi numeri, gli Stili** | fatto il 26 agosto. **Da provare tu**, e la prima cosa è il collegamento |
+| **Il banco della console** | `banco-console.mjs`: un gateway vero con dati finti, per guardare la pagina in un browser. Ha trovato tre difetti che le prove non vedevano |
+| **404 controlli automatici** | erano 300 nella 0.7.6. I nuovi guardano anche la pagina: variabili mai dichiarate, id cercati a vuoto, schede che non si leggono |
 
 Si lavora su un ramo per release e una PR: `release-0.2.0` è stata unita con le
 PR #3 e #4, la 0.3.1 con la #5, la 0.3.2 con la #6, la 0.3.3 con la #7, la
