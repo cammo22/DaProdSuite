@@ -552,18 +552,36 @@ export const STILE = `  :root {
   .daChi { color: var(--fioco); font-size: 11px; margin-top: 6px; }
 
   /* --------------------------------------------------------- barra in fondo */
+  /*
+    **Sei colonne, non cinque.** Dalla 0.7.7 le schede sono sei, ma la griglia
+    ne dichiarava ancora cinque: la sesta finiva a capo, e la barra diventava
+    due righe che si mangiavano un pezzo di schermo — «vorrei aggiustare la
+    barra sotto e renderla una sola riga», 26 agosto 2026. Le parole sono
+    strette apposta e vanno su una riga sola: se un giorno servisse una settima
+    scheda, la risposta non è restringere ancora.
+  */
   nav.fondo {
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
-    display: grid; grid-template-columns: repeat(5, 1fr);
+    display: grid; grid-template-columns: repeat(6, 1fr);
     background: #0a0c11f2; backdrop-filter: blur(10px);
     border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom);
   }
   nav.fondo button {
     background: none; border: 0; border-radius: 0; color: var(--dim);
-    font-size: 10.5px; font-weight: 500; padding: 9px 2px 10px;
+    font-size: 9.5px; font-weight: 500; padding: 8px 1px 9px;
     display: flex; flex-direction: column; align-items: center; gap: 3px;
+    min-width: 0; overflow: hidden; white-space: nowrap;
   }
-  nav.fondo button .segno { font-size: 17px; line-height: 1; }
+  nav.fondo button .segno { font-size: 16px; line-height: 1; }
+  /*
+    **Mentre si scrive, la barra si toglie di mezzo.**
+    Su Android la tastiera alza il fondo della pagina e la barra fissa si
+    piazzava sopra alla casella e alle ultime battute: «quando scrivo con il
+    modello la barra sotto nasconde la chat». Chi sta scrivendo non sta
+    cambiando scheda, quindi la barra in quel momento non serve a niente.
+  */
+  body.scrivendo nav.fondo { display: none; }
+  body.scrivendo { padding-bottom: 14px; }
   nav.fondo button.on { color: var(--txt); }
   nav.fondo button.on .segno { color: var(--accent); }
   nav.fondo .bollo {
@@ -572,7 +590,7 @@ export const STILE = `  :root {
     border-radius: 99px; padding: 0 5px; min-width: 16px; text-align: center;
   }
   @media (min-width: 760px) {
-    nav.fondo { grid-template-columns: repeat(5, auto); justify-content: center; gap: 10px; }
+    nav.fondo { grid-template-columns: repeat(6, auto); justify-content: center; gap: 10px; }
     nav.fondo button { flex-direction: row; padding: 13px 18px; font-size: 13px; }
   }
 

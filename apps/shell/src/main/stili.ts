@@ -38,7 +38,7 @@
 
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { STILI_DI_PARTENZA } from "@daprod/azioni";
+import { type TipoStile, stiliDiPartenzaPer } from "@daprod/azioni";
 import { DATA_ROOT } from "./paths";
 
 /** Uno stile: un nome per una persona, e le parole per il modello. */
@@ -48,6 +48,15 @@ export interface Stile {
   nome: string;
   /** Le parole che finiscono nella descrizione del brano. */
   testo: string;
+  /**
+   * Di che cosa è lo stile: un'immagine, un video, un brano.
+   *
+   * **Nuovo dalla 0.7.8**, chiesto il 26 agosto 2026: «gli stili devono essere
+   * di tre tipi per immagini, video e musica, così li separiamo e ordiniamo per
+   * bene». Chi ne ha uno salvato prima di oggi non ha questo campo, ed è
+   * musica: era l'unico tipo che esisteva. Vedi `conTipo`.
+   */
+  tipo: TipoStile;
   /**
    * Da dove viene: `partenza` è uno dei ventiquattro, `mio` l'ha fatto la
    * persona, `preso` l'ha copiato da qualcun altro.
@@ -87,34 +96,91 @@ function fileStili(chi: string): string {
 }
 
 /**
+ * Quali set di partenza sono già stati consegnati a questa persona.
+ *
+ * Serve a una cosa sola, ma indispensabile: il giorno che si aggiunge un tipo
+ * nuovo — come immagini e video nella 0.7.8 — chi c'era già deve riceverne il
+ * set **una volta**. Senza questo segno, chi ne butta uno se lo ritroverebbe al
+ * riavvio dopo; e senza dare il set a chi c'era, gli stili immagine sarebbero
+ * solo di chi si collega da domani.
+ */
+function fileSetDati(chi: string): string {
+  return join(cartellaPersona(chi), "stili-consegnati.json");
+}
+
+function setGiaDati(chi: string): TipoStile[] {
+  try {
+    const dentro = JSON.parse(readFileSync(fileSetDati(chi), "utf8")) as unknown;
+    if (Array.isArray(dentro)) return dentro.filter((x): x is TipoStile => typeof x === "string");
+  } catch {
+    // Non c'è, o è illeggibile: vale come «niente è stato consegnato».
+  }
+  return [];
+}
+
+function segnaSetDato(chi: string, tipi: TipoStile[]): void {
+  try {
+    writeFileSync(fileSetDati(chi), `${JSON.stringify(tipi)}
+`, "utf8");
+  } catch {
+    // Disco non scrivibile: al giro dopo si riproverà, e nel frattempo gli
+    // stili ci sono lo stesso.
+  }
+}
+
+/** Uno stile vecchio, senza tipo, è musica: era l'unico che esistesse. */
+function conTipo(s: Stile): Stile {
+  if (s.tipo === "immagine" || s.tipo === "video" || s.tipo === "musica") return s;
+  return { ...s, tipo: "musica" };
+}
+
+/**
  * Gli stili di una persona. Alla prima volta, quelli di partenza.
  *
  * La copia iniziale si scrive **subito**: se restasse in memoria, il primo
  * riavvio della suite la rifarebbe da capo e chi ne avesse buttato uno se lo
  * ritroverebbe.
  */
-export function stiliDi(chi: string): Stile[] {
+export function stiliDi(chi: string, tipo?: TipoStile): Stile[] {
+  const tutti = leggiTutti(chi);
+  return tipo ? tutti.filter((s) => s.tipo === tipo) : tutti;
+}
+
+function leggiTutti(chi: string): Stile[] {
   const file = fileStili(chi);
+  let dentro: Stile[] = [];
+  let cera = false;
   if (existsSync(file)) {
     try {
-      const dentro = JSON.parse(readFileSync(file, "utf8")) as unknown;
-      if (Array.isArray(dentro)) return dentro.filter(eUnoStile);
+      const letto = JSON.parse(readFileSync(file, "utf8")) as unknown;
+      if (Array.isArray(letto)) {
+        dentro = letto.filter(eUnoStile).map(conTipo);
+        cera = true;
+      }
     } catch {
       // File illeggibile: si riparte da quelli di partenza invece di lasciare
       // una persona senza niente.
     }
   }
-  const iniziali = quelliDiPartenza();
-  scrivi(chi, iniziali);
-  return iniziali;
+
+  // I set che mancano si consegnano adesso, una volta sola.
+  const gia = cera ? setGiaDati(chi) : [];
+  const daDare = (["immagine", "video", "musica"] as TipoStile[]).filter((t) => !gia.includes(t));
+  if (!daDare.length) return dentro;
+
+  const arrivati = dentro.concat(daDare.flatMap((t) => quelliDiPartenza(t)));
+  scrivi(chi, arrivati);
+  segnaSetDato(chi, gia.concat(daDare));
+  return arrivati;
 }
 
-function quelliDiPartenza(): Stile[] {
+function quelliDiPartenza(tipo: TipoStile): Stile[] {
   const adesso = Date.now();
-  return Object.entries(STILI_DI_PARTENZA).map(([nome, testo], i) => ({
-    id: `s${i + 1}`,
+  return Object.entries(stiliDiPartenzaPer(tipo)).map(([nome, testo], i) => ({
+    id: `${tipo.slice(0, 3)}${i + 1}`,
     nome,
     testo,
+    tipo,
     da: "partenza" as const,
     quando: adesso,
   }));
@@ -144,15 +210,31 @@ function scrivi(chi: string, stili: Stile[]): void {
  */
 export function salvaStile(
   chi: string,
-  dati: { id?: string; nome: string; testo: string; da?: Stile["da"]; daNome?: string },
+  dati: {
+    id?: string;
+    nome: string;
+    testo: string;
+    tipo?: TipoStile;
+    da?: Stile["da"];
+    daNome?: string;
+  },
 ): Stile | null {
   const nome = dati.nome.trim().slice(0, 60);
   const testo = dati.testo.trim().slice(0, 2000);
   if (!nome || !testo) return null;
 
-  const miei = stiliDi(chi);
+  const miei = leggiTutti(chi);
+  // Modificando uno che c'è già, il tipo è il suo: non lo si cambia per sbaglio
+  // perché chi ha chiamato non l'ha detto.
+  const tipo: TipoStile =
+    dati.tipo ?? (dati.id ? miei.find((s) => s.id === dati.id)?.tipo : undefined) ?? "musica";
+  // Due stili con lo stesso nome ma di tipo diverso sono due cose diverse:
+  // «Ora dorata» ha senso per una foto e per un video, e non si sovrascrivono.
   const stessoNome = miei.find(
-    (s) => s.id !== dati.id && s.nome.toLocaleLowerCase("it") === nome.toLocaleLowerCase("it"),
+    (s) =>
+      s.id !== dati.id &&
+      s.tipo === tipo &&
+      s.nome.toLocaleLowerCase("it") === nome.toLocaleLowerCase("it"),
   );
   const daCambiare = miei.find((s) => s.id === dati.id) ?? stessoNome;
 
@@ -172,6 +254,7 @@ export function salvaStile(
     id: `s${Date.now().toString(36)}`,
     nome,
     testo,
+    tipo,
     da: dati.da ?? "mio",
     daNome: dati.daNome,
     quando: Date.now(),
@@ -183,7 +266,7 @@ export function salvaStile(
 
 /** Butta uno stile. Torna vero se c'era. */
 export function togliStile(chi: string, id: string): boolean {
-  const miei = stiliDi(chi);
+  const miei = leggiTutti(chi);
   const restano = miei.filter((s) => s.id !== id);
   if (restano.length === miei.length) return false;
   scrivi(chi, restano);
@@ -192,7 +275,7 @@ export function togliStile(chi: string, id: string): boolean {
 
 /** Mette uno stile in vetrina, o lo toglie. */
 export function condividiStile(chi: string, id: string, condiviso: boolean): boolean {
-  const miei = stiliDi(chi);
+  const miei = leggiTutti(chi);
   const quale = miei.find((s) => s.id === id);
   if (!quale) return false;
   quale.condiviso = condiviso || undefined;
@@ -231,7 +314,7 @@ export function stiliInVetrina(
       if (!existsSync(file)) continue;
       const dentro = JSON.parse(readFileSync(file, "utf8")) as unknown;
       if (!Array.isArray(dentro)) continue;
-      for (const s of dentro.filter(eUnoStile)) {
+      for (const s of dentro.filter(eUnoStile).map(conTipo)) {
         if (!s.condiviso) continue;
         fuori.push({ ...s, chi: cartella, chiNome: nomiDi(cartella) });
       }

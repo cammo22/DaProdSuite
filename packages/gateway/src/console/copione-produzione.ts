@@ -225,10 +225,38 @@ export const COPIONE_PRODUZIONE = `
        * deve poterla toccare. Il testo arriva insieme al nome (vedi
        * elencoAzioni nel gateway), quindi non serve un secondo giro di rete.
        */
-      if (campo.nome === "stile" && campo.testi && campo.testi[quale]) {
+      if (campo.nome === "stile" && campo.testi && (campo.testi[quale] || !quale)) {
         var principale = document.querySelector("#modulo [data-principale]");
+        // Tornando a «scrivo io» c'e' solo da togliere: la casella del brano
+        // invece si lascia com'e', perche' li' lo stile **e'** la richiesta e
+        // svuotarla vorrebbe dire cancellare quello che si sta per chiedere.
+        if (principale && !quale && principale.dataset.campo === "descrizione") principale = null;
         if (principale) {
-          principale.value = campo.testi[quale];
+          /**
+           * **Nel brano lo stile sostituisce, nelle altre due si aggiunge.**
+           *
+           * Dalla 0.7.8 gli stili sono tre — immagini, video, musica — e il
+           * gesto non puo' essere lo stesso, perche' la casella principale non
+           * dice la stessa cosa: «che genere» di un brano **e'** lo stile, e
+           * riscriverla e' quello che si vuole; «cosa deve esserci» di una foto
+           * e' il soggetto, e riscriverlo con «photorealistic, 35mm» vorrebbe
+           * dire buttare via quello che hai appena scritto.
+           */
+          var testo = campo.testi[quale] || "";
+          if (principale.dataset.campo === "descrizione") {
+            principale.value = testo;
+          } else {
+            // Si toglie lo stile di prima, se ce n'era uno: cambiare idea due
+            // volte non deve lasciare due code appiccicate al soggetto.
+            var pulito = principale.value;
+            for (var altro in campo.testi) {
+              if (!campo.testi[altro]) continue;
+              pulito = pulito.split(", " + campo.testi[altro]).join("");
+              pulito = pulito.split(campo.testi[altro]).join("");
+            }
+            pulito = pulito.replace(/^[\\s,]+|[\\s,]+$/g, "");
+            principale.value = pulito ? pulito + ", " + testo : testo;
+          }
           principale.dispatchEvent(new Event("input"));
         }
       }

@@ -263,6 +263,14 @@ export const PAGINE = `<header>
     qualunque parte ci si colleghi.
   -->
   <section class="pagina" id="pag-stili">
+    <!--
+      Tre tipi, dalla 0.7.8: immagini, video, musica. Chiesto il 26 agosto 2026
+      — «gli stili devono essere di tre tipi, così li separiamo e ordiniamo per
+      bene» — perché uno stile non è la stessa cosa nei tre posti: per un brano
+      sono generi, per una foto un modo di fotografare, per un video un modo di
+      riprendere.
+    -->
+    <div class="filtri" id="tipi-stili"></div>
     <div class="tastoni" id="due-tasti-stili"></div>
 
     <div class="fila" style="margin-top:12px">

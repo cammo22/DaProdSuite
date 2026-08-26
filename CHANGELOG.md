@@ -10,6 +10,74 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ---
 
+## 0.7.8 — Gli stili diventano tre, e la barra torna una riga
+
+**26 agosto 2026.** Cinque cose viste usandola dal telefono, e nessuna è
+un'idea nuova: sono cinque punti in cui la suite faceva perdere tempo.
+
+### La barra in fondo era diventata due righe
+
+> «Vorrei aggiustare la barra sotto e renderla una sola riga.»
+
+Nella 0.7.7 le schede sono diventate sei — gli Stili si sono presi la loro — ma
+la barra ne dichiarava ancora cinque. La sesta finiva a capo, e sotto a ogni
+schermata c'era una doppia fascia che si mangiava un pezzo di telefono. Adesso
+le sei stanno in fila, con le parole un filo più strette.
+
+### Scrivendo al modello, la barra copriva quello che scrivevi
+
+> «Su Android quando scrivo con il modello la barra sotto nasconde la chat.»
+
+La tastiera del telefono alza il fondo della finestra, e una barra fissa finisce
+sopra alla casella e sopra alle ultime battute — cioè proprio sopra a quello che
+stai facendo. Adesso **mentre si scrive la barra si toglie di mezzo** e torna
+appena esci dalla casella: chi sta scrivendo non sta cambiando scheda.
+
+### I video hanno la loro immagine, e ce l'hanno subito
+
+> «I video continua a non funzionare la thumbnail: facciamo che a fine video il
+> software la crea.»
+
+Prima il fotogramma lo cavava FFmpeg, dalla parte della suite, la prima volta
+che qualcuno apriva la galleria. Due difetti che insieme facevano un buco:
+**FFmpeg non c'è per forza** — non è imbarcato, è GPL e la suite è MIT — e su un
+computer senza, i video restavano rettangoli neri per sempre; e anche dove
+c'era, l'anteprima nasceva mentre stavi già guardando lo schermo nero.
+
+Adesso il fotogramma se lo prende **DaProdCinema, appena il video è finito**, con
+quello che ha già in mano. Nessun programma esterno da installare, e la
+copertina esiste prima che qualcuno apra la galleria — sul computer e sul
+telefono insieme. Vale per le clip di Crea e per quelle di una Storia.
+
+### Gli stili sono di tre tipi: immagini, video, musica
+
+> «Gli stili vanno bene ma devono essere di tre tipi per immagini, video e
+> musica. Gli stili salvati per immagini li ritrovo anche nella produzione
+> immagini, stessa cosa per musica e video, così li separiamo e ordiniamo per
+> bene.»
+
+Uno stile **non è la stessa cosa nei tre posti**: per un brano sono tre generi
+musicali, per un'immagine è un modo di fotografare o di disegnare, per un video
+è un modo di riprendere. Tenerli in un elenco solo voleva dire offrire «boom bap
+partenopeo» a chi stava facendo una foto.
+
+Nella scheda Stili adesso ci sono tre file — **Immagini**, **Video**,
+**Musica** — col numero di quanti ce n'è dentro, così un elenco vuoto si spiega
+da sé. Ognuno parte con un set preimpostato: sedici modi di fotografare,
+quattordici modi di riprendere, i ventiquattro generi che c'erano già. Chi aveva
+già i suoi stili musicali se li ritrova dov'erano, e riceve gli altri due set
+una volta sola.
+
+### E si ritrovano dentro la Produzione giusta
+
+Il campo «uno stile pronto» non è più solo del brano: c'è anche in **Fai
+un'immagine** e in **Fai un video**, e ognuno mostra **solo gli stili del suo
+tipo**. Toccare uno stile nella scheda Stili porta nella produzione giusta, già
+riempita — una foto in DaProdFoto, una clip in DaProdCinema, un brano in
+DaProdMusica.
+
+---
+
 ## 0.7.7 — Provata a lungo, e sono venute fuori venti cose
 
 **26 agosto 2026.** La 0.7.6 è stata usata davvero, per ore, e questa versione è

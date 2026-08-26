@@ -779,6 +779,13 @@ export interface StileRemoto {
   nome: string;
   /** Le parole che finiscono nella descrizione del brano. */
   testo: string;
+  /**
+   * Di che cosa è: `immagine`, `video`, `musica`. Dalla 0.7.8.
+   *
+   * È quello che tiene separati i tre elenchi, e che fa arrivare gli stili
+   * immagine dentro la Produzione immagini e non dentro quella dei brani.
+   */
+  tipo?: string;
   /** `partenza`, `mio`, `preso`: da dove viene. */
   da: string;
   /** Chi l'ha fatto, se è arrivato da un altro. */
@@ -800,7 +807,14 @@ export interface FornitoreStili {
   /** Salva uno stile: nuovo, o al posto di uno che c'era. */
   salva(
     chi: string,
-    dati: { id?: string; nome: string; testo: string; da?: string; daNome?: string },
+    dati: {
+      id?: string;
+      nome: string;
+      testo: string;
+      tipo?: string;
+      da?: string;
+      daNome?: string;
+    },
   ): StileRemoto | null;
   togli(chi: string, id: string): boolean;
   condividi(chi: string, id: string, condiviso: boolean): boolean;

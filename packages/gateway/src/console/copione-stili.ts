@@ -18,6 +18,23 @@
  * cambiano da un brano all'altro. Uno lo si riempie, l'altro lo si costruisce
  * una volta e lo si usa per mesi — e per questo merita un posto suo.
  *
+ * ## Tre tipi, dalla 0.7.8
+ *
+ * > «Gli stili vanno bene ma devono essere di tre tipi per immagini, video e
+ * > musica; gli stili salvati per immagini li ritrovo anche nella produzione
+ * > immagini, stessa cosa per musica e video, così li separiamo e ordiniamo
+ * > per bene.»
+ *
+ * Perché uno stile **non è la stessa cosa nei tre posti**: per un brano sono
+ * tre generi musicali, per un'immagine un modo di fotografare, per un video un
+ * modo di riprendere. In cima ci sono tre tasti e se ne guarda uno per volta —
+ * non tre elenchi in colonna: su un telefono ottanta stili di fila sono una
+ * lista che si scorre e non si legge.
+ *
+ * Il numero accanto a ogni tipo non è decorazione: dice se l'elenco vuoto che
+ * stai guardando è perché non hai stili, o perché stai guardando dalla parte
+ * sbagliata.
+ *
  * ## Due elenchi, e la differenza conta
  *
  * - **I miei**: quelli di partenza, quelli che ho fatto io, quelli che ho preso
@@ -34,6 +51,29 @@ export const COPIONE_STILI = `
   var stiliDegliAltri = [];
   /** Da che parte si sta guardando: \`miei\` o \`vetrina\`. */
   var doveStili = "miei";
+  /**
+   * Di che tipo si stanno guardando: \`immagine\`, \`video\` o \`musica\`.
+   *
+   * Uno solo per volta, e non tre elenchi uno sotto l'altro: su un telefono
+   * ottanta stili in colonna sono una lista che si scorre e non si legge.
+   */
+  var tipoStili = "immagine";
+
+  /** I tre tipi, con la scheda che li usa e un esempio di come si scrivono. */
+  var TIPI_STILE = [
+    { id: "immagine", nome: "Immagini", segno: "\u25c9", azione: "genera.immagine", esempio: "photorealistic, 35mm photography, natural light" },
+    { id: "video", nome: "Video", segno: "\u25b6", azione: "genera.video", esempio: "cinematic shot, shallow depth of field, steady camera" },
+    { id: "musica", nome: "Musica", segno: "\u266b", azione: "genera.brano", esempio: "neapolitan neomelodic pop, melodic trap, autotune ballad" },
+  ];
+
+  function infoTipo(quale) {
+    for (var i = 0; i < TIPI_STILE.length; i++) if (TIPI_STILE[i].id === quale) return TIPI_STILE[i];
+    return TIPI_STILE[0];
+  }
+  function tipoOra() { return infoTipo(tipoStili); }
+
+  /** Uno stile senza tipo viene da prima della 0.7.8: era musica. */
+  function tipoDi(s) { return s && s.tipo ? s.tipo : "musica"; }
 
   async function leggiStili() {
     try {
@@ -50,25 +90,54 @@ export const COPIONE_STILI = `
   }
 
   function disegnaStili() {
+    disegnaTipiStili();
     disegnaDueTastiStili();
 
     var casella = $("elenco-stili");
     casella.innerHTML = "";
-    var quali = doveStili === "vetrina" ? stiliDegliAltri : mieiStili;
+    var quali = (doveStili === "vetrina" ? stiliDegliAltri : mieiStili)
+      .filter(function (s) { return tipoDi(s) === tipoStili; });
 
     $("stili-vuoti").hidden = quali.length > 0;
     $("stili-vuoti").textContent = doveStili === "vetrina"
-      ? "Nessuno ha ancora messo uno stile in vetrina. Mettici il tuo: tieni premuto e scegli «condividi»."
-      : "Non hai ancora nessuno stile.";
+      ? "Nessuno ha ancora messo in vetrina uno stile per " + tipoOra().nome.toLowerCase() + ". Mettici il tuo: tieni premuto e scegli «condividi»."
+      : "Non hai ancora nessuno stile per " + tipoOra().nome.toLowerCase() + ".";
 
     for (var s of quali) casella.append(cartaStile(s));
+  }
+
+  /**
+   * I tre tipi in fila, col numero di quanti ce n'è dentro.
+   *
+   * Il numero non è decorazione: dice se l'elenco vuoto che stai guardando è
+   * perché non hai stili, o perché stai guardando dalla parte sbagliata.
+   */
+  function disegnaTipiStili() {
+    var casella = $("tipi-stili");
+    if (!casella) return;
+    casella.innerHTML = "";
+    var dentro = doveStili === "vetrina" ? stiliDegliAltri : mieiStili;
+    for (var t of TIPI_STILE) {
+      var quanti = dentro.filter((function (quale) {
+        return function (s) { return tipoDi(s) === quale; };
+      })(t.id)).length;
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "mini" + (t.id === tipoStili ? " on" : "");
+      b.textContent = t.segno + " " + t.nome + " \\u00b7 " + quanti;
+      b.addEventListener("click", (function (quale) {
+        return function () { tipoStili = quale; disegnaStili(); };
+      })(t.id));
+      casella.append(b);
+    }
   }
 
   function disegnaDueTastiStili() {
     var casella = $("due-tasti-stili");
     casella.innerHTML = "";
+    var quantiMiei = mieiStili.filter(function (s) { return tipoDi(s) === tipoStili; }).length;
     var pezzi = [
-      { id: "miei", nome: "I miei stili", sotto: mieiStili.length + " da usare quando vuoi", tinta: "ciano", segno: "\\u266B" },
+      { id: "miei", nome: "I miei stili", sotto: quantiMiei + " per " + tipoOra().nome.toLowerCase(), tinta: "ciano", segno: tipoOra().segno },
       { id: "vetrina", nome: "In vetrina", sotto: "quelli che gli altri fanno provare", tinta: "rosa", segno: "\\u2726" },
     ];
     for (var x of pezzi) {
@@ -159,10 +228,11 @@ export const COPIONE_STILI = `
    * È la cosa per cui uno stile esiste, quindi è il gesto più corto: un tocco.
    */
   function usaLoStile(s) {
-    var brano = azioni.filter(function (a) { return a.id === "genera.brano"; })[0];
-    if (!brano) { alert("Su questo computer non si possono fare brani."); return; }
+    var info = infoTipo(tipoDi(s));
+    var azione = azioni.filter(function (a) { return a.id === info.azione; })[0];
+    if (!azione) { alert("Su questo computer non si pu\u00f2 fare questo."); return; }
     vaiA("produzione");
-    scegli(brano);
+    scegli(azione);
     var principale = document.querySelector("#modulo [data-principale]");
     if (principale) {
       principale.value = s.testo;
@@ -181,7 +251,7 @@ export const COPIONE_STILI = `
     testo.textContent = s.testo;
     carta.append(testo);
 
-    voceFoglio(carta, "\\u266B", "Usalo adesso", "va in Produzione, gi\\u00e0 riempito", function () {
+    voceFoglio(carta, infoTipo(tipoDi(s)).segno, "Usalo adesso", "va in Produzione, gi\\u00e0 riempito", function () {
       chiudiFoglio();
       usaLoStile(s);
     });
@@ -218,7 +288,11 @@ export const COPIONE_STILI = `
    * documentazione.
    */
   function apriModificaStile(s) {
-    var carta = apriFoglio(s && s.id ? "Modifica lo stile" : "Uno stile nuovo");
+    var suo = s && s.tipo ? s.tipo : tipoStili;
+    var info = infoTipo(suo);
+    var carta = apriFoglio(
+      (s && s.id ? "Modifica lo stile" : "Uno stile nuovo") + " \u00b7 " + info.nome.toLowerCase(),
+    );
 
     var eNome = document.createElement("label");
     eNome.textContent = "Come si chiama";
@@ -226,21 +300,26 @@ export const COPIONE_STILI = `
     campoNome.type = "text";
     campoNome.maxLength = 60;
     campoNome.value = (s && s.nome) || "";
-    campoNome.placeholder = "Neomelodico trap";
+    campoNome.placeholder = suo === "musica" ? "Neomelodico trap" : (suo === "video" ? "Carrellata lenta" : "Fotografia vera");
 
     var eTesto = document.createElement("label");
     eTesto.textContent = "Le parole per il modello";
     var campoTesto = document.createElement("textarea");
     campoTesto.value = (s && s.testo) || "";
-    campoTesto.placeholder = "neapolitan neomelodic pop, melodic trap, autotune ballad";
+    campoTesto.placeholder = info.esempio;
     faCrescere(campoTesto);
 
     var nota = document.createElement("p");
     nota.className = "nota";
-    nota.textContent =
-      "Tre o quattro generi in inglese, separati da virgola. Niente strumenti, niente " +
-      "atmosfera, niente BPM: una descrizione dettagliata restringe il modello e fa uscire " +
-      "sempre la stessa cosa. Si affina sui sottogeneri, non aggiungendo parole.";
+    nota.textContent = suo === "musica"
+      ? "Tre o quattro generi in inglese, separati da virgola. Niente strumenti, niente " +
+        "atmosfera, niente BPM: una descrizione dettagliata restringe il modello e fa uscire " +
+        "sempre la stessa cosa. Si affina sui sottogeneri, non aggiungendo parole."
+      : suo === "video"
+        ? "Poche parole in inglese: come si riprende, non cosa si riprende. La scena la " +
+          "scrivi ogni volta nella descrizione; qui ci va solo il modo."
+        : "Poche parole in inglese: il modo, non il soggetto. Il soggetto lo scrivi ogni " +
+          "volta nella descrizione; qui ci va come deve venire.";
 
     var avviso = document.createElement("div");
     avviso.className = "avviso";
@@ -258,6 +337,7 @@ export const COPIONE_STILI = `
             id: s && s.id,
             nome: campoNome.value.trim(),
             testo: campoTesto.value.trim(),
+            tipo: suo,
           }),
         });
         chiudiFoglio();
@@ -299,7 +379,7 @@ export const COPIONE_STILI = `
     try {
       await chiama("/stili/vetrina/prendi", {
         method: "POST",
-        body: JSON.stringify({ nome: s.nome, testo: s.testo, daNome: s.chiNome }),
+        body: JSON.stringify({ nome: s.nome, testo: s.testo, tipo: tipoDi(s), daNome: s.chiNome }),
       });
       tasto.textContent = "\\u2713 \\u00e8 tuo";
       // Gli stili dell'azione cambiano: si rileggono, se no la Produzione

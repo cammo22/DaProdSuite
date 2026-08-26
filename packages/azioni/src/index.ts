@@ -12,8 +12,14 @@ export {
   DURATE_VIDEO,
   LINGUE_CANTO,
   SEZIONI,
+  STILE_PER_APP,
   STILI_DI_PARTENZA,
+  STILI_IMMAGINE_DI_PARTENZA,
+  STILI_VIDEO_DI_PARTENZA,
+  TIPI_STILE,
+  stiliDiPartenzaPer,
 } from "./stili";
+export type { TipoStile } from "./stili";
 export { schemaDi } from "./schema";
 export type { Proprieta, Schema } from "./schema";
 export { opzioni, testoPrincipale, verifica } from "./verifica";

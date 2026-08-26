@@ -25,6 +25,7 @@ import { durata, el, escapeHtml } from "./dom.js";
 import { disegnaLista } from "/comune/lista-viva.js";
 import { FASI } from "./grafi.js";
 import * as ponte from "./ponte.js";
+import { faiLaCopertina } from "./copertina.js";
 
 const lavori = new Map();
 let ordine = [];
@@ -297,6 +298,20 @@ async function concludi(l) {
     } catch {
       // Il video c'è comunque: i metadati sono un di più, non il risultato.
     }
+
+    /**
+     * **E adesso la copertina**, chiesta il 26 agosto 2026: «i video continua a
+     * non funzionare la thumbnail, facciamo che a fine video il software la
+     * crea». Il fotogramma se lo prende la scheda, con un `<video>` e un
+     * `<canvas>`: nessun programma esterno, e la copertina c'è **prima** che
+     * qualcuno apra la galleria — qui e sul telefono.
+     *
+     * Senza `await`, e apposta: il video è pronto adesso e si deve vedere
+     * adesso. La copertina arriva un secondo dopo, e la libreria avvisa da sola
+     * chi la stava guardando.
+     */
+    void faiLaCopertina(id, ponte.vista(file));
+
     fatti.unshift({
       id,
       url: ponte.vista(file),

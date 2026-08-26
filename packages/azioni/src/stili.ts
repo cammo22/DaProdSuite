@@ -117,3 +117,92 @@ export const DURATE_BRANO: readonly number[] = [30, 60, 80, 120, 220];
 
 /** Le durate di una clip video, con la stessa logica. */
 export const DURATE_VIDEO: readonly number[] = [3, 5, 8, 10];
+
+/* ==========================================================================
+   Gli stili delle altre due schede: immagini e video.
+   ========================================================================== */
+
+/**
+ * **Perché tre elenchi e non uno, dalla 0.7.8.**
+ *
+ * Chiesto il 26 agosto 2026: «gli stili vanno bene ma devono essere di tre tipi
+ * per immagini, video e musica; gli stili salvati per immagini li ritrovo anche
+ * nella produzione immagini, stessa cosa per musica e video, così li separiamo
+ * e ordiniamo per bene».
+ *
+ * Ed è la cosa giusta, perché uno stile **non è la stessa cosa nei tre posti**:
+ * per un brano sono tre generi musicali, per un'immagine è un modo di
+ * fotografare o di disegnare, per un video è un modo di riprendere. Metterli
+ * tutti in un elenco solo vorrebbe dire offrire «boom bap partenopeo» a chi sta
+ * facendo una foto — cioè un menu che non si guarda più.
+ *
+ * La regola invece resta identica in tutti e tre: **poche parole, e nessuna
+ * prosa**. Una descrizione dettagliata restringe il modello e fa uscire sempre
+ * la stessa cosa; si affina cambiando le parole, non aggiungendone.
+ */
+export type TipoStile = "immagine" | "video" | "musica";
+
+/** I tre tipi, nell'ordine in cui si mostrano. */
+export const TIPI_STILE: readonly { id: TipoStile; nome: string; segno: string }[] = [
+  { id: "immagine", nome: "Immagini", segno: "◉" },
+  { id: "video", nome: "Video", segno: "▶" },
+  { id: "musica", nome: "Musica", segno: "♫" },
+];
+
+/**
+ * Da che scheda arriva una richiesta, a che stili le servono.
+ *
+ * Sta qui e non nel gateway perché è la stessa domanda che si fanno il
+ * telefono, la console e l'agente: la scheda foto vuole gli stili immagine, e
+ * non c'è un secondo modo di rispondere.
+ */
+export const STILE_PER_APP: Readonly<Record<string, TipoStile>> = {
+  foto: "immagine",
+  cinema: "video",
+  musica: "musica",
+};
+
+/** Gli stili immagine di partenza: modi di fotografare, o di disegnare. */
+export const STILI_IMMAGINE_DI_PARTENZA: Readonly<Record<string, string>> = {
+  "Fotografia vera": "photorealistic, 35mm photography, natural light, sharp focus",
+  "Ritratto da studio": "studio portrait, softbox lighting, shallow depth of field, 85mm",
+  "Ora dorata": "golden hour, warm backlight, lens flare, cinematic photography",
+  "Notte al neon": "neon noir, night city, wet asphalt reflections, cyberpunk lighting",
+  "Cinema anni 70": "70s film still, kodak portra, grain, muted colors",
+  "Bianco e nero": "black and white photography, high contrast, film grain",
+  "Anime": "anime illustration, cel shading, clean lineart, vibrant colors",
+  "Fumetto": "comic book art, bold ink lines, halftone shading",
+  "Acquerello": "watercolor painting, soft washes, paper texture",
+  "Olio su tela": "oil painting, visible brush strokes, classical composition",
+  "Tre dimensioni": "3d render, octane render, soft global illumination, high detail",
+  "Pixel": "pixel art, 16-bit, limited palette",
+  "Minimale": "minimalist design, flat colors, negative space, clean shapes",
+  "Manifesto": "poster design, bold typography space, graphic shapes, high contrast",
+  "Sogno": "dreamy, soft focus, pastel colors, ethereal light",
+  "Epico": "epic fantasy illustration, dramatic lighting, wide vista",
+};
+
+/** Gli stili video di partenza: modi di riprendere, non di colorare. */
+export const STILI_VIDEO_DI_PARTENZA: Readonly<Record<string, string>> = {
+  "Cinematografico": "cinematic shot, shallow depth of field, film grain, steady camera",
+  "Camera a mano": "handheld camera, subtle shake, documentary feel",
+  "Carrellata lenta": "slow dolly in, smooth camera movement, steady pace",
+  "Drone": "aerial drone shot, wide landscape, slow orbit",
+  "Primo piano": "close up shot, face detail, soft light, slow push in",
+  "Rallentatore": "slow motion, 120fps look, fluid movement",
+  "Notte neon": "night scene, neon lights, reflections, moody atmosphere",
+  "Ora dorata": "golden hour, warm backlight, lens flare",
+  "Anime in movimento": "anime animation, cel shading, dynamic motion",
+  "Cartone": "cartoon animation, bold outlines, bouncy motion",
+  "Stop motion": "stop motion animation, handmade textures, slight jitter",
+  "Vecchia pellicola": "vintage film look, 16mm grain, faded colors",
+  "Timelapse": "timelapse, fast moving clouds, static camera",
+  "Sott'acqua": "underwater shot, caustic light, floating particles",
+};
+
+/** L'elenco di partenza di un tipo. */
+export function stiliDiPartenzaPer(tipo: TipoStile): Readonly<Record<string, string>> {
+  if (tipo === "immagine") return STILI_IMMAGINE_DI_PARTENZA;
+  if (tipo === "video") return STILI_VIDEO_DI_PARTENZA;
+  return STILI_DI_PARTENZA;
+}
