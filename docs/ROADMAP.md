@@ -26,7 +26,7 @@ file si scrive quale delle due metà manca.
 
 ## A che punto siamo — 26 agosto 2026
 
-**Ultima pubblicata: 0.7.6.** Nove schede dentro la suite, un ambiente Python
+**Ultima pubblicata: 0.7.7.** Nove schede dentro la suite, un ambiente Python
 solo, e il giro che conta — chiedo dal telefono, il computer fa, il file torna —
 **provato da chi la usa**, sul suo PC e sul suo telefono.
 
@@ -71,7 +71,13 @@ fanno quello che ti ho chiesto».
 Adesso che il giro base regge, quello che resta è **la stessa cura data alle
 altre otto schede**. In quest'ordine:
 
-1. **provare la 0.7.6 sul PC vero e sul telefono vero.** È il giro più grosso
+1. **provare la 0.7.7 sul PC vero e sul telefono vero.** La prima cosa da
+   guardare è il **collegamento**: apri e chiudi l'app dieci volte e non deve mai
+   chiedere di riscannerizzare il codice. È la ragione per cui esiste questa
+   versione, e finché non è provata su un telefono vero resta una cura scritta e
+   non verificata.
+
+2. **provare la 0.7.6 sul PC vero e sul telefono vero.** È il giro più grosso
    dalla 0.7.0 e tocca tre cose che qui non si potevano provare: la
    chiacchierata contro LM Studio, le anteprime e la copertina cucita con
    FFmpeg, e lo specchio offline su un telefono. In quest'ordine, perché in

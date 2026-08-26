@@ -51,6 +51,7 @@ export const COPIONE_AVVIO = `
 
     disegnaDueTasti();
     disegnaFiltri();
+    try { await leggiStili(); } catch (e) { /* offline: restano quelli di prima */ }
     disegnaFiltriDaprod();
     await leggiPreset();
     await guardaAi();

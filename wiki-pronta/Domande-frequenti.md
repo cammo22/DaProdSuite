@@ -1,6 +1,26 @@
 # Domande frequenti
 
-### I miei dati escono dal computer?
+### «Ogni volta che riapro l'app devo riscannerizzare il codice»
+
+**Dalla 0.7.7 non deve più succedere.** Era il difetto più fastidioso della
+0.7.6, e aveva due cause che si sommavano.
+
+La prima: l'accoppiamento veniva scritto su disco **mezzo secondo dopo**, e se
+la suite moriva male in quella finestra il computer non aveva mai saputo di te.
+Adesso quello che decide *chi sei* si scrive subito.
+
+La seconda: bastava **un solo** «non ti riconosco» perché l'app buttasse via la
+credenziale — e un «non ti riconosco» capita anche quando la suite si sta ancora
+accendendo. Adesso la credenziale vera vive nel profilo del telefono: se il
+computer fa storie, l'app la rimette e riprova, e solo dopo tre volte di fila ti
+riporta all'ingresso, dicendoti perché.
+
+**Se ti succede ancora**, c'è una terza cosa che non è un difetto: qualcuno ti ha
+tolto dal computer. In quel caso adesso l'app te lo dice — «questo collegamento
+non vale più» — e ti offre di rifarlo, invece di comportarsi come se fosse
+offline.
+
+## I miei dati escono dal computer?
 
 No. Tutto gira in locale: niente account da creare, niente chiave API da
 incollare da qualche parte, niente immagine, brano o testo che venga mandato

@@ -51,6 +51,24 @@ export const COPIONE_BASE = `
   /** La chiacchierata in corso, se ce n'è una. */
   var sessione = null;
   var orologioChiacchiera = null;
+  /**
+   * Il posto in fila, mentre si aspetta di poter parlare col modello.
+   *
+   * ⚠ Queste tre righe sembrano contabilità e sono la cosa più importante del
+   * file. Una variabile usata e mai dichiarata, in JavaScript, non è un errore
+   * che si vede: è un'eccezione che parte alla prima lettura, risale fino al
+   * catch vuoto di chi ha chiamato, e **sparisce**. Quello che si
+   * vede è una parte di pagina che resta vuota senza dire niente — ed è
+   * successo davvero fra la 0.7.6 e la 0.7.7: «le ultime cose venute fuori» non
+   * compariva mai, e in console non c'era una riga.
+   *
+   * L'ha trovato il banco (banco-console.mjs), che è la ragione per cui
+   * adesso esiste.
+   */
+  var attesaChiacchiera = null;
+  var orologioFila = null;
+  /** Il cronometro del lavoro in corso: scorre, e si spegne quando sparisce. */
+  var orologioAdesso = null;
   /** La bacheca di DaProd, e da che filtro la si guarda. */
   var inBacheca = [];
   var filtroBacheca = "";
@@ -280,6 +298,7 @@ export const COPIONE_BASE = `
     window.scrollTo({ top: 0 });
     if (quale === "galleria") leggiGalleria();
     if (quale === "daprod") leggiBacheca();
+    if (quale === "stili") leggiStili();
     // Chi apre LM Studio a suite gia' accesa deve ritrovare i tasti accesi
     // senza riaprire niente: si richiede quando si va dove servono.
     if (quale === "produzione" || quale === "riepilogo") void guardaAi();

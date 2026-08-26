@@ -10,6 +10,197 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ---
 
+## 0.7.7 — Provata a lungo, e sono venute fuori venti cose
+
+**26 agosto 2026.** La 0.7.6 è stata usata davvero, per ore, e questa versione è
+la risposta a quello che ne è uscito. Non c'è un'idea nuova: ci sono venti
+difetti veri, e il più grave era quello che si diceva per ultimo.
+
+### Il collegamento non si perde più
+
+> «Quando chiudo e apro l'app spesso devo cancellare l'account e riscannerizzare
+> il codice. Facciamo una cosa stabile e testabile, non voglio problemi di
+> questo tipo.»
+
+Aveva due cause, e si sommavano.
+
+**L'accoppiamento poteva non essere mai scritto.** L'archivio del gateway scrive
+in differita, mezzo secondo dopo — giusto per l'ultimo accesso di un telefono
+che bussa ogni venti secondi, **sbagliato** per il momento in cui nasce una
+credenziale. Bastava che la suite morisse male in quella mezza finestra — e
+moriva male spesso, per via dei processi che restavano — perché il telefono si
+ritrovasse un token che il computer non aveva mai visto. Adesso quello che
+decide *chi sei* si scrive **subito**: accoppiamento, revoca, cambio di ruolo,
+cambio di nome. Tutto il resto resta differito.
+
+**E un 401 buttava via la credenziale.** Uno solo, e non è detto che avesse
+ragione: la suite può essersi appena accesa, il gateway può essere ripartito in
+mezzo a una chiamata. Buttato il token, dentro l'app non c'era più modo di
+rientrare — la pagina servita dalla copia non ha il frammento con la credenziale
+— e l'unica strada sembrava rifare il codice. Adesso la credenziale vera vive
+**nel profilo del telefono**, che è il posto durevole: al primo 401 l'app la
+rimette e riapre, e solo dopo tre di fila si torna all'ingresso, con scritto
+perché.
+
+**E «non risponde» non è più «non ti conosce».** Erano trattati uguale — si
+mostrava la copia offline — quindi chi era stato tolto dal computer vedeva
+un'app che sembrava funzionare e non faceva niente. Adesso si distingue, e nel
+secondo caso si dice cos'è successo e si offre di rifare il collegamento.
+
+### La fila, con i numeri
+
+> «Usiamo un sistema di coda a numeri che si aggiorna.»
+
+Ogni lavoro ha un **numero** che non riparte mai: `#47`. Si legge al telefono, si
+dice a voce, si ritrova in un elenco — cose che `r-8f3a2c` non permetteva. E
+accanto c'è il **posto**, che invece scende a ogni lavoro che finisce.
+
+Da lì vengono cinque cose che prima non c'erano:
+
+- **si esce dalla fila**, e non serve il permesso di nessuno: chi esce libera la
+  macchina, non la occupa;
+- **si ferma quello che gira**, ma solo dal computer — il tempo di scheda video
+  già speso si butta, e non è un gesto da telecomando;
+- **«falle partire tutte»**, un tasto solo per dare il sì a tutto quello che
+  aspetta, in ordine di arrivo;
+- **«rifallo»** e **«cambia e rifallo»** su un lavoro finito. Ne nasce uno nuovo,
+  col suo numero: un lavoro finito è un fatto, e riscriverlo vorrebbe dire non
+  capire più cosa è successo quando;
+- **da quanto sta andando**, che scorre ogni secondo. *Quanto manca* non lo sa
+  nemmeno il motore; da quanto è partito sì, e basta a capire se è cominciato
+  adesso o se è lì da un quarto d'ora.
+
+### «Chiedo al computer» adesso chiede davvero
+
+> «Quando dice chiedo al computer in realtà non chiede.»
+
+Era vero: se la macchina stava generando, si restava un minuto con una rotella e
+poi ci si sentiva dire di riprovare. Adesso **ci si mette in fila per davvero**:
+il computer risponde subito con il tuo posto, quel numero scende sotto i tuoi
+occhi, e se cambi idea esci dalla coda con un tasto.
+
+### Il modello sa cosa sta facendo
+
+> «Il fatto che non scrive bene il prompt è perché questi modelli locali sono
+> piccoli: magari diamogli un preset a tutti i modelli che spiegano cosa possono
+> e come fare.»
+
+Le istruzioni sono diventate un **manuale**: per ognuna delle quattro cose che la
+macchina sa fare c'è scritto quali campi riempire, cosa ci va dentro e **un
+esempio vero** — che a un modello da 4 miliardi di parametri serve più di
+qualunque spiegazione. Dentro ci sono anche gli stili di chi sta parlando.
+
+E il piano non arriva più mezzo vuoto. Per un brano il modello riempiva la
+descrizione e nient'altro: niente testo da cantare, niente stile, niente lingua,
+niente durata — e una canzone senza parole è uno strumentale, che non è quello
+che aveva chiesto chi ha scritto «una canzone d'amore a Napoli». Adesso lo schema
+ha **un campo per ogni cosa che serve**.
+
+**E il modello con cui generare si sceglie quando il piano è pronto**, non prima:
+il modello che *scrive* non è quello che *genera*, e la scelta ha senso farla
+guardando cosa si sta per fare.
+
+**Quanto contesto dargli si sceglie**: 32K, 64K, 128K, 256K. Si paga in memoria —
+ogni GB di cache è un GB che non sta ai pesi — quindi il numero giusto dipende
+dal modello e dalla macchina, e non può deciderlo il programma.
+
+### Pulsanti, non menu a tendina
+
+> «Nell'interfaccia android voglio pulsanti, non menu a tendine. Durata canzoni
+> pulsanti da 30, 60, 80, 120 e 220 secondi, anche i modelli voglio pulsanti. Le
+> finestre mentre scrivi devono allungarsi: non voglio piccole finestre di testo,
+> voglio vedere bene.»
+
+Nei moduli non c'è più un solo `<select>`. Modelli, stili, lingue: pastiglie, che
+si vedono tutte insieme e si premono una volta. Le durate sono cinque pulsanti; la
+casella resta, per chi ne vuole 137.
+
+Le caselle di testo **crescono mentre scrivi**. Il testo di una canzone sono venti
+righe: scriverle dentro una finestrella da tre, su un telefono, vuol dire non
+rileggere mai quello che si è scritto.
+
+E nella musica c'è quello che mancava: **gli stili**, **la lingua**, e **le
+istruzioni fra parentesi quadre** — `[Intro]`, `[Verse]`, `[Chorus]` — che si
+infilano dove sta il cursore, con l'a capo giusto intorno. Sul computer c'erano
+da sempre; dal telefono bisognava sapere che esistevano e scriverle a mano.
+
+### Gli Stili, una scheda tutta loro
+
+> «Aggiungiamo gli stili su Android, una nuova tab Stili dove gestire tutto e
+> anche volendo condividere uno stile per farlo provare agli altri. Ogni utente
+> deve avere i suoi, ma partono tutti con un set preimpostato.»
+
+Sei schede invece di cinque. Dentro: i ventiquattro stili di partenza, quelli che
+hai fatto tu, e quelli che hai preso da qualcuno. Si tocca uno stile per usarlo —
+va in Produzione già riempito — e **si tiene premuto** per il resto: modifica e
+salva, fanne una copia, mettilo in vetrina, buttalo.
+
+La **vetrina** è quello che gli altri hanno deciso di far provare. Prenderne uno
+ne fa una **copia**: da quel momento è tuo, e chi l'ha fatto può cambiarlo o
+toglierlo senza che a te sparisca da sotto le mani. Resta scritto di chi era.
+
+Gli stili vivono sul computer, nella cartella della persona — non nella memoria
+di un browser, com'era fino a ieri: cambiavi dispositivo e non c'erano più.
+
+### Una cartella per ognuno, e una per DaProd
+
+> «Facciamo una cartella per ogni utente in modo tale da tenere sempre i dati
+> degli utenti sotto controllo. Tutto quello pubblicato su DaProd finisce in una
+> cartella separata in modo da non perdere quei file, e facciamo un collegamento
+> rapido a queste cartelle nella suite.»
+
+`persone\<id>\` per ognuno, e `daprod\` per quello che viene messo in bacheca —
+una **copia**, non uno spostamento: pubblicare è un gesto in più, non un trasloco,
+e chi pubblica non deve vedersi sparire il file da dove lo cerca. Il nome della
+copia dice di chi è: `Cammo — un faro sulla scogliera.png`.
+
+Togliere una persona adesso toglie anche la sua cartella. I risultati no: quelli
+sono file veri, e qualcuno potrebbe volerli ancora.
+
+### Il telefono, le cose piccole che si notavano
+
+- **Le notifiche sono due**, non sei: un lavoro pronto e un pensiero arrivato. Un
+  programma che avvisa a ogni cosa smette di essere ascoltato.
+- **Il marchio nuovo** sull'icona dell'app e dentro le notifiche. La piccola resta
+  una sagoma, e non è una scelta: Android riempie di bianco qualunque cosa ci si
+  metta, e un logo a colori ci diventa una macchia.
+- **I video hanno la loro anteprima**, anche senza FFmpeg sul computer: il
+  fotogramma se lo estrae il telefono, dal video che ha già in casa. Funziona
+  anche senza linea.
+- **Via «Scollega questo dispositivo»** dall'app: non funzionava bene — revocava
+  il token e lasciava il profilo — e faceva la stessa cosa di «Cambia persona»,
+  che funziona. Un gesto solo, invece di due di cui uno rotto.
+
+### E sul computer
+
+- **Le notifiche arrivano anche lì**: «mettiamo le notifiche anche su pc che non
+  le sento». Due sole, come sul telefono.
+- **Si ferma una generazione** dal pannello.
+- **Si accettano tutte le richieste** con un tasto.
+
+### Il banco di prova, e i tre difetti che ha trovato
+
+Questa versione ha un attrezzo nuovo che non si vede: `banco-console.mjs` accende
+un gateway vero con dentro dati finti e serve la pagina vera, per guardarla in un
+browser. Le prove automatiche controllano le rotte; la pagina è tremila righe di
+JavaScript che nessun controllo di tipi guarda.
+
+Ha trovato tre cose, tutte e tre invisibili altrimenti:
+
+1. **tre variabili usate e mai dichiarate.** In JavaScript non è un errore che si
+   vede: parte un'eccezione, risale fino a un `catch` vuoto e sparisce. Sullo
+   schermo restava «le ultime cose venute fuori» sempre vuota, e in console non
+   c'era una riga;
+2. **un tasto agganciato a un id che non esisteva**, che rompeva tutti gli agganci
+   venuti dopo;
+3. **la scheda Stili che non si leggeva aprendosi**, e restava vuota.
+
+Da oggi le tre cose sono controllate a ogni prova: una variabile assegnata e mai
+dichiarata, un id cercato a vuoto e una scheda che non si va a prendere la sua
+roba fanno fallire le prove. Sono 404 controlli, contro i 300 della 0.7.6.
+
+---
+
 ## 0.7.6 — Due programmi invece di uno, e la macchina che resta tua
 
 **26 agosto 2026.** Il giro più grosso dalla 0.7.0, e nasce da una frase sola:
