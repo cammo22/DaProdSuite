@@ -192,7 +192,9 @@ anche da lì: sono due gesti diversi.
 
 ### Cosa vedi
 
-**Sei** schede in fondo. Dalla **0.7.6** tre hanno cambiato nome — il nome
+**Sei** schede in fondo, su **una riga sola** (dalla 0.7.8: prima la sesta
+andava a capo, e mentre scrivevi la barra copriva la casella — adesso si toglie
+di mezzo da sola finché non hai finito). Dalla **0.7.6** tre hanno cambiato nome — il nome
 vecchio prometteva un'altra cosa — e dalla **0.7.7** ce n'è una in più, gli
 **Stili**:
 
@@ -203,13 +205,21 @@ vecchio prometteva un'altra cosa — e dalla **0.7.7** ce n'è una in più, gli
   la suite disegna da sola: quando il PC impara a fare una cosa nuova, la trovi
   qui senza aggiornare l'app. Sotto c'è **parla con un modello** (vedi più
   giù);
-- **Stili** (dalla 0.7.7) — i ventiquattro stili musicali di partenza più
-  quelli che ti fai tu. **Toccane uno per usarlo**: ti porta in Produzione con la
-  descrizione già riempita. **Tienilo premuto** e escono le opzioni: modifica e
-  salva, fanne una copia, mettilo in vetrina, buttalo. La **vetrina** è quello
-  che gli altri hanno deciso di far provare: prenderne uno ne fa una copia tua,
-  e resta scritto di chi era. Sono tuoi e stanno sul computer, quindi li ritrovi
-  da qualunque telefono;
+- **Stili** (dalla 0.7.7) — dalla **0.7.8** sono di **tre tipi**, e in cima ci
+  sono tre tasti per passare dall'uno all'altro: **Immagini**, **Video**,
+  **Musica**, col numero di quanti ce n'è dentro. Non è un capriccio d'ordine:
+  uno stile non è la stessa cosa nei tre posti — per un brano sono tre generi,
+  per una foto un modo di fotografare, per un video un modo di riprendere.
+  Ognuno parte col suo set preimpostato (sedici modi di fotografare, quattordici
+  di riprendere, i ventiquattro generi musicali) più quelli che ti fai tu.
+  **Toccane uno per usarlo**: ti porta nella Produzione giusta — una foto in
+  Immagini, una clip in Video, un brano in Musica — con la descrizione già
+  riempita. **Tienilo premuto** e escono le opzioni: modifica e salva, fanne una
+  copia, mettilo in vetrina, buttalo. La **vetrina** è quello che gli altri hanno
+  deciso di far provare: prenderne uno ne fa una copia tua, e resta scritto di
+  chi era. Sono tuoi e stanno sul computer, quindi li ritrovi da qualunque
+  telefono. E li ritrovi anche **dentro il modulo**: il campo «uno stile pronto»
+  c'è in Immagini, Video e Musica, e mostra solo quelli del suo tipo;
 - **Fila** (era «Lavori», poi «Riepilogo») — quattro numeri in cima — in
   lavorazione, in fila, pronti, aspettano il sì — e sotto **cosa sta girando
   adesso**, da quanto, per chi. Dalla 0.7.7 **ogni lavoro ha il suo numero**

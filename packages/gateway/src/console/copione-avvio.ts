@@ -153,6 +153,42 @@ export const COPIONE_AVVIO = `
   document.addEventListener("dragover", function (ev) { ev.preventDefault(); });
   document.addEventListener("drop", function (ev) { ev.preventDefault(); });
 
+  /**
+   * **Mentre si scrive, la barra in fondo si toglie di mezzo.**
+   *
+   * Il difetto, detto il 26 agosto 2026: «su Android quando scrivo con il
+   * modello la barra sotto nasconde la chat». Su un telefono la tastiera alza
+   * il fondo della finestra e una barra fissa finisce sopra alla casella e
+   * sopra alle ultime battute — cioè proprio sopra a quello che stai facendo.
+   *
+   * Chi sta scrivendo non sta cambiando scheda: in quel momento la barra non
+   * serve a niente, e toglierla è meglio che restringere la pagina. Torna da
+   * sola appena si esce dalla casella.
+   *
+   * Il rientro nella vista si fa dopo un attimo e non subito: la tastiera si
+   * apre con la sua animazione, e chiedere prima «portami qui» vuol dire
+   * chiederlo alla finestra di prima.
+   */
+  document.addEventListener("focusin", function (ev) {
+    var chi = ev.target;
+    if (!chi || (chi.tagName !== "TEXTAREA" && chi.tagName !== "INPUT")) return;
+    document.body.classList.add("scrivendo");
+    setTimeout(function () {
+      try { chi.scrollIntoView({ block: "center", behavior: "smooth" }); } catch (e) { /* vecchio browser */ }
+    }, 320);
+  });
+  document.addEventListener("focusout", function (ev) {
+    var chi = ev.target;
+    if (!chi || (chi.tagName !== "TEXTAREA" && chi.tagName !== "INPUT")) return;
+    // Un attimo di attesa: passando da una casella all'altra il fuoco esce e
+    // rientra, e senza questa pausa la barra sfarfallerebbe a ogni salto.
+    setTimeout(function () {
+      var ora = document.activeElement;
+      if (ora && (ora.tagName === "TEXTAREA" || ora.tagName === "INPUT")) return;
+      document.body.classList.remove("scrivendo");
+    }, 120);
+  });
+
   // Dal telefono il QR non lo si inquadra da qui: lo fa l'app, con la camera.
   // Dirlo in una pagina che non può farlo sarebbe una promessa a vuoto.
   if (window.DaProdApp) $("nota-qr").hidden = true;

@@ -65,6 +65,7 @@ import {
   riferimentiPerIlModello,
 } from "./storia-riferimenti.js";
 import * as ponte from "./ponte.js";
+import { faiLaCopertina } from "./copertina.js";
 // Il selettore del modello che scrive è di tutte le app: sta in `packages/ui` e
 // la suite lo serve sotto `/comune/`, dalla stessa origine della pagina.
 import { collegaSelettoreLlm, modelloScelto } from "/comune/selettore-llm.js";
@@ -638,6 +639,9 @@ async function scriviMetaClip(s, i, m, misura) {
       scena: i + 1,
       ts: Date.now(),
     });
+    // E la copertina, come per le clip di Crea: un video senza fotogramma è un
+    // rettangolo nero, in galleria e sul telefono. Vedi `copertina.js`.
+    void faiLaCopertina(ponte.idLibreria(pezzi), ponte.vista(pezzi));
   } catch {
     // La clip c'è comunque: i metadati sono un di più, non il risultato.
   }

@@ -15,6 +15,7 @@
  */
 
 import {
+  STILE_PER_APP,
   azione as trovaAzione,
   azioniPer,
   opzioni as opzioniDi,
@@ -45,18 +46,25 @@ export type EsitoAzione =
  * L'elenco delle azioni che questo dispositivo può chiedere, con gli schemi.
  *
  * `stiliDi` è facoltativo e serve a una cosa sola: **riempire le scelte che il
- * catalogo non può conoscere**. Il campo «uno stile pronto» del brano nasce con
- * l'elenco vuoto, perché gli stili sono di ogni persona e stanno sul computer;
- * qui si mettono quelli di chi sta chiedendo. Senza, il telefono mostrerebbe un
- * menu vuoto — che è peggio di nessun menu.
+ * catalogo non può conoscere**. Il campo «uno stile pronto» nasce con l'elenco
+ * vuoto, perché gli stili sono di ogni persona e stanno sul computer; qui si
+ * mettono quelli di chi sta chiedendo. Senza, il telefono mostrerebbe un menu
+ * vuoto — che è peggio di nessun menu.
+ *
+ * **E si mettono quelli del tipo giusto**, dalla 0.7.8: la scheda foto riceve
+ * gli stili immagine, il cinema quelli video, la musica i suoi. Offrire «boom
+ * bap partenopeo» a chi sta facendo una foto è un menu che non si guarda più.
  */
 export function elencoAzioni(
   dispositivo: Dispositivo,
-  stiliDi?: (chi: string) => { nome: string; testo: string }[],
+  stiliDi?: (chi: string) => { nome: string; testo: string; tipo?: string }[],
 ): unknown[] {
-  const stili = stiliDi ? stiliDi(dispositivo.id) : [];
+  const tutti = stiliDi ? stiliDi(dispositivo.id) : [];
 
   return azioniPer(dispositivo.ruolo).map((a) => {
+    const voluto = STILE_PER_APP[a.app ?? ""] ?? "musica";
+    // Chi ha stili salvati prima della 0.7.8 non ha il tipo: sono musica.
+    const stili = tutti.filter((x) => (x.tipo ?? "musica") === voluto);
     const campi = a.campi.map((c) => {
       if (c.nome !== "stile" || !stili.length) return c;
       return {

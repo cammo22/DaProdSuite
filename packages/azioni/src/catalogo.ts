@@ -82,6 +82,30 @@ function campoModello(quali: {
   } as const;
 }
 
+/**
+ * Il campo «uno stile pronto», uguale nelle tre schede che ne hanno.
+ *
+ * Dalla 0.7.8 non è più solo della musica: chiesto il 26 agosto 2026 — «gli
+ * stili salvati per immagini li ritrovo anche nella produzione immagini,
+ * stessa cosa per musica e video». Le scelte non stanno qui dentro: gli stili
+ * sono di ogni persona e li tiene il computer, che li mette dentro quando
+ * qualcuno chiede le azioni — e ci mette **solo quelli del tipo giusto**.
+ */
+function campoStile(riempie: string) {
+  return {
+    nome: "stile",
+    etichetta: "Uno stile pronto",
+    descrizione:
+      `Se lo scegli, riempie «${riempie}» con le parole giuste. I tuoi stili stanno sul ` +
+      "computer e li ritrovi da qualunque dispositivo.",
+    tipo: "scelta",
+    obbligatorio: false,
+    vuoto: "— scrivo io —",
+    // Riempite dal computer con gli stili di chi sta chiedendo.
+    scelte: [],
+  } as const;
+}
+
 export const AZIONI: readonly Azione[] = [
   /* ------------------------------------------------------------ generare */
 
@@ -106,6 +130,7 @@ export const AZIONI: readonly Azione[] = [
         maxLunghezza: PROMPT_MAX,
         esempio: "un faro sulla scogliera al tramonto, luce calda, fotografia",
       },
+      campoStile("cosa deve esserci"),
       {
         nome: "negativo",
         etichetta: "Cosa non ci deve essere",
@@ -150,6 +175,7 @@ export const AZIONI: readonly Azione[] = [
         maxLunghezza: PROMPT_MAX,
         esempio: "una barca che entra in porto all'alba, la camera la segue da destra",
       },
+      campoStile("cosa deve succedere"),
       {
         nome: "secondi",
         etichetta: "Quanto dura",
@@ -191,27 +217,7 @@ export const AZIONI: readonly Azione[] = [
         maxLunghezza: PROMPT_MAX,
         esempio: "neapolitan neomelodic pop, melodic trap, autotune ballad",
       },
-      /**
-       * Lo stile pronto: riempie la descrizione al posto tuo.
-       *
-       * Chiesto il 26 agosto 2026 — «nella parte musica mancano stili» — ed è
-       * la cosa che rende usabile la casella qui sopra da chi non sa che
-       * «neapolitan neomelodic pop» è la frase giusta. Le scelte non stanno
-       * qui dentro: le tiene il computer, una per persona, e le manda quando
-       * qualcuno chiede le azioni. Vedi `stili.ts` nello shell.
-       */
-      {
-        nome: "stile",
-        etichetta: "Uno stile pronto",
-        descrizione:
-          "Se lo scegli, riempie «che genere» con le parole giuste. I tuoi stili stanno sul " +
-          "computer e li ritrovi da qualunque dispositivo.",
-        tipo: "scelta",
-        obbligatorio: false,
-        vuoto: "\u2014 scrivo io \u2014",
-        // Riempite dal computer con gli stili di chi sta chiedendo.
-        scelte: [],
-      },
+      campoStile("che genere"),
       {
         nome: "testo",
         etichetta: "Il testo da cantare",

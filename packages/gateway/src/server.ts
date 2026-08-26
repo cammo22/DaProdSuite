@@ -50,8 +50,8 @@
  *   POST /macchina/ferma                        → ferma quello che gira adesso (solo il PC)
  *   POST /macchina/accetta-tutte                → dà il sì a tutto quello che aspetta
  *   POST /richieste/:id/rifai  { testo? }        → rifallo, uguale o modificato
- *   GET  /stili                                 → i tuoi stili musicali
- *   POST /stili        { id?, nome, testo }      → salvane uno, o cambialo
+ *   GET  /stili                                 → i tuoi stili (immagine, video, musica)
+ *   POST /stili   { id?, nome, testo, tipo }     → salvane uno, o cambialo
  *   DELETE /stili/:id                           → buttalo
  *   POST /stili/:id/condividi { condiviso }      → mettilo in vetrina, o toglilo
  *   GET  /stili/vetrina                         → quelli che gli altri hanno messo in mostra
@@ -1185,11 +1185,17 @@ export class Gateway {
 
       if (percorso === "/stili" && req.method === "POST") {
         if (!this.stili) return this.errore(res, 501, "Questa suite non tiene gli stili.");
-        const dati = (corpo ?? {}) as { id?: string; nome?: string; testo?: string };
+        const dati = (corpo ?? {}) as {
+          id?: string;
+          nome?: string;
+          testo?: string;
+          tipo?: string;
+        };
         const salvato = this.stili.salva(dispositivo.id, {
           id: dati.id,
           nome: String(dati.nome ?? ""),
           testo: String(dati.testo ?? ""),
+          tipo: dati.tipo ? String(dati.tipo) : undefined,
         });
         if (!salvato) return this.errore(res, 400, "Servono un nome e delle parole.");
         this.json(res, 201, { ok: true, stile: salvato });
@@ -1212,10 +1218,16 @@ export class Gateway {
        */
       if (percorso === "/stili/vetrina/prendi" && req.method === "POST") {
         if (!this.stili) return this.errore(res, 501, "Questa suite non tiene gli stili.");
-        const dati = (corpo ?? {}) as { nome?: string; testo?: string; daNome?: string };
+        const dati = (corpo ?? {}) as {
+          nome?: string;
+          testo?: string;
+          tipo?: string;
+          daNome?: string;
+        };
         const preso = this.stili.salva(dispositivo.id, {
           nome: String(dati.nome ?? ""),
           testo: String(dati.testo ?? ""),
+          tipo: dati.tipo ? String(dati.tipo) : undefined,
           da: "preso",
           daNome: dati.daNome ? String(dati.daNome).slice(0, 40) : undefined,
         });

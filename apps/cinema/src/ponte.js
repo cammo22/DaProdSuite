@@ -185,6 +185,14 @@ export const liberaMemoriaLlm = () => suite.llm.liberaMemoria();
 
 export const video = () => suite.libreria.elenco({ tipo: "video", app: "cinema" });
 export const scriviMeta = (id, meta) => suite.libreria.meta(id, meta);
+/**
+ * Mette la copertina accanto al video, come `.cover.jpg`.
+ *
+ * È quello che rende visibile un video prima di premere play: la galleria della
+ * suite e quella del telefono leggono tutte e due questo file. Vedi
+ * `copertina.js`, che il fotogramma se lo prende da solo.
+ */
+export const salvaCopertina = (id, dataUrl) => suite.libreria.copertina(id, dataUrl);
 export const mostraNellaCartella = (id) => suite.libreria.mostraNellaCartella(id);
 export const eliminaElemento = (id) => suite.libreria.elimina(id);
 /** Ne porta fuori una copia, scegliendo dove con la finestra di Windows. */

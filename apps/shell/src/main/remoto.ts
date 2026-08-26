@@ -717,6 +717,10 @@ const fornitoreStili: FornitoreStili = {
       id: dati.id,
       nome: dati.nome,
       testo: dati.testo,
+      tipo:
+        dati.tipo === "immagine" || dati.tipo === "video" || dati.tipo === "musica"
+          ? dati.tipo
+          : undefined,
       da: dati.da === "preso" || dati.da === "partenza" ? dati.da : "mio",
       daNome: dati.daNome,
     }),

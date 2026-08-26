@@ -90,6 +90,24 @@ lo stesso.
 
 ## A che punto siamo
 
+> **0.7.8: gli stili diventano tre, e la barra torna una riga.**
+>
+> **Gli stili sono di tre tipi: immagini, video, musica.** Uno stile non è la
+> stessa cosa nei tre posti — per un brano sono generi, per una foto un modo di
+> fotografare, per un video un modo di riprendere — e adesso stanno in tre file
+> separate, ognuna col suo set di partenza. Il campo «uno stile pronto» c'è anche
+> in **Fai un'immagine** e in **Fai un video**, e mostra solo quelli del suo tipo.
+>
+> **La barra in fondo è una riga sola.** Le schede sono sei dalla 0.7.7, ma la
+> barra ne teneva cinque e la sesta andava a capo. E **mentre scrivi si toglie di
+> mezzo**: sul telefono la tastiera la spingeva sopra alla chat.
+>
+> **I video hanno la loro immagine, subito.** Il fotogramma se lo prende
+> DaProdCinema appena il video è finito, senza bisogno di FFmpeg installato: in
+> galleria non ci sono più rettangoli neri, né sul computer né sul telefono.
+>
+> ⚠ Cosa è provato e cosa no sta in fondo al [CHANGELOG](CHANGELOG.md) § 0.7.8.
+>
 > **0.7.7: provata a lungo, e sono venute fuori venti cose.**
 >
 > **Il collegamento non si perde più.** Era la cosa più fastidiosa: «chiudo e
