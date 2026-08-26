@@ -79,7 +79,22 @@ function valore(
 
     case "scelta": {
       const scelto = String(grezzo).trim();
-      if (campo.scelte && !campo.scelte.includes(scelto)) {
+      /**
+       * **Un elenco vuoto vuol dire «le scelte le mette il computer».**
+       *
+       * Non è un caso di confine: è come nasce il campo «uno stile pronto». Il
+       * catalogo non può conoscere gli stili di una persona — sono suoi e
+       * stanno sul suo computer — quindi qui dentro c'è `scelte: []`, e chi
+       * risponde a `/azioni` ci mette i suoi prima di mandarli fuori.
+       *
+       * Senza questo controllo in più, `[].includes(qualunque cosa)` è falso e
+       * **ogni** stile scelto tornava indietro con «"stile" può essere solo: .
+       * Arrivato "Neomelodico trap"» — cioè un elenco vuoto e una richiesta
+       * rifiutata. Il difetto c'era dalla 0.7.7 e si vedeva solo nei brani;
+       * dalla 0.7.8, con gli stili anche nelle immagini e nei video, si vedeva
+       * dappertutto.
+       */
+      if (campo.scelte && campo.scelte.length > 0 && !campo.scelte.includes(scelto)) {
         return {
           errore: `"${campo.nome}" può essere solo: ${campo.scelte.join(", ")}. Arrivato "${scelto}".`,
         };
