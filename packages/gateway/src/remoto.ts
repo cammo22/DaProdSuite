@@ -203,7 +203,7 @@ export class Remoto {
     const posti = (invito.restano ?? 1) - 1;
     if (posti <= 0) dati.inviti.splice(indice, 1);
     else invito.restano = posti;
-    this.archivio.salva();
+    this.archivio.salvaSubito();
 
     const dispositivo: Dispositivo = {
       id: nuovoId("tel"),
@@ -214,7 +214,15 @@ export class Remoto {
       ultimoAccesso: Date.now(),
     };
     dati.dispositivi.push(dispositivo);
-    this.archivio.salva();
+    /**
+     * **Subito, non fra mezzo secondo.**
+     *
+     * È la riga che chiude «quando chiudo e apro l'app devo riscannerizzare il
+     * codice»: con la scrittura differita bastava che la suite morisse male
+     * nella mezza secondo dopo l'accoppiamento perché il telefono si ritrovasse
+     * con un token che il computer non aveva mai scritto. Vedi `salvaSubito`.
+     */
+    this.archivio.salvaSubito();
     return { dispositivo, token: dispositivo.token };
   }
 
@@ -249,7 +257,7 @@ export class Remoto {
     const prima = dati.dispositivi.length;
     dati.dispositivi = dati.dispositivi.filter((d) => d.id !== id);
     if (dati.dispositivi.length !== prima) {
-      this.archivio.salva();
+      this.archivio.salvaSubito();
       return true;
     }
     return false;
@@ -273,7 +281,7 @@ export class Remoto {
     );
     if (preso) return false;
     dispositivo.nome = pulito;
-    this.archivio.salva();
+    this.archivio.salvaSubito();
     return true;
   }
 
@@ -291,7 +299,7 @@ export class Remoto {
     if (!dispositivo) return false;
     if (cambi.foto !== undefined) dispositivo.foto = cambi.foto || undefined;
     if (cambi.motto !== undefined) dispositivo.motto = cambi.motto.trim().slice(0, 120) || undefined;
-    this.archivio.salva();
+    this.archivio.salvaSubito();
     return true;
   }
 
@@ -309,7 +317,7 @@ export class Remoto {
     const dispositivo = this.archivio.datiCorrenti.dispositivi.find((d) => d.id === id);
     if (!dispositivo) return false;
     dispositivo.ruolo = ruolo;
-    this.archivio.salva();
+    this.archivio.salvaSubito();
     this.notifica({
       dispositivoId: dispositivo.id,
       titolo: ruolo === "admin" ? "Adesso puoi decidere" : "Adesso puoi chiedere",
@@ -364,8 +372,10 @@ export class Remoto {
      */
     const verdetto = this.decidiSubito(opzioni.daDispositivo);
     const decide = verdetto.subito;
+    dati.ultimoNumero = (dati.ultimoNumero ?? 0) + 1;
     const richiesta: Richiesta = {
       id: nuovoId("r"),
+      numero: dati.ultimoNumero,
       tipo: opzioni.tipo,
       app: opzioni.app,
       testo: opzioni.testo,
@@ -399,6 +409,70 @@ export class Remoto {
       });
     }
     return richiesta;
+  }
+
+  /**
+   * Rifà un lavoro: una richiesta nuova con le stesse opzioni.
+   *
+   * **Perché non si «riapre» quella vecchia.** Un lavoro finito è un fatto: ha
+   * un numero, un'ora e — se è andato bene — un file. Riusarlo vorrebbe dire
+   * riscrivere la storia, e chi guarda l'elenco non capirebbe più cosa è
+   * successo quando. Se ne fa uno nuovo, con il suo numero, e nell'elenco si
+   * vedono tutti e due.
+   *
+   * Chiesto il 26 agosto 2026: «la possibilità di riutilizzare quel prompt,
+   * rifarlo oppure rifarlo ma prima modificarlo». Il `testo` facoltativo è la
+   * seconda metà: se c'è, si rifà con quello.
+   */
+  rifai(id: string, da: Dispositivo, testo?: string): Richiesta | { errore: string } {
+    const vecchia = this.richiesta(id);
+    if (!vecchia) return { errore: "Non trovo questo lavoro." };
+    // La propria, o qualunque se si può decidere: rifare il lavoro di un altro
+    // vuol dire occupargli la scheda video, e quello lo decide chi decide.
+    if (vecchia.daDispositivo !== da.id && da.ruolo !== "admin") {
+      return { errore: "Puoi rifare solo i tuoi lavori." };
+    }
+    const chi = this.archivio.datiCorrenti.dispositivi.find((d) => d.id === vecchia.daDispositivo);
+    return this.creaRichiesta({
+      tipo: vecchia.tipo,
+      app: vecchia.app,
+      testo: (testo ?? vecchia.testo).trim() || vecchia.testo,
+      opzioni: vecchia.opzioni,
+      // Se chi l'aveva chiesta non c'è più, il lavoro nuovo è di chi lo rifà.
+      daDispositivo: chi ?? da,
+    });
+  }
+
+  /**
+   * Accetta tutto quello che aspetta un sì. Torna quante ne sono partite.
+   *
+   * **Le più vecchie per prime**, che è l'unico ordine onesto: chi aspetta da
+   * più tempo parte prima. E passa comunque dalla fila — accettarne venti non
+   * vuol dire farne venti insieme, vuol dire metterne venti in ordine.
+   */
+  accettaTutte(da: Dispositivo): Richiesta[] {
+    const dati = this.archivio.datiCorrenti;
+    const ferme = dati.richieste
+      .filter((r) => r.stato === "in-attesa")
+      .sort((a, b) => a.quando - b.quando);
+    if (!ferme.length) return [];
+
+    for (const r of ferme) {
+      r.stato = "accettata";
+      r.trattenuta = undefined;
+    }
+    this.archivio.salva();
+    for (const r of ferme) {
+      for (const fn of this.accettatori) fn(r);
+      if (r.daDispositivo === da.id) continue;
+      this.notifica({
+        dispositivoId: r.daDispositivo,
+        richiestaId: r.id,
+        titolo: "È partita",
+        corpo: `Il numero ${r.numero ?? ""} è in lavorazione: “${breve(r.testo)}”`,
+      });
+    }
+    return ferme;
   }
 
   /**

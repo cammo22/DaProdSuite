@@ -189,10 +189,36 @@ export interface Impostazioni {
    * vuole ritrovare tre telefoni che generano stamattina.
    */
   inPausa: boolean;
+  /**
+   * Con quanto contesto si carica il modello che scrive, in token.
+   *
+   * **Perché è una scelta e non un numero fisso.** Il contesto si paga in
+   * memoria: la cache delle chiavi cresce con la lunghezza, e ogni GB che
+   * prende è un GB che non sta ai pesi — cioè che fa uscire il modello dalla
+   * scheda video e lo fa rispondere in due minuti invece che in dieci secondi.
+   *
+   * 64K era il numero fisso fino alla 0.7.6, ed è un buon numero: dieci volte
+   * quello che serve a finire il testo di una canzone. Ma dipende dal modello e
+   * dalla macchina, e chiesto il 26 agosto 2026 — «non c'è la possibilità di
+   * settare llm a 64k 128 o 256k» — adesso si sceglie.
+   *
+   * Vale al **prossimo caricamento**: un modello già in memoria non se lo
+   * rilegge.
+   */
+  contestoLlm: number;
 }
 
 /** Chi può far partire un lavoro senza il sì di chi sta al computer. */
 export type ChiPassaSubito = "mai" | "admin" | "tutti";
+
+/**
+ * I contesti fra cui si sceglie, in token.
+ *
+ * Quattro, e sono i quattro che cambiano qualcosa: 32K sta in memoria ovunque,
+ * 64K è quello con cui abbiamo lavorato finora, 128K serve a chi dà in pasto
+ * documenti lunghi, 256K è il massimo di Bonsai e su otto GB lo si paga.
+ */
+export const CONTESTI_LLM = [32_768, 65_536, 131_072, 262_144] as const;
 
 /* ----------------------------------------------------------------------- llm */
 

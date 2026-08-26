@@ -65,7 +65,9 @@ export const COPIONE_LAVORI = `
     corpo.className = "cresce";
     var t = document.createElement("div");
     t.className = "titolo";
-    t.textContent = r.testo;
+    // Il numero davanti: e' il nome del lavoro, quello che si dice a voce e che
+    // si ritrova in un elenco. «Il 47» si ricorda, «r-8f3a2c» no.
+    t.textContent = (r.numero ? "#" + r.numero + " " : "") + r.testo;
     var d = document.createElement("div");
     d.className = "dettaglio";
     d.textContent = [nomeScheda(r.app), r.daNome, quando(r.quando), r.motivoScarto || r.trattenuta]
@@ -112,6 +114,29 @@ export const COPIONE_LAVORI = `
         apri.textContent = menu.hidden ? "che ne faccio?" : "chiudi";
       });
       li.append(apri, menu);
+    }
+
+    /**
+     * **Rifallo**, uguale o cambiato.
+     *
+     * Chiesto il 26 agosto 2026: «la possibilita' di riutilizzare quel prompt,
+     * rifarlo oppure rifarlo ma prima modificarlo». E' il gesto che si fa piu'
+     * spesso dopo aver guardato un risultato — «quasi, ma piu' scuro» — e fino
+     * alla 0.7.6 voleva dire riscrivere tutto da capo.
+     *
+     * Ne nasce una **nuova**, con il suo numero: un lavoro finito e' un fatto, e
+     * riscriverlo vorrebbe dire non capire piu' cosa e' successo quando.
+     */
+    if (["pronta", "scartata", "scaduta", "archiviata"].indexOf(r.stato) >= 0) {
+      var ancora = document.createElement("button");
+      ancora.className = "mini";
+      ancora.textContent = "\\u21BB rifallo";
+      ancora.addEventListener("click", function () { void rifai(r, false); });
+      var cambia = document.createElement("button");
+      cambia.className = "mini";
+      cambia.textContent = "\\u270E cambia e rifallo";
+      cambia.addEventListener("click", function () { void rifai(r, true); });
+      li.append(ancora, cambia);
     }
 
     // Finito vuol dire che si può mettere via. Chi decide può farlo con tutte,
@@ -249,6 +274,31 @@ export const COPIONE_LAVORI = `
     } catch (e) {
       avviso.textContent = e.message;
     }
+  }
+
+  /**
+   * Rifa' un lavoro. Chiedendo, prima si apre la casella per ritoccarlo.
+   *
+   * La casella nasce **gia' piena** con quello che era stato chiesto: chi vuole
+   * cambiare due parole non deve riscriverne trenta.
+   */
+  async function rifai(r, cambiando) {
+    var testo = r.testo;
+    if (cambiando) {
+      var scritto = prompt("Cosa deve fare, stavolta?", r.testo);
+      if (scritto === null) return;
+      if (!scritto.trim()) return;
+      testo = scritto.trim();
+    }
+    try {
+      await chiama("/richieste/" + encodeURIComponent(r.id) + "/rifai", {
+        method: "POST",
+        body: JSON.stringify({ testo: testo }),
+      });
+      filtroLavori = "vivi";
+      await leggiCoda();
+      await leggiMacchina();
+    } catch (e) { alert(e.message); }
   }
 
   async function togliRichiesta(r, come) {

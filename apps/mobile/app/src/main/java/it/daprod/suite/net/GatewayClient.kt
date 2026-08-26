@@ -126,7 +126,32 @@ class GatewayClient(
      * codice — che è esattamente quello che questa app esiste per evitare.
      * Meglio chiedere prima e dire in italiano cosa succede.
      */
-    suspend fun raggiungibile(attesaMs: Long = 0): Boolean = withContext(Dispatchers.IO) {
+    suspend fun raggiungibile(attesaMs: Long = 0): Boolean =
+        bussa(attesaMs) == Colpo.RISPONDE
+
+    /**
+     * Com'è andato il colpetto. **Tre esiti, non due**, e la differenza conta.
+     *
+     * ⚠ Fino alla 0.7.6 questa era una domanda sì/no, e il no valeva per due
+     * cose diversissime: «il computer non c'è» e «il computer c'è e dice che
+     * non ti conosce». L'app le trattava allo stesso modo — mostrava la copia
+     * offline — quindi chi era stato revocato vedeva un'app che sembrava
+     * funzionare e non faceva niente. L'unica cura che veniva in mente era
+     * cancellare il profilo e rifare il codice, ed è esattamente quello che
+     * capitava: «spesso devo cancellare l'account e riscannerizzare».
+     */
+    enum class Colpo {
+        /** Il computer c'è e ci riconosce. */
+        RISPONDE,
+
+        /** Il computer c'è, e dice di no: il collegamento è stato tolto. */
+        RIFIUTA,
+
+        /** Nessuna risposta: spento, altra rete, linea giù. */
+        NIENTE,
+    }
+
+    suspend fun bussa(attesaMs: Long = 0): Colpo = withContext(Dispatchers.IO) {
         try {
             val req = conToken().url(a("/io")).build()
             // Bussare non è chiedere: quando si sta cercando quale indirizzo
@@ -140,9 +165,17 @@ class GatewayClient(
                 } else {
                     condiviso
                 }
-            cliente.newCall(req).execute().use { it.isSuccessful }
+            cliente.newCall(req).execute().use { res ->
+                when {
+                    res.isSuccessful -> Colpo.RISPONDE
+                    res.code == 401 || res.code == 403 -> Colpo.RIFIUTA
+                    // Un 500, o un proxy che si mette in mezzo: il computer non
+                    // è quello che cerchiamo, ma non ci ha nemmeno cacciati.
+                    else -> Colpo.NIENTE
+                }
+            }
         } catch (_: Exception) {
-            false
+            Colpo.NIENTE
         }
     }
 

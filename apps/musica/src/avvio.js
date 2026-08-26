@@ -10,7 +10,7 @@
 import { el, mostraScheda, suApertura } from "./dom.js";
 import { collegaLettore } from "./lettore.js";
 import { collegaComandiCoda, messaggioDalMotore, riallinea } from "./coda.js";
-import { collegaCrea } from "./crea.js";
+import { collegaCrea, scegliLingua } from "./crea.js";
 import { collegaCostruttore } from "./costruttore.js";
 import { aggiornaLibreria, collegaLibreria } from "./libreria.js";
 import { aggiornaImmagini, collegaImmagini } from "./immagini.js";
@@ -91,6 +91,16 @@ await collega(
  */
 collegaLavoriDaFuori(async (richiesta) => {
   scrivi(el.caption, richiesta.testo);
+  /**
+   * La lingua del canto, se chi ha chiesto l'ha detta.
+   *
+   * Dalla 0.7.7 arriva da fuori come le altre cose. Qui non e' un campo del
+   * modulo ma una preferenza con delle pastiglie, quindi va messa a mano:
+   * ACE-Step la riceve come impostazione vera, MiniMax se la trova aggiunta
+   * alla descrizione — e chi ha chiesto non deve sapere quale dei due sta
+   * usando.
+   */
+  if (richiesta.opzioni.lingua) scegliLingua(richiesta.opzioni.lingua);
   // Il testo da cantare è facoltativo: vuoto vuol dire strumentale, ed è
   // quello che dice anche il catalogo delle azioni.
   scrivi(el.lyrics, richiesta.opzioni.testo || "");

@@ -7,6 +7,13 @@
  */
 
 export { APP_REMOTE, AZIONI, MODELLI_DICHIARATI, azione, azioniPer } from "./catalogo";
+export {
+  DURATE_BRANO,
+  DURATE_VIDEO,
+  LINGUE_CANTO,
+  SEZIONI,
+  STILI_DI_PARTENZA,
+} from "./stili";
 export { schemaDi } from "./schema";
 export type { Proprieta, Schema } from "./schema";
 export { opzioni, testoPrincipale, verifica } from "./verifica";

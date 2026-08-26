@@ -120,24 +120,25 @@ export const COPIONE_PRODUZIONE = `
       modulo.append(etichetta);
 
       var controllo;
+      var accanto = null;
+
       if (campo.tipo === "scelta") {
-        controllo = document.createElement("select");
-        if (!campo.obbligatorio) {
-          var vuoto = document.createElement("option");
-          vuoto.value = "";
-          // Cosa vuol dire lasciarlo vuoto lo dice il campo: su un filtro
-          // «tutte», sul modello «quello scelto sul computer».
-          vuoto.textContent = campo.vuoto || "\\u2014 tutte \\u2014";
-          controllo.append(vuoto);
-        }
-        for (var opt of (campo.scelte || [])) {
-          var o = document.createElement("option");
-          o.value = opt;
-          // Il nome per una persona se il catalogo ce l'ha: «anima2» non vuol
-          // dire niente a chi lo legge una volta sola, «Anima v2» sì.
-          o.textContent = (campo.etichette && campo.etichette[opt]) || opt;
-          controllo.append(o);
-        }
+        /**
+         * **Pastiglie, non un menu a tendina.**
+         *
+         * Chiesto il 26 agosto 2026: «anche i modelli voglio pulsanti». Un menu
+         * a tendina su un telefono e' due tocchi e una schermata di sistema che
+         * copre tutto; le pastiglie sono un tocco, e soprattutto **si vedono
+         * tutte insieme** — quello che si puo' scegliere e' li', senza doverlo
+         * andare a cercare.
+         *
+         * Il valore vero resta in un campo nascosto: e' quello che viaggia, ed
+         * e' quello che il resto del codice si aspetta di trovare.
+         */
+        controllo = document.createElement("input");
+        controllo.type = "hidden";
+        controllo.value = campo.obbligatorio ? (campo.scelte || [])[0] || "" : "";
+        accanto = pastiglieDiScelta(campo, controllo);
       } else if (campo.tipo === "numero") {
         controllo = document.createElement("input");
         controllo.type = "number";
@@ -145,9 +146,23 @@ export const COPIONE_PRODUZIONE = `
         if (campo.min !== undefined) controllo.min = campo.min;
         if (campo.max !== undefined) controllo.max = campo.max;
         if (campo.predefinito !== undefined) controllo.value = campo.predefinito;
+        // Le durate che si scelgono davvero, come pulsanti: «30, 60, 80, 120 e
+        // 220 secondi». La casella resta, per chi ne vuole 137.
+        if ((campo.valoriTipici || []).length) accanto = pastiglieDiNumero(campo, controllo);
       } else if ((campo.maxLunghezza || 0) > 200) {
         controllo = document.createElement("textarea");
         if (campo.esempio) controllo.placeholder = campo.esempio;
+        /**
+         * **La casella cresce mentre scrivi.**
+         *
+         * Chiesto cosi': «le finestre mentre scrivi devono allungarsi, non
+         * voglio piccole finestre di testo, voglio vedere bene». Il testo di una
+         * canzone sono venti righe: scriverle dentro una finestrella da tre, su
+         * un telefono, vuol dire non rileggere mai quello che si e' scritto.
+         */
+        faCrescere(controllo);
+        // Le sezioni di un brano, da mettere dove sta il cursore.
+        if ((campo.inserti || []).length) accanto = pastiglieDaInfilare(campo, controllo);
       } else {
         controllo = document.createElement("input");
         controllo.type = "text";
@@ -157,6 +172,7 @@ export const COPIONE_PRODUZIONE = `
       controllo.dataset.campo = campo.nome;
       if (campo.principale) controllo.dataset.principale = "1";
       modulo.append(controllo);
+      if (accanto) modulo.append(accanto);
 
       // Il tasto dell'AI sta **sotto la casella che è la richiesta**, non in
       // cima alla pagina: è quello che riscrive, e si deve vedere cosa
@@ -182,6 +198,171 @@ export const COPIONE_PRODUZIONE = `
     $("avviso-azione").textContent = "";
     $("avviso-azione").className = "avviso";
     modulo.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+
+  /**
+   * Le pastiglie di una scelta: modelli, stili, lingue.
+   *
+   * Una sola accesa alla volta. Quella accesa si puo' **spegnere** ritoccando
+   * «— tutte —», se il campo si puo' lasciare vuoto: senza, chi tocca per
+   * sbaglio «Inglese» non ha piu' modo di tornare a «quella scelta sul
+   * computer».
+   */
+  function pastiglieDiScelta(campo, nascosto) {
+    var fila = document.createElement("div");
+    fila.className = "filtri";
+    fila.style.marginTop = "6px";
+
+    var tutte = [];
+    var accendi = function (quale) {
+      nascosto.value = quale;
+      for (var b of tutte) b.classList.toggle("on", b.dataset.valore === quale);
+      /**
+       * Uno stile riempie la casella che **e'** la richiesta.
+       *
+       * E' il motivo per cui gli stili esistono: chi non sa che «neapolitan
+       * neomelodic pop, melodic trap» e' la frase giusta non deve impararla,
+       * deve poterla toccare. Il testo arriva insieme al nome (vedi
+       * elencoAzioni nel gateway), quindi non serve un secondo giro di rete.
+       */
+      if (campo.nome === "stile" && campo.testi && campo.testi[quale]) {
+        var principale = document.querySelector("#modulo [data-principale]");
+        if (principale) {
+          principale.value = campo.testi[quale];
+          principale.dispatchEvent(new Event("input"));
+        }
+      }
+    };
+
+    if (!campo.obbligatorio) {
+      var niente = document.createElement("button");
+      niente.type = "button";
+      niente.className = "mini on";
+      niente.dataset.valore = "";
+      niente.textContent = campo.vuoto || "\\u2014 tutte \\u2014";
+      niente.addEventListener("click", function () { accendi(""); });
+      tutte.push(niente);
+      fila.append(niente);
+    }
+
+    for (var opt of (campo.scelte || [])) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "mini" + (nascosto.value === opt ? " on" : "");
+      b.dataset.valore = opt;
+      // Il nome per una persona se il catalogo ce l'ha: «anima2» non vuol dire
+      // niente a chi lo legge una volta sola, «Anima v2» si'.
+      b.textContent = (campo.etichette && campo.etichette[opt]) || opt;
+      b.addEventListener("click", (function (quale) {
+        return function () { accendi(quale); };
+      })(opt));
+      tutte.push(b);
+      fila.append(b);
+    }
+    return fila;
+  }
+
+  /** I numeri che si scelgono davvero: 30, 60, 80, 120, 220 secondi. */
+  function pastiglieDiNumero(campo, casella) {
+    var fila = document.createElement("div");
+    fila.className = "filtri";
+    fila.style.marginTop = "6px";
+
+    var tutte = [];
+    var accendi = function () {
+      for (var b of tutte) b.classList.toggle("on", b.dataset.valore === String(casella.value));
+    };
+
+    for (var n of campo.valoriTipici) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "mini";
+      b.dataset.valore = String(n);
+      b.textContent = campo.nome === "secondi" ? etichettaSecondi(n) : String(n);
+      b.addEventListener("click", (function (quale) {
+        return function () { casella.value = quale; accendi(); };
+      })(n));
+      tutte.push(b);
+      fila.append(b);
+    }
+    casella.addEventListener("input", accendi);
+    accendi();
+    return fila;
+  }
+
+  /** «80 s» sotto il minuto e mezzo, «2:00» sopra: si legge meglio. */
+  function etichettaSecondi(n) {
+    if (n < 90) return n + " s";
+    var m = Math.floor(n / 60);
+    var r = n % 60;
+    return m + ":" + (r < 10 ? "0" : "") + r;
+  }
+
+  /**
+   * Le istruzioni di sezione, da infilare dove sta il cursore.
+   *
+   * Chiesto il 26 agosto 2026: «tutte le istruzioni tra le quadre come intro,
+   * verse ecc devono funzionare anche su Android». Sul computer c'era una fila
+   * di pastiglie; dal telefono bisognava sapere che esistevano e scriverle a
+   * mano con le parentesi giuste — cioe' non le usava nessuno.
+   */
+  function pastiglieDaInfilare(campo, casella) {
+    var fila = document.createElement("div");
+    fila.className = "filtri";
+    fila.style.marginTop = "6px";
+
+    for (var t of campo.inserti) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "mini";
+      b.textContent = t;
+      b.addEventListener("click", (function (quale) {
+        return function () { infilaAlCursore(casella, quale); };
+      })(t));
+      fila.append(b);
+    }
+    return fila;
+  }
+
+  /**
+   * Mette un pezzo di testo dove sta il cursore, e ci va a capo intorno.
+   *
+   * Una sezione va su una riga sua: infilarla in mezzo a una frase darebbe
+   * «sotto le [Chorus] stelle», che il modello musicale legge come testo e non
+   * come sezione.
+   */
+  function infilaAlCursore(casella, pezzo) {
+    var da = casella.selectionStart || 0;
+    var a = casella.selectionEnd || 0;
+    var prima = casella.value.slice(0, da);
+    var dopo = casella.value.slice(a);
+    var aCapoPrima = prima && !prima.endsWith("\\n") ? "\\n" : "";
+    var aCapoDopo = dopo && !dopo.startsWith("\\n") ? "\\n" : "\\n";
+    casella.value = prima + aCapoPrima + pezzo + aCapoDopo + dopo;
+    var dove = (prima + aCapoPrima + pezzo + aCapoDopo).length;
+    casella.focus();
+    casella.setSelectionRange(dove, dove);
+    casella.dispatchEvent(new Event("input"));
+  }
+
+  /**
+   * Una casella di testo che si allunga mentre scrivi.
+   *
+   * Si azzera l'altezza e la si rimette a scrollHeight: e' l'unico modo che
+   * funziona anche quando si **cancella** testo — senza l'azzeramento la casella
+   * cresce e non torna piu' indietro.
+   */
+  function faCrescere(casella) {
+    var adatta = function () {
+      casella.style.height = "auto";
+      // Un tetto c'e', e serve: una casella alta quanto tre schermi non si
+      // scorre piu', e il tasto «manda» finisce in un altro fuso orario.
+      casella.style.height = Math.min(casella.scrollHeight + 2, 460) + "px";
+    };
+    casella.addEventListener("input", adatta);
+    // Anche adesso: il modulo puo' nascere con dentro qualcosa (un preset, una
+    // richiesta da riscrivere), e in quel caso deve nascere gia' alto.
+    setTimeout(adatta, 0);
   }
 
   /**
@@ -460,7 +641,8 @@ export const COPIONE_PRODUZIONE = `
     try {
       var risposta = await chiama("/chiacchierata");
       sessione = (risposta && risposta.sessione) || null;
-    } catch (e) { sessione = null; }
+      attesaChiacchiera = (risposta && risposta.attesa) || null;
+    } catch (e) { sessione = null; attesaChiacchiera = null; }
     disegnaChiacchierata();
   }
 
@@ -474,16 +656,51 @@ export const COPIONE_PRODUZIONE = `
         method: "POST",
         body: JSON.stringify({ modello: $("quale-modello").value }),
       });
-      sessione = risposta.sessione;
+      sessione = risposta.sessione || null;
+      attesaChiacchiera = risposta.attesa || null;
       avviso.textContent = "";
       disegnaChiacchierata();
-      $("cosa-dico").focus();
+      if (sessione) $("cosa-dico").focus();
+      else guardaLaFilaDelParlare();
     } catch (e) {
       avviso.textContent = e.message;
       avviso.className = "avviso male";
     } finally {
       $("comincia-chiacchiera").disabled = false;
     }
+  }
+
+  /**
+   * Mentre si aspetta il turno, si guarda ogni tre secondi.
+   *
+   * Non passa dallo stato vivo: quello racconta la suite, non la propria
+   * posizione in una coda. Tre secondi sono abbastanza per vedere il numero
+   * scendere, e abbastanza pochi da non far pensare che si sia piantato.
+   */
+  function guardaLaFilaDelParlare() {
+    if (orologioFila) clearInterval(orologioFila);
+    orologioFila = setInterval(function () {
+      if (sessione || !attesaChiacchiera) {
+        clearInterval(orologioFila);
+        orologioFila = null;
+        return;
+      }
+      leggiChiacchierata().catch(function () {});
+    }, 3000);
+  }
+
+  /**
+   * Esco dalla coda. **Chi esce libera la macchina**, non la occupa: non c'e'
+   * niente da chiedere a nessuno, e infatti non si chiede.
+   */
+  async function esciDallaFilaDelParlare() {
+    if (orologioFila) { clearInterval(orologioFila); orologioFila = null; }
+    if (!attesaChiacchiera) return;
+    attesaChiacchiera = null;
+    disegnaChiacchierata();
+    try {
+      await chiama("/chiacchierata/attesa", { method: "DELETE" });
+    } catch (e) { /* era gia' uscito: va bene lo stesso */ }
   }
 
   async function dilloAlModello() {
@@ -529,9 +746,13 @@ export const COPIONE_PRODUZIONE = `
 
   function disegnaChiacchierata() {
     var viva = sessione && sessione.scade > Date.now();
-    $("prima-di-parlare").hidden = viva;
+    var inFila = !viva && attesaChiacchiera;
+    $("prima-di-parlare").hidden = Boolean(viva || inFila);
     $("mentre-si-parla").hidden = !viva;
+    $("in-fila-per-parlare").hidden = !inFila;
     if (orologioChiacchiera) { clearInterval(orologioChiacchiera); orologioChiacchiera = null; }
+
+    if (inFila) { disegnaLaFilaDelParlare(); return; }
     if (!viva) { sessione = null; return; }
 
     var discorso = $("discorso");
@@ -561,6 +782,38 @@ export const COPIONE_PRODUZIONE = `
   }
 
   /**
+   * Il posto in fila, mentre si aspetta di parlare.
+   *
+   * Tre informazioni e un tasto: dove sei, quanti siete, cosa sta succedendo, e
+   * come uscire. Chi aspetta ha diritto a tutte e quattro — la 0.7.6 non gliene
+   * dava nessuna, e da fuori sembrava che il tasto non avesse fatto niente.
+   */
+  function disegnaLaFilaDelParlare() {
+    var a = attesaChiacchiera || {};
+    if (a.errore) {
+      // L'attesa e' finita male: si torna al tasto, con scritto perche'.
+      attesaChiacchiera = null;
+      $("prima-di-parlare").hidden = false;
+      $("in-fila-per-parlare").hidden = true;
+      $("avviso-chiacchiera").textContent = a.errore;
+      $("avviso-chiacchiera").className = "avviso male";
+      if (orologioFila) { clearInterval(orologioFila); orologioFila = null; }
+      return;
+    }
+    var quale = $("posto-in-fila");
+    var sotto = $("sotto-la-fila");
+    if (a.sicarica || !a.posto) {
+      quale.textContent = "\u2026";
+      sotto.textContent = "Tocca a te: sto caricando il modello, ci vogliono dei secondi.";
+    } else {
+      quale.textContent = a.posto + "\u00ba";
+      sotto.textContent = a.quanti > 1
+        ? "in fila su " + a.quanti + ". Appena il computer si libera, tocca a te."
+        : "in fila. Il computer sta finendo una cosa: appena ha finito, tocca a te.";
+    }
+  }
+
+  /**
    * Il piano: quello che il modello propone, con le caselle da spuntare.
    *
    * Si spunta quello che si vuole — «anche un video e una foto insieme, lo puoi
@@ -581,8 +834,11 @@ export const COPIONE_PRODUZIONE = `
     box.append(riassunto);
 
     var caselle = [];
+    var modelliDelPiano = {};
     sessione.piano.lavori.forEach(function (l, i) {
-      var riga = document.createElement("label");
+      // Un div, non una label: dentro ci sono le pastiglie del modello, e
+      // dentro una label ogni tocco su una pastiglia spegnerebbe la spunta.
+      var riga = document.createElement("div");
       riga.className = "lavoro";
       var spunta = document.createElement("input");
       spunta.type = "checkbox";
@@ -598,8 +854,19 @@ export const COPIONE_PRODUZIONE = `
         : l.che;
       var come = document.createElement("div");
       come.className = "come";
-      come.textContent = l.campi[Object.keys(l.campi)[0]] || "";
+      come.textContent = riassuntoDelLavoro(l);
       testi.append(che, come);
+      /**
+       * **Con che modello generarlo, deciso adesso.**
+       *
+       * Chiesto il 26 agosto 2026: «quando parlo con llm devo poter scegliere
+       * poi che modello usare una volta che il piano e' pronto». Ha ragione: il
+       * modello che *genera* non e' quello che *scrive*, e la scelta ha senso
+       * farla guardando il piano — non prima, quando ancora non si sa cosa si
+       * fara'.
+       */
+      var quali = modelliPer(l.azione);
+      if (quali.length) testi.append(pastiglieDelModello(l.azione, quali, modelliDelPiano));
       riga.append(spunta, testi);
       box.append(riga);
     });
@@ -616,7 +883,7 @@ export const COPIONE_PRODUZIONE = `
       try {
         var esito = await chiama(
           "/chiacchierata/" + encodeURIComponent(sessione.id) + "/piano",
-          { method: "POST", body: JSON.stringify({ quali: quali }) },
+          { method: "POST", body: JSON.stringify({ quali: quali, modelli: modelliDelPiano }) },
         );
         sessione = null;
         disegnaChiacchierata();
@@ -643,7 +910,67 @@ export const COPIONE_PRODUZIONE = `
     dove.append(box);
   }
 
+  /** Cosa c'e' dentro un lavoro del piano, in una riga leggibile. */
+  function riassuntoDelLavoro(l) {
+    var pezzi = [];
+    var principale = l.campi.prompt || l.campi.descrizione || l.campi.testo || "";
+    if (principale) pezzi.push(principale.slice(0, 140));
+    if (l.campi.stile) pezzi.push("stile: " + l.campi.stile);
+    if (l.campi.lingua) pezzi.push("in " + l.campi.lingua);
+    if (l.campi.secondi) pezzi.push(l.campi.secondi + " s");
+    if (l.campi.quante && l.campi.quante !== "1") pezzi.push(l.campi.quante + " immagini");
+    // Il testo da cantare non si mette per intero: sono venti righe, e qui serve
+    // sapere **che c'e'**, non rileggerlo.
+    if (l.campi.testo && l.campi.descrizione) pezzi.push("col testo");
+    return pezzi.join(" \u00b7 ");
+  }
+
+  /** I modelli fra cui si puo' scegliere per un'azione, dal catalogo. */
+  function modelliPer(idAzione) {
+    var a = azioni.filter(function (x) { return x.id === idAzione; })[0];
+    if (!a) return [];
+    var campo = a.campi.filter(function (c) { return c.nome === "modello"; })[0];
+    if (!campo) return [];
+    return (campo.scelte || []).map(function (id) {
+      return { id: id, nome: (campo.etichette && campo.etichette[id]) || id };
+    });
+  }
+
+  function pastiglieDelModello(idAzione, quali, dove) {
+    var fila = document.createElement("div");
+    fila.className = "filtri";
+    fila.style.marginTop = "7px";
+    var tutte = [];
+    var accendi = function (quale) {
+      if (quale) dove[idAzione] = quale;
+      else delete dove[idAzione];
+      for (var b of tutte) b.classList.toggle("on", (b.dataset.valore || "") === (quale || ""));
+    };
+    var suo = document.createElement("button");
+    suo.type = "button";
+    suo.className = "mini on";
+    suo.dataset.valore = "";
+    suo.textContent = "quello del computer";
+    suo.addEventListener("click", function () { accendi(""); });
+    tutte.push(suo);
+    fila.append(suo);
+    for (var m of quali) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "mini";
+      b.dataset.valore = m.id;
+      b.textContent = m.nome;
+      b.addEventListener("click", (function (quale) {
+        return function () { accendi(quale); };
+      })(m.id));
+      tutte.push(b);
+      fila.append(b);
+    }
+    return fila;
+  }
+
   async function chiudiLaChiacchierata() {
+    esciDallaFilaDelParlare();
     if (!sessione) return;
     var id = sessione.id;
     sessione = null;
@@ -742,16 +1069,66 @@ export const COPIONE_PRODUZIONE = `
     box.className = "adesso";
     var che = document.createElement("div");
     che.className = "che";
-    che.textContent = macchina.adesso.che;
+    che.textContent = (macchina.adesso.numero ? "#" + macchina.adesso.numero + " \\u00b7 " : "") +
+      macchina.adesso.che;
     var chi = document.createElement("span");
     chi.className = "chi";
-    chi.textContent = macchina.adesso.chi
-      ? "per " + macchina.adesso.chi
-      : "dal computer";
+    var scriviChi = function () {
+      chi.textContent =
+        (macchina.adesso && macchina.adesso.chi ? "per " + macchina.adesso.chi : "dal computer") +
+        (macchina.adesso && macchina.adesso.da ? " \\u00b7 da " + daQuanto(macchina.adesso.da) : "");
+    };
+    scriviChi();
     var barra = document.createElement("div");
     barra.className = "barra";
     barra.append(document.createElement("i"));
     box.append(che, chi, barra);
+
+    /**
+     * **Fermalo.** Solo dal computer, e solo perche' costa.
+     *
+     * Chiesto il 26 agosto 2026: «mettiamo la possibilita' da pc di annullare
+     * una generazione». Non e' come togliere dalla fila — quello non e' ancora
+     * partito, questo si' — e il tempo di scheda video gia' speso si butta. Per
+     * questo il tasto lo vede solo chi sta al computer.
+     */
+    if (sonoLaCasa) {
+      var ferma = document.createElement("button");
+      ferma.className = "mini male";
+      ferma.style.marginTop = "10px";
+      ferma.textContent = "\\u25A0 Ferma questa generazione";
+      ferma.addEventListener("click", async function () {
+        if (!confirm("Fermare quello che sta girando? Il tempo gi\\u00e0 speso si perde.")) return;
+        ferma.disabled = true;
+        try {
+          await chiama("/macchina/ferma", { method: "POST", body: "{}" });
+          await leggiMacchina();
+          await leggiCoda();
+        } catch (e) { alert(e.message); ferma.disabled = false; }
+      });
+      box.append(ferma);
+    }
+
+    /**
+     * Il cronometro che scorre, ogni secondo.
+     *
+     * Chiesto cosi': «mettiamo i caricamenti anche sull'app android in modo da
+     * far vedere delle barre di caricamento per le tempistiche». **Quanto
+     * manca** non si puo' dire — non lo sa nemmeno il motore — ma da quanto sta
+     * andando si', e quello basta a capire se e' partito adesso o se e' li' da
+     * un quarto d'ora.
+     */
+    if (orologioAdesso) clearInterval(orologioAdesso);
+    if (macchina.adesso.da) {
+      orologioAdesso = setInterval(function () {
+        if (!document.body.contains(chi)) {
+          clearInterval(orologioAdesso);
+          orologioAdesso = null;
+          return;
+        }
+        scriviChi();
+      }, 1000);
+    }
     dove.append(box);
 
     // Chi aspetta, e a che posto. È la domanda vera di chi guarda da fuori:
@@ -760,23 +1137,44 @@ export const COPIONE_PRODUZIONE = `
       var elenco = document.createElement("ul");
       elenco.className = "voci compatta";
       elenco.style.marginTop = "10px";
-      macchina.fila.slice(0, 6).forEach(function (f, i) {
+      macchina.fila.slice(0, 8).forEach(function (f) {
         var li = document.createElement("li");
         var corpo = document.createElement("div");
         corpo.className = "cresce";
-        var t = document.createElement("div");
-        t.className = "titolo";
-        t.textContent = f.che;
+        var titolo = document.createElement("div");
+        titolo.className = "titolo";
+        titolo.textContent = (f.numero ? "#" + f.numero + " \\u00b7 " : "") + f.che;
         var d = document.createElement("div");
         d.className = "dettaglio";
-        d.textContent = (f.chi ? f.chi + " \\u00b7 " : "") + (i + 1) + "\\u00ba in fila";
-        corpo.append(t, d);
+        d.textContent = (f.chi ? f.chi + " \\u00b7 " : "") + f.posto + "\\u00ba in fila";
+        corpo.append(titolo, d);
         li.append(corpo);
         if (f.tuo) {
           var mio = document.createElement("span");
           mio.className = "pillola lavoro";
           mio.textContent = "tuo";
           li.append(mio);
+        }
+        /**
+         * **Uscire dalla fila e' un diritto**, non un permesso: chi esce libera
+         * la macchina. Il proprio si toglie sempre; quello di un altro lo toglie
+         * chi decide, ed e' il computer a dirci quale dei due siamo.
+         */
+        if (f.tuoDaTogliere) {
+          var via = document.createElement("button");
+          via.className = "mini male";
+          via.textContent = "togli";
+          via.addEventListener("click", (function (quale, tasto) {
+            return async function () {
+              tasto.disabled = true;
+              try {
+                await chiama("/macchina/fila/" + encodeURIComponent(quale), { method: "DELETE" });
+                await leggiMacchina();
+                await leggiCoda();
+              } catch (e) { alert(e.message); tasto.disabled = false; }
+            };
+          })(f.id, via));
+          li.append(via);
         }
         elenco.append(li);
       });
@@ -807,6 +1205,37 @@ export const COPIONE_PRODUZIONE = `
         avvisi.append(li2);
       }
       if (avvisi.children.length) dove.append(avvisi);
+    }
+
+    /**
+     * **Falle partire tutte.**
+     *
+     * Chiesto il 26 agosto 2026: «sul pc deve essere un tasto che se premuto
+     * accetta tutte le richieste mettendole correttamente in coda». Non fa
+     * partire venti generazioni insieme — non si potrebbe — ne mette venti in
+     * ordine, ognuna col suo numero.
+     */
+    var ferme = richieste.filter(function (r) { return r.stato === "in-attesa"; });
+    if (puoiDecidere && ferme.length > 1) {
+      var tuttePerTutte = document.createElement("div");
+      tuttePerTutte.className = "fila";
+      var b = document.createElement("button");
+      b.textContent = "\\u25B6 Falle partire tutte (" + ferme.length + ")";
+      b.addEventListener("click", async function () {
+        b.disabled = true;
+        b.textContent = "le metto in fila\\u2026";
+        try {
+          var esito = await chiama("/macchina/accetta-tutte", { method: "POST", body: "{}" });
+          await leggiCoda();
+          await leggiMacchina();
+          $("sotto-riepilogo").textContent =
+            (esito.quante || ferme.length) + " lavori sono andati in fila, in ordine di arrivo.";
+        } catch (e) { alert(e.message); }
+        b.disabled = false;
+        b.textContent = "\\u25B6 Falle partire tutte";
+      });
+      tuttePerTutte.append(b);
+      dove.append(tuttePerTutte);
     }
   }
 `;

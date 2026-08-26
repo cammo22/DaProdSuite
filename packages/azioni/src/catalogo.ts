@@ -12,6 +12,7 @@
  */
 
 import type { Azione } from "./tipi";
+import { DURATE_BRANO, DURATE_VIDEO, LINGUE_CANTO, SEZIONI } from "./stili";
 
 /** Le app che possono ricevere un lavoro da fuori, oggi. */
 export const APP_REMOTE = ["foto", "cinema", "musica", "voce"] as const;
@@ -122,6 +123,7 @@ export const AZIONI: readonly Azione[] = [
         min: 1,
         max: 4,
         predefinito: 1,
+        valoriTipici: [1, 2, 3, 4],
       },
       campoModello(MODELLI_FOTO),
     ],
@@ -157,6 +159,7 @@ export const AZIONI: readonly Azione[] = [
         min: 2,
         max: 10,
         predefinito: 5,
+        valoriTipici: DURATE_VIDEO,
       },
       campoModello(MODELLI_CINEMA),
     ],
@@ -167,7 +170,9 @@ export const AZIONI: readonly Azione[] = [
     app: "musica",
     titolo: "Fai un brano",
     descrizione:
-      "Genera una canzone da una descrizione, con DaProdMusica. Se dai anche il testo, lo canta.",
+      "Genera una canzone da una descrizione, con DaProdMusica. Se dai anche il testo, lo canta. " +
+      "La descrizione vuole SOLO generi (tre o quattro): strumenti, mood e BPM restringono il " +
+      "modello e fanno uscire sempre la stessa cosa.",
     produce: "file",
     risultato: "audio",
     permesso: "tutti",
@@ -177,19 +182,59 @@ export const AZIONI: readonly Azione[] = [
         nome: "descrizione",
         etichetta: "Che genere",
         principale: true,
-        descrizione: "Genere, strumenti, atmosfera.",
+        descrizione:
+          "Tre o quattro generi in inglese, separati da virgola. Niente strumenti, niente " +
+          "atmosfera, niente BPM: quelli li decide il modello, e scrivendoli si ottiene sempre " +
+          "lo stesso brano.",
         tipo: "testo",
         obbligatorio: true,
         maxLunghezza: PROMPT_MAX,
-        esempio: "cantautorato italiano, chitarra acustica e archi, malinconico",
+        esempio: "neapolitan neomelodic pop, melodic trap, autotune ballad",
+      },
+      /**
+       * Lo stile pronto: riempie la descrizione al posto tuo.
+       *
+       * Chiesto il 26 agosto 2026 — «nella parte musica mancano stili» — ed è
+       * la cosa che rende usabile la casella qui sopra da chi non sa che
+       * «neapolitan neomelodic pop» è la frase giusta. Le scelte non stanno
+       * qui dentro: le tiene il computer, una per persona, e le manda quando
+       * qualcuno chiede le azioni. Vedi `stili.ts` nello shell.
+       */
+      {
+        nome: "stile",
+        etichetta: "Uno stile pronto",
+        descrizione:
+          "Se lo scegli, riempie «che genere» con le parole giuste. I tuoi stili stanno sul " +
+          "computer e li ritrovi da qualunque dispositivo.",
+        tipo: "scelta",
+        obbligatorio: false,
+        vuoto: "\u2014 scrivo io \u2014",
+        // Riempite dal computer con gli stili di chi sta chiedendo.
+        scelte: [],
       },
       {
         nome: "testo",
         etichetta: "Il testo da cantare",
-        descrizione: "Le parole. Vuoto vuol dire strumentale.",
+        descrizione:
+          "Le parole. Vuoto vuol dire strumentale. Le sezioni si segnano fra parentesi quadre: " +
+          "[Verse], [Chorus], [Bridge]. Ogni sezione va su una riga sua.",
         tipo: "testo",
         obbligatorio: false,
         maxLunghezza: 4000,
+        inserti: SEZIONI,
+        esempio: "[Verse]\nLe luci della citt\u00e0 si accendono piano\n\n[Chorus]\n\u2026",
+      },
+      {
+        nome: "lingua",
+        etichetta: "In che lingua canta",
+        descrizione:
+          "La lingua del canto. ACE-Step la riceve come impostazione, MiniMax se la trova " +
+          "aggiunta alla descrizione: da qui non cambia niente, si dice e basta.",
+        tipo: "scelta",
+        obbligatorio: false,
+        vuoto: "\u2014 quella scelta sul computer \u2014",
+        scelte: LINGUE_CANTO.map((l) => l.id),
+        etichette: Object.fromEntries(LINGUE_CANTO.map((l) => [l.id, l.nome])),
       },
       {
         nome: "secondi",
@@ -200,6 +245,7 @@ export const AZIONI: readonly Azione[] = [
         min: 15,
         max: 240,
         predefinito: 60,
+        valoriTipici: DURATE_BRANO,
       },
       campoModello(MODELLI_MUSICA),
     ],

@@ -37,41 +37,69 @@ object Indirizzi {
      * `preferito` è quello che ha funzionato l'ultima volta: si prova da solo
      * prima di disturbare gli altri.
      */
-    suspend fun quale(basi: List<String>, preferito: String?, token: String): String? {
+    suspend fun quale(basi: List<String>, preferito: String?, token: String): String? =
+        (cerca(basi, preferito, token) as? Esito.Trovato)?.base
+
+    /**
+     * Com'è finita la ricerca. **Tre esiti**, perché «non risponde» e «dice di
+     * no» sono due cose diverse e vanno raccontate diversamente.
+     */
+    sealed interface Esito {
+        data class Trovato(val base: String) : Esito
+
+        /**
+         * Il computer c'è, e non ci riconosce più.
+         *
+         * Vuol dire una cosa sola: quel collegamento è stato tolto dal PC.
+         * Mostrare la copia offline, in questo caso, sarebbe raccontare una
+         * bugia — l'app sembrerebbe funzionare e non farebbe niente.
+         */
+        data object Revocato : Esito
+
+        /** Nessuno risponde: spento, altra rete, linea giù. */
+        data object Silenzio : Esito
+    }
+
+    suspend fun cerca(basi: List<String>, preferito: String?, token: String): Esito {
         val puliti = (listOfNotNull(preferito) + basi)
             .map { it.trim().trimEnd('/') }
             .filter { it.isNotBlank() }
             .distinct()
-        if (puliti.isEmpty()) return null
+        if (puliti.isEmpty()) return Esito.Silenzio
 
         // Il preferito da solo: se c'è ancora, abbiamo finito qui.
         val primo = puliti.first()
-        if (bussa(primo, token)) return primo
+        when (colpo(primo, token)) {
+            GatewayClient.Colpo.RISPONDE -> return Esito.Trovato(primo)
+            // Un rifiuto è una risposta, e vale per tutti gli indirizzi dello
+            // stesso computer: è il token a non andare bene, non la strada.
+            GatewayClient.Colpo.RIFIUTA -> return Esito.Revocato
+            GatewayClient.Colpo.NIENTE -> Unit
+        }
 
         val altri = puliti.drop(1)
-        if (altri.isEmpty()) return null
+        if (altri.isEmpty()) return Esito.Silenzio
 
         // Gli altri tutti insieme: vince il primo che risponde.
         return withContext(Dispatchers.IO) {
             coroutineScope {
-                val prove = altri.map { base -> async { if (bussa(base, token)) base else null } }
-                // `awaitAll` aspetterebbe anche i perdenti; qui basta il primo
-                // che torna qualcosa, e gli altri si annullano uscendo di scope.
-                var vinto: String? = null
+                val prove = altri.map { base -> async { base to colpo(base, token) } }
+                var esito: Esito = Esito.Silenzio
                 for (p in prove) {
-                    val esito = p.await()
-                    if (esito != null) {
-                        vinto = esito
+                    val (base, come) = p.await()
+                    if (come == GatewayClient.Colpo.RISPONDE) {
+                        esito = Esito.Trovato(base)
                         break
                     }
+                    if (come == GatewayClient.Colpo.RIFIUTA) esito = Esito.Revocato
                 }
                 for (p in prove) p.cancel()
-                vinto
+                esito
             }
         }
     }
 
     /** Un colpetto: `/io` risponde solo a chi ha la credenziale giusta. */
-    private suspend fun bussa(base: String, token: String): Boolean =
-        GatewayClient(base, token).raggiungibile(ATTESA_MS)
+    private suspend fun colpo(base: String, token: String): GatewayClient.Colpo =
+        GatewayClient(base, token).bussa(ATTESA_MS)
 }

@@ -141,8 +141,10 @@ const fintoPreset = {
  * admin. Le rotte che governano la fila devono dire di no a tutti e due.
  */
 const macchinaFinta = {
-  regole: { chiPassaSubito: "admin", limiteFila: 6, limitePersona: 2 },
+  regole: { chiPassaSubito: "admin", limiteFila: 6, limitePersona: 2, contestoLlm: 65536 },
   inPausa: false,
+  fermate: 0,
+  tolti: [],
   stato: () => ({
     adesso: null,
     fila: [],
@@ -153,7 +155,62 @@ const macchinaFinta = {
   }),
   pausa: (v) => { macchinaFinta.inPausa = v; },
   regoleNuove: (v) => { macchinaFinta.regole = v; },
-  togli: () => null,
+  togli: (id) => { macchinaFinta.tolti.push(id); return null; },
+  fermaAdesso: () => { macchinaFinta.fermate += 1; return null; },
+  accettaTutte: () => remoto.accettaTutte({ id: "pc", nome: "PC", ruolo: "admin" }).length,
+};
+
+/**
+ * Gli stili finti: quelli di una persona, tenuti in memoria.
+ *
+ * Non serve il disco per provare le rotte: serve qualcuno che risponda, e che
+ * tenga separati i miei dai tuoi — che e' la cosa che, se salta, non rompe
+ * niente e apre.
+ */
+const stiliDiTutti = new Map();
+const fintiStili = {
+  miei: (chi) => {
+    if (!stiliDiTutti.has(chi)) {
+      stiliDiTutti.set(chi, [
+        { id: "s1", nome: "Neomelodico trap", testo: "neapolitan neomelodic pop", da: "partenza", quando: 1 },
+      ]);
+    }
+    return stiliDiTutti.get(chi);
+  },
+  vetrina: (chi) => {
+    const fuori = [];
+    for (const [altro, elenco] of stiliDiTutti) {
+      if (altro === chi) continue;
+      for (const s of elenco) if (s.condiviso) fuori.push({ ...s, chi: altro, chiNome: "un altro" });
+    }
+    return fuori;
+  },
+  salva: (chi, dati) => {
+    if (!dati.nome || !dati.testo) return null;
+    const miei = fintiStili.miei(chi);
+    const gia = miei.find((s) => s.id === dati.id || s.nome === dati.nome);
+    if (gia) {
+      gia.nome = dati.nome;
+      gia.testo = dati.testo;
+      return gia;
+    }
+    const nuovo = { ...dati, id: "s" + (miei.length + 1), quando: Date.now() };
+    miei.push(nuovo);
+    return nuovo;
+  },
+  togli: (chi, id) => {
+    const miei = fintiStili.miei(chi);
+    const dove = miei.findIndex((s) => s.id === id);
+    if (dove < 0) return false;
+    miei.splice(dove, 1);
+    return true;
+  },
+  condividi: (chi, id, condiviso) => {
+    const quale = fintiStili.miei(chi).find((s) => s.id === id);
+    if (!quale) return false;
+    quale.condiviso = condiviso;
+    return true;
+  },
 };
 
 /**
@@ -196,6 +253,8 @@ const fintaChiacchierata = {
   },
   mia: (dispositivoId) =>
     sessioneFinta && sessioneFinta.dispositivoId === dispositivoId ? sessioneFinta : null,
+  attesa: () => null,
+  esci: () => true,
   chiudi: () => { sessioneFinta = null; },
   accetta: async ({ quali }) => {
     const quanti = quali.length || 1;
@@ -224,8 +283,11 @@ const gateway = new G.Gateway({
     pausa: macchinaFinta.pausa,
     regole: macchinaFinta.regoleNuove,
     togli: macchinaFinta.togli,
+    fermaAdesso: macchinaFinta.fermaAdesso,
+    accettaTutte: macchinaFinta.accettaTutte,
   },
   chiacchierata: fintaChiacchierata,
+  stili: fintiStili,
   pannello: {
     stato: (d) => ({
       computer: "PC-DI-PROVA",
@@ -1051,6 +1113,122 @@ console.log("\n— la chiacchierata —");
   dice("accettare il piano mette in fila", preso.stato === 201 && preso.dati?.quanti === 1, `→ ${preso.testo}`);
   const dopo = await chiama("/chiacchierata", { token: tokenAdmin });
   dice("e la chiacchierata si chiude da sé", dopo.dati?.sessione === null);
+}
+
+console.log("\n— la fila con i numeri —");
+{
+  const r = await chiama("/richieste", { token: tokenAdmin });
+  const conNumero = (r.dati || []).filter((x) => typeof x.numero === "number");
+  dice("ogni lavoro ha il suo numero", conNumero.length === (r.dati || []).length, `${conNumero.length}/${(r.dati || []).length}`);
+  /**
+   * I numeri non si ripetono e non tornano indietro: e' quello che li rende
+   * utili per parlarne. Due lavori «numero 3» sono peggio di nessun numero.
+   */
+  const numeri = conNumero.map((x) => x.numero);
+  dice("e non si ripetono", new Set(numeri).size === numeri.length);
+}
+
+console.log("\n— rifare un lavoro —");
+{
+  const prima = await chiama("/richieste", { token: tokenAdmin });
+  const finita = (prima.dati || []).find((x) => x.stato === "pronta" || x.stato === "scartata");
+  if (!finita) {
+    dice("c'e' un lavoro finito da rifare", false, "nessuno");
+  } else {
+    const r = await chiama(`/richieste/${finita.id}/rifai`, { metodo: "POST", token: tokenAdmin, corpo: {} });
+    dice("si rifa'", r.stato === 201, `→ ${r.stato} ${r.testo}`);
+    dice("ed e' un lavoro nuovo", r.dati?.richiesta?.id !== finita.id);
+    dice("con un numero nuovo", r.dati?.richiesta?.numero > finita.numero, `${finita.numero} → ${r.dati?.richiesta?.numero}`);
+
+    const cambiata = await chiama(`/richieste/${finita.id}/rifai`, {
+      metodo: "POST", token: tokenAdmin, corpo: { testo: "un faro, ma di notte" },
+    });
+    dice("e si puo' cambiare il testo", cambiata.dati?.richiesta?.testo === "un faro, ma di notte", cambiata.dati?.richiesta?.testo);
+  }
+}
+
+console.log("\n— fermare e accettare tutto —");
+{
+  const r = await chiama("/macchina/ferma", { metodo: "POST", token: tokenAdmin, corpo: {} });
+  dice("fermare da fuori e' vietato", r.stato === 403, `→ ${r.stato}`);
+  dice("e non ha fermato niente", macchinaFinta.fermate === 0);
+}
+{
+  const r = await chiama("/macchina/accetta-tutte", { metodo: "POST", token: tokenAdmin, corpo: {} });
+  dice("chi decide puo' accettarle tutte", r.stato === 200, `→ ${r.stato} ${r.testo}`);
+  dice("e dice quante ne sono partite", typeof r.dati?.quante === "number");
+  const dopo = await chiama("/richieste", { token: tokenAdmin });
+  const ferme = (dopo.dati || []).filter((x) => x.stato === "in-attesa");
+  dice("non ne resta nessuna in attesa", ferme.length === 0, `ne restano ${ferme.length}`);
+}
+
+console.log("\n— gli stili —");
+{
+  const r = await chiama("/stili", { token: tokenAdmin });
+  dice("si parte con un set", r.stato === 200 && (r.dati?.stili || []).length > 0, `→ ${r.testo}`);
+}
+{
+  const r = await chiama("/stili", {
+    metodo: "POST", token: tokenAdmin,
+    corpo: { nome: "Il mio", testo: "italo disco, synthwave" },
+  });
+  dice("se ne salva uno nuovo", r.stato === 201, `→ ${r.stato} ${r.testo}`);
+  const id = r.dati?.stile?.id;
+
+  const senzaNiente = await chiama("/stili", { metodo: "POST", token: tokenAdmin, corpo: { nome: "", testo: "" } });
+  dice("uno vuoto no", senzaNiente.stato === 400);
+
+  const inVetrina = await chiama(`/stili/${id}/condividi`, {
+    metodo: "POST", token: tokenAdmin, corpo: { condiviso: true },
+  });
+  dice("si mette in vetrina", inVetrina.stato === 200, `→ ${inVetrina.stato}`);
+
+  /**
+   * ⚠ **La vetrina non deve mostrarti i tuoi.** Sono gia' nella tua lista, e
+   * vederli due volte farebbe credere di averne il doppio.
+   */
+  const mia = await chiama("/stili/vetrina", { token: tokenAdmin });
+  dice("ma non compare nella propria vetrina", (mia.dati?.stili || []).length === 0, `→ ${mia.testo}`);
+
+  // Un secondo dispositivo: lui lo deve vedere, e prenderlo.
+  const invito = remoto.nuovoInvito("ospite");
+  const altro = await chiama("/accoppiamento", { metodo: "POST", corpo: { codice: invito.codice, nome: "chi guarda" } });
+  const suoToken = altro.dati?.token;
+  const suaVetrina = await chiama("/stili/vetrina", { token: suoToken });
+  dice("un altro lo vede in vetrina", (suaVetrina.dati?.stili || []).length === 1, `→ ${suaVetrina.testo}`);
+
+  const preso = await chiama("/stili/vetrina/prendi", {
+    metodo: "POST", token: suoToken,
+    corpo: { nome: "Il mio", testo: "italo disco, synthwave", daNome: "portatile" },
+  });
+  dice("e se lo prende", preso.stato === 201, `→ ${preso.stato}`);
+  dice("e resta scritto di chi era", preso.dati?.stile?.daNome === "portatile");
+
+  /**
+   * Prenderlo **ne fa una copia**: chi l'ha fatto puo' cambiarlo o toglierlo
+   * dalla vetrina senza che all'altro sparisca da sotto le mani.
+   */
+  await chiama(`/stili/${id}`, { metodo: "DELETE", token: tokenAdmin });
+  const suoi = await chiama("/stili", { token: suoToken });
+  dice("e resta suo anche se l'altro lo butta", (suoi.dati?.stili || []).some((x) => x.nome === "Il mio"));
+  if (altro.dati?.dispositivo?.id) remoto.revoca(altro.dati.dispositivo.id);
+}
+
+console.log("\n— le azioni sanno gli stili di chi chiede —");
+{
+  const r = await chiama("/azioni", { token: tokenAdmin });
+  const brano = (r.dati || []).find((a) => a.id === "genera.brano");
+  const stile = brano?.campi?.find((c) => c.nome === "stile");
+  dice("il campo «uno stile pronto» c'e'", !!stile);
+  dice("ed e' pieno di quelli di chi chiede", (stile?.scelte || []).length > 0, `→ ${(stile?.scelte || []).length}`);
+  dice("con dentro anche le parole", !!stile?.testi && Object.keys(stile.testi).length > 0);
+
+  const testo = brano?.campi?.find((c) => c.nome === "testo");
+  dice("le sezioni si possono infilare", (testo?.inserti || []).includes("[Chorus]"));
+  const durata = brano?.campi?.find((c) => c.nome === "secondi");
+  dice("le durate sono pulsanti", (durata?.valoriTipici || []).includes(220));
+  const lingua = brano?.campi?.find((c) => c.nome === "lingua");
+  dice("e la lingua si sceglie", (lingua?.scelte || []).includes("it"));
 }
 
 console.log("\n— il limite dei tentativi —");

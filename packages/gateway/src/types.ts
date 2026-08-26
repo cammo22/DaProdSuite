@@ -67,6 +67,18 @@ export type StatoRichiesta =
 /** Una richiesta di lavoro, come la vede il server. */
 export interface Richiesta {
   id: string;
+  /**
+   * Il numero del lavoro. Progressivo, e non riparte mai.
+   *
+   * **Serve a parlarne.** Un id come `r-8f3a2c` non si legge al telefono, non
+   * si dice a voce e non si ritrova in un elenco: «il 47» sì. Chiesto il 26
+   * agosto 2026 — «usiamo un sistema di coda a numeri che si aggiorna» — ed è
+   * la cosa che rende una fila una fila invece di un mucchio.
+   *
+   * Le richieste scritte prima della 0.7.7 non ce l'hanno: si legge come 0, e
+   * non si mostra.
+   */
+  numero?: number;
   /** Il tipo di lavoro: "testo" (prompt), "immagine", "video", "audio", … */
   tipo: string;
   /** L'app che deve eseguirlo: foto, cinema, voce, musica… */
@@ -527,9 +539,34 @@ export interface FornitorePreset {
  */
 export interface StatoMacchina {
   /** Cosa sta lavorando adesso. Null vuol dire: il computer è libero. */
-  adesso: { che: string; chi: string; mestiere: string } | null;
-  /** Chi aspetta, in ordine di partenza. */
-  fila: { id: string; che: string; chi: string; mestiere: string; tuo: boolean }[];
+  adesso: {
+    che: string;
+    chi: string;
+    mestiere: string;
+    numero?: number;
+    /** L'id della richiesta, se questo lavoro ne ha una: serve ad annullarlo. */
+    richiesta?: string;
+    /** Da quando sta girando, in millisecondi. Per il cronometro. */
+    da?: number;
+  } | null;
+  /**
+   * Chi aspetta, in ordine di partenza.
+   *
+   * `numero` è quello del lavoro e `posto` è dove sta adesso: il primo non
+   * cambia mai, il secondo scende a ogni lavoro che finisce. Servono tutti e
+   * due — uno per riconoscere il proprio, l'altro per sapere quanto manca.
+   */
+  fila: {
+    id: string;
+    che: string;
+    chi: string;
+    mestiere: string;
+    tuo: boolean;
+    numero?: number;
+    posto: number;
+    /** Vero se chi guarda può toglierlo dalla fila: la sua roba, o è la casa. */
+    tuoDaTogliere: boolean;
+  }[];
   /** Chi sta al computer lo sta usando: non parte niente di nuovo. */
   inPausa: boolean;
   /** Perché è in pausa, se è stato detto. */
@@ -570,6 +607,22 @@ export interface FornitoreMacchina {
   }): void;
   /** Toglie dalla fila un lavoro non ancora partito. Torna il motivo se non va. */
   togli(id: string): string | null;
+  /**
+   * Ferma quello che sta girando **adesso**.
+   *
+   * Chiesto il 26 agosto 2026: «mettiamo la possibilità da pc di annullare una
+   * generazione». Non è la stessa cosa di togliere dalla fila — quello non è
+   * ancora partito, questo sì — e costa: il tempo di scheda video già speso è
+   * perso. Per questo lo può fare solo la casa.
+   */
+  fermaAdesso(): string | null;
+  /**
+   * Accetta tutto quello che aspetta un sì, e lo mette in fila.
+   *
+   * «Sul pc deve essere un tasto che se premuto accetta tutte le richieste
+   * mettendole correttamente in coda.» Torna quante ne sono partite.
+   */
+  accettaTutte(): number;
 }
 
 /* -------------------------------------------------------- la chiacchierata */
@@ -603,6 +656,8 @@ export interface Chiacchierata {
   id: string;
   /** Il dispositivo che sta parlando. */
   dispositivoId: string;
+  /** Come si chiama chi sta parlando: serve a dirlo a chi aspetta. */
+  chiNome?: string;
   /** Il modello scelto, come lo chiama LM Studio. */
   modello: string;
   /** Quando scade, in millisecondi. */
@@ -645,19 +700,41 @@ export interface LavoroDelPiano {
   campi: Record<string, string>;
 }
 
+/**
+ * Il posto in fila di chi ha chiesto di parlare e sta aspettando.
+ *
+ * ⚠ **Questa è la cura a «quando dice chiedo al computer in realtà non
+ * chiede»**, visto usando la 0.7.6. Prima l'attesa era dentro la chiamata: chi
+ * premeva restava con una rotella per un minuto e poi si sentiva dire di
+ * riprovare. Adesso la chiamata torna subito con un numero, quel numero scende,
+ * e chi non ha voglia di aspettare esce dalla coda.
+ */
+export interface AttesaChiacchierata {
+  /** Quanti ce ne sono davanti, più uno. Zero vuol dire: tocca a te adesso. */
+  posto: number;
+  /** Quanti aspettano in tutto, per capire quanto è lunga la fila. */
+  quanti: number;
+  /** Il turno è arrivato e si sta caricando il modello: ci vogliono secondi. */
+  sicarica: boolean;
+  /** Se l'attesa è finita male, il perché. */
+  errore?: string;
+}
+
 /** Chi sa reggere una chiacchierata: lo passa lo shell. */
 export interface FornitoreChiacchierata {
   /** I modelli installati su questo computer, fra cui scegliere. */
   modelli(): Promise<{ id: string; caricato: boolean }[]>;
   /**
-   * Comincia una sessione. Torna il motivo se non si può — modello assente,
-   * macchina in pausa, un'altra chiacchierata già in corso.
+   * Chiede di parlare. **Torna subito**: o la sessione, o il posto in fila.
+   *
+   * Il motivo torna solo per le cose che non si aggiustano aspettando: LM
+   * Studio spento, nessun modello installato, un altro che sta già parlando.
    */
   comincia(opzioni: {
     dispositivoId: string;
     chiNome: string;
     modello: string;
-  }): Promise<{ sessione: Chiacchierata } | { errore: string }>;
+  }): Promise<{ sessione: Chiacchierata } | { attesa: AttesaChiacchierata } | { errore: string }>;
   /** Una battuta. Torna la sessione aggiornata, col piano se ne ha fatto uno. */
   dico(opzioni: {
     id: string;
@@ -666,17 +743,65 @@ export interface FornitoreChiacchierata {
   }): Promise<{ sessione: Chiacchierata } | { errore: string }>;
   /** La sessione di questo dispositivo, se ce n'è una viva. */
   mia(dispositivoId: string): Chiacchierata | null;
+  /** Il posto in fila di questo dispositivo, se sta aspettando. */
+  attesa(dispositivoId: string): AttesaChiacchierata | null;
+  /** Esce dalla coda. È un diritto: chi esce libera la macchina. */
+  esci(dispositivoId: string): boolean;
   /** Chiude la sessione e libera la memoria. */
   chiudi(id: string, dispositivoId: string): void;
   /**
    * Accetta il piano: i lavori vanno in fila e il modello se ne va.
    *
    * `quali` sono gli indici dei lavori da fare: chi ne vuole due su tre non
-   * deve accettare tutto o niente.
+   * deve accettare tutto o niente. `modelli` dice con quale modello generare
+   * ognuna delle azioni scelte — si decide guardando il piano, non prima.
    */
   accetta(opzioni: {
     id: string;
     dispositivoId: string;
     quali: number[];
+    modelli?: Record<string, string>;
   }): Promise<{ quanti: number } | { errore: string }>;
+}
+
+/* --------------------------------------------------------------- gli stili */
+
+/**
+ * Uno stile musicale di una persona.
+ *
+ * Vive sul computer, nella cartella di chi l'ha fatto — non nel telefono e non
+ * nel `localStorage` di un browser. È la differenza fra uno stile che è **tuo**
+ * e uno che è di quel dispositivo: il secondo sparisce cambiando telefono, e
+ * uno stile buono si costruisce una volta e si usa per mesi.
+ */
+export interface StileRemoto {
+  id: string;
+  nome: string;
+  /** Le parole che finiscono nella descrizione del brano. */
+  testo: string;
+  /** `partenza`, `mio`, `preso`: da dove viene. */
+  da: string;
+  /** Chi l'ha fatto, se è arrivato da un altro. */
+  daNome?: string;
+  quando: number;
+  /** In vetrina: gli altri lo vedono e possono provarlo. */
+  condiviso?: boolean;
+  /** Solo per quelli in vetrina: di chi sono. */
+  chi?: string;
+  chiNome?: string;
+}
+
+/** Chi sa rispondere sugli stili: lo passa lo shell. */
+export interface FornitoreStili {
+  /** I miei. Alla prima volta, quelli di partenza. */
+  miei(chi: string): StileRemoto[];
+  /** Quelli che gli altri hanno messo in vetrina. */
+  vetrina(chi: string): StileRemoto[];
+  /** Salva uno stile: nuovo, o al posto di uno che c'era. */
+  salva(
+    chi: string,
+    dati: { id?: string; nome: string; testo: string; da?: string; daNome?: string },
+  ): StileRemoto | null;
+  togli(chi: string, id: string): boolean;
+  condividi(chi: string, id: string, condiviso: boolean): boolean;
 }

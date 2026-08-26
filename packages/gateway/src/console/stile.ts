@@ -458,6 +458,16 @@ export const STILE = `  :root {
   .dettatura { display: flex; gap: 8px; align-items: flex-end; margin-top: 10px; }
   .dettatura textarea { min-height: 46px; max-height: 130px; }
 
+  /* Il posto in fila, mentre si aspetta di parlare col modello. */
+  .inFila {
+    display: flex; gap: 14px; align-items: center;
+    border: 1px solid var(--line2); border-radius: 16px; padding: 14px;
+    background: linear-gradient(180deg, #221c0e, var(--panel2)); margin-top: 10px;
+  }
+  .inFila .numerone { font-size: 30px; font-weight: 700; color: var(--attesa); line-height: 1; }
+  .inFila b { display: block; font-size: 14px; }
+  .inFila small { color: var(--dim); font-size: 12px; }
+
   .piano {
     border: 1px solid var(--accent); border-radius: 16px; padding: 13px 14px;
     background: linear-gradient(180deg, #1a1330, var(--panel2)); margin-top: 12px;
@@ -524,6 +534,22 @@ export const STILE = `  :root {
   .pausa .dentro { flex: 1; min-width: 0; }
   .pausa b { display: block; font-size: 13.5px; }
   .pausa small { color: var(--dim); font-size: 12px; }
+
+  /* ------------------------------------------------------------- gli stili */
+  /* Una carta per stile: il nome grande, le parole sotto. Si tocca per usarlo,
+     si tiene premuto per il resto — quattro tasti su ognuna delle ventiquattro
+     carte sarebbero una schermata illeggibile. */
+  .stili { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px; }
+  .stile {
+    border: 1px solid var(--line2); border-radius: 15px; padding: 13px 14px;
+    background: var(--panel2); cursor: pointer; user-select: none;
+    -webkit-user-select: none; -webkit-touch-callout: none;
+  }
+  .stile:hover { border-color: var(--accent2); }
+  .stile.inVetrina { border-color: #f472b655; }
+  .nomeStile { font-weight: 650; font-size: 14px; }
+  .testoStile { color: var(--dim); font-size: 12px; margin-top: 4px; line-height: 1.45; }
+  .daChi { color: var(--fioco); font-size: 11px; margin-top: 6px; }
 
   /* --------------------------------------------------------- barra in fondo */
   nav.fondo {

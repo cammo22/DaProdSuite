@@ -153,6 +153,23 @@ export const COPIONE_GALLERIA = `
     vetro.type = "button";
     vetro.className = "vetro";
 
+    /**
+     * **Sempre qualcosa da guardare**, e da tre strade invece di una.
+     *
+     * ⚠ Il difetto del 26 agosto 2026 — «i video su android non mostrano bene
+     * la thumbnail» — aveva una causa che non si vedeva: il fotogramma lo
+     * estrae FFmpeg, e **FFmpeg non è imbarcato nella suite** (è GPL, la suite
+     * è MIT). Chi non ce l'ha installato non aveva anteprime, punto.
+     *
+     * Adesso, in ordine di quanto costano:
+     *
+     * 1. un'immagine è già sé stessa;
+     * 2. il computer ha il fotogramma o la copertina: si prende da lì;
+     * 3. **il telefono se lo fa da solo**, se quel video ce l'ha in casa —
+     *    Android sa estrarre un fotogramma senza bisogno di niente, e funziona
+     *    anche senza linea.
+     */
+    var fatta = false;
     if (v.anteprima) {
       var img = document.createElement("img");
       img.loading = "lazy";
@@ -162,7 +179,18 @@ export const COPIONE_GALLERIA = `
       img.src = v.tipo === "immagine" ? indirizzoDi(v) : anteprimaDi(v);
       img.alt = v.nome;
       vetro.append(img);
-    } else {
+      fatta = true;
+    } else if (v.tipo === "video" && window.DaProdApp && window.DaProdApp.anteprimaVideo) {
+      var daQui = window.DaProdApp.anteprimaVideo(v.id);
+      if (daQui) {
+        var suo = document.createElement("img");
+        suo.src = daQui;
+        suo.alt = v.nome;
+        vetro.append(suo);
+        fatta = true;
+      }
+    }
+    if (!fatta) {
       var senza = document.createElement("div");
       senza.className = "senza";
       senza.textContent = (SCHEDE[v.app] || SCHEDE.suite).segno;

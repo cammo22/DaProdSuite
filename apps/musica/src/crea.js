@@ -155,6 +155,24 @@ function mostraCampi(m) {
   el.steps.dispatchEvent(new Event("input"));
 }
 
+/**
+ * Sceglie la lingua del canto da fuori.
+ *
+ * **Serve al telefono**, dalla 0.7.7: chiesto il 26 agosto 2026 — «nella parte
+ * musica mancano stili, lingua e tutte le istruzioni tra le quadre» — e la
+ * lingua qui non e' un campo del modulo, e' una preferenza con delle pastiglie.
+ * Chi arriva da fuori la manda come `lingua: "it"` e questa la mette dov'e'.
+ *
+ * Torna falso se quella lingua non esiste: chi chiama non deve far finta che
+ * sia cambiato qualcosa.
+ */
+export function scegliLingua(id) {
+  if (!LINGUE.some((l) => l.id === id)) return false;
+  localStorage.setItem(CHIAVE_LINGUA, id);
+  disegnaLingue(modello(modelloScelto()));
+  return true;
+}
+
 export function stiliMiei() {
   const attuali = localStorage.getItem(CHIAVE_STILI);
   if (attuali) return JSON.parse(attuali);

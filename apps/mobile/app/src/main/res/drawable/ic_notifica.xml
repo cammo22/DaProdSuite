@@ -1,13 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  L'icona piccola di una notifica.
+
+  ⚠ **Deve essere una sagoma, e non e' una scelta nostra**: Android prende
+  qualunque cosa ci si metta e la riempie di bianco. Un marchio a colori qui
+  diventa una macchia — e infatti il marchio sta nell'icona **grande**, che e'
+  quella che si vede aprendo la notifica (vedi `Notifiche.kt`).
+
+  Quindi qui c'e' la sola cosa che si riconosce a 24 px: la D.
+-->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"
     android:height="24dp"
     android:viewportWidth="24"
-    android:viewportHeight="24">
+    android:viewportHeight="24"
+    android:tint="#FFFFFFFF">
     <path
         android:fillColor="#FFFFFFFF"
-        android:pathData="M12,2a10,10 0 1,0 0,20a10,10 0 1,0 0,-20" />
-    <path
-        android:fillColor="#FF7C5CFF"
-        android:pathData="M12,7a5,5 0 1,0 0,10a5,5 0 1,0 0,-10" />
+        android:pathData="M6,4h6a8,8 0 0,1 0,16h-6zM9.5,7.2v9.6h2.5a4.8,4.8 0 0,0 0,-9.6z" />
 </vector>

@@ -1,5 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  L'icona dell'app, dalla 0.7.7: il marchio DaProd Produzioni.
+
+  Il disegno sta in `drawable/logo_daprod.xml`, e li' c'e' scritto anche come
+  sostituirlo con il PNG vero senza toccare una riga di codice.
+
+  Niente `<background>` separato: il disegno ha il suo cielo dentro, e un fondo
+  in piu' sotto lo coprirebbe ai bordi su certi telefoni.
+-->
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-    <background android:drawable="@color/sfondo" />
-    <foreground android:drawable="@drawable/ic_launcher" />
+    <background android:drawable="@drawable/logo_daprod" />
+    <foreground android:drawable="@android:color/transparent" />
 </adaptive-icon>

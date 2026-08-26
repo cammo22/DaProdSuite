@@ -11,6 +11,7 @@
  */
 
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { CONTESTI_LLM } from "@daprod/ipc";
 import type { ChiPassaSubito, Impostazioni, ProfiloMemoria, Velocita } from "@daprod/ipc";
 import { SETTINGS_FILE } from "./paths";
 
@@ -56,6 +57,13 @@ const PREDEFINITE: Impostazioni = {
   /** Due a testa: uno che genera e uno che aspetta. Il terzo si accetta a mano. */
   limitePersona: 2,
   inPausa: false,
+  /**
+   * 64K: quello con cui la suite ha lavorato fino alla 0.7.6.
+   *
+   * Chi aggiorna non deve accorgersi di niente; chi vuole di più (o di meno) lo
+   * sceglie da DaProdConnessione.
+   */
+  contestoLlm: 65_536,
 };
 
 let cache: Impostazioni | null = null;
@@ -92,6 +100,7 @@ export function impostazioni(): Impostazioni {
         limiteFila: numeroSano(lette.limiteFila, PREDEFINITE.limiteFila),
         limitePersona: numeroSano(lette.limitePersona, PREDEFINITE.limitePersona),
         inPausa: lette.inPausa === true,
+        contestoLlm: contestoSano(lette.contestoLlm),
       };
       return cache;
     } catch {
@@ -163,6 +172,29 @@ export function impostaLimiti(fila: number, persona: number): Impostazioni {
 /** «Sto usando il computer»: si ricorda, come tutto il resto qui dentro. */
 export function impostaPausa(inPausa: boolean): Impostazioni {
   return salva({ inPausa });
+}
+
+/**
+ * Con quanto contesto caricare il modello che scrive.
+ *
+ * Ha effetto al **prossimo caricamento**: un modello già in memoria non se lo
+ * rilegge, e dirgli il contrario sarebbe far credere a chi preme che sia
+ * cambiato qualcosa adesso.
+ */
+export function impostaContestoLlm(token: number): Impostazioni {
+  return salva({ contestoLlm: contestoSano(token) });
+}
+
+/**
+ * Un contesto che esista davvero fra quelli offerti.
+ *
+ * Non si accetta un numero qualunque: un contesto scritto a mano e sbagliato di
+ * uno zero è un modello che non si carica più, e la frase che LM Studio
+ * risponde in quel caso non aiuta nessuno.
+ */
+function contestoSano(valore: unknown): number {
+  const n = Number(valore);
+  return (CONTESTI_LLM as readonly number[]).includes(n) ? n : PREDEFINITE.contestoLlm;
 }
 
 /**

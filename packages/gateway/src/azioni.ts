@@ -41,18 +41,45 @@ export type EsitoAzione =
   | { esito: "fatto"; risultato: unknown }
   | { esito: "errore"; errore: string; codice: number };
 
-/** L'elenco delle azioni che questo dispositivo può chiedere, con gli schemi. */
-export function elencoAzioni(dispositivo: Dispositivo): unknown[] {
-  return azioniPer(dispositivo.ruolo).map((a) => ({
-    id: a.id,
-    app: a.app,
-    titolo: a.titolo,
-    descrizione: a.descrizione,
-    produce: a.produce,
-    coda: a.coda,
-    campi: a.campi,
-    schema: schemaDi(a),
-  }));
+/**
+ * L'elenco delle azioni che questo dispositivo può chiedere, con gli schemi.
+ *
+ * `stiliDi` è facoltativo e serve a una cosa sola: **riempire le scelte che il
+ * catalogo non può conoscere**. Il campo «uno stile pronto» del brano nasce con
+ * l'elenco vuoto, perché gli stili sono di ogni persona e stanno sul computer;
+ * qui si mettono quelli di chi sta chiedendo. Senza, il telefono mostrerebbe un
+ * menu vuoto — che è peggio di nessun menu.
+ */
+export function elencoAzioni(
+  dispositivo: Dispositivo,
+  stiliDi?: (chi: string) => { nome: string; testo: string }[],
+): unknown[] {
+  const stili = stiliDi ? stiliDi(dispositivo.id) : [];
+
+  return azioniPer(dispositivo.ruolo).map((a) => {
+    const campi = a.campi.map((c) => {
+      if (c.nome !== "stile" || !stili.length) return c;
+      return {
+        ...c,
+        scelte: stili.map((x) => x.nome),
+        // Il testo dello stile viaggia insieme al nome: chi sceglie «Neomelodico
+        // trap» sul telefono deve poter riempire la descrizione **senza** un
+        // secondo giro di rete, e il gateway non è il posto dove tenere una
+        // tabella di traduzione che qualcuno dovrebbe poi mantenere.
+        testi: Object.fromEntries(stili.map((x) => [x.nome, x.testo])),
+      };
+    });
+    return {
+      id: a.id,
+      app: a.app,
+      titolo: a.titolo,
+      descrizione: a.descrizione,
+      produce: a.produce,
+      coda: a.coda,
+      campi,
+      schema: schemaDi(a),
+    };
+  });
 }
 
 export async function eseguiAzione(

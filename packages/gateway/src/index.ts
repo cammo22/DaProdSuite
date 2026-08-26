@@ -12,6 +12,7 @@ export { Remoto, SCADENZA_INVITO_MS } from "./remoto";
 export { Gateway, type GatewayOpzioni, type StatoProvider } from "./server";
 export type {
   Attivita,
+  AttesaChiacchierata,
   BattutaChiacchierata,
   Chiacchierata,
   Dispositivo,
@@ -22,6 +23,7 @@ export type {
   FornitoreMacchina,
   FornitorePannello,
   FornitorePreset,
+  FornitoreStili,
   IndirizzoPubblico,
   Invio,
   Invito,
@@ -39,5 +41,6 @@ export type {
   StatoPannello,
   StatoRichiesta,
   StatoSuite,
+  StileRemoto,
   VoceLibreria,
 } from "./types";

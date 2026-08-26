@@ -101,6 +101,8 @@ export const COPIONE_AVVIO = `
   $("apri-profilo").addEventListener("click", apriIlProfilo);
   $("comincia-chiacchiera").addEventListener("click", cominciaChiacchierata);
   $("chiudi-chiacchiera").addEventListener("click", chiudiLaChiacchierata);
+  $("esci-dalla-fila").addEventListener("click", esciDallaFilaDelParlare);
+  $("stile-nuovo").addEventListener("click", function () { apriModificaStile(null); });
   $("dillo").addEventListener("click", dilloAlModello);
   $("cosa-dico").addEventListener("keydown", function (ev) {
     // Invio manda, invio col maiuscolo va a capo: è quello che fa ogni chat, e

@@ -27,6 +27,7 @@ import {
   type FornitoreMacchina,
   type FornitorePannello,
   type FornitorePreset,
+  type FornitoreStili,
   type InvitoQr,
   type InvitoVivo,
   type Risultato,
@@ -55,15 +56,34 @@ import {
   impostaPausa,
   impostazioni,
 } from "./impostazioni";
-import { accoda, collegaEsecuzione, filaCompleta, togliDallaFila } from "./esecuzione";
+import {
+  accoda,
+  collegaEsecuzione,
+  fermaQuelloInCorso,
+  filaCompleta,
+  filaInCorso,
+  togliDallaFila,
+} from "./esecuzione";
+import { avvisaSulComputer } from "./avvisi";
+import { cartelleImportanti, tieniInDaProd } from "./cartelle";
+import {
+  buttaLaCartella,
+  condividiStile,
+  salvaStile,
+  stiliDi,
+  stiliInVetrina,
+  togliStile,
+} from "./stili";
 import { turno } from "./turno";
 import { anteprimaDi, puoAvereAnteprima } from "./anteprime";
 import {
   accettaIlPiano,
+  attesaDi,
   battuta,
   chiudiChiacchierata,
   collegaChiacchierata,
   cominciaChiacchierata,
+  esciDallaFila,
   miaChiacchierata,
   modelliPerChiacchierare,
 } from "./chiacchierata";
@@ -429,8 +449,33 @@ const fornitoreLibreria: FornitoreLibreria = {
 
   pubblica(id, chi, pubblicato) {
     const fatto = libreria.pubblica(id, chi, pubblicato);
-    if (fatto) sveglia();
-    return fatto;
+    if (!fatto) return false;
+    /**
+     * **Una copia in una cartella sua**, dalla 0.7.7.
+     *
+     * Chiesto così: «tutto quello pubblicato su DaProd finisce in una cartella
+     * separata in modo da non perdere quei file». Una **copia** e non uno
+     * spostamento: mettere una cosa in bacheca è un gesto in più, non un
+     * trasloco, e chi la pubblica non deve vedersela sparire da dove la cerca.
+     *
+     * Togliere dalla bacheca non toglie la copia, ed è voluto: quella cartella
+     * esiste per non perdere niente, non per rispecchiare uno stato.
+     */
+    if (pubblicato) {
+      const elemento = libreria.trova(id);
+      if (elemento) {
+        tieniInDaProd({
+          percorso: elemento.percorso,
+          chiNome:
+            typeof elemento.meta?.["chiNome"] === "string"
+              ? (elemento.meta["chiNome"] as string)
+              : undefined,
+          titolo: elemento.nome,
+        });
+      }
+    }
+    sveglia();
+    return true;
   },
 
   /**
@@ -533,36 +578,68 @@ const fornitoreMacchina: FornitoreMacchina = {
       (r) => r.stato === "in-attesa" && r.trattenuta,
     );
 
+    const gira = filaInCorso();
+    const eLaCasa = dispositivo.id === ID_DI_CASA;
+
+    /**
+     * La fila, con **il numero e il posto**.
+     *
+     * Sono due cose diverse e servono tutte e due: il numero non cambia mai —
+     * è il nome del lavoro, quello che si dice a voce — e il posto scende a
+     * ogni lavoro che finisce. Chiesto il 26 agosto 2026: «usiamo un sistema di
+     * coda a numeri che si aggiorna», e «ti fa vedere in che posizione sei».
+     *
+     * Il posto si conta su **tutta** la fila, non su una metà: chi aspetta non
+     * gliene importa niente che davanti a lui ci sia una generazione o una
+     * domanda al modello, gliene importa quanti sono.
+     */
+    let posto = 0;
+    const inFila = [
+      // Prima quello che il turno conosce (le domande al modello), poi la
+      // fila delle generazioni: sono due elenchi perché sono due cose, ma
+      // chi guarda ne deve vedere uno solo.
+      ...stato.fila.map((b) => ({
+        id: b.id,
+        che: b.che,
+        chi: b.chi,
+        mestiere: b.mestiere as string,
+        tuo: b.chi === dispositivo.nome,
+        posto: (posto += 1),
+        tuoDaTogliere: eLaCasa,
+      })),
+      ...lavori
+        .filter((l) => l.posto > 0)
+        .map((l) => ({
+          id: l.id,
+          che: `${nomeScheda(l.app)}: ${l.testo.slice(0, 60)}`,
+          chi: l.da,
+          mestiere: "generazione",
+          tuo: l.daId === dispositivo.id,
+          numero: l.numero,
+          posto: (posto += 1),
+          // Il proprio si toglie sempre: chi esce dalla fila la libera, non la
+          // occupa. Quello di un altro lo toglie chi decide.
+          tuoDaTogliere: l.daId === dispositivo.id || dispositivo.ruolo === "admin",
+        })),
+    ];
+
     return {
       adesso: stato.adesso
-        ? { che: stato.adesso.che, chi: stato.adesso.chi, mestiere: stato.adesso.mestiere }
+        ? {
+            che: stato.adesso.che,
+            chi: stato.adesso.chi,
+            mestiere: stato.adesso.mestiere,
+            numero: gira?.numero,
+            richiesta: gira?.id,
+            da: gira?.da || undefined,
+          }
         : null,
-      fila: [
-        // Prima quello che il turno conosce (le domande al modello), poi la
-        // fila delle generazioni: sono due elenchi perché sono due cose, ma
-        // chi guarda ne deve vedere uno solo.
-        ...stato.fila.map((b) => ({
-          id: b.id,
-          che: b.che,
-          chi: b.chi,
-          mestiere: b.mestiere as string,
-          tuo: b.chi === dispositivo.nome,
-        })),
-        ...lavori
-          .filter((l) => l.posto > 0)
-          .map((l) => ({
-            id: l.id,
-            che: `${nomeScheda(l.app)}: ${l.testo.slice(0, 60)}`,
-            chi: l.da,
-            mestiere: "generazione",
-            tuo: l.da === dispositivo.nome,
-          })),
-      ],
+      fila: inFila,
       inPausa: stato.sospesa,
       motivoPausa: stato.motivoSospensione,
       trattenute: trattenute.map((r) => ({
         id: r.id,
-        testo: r.testo.slice(0, 120),
+        testo: (r.numero ? `#${r.numero} ` : "") + r.testo.slice(0, 120),
         perche: r.trattenuta ?? "",
         tuo: r.daDispositivo === dispositivo.id,
       })),
@@ -588,6 +665,28 @@ const fornitoreMacchina: FornitoreMacchina = {
     const esito = accessoRemoto.togliDallaFila(id);
     return esito.ok ? null : (esito.errore ?? "Non sono riuscito a toglierlo.");
   },
+
+  fermaAdesso() {
+    const gira = filaInCorso();
+    if (!gira) return "Non sta girando niente.";
+    void fermaQuelloInCorso();
+    // Il motivo lo legge chi aveva chiesto: «fallito» e «fermato» sono due
+    // cose diverse, e sentirsi dire la prima quando è successa la seconda fa
+    // pensare che il programma sia rotto.
+    remoto.cambiaStato(gira.id, adminDiCasa(), "scartata", {
+      motivo: "Fermato da chi sta al computer.",
+    });
+    gateway?.aggiorna();
+    sveglia();
+    return null;
+  },
+
+  accettaTutte() {
+    const partite = remoto.accettaTutte(adminDiCasa());
+    gateway?.aggiorna();
+    sveglia();
+    return partite.length;
+  },
 };
 
 /** Come si chiama una scheda, per scriverlo accanto a un lavoro in fila. */
@@ -595,6 +694,35 @@ function nomeScheda(app: string): string {
   const id = app as AppId;
   return APPS[id]?.name ?? app;
 }
+
+/* ------------------------------------------------------------ gli stili */
+
+/**
+ * Gli stili, uno per persona. Il mestiere sta in `stili.ts`.
+ *
+ * Qui c'è solo il collegamento, e una riga che vale la pena leggere: il nome di
+ * chi ha messo uno stile in vetrina si prende dall'elenco dei dispositivi. Se
+ * quella persona non c'è più — l'hanno scollegata — il suo stile resta in
+ * vetrina senza un nome sopra, e va bene così: lo stile è ancora buono.
+ */
+const fornitoreStili: FornitoreStili = {
+  miei: (chi) => stiliDi(chi),
+  vetrina: (chi) =>
+    stiliInVetrina(
+      chi,
+      (id) => remoto.listaDispositivi().find((d) => d.id === id)?.nome ?? "qualcuno",
+    ),
+  salva: (chi, dati) =>
+    salvaStile(chi, {
+      id: dati.id,
+      nome: dati.nome,
+      testo: dati.testo,
+      da: dati.da === "preso" || dati.da === "partenza" ? dati.da : "mio",
+      daNome: dati.daNome,
+    }),
+  togli: (chi, id) => togliStile(chi, id),
+  condividi: (chi, id, condiviso) => condividiStile(chi, id, condiviso),
+};
 
 /* ------------------------------------------------------ la chiacchierata */
 
@@ -610,6 +738,8 @@ const fornitoreChiacchierata: FornitoreChiacchierata = {
   comincia: (opzioni) => cominciaChiacchierata(opzioni),
   dico: (opzioni) => battuta(opzioni),
   mia: (dispositivoId) => miaChiacchierata(dispositivoId),
+  attesa: (dispositivoId) => attesaDi(dispositivoId),
+  esci: (dispositivoId) => esciDallaFila(dispositivoId),
   chiudi: (id, dispositivoId) => chiudiChiacchierata(id, dispositivoId),
   accetta: (opzioni) => accettaIlPiano(opzioni),
 };
@@ -808,6 +938,7 @@ async function accendi(): Promise<StatoAccesso> {
     preset: fornitorePreset,
     macchina: fornitoreMacchina,
     chiacchierata: fornitoreChiacchierata,
+    stili: fornitoreStili,
   });
   // Chi può arrivare: tutta la rete se la connessione è accesa, solo questo
   // computer se è spenta. In tutti e due i casi il gateway **c'è**, perché è
@@ -1041,6 +1172,20 @@ function adminDiCasa(): Dispositivo {
 
 function revoca(id: string): DispositivoRemoto[] {
   remoto.revoca(id);
+  /**
+   * Con la persona se ne va anche la sua cartella.
+   *
+   * «Facciamo una cartella per ogni utente in modo tale da tenere sempre i dati
+   * degli utenti sotto controllo»: tenerli sotto controllo vuol dire anche
+   * poterli togliere davvero, invece di lasciare in giro le cartelle di chi non
+   * c'è più.
+   *
+   * ⚠ **I risultati non si toccano.** Quelli stanno in `output`, sono file veri
+   * e qualcuno potrebbe volerli ancora — anche solo per riguardarli. Qui se ne
+   * vanno gli stili e le preferenze, che senza quella persona non servono a
+   * nessuno.
+   */
+  buttaLaCartella(id);
   gateway?.aggiorna();
   sveglia();
   return statoPannello().dispositivi;
@@ -1224,7 +1369,20 @@ collegaEsecuzione({
     sveglia();
   },
   consegna(id, file) {
+    const chi = remoto.archivi.datiCorrenti.richieste.find((r) => r.id === id);
     consegna(id, file);
+    /**
+     * **E lo dice anche a chi sta al computer**, dalla 0.7.7.
+     *
+     * Chiesto così: «mettiamo le notifiche anche su pc che non le sento». Fino
+     * a ieri l'avviso arrivava solo sul telefono di chi aveva chiesto: chi
+     * ospita la macchina — che è quello che aspetta di più, perché è lì —
+     * doveva guardare la finestra.
+     */
+    avvisaSulComputer(
+      chi?.numero ? `Pronto il numero ${chi.numero}` : "Un lavoro è pronto",
+      `${chi?.daNome ?? "qualcuno"}: ${(chi?.testo ?? file.nome).slice(0, 90)}`,
+    );
     // La fila si è accorciata: qualcuno che aspettava per via di un tetto può
     // partire adesso. Senza questa riga i tetti sarebbero una porta che non si
     // riapre — vedi `rivediTrattenute`.
@@ -1274,6 +1432,7 @@ remoto.suAccettata((richiesta) => {
      * partito** — quello si finisce — ma non si mette nemmeno in fondo.
      */
     corsia: richiesta.daDispositivo === ID_DI_CASA ? "subito" : "in-fila",
+    numero: richiesta.numero,
   });
 });
 
@@ -1334,6 +1493,16 @@ export const accessoRemoto = {
     sveglia();
     liberaLaFila();
     return errore ? { ok: false, errore } : { ok: true };
+  },
+  /**
+   * Le cartelle importanti, per i collegamenti rapidi dell'hub.
+   *
+   * «Facciamo un collegamento rapido a queste cartelle nella suite»: quattro
+   * tasti che aprono Esplora risorse dove serve, invece di un percorso da
+   * copiare a mano da un file di documentazione.
+   */
+  cartelle() {
+    return cartelleImportanti();
   },
   /** Com'è messa la macchina adesso: chi lavora, chi aspetta, se è in pausa. */
   comeVaLaMacchina() {

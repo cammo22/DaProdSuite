@@ -17,6 +17,7 @@
 export const COPIONE_BASE = `
   var CHIAVE = "daprod.token";
   var CHIAVE_NOME = "daprod.nome";
+  var CHIAVE_MODO = "daprod.modo";
   var $ = function (id) { return document.getElementById(id); };
 
   var token = localStorage.getItem(CHIAVE) || "";
@@ -83,7 +84,19 @@ export const COPIONE_BASE = `
    * si cancella dall'indirizzo.
    */
   (function dallIndirizzo() {
+    /**
+     * Il modo, in tre gradi di certezza.
+     *
+     * 1. **quello che ha detto l'app**, che è l'unica a saperlo per certo;
+     * 2. **quello che ha detto l'ultima volta**, tenuto da parte — serve quando
+     *    la pagina si apre dalla copia tenuta nel telefono, che un frammento
+     *    non ce l'ha;
+     * 3. **la larghezza dello schermo**, che è un indizio e non una prova.
+     */
     modo = window.innerWidth < 760 ? "telefono" : "computer";
+    var ricordato = localStorage.getItem(CHIAVE_MODO);
+    if (ricordato === "telefono" || ricordato === "computer") modo = ricordato;
+
     if (!location.hash) return;
     var pezzi = new URLSearchParams(location.hash.slice(1));
     var t = pezzi.get("t");
@@ -91,7 +104,10 @@ export const COPIONE_BASE = `
     var m = pezzi.get("m");
     if (t) { token = t; localStorage.setItem(CHIAVE, t); }
     if (u) { ioNome = u; localStorage.setItem(CHIAVE_NOME, u); }
-    if (m === "telefono" || m === "computer") modo = m;
+    if (m === "telefono" || m === "computer") {
+      modo = m;
+      localStorage.setItem(CHIAVE_MODO, m);
+    }
     history.replaceState(null, "", location.pathname);
   })();
 
@@ -113,12 +129,53 @@ export const COPIONE_BASE = `
     var corpo = null;
     try { corpo = testo ? JSON.parse(testo) : null; } catch (e) { corpo = null; }
     if (!risposta.ok) {
-      // 401 vuol dire che il computer non ci riconosce più: il collegamento è
-      // stato tolto, o la suite è stata reinstallata. Si riparte dall'invito.
-      if (risposta.status === 401) scollega(true);
+      if (risposta.status === 401) perdutaLaCredenziale();
       throw new Error((corpo && corpo.errore) || ("Errore " + risposta.status));
     }
+    // Una risposta buona azzera il conto: quello che conta sono i 401 **di
+    // fila**, non i 401 in assoluto.
+    quantiNo = 0;
     return corpo;
+  }
+
+  /** Quanti 401 di fila abbiamo preso. Uno solo non vuol dire niente. */
+  var quantiNo = 0;
+
+  /**
+   * Il computer dice che non ci conosce. **Non è detto che abbia ragione.**
+   *
+   * ⚠ Questo pezzo è la seconda metà della cura al difetto più fastidioso della
+   * 0.7.6: «quando chiudo e apro l'app spesso devo cancellare l'account e
+   * riscannerizzare il codice».
+   *
+   * Prima bastava **un** 401 e si buttava via il token da \`localStorage\`. Un
+   * 401 però capita anche per ragioni che non sono «ti ho revocato»: la suite
+   * si sta ancora accendendo, la pagina è stata riaperta da una copia mentre il
+   * computer tornava, una chiamata è partita nel mezzo di un riavvio del
+   * gateway. E buttato il token, dentro l'app non c'era più modo di rientrare —
+   * la pagina servita dalla copia non ha il frammento con la credenziale —
+   * quindi l'unica strada sembrava rifare il codice.
+   *
+   * Adesso:
+   *
+   * 1. **si chiede all'app di rimetterlo.** La credenziale vera vive nel
+   *    profilo del telefono, che è il posto durevole: \`localStorage\` è solo
+   *    dove la pagina la tiene a portata di mano. Se l'app c'è, la rimette.
+   * 2. **si insiste tre volte** prima di credere che sia una revoca vera.
+   * 3. **e anche allora non si butta niente in silenzio**: si torna alla
+   *    pagina d'ingresso con scritto cosa è successo.
+   */
+  function perdutaLaCredenziale() {
+    quantiNo += 1;
+
+    if (window.DaProdApp && window.DaProdApp.riprendiCredenziale && quantiNo <= 3) {
+      // L'app rimette il token e ricarica: se era una scivolata, da qui in poi
+      // non se ne accorge nessuno.
+      window.DaProdApp.riprendiCredenziale();
+      return;
+    }
+    if (quantiNo < 3) return;
+    scollega(true);
   }
 
   /**
@@ -189,7 +246,12 @@ export const COPIONE_BASE = `
 
   function scollega(automatico) {
     token = "";
+    quantiNo = 0;
     localStorage.removeItem(CHIAVE);
+    // Il **nome** resta: chi rientra deve ribattere otto cifre, non anche
+    // ricordarsi come si era chiamato. Ed è anche l'unico nome che gli sarà
+    // permesso riusare, visto che è già suo.
+
     if (flusso) { flusso.close(); flusso = null; }
     chiudiFoglio();
     for (var s of document.querySelectorAll(".pagina")) s.classList.remove("on");
@@ -455,6 +517,21 @@ export const COPIONE_BASE = `
     if (passati < 3600) return Math.round(passati / 60) + " min fa";
     if (passati < 86400) return Math.round(passati / 3600) + " h fa";
     return new Date(ms).toLocaleDateString("it-IT", { day: "numeric", month: "short" });
+  }
+
+  /**
+   * Da quanto sta andando una cosa: «2 min», «14 min», «1 h 3 min».
+   *
+   * Non si dice **quanto manca**, e non e' una mancanza: nessuno lo sa, nemmeno
+   * il motore. Sapere da quanto e' partito basta a capire se e' cominciato
+   * adesso o se e' li' da un quarto d'ora, che e' la domanda vera.
+   */
+  function daQuanto(da) {
+    var quanti = Math.max(0, Math.round((Date.now() - da) / 1000));
+    if (quanti < 60) return quanti + " s";
+    var minuti = Math.floor(quanti / 60);
+    if (minuti < 60) return minuti + " min";
+    return Math.floor(minuti / 60) + " h " + (minuti % 60) + " min";
   }
 
   function pesa(b) {

@@ -169,6 +169,29 @@ export const PAGINE = `<header>
         <div class="avviso" id="avviso-chiacchiera"></div>
       </div>
 
+      <!--
+        Il posto in fila, mentre si aspetta il computer.
+
+        Chiesto il 26 agosto 2026: «se sta generando, aspetto il turno, ti mette
+        in coda e ti fa vedere in che posizione sei e volendo puoi anche
+        abbandonare la coda». Tre informazioni e un tasto — dove sei, quanti
+        siete, cosa sta succedendo, come uscire — e nella 0.7.6 non ce n'era
+        nessuna: si restava un minuto con una rotella e poi ci si sentiva dire
+        di riprovare.
+      -->
+      <div id="in-fila-per-parlare" hidden>
+        <div class="inFila">
+          <div class="numerone" id="posto-in-fila">&#8230;</div>
+          <div class="cresce">
+            <b>Sei in coda per parlare</b>
+            <small id="sotto-la-fila">Il computer sta lavorando.</small>
+          </div>
+        </div>
+        <div class="fila">
+          <button class="piano" id="esci-dalla-fila">Lascia perdere, esco dalla coda</button>
+        </div>
+      </div>
+
       <div id="mentre-si-parla" hidden>
         <div class="fila" style="margin-top:0">
           <span class="cronometro" id="cronometro-chiacchiera">10:00</span>
@@ -227,6 +250,34 @@ export const PAGINE = `<header>
     </div>
   </section>
 
+  <!-- =============================== STILI ================================
+    La scheda nuova della 0.7.7.
+
+    Chiesto così: «aggiungiamo gli stili su Android, una nuova tab Stili dove
+    gestire tutto e anche volendo condividere uno stile per farlo provare agli
+    altri». Uno stile è la cosa che uno costruisce una volta e usa per mesi — e
+    fino alla 0.7.6 viveva nella memoria del browser di DaProdMusica, cioè era di
+    *quel browser*: cambiavi dispositivo e non c'era più.
+
+    Adesso sta sul computer, nella cartella della persona, e si ritrova da
+    qualunque parte ci si colleghi.
+  -->
+  <section class="pagina" id="pag-stili">
+    <div class="tastoni" id="due-tasti-stili"></div>
+
+    <div class="fila" style="margin-top:12px">
+      <button id="stile-nuovo">&#10010; Uno stile nuovo</button>
+    </div>
+
+    <p class="sotto" style="margin-top:12px">
+      Toccane uno per usarlo. <b>Tienilo premuto</b> per modificarlo, metterlo in
+      vetrina o buttarlo.
+    </p>
+
+    <div class="stili" id="elenco-stili"></div>
+    <div class="vuoto" id="stili-vuoti" hidden></div>
+  </section>
+
   <!-- ============================== DAPROD ===============================
     Era «Persone», e mostrava i quadrati della rete.
 
@@ -262,10 +313,18 @@ export const PAGINE = `<header>
 
 </main>
 
+<!--
+  Sei schede, dalla 0.7.7: gli Stili si sono presi la loro.
+
+  Sei e' il massimo che ci sta in una barra su un telefono da 375 px, e ci sta
+  solo perche' le parole sono corte. Se un giorno ne servisse una settima, la
+  risposta non e' restringere ancora: e' che due di queste dicono la stessa cosa.
+-->
 <nav class="fondo" id="fondo" hidden>
   <button data-pagina="casa" class="on"><span class="segno">&#9673;</span>Casa</button>
-  <button data-pagina="produzione"><span class="segno">&#10010;</span>Produzione</button>
-  <button data-pagina="riepilogo"><span class="segno">&#9776;</span>Riepilogo<span class="bollo" id="bollo" hidden></span></button>
+  <button data-pagina="produzione"><span class="segno">&#10010;</span>Produci</button>
+  <button data-pagina="stili"><span class="segno">&#9835;</span>Stili</button>
+  <button data-pagina="riepilogo"><span class="segno">&#9776;</span>Fila<span class="bollo" id="bollo" hidden></span></button>
   <button data-pagina="galleria"><span class="segno">&#9635;</span>Galleria</button>
   <button data-pagina="daprod"><span class="segno">&#9788;</span>DaProd</button>
 </nav>`;

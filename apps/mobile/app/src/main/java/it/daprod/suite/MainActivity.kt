@@ -556,9 +556,23 @@ class MainActivity : AppCompatActivity() {
         binding.attesa.visibility = View.VISIBLE
         // **Quale indirizzo risponde adesso**, non quale rispondeva l'altra
         // volta: è tutto il motivo per cui l'app si ricollega da sola.
-        val vivo = Indirizzi.quale(persona.basi, persona.base, persona.token)
+        val esito = Indirizzi.cerca(persona.basi, persona.base, persona.token)
         binding.attesa.visibility = View.GONE
 
+        /**
+         * **«Non risponde» e «non ti conosce» non sono la stessa cosa.**
+         *
+         * Fino alla 0.7.6 erano trattate uguale: si mostrava la copia offline.
+         * Chi era stato tolto dal computer vedeva quindi un'app che sembrava
+         * funzionare e non faceva niente, e l'unica idea che veniva era
+         * cancellare il profilo e rifare il codice. Adesso si dice cos'è
+         * successo, e si offre il gesto giusto.
+         */
+        if (esito is Indirizzi.Esito.Revocato) {
+            diCheEStatoTolto(persona)
+            return@launch
+        }
+        val vivo = (esito as? Indirizzi.Esito.Trovato)?.base
         if (vivo == null) {
             apriDallaCopia(persona)
             return@launch
@@ -641,7 +655,7 @@ class MainActivity : AppCompatActivity() {
         stiamoOffline = true
         binding.web.loadDataWithBaseURL(
             p.base.trimEnd('/') + "/",
-            html,
+            conCredenziale(html, p),
             "text/html",
             "utf-8",
             p.base.trimEnd('/') + "/",
@@ -649,6 +663,82 @@ class MainActivity : AppCompatActivity() {
         mostra(Dove.SUITE)
         avvisa(getString(R.string.senza_pc_avviso))
     }
+
+    /**
+     * Il computer c'è, e questo collegamento non vale più.
+     *
+     * Succede per una ragione sola: qualcuno l'ha tolto dal PC. Si dice, e si
+     * offrono le due cose che hanno senso — rifare il collegamento con un
+     * codice nuovo, o tornare all'elenco delle persone. **Non si cancella
+     * niente da soli**: buttare via un profilo senza chiedere è esattamente il
+     * genere di gesto che poi non si può disfare.
+     */
+    private fun diCheEStatoTolto(p: Profilo) {
+        AlertDialog.Builder(this)
+            .setTitle("«${p.nome}» non è più collegato")
+            .setMessage(
+                "${p.computer} risponde, ma dice che questo collegamento non vale più: " +
+                    "vuol dire che è stato tolto dal computer.\n\n" +
+                    "Per rientrare serve un codice nuovo.",
+            )
+            .setPositiveButton("Rifai il collegamento") { _, _ ->
+                nomeInCorso = p.nome
+                Profili.rimuovi(this, p.id)
+                chi = null
+                client = null
+                deposito = null
+                servitore = null
+                polling?.cancel()
+                vaiAdEntrare()
+            }
+            .setNegativeButton("Non adesso") { _, _ ->
+                if (Profili.tutti(this).size > 1) {
+                    Profili.esci(this)
+                    chi = null
+                    mostra(Dove.UTENTI)
+                } else {
+                    apriDallaCopia(p)
+                }
+            }
+            .setCancelable(false)
+            .show()
+    }
+
+    /**
+     * Mette la credenziale dentro la copia, prima che la pagina si svegli.
+     *
+     * ⚠ **È il pezzo che chiude «devo cancellare l'account e riscannerizzare il
+     * codice».** Quando il computer risponde, il token viaggia nel frammento
+     * dell'indirizzo; ma una pagina caricata da `loadDataWithBaseURL` un
+     * frammento non ce l'ha, e la console si sveglierebbe leggendo un
+     * `localStorage` che — se un 401 l'aveva svuotato — è vuoto. Risultato: la
+     * schermata d'ingresso, dentro un'app che il codice ce l'ha in tasca.
+     *
+     * **La credenziale vera vive nel profilo**, che è il posto durevole: il
+     * `localStorage` della WebView è solo dove la pagina la tiene a portata di
+     * mano. Qui si rimette, con uno script che gira prima del suo.
+     */
+    private fun conCredenziale(html: String, p: Profilo): String {
+        val script = buildString {
+            append("<script>try{")
+            append("localStorage.setItem('daprod.token',").append(comeStringaJs(p.token)).append(");")
+            append("localStorage.setItem('daprod.nome',").append(comeStringaJs(p.nome)).append(");")
+            append("localStorage.setItem('daprod.modo','telefono');")
+            append("}catch(e){}</script>")
+        }
+        val dove = html.indexOf("</head>")
+        return if (dove >= 0) html.substring(0, dove) + script + html.substring(dove) else script + html
+    }
+
+    /**
+     * Una stringa che JavaScript legge come tale, qualunque cosa ci sia dentro.
+     *
+     * I token sono esadecimali e i nomi no: un apice in un nome romperebbe lo
+     * script, e uno `</script>` dentro un nome lo chiuderebbe a metà. Si
+     * codifica in JSON, che è l'unico modo che non ha casi particolari.
+     */
+    private fun comeStringaJs(valore: String): String =
+        org.json.JSONObject.quote(valore).replace("</", "<\\/")
 
     /* ------------------------------------------------------- lo specchio */
 
@@ -836,6 +926,51 @@ class MainActivity : AppCompatActivity() {
                         mostra(Dove.UTENTI)
                     }
                 }
+
+                /**
+                 * La pagina ha preso un 401 e chiede la credenziale indietro.
+                 *
+                 * ⚠ **La seconda metà della cura**, insieme a `conCredenziale`.
+                 * Un 401 non vuol dire per forza «ti ho revocato»: la suite può
+                 * essersi appena accesa, o il gateway può essere ripartito in
+                 * mezzo a una chiamata. Il token vero ce l'abbiamo noi, nel
+                 * profilo: si rimette e si riapre, e se era una scivolata non
+                 * se ne accorge nessuno.
+                 *
+                 * Se invece la revoca era vera, la pagina riprova, prende altri
+                 * due 401 e a quel punto **lei** decide di tornare
+                 * all'ingresso — con scritto perché.
+                 */
+                @JavascriptInterface
+                fun riprendiCredenziale() {
+                    runOnUiThread { apriSuite() }
+                }
+
+                /**
+                 * Il fotogramma di un video, fatto **dal telefono**.
+                 *
+                 * ⚠ Chiesto il 26 agosto 2026: «i video su android non mostrano
+                 * bene la thumbnail». La causa vera stava sul computer: il
+                 * fotogramma lo estrae FFmpeg, e **FFmpeg non e' imbarcato**
+                 * nella suite (e' GPL, la suite e' MIT). Chi non ce l'ha
+                 * installato vedeva un riquadro con dentro un simbolo.
+                 *
+                 * Qui c'e' la seconda strada, e non ha bisogno di niente:
+                 * Android sa tirare fuori un fotogramma da un video da solo
+                 * (`MediaMetadataRetriever`). Se il video e' nello specchio —
+                 * e ci sta, sotto i quaranta mega — il fotogramma si fa qui,
+                 * subito, e funziona anche senza linea.
+                 *
+                 * Torna una `data:` URL, che la pagina mette dritta in un `img`.
+                 * Stringa vuota vuol dire: non ce l'ho, arrangiati con quello
+                 * che ti manda il computer.
+                 */
+                @JavascriptInterface
+                fun anteprimaVideo(id: String): String = fotogrammaDaQui(id)
+
+                /** Vero se il file di questa cosa e' gia' nel telefono. */
+                @JavascriptInterface
+                fun ceLHoQui(id: String): Boolean = deposito?.ceLho(id) == true
             },
             "DaProdApp",
         )
@@ -970,6 +1105,57 @@ class MainActivity : AppCompatActivity() {
     }
 
     /* --------------------------------------------------------- scaricare */
+
+    /**
+     * Un fotogramma da un video che abbiamo qui, come `data:` URL.
+     *
+     * **Il secondo secondo, non il primo.** Quasi tutte le clip generate
+     * cominciano da un nero o da una dissolvenza: il fotogramma zero e'
+     * esattamente il rettangolo nero che stiamo cercando di togliere.
+     *
+     * Il risultato si tiene nello specchio come qualunque altra anteprima: un
+     * `MediaMetadataRetriever` su un video da trenta mega costa qualche decimo
+     * di secondo, e una galleria che ne apre dodici scorrendo li sentirebbe
+     * tutti.
+     */
+    private fun fotogrammaDaQui(id: String): String {
+        val d = deposito ?: return ""
+        // Gia' fatto un'altra volta? Allora e' li'.
+        d.fileSalvato(Deposito.anteprimaDi(id))?.let { (byte, mime) ->
+            if (mime.startsWith("image/")) return "data:" + mime + ";base64," + base64Di(byte)
+        }
+
+        val (video, _) = d.fileSalvato(id) ?: return ""
+        return try {
+            // `MediaMetadataRetriever` vuole un file o un descrittore: i byte in
+            // memoria non li prende. Una copia nella cache, e via.
+            val temporaneo = File(cacheDir, "fotogramma.tmp")
+            temporaneo.writeBytes(video)
+            val lettore = android.media.MediaMetadataRetriever()
+            lettore.setDataSource(temporaneo.absolutePath)
+            val quadro = lettore.getFrameAtTime(
+                2_000_000L,
+                android.media.MediaMetadataRetriever.OPTION_CLOSEST_SYNC,
+            ) ?: lettore.frameAtTime
+            lettore.release()
+            temporaneo.delete()
+            if (quadro == null) return ""
+
+            val fuori = java.io.ByteArrayOutputStream()
+            quadro.compress(android.graphics.Bitmap.CompressFormat.JPEG, 78, fuori)
+            quadro.recycle()
+            val byte = fuori.toByteArray()
+            d.mettiFile(Deposito.anteprimaDi(id), byte, "image/jpeg")
+            "data:image/jpeg;base64," + base64Di(byte)
+        } catch (_: Exception) {
+            // Formato che Android non decodifica, memoria finita: si torna al
+            // riquadro col simbolo, che e' quello che c'era prima.
+            ""
+        }
+    }
+
+    private fun base64Di(byte: ByteArray): String =
+        android.util.Base64.encodeToString(byte, android.util.Base64.NO_WRAP)
 
     /**
      * Porta un file dentro il telefono.

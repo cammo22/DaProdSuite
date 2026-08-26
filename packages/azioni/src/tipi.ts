@@ -55,6 +55,25 @@ export interface Campo {
   /** Per `tipo: "numero"`: gli estremi, inclusi. */
   min?: number;
   max?: number;
+  /**
+   * I valori che si scelgono davvero, per farne dei pulsanti.
+   *
+   * Chiesto il 26 agosto 2026: «durata canzoni pulsanti da 30, 60, 80, 120 e
+   * 220 secondi». Un cursore da trascinare al secondo giusto è un attrezzo da
+   * mouse; su un telefono, cinque pulsanti sono cinque scelte che si premono.
+   * Gli estremi restano — chi vuole 137 secondi li scrive — ma la strada
+   * normale sono questi.
+   */
+  valoriTipici?: readonly number[];
+  /**
+   * Frammenti da infilare nel testo con un tocco, dove sta il cursore.
+   *
+   * Servono alle istruzioni di sezione di un brano — `[Verse]`, `[Chorus]` — che
+   * sul computer si mettono con una fila di pastiglie e dal telefono, fino alla
+   * 0.7.6, non si mettevano affatto: bisognava sapere che esistevano e
+   * scriverle a mano con le parentesi giuste.
+   */
+  inserti?: readonly string[];
   /** Per `tipo: "testo"`: quanto può essere lungo. Serve a non farsi allagare. */
   maxLunghezza?: number;
   /** Il valore che vale se il campo non arriva. */

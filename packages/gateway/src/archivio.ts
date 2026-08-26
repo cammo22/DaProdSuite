@@ -28,6 +28,14 @@ export interface DatiRemoto {
   inviti: Invito[];
   /** I file mandati a mano a qualcuno. Vuoto negli archivi scritti prima della 0.7.2. */
   invii: Invio[];
+  /**
+   * L'ultimo numero dato a un lavoro. Non riparte mai da capo.
+   *
+   * Vive nell'archivio e non in memoria: un numero che ricomincia da uno a ogni
+   * riavvio della suite non è un numero, è un'etichetta riusata — e due lavori
+   * «numero 3» nella stessa giornata sono peggio di nessun numero.
+   */
+  ultimoNumero?: number;
 }
 
 const VUOTI: DatiRemoto = {
@@ -37,6 +45,7 @@ const VUOTI: DatiRemoto = {
   notifiche: [],
   inviti: [],
   invii: [],
+  ultimoNumero: 0,
 };
 
 /** Quanto si aspetta prima di scrivere davvero: mezzo secondo. */
@@ -65,10 +74,35 @@ export class Archivio {
         // Un archivio scritto da una versione precedente non ce l'ha: si parte
         // da vuoto invece di rifiutarlo.
         invii: Array.isArray(letto.invii) ? letto.invii : [],
+        ultimoNumero: Number(letto.ultimoNumero) || 0,
       };
     } catch {
       return { ...VUOTI };
     }
+  }
+
+  /**
+   * **Scrive adesso, e non fra mezzo secondo.**
+   *
+   * ⚠ Questo è il difetto più grave chiuso nella 0.7.7, e lo si è visto solo
+   * usandola: «quando chiudo e apro l'app spesso devo cancellare l'account e
+   * riscannerizzare il codice».
+   *
+   * Le scritture qui sono differite di mezzo secondo, e per l'ultimo accesso di
+   * un dispositivo è giusto: un telefono che bussa ogni venti secondi
+   * riscriverebbe il file per ogni battito. Ma **l'accoppiamento passava dalla
+   * stessa strada**, e mezzo secondo è un'eternità: bastava che la suite
+   * morisse male in quella finestra — e moriva male spesso, per via dei
+   * processi che restavano — perché il dispositivo appena accoppiato non fosse
+   * mai stato scritto. Il telefono aveva un token che il computer non aveva mai
+   * visto: 401 a ogni chiamata, e l'unica cura sembrava rifare il codice.
+   *
+   * Da qui in poi: **quello che decide chi sei si scrive subito.**
+   * Accoppiamento, revoca, cambio di ruolo, cambio di nome. Tutto il resto
+   * resta differito, che è quello per cui la differita era nata.
+   */
+  salvaSubito(): void {
+    this.scriviAdesso();
   }
 
   /**

@@ -25,6 +25,7 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 import { capture } from "@daprod/runtime";
 import { colTurno, turno, type Corsia } from "./turno";
+import { impostazioni } from "./impostazioni";
 
 /** Dove ascolta LM Studio quando accendi il suo server locale. */
 const BASE = "http://127.0.0.1:1234/v1";
@@ -52,6 +53,18 @@ export const MODELLO_CONSIGLIATO = "prism-ml/bonsai-27b";
  * decide lui, e la suite non gli mette le mani in tasca.
  */
 export const CONTESTO_CONSIGLIATO = 65_536;
+
+/**
+ * Con quanto contesto caricare, adesso, su questa macchina.
+ *
+ * `CONTESTO_CONSIGLIATO` resta il numero di riferimento — è quello con cui la
+ * suite ha lavorato e quello scritto nella documentazione — ma dalla 0.7.7 si
+ * sceglie da DaProdConnessione, e chi carica un modello deve usare la scelta,
+ * non il consiglio.
+ */
+export function contestoScelto(): number {
+  return impostazioni().contestoLlm || CONTESTO_CONSIGLIATO;
+}
 
 /**
  * Chi risponde e con cosa.

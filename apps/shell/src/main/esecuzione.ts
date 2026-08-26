@@ -97,6 +97,8 @@ export interface DaEseguire {
    * ma non si mette nemmeno dietro a tre telefoni per generare una cosa sua.
    */
   corsia?: Corsia;
+  /** Il numero del lavoro, per parlarne: «il 47». Lo dà il gateway. */
+  numero?: number;
 }
 
 /** Chi ci dice com'è andata, e dove mettere il risultato. */
@@ -120,6 +122,17 @@ export const collegaEsecuzione = (c: Cablaggio): void => {
 
 const fila: DaEseguire[] = [];
 let inCorso: DaEseguire | null = null;
+/** Da quando gira quello in corso: serve al cronometro di chi guarda. */
+let inCorsoDa = 0;
+/**
+ * L'id del lavoro che qualcuno ha chiesto di fermare.
+ *
+ * Non lo si ferma **davvero** a metà — il motore sta scrivendo, e strappargli
+ * il file di mano lascerebbe mezzo video sul disco. Si dice al motore di
+ * interrompere, e da qui si smette di aspettare il suo file: la richiesta
+ * risulta annullata, e la fila va avanti.
+ */
+let daFermare = "";
 
 /**
  * Le schede aperte **dalla fila**, non da chi sta al computer.
@@ -131,8 +144,12 @@ let inCorso: DaEseguire | null = null;
 const aperteDaNoi = new Set<AppId>();
 
 /** Cosa sta facendo la fila adesso: lo mostra DaProdConnessione. */
-export const filaInCorso = (): { id: string; app: string; testo: string } | null =>
-  inCorso ? { id: inCorso.id, app: inCorso.app, testo: inCorso.testo } : null;
+export const filaInCorso = ():
+  | { id: string; app: string; testo: string; numero?: number; da: number }
+  | null =>
+  inCorso
+    ? { id: inCorso.id, app: inCorso.app, testo: inCorso.testo, numero: inCorso.numero, da: inCorsoDa }
+    : null;
 
 export const filaInAttesa = (): number => fila.length;
 
@@ -147,8 +164,10 @@ export const filaCompleta = (): {
   app: string;
   testo: string;
   da: string;
+  daId: string;
   corsia: Corsia;
   posto: number;
+  numero?: number;
 }[] => [
   ...(inCorso
     ? [
@@ -157,8 +176,10 @@ export const filaCompleta = (): {
           app: inCorso.app,
           testo: inCorso.testo,
           da: inCorso.da,
+          daId: inCorso.daId,
           corsia: inCorso.corsia ?? ("in-fila" as Corsia),
           posto: 0,
+          numero: inCorso.numero,
         },
       ]
     : []),
@@ -167,8 +188,10 @@ export const filaCompleta = (): {
     app: r.app,
     testo: r.testo,
     da: r.da,
+    daId: r.daId,
     corsia: r.corsia ?? ("in-fila" as Corsia),
     posto: i + 1,
+    numero: r.numero,
   })),
 ];
 
@@ -185,6 +208,47 @@ export function togliDallaFila(id: string): boolean {
   fila.splice(dove, 1);
   annota(`tolto dalla fila: ${id}`);
   return true;
+}
+
+/**
+ * Ferma la generazione in corso. Torna il motivo se non si può.
+ *
+ * **Cosa vuol dire «fermare», qui.** Non si strappa niente di mano al motore:
+ * gli si dice di interrompere (ComfyUI ha una rotta apposta) e si smette di
+ * aspettare il suo file. Il lavoro risulta annullato, la fila va avanti, e se
+ * il motore lascia sul disco mezzo file quello resta in libreria come qualunque
+ * altra cosa — non è granché, ma è meglio che una fila bloccata su un lavoro
+ * che nessuno vuole più.
+ *
+ * Chiesto il 26 agosto 2026: «mettiamo la possibilità da pc di annullare una
+ * generazione».
+ */
+export async function fermaQuelloInCorso(): Promise<string | null> {
+  const adesso = inCorso;
+  if (!adesso) return "Non sta girando niente.";
+  daFermare = adesso.id;
+  annota(`fermo ${adesso.id} (${adesso.app}): chiesto da chi sta al computer`);
+
+  /**
+   * Il motore si ferma da sé, se sa come.
+   *
+   * ComfyUI espone `/interrupt` (ferma quello che sta calcolando) e
+   * `/queue { clear: true }` (butta quello che ha in attesa). Le due insieme
+   * sono l'unica cosa che libera la scheda video adesso invece che fra un
+   * quarto d'ora. Se non risponde, pazienza: il lavoro risulta annullato
+   * comunque e la fila non resta ferma.
+   */
+  await Promise.all([
+    fetch("http://127.0.0.1:8188/interrupt", { method: "POST", signal: AbortSignal.timeout(4000) })
+      .catch(() => {}),
+    fetch("http://127.0.0.1:8188/queue", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ clear: true }),
+      signal: AbortSignal.timeout(4000),
+    }).catch(() => {}),
+  ]);
+  return null;
 }
 
 /** Questa app sa eseguire da sola quello che le viene chiesto? */
@@ -216,6 +280,7 @@ async function giraLaFila(): Promise<void> {
   if (!prossima) return;
 
   inCorso = prossima;
+  inCorsoDa = Date.now();
   /**
    * **Prima il turno, poi il lavoro.**
    *
@@ -243,6 +308,8 @@ async function giraLaFila(): Promise<void> {
   } finally {
     turno.rilascia(biglietto);
     inCorso = null;
+    inCorsoDa = 0;
+    if (daFermare === prossima.id) daFermare = "";
     // La prossima parte adesso, non fra un giro di orologio.
     if (fila.length) void giraLaFila();
     else await chiudiQuelloCheAbbiamoAperto();
@@ -307,7 +374,11 @@ async function esegui(richiesta: DaEseguire): Promise<void> {
   if (errore) throw new Error(errore);
 
   annota(`partita ${richiesta.id} su ${app}, aspetto il file`);
-  const uscito = await aspettaIlFile(app, da);
+  const uscito = await aspettaIlFile(app, da, richiesta.id);
+  if (daFermare === richiesta.id) {
+    daFermare = "";
+    throw new Error("Fermato da chi sta al computer.");
+  }
   if (!uscito) throw new Error("Il lavoro è partito ma non ne è uscito niente.");
 
   /**
@@ -424,10 +495,13 @@ function attendiRisposta(id: string): Promise<string> {
  * stessa dimensione, e non zero. Costa qualche secondo in più e toglie di mezzo
  * una consegna sbagliata su tre.
  */
-async function aspettaIlFile(app: AppId, da: number): Promise<ElementoLibreria | null> {
+async function aspettaIlFile(app: AppId, da: number, id: string): Promise<ElementoLibreria | null> {
   const scaduta = da + ATTESA_FILE_MS;
   while (Date.now() < scaduta) {
     await pausa(3000);
+    // Qualcuno ha detto basta: si smette di aspettare, e il lavoro risulta
+    // annullato invece che fallito. Sono due cose diverse e chi guarda lo vede.
+    if (daFermare === id) return null;
     const nuovi = libreria
       .cerca({ app })
       .filter((e) => e.creato > da)

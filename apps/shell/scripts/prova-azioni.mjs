@@ -108,10 +108,10 @@ console.log("\n— la pagina della console —");
    * questa riga è il posto che se ne accorge se un giorno la barra e le
    * sezioni si disallineano: sarebbe un tasto che non porta da nessuna parte.
    */
-  for (const quale of ["entra", "casa", "produzione", "riepilogo", "galleria", "daprod"]) {
+  for (const quale of ["entra", "casa", "produzione", "stili", "riepilogo", "galleria", "daprod"]) {
     dice(`la pagina "${quale}" c'è`, html.includes(`id="pag-${quale}"`));
   }
-  for (const quale of ["casa", "produzione", "riepilogo", "galleria", "daprod"]) {
+  for (const quale of ["casa", "produzione", "stili", "riepilogo", "galleria", "daprod"]) {
     dice(`e la barra in fondo ci porta`, html.includes(`data-pagina="${quale}"`));
   }
 
@@ -131,12 +131,87 @@ console.log("\n— la pagina della console —");
     'id="apri-profilo"',
     'id="carica-in-bacheca"',
     'id="strisce"',
+    'id="elenco-stili"',
+    'id="in-fila-per-parlare"',
+    'id="posto-in-fila"',
   ]) {
     dice(`c'è ${pezzo}`, html.includes(pezzo));
   }
   dice("il modo telefono si legge dall'indirizzo", html.includes('pezzi.get("m")'));
   dice("le anteprime si chiedono al computer", html.includes("/libreria/anteprima/"));
   dice("gli interruttori della macchina sono dietro sonoLaCasa", html.includes("if (sonoLaCasa)"));
+
+  /**
+   * I gesti della 0.7.7 che una svista farebbe sparire in silenzio.
+   *
+   * Sono tutti tasti: un id sbagliato non da' nessun errore, da' un tasto che
+   * non fa niente — e questa pagina la si guarda sul telefono di qualcun altro.
+   */
+  for (const [cosa, pezzo] of [
+    ["si esce dalla coda per parlare", "/chiacchierata/attesa"],
+    ["si ferma una generazione", "/macchina/ferma"],
+    ["si accettano tutte le richieste", "/macchina/accetta-tutte"],
+    ["si esce dalla fila dei lavori", "/macchina/fila/"],
+    ["si rifa' un lavoro", "/rifai"],
+    ["gli stili si leggono", '"/stili"'],
+    ["e si mettono in vetrina", "/stili/vetrina"],
+    ["il contesto del modello si sceglie", "contestoLlm"],
+    ["le caselle di testo crescono", "function faCrescere"],
+    ["le sezioni si infilano col cursore", "function infilaAlCursore"],
+    ["le scelte sono pastiglie, non menu", "function pastiglieDiScelta"],
+    ["le durate sono pulsanti", "function pastiglieDiNumero"],
+  ]) {
+    dice(cosa, html.includes(pezzo), `manca ${pezzo}`);
+  }
+
+  /**
+   * ⚠ **Niente `<select>` nei moduli.**
+   *
+   * Chiesto il 26 agosto 2026: «nell'interfaccia android voglio pulsanti, non
+   * menu a tendina». Un menu a tendina che rispunta e' il genere di cosa che si
+   * riaggiunge senza pensarci, scrivendo un campo nuovo — e su un telefono e'
+   * due tocchi e una schermata di sistema che copre tutto.
+   */
+  dice(
+    "niente menu a tendina nei moduli",
+    !/createElement\("select"\)/.test(html),
+    "un <select> e' tornato nel modulo",
+  );
+}
+
+/**
+ * Gli stili stanno in due copie, e devono dire la stessa cosa.
+ *
+ * ⚠ La copia buona e' `packages/azioni/src/stili.ts`: da li' parte ogni persona
+ * che si collega. L'altra vive dentro DaProdMusica, che e' una pagina web e non
+ * puo' importare un pacchetto Node.
+ *
+ * Non e' una svista, ed e' questa prova a renderla onesta: il giorno che le due
+ * divergono, questa riga fallisce. Meglio una copia sorvegliata che una terza
+ * strada per la stessa verita'.
+ */
+console.log("\n— gli stili sono gli stessi da tutte e due le parti —");
+{
+  const daMusica = await import(
+    new URL("../../../apps/musica/src/dati/stili.js", import.meta.url).href
+  );
+  const qui = Object.entries(A.STILI_DI_PARTENZA);
+  const li = Object.entries(daMusica.STILI);
+  dice(
+    `sono ${qui.length} da tutte e due le parti`,
+    qui.length === li.length,
+    `azioni ${qui.length}, musica ${li.length}`,
+  );
+  const diversi = qui.filter(([nome, testo]) => daMusica.STILI[nome] !== testo);
+  dice(
+    "e dicono le stesse parole",
+    diversi.length === 0,
+    diversi.map(([n]) => n).join(", "),
+  );
+  dice(
+    "le sezioni sono quelle documentate per MiniMax",
+    A.SEZIONI.every((t) => daMusica.TAGS.includes(t)) && A.SEZIONI.length === daMusica.TAGS.length,
+  );
 }
 
 console.log("\n— gli schemi per un agente —");

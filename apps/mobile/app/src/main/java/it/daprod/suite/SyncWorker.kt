@@ -78,11 +78,11 @@ class SyncWorker(context: Context, params: WorkerParameters) : CoroutineWorker(c
                 try {
                     client.eseguiAzione(voce.azione, voce.valori)
                     coda.rimuovi(voce)
-                    Notifiche.mostra(ctx, persona.nome, "«${voce.titolo}» è partita: il computer è tornato.")
+                    Notifiche.mostraComunque(ctx, persona.nome, "«${voce.titolo}» è partita: il computer è tornato.")
                 } catch (e: GatewayException) {
                     // Il computer l'ha rifiutata: tenerla per sempre non aiuta.
                     coda.rimuovi(voce)
-                    Notifiche.mostra(ctx, persona.nome, "«${voce.titolo}» non è stata accettata: ${e.message}")
+                    Notifiche.mostraComunque(ctx, persona.nome, "«${voce.titolo}» non è stata accettata: ${e.message}")
                 } catch (_: Exception) {
                     qualcunaFallita = true
                     break

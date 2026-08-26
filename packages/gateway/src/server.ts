@@ -47,12 +47,22 @@
  *   POST /macchina/pausa  { inPausa }            → «sto usando il computer» (solo il PC)
  *   POST /macchina/regole { … }                  → chi passa subito e i tetti (solo il PC)
  *   DELETE /macchina/fila/:id                   → toglie un lavoro non ancora partito
+ *   POST /macchina/ferma                        → ferma quello che gira adesso (solo il PC)
+ *   POST /macchina/accetta-tutte                → dà il sì a tutto quello che aspetta
+ *   POST /richieste/:id/rifai  { testo? }        → rifallo, uguale o modificato
+ *   GET  /stili                                 → i tuoi stili musicali
+ *   POST /stili        { id?, nome, testo }      → salvane uno, o cambialo
+ *   DELETE /stili/:id                           → buttalo
+ *   POST /stili/:id/condividi { condiviso }      → mettilo in vetrina, o toglilo
+ *   GET  /stili/vetrina                         → quelli che gli altri hanno messo in mostra
+ *   POST /stili/vetrina/prendi { nome, testo, daNome } → copialo fra i tuoi
  *   GET  /modelli                               → i modelli con cui si può parlare
  *   GET  /chiacchierata                         → la tua sessione viva, se c'è
  *   POST /chiacchierata   { modello }            → cominciane una (dieci minuti)
  *   POST /chiacchierata/:id/dico  { testo }      → una battuta, e la risposta
  *   POST /chiacchierata/:id/piano { quali }      → accetta il piano: i lavori partono
  *   DELETE /chiacchierata/:id                   → chiudila e libera la memoria
+ *   DELETE /chiacchierata/attesa                → esci dalla coda per parlare
  *   POST /io/profilo      { motto }              → cambia la riga sotto al nome
  *   POST /io/foto                               → la foto del profilo (il corpo è il file)
  *   POST /bacheca?nome=&didascalia=             → carica una cosa tua in bacheca
@@ -87,6 +97,7 @@ import type {
   FornitoreMacchina,
   FornitorePannello,
   FornitorePreset,
+  FornitoreStili,
   StatoRichiesta,
   StatoSuite,
 } from "./types";
@@ -136,6 +147,8 @@ export interface GatewayOpzioni {
   macchina?: FornitoreMacchina;
   /** Chi sa reggere una chiacchierata con un modello, se questa suite ce l'ha. */
   chiacchierata?: FornitoreChiacchierata;
+  /** Chi tiene gli stili musicali di ogni persona. */
+  stili?: FornitoreStili;
 }
 
 /** Ogni quanto il gateway manda un segno di vita a chi è in ascolto. */
@@ -188,6 +201,7 @@ export class Gateway {
   private preset: FornitorePreset | undefined;
   private macchina: FornitoreMacchina | undefined;
   private chiacchierata: FornitoreChiacchierata | undefined;
+  private stili: FornitoreStili | undefined;
 
   constructor(opzioni: GatewayOpzioni) {
     this.remoto = opzioni.remoto;
@@ -201,6 +215,7 @@ export class Gateway {
     this.preset = opzioni.preset;
     this.macchina = opzioni.macchina;
     this.chiacchierata = opzioni.chiacchierata;
+    this.stili = opzioni.stili;
     this.server = createServer((req, res) => {
       void this.maneggia(req, res);
     });
@@ -335,7 +350,13 @@ export class Gateway {
 
       // Le azioni: cosa si può chiedere, e come si chiede.
       if (percorso === "/azioni" && req.method === "GET") {
-        this.json(res, 200, elencoAzioni(dispositivo));
+        // Gli stili di chi sta chiedendo finiscono dentro il campo «uno stile
+        // pronto»: il catalogo non può conoscerli, sono di ogni persona.
+        this.json(
+          res,
+          200,
+          elencoAzioni(dispositivo, this.stili ? (chi) => this.stili!.miei(chi) : undefined),
+        );
         return;
       }
       const daFare = percorso.match(/^\/azioni\/([^/]+)$/);
@@ -478,6 +499,28 @@ export class Gateway {
       }
 
       // Mettere via una richiesta finita, o buttarla del tutto.
+      /**
+       * Rifallo: uguale, o con il testo cambiato.
+       *
+       * Chiesto il 26 agosto 2026: «la possibilità di riutilizzare quel prompt,
+       * rifarlo oppure rifarlo ma prima modificarlo». Nasce una richiesta
+       * **nuova**, col suo numero: un lavoro finito è un fatto, e riscriverlo
+       * vorrebbe dire non capire più cosa è successo quando.
+       */
+      const daRifare = percorso.match(/^\/richieste\/([^/]+)\/rifai$/);
+      if (daRifare && req.method === "POST") {
+        const dati = (corpo ?? {}) as { testo?: string };
+        const esito = this.remoto.rifai(
+          decodeURIComponent(daRifare[1] ?? ""),
+          dispositivo,
+          typeof dati.testo === "string" ? dati.testo.slice(0, 4000) : undefined,
+        );
+        if ("errore" in esito) return this.errore(res, 403, esito.errore);
+        this.json(res, 201, { ok: true, richiesta: esito });
+        this.aggiorna();
+        return;
+      }
+
       const daTogliere = percorso.match(/^\/richieste\/([^/]+)$/);
       if (daTogliere && (req.method === "DELETE" || req.method === "PATCH")) {
         const id = daTogliere[1] ?? "";
@@ -954,11 +997,59 @@ export class Gateway {
       const dallaFila = percorso.match(/^\/macchina\/fila\/([^/]+)$/);
       if (dallaFila && req.method === "DELETE") {
         if (!this.macchina) return this.errore(res, 501, "Questa suite non governa la fila.");
-        if (dispositivo.ruolo !== "admin") {
-          return this.errore(res, 403, "Togliere un lavoro dalla fila lo fa chi decide.");
+        const quale = decodeURIComponent(dallaFila[1] ?? "");
+        /**
+         * **Uscire dalla propria fila è un diritto, non un permesso.**
+         *
+         * Chiesto il 26 agosto 2026: «ti mette in coda e ti fa vedere in che
+         * posizione sei, e volendo puoi anche abbandonare la coda». Chi ha
+         * chiesto una cosa e ha cambiato idea non deve chiedere il permesso a
+         * nessuno per toglierla: sta liberando la macchina, non occupandola.
+         *
+         * Il lavoro di un altro invece lo toglie chi decide.
+         */
+        const sua = this.remoto.richiesta(quale)?.daDispositivo === dispositivo.id;
+        if (!sua && dispositivo.ruolo !== "admin") {
+          return this.errore(res, 403, "Puoi togliere dalla fila solo i tuoi lavori.");
         }
-        const errore = this.macchina.togli(decodeURIComponent(dallaFila[1] ?? ""));
+        const errore = this.macchina.togli(quale);
         this.json(res, errore ? 409 : 200, { ok: !errore, errore: errore ?? undefined });
+        this.aggiorna();
+        return;
+      }
+
+      /**
+       * Ferma quello che gira adesso. **Solo dal computer.**
+       *
+       * Non è «togli dalla fila»: quello non è ancora partito, questo sì, e il
+       * tempo di scheda video già speso si butta. Un telefono che potesse
+       * fermare la generazione di un altro sarebbe un telecomando per rovinare
+       * il pomeriggio a qualcuno.
+       */
+      if (percorso === "/macchina/ferma" && req.method === "POST") {
+        if (!this.macchina) return this.errore(res, 501, "Questa suite non governa la fila.");
+        if (!this.macchina.stato(dispositivo).sonoLaCasa) {
+          return this.errore(res, 403, "Fermare una generazione si fa solo dal computer.");
+        }
+        const errore = this.macchina.fermaAdesso();
+        this.json(res, errore ? 409 : 200, { ok: !errore, errore: errore ?? undefined });
+        this.aggiorna();
+        return;
+      }
+
+      /**
+       * Il sì a tutto quello che aspetta, in un colpo.
+       *
+       * Lo può fare chi decide — è la stessa cosa che farebbe premendo venti
+       * volte «fallo così com'è», e i tetti della fila valgono lo stesso.
+       */
+      if (percorso === "/macchina/accetta-tutte" && req.method === "POST") {
+        if (!this.macchina) return this.errore(res, 501, "Questa suite non governa la fila.");
+        if (dispositivo.ruolo !== "admin") {
+          return this.errore(res, 403, "Questo lo può fare solo chi ha il permesso di decidere.");
+        }
+        const quante = this.macchina.accettaTutte();
+        this.json(res, 200, { ok: true, quante });
         this.aggiorna();
         return;
       }
@@ -972,9 +1063,19 @@ export class Gateway {
         return;
       }
 
+      /**
+       * La mia chiacchierata: la sessione, oppure il posto in fila.
+       *
+       * Tutte e due nella stessa risposta, e non è pigrizia: chi guarda deve
+       * poter passare da «sei terzo» a «stai parlando» senza che nessuno gli
+       * dica di cambiare rotta.
+       */
       if (percorso === "/chiacchierata" && req.method === "GET") {
-        if (!this.chiacchierata) return this.json(res, 200, { sessione: null });
-        this.json(res, 200, { sessione: this.chiacchierata.mia(dispositivo.id) });
+        if (!this.chiacchierata) return this.json(res, 200, { sessione: null, attesa: null });
+        this.json(res, 200, {
+          sessione: this.chiacchierata.mia(dispositivo.id),
+          attesa: this.chiacchierata.attesa(dispositivo.id),
+        });
         return;
       }
 
@@ -989,7 +1090,23 @@ export class Gateway {
           modello: String(dati.modello ?? ""),
         });
         if ("errore" in esito) return this.errore(res, 409, esito.errore);
-        this.json(res, 201, esito);
+        // 201 se si parla già, 202 se si è in fila: sono due cose diverse, e
+        // chi legge il codice della risposta non deve indovinare quale.
+        this.json(res, "sessione" in esito ? 201 : 202, esito);
+        this.aggiorna();
+        return;
+      }
+
+      /**
+       * Esco dalla coda. **Un diritto, non un permesso.**
+       *
+       * Chi si è messo in fila e ha cambiato idea sta liberando la macchina:
+       * non deve chiedere niente a nessuno.
+       */
+      if (percorso === "/chiacchierata/attesa" && req.method === "DELETE") {
+        if (!this.chiacchierata) return this.json(res, 200, { ok: true });
+        const uscito = this.chiacchierata.esci(dispositivo.id);
+        this.json(res, 200, { ok: uscito });
         this.aggiorna();
         return;
       }
@@ -1015,11 +1132,27 @@ export class Gateway {
           return;
         }
         if (coda === "/piano" && req.method === "POST") {
-          const dati = (corpo ?? {}) as { quali?: number[] };
+          const dati = (corpo ?? {}) as { quali?: number[]; modelli?: Record<string, string> };
+          /**
+           * Con quale modello generare, scelto **adesso**.
+           *
+           * Chiesto il 26 agosto 2026: «quando parlo con llm devo poter
+           * scegliere poi che modello usare una volta che il piano è pronto».
+           * Ha ragione: il modello che *genera* non è quello che *scrive*, e la
+           * scelta ha senso farla guardando il piano — non prima, quando ancora
+           * non si sa cosa si farà.
+           */
+          const modelli: Record<string, string> = {};
+          for (const [azione, quale] of Object.entries(dati.modelli ?? {})) {
+            if (typeof quale === "string" && quale.trim()) {
+              modelli[String(azione).slice(0, 40)] = quale.trim().slice(0, 80);
+            }
+          }
           const esito = await this.chiacchierata.accetta({
             id,
             dispositivoId: dispositivo.id,
             quali: Array.isArray(dati.quali) ? dati.quali.map(Number).filter(Number.isFinite) : [],
+            modelli,
           });
           if ("errore" in esito) return this.errore(res, 409, esito.errore);
           this.json(res, 201, esito);
@@ -1032,6 +1165,84 @@ export class Gateway {
           this.aggiorna();
           return;
         }
+      }
+
+      /* --------------------------------------------------- gli stili */
+
+      /**
+       * Gli stili musicali, uno per persona.
+       *
+       * **Perché una scheda tutta sua**, chiesta il 26 agosto 2026: uno stile
+       * è la cosa che uno costruisce una volta e usa per mesi, e fino alla
+       * 0.7.6 viveva nel `localStorage` di DaProdMusica — cioè era di *quel
+       * browser*, non di quella persona. Cambiavi dispositivo e non c'era più.
+       */
+      if (percorso === "/stili" && req.method === "GET") {
+        if (!this.stili) return this.json(res, 200, { stili: [] });
+        this.json(res, 200, { stili: this.stili.miei(dispositivo.id) });
+        return;
+      }
+
+      if (percorso === "/stili" && req.method === "POST") {
+        if (!this.stili) return this.errore(res, 501, "Questa suite non tiene gli stili.");
+        const dati = (corpo ?? {}) as { id?: string; nome?: string; testo?: string };
+        const salvato = this.stili.salva(dispositivo.id, {
+          id: dati.id,
+          nome: String(dati.nome ?? ""),
+          testo: String(dati.testo ?? ""),
+        });
+        if (!salvato) return this.errore(res, 400, "Servono un nome e delle parole.");
+        this.json(res, 201, { ok: true, stile: salvato });
+        return;
+      }
+
+      if (percorso === "/stili/vetrina" && req.method === "GET") {
+        if (!this.stili) return this.json(res, 200, { stili: [] });
+        this.json(res, 200, { stili: this.stili.vetrina(dispositivo.id) });
+        return;
+      }
+
+      /**
+       * Prendere uno stile di un altro: **se ne fa una copia.**
+       *
+       * Non un riferimento, e non è un dettaglio: dal momento in cui è tuo, chi
+       * l'ha fatto può cambiarlo o toglierlo dalla vetrina senza che a te
+       * sparisca da sotto le mani. Resta scritto di chi era, che è l'unica cosa
+       * che vale la pena ricordare.
+       */
+      if (percorso === "/stili/vetrina/prendi" && req.method === "POST") {
+        if (!this.stili) return this.errore(res, 501, "Questa suite non tiene gli stili.");
+        const dati = (corpo ?? {}) as { nome?: string; testo?: string; daNome?: string };
+        const preso = this.stili.salva(dispositivo.id, {
+          nome: String(dati.nome ?? ""),
+          testo: String(dati.testo ?? ""),
+          da: "preso",
+          daNome: dati.daNome ? String(dati.daNome).slice(0, 40) : undefined,
+        });
+        if (!preso) return this.errore(res, 400, "Questo stile non si può copiare.");
+        this.json(res, 201, { ok: true, stile: preso });
+        return;
+      }
+
+      const inVetrina = percorso.match(/^\/stili\/([^/]+)\/condividi$/);
+      if (inVetrina && req.method === "POST") {
+        if (!this.stili) return this.errore(res, 501, "Questa suite non tiene gli stili.");
+        const voluto = ((corpo ?? {}) as { condiviso?: boolean }).condiviso !== false;
+        const fatto = this.stili.condividi(
+          dispositivo.id,
+          decodeURIComponent(inVetrina[1] ?? ""),
+          voluto,
+        );
+        this.json(res, fatto ? 200 : 404, { ok: fatto, condiviso: voluto });
+        return;
+      }
+
+      const daButtareStile = percorso.match(/^\/stili\/([^/]+)$/);
+      if (daButtareStile && req.method === "DELETE") {
+        if (!this.stili) return this.errore(res, 501, "Questa suite non tiene gli stili.");
+        const fatto = this.stili.togli(dispositivo.id, decodeURIComponent(daButtareStile[1] ?? ""));
+        this.json(res, fatto ? 200 : 404, { ok: fatto });
+        return;
       }
 
       // Notifiche: elenco e spunta "letta".

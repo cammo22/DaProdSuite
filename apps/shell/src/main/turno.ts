@@ -237,6 +237,14 @@ class Turno extends EventEmitter {
     chi?: string;
     /** Si arrende dopo questo tempo invece di aspettare il massimo. */
     attesaMassimaMs?: number;
+    /**
+     * L'id del posto in fila, **prima** che il turno arrivi.
+     *
+     * Serve a chi deve mostrare la posizione a qualcuno che aspetta, e a poterla
+     * annullare se quel qualcuno se ne va. Senza, l'id si conoscerebbe solo a
+     * turno ottenuto — cioè quando non serve più.
+     */
+    dimmiIlBiglietto?: (id: string) => void;
   }): Promise<Biglietto> {
     this.contatore += 1;
     const attesa = richiesta.attesaMassimaMs ?? ATTESA_MASSIMA_MS;
@@ -267,6 +275,7 @@ class Turno extends EventEmitter {
         this.fila.push(posto);
       }
 
+      richiesta.dimmiIlBiglietto?.(posto.id);
       annota(
         `in fila ${posto.id}: ${posto.mestiere} — ${posto.che}` +
           (posto.chi ? ` (${posto.chi})` : "") +

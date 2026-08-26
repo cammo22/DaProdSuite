@@ -159,10 +159,16 @@ export const COPIONE_IMPOSTAZIONI = `
      * casa lo usano in due — quindi è finito dove sono finiti tutti gli altri.
      */
     if (window.DaProdApp && window.DaProdApp.cambiaPersona) {
-      voceFoglio(carta, "⇄", "Cambia persona", "un altro profilo su questo telefono", function () {
-        chiudiFoglio();
-        window.DaProdApp.cambiaPersona();
-      });
+      voceFoglio(
+        carta,
+        "⇄",
+        "Cambia persona",
+        "tieni premuto un nome per toglierlo dal telefono",
+        function () {
+          chiudiFoglio();
+          window.DaProdApp.cambiaPersona();
+        },
+      );
     }
 
     if (window.DaProdApp && window.DaProdApp.aggiorna) {
@@ -172,12 +178,17 @@ export const COPIONE_IMPOSTAZIONI = `
       });
     }
 
-    voceFoglio(carta, "\\u2715", "Scollega questo dispositivo", "per rientrare servir\\u00e0 un codice nuovo", function () {
-      if (!confirm("Scollegarti da " + (pannello ? pannello.computer : "questo computer") + "? Per rientrare ti servir\\u00e0 un codice nuovo.")) return;
-      chiama("/dispositivi/" + encodeURIComponent(ioId), { method: "DELETE" })
-        .catch(function () { /* se il computer non risponde ci si scollega lo stesso */ })
-        .then(function () { scollega(false); });
-    }, true);
+    // Nel browser è l'unico modo di uscire, quindi c'è. Dentro l'app no: si
+    // esce da «Cambia persona», tenendo premuto il nome — un gesto solo per
+    // una cosa sola, invece di due tasti di cui uno rotto.
+    if (!window.DaProdApp) {
+      voceFoglio(carta, "\\u2715", "Scollega questo dispositivo", "per rientrare servir\\u00e0 un codice nuovo", function () {
+        if (!confirm("Scollegarti da " + (pannello ? pannello.computer : "questo computer") + "? Per rientrare ti servir\\u00e0 un codice nuovo.")) return;
+        chiama("/dispositivi/" + encodeURIComponent(ioId), { method: "DELETE" })
+          .catch(function () { /* se il computer non risponde ci si scollega lo stesso */ })
+          .then(function () { scollega(false); });
+      }, true);
+    }
 
     var versione = document.createElement("p");
     versione.className = "nota";
@@ -409,6 +420,59 @@ export const COPIONE_IMPOSTAZIONI = `
       "attesa con scritto perch\\u00e9, e parte da sola quando la fila si sgombra.";
 
     carta.append(eFila, campoFila, ePersona, campoPersona, salva, nota);
+
+    /**
+     * **Con quanto contesto caricare il modello che scrive.**
+     *
+     * Chiesto il 26 agosto 2026: «non c'e' la possibilita' di settare llm a 64k
+     * 128 o 256k». Il contesto si paga in memoria — la cache delle chiavi
+     * cresce con la lunghezza, e ogni GB che prende e' un GB che non sta ai pesi
+     * — quindi il numero giusto dipende dal modello e dalla macchina, e non puo'
+     * deciderlo il programma.
+     */
+    var eContesto = document.createElement("label");
+    eContesto.textContent = "Quanto contesto dare al modello che scrive";
+    carta.append(eContesto);
+
+    var filaContesto = document.createElement("div");
+    filaContesto.className = "filtri";
+    var adessoContesto = (macchina.regole && macchina.regole.contestoLlm) || 65536;
+    for (var quanto of [32768, 65536, 131072, 262144]) {
+      var bc = document.createElement("button");
+      bc.type = "button";
+      bc.className = "mini" + (quanto === adessoContesto ? " on" : "");
+      bc.textContent = Math.round(quanto / 1024) + "K";
+      bc.addEventListener("click", (function (quale) {
+        return function () { void cambiaContesto(quale); };
+      })(quanto));
+      filaContesto.append(bc);
+    }
+    carta.append(filaContesto);
+
+    var notaContesto = document.createElement("p");
+    notaContesto.className = "nota";
+    notaContesto.textContent =
+      "64K e' quello con cui la suite ha lavorato finora, ed e' dieci volte quello che serve a " +
+      "finire il testo di una canzone. Piu' contesto vuol dire meno posto per i pesi: su otto GB " +
+      "il modello esce dalla scheda video e risponde in minuti invece che in secondi. " +
+      "Vale dal prossimo caricamento.";
+    carta.append(notaContesto);
+  }
+
+  async function cambiaContesto(quanto) {
+    var adesso = macchina ? macchina.regole : {};
+    try {
+      macchina = await chiama("/macchina/regole", {
+        method: "POST",
+        body: JSON.stringify({
+          chiPassaSubito: adesso.chiPassaSubito,
+          limiteFila: adesso.limiteFila,
+          limitePersona: adesso.limitePersona,
+          contestoLlm: quanto,
+        }),
+      });
+      apriIlComputer();
+    } catch (e) { alert(e.message); }
   }
 
   async function cambiaRegole(cambi) {
