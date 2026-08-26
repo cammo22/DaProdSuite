@@ -10,6 +10,29 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ---
 
+## Non ancora pubblicato
+
+Due correzioni alla 0.7.8, viste appena l'ha usata.
+
+**Gli stili non si potevano usare.** Sceglierne uno e premere Genera tornava
+indietro con «"stile" può essere solo: . Arrivato "Neomelodico trap"» — un
+elenco vuoto e la richiesta rifiutata. Il controllo dei campi confrontava lo
+stile scelto con l'elenco del catalogo, che per gli stili è **vuoto apposta**:
+non li può conoscere, sono di ogni persona e stanno sul suo computer, e li mette
+dentro chi risponde. Adesso un elenco vuoto vuol dire «le scelte le mette il
+computer» e non «nessuna scelta è valida». Il difetto c'era dalla 0.7.7 e
+toccava solo i brani; con gli stili anche in immagini e video si vedeva
+dappertutto.
+
+**Gli stili musicali erano doppi.** Chi aveva già i suoi ventiquattro generi si
+ritrovava «Neomelodico trap» due volte. Il segno di quali set sono già stati
+consegnati nasce con la 0.7.8, e un file scritto prima non ce l'aveva: la suite
+credeva di non aver mai dato la musica e la ridava. Adesso un file che c'era già
+vale da solo come «la musica l'hai avuta» — era l'unico tipo che esistesse — e i
+doppioni arrivati nel frattempo se ne vanno da soli alla prima apertura.
+
+---
+
 ## 0.7.8 — Gli stili diventano tre, e la barra torna una riga
 
 **26 agosto 2026.** Cinque cose viste usandola dal telefono, e nessuna è

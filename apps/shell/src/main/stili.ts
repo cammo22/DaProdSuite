@@ -163,15 +163,53 @@ function leggiTutti(chi: string): Stile[] {
     }
   }
 
-  // I set che mancano si consegnano adesso, una volta sola.
-  const gia = cera ? setGiaDati(chi) : [];
+  /**
+   * Quali set questa persona ha già ricevuto.
+   *
+   * ⚠ **La riga che conta è quella su `musica`**, ed è il difetto della prima
+   * 0.7.8: chi aveva un `stili.json` scritto dalla 0.7.7 aveva già i
+   * ventiquattro generi, ma il segno di consegna nasce con la 0.7.8 e quel file
+   * non ce l'aveva. Il risultato era che glieli riconsegnavamo tutti — e in
+   * Musica comparivano **due volte**, «Neomelodico trap», «Neomelodico trap».
+   *
+   * Un file che c'era già vuol dire, da solo, che la musica è stata consegnata:
+   * era l'unico tipo che esistesse prima di oggi.
+   */
+  const segnati = cera ? setGiaDati(chi) : [];
+  const gia = cera && !segnati.length ? (["musica"] as TipoStile[]) : segnati;
   const daDare = (["immagine", "video", "musica"] as TipoStile[]).filter((t) => !gia.includes(t));
-  if (!daDare.length) return dentro;
 
-  const arrivati = dentro.concat(daDare.flatMap((t) => quelliDiPartenza(t)));
+  // E si toglie di mezzo quello che è già arrivato doppio a chi ha aperto la
+  // prima 0.7.8: senza, l'elenco resta sporco anche dopo la correzione.
+  const puliti = senzaDoppioni(dentro);
+  if (!daDare.length) {
+    if (puliti.length !== dentro.length) scrivi(chi, puliti);
+    if (!segnati.length) segnaSetDato(chi, gia);
+    return puliti;
+  }
+
+  const arrivati = puliti.concat(daDare.flatMap((t) => quelliDiPartenza(t)));
   scrivi(chi, arrivati);
   segnaSetDato(chi, gia.concat(daDare));
   return arrivati;
+}
+
+/**
+ * Via i doppioni: stesso tipo e stesso nome, resta il primo.
+ *
+ * Il primo e non l'ultimo, apposta: se una persona aveva modificato «Ora
+ * dorata» e poi ne è arrivata una copia di partenza, quella che vale è la sua.
+ */
+function senzaDoppioni(stili: Stile[]): Stile[] {
+  const visti = new Set<string>();
+  const buoni: Stile[] = [];
+  for (const s of stili) {
+    const chiave = `${s.tipo}|${s.nome.toLocaleLowerCase("it")}`;
+    if (visti.has(chiave)) continue;
+    visti.add(chiave);
+    buoni.push(s);
+  }
+  return buoni;
 }
 
 function quelliDiPartenza(tipo: TipoStile): Stile[] {
