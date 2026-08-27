@@ -108,14 +108,30 @@ function disegna(blobUrl) {
       // va a metà, che in un video di mezzo secondo è comunque dopo il nero.
       const durata = Number.isFinite(video.duration) ? video.duration : 0;
       const dove = durata > SECONDO_BUONO + 0.2 ? SECONDO_BUONO : Math.max(0, durata / 2);
+      /**
+       * ⚠ **Se non c'è dove andare, si disegna quello che c'è.**
+       *
+       * `currentTime = 0` su un video che sta già a zero **non fa scattare
+       * `seeked`**: il browser non ha niente da cercare, e giustamente non dice
+       * niente. Succede ogni volta che la durata non si legge — un mp4 scritto
+       * male, un contenitore senza durata — e la conseguenza era la peggiore:
+       * si restava ad aspettare un evento che non sarebbe mai arrivato, quindi
+       * quindici secondi di attesa e nessuna copertina, in silenzio.
+       *
+       * Il fotogramma però ce l'abbiamo già: `loadeddata` vuol dire che il
+       * primo è decodificato. Si disegna quello.
+       */
+      if (dove <= 0.01) return prendiIlFotogramma();
       try {
         video.currentTime = dove;
       } catch {
-        finisci(null);
+        prendiIlFotogramma();
       }
     });
 
-    video.addEventListener("seeked", () => {
+    video.addEventListener("seeked", () => prendiIlFotogramma());
+
+    function prendiIlFotogramma() {
       try {
         const largo = video.videoWidth || LARGA;
         const alto = video.videoHeight || Math.round((LARGA * 9) / 16);
@@ -130,7 +146,7 @@ function disegna(blobUrl) {
       } catch {
         finisci(null);
       }
-    });
+    }
 
     video.src = blobUrl;
   });

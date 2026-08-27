@@ -1,0 +1,45 @@
+name: Un'idea, o una cosa che manca
+description: Una funzione che vorresti, un modello da provare, una parola scritta male
+labels: ["idea"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Le cose migliori di questa suite sono nate così: qualcuno l'ha usata e
+        ha detto cosa mancava. Anche «questa parola non si capisce» è una
+        segnalazione buona — anzi, è una delle migliori.
+
+  - type: textarea
+    id: cosa
+    attributes:
+      label: Cosa vorresti poter fare
+      description: Racconta il gesto, non la soluzione. Cosa staresti facendo, e cosa ti manca per farlo.
+      placeholder: |
+        Dal telefono vorrei poter dare un nome alla canzone prima di chiederla,
+        come si fa sul computer. Adesso il file esce chiamato come il ritornello.
+    validations:
+      required: true
+
+  - type: textarea
+    id: adesso
+    attributes:
+      label: Come lo fai adesso
+      description: Se c'è un modo, anche scomodo. Serve a capire quanto conta.
+
+  - type: dropdown
+    id: scheda
+    attributes:
+      label: Quale scheda riguarda
+      options:
+        - DaProdVisualizer
+        - DaProdMusica
+        - DaProdFoto
+        - DaProdDream
+        - DaProdIoDigitale
+        - DaProdCinema
+        - DaProdVoce
+        - DaProdConnessione
+        - L'app del telefono
+        - La suite in generale
+    validations:
+      required: true

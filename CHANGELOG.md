@@ -12,24 +12,205 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ## Non ancora pubblicato
 
-Due correzioni alla 0.7.8, viste appena l'ha usata.
+Niente: la 0.8.0 è appena uscita.
 
-**Gli stili non si potevano usare.** Sceglierne uno e premere Genera tornava
-indietro con «"stile" può essere solo: . Arrivato "Neomelodico trap"» — un
-elenco vuoto e la richiesta rifiutata. Il controllo dei campi confrontava lo
-stile scelto con l'elenco del catalogo, che per gli stili è **vuoto apposta**:
-non li può conoscere, sono di ogni persona e stanno sul suo computer, e li mette
-dentro chi risponde. Adesso un elenco vuoto vuol dire «le scelte le mette il
-computer» e non «nessuna scelta è valida». Il difetto c'era dalla 0.7.7 e
-toccava solo i brani; con gli stili anche in immagini e video si vedeva
-dappertutto.
+---
 
-**Gli stili musicali erano doppi.** Chi aveva già i suoi ventiquattro generi si
-ritrovava «Neomelodico trap» due volte. Il segno di quali set sono già stati
-consegnati nasce con la 0.7.8, e un file scritto prima non ce l'aveva: la suite
-credeva di non aver mai dato la musica e la ridava. Adesso un file che c'era già
-vale da solo come «la musica l'hai avuta» — era l'unico tipo che esistesse — e i
-doppioni arrivati nel frattempo se ne vanno da soli alla prima apertura.
+## 0.8.0 — Le cose lasciate indietro
+
+**27 agosto 2026.** Nessuna funzione nuova, e non è una release piccola: sono
+**sette cose che non funzionavano** e che erano state rimandate, una dietro
+l'altra, mentre si costruiva il resto. Detto così:
+
+> «Facciamo una release che si concentra a fixare tutte le cose trascurate
+> durante lo sviluppo.»
+
+Sono tutte cose che si vedono usandola, e nessuna aveva un messaggio d'errore:
+un riquadro nero al posto di un fotogramma, un tasto che non fa niente, una
+notifica che arriva quaranta minuti dopo. Difetti che non si trovano nel log —
+si trovano usando il programma e restando delusi.
+
+### I video hanno la loro anteprima. Per davvero, stavolta
+
+> «Se riesci risolvi il problema dell'immagine di anteprima dei video che non
+> funziona.»
+
+È la quarta volta che questa riga compare in un changelog, e le prime tre erano
+correzioni vere che curavano cose vere. Il difetto restava perché **le cause
+erano quattro**, e ogni volta se ne chiudeva una.
+
+**1. Nella Galleria di DaProdCinema il fotogramma non veniva chiesto a nessuno.**
+Il riquadro era un `<video preload="metadata">`, e `metadata` fa esattamente
+quello che dice: legge *quanto dura* e *quanto è grande*, e non decodifica
+niente. Un video che non ha decodificato niente e non ha un poster è un
+rettangolo nero. La copertina intanto c'era, lì accanto, e non la guardava
+nessuno.
+
+**2. La copertina si perdeva nella rinomina — e succedeva a ogni video chiesto
+dal telefono.** Il motore scrive `clip_00042_.mp4`; la scheda comincia a
+fargli la copertina, che sono qualche secondo di scaricamento e decodifica; nel
+frattempo la suite dà al file il nome di quello che era stato chiesto. Quando la
+copertina è pronta chiede di essere messa accanto a un file che non esiste più,
+la libreria risponde «non c'è», e nessuno se ne accorge. Adesso la libreria si
+ricorda come si chiamava prima una cosa che ha rinominato.
+
+**3. Una clip senza durata leggibile non arrivava mai.** Il fotogramma si
+prende spostandosi a un secondo dentro; se la durata non si legge ci si sposta a
+zero, e spostarsi a zero quando si è già a zero **non fa succedere niente** — si
+restava ad aspettare un segnale che non sarebbe arrivato. Adesso, se non c'è
+dove andare, si disegna il fotogramma che c'è già.
+
+**4. Senza FFmpeg non c'erano anteprime, e non c'era scritto da nessuna parte.**
+FFmpeg non è imbarcato nella suite — è GPL, la suite è MIT — e chi non ce
+l'aveva installato a mano non aveva né anteprime dei video, né la copertina
+cucita dentro i brani, né la conversione audio del Visualizer. Adesso
+l'ambiente Python della suite se lo porta dentro da solo: **non lo
+distribuiamo, se lo scarica il computer di chi installa**, come già fa con
+ComfyUI. Chi ne ha uno suo installato continua a usare quello.
+
+E i video già in cartella, quelli fatti prima di oggi, si prendono la loro
+copertina alla prima apertura della Galleria: uno alla volta, senza far tossire
+la scheda video.
+
+### Dal telefono la canzone ha un nome
+
+> «Manca anche la possibilità da Android di mettere un nome alla canzone.»
+
+Sul computer la casella del titolo è la prima cosa che si vede aprendo
+DaProdMusica. Da fuori non c'era: il brano finiva in galleria chiamato come la
+prima riga del ritornello, o — senza testo — come i tre generi in inglese.
+Adesso **Produzione Musica** comincia con «Come si chiama», e quel nome è come
+si chiamerà il file.
+
+Lasciarlo vuoto fa quello che faceva prima: lo ricava dal testo.
+
+### Le canzoni si scrivono in italiano, non in napoletano
+
+> «Spesso gli LLM scrivono in napoletano, facciamoli scrivere in italiano.»
+
+E la colpa era nostra. Le istruzioni che la suite dà al modello contenevano un
+esempio di ritornello, e quell'esempio era *«Ammore mio, nun te ne jì»*. Un
+modello piccolo copia l'esempio molto più di quanto segua una regola — è la
+ragione per cui gli esempi ci sono — e quello gli stava insegnando, senza
+dirlo, che le canzoni di questa suite si scrivono in dialetto.
+
+Adesso l'esempio è in italiano, e sopra c'è scritto per esteso: **il genere può
+essere napoletano, la lingua no.** Vale nei tre posti in cui un modello scrive
+un testo — la chiacchierata, il tasto «riscrivi», e Bonsai dentro
+DaProdMusica — e Bonsai in più **guarda la lingua che hai scelto** invece di
+scrivere sempre in italiano: se canti in inglese, scrive in inglese.
+
+### La foto del profilo si carica
+
+> «Il caricamento della foto profilo non funziona.»
+
+Dal telefono, toccare «Metti una foto» non faceva niente. Nessun errore,
+nessun messaggio: niente.
+
+Una WebView, da sola, **non sa aprire il selettore dei file**. Quando la pagina
+ne chiede uno, Android chiede all'app cosa fare, e se l'app non risponde — e la
+nostra non era stata scritta per rispondere — la richiesta viene lasciata cadere
+in silenzio. Adesso risponde. Con lo stesso pezzo si è sistemato anche il
+caricare una cosa in bacheca dal telefono, che non funzionava per lo stesso
+identico motivo.
+
+### Le notifiche arrivano quando il lavoro finisce
+
+> «Le notifiche Android quando chiudo l'app a volte non arrivano o arrivano in
+> ritardo.»
+
+Vero, compreso il «a volte». Con l'app chiusa, l'unica cosa che guardava se il
+computer aveva finito era un lavoro periodico di Android: il suo intervallo più
+corto **è un quarto d'ora** — è un limite del sistema, non una nostra scelta — e
+quel quarto d'ora è il minimo. Col telefono in tasca e lo schermo spento,
+Android accorpa quei lavori e li fa girare quando gli conviene: mezz'ora,
+un'ora, o alla prima volta che riprendi il telefono in mano. Per un video che ci
+mette tre minuti, vuol dire saperlo molto dopo essere andati a guardare da soli.
+
+Non si può curare con un servizio di notifiche: qui il «server» è il PC di casa,
+e mettere qualcuno in mezzo sarebbe contro tutta la ragione per cui questa suite
+esiste. Quello che si può fare è **restare svegli finché c'è un motivo**.
+
+Da adesso, quando chiudi l'app con qualcosa in ballo, resta di guardia una
+sentinella: chiede al computer ogni venti secondi, e **si spegne da sola** appena
+la fila è vuota — o comunque dopo mezz'ora. La sua notifica silenziosa non dice
+«l'app è in esecuzione», dice a che punto sei: *«è 2° in fila»*, leggibile senza
+aprire niente.
+
+E tre cose più piccole, sulla stessa strada:
+
+- **toccare una notifica adesso apre l'app.** Prima non apriva niente: la
+  notifica si chiudeva e bisognava cercare l'icona a mano.
+- **il controllo di fondo non riparte più a vuoto senza linea**, e quando va
+  storto riprova dopo un minuto invece che dopo un'ora.
+- nel menu c'è **«Notifiche in ritardo?»**, che spiega in due righe il risparmio
+  batteria di Android e porta dove si toglie. Compare solo se serve.
+
+### Sul computer, la riga di una persona sta in una riga
+
+> «Su PC nella tab delle persone il pulsante per inviare un pensiero è sotto.
+> Rendiamo tutto responsive e ordinato e preciso.»
+
+Era una riga con dentro cinque cose in fila — la faccia, il nome che si allarga,
+due o tre tastini, e in mezzo a loro la barra dell'invio larga tutta la riga — e
+bastava un nome lungo perché si sfaldasse: i tasti su due o tre altezze diverse,
+spezzati a metà dalla barra.
+
+Adesso sono due blocchi con un mestiere ciascuno: **chi è** e **cosa gli si può
+fare**. Su uno schermo largo stanno affiancati, con i tasti in fila a destra;
+su un telefono vanno uno sopra l'altro, con i tasti allineati sotto al nome.
+Nessuna delle due è la versione ridotta dell'altra.
+
+E il tasto adesso dice **«mandagli un pensiero»**, come si chiama dappertutto —
+in Galleria, nella notifica che arriva sul telefono, nella bacheca. Una cosa
+sola non può avere due nomi a seconda della schermata.
+
+### E gli stili si possono usare
+
+Era già corretto sul ramo principale, ma non era mai uscito in una release: dalla
+0.7.7, scegliere uno stile e premere Genera tornava indietro con *«"stile" può
+essere solo: . Arrivato "Neomelodico trap"»* — un elenco vuoto e la richiesta
+rifiutata. Il controllo confrontava lo stile scelto con l'elenco del catalogo,
+che per gli stili è **vuoto apposta**: non li può conoscere, sono di ogni persona
+e stanno sul suo computer. Adesso un elenco vuoto vuol dire «le scelte le mette
+il computer» e non «nessuna scelta è valida».
+
+Insieme: **i doppioni degli stili musicali se ne vanno da soli.** Chi aveva già i
+suoi ventiquattro generi si ritrovava «Neomelodico trap» due volte, perché il
+segno di quali set sono già stati consegnati nasce con la 0.7.8 e un file scritto
+prima non ce l'aveva.
+
+### Il progetto, riordinato
+
+Fuori dal programma:
+
+- **il README** dice a che punto siamo davvero — la targhetta della versione era
+  ferma alla 0.7.1 — e non è più una copia del changelog: le release vecchie
+  stanno in una tabella, e la storia intera in un posto solo;
+- **il sito** ([cammo22.github.io/DaProdSuite](https://cammo22.github.io/DaProdSuite/))
+  diceva «0.2.0 pubblicata» e non nominava il telefono. Adesso ha la versione
+  giusta, l'app Android da scaricare, e la sezione su cosa si fa da fuori casa;
+- **la wiki** è allineata, e il repository ha i moduli per segnalare un difetto e
+  per proporre una modifica.
+
+### ⚠ Cosa è provato, e cosa no
+
+Il patto di sempre: quello che non è passato per le mani di chi la usa è scritto
+qui, non nascosto.
+
+| Cosa | Come sta |
+|---|---|
+| Le anteprime dei video: le quattro cause | **le prime tre lette nel codice e corrette**; il giro vero — genero un video, guardo la galleria — è da fare sul PC con la scheda |
+| FFmpeg dentro l'ambiente Python | il percorso è quello che `imageio-ffmpeg` usa da anni; **su questa macchina non è stato installato da zero** |
+| Il titolo del brano da Android | **provato nella console vera**: il campo c'è, è il primo, e viaggia con la richiesta |
+| L'italiano invece del napoletano | **istruzioni corrette e lette**; quanto ubbidisce un modello da 4B si vede solo usandolo |
+| La riga delle persone | **provata in un browser vero**, a 1280 px e a 375 px: i tasti stanno in fila, su tutte e due |
+| La foto del profilo da Android | **l'APK compila**; il tocco vero sul telefono no |
+| La sentinella delle notifiche | **l'APK compila**; quanto arriva prima si misura solo chiudendo l'app con un video in corso |
+| Gli stili | corretti sul ramo principale il 26 agosto, **mai usciti in una release fino a oggi** |
+
+Le prove automatiche — cicli, avvio, azioni, gateway, MCP — passano tutte, e
+l'app Android compila e si firma.
 
 ---
 

@@ -18,9 +18,20 @@
 
 import { el, escapeHtml, mostraErrore, mostraScheda } from "./dom.js";
 import { aggiungiRiferimento } from "./riferimenti.js";
+import { faiLaCopertina } from "./copertina.js";
 import * as ponte from "./ponte.js";
 
 let video = [];
+
+/**
+ * I video a cui abbiamo gia' provato a fare la copertina, in questa sessione.
+ *
+ * Serve a non entrare in un giro senza fine: salvare una copertina avvisa la
+ * libreria, la libreria riavvisa la galleria, e la galleria ricomincerebbe da
+ * capo. Con un video a cui la copertina non si puo' fare — un file rovinato, un
+ * codec che il browser non conosce — sarebbe un ciclo infinito.
+ */
+const provate = new Set();
 
 /** Come si racconta un video in una riga: modello, misura, durata, quando. */
 export function descrivi(v) {
@@ -46,16 +57,63 @@ export async function aggiornaGalleria() {
     : `<div class="empty">Ancora nessun video. Vai su <b>Crea</b> e fallo.</div>`;
 
   collega();
+  void riprendiLeCopertine();
 }
 
+/**
+ * I video vecchi si prendono la loro copertina adesso.
+ *
+ * **Perche' serve una ripresa e non basta farla a fine generazione.** Da
+ * `copertina.js` la copertina nasce insieme al video, ma quello vale da qui in
+ * avanti: chi apre questa scheda ha una cartella piena di clip fatte prima —
+ * quando la copertina non si faceva, o si faceva e si perdeva per la rinomina —
+ * e quelle resterebbero rettangoli neri per sempre.
+ *
+ * Una per volta, e con calma: aprire venti video insieme per prendergli un
+ * fotogramma vorrebbe dire venti decodifiche in parallelo mentre la scheda
+ * video sta generando. Una alla volta non si sente.
+ */
+async function riprendiLeCopertine() {
+  for (const v of video) {
+    if (v.copertina || provate.has(v.id)) continue;
+    provate.add(v.id);
+    // `await`: e' apposta in fila. Ognuna scarica il video e lo decodifica, e
+    // farlo per venti insieme e' l'unico modo di far tossire la scheda.
+    if (await faiLaCopertina(v.id, v.url)) return;
+  }
+}
+
+/**
+ * Il riquadro di un video, **con dentro qualcosa da guardare.**
+ *
+ * ⚠ Il difetto piu' vecchio della scheda, detto quattro volte: «l'immagine di
+ * anteprima dei video non funziona». Qui era scritto cosi':
+ *
+ *     <video class="art" src="..." preload="metadata" muted playsinline>
+ *
+ * e `preload="metadata"` fa esattamente quello che dice: legge **i dati** del
+ * video — quanto dura, quanto e' grande — e non decodifica un fotogramma. Un
+ * `<video>` che non ha decodificato niente e non ha un `poster` disegna un
+ * rettangolo nero. Venti riquadri neri in griglia.
+ *
+ * La copertina invece c'e' quasi sempre: la fa `copertina.js` appena il video
+ * e' finito, e vive in un `.cover.jpg` accanto al file — la libreria la
+ * consegna gia' pronta in `v.copertina`. Bastava usarla.
+ *
+ * Quindi adesso: **se la copertina c'e' si mostra un'immagine** (che e' anche
+ * piu' leggera di venti `<video>` da caricare); se non c'e', resta il `<video>`
+ * di prima con `preload="auto"`, che il fotogramma se lo decodifica — e nel
+ * frattempo `riprendiLeCopertine` gliene fa una vera per la prossima volta.
+ */
 function scheda(v) {
   const meta = v.meta || {};
-  // `preload="metadata"`: con venti video in griglia, caricarli interi
-  // all'apertura della scheda vorrebbe dire centinaia di MB letti dal disco per
-  // vedere venti riquadri. Così ne arriva solo il primo fotogramma.
+  const dentro = v.copertina
+    ? `<img class="art" src="${escapeHtml(v.copertina)}" alt="" loading="lazy"
+      data-lente="${escapeHtml(v.id)}">`
+    : `<video class="art" src="${escapeHtml(v.url)}" preload="auto" muted playsinline
+      data-lente="${escapeHtml(v.id)}"></video>`;
   return `<div class="card">
-    <video class="art" src="${escapeHtml(v.url)}" preload="metadata" muted playsinline
-      data-lente="${escapeHtml(v.id)}"></video>
+    ${dentro}
     <div class="nm">${escapeHtml(String(meta.prompt || v.nome))}</div>
     <div class="sub">${escapeHtml(descrivi(v))}</div>
     <div class="acts">

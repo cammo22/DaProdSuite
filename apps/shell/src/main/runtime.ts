@@ -18,6 +18,7 @@ import { controllaAmbiente, ensureUv, installRuntime, riparaAmbiente, verdetto }
 import type { RapportoAmbiente, RuntimeState } from "@daprod/ipc";
 import { createLogger } from "./logging";
 import { BASE_REQUIREMENTS, PYTHON_EXE, RUNTIME_DIR, TOOLS_DIR, VINCOLI_REQUIREMENTS } from "./paths";
+import { dimenticaFfmpeg } from "./ffmpeg";
 
 const execFileAsync = promisify(execFile);
 
@@ -80,6 +81,11 @@ class Runtime extends EventEmitter {
         });
 
         this.patch({ installing: undefined });
+        // L'ambiente adesso c'è, e dentro c'è anche FFmpeg: chi aveva già
+        // chiesto «c'è FFmpeg?» si era sentito rispondere di no, e quella
+        // risposta gli sarebbe rimasta incollata fino al riavvio — cioè niente
+        // anteprime dei video per tutta la prima sessione dopo l'installazione.
+        dimenticaFfmpeg();
         await this.refresh();
       } catch (err) {
         const messaggio = err instanceof Error ? err.message : String(err);
@@ -138,6 +144,8 @@ class Runtime extends EventEmitter {
         });
 
         this.patch({ installing: undefined });
+        // Come sopra: una riparazione puo' aver rimesso `imageio-ffmpeg`.
+        dimenticaFfmpeg();
         await this.refresh();
       } catch (err) {
         const messaggio = err instanceof Error ? err.message : String(err);

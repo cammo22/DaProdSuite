@@ -60,4 +60,17 @@
     <!-- Notifiche -->
     <string name="notifica_canale">Lavori DaProd Suite</string>
     <string name="notifica_descrizione">Quando un lavoro finisce sul PC</string>
+
+    <!-- La sentinella: l'avviso silenzioso mentre si aspetta il computer.
+         Ha un canale suo apposta, così chi non lo vuole può spegnere questo
+         e tenere quello che conta. -->
+    <string name="attesa_canale">Mentre aspetti il computer</string>
+    <string name="attesa_descrizione">Un avviso silenzioso finché il computer sta finendo un tuo lavoro. Sparisce da solo.</string>
+
+    <!-- Batteria: perché le notifiche possono arrivare tardi, e dove si preme. -->
+    <string name="batteria_titolo">Le notifiche arrivano tardi?</string>
+    <string name="batteria_spiega">Per far durare la batteria, Android mette a dormire le app chiuse: gli avvisi del computer possono arrivare mezz\'ora dopo. Se togli DaProd Suite da quel risparmio, arrivano quando succedono.</string>
+    <string name="batteria_vai">Portami lì</string>
+    <string name="batteria_no">Lascia stare</string>
+    <string name="menu_batteria">Notifiche in ritardo?</string>
 </resources>

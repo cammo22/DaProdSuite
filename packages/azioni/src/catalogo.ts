@@ -205,6 +205,30 @@ export const AZIONI: readonly Azione[] = [
     coda: true,
     campi: [
       {
+        /**
+         * **Come si chiama la canzone.**
+         *
+         * Chiesto il 27 agosto 2026: «manca la possibilità da Android di
+         * mettere un nome alla canzone». Sul computer la casella c'è da sempre
+         * — è quella in cima a DaProdMusica — e da fuori no: chi chiedeva un
+         * brano dal telefono si ritrovava un file che si chiamava come la
+         * prima riga del ritornello, o come i generi.
+         *
+         * Vuoto vuol dire: **lo decide la scheda**, dalla prima riga cantata.
+         * È quello che faceva prima, e per uno strumentale è ancora l'unica
+         * cosa sensata.
+         */
+        nome: "titolo",
+        etichetta: "Come si chiama",
+        descrizione:
+          "Il nome del brano: è come si chiamerà il file e come lo vedi in galleria. " +
+          "Vuoto vuol dire che lo ricavo dal testo.",
+        tipo: "testo",
+        obbligatorio: false,
+        maxLunghezza: 80,
+        esempio: "Le luci del porto",
+      },
+      {
         nome: "descrizione",
         etichetta: "Che genere",
         principale: true,

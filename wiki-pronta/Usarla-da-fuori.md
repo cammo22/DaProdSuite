@@ -229,7 +229,8 @@ vecchio prometteva un'altra cosa — e dalla **0.7.7** ce n'è una in più, gli
 - **Galleria** — due tasti in cima: **Le mie Produzioni** e **Pensieri** (quello
   che ti hanno mandato). Poi i filtri: tutto, immagini, video, musica e voce.
   **I video hanno il loro fotogramma** e **i brani la loro copertina**: si vede
-  cosa c'è senza premere play. Tocchi una cosa e si apre **a schermo intero**,
+  cosa c'è senza premere play. *(Dalla **0.8.0** ce l'hanno davvero tutti,
+  compresi quelli fatti prima.)* Tocchi una cosa e si apre **a schermo intero**,
   con due tasti: *salva nel telefono* e *condividi*;
 - **DaProd** — la bacheca, e il tuo profilo. Vedi sotto.
 
@@ -238,6 +239,9 @@ vecchio prometteva un'altra cosa — e dalla **0.7.7** ce n'è una in più, gli
 Dalla **0.7.7** dal telefono c'è tutto quello che c'è sul computer, e sono
 **pulsanti**, non menu a tendina:
 
+- **come si chiama** — il nome della canzone, dalla **0.8.0**. È il primo campo,
+  ed è come si chiamerà il file: lasciandolo vuoto lo ricava dalla prima riga del
+  ritornello, come faceva prima;
 - **uno stile pronto** — toccane uno e la descrizione si riempie da sola con le
   parole giuste. Se non sai cosa scrivere in «che genere», parti da lì;
 - **le sezioni del testo** — `[Intro]`, `[Verse]`, `[Chorus]`… si toccano e
@@ -249,6 +253,12 @@ Dalla **0.7.7** dal telefono c'è tutto quello che c'è sul computer, e sono
 E **le caselle di testo si allungano mentre scrivi**: il testo di una canzone
 sono venti righe, e dentro una finestrella da tre non si rilegge mai niente.
 
+**Se fai scrivere il testo a un modello**, dalla 0.8.0 scrive in **italiano**.
+Prima capitava che scrivesse in napoletano, e la colpa era delle istruzioni che
+gli davamo: l'esempio di ritornello era in dialetto, e un modello piccolo copia
+l'esempio più di quanto segua una regola. Il genere può restare napoletano — è
+quello degli stili di partenza — ma la lingua è quella che scegli tu.
+
 ### DaProd, e il tuo profilo
 
 È la scheda che prima si chiamava «Persone» e mostrava i quadrati della rete.
@@ -259,7 +269,9 @@ chi l'ha fatto, la cosa, e sotto due tasti.
 - **☆ tieni** — la fa comparire fra le tue cose. Non è una copia: il file resta
   di chi l'ha fatto, e se lui la toglie dalla bacheca sparisce anche da te;
 - **il tuo profilo**, in cima: nome, **foto** e una riga sotto al nome. Si cambia
-  tutto con *Modifica*;
+  tutto con *Modifica*. *(Dalla **0.8.0** la foto si carica davvero anche dal
+  telefono: prima toccare «Metti una foto» non apriva niente — e per lo stesso
+  motivo non funzionava nemmeno «Metti una cosa tua».)*
 - **Metti una cosa tua** — carichi un file dal telefono e finisce in bacheca,
   anche se non l'ha generato il computer.
 
@@ -275,8 +287,10 @@ che prima stava sparso fra il menu a tre puntini e la scheda «Persone»:
   prima, se il computer rispondeva subito, non succedeva niente di visibile.)*
 - **Come siamo messi** — la rete di casa, se ci si arriva da fuori, il firewall,
   e gli indirizzi;
-- **Le persone** — chi è collegato, cosa può fare, e il tasto per mandargli un
-  file *(solo se puoi decidere)*;
+- **Le persone** — chi è collegato, cosa può fare, e il tasto **mandagli un
+  pensiero** *(solo se puoi decidere)*. Dal computer ci puoi anche trascinare
+  sopra un file. *(Dalla **0.8.0** la riga di una persona sta in una riga: prima,
+  con un nome lungo, i tasti si sparpagliavano su due o tre altezze.)*
 - **Aggiungi una persona** — il codice e il QR *(solo se puoi decidere)*;
 - **Il computer** — la pausa e i limiti della fila. **Compare solo aprendo la
   pagina dal computer**: vedi «Chi decide, e cosa succede quando dice di sì»;

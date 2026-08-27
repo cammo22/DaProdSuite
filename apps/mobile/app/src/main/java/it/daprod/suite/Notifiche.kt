@@ -2,7 +2,9 @@ package it.daprod.suite
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.os.Build
@@ -46,6 +48,29 @@ import androidx.core.content.ContextCompat
  */
 object Notifiche {
     private const val CANALE = "lavori"
+
+    /**
+     * Toccare la notifica apre l'app. **Prima non apriva niente.**
+     *
+     * Sembra un dettaglio e non lo e': la notifica dice «e' pronto», e la cosa
+     * che uno fa subito dopo averla letta e' toccarla per andare a vedere.
+     * Senza un `contentIntent` quel tocco non fa niente — la notifica si chiude
+     * e basta — e bisogna cercare l'icona dell'app come se non fosse successo
+     * niente.
+     *
+     * `SINGLE_TOP` piu' `CLEAR_TOP`: si torna a quella gia' aperta invece di
+     * aprirne una seconda sopra.
+     */
+    fun apriLApp(context: Context): PendingIntent? {
+        val intento = Intent(context, MainActivity::class.java)
+            .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        return PendingIntent.getActivity(
+            context,
+            0,
+            intento,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+    }
 
     fun creaCanale(context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -115,6 +140,9 @@ object Notifiche {
             // trenta parole tagliato a metà non dice quale lavoro è.
             .setStyle(NotificationCompat.BigTextStyle().bigText(corpo))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
+            // E toccandola si apre l'app, che e' la cosa che si vuole fare
+            // subito dopo aver letto «e' pronto». Vedi `apriLApp`.
+            .setContentIntent(apriLApp(context))
             .setAutoCancel(true)
             .build()
         return try {

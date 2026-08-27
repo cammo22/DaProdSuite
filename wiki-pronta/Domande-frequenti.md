@@ -159,13 +159,47 @@ volta, e non è una cosa che si vuole far decidere a un telefono in tasca.
 
 Tutti i dettagli in **[Usarla da fuori](Usarla-da-fuori)**.
 
+### Le notifiche dal telefono arrivano tardi, o non arrivano
+
+**Dalla 0.8.0 arrivano quando il lavoro finisce**, e vale la pena sapere cos'era.
+
+Con l'app chiusa, l'unica cosa che guardava se il computer aveva finito era un
+lavoro periodico di Android. Il suo intervallo più corto **è un quarto d'ora**,
+ed è un limite del sistema, non una nostra scelta — e quel quarto d'ora è il
+minimo: col telefono in tasca e lo schermo spento, Android accorpa quei lavori e
+li fa girare quando gli conviene. Per un video pronto in tre minuti voleva dire
+saperlo mezz'ora dopo.
+
+Adesso, quando chiudi l'app con qualcosa in ballo, resta di guardia una
+**sentinella**: chiede al computer ogni venti secondi e si spegne da sola appena
+la fila si svuota. La riconosci dall'avviso silenzioso in fondo alle notifiche,
+che dice a che punto sei — *«è 2° in fila»* — e sparisce quando ha finito.
+
+**Se arrivano ancora tardi**, è il risparmio batteria di Android: mette a
+dormire le app chiuse. Nel menu dei tre puntini dell'app c'è **«Notifiche in
+ritardo?»**, che ti porta dove si toglie. La voce compare solo se serve.
+
+### L'anteprima di un video è un rettangolo nero
+
+**Dalla 0.8.0 non deve più succedere.** Il fotogramma se lo prende DaProdCinema
+appena il video è finito, e i video già in cartella si prendono il loro alla
+prima apertura della Galleria — uno alla volta, senza far tossire la scheda.
+
+Se ne resta uno nero: è un file che il computer non riesce ad aprire (scaricato
+male, o interrotto a metà). Provalo con un lettore video: se non parte nemmeno
+lì, il fotogramma non c'è da nessuna parte.
+
 ### Come segnalo un problema?
 
-Apri una
-[Issue](https://github.com/cammo22/DaProdSuite/issues) sul repository,
-descrivendo cosa è successo. Ogni app ha un tasto **log** in basso a destra
-(o `Ctrl+L`) che mostra le ultime righe del motore: se qualcosa va storto, è
-il primo posto dove guardare, ed è utile incollarle nella segnalazione.
+Ci sono due moduli, e ti fanno le domande giuste:
+
+- [**Qualcosa non funziona**](https://github.com/cammo22/DaProdSuite/issues/new?template=difetto.yml)
+- [**Un'idea, o una cosa che manca**](https://github.com/cammo22/DaProdSuite/issues/new?template=idea.yml)
+  — anche «questa parola non si capisce» è una segnalazione buona.
+
+Ogni app ha un tasto **log** in basso a destra (o `Ctrl+L`) che mostra le ultime
+righe del motore: se qualcosa va storto è il primo posto dove guardare, ed è
+utile incollarle nella segnalazione.
 
 ### Serve sapere come funziona l'intelligenza artificiale per usarla?
 

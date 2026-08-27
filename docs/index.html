@@ -138,6 +138,23 @@
   .carta-app h3{margin:0; font-size:16px; display:flex; align-items:center}
   .carta-app p{margin:0; font-size:13.8px; color:var(--testo-tenue); line-height:1.5}
   .carta-app .modello{margin-top:auto; padding-top:10px; font-size:12px; color:var(--testo-fioco); border-top:1px solid var(--bordo)}
+  .carta-app .arte.segno{
+    display:grid; place-items:center; font-size:40px; color:rgba(255,255,255,.72);
+    background:linear-gradient(140deg, rgba(124,92,255,.35), rgba(61,219,255,.18));
+  }
+  .griglia-telefono{display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:18px; margin-top:28px}
+  .carta-telefono{
+    background:var(--fondo-pannello); border:1px solid var(--bordo);
+    border-radius:var(--raggio); padding:20px;
+  }
+  .carta-telefono .ico{font-size:24px; margin-bottom:10px}
+  .carta-telefono h3{margin:0 0 6px; font-size:15px}
+  .carta-telefono p{margin:0; font-size:13.8px; color:var(--testo-tenue); line-height:1.55}
+  .nota-telefono{
+    margin-top:26px; padding:16px 18px; border-radius:var(--raggio);
+    border:1px solid var(--bordo); background:var(--fondo-alto);
+    font-size:13.5px; color:var(--testo-tenue);
+  }
   .nota-crescita{
     margin-top:28px; padding:16px 20px; border-radius:12px; font-size:13.5px;
     color:var(--testo-tenue); background:rgba(124,92,255,.06); border:1px dashed var(--bordo-vivo);
@@ -315,7 +332,7 @@
 
     <div class="hero-corpo">
       <div class="badge-riga">
-        <span class="badge"><b>0.2.0</b>&nbsp;pubblicata</span>
+        <span class="badge"><b>0.8.0</b>&nbsp;pubblicata</span>
         <span class="badge">100% locale</span>
         <span class="badge">Open source · MIT</span>
         <span class="badge presto">Discord — presto</span>
@@ -324,15 +341,16 @@
       <h1>I migliori modelli AI,<br class="a-capo-largo"> <span class="sfumato">selezionati per te.</span></h1>
 
       <p class="intro">
-        Un programma solo per fare musica, immagini, video e parlare con un
-        avatar. Gira sul tuo computer: niente account, niente chiavi API,
-        codice aperto.
+        Un programma solo per fare musica, immagini, video, voci e parlare con
+        un avatar. Gira sul tuo computer: niente account, niente chiavi API,
+        codice aperto. E dal telefono glielo chiedi anche da fuori casa.
       </p>
 
       <div class="cta-riga">
         <a class="bottone primario" href="https://github.com/cammo22/DaProdSuite/releases/latest">
           ⬇ Scarica per Windows
         </a>
+        <a class="bottone secondario" href="#telefono">📱 E dal telefono</a>
         <a class="bottone secondario" href="#app">Guarda le app</a>
       </div>
       <p class="hero-nota">Un installer, un clic. Si aggiorna da sola. Niente esce dal tuo computer.</p>
@@ -445,6 +463,24 @@
         </div>
       </div>
 
+      <div class="carta-app viva">
+        <div class="arte segno">❞<span class="stato">disponibile</span></div>
+        <div class="corpo">
+          <h3><span class="pallino" style="background:var(--ambra)"></span>DaProdVoce</h3>
+          <p>Scrivi una frase e te la legge ad alta voce, con la voce che scegli tu.</p>
+          <div class="modello">Audio8 TTS 0.1B · 0.6B</div>
+        </div>
+      </div>
+
+      <div class="carta-app viva">
+        <div class="arte segno">◈<span class="stato">disponibile</span></div>
+        <div class="corpo">
+          <h3><span class="pallino" style="background:var(--ciano)"></span>DaProdConnessione</h3>
+          <p>Chi è collegato, cosa sta girando, e la stessa pagina che vedi dal telefono.</p>
+          <div class="modello">Nessun modello: è il cruscotto della suite</div>
+        </div>
+      </div>
+
       <div class="carta-app futura">
         <div class="arte"><img src="media/app/companion.webp" alt=""><span class="stato">in arrivo</span></div>
         <div class="corpo">
@@ -551,6 +587,61 @@
         <p>Ogni scheda dice quanto occupa e si disinstalla da sola. I modelli che servono anche a un'altra app restano.</p>
       </div>
     </div>
+  </div>
+</section>
+
+<section id="telefono">
+  <div class="contenitore">
+    <div class="titolo-sezione">
+      <span class="etichetta">Dal telefono</span>
+      <h2>La stessa suite, in tasca</h2>
+      <p>
+        Inquadri il QR sullo schermo del computer, o batti un codice di otto
+        cifre, e la suite è nel telefono. Il telefono non calcola niente: fa
+        tutto il computer di casa. Sulla wifi di casa, o — con il tunnel
+        acceso — da qualunque parte, senza aprire porte sul router.
+      </p>
+    </div>
+
+    <div class="griglia-telefono">
+      <div class="carta-telefono">
+        <div class="ico">◉</div>
+        <h3>Quattro tasti, e basta</h3>
+        <p>Immagini, video, musica, audio. Scrivi cosa vuoi, scegli con che modello, e il computer lo fa. Il tuo posto in fila si vede.</p>
+      </div>
+      <div class="carta-telefono">
+        <div class="ico">☷</div>
+        <h3>Le tue cose si vedono</h3>
+        <p>I video hanno il loro fotogramma, i brani la loro copertina. Tocchi e si apre a schermo intero: salvi in galleria, o condividi.</p>
+      </div>
+      <div class="carta-telefono">
+        <div class="ico">☺</div>
+        <h3>Più persone, una casa</h3>
+        <p>Ognuno ha il suo collegamento e vede le sue cose. In bacheca c’è quello che gli altri hanno voluto far vedere. E ci si manda dei pensieri.</p>
+      </div>
+      <div class="carta-telefono">
+        <div class="ico">⚡</div>
+        <h3>Col computer spento non cambia</h3>
+        <p>È la stessa app, con quello che si è tenuta mentre la linea c’era. Quello che chiedi parte da solo appena il computer torna — anche ad app chiusa.</p>
+      </div>
+    </div>
+
+    <div class="nota-telefono">
+      <b>Il QR non contiene una password.</b> Contiene un invito che scade in
+      cinque minuti e vale una volta sola: ogni telefono ottiene la sua
+      credenziale, con i suoi permessi, che si può togliere da sola. I motori
+      restano su <code>127.0.0.1</code> e non sono mai raggiungibili da fuori:
+      passa tutto da un gateway che autentica.
+    </div>
+
+    <div class="cta-riga" style="margin-top:26px">
+      <a class="bottone primario" href="https://github.com/cammo22/DaProdSuite/releases/latest">⬇ Scarica l’app Android</a>
+      <a class="bottone secondario" href="https://github.com/cammo22/DaProdSuite/blob/main/docs/ACCESSO-REMOTO.md">Come funziona sotto</a>
+    </div>
+    <p class="hero-nota" style="margin-top:12px">
+      Non sta su nessun negozio: si installa a mano una volta, e da lì in poi si
+      aggiorna da sola. Serve Android 8 o più recente.
+    </p>
   </div>
 </section>
 
@@ -680,6 +771,30 @@
       </details>
 
       <details>
+        <summary>L’app del telefono è su Google Play?</summary>
+        <p class="risposta">
+          No, e per adesso non è in programma: sta nella
+          <a href="https://github.com/cammo22/DaProdSuite/releases/latest">Release</a>
+          come file <code>.apk</code>, si installa a mano una volta e da lì in
+          poi si aggiorna da sola. Android chiederà il permesso di installare
+          un’app che non viene dal negozio: è normale, e va dato una volta
+          sola. L’app è un vetro sul tuo computer: senza quello, da sola non
+          fa niente.
+        </p>
+      </details>
+
+      <details>
+        <summary>Il computer deve stare acceso?</summary>
+        <p class="risposta">
+          Per generare sì: è lui che fa il lavoro, il telefono non calcola
+          niente. Ma l’app funziona lo stesso a computer spento: vedi quello
+          che il telefono si è tenuto, e quello che chiedi si mette in coda e
+          parte da solo appena il computer torna — anche se nel frattempo
+          l’app l’hai chiusa.
+        </p>
+      </details>
+
+      <details>
         <summary>Perché solo Windows?</summary>
         <p class="risposta">
           È la piattaforma su cui il progetto è nato e dove viene misurato.
@@ -721,6 +836,7 @@
     </div>
     <div class="link-riga">
       <a href="https://github.com/cammo22/DaProdSuite">Codice</a>
+      <a href="#telefono">Dal telefono</a>
       <a href="#domande">Domande</a>
       <a href="https://github.com/cammo22/DaProdSuite/releases">Release</a>
       <a href="https://github.com/cammo22/DaProdSuite/blob/main/CHANGELOG.md">Changelog</a>
@@ -735,30 +851,50 @@
   // I tempi sono quelli misurati sulla macchina di riferimento, una RTX 4060
   // da 8 GB. Sopra gli 8 GB non abbiamo misure nostre e non ce le inventiamo:
   // diciamo cosa cambia, non quanto.
-  const APP = ["DaProdVisualizer", "DaProdMusica", "DaProdFoto", "DaProdDream", "DaProdIoDigitale"];
+  // ⚠ Le app erano cinque e la suite ne ha nove: mancavano DaProdCinema — cioè
+  // proprio quella che sugli 8 GB stringe di più, e quindi la prima che uno
+  // vuole vedere in questo elenco — e DaProdVoce. Se un giorno se ne aggiunge
+  // una, va aggiunta anche una voce a ognuna delle tre righe qui sotto.
+  const APP = [
+    "DaProdVisualizer",
+    "DaProdMusica",
+    "DaProdFoto",
+    "DaProdDream",
+    "DaProdIoDigitale",
+    "DaProdCinema",
+    "DaProdVoce",
+  ];
 
   const LIVELLI = {
     "8": {
       titolo: "Ci gira tutto. È la scheda su cui proviamo.",
       riga: "Ogni app della suite è stata scritta e misurata su 8 GB. Un modello pesante alla volta: quando ne apri un altro, la suite spegne il precedente.",
-      verdetti: ["si", "si", "si", "si", "si"],
-      note: ["", "", "il modello grande (FLUX.2 Klein 9B) sta al limite", "", ""],
+      verdetti: ["si", "si", "si", "si", "si", "forse", "si"],
+      note: [
+        "",
+        "",
+        "il modello grande (FLUX.2 Klein 9B) sta al limite",
+        "",
+        "",
+        "una clip da 5 secondi sono minuti, non secondi",
+        "",
+      ],
       misure: [["~20 s", "un'immagine"], ["~15 min", "un brano da 2 minuti"], ["1 alla volta", "modelli pesanti in memoria"]],
       misurato: true,
     },
     "12": {
       titolo: "Stessa roba, con più margine.",
       riga: "I modelli più pesanti smettono di stare al limite, e le generazioni lunghe hanno spazio di manovra. Le app sono le stesse: cambia quanto stringi.",
-      verdetti: ["si", "si", "si", "si", "si"],
-      note: ["", "", "il modello grande ci sta comodo", "", ""],
+      verdetti: ["si", "si", "si", "si", "si", "si", "si"],
+      note: ["", "", "il modello grande ci sta comodo", "", "", "", ""],
       misure: [["più margine", "sui modelli grandi"], ["stesse app", "nessuna esclusa"], ["1 alla volta", "resta la regola"]],
       misurato: false,
     },
     "16": {
       titolo: "Masterrace. Ti avanza roba.",
       riga: "Qui puoi tenere un LLM caricato in LM Studio mentre generi, senza che i due si contendano la scheda — che sugli 8 GB è la cosa che rallenta di più. La suite oggi non sfrutta ancora tutta questa memoria da sola: ci stiamo lavorando.",
-      verdetti: ["si", "si", "si", "si", "si"],
-      note: ["", "", "", "", ""],
+      verdetti: ["si", "si", "si", "si", "si", "si", "si"],
+      note: ["", "", "", "", "", "", ""],
       misure: [["LLM + generazione", "insieme, senza code"], ["tutto", "nessun compromesso"], ["margine", "per quello che arriva"]],
       misurato: false,
     },

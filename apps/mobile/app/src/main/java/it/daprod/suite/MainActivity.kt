@@ -4,11 +4,14 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.JavascriptInterface
+import android.webkit.ValueCallback
+import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebView
@@ -150,6 +153,47 @@ class MainActivity : AppCompatActivity() {
     private val chiediNotifiche =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
 
+    /* --------------------------------------------------- scegliere un file */
+
+    /**
+     * Chi sta aspettando il file che l'utente sceglie.
+     *
+     * ⚠ **Il difetto del 27 agosto 2026: «il caricamento della foto profilo non
+     * funziona».** E non funzionava niente che passasse da un `<input
+     * type="file">` — la foto del profilo, e anche il caricare una cosa in
+     * bacheca. Toccavi «Metti una foto», si apriva la finestra dei file… no:
+     * **non succedeva niente**. Nessun errore, nessun messaggio.
+     *
+     * La causa è una riga che non c'era. Una WebView, da sola, **non sa aprire
+     * il selettore dei file**: quando la pagina ne chiede uno, Android chiama
+     * `WebChromeClient.onShowFileChooser`, e se un `WebChromeClient` non c'è —
+     * e qui non c'era — la richiesta viene lasciata cadere in silenzio. È
+     * scritto nella documentazione di Android, e non si vede in nessun log.
+     *
+     * Quindi adesso c'è, e fa le tre cose che vanno fatte: apre il selettore
+     * che la pagina ha chiesto, riporta indietro quello che è stato scelto, e —
+     * la parte che si dimentica — **risponde comunque anche quando si annulla**.
+     * Un `ValueCallback` a cui non si risponde mai lascia quell'`<input>` morto
+     * per sempre: al secondo tentativo il tasto non farebbe più niente,
+     * stavolta davvero.
+     */
+    private var attesaFile: ValueCallback<Array<Uri>>? = null
+
+    private val scegliUnFile =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { esito ->
+            val chiAspetta = attesaFile ?: return@registerForActivityResult
+            attesaFile = null
+            chiAspetta.onReceiveValue(
+                WebChromeClient.FileChooserParams.parseResult(esito.resultCode, esito.data),
+            )
+        }
+
+    /** Dice alla pagina che di file non ne arriva nessuno, e libera l'input. */
+    private fun nessunFileScelto() {
+        attesaFile?.onReceiveValue(null)
+        attesaFile = null
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -158,6 +202,7 @@ class MainActivity : AppCompatActivity() {
         codaOffline = CodaOffline(this)
 
         Notifiche.creaCanale(this)
+        Sentinella.creaCanale(this)
         SyncWorker.programma(this)
         if (Build.VERSION.SDK_INT >= 33 &&
             ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) !=
@@ -224,10 +269,38 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        // Guarda l'app adesso: la sentinella non serve più, e la sua notifica
+        // silenziosa nemmeno. Se serve, riparte chiudendo.
+        Sentinella.aRiposo(this)
         // Tornare sull'app è il momento in cui si vuole sapere com'è andata: se
         // eravamo senza computer si riprova, e se stavolta risponde la pagina
         // torna quella vera senza che nessuno prema niente.
         if (dove == Dove.SUITE && stiamoOffline) apriSuite()
+    }
+
+    /**
+     * L'app va in secondo piano: **da qui in poi guarda la sentinella.**
+     *
+     * ⚠ La cura del difetto del 27 agosto 2026 — «le notifiche quando chiudo
+     * l'app a volte non arrivano o arrivano in ritardo». Fino alla 0.7.8, da
+     * questo momento l'unica cosa sveglia era [SyncWorker], che passa ogni
+     * quarto d'ora **quando Android glielo lascia fare**: dentro Doze diventa
+     * mezz'ora, o un'ora. Un video pronto in tre minuti si sapeva molto dopo.
+     *
+     * Si parte da `onStop` e non da `onPause`: `onPause` scatta anche quando ci
+     * si mette davanti una finestrella — il selettore dei file, il permesso
+     * delle notifiche — e mettere di guardia una sentinella perché l'utente sta
+     * scegliendo una foto sarebbe assurdo.
+     *
+     * Solo da dentro la suite: chi è fermo sulla scelta della persona non ha
+     * chiesto niente a nessuno, e non c'è niente da aspettare.
+     *
+     * Se non c'è davvero niente in ballo, la sentinella se ne accorge da sola e
+     * si spegne: la domanda vuole la rete, e questo non è il momento di farla.
+     */
+    override fun onStop() {
+        super.onStop()
+        if (dove == Dove.SUITE && chi != null) Sentinella.diGuardia(this)
     }
 
     /* ------------------------------------------------------ le schermate */
@@ -975,6 +1048,38 @@ class MainActivity : AppCompatActivity() {
             "DaProdApp",
         )
 
+        /**
+         * Il selettore dei file, che senza questo non si apre.
+         *
+         * Vedi [attesaFile] per il perché per esteso. In due righe: la foto del
+         * profilo e il caricare in bacheca passano da un `<input type="file">`
+         * della pagina, e una WebView senza `WebChromeClient` quelle richieste
+         * le butta via senza dirlo a nessuno.
+         */
+        w.webChromeClient = object : WebChromeClient() {
+            override fun onShowFileChooser(
+                view: WebView?,
+                chiAspetta: ValueCallback<Array<Uri>>?,
+                comeLoVuole: FileChooserParams?,
+            ): Boolean {
+                // Se ne era rimasto uno appeso — si tocca due volte, capita —
+                // gli si risponde adesso: quell'input altrimenti resta morto.
+                nessunFileScelto()
+                val intento = comeLoVuole?.createIntent() ?: return false
+                attesaFile = chiAspetta
+                return try {
+                    scegliUnFile.launch(intento)
+                    true
+                } catch (_: Exception) {
+                    // Nessuna app che sappia scegliere file: si dice di no alla
+                    // pagina invece di lasciarla ad aspettare.
+                    attesaFile = null
+                    avvisa("Su questo telefono non trovo un'app per scegliere i file.")
+                    false
+                }
+            }
+        }
+
         w.webViewClient = object : WebViewClient() {
             /**
              * Fuori dalla suite non si va.
@@ -1051,6 +1156,9 @@ class MainActivity : AppCompatActivity() {
         if (Profili.tutti(this).size > 1) menu.menu.add(0, 1, 0, R.string.menu_cambia)
         menu.menu.add(0, 2, 1, R.string.aggiungi_persona)
         menu.menu.add(0, 3, 2, R.string.menu_aggiorna)
+        // Solo se il risparmio è ancora acceso: una voce di menu che non fa
+        // niente è peggio di una voce che non c'è.
+        if (!senzaRisparmioBatteria()) menu.menu.add(0, 4, 3, R.string.menu_batteria)
 
         menu.setOnMenuItemClickListener { voce ->
             when (voce.itemId) {
@@ -1065,10 +1173,58 @@ class MainActivity : AppCompatActivity() {
                 }
                 2 -> vaiAdEntrare()
                 3 -> cercaAggiornamento(dilloSempre = true)
+                4 -> spiegaLaBatteria()
             }
             true
         }
         menu.show()
+    }
+
+    /* ---------------------------------------------------------- batteria */
+
+    /**
+     * Vero se Android ha smesso di mettere a dormire questa app.
+     *
+     * È l'altra metà del ritardo delle notifiche, e non si può sistemare dal
+     * codice: Doze è una scelta del telefono, e toglierne un'app è una scelta
+     * di chi lo usa. Quello che si può fare è **dirglielo, una volta, con
+     * parole sue**, e portarlo dove si preme — invece di lasciarlo a pensare
+     * che l'app sia rotta.
+     */
+    private fun senzaRisparmioBatteria(): Boolean = try {
+        val gestore = getSystemService(android.os.PowerManager::class.java)
+        gestore?.isIgnoringBatteryOptimizations(packageName) == true
+    } catch (_: Exception) {
+        // Un telefono che non sa rispondere: si fa finta di sì e non si
+        // propone niente. Meglio non chiedere che chiedere per sbaglio.
+        true
+    }
+
+    private fun spiegaLaBatteria() {
+        AlertDialog.Builder(this)
+            .setTitle(R.string.batteria_titolo)
+            .setMessage(R.string.batteria_spiega)
+            .setPositiveButton(R.string.batteria_vai) { _, _ ->
+                try {
+                    /**
+                     * L'elenco delle app, non la richiesta diretta.
+                     *
+                     * `ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` mostrerebbe
+                     * un sì/no in un colpo solo, e vorrebbe un permesso che
+                     * esiste apposta per essere guardato con sospetto. Questa
+                     * apre la stessa schermata delle impostazioni: un passaggio
+                     * in più, e nessun permesso da chiedere per una cosa che
+                     * deve restare una scelta di chi usa il telefono.
+                     */
+                    startActivity(
+                        Intent(android.provider.Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS),
+                    )
+                } catch (_: Exception) {
+                    avvisa("Su questo telefono quella schermata non si apre da qui.")
+                }
+            }
+            .setNegativeButton(R.string.batteria_no, null)
+            .show()
     }
 
     /* ------------------------------------------------------------- la fila */
@@ -1387,5 +1543,8 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         polling?.cancel()
+        // Un `ValueCallback` che non riceve mai risposta tiene bloccato il suo
+        // `<input>`: se l'activity muore con una scelta a metà, si chiude qui.
+        nessunFileScelto()
     }
 }

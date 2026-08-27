@@ -1,0 +1,11 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Le domande frequenti
+    url: https://cammo22.github.io/DaProdSuite/#domande
+    about: "«I miei file escono dal computer?», «ho meno di 8 GB», «serve un LLM?» — le risposte sono già lì."
+  - name: Come si usa da fuori casa
+    url: https://github.com/cammo22/DaProdSuite/blob/main/docs/ACCESSO-REMOTO.md
+    about: QR, gateway, tunnel, app Android: come funziona sotto e cosa fare se non si collega.
+  - name: Cosa è cambiato
+    url: https://github.com/cammo22/DaProdSuite/blob/main/CHANGELOG.md
+    about: Se una cosa ha smesso di funzionare dopo un aggiornamento, qui c'è scritto cosa è stato toccato.
