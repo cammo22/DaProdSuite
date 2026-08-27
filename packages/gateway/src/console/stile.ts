@@ -68,7 +68,10 @@ export const STILE = `  :root {
   .chi {
     font-size: 12.5px; color: var(--txt); background: var(--panel2);
     border: 1px solid var(--line2); border-radius: 99px; padding: 4px 6px 4px 4px;
-    cursor: pointer; display: flex; align-items: center; gap: 7px; max-width: 46vw;
+    cursor: pointer; display: flex; align-items: center; gap: 7px;
+    /* 46vw su un telefono sono 170 px; su un monitor da 27 pollici sono metà
+       schermo per scriverci un nome. Vince il più stretto dei due. */
+    max-width: min(46vw, 260px);
   }
   .chi .faccina {
     width: 24px; height: 24px; border-radius: 99px; object-fit: cover;
@@ -232,6 +235,44 @@ export const STILE = `  :root {
   }
   ul.voci li:first-child { border-top: 0; }
   .cresce { flex: 1 1 200px; min-width: 0; }
+
+  /* ------------------------------------------- una riga con dentro qualcuno
+     ⚠ Il difetto del 27 agosto 2026: «nella tab delle persone il pulsante per
+     inviare un pensiero è sotto». Una riga era cinque figli in fila dentro un
+     flex che va a capo — faccia, nome, due tastini, la barra larga tutta la
+     riga, un terzo tastino — e con un nome lungo si sfaldava: i tasti su tre
+     righe diverse, con la barra a spezzarli in mezzo.
+
+     Adesso sono due blocchi: **chi è** e **cosa gli si può fare**. Ognuno va a
+     capo intero, mai un pezzo per volta.
+
+     Sotto i 560 px stanno uno sopra l'altro e i tasti partono da sinistra,
+     allineati con il nome; sopra, i tasti si stringono a destra e la riga è
+     una. Nessuno dei due è "la versione ridotta" dell'altro: sono le due forme
+     giuste per due larghezze. */
+  ul.voci li .chi-e {
+    display: flex; gap: 11px; align-items: center;
+    flex: 1 1 240px; min-width: 0;
+  }
+  ul.voci li .azioni {
+    display: flex; gap: 7px; flex-wrap: wrap; align-items: center;
+    /* Non si allargano per riempire il vuoto (flex 0, non 1):
+       vuoto — un tasto largo come mezza riga sembra la cosa principale, e non
+       lo è. */
+    flex: 0 1 auto;
+  }
+  ul.voci li .azioni:empty { display: none; }
+  @media (min-width: 560px) {
+    /* I tasti in mezzo all'altezza (align-self center): la riga è alta quanto il nome, che può essere due
+       righe di testo; i tasti stanno in mezzo a quell'altezza invece che
+       incollati in cima. */
+    ul.voci li .azioni { margin-left: auto; justify-content: flex-end; align-self: center; }
+  }
+  @media (max-width: 559px) {
+    /* Allineati con il nome, non con la faccia: la colonna di lettura è
+       quella. 34 px di faccia + 11 di spazio. */
+    ul.voci li .azioni { width: 100%; padding-left: 45px; }
+  }
   .titolo { font-weight: 600; overflow-wrap: anywhere; }
   .dettaglio { color: var(--dim); font-size: 12.5px; overflow-wrap: anywhere; margin-top: 2px; }
   .pillola {
@@ -514,7 +555,10 @@ export const STILE = `  :root {
 
   /* Dove si lascia cadere un file: la riga di una persona collegata. */
   ul.voci li.cade { border-radius: 12px; outline: 2px dashed var(--accent); outline-offset: 3px; }
-  .barra-invio { width: 100%; height: 5px; border-radius: 99px; background: var(--line2); margin-top: 9px; }
+  /* La barra dell'invio: sotto a tutto, larga quanto la riga. Sta in fondo
+     perché dice a che punto è un file che parte — non è un tasto, e in mezzo
+     ai tasti li spezzava in due gruppi. */
+  .barra-invio { flex: 1 0 100%; height: 5px; border-radius: 99px; background: var(--line2); margin-top: 9px; }
   .barra-invio i { display: block; height: 100%; border-radius: 99px; background: var(--accent); width: 0; }
 
   /* --------------------------------------------------------- il QR */

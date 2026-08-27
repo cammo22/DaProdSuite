@@ -205,6 +205,72 @@ class GatewayClient(
         }
     }
 
+    /**
+     * Cosa sta aspettando questa persona, adesso, dal computer.
+     *
+     * **Serve a una cosa sola, ed e' la piu' importante della 0.8.0**: sapere
+     * se vale la pena restare svegli. La [it.daprod.suite.Sentinella] chiede
+     * qui, e se non c'e' niente in ballo si spegne invece di tenere il telefono
+     * a bussare per mezz'ora.
+     *
+     * Torna null anche quando il computer non risponde: non e' una bugia — se
+     * non risponde, non c'e' niente che possa finire mentre stiamo guardando.
+     */
+    suspend fun cosaAspetto(mioNome: String): Attesa? = withContext(Dispatchers.IO) {
+        try {
+            val req = conToken().url(a("/macchina")).build()
+            condiviso.newCall(req).execute().use { res ->
+                if (!res.isSuccessful) return@withContext null
+                val stato = JSONObject(res.body?.string().orEmpty())
+
+                val adesso = stato.optJSONObject("adesso")
+                val mioInCorso = adesso != null && adesso.optString("chi") == mioNome
+
+                var inFila = 0
+                var primoPosto = 0
+                var primoChe = ""
+                val fila = stato.optJSONArray("fila")
+                if (fila != null) {
+                    for (i in 0 until fila.length()) {
+                        val v = fila.optJSONObject(i) ?: continue
+                        if (!v.optBoolean("tuo")) continue
+                        inFila += 1
+                        val posto = v.optInt("posto", 0)
+                        if (inFila == 1 || posto < primoPosto) {
+                            primoPosto = posto
+                            primoChe = v.optString("che")
+                        }
+                    }
+                }
+
+                // Le trattenute sono ferme per un tetto, ma partiranno: chi le
+                // ha chieste sta aspettando quelle come le altre.
+                var trattenute = 0
+                val ferme = stato.optJSONArray("trattenute")
+                if (ferme != null) {
+                    for (i in 0 until ferme.length()) {
+                        if (ferme.optJSONObject(i)?.optBoolean("tuo") == true) trattenute += 1
+                    }
+                }
+
+                val quante = inFila + trattenute + (if (mioInCorso) 1 else 0)
+                if (quante == 0) return@withContext null
+
+                val riga = when {
+                    mioInCorso -> "Il computer sta facendo «${adesso!!.optString("che")}»."
+                    primoPosto > 0 -> "«$primoChe» aspetta: e' $primoPosto° in fila."
+                    else -> "Il computer ha $quante cose tue da fare."
+                }
+                Attesa(quante, riga)
+            }
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    /** Quante cose di questa persona il computer deve ancora finire, e come dirlo. */
+    data class Attesa(val quante: Int, val riga: String)
+
     /** Le novità che il PC ci ha lasciato: id e testo da mostrare. */
     suspend fun notificheNonLette(): List<Pair<String, String>> = withContext(Dispatchers.IO) {
         val req = conToken().url(a("/notifiche")).build()

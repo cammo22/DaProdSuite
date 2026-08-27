@@ -107,12 +107,58 @@ class Libreria extends EventEmitter {
     );
   }
 
+  /**
+   * Come si chiamava prima, e come si chiama adesso.
+   *
+   * ⚠ **La causa vera delle anteprime dei video che non arrivavano mai.** Vale
+   * la pena scriverla per esteso, perché non si vedeva da nessuna parte.
+   *
+   * Un video chiesto dal telefono fa questo giro: il motore lo scrive come
+   * `clip_00042_.mp4`; DaProdCinema, appena finito, comincia a fargli la
+   * copertina — scarica il file, lo decodifica, ne prende un fotogramma:
+   * qualche secondo. Nel frattempo la suite gli dà il nome di quello che era
+   * stato chiesto (`esecuzione.ts`, che chiama `intitola`), e il file diventa
+   * `una barca che entra in porto.mp4`. Poi la copertina arriva, chiede di
+   * essere messa accanto a `clip_00042_.mp4`, e **quel file non esiste più**:
+   * `trova` rispondeva «non c'è», `impostaCopertina` tornava `false`, e non se
+   * ne accorgeva nessuno. Quel video restava senza anteprima per sempre.
+   *
+   * E non era un caso raro: era **ogni** video chiesto da fuori.
+   *
+   * La cura è dire come si chiama adesso invece di dire che non c'è. Un
+   * elemento rinominato è lo stesso elemento: chi ha in mano il nome di prima
+   * ha in mano quella cosa lì, e ha ragione lui.
+   */
+  private diventato = new Map<string, string>();
+
+  /** Quante rinomine si ricordano: si consultano entro secondi, ne bastano poche. */
+  private static readonly RINOMINE_RICORDATE = 200;
+
+  private ricordaRinomina(prima: string, dopo: string): void {
+    // Due rinomine di fila sono normali — il nome del motore, poi il titolo —
+    // e chi punta al primo dei tre nomi deve arrivare fino all'ultimo.
+    for (const [da, a] of this.diventato) {
+      if (a === prima) this.diventato.set(da, dopo);
+    }
+    this.diventato.set(prima, dopo);
+    while (this.diventato.size > Libreria.RINOMINE_RICORDATE) {
+      const piuVecchia = this.diventato.keys().next().value;
+      if (piuVecchia === undefined) break;
+      this.diventato.delete(piuVecchia);
+    }
+  }
+
   trova(id: string): ElementoLibreria | undefined {
     const daCache = this.elenco().find((e) => e.id === id);
     if (daCache) return daCache;
     // Un file appena scritto può essere più giovane della cache: un'app che
     // rinomina il brano un istante dopo averlo generato lo cercherebbe invano.
-    return this.elenco(true).find((e) => e.id === id);
+    const fresco = this.elenco(true).find((e) => e.id === id);
+    if (fresco) return fresco;
+
+    // E se con quel nome non c'è più: forse è solo diventato un altro nome.
+    const adesso = this.diventato.get(id);
+    return adesso ? this.elenco().find((e) => e.id === adesso) : undefined;
   }
 
   /** Da chiamare quando un'app scrive un risultato, per aggiornare subito l'indice. */
@@ -172,8 +218,13 @@ class Libreria extends EventEmitter {
       if (existsSync(prima)) renameSync(prima, dopo);
     }
 
+    const nuovoId = relative(OUTPUT_DIR, destinazione).replace(/\\/g, "/");
+    // Chi aveva in mano il nome di prima deve poterci arrivare lo stesso:
+    // vedi `diventato`, che e' la cura del difetto delle anteprime.
+    if (nuovoId !== elemento.id) this.ricordaRinomina(elemento.id, nuovoId);
+
     this.segnalaNovita();
-    return this.trova(relative(OUTPUT_DIR, destinazione).replace(/\\/g, "/")) ?? null;
+    return this.trova(nuovoId) ?? null;
   }
 
   /**

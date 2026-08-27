@@ -93,7 +93,10 @@ LA DESCRIZIONE (campo "testo"):
 - Se ti danno una lingua per il canto, tienila.
 
 IL TESTO DA CANTARE (campo "parole"):
-- In italiano, a meno che l'idea non sia scritta in un'altra lingua: allora in quella.
+- In ITALIANO CORRENTE, a meno che l'idea non sia scritta in un'altra lingua: allora in quella.
+- NIENTE DIALETTO: né napoletano, né romano, né siciliano, nemmeno nel ritornello.
+  Il genere può essere napoletano, la lingua no. Si scrive "amore mio, non te ne
+  andare", mai "ammore mio, nun te ne jì".
 - Con i tag fra parentesi quadre a dire dove va cosa: [Verse], [Chorus], [Bridge].
 - Due strofe e un ritornello che torna. Corto: si canta, non si legge.
 - Righe brevi, parole che si possono cantare, niente frasi da manuale.

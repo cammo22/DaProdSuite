@@ -404,11 +404,24 @@ async function esegui(richiesta: DaEseguire): Promise<void> {
    */
   await pausa(2000);
 
+  /**
+   * Come si chiama la cosa che è appena uscita.
+   *
+   * Di regola: **quello che è stato chiesto**, cioè il campo principale
+   * dell'azione — il prompt di un'immagine, la scena di un video.
+   *
+   * Per un brano no, e dalla 0.8.0 c'è il campo giusto: il campo principale di
+   * `genera.brano` sono **i generi** («neapolitan neomelodic pop, melodic
+   * trap»), che come nome di una canzone non dice niente a nessuno. Se chi ha
+   * chiesto le ha dato un nome, si chiama così.
+   */
+  const comeSiChiama = (richiesta.opzioni["titolo"] ?? "").trim() || richiesta.testo;
+
   let battezzato = uscito;
   try {
     battezzato =
       (await libreria.intitola(uscito.id, {
-        titolo: richiesta.testo,
+        titolo: comeSiChiama,
         chi: richiesta.daId,
         chiNome: richiesta.da,
         extra: { richiesta: richiesta.id, azione: richiesta.azione },

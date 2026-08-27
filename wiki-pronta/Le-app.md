@@ -126,6 +126,23 @@ piccolo, non un modello veloce. In compenso è l'unica scheda che **non pretende
 la scheda video per sé**: si apre accanto alle altre invece di spegnerle, e dopo
 cinque minuti che non la usi lascia la memoria da sola.
 
+## 🔌 DaProdConnessione — *disponibile*
+
+La scheda che dice se tutto funziona, e da cui si governa il resto: chi è
+collegato, cosa sta girando adesso, chi aspetta in fila, la rete di casa e la
+strada da fuori.
+
+Non ha una pagina sua: apre **la stessa identica pagina** che vedono il browser
+di un portatile e l'app del telefono. Non è pigrizia — è la cura di un difetto
+vero: prima quella roba stava in due posti che non dicevano mai la stessa cosa.
+Una verità sola non si ottiene scrivendone una terza, si ottiene togliendone
+una.
+
+Sul computer mostra qualcosa in più: la **pausa** («sto usando il computer») e i
+**limiti della fila**. Quelli si toccano solo da lì — nemmeno da un telefono con
+i permessi da admin: un telefono decide sulle richieste degli altri, non sui
+limiti a cui è sottoposto lui.
+
 ## 🤖 DaProdCompanion — *in arrivo*
 
 Un compagno sul desktop che ti ascolta e si ricorda di te nel tempo, con un

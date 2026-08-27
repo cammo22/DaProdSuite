@@ -77,8 +77,18 @@ Si parte da **0.0.1**. Il numero sale **solo** quando si pubblica: le versioni
 provate sul PC e mai pubblicate non consumano un numero.
 
 - `0.0.x` — si aggiusta o si aggiunge qualcosa di piccolo
-- `0.x.0` — entra un'app nuova nella suite, o cambia come funziona qualcosa
+- `0.x.0` — entra un'app nuova nella suite, o **cambia lo stato della suite**
 - `x.0.0` — la suite diventa un'altra cosa
+
+**Il numero di mezzo dice *cosa* è cambiato, non quanto lavoro c'è dentro.**
+Parole di Cammo, il 22 agosto 2026: la 0.7.2 ha aggiunto sei funzioni ed è
+rimasta una 0.7 perché non ha portato una scheda nuova.
+
+Ma «cambia come funziona qualcosa» comprende anche il caso della **0.8.0**, che
+non ha aggiunto niente: ha chiuso sette difetti che si vedevano usandola tutti i
+giorni. Non è una 0.7.9 perché non è un'altra rifinitura in fila alle altre — è
+il punto in cui la suite ha smesso di avere una lista di cose che non vanno.
+Quello è un cambio di stato, e vale il numero.
 
 Il tag `v0.0.2` deve avere lo stesso numero di `package.json`. La CI parte dal tag.
 

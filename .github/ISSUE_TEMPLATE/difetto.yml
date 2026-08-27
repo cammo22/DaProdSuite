@@ -1,0 +1,80 @@
+name: Qualcosa non funziona
+description: Un tasto che non fa niente, un errore, una cosa che si comporta male
+labels: ["difetto"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Grazie per il tempo che ci stai mettendo. Più preciso sei, prima si trova.
+
+        **Prima di scrivere:** ogni app ha un tasto **log** in basso a destra
+        (o `Ctrl+L`) che mostra le ultime righe del motore. Quasi sempre la
+        risposta è lì, e incollarne un pezzo qui sotto fa risparmiare un giro
+        di domande.
+
+  - type: input
+    id: versione
+    attributes:
+      label: Che versione
+      description: Sta nelle impostazioni, in fondo, o nel nome dell'installer.
+      placeholder: "0.8.0"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: dove
+    attributes:
+      label: Dove succede
+      options:
+        - Sul computer, nella suite
+        - Sul telefono, nell'app Android
+        - Nella pagina aperta dal browser di un altro computer
+        - Non lo so / tutte e due
+    validations:
+      required: true
+
+  - type: dropdown
+    id: scheda
+    attributes:
+      label: Quale scheda
+      options:
+        - DaProdVisualizer
+        - DaProdMusica
+        - DaProdFoto
+        - DaProdDream
+        - DaProdIoDigitale
+        - DaProdCinema
+        - DaProdVoce
+        - DaProdConnessione
+        - L'installazione, o la suite in generale
+        - Non riguarda una scheda sola
+    validations:
+      required: true
+
+  - type: textarea
+    id: cosa
+    attributes:
+      label: Cosa succede
+      description: Cosa hai fatto, cosa ti aspettavi, e cosa è successo invece.
+      placeholder: |
+        Ho premuto Genera in DaProdMusica dopo aver scelto uno stile.
+        Mi aspettavo che partisse.
+        È tornato indietro con scritto «"stile" può essere solo: .»
+    validations:
+      required: true
+
+  - type: textarea
+    id: log
+    attributes:
+      label: Le righe del log
+      description: Il tasto **log** in basso a destra, o `%LOCALAPPDATA%\DaProdSuite\logs\`. Incolla le ultime venti righe.
+      render: text
+
+  - type: textarea
+    id: macchina
+    attributes:
+      label: Che computer
+      description: Scheda video e quanta VRAM, sistema, e — se riguarda il telefono — che Android.
+      placeholder: |
+        RTX 4060 8 GB, Windows 11
+        Telefono: Android 14

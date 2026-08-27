@@ -496,7 +496,9 @@ export const COPIONE_IMPOSTAZIONI = `
     var carta = apriFoglio("Le persone");
     var spiega = document.createElement("p");
     spiega.className = "sotto";
-    spiega.textContent = "Trascina un file sul nome di una persona per mandarglielo \\u2014 o usa il tasto.";
+    spiega.textContent =
+      "Chi è collegato a questo computer. Trascina un file su una persona per mandarglielo, "
+      + "o usa il tasto: gli arriva come un pensiero.";
     carta.append(spiega);
 
     var elenco = document.createElement("ul");
@@ -525,6 +527,25 @@ export const COPIONE_IMPOSTAZIONI = `
     }
   }
 
+  /**
+   * Una persona nell'elenco: **la faccia e il nome sopra, i tasti sotto.**
+   *
+   * ⚠ Il difetto del 27 agosto 2026, detto dal computer: «nella tab delle
+   * persone il pulsante per inviare un pensiero è sotto». Ed era vero, ma non
+   * era un tasto scritto nel posto sbagliato: erano **cinque cose messe in
+   * fila** dentro una riga che va a capo — la faccia, il nome che cresce, due o
+   * tre tastini, e in mezzo a loro la barra dell'invio, larga tutta la riga.
+   * Bastava che il nome fosse lungo e i tastini si sparpagliavano su due o tre
+   * righe, ognuno a un'altezza diversa, con la barra a spezzarli in mezzo.
+   *
+   * Adesso sono **due blocchi con un mestiere ciascuno**: chi è (faccia, nome,
+   * cosa può fare) e cosa gli si può fare (i tastini, tutti insieme, in fondo).
+   * La barra dell'invio sta sotto a tutti e due, che è dove serve: dice a che
+   * punto è un file che sta partendo, non è un tasto in mezzo agli altri.
+   *
+   * Su uno schermo largo i due blocchi stanno affiancati; sotto i 560 px vanno
+   * uno sopra l'altro — vedi «ul.voci li .azioni» nel foglio di stile.
+   */
   function rigaDispositivo(d) {
     var li = document.createElement("li");
     var faccia = document.createElement("span");
@@ -549,7 +570,20 @@ export const COPIONE_IMPOSTAZIONI = `
       (d.ruolo === "admin" ? "Admin \\u2014 fa partire quello che chiede" : "Utente \\u2014 manda richieste") +
       " \\u00b7 visto " + quando(d.ultimoAccesso);
     corpo.append(t, s);
-    li.append(faccia, corpo);
+
+    // Chi è: la faccia e il nome, sempre insieme. Senza questo involucro la
+    // faccia e il nome erano due elementi indipendenti della riga, e andavano
+    // a capo separatamente — una faccia sola su una riga, il nome sull'altra.
+    var chiE = document.createElement("div");
+    chiE.className = "chi-e";
+    chiE.append(faccia, corpo);
+    li.append(chiE);
+
+    // Cosa gli si può fare: i tastini stanno **qui dentro**, tutti, e questo
+    // riquadro va a capo intero invece di sfaldarsi un tasto per volta.
+    var azioni = document.createElement("div");
+    azioni.className = "azioni";
+    li.append(azioni);
 
     if (puoiDecidere) {
       if (d.id !== ioId) {
@@ -570,7 +604,7 @@ export const COPIONE_IMPOSTAZIONI = `
             .then(disegnaDispositivi)
             .catch(function (e) { alert(e.message); });
         });
-        li.append(permesso);
+        azioni.append(permesso);
       }
 
       var via = document.createElement("button");
@@ -583,16 +617,7 @@ export const COPIONE_IMPOSTAZIONI = `
           .then(disegnaDispositivi)
           .catch(function (e) { alert(e.message); });
       });
-      li.append(via);
-
-      // **Trascinaci sopra un file e glielo mandi.** Chiesto così, ed è il
-      // gesto più corto che ci sia: niente moduli, niente «scegli file».
-      var barra = document.createElement("div");
-      barra.className = "barra-invio";
-      barra.hidden = true;
-      var dentro = document.createElement("i");
-      barra.append(dentro);
-      li.append(barra);
+      azioni.append(via);
 
       // Su un telefono non si trascina niente: con l'input nascosto il gesto
       // c'è su tutti e due, e sul computer restano tutti e due.
@@ -605,10 +630,24 @@ export const COPIONE_IMPOSTAZIONI = `
         scegli.value = "";
       });
       var mandaUno = document.createElement("button");
-      mandaUno.className = "mini";
-      mandaUno.textContent = "mandagli un file";
+      mandaUno.className = "mini acceso";
+      // «Un pensiero», non «un file»: è come si chiama dappertutto — in
+      // Galleria, nella notifica che arriva sul telefono, nella bacheca. Una
+      // cosa sola non può avere due nomi a seconda della schermata.
+      mandaUno.textContent = "mandagli un pensiero";
       mandaUno.addEventListener("click", function () { scegli.click(); });
-      li.append(mandaUno, scegli);
+      azioni.append(mandaUno, scegli);
+
+      // **Trascinaci sopra un file e glielo mandi.** Chiesto così, ed è il
+      // gesto più corto che ci sia: niente moduli, niente «scegli file». La
+      // barra sta in fondo alla riga, sotto ai tasti: dice a che punto è
+      // l'invio, e in mezzo ai tasti li spezzava in due.
+      var barra = document.createElement("div");
+      barra.className = "barra-invio";
+      barra.hidden = true;
+      var dentro = document.createElement("i");
+      barra.append(dentro);
+      li.append(barra);
 
       li.addEventListener("dragover", function (ev) {
         ev.preventDefault();

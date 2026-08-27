@@ -38,3 +38,19 @@ sacremoses>=0.1.1
 
 # Lettura della VRAM per l'arbitro della GPU.
 nvidia-ml-py>=13.0
+
+# FFmpeg, per tutta la suite.
+#
+# **Perche' e' salito qui dalla 0.8.0.** Stava nei requisiti di DaProdDream e di
+# DaProdIoDigitale, che lo usano per registrare. Ma FFmpeg serve a tre cose che
+# non sono di nessuna scheda: il fotogramma di anteprima di un video, la
+# copertina cucita dentro un brano, la transcodifica del Visualizer. Chi non
+# aveva installato quelle due schede non aveva FFmpeg, e quelle tre cose non
+# funzionavano — **senza che da nessuna parte ci fosse scritto perche'**. Le
+# anteprime dei video nere sono state questo per tre versioni di fila.
+#
+# Non e' un doppione di quello di sistema: `findFfmpeg` guarda prima il PATH e
+# usa questo solo se sul computer non ce n'e' uno. E non cambia niente sulla
+# licenza: il binario lo scarica pip sul computer di chi installa, come
+# ComfyUI. La suite resta MIT e non imbarca niente di GPL.
+imageio-ffmpeg>=0.6.0

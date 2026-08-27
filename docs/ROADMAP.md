@@ -24,11 +24,17 @@ file si scrive quale delle due metà manca.
 
 ---
 
-## A che punto siamo — 26 agosto 2026
+## A che punto siamo — 27 agosto 2026
 
-**Ultima pubblicata: 0.7.7.** Nove schede dentro la suite, un ambiente Python
+**Ultima pubblicata: 0.8.0.** Nove schede dentro la suite, un ambiente Python
 solo, e il giro che conta — chiedo dal telefono, il computer fa, il file torna —
 **provato da chi la usa**, sul suo PC e sul suo telefono.
+
+La 0.8.0 non ha aggiunto niente: ha chiuso **sette difetti rimandati** mentre si
+costruiva il resto — le anteprime dei video, il nome del brano da Android, i
+modelli che scrivevano in napoletano, la foto del profilo, le notifiche in
+ritardo, la riga delle persone, gli stili. Il changelog li racconta uno per uno,
+con scritto cosa di quelle correzioni è stato provato e cosa no.
 
 Parole sue, provando la 0.7.1: «funziona molto bene, sia l'app android che pc
 fanno quello che ti ho chiesto».
@@ -50,7 +56,7 @@ fanno quello che ti ho chiesto».
 | **I regali: un file trascinato su una persona** | provato dal codice; **il trascinamento vero no** |
 | **Le schede che si chiudono a lavoro finito** | fatto e **provato**: nel registro si legge, e la VRAM torna libera |
 | **I video che arrivano fino in fondo** | il difetto era la rinomina, **trovato nel log e chiuso** |
-| **La coda del telefono che parte ad app chiusa** | scritta; **dipende da quando Android fa girare il lavoro** |
+| **La coda del telefono che parte ad app chiusa** | scritta. Dalla 0.8.0 c'è anche la sentinella, che con qualcosa in ballo guarda ogni venti secondi invece di ogni quarto d'ora; **da provare a app chiusa con un video in corso** |
 | **Modelli e preset dal telefono** | **provato contro il motore acceso**: FLUX.2 4B chiesto da fuori, e usato |
 | Tailscale come strada principale | scritto, **mai provato col telefono** |
 | Accesso da Internet (tunnel in uscita) | **acceso di suo dalla 0.7.5**, si rialza da solo, e il telefono impara l’indirizzo nuovo; **da provare col telefono fuori casa** |
@@ -59,8 +65,8 @@ fanno quello che ti ho chiesto».
 | **Telefono e computer con due facce diverse** | fatto, e **guidato in un browser vero** a 375 px: le due facce, il nome unico, la chiacchierata, il foglio delle impostazioni |
 | **Lo specchio offline: la stessa app a computer spento** | scritto e **compila**; il giro vero su un telefono **no** |
 | **DaProd: bacheca, mi piace, tieni, profilo con foto** | fatto e provato in un browser vero; **con due persone vere no** |
-| **Anteprime: fotogramma dei video, copertina dei brani** | le rotte sono provate; l'estrazione con FFmpeg su un video vero **no** |
-| **La copertina cucita dentro il brano** | scritta; **mai fatta su un mp3 vero** (vuole FFmpeg installato) |
+| **Anteprime: fotogramma dei video, copertina dei brani** | quattro cause trovate e chiuse nella 0.8.0 — galleria senza poster, copertina persa nella rinomina, clip senza durata, FFmpeg assente; **il giro vero su un video generato è da fare** |
+| **La copertina cucita dentro il brano** | scritta; **mai fatta su un mp3 vero**. Dalla 0.8.0 FFmpeg c'è quasi sempre: se lo porta dentro l'ambiente Python |
 | **Dieci minuti col modello, e il piano che si accetta** | il giro è provato con un modello finto; **contro LM Studio vero no** |
 | **Un turno solo per generazioni e modello** | fatto; la fila si prova da sola, l'effetto su una generazione vera **da misurare** |
 | **I limiti della fila, e solo dal PC** | fatto e provato: le due rotte dicono di no anche a un admin |
@@ -68,34 +74,52 @@ fanno quello che ti ho chiesto».
 
 ### Il prossimo passo
 
-Adesso che il giro base regge, quello che resta è **la stessa cura data alle
-altre otto schede**. In quest'ordine:
+Il giro base regge e i difetti grossi sono chiusi. Quello che resta è **provare
+sul vero** quello che è stato scritto, in quest'ordine — che è l'ordine in cui
+si vede se è servito:
 
-1. **provare la 0.7.7 sul PC vero e sul telefono vero.** La prima cosa da
-   guardare è il **collegamento**: apri e chiudi l'app dieci volte e non deve mai
-   chiedere di riscannerizzare il codice. È la ragione per cui esiste questa
-   versione, e finché non è provata su un telefono vero resta una cura scritta e
-   non verificata.
+1. **La 0.8.0 sul PC vero e sul telefono vero.** Sette correzioni, e sette gesti
+   da rifare a mano:
+   - genero un video e guardo la Galleria di DaProdCinema: il fotogramma c'è?
+   - lo stesso video chiesto **dal telefono**: dopo la rinomina l'anteprima resta?
+   - chiedo un brano da Android con un nome scritto: il file si chiama così?
+   - chiedo una canzone al modello: scrive in italiano o in napoletano?
+   - dal telefono, «Metti una foto»: si apre il selettore?
+   - chiudo l'app con un video in corso: quanto ci mette la notifica?
+   - la scheda delle persone sul computer: i tasti stanno in fila?
 
-2. **provare la 0.7.6 sul PC vero e sul telefono vero.** È il giro più grosso
-   dalla 0.7.0 e tocca tre cose che qui non si potevano provare: la
-   chiacchierata contro LM Studio, le anteprime e la copertina cucita con
-   FFmpeg, e lo specchio offline su un telefono. In quest'ordine, perché in
-   quest'ordine si vedono;
-2. **guardare se restano ancora processi** dopo tre aperture e tre chiusure. Se
-   il libro dei processi fa il suo mestiere, il terminale non serve più;
-3. **la bacheca con due persone vere**: i mi piace e il «tieni» hanno senso solo
-   in due, e finora sono stati provati da uno solo;
-4. **le parole di tutta la suite** — il telefono e il collegamento sono a posto;
-   l'hub e le altre schede no (§ «Le parole di tutta la suite», qui sotto);
-5. Tailscale sul telefono, fuori casa;
-6. una storia intera generata guardando la barra.
+2. **Guardare se restano ancora processi** dopo tre aperture e tre chiusure. Se
+   il libro dei processi fa il suo mestiere, il terminale non serve più.
+
+3. **Le tre cose della 0.7.6 mai provate contro il vero**: la chiacchierata
+   contro LM Studio, la copertina cucita dentro un mp3, lo specchio offline su
+   un telefono.
+
+4. **La bacheca con due persone vere**: i mi piace e il «tieni» hanno senso solo
+   in due, e finora li ha provati uno solo.
+
+5. **Le parole di tutta la suite** — il telefono e il collegamento sono a posto;
+   l'hub e le altre schede no (§ «Le parole di tutta la suite», qui sotto).
+
+6. Tailscale sul telefono, fuori casa.
+
+7. Una storia intera generata guardando la barra.
 
 ---
 
+
 # Quello che resta da fare
 
-## 0.8.0 — DaProdCinema: le due strade che restano
+## 0.9.0 — DaProdCinema: le due strade che restano
+
+> **Perché non è più la 0.8.0.** Quel numero è andato alle correzioni del 27
+> agosto 2026 — le sette cose lasciate indietro. Era stato tenuto da parte per
+> questa sezione, e la regola resta quella di sempre: il numero dice **cosa** è
+> cambiato, non quanto lavoro c'è dentro. La 0.8.0 non ha portato una scheda
+> nuova, ma ha chiuso sette difetti che si vedevano usandola tutti i giorni, e
+> quello è un cambio di stato della suite: da «funziona, con delle cose che non
+> vanno» a «funziona».
+
 
 **La scheda è nata nella 0.4.0**, nella 0.4.1 ha preso i suoi modelli — LTX 2.5 e
 MiniMax H3, quelli decisi qui sotto — e nella 0.4.2 è stata rifatta da capo:

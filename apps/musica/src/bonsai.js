@@ -17,6 +17,8 @@
 
 import { el, mostraErrore } from "./dom.js";
 import { titoloAuto } from "./grafi.js";
+import { linguaScelta } from "./crea.js";
+import { LINGUE } from "./dati/ace.js";
 // Il selettore del modello e' di tutte le app, non di questa: sta in
 // `packages/ui` e la suite lo serve sotto `/comune/`, dalla stessa origine
 // della pagina. Fino al 19 agosto 2026 ce n'erano due copie identiche, una
@@ -35,12 +37,33 @@ const suite = window.daprodSuite;
  * va guidato. Da qui in poi: la lingua si dice **prima di tutto**, si vieta
  * esplicitamente quello che sbagliava, e i tag di sezione sono elencati uno per
  * uno perché "dividi in sezioni" per lui non vuol dire niente.
+ *
+ * ⚠ **Due cose cambiate nella 0.8.0**, e nascono dalla stessa frase — «spesso
+ * gli LLM scrivono in napoletano, facciamoli scrivere in italiano»:
+ *
+ * - **la lingua è quella scelta**, non "italiano" scritto qui dentro. Le
+ *   pastiglie della lingua stanno due schede più in là e decidono come canta il
+ *   modello musicale: era strano che il paroliere non le guardasse.
+ * - **il dialetto si vieta per nome, con un esempio.** Gli stili di partenza
+ *   sono neomelodici napoletani, e «neapolitan neomelodic pop» nello stile tira
+ *   il modello verso il napoletano da solo. Il genere può essere napoletano, la
+ *   lingua no: sono due cose diverse, e a un modello piccolo va detto — con la
+ *   riga sbagliata accanto a quella giusta, che è l'unica forma che segue.
  */
-const SISTEMA = `Sei un paroliere italiano madrelingua.
+function sistema() {
+  const scelta = LINGUE.find((l) => l.id === linguaScelta());
+  // «Non lo so» non è una lingua in cui scrivere: chi non ha scelto scrive in
+  // italiano, che è la lingua della suite.
+  const nome = scelta && scelta.id !== "unknown" ? scelta.nome : "Italiano";
+
+  return `Sei un paroliere ${nome.toLowerCase()} madrelingua.
 
 REGOLA PIÙ IMPORTANTE — LA LINGUA:
-- Il testo va scritto in ITALIANO CORRETTO, parole che esistono nel vocabolario.
-- Vietate le parole spagnole, inglesi o inventate dentro il testo italiano.
+- Il testo va scritto in ${nome.toUpperCase()} CORRENTE, parole che esistono nel vocabolario.
+- NIENTE DIALETTO. Né napoletano, né romano, né siciliano: nemmeno una parola,
+  nemmeno nel ritornello. Il genere musicale può essere napoletano, la lingua no.
+  Si scrive "amore mio, non te ne andare", mai "ammore mio, nun te ne jì".
+- Vietate le parole di altre lingue o inventate dentro il testo.
 - Se non sei sicuro che una parola esista, usane una più semplice.
 - Frasi brevi, parole comuni, quelle che si usano parlando.
 
@@ -53,6 +76,7 @@ COME DEVE ESSERE IL TESTO:
 
 LO STILE va invece scritto in INGLESE, 3 o 4 generi musicali separati da virgola.
 LA COPERTINA va scritta in INGLESE: una scena concreta, senza scritte dentro.`;
+}
 
 /**
  * La forma della risposta, imposta al modello.
@@ -144,7 +168,7 @@ async function chiedi(bottone, utente, attesa) {
       // Quello scelto nel selettore qui sopra: se ne hai messo uno piccolo per
       // avere una risposta subito, deve rispondere quello.
       modello: modelloScelto(),
-      sistema: SISTEMA,
+      sistema: sistema(),
       utente,
       schema: SCHEMA,
       nomeSchema: "canzone",
@@ -168,7 +192,7 @@ export function collegaBonsai() {
     if (!idea) return mostraErrore("Scrivi in una riga di cosa deve parlare la canzone.");
     void chiedi(
       el.bonsaiTutto,
-      `Scrivi una canzone italiana su questa idea: "${idea}".\n`,
+      `Scrivi una canzone su questa idea: "${idea}".\n`,
       "sto scrivendo…",
     );
   };

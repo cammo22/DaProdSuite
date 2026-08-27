@@ -101,6 +101,19 @@ collegaLavoriDaFuori(async (richiesta) => {
    * usando.
    */
   if (richiesta.opzioni.lingua) scegliLingua(richiesta.opzioni.lingua);
+  /**
+   * Come si chiama il brano, se chi ha chiesto gliel'ha dato un nome.
+   *
+   * Nuovo nella 0.8.0, e mancava da sempre: la casella del titolo è la prima
+   * cosa che si vede aprendo questa scheda, e da fuori non c'era modo di
+   * riempirla. Il brano finiva in galleria chiamato come la prima riga del
+   * ritornello — o, senza testo, come i generi.
+   *
+   * Vuoto si lascia vuoto **apposta**: `nuovaResa` ci mette il titolo ricavato
+   * dal testo, che è quello che faceva prima e che per uno strumentale resta
+   * l'unica cosa sensata.
+   */
+  if (richiesta.opzioni.titolo) scrivi(el.titolo, richiesta.opzioni.titolo);
   // Il testo da cantare è facoltativo: vuoto vuol dire strumentale, ed è
   // quello che dice anche il catalogo delle azioni.
   scrivi(el.lyrics, richiesta.opzioni.testo || "");

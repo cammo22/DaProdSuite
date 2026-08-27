@@ -561,22 +561,51 @@ function istruzioni(dispositivoId: string): string {
     ' calm water, golden light"',
     "",
     "### genera.brano — una canzone",
-    "Questa ha QUATTRO campi e vanno riempiti TUTTI, non solo il primo:",
+    "Questa ha CINQUE campi e vanno riempiti TUTTI, non solo il primo:",
+    "- `titolo`: come si chiama la canzone. Tre o quattro parole, in italiano,",
+    "  senza virgolette. È il nome che avrà il file.",
     "- `descrizione`: SOLO GENERI, tre o quattro, in inglese, separati da virgola.",
     "  NIENTE strumenti, NIENTE atmosfera, NIENTE BPM, NIENTE tonalità: scriverli",
     "  restringe il modello musicale e fa uscire sempre la stessa cosa.",
-    "- `testo`: le parole da cantare, nella lingua chiesta. Segna le sezioni fra",
+    "- `testo`: le parole da cantare. Segna le sezioni fra",
     `  parentesi quadre: ${SEZIONI.join(" ")}. Ogni sezione su una riga sua, poi il`,
     "  testo sotto. Scrivi almeno una strofa e un ritornello.",
-    `- \`lingua\`: ${lingue}.`,
+    `- \`lingua\`: ${lingue}. Se non te la dicono: it.`,
     "- `durata`: secondi, fra 30 e 220. Una canzone normale è 120.",
+    "",
+    /**
+     * ⚠ **La regola della lingua, e perché è scritta in maiuscolo.**
+     *
+     * Detto il 27 agosto 2026: «spesso gli LLM scrivono in napoletano,
+     * facciamoli scrivere in italiano». Ed era colpa di questo file: l'esempio
+     * di `testo` qui sotto finiva con *«Ammore mio, nun te ne jì»*, che è
+     * napoletano. Un modello piccolo copia l'esempio molto più di quanto segua
+     * una regola — è la ragione per cui gli esempi ci sono — e quello gli stava
+     * dicendo, senza dirlo, che le canzoni di questa suite si scrivono in
+     * dialetto.
+     *
+     * Non era del tutto un caso: gli stili di partenza sono neomelodici
+     * napoletani, e «neapolitan neomelodic pop» nella descrizione tira nella
+     * stessa direzione. Ma il **genere** è napoletano, la **lingua** no: sono
+     * due cose diverse, e questa è la riga che le separa.
+     */
+    "REGOLA DELLA LINGUA — vale sopra a tutto il resto:",
+    "- Il `testo` va scritto in ITALIANO CORRENTE, parole del vocabolario.",
+    "- NIENTE dialetto: né napoletano, né romano, né siciliano. Nemmeno una",
+    "  parola, nemmeno nel ritornello. Il genere può essere napoletano, la lingua no.",
+    "- NIENTE parole spagnole, inglesi o inventate dentro un testo italiano.",
+    "- L'unico caso in cui si cambia lingua è se te la chiedono: se chiedono una",
+    "  canzone in inglese, `lingua: en` e il testo tutto in inglese.",
+    "",
+    'Esempio di `titolo`: "Le luci del porto"',
     'Esempio di `descrizione`: "neapolitan neomelodic pop, melodic trap, autotune ballad"',
     "Esempio di `testo`:",
     "[Verse]",
     "Le luci del porto si accendono piano",
     "e resto a guardarti da lontano",
     "[Chorus]",
-    "Ammore mio, nun te ne jì",
+    "Amore mio, non te ne andare",
+    "resta un momento a respirare",
     "",
     "### genera.voce — un testo letto ad alta voce",
     "- `testo`: quello che deve dire, nella lingua di chi te lo chiede.",
@@ -600,6 +629,9 @@ function istruzioni(dispositivoId: string): string {
     "   persona, una riga. Il prompt va nei campi del piano.",
     "7. Per un brano NON lasciare `testo` vuoto, a meno che non ti chiedano uno",
     "   strumentale: senza parole non canta.",
+    "8. Per un brano dai sempre un `titolo`: due o tre parole prese dal ritornello.",
+    "9. Le canzoni si scrivono in ITALIANO, mai in dialetto. Vedi la regola della",
+    "   lingua qui sopra: vale anche quando il genere è napoletano.",
   ].join("\n");
 }
 
@@ -643,11 +675,17 @@ const SCHEMA_RISPOSTA = {
               "Per immagine e video: la descrizione in inglese. Per il brano: i tre o quattro " +
               "generi in inglese. Per la voce: il testo da leggere.",
           },
+          titolo: {
+            type: "string",
+            description:
+              "SOLO per genera.brano: come si chiama la canzone, in italiano, tre o quattro " +
+              "parole. È il nome che avrà il file.",
+          },
           testo: {
             type: "string",
             description:
-              "SOLO per genera.brano: le parole da cantare, con le sezioni fra parentesi " +
-              "quadre. Vuoto solo se chiedono uno strumentale.",
+              "SOLO per genera.brano: le parole da cantare, IN ITALIANO e senza dialetto, " +
+              "con le sezioni fra parentesi quadre. Vuoto solo se chiedono uno strumentale.",
           },
           lingua: {
             type: "string",
@@ -773,6 +811,11 @@ function unLavoro(grezzo: unknown, dispositivoId: string): LavoroDelPiano | null
 
     const lingua = typeof dati["lingua"] === "string" ? dati["lingua"].trim() : "";
     if (LINGUE_CANTO.some((l) => l.id === lingua)) campi["lingua"] = lingua;
+
+    // Come si chiama, se un nome gliel'ha dato. Vuoto lo ricava la scheda dal
+    // testo, che è quello che ha sempre fatto.
+    const nome = typeof dati["titolo"] === "string" ? dati["titolo"].trim() : "";
+    if (nome) campi["titolo"] = nome.slice(0, 80);
 
     /**
      * Se ha scelto uno stile della persona, glielo si riconosce.

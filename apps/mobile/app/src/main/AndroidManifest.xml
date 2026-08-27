@@ -8,6 +8,14 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <!-- Le notifiche quando un lavoro finisce. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!--
+      La sentinella: resta sveglia mentre il computer sta finendo un tuo lavoro,
+      e si spegne da sola appena ha finito. Serve perché il lavoro periodico di
+      Android non scende sotto il quarto d'ora, e dentro Doze diventa un'ora:
+      per «il video è pronto» è troppo tardi. Vedi Sentinella.kt.
+    -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     <!-- Per installare l'aggiornamento dell'app che si scarica da sola.
          Su Android 8 e oltre va comunque concesso a mano una volta sola. -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
@@ -44,6 +52,15 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/percorsi_file" />
         </provider>
+
+        <!--
+          La sentinella. `exported="false"`: la fa partire solo l'app stessa,
+          quando va in secondo piano con qualcosa in ballo sul computer.
+        -->
+        <service
+            android:name=".Sentinella"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
 
         <!-- Lo scanner del QR: un'activity della libreria zxing. -->
         <activity
