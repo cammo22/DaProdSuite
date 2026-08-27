@@ -39,6 +39,16 @@ export interface Dispositivo {
 }
 
 /** Il dispositivo senza il token: è quel che si può mostrare in giro. */
+/**
+ * Un dispositivo come lo vede chi non e' il computer.
+ *
+ * Senza il token, ovviamente. E con `foto` che vuol dire una cosa diversa da
+ * quella di dentro: qui e' **l'indirizzo** dove sta la faccia, gia' con la
+ * versione dentro (vedi `indirizzoDellaFoto`), non il nome del file sul disco.
+ * Fuori da qui quel nome non serve a niente, e lasciare che ogni pagina si
+ * costruisse l'indirizzo da se' e' esattamente il modo in cui la foto nuova
+ * continuava a comparire vecchia.
+ */
 export type DispositivoPubblico = Omit<Dispositivo, "token">;
 
 /** Stato di una richiesta di generazione arrivata da un telefono. */
@@ -284,6 +294,14 @@ export interface VoceLibreria {
   /** Vero se è tua: lo decide il gateway guardando chi sta chiedendo. */
   mia?: boolean;
   /**
+   * Dove sta la faccia di chi l'ha fatta, se ce l'ha.
+   *
+   * Viaggia **gia' fatta** e non si costruisce dalla pagina: dentro c'e' la
+   * versione della foto, ed e' quella che fa comparire una foto nuova invece di
+   * quella di prima. Vedi `indirizzoDellaFoto` nel gateway.
+   */
+  chiFoto?: string;
+  /**
    * Quanti hanno messo mi piace, e se ce l'hai messo tu.
    *
    * Nasce con DaProd, la bacheca: senza un segno che dica «l'ho vista e mi è
@@ -327,6 +345,8 @@ export interface VoceCommento {
   id: string;
   chi: string;
   chiNome: string;
+  /** Dove sta la sua faccia, con dentro la versione. Come per le voci. */
+  chiFoto?: string;
   testo: string;
   quando: number;
   /** Vero se chi sta guardando puo' toglierlo: l'ha scritto lui, o e' roba sua. */

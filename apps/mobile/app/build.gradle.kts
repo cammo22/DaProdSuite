@@ -41,8 +41,8 @@ android {
         targetSdk = 34
         // Segue la versione della suite: l'app e il gateway si tengono per mano,
         // e sapere che numero ha in mano il telefono serve quando qualcosa non torna.
-        versionCode = 19
-        versionName = "0.8.1"
+        versionCode = 20
+        versionName = "0.8.2"
     }
 
     buildTypes {

@@ -80,7 +80,10 @@ export const COPIONE_DAPROD = `
     testa.className = "testa";
     var faccia = document.createElement("span");
     faccia.className = "faccia-tonda";
-    riempiFaccia(faccia, v.chiNome || "?", v.chi ? "/io/foto/" + encodeURIComponent(v.chi) : "");
+    // L'indirizzo arriva gia' fatto dal computer, con dentro **quale** foto e':
+    // costruirlo qui vorrebbe dire perdere la versione, ed e' esattamente il
+    // motivo per cui una foto nuova continuava a comparire vecchia.
+    riempiFaccia(faccia, v.chiNome || "?", v.chiFoto || "");
     var chi = document.createElement("div");
     chi.className = "cresce";
     var nome = document.createElement("div");
@@ -349,7 +352,7 @@ export const COPIONE_DAPROD = `
 
     var faccia = document.createElement("span");
     faccia.className = "faccia-tonda";
-    riempiFaccia(faccia, c.chiNome || "?", c.chi ? "/io/foto/" + encodeURIComponent(c.chi) : "");
+    riempiFaccia(faccia, c.chiNome || "?", c.chiFoto || "");
 
     var corpo = document.createElement("div");
     corpo.className = "cresce";
@@ -441,9 +444,13 @@ export const COPIONE_DAPROD = `
           "/io/foto?nome=" + encodeURIComponent(file.name),
           file,
         );
-        // Con un pezzo di indirizzo che cambia, altrimenti il browser continua
-        // a mostrare la foto di prima: è la stessa via, con un contenuto nuovo.
-        ioFoto = esito.foto + "?v=" + Date.now();
+        /**
+         * L'indirizzo che risponde il computer ha gia' dentro la versione
+         * nuova. Prima ce la si appiccicava qui con l'orologio, e funzionava —
+         * ma **solo su questa schermata**: tutte le altre facce continuavano a
+         * chiedere l'indirizzo senza versione, e si tenevano quella di prima.
+         */
+        ioFoto = esito.foto || ioFoto;
         riempiFaccia(faccia, ioNome, ioFoto);
         disegnaMioProfilo();
         leggiBacheca();

@@ -84,6 +84,7 @@
  * resta fuori.
  */
 
+import { createHash } from "node:crypto";
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import type { AddressInfo } from "node:net";
 import { createReadStream, createWriteStream, mkdirSync, rmSync, statSync } from "node:fs";
@@ -707,7 +708,7 @@ export class Gateway {
           basi: this.pannello?.stato(dispositivo).indirizzi.map((i) => i.base) ?? [],
           // Il profilo, dalla 0.7.6: la faccia e la riga sotto al nome. Senza,
           // in DaProd uno è una stringa di testo fra altre stringhe di testo.
-          foto: dispositivo.foto ? `/io/foto/${encodeURIComponent(dispositivo.id)}` : undefined,
+          foto: indirizzoDellaFoto(dispositivo),
           motto: dispositivo.motto,
         });
         return;
@@ -762,7 +763,24 @@ export class Gateway {
          * continuava a vedere la vecchia — su ogni schermata tranne quella in
          * cui l'aveva appena messa. Vedi `mandaConPezzi`.
          */
-        this.mandaConPezzi(req, res, assoluto, mimeDiUnImmagine(assoluto), 0, undefined, "cambia");
+        /**
+         * **Con la versione dentro, l'indirizzo si puo' tenere.**
+         *
+         * `?v=` dice *quale* foto e', non solo di chi: due foto diverse sono
+         * due indirizzi diversi, quindi tenersi questa non fa vedere quella di
+         * prima. Chi arriva senza versione — un indirizzo vecchio, scritto a
+         * mano — resta sul «chiedi se e' cambiata», che e' la cura della 0.8.1
+         * e continua a valere per lui.
+         */
+        this.mandaConPezzi(
+          req,
+          res,
+          assoluto,
+          mimeDiUnImmagine(assoluto),
+          0,
+          undefined,
+          url.searchParams.get("v") ? "fermo" : "cambia",
+        );
         return;
       }
 
@@ -1782,7 +1800,16 @@ export class Gateway {
     const prima = chi.foto;
     this.remoto.cambiaProfilo(chi.id, { foto: esito.suDisco });
     if (prima && prima !== esito.suDisco) buttaIlFile(join(this.remoto.inviiDir, prima));
-    this.json(res, 201, { ok: true, foto: `/io/foto/${encodeURIComponent(chi.id)}` });
+    /**
+     * L'indirizzo che si risponde ha **gia' dentro la versione nuova**: chi ha
+     * appena caricato la vede cambiare all'istante, senza che la pagina debba
+     * inventarsi un `?v=` suo — che era quello che faceva prima, e funzionava
+     * solo sulla schermata in cui l'aveva messa.
+     */
+    this.json(res, 201, {
+      ok: true,
+      foto: indirizzoDellaFoto({ id: chi.id, foto: esito.suDisco }),
+    });
     this.aggiorna();
   }
 
@@ -1931,9 +1958,48 @@ export class Gateway {
 }
 
 /** Il dispositivo senza il token: è quel che si può mostrare in giro. */
+/**
+ * Dove sta la faccia di una persona — **con dentro quale faccia è.**
+ *
+ * ⚠ **La cura del difetto che si era ripresentato**, detto il 27 agosto 2026:
+ * «ci sono ancora problemi con le immagini di profilo, non vengono aggiornate
+ * bene». La 0.8.1 aveva messo `no-cache` su questa rotta, e non è bastato — per
+ * un motivo che si vede solo guardando **come** la pagina disegna una faccia.
+ *
+ * Le facce non sono `<img>`: sono un `background-image` CSS (vedi
+ * `riempiFaccia`). Un browser, per un'immagine di sfondo il cui indirizzo non è
+ * cambiato, **la riusa da quella che ha già in memoria senza andare a
+ * chiedere**: `no-cache` governa la cache di rete, non quella del documento
+ * aperto. Con l'indirizzo fisso `/io/foto/<persona>`, una foto nuova non aveva
+ * nessun modo di farsi notare.
+ *
+ * Chiedere per favore non funziona; cambiare indirizzo sì. Il nome del file
+ * sul disco cambia a **ogni** caricamento — è `<quando>-<nome>` — quindi basta
+ * portarselo dietro ridotto a poche lettere: foto diversa, indirizzo diverso,
+ * e il browser non ha niente da riusare.
+ *
+ * E siccome adesso l'indirizzo è onesto, chi ce l'ha può anche tenerselo: vedi
+ * `mandaConPezzi`, dove un indirizzo con la versione dentro torna a valere un
+ * giorno invece di essere richiesto a ogni faccia di ogni riquadro.
+ */
+export function indirizzoDellaFoto(d: { id: string; foto?: string }): string | undefined {
+  if (!d.foto) return undefined;
+  const versione = createHash("sha1").update(d.foto).digest("hex").slice(0, 10);
+  return `/io/foto/${encodeURIComponent(d.id)}?v=${versione}`;
+}
+
 function senzaToken(d: Dispositivo): DispositivoPubblico {
   const { token: _token, ...pubblico } = d;
-  return pubblico;
+  /**
+   * `foto` esce come **indirizzo**, non come nome di file.
+   *
+   * Dentro, `Dispositivo.foto` e' il nome del file sul disco: e' quello che
+   * serve a chi lo deve aprire. Fuori non serve a nessuno — e serviva ancora
+   * meno che ogni pagina si costruisse l'indirizzo da se', perche' e' cosi'
+   * che la versione si perdeva per strada. Chi riceve una persona riceve gia'
+   * dove sta la sua faccia, con dentro **quale** faccia e'.
+   */
+  return { ...pubblico, foto: indirizzoDellaFoto(d) };
 }
 
 /** Legge il corpo di una richiesta JSON, con un tetto per la memoria. */
