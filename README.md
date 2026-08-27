@@ -10,7 +10,7 @@ Un programma solo per fare musica, immagini, video, voci e parlare con un avatar
 Ogni app la installi quando ti serve e la disinstalli quando non ti serve più.
 Gira sul tuo computer: niente account, niente chiavi API, codice aperto.
 
-[![versione](https://img.shields.io/badge/versione-0.8.1-7c5cff)](https://github.com/cammo22/DaProdSuite/releases/latest)
+[![versione](https://img.shields.io/badge/versione-0.8.2-7c5cff)](https://github.com/cammo22/DaProdSuite/releases/latest)
 [![licenza](https://img.shields.io/badge/licenza-MIT-5cff9d)](LICENSE)
 [![piattaforma](https://img.shields.io/badge/Windows-x64-3ddbff)](#requisiti)
 [![sito](https://img.shields.io/badge/sito-cammo22.github.io-ffa63d)](https://cammo22.github.io/DaProdSuite/)
@@ -93,27 +93,26 @@ lo stesso.
 
 ## A che punto siamo
 
-**Ultima pubblicata: 0.8.1 — «Il fotogramma, la foto, e le parole sotto».**
+**Ultima pubblicata: 0.8.2 — «La faccia giusta».** Una cosa sola: la foto del
+profilo, che cambiandola continuava a comparire quella di prima.
 
-> **Le anteprime dei video: la causa vera.** Il fotogramma lo estrae FFmpeg, e
-> la suite gli faceva scrivere il risultato su un file chiamato `.jpg.part` —
-> ma **FFmpeg sceglie il formato dall'estensione**, e `.part` non è un formato.
-> Rifiutava ogni volta, e la spiegazione finiva su un canale che nessuno
-> leggeva. Sul PC di casa: **1269 esecuzioni di FFmpeg, zero file prodotti.**
-> Adesso il fotogramma esce, e si scrive **accanto al video** — dove tutta la
-> suite lo cerca già. Lo stesso sbaglio teneva muta la conversione audio del
-> Visualizer.
+> La 0.8.1 aveva chiesto al browser di non tenersi la vecchia, e non era
+> bastato. Le facce non sono immagini, sono uno **sfondo**, e un browser riusa
+> uno sfondo il cui indirizzo non è cambiato **senza andare a chiedere**.
+> Adesso l'indirizzo dice **quale** foto è, non solo di chi: foto diversa,
+> indirizzo diverso, e non resta niente da riusare. Cambiarla la fa cambiare
+> dappertutto e subito.
 >
-> **La foto del profilo non resta più quella vecchia.** È l'unica cosa della
-> suite che vive a un indirizzo fisso e cambia contenuto, e si portava dietro la
-> regola di tutto il resto: tienila un giorno. Adesso quell'indirizzo dice
-> «chiedi se è cambiata».
+> Per strada: chi non ha una foto adesso mostra le sue iniziali invece di un
+> tondino vuoto.
 >
-> **Si può commentare.** Sotto a ogni cosa in DaProd c'è un fumetto: si tocca,
-> si scrive, si manda con Invio. Lo può togliere chi l'ha scritto **e** chi ha
-> fatto la cosa, e a chi l'ha fatta arriva un avviso sul telefono.
->
-> ⚠ Cosa è provato e cosa no sta in fondo al [CHANGELOG](CHANGELOG.md) § 0.8.1.
+> ⚠ Cosa è provato e cosa no sta in fondo al [CHANGELOG](CHANGELOG.md) § 0.8.2.
+
+**Prima, la 0.8.1 — «Il fotogramma, la foto, e le parole sotto».** La causa vera
+delle anteprime dei video: FFmpeg scriveva su un file `.part` e sceglie il
+formato dall'estensione, quindi rifiutava — 1269 volte, in silenzio. E i
+commenti sotto alle cose in bacheca.
+
 
 **Prima, la 0.8.0 — «Le cose lasciate indietro».** Sette difetti rimandati
 mentre si costruiva il resto: il nome del brano da Android, i modelli che
@@ -125,6 +124,7 @@ in ritardo, la riga delle persone, gli stili.
 
 | | |
 |---|---|
+| **0.8.1** | La causa vera delle anteprime dei video, la cache della foto, e i commenti |
 | **0.8.0** | Sette cose lasciate indietro: anteprime, titolo del brano, italiano, foto del profilo, notifiche |
 | **0.7.8** | Gli stili diventano tre — immagini, video, musica — e la barra del telefono torna una riga |
 | **0.7.7** | Provata a lungo: il collegamento non si perde più, la fila ha i numeri, venti cose viste usandola |

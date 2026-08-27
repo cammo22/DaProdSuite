@@ -577,15 +577,41 @@ export const COPIONE_BASE = `
    * peggio di un'iniziale: sembra una cosa che non ha caricato.
    */
   function riempiFaccia(elemento, nome, indirizzoFoto) {
-    elemento.textContent = "";
     elemento.style.backgroundImage = "";
-    if (indirizzoFoto) {
-      elemento.style.backgroundImage = "url(" + indirizzoFoto + ")";
-      elemento.style.backgroundSize = "cover";
-      elemento.style.backgroundPosition = "center";
-      return;
-    }
     elemento.textContent = iniziali(nome);
+    if (!indirizzoFoto) return;
+
+    // La foto si mette **subito**: e' quello che si deve vedere, e aspettare
+    // di sapere se carica vorrebbe dire un lampo di iniziali a ogni disegno.
+    elemento.textContent = "";
+    elemento.style.backgroundImage = "url(" + indirizzoFoto + ")";
+    elemento.style.backgroundSize = "cover";
+    elemento.style.backgroundPosition = "center";
+
+    /**
+     * **E se non arriva, tornano le iniziali.**
+     *
+     * Uno sfondo che non carica non lascia un buco visibile: lascia il riquadro
+     * colorato **vuoto**, perche' le iniziali erano state cancellate per
+     * fargli posto. Succedeva davvero, e a chiunque non avesse una foto: la
+     * pagina si costruiva l'indirizzo per chiunque avesse un id.
+     *
+     * ⚠ **La prova si tiene appesa all'elemento**, e non e' pignoleria: una
+     * immagine che nessuno tiene per mano, in Chromium, puo' sparire prima di
+     * dire com'e' andata: il file arriva, la risposta e' 200, e il segnale di
+     * «e' arrivata» non scatta mai. Ci si perde mezz'ora prima di sospettarlo.
+     *
+     * E si controlla di essere ancora l'ultima: fra due disegni ravvicinati,
+     * l'errore della foto di prima non deve cancellare quella di adesso.
+     */
+    var prova = new Image();
+    elemento.provaFoto = prova;
+    prova.onerror = function () {
+      if (elemento.provaFoto !== prova) return;
+      elemento.style.backgroundImage = "";
+      elemento.textContent = iniziali(nome);
+    };
+    prova.src = indirizzoFoto;
   }
 
   /**

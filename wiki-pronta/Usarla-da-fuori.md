@@ -276,7 +276,10 @@ chi l'ha fatto, la cosa, e sotto due tasti.
 - **il tuo profilo**, in cima: nome, **foto** e una riga sotto al nome. Si cambia
   tutto con *Modifica*. *(Dalla **0.8.0** la foto si carica davvero anche dal
   telefono: prima toccare «Metti una foto» non apriva niente — e per lo stesso
-  motivo non funzionava nemmeno «Metti una cosa tua».)*
+  motivo non funzionava nemmeno «Metti una cosa tua». Dalla **0.8.2**
+  cambiandola cambia **dappertutto e subito**: prima il telefono continuava a
+  mostrare quella di prima, perché l'indirizzo della faccia era sempre lo
+  stesso e non aveva modo di accorgersi che dentro c'era una foto nuova.)*
 - **Metti una cosa tua** — carichi un file dal telefono e finisce in bacheca,
   anche se non l'ha generato il computer.
 

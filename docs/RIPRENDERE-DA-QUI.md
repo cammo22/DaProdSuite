@@ -1,7 +1,7 @@
 # Riprendere da qui
 
 Documento di passaggio fra una sessione e l'altra. Aggiornato il **27 agosto
-2026**, con la **0.8.1** appena pubblicata.
+2026**, con la **0.8.2** appena pubblicata.
 
 > **Il prossimo passo è provare la 0.8.1 sul PC vero e sul telefono vero.** Tre
 > gesti, e il primo è quello che conta:
@@ -9,8 +9,9 @@ Documento di passaggio fra una sessione e l'altra. Aggiornato il **27 agosto
 > 1. **genero un video nuovo e apro la Galleria.** Il fotogramma c'è? È la
 >    quinta causa dello stesso difetto, e la prima quattro volte «corretta»: se
 >    è ancora nero, si guarda `logs/anteprime.log`, che **adesso scrive perché**.
-> 2. **cambio la foto del profilo con una nuova.** Deve cambiare dappertutto e
->    subito, non fra ventiquattro ore.
+> 2. **cambio la foto del profilo con una nuova.** Chiuso nella 0.8.2 e
+>    **provato in un browser vero** con tre foto di tre colori: quello che resta
+>    da vedere è il giro dal telefono, e con due persone collegate.
 > 3. **commento una cosa in bacheca**, da un telefono, e guardo se all'altro
 >    arriva l'avviso. E se la X compare dove deve: su quello che ho scritto io,
 >    e su quello che scrivono sotto alle mie cose.
@@ -765,6 +766,66 @@ cinque minuti se serve.
   valore che vuole il nodo di ACE-Step, lettera per lettera), `nome` (l'italiano
   della pastiglia) e `inglese` (quello che finisce nella descrizione per
   MiniMax, in `grafi.js` → `descrizione()`).
+
+## La foto del profilo, e perché `no-cache` non bastava (la 0.8.2)
+
+La 0.8.1 aveva messo `Cache-Control: private, no-cache` sulla rotta della foto.
+Verificato dal gateway acceso, la risposta era giusta. E la foto continuava a
+comparire vecchia.
+
+**La causa sta in `riempiFaccia`**: una faccia non è un `<img>`, è un
+`background-image`. Per uno sfondo il cui indirizzo non è cambiato, Chromium
+riusa quello che ha già in memoria **senza emettere la richiesta** — quindi
+`no-cache`, che governa la cache di rete, non entra mai in gioco. Con
+l'indirizzo fisso `/io/foto/<persona>` non c'era niente da fare.
+
+Chiedere per favore non funziona; cambiare indirizzo sì. `indirizzoDellaFoto`
+in `server.ts` prende `Dispositivo.foto` — il nome del file sul disco, che è
+`<quando>-<nome>` e quindi cambia a ogni caricamento — e lo riduce a dieci
+lettere dentro un `?v=`.
+
+Cosa è cambiato:
+
+| Dove | Cosa |
+|---|---|
+| `server.ts` → `indirizzoDellaFoto` | la formula, in un posto solo |
+| `server.ts` → `/io`, `senzaToken`, la risposta al caricamento | mandano l'indirizzo, non il nome del file |
+| `server.ts` → la rotta della foto | con `?v=` torna a valere un giorno; senza, resta il «chiedi se è cambiata» della 0.8.1 |
+| `types.ts` | `VoceLibreria.chiFoto`, `VoceCommento.chiFoto` |
+| `ipc/remoto.ts` | `DispositivoRemoto.foto`, **che non c'era**: l'elenco delle persone se la costruiva da sé |
+| `remoto.ts` (shell) | `fotoDi()` riempie i tre campi chiamando la formula del gateway |
+| le tre pagine | usano l'indirizzo che arriva, invece di costruirlo |
+
+### ⚠ Il tranello dentro il tranello
+
+La prima stesura di `riempiFaccia` metteva le iniziali e caricava la foto con un
+`new Image()`, mettendo lo sfondo su `onload`. Sembrava più sicuro e **non
+funzionava**: la richiesta partiva, tornava 200, e `onload` non scattava mai.
+
+Il motivo è che quell'immagine non la teneva per mano nessuno — nessuna
+variabile viva la referenziava — e in Chromium una `Image` così può sparire
+prima di dire com'è andata. Ci si perde mezz'ora prima di sospettarlo, e il log
+di rete non aiuta perché la richiesta **riesce**.
+
+Adesso: lo sfondo si mette subito (che è anche quello che si deve vedere), e la
+prova serve solo a **tornare indietro** se non arriva — con l'oggetto appeso
+all'elemento, così resta vivo.
+
+### Come si è provato
+
+Non leggendo il codice. Nel banco della console, con tre PNG veri di tre colori
+diversi: si carica la rossa, si guarda l'indirizzo e **si campiona il pixel**;
+si carica la verde, si ricarica, stesso giro; poi si sceglie una foto blu **dal
+foglio del profilo**, come farebbe una persona, e si controlla che nello stesso
+istante le tre facce diventino blu.
+
+⚠ E una nota sull'attrezzo: `navigate` verso un indirizzo **identico** non
+ricarica la pagina. Metà della confusione di quella sessione è venuta da lì:
+sembrava che il server mandasse una cosa e la pagina ne mostrasse un'altra.
+Quando i due non tornano, la prima cosa da controllare è che la pagina sia
+davvero ripartita (`location.reload()`).
+
+---
 
 ## La quinta causa delle anteprime (27 agosto 2026, la 0.8.1)
 

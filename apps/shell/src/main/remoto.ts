@@ -19,6 +19,7 @@ import {
   Archivio,
   Gateway,
   Remoto,
+  indirizzoDellaFoto,
   type Dispositivo,
   type Esecutore,
   type FornitoreAi,
@@ -419,6 +420,9 @@ const fornitoreLibreria: FornitoreLibreria = {
         mime: mimeDi(e.percorso, e.tipo),
         chi: libreria.padrone(e),
         chiNome: typeof e.meta?.["chiNome"] === "string" ? (e.meta["chiNome"] as string) : undefined,
+        // Dove sta la sua faccia, con dentro **quale** faccia e': senza la
+        // versione, una foto nuova continuava a comparire come quella vecchia.
+        chiFoto: fotoDi(libreria.padrone(e)),
         pubblicato: libreria.inBacheca(e),
         mia: libreria.padrone(e) === filtro.chi,
         quantiMiPiace: libreria.miPiaceDi(e, filtro.chi).quanti,
@@ -879,6 +883,18 @@ function puoVederla(elemento: ElementoLibreria, chi: string): boolean {
   return libreria.inBacheca(elemento);
 }
 
+/**
+ * Dove sta la faccia di una persona, gia' con la versione dentro.
+ *
+ * Il conto lo fa il gateway (`indirizzoDellaFoto`) perche' e' lui a servire
+ * quella rotta: una seconda formula scritta qui sarebbe la solita seconda
+ * verita', e la prima a divergere il giorno che l'indirizzo cambia.
+ */
+function fotoDi(chi: string): string | undefined {
+  const persona = remoto.listaDispositivi().find((d) => d.id === chi);
+  return persona ? indirizzoDellaFoto(persona) : undefined;
+}
+
 /** Come si chiama chi sta scrivendo, per metterlo dentro al commento. */
 function nomeDi(chi: string): string {
   if (chi === PADRONE_DI_CASA) return "il computer";
@@ -898,6 +914,7 @@ function vestiCommento(
 ): VoceCommento {
   return {
     ...c,
+    chiFoto: fotoDi(c.chi),
     // Chi l'ha scritto, e chi ha fatto la cosa: se non puoi togliere quello che
     // ti scrivono sotto, in bacheca smetti di metterci roba.
     mioDaTogliere: c.chi === chi || libreria.padrone(elemento) === chi || chi === PADRONE_DI_CASA,
@@ -940,6 +957,9 @@ function statoPannello(): StatoAccesso {
     ruolo: d.ruolo,
     accoppiato: d.accoppiato,
     ultimoAccesso: d.ultimoAccesso,
+    // La faccia, con dentro quale faccia è: senza, l'elenco delle persone se
+    // la costruiva da sé e mostrava quella del giorno prima.
+    foto: indirizzoDellaFoto(d),
   }));
 
   const richieste: RichiestaRemota[] = remoto.archivi.datiCorrenti.richieste

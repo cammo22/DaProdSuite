@@ -550,7 +550,10 @@ export const COPIONE_IMPOSTAZIONI = `
     var li = document.createElement("li");
     var faccia = document.createElement("span");
     faccia.className = "faccia-tonda";
-    riempiFaccia(faccia, d.nome, "/io/foto/" + encodeURIComponent(d.id));
+    // Il campo foto arriva gia' come indirizzo giusto, versione compresa: il
+    // computer lo manda cosi' dalla 0.8.2. Costruirlo qui era il modo di
+    // perdere la versione e mostrare la faccia di ieri.
+    riempiFaccia(faccia, d.nome, d.foto || "");
     var corpo = document.createElement("div");
     corpo.className = "cresce";
     var t = document.createElement("div");

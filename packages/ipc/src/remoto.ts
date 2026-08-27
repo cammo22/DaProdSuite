@@ -114,6 +114,17 @@ export interface DispositivoRemoto {
   ruolo: "admin" | "ospite";
   accoppiato: number;
   ultimoAccesso: number;
+  /**
+   * Dove sta la sua faccia, se ne ha una.
+   *
+   * ⚠ **Nuovo nella 0.8.2, e prima mancava del tutto.** L'elenco delle persone
+   * nelle impostazioni la faccia la disegnava lo stesso, costruendosi
+   * l'indirizzo da sé a partire dall'id — che funziona finché la foto non
+   * cambia mai. Cambiandola, quell'indirizzo resta identico e il browser
+   * continua a mostrare quella di prima. Adesso l'indirizzo arriva da qui, con
+   * dentro **quale** foto è.
+   */
+  foto?: string;
 }
 
 /** Una richiesta arrivata dal telefono, come la mostra il pannello. */

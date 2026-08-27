@@ -9,7 +9,7 @@ export { Archivio, cartellaInvii, cartellaRisultati } from "./archivio";
 export { elencoAzioni, eseguiAzione, type Esecutore, type EsitoAzione } from "./azioni";
 export { paginaConsole } from "./console";
 export { Remoto, SCADENZA_INVITO_MS } from "./remoto";
-export { Gateway, type GatewayOpzioni, type StatoProvider } from "./server";
+export { Gateway, indirizzoDellaFoto, type GatewayOpzioni, type StatoProvider } from "./server";
 export type {
   Attivita,
   AttesaChiacchierata,

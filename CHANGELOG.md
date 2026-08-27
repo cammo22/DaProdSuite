@@ -12,7 +12,69 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ## Non ancora pubblicato
 
-Niente: la 0.8.1 è appena uscita.
+Niente: la 0.8.2 è appena uscita.
+
+---
+
+## 0.8.2 — La faccia giusta
+
+**27 agosto 2026.** Una cosa sola:
+
+> «Ci sono ancora problemi con le immagini di profilo, non vengono aggiornate
+> bene.»
+
+La 0.8.1 aveva chiesto al browser di non tenersi la foto vecchia. Non è bastato,
+e il motivo si vede solo guardando **come** la suite disegna una faccia.
+
+### Chiedere per favore non funziona
+
+Le facce non sono immagini: sono uno **sfondo** — una regola di stile che dice
+«qui dentro metti quel disegno lì». E un browser, per uno sfondo il cui
+indirizzo non è cambiato, riusa quello che ha già in memoria **senza andare a
+chiedere se è cambiato**. La cortesia della 0.8.1 valeva per le richieste che
+partono; quella non partiva proprio.
+
+Con l'indirizzo fisso `/io/foto/<persona>`, una foto nuova non aveva nessun modo
+di farsi notare. Su una schermata funzionava — quella del profilo, che si
+aggiungeva un pezzo di indirizzo con l'orologio — e su tutte le altre no: la
+bacheca, l'elenco delle persone, il tondino in alto a destra.
+
+**Adesso l'indirizzo dice quale foto è**, non solo di chi. Il nome del file sul
+disco cambia a ogni caricamento, e quel nome viaggia dentro l'indirizzo ridotto
+a poche lettere: foto diversa, indirizzo diverso, e al browser non resta niente
+da riusare. Non è una preghiera, è un fatto.
+
+E siccome adesso l'indirizzo è onesto, chi ce l'ha può anche tenerselo: la
+faccia in bacheca torna a comparire senza chiedere niente, e cambiarla la fa
+cambiare **dappertutto e subito** — la bacheca, i commenti, le persone, il
+tondino, il profilo.
+
+### Due cose che si sono viste per strada
+
+**Chi non ha una foto adesso ha le sue iniziali.** Prima la pagina si costruiva
+l'indirizzo della faccia per chiunque avesse un nome, foto o no: quella
+richiesta non trovava niente, lo sfondo restava vuoto, e le iniziali erano già
+state cancellate per fargli posto. Un tondino colorato e basta. Adesso
+l'indirizzo lo manda il computer solo a chi una foto ce l'ha davvero, e se per
+qualunque motivo non arriva, le iniziali tornano.
+
+**L'elenco delle persone non riceveva la faccia.** Se la costruiva da sé
+partendo dal nome della persona — che è esattamente il modo in cui la versione
+si perdeva per strada. Adesso arriva già fatta da chi la conosce.
+
+### ⚠ Cosa è provato, e cosa no
+
+Questa volta il giro è stato fatto per intero, in un browser vero, con foto
+vere.
+
+| Cosa | Come sta |
+|---|---|
+| Cambiare foto dalla pagina | **provato davvero**: scelta una foto blu dal foglio del profilo, e nello stesso momento le facce sono diventate blu — l'indirizzo nuovo e i pixel nuovi, controllati uno per uno |
+| La foto che cambia due volte | **provata**: rossa, poi verde, poi blu. Tre indirizzi diversi, tre immagini diverse, nessuna che si trascina dietro la precedente |
+| L'elenco delle persone | **provato**: dopo il cambio mostra la faccia nuova, senza ricaricare la pagina |
+| Le iniziali quando la foto non c'è | **provate**: una foto rotta apposta lascia le iniziali invece del tondino vuoto |
+| Le facce in bacheca e sotto ai commenti | il campo arriva dal computer ed è lo stesso di tutti gli altri; **con due persone vere non è stato provato** |
+| Dal telefono | la pagina è la stessa e l'indirizzo pure; **il giro con l'app in mano no** |
 
 ---
 

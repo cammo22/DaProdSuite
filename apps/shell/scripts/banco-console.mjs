@@ -84,6 +84,8 @@ const comeEsce = (v, chi) => ({
   mime: v.mime,
   chi: "pc",
   chiNome: "il computer",
+  // La faccia di chi l'ha fatta, come la manda lo shell vero.
+  chiFoto: G.indirizzoDellaFoto({ id: "pc", foto: "finta.jpg" }),
   pubblicato: inBacheca.has(v.id),
   mia: true,
   quantiMiPiace: (cuori.get(v.id) ?? new Set()).size,
@@ -130,7 +132,11 @@ const libreria = {
    * vero della libreria, che li scrive nel `.json` accanto al file.
    */
   commenti: (id, chi) =>
-    (parole.get(id) ?? []).map((c) => ({ ...c, mioDaTogliere: c.chi === chi || c.chi === "pc" })),
+    (parole.get(id) ?? []).map((c) => ({
+      ...c,
+      mioDaTogliere: c.chi === chi || c.chi === "pc",
+      chiFoto: G.indirizzoDellaFoto({ id: c.chi, foto: c.chi + ".jpg" }),
+    })),
   commenta: (id, chi, testo) => {
     const dopo = [
       ...(parole.get(id) ?? []),
@@ -309,7 +315,13 @@ const gateway = new G.Gateway({
       ],
       tunnel: { fase: "acceso", indirizzo: "https://finto.trycloudflare.com" },
       firewall: { aperta: true, incerto: false },
-      dispositivi: remoto.listaDispositivi().map(({ token, ...resto }) => resto),
+      // Come fa lo shell vero: la faccia esce come **indirizzo** con dentro la
+      // versione, non come nome del file. La formula e' quella vera, presa dal
+      // gateway: una seconda copia qui sarebbe un banco che prova se' stesso.
+      dispositivi: remoto.listaDispositivi().map(({ token, ...resto }) => ({
+        ...resto,
+        foto: G.indirizzoDellaFoto(resto),
+      })),
       puoiDecidere: d.ruolo === "admin",
       codaAutomatica: true,
     }),
