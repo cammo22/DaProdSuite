@@ -1,37 +1,49 @@
 # Riprendere da qui
 
-Documento di passaggio fra una sessione e l'altra. Aggiornato il **26 agosto
-2026**, con la **0.7.7** appena chiusa.
+Documento di passaggio fra una sessione e l'altra. Aggiornato il **27 agosto
+2026**, con la **0.8.0** appena pubblicata.
 
-> **Il prossimo passo è provare la 0.7.7 sul PC vero e sul telefono vero**, e le
-> cose da guardare sono cinque, in quest'ordine — la prima è quella che conta,
-> perché è la ragione per cui esiste questa versione:
+> **La 0.8.0 non ha aggiunto niente: ha chiuso sette difetti rimandati.** Il
+> prossimo passo è **provarla sul PC vero e sul telefono vero**, e sono sette
+> gesti, uno per correzione:
 >
-> 1. **il collegamento regge?** Apri e chiudi l'app dieci volte, spegni e
->    riaccendi la suite in mezzo, cambia rete. Non deve mai chiedere di
->    riscannerizzare il codice. Se succede ancora, il posto da guardare è
->    `Archivio.salvaSubito` e `perdutaLaCredenziale` nel copione.
-> 2. **la chiacchierata contro LM Studio vero**, con **qwen3-4b** e con
->    **bonsai-27b**: sono i due che Cammo ha installati, ed è su quelli che il
->    manuale delle istruzioni va misurato. Quello che non si sa è se un modello
->    da 4B rispetta lo schema del piano — qui è girato solo contro un finto.
-> 3. **un brano intero dal telefono**: stile, lingua, testo con i `[Verse]`,
->    durata a pulsanti. Deve arrivare a DaProdMusica con tutto dentro.
-> 4. **le anteprime**: un video in galleria deve avere il suo fotogramma. Sul
->    computer serve FFmpeg; **dal telefono no**, se quel video ce l'ha in casa —
->    ed è la strada nuova da provare.
-> 5. **lo specchio offline**: apri l'app in casa una volta, poi spegni la suite e
->    riapri. Deve essere la stessa app, non un'altra.
+> 1. **genero un video e apro la Galleria di DaProdCinema.** Il fotogramma c'è?
+>    E i ventotto video già in `output/cinema/video/daprodcinema/` — che oggi
+>    **non hanno un solo `.cover.jpg`**, verificato — se lo prendono uno alla
+>    volta mentre guardi?
+> 2. **lo stesso video chiesto dal telefono.** È il caso che si rompeva sempre:
+>    la copertina arriva dopo che `intitola` ha rinominato il file. Adesso la
+>    libreria si ricorda il nome di prima (`Libreria.diventato`).
+> 3. **un brano da Android con un nome scritto**: il file si deve chiamare così,
+>    non come la prima riga del ritornello.
+> 4. **chiedo una canzone al modello** (qwen3-4b, e bonsai-27b): scrive in
+>    italiano o in napoletano? La prova sta nei nomi dei brani già in cartella —
+>    *«VerseI veddo te a Napoli e ti parlo»*, *«Serenata cell serenata cell»*.
+> 5. **dal telefono, «Metti una foto»**: si apre il selettore dei file?
+> 6. **chiudo l'app con un video in corso**: quanto ci mette la notifica? Prima
+>    era «quando capita», adesso dovrebbe essere venti secondi. Si riconosce
+>    dall'avviso silenzioso in fondo che dice il posto in fila.
+> 7. **la scheda delle persone sul computer**: i tasti stanno in fila?
+>
+> Restano da provare anche le tre cose vecchie mai fatte girare contro il vero:
+> la chiacchierata contro LM Studio, la copertina cucita dentro un mp3, lo
+> specchio offline su un telefono.
 >
 > Il dettaglio di cosa è provato e cosa no sta in fondo al
-> [CHANGELOG](../CHANGELOG.md), § 0.7.7.
+> [CHANGELOG](../CHANGELOG.md), § 0.8.0.
 
-> **C'è un attrezzo nuovo, e va usato**: `node apps/shell/scripts/banco-console.mjs`
-> accende un gateway vero con dati finti e stampa due indirizzi — uno «come
-> telefono», uno «come computer». Si aprono in un browser e si guarda la pagina
-> vera senza avere la suite accesa. Nella 0.7.7 ha trovato tre difetti che
-> nessuna prova automatica poteva vedere; adesso quei tre sono anche controllati
-> in `prova-azioni.mjs`.
+> **Due attrezzi che vanno usati**, e nessuno dei due vuole la suite accesa:
+>
+> - `node apps/shell/scripts/banco-console.mjs` accende un gateway vero con dati
+>   finti e stampa due indirizzi — uno «come telefono», uno «come computer». Si
+>   aprono in un browser e si guarda la pagina vera. Nella 0.7.7 ha trovato tre
+>   difetti che nessuna prova automatica poteva vedere; nella 0.8.0 ha
+>   verificato il campo del titolo e la riga delle persone a 1280 e a 375 px.
+> - `pnpm run prova` gira cicli, avvio, azioni, gateway e MCP in una decina di
+>   secondi. `prova-avvio.mjs` in particolare carica **tutti** i moduli del main
+>   con un Electron finto: è quello che vede un import circolare prima che
+>   ammazzi la suite all'avvio.
+
 
 **Se stai leggendo questo all'inizio di una conversazione nuova**: leggi anche
 [COME-SI-LAVORA.md](COME-SI-LAVORA.md) e [ROADMAP.md](ROADMAP.md), poi vai al
@@ -751,6 +763,80 @@ cinque minuti se serve.
   valore che vuole il nodo di ACE-Step, lettera per lettera), `nome` (l'italiano
   della pastiglia) e `inglese` (quello che finisce nella descrizione per
   MiniMax, in `grafi.js` → `descrizione()`).
+
+## Le sette cose lasciate indietro (27 agosto 2026, la 0.8.0)
+
+Dove sta ciascuna, per chi ci torna sopra.
+
+### 1. Le anteprime dei video — quattro cause, non una
+
+Ed è il motivo per cui era già stata «corretta» tre volte.
+
+| Causa | Dove | Cosa era |
+|---|---|---|
+| La galleria non chiedeva il fotogramma | `apps/cinema/src/galleria.js` → `scheda()` | `<video preload="metadata">` legge i dati e non decodifica: senza poster è un rettangolo nero. E `v.copertina`, che la libreria consegna già pronta, non la guardava nessuno |
+| La copertina si perdeva nella rinomina | `apps/shell/src/main/libreria.ts` → `Libreria.diventato` | `faiLaCopertina` ci mette qualche secondo; nel frattempo `esecuzione.ts` chiama `intitola`, che rinomina. `trova(vecchioId)` rispondeva «non c'è». Succedeva a **ogni** video chiesto da fuori |
+| Una clip senza durata non arrivava mai | `apps/cinema/src/copertina.js` → `prendiIlFotogramma` | `currentTime = 0` su un video già a zero **non fa scattare `seeked`**: si aspettava un evento che non sarebbe arrivato, quindici secondi, poi niente |
+| Senza FFmpeg non c'erano anteprime | `apps/shell/src/main/ffmpeg.ts` → `dentroLAmbiente()` | Si guardava solo il PATH. Adesso anche `runtime/Lib/site-packages/imageio_ffmpeg/binaries/`, e `imageio-ffmpeg` è salito in `requirements/base.txt` |
+
+Il ripescaggio dei video vecchi è `riprendiLeCopertine()` in `galleria.js`: uno
+alla volta, e si ferma al primo riuscito perché salvare una copertina riavvisa la
+libreria, che riavvisa la galleria, che ricomincia. Il `Set` `provate` è quello
+che impedisce il giro infinito su un video che non si apre.
+
+**Verificato il 27 agosto**: `output/cinema/video/daprodcinema/` conteneva 28
+`.mp4` e **zero** `.cover.jpg`. Due di quei file, dati in pasto a `fotogramma()`
+in un browser vero, hanno prodotto un JPEG in 587 ms e 97 ms — immagini vere,
+luminanza media 51 e 111 su 255.
+
+### 2. Il titolo del brano da fuori
+
+`packages/azioni/src/catalogo.ts` (campo `titolo` in `genera.brano`),
+`apps/musica/src/avvio.js` (lo scrive in `el.titolo`), `apps/shell/src/main/esecuzione.ts`
+(`comeSiChiama`: il titolo se c'è, altrimenti il campo principale — che per un
+brano sono i generi, e come nome di una canzone non dice niente).
+
+### 3. L'italiano invece del napoletano
+
+La causa era **un esempio**: in `chiacchierata.ts`, il `[Chorus]` di esempio era
+*«Ammore mio, nun te ne jì»*. Un modello piccolo copia l'esempio più di quanto
+segua una regola. Corretto lì, in `migliora.ts` e in `apps/musica/src/bonsai.js`,
+che adesso è una funzione `sistema()` e guarda `linguaScelta()` invece di dire
+sempre «italiano».
+
+### 4. La foto del profilo da Android
+
+`MainActivity.preparaWeb()`: mancava un `WebChromeClient`. Una WebView senza non
+sa aprire il selettore dei file, e lascia cadere ogni `<input type="file">` in
+silenzio. Vedi `attesaFile` e `scegliUnFile`. Il `nessunFileScelto()` in
+`onDestroy` non è opzionale: un `ValueCallback` senza risposta lascia
+quell'input morto per sempre.
+
+### 5. Le notifiche in ritardo
+
+`Sentinella.kt`, nuovo: un servizio in primo piano che vive finché
+`GatewayClient.cosaAspetto()` risponde qualcosa, e si spegne dopo due giri a
+vuoto o dopo mezz'ora. `SyncWorker` è passato a `ExistingPeriodicWorkPolicy.UPDATE`
+(era `KEEP`, cioè: le correzioni non sarebbero mai arrivate a chi aveva già
+l'app), con vincolo di rete e backoff lineare. `Notifiche.apriLApp()` è il
+`contentIntent` che prima non c'era.
+
+### 6. La riga delle persone
+
+`copione-impostazioni.ts` → `rigaDispositivo`: due involucri (`.chi-e`,
+`.azioni`) invece di cinque figli in fila dentro un flex che va a capo. Il CSS
+sta in `stile.ts` sotto «una riga con dentro qualcuno». La `.barra-invio` è
+passata a `flex: 1 0 100%` e sta in fondo: in mezzo ai tasti li spezzava in due.
+
+### 7. Gli stili
+
+Corretti il 26 agosto in `packages/azioni/src/verifica.ts` (un elenco `scelte`
+vuoto vuol dire «le riempie il computer», non «nessuna è valida») e in
+`apps/shell/src/main/stili.ts` (i doppioni). Erano su `main` da un giorno e
+**non erano mai usciti in una release**.
+
+---
+
 
 ## Com'è entrata DaProdMusica
 
