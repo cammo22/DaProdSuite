@@ -32,10 +32,25 @@ import { copyFileSync, renameSync as spostaFile } from "node:fs";
 import { basename, dirname, extname, join, relative } from "node:path";
 import { APP_IDS, type AppId, type ElementoLibreria, type TipoElemento } from "@daprod/ipc";
 import { codificaUrl } from "./file-scheme";
-import { cuciLaCopertina } from "./anteprime";
+import { cuciLaCopertina, quandoCompareUnaCopertina } from "./anteprime";
 import { OUTPUT_DIR } from "./paths";
 
 const SUFFISSO_COPERTINA = ".cover.jpg";
+
+/** Una cosa che qualcuno ha scritto sotto a un risultato. */
+export interface Commento {
+  id: string;
+  chi: string;
+  chiNome: string;
+  testo: string;
+  quando: number;
+}
+
+/** Quanto può essere lungo un commento. Due righe: è un commento, non un post. */
+const COMMENTO_MAX_BATTUTE = 500;
+
+/** Quanti se ne tengono per ogni cosa. Oltre, cade il più vecchio. */
+const COMMENTI_MAX = 200;
 
 /**
  * Chi possiede quello che e' stato fatto stando davanti al computer.
@@ -462,6 +477,87 @@ class Libreria extends EventEmitter {
     return { quanti: elenco.length, mio: elenco.includes(chi) };
   }
 
+  /* ---------------------------------------------------------- i commenti */
+
+  /**
+   * Le parole che qualcuno ha scritto sotto a una cosa.
+   *
+   * **Stanno nel `.json` accanto al file**, come i mi piace e come l'autore:
+   * niente secondo elenco da tenere allineato, e una cosa spostata a mano si
+   * porta dietro quello che le hanno detto sotto. È la stessa regola di tutto il
+   * resto — la cartella *è* la libreria.
+   *
+   * Chiesto il 27 agosto 2026: «facciamo un modo di poter anche commentare i
+   * contenuti». È l'ultimo pezzo che mancava a DaProd per essere un posto dove
+   * si sta: un cuore dice *che* qualcuno è passato, un commento dice **cosa ha
+   * pensato**.
+   *
+   * Il nome di chi scrive si salva **insieme** al commento e non si va a
+   * cercare dopo. Non è una ripetizione per pigrizia: chi si scollega sparisce
+   * dall'elenco dei dispositivi, e senza il nome scritto qui il suo commento
+   * diventerebbe di «qualcuno» il giorno dopo.
+   */
+  commenti(elemento: ElementoLibreria): Commento[] {
+    const grezzi = elemento.meta?.["commenti"];
+    if (!Array.isArray(grezzi)) return [];
+    return grezzi.filter((c): c is Commento => {
+      if (typeof c !== "object" || c === null) return false;
+      const x = c as Record<string, unknown>;
+      return typeof x["id"] === "string" && typeof x["testo"] === "string";
+    });
+  }
+
+  /**
+   * Scrive un commento. Torna l'elenco aggiornato, o null se non si può.
+   *
+   * Il tetto a [COMMENTI_MAX] non è un limite di prodotto, è una difesa del
+   * file: quel `.json` sta accanto a un video e viene riletto a ogni giro di
+   * galleria. Oltre il tetto cade il più vecchio.
+   */
+  commenta(
+    id: string,
+    chi: string,
+    chiNome: string,
+    testo: string,
+  ): Commento[] | null {
+    const elemento = this.trova(id);
+    if (!elemento) return null;
+
+    const pulito = testo.replace(/\s+/gu, " ").trim().slice(0, COMMENTO_MAX_BATTUTE);
+    if (!pulito) return null;
+
+    const commento: Commento = {
+      id: `c-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`,
+      chi,
+      chiNome,
+      testo: pulito,
+      quando: Date.now(),
+    };
+    const dopo = [...this.commenti(elemento), commento].slice(-COMMENTI_MAX);
+    this.aggiornaMeta(elemento, { commenti: dopo });
+    return dopo;
+  }
+
+  /**
+   * Toglie un commento. Lo può fare chi l'ha scritto, e chi ha fatto la cosa.
+   *
+   * Il secondo caso conta quanto il primo: chi mette una cosa in bacheca deve
+   * poter togliere quello che gli scrivono sotto, o smette di metterci niente.
+   */
+  togliCommento(id: string, idCommento: string, chi: string): Commento[] | null {
+    const elemento = this.trova(id);
+    if (!elemento) return null;
+
+    const tutti = this.commenti(elemento);
+    const suo = tutti.find((c) => c.id === idCommento);
+    if (!suo) return null;
+    if (suo.chi !== chi && this.padrone(elemento) !== chi) return null;
+
+    const dopo = tutti.filter((c) => c.id !== idCommento);
+    this.aggiornaMeta(elemento, { commenti: dopo });
+    return dopo;
+  }
+
   /**
    * Tiene da parte una cosa di qualcun altro, o smette di tenerla.
    *
@@ -737,3 +833,13 @@ function leggiTitolo(file: string): string | undefined {
 }
 
 export const libreria = new Libreria();
+
+/**
+ * Una copertina appena estratta fa aggiornare la galleria.
+ *
+ * `anteprime.ts` non conosce la libreria e non deve conoscerla — la importa lei
+ * — quindi le si passa il filo da questa parte. Serve al caso nuovo della
+ * 0.8.1: il fotogramma di un video adesso si scrive **accanto al file**, e chi
+ * sta guardando la galleria in quel momento deve vederlo comparire.
+ */
+quandoCompareUnaCopertina(() => libreria.segnalaNovita());

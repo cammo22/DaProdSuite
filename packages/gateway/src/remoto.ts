@@ -784,6 +784,18 @@ export class Remoto {
     return true;
   }
 
+  /**
+   * Avvisa una persona di qualcosa che non riguarda la fila.
+   *
+   * Nasce con i commenti della 0.8.1: chi ha messo una cosa in bacheca deve
+   * sapere che qualcuno gli ha scritto sotto, e quello non e' un lavoro, non ha
+   * una richiesta, e non passa da nessuno dei giri di qui dentro. La scrive chi
+   * la sa — la libreria, che sta nello shell — e questa e' la porta.
+   */
+  avvisaPersona(dispositivoId: string, titolo: string, corpo: string): void {
+    this.notifica({ dispositivoId, titolo, corpo });
+  }
+
   private notifica(opts: { dispositivoId: string; richiestaId?: string; titolo: string; corpo: string }): void {
     const dato = this.archivio.datiCorrenti;
     dato.notifiche.push({

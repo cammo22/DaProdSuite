@@ -42,5 +42,6 @@ export type {
   StatoRichiesta,
   StatoSuite,
   StileRemoto,
+  VoceCommento,
   VoceLibreria,
 } from "./types";

@@ -181,9 +181,19 @@ ritardo?»**, che ti porta dove si toglie. La voce compare solo se serve.
 
 ### L'anteprima di un video è un rettangolo nero
 
-**Dalla 0.8.0 non deve più succedere.** Il fotogramma se lo prende DaProdCinema
-appena il video è finito, e i video già in cartella si prendono il loro alla
-prima apertura della Galleria — uno alla volta, senza far tossire la scheda.
+**Dalla 0.8.1 non deve più succedere** — e stavolta con la causa vera in mano.
+
+Il fotogramma lo tira fuori FFmpeg, e la suite gli faceva scrivere il risultato
+su un file di passaggio che finiva in `.part`. FFmpeg però decide in che formato
+scrivere **guardando l'estensione**, e `.part` non è un formato: rifiutava ogni
+volta, e la spiegazione finiva in un posto che nessuno leggeva. Sul computer su
+cui è stato trovato: 1269 esecuzioni, zero file. Adesso il fotogramma esce, e si
+scrive accanto al video.
+
+E dalla 0.8.0 il fotogramma se lo prende anche **DaProdCinema** appena il video
+è finito, così c'è prima che qualcuno apra la galleria; i video già in cartella
+se lo prendono alla prima apertura della Galleria, uno alla volta, senza far
+tossire la scheda.
 
 Se ne resta uno nero: è un file che il computer non riesce ad aprire (scaricato
 male, o interrotto a metà). Provalo con un lettore video: se non parte nemmeno

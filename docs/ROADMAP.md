@@ -26,7 +26,7 @@ file si scrive quale delle due metà manca.
 
 ## A che punto siamo — 27 agosto 2026
 
-**Ultima pubblicata: 0.8.0.** Nove schede dentro la suite, un ambiente Python
+**Ultima pubblicata: 0.8.1.** Nove schede dentro la suite, un ambiente Python
 solo, e il giro che conta — chiedo dal telefono, il computer fa, il file torna —
 **provato da chi la usa**, sul suo PC e sul suo telefono.
 
@@ -65,7 +65,8 @@ fanno quello che ti ho chiesto».
 | **Telefono e computer con due facce diverse** | fatto, e **guidato in un browser vero** a 375 px: le due facce, il nome unico, la chiacchierata, il foglio delle impostazioni |
 | **Lo specchio offline: la stessa app a computer spento** | scritto e **compila**; il giro vero su un telefono **no** |
 | **DaProd: bacheca, mi piace, tieni, profilo con foto** | fatto e provato in un browser vero; **con due persone vere no** |
-| **Anteprime: fotogramma dei video, copertina dei brani** | quattro cause trovate e chiuse nella 0.8.0 — galleria senza poster, copertina persa nella rinomina, clip senza durata, FFmpeg assente; **il giro vero su un video generato è da fare** |
+| **Anteprime: fotogramma dei video, copertina dei brani** | cinque cause, tutte chiuse: le prime quattro nella 0.8.0, la quinta nella 0.8.1 — FFmpeg scriveva su un `.part` e rifiutava, 1269 volte. **Provato sul video vero**; il giro dentro la suite accesa è da fare |
+| **Commentare quello che c'è in bacheca** | nuovo nella 0.8.1; **provato nel banco della console**, con file veri no |
 | **La copertina cucita dentro il brano** | scritta; **mai fatta su un mp3 vero**. Dalla 0.8.0 FFmpeg c'è quasi sempre: se lo porta dentro l'ambiente Python |
 | **Dieci minuti col modello, e il piano che si accetta** | il giro è provato con un modello finto; **contro LM Studio vero no** |
 | **Un turno solo per generazioni e modello** | fatto; la fila si prova da sola, l'effetto su una generazione vera **da misurare** |
@@ -78,7 +79,11 @@ Il giro base regge e i difetti grossi sono chiusi. Quello che resta è **provare
 sul vero** quello che è stato scritto, in quest'ordine — che è l'ordine in cui
 si vede se è servito:
 
-1. **La 0.8.0 sul PC vero e sul telefono vero.** Sette correzioni, e sette gesti
+1. **La 0.8.1 sul PC vero e sul telefono vero**: un video nuovo con il suo
+   fotogramma, la foto del profilo che cambia davvero, un commento che arriva
+   all'altro telefono.
+
+2. **La 0.8.0 sul PC vero e sul telefono vero.** Sette correzioni, e sette gesti
    da rifare a mano:
    - genero un video e guardo la Galleria di DaProdCinema: il fotogramma c'è?
    - lo stesso video chiesto **dal telefono**: dopo la rinomina l'anteprima resta?
@@ -88,22 +93,22 @@ si vede se è servito:
    - chiudo l'app con un video in corso: quanto ci mette la notifica?
    - la scheda delle persone sul computer: i tasti stanno in fila?
 
-2. **Guardare se restano ancora processi** dopo tre aperture e tre chiusure. Se
+3. **Guardare se restano ancora processi** dopo tre aperture e tre chiusure. Se
    il libro dei processi fa il suo mestiere, il terminale non serve più.
 
-3. **Le tre cose della 0.7.6 mai provate contro il vero**: la chiacchierata
+4. **Le tre cose della 0.7.6 mai provate contro il vero**: la chiacchierata
    contro LM Studio, la copertina cucita dentro un mp3, lo specchio offline su
    un telefono.
 
-4. **La bacheca con due persone vere**: i mi piace e il «tieni» hanno senso solo
+5. **La bacheca con due persone vere**: i mi piace e il «tieni» hanno senso solo
    in due, e finora li ha provati uno solo.
 
-5. **Le parole di tutta la suite** — il telefono e il collegamento sono a posto;
+6. **Le parole di tutta la suite** — il telefono e il collegamento sono a posto;
    l'hub e le altre schede no (§ «Le parole di tutta la suite», qui sotto).
 
-6. Tailscale sul telefono, fuori casa.
+7. Tailscale sul telefono, fuori casa.
 
-7. Una storia intera generata guardando la barra.
+8. Una storia intera generata guardando la barra.
 
 ---
 

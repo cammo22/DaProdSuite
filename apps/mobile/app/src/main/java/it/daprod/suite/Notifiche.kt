@@ -28,7 +28,10 @@ import androidx.core.content.ContextCompat
  * Adesso ne passano due sole:
  *
  * - **un lavoro è pronto** — la cosa per cui si stava aspettando;
- * - **è arrivato un pensiero** — qualcuno ti ha mandato qualcosa.
+ * - **è arrivato un pensiero** — qualcuno ti ha mandato qualcosa;
+ * - **qualcuno ha commentato una cosa tua** (dalla 0.8.1) — è l'altra metà di
+ *   DaProd: un cuore si vede tornando, un commento è qualcuno che ti ha
+ *   scritto, e va detto.
  *
  * Il filtro sta in [valeLaPena], e guarda il titolo che il computer manda: è la
  * cosa più stabile che c'è: il gateway li scrive in un posto solo
@@ -101,6 +104,9 @@ object Notifiche {
         val tutto = "$titolo $corpo".lowercase()
         if (tutto.contains("pronto") || tutto.contains("pronta")) return true
         if (tutto.contains("ricevut") || tutto.contains("pensiero") || tutto.contains("mandato")) return true
+        // Un commento sotto a una cosa tua: e' l'altra meta' di DaProd, e senza
+        // l'avviso lo scopri solo se torni a guardarla — cioe' quasi mai.
+        if (tutto.contains("commentat") || tutto.contains("un commento")) return true
         // Un lavoro rifiutato è l'altra cosa che si aspetta e non arriva: dirlo
         // è meglio che lasciare qualcuno ad aspettare una cosa che non verrà.
         if (tutto.contains("non è stata accettata") || tutto.contains("non fatto")) return true

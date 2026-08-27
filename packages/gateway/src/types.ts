@@ -291,6 +291,14 @@ export interface VoceLibreria {
    */
   quantiMiPiace?: number;
   mioMiPiace?: boolean;
+  /**
+   * Quanti commenti ha.
+   *
+   * Viaggia con l'elenco e non si chiede a parte: la bacheca deve poter
+   * scrivere «3 commenti» sotto a ogni cosa senza un giro di rete per riquadro.
+   * I commenti veri si chiedono aprendoli.
+   */
+  quantiCommenti?: number;
   /** Tenuta da parte da chi guarda: compare fra le sue cose anche se non è sua. */
   tenuta?: boolean;
   /**
@@ -308,6 +316,23 @@ export interface VoceLibreria {
 }
 
 /** Chi sa rispondere sulla libreria: lo passa lo shell al gateway. */
+/**
+ * Una cosa che qualcuno ha scritto sotto a un risultato.
+ *
+ * `chiNome` viaggia **dentro** il commento e non si va a cercare dopo: chi si
+ * scollega sparisce dall'elenco dei dispositivi, e senza il nome scritto qui il
+ * suo commento diventerebbe di «qualcuno» il giorno dopo.
+ */
+export interface VoceCommento {
+  id: string;
+  chi: string;
+  chiNome: string;
+  testo: string;
+  quando: number;
+  /** Vero se chi sta guardando puo' toglierlo: l'ha scritto lui, o e' roba sua. */
+  mioDaTogliere?: boolean;
+}
+
 export interface FornitoreLibreria {
   /**
    * Le ultime cose prodotte, filtrate come chiede chi guarda.
@@ -343,6 +368,19 @@ export interface FornitoreLibreria {
   anteprima?(id: string, chi: string): Promise<string | null>;
   /** Mette o toglie il mi piace di questa persona. Torna quanti sono adesso. */
   miPiace?(id: string, chi: string, mi: boolean): number | null;
+  /**
+   * I commenti di una voce, se questa persona ha il diritto di vederla.
+   *
+   * Nuovi nella 0.8.1: «facciamo un modo di poter anche commentare i
+   * contenuti». Un cuore dice *che* qualcuno e' passato; un commento dice
+   * **cosa ha pensato**, ed e' l'ultimo pezzo che mancava a una bacheca per
+   * essere un posto dove si sta invece di una vetrina.
+   */
+  commenti?(id: string, chi: string): VoceCommento[] | null;
+  /** Scrive un commento. Torna l'elenco aggiornato, o null se non si puo'. */
+  commenta?(id: string, chi: string, testo: string): VoceCommento[] | null;
+  /** Toglie un commento: lo puo' fare chi l'ha scritto e chi ha fatto la cosa. */
+  togliCommento?(id: string, idCommento: string, chi: string): VoceCommento[] | null;
   /** Tiene da parte una cosa di qualcun altro, o smette di tenerla. */
   tieni?(id: string, chi: string, tenere: boolean): boolean;
   /**

@@ -63,6 +63,17 @@ const voci = [
 const cuori = new Map();
 const inBacheca = new Set(["cinema/clip.mp4"]);
 
+/** I commenti finti: id della voce → elenco. Come nella libreria vera. */
+const parole = new Map([
+  [
+    "cinema/clip.mp4",
+    [
+      { id: "c1", chi: "altro", chiNome: "Giulia", testo: "Questa barca mi fa venire voglia di partire.", quando: Date.now() - 7200_000 },
+      { id: "c2", chi: "pc", chiNome: "il computer", testo: "L'ho rifatta tre volte prima che il porto venisse dritto.", quando: Date.now() - 600_000 },
+    ],
+  ],
+]);
+
 const comeEsce = (v, chi) => ({
   id: v.id,
   nome: v.nome,
@@ -77,6 +88,7 @@ const comeEsce = (v, chi) => ({
   mia: true,
   quantiMiPiace: (cuori.get(v.id) ?? new Set()).size,
   mioMiPiace: (cuori.get(v.id) ?? new Set()).has(chi),
+  quantiCommenti: (parole.get(v.id) ?? []).length,
   tenuta: false,
   anteprima: v.tipo === "immagine",
   didascalia: v.nome,
@@ -110,6 +122,28 @@ const libreria = {
     return chi_.size;
   },
   tieni: () => true,
+  /**
+   * I commenti, nuovi nella 0.8.1.
+   *
+   * Il banco li tiene in memoria e li perde chiudendolo, e va benissimo: qui
+   * si guarda **la pagina**, non la persistenza — quella la prova il codice
+   * vero della libreria, che li scrive nel `.json` accanto al file.
+   */
+  commenti: (id, chi) =>
+    (parole.get(id) ?? []).map((c) => ({ ...c, mioDaTogliere: c.chi === chi || c.chi === "pc" })),
+  commenta: (id, chi, testo) => {
+    const dopo = [
+      ...(parole.get(id) ?? []),
+      { id: "c" + Date.now(), chi, chiNome: "chi prova", testo, quando: Date.now() },
+    ];
+    parole.set(id, dopo);
+    return dopo.map((c) => ({ ...c, mioDaTogliere: c.chi === chi || c.chi === "pc" }));
+  },
+  togliCommento: (id, idc, chi) => {
+    const dopo = (parole.get(id) ?? []).filter((c) => c.id !== idc);
+    parole.set(id, dopo);
+    return dopo.map((c) => ({ ...c, mioDaTogliere: c.chi === chi || c.chi === "pc" }));
+  },
   aggiungi: (dati) => ({ ...dati, id: "connessione/" + dati.nome, tipo: "immagine", app: "connessione", creato: Date.now(), mia: true }),
 };
 

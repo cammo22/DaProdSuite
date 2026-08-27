@@ -1,36 +1,38 @@
 # Riprendere da qui
 
 Documento di passaggio fra una sessione e l'altra. Aggiornato il **27 agosto
-2026**, con la **0.8.0** appena pubblicata.
+2026**, con la **0.8.1** appena pubblicata.
 
-> **La 0.8.0 non ha aggiunto niente: ha chiuso sette difetti rimandati.** Il
-> prossimo passo è **provarla sul PC vero e sul telefono vero**, e sono sette
-> gesti, uno per correzione:
+> **Il prossimo passo è provare la 0.8.1 sul PC vero e sul telefono vero.** Tre
+> gesti, e il primo è quello che conta:
 >
-> 1. **genero un video e apro la Galleria di DaProdCinema.** Il fotogramma c'è?
->    E i ventotto video già in `output/cinema/video/daprodcinema/` — che oggi
->    **non hanno un solo `.cover.jpg`**, verificato — se lo prendono uno alla
->    volta mentre guardi?
-> 2. **lo stesso video chiesto dal telefono.** È il caso che si rompeva sempre:
->    la copertina arriva dopo che `intitola` ha rinominato il file. Adesso la
->    libreria si ricorda il nome di prima (`Libreria.diventato`).
-> 3. **un brano da Android con un nome scritto**: il file si deve chiamare così,
->    non come la prima riga del ritornello.
-> 4. **chiedo una canzone al modello** (qwen3-4b, e bonsai-27b): scrive in
->    italiano o in napoletano? La prova sta nei nomi dei brani già in cartella —
->    *«VerseI veddo te a Napoli e ti parlo»*, *«Serenata cell serenata cell»*.
-> 5. **dal telefono, «Metti una foto»**: si apre il selettore dei file?
-> 6. **chiudo l'app con un video in corso**: quanto ci mette la notifica? Prima
->    era «quando capita», adesso dovrebbe essere venti secondi. Si riconosce
->    dall'avviso silenzioso in fondo che dice il posto in fila.
-> 7. **la scheda delle persone sul computer**: i tasti stanno in fila?
+> 1. **genero un video nuovo e apro la Galleria.** Il fotogramma c'è? È la
+>    quinta causa dello stesso difetto, e la prima quattro volte «corretta»: se
+>    è ancora nero, si guarda `logs/anteprime.log`, che **adesso scrive perché**.
+> 2. **cambio la foto del profilo con una nuova.** Deve cambiare dappertutto e
+>    subito, non fra ventiquattro ore.
+> 3. **commento una cosa in bacheca**, da un telefono, e guardo se all'altro
+>    arriva l'avviso. E se la X compare dove deve: su quello che ho scritto io,
+>    e su quello che scrivono sotto alle mie cose.
 >
-> Restano da provare anche le tre cose vecchie mai fatte girare contro il vero:
-> la chiacchierata contro LM Studio, la copertina cucita dentro un mp3, lo
-> specchio offline su un telefono.
+> Restano da provare le sette della 0.8.0 (§ più sotto) e le tre cose vecchie
+> mai fatte girare contro il vero: la chiacchierata contro LM Studio, la
+> copertina cucita dentro un mp3, lo specchio offline su un telefono.
 >
 > Il dettaglio di cosa è provato e cosa no sta in fondo al
-> [CHANGELOG](../CHANGELOG.md), § 0.8.0.
+> [CHANGELOG](../CHANGELOG.md), § 0.8.1.
+
+> ⚠ **La lezione della 0.8.1, che vale più della correzione.** Il difetto delle
+> anteprime è durato quattro versioni perché **FFmpeg si lamentava e nessuno lo
+> scriveva**: `gira()` guardava il codice di uscita e buttava via `stderr`. Il
+> conto finale è stato 1269 esecuzioni e zero file prodotti.
+>
+> Quando una cosa non funziona e non c'è niente nel log, il primo sospetto è che
+> **il log non ci sia**, non che la causa sia sottile. E prima di leggere il
+> codice: contare. `grep -c` sul registro dei processi contro `ls | wc -l` sulla
+> cartella dei risultati ha detto in due comandi quello che tre giri di lettura
+> non avevano visto.
+
 
 > **Due attrezzi che vanno usati**, e nessuno dei due vuole la suite accesa:
 >
@@ -763,6 +765,75 @@ cinque minuti se serve.
   valore che vuole il nodo di ACE-Step, lettera per lettera), `nome` (l'italiano
   della pastiglia) e `inglese` (quello che finisce nella descrizione per
   MiniMax, in `grafi.js` → `descrizione()`).
+
+## La quinta causa delle anteprime (27 agosto 2026, la 0.8.1)
+
+**La 0.8.0 ne aveva chiuse quattro e ne aveva lasciata una**, che stava sotto a
+tutte. Vale la pena averla scritta per esteso, perché la forma di questo errore
+si ripete.
+
+`estrai()` in `anteprime.ts` faceva scrivere FFmpeg su `${destinazione}.part`
+per rinominare solo a fine riuscita. **FFmpeg sceglie il muxer dall'estensione**,
+e `.part` non è un'estensione che conosce:
+
+```
+Unable to choose an output format for '….jpg.part';
+use a standard extension for the filename or specify the format manually
+```
+
+Quel messaggio andava su `stderr`, e `gira()` guardava solo il codice di uscita.
+Da lì: `false` senza motivo, `null` senza motivo, rettangolo nero senza motivo.
+
+**Come si è trovato**, e conviene rifare questo giro la prossima volta:
+
+1. `grep -c "ffmpeg (anteprime)" logs/processi.log` → **1269**
+2. `ls cache/anteprime | wc -l` → **0**
+
+Milleduecento tentativi e nessun risultato non è un caso limite: è una funzione
+che non ha mai funzionato. Il resto è stato riprodurre il comando a mano, prima
+su `.jpg` (riesce) e poi su `.jpg.part` (rifiuta).
+
+Cosa è cambiato:
+
+| Dove | Cosa |
+|---|---|
+| `anteprime.ts` → `estrai` | il file di passaggio finisce in `.jpg` **e** `-f mjpeg` dichiara il formato. Due cinture |
+| `anteprime.ts` → `fotogrammaDi` | il fotogramma si scrive **accanto al video** (`.cover.jpg`), non in cache: è la convenzione che tutta la suite già legge. La cache resta come ripiego |
+| `anteprime.ts` → `gira` | quando FFmpeg si lamenta, adesso finisce in `anteprime.log`. È la lezione vera |
+| `apps/visualizer/ffmpeg.ts` | stesso `.part`, stesso sbaglio: la conversione audio dei formati che Chromium non legge **non ha mai funzionato** |
+| `libreria.ts` + `anteprime.ts` | `quandoCompareUnaCopertina`: un gancio, non un `import` — `libreria` importa già `anteprime`, e il cerchio ha già ammazzato l'avvio una volta |
+
+**La prova che lo chiude**: `scratchpad/prova-fotogramma.mjs` carica
+`out/main/anteprime.js` con un Electron finto e chiede l'anteprima di un video
+vero senza copertina. Se torna un percorso, funziona.
+
+### La foto del profilo che restava quella vecchia
+
+`mandaConPezzi` in `server.ts` mandava `Cache-Control: private, max-age=86400`
+per tutto. Giusto per i file della libreria — il nome sta nell'indirizzo, quindi
+contenuto nuovo = indirizzo nuovo — e **sbagliato per `/io/foto/<persona>`**, che
+è l'unico indirizzo fisso con contenuto che cambia.
+
+Adesso `mandaConPezzi` prende un parametro `come`: `fermo` (come prima) o
+`cambia` (`no-cache` + `ETag` da dimensione e data, con il 304 gestito). La
+rotta della foto passa `cambia`, e anche il tipo vero al posto di `image/*` —
+che con `nosniff` non è un tipo che il browser accetta, stesso difetto già chiuso
+sulle anteprime il 26 agosto e rimasto qui.
+
+### I commenti
+
+`libreria.ts`: `commenti` / `commenta` / `togliCommento`, dentro il `.json`
+accanto al file come i mi piace. `remoto.ts` ci mette i permessi (`puoVederla`)
+e l'avviso a chi ha fatto la cosa (`remoto.avvisaPersona`, nuovo).
+`server.ts`: `GET`/`POST /libreria/:id/commenti` e
+`DELETE /libreria/:id/commenti/:idc`. La faccia sta in `copione-daprod.ts`,
+sotto al riquadro e non in un foglio.
+
+`quantiCommenti` viaggia con l'elenco: il conto si vede subito, le parole si
+chiedono aprendole. Duecento commenti dentro l'elenco della galleria vorrebbero
+dire scaricarli tutti per mostrarne il numero.
+
+---
 
 ## Le sette cose lasciate indietro (27 agosto 2026, la 0.8.0)
 

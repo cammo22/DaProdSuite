@@ -57,13 +57,39 @@ export async function transcodeToWav(source: string): Promise<string | null> {
   const target = join(cacheDir(), `${chiave}.wav`);
   if (existsSync(target)) return target;
 
-  // Si scrive su un file .part e si rinomina solo a conversione riuscita: così
-  // un'interruzione non lascia in cache un WAV troncato che sembra valido.
-  const temp = `${target}.part`;
+  /**
+   * Si scrive su un file di passaggio e si rinomina solo a conversione
+   * riuscita: così un'interruzione non lascia in cache un WAV troncato che
+   * sembra valido.
+   *
+   * ⚠ **Finisce in `.wav`, non in `.part`**, e vale la pena dire perché: era
+   * `${target}.part`, e **FFmpeg sceglie il formato dall'estensione**. `.part`
+   * non è un formato, quindi rispondeva «Unable to choose an output format» e
+   * usciva con errore — ogni volta, in silenzio. Lo stesso identico difetto
+   * teneva nere le anteprime dei video (vedi `main/anteprime.ts`), e qui voleva
+   * dire che i formati che Chromium non sa decodificare — WMA, AIFF, APE —
+   * **non si sono mai sentiti**, pur avendo FFmpeg installato.
+   *
+   * `-f wav` è la seconda cintura: il formato detto, non dedotto.
+   */
+  const temp = `${target}.inCorso.wav`;
   const ok = await new Promise<boolean>((resolve) => {
     const child = spawn(
       binario,
-      ["-hide_banner", "-loglevel", "error", "-i", source, "-vn", "-c:a", "pcm_s16le", "-y", temp],
+      [
+        "-hide_banner",
+        "-loglevel",
+        "error",
+        "-i",
+        source,
+        "-vn",
+        "-c:a",
+        "pcm_s16le",
+        "-f",
+        "wav",
+        "-y",
+        temp,
+      ],
       { windowsHide: true },
     );
     registra(child, "ffmpeg (conversione audio)");

@@ -212,8 +212,175 @@ export const COPIONE_DAPROD = `
       piedi.append(togli);
     }
 
-    box.append(piedi);
+    /**
+     * I commenti. **Sotto la cosa, non in un foglio a parte.**
+     *
+     * Chiesto il 27 agosto 2026: «facciamo un modo di poter anche commentare i
+     * contenuti». Un cuore dice *che* qualcuno e' passato; un commento dice
+     * **cosa ha pensato**, ed e' l'ultimo pezzo che mancava a questa bacheca
+     * per essere un posto dove si sta invece di una vetrina.
+     *
+     * Il conto si vede subito perche' viaggia con l'elenco; le parole si
+     * chiedono solo aprendole. Duecento commenti dentro l'elenco della
+     * galleria vorrebbero dire scaricarli tutti per mostrarne il numero.
+     */
+    var conta = document.createElement("button");
+    conta.className = "cuore";
+    var fumetto = document.createElement("span");
+    fumetto.className = "simbolo";
+    // Il fumetto sta fuori dal BMP: dentro una stringa JS va scritto come
+    // coppia di surrogati, se no il primo pezzo si mangia il secondo.
+    fumetto.textContent = "\\uD83D\\uDCAC";
+    var quantiCom = document.createElement("span");
+    piedi.append(conta);
+    conta.append(fumetto, quantiCom);
+
+    var filo = document.createElement("div");
+    filo.className = "commenti";
+    filo.hidden = true;
+
+    var aggiornaConto = function (quanti) {
+      v.quantiCommenti = quanti;
+      quantiCom.textContent = quanti ? String(quanti) : "commenta";
+    };
+    aggiornaConto(v.quantiCommenti || 0);
+
+    var caricati = false;
+    conta.addEventListener("click", function () {
+      filo.hidden = !filo.hidden;
+      if (filo.hidden || caricati) return;
+      caricati = true;
+      leggiCommenti(v, filo, aggiornaConto);
+    });
+
+    box.append(piedi, filo);
     return box;
+  }
+
+  /* --------------------------------------------------------- i commenti */
+
+  /** Chiede le parole e le disegna. Una volta sola, aprendo. */
+  async function leggiCommenti(v, filo, aggiornaConto) {
+    filo.innerHTML = "";
+    var attesa = document.createElement("div");
+    attesa.className = "vuoto";
+    attesa.textContent = "…";
+    filo.append(attesa);
+    try {
+      var esito = await chiama("/libreria/" + encodeURIComponent(v.id) + "/commenti");
+      disegnaCommenti(v, filo, esito.commenti || [], aggiornaConto);
+    } catch (e) {
+      filo.innerHTML = "";
+      var male = document.createElement("div");
+      male.className = "avviso male";
+      male.textContent = e.message;
+      filo.append(male);
+    }
+  }
+
+  function disegnaCommenti(v, filo, elenco, aggiornaConto) {
+    filo.innerHTML = "";
+    aggiornaConto(elenco.length);
+
+    if (!elenco.length) {
+      var vuoto = document.createElement("div");
+      vuoto.className = "vuoto";
+      vuoto.textContent = "Ancora niente. Scrivi tu la prima cosa.";
+      filo.append(vuoto);
+    }
+
+    for (var c of elenco) filo.append(unCommento(v, filo, c, aggiornaConto));
+
+    /**
+     * La casella per scrivere.
+     *
+     * **Invio manda**, perche' e' quello che fa la mano da sola. Maiusc+Invio
+     * va a capo: un commento di due righe capita, e perderlo perche' hai
+     * premuto Invio per andare a capo e' il modo piu' rapido di non commentare
+     * mai piu'.
+     */
+    var scrivi = document.createElement("div");
+    scrivi.className = "scrivi-commento";
+    var casella = document.createElement("textarea");
+    casella.rows = 1;
+    casella.maxLength = 500;
+    casella.placeholder = "Scrivi qualcosa…";
+    var manda = document.createElement("button");
+    manda.className = "mini";
+    manda.textContent = "Manda";
+
+    var spedisci = async function () {
+      var testo = casella.value.trim();
+      if (!testo) return;
+      manda.disabled = true;
+      casella.disabled = true;
+      try {
+        var esito = await chiama("/libreria/" + encodeURIComponent(v.id) + "/commenti", {
+          method: "POST",
+          body: JSON.stringify({ testo: testo }),
+        });
+        casella.value = "";
+        disegnaCommenti(v, filo, esito.commenti || [], aggiornaConto);
+      } catch (e) {
+        alert(e.message);
+      }
+      manda.disabled = false;
+      casella.disabled = false;
+    };
+
+    manda.addEventListener("click", spedisci);
+    casella.addEventListener("keydown", function (ev) {
+      if (ev.key === "Enter" && !ev.shiftKey) { ev.preventDefault(); spedisci(); }
+    });
+    // Cresce mentre scrivi, come le caselle della Produzione: un commento
+    // dentro una fessura da una riga non si rilegge.
+    casella.addEventListener("input", function () {
+      casella.style.height = "auto";
+      casella.style.height = Math.min(casella.scrollHeight + 2, 160) + "px";
+    });
+
+    scrivi.append(casella, manda);
+    filo.append(scrivi);
+  }
+
+  function unCommento(v, filo, c, aggiornaConto) {
+    var riga = document.createElement("div");
+    riga.className = "commento";
+
+    var faccia = document.createElement("span");
+    faccia.className = "faccia-tonda";
+    riempiFaccia(faccia, c.chiNome || "?", c.chi ? "/io/foto/" + encodeURIComponent(c.chi) : "");
+
+    var corpo = document.createElement("div");
+    corpo.className = "cresce";
+    var testa = document.createElement("div");
+    testa.className = "chi";
+    testa.textContent = (c.chiNome || "qualcuno") + " · " + quando(c.quando);
+    var parole = document.createElement("div");
+    parole.className = "cosa";
+    parole.textContent = c.testo;
+    corpo.append(testa, parole);
+    riga.append(faccia, corpo);
+
+    // La X c'e' solo se il computer ha detto che si puo': chi l'ha scritto, e
+    // chi ha fatto la cosa. La pagina non lo indovina.
+    if (c.mioDaTogliere) {
+      var via = document.createElement("button");
+      via.className = "toglilo";
+      via.title = "togli questo commento";
+      via.textContent = "✕";
+      via.addEventListener("click", async function () {
+        try {
+          var esito = await chiama(
+            "/libreria/" + encodeURIComponent(v.id) + "/commenti/" + encodeURIComponent(c.id),
+            { method: "DELETE" },
+          );
+          disegnaCommenti(v, filo, esito.commenti || [], aggiornaConto);
+        } catch (e) { alert(e.message); }
+      });
+      riga.append(via);
+    }
+    return riga;
   }
 
   /* ---------------------------------------------------------- il profilo */

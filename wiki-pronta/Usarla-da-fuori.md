@@ -268,6 +268,11 @@ chi l'ha fatto, la cosa, e sotto due tasti.
 - **♥ mi piace** — su qualunque cosa in bacheca;
 - **☆ tieni** — la fa comparire fra le tue cose. Non è una copia: il file resta
   di chi l'ha fatto, e se lui la toglie dalla bacheca sparisce anche da te;
+- **💬 i commenti** (dalla **0.8.1**) — il fumetto dice quanti ce ne sono; si
+  tocca e si aprono lì sotto. Si scrive e si manda con **Invio** (Maiusc+Invio va
+  a capo). Un commento lo può togliere chi l'ha scritto **e** chi ha fatto la
+  cosa — se non puoi togliere quello che ti scrivono sotto, in bacheca smetti di
+  metterci roba. A chi l'ha fatta arriva un avviso sul telefono;
 - **il tuo profilo**, in cima: nome, **foto** e una riga sotto al nome. Si cambia
   tutto con *Modifica*. *(Dalla **0.8.0** la foto si carica davvero anche dal
   telefono: prima toccare «Metti una foto» non apriva niente — e per lo stesso
