@@ -33,8 +33,16 @@ import {
   type Risultato,
   type StatoPannello,
   type StatoSuite,
+  type VoceCommento,
 } from "@daprod/gateway";
-import { APPS, APP_IDS, type AppId, type AppStatus, type TipoElemento } from "@daprod/ipc";
+import {
+  APPS,
+  APP_IDS,
+  type AppId,
+  type AppStatus,
+  type ElementoLibreria,
+  type TipoElemento,
+} from "@daprod/ipc";
 import type {
   DispositivoRemoto,
   EsitoDecisione,
@@ -415,6 +423,7 @@ const fornitoreLibreria: FornitoreLibreria = {
         mia: libreria.padrone(e) === filtro.chi,
         quantiMiPiace: libreria.miPiaceDi(e, filtro.chi).quanti,
         mioMiPiace: libreria.miPiaceDi(e, filtro.chi).mio,
+        quantiCommenti: libreria.commenti(e).length,
         tenuta: libreria.laTiene(e, filtro.chi),
         caricata: libreria.eCaricata(e),
         didascalia:
@@ -505,6 +514,57 @@ const fornitoreLibreria: FornitoreLibreria = {
     const vista = suo || libreria.inBacheca(elemento);
     if (!vista) return null;
     return anteprimaDi(elemento);
+  },
+
+  /* --------------------------------------------------------- i commenti */
+
+  /**
+   * Chi puo' leggere e scrivere sotto a una cosa: **chi la puo' vedere.**
+   *
+   * Stessa regola del file e dell'anteprima, e non e' una scorciatoia: un
+   * commento sotto a una cosa che non puoi vedere sarebbe un modo di sapere che
+   * esiste. La bacheca e' quello che gli altri hanno **deciso** di far vedere.
+   */
+  commenti(id, chi) {
+    const elemento = libreria.trova(id);
+    if (!elemento || !puoVederla(elemento, chi)) return null;
+    return libreria.commenti(elemento).map((c) => vestiCommento(c, elemento, chi));
+  },
+
+  commenta(id, chi, testo) {
+    const elemento = libreria.trova(id);
+    if (!elemento || !puoVederla(elemento, chi)) return null;
+
+    const chiNome = nomeDi(chi);
+    const dopo = libreria.commenta(id, chi, chiNome, testo);
+    if (!dopo) return null;
+
+    /**
+     * E chi l'ha fatta lo viene a sapere.
+     *
+     * E' il punto dei commenti: senza l'avviso, chi mette una cosa in bacheca
+     * scopre che gli hanno scritto solo se torna a guardarla — cioe' quasi mai.
+     * Non si avvisa se uno commenta la propria roba: sa gia' cosa ha scritto.
+     */
+    const padrone = libreria.padrone(elemento);
+    if (padrone !== chi && padrone !== PADRONE_DI_CASA) {
+      remoto.avvisaPersona(
+        padrone,
+        "Un commento",
+        `${chiNome} ha commentato "${elemento.nome}": ${dopo[dopo.length - 1]?.testo ?? ""}`,
+      );
+    }
+    sveglia();
+    return dopo.map((c) => vestiCommento(c, elemento, chi));
+  },
+
+  togliCommento(id, idCommento, chi) {
+    const elemento = libreria.trova(id);
+    if (!elemento || !puoVederla(elemento, chi)) return null;
+    const dopo = libreria.togliCommento(id, idCommento, chi);
+    if (!dopo) return null;
+    sveglia();
+    return dopo.map((c) => vestiCommento(c, elemento, chi));
   },
 
   /** Mi piace: su quello che si ha il diritto di vedere, e su niente altro. */
@@ -804,6 +864,46 @@ const fornitorePreset: FornitorePreset = {
  * guarda l'estensione e non il contenuto perché questi file li abbiamo scritti
  * noi, e sappiamo cosa sono.
  */
+/* ------------------------------------------- gli aiuti dei commenti */
+
+/**
+ * Questa persona ha il diritto di vedere questa cosa?
+ *
+ * Le sue, quelle che qualcuno ha messo in bacheca, e tutto quanto se a
+ * guardare e' il computer. E' la stessa regola del file e dell'anteprima,
+ * scritta una volta sola perche' adesso la usano in quattro.
+ */
+function puoVederla(elemento: ElementoLibreria, chi: string): boolean {
+  if (chi === PADRONE_DI_CASA) return true;
+  if (libreria.padrone(elemento) === chi) return true;
+  return libreria.inBacheca(elemento);
+}
+
+/** Come si chiama chi sta scrivendo, per metterlo dentro al commento. */
+function nomeDi(chi: string): string {
+  if (chi === PADRONE_DI_CASA) return "il computer";
+  return remoto.listaDispositivi().find((d) => d.id === chi)?.nome ?? "qualcuno";
+}
+
+/**
+ * Il commento come lo vede chi guarda: con dentro se lo puo' togliere.
+ *
+ * Il permesso non lo calcola la pagina — non ha modo di saperlo con certezza,
+ * e una X che compare quando non dovrebbe e' peggio di una X che non c'e'.
+ */
+function vestiCommento(
+  c: { id: string; chi: string; chiNome: string; testo: string; quando: number },
+  elemento: ElementoLibreria,
+  chi: string,
+): VoceCommento {
+  return {
+    ...c,
+    // Chi l'ha scritto, e chi ha fatto la cosa: se non puoi togliere quello che
+    // ti scrivono sotto, in bacheca smetti di metterci roba.
+    mioDaTogliere: c.chi === chi || libreria.padrone(elemento) === chi || chi === PADRONE_DI_CASA,
+  };
+}
+
 function mimeDi(percorso: string, tipo: string): string {
   const coda = percorso.slice(percorso.lastIndexOf(".") + 1).toLowerCase();
   const noti: Record<string, string> = {

@@ -69,6 +69,9 @@
  *   GET  /libreria/anteprima/:id                → il fotogramma o la copertina
  *   POST /libreria/:id/mipiace { mipiace }       → mi piace, o non più
  *   POST /libreria/:id/tengo   { tengo }         → tienila fra le tue cose
+ *   GET  /libreria/:id/commenti                 → cosa hanno scritto sotto
+ *   POST /libreria/:id/commenti { testo }        → scrivici sotto
+ *   DELETE /libreria/:id/commenti/:idc          → togli un commento
  *
  * Tutte le rotte tranne `/` e `/accoppiamento` vogliono
  * `Authorization: Bearer <token>`. L'unica eccezione è `/stato/stream`, che
@@ -163,6 +166,15 @@ const BATTITO_SSE_MS = 20_000;
  * più di qualunque cosa la suite produca.
  */
 const MASSIMO_REGALO = 512 * 1024 * 1024;
+
+/**
+ * Quanto può essere lungo un commento.
+ *
+ * Cinquecento battute sono due righe piene: è un commento, non un post. Il
+ * taglio vero lo fa comunque la libreria quando lo scrive; questo serve a dire
+ * di no **prima**, con una frase invece che con un troncamento silenzioso.
+ */
+const MASSIMO_COMMENTO = 500;
 
 /**
  * Quanto può pesare una foto del profilo: quattro mega.
@@ -736,7 +748,21 @@ export class Gateway {
         if (!assoluto.startsWith(this.remoto.inviiDir)) {
           return this.errore(res, 403, "Percorso fuori dalla cartella.");
         }
-        this.mandaConPezzi(req, res, assoluto, "image/*", 0);
+        /**
+         * ⚠ **Due cose, e tutte e due si vedevano solo usandola.**
+         *
+         * `image/*` non è un tipo: è una famiglia. Con `X-Content-Type-Options:
+         * nosniff` — che queste risposte hanno — il browser non ha il permesso
+         * di indovinare, e un tipo che non sa leggere lo rifiuta. È lo stesso
+         * difetto già chiuso sulle anteprime il 26 agosto, ed era rimasto qui.
+         *
+         * E **`cambia`**: la foto del profilo è l'unica cosa della suite che
+         * vive a un indirizzo fisso e cambia contenuto. Con la cache di un
+         * giorno buona per i file della libreria, chi ne caricava una nuova
+         * continuava a vedere la vecchia — su ogni schermata tranne quella in
+         * cui l'aveva appena messa. Vedi `mandaConPezzi`.
+         */
+        this.mandaConPezzi(req, res, assoluto, mimeDiUnImmagine(assoluto), 0, undefined, "cambia");
         return;
       }
 
@@ -833,6 +859,58 @@ export class Gateway {
         );
         if (quanti === null) return this.errore(res, 404, "Questa non la trovo, o non la puoi vedere.");
         this.json(res, 200, { ok: true, quanti });
+        this.aggiorna();
+        return;
+      }
+
+      /**
+       * I commenti di una cosa: leggerli, scriverne uno, toglierne uno.
+       *
+       * **Perche' tre rotte e non un campo dell'elenco.** Il conto viaggia
+       * gia' con l'elenco (`quantiCommenti`), che e' quello che serve a
+       * scrivere «3 commenti» sotto a un riquadro. I commenti veri sono testo
+       * di persone e possono essere duecento: si chiedono quando si aprono, non
+       * a ogni giro di galleria.
+       *
+       * Chi puo' leggerli e' chi puo' vedere quella cosa, e chi puo' scriverli
+       * e' lo stesso: il controllo sta nello shell, che e' l'unico a sapere di
+       * chi e' cosa. Vedi `puoVederla` in `remoto.ts`.
+       */
+      const iCommenti = percorso.match(/^\/libreria\/(.+)\/commenti$/);
+      if (iCommenti && (req.method === "GET" || req.method === "POST")) {
+        if (!this.libreria?.commenti) return this.errore(res, 501, "Qui non si commenta.");
+        const id = decodeURIComponent(iCommenti[1] ?? "");
+
+        if (req.method === "GET") {
+          const elenco = this.libreria.commenti(id, dispositivo.id);
+          if (!elenco) return this.errore(res, 404, "Questa non la trovo, o non la puoi vedere.");
+          this.json(res, 200, { commenti: elenco });
+          return;
+        }
+
+        if (!this.libreria.commenta) return this.errore(res, 501, "Qui non si commenta.");
+        const testo = String(((corpo ?? {}) as { testo?: unknown }).testo ?? "").trim();
+        if (!testo) return this.errore(res, 400, "Il commento era vuoto.");
+        if (testo.length > MASSIMO_COMMENTO) {
+          return this.errore(res, 413, `Un commento piu' lungo di ${MASSIMO_COMMENTO} battute non passa.`);
+        }
+        const dopo = this.libreria.commenta(id, dispositivo.id, testo);
+        if (!dopo) return this.errore(res, 404, "Questa non la trovo, o non la puoi vedere.");
+        this.json(res, 201, { commenti: dopo });
+        this.aggiorna();
+        return;
+      }
+
+      const unCommento = percorso.match(/^\/libreria\/(.+)\/commenti\/([^/]+)$/);
+      if (unCommento && req.method === "DELETE") {
+        if (!this.libreria?.togliCommento) return this.errore(res, 501, "Qui non si commenta.");
+        const dopo = this.libreria.togliCommento(
+          decodeURIComponent(unCommento[1] ?? ""),
+          decodeURIComponent(unCommento[2] ?? ""),
+          dispositivo.id,
+        );
+        if (!dopo) return this.errore(res, 403, "Questo commento non lo puoi togliere.");
+        this.json(res, 200, { commenti: dopo });
         this.aggiorna();
         return;
       }
@@ -1416,6 +1494,26 @@ export class Gateway {
    * scrivere due volte la stessa gestione di `Range` voleva dire due modi
    * diversi di sbagliarla.
    */
+  /**
+   * Manda un file, con o senza pezzi.
+   *
+   * `come` dice **che vita ha quell'indirizzo**, ed è la differenza fra due
+   * cose che sembrano uguali:
+   *
+   * - `fermo` (quasi tutto): l'indirizzo contiene il nome del file, quindi un
+   *   contenuto diverso è un indirizzo diverso. Si tiene un giorno, e farlo
+   *   richiedere di nuovo a ogni scorrimento della galleria sarebbe banda
+   *   buttata.
+   * - `cambia` (la foto del profilo): l'indirizzo è `/io/foto/<persona>` e
+   *   **resta quello mentre il contenuto cambia**. ⚠ Con la cache di un giorno
+   *   voleva dire che chi cambiava foto continuava a vedersi la vecchia per
+   *   ventiquattr'ore — detto il 27 agosto 2026: «ora carica la foto profilo ma
+   *   se la provo a cambiare con una nuova rimane sempre la vecchia».
+   *
+   * `cambia` non vuol dire «non tenerla»: vuol dire **chiedi se è cambiata**.
+   * L'`ETag` è dimensione e data, la risposta a una foto ferma è un `304` da
+   * poche decine di byte, e la faccia in bacheca resta immediata come prima.
+   */
   private mandaConPezzi(
     req: IncomingMessage,
     res: ServerResponse,
@@ -1423,10 +1521,14 @@ export class Gateway {
     mime: string,
     bytesAttesi: number,
     scaricaCome?: string,
+    come: "fermo" | "cambia" = "fermo",
   ): void {
     let dimensione = bytesAttesi;
+    let marchio = "";
     try {
-      dimensione = statSync(percorso).size;
+      const dati = statSync(percorso);
+      dimensione = dati.size;
+      marchio = `"${dati.size.toString(36)}-${Math.floor(dati.mtimeMs).toString(36)}"`;
     } catch {
       this.errore(res, 404, "Il file non è più sul disco.");
       return;
@@ -1436,10 +1538,18 @@ export class Gateway {
       "Content-Type": mime,
       "Accept-Ranges": "bytes",
       "X-Content-Type-Options": "nosniff",
-      // È roba di casa e non cambia mai: farla richiedere di nuovo a ogni
-      // scorrimento della galleria costa banda per niente.
-      "Cache-Control": "private, max-age=86400",
+      "Cache-Control": come === "cambia" ? "private, no-cache" : "private, max-age=86400",
     };
+    if (come === "cambia") {
+      comuni["ETag"] = marchio;
+      // È già quella che ha: si risparmia la foto intera e si risponde in un
+      // pacchetto. Senza questo, `no-cache` vorrebbe dire riscaricarla sempre.
+      if (req.headers["if-none-match"] === marchio) {
+        res.writeHead(304, comuni);
+        res.end();
+        return;
+      }
+    }
     if (scaricaCome) {
       comuni["Content-Disposition"] = `attachment; filename="${scaricaCome.replace(/"/g, "")}"`;
     }

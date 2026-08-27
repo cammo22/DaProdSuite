@@ -12,7 +12,123 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ## Non ancora pubblicato
 
-Niente: la 0.8.0 è appena uscita.
+Niente: la 0.8.1 è appena uscita.
+
+---
+
+## 0.8.1 — Il fotogramma, la foto, e le parole sotto
+
+**27 agosto 2026.** Due difetti che la 0.8.0 non aveva chiuso davvero — e stavolta
+c'è il numero esatto di quanto è durato il primo — più la cosa che mancava a
+DaProd per essere un posto dove si sta.
+
+### Le anteprime dei video: la causa vera, finalmente
+
+> «Continua ad esserci il problema della thumbnail dei video che non funziona.»
+
+Aveva ragione. La 0.8.0 aveva chiuso quattro cause, e i video vecchi in effetti
+si erano presi la loro copertina. Ma **quelli nuovi no**, e il motivo era una
+quinta causa — quella che stava sotto a tutte le altre.
+
+Il fotogramma lo estrae FFmpeg, e la suite gli faceva scrivere il risultato su
+un file di passaggio chiamato `<qualcosa>.jpg.part`, per rinominarlo solo a fine
+riuscita. È una cautela giusta e una scelta di nome sbagliata: **FFmpeg decide
+in che formato scrivere guardando l'estensione del file**, e `.part` non è un
+formato. Rispondeva:
+
+```
+Unable to choose an output format for '….jpg.part';
+use a standard extension for the filename or specify the format manually
+```
+
+cioè un errore chiarissimo — che finiva su uno `stderr` che nessuno leggeva. La
+funzione guardava solo il codice di uscita, tornava «non ce l'ho fatta», e sopra
+a quel «non ce l'ho fatta» c'era un rettangolo nero senza spiegazioni.
+
+**Quanto è durato**, misurato sul PC di casa prima di toccare niente: il
+registro dei processi contava **1269 esecuzioni di FFmpeg per le anteprime**, e
+la cartella dove finivano era **vuota dal giorno in cui era stata creata**. Non
+una che sia andata a buon fine.
+
+Tre cose cambiano insieme:
+
+- **il nome di passaggio finisce in `.jpg`**, e il formato si dichiara anche a
+  voce (`-f mjpeg`): due cinture, così non dipende più da come si chiama il file;
+- **il fotogramma si scrive accanto al video**, come un `.cover.jpg` — che è la
+  convenzione che tutta la suite già legge: la galleria lo usa come poster senza
+  chiedere niente a nessuno, lo specchio del telefono se lo porta dietro, e
+  rinominare o cancellare il video se lo porta appresso. Prima finiva in una
+  cache che conosceva solo lui;
+- **quando FFmpeg si lamenta, adesso lo si scrive.** È la lezione vera di questo
+  difetto: un processo che fallisce in silenzio è un difetto che non si trova.
+
+Lo stesso identico sbaglio, con lo stesso `.part`, teneva rotta anche **la
+conversione audio del Visualizer**: i formati che il computer non sa leggere da
+solo — WMA, AIFF, APE — non si sono mai sentiti, pur avendo FFmpeg installato.
+Corretto insieme.
+
+### La foto del profilo che restava quella vecchia
+
+> «Ora carica la foto profilo ma se la provo a cambiare con una nuova rimane
+> sempre la vecchia.»
+
+La foto nuova arrivava, si salvava, la vecchia veniva buttata: dal lato del
+computer era tutto a posto. A restare indietro era il **browser**.
+
+La foto del profilo è l'unica cosa della suite che vive a un indirizzo fisso —
+`/io/foto/<persona>` — e cambia contenuto. Tutto il resto no: un file della
+libreria ha il suo nome dentro l'indirizzo, quindi un contenuto diverso è un
+indirizzo diverso, e tenerselo in memoria un giorno intero è la cosa giusta. La
+foto si portava dietro la stessa regola, e voleva dire **ventiquattr'ore con la
+faccia di prima** — su ogni schermata tranne quella in cui l'avevi appena messa.
+
+Adesso quell'indirizzo dice «chiedi se è cambiata» invece di «tienila». Non
+costa: la risposta a una foto ferma è un pacchetto da poche decine di byte, e la
+faccia in bacheca resta immediata come prima.
+
+Insieme, una seconda cosa che si vedeva solo usandola: la foto veniva dichiarata
+`image/*`, che non è un tipo ma una famiglia, e le regole di sicurezza della
+pagina vietano al browser di indovinare. Adesso dice se è un JPEG o un PNG.
+
+### Si può commentare
+
+> «Facciamo un modo di poter anche commentare i contenuti.»
+
+Sotto a ogni cosa in **DaProd** c'è un fumetto con quanti commenti ha. Si tocca
+e si apre lì sotto — non in un foglio a parte: un commento appartiene a quello
+che sta sopra, e portarlo altrove vorrebbe dire perdere di vista la cosa di cui
+si sta parlando.
+
+- **si scrive e si manda con Invio.** Maiusc+Invio va a capo, e la casella
+  cresce mentre scrivi come quelle della Produzione;
+- **si può togliere**, e lo possono fare in due: chi l'ha scritto, e **chi ha
+  fatto la cosa**. Il secondo conta quanto il primo — se non puoi togliere
+  quello che ti scrivono sotto, in bacheca smetti di metterci roba;
+- **chi ha fatto la cosa riceve un avviso** sul telefono. Senza, scopriresti che
+  ti hanno scritto solo tornando a guardare, cioè quasi mai;
+- **si vede solo quello che si può vedere**: si commenta le proprie cose e
+  quelle che qualcuno ha messo in bacheca, e basta. Stessa regola del file e
+  dell'anteprima.
+
+Il nome di chi scrive resta scritto **dentro** il commento: chi si scollega
+sparisce dall'elenco dei dispositivi, e senza quel nome il suo commento
+diventerebbe di «qualcuno» il giorno dopo.
+
+I commenti stanno nel `.json` accanto al file, come i mi piace e come l'autore:
+niente secondo elenco da tenere allineato, e una cosa spostata a mano si porta
+dietro quello che le hanno detto sotto.
+
+### ⚠ Cosa è provato, e cosa no
+
+| Cosa | Come sta |
+|---|---|
+| Il fotogramma di un video vero | **provato sul serio**: il codice vero della suite, il video vero che ieri non aveva copertina, un JPEG da 33 KB scritto accanto al file. Un solo FFmpeg, non 1269 |
+| La causa (`.part`) | **riprodotta a mano** prima e dopo: con `.part` FFmpeg rifiuta, con `.jpg` e `-f mjpeg` scrive |
+| La conversione audio del Visualizer | corretta **per analogia**, stessa riga e stesso sbaglio; **non provata su un WMA vero** |
+| La cache della foto del profilo | la vecchia risposta è stata **letta dal gateway acceso** (`max-age=86400`, `image/*`); la nuova compila, **il giro vero col telefono no** |
+| I commenti | **provati nel banco della console**: si leggono, se ne scrive uno, il conto sale, se ne toglie uno e il conto scende. A 1280 px e a 375 px |
+| I commenti nella libreria vera | il codice che li scrive nel `.json` **non è ancora girato contro file veri** |
+| L'avviso di un commento sul telefono | l'APK compila e si firma; **il tocco vero no** |
 
 ---
 

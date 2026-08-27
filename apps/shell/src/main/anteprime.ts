@@ -41,7 +41,7 @@
 
 import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, renameSync, rmSync, statSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, renameSync, rmSync, statSync } from "node:fs";
 import { extname, join } from "node:path";
 import type { ElementoLibreria } from "@daprod/ipc";
 import { CACHE_DIR } from "./paths";
@@ -53,6 +53,20 @@ const log = createLogger("anteprime");
 const annota = (riga: string): void => log.write(`${riga}\n`, false);
 
 const SUFFISSO_COPERTINA = ".cover.jpg";
+
+/**
+ * Chi avvisare quando nasce una copertina.
+ *
+ * **Un gancio e non un `import`**, perché `libreria.ts` importa già questo file
+ * (per `cuciLaCopertina`): chiamarla da qui sarebbe un cerchio, e i cerchi in
+ * questo progetto hanno già ammazzato l'avvio una volta — vedi
+ * `prova-cicli.mjs`. Chi accende la suite li mette in comunicazione.
+ */
+let avvisaChiGuarda: () => void = () => {};
+
+export function quandoCompareUnaCopertina(fn: () => void): void {
+  avvisaChiGuarda = fn;
+}
 
 /**
  * A che secondo si prende il fotogramma.
@@ -124,20 +138,42 @@ async function fotogrammaDi(elemento: ElementoLibreria): Promise<string | null> 
     return null;
   }
 
+  /**
+   * **Il fotogramma si scrive accanto al video, non in una cache.**
+   *
+   * Cambiato nella 0.8.1, e non è un dettaglio di implementazione: un
+   * `.cover.jpg` accanto al file è la convenzione che **tutta** la suite già
+   * legge — la galleria del computer la usa come poster senza chiedere niente
+   * a nessuno, lo specchio del telefono se la porta dietro, e `rinomina` e
+   * `elimina` la spostano e la cancellano insieme al video.
+   *
+   * In cache invece era una cosa che sapeva solo questo file, si rifaceva a
+   * ogni cambio di data, e non serviva a nessun altro.
+   *
+   * Se scrivere lì non si può — cartella in sola lettura, file bloccato da
+   * Windows — si ripiega sulla cache, che è meglio di niente.
+   */
+  const accanto = senzaEstensione(elemento.percorso) + SUFFISSO_COPERTINA;
+  if (existsSync(accanto)) return accanto;
+
   const chiave = createHash("sha1")
     .update(`${elemento.percorso}|${stat.size}|${stat.mtimeMs}`)
     .digest("hex")
     .slice(0, 16);
-  const destinazione = join(cartellaAnteprime(), `${chiave}.jpg`);
-  if (existsSync(destinazione)) return destinazione;
+  const diScorta = join(cartellaAnteprime(), `${chiave}.jpg`);
+  if (existsSync(diScorta)) return diScorta;
 
-  const gia = inCorso.get(destinazione);
+  const gia = inCorso.get(accanto);
   if (gia) return gia;
 
-  const lavoro = estrai(binario, elemento.percorso, destinazione).finally(() => {
-    inCorso.delete(destinazione);
+  const lavoro = (async () => {
+    const suoPosto = await estrai(binario, elemento.percorso, accanto);
+    if (suoPosto) return suoPosto;
+    return estrai(binario, elemento.percorso, diScorta);
+  })().finally(() => {
+    inCorso.delete(accanto);
   });
-  inCorso.set(destinazione, lavoro);
+  inCorso.set(accanto, lavoro);
   return lavoro;
 }
 
@@ -146,9 +182,41 @@ async function estrai(
   sorgente: string,
   destinazione: string,
 ): Promise<string | null> {
-  // Si scrive su un `.part` e si rinomina solo a fine riuscita: un'anteprima
-  // troncata in cache è peggio di nessuna anteprima, perché nessuno la rifà.
-  const temporaneo = `${destinazione}.part`;
+  /**
+   * Si scrive su un file di passaggio e si rinomina solo a fine riuscita:
+   * un'anteprima troncata è peggio di nessuna anteprima, perché nessuno la rifà.
+   *
+   * ⚠ **E quel file finisce in `.jpg`, non in `.part`.** È la riga che ha
+   * tenuto rotte le anteprime dei video per quattro versioni.
+   *
+   * Prima era `${destinazione}.part`, che sembra la cosa ovvia e non lo è:
+   * **FFmpeg sceglie il formato dall'estensione del file che scrive**, e
+   * `.part` non è un formato. Rispondeva
+   *
+   *     Unable to choose an output format for '…jpg.part';
+   *     use a standard extension for the filename or specify the format manually
+   *
+   * cioè un errore chiarissimo — che però finiva su uno `stderr` che nessuno
+   * leggeva. `gira()` guardava solo il codice di uscita, tornava `false`,
+   * `estrai` riprovava con lo stesso nome e lo stesso esito, e tornava null.
+   * Rettangolo nero, nessuna riga nel log, nessun modo di accorgersene.
+   *
+   * Quanto è durata, misurato sul PC di casa il 27 agosto 2026: **1269
+   * esecuzioni di FFmpeg e zero file prodotti.** La cartella della cache era
+   * vuota dal giorno in cui era stata creata.
+   *
+   * Due cinture invece di una: l'estensione è quella buona **e** il formato si
+   * dichiara con `-f mjpeg`, così non dipende più da come si chiama il file.
+   *
+   * Sta nella cache e non accanto al video, anche quando è lì che finirà: un
+   * `.jpg` di passaggio dentro la cartella dei risultati comparirebbe in
+   * galleria come un'immagine a sé — per una frazione di secondo, ma
+   * comparirebbe.
+   */
+  const temporaneo = join(
+    cartellaAnteprime(),
+    `${createHash("sha1").update(destinazione).digest("hex").slice(0, 16)}.inCorso.jpg`,
+  );
   const fatto = await gira(binario, [
     "-hide_banner",
     "-loglevel",
@@ -168,6 +236,9 @@ async function estrai(
     "scale=480:-2",
     "-q:v",
     "4",
+    // Il formato detto a voce, e non dedotto dal nome: vedi sopra.
+    "-f",
+    "mjpeg",
     "-y",
     temporaneo,
   ]);
@@ -190,6 +261,8 @@ async function estrai(
       "scale=480:-2",
       "-q:v",
       "4",
+      "-f",
+      "mjpeg",
       "-y",
       temporaneo,
     ]);
@@ -202,13 +275,26 @@ async function estrai(
   try {
     if (statSync(temporaneo).size === 0) {
       rmSync(temporaneo, { force: true });
+      annota(`ffmpeg ha scritto un file vuoto per ${sorgente}`);
       return null;
     }
-    renameSync(temporaneo, destinazione);
-  } catch {
+    try {
+      renameSync(temporaneo, destinazione);
+    } catch {
+      // Fra due dischi diversi non si sposta, si copia. Capita se qualcuno ha
+      // messo la cartella dei risultati su un altro disco.
+      copyFileSync(temporaneo, destinazione);
+      rmSync(temporaneo, { force: true });
+    }
+  } catch (err) {
     rmSync(temporaneo, { force: true });
+    annota(`il fotogramma di ${sorgente} non si è potuto consegnare: ${err instanceof Error ? err.message : err}`);
     return null;
   }
+  // Una copertina nuova accanto a un file vuol dire che la galleria adesso ha
+  // qualcosa da mostrare che un attimo fa non c'era: chi la sta guardando deve
+  // vederla comparire, non trovarla alla prossima apertura.
+  if (destinazione.endsWith(SUFFISSO_COPERTINA)) avvisaChiGuarda();
   return destinazione;
 }
 
@@ -320,21 +406,44 @@ export async function cuciLaCopertina(percorsoAudio: string): Promise<boolean> {
 
 /* --------------------------------------------------------------- FFmpeg */
 
-/** Lancia FFmpeg e dice se è finito bene. Mai più di mezzo minuto. */
+/**
+ * Lancia FFmpeg e dice se è finito bene. Mai più di mezzo minuto.
+ *
+ * ⚠ **E quando va male, scrive perché.** È la lezione della 0.8.1: FFmpeg si
+ * lamentava a voce alta — «Unable to choose an output format» — e quella riga
+ * andava a finire su uno `stderr` che nessuno leggeva. Il risultato era un
+ * `false` senza motivo, e sopra a quel `false` un `null` senza motivo, e in
+ * galleria un rettangolo nero senza motivo. Milleduecento volte.
+ *
+ * Un processo che fallisce in silenzio è un difetto che non si trova.
+ */
 function gira(binario: string, argomenti: string[]): Promise<boolean> {
   return new Promise((risolvi) => {
     const figlio = spawn(binario, argomenti, { windowsHide: true });
     registra(figlio, "ffmpeg (anteprime)");
+
+    // Solo le ultime righe: a FFmpeg che non trova un codec ne bastano due, e
+    // un log che si mangia il disco non lo guarda nessuno.
+    let lamentele = "";
+    figlio.stderr?.on("data", (pezzo: Buffer) => {
+      lamentele = (lamentele + pezzo.toString()).slice(-600);
+    });
+
     const scadenza = setTimeout(() => {
       figlio.kill();
+      annota(`ffmpeg ci ha messo troppo: ${argomenti[argomenti.length - 1]}`);
       risolvi(false);
     }, ATTESA_FFMPEG_MS);
-    figlio.on("error", () => {
+    figlio.on("error", (err) => {
       clearTimeout(scadenza);
+      annota(`ffmpeg non è partito: ${err.message}`);
       risolvi(false);
     });
     figlio.on("close", (codice) => {
       clearTimeout(scadenza);
+      if (codice !== 0) {
+        annota(`ffmpeg ha detto di no (codice ${codice}): ${lamentele.trim() || "senza spiegazioni"}`);
+      }
       risolvi(codice === 0);
     });
   });

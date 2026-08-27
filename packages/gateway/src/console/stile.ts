@@ -468,6 +468,36 @@ export const STILE = `  :root {
     background: none; border: 0; padding: 4px 6px; color: var(--dim); font-size: 13px;
     display: flex; align-items: center; gap: 6px; cursor: pointer; font-weight: 500;
   }
+
+  /* ---------------------------------------------------------- i commenti
+     Sotto la cosa, dentro lo stesso riquadro: un commento appartiene a
+     quello che sta sopra, e in un foglio a parte perderebbe la cosa di vista.
+     La riga di sinistra e' quella che dice «questo e' un discorso su quello
+     li'», ed e' l'unico ornamento che serve. */
+  .posta .commenti {
+    border-top: 1px solid var(--line); padding: 4px 14px 12px;
+    display: flex; flex-direction: column; gap: 2px;
+  }
+  .commento {
+    display: flex; gap: 9px; align-items: flex-start; padding: 8px 0;
+  }
+  .commento .faccia-tonda { width: 26px; height: 26px; font-size: 10.5px; }
+  .commento .chi { font-size: 11.5px; color: var(--fioco); }
+  .commento .cosa { font-size: 13.5px; overflow-wrap: anywhere; margin-top: 1px; }
+  .commento .toglilo {
+    background: none; border: 0; color: var(--fioco); cursor: pointer;
+    font-size: 12px; padding: 4px 6px; line-height: 1; flex: 0 0 auto;
+  }
+  .commento .toglilo:hover { color: var(--err); }
+
+  /* La casella e il tasto sulla stessa riga, e la casella cresce scrivendo:
+     un commento di due righe dentro una fessura da una non si rilegge. */
+  .scrivi-commento { display: flex; gap: 8px; align-items: flex-end; margin-top: 8px; }
+  .scrivi-commento textarea {
+    flex: 1 1 auto; min-width: 0; resize: none; overflow: hidden;
+    margin: 0; padding: 9px 11px; font-size: 13.5px; line-height: 1.45;
+  }
+  .scrivi-commento button { flex: 0 0 auto; }
   .cuore.mio { color: var(--rosa); }
   .cuore .simbolo { font-size: 17px; line-height: 1; }
 

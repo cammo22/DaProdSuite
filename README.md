@@ -10,7 +10,7 @@ Un programma solo per fare musica, immagini, video, voci e parlare con un avatar
 Ogni app la installi quando ti serve e la disinstalli quando non ti serve più.
 Gira sul tuo computer: niente account, niente chiavi API, codice aperto.
 
-[![versione](https://img.shields.io/badge/versione-0.8.0-7c5cff)](https://github.com/cammo22/DaProdSuite/releases/latest)
+[![versione](https://img.shields.io/badge/versione-0.8.1-7c5cff)](https://github.com/cammo22/DaProdSuite/releases/latest)
 [![licenza](https://img.shields.io/badge/licenza-MIT-5cff9d)](LICENSE)
 [![piattaforma](https://img.shields.io/badge/Windows-x64-3ddbff)](#requisiti)
 [![sito](https://img.shields.io/badge/sito-cammo22.github.io-ffa63d)](https://cammo22.github.io/DaProdSuite/)
@@ -93,42 +93,39 @@ lo stesso.
 
 ## A che punto siamo
 
-**Ultima pubblicata: 0.8.0 — «Le cose lasciate indietro».** Nessuna funzione
-nuova: sette cose che non funzionavano, rimandate una dietro l'altra mentre si
-costruiva il resto.
+**Ultima pubblicata: 0.8.1 — «Il fotogramma, la foto, e le parole sotto».**
 
-> **I video hanno la loro anteprima.** Per davvero, stavolta: le cause erano
-> quattro e ogni giro se ne chiudeva una. La galleria non chiedeva il fotogramma
-> a nessuno; la copertina si perdeva quando il file veniva rinominato — cioè a
-> **ogni** video chiesto dal telefono; una clip senza durata leggibile non
-> arrivava mai; e senza FFmpeg installato non c'erano anteprime, senza che da
-> nessuna parte ci fosse scritto perché. Adesso FFmpeg se lo porta dentro
-> l'ambiente Python della suite.
+> **Le anteprime dei video: la causa vera.** Il fotogramma lo estrae FFmpeg, e
+> la suite gli faceva scrivere il risultato su un file chiamato `.jpg.part` —
+> ma **FFmpeg sceglie il formato dall'estensione**, e `.part` non è un formato.
+> Rifiutava ogni volta, e la spiegazione finiva su un canale che nessuno
+> leggeva. Sul PC di casa: **1269 esecuzioni di FFmpeg, zero file prodotti.**
+> Adesso il fotogramma esce, e si scrive **accanto al video** — dove tutta la
+> suite lo cerca già. Lo stesso sbaglio teneva muta la conversione audio del
+> Visualizer.
 >
-> **Dal telefono la canzone ha un nome.** «Come si chiama» è il primo campo di
-> Produzione Musica, ed è come si chiamerà il file.
+> **La foto del profilo non resta più quella vecchia.** È l'unica cosa della
+> suite che vive a un indirizzo fisso e cambia contenuto, e si portava dietro la
+> regola di tutto il resto: tienila un giorno. Adesso quell'indirizzo dice
+> «chiedi se è cambiata».
 >
-> **Le canzoni si scrivono in italiano.** I modelli scrivevano in napoletano
-> perché glielo insegnavamo noi: l'esempio di ritornello nelle istruzioni era
-> *«Ammore mio, nun te ne jì»*. Il genere può essere napoletano, la lingua no.
+> **Si può commentare.** Sotto a ogni cosa in DaProd c'è un fumetto: si tocca,
+> si scrive, si manda con Invio. Lo può togliere chi l'ha scritto **e** chi ha
+> fatto la cosa, e a chi l'ha fatta arriva un avviso sul telefono.
 >
-> **La foto del profilo si carica**, e dal telefono si può caricare in bacheca:
-> una WebView senza la riga giusta lascia cadere in silenzio ogni «scegli un
-> file».
->
-> **Le notifiche arrivano quando il lavoro finisce**, non mezz'ora dopo: con
-> qualcosa in ballo resta di guardia una sentinella che chiede ogni venti
-> secondi e si spegne da sola. E toccare una notifica finalmente apre l'app.
->
-> **La riga di una persona sta in una riga**, sul computer e sul telefono, e il
-> tasto dice «mandagli un pensiero» come si chiama dappertutto.
->
-> ⚠ Cosa è provato e cosa no sta in fondo al [CHANGELOG](CHANGELOG.md) § 0.8.0.
+> ⚠ Cosa è provato e cosa no sta in fondo al [CHANGELOG](CHANGELOG.md) § 0.8.1.
+
+**Prima, la 0.8.0 — «Le cose lasciate indietro».** Sette difetti rimandati
+mentre si costruiva il resto: il nome del brano da Android, i modelli che
+scrivevano in napoletano, la foto del profilo che non si caricava, le notifiche
+in ritardo, la riga delle persone, gli stili.
+
 
 ### Le versioni prima di questa
 
 | | |
 |---|---|
+| **0.8.0** | Sette cose lasciate indietro: anteprime, titolo del brano, italiano, foto del profilo, notifiche |
 | **0.7.8** | Gli stili diventano tre — immagini, video, musica — e la barra del telefono torna una riga |
 | **0.7.7** | Provata a lungo: il collegamento non si perde più, la fila ha i numeri, venti cose viste usandola |
 | **0.7.6** | Due facce per la stessa pagina: chi governa dal computer, chi fa dal telefono. E lo specchio offline |
