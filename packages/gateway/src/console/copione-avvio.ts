@@ -152,7 +152,7 @@ export const COPIONE_AVVIO = `
     // aspettarsi il contrario da questa sarebbe una sorpresa gratis.
     if (ev.key === "Enter" && !ev.shiftKey) { ev.preventDefault(); dilloAlModello(); }
   });
-  $("carica-in-bacheca").addEventListener("click", function () { $("file-in-bacheca").click(); });
+  $("carica-in-bacheca").addEventListener("click", apriCarica);
   $("file-in-bacheca").addEventListener("change", function () {
     var file = $("file-in-bacheca").files && $("file-in-bacheca").files[0];
     $("file-in-bacheca").value = "";

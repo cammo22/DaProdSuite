@@ -676,6 +676,15 @@ export const STILE = `  :root {
   }
   .pausa.bussano .segno { color: var(--accent); }
 
+  /* Com'e' stata fatta una cosa: una riga per campo, dentro al foglio. */
+  .info {
+    padding: 9px 0; border-bottom: 1px solid var(--line);
+  }
+  .info b { display: block; font-size: 11.5px; color: var(--dim); font-weight: 600; }
+  .info .cosa {
+    font-size: 13.5px; margin-top: 3px; white-space: pre-wrap; overflow-wrap: anywhere;
+  }
+
   /* Una riga della rete: chi bussa, o un altro computer. */
   .bussa {
     display: flex; gap: 10px; align-items: center;

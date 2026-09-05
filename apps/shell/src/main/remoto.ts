@@ -513,9 +513,18 @@ const fornitoreLibreria: FornitoreLibreria = {
     };
   },
 
-  pubblica(id, chi, pubblicato) {
+  pubblica(id, chi, pubblicato, didascalia) {
     const fatto = libreria.pubblica(id, chi, pubblicato);
     if (!fatto) return false;
+    /**
+     * Le due righe scritte sotto, se chi pubblica ne ha scritte.
+     *
+     * Vuoto **non cancella** quella di prima: chi ripubblica una cosa senza
+     * riscrivere niente non sta chiedendo di dimenticare cosa aveva scritto.
+     */
+    if (typeof didascalia === "string" && didascalia.trim()) {
+      libreria.intitolaDidascalia(id, didascalia.trim());
+    }
     /**
      * **Una copia in una cartella sua**, dalla 0.7.7.
      *
@@ -852,10 +861,11 @@ function nomeScheda(app: string): string {
 const fornitoreStili: FornitoreStili = {
   miei: (chi, genere) =>
     stiliDi(chi, undefined, genere === "prompt" || genere === "stile" ? genere : undefined),
-  vetrina: (chi) =>
+  vetrina: (chi, ancheImiei) =>
     stiliInVetrina(
       chi,
       (id) => remoto.listaDispositivi().find((d) => d.id === id)?.nome ?? "qualcuno",
+      ancheImiei === true,
     ),
   salva: (chi, dati) =>
     salvaStile(chi, {
@@ -867,6 +877,7 @@ const fornitoreStili: FornitoreStili = {
           ? dati.tipo
           : undefined,
       genere: dati.genere === "prompt" ? "prompt" : "stile",
+      campi: dati.campi,
       da: dati.da === "preso" || dati.da === "partenza" ? dati.da : "mio",
       daNome: dati.daNome,
     }),

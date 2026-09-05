@@ -287,6 +287,84 @@ export const COPIONE_GALLERIA = `
     }
   }
 
+  /**
+   * Com'e' stata fatta una cosa: i campi, e il tasto per tenerseli.
+   *
+   * ⚠ **E' anche il posto dove i prompt diventano utili.** Chiesto il 5
+   * settembre 2026: «ci sono gli stili che sono solo una parte e i prompt che
+   * contengono tutto; come ora non vanno bene — i prompt devi prenderli da
+   * quelli che ho creato io, e nel caso di una canzone ci devono essere tutte
+   * le info, stessa cosa per immagini e video».
+   *
+   * Quindi «salvalo come prompt» qui dentro **non salva solo il testo
+   * principale**: salva tutto quello che si vede in questo riquadro, campo per
+   * campo. Ritrovandolo in Produzione si riempie il modulo intero — titolo,
+   * testo, stile, durata — e non una casella sola.
+   */
+  function apriLeInfo(v) {
+    var carta = apriFoglio("Com'\u00e8 stata fatta");
+
+    var quale = document.createElement("p");
+    quale.className = "sotto";
+    quale.textContent = (v.didascalia || v.nome) + " \u00b7 " + dataDi(v.creato);
+    carta.append(quale);
+
+    for (var come in v.comeEStataFatta) {
+      if (!Object.prototype.hasOwnProperty.call(v.comeEStataFatta, come)) continue;
+      var riga = document.createElement("div");
+      riga.className = "info";
+      var etichetta = document.createElement("b");
+      etichetta.textContent = come;
+      var valore = document.createElement("div");
+      valore.className = "cosa";
+      valore.textContent = v.comeEStataFatta[come];
+      riga.append(etichetta, valore);
+      carta.append(riga);
+    }
+
+    var fila = document.createElement("div");
+    fila.className = "fila";
+    var tieni = document.createElement("button");
+    tieni.textContent = "\u270E Salvalo come prompt";
+    tieni.addEventListener("click", function () { void salvaComeProntoDaInfo(v, tieni); });
+    fila.append(tieni);
+    carta.append(fila);
+  }
+
+  /**
+   * Salva quello che si e' appena letto come **un prompt intero**.
+   *
+   * Il testo del prompt e' il campo principale; tutto il resto — titolo, testo
+   * cantato, stile, durata — finisce nei campi, che e' quello che rende un
+   * prompt diverso da uno stile: ritrovandolo si riempie il modulo, non una
+   * casella.
+   */
+  async function salvaComeProntoDaInfo(v, tasto) {
+    var tipo = v.tipo === "audio" ? "musica" : v.tipo === "video" ? "video" : "immagine";
+    var principale =
+      v.comeEStataFatta["Il prompt"] || v.comeEStataFatta["Che genere"] || v.didascalia || v.nome;
+    var nome = window.prompt("Come lo chiami?", (v.didascalia || v.nome).slice(0, 40));
+    if (!nome) return;
+    tasto.disabled = true;
+    try {
+      await chiama("/stili", {
+        method: "POST",
+        body: JSON.stringify({
+          nome: nome.trim(),
+          testo: principale,
+          tipo: tipo,
+          genere: "prompt",
+          campi: v.comeEStataFatta,
+        }),
+      });
+      tasto.textContent = "\u2713 salvato fra i prompt";
+      try { await leggiStili(); } catch (e) { /* al giro dopo */ }
+    } catch (e) {
+      tasto.disabled = false;
+      alert(e.message);
+    }
+  }
+
   /** L'indirizzo del file vero, e quello dell'anteprima. */
   function indirizzoDi(v) { return "/libreria/file/" + encodeURIComponent(v.id); }
   function anteprimaDi(v) { return "/libreria/anteprima/" + encodeURIComponent(v.id); }
@@ -585,6 +663,26 @@ export const COPIONE_GALLERIA = `
         inFila.textContent = "\\u2713 " + quante + " in fila";
       });
       attrezzi.append(inFila);
+    }
+
+    /**
+     * **Com'e' stata fatta.** Nuovo nella 0.9.1.
+     *
+     * Chiesto il 5 settembre 2026: «quando si clicca un contenuto, se e' una
+     * foto sotto ci devono essere le info con un tasto da cliccare — per le
+     * foto il prompt, per le canzoni titolo testo e stile, per i video il
+     * prompt».
+     *
+     * E' un tasto e non un riquadro sempre aperto: sotto a una foto a schermo
+     * intero, venti righe di prompt sono venti righe che coprono la foto. Chi
+     * vuole sapere preme; chi guarda, guarda.
+     */
+    if (v.comeEStataFatta && Object.keys(v.comeEStataFatta).length) {
+      var info = document.createElement("button");
+      info.className = "mini";
+      info.textContent = "\\u2139 Com'\\u00e8 stata fatta";
+      info.addEventListener("click", function () { apriLeInfo(v); });
+      attrezzi.append(info);
     }
 
     var salva = document.createElement("button");

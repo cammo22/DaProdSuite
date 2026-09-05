@@ -29,27 +29,26 @@
  * ha generato il computer.
  */
 export const COPIONE_DAPROD = `
-  /** Da che parte si guarda la bacheca: tutto, o solo quello che hai tenuto. */
-  var VISTE_BACHECA = [
-    { id: "", nome: "tutto" },
-    { id: "immagine", nome: "immagini" },
-    { id: "video", nome: "video" },
-    { id: "audio", nome: "musica" },
-  ];
-
+  /**
+   * ⚠ **In DaProd non ci sono filtri**, dalla 0.9.1.
+   *
+   * C'erano — «tutto», «immagini», «video», «musica» — e sono stati tolti il 5
+   * settembre 2026: «nella sezione daprod togli i pulsanti per tutto immagini
+   * video e musica, viene sempre visualizzato tutto».
+   *
+   * Ed e' la cosa giusta. Quei filtri sono nati copiando la Galleria, dove
+   * servono: li' cerchi **una cosa tua** in mezzo a trecento. Qui non si cerca
+   * niente — si scorre quello che gli altri hanno messo, in ordine di tempo, e
+   * un filtro per tipo su una bacheca vuol dire nascondere due terzi di quello
+   * che le persone hanno fatto perche' oggi ti va la musica.
+   *
+   * La funzione resta e non disegna niente: la chiamano tre posti, e toglierla
+   * da tutti e tre per una riga vuota non vale la confusione.
+   */
   function disegnaFiltriDaprod() {
     var casella = $("filtri-daprod");
-    casella.innerHTML = "";
-    for (var v of VISTE_BACHECA) {
-      var b = document.createElement("button");
-      b.type = "button";
-      b.className = "mini" + (v.id === filtroBacheca ? " on" : "");
-      b.textContent = v.nome;
-      b.addEventListener("click", (function (quale) {
-        return function () { filtroBacheca = quale; disegnaFiltriDaprod(); leggiBacheca(); };
-      })(v.id));
-      casella.append(b);
-    }
+    if (casella) casella.innerHTML = "";
+    filtroBacheca = "";
   }
 
   async function leggiBacheca() {
@@ -636,12 +635,112 @@ export const COPIONE_DAPROD = `
    * È l'altra metà di DaProd: una bacheca dove si può solo mostrare quello che
    * la suite ha prodotto è una vetrina, non un posto dove si sta.
    */
+  /**
+   * **Carica un contenuto: da dove?** Nuovo nella 0.9.1.
+   *
+   * Chiesto il 5 settembre 2026: «il pulsante metti una cosa tua cambiamolo in
+   * "carica un contenuto"; una volta cliccato chiedera' dal tuo telefono
+   * oppure dalla suite — dal telefono vede i file, dalla suite fa vedere solo
+   * i contenuti creati».
+   *
+   * Sono due gesti diversi e per questo si chiede prima: dal telefono si sceglie
+   * un file e **si carica**, dalla suite si sceglie una cosa che c'e' gia' e
+   * **si pubblica** (nessun byte si muove). Prima c'era solo il primo, e le
+   * proprie generazioni si mettevano in bacheca dalla Galleria — cioe' da
+   * un'altra scheda, che e' il motivo per cui quasi nessuno lo faceva.
+   */
+  function apriCarica() {
+    var carta = apriFoglio("Carica un contenuto");
+
+    voceFoglio(
+      carta,
+      "\u1F4F1".length > 1 ? "\u2913" : "\u2913",
+      "Dal telefono",
+      "una foto, un video o un brano che hai gi\u00e0 qui",
+      function () { chiudiFoglio(); $("file-in-bacheca").click(); },
+    );
+
+    voceFoglio(
+      carta,
+      "\u25A6",
+      "Dalla suite",
+      "una cosa che hai fatto fare al computer",
+      function () { chiudiFoglio(); void apriScegliDallaSuite(); },
+    );
+  }
+
+  /**
+   * Le proprie cose, per sceglierne una da mettere in bacheca.
+   *
+   * Nessun byte si muove: la cosa e' gia' sul computer, e pubblicarla e' un
+   * segno che si mette accanto. E' la stessa rotta che usa la Galleria.
+   */
+  async function apriScegliDallaSuite() {
+    var carta = apriFoglio("Dalla suite");
+    var attesa = document.createElement("p");
+    attesa.className = "nota";
+    attesa.textContent = "Guardo cosa hai fatto\u2026";
+    carta.append(attesa);
+
+    var voci = [];
+    try {
+      var risposta = await chiama("/libreria?quanti=60&dove=mie");
+      voci = (risposta && risposta.voci) || [];
+    } catch (e) {
+      attesa.className = "avviso male";
+      attesa.textContent = e.message;
+      return;
+    }
+    attesa.remove();
+
+    var daFare = voci.filter(function (v) { return !v.pubblicato; });
+    if (!daFare.length) {
+      var niente = document.createElement("p");
+      niente.className = "nota";
+      niente.textContent = "Hai gi\u00e0 messo in bacheca tutto quello che hai fatto.";
+      carta.append(niente);
+      return;
+    }
+
+    for (var v of daFare) {
+      voceFoglio(
+        carta,
+        v.tipo === "audio" ? "\u266B" : v.tipo === "video" ? "\u25B6" : "\u25C9",
+        v.didascalia || v.nome,
+        quando(v.creato),
+        (function (quale) {
+          return function () { chiudiFoglio(); void pubblicaDallaSuite(quale); };
+        })(v),
+      );
+    }
+  }
+
+  /** La mette in bacheca, con due parole sotto se se ne vogliono scrivere. */
+  async function pubblicaDallaSuite(v) {
+    var avviso = $("avviso-bacheca");
+    try {
+      var didascalia = window.prompt("Vuoi scriverci qualcosa sotto?", v.didascalia || "");
+      if (didascalia === null) return;
+      await chiama("/libreria/" + encodeURIComponent(v.id) + "/pubblica", {
+        method: "POST",
+        body: JSON.stringify({ pubblicato: true, didascalia: didascalia }),
+      });
+      avviso.textContent = "";
+      await leggiBacheca();
+    } catch (e) {
+      avviso.textContent = e.message;
+      avviso.className = "avviso male";
+    }
+  }
+
   async function caricaInBacheca(file) {
     var avviso = $("avviso-bacheca");
     avviso.className = "avviso";
     avviso.textContent = "Carico " + file.name + "\\u2026";
     try {
-      var didascalia = prompt("Due parole da scriverci sotto?", "") || "";
+      // «Mettiamo anche la possibilita' di poter scrivere qualcosa di
+      // personalizzato»: due parole sotto, e si possono lasciare vuote.
+      var didascalia = window.prompt("Vuoi scriverci qualcosa sotto?", "") || "";
       await mandaIlFile(
         "/bacheca?nome=" + encodeURIComponent(file.name) +
           "&didascalia=" + encodeURIComponent(didascalia),

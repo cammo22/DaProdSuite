@@ -971,8 +971,14 @@ export class Gateway {
       if (inBacheca && req.method === "POST") {
         if (!this.libreria) return this.errore(res, 501, "Questa suite non ha la libreria.");
         const id = decodeURIComponent(inBacheca[1] ?? "");
-        const voluto = ((corpo ?? {}) as { pubblicato?: boolean }).pubblicato !== false;
-        const fatto = this.libreria.pubblica(id, dispositivo.id, voluto);
+        const dati = (corpo ?? {}) as { pubblicato?: boolean; didascalia?: string };
+        const voluto = dati.pubblicato !== false;
+        const fatto = this.libreria.pubblica(
+          id,
+          dispositivo.id,
+          voluto,
+          typeof dati.didascalia === "string" ? dati.didascalia.slice(0, 300) : undefined,
+        );
         this.json(res, fatto ? 200 : 403, { ok: fatto, pubblicato: voluto });
         this.aggiorna();
         return;
@@ -1582,6 +1588,7 @@ export class Gateway {
           testo?: string;
           tipo?: string;
           genere?: string;
+          campi?: Record<string, string>;
         };
         const salvato = this.stili.salva(dispositivo.id, {
           id: dati.id,
@@ -1589,6 +1596,8 @@ export class Gateway {
           testo: String(dati.testo ?? ""),
           tipo: dati.tipo ? String(dati.tipo) : undefined,
           genere: dati.genere ? String(dati.genere) : undefined,
+          // Solo per i prompt: tutti i campi, non solo il testo principale.
+          campi: dati.campi && typeof dati.campi === "object" ? dati.campi : undefined,
         });
         if (!salvato) return this.errore(res, 400, "Servono un nome e delle parole.");
         this.json(res, 201, { ok: true, stile: salvato });
@@ -1596,8 +1605,12 @@ export class Gateway {
       }
 
       if (percorso === "/stili/vetrina" && req.method === "GET") {
+        // `miei=1`: ci vanno anche i propri. Lo chiede DaProd, dove la vetrina
+        // e' una bacheca e non un elenco da cui prendere.
         if (!this.stili) return this.json(res, 200, { stili: [] });
-        this.json(res, 200, { stili: this.stili.vetrina(dispositivo.id) });
+        this.json(res, 200, {
+          stili: this.stili.vetrina(dispositivo.id, url.searchParams.get("miei") === "1"),
+        });
         return;
       }
 

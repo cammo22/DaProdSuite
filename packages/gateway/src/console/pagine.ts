@@ -370,7 +370,7 @@ export const PAGINE = `<header>
         <button class="mini" id="apri-profilo">Modifica</button>
       </div>
       <div class="fila">
-        <button class="mini" id="carica-in-bacheca">&#10514; Metti una cosa tua</button>
+        <button class="mini" id="carica-in-bacheca">&#10514; Carica un contenuto</button>
         <input type="file" id="file-in-bacheca" hidden>
       </div>
       <div class="avviso" id="avviso-bacheca"></div>

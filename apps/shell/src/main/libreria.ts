@@ -576,6 +576,19 @@ class Libreria extends EventEmitter {
     return true;
   }
 
+  /**
+   * Le due righe scritte sotto a una cosa in bacheca.
+   *
+   * Stanno nei metadati come tutto il resto, e sopravvivono a un rinomina:
+   * sono quello che ha scritto una persona, non un pezzo del nome del file.
+   */
+  intitolaDidascalia(id: string, didascalia: string): boolean {
+    const elemento = this.trova(id);
+    if (!elemento) return false;
+    this.aggiornaMeta(elemento, { didascalia: didascalia.slice(0, 300) });
+    return true;
+  }
+
   /** Vero se questa persona l'ha tenuta da parte. */
   laTiene(elemento: ElementoLibreria, chi: string): boolean {
     return leggiElenco(elemento.meta?.["tenutaDa"]).includes(chi);

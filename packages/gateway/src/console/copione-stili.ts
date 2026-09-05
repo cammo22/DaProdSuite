@@ -117,7 +117,10 @@ export const COPIONE_STILI = `
    */
   async function leggiVetrina() {
     try {
-      var altri = await chiama("/stili/vetrina");
+      // «miei=1»: in DaProd si vede anche quello che hai messo tu. E' l'unico
+      // modo di sapere che la condivisione e' andata — ed e' il difetto detto
+      // il 5 settembre 2026: «ho condiviso uno stile ma non e' uscito in daprod».
+      var altri = await chiama("/stili/vetrina?miei=1");
       stiliDegliAltri = (altri && altri.stili) || [];
     } catch (e) {
       stiliDegliAltri = [];
@@ -314,6 +317,51 @@ export const COPIONE_STILI = `
     }
     var pastiglia = document.querySelector('#modulo [data-campo="stile"]');
     if (pastiglia) pastiglia.value = s.nome;
+
+    /**
+     * ⚠ **Un prompt riempie il modulo, non una casella.**
+     *
+     * E' la differenza detta il 5 settembre 2026: «ci sono gli stili che sono
+     * solo una parte e i prompt che contengono tutto; come ora non vanno bene —
+     * nel caso di una canzone ci devono essere tutte le info».
+     *
+     * I campi arrivano con le etichette che si leggono («Il titolo», «Il
+     * testo»), perche' e' cosi' che vengono salvati e cosi' si capiscono
+     * aprendo il file. Qui si rimappano sui nomi veri dei campi: la tabella e'
+     * corta e sta in un posto solo.
+     */
+    if (genereDi(s) === "prompt" && s.campi) {
+      var DOVE_VA = {
+        "Il prompt": "prompt",
+        "Che genere": "descrizione",
+        "Il testo": "testo",
+        "Lo stile": "stile",
+        "Il titolo": "titolo",
+        "La lingua": "lingua",
+        "Quanto dura": "secondi",
+        "I battiti": "bpm",
+        "La tonalit\u00e0": "tonalita",
+        "La copertina": "copertina",
+        "Con che modello": "modello",
+      };
+      for (var etichetta in s.campi) {
+        if (!Object.prototype.hasOwnProperty.call(s.campi, etichetta)) continue;
+        var nome = DOVE_VA[etichetta];
+        if (!nome) continue;
+        var campo = document.querySelector('#modulo [data-campo="' + nome + '"]');
+        if (!campo) continue;
+        campo.value = s.campi[etichetta];
+        campo.dispatchEvent(new Event("input", { bubbles: true }));
+        campo.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+      // Le pastiglie leggono il campo nascosto solo quando lo si tocca: senza
+      // questo giro resterebbero accese su quelle di prima.
+      for (var p of document.querySelectorAll("#modulo .filtri button[data-valore]")) {
+        var nascosto = p.parentElement && p.parentElement.previousElementSibling;
+        if (!nascosto || !nascosto.dataset) continue;
+        p.classList.toggle("on", p.dataset.valore === nascosto.value);
+      }
+    }
   }
 
   /** Il foglio di uno stile: le quattro cose che ci si può fare. */

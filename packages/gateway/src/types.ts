@@ -484,8 +484,14 @@ export interface FornitoreLibreria {
    * **o se non è roba che questo dispositivo può vedere.**
    */
   file(id: string, chi: string): { percorso: string; nome: string; mime: string; bytes: number } | null;
-  /** Mette o toglie dalla bacheca. Solo il padrone della voce può farlo. */
-  pubblica(id: string, chi: string, pubblicato: boolean): boolean;
+  /**
+   * Mette o toglie dalla bacheca. Solo il padrone della voce può farlo.
+   *
+   * `didascalia` sono le due righe che si leggono sotto. Nuova dalla 0.9.1:
+   * chiesto «mettiamo anche la possibilità di poter scrivere qualcosa di
+   * personalizzato». Assente vuol dire «lascia quella che c'è», non «cancellala».
+   */
+  pubblica(id: string, chi: string, pubblicato: boolean, didascalia?: string): boolean;
   /** Butta via una voce. Solo il padrone della voce può farlo. */
   elimina(id: string, chi: string): boolean;
   /**
@@ -1021,6 +1027,16 @@ export interface StileRemoto {
    * tutta lì la differenza.
    */
   genere?: string;
+  /**
+   * Per un **prompt**: tutti i campi, non solo il testo principale.
+   *
+   * ⚠ E' la differenza che il 5 settembre 2026 e' stata detta cosi': «ci sono
+   * gli stili che sono solo una parte e i prompt che contengono tutto; come ora
+   * non vanno bene». Un prompt di una canzone deve portarsi dietro titolo,
+   * testo, stile e durata: ritrovandolo si riempie **il modulo**, non una
+   * casella.
+   */
+  campi?: Record<string, string>;
   /** `partenza`, `mio`, `preso`: da dove viene. */
   da: string;
   /** Chi l'ha fatto, se è arrivato da un altro. */
@@ -1042,8 +1058,19 @@ export interface FornitoreStili {
    * che è quello che serve alla scheda Stili, la quale li separa da sé.
    */
   miei(chi: string, genere?: string): StileRemoto[];
-  /** Quelli che gli altri hanno messo in vetrina. */
-  vetrina(chi: string): StileRemoto[];
+  /**
+   * Quelli che gli altri hanno messo in vetrina.
+   *
+   * ⚠ `ancheImiei` esiste per un difetto vero, detto il 5 settembre 2026: «ho
+   * condiviso uno stile ma non è uscito in daprod». E non era rotto — era
+   * voluto: nella scheda Stili i propri non compaiono in vetrina, perché sono
+   * già nella lista accanto.
+   *
+   * In DaProd quella regola diventa sbagliata. Là la vetrina non è un elenco da
+   * cui prendere: è **una bacheca**, e in una bacheca quello che hai pubblicato
+   * tu si vede — è l'unico modo di sapere che è andato.
+   */
+  vetrina(chi: string, ancheImiei?: boolean): StileRemoto[];
   /** Salva uno stile: nuovo, o al posto di uno che c'era. */
   salva(
     chi: string,
@@ -1053,6 +1080,7 @@ export interface FornitoreStili {
       testo: string;
       tipo?: string;
       genere?: string;
+      campi?: Record<string, string>;
       da?: string;
       daNome?: string;
     },
