@@ -263,12 +263,20 @@ class MainActivity : AppCompatActivity() {
             }
         }
         SyncWorker.programma(this)
-        if (Build.VERSION.SDK_INT >= 33 &&
-            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) !=
-            PackageManager.PERMISSION_GRANTED
-        ) {
-            chiediNotifiche.launch(Manifest.permission.POST_NOTIFICATIONS)
-        }
+        /**
+         * ⚠ **I permessi si chiedono all'avvio, tutti insieme.** Dalla 0.9.1.
+         *
+         * Prima si chiedevano uno alla volta e nel momento peggiore: le
+         * notifiche qui, dentro la schermata del nome; la batteria da una voce
+         * di menu che compariva solo se mancava; l'installazione quando un
+         * aggiornamento c'era già. Quasi nessuno li dava tutti, e poi «le
+         * notifiche non arrivano» — con la causa in un interruttore che nessuno
+         * sapeva di dover accendere.
+         *
+         * Chiesto il 5 settembre 2026: «facciamo che all'avvio si devono
+         * accettare tutti i requisiti, come notifiche aggiornamento ecc».
+         */
+        if (Permessi.daChiedere(this)) mostraIPermessi(true)
 
         preparaWeb()
 
@@ -1722,9 +1730,11 @@ class MainActivity : AppCompatActivity() {
         if (Profili.tutti(this).size > 1) menu.menu.add(0, 1, 0, R.string.menu_cambia)
         menu.menu.add(0, 2, 1, R.string.aggiungi_persona)
         menu.menu.add(0, 3, 2, R.string.menu_aggiorna)
-        // Solo se il risparmio è ancora acceso: una voce di menu che non fa
-        // niente è peggio di una voce che non c'è.
-        if (!senzaRisparmioBatteria()) menu.menu.add(0, 4, 3, R.string.menu_batteria)
+        // I permessi ci sono **sempre**, anche quando sono tutti dati: e' il
+        // posto in cui uno va a guardare quando qualcosa non arriva, e una
+        // voce che compare solo quando manca qualcosa e' una voce che non si
+        // trova quando serve.
+        menu.menu.add(0, 4, 3, R.string.menu_permessi)
 
         menu.setOnMenuItemClickListener { voce ->
             when (voce.itemId) {
@@ -1739,7 +1749,7 @@ class MainActivity : AppCompatActivity() {
                 }
                 2 -> vaiAdEntrare()
                 3 -> cercaAggiornamento(dilloSempre = true)
-                4 -> spiegaLaBatteria()
+                4 -> mostraIPermessi(false)
             }
             true
         }
@@ -1766,32 +1776,97 @@ class MainActivity : AppCompatActivity() {
         true
     }
 
-    private fun spiegaLaBatteria() {
-        AlertDialog.Builder(this)
-            .setTitle(R.string.batteria_titolo)
-            .setMessage(R.string.batteria_spiega)
-            .setPositiveButton(R.string.batteria_vai) { _, _ ->
-                try {
-                    /**
-                     * L'elenco delle app, non la richiesta diretta.
-                     *
-                     * `ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` mostrerebbe
-                     * un sì/no in un colpo solo, e vorrebbe un permesso che
-                     * esiste apposta per essere guardato con sospetto. Questa
-                     * apre la stessa schermata delle impostazioni: un passaggio
-                     * in più, e nessun permesso da chiedere per una cosa che
-                     * deve restare una scelta di chi usa il telefono.
-                     */
-                    startActivity(
-                        Intent(android.provider.Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS),
-                    )
-                } catch (_: Exception) {
-                    avvisa("Su questo telefono quella schermata non si apre da qui.")
-                }
+    /**
+     * Cosa serve all'app per funzionare bene, tutto in una schermata.
+     *
+     * ⚠ **Sostituisce tre finestrelle sparse.** Prima le notifiche si
+     * chiedevano al primo avvio dentro la schermata del nome, la batteria da
+     * una voce di menu che compariva solo se mancava, e l'installazione quando
+     * un aggiornamento c'era già. Nessuno le vedeva tutte e tre, e il risultato
+     * era «le notifiche non arrivano» con la causa in un interruttore che
+     * l'utente non sapeva di dover accendere.
+     *
+     * `allAvvio` cambia solo le parole e il tasto per uscire: la prima volta si
+     * può saltare, dalle impostazioni si chiude. Le tre righe sono le stesse, e
+     * dicono **cosa succede senza** — che è l'unica cosa che convince a dare un
+     * permesso.
+     */
+    private fun mostraIPermessi(allAvvio: Boolean) {
+        val stato = Permessi.stato(this)
+        val righe = buildList {
+            if (!stato.notifiche) {
+                add(
+                    Triple(
+                        getString(R.string.perm_notifiche),
+                        getString(R.string.perm_notifiche_perche),
+                        { chiediNotifiche.launch(Manifest.permission.POST_NOTIFICATIONS) },
+                    ),
+                )
             }
-            .setNegativeButton(R.string.batteria_no, null)
+            if (!stato.batteria) {
+                add(
+                    Triple(
+                        getString(R.string.perm_batteria),
+                        getString(R.string.perm_batteria_perche),
+                        { Permessi.apriBatteria(this@MainActivity) },
+                    ),
+                )
+            }
+            if (!stato.installare) {
+                add(
+                    Triple(
+                        getString(R.string.perm_installare),
+                        getString(R.string.perm_installare_perche),
+                        { Permessi.apriInstallazione(this@MainActivity) },
+                    ),
+                )
+            }
+        }
+
+        if (righe.isEmpty()) {
+            AlertDialog.Builder(this)
+                .setTitle(R.string.perm_titolo)
+                .setMessage(R.string.perm_tutto_ok)
+                .setPositiveButton(android.R.string.ok, null)
+                .show()
+            Permessi.segnaChiesti(this)
+            return
+        }
+
+        val corpo = buildString {
+            append(getString(R.string.perm_intro))
+            append("\n")
+            for ((nome, perche, _) in righe) {
+                append("\n\u2022 ")
+                append(nome)
+                append("\n   ")
+                append(perche)
+                append("\n")
+            }
+        }
+
+        /**
+         * Un tasto per volta, e non tre.
+         *
+         * Android non lascia chiedere tre permessi in una finestra sola — due
+         * dei tre aprono una schermata di sistema — quindi si offre il primo
+         * che manca e si riapre questa dopo. Chi ne dà uno e chiude, la
+         * prossima volta si vede solo quello che resta.
+         */
+        val (nome, _, fai) = righe.first()
+        AlertDialog.Builder(this)
+            .setTitle(R.string.perm_titolo)
+            .setMessage(corpo)
+            .setPositiveButton(getString(R.string.perm_dai, nome.lowercase())) { _, _ ->
+                Permessi.segnaChiesti(this)
+                fai()
+            }
+            .setNegativeButton(if (allAvvio) R.string.perm_dopo else android.R.string.cancel) { _, _ ->
+                Permessi.segnaChiesti(this)
+            }
             .show()
     }
+
 
     /* ------------------------------------------------------------- la fila */
 
@@ -1895,7 +1970,15 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch {
             try {
                 val (byte, mime) = prendiIByte(rotta, chiaveLocale)
-                val dove = Scarica.salva(this@MainActivity, nome, mimeBuono(mime, nome), byte)
+                /**
+                 * Anche qui il nome vuole l'estensione, e per lo stesso motivo:
+                 * in libreria le cose si chiamano col titolo e basta. In
+                 * galleria, un file senza estensione la galleria di Android non
+                 * lo mostra nemmeno.
+                 */
+                val tipo = mimeBuono(mime, nome)
+                val conCoda = if (nome.contains('.')) nome else nome + estensioneDi(tipo)
+                val dove = Scarica.salva(this@MainActivity, conCoda, tipo, byte)
                 avvisa("Salvato in $dove.")
             } catch (e: Exception) {
                 avvisa(spiega(e))
@@ -1918,7 +2001,25 @@ class MainActivity : AppCompatActivity() {
                 // Una cartella che si svuota da sé: un file condiviso ieri non
                 // serve più a nessuno, e la cache non è un archivio.
                 cartella.listFiles()?.forEach { runCatching { it.delete() } }
-                val file = File(cartella, nome.replace(Regex("[\\\\/:*?\"<>|]"), "_"))
+                /**
+                 * ⚠ **Il nome deve avere l'estensione giusta, o non lo apre nessuno.**
+                 *
+                 * Il difetto del 5 settembre 2026: «quando condivido una
+                 * canzone con il pulsante condividi non condivide
+                 * correttamente il file mp3».
+                 *
+                 * La causa non era la condivisione: era il nome. In libreria
+                 * una cosa si chiama come il suo titolo **senza estensione**
+                 * (`basename(voce.name, extname(voce.name))` in libreria.ts),
+                 * quindi il file scritto qui si chiamava «Bum bum Opensource» e
+                 * basta. Le altre app guardano il nome prima del tipo: senza
+                 * `.mp3` quella e' roba che non si sa cosa sia, e finisce
+                 * allegata come documento generico — o rifiutata.
+                 */
+                val tipo = mimeBuono(mime, nome)
+                val pulito = nome.replace(Regex("[\\\\/:*?\"<>|]"), "_")
+                val conCoda = if (pulito.contains('.')) pulito else pulito + estensioneDi(tipo)
+                val file = File(cartella, conCoda)
                 file.writeBytes(byte)
 
                 val uri = FileProvider.getUriForFile(
@@ -1927,7 +2028,7 @@ class MainActivity : AppCompatActivity() {
                     file,
                 )
                 val intento = Intent(Intent.ACTION_SEND).apply {
-                    type = mimeBuono(mime, nome)
+                    type = tipo
                     putExtra(Intent.EXTRA_STREAM, uri)
                     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 }
@@ -1959,6 +2060,26 @@ class MainActivity : AppCompatActivity() {
      * Serve al telefono per sapere in che collezione metterlo. Un
      * `application/octet-stream` finirebbe nei Download anche se è una foto.
      */
+    /**
+     * L'estensione che va con un tipo, per i file che non ce l'hanno.
+     *
+     * È il contrario di [mimeBuono], e serve alla condivisione: in libreria le
+     * cose si chiamano col loro titolo, senza estensione, e un file senza
+     * estensione le altre app non lo aprono.
+     */
+    private fun estensioneDi(mime: String): String = when (mime.substringBefore(";").trim()) {
+        "image/png" -> ".png"
+        "image/jpeg" -> ".jpg"
+        "image/webp" -> ".webp"
+        "video/mp4" -> ".mp4"
+        "video/webm" -> ".webm"
+        "audio/mpeg" -> ".mp3"
+        "audio/wav", "audio/x-wav" -> ".wav"
+        "audio/flac", "audio/x-flac" -> ".flac"
+        "audio/ogg", "audio/opus" -> ".opus"
+        else -> ""
+    }
+
     private fun mimeBuono(dallaRete: String, nome: String): String {
         val pulito = dallaRete.substringBefore(";").trim()
         if (pulito.isNotBlank() && pulito != "application/octet-stream") return pulito

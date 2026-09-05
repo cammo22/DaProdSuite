@@ -100,6 +100,19 @@ object Notifiche {
      * smette di far passare qualcosa — e quello si nota — invece di far passare
      * tutto, che non si nota finché non dà fastidio.
      */
+    /**
+     * ⚠ **Una sola notifica per lavoro**, e dalla 0.9.1 e' scritto qui perche'.
+     *
+     * Chiesto il 5 settembre 2026: «su telefono solo una notifica quando si
+     * riceve il lavoro». Il gateway ne scrive quattro per ogni lavoro —
+     * «Nuova richiesta», «L'ho accettata», «E' partita», «E' pronta» — e questo
+     * filtro ne lascia passare **una**: quella che dice che c'e' qualcosa da
+     * guardare.
+     *
+     * Restano fuori dal conto le due cose che non sono un lavoro: un pensiero
+     * che qualcuno ti manda e un commento sotto a una cosa tua. Sono persone
+     * che ti scrivono, non stati di una fila.
+     */
     fun valeLaPena(titolo: String, corpo: String): Boolean {
         val tutto = "$titolo $corpo".lowercase()
         if (tutto.contains("pronto") || tutto.contains("pronta")) return true

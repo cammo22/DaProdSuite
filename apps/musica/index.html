@@ -135,6 +135,15 @@
           <label>Copertina</label>
           <select id="coverStyleNew"></select>
         </div>
+        <!-- Con che modello si disegna la copertina. Due, e non quattro: i FLUX
+             grossi vorrebbero undici giga in scheda subito dopo un brano. -->
+        <div class="field">
+          <label>Copertina, con che modello</label>
+          <select id="coverModello">
+            <option value="flux2-4b">FLUX.2 Klein 4B</option>
+            <option value="anima">Anima — la più veloce</option>
+          </select>
+        </div>
       </div>
       <label class="switch"><input type="checkbox" id="autoCover" checked> Genera la copertina prima del brano (pochi secondi)</label>
       <div class="manca" id="mancaAnimaCrea" hidden></div>

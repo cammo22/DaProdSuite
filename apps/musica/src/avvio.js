@@ -140,7 +140,51 @@ collegaLavoriDaFuori(async (richiesta) => {
   }
   if (richiesta.opzioni.tonalita) scegliInMenu(el.tonalita, richiesta.opzioni.tonalita);
   if (richiesta.opzioni.tempo) scegliInMenu(el.tempo, richiesta.opzioni.tempo);
-  if (richiesta.opzioni.strumentale) spunta(el.instrumental, richiesta.opzioni.strumentale);
+  /**
+   * La voce: accesa o spenta.
+   *
+   * Dalla 0.9.1 non è più una spunta ma due pastiglie — «Cantata» e
+   * «Strumentale» — e quello che arriva qui è `si` o `no`. Vuoto vuol dire
+   * cantata, che è quello che facevano tutte le richieste di prima.
+   */
+  if (richiesta.opzioni.voce) spunta(el.instrumental, richiesta.opzioni.voce === "no");
+
+  /**
+   * **La copertina, chiesta da fuori.** Nuova nella 0.9.1.
+   *
+   * Un brano senza copertina, in galleria e in DaProd, è un quadrato con una
+   * nota dentro: si scorre via. Sul computer la copertina si fa da sempre; da
+   * fuori no, e i brani chiesti dal telefono restavano gli unici senza faccia.
+   *
+   * Tre cose, e ognuna ha il suo posto in questa scheda: la descrizione va
+   * nella casella dell'idea (quella che riempie anche Bonsai), lo stile ci si
+   * aggiunge davanti, e il modello è il menu accanto.
+   *
+   * Chiedere una copertina **accende anche l'interruttore**: chi scrive cosa
+   * vuole vedere sta chiedendo che venga fatta, e lasciarlo spento vorrebbe
+   * dire ignorare quello che ha scritto senza dirglielo.
+   */
+  const laCopertina = [richiesta.opzioni.stileCopertina, richiesta.opzioni.copertina]
+    .map((x) => (x || "").trim())
+    .filter(Boolean)
+    .join(", ");
+  if (laCopertina) {
+    scrivi(el.ideaCopertina, laCopertina);
+    spunta(el.autoCover, true);
+  }
+  if (richiesta.opzioni.modelloCopertina) {
+    scegliInMenu(el.coverModello, richiesta.opzioni.modelloCopertina);
+  }
+
+  /**
+   * Quanti brani in un colpo. Nuovo nella 0.9.1, come in DaProdFoto.
+   *
+   * Il campo della scheda arriva a dieci; da fuori il catalogo si ferma a
+   * quattro, e quel limite lo rispettiamo qui invece di fidarci.
+   */
+  if (richiesta.opzioni.quante) {
+    scrivi(el.batch, String(numero(richiesta.opzioni.quante, 1, 4, 1)));
+  }
   // Qui il menu dei modelli si chiama «qualità», che è il nome che ha nella
   // pagina: gli id però sono gli stessi del catalogo delle azioni.
   if (scegliInMenu(el.qualita, richiesta.opzioni.modello)) await aspettaPremibile(el.go);

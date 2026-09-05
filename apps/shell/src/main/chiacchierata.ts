@@ -395,6 +395,79 @@ export async function battuta(opzioni: {
 }
 
 /**
+ * **Adesso fammi il piano.** Nuova nella 0.9.1.
+ *
+ * ⚠ Il difetto che cura, detto il 5 settembre 2026: «siccome i modelli
+ * falliscono a creare il piano, crea proprio un tasto che se premuto gli fa
+ * fare un piano — quindi io ci chatto, quando sono soddisfatto clicco crea
+ * piano e il modello crea il piano».
+ *
+ * Aveva ragione, e la causa è precisa. Fino a qui, a ogni battuta il modello
+ * doveva fare **due cose insieme**: capire se stavi chiacchierando o chiedendo,
+ * e nel secondo caso riempire otto campi. Un modello da quattro miliardi che
+ * deve decidere *se* rispondere a una domanda o compilare un modulo sbaglia
+ * quella decisione spesso — e quando sbaglia lascia il piano vuoto senza dirlo.
+ *
+ * Con un tasto la decisione la prende la persona: da quel momento il modello ha
+ * **un lavoro solo**, e su un lavoro solo va molto meglio. Le istruzioni qui
+ * sotto lo dicono in una riga sola e senza alternative: il piano non può essere
+ * vuoto.
+ *
+ * Il modello non fa una battuta nuova: la conversazione resta com'è, e quello
+ * che cambia è il piano. Se sbaglia lo si dice, e si può ripremere.
+ */
+export async function faiIlPiano(opzioni: {
+  id: string;
+  dispositivoId: string;
+}): Promise<{ sessione: Chiacchierata } | { errore: string }> {
+  scadutaVia();
+  const sessione = tua(opzioni.id, opzioni.dispositivoId);
+  if (!sessione) {
+    return { errore: "Questa chiacchierata è finita. Cominciane un'altra, se ti serve." };
+  }
+  if (!sessione.battute.some((b) => b.chi === "io")) {
+    return { errore: "Digli prima cosa vuoi: dal niente non esce un piano." };
+  }
+
+  const esito = await chiediAllLlm({
+    modello: sessione.modello,
+    sistema: [
+      istruzioni(sessione.dispositivoId),
+      "",
+      "## ADESSO",
+      "La persona ha premuto «crea il piano». Non stai più decidendo se serve un",
+      "piano: serve. Leggi tutta la conversazione qui sotto e trasformala in lavori.",
+      "Il piano NON può essere vuoto: mettici almeno un lavoro.",
+      "In `risposta` scrivi una riga sola che dice cosa hai messo nel piano.",
+    ].join("\n"),
+    utente: conversazione(sessione.battute),
+    schema: SCHEMA_RISPOSTA,
+    nomeSchema: "risposta_daprod",
+    pensa: false,
+    turnoGiaPreso: true,
+    timeoutMs: 3 * 60_000,
+  });
+
+  if (!esito.ok) {
+    return { errore: esito.motivo ?? "Il modello non ha risposto." };
+  }
+
+  const letto = leggiRisposta(esito.testo, sessione.dispositivoId);
+  if (!letto.piano || !letto.piano.lavori.length) {
+    return {
+      errore:
+        "Il modello non è riuscito a farne un piano. Digli in una riga cosa vuoi " +
+        "— «fammi una foto di …» — e ripremi.",
+    };
+  }
+
+  sessione.battute.push({ chi: "modello", testo: letto.risposta, quando: Date.now() });
+  sessione.piano = letto.piano;
+  rimandaLaFine(sessione);
+  return { sessione: nuda(sessione) };
+}
+
+/**
  * Accetta il piano: i lavori vanno in fila, e il modello se ne va.
  *
  * **Le due cose insieme, in quest'ordine.** Prima si accodano i lavori — se

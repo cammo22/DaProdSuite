@@ -378,6 +378,40 @@ export interface VoceLibreria {
   caricata?: boolean;
   /** Le due righe scritte sotto da chi l'ha messa in bacheca. */
   didascalia?: string;
+  /**
+   * **Mai guardata da chi sta guardando adesso.** Nuova dalla 0.9.1.
+   *
+   * Chiesto il 5 settembre 2026: «nelle mie produzioni, la possibilità di
+   * vedere quando un item è nuovo, mai visualizzato, colorandolo
+   * diversamente; quando si clicca cambia colore, e se teniamo premuto lo
+   * possiamo rimettere come non visualizzato».
+   *
+   * Serve a una cosa concreta: una notte di lavoro lascia trenta file, e la
+   * mattina dopo non c'è modo di sapere quali si sono già guardati. Il segno è
+   * **per persona**, non per file: la stessa cosa può essere nuova per te e
+   * vecchia per chi l'ha fatta.
+   */
+  nuova?: boolean;
+  /**
+   * Messa via da chi guarda: non compare più fra le sue cose, ma non è persa.
+   *
+   * Sta in una scheda sua («Archivio»), da cui si può tirare fuori o buttare
+   * davvero. È l'altra metà del segno «nuova»: uno serve a sapere cosa non hai
+   * ancora visto, l'altro a togliere di mezzo quello che hai già deciso.
+   */
+  archiviata?: boolean;
+  /**
+   * Cosa era stato chiesto per farla, e con che campi.
+   *
+   * Chiesto il 5 settembre 2026: «mettiamo insieme al contenuto il prompt
+   * usato, che se tenuto premuto si può salvare, così quando pubblichiamo
+   * sappiamo come è stato fatto il contenuto». Per una foto è il prompt; per
+   * un brano sono titolo, testo e stile; per un video il prompt.
+   *
+   * Viaggia con l'elenco perché è quello che si guarda insieme alla cosa —
+   * chiederlo a parte vorrebbe dire un giro di rete per ogni riquadro aperto.
+   */
+  comeEStataFatta?: Record<string, string>;
 }
 
 /** Chi sa rispondere sulla libreria: lo passa lo shell al gateway. */
@@ -434,15 +468,30 @@ export interface FornitoreLibreria {
      * Chi non è admin e chiede `tutte` riceve `mie`: il divieto sta nel
      * gateway, non qui.
      */
-    dove?: "mie" | "bacheca" | "tutte";
+    dove?: "mie" | "bacheca" | "tutte" | "salvati" | "archivio";
+    /**
+     * Le cose di **una persona sola**, per il suo profilo.
+     *
+     * Chiesto il 5 settembre 2026: «se clicchi su un utente puoi vedere il suo
+     * profilo e le sue creazioni, solo quelle pubblicate però — un admin può
+     * vedere anche quelle non pubbliche». Il filtro dei permessi resta quello
+     * di `dove`: qui si dice solo **di chi**.
+     */
+    di?: string;
   }): VoceLibreria[];
   /**
    * Il file di una voce: percorso sul disco e come si chiama. Null se non c'è
    * **o se non è roba che questo dispositivo può vedere.**
    */
   file(id: string, chi: string): { percorso: string; nome: string; mime: string; bytes: number } | null;
-  /** Mette o toglie dalla bacheca. Solo il padrone della voce può farlo. */
-  pubblica(id: string, chi: string, pubblicato: boolean): boolean;
+  /**
+   * Mette o toglie dalla bacheca. Solo il padrone della voce può farlo.
+   *
+   * `didascalia` sono le due righe che si leggono sotto. Nuova dalla 0.9.1:
+   * chiesto «mettiamo anche la possibilità di poter scrivere qualcosa di
+   * personalizzato». Assente vuol dire «lascia quella che c'è», non «cancellala».
+   */
+  pubblica(id: string, chi: string, pubblicato: boolean, didascalia?: string): boolean;
   /** Butta via una voce. Solo il padrone della voce può farlo. */
   elimina(id: string, chi: string): boolean;
   /**
@@ -471,6 +520,15 @@ export interface FornitoreLibreria {
   togliCommento?(id: string, idCommento: string, chi: string): VoceCommento[] | null;
   /** Tiene da parte una cosa di qualcun altro, o smette di tenerla. */
   tieni?(id: string, chi: string, tenere: boolean): boolean;
+  /**
+   * Segna una cosa come vista, o la rimette come nuova.
+   *
+   * È **per persona**: la stessa cosa può essere nuova per te e vecchia per chi
+   * l'ha fatta. Torna falso se quella cosa non c'è o non la puoi vedere.
+   */
+  segnaVista?(id: string, chi: string, vista: boolean): boolean;
+  /** Mette una cosa in archivio, o la tira fuori. Anche questo per persona. */
+  archivia?(id: string, chi: string, dentro: boolean): boolean;
   /**
    * Un file caricato a mano da una persona, da mettere in bacheca.
    *
@@ -898,6 +956,19 @@ export interface FornitoreChiacchierata {
     dispositivoId: string;
     testo: string;
   }): Promise<{ sessione: Chiacchierata } | { errore: string }>;
+  /**
+   * **Adesso fammi il piano.** Nuova dalla 0.9.1.
+   *
+   * A ogni battuta il modello doveva fare due cose insieme: capire se stavi
+   * chiacchierando o chiedendo, e nel secondo caso riempire otto campi. Un
+   * modello piccolo quella decisione la sbaglia spesso, e quando la sbaglia
+   * lascia il piano vuoto senza dirlo. Con un tasto la decisione la prende la
+   * persona, e al modello resta **un lavoro solo**.
+   */
+  faiIlPiano(opzioni: {
+    id: string;
+    dispositivoId: string;
+  }): Promise<{ sessione: Chiacchierata } | { errore: string }>;
   /** La sessione di questo dispositivo, se ce n'è una viva. */
   mia(dispositivoId: string): Chiacchierata | null;
   /** Il posto in fila di questo dispositivo, se sta aspettando. */
@@ -956,6 +1027,16 @@ export interface StileRemoto {
    * tutta lì la differenza.
    */
   genere?: string;
+  /**
+   * Per un **prompt**: tutti i campi, non solo il testo principale.
+   *
+   * ⚠ E' la differenza che il 5 settembre 2026 e' stata detta cosi': «ci sono
+   * gli stili che sono solo una parte e i prompt che contengono tutto; come ora
+   * non vanno bene». Un prompt di una canzone deve portarsi dietro titolo,
+   * testo, stile e durata: ritrovandolo si riempie **il modulo**, non una
+   * casella.
+   */
+  campi?: Record<string, string>;
   /** `partenza`, `mio`, `preso`: da dove viene. */
   da: string;
   /** Chi l'ha fatto, se è arrivato da un altro. */
@@ -977,8 +1058,19 @@ export interface FornitoreStili {
    * che è quello che serve alla scheda Stili, la quale li separa da sé.
    */
   miei(chi: string, genere?: string): StileRemoto[];
-  /** Quelli che gli altri hanno messo in vetrina. */
-  vetrina(chi: string): StileRemoto[];
+  /**
+   * Quelli che gli altri hanno messo in vetrina.
+   *
+   * ⚠ `ancheImiei` esiste per un difetto vero, detto il 5 settembre 2026: «ho
+   * condiviso uno stile ma non è uscito in daprod». E non era rotto — era
+   * voluto: nella scheda Stili i propri non compaiono in vetrina, perché sono
+   * già nella lista accanto.
+   *
+   * In DaProd quella regola diventa sbagliata. Là la vetrina non è un elenco da
+   * cui prendere: è **una bacheca**, e in una bacheca quello che hai pubblicato
+   * tu si vede — è l'unico modo di sapere che è andato.
+   */
+  vetrina(chi: string, ancheImiei?: boolean): StileRemoto[];
   /** Salva uno stile: nuovo, o al posto di uno che c'era. */
   salva(
     chi: string,
@@ -988,6 +1080,7 @@ export interface FornitoreStili {
       testo: string;
       tipo?: string;
       genere?: string;
+      campi?: Record<string, string>;
       da?: string;
       daNome?: string;
     },

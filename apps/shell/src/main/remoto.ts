@@ -94,6 +94,7 @@ import {
   chiudiChiacchierata,
   collegaChiacchierata,
   cominciaChiacchierata,
+  faiIlPiano,
   esciDallaFila,
   miaChiacchierata,
   modelliPerChiacchierare,
@@ -404,6 +405,9 @@ const fornitoreLibreria: FornitoreLibreria = {
      * entrare in casa, non solo lasciargli accettare le richieste.
      */
     const vedeTutto = filtro.dove === "tutte";
+    /** Le cose messe da parte, e quelle messe via. Due schede nuove della 0.9.1. */
+    const salvati = filtro.dove === "salvati";
+    const archivio = filtro.dove === "archivio";
     /**
      * **Il computer vede tutto.**
      *
@@ -418,6 +422,25 @@ const fornitoreLibreria: FornitoreLibreria = {
     return libreria
       .cerca(cerca)
       .filter((e) => {
+        /**
+         * **L'archivio si guarda solo quando lo si chiede.**
+         *
+         * Sta prima di tutto il resto perche' e' una domanda diversa dalle
+         * altre: «mie», «tutte» e «bacheca» dicono *di chi*, l'archivio dice
+         * *in che stato*. Una cosa archiviata non deve comparire da nessuna
+         * parte tranne che li', o archiviare non servirebbe a niente.
+         */
+        if (archivio) return libreria.eArchiviata(e, filtro.chi);
+        if (libreria.eArchiviata(e, filtro.chi)) return false;
+
+        // Le cose di una persona sola: il suo profilo. Il permesso resta
+        // quello di `dove` — qui si dice solo di chi.
+        if (filtro.di && libreria.padrone(e) !== filtro.di) return false;
+
+        // Messe da parte: quelle di altri che hai tenuto, e che loro tengono
+        // in bacheca. Le tue non ci vanno: sono gia' fra le tue.
+        if (salvati) return libreria.laTiene(e, filtro.chi) && libreria.inBacheca(e);
+
         if (eIlComputer || vedeTutto) return true;
         if (bacheca) return libreria.inBacheca(e);
         /**
@@ -446,6 +469,12 @@ const fornitoreLibreria: FornitoreLibreria = {
         // versione, una foto nuova continuava a comparire come quella vecchia.
         chiFoto: fotoDi(libreria.padrone(e)),
         pubblicato: libreria.inBacheca(e),
+        // Mai guardata da chi sta guardando adesso. Il segno e' per persona:
+        // la stessa cosa e' nuova per te e vecchia per chi l'ha fatta.
+        nuova: !libreria.laHaVista(e, filtro.chi),
+        archiviata: libreria.eArchiviata(e, filtro.chi),
+        // Come e' stata fatta: quello che era stato chiesto, campo per campo.
+        comeEStataFatta: libreria.comeEStataFatta(e),
         mia: libreria.padrone(e) === filtro.chi,
         quantiMiPiace: libreria.miPiaceDi(e, filtro.chi).quanti,
         mioMiPiace: libreria.miPiaceDi(e, filtro.chi).mio,
@@ -484,9 +513,18 @@ const fornitoreLibreria: FornitoreLibreria = {
     };
   },
 
-  pubblica(id, chi, pubblicato) {
+  pubblica(id, chi, pubblicato, didascalia) {
     const fatto = libreria.pubblica(id, chi, pubblicato);
     if (!fatto) return false;
+    /**
+     * Le due righe scritte sotto, se chi pubblica ne ha scritte.
+     *
+     * Vuoto **non cancella** quella di prima: chi ripubblica una cosa senza
+     * riscrivere niente non sta chiedendo di dimenticare cosa aveva scritto.
+     */
+    if (typeof didascalia === "string" && didascalia.trim()) {
+      libreria.intitolaDidascalia(id, didascalia.trim());
+    }
     /**
      * **Una copia in una cartella sua**, dalla 0.7.7.
      *
@@ -611,6 +649,33 @@ const fornitoreLibreria: FornitoreLibreria = {
     const elemento = libreria.trova(id);
     if (!elemento || !libreria.inBacheca(elemento)) return false;
     const fatto = libreria.tieni(id, chi, tenere);
+    if (fatto) sveglia();
+    return fatto;
+  },
+
+  /**
+   * Vista, o rimessa nuova. **Solo su quello che si può vedere.**
+   *
+   * Il controllo è lo stesso di `file`: chi non può aprirla non deve poterne
+   * cambiare lo stato, o si avrebbe un modo di scoprire cosa esiste sul
+   * computer di qualcun altro premendo dei tasti a caso.
+   */
+  segnaVista(id, chi, vista) {
+    const elemento = libreria.trova(id);
+    if (!elemento) return false;
+    const suo =
+      libreria.padrone(elemento) === chi || chi === PADRONE_DI_CASA || decide(chi);
+    if (!suo && !libreria.inBacheca(elemento)) return false;
+    return libreria.segnaVista(id, chi, vista);
+  },
+
+  archivia(id, chi, dentro) {
+    const elemento = libreria.trova(id);
+    if (!elemento) return false;
+    const suo =
+      libreria.padrone(elemento) === chi || chi === PADRONE_DI_CASA || decide(chi);
+    if (!suo && !libreria.inBacheca(elemento)) return false;
+    const fatto = libreria.archivia(id, chi, dentro);
     if (fatto) sveglia();
     return fatto;
   },
@@ -796,10 +861,11 @@ function nomeScheda(app: string): string {
 const fornitoreStili: FornitoreStili = {
   miei: (chi, genere) =>
     stiliDi(chi, undefined, genere === "prompt" || genere === "stile" ? genere : undefined),
-  vetrina: (chi) =>
+  vetrina: (chi, ancheImiei) =>
     stiliInVetrina(
       chi,
       (id) => remoto.listaDispositivi().find((d) => d.id === id)?.nome ?? "qualcuno",
+      ancheImiei === true,
     ),
   salva: (chi, dati) =>
     salvaStile(chi, {
@@ -811,6 +877,7 @@ const fornitoreStili: FornitoreStili = {
           ? dati.tipo
           : undefined,
       genere: dati.genere === "prompt" ? "prompt" : "stile",
+      campi: dati.campi,
       da: dati.da === "preso" || dati.da === "partenza" ? dati.da : "mio",
       daNome: dati.daNome,
     }),
@@ -831,6 +898,7 @@ const fornitoreChiacchierata: FornitoreChiacchierata = {
   modelli: () => modelliPerChiacchierare(),
   comincia: (opzioni) => cominciaChiacchierata(opzioni),
   dico: (opzioni) => battuta(opzioni),
+  faiIlPiano: (opzioni) => faiIlPiano(opzioni),
   mia: (dispositivoId) => miaChiacchierata(dispositivoId),
   attesa: (dispositivoId) => attesaDi(dispositivoId),
   esci: (dispositivoId) => esciDallaFila(dispositivoId),
@@ -1596,20 +1664,26 @@ collegaEsecuzione({
     sveglia();
   },
   consegna(id, file) {
-    const chi = remoto.archivi.datiCorrenti.richieste.find((r) => r.id === id);
     consegna(id, file);
     /**
-     * **E lo dice anche a chi sta al computer**, dalla 0.7.7.
+     * ⚠ **Sul computer non si avvisa piu' quando un lavoro finisce.**
      *
-     * Chiesto così: «mettiamo le notifiche anche su pc che non le sento». Fino
-     * a ieri l'avviso arrivava solo sul telefono di chi aveva chiesto: chi
-     * ospita la macchina — che è quello che aspetta di più, perché è lì —
-     * doveva guardare la finestra.
+     * C'era dalla 0.7.7 — «mettiamo le notifiche anche su pc che non le sento»
+     * — e il 5 settembre 2026 e' stata tolta: «sul pc riceviamo una notifica
+     * quando viene incaricato un lavoro e basta; togli le notifiche del lavoro
+     * pronto o in esecuzione».
+     *
+     * Ed e' giusto, ed e' interessante il perche'. Le due notifiche servono a
+     * due persone diverse: **quella di «e' pronto» serve a chi ha chiesto**, e
+     * chi ha chiesto ha il telefono in tasca. Chi sta al computer la riceve
+     * mentre guarda la finestra in cui il lavoro sta finendo — cioe' non gli
+     * dice niente che non veda gia' — e in una serata di lavoro sono trenta
+     * riquadri nell'angolo dello schermo. Trenta avvisi che non dicono niente
+     * insegnano a ignorare anche il primo che direbbe qualcosa.
+     *
+     * Sul computer restano le due che riguardano **qualcun altro**: qualcuno
+     * vuole collegarsi, e qualcuno ha chiesto un lavoro.
      */
-    avvisaSulComputer(
-      chi?.numero ? `Pronto il numero ${chi.numero}` : "Un lavoro è pronto",
-      `${chi?.daNome ?? "qualcuno"}: ${(chi?.testo ?? file.nome).slice(0, 90)}`,
-    );
     // La fila si è accorciata: qualcuno che aspettava per via di un tetto può
     // partire adesso. Senza questa riga i tetti sarebbero una porta che non si
     // riapre — vedi `rivediTrattenute`.
@@ -1638,6 +1712,27 @@ function liberaLaFila(): void {
  * — finisce qui, e da qui la scheda giusta si apre e genera. È il pezzo che
  * mancava perché «da fuori» volesse dire davvero da fuori.
  */
+/**
+ * **Qualcuno ha chiesto un lavoro**: e questo, sul computer, si dice.
+ *
+ * Nuova nella 0.9.1, chiesta cosi': «sul pc riceviamo una notifica quando viene
+ * incaricato un lavoro e basta». E' l'unica notifica del lavoro che sopravvive
+ * su questa macchina, e la ragione e' che e' l'unica che dice qualcosa che chi
+ * ci sta davanti non vede: una richiesta e' arrivata **da fuori**, e magari la
+ * suite e' dietro a un browser.
+ *
+ * Sta su `suRichiesta` e non su `suAccettata` apposta: «incaricato» vuol dire
+ * arrivato, non partito. Se aspettasse il si', chi decide riceverebbe la
+ * notifica dopo averlo dato lui — cioe' mai in tempo per servire a qualcosa.
+ */
+remoto.suRichiesta((richiesta) => {
+  avvisaSulComputer(
+    richiesta.numero ? `Lavoro numero ${richiesta.numero}` : "Un lavoro da fare",
+    `${richiesta.daNome} ha chiesto: ${richiesta.testo.slice(0, 90)}`,
+    `richiesta-${richiesta.id}`,
+  );
+});
+
 remoto.suAccettata((richiesta) => {
   accoda({
     id: richiesta.id,

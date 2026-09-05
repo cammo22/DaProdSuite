@@ -345,7 +345,11 @@ async function creaBrano(p, racconta = () => {}) {
     const prompt = idea
       ? `album cover artwork, ${idea}, square composition, no text`
       : promptCopertina(p.titolo, p.lyrics, el.coverStyleNew.value);
-    idCopertina = await ponte.invia(grafoImmagine(prompt, rnd()));
+    // Con che modello: dalla 0.9.1 si sceglie, e di suo è FLUX.2 Klein 4B.
+    // Vedi `MODELLI_COPERTINA` in grafi.js per il perché sono due e non quattro.
+    idCopertina = await ponte.invia(
+      grafoImmagine(prompt, rnd(), { modello: el.coverModello ? el.coverModello.value : "" }),
+    );
   }
 
   // `conCopertina` dice alla coda che c'è una copertina per questo brano: se

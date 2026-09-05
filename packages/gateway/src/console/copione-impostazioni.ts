@@ -116,9 +116,27 @@ export const COPIONE_IMPOSTAZIONI = `
       location.reload();
     });
 
-    voceFoglio(carta, "\\u2609", "Come siamo messi", frasaConnessione(), function () {
-      apriComeSiamoMessi();
-    });
+    /**
+     * ⚠ **Le impostazioni non sono le stesse per tutti.** Dalla 0.9.1.
+     *
+     * Chiesto il 5 settembre 2026: «fai in modo che solo gli admin vedano le
+     * cose importanti nelle impostazioni, gli utenti non devono vedere le
+     * stesse impostazioni».
+     *
+     * Non e' un permesso in piu': quelle voci **gia'** non facevano niente per
+     * chi non decide — il gateway le rifiuta — e mostrarle serviva solo a
+     * offrire tasti che rispondono «non puoi». Peggio: «Come siamo messi»
+     * racconta gli indirizzi del computer, il tunnel e il firewall, cioe' come
+     * si entra in casa, e non e' roba da mettere davanti a chiunque passi.
+     *
+     * A chi non decide restano le quattro cose che riguardano **lui**:
+     * ricaricare, cambiare persona, aggiornare l'app, andarsene.
+     */
+    if (puoiDecidere) {
+      voceFoglio(carta, "\\u2609", "Come siamo messi", frasaConnessione(), function () {
+        apriComeSiamoMessi();
+      });
+    }
 
     if (puoiDecidere) {
       voceFoglio(
@@ -136,12 +154,13 @@ export const COPIONE_IMPOSTAZIONI = `
     /**
      * La rete: chi bussa, e gli altri computer.
      *
-     * **Si vede anche da ospite**, ed e' voluto: sapere che in casa c'e' un
-     * altro computer con la suite accesa e' un'informazione, non un permesso.
-     * La fila delle bussate dentro al foglio la nasconde il gateway, non questa
-     * riga: chi non decide riceve un elenco vuoto.
+     * ⚠ **Solo per chi decide**, dalla 0.9.1. Nella 0.9.0 si vedeva da tutti,
+     * con il ragionamento che sapere quali computer ci sono in casa e'
+     * un'informazione e non un permesso. E' vero a meta': dentro quel foglio
+     * c'e' anche chi sta bussando alla porta, e chi puo' entrare non e' una
+     * cosa che si guarda per curiosita'.
      */
-    voceFoglio(
+    if (puoiDecidere) voceFoglio(
       carta,
       "\u2318",
       "La rete di casa",

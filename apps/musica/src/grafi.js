@@ -130,6 +130,88 @@ const MODELLI_IMMAGINE = {
   vae: "qwen_image_vae.safetensors",
 };
 
+/**
+ * Con che modello si fa **la copertina**. Due, dalla 0.9.1.
+ *
+ * Chiesto il 5 settembre 2026: «anche la possibilità di scegliere anima o flux
+ * per la copertina», e «rendiamo flux klein 4b default per le immagini, lo
+ * stesso per le copertine».
+ *
+ * **Perché due e non quattro.** Una copertina è un quadrato che si guarda in
+ * una lista: i due FLUX grossi ci starebbero, ma vorrebbero dire caricare
+ * undici giga in scheda subito dopo aver fatto un brano — e su 8 GB è la strada
+ * per l'out-of-memory. Anima resta perché è la più veloce e non serve la
+ * scheda; Klein 4B perché capisce le descrizioni lunghe, che è quello che si
+ * scrive quando si dice come deve essere una copertina.
+ *
+ * Gli id sono gli stessi di DaProdFoto, e non è un caso: chi chiede da fuori
+ * dice «flux2-4b» e vale in tutte e due le schede.
+ */
+export const MODELLI_COPERTINA = {
+  anima: {
+    id: "anima",
+    nome: "Anima",
+    grafo: (prompt, seed, opzioni) => grafoAnima(prompt, seed, opzioni),
+    catalogo: [],
+  },
+  "flux2-4b": {
+    id: "flux2-4b",
+    nome: "FLUX.2 Klein 4B",
+    dit: "flux-2-klein-4b-Q5_K_M.gguf",
+    txt: "Qwen3-4B-Q5_K_M.gguf",
+    vae: "flux2-vae.safetensors",
+    grafo: (prompt, seed, opzioni) => grafoFluxCopertina(prompt, seed, opzioni),
+    catalogo: ["flux2-klein-4b-q5km", "flux2-4b-text-encoder", "flux2-vae"],
+  },
+};
+
+/**
+ * La copertina con FLUX.2 Klein 4B.
+ *
+ * È il grafo di DaProdFoto ridotto all'osso: niente ritocco, niente misure
+ * libere, niente negativo. Klein è distillato e lavora a CFG 1, e a CFG 1 il
+ * negativo non viene guardato — si passa un conditioning azzerato, che è quello
+ * che fa il flusso ufficiale e costa un encoding in meno.
+ *
+ * ⚠ Il testo del prompt qui **non si traduce**: FLUX.2 legge con un Qwen3, che
+ * l'italiano lo capisce. È la differenza con Anima, che l'inglese lo vuole.
+ */
+function grafoFluxCopertina(prompt, seed, { larghezza = 1024, altezza = 1024, salva = false } = {}) {
+  const m = MODELLI_COPERTINA["flux2-4b"];
+  return {
+    "1": { class_type: "UnetLoaderGGUF", inputs: { unet_name: m.dit } },
+    "2": { class_type: "CLIPLoaderGGUF", inputs: { clip_name: m.txt, type: "flux2" } },
+    "3": { class_type: "CLIPTextEncode", inputs: { clip: ["2", 0], text: prompt } },
+    "4": { class_type: "ConditioningZeroOut", inputs: { conditioning: ["3", 0] } },
+    "5": {
+      class_type: "CFGGuider",
+      inputs: { model: ["1", 0], positive: ["3", 0], negative: ["4", 0], cfg: 1 },
+    },
+    "6": { class_type: "RandomNoise", inputs: { noise_seed: seed } },
+    "7": { class_type: "KSamplerSelect", inputs: { sampler_name: "euler" } },
+    "8": {
+      class_type: "Flux2Scheduler",
+      inputs: { steps: 20, width: larghezza, height: altezza },
+    },
+    "9": { class_type: "VAELoader", inputs: { vae_name: m.vae } },
+    "11": {
+      class_type: "EmptyFlux2LatentImage",
+      inputs: { width: larghezza, height: altezza, batch_size: 1 },
+    },
+    "12": {
+      class_type: "SamplerCustomAdvanced",
+      inputs: {
+        noise: ["6", 0], guider: ["5", 0], sampler: ["7", 0],
+        sigmas: ["8", 0], latent_image: ["11", 0],
+      },
+    },
+    "10": { class_type: "VAEDecode", inputs: { samples: ["12", 0], vae: ["9", 0] } },
+    "13": salva
+      ? { class_type: "SaveImage", inputs: { images: ["10", 0], filename_prefix: "immagini/daprod" } }
+      : { class_type: "PreviewImage", inputs: { images: ["10", 0] } },
+  };
+}
+
 const PREFISSO = "audio/daprodmusica";
 const SALVATAGGI = {
   mp3: { class_type: "SaveAudioMP3", inputs: { audio: ["8", 0], filename_prefix: PREFISSO, quality: "V0" } },
@@ -291,7 +373,19 @@ function grafoAce(m, p) {
  * finisse in output, la libreria si riempirebbe di copertine sciolte che nessuno
  * ha chiesto.
  */
-export function grafoImmagine(prompt, seed, { larghezza = 1024, altezza = 1024, salva = false } = {}) {
+/**
+ * La copertina, con il modello che si è scelto.
+ *
+ * Di suo **FLUX.2 Klein 4B**, dalla 0.9.1: capisce le descrizioni lunghe, che è
+ * quello che si scrive quando si dice come dev'essere una copertina. Un id che
+ * non conosciamo torna ad Anima invece di far fallire il lavoro.
+ */
+export function grafoImmagine(prompt, seed, opzioni = {}) {
+  const quale = MODELLI_COPERTINA[opzioni.modello] ?? MODELLI_COPERTINA["flux2-4b"];
+  return quale.grafo(prompt, seed, opzioni);
+}
+
+function grafoAnima(prompt, seed, { larghezza = 1024, altezza = 1024, salva = false } = {}) {
   return {
     "1": { class_type: "UNETLoader", inputs: { unet_name: MODELLI_IMMAGINE.dit, weight_dtype: "default" } },
     "2": { class_type: "CLIPLoader", inputs: { clip_name: MODELLI_IMMAGINE.txt, type: "stable_diffusion" } },

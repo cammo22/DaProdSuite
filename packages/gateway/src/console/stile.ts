@@ -193,6 +193,10 @@ export const STILE = `  :root {
   .tastone.rosa  { --tinta: #f472b6; }
   .tastone.ciano { --tinta: #22d3ee; }
   .tastone.ambra { --tinta: #fb923c; }
+  /* L'archivio: grigio, e non e' pigrizia. E' la sezione di quello che si e'
+     gia' guardato e messo via, e un colore acceso la farebbe sembrare una cosa
+     da guardare. */
+  .tastone.grigio { --tinta: #6b7280; }
   .tastone.verde { --tinta: #34d399; }
   .tastone.on { border-color: var(--tinta); }
   .tastone.on::after { opacity: .5; }
@@ -352,6 +356,37 @@ export const STILE = `  :root {
   .filtri { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 12px; }
   .filtri button.on { border-color: var(--accent); color: var(--txt); background: #1b1533; }
   .quadri { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 11px; }
+
+  /**
+   * ⚠ **Mai guardata.** Nuovo nella 0.9.1.
+   *
+   * Chiesto il 5 settembre 2026: «la possibilita' di vedere quando un item e'
+   * nuovo, mai visualizzato, colorandolo diversamente». Non e' decorazione: una
+   * notte di lavoro lascia trenta file, e la mattina dopo non c'e' modo di
+   * sapere quali si sono gia' guardati.
+   *
+   * Il segno e' **il bordo e un pallino**, non lo sfondo: lo sfondo di un
+   * riquadro e' l'immagine, e tingerla sarebbe mentire su come e' venuta.
+   */
+  .quadro.nuova { border-color: var(--accent); box-shadow: 0 0 0 1px #8b5cf644; }
+  .quadro.nuova .sotto .nome::after {
+    content: "";
+    display: inline-block; vertical-align: middle;
+    width: 7px; height: 7px; margin-left: 6px; border-radius: 99px;
+    background: var(--accent);
+  }
+  /* Di chi e', quando si guarda la roba di tutti. Piu' visibile di una spilla:
+     e' l'unica cosa che distingue due foto uguali fatte da due persone. */
+  .quadro .padrone {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: #8b5cf622; border: 1px solid #8b5cf655; color: var(--txt);
+    border-radius: 99px; padding: 2px 8px; font-size: 11px; margin-top: 4px;
+  }
+  .quadro .padrone .faccia-tonda { width: 16px; height: 16px; font-size: 9px; }
+  /* Le cose non pubblicate, nel profilo di qualcun altro visto da chi decide:
+     un colore diverso, perche' guardarle e' un permesso e non la normalita'. */
+  .quadro.privata { border-color: #fb923c66; }
+  .quadro.privata .sotto .riga::before { content: "non pubblicata \u00b7 "; color: var(--ambra); }
   @media (min-width: 620px) { .quadri { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); } }
   .quadro { border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: #0b0d13; }
   .quadro .vetro { position: relative; display: block; width: 100%; cursor: pointer; border: 0; padding: 0; background: #000; }
@@ -641,6 +676,15 @@ export const STILE = `  :root {
   }
   .pausa.bussano .segno { color: var(--accent); }
 
+  /* Com'e' stata fatta una cosa: una riga per campo, dentro al foglio. */
+  .info {
+    padding: 9px 0; border-bottom: 1px solid var(--line);
+  }
+  .info b { display: block; font-size: 11.5px; color: var(--dim); font-weight: 600; }
+  .info .cosa {
+    font-size: 13.5px; margin-top: 3px; white-space: pre-wrap; overflow-wrap: anywhere;
+  }
+
   /* Una riga della rete: chi bussa, o un altro computer. */
   .bussa {
     display: flex; gap: 10px; align-items: center;
@@ -651,38 +695,33 @@ export const STILE = `  :root {
   .bussa b { display: block; font-size: 13.5px; }
   .bussa small { color: var(--dim); font-size: 11.5px; display: block; overflow-wrap: anywhere; }
 
-  /* --------------------------------------------------------- dillo e basta */
-  /* Una riga sola: la casella e il tasto. Sta in cima alla Produzione perche'
-     e' il modo piu' corto per arrivare a un lavoro, e quello piu' corto va
-     davanti agli altri. */
-  .dillo { display: flex; gap: 8px; margin: 12px 0 4px; }
-  .dillo input { flex: 1; min-width: 0; margin: 0; }
-  .dillo button { flex: 0 0 auto; }
+  /* Un po' di respiro in fondo alle pagine lunghe.
+     Chiesto il 5 settembre 2026: «in produci lascia un po' di spazio in fondo,
+     cosi' lasciamo un po' di spazio quando si scrolla». Senza, l'ultimo campo
+     finisce appiccicato alla barra delle schede e per toccarlo si sbaglia. */
+  #pag-produzione, #pag-daprod, #pag-galleria { padding-bottom: 40px; }
 
   /* ------------------------------------------------------- il visualizer */
   /* Dietro a tutto, e senza toccare niente: nessun evento del mouse arriva
      qui, quindi la pagina sopra funziona esattamente come prima. */
   /**
-   * Dietro a tutto, e **con uno z-index negativo**.
+   * ⚠ **Il visualizer sta dentro il palco**, non dietro alla pagina.
    *
-   * La prima stesura lo metteva a zero e alzava a uno la testata, il corpo e la
-   * barra delle schede. Sembra la stessa cosa e non lo era: quella riga
-   * arrivava dopo la regola della testata e le portava via il «position:
-   * sticky», e dentro la WebView di Android il risultato era che la lente e il
-   * palco si vedevano quasi neri. Trovato provando sull'app, non leggendo.
+   * Nella 0.9.0 era lo sfondo del corpo, e la foto del 5 settembre 2026 l'ha
+   * chiuso in una riga: «nella foto vedi il rosso, e' dove vorrei vedere il
+   * visualizer, non nello sfondo dove lo hai messo». A schermo intero **il
+   * visualizer e' il contenuto**: un brano non ha altro da mostrare che la sua
+   * copertina e quello che il suono fa vedere, e guardarlo attraverso una
+   * lista della spesa non e' guardarlo.
    *
-   * Con «-1» il canvas sta sotto al contenuto della pagina e sopra allo sfondo
-   * del corpo senza che nessun altro debba cambiare: e' il modo classico, e non
-   * tocca niente di quello che c'era prima.
+   * Sta in fondo al palco e non tocca niente: nessun evento del mouse arriva
+   * qui, quindi i tasti sopra funzionano esattamente come prima.
    */
-  #visual {
-    position: fixed; inset: 0; z-index: -1;
+  .palcoLettore #visual {
+    position: absolute; inset: 0; z-index: 0;
     width: 100%; height: 100%;
     pointer-events: none;
   }
-  /* Con il visualizer acceso lo sfondo del corpo si smorza: due sfumature
-     sovrapposte sono fango, e quella che deve vedersi e' quella che si muove. */
-  body.convisual { background-image: none; background-color: #05060a; }
 
   /* ----------------------------------------------------- la barra che suona */
   .barraLettore {
@@ -736,13 +775,29 @@ export const STILE = `  :root {
    * leggendo il codice: da fuori sembrava un problema di «backdrop-filter».
    */
   .palcoLettore {
-    position: fixed; inset: 0; z-index: 80;
+    position: fixed; inset: 0; z-index: 80; overflow: hidden;
     background: #04050afa;
     display: flex; flex-direction: column;
     padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom);
     animation: entra .18s ease-out;
   }
+  /* Tutto quello che sta nel palco va sopra al canvas. */
+  .palcoLettore .cima,
+  .palcoLettore .dentro,
+  .palcoLettore .tempo,
+  .palcoLettore .sotto { position: relative; z-index: 1; }
   .palcoLettore .cima { display: flex; align-items: center; gap: 10px; padding: 10px 14px; }
+
+  /* La barra del tempo: si legge dove sei e ci si sposta. */
+  .palcoLettore .tempo { display: flex; align-items: center; gap: 10px; padding: 0 16px; }
+  .palcoLettore .tempo .ora {
+    font-size: 11.5px; color: var(--dim); font-variant-numeric: tabular-nums;
+    flex: 0 0 auto; min-width: 38px; text-align: center;
+  }
+  .palcoLettore .tempo input[type="range"] {
+    flex: 1; min-width: 0; margin: 0; accent-color: var(--accent);
+    height: 26px; background: none; border: 0; padding: 0;
+  }
   .palcoLettore .cima .titolo { flex: 1; min-width: 0; }
   .palcoLettore .cima .titolo b {
     display: block; font-size: 14px; font-weight: 600;
@@ -792,7 +847,7 @@ export const STILE = `  :root {
   */
   nav.fondo {
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
-    display: grid; grid-template-columns: repeat(6, 1fr);
+    display: grid; grid-template-columns: repeat(5, 1fr);
     background: #0a0c11f2; backdrop-filter: blur(10px);
     border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom);
   }
@@ -820,7 +875,7 @@ export const STILE = `  :root {
     border-radius: 99px; padding: 0 5px; min-width: 16px; text-align: center;
   }
   @media (min-width: 760px) {
-    nav.fondo { grid-template-columns: repeat(6, auto); justify-content: center; gap: 10px; }
+    nav.fondo { grid-template-columns: repeat(5, auto); justify-content: center; gap: 10px; }
     nav.fondo button { flex-direction: row; padding: 13px 18px; font-size: 13px; }
   }
 

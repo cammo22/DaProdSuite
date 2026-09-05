@@ -79,6 +79,19 @@ export interface Stile {
    */
   genere?: "stile" | "prompt";
   /**
+   * Per un **prompt**: tutti i campi, non solo il testo principale.
+   *
+   * ⚠ È la differenza detta il 5 settembre 2026: «ci sono gli stili che sono
+   * solo una parte e i prompt che contengono tutto; come ora non vanno bene».
+   * Un prompt di una canzone si porta dietro titolo, testo, stile e durata, e
+   * ritrovandolo si riempie **il modulo** invece di una casella.
+   *
+   * Le chiavi sono quelle che si leggono («Il titolo», «Il testo»): vengono da
+   * `comeEStataFatta` in libreria.ts, e restano leggibili apposta — chi apre il
+   * file degli stili deve capire cosa c'è dentro senza una tabella.
+   */
+  campi?: Record<string, string>;
+  /**
    * Da dove viene: `partenza` è uno dei ventiquattro, `mio` l'ha fatto la
    * persona, `preso` l'ha copiato da qualcun altro.
    *
@@ -285,6 +298,7 @@ export function salvaStile(
     testo: string;
     tipo?: TipoStile;
     genere?: "stile" | "prompt";
+    campi?: Record<string, string>;
     da?: Stile["da"];
     daNome?: string;
   },
@@ -320,6 +334,7 @@ export function salvaStile(
     // tuo, e il giorno che aggiungiamo stili nuovi non deve tornare com'era.
     if (daCambiare.da === "partenza") daCambiare.da = "mio";
     if (dati.daNome) daCambiare.daNome = dati.daNome;
+    if (dati.campi) daCambiare.campi = dati.campi;
     daCambiare.quando = Date.now();
     scrivi(chi, miei);
     return daCambiare;
@@ -331,6 +346,7 @@ export function salvaStile(
     testo,
     tipo,
     genere,
+    campi: dati.campi,
     da: dati.da ?? "mio",
     daNome: dati.daNome,
     quando: Date.now(),
@@ -369,6 +385,7 @@ export function condividiStile(chi: string, id: string, condiviso: boolean): boo
 export function stiliInVetrina(
   tranne: string,
   nomiDi: (id: string) => string,
+  ancheImiei = false,
 ): (Stile & { chi: string; chiNome: string })[] {
   const radice = join(DATA_ROOT, "persone");
   if (!existsSync(radice)) return [];
@@ -384,7 +401,10 @@ export function stiliInVetrina(
   }
 
   for (const cartella of cartelle) {
-    if (cartella === tranne) continue;
+    // ⚠ In DaProd i propri **ci vanno**: la' la vetrina e' una bacheca, e
+    // quello che hai pubblicato tu si vede — e' l'unico modo di sapere che e'
+    // andato. Nella scheda Stili no: sono gia' nella lista accanto.
+    if (cartella === tranne && !ancheImiei) continue;
     try {
       const file = join(radice, cartella, "stili.json");
       if (!existsSync(file)) continue;

@@ -87,7 +87,7 @@
 import { createHash } from "node:crypto";
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import type { AddressInfo } from "node:net";
-import { createReadStream, createWriteStream, mkdirSync, rmSync, statSync } from "node:fs";
+import { copyFileSync, createReadStream, createWriteStream, mkdirSync, rmSync, statSync } from "node:fs";
 import { join, normalize } from "node:path";
 import { elencoAzioni, eseguiAzione, type Esecutore } from "./azioni";
 import { paginaConsole } from "./console";
@@ -820,6 +820,49 @@ export class Gateway {
       }
 
       /** La riga sotto al nome. La cambia solo chi sta dietro a quel nome. */
+      /**
+       * **Una faccia presa da quello che hai gia' fatto.** Nuova nella 0.9.1.
+       *
+       * Chiesto il 5 settembre 2026: «anche nel profilo il tasto metti una foto
+       * devi poter scegliere dal telefono oppure dalla suite». Chi usa questa
+       * suite fa immagini tutto il giorno, e la piu' bella che ha per farci una
+       * faccia l'ha appena generata: farla salvare nel telefono per poi
+       * ricaricarla e' un giro che non serve a niente.
+       *
+       * **Nessun byte passa dalla rete.** Il file e' gia' sul disco del
+       * computer: si copia da li' a li', e quello che viaggia e' un id.
+       */
+      if (percorso === "/io/foto/dalla-libreria" && req.method === "POST") {
+        if (!this.libreria?.file) return this.errore(res, 501, "Questa suite non ha la libreria.");
+        const id = String(((corpo ?? {}) as { id?: string }).id ?? "");
+        const quale = this.libreria.file(id, dispositivo.id);
+        if (!quale) return this.errore(res, 404, "Questa immagine non la trovo, o non e' tua.");
+        if (!quale.mime.startsWith("image/")) {
+          return this.errore(res, 400, "Per la faccia ci vuole un'immagine.");
+        }
+        if (quale.bytes > MASSIMO_FOTO) {
+          return this.errore(res, 413, "Quest'immagine e' troppo grande per una faccia.");
+        }
+
+        const suDisco = `faccia-${dispositivo.id}-${Date.now().toString(36)}${estensioneDi(quale.mime)}`;
+        try {
+          mkdirSync(this.remoto.inviiDir, { recursive: true });
+          copyFileSync(quale.percorso, join(this.remoto.inviiDir, suDisco));
+        } catch {
+          return this.errore(res, 500, "Non sono riuscito a copiarla.");
+        }
+
+        const prima = dispositivo.foto;
+        this.remoto.cambiaProfilo(dispositivo.id, { foto: suDisco });
+        if (prima && prima !== suDisco) buttaIlFile(join(this.remoto.inviiDir, prima));
+        this.json(res, 201, {
+          ok: true,
+          foto: indirizzoDellaFoto({ id: dispositivo.id, foto: suDisco }),
+        });
+        this.aggiorna();
+        return;
+      }
+
       if (percorso === "/io/profilo" && req.method === "POST") {
         const dati = (corpo ?? {}) as { motto?: string; nome?: string };
         if (typeof dati.nome === "string" && dati.nome.trim()) {
@@ -910,6 +953,9 @@ export class Gateway {
                * ricevuto comunque.
                */
               dove: dovePuoiGuardare(url.searchParams.get("dove"), dispositivo),
+              // Le cose di una persona sola: il suo profilo in DaProd. Il
+              // permesso resta quello di `dove`; qui si dice solo di chi.
+              di: url.searchParams.get("di") || undefined,
             }) ?? [],
         });
         return;
@@ -968,8 +1014,14 @@ export class Gateway {
       if (inBacheca && req.method === "POST") {
         if (!this.libreria) return this.errore(res, 501, "Questa suite non ha la libreria.");
         const id = decodeURIComponent(inBacheca[1] ?? "");
-        const voluto = ((corpo ?? {}) as { pubblicato?: boolean }).pubblicato !== false;
-        const fatto = this.libreria.pubblica(id, dispositivo.id, voluto);
+        const dati = (corpo ?? {}) as { pubblicato?: boolean; didascalia?: string };
+        const voluto = dati.pubblicato !== false;
+        const fatto = this.libreria.pubblica(
+          id,
+          dispositivo.id,
+          voluto,
+          typeof dati.didascalia === "string" ? dati.didascalia.slice(0, 300) : undefined,
+        );
         this.json(res, fatto ? 200 : 403, { ok: fatto, pubblicato: voluto });
         this.aggiorna();
         return;
@@ -981,6 +1033,40 @@ export class Gateway {
        * chi mette una cosa in bacheca non sa se l'ha guardata qualcuno, e la
        * volta dopo non ce la mette.
        */
+      /**
+       * Vista, o rimessa nuova. E archiviata, o tirata fuori.
+       *
+       * Due gesti piccoli che servono a una cosa sola e grossa: **tenere in
+       * ordine**. Una notte di lavoro lascia trenta file, e la mattina dopo non
+       * c'è modo di sapere quali si sono già guardati.
+       *
+       * Tutti e due sono **per persona**: la stessa cosa è nuova per te e
+       * vecchia per chi l'ha fatta, e archiviarla non la fa sparire a lui.
+       */
+      const laVista = percorso.match(/^\/libreria\/(.+)\/vista$/);
+      if (laVista && req.method === "POST") {
+        if (!this.libreria?.segnaVista) return this.errore(res, 501, "Qui non si tiene il conto.");
+        const fatto = this.libreria.segnaVista(
+          decodeURIComponent(laVista[1] ?? ""),
+          dispositivo.id,
+          ((corpo ?? {}) as { vista?: boolean }).vista !== false,
+        );
+        this.json(res, fatto ? 200 : 404, { ok: fatto });
+        return;
+      }
+      const lArchivio = percorso.match(/^\/libreria\/(.+)\/archivia$/);
+      if (lArchivio && req.method === "POST") {
+        if (!this.libreria?.archivia) return this.errore(res, 501, "Qui non c'è un archivio.");
+        const fatto = this.libreria.archivia(
+          decodeURIComponent(lArchivio[1] ?? ""),
+          dispositivo.id,
+          ((corpo ?? {}) as { dentro?: boolean }).dentro !== false,
+        );
+        this.json(res, fatto ? 200 : 404, { ok: fatto });
+        this.aggiorna();
+        return;
+      }
+
       const ilMiPiace = percorso.match(/^\/libreria\/(.+)\/mipiace$/);
       if (ilMiPiace && req.method === "POST") {
         if (!this.libreria?.miPiace) return this.errore(res, 501, "Qui non si mette mi piace.");
@@ -1466,6 +1552,22 @@ export class Gateway {
           this.json(res, 200, esito);
           return;
         }
+        /**
+         * «Adesso fammi il piano».
+         *
+         * Una rotta a sé e non un campo di `/dico`: qui il modello non risponde
+         * a niente, trasforma quello che si sono detti in lavori. Vedi
+         * `faiIlPiano` in chiacchierata.ts per il perché.
+         */
+        if (coda === "/fai-piano" && req.method === "POST") {
+          const esito = await this.chiacchierata.faiIlPiano({
+            id,
+            dispositivoId: dispositivo.id,
+          });
+          if ("errore" in esito) return this.errore(res, 409, esito.errore);
+          this.json(res, 200, esito);
+          return;
+        }
         if (coda === "/piano" && req.method === "POST") {
           const dati = (corpo ?? {}) as { quali?: number[]; modelli?: Record<string, string> };
           /**
@@ -1529,6 +1631,7 @@ export class Gateway {
           testo?: string;
           tipo?: string;
           genere?: string;
+          campi?: Record<string, string>;
         };
         const salvato = this.stili.salva(dispositivo.id, {
           id: dati.id,
@@ -1536,6 +1639,8 @@ export class Gateway {
           testo: String(dati.testo ?? ""),
           tipo: dati.tipo ? String(dati.tipo) : undefined,
           genere: dati.genere ? String(dati.genere) : undefined,
+          // Solo per i prompt: tutti i campi, non solo il testo principale.
+          campi: dati.campi && typeof dati.campi === "object" ? dati.campi : undefined,
         });
         if (!salvato) return this.errore(res, 400, "Servono un nome e delle parole.");
         this.json(res, 201, { ok: true, stile: salvato });
@@ -1543,8 +1648,12 @@ export class Gateway {
       }
 
       if (percorso === "/stili/vetrina" && req.method === "GET") {
+        // `miei=1`: ci vanno anche i propri. Lo chiede DaProd, dove la vetrina
+        // e' una bacheca e non un elenco da cui prendere.
         if (!this.stili) return this.json(res, 200, { stili: [] });
-        this.json(res, 200, { stili: this.stili.vetrina(dispositivo.id) });
+        this.json(res, 200, {
+          stili: this.stili.vetrina(dispositivo.id, url.searchParams.get("miei") === "1"),
+        });
         return;
       }
 
@@ -2263,10 +2372,21 @@ function daDove(req: IncomingMessage): string {
 function dovePuoiGuardare(
   chiesto: string | null,
   dispositivo: Dispositivo,
-): "mie" | "bacheca" | "tutte" {
+): "mie" | "bacheca" | "tutte" | "salvati" | "archivio" {
   if (chiesto === "bacheca") return "bacheca";
+  if (chiesto === "salvati") return "salvati";
+  if (chiesto === "archivio") return "archivio";
   if (chiesto === "tutte" && dispositivo.ruolo === "admin") return "tutte";
   return "mie";
+}
+
+/** L'estensione che va con un tipo d'immagine. Serve al nome del file. */
+function estensioneDi(mime: string): string {
+  const pulito = mime.split(";")[0]?.trim() ?? "";
+  if (pulito === "image/png") return ".png";
+  if (pulito === "image/webp") return ".webp";
+  if (pulito === "image/gif") return ".gif";
+  return ".jpg";
 }
 
 function senzaToken(d: Dispositivo): DispositivoPubblico {

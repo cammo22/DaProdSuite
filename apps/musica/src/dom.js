@@ -14,7 +14,7 @@ for (const chiave of [
   "qualita", "rigaQualita", "mancaQualita",
   "bpm", "bpmVal", "tonalita", "tempo", "lingue", "notaLingua",
   "ideaCanzone", "ideaCopertina", "bonsaiTutto", "bonsaiFinisci", "bonsaiStato", "selettoreLlm",
-  "randomSeed", "autoCover", "coverStyleNew", "go", "goAudio", "stopBtn", "clearQueue",
+  "randomSeed", "autoCover", "coverStyleNew", "coverModello", "go", "goAudio", "stopBtn", "clearQueue",
   "mancaAnima", "mancaAnimaCrea",
   "avvisoCpu",
   "dot", "statusTxt", "feed", "error", "libList", "detail", "libCount", "navLib",

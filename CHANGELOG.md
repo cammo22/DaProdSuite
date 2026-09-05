@@ -12,7 +12,147 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ## Non ancora pubblicato
 
-Niente: la 0.9.0 è appena uscita.
+Niente: la 0.9.1 è appena uscita.
+
+---
+
+## 0.9.1 — Quaranta cose che si vedevano
+
+Nessuna funzione nuova grossa. È quello che è venuto fuori **usando la 0.9.0
+per una sera**, e sono quaranta cose: alcune sono difetti, altre sono scelte
+che sembravano giuste scrivendole e non lo erano una volta in mano.
+
+### La Produzione, adesso ha delle risposte
+
+**Via «quello scelto sul computer»** da tutti i menu. Quella voce voleva dire
+«non lo so, decidi tu», e su un telefono è la risposta sbagliata a una domanda
+che ne ha una giusta: chi chiede da fuori non sa cosa c'è selezionato di là, e
+quello che c'è selezionato cambia sotto ai suoi piedi. Adesso c'è un
+predefinito: **FLUX.2 Klein 4B** per le immagini e per le copertine, **LTX
+2.5** per i video, **ACE-Step XL** per la musica, **italiano** per il canto.
+
+**La copertina di un brano si chiede dal telefono.** Cosa deve esserci, con
+quale dei tuoi stili immagine, e con che modello. Un brano senza copertina, in
+galleria e in DaProd, è un quadrato con una nota dentro: si scorre via — e i
+brani chiesti dal telefono erano gli unici senza faccia.
+
+**Tonalità e ritmo si spiegano da soli.** Tenendo premuta una pastiglia si
+legge che effetto fa: «La minore — la più usata nel pop, malinconica ma non
+cupa». Ventiquattro sigle erano ventiquattro scelte fatte a caso. Il ritmo di
+suo è **a caso**: è la cosa che meno si sa di una canzone prima di sentirla, e
+uno fisso farebbe suonare uguali tutti i brani di chi non tocca quella riga.
+
+**La voce è un interruttore**, «Cantata» o «Strumentale», invece di una spunta
+che si chiamava «senza voce». E i brani si chiedono **da 1 a 4**, come le
+immagini.
+
+**La storia è un'azione a sé**, con 30 secondi, un minuto o due. Non un cursore
+più lungo: una clip è **una** generazione e dura minuti, una storia sono da
+quattro a sedici generazioni incatenate e dura mezz'ora. Un cursore che passa
+da 20 a 30 senza dire niente nasconde quel salto.
+
+**Gli stili escono dalla barra in fondo** e diventano un tasto in Produci: uno
+stile lo si cerca mentre si produce. In fondo restano cinque schede.
+
+**«Dillo e basta» è durata una versione**, e la lezione vale la pena scriverla:
+erano due caselle nella stessa schermata che facevano la stessa cosa. Al suo
+posto, dov'è sempre servito, un tasto **«Crea il piano»**: prima il modello
+doveva capire a ogni battuta se stavi chiacchierando o chiedendo, e quella
+decisione la sbagliava spesso — «i modelli falliscono a creare il piano».
+Adesso la prendi tu, e a lui resta un lavoro solo.
+
+### Il visualizer, dove serve
+
+**Sta dentro il palco**, non più dietro alla pagina. La foto che me l'ha fatto
+notare era eloquente: le onde rosse dietro a tutto, e in mezzo un riquadro nero
+con la copertina. A schermo intero **il visualizer è il contenuto**.
+
+**La barra del tempo, e ci si sposta dentro**: non c'era proprio, perché la
+0.9.0 si appoggiava ai controlli del browser e a schermo intero quelli non ci
+sono. **Trascinando non si muove più la pagina dietro** — la causa era una
+parola, `passive: true`, che non lascia fermare lo scorrimento. E c'è il tasto
+per **abbassare senza fermare**, che era una cosa che il codice già faceva e
+che non si vedeva.
+
+**In DaProd un brano suona.** Lì un tocco apriva la lente — un file, nessuna
+fila, nessun visualizer — mentre in Galleria apriva il lettore: due gesti
+uguali che facevano due cose diverse. E **due tocchi mettono mi piace**.
+
+### La galleria tiene in ordine
+
+Quattro sezioni: le mie, i **Pensieri**, i **Salvati** e l'**Archivio** — più
+«Di tutti» per chi decide.
+
+**Le cose mai guardate hanno il bordo viola e un pallino.** Il segno è per
+persona, non per file: la stessa cosa è nuova per te e vecchia per chi l'ha
+fatta. Toccandola sparisce, tenendola premuta torna nuova — e da lì si
+archivia. **Archiviare non cancella**: il file resta, e si butta davvero con un
+secondo gesto.
+
+**La data vera accanto al «un'ora fa»**, perché due cose fatte lo stesso
+pomeriggio si distinguono solo con l'ora. E **di chi è, con la faccia**, quando
+si guarda la roba di tutti.
+
+### DaProd
+
+**Via i filtri per tipo**: qui non si cerca niente, si scorre — e un filtro per
+tipo vuol dire nascondere due terzi di quello che le persone hanno fatto.
+
+**«Carica un contenuto», e chiede da dove**: dal telefono si sceglie un file e
+si carica, dalla suite si sceglie una cosa che c'è già e si pubblica. Vale
+anche per **la foto del profilo**: chi usa questa suite fa immagini tutto il
+giorno, e la più bella per farci una faccia l'ha appena generata.
+
+**Com'è stata fatta**: sotto a una cosa aperta c'è un tasto, e dentro ci sono i
+campi — per una foto il prompt, per una canzone titolo, testo, stile e durata.
+
+**⚠ E i prompt adesso contengono tutto**, che era la cosa detta così: «ci sono
+gli stili che sono solo una parte e i prompt che contengono tutto; come ora non
+vanno bene». Salvando un prompt da lì si salvano tutti i campi, e ritrovandolo
+in Produzione si riempie **il modulo intero** invece di una casella.
+
+**Il profilo di una persona**: toccando il nome sopra a una cosa si apre chi
+l'ha fatta, con le sue creazioni. Solo le pubblicate — tranne per chi decide,
+che le vede tutte, con le altre di un altro colore.
+
+**Lo stile condiviso che non compariva** non era rotto, era voluto: nella
+scheda Stili i propri non si vedono in vetrina. In DaProd quella regola è
+sbagliata — lì è una bacheca, e quello che hai pubblicato tu si vede.
+
+### Notifiche e permessi
+
+**Sul computer, una sola: «qualcuno ha chiesto un lavoro».** Quella di «è
+pronto» se ne va, e il perché è interessante: serve a chi ha chiesto, e chi ha
+chiesto ha il telefono in tasca. Chi sta al computer la riceve mentre guarda la
+finestra in cui il lavoro sta finendo, e in una serata sono trenta riquadri
+nell'angolo dello schermo — trenta avvisi che non dicono niente insegnano a
+ignorare anche il primo che direbbe qualcosa.
+
+**I permessi si chiedono all'avvio, tutti insieme**, e si ritrovano nel menu.
+Ognuno dice **cosa succede senza**, che è l'unica cosa che convince a darlo.
+
+**Le impostazioni non sono le stesse per tutti**: «Come siamo messi» e «La rete
+di casa» le vede solo chi decide. Quelle voci già non facevano niente per gli
+altri — il gateway le rifiuta — e «Come siamo messi» racconta gli indirizzi, il
+tunnel e il firewall: come si entra in casa.
+
+### E il difetto dell'mp3
+
+**Condividere una canzone non funzionava**, e la causa non era la condivisione:
+era il nome. In libreria una cosa si chiama come il suo titolo **senza
+estensione**, quindi il file condiviso si chiamava «Bum bum Opensource» e
+basta. Le altre app guardano il nome prima del tipo: senza `.mp3` quella è roba
+che non si sa cosa sia. Vale anche per il salvataggio in galleria.
+
+### ⚠ Cosa resta da fare
+
+- **Il visualizer non è ancora quello di DaProdVisualizer.** Quello gira su
+  WebGL con Three.js e sta in un'app React da mezzo mega: dentro la console,
+  che si serve da sé e non carica niente da fuori, non ci entra così com'è. Il
+  posto adesso è quello giusto e gli effetti sono cinque; l'innesto del motore
+  vero è la prossima cosa.
+- **I video da 30, 60 e 120 secondi** restano scritti e mai passati per una
+  scheda video.
 
 ---
 

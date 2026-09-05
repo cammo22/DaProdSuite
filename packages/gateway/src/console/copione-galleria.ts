@@ -74,6 +74,29 @@ export const COPIONE_GALLERIA = `
      * Il divieto vero sta nel gateway: chi non e' admin, chiedendo «tutte»,
      * riceve le sue.
      */
+    /**
+     * **Salvati** e **Archivio**, dalla 0.9.1.
+     *
+     * Salvati sono le cose degli altri che hai tenuto: prima «tieni» le faceva
+     * comparire fra le tue, mescolate, e non c'era modo di ritrovarle.
+     * L'archivio e' dove si mette quello che si e' gia' guardato e non si vuole
+     * piu' fra i piedi — e da li' si butta davvero, che e' un secondo gesto.
+     */
+    pezzi.push({
+      id: "salvati",
+      nome: "Salvati",
+      sotto: "quello che hai tenuto degli altri",
+      tinta: "ambra",
+      segno: "\\u2764",
+    });
+    pezzi.push({
+      id: "archivio",
+      nome: "Archivio",
+      sotto: "messo via, non buttato",
+      tinta: "grigio",
+      segno: "\\u2637",
+    });
+
     if (puoiDecidere) {
       pezzi.push({
         id: "tutte",
@@ -140,9 +163,10 @@ export const COPIONE_GALLERIA = `
     }
 
     try {
+      var quale = "mie";
+      if (dove === "tutte" || dove === "salvati" || dove === "archivio") quale = dove;
       var risposta = await chiama(
-        "/libreria?quanti=60&dove=" + (dove === "tutte" ? "tutte" : "mie") +
-          (filtro ? "&tipo=" + filtro : ""),
+        "/libreria?quanti=60&dove=" + quale + (filtro ? "&tipo=" + filtro : ""),
       );
       var voci = (risposta && risposta.voci) || [];
       // Quello che si sta guardando adesso: serve al lettore, che quando si
@@ -152,8 +176,10 @@ export const COPIONE_GALLERIA = `
       vociMostrate = voci;
       casella.innerHTML = "";
       $("galleria-vuota").hidden = voci.length > 0;
-      $("galleria-vuota").textContent = dove === "tutte"
-        ? "Su questo computer non c\u0027\u00e8 ancora niente."
+      $("galleria-vuota").textContent =
+        dove === "tutte" ? "Su questo computer non c\u0027\u00e8 ancora niente."
+        : dove === "salvati" ? "Non hai ancora tenuto niente. In DaProd, sotto a una cosa degli altri, c\u0027\u00e8 il segnalibro."
+        : dove === "archivio" ? "L\u0027archivio \u00e8 vuoto. Tieni premuta una cosa in galleria per metterla via."
         : "Ancora niente di tuo. Quello che chiedi finisce qui.";
       for (var v of voci) casella.append(quadro(v));
     } catch (e) {
@@ -165,6 +191,179 @@ export const COPIONE_GALLERIA = `
 
   /** Le voci che la galleria sta mostrando adesso: la fila che nasce da un tocco. */
   var vociMostrate = [];
+
+  /**
+   * La data, corta ma vera: «5 set, 18:22».
+   *
+   * Non sostituisce «un'ora fa»: dicono due cose diverse. Il tempo passato si
+   * legge di sfuggita e serve a capire se e' roba di adesso; la data serve
+   * quando si cerca una cosa precisa fra trenta, ed e' l'unica che distingue
+   * due file dello stesso pomeriggio.
+   *
+   * Si scrive in italiano e senza anno se e' di quest'anno: l'anno, su una cosa
+   * fatta stamattina, e' rumore.
+   */
+  function dataDi(ms) {
+    if (!ms) return "";
+    var d = new Date(ms);
+    var mesi = ["gen", "feb", "mar", "apr", "mag", "giu", "lug", "ago", "set", "ott", "nov", "dic"];
+    var oggi = new Date();
+    var anno = d.getFullYear() === oggi.getFullYear() ? "" : " " + d.getFullYear();
+    var ore = String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+    return d.getDate() + " " + mesi[d.getMonth()] + anno + ", " + ore;
+  }
+
+  /** Dice al computer che questa cosa e' stata guardata (o che torna nuova). */
+  async function segnaVista(v, vista) {
+    try {
+      await chiama("/libreria/" + encodeURIComponent(v.id) + "/vista", {
+        method: "POST",
+        body: JSON.stringify({ vista: vista }),
+      });
+    } catch (e) {
+      // Un segno di lettura non vale un errore rosso: al giro dopo si rifa'.
+    }
+  }
+
+  /**
+   * Le scelte che compaiono tenendo premuta una cosa in galleria.
+   *
+   * Tre gesti che servono a **tenere in ordine**, e nessuno dei tre e' cosi'
+   * frequente da meritare un tasto sempre visibile sotto a ogni riquadro: in
+   * una griglia di dodici, tre tasti per riquadro sono trentasei tasti.
+   */
+  function apriLeScelte(v, box) {
+    var carta = apriFoglio(v.didascalia || v.nome);
+
+    voceFoglio(
+      carta,
+      v.nuova ? "\u2713" : "\u25CF",
+      v.nuova ? "Segnala come gi\u00e0 vista" : "Rimettila come nuova",
+      v.nuova ? "toglie il pallino" : "torna a farsi notare in galleria",
+      function () {
+        chiudiFoglio();
+        v.nuova = !v.nuova;
+        box.classList.toggle("nuova", v.nuova);
+        void segnaVista(v, !v.nuova);
+      },
+    );
+
+    if (dove === "archivio") {
+      voceFoglio(carta, "\u21B6", "Tirala fuori dall\u0027archivio", "torna in galleria", function () {
+        chiudiFoglio();
+        void archivia(v, false);
+      });
+      voceFoglio(carta, "\u2715", "Buttala davvero", "il file sparisce dal computer", function () {
+        if (!confirm("Cancellare \u00ab" + v.nome + "\u00bb dal computer? Non si torna indietro.")) return;
+        chiudiFoglio();
+        void butta(v);
+      }, true);
+    } else {
+      voceFoglio(carta, "\u2637", "Mettila in archivio", "esce dalla galleria, non si cancella", function () {
+        chiudiFoglio();
+        void archivia(v, true);
+      });
+    }
+  }
+
+  async function archivia(v, dentro) {
+    try {
+      await chiama("/libreria/" + encodeURIComponent(v.id) + "/archivia", {
+        method: "POST",
+        body: JSON.stringify({ dentro: dentro }),
+      });
+      await leggiGalleria();
+    } catch (e) {
+      alert(e.message);
+    }
+  }
+
+  async function butta(v) {
+    try {
+      await chiama("/libreria/" + encodeURIComponent(v.id), { method: "DELETE" });
+      await leggiGalleria();
+    } catch (e) {
+      alert(e.message);
+    }
+  }
+
+  /**
+   * Com'e' stata fatta una cosa: i campi, e il tasto per tenerseli.
+   *
+   * ⚠ **E' anche il posto dove i prompt diventano utili.** Chiesto il 5
+   * settembre 2026: «ci sono gli stili che sono solo una parte e i prompt che
+   * contengono tutto; come ora non vanno bene — i prompt devi prenderli da
+   * quelli che ho creato io, e nel caso di una canzone ci devono essere tutte
+   * le info, stessa cosa per immagini e video».
+   *
+   * Quindi «salvalo come prompt» qui dentro **non salva solo il testo
+   * principale**: salva tutto quello che si vede in questo riquadro, campo per
+   * campo. Ritrovandolo in Produzione si riempie il modulo intero — titolo,
+   * testo, stile, durata — e non una casella sola.
+   */
+  function apriLeInfo(v) {
+    var carta = apriFoglio("Com'\u00e8 stata fatta");
+
+    var quale = document.createElement("p");
+    quale.className = "sotto";
+    quale.textContent = (v.didascalia || v.nome) + " \u00b7 " + dataDi(v.creato);
+    carta.append(quale);
+
+    for (var come in v.comeEStataFatta) {
+      if (!Object.prototype.hasOwnProperty.call(v.comeEStataFatta, come)) continue;
+      var riga = document.createElement("div");
+      riga.className = "info";
+      var etichetta = document.createElement("b");
+      etichetta.textContent = come;
+      var valore = document.createElement("div");
+      valore.className = "cosa";
+      valore.textContent = v.comeEStataFatta[come];
+      riga.append(etichetta, valore);
+      carta.append(riga);
+    }
+
+    var fila = document.createElement("div");
+    fila.className = "fila";
+    var tieni = document.createElement("button");
+    tieni.textContent = "\u270E Salvalo come prompt";
+    tieni.addEventListener("click", function () { void salvaComeProntoDaInfo(v, tieni); });
+    fila.append(tieni);
+    carta.append(fila);
+  }
+
+  /**
+   * Salva quello che si e' appena letto come **un prompt intero**.
+   *
+   * Il testo del prompt e' il campo principale; tutto il resto — titolo, testo
+   * cantato, stile, durata — finisce nei campi, che e' quello che rende un
+   * prompt diverso da uno stile: ritrovandolo si riempie il modulo, non una
+   * casella.
+   */
+  async function salvaComeProntoDaInfo(v, tasto) {
+    var tipo = v.tipo === "audio" ? "musica" : v.tipo === "video" ? "video" : "immagine";
+    var principale =
+      v.comeEStataFatta["Il prompt"] || v.comeEStataFatta["Che genere"] || v.didascalia || v.nome;
+    var nome = window.prompt("Come lo chiami?", (v.didascalia || v.nome).slice(0, 40));
+    if (!nome) return;
+    tasto.disabled = true;
+    try {
+      await chiama("/stili", {
+        method: "POST",
+        body: JSON.stringify({
+          nome: nome.trim(),
+          testo: principale,
+          tipo: tipo,
+          genere: "prompt",
+          campi: v.comeEStataFatta,
+        }),
+      });
+      tasto.textContent = "\u2713 salvato fra i prompt";
+      try { await leggiStili(); } catch (e) { /* al giro dopo */ }
+    } catch (e) {
+      tasto.disabled = false;
+      alert(e.message);
+    }
+  }
 
   /** L'indirizzo del file vero, e quello dell'anteprima. */
   function indirizzoDi(v) { return "/libreria/file/" + encodeURIComponent(v.id); }
@@ -181,7 +380,17 @@ export const COPIONE_GALLERIA = `
    */
   function quadro(v) {
     var box = document.createElement("div");
-    box.className = "quadro";
+    /**
+     * Il riquadro dice **due cose oltre a quello che c'e' dentro**.
+     *
+     * «nuova»: mai guardata da chi sta guardando adesso. «privata»: non e' in
+     * bacheca, e la stai vedendo perche' decidi tu — nel profilo di qualcun
+     * altro, da admin. Tutte e due sono colori, non parole: in una griglia di
+     * dodici riquadri una parola non si legge, un bordo si'.
+     */
+    box.className = "quadro" +
+      (v.nuova ? " nuova" : "") +
+      (dove === "tutte" && v.pubblicato === false && !v.mia ? " privata" : "");
 
     var vetro = document.createElement("button");
     vetro.type = "button";
@@ -252,6 +461,14 @@ export const COPIONE_GALLERIA = `
      * valgono anche per lei, e cosi' «solo musica» diventa una scaletta.
      */
     vetro.addEventListener("click", function () {
+      // Toccarla vuol dire averla guardata: il segno sparisce subito, e il
+      // computer lo sa un attimo dopo. Se la rete e' giu' non cambia niente di
+      // importante, ed e' il motivo per cui non si aspetta la risposta.
+      if (v.nuova) {
+        v.nuova = false;
+        box.classList.remove("nuova");
+        void segnaVista(v, true);
+      }
       if (v.tipo === "audio" || v.tipo === "video") {
         accodaTutto(vociMostrate, v);
         apriPalco();
@@ -259,6 +476,27 @@ export const COPIONE_GALLERIA = `
         apriLaLente(v);
       }
     });
+
+    /**
+     * **Tenendo premuto**: rimettila nuova, mettila via, o buttala.
+     *
+     * Chiesto il 5 settembre 2026: «se teniamo premuto un item lo possiamo
+     * rimettere come non visualizzato, in modo da tenere in ordine tutto» e
+     * «si puo' anche decidere di archiviarlo».
+     */
+    var quandoPremuto = function (ev) {
+      if (ev) ev.preventDefault();
+      apriLeScelte(v, box);
+    };
+    box.addEventListener("contextmenu", quandoPremuto);
+    var attesa = null;
+    box.addEventListener("touchstart", function () {
+      attesa = setTimeout(function () { quandoPremuto(null); attesa = null; }, 500);
+    }, { passive: true });
+    var molla = function () { if (attesa) { clearTimeout(attesa); attesa = null; } };
+    box.addEventListener("touchend", molla, { passive: true });
+    box.addEventListener("touchmove", molla, { passive: true });
+    box.addEventListener("touchcancel", molla, { passive: true });
     box.append(vetro);
 
     var sotto = document.createElement("div");
@@ -269,8 +507,45 @@ export const COPIONE_GALLERIA = `
     nome.title = v.nome;
     var riga = document.createElement("div");
     riga.className = "riga";
-    riga.textContent = [nomeScheda(v.app), quando(v.creato), pesa(v.bytes)].filter(Boolean).join(" \\u00b7 ");
+    /**
+     * **La data vera, non solo «1 h fa».** Chiesto il 5 settembre 2026: «metti
+     * anche nelle creazioni una data, per capire bene e ordinare tutto meglio».
+     *
+     * «2 giorni fa» dice quanto e' passato e non **quando**: due cose fatte lo
+     * stesso pomeriggio si distinguono solo con l'ora. Restano tutte e due —
+     * il tempo passato si legge di sfuggita, la data si legge quando serve.
+     */
+    riga.textContent = [nomeScheda(v.app), quando(v.creato), dataDi(v.creato), pesa(v.bytes)]
+      .filter(Boolean)
+      .join(" \\u00b7 ");
     sotto.append(nome, riga);
+
+    /**
+     * **Di chi e'**, quando si guarda la roba di tutti.
+     *
+     * Chiesto il 5 settembre 2026: «in galleria di tutti, quando sei admin,
+     * rendi piu' visibile a quale utente appartiene quell'item». Prima era una
+     * spilla grigia come tutte le altre, e in una griglia di dodici non si
+     * leggeva: adesso ha la faccia e il colore del nome.
+     */
+    if ((dove === "tutte" || dove === "salvati") && v.chiNome) {
+      var padrone = document.createElement("span");
+      padrone.className = "padrone";
+      var faccia = document.createElement("span");
+      faccia.className = "faccia-tonda";
+      if (v.chiFoto) {
+        var img = document.createElement("img");
+        img.src = v.chiFoto;
+        img.className = "faccia-tonda";
+        faccia = img;
+      } else {
+        faccia.textContent = v.chiNome.slice(0, 1).toUpperCase();
+      }
+      var quale = document.createElement("span");
+      quale.textContent = v.chiNome;
+      padrone.append(faccia, quale);
+      sotto.append(padrone);
+    }
 
     if (v.mia && v.pubblicato) {
       var mostra = document.createElement("span");
@@ -388,6 +663,26 @@ export const COPIONE_GALLERIA = `
         inFila.textContent = "\\u2713 " + quante + " in fila";
       });
       attrezzi.append(inFila);
+    }
+
+    /**
+     * **Com'e' stata fatta.** Nuovo nella 0.9.1.
+     *
+     * Chiesto il 5 settembre 2026: «quando si clicca un contenuto, se e' una
+     * foto sotto ci devono essere le info con un tasto da cliccare — per le
+     * foto il prompt, per le canzoni titolo testo e stile, per i video il
+     * prompt».
+     *
+     * E' un tasto e non un riquadro sempre aperto: sotto a una foto a schermo
+     * intero, venti righe di prompt sono venti righe che coprono la foto. Chi
+     * vuole sapere preme; chi guarda, guarda.
+     */
+    if (v.comeEStataFatta && Object.keys(v.comeEStataFatta).length) {
+      var info = document.createElement("button");
+      info.className = "mini";
+      info.textContent = "\\u2139 Com'\\u00e8 stata fatta";
+      info.addEventListener("click", function () { apriLeInfo(v); });
+      attrezzi.append(info);
     }
 
     var salva = document.createElement("button");

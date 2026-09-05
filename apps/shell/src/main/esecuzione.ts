@@ -424,7 +424,24 @@ async function esegui(richiesta: DaEseguire): Promise<void> {
         titolo: comeSiChiama,
         chi: richiesta.daId,
         chiNome: richiesta.da,
-        extra: { richiesta: richiesta.id, azione: richiesta.azione },
+        /**
+         * **Cosa era stato chiesto, campo per campo.** Dalla 0.9.1.
+         *
+         * Chiesto il 5 settembre 2026: «mettiamo insieme al contenuto il prompt
+         * usato, cosi' quando pubblichiamo sappiamo come e' stato fatto il
+         * contenuto». Le opzioni della richiesta ci sono gia' — sono quelle con
+         * cui la scheda ha generato — e finora si perdevano appena il lavoro
+         * finiva.
+         *
+         * Ci va anche `testo`, che e' il campo principale: per un'immagine e'
+         * il prompt, per un brano sono i generi.
+         */
+        extra: {
+          richiesta: richiesta.id,
+          azione: richiesta.azione,
+          ...richiesta.opzioni,
+          prompt: richiesta.opzioni["prompt"] ?? richiesta.testo,
+        },
       })) ?? uscito;
   } catch (err) {
     // **Un nome non e' un lavoro.** Qui dentro si consegna quello che il motore

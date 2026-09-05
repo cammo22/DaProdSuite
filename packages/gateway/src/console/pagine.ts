@@ -24,21 +24,7 @@
  * basso. Una scheda in fondo è un posto dove si passa ogni giorno; le
  * impostazioni si aprono, si guardano e si chiudono.
  */
-export const PAGINE = `<!--
-  Il visualizer, dietro a tutto.
-
-  Non e' una scheda e non e' una finestra: e' **lo sfondo della pagina** mentre
-  suona una canzone. Chiesto il 5 settembre 2026 — «lo sfondo del visualizer
-  parte sullo sfondo in random e effetti shuffle» — e la differenza fra questo
-  e una schermata dedicata e' tutta qui: si continua a girare per l'app, e
-  dietro c'e' la musica che si muove.
-
-  Nascosto finche' non suona niente: un canvas che ridisegna sessanta volte al
-  secondo dietro a una pagina ferma e' solo batteria buttata.
--->
-<canvas id="visual" hidden></canvas>
-
-<header>
+export const PAGINE = `<header>
   <div class="marchio">DaProd<span>Suite</span></div>
   <div class="cresci"></div>
   <button class="chi" id="chi" hidden>
@@ -175,25 +161,39 @@ export const PAGINE = `<!--
       <p class="sotto">Lo fa il computer. Tu scegli cosa, e lui lo mette in lavorazione.</p>
 
       <!--
-        **Dillo e basta.** La casella in cui si scrive una frase in italiano e
-        il modulo qui sotto si riempie da solo.
+        ⚠ **Qui c'era «dillo e basta», ed e' durata una versione.**
 
-        E' il terzo passo che docs/AZIONI-E-MCP.md aveva segnato un anno fa e
-        che era rimasto aperto: il catalogo delle azioni e l'MCP c'erano gia',
-        mancava **il posto in cui scrivere la frase**. A rispondere e' Needle 2
-        se sul computer c'e', il modello di LM Studio se no.
+        Era una casella in cui scrivere una frase e vedere il modulo riempirsi.
+        Tolta il 5 settembre 2026, chiesto cosi': «in produzione hai messo una
+        nuova chat per llm in alto, toglila, gia' abbiamo la sezione parla con
+        un modello».
 
-        Non manda in coda niente: riempie il modulo e ti fa vedere cosa ha
-        capito. Il si' lo dai tu, con il tasto di sempre.
+        Aveva ragione, ed e' una lezione che vale la pena scrivere: erano **due
+        caselle nella stessa schermata che fanno la stessa cosa** — dire a
+        parole quello che vuoi — e la seconda non aggiungeva niente alla prima
+        se non il dubbio su quale usare. Quello che serviva davvero alla
+        chiacchierata non era una gemella piu' corta: era **un tasto che fa il
+        piano quando dico io**, ed e' quello che c'e' adesso li' sotto.
+
+        Il codice che capisce le frasi non e' stato buttato: «capisci» nel
+        gateway e «needle.ts» nello shell ci sono ancora, e li usa la
+        chiacchierata.
       -->
-      <div class="dillo">
-        <input id="dillo-cosa" autocomplete="off"
-               placeholder="Dillo e basta: «un faro al tramonto, in foto»">
-        <button id="dillo-vai" class="mini">Capiscimi</button>
-      </div>
-      <div class="avviso" id="dillo-avviso"></div>
       <div class="tastoni" id="elenco-azioni"></div>
       <div class="filtri" id="altre-azioni" style="margin-top:12px"></div>
+
+      <!--
+        **Gli stili si gestiscono da qui**, dalla 0.9.1.
+
+        Erano una scheda in fondo, una delle sei. Chiesto il 5 settembre 2026:
+        «togli dalla barra sotto la tab stili e mettiamo un bel pulsante
+        gestione stili in produci». Ed e' il posto giusto: uno stile lo si
+        cerca **mentre si produce**, non come cosa a se'. In fondo restano
+        cinque schede, e cinque su un telefono si leggono meglio di sei.
+      -->
+      <div class="fila" style="margin-top:6px">
+        <button class="piano largo" id="apri-stili">&#9776; Gestione stili e prompt</button>
+      </div>
       <form id="modulo" hidden onsubmit="return false"></form>
       <div class="fila" id="fila-manda" hidden>
         <button id="manda">Mandalo al computer</button>
@@ -252,6 +252,22 @@ export const PAGINE = `<!--
         <div class="dettatura">
           <textarea id="cosa-dico" placeholder="Scrivi cosa vorresti…"></textarea>
           <button id="dillo">Invia</button>
+        </div>
+
+        <!--
+          **Il piano si chiede, non si aspetta.** Nuovo nella 0.9.1.
+
+          Prima, a ogni battuta, il modello doveva fare due cose insieme: capire
+          se stavi chiacchierando o chiedendo, e nel secondo caso riempire otto
+          campi. Un modello piccolo quella decisione la sbaglia spesso, e quando
+          la sbaglia lascia il piano vuoto senza dirlo — «i modelli falliscono a
+          creare il piano».
+
+          Con questo tasto la decisione la prendi tu: chiacchieri finché sei
+          soddisfatto, poi glielo chiedi, e al modello resta un lavoro solo.
+        -->
+        <div class="fila">
+          <button class="piano largo" id="fai-il-piano">&#9733; Crea il piano</button>
         </div>
       </div>
     </div>
@@ -354,7 +370,7 @@ export const PAGINE = `<!--
         <button class="mini" id="apri-profilo">Modifica</button>
       </div>
       <div class="fila">
-        <button class="mini" id="carica-in-bacheca">&#10514; Metti una cosa tua</button>
+        <button class="mini" id="carica-in-bacheca">&#10514; Carica un contenuto</button>
         <input type="file" id="file-in-bacheca" hidden>
       </div>
       <div class="avviso" id="avviso-bacheca"></div>
@@ -416,28 +432,61 @@ export const PAGINE = `<!--
   insegnato a tutti. Il tasto con la X c'e' lo stesso, per chi e' col mouse.
 -->
 <div class="palcoLettore" id="palco" hidden>
+  <!--
+    ⚠ **Il visualizer sta qui, dentro il palco.** Cambiato il 5 settembre 2026.
+
+    Nella 0.9.0 era lo sfondo della pagina, e la foto che me l'ha fatto notare
+    era eloquente: le onde rosse dietro a tutto, e in mezzo un riquadro nero con
+    la copertina. «Nella foto vedi il rosso: e' dove vorrei vedere il
+    visualizer, non nello sfondo dove lo hai messo».
+
+    Ha ragione, e la ragione e' semplice: a schermo intero **il visualizer e' il
+    contenuto**. Un brano non ha niente da mostrare tranne la sua copertina e
+    quello che il suono fa vedere; metterlo dietro alla pagina vuol dire
+    guardarlo attraverso una lista della spesa.
+  -->
+  <canvas id="visual"></canvas>
+
   <div class="cima">
     <div class="titolo">
       <b id="palco-nome"></b>
       <small id="palco-sotto"></small>
     </div>
     <button class="tondo" id="palco-cambia" title="Cambia effetto">&#9881;</button>
+    <button class="tondo" id="palco-giu" title="Abbassa e continua">&#8595;</button>
     <button class="tondo" id="palco-chiudi" title="Chiudi">&#10005;</button>
   </div>
+
   <div class="dentro" id="palco-dentro"></div>
+
+  <!--
+    **Il tempo, e ci si sposta dentro.** Chiesto il 5 settembre 2026: «lo swipe
+    funziona in galleria, ma non e' possibile andare avanti e indietro nel tempo
+    della canzone».
+
+    Una barra vera, non i controlli del browser: quelli, dentro una WebView, si
+    disegnano come vuole Android e non stanno in un palco a schermo intero.
+  -->
+  <div class="tempo" id="palco-tempo">
+    <span class="ora" id="palco-ora">0:00</span>
+    <input type="range" id="palco-barra" min="0" max="1000" value="0" step="1">
+    <span class="ora" id="palco-durata">0:00</span>
+  </div>
+
   <div class="sotto">
-    <span class="effetto" id="palco-effetto"></span>
+    <button class="tondo" id="palco-effetto" title="Cambia effetto"></button>
     <div class="cresci"></div>
     <button class="tondo" id="palco-prima" title="Precedente">&#9198;</button>
     <button class="tondo grosso" id="palco-play" title="Pausa">&#9208;</button>
     <button class="tondo" id="palco-poi" title="Prossimo">&#9197;</button>
+    <div class="cresci"></div>
+    <button class="tondo" id="palco-fila" title="La fila">&#9776;</button>
   </div>
 </div>
 
 <nav class="fondo" id="fondo" hidden>
   <button data-pagina="casa" class="on"><span class="segno">&#9673;</span>Casa</button>
   <button data-pagina="produzione"><span class="segno">&#10010;</span>Produci</button>
-  <button data-pagina="stili"><span class="segno">&#9835;</span>Stili</button>
   <button data-pagina="riepilogo"><span class="segno">&#9776;</span>Fila<span class="bollo" id="bollo" hidden></span></button>
   <button data-pagina="galleria"><span class="segno">&#9635;</span>Galleria</button>
   <button data-pagina="daprod"><span class="segno">&#9788;</span>DaProd</button>

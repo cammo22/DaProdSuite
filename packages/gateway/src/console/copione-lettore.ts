@@ -159,6 +159,8 @@ export const COPIONE_LETTORE = `
       elemento.addEventListener("ended", prossimo);
       elemento.addEventListener("error", prossimo);
       elemento.addEventListener("play", function () { disegnaBarra(); diAllApp(true); });
+      elemento.addEventListener("timeupdate", disegnaIlTempo);
+      elemento.addEventListener("loadedmetadata", disegnaIlTempo);
       elemento.addEventListener("pause", function () { disegnaBarra(); diAllApp(false); });
       // Un video sta nel palco e si guarda; un audio non ha niente da mostrare
       // e resta attaccato al documento, dove nessuno lo vede.
@@ -346,16 +348,90 @@ export const COPIONE_LETTORE = `
     $("palco-nome").textContent = v.didascalia || v.nome;
     $("palco-sotto").textContent =
       (inCoda + 1) + " di " + coda.length + (v.chiNome ? " \\u00b7 " + v.chiNome : "");
+    $("palco-effetto").textContent = "\\u2732";
+    $("palco-effetto").title = "Effetto: " + EFFETTI[effettoOra];
+    // La barra del tempo non ha senso su un'immagine: dieci secondi fissi non
+    // sono un tempo dentro cui spostarsi.
+    $("palco-tempo").hidden = v.tipo === "immagine";
+    disegnaIlTempo();
+  }
+
+  /**
+   * Dove siamo nel brano, e quanto dura.
+   *
+   * ⚠ Chiesto il 5 settembre 2026: «lo swipe funziona in galleria, ma non e'
+   * possibile andare avanti e indietro nel tempo della canzone». Non c'era
+   * proprio: il palco aveva tre tasti e nessuna barra, perche' la 0.9.0 si
+   * appoggiava ai controlli del browser — e a schermo intero quelli non ci sono.
+   *
+   * La barra si muove **solo quando non la stai trascinando**: senza quella
+   * riga il dito la sposta e il brano la rimette indietro trenta volte al
+   * secondo, e prendere un punto diventa impossibile.
+   */
+  function disegnaIlTempo() {
+    var barra = $("palco-barra");
+    if (!barra || !suonante || !isFinite(suonante.duration)) return;
+    if (!stoTrascinando) {
+      barra.value = String(Math.round((suonante.currentTime / suonante.duration) * 1000));
+    }
+    $("palco-ora").textContent = comeOrologio(suonante.currentTime);
+    $("palco-durata").textContent = comeOrologio(suonante.duration);
+  }
+
+  /** Vero mentre il dito sta sulla barra del tempo. */
+  var stoTrascinando = false;
+
+  function comeOrologio(secondi) {
+    if (!isFinite(secondi)) return "0:00";
+    var m = Math.floor(secondi / 60);
+    var s = Math.floor(secondi % 60);
+    return m + ":" + (s < 10 ? "0" : "") + s;
+  }
+
+  /** Porta il brano dove dice la barra. */
+  function vaiAlPunto() {
+    var barra = $("palco-barra");
+    if (!suonante || !isFinite(suonante.duration)) return;
+    suonante.currentTime = (Number(barra.value) / 1000) * suonante.duration;
+  }
+
+  /** La fila, come elenco: si tocca una riga e si salta li'. */
+  function apriLaFila() {
+    var carta = apriFoglio("In fila \\u00b7 " + coda.length);
+    coda.forEach(function (v, i) {
+      voceFoglio(
+        carta,
+        i === inCoda ? "\\u25B6" : String(i + 1),
+        v.didascalia || v.nome,
+        (v.tipo === "audio" ? "brano" : v.tipo === "video" ? "video" : "immagine") +
+          (v.chiNome ? " \\u00b7 " + v.chiNome : ""),
+        (function (quale) {
+          return function () { chiudiFoglio(); suonaIlNumero(quale); };
+        })(i),
+      );
+    });
   }
 
   function apriPalco() {
     if (inCoda < 0) return;
     palcoAperto = true;
     disegnaPalco();
+    // Il disegno vive con il palco: si accende qui e si spegne chiudendolo.
+    if (analizzatore && !disegnoVivo) disegnoVivo = requestAnimationFrame(disegna);
   }
 
+  /**
+   * **Abbassa, non ferma.** Chiesto il 5 settembre 2026: «se swipo continua la
+   * riproduzione da abbassato e posso continuare a usare l'app».
+   *
+   * E' quello che questa funzione ha sempre fatto — il palco e' una finestra su
+   * una fila che va avanti lo stesso — ma non si vedeva: chiudendolo restava
+   * solo la barra in fondo, e sembrava che si fosse spento tutto. Adesso c'e'
+   * anche il tasto con la freccia in giu', che dice cosa succede.
+   */
   function chiudiPalco() {
     palcoAperto = false;
+    if (disegnoVivo) { cancelAnimationFrame(disegnoVivo); disegnoVivo = null; }
     // Un video torna nel documento, nascosto: se restasse dentro al palco
     // sparirebbe con lui, e con lui sparirebbe il suono.
     if (suonante && suonante.tagName === "VIDEO") {
@@ -379,15 +455,46 @@ export const COPIONE_LETTORE = `
 
     palco.addEventListener("touchstart", function (ev) {
       if (ev.touches.length !== 1) { partenza = null; return; }
+      /**
+       * Il dito sulla barra del tempo **non trascina il palco**.
+       *
+       * Senza questa riga, spostarsi dentro una canzone chiudeva il palco: il
+       * movimento del dito e' orizzontale, ma basta un pixel in verticale
+       * perche' il palco creda che lo si stia buttando giu'.
+       */
+      var sopra = ev.target;
+      while (sopra && sopra !== palco) {
+        if (sopra.id === "palco-tempo" || sopra.tagName === "INPUT") { partenza = null; return; }
+        sopra = sopra.parentElement;
+      }
       partenza = ev.touches[0].clientY;
     }, { passive: true });
 
+    /**
+     * ⚠ **Non passivo, e non e' un dettaglio.**
+     *
+     * Il difetto del 5 settembre 2026: «quando mi trovo in daprod e clicco su
+     * un contenuto, se swipo con il dito in alto e in basso mentre ho un
+     * contenuto a schermo intero, muove la pagina dietro — mentre invece vorrei
+     * trascinasse il contenuto in basso».
+     *
+     * La causa era qui: con «passive: true» il browser **non lascia**
+     * chiamare «preventDefault», e il gesto scorre la pagina sotto mentre il
+     * contenuto si muove per conto suo. Sono due movimenti insieme, e quello
+     * che si vede e' la pagina.
+     *
+     * Passivo a falso costa qualche microsecondo per evento e in cambio il
+     * gesto e' uno solo. Si ferma **solo il movimento verticale**: se uno sta
+     * scorrendo di lato dentro al contenuto, quello deve continuare a
+     * funzionare.
+     */
     palco.addEventListener("touchmove", function (ev) {
       if (partenza === null || ev.touches.length !== 1) return;
       var quanto = ev.touches[0].clientY - partenza;
+      if (Math.abs(quanto) > 6 && ev.cancelable) ev.preventDefault();
       dentro.style.transform = "translateY(" + quanto + "px)";
       dentro.style.opacity = String(Math.max(0.25, 1 - Math.abs(quanto) / 400));
-    }, { passive: true });
+    }, { passive: false });
 
     var finito = function (ev) {
       if (partenza === null) return;
@@ -451,20 +558,16 @@ export const COPIONE_LETTORE = `
      */
     orologioEffetti = setInterval(function () { cambiaEffetto(true); }, 25000);
 
-    var tela = $("visual");
-    if (!tela) return;
-    tela.hidden = false;
-    document.body.classList.add("convisual");
     partitoIl = performance.now();
-    if (!disegnoVivo) disegnoVivo = requestAnimationFrame(disegna);
+    // Il disegno gira **solo con il palco aperto**: un canvas che ridisegna
+    // sessanta volte al secondo dietro a un palco chiuso e' batteria buttata,
+    // e dalla 0.9.1 il visualizer si vede solo li'.
+    if (palcoAperto && !disegnoVivo) disegnoVivo = requestAnimationFrame(disegna);
   }
 
   function spegniIlVisualizer() {
     if (orologioEffetti) { clearInterval(orologioEffetti); orologioEffetti = null; }
     if (disegnoVivo) { cancelAnimationFrame(disegnoVivo); disegnoVivo = null; }
-    var tela = $("visual");
-    if (tela) tela.hidden = true;
-    document.body.classList.remove("convisual");
   }
 
   /** Un effetto a caso, diverso da quello di adesso. */
