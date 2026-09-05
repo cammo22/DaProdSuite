@@ -24,21 +24,7 @@
  * basso. Una scheda in fondo è un posto dove si passa ogni giorno; le
  * impostazioni si aprono, si guardano e si chiudono.
  */
-export const PAGINE = `<!--
-  Il visualizer, dietro a tutto.
-
-  Non e' una scheda e non e' una finestra: e' **lo sfondo della pagina** mentre
-  suona una canzone. Chiesto il 5 settembre 2026 — «lo sfondo del visualizer
-  parte sullo sfondo in random e effetti shuffle» — e la differenza fra questo
-  e una schermata dedicata e' tutta qui: si continua a girare per l'app, e
-  dietro c'e' la musica che si muove.
-
-  Nascosto finche' non suona niente: un canvas che ridisegna sessanta volte al
-  secondo dietro a una pagina ferma e' solo batteria buttata.
--->
-<canvas id="visual" hidden></canvas>
-
-<header>
+export const PAGINE = `<header>
   <div class="marchio">DaProd<span>Suite</span></div>
   <div class="cresci"></div>
   <button class="chi" id="chi" hidden>
@@ -446,21 +432,55 @@ export const PAGINE = `<!--
   insegnato a tutti. Il tasto con la X c'e' lo stesso, per chi e' col mouse.
 -->
 <div class="palcoLettore" id="palco" hidden>
+  <!--
+    ⚠ **Il visualizer sta qui, dentro il palco.** Cambiato il 5 settembre 2026.
+
+    Nella 0.9.0 era lo sfondo della pagina, e la foto che me l'ha fatto notare
+    era eloquente: le onde rosse dietro a tutto, e in mezzo un riquadro nero con
+    la copertina. «Nella foto vedi il rosso: e' dove vorrei vedere il
+    visualizer, non nello sfondo dove lo hai messo».
+
+    Ha ragione, e la ragione e' semplice: a schermo intero **il visualizer e' il
+    contenuto**. Un brano non ha niente da mostrare tranne la sua copertina e
+    quello che il suono fa vedere; metterlo dietro alla pagina vuol dire
+    guardarlo attraverso una lista della spesa.
+  -->
+  <canvas id="visual"></canvas>
+
   <div class="cima">
     <div class="titolo">
       <b id="palco-nome"></b>
       <small id="palco-sotto"></small>
     </div>
     <button class="tondo" id="palco-cambia" title="Cambia effetto">&#9881;</button>
+    <button class="tondo" id="palco-giu" title="Abbassa e continua">&#8595;</button>
     <button class="tondo" id="palco-chiudi" title="Chiudi">&#10005;</button>
   </div>
+
   <div class="dentro" id="palco-dentro"></div>
+
+  <!--
+    **Il tempo, e ci si sposta dentro.** Chiesto il 5 settembre 2026: «lo swipe
+    funziona in galleria, ma non e' possibile andare avanti e indietro nel tempo
+    della canzone».
+
+    Una barra vera, non i controlli del browser: quelli, dentro una WebView, si
+    disegnano come vuole Android e non stanno in un palco a schermo intero.
+  -->
+  <div class="tempo" id="palco-tempo">
+    <span class="ora" id="palco-ora">0:00</span>
+    <input type="range" id="palco-barra" min="0" max="1000" value="0" step="1">
+    <span class="ora" id="palco-durata">0:00</span>
+  </div>
+
   <div class="sotto">
-    <span class="effetto" id="palco-effetto"></span>
+    <button class="tondo" id="palco-effetto" title="Cambia effetto"></button>
     <div class="cresci"></div>
     <button class="tondo" id="palco-prima" title="Precedente">&#9198;</button>
     <button class="tondo grosso" id="palco-play" title="Pausa">&#9208;</button>
     <button class="tondo" id="palco-poi" title="Prossimo">&#9197;</button>
+    <div class="cresci"></div>
+    <button class="tondo" id="palco-fila" title="La fila">&#9776;</button>
   </div>
 </div>
 

@@ -206,7 +206,40 @@ export const COPIONE_DAPROD = `
       senza.textContent = (SCHEDE[v.app] || SCHEDE.suite).segno;
       vetro.append(senza);
     }
-    vetro.addEventListener("click", function () { apriLaLente(v); });
+    /**
+     * ⚠ **Anche da qui si suona, non si apre la lente.**
+     *
+     * Il difetto del 5 settembre 2026: «nella sezione daprod, se ascolto una
+     * canzone, sullo sfondo non appare il visualizer». La causa era questa
+     * riga: in DaProd un tocco apriva la lente — un file, i controlli del
+     * browser, nessuna fila e nessun visualizer — mentre in Galleria apriva il
+     * lettore. Due gesti uguali che facevano due cose diverse.
+     *
+     * Adesso in tutte e due i posti un brano o un video mettono in fila quello
+     * che si sta guardando e aprono il palco. Una foto resta una foto.
+     */
+    vetro.addEventListener("click", function () {
+      if (v.tipo === "audio" || v.tipo === "video") {
+        accodaTutto(inBacheca, v);
+        apriPalco();
+      } else {
+        apriLaLente(v);
+      }
+    });
+
+    /**
+     * **Due tocchi: mi piace.** Chiesto il 5 settembre 2026: «facciamo doppio
+     * click su qualcosa, mette il like».
+     *
+     * E' il gesto che ogni social ha insegnato, e costa meno di cercare il
+     * cuore in fondo al riquadro. Il cuore resta: uno serve a chi sa, l'altro a
+     * chi guarda.
+     */
+    vetro.addEventListener("dblclick", function (ev) {
+      ev.preventDefault();
+      var cuore = box.querySelector(".cuore.miPiace");
+      if (cuore) cuore.click();
+    });
     box.append(vetro);
 
     var parole = document.createElement("div");
@@ -225,7 +258,10 @@ export const COPIONE_DAPROD = `
      * spegne. Se poi la chiamata va male si rimette com'era.
      */
     var cuore = document.createElement("button");
-    cuore.className = "cuore" + (v.mioMiPiace ? " mio" : "");
+    // «miPiace» lo distingue dagli altri tasti che usano la stessa forma —
+    // «tienila», «togli», il conto dei commenti — e serve al doppio tocco sul
+    // contenuto, che deve trovare **questo** e non il primo che capita.
+    cuore.className = "cuore miPiace" + (v.mioMiPiace ? " mio" : "");
     var simbolo = document.createElement("span");
     simbolo.className = "simbolo";
     simbolo.textContent = v.mioMiPiace ? "\\u2665" : "\\u2661";
@@ -236,7 +272,7 @@ export const COPIONE_DAPROD = `
       var prima = v.mioMiPiace;
       v.mioMiPiace = !prima;
       v.quantiMiPiace = Math.max(0, (v.quantiMiPiace || 0) + (prima ? -1 : 1));
-      cuore.className = "cuore" + (v.mioMiPiace ? " mio" : "");
+      cuore.className = "cuore miPiace" + (v.mioMiPiace ? " mio" : "");
       simbolo.textContent = v.mioMiPiace ? "\\u2665" : "\\u2661";
       conto.textContent = v.quantiMiPiace ? String(v.quantiMiPiace) : "";
       try {
@@ -248,7 +284,7 @@ export const COPIONE_DAPROD = `
         conto.textContent = v.quantiMiPiace ? String(v.quantiMiPiace) : "";
       } catch (e) {
         v.mioMiPiace = prima;
-        cuore.className = "cuore" + (prima ? " mio" : "");
+        cuore.className = "cuore miPiace" + (prima ? " mio" : "");
         simbolo.textContent = prima ? "\\u2665" : "\\u2661";
       }
     });

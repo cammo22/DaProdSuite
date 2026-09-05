@@ -31,6 +31,7 @@ export const COPIONE_PRODUZIONE = `
   var PRODUZIONI = {
     "genera.immagine": { nome: "Produzione Immagini", sotto: "una foto da una descrizione", tinta: "viola", segno: "\\u25C9" },
     "genera.video": { nome: "Produzione Video", sotto: "una clip, col suono", tinta: "rosa", segno: "\\u25B6" },
+    "genera.storia": { nome: "Storia", sotto: "30 secondi, un minuto, due", tinta: "rosa", segno: "\\u29C9" },
     "genera.brano": { nome: "Produzione Musica", sotto: "una canzone, anche cantata", tinta: "ciano", segno: "\\u266B" },
     "genera.voce": { nome: "Produzione Audio", sotto: "un testo letto ad alta voce", tinta: "ambra", segno: "\\u275E" },
   };

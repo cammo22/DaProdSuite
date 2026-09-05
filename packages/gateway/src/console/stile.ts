@@ -696,26 +696,23 @@ export const STILE = `  :root {
   /* Dietro a tutto, e senza toccare niente: nessun evento del mouse arriva
      qui, quindi la pagina sopra funziona esattamente come prima. */
   /**
-   * Dietro a tutto, e **con uno z-index negativo**.
+   * ⚠ **Il visualizer sta dentro il palco**, non dietro alla pagina.
    *
-   * La prima stesura lo metteva a zero e alzava a uno la testata, il corpo e la
-   * barra delle schede. Sembra la stessa cosa e non lo era: quella riga
-   * arrivava dopo la regola della testata e le portava via il «position:
-   * sticky», e dentro la WebView di Android il risultato era che la lente e il
-   * palco si vedevano quasi neri. Trovato provando sull'app, non leggendo.
+   * Nella 0.9.0 era lo sfondo del corpo, e la foto del 5 settembre 2026 l'ha
+   * chiuso in una riga: «nella foto vedi il rosso, e' dove vorrei vedere il
+   * visualizer, non nello sfondo dove lo hai messo». A schermo intero **il
+   * visualizer e' il contenuto**: un brano non ha altro da mostrare che la sua
+   * copertina e quello che il suono fa vedere, e guardarlo attraverso una
+   * lista della spesa non e' guardarlo.
    *
-   * Con «-1» il canvas sta sotto al contenuto della pagina e sopra allo sfondo
-   * del corpo senza che nessun altro debba cambiare: e' il modo classico, e non
-   * tocca niente di quello che c'era prima.
+   * Sta in fondo al palco e non tocca niente: nessun evento del mouse arriva
+   * qui, quindi i tasti sopra funzionano esattamente come prima.
    */
-  #visual {
-    position: fixed; inset: 0; z-index: -1;
+  .palcoLettore #visual {
+    position: absolute; inset: 0; z-index: 0;
     width: 100%; height: 100%;
     pointer-events: none;
   }
-  /* Con il visualizer acceso lo sfondo del corpo si smorza: due sfumature
-     sovrapposte sono fango, e quella che deve vedersi e' quella che si muove. */
-  body.convisual { background-image: none; background-color: #05060a; }
 
   /* ----------------------------------------------------- la barra che suona */
   .barraLettore {
@@ -769,13 +766,29 @@ export const STILE = `  :root {
    * leggendo il codice: da fuori sembrava un problema di «backdrop-filter».
    */
   .palcoLettore {
-    position: fixed; inset: 0; z-index: 80;
+    position: fixed; inset: 0; z-index: 80; overflow: hidden;
     background: #04050afa;
     display: flex; flex-direction: column;
     padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom);
     animation: entra .18s ease-out;
   }
+  /* Tutto quello che sta nel palco va sopra al canvas. */
+  .palcoLettore .cima,
+  .palcoLettore .dentro,
+  .palcoLettore .tempo,
+  .palcoLettore .sotto { position: relative; z-index: 1; }
   .palcoLettore .cima { display: flex; align-items: center; gap: 10px; padding: 10px 14px; }
+
+  /* La barra del tempo: si legge dove sei e ci si sposta. */
+  .palcoLettore .tempo { display: flex; align-items: center; gap: 10px; padding: 0 16px; }
+  .palcoLettore .tempo .ora {
+    font-size: 11.5px; color: var(--dim); font-variant-numeric: tabular-nums;
+    flex: 0 0 auto; min-width: 38px; text-align: center;
+  }
+  .palcoLettore .tempo input[type="range"] {
+    flex: 1; min-width: 0; margin: 0; accent-color: var(--accent);
+    height: 26px; background: none; border: 0; padding: 0;
+  }
   .palcoLettore .cima .titolo { flex: 1; min-width: 0; }
   .palcoLettore .cima .titolo b {
     display: block; font-size: 14px; font-weight: 600;

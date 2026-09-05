@@ -132,6 +132,12 @@ export const COPIONE_AVVIO = `
   $("palco-prima").addEventListener("click", precedente);
   $("palco-poi").addEventListener("click", prossimo);
   $("palco-cambia").addEventListener("click", function () { cambiaEffetto(false); });
+  $("palco-effetto").addEventListener("click", function () { cambiaEffetto(false); });
+  $("palco-giu").addEventListener("click", chiudiPalco);
+  $("palco-fila").addEventListener("click", apriLaFila);
+  // La barra del tempo: mentre il dito e' sopra, il brano non la muove.
+  $("palco-barra").addEventListener("input", function () { stoTrascinando = true; });
+  $("palco-barra").addEventListener("change", function () { stoTrascinando = false; vaiAlPunto(); });
   aggangiaIlTrascinamento($("palco"));
   $("chi").addEventListener("click", function () { vaiA("daprod"); });
   $("apri-profilo").addEventListener("click", apriIlProfilo);
