@@ -10,7 +10,7 @@ Un programma solo per fare musica, immagini, video, voci e parlare con un avatar
 Ogni app la installi quando ti serve e la disinstalli quando non ti serve più.
 Gira sul tuo computer: niente account, niente chiavi API, codice aperto.
 
-[![versione](https://img.shields.io/badge/versione-0.9.0-7c5cff)](https://github.com/cammo22/DaProdSuite/releases/latest)
+[![versione](https://img.shields.io/badge/versione-0.9.1-7c5cff)](https://github.com/cammo22/DaProdSuite/releases/latest)
 [![licenza](https://img.shields.io/badge/licenza-MIT-5cff9d)](LICENSE)
 [![piattaforma](https://img.shields.io/badge/Windows-x64-3ddbff)](#requisiti)
 [![sito](https://img.shields.io/badge/sito-cammo22.github.io-ffa63d)](https://cammo22.github.io/DaProdSuite/)
@@ -95,17 +95,12 @@ tutte lo stesso.
 
 ## A che punto siamo
 
-**Ultima pubblicata: 0.9.0 — «Il telefono trova il computer».** La più grossa
-da quando esiste l'app del telefono, e cambia il primo minuto: non c'è più un
-codice da farsi dettare. Scegli come ti chiami, e sotto compare l'elenco dei
-computer di casa; ne tocchi uno, di là arriva un avviso, e chi ci sta davanti
-dice di sì.
-
-Dentro ci sono anche il lettore con la fila e il visualizer, gli stili e i
-prompt che si condividono in DaProd, la casella «dillo e basta» che trasforma
-una frase in un lavoro, e tre difetti dell'app chiusi guardando dentro la
-pagina invece che indovinando: il crash che se la portava via, il computer che
-si perdeva cambiando indirizzo, e il tasto indietro che usciva dall'app.
+**Ultima pubblicata: 0.9.1 — «Quaranta cose che si vedevano».** Nessuna funzione
+nuova grossa: quaranta difetti e rifiniture trovati usando la 0.9.0 per una
+sera. I default veri al posto di «quello scelto sul computer», la copertina di
+un brano chiesta dal telefono, il visualizer spostato dove serve, la galleria
+che segna cosa non hai ancora guardato, l'archivio, i permessi chiesti
+all'avvio, e le impostazioni che non sono più le stesse per tutti.
 
 **Prima, la 0.8.1 — «Il fotogramma, la foto, e le parole sotto».** La causa vera
 delle anteprime dei video: FFmpeg scriveva su un file `.part` e sceglie il

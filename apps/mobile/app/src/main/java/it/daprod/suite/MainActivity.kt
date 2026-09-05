@@ -1970,7 +1970,15 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch {
             try {
                 val (byte, mime) = prendiIByte(rotta, chiaveLocale)
-                val dove = Scarica.salva(this@MainActivity, nome, mimeBuono(mime, nome), byte)
+                /**
+                 * Anche qui il nome vuole l'estensione, e per lo stesso motivo:
+                 * in libreria le cose si chiamano col titolo e basta. In
+                 * galleria, un file senza estensione la galleria di Android non
+                 * lo mostra nemmeno.
+                 */
+                val tipo = mimeBuono(mime, nome)
+                val conCoda = if (nome.contains('.')) nome else nome + estensioneDi(tipo)
+                val dove = Scarica.salva(this@MainActivity, conCoda, tipo, byte)
                 avvisa("Salvato in $dove.")
             } catch (e: Exception) {
                 avvisa(spiega(e))
@@ -1993,7 +2001,25 @@ class MainActivity : AppCompatActivity() {
                 // Una cartella che si svuota da sé: un file condiviso ieri non
                 // serve più a nessuno, e la cache non è un archivio.
                 cartella.listFiles()?.forEach { runCatching { it.delete() } }
-                val file = File(cartella, nome.replace(Regex("[\\\\/:*?\"<>|]"), "_"))
+                /**
+                 * ⚠ **Il nome deve avere l'estensione giusta, o non lo apre nessuno.**
+                 *
+                 * Il difetto del 5 settembre 2026: «quando condivido una
+                 * canzone con il pulsante condividi non condivide
+                 * correttamente il file mp3».
+                 *
+                 * La causa non era la condivisione: era il nome. In libreria
+                 * una cosa si chiama come il suo titolo **senza estensione**
+                 * (`basename(voce.name, extname(voce.name))` in libreria.ts),
+                 * quindi il file scritto qui si chiamava «Bum bum Opensource» e
+                 * basta. Le altre app guardano il nome prima del tipo: senza
+                 * `.mp3` quella e' roba che non si sa cosa sia, e finisce
+                 * allegata come documento generico — o rifiutata.
+                 */
+                val tipo = mimeBuono(mime, nome)
+                val pulito = nome.replace(Regex("[\\\\/:*?\"<>|]"), "_")
+                val conCoda = if (pulito.contains('.')) pulito else pulito + estensioneDi(tipo)
+                val file = File(cartella, conCoda)
                 file.writeBytes(byte)
 
                 val uri = FileProvider.getUriForFile(
@@ -2002,7 +2028,7 @@ class MainActivity : AppCompatActivity() {
                     file,
                 )
                 val intento = Intent(Intent.ACTION_SEND).apply {
-                    type = mimeBuono(mime, nome)
+                    type = tipo
                     putExtra(Intent.EXTRA_STREAM, uri)
                     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 }
@@ -2034,6 +2060,26 @@ class MainActivity : AppCompatActivity() {
      * Serve al telefono per sapere in che collezione metterlo. Un
      * `application/octet-stream` finirebbe nei Download anche se è una foto.
      */
+    /**
+     * L'estensione che va con un tipo, per i file che non ce l'hanno.
+     *
+     * È il contrario di [mimeBuono], e serve alla condivisione: in libreria le
+     * cose si chiamano col loro titolo, senza estensione, e un file senza
+     * estensione le altre app non lo aprono.
+     */
+    private fun estensioneDi(mime: String): String = when (mime.substringBefore(";").trim()) {
+        "image/png" -> ".png"
+        "image/jpeg" -> ".jpg"
+        "image/webp" -> ".webp"
+        "video/mp4" -> ".mp4"
+        "video/webm" -> ".webm"
+        "audio/mpeg" -> ".mp3"
+        "audio/wav", "audio/x-wav" -> ".wav"
+        "audio/flac", "audio/x-flac" -> ".flac"
+        "audio/ogg", "audio/opus" -> ".opus"
+        else -> ""
+    }
+
     private fun mimeBuono(dallaRete: String, nome: String): String {
         val pulito = dallaRete.substringBefore(";").trim()
         if (pulito.isNotBlank() && pulito != "application/octet-stream") return pulito

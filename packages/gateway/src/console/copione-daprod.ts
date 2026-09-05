@@ -155,6 +155,71 @@ export const COPIONE_DAPROD = `
   }
 
   /**
+   * Le proprie immagini, per farne una faccia.
+   *
+   * Il file non si ricarica: sta gia' sul computer, e il gateway lo copia nella
+   * cartella delle facce leggendolo da li'. Vedi «/io/foto/dalla-libreria».
+   */
+  async function apriFacciaDallaSuite() {
+    var carta = apriFoglio("Una tua immagine");
+    var attesa = document.createElement("p");
+    attesa.className = "nota";
+    attesa.textContent = "Guardo cosa hai fatto\u2026";
+    carta.append(attesa);
+
+    var voci = [];
+    try {
+      var risposta = await chiama("/libreria?quanti=60&dove=mie&tipo=immagine");
+      voci = (risposta && risposta.voci) || [];
+    } catch (e) {
+      attesa.className = "avviso male";
+      attesa.textContent = e.message;
+      return;
+    }
+    attesa.remove();
+
+    if (!voci.length) {
+      var niente = document.createElement("p");
+      niente.className = "nota";
+      niente.textContent = "Non hai ancora fatto nessuna immagine.";
+      carta.append(niente);
+      return;
+    }
+
+    var griglia = document.createElement("div");
+    griglia.className = "quadri";
+    for (var v of voci) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "vetro";
+      var img = document.createElement("img");
+      img.loading = "lazy";
+      img.src = "/libreria/file/" + encodeURIComponent(v.id);
+      b.append(img);
+      b.addEventListener("click", (function (quale) {
+        return function () { chiudiFoglio(); void facciaDa(quale); };
+      })(v));
+      griglia.append(b);
+    }
+    carta.append(griglia);
+  }
+
+  /** Prende quell'immagine come faccia del profilo. */
+  async function facciaDa(v) {
+    try {
+      var esito = await chiama("/io/foto/dalla-libreria", {
+        method: "POST",
+        body: JSON.stringify({ id: v.id }),
+      });
+      ioFoto = esito.foto || ioFoto;
+      disegnaMioProfilo();
+      await leggiBacheca();
+    } catch (e) {
+      alert(e.message);
+    }
+  }
+
+  /**
    * Il profilo di qualcun altro: chi e', e cosa ha fatto.
    *
    * **Solo le sue cose pubblicate**, tranne per chi decide, che le vede tutte —
@@ -655,7 +720,27 @@ export const COPIONE_DAPROD = `
     var cambia = document.createElement("button");
     cambia.className = "mini";
     cambia.textContent = ioFoto ? "Cambia foto" : "Metti una foto";
-    cambia.addEventListener("click", function () { scegli.click(); });
+    /**
+     * **Da dove viene la faccia: dal telefono, o dalla suite.**
+     *
+     * Chiesto il 5 settembre 2026: «anche nel profilo il tasto metti una foto
+     * devi poter scegliere dal telefono oppure dalla suite». E' lo stesso gesto
+     * di «carica un contenuto», e per la stessa ragione: chi usa questa suite
+     * fa immagini tutto il giorno, e la piu' bella che ha per farci una faccia
+     * l'ha appena generata — chiedergli di salvarla nel telefono per poi
+     * ricaricarla e' un giro che non serve a niente.
+     */
+    cambia.addEventListener("click", function () {
+      var scelta = apriFoglio("La tua faccia");
+      voceFoglio(scelta, "\u2913", "Dal telefono", "una foto che hai qui", function () {
+        chiudiFoglio();
+        scegli.click();
+      });
+      voceFoglio(scelta, "\u25C9", "Dalla suite", "una che hai fatto tu", function () {
+        chiudiFoglio();
+        void apriFacciaDallaSuite();
+      });
+    });
     var dati = document.createElement("div");
     dati.className = "dati";
     var quale = document.createElement("div");

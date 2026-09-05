@@ -87,7 +87,7 @@
 import { createHash } from "node:crypto";
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import type { AddressInfo } from "node:net";
-import { createReadStream, createWriteStream, mkdirSync, rmSync, statSync } from "node:fs";
+import { copyFileSync, createReadStream, createWriteStream, mkdirSync, rmSync, statSync } from "node:fs";
 import { join, normalize } from "node:path";
 import { elencoAzioni, eseguiAzione, type Esecutore } from "./azioni";
 import { paginaConsole } from "./console";
@@ -820,6 +820,49 @@ export class Gateway {
       }
 
       /** La riga sotto al nome. La cambia solo chi sta dietro a quel nome. */
+      /**
+       * **Una faccia presa da quello che hai gia' fatto.** Nuova nella 0.9.1.
+       *
+       * Chiesto il 5 settembre 2026: «anche nel profilo il tasto metti una foto
+       * devi poter scegliere dal telefono oppure dalla suite». Chi usa questa
+       * suite fa immagini tutto il giorno, e la piu' bella che ha per farci una
+       * faccia l'ha appena generata: farla salvare nel telefono per poi
+       * ricaricarla e' un giro che non serve a niente.
+       *
+       * **Nessun byte passa dalla rete.** Il file e' gia' sul disco del
+       * computer: si copia da li' a li', e quello che viaggia e' un id.
+       */
+      if (percorso === "/io/foto/dalla-libreria" && req.method === "POST") {
+        if (!this.libreria?.file) return this.errore(res, 501, "Questa suite non ha la libreria.");
+        const id = String(((corpo ?? {}) as { id?: string }).id ?? "");
+        const quale = this.libreria.file(id, dispositivo.id);
+        if (!quale) return this.errore(res, 404, "Questa immagine non la trovo, o non e' tua.");
+        if (!quale.mime.startsWith("image/")) {
+          return this.errore(res, 400, "Per la faccia ci vuole un'immagine.");
+        }
+        if (quale.bytes > MASSIMO_FOTO) {
+          return this.errore(res, 413, "Quest'immagine e' troppo grande per una faccia.");
+        }
+
+        const suDisco = `faccia-${dispositivo.id}-${Date.now().toString(36)}${estensioneDi(quale.mime)}`;
+        try {
+          mkdirSync(this.remoto.inviiDir, { recursive: true });
+          copyFileSync(quale.percorso, join(this.remoto.inviiDir, suDisco));
+        } catch {
+          return this.errore(res, 500, "Non sono riuscito a copiarla.");
+        }
+
+        const prima = dispositivo.foto;
+        this.remoto.cambiaProfilo(dispositivo.id, { foto: suDisco });
+        if (prima && prima !== suDisco) buttaIlFile(join(this.remoto.inviiDir, prima));
+        this.json(res, 201, {
+          ok: true,
+          foto: indirizzoDellaFoto({ id: dispositivo.id, foto: suDisco }),
+        });
+        this.aggiorna();
+        return;
+      }
+
       if (percorso === "/io/profilo" && req.method === "POST") {
         const dati = (corpo ?? {}) as { motto?: string; nome?: string };
         if (typeof dati.nome === "string" && dati.nome.trim()) {
@@ -2335,6 +2378,15 @@ function dovePuoiGuardare(
   if (chiesto === "archivio") return "archivio";
   if (chiesto === "tutte" && dispositivo.ruolo === "admin") return "tutte";
   return "mie";
+}
+
+/** L'estensione che va con un tipo d'immagine. Serve al nome del file. */
+function estensioneDi(mime: string): string {
+  const pulito = mime.split(";")[0]?.trim() ?? "";
+  if (pulito === "image/png") return ".png";
+  if (pulito === "image/webp") return ".webp";
+  if (pulito === "image/gif") return ".gif";
+  return ".jpg";
 }
 
 function senzaToken(d: Dispositivo): DispositivoPubblico {
