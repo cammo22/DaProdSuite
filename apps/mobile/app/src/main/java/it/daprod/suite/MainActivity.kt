@@ -263,12 +263,20 @@ class MainActivity : AppCompatActivity() {
             }
         }
         SyncWorker.programma(this)
-        if (Build.VERSION.SDK_INT >= 33 &&
-            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) !=
-            PackageManager.PERMISSION_GRANTED
-        ) {
-            chiediNotifiche.launch(Manifest.permission.POST_NOTIFICATIONS)
-        }
+        /**
+         * ⚠ **I permessi si chiedono all'avvio, tutti insieme.** Dalla 0.9.1.
+         *
+         * Prima si chiedevano uno alla volta e nel momento peggiore: le
+         * notifiche qui, dentro la schermata del nome; la batteria da una voce
+         * di menu che compariva solo se mancava; l'installazione quando un
+         * aggiornamento c'era già. Quasi nessuno li dava tutti, e poi «le
+         * notifiche non arrivano» — con la causa in un interruttore che nessuno
+         * sapeva di dover accendere.
+         *
+         * Chiesto il 5 settembre 2026: «facciamo che all'avvio si devono
+         * accettare tutti i requisiti, come notifiche aggiornamento ecc».
+         */
+        if (Permessi.daChiedere(this)) mostraIPermessi(true)
 
         preparaWeb()
 
@@ -1722,9 +1730,11 @@ class MainActivity : AppCompatActivity() {
         if (Profili.tutti(this).size > 1) menu.menu.add(0, 1, 0, R.string.menu_cambia)
         menu.menu.add(0, 2, 1, R.string.aggiungi_persona)
         menu.menu.add(0, 3, 2, R.string.menu_aggiorna)
-        // Solo se il risparmio è ancora acceso: una voce di menu che non fa
-        // niente è peggio di una voce che non c'è.
-        if (!senzaRisparmioBatteria()) menu.menu.add(0, 4, 3, R.string.menu_batteria)
+        // I permessi ci sono **sempre**, anche quando sono tutti dati: e' il
+        // posto in cui uno va a guardare quando qualcosa non arriva, e una
+        // voce che compare solo quando manca qualcosa e' una voce che non si
+        // trova quando serve.
+        menu.menu.add(0, 4, 3, R.string.menu_permessi)
 
         menu.setOnMenuItemClickListener { voce ->
             when (voce.itemId) {
@@ -1739,7 +1749,7 @@ class MainActivity : AppCompatActivity() {
                 }
                 2 -> vaiAdEntrare()
                 3 -> cercaAggiornamento(dilloSempre = true)
-                4 -> spiegaLaBatteria()
+                4 -> mostraIPermessi(false)
             }
             true
         }
@@ -1766,32 +1776,97 @@ class MainActivity : AppCompatActivity() {
         true
     }
 
-    private fun spiegaLaBatteria() {
-        AlertDialog.Builder(this)
-            .setTitle(R.string.batteria_titolo)
-            .setMessage(R.string.batteria_spiega)
-            .setPositiveButton(R.string.batteria_vai) { _, _ ->
-                try {
-                    /**
-                     * L'elenco delle app, non la richiesta diretta.
-                     *
-                     * `ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` mostrerebbe
-                     * un sì/no in un colpo solo, e vorrebbe un permesso che
-                     * esiste apposta per essere guardato con sospetto. Questa
-                     * apre la stessa schermata delle impostazioni: un passaggio
-                     * in più, e nessun permesso da chiedere per una cosa che
-                     * deve restare una scelta di chi usa il telefono.
-                     */
-                    startActivity(
-                        Intent(android.provider.Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS),
-                    )
-                } catch (_: Exception) {
-                    avvisa("Su questo telefono quella schermata non si apre da qui.")
-                }
+    /**
+     * Cosa serve all'app per funzionare bene, tutto in una schermata.
+     *
+     * ⚠ **Sostituisce tre finestrelle sparse.** Prima le notifiche si
+     * chiedevano al primo avvio dentro la schermata del nome, la batteria da
+     * una voce di menu che compariva solo se mancava, e l'installazione quando
+     * un aggiornamento c'era già. Nessuno le vedeva tutte e tre, e il risultato
+     * era «le notifiche non arrivano» con la causa in un interruttore che
+     * l'utente non sapeva di dover accendere.
+     *
+     * `allAvvio` cambia solo le parole e il tasto per uscire: la prima volta si
+     * può saltare, dalle impostazioni si chiude. Le tre righe sono le stesse, e
+     * dicono **cosa succede senza** — che è l'unica cosa che convince a dare un
+     * permesso.
+     */
+    private fun mostraIPermessi(allAvvio: Boolean) {
+        val stato = Permessi.stato(this)
+        val righe = buildList {
+            if (!stato.notifiche) {
+                add(
+                    Triple(
+                        getString(R.string.perm_notifiche),
+                        getString(R.string.perm_notifiche_perche),
+                        { chiediNotifiche.launch(Manifest.permission.POST_NOTIFICATIONS) },
+                    ),
+                )
             }
-            .setNegativeButton(R.string.batteria_no, null)
+            if (!stato.batteria) {
+                add(
+                    Triple(
+                        getString(R.string.perm_batteria),
+                        getString(R.string.perm_batteria_perche),
+                        { Permessi.apriBatteria(this@MainActivity) },
+                    ),
+                )
+            }
+            if (!stato.installare) {
+                add(
+                    Triple(
+                        getString(R.string.perm_installare),
+                        getString(R.string.perm_installare_perche),
+                        { Permessi.apriInstallazione(this@MainActivity) },
+                    ),
+                )
+            }
+        }
+
+        if (righe.isEmpty()) {
+            AlertDialog.Builder(this)
+                .setTitle(R.string.perm_titolo)
+                .setMessage(R.string.perm_tutto_ok)
+                .setPositiveButton(android.R.string.ok, null)
+                .show()
+            Permessi.segnaChiesti(this)
+            return
+        }
+
+        val corpo = buildString {
+            append(getString(R.string.perm_intro))
+            append("\n")
+            for ((nome, perche, _) in righe) {
+                append("\n\u2022 ")
+                append(nome)
+                append("\n   ")
+                append(perche)
+                append("\n")
+            }
+        }
+
+        /**
+         * Un tasto per volta, e non tre.
+         *
+         * Android non lascia chiedere tre permessi in una finestra sola — due
+         * dei tre aprono una schermata di sistema — quindi si offre il primo
+         * che manca e si riapre questa dopo. Chi ne dà uno e chiude, la
+         * prossima volta si vede solo quello che resta.
+         */
+        val (nome, _, fai) = righe.first()
+        AlertDialog.Builder(this)
+            .setTitle(R.string.perm_titolo)
+            .setMessage(corpo)
+            .setPositiveButton(getString(R.string.perm_dai, nome.lowercase())) { _, _ ->
+                Permessi.segnaChiesti(this)
+                fai()
+            }
+            .setNegativeButton(if (allAvvio) R.string.perm_dopo else android.R.string.cancel) { _, _ ->
+                Permessi.segnaChiesti(this)
+            }
             .show()
     }
+
 
     /* ------------------------------------------------------------- la fila */
 

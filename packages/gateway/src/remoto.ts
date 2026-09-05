@@ -423,6 +423,20 @@ export class Remoto {
     return archivio.ioId;
   }
 
+  /**
+   * Chi vuole sapere che **è arrivata** una richiesta.
+   *
+   * Diverso da `suAccettata`, e la differenza conta: qui si è appena chiesto
+   * qualcosa, là si è deciso di farlo. Serve alla notifica sul computer, che
+   * dalla 0.9.1 è l'unica del lavoro che resta lì — e dice una cosa che chi sta
+   * davanti non vede: qualcuno ha chiesto, da fuori.
+   */
+  private richiedenti: ((richiesta: Richiesta) => void)[] = [];
+
+  suRichiesta(fn: (richiesta: Richiesta) => void): void {
+    this.richiedenti.push(fn);
+  }
+
   /** Chi eseguirà le richieste accettate. Lo aggancia lo shell. */
   suAccettata(fn: (richiesta: Richiesta) => void): void {
     this.accettatori.push(fn);
@@ -585,6 +599,23 @@ export class Remoto {
     };
     dati.richieste.push(richiesta);
     this.archivio.salva();
+
+    /**
+     * Chi sta al computer lo deve sapere. **Sempre, anche se parte da sola.**
+     *
+     * Dalla 0.9.1 e' l'unica notifica del lavoro che compare sul PC: «sul pc
+     * riceviamo una notifica quando viene incaricato un lavoro e basta». Si
+     * manda **prima** di far partire, e anche quando il si' non serve — perche'
+     * quello che dice e' «e' arrivato qualcosa da fuori», e quella cosa vale
+     * uguale sia che parta subito sia che aspetti.
+     */
+    for (const fn of this.richiedenti) {
+      try {
+        fn(richiesta);
+      } catch {
+        // Un avviso che non compare non deve poter fermare un lavoro.
+      }
+    }
 
     if (decide) {
       // Nessuna notifica a nessuno: l'ha chiesta chi poteva gia' dire di si', e

@@ -1664,20 +1664,26 @@ collegaEsecuzione({
     sveglia();
   },
   consegna(id, file) {
-    const chi = remoto.archivi.datiCorrenti.richieste.find((r) => r.id === id);
     consegna(id, file);
     /**
-     * **E lo dice anche a chi sta al computer**, dalla 0.7.7.
+     * ⚠ **Sul computer non si avvisa piu' quando un lavoro finisce.**
      *
-     * Chiesto così: «mettiamo le notifiche anche su pc che non le sento». Fino
-     * a ieri l'avviso arrivava solo sul telefono di chi aveva chiesto: chi
-     * ospita la macchina — che è quello che aspetta di più, perché è lì —
-     * doveva guardare la finestra.
+     * C'era dalla 0.7.7 — «mettiamo le notifiche anche su pc che non le sento»
+     * — e il 5 settembre 2026 e' stata tolta: «sul pc riceviamo una notifica
+     * quando viene incaricato un lavoro e basta; togli le notifiche del lavoro
+     * pronto o in esecuzione».
+     *
+     * Ed e' giusto, ed e' interessante il perche'. Le due notifiche servono a
+     * due persone diverse: **quella di «e' pronto» serve a chi ha chiesto**, e
+     * chi ha chiesto ha il telefono in tasca. Chi sta al computer la riceve
+     * mentre guarda la finestra in cui il lavoro sta finendo — cioe' non gli
+     * dice niente che non veda gia' — e in una serata di lavoro sono trenta
+     * riquadri nell'angolo dello schermo. Trenta avvisi che non dicono niente
+     * insegnano a ignorare anche il primo che direbbe qualcosa.
+     *
+     * Sul computer restano le due che riguardano **qualcun altro**: qualcuno
+     * vuole collegarsi, e qualcuno ha chiesto un lavoro.
      */
-    avvisaSulComputer(
-      chi?.numero ? `Pronto il numero ${chi.numero}` : "Un lavoro è pronto",
-      `${chi?.daNome ?? "qualcuno"}: ${(chi?.testo ?? file.nome).slice(0, 90)}`,
-    );
     // La fila si è accorciata: qualcuno che aspettava per via di un tetto può
     // partire adesso. Senza questa riga i tetti sarebbero una porta che non si
     // riapre — vedi `rivediTrattenute`.
@@ -1706,6 +1712,27 @@ function liberaLaFila(): void {
  * — finisce qui, e da qui la scheda giusta si apre e genera. È il pezzo che
  * mancava perché «da fuori» volesse dire davvero da fuori.
  */
+/**
+ * **Qualcuno ha chiesto un lavoro**: e questo, sul computer, si dice.
+ *
+ * Nuova nella 0.9.1, chiesta cosi': «sul pc riceviamo una notifica quando viene
+ * incaricato un lavoro e basta». E' l'unica notifica del lavoro che sopravvive
+ * su questa macchina, e la ragione e' che e' l'unica che dice qualcosa che chi
+ * ci sta davanti non vede: una richiesta e' arrivata **da fuori**, e magari la
+ * suite e' dietro a un browser.
+ *
+ * Sta su `suRichiesta` e non su `suAccettata` apposta: «incaricato» vuol dire
+ * arrivato, non partito. Se aspettasse il si', chi decide riceverebbe la
+ * notifica dopo averlo dato lui — cioe' mai in tempo per servire a qualcosa.
+ */
+remoto.suRichiesta((richiesta) => {
+  avvisaSulComputer(
+    richiesta.numero ? `Lavoro numero ${richiesta.numero}` : "Un lavoro da fare",
+    `${richiesta.daNome} ha chiesto: ${richiesta.testo.slice(0, 90)}`,
+    `richiesta-${richiesta.id}`,
+  );
+});
+
 remoto.suAccettata((richiesta) => {
   accoda({
     id: richiesta.id,

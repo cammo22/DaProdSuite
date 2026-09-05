@@ -154,6 +154,103 @@ export const COPIONE_DAPROD = `
     return box;
   }
 
+  /**
+   * Il profilo di qualcun altro: chi e', e cosa ha fatto.
+   *
+   * **Solo le sue cose pubblicate**, tranne per chi decide, che le vede tutte —
+   * e quelle non pubblicate hanno un colore diverso, perche' guardarle e' un
+   * permesso e non la normalita'. Il filtro vero sta nel gateway: qui si
+   * sceglie solo cosa chiedere.
+   */
+  async function apriIlProfiloDi(v) {
+    var carta = apriFoglio(v.chiNome || "Questa persona");
+
+    var testa = document.createElement("div");
+    testa.className = "profilo";
+    var faccia = document.createElement("span");
+    faccia.className = "faccia-tonda grande";
+    riempiFaccia(faccia, v.chiNome || "?", v.chiFoto || "");
+    var dati = document.createElement("div");
+    dati.className = "dati";
+    var nome = document.createElement("div");
+    nome.className = "nome";
+    nome.textContent = v.chiNome || "qualcuno";
+    var sotto = document.createElement("div");
+    sotto.className = "motto";
+    sotto.textContent = "Guardo cosa ha fatto\u2026";
+    dati.append(nome, sotto);
+    testa.append(faccia, dati);
+    carta.append(testa);
+
+    var quadri = document.createElement("div");
+    quadri.className = "quadri";
+    carta.append(quadri);
+
+    var voci = [];
+    try {
+      // Chi decide chiede «tutte» e riceve tutto; chi non decide chiede lo
+      // stesso «bacheca», che e' l'unica cosa che il gateway gli darebbe.
+      var risposta = await chiama(
+        "/libreria?quanti=60&di=" + encodeURIComponent(v.chi) +
+          "&dove=" + (puoiDecidere ? "tutte" : "bacheca"),
+      );
+      voci = (risposta && risposta.voci) || [];
+    } catch (e) {
+      sotto.textContent = e.message;
+      return;
+    }
+
+    var pubbliche = voci.filter(function (x) { return x.pubblicato; }).length;
+    sotto.textContent = voci.length
+      ? pubbliche + " in bacheca" + (voci.length > pubbliche ? " \u00b7 " + (voci.length - pubbliche) + " no" : "")
+      : "Non ha ancora messo niente in bacheca.";
+
+    for (var x of voci) quadri.append(quadroDelProfilo(x));
+  }
+
+  /** Un riquadro nel profilo di qualcun altro. */
+  function quadroDelProfilo(v) {
+    var box = document.createElement("div");
+    // Le non pubblicate hanno un colore diverso: si vedono solo da chi decide,
+    // e va detto che si sta guardando una cosa che non e' in bacheca.
+    box.className = "quadro" + (v.pubblicato ? "" : " privata");
+
+    var vetro = document.createElement("button");
+    vetro.type = "button";
+    vetro.className = "vetro";
+    if (v.tipo === "immagine" || v.anteprima) {
+      var img = document.createElement("img");
+      img.loading = "lazy";
+      img.src = v.tipo === "immagine"
+        ? "/libreria/file/" + encodeURIComponent(v.id)
+        : "/libreria/anteprima/" + encodeURIComponent(v.id);
+      vetro.append(img);
+    } else {
+      var senza = document.createElement("div");
+      senza.className = "senza";
+      senza.textContent = v.tipo === "audio" ? "\u266B" : "\u25B6";
+      vetro.append(senza);
+    }
+    vetro.addEventListener("click", function () {
+      chiudiFoglio();
+      if (v.tipo === "audio" || v.tipo === "video") { accodaTutto([v], v); apriPalco(); }
+      else apriLaLente(v);
+    });
+
+    var sotto = document.createElement("div");
+    sotto.className = "sotto";
+    var nome = document.createElement("div");
+    nome.className = "nome";
+    nome.textContent = v.didascalia || v.nome;
+    var riga = document.createElement("div");
+    riga.className = "riga";
+    riga.textContent = quando(v.creato);
+    sotto.append(nome, riga);
+
+    box.append(vetro, sotto);
+    return box;
+  }
+
   /** Una cosa in bacheca: la faccia sopra, la roba in mezzo, i tasti sotto. */
   function postaDi(v) {
     var box = document.createElement("div");
@@ -179,6 +276,25 @@ export const COPIONE_DAPROD = `
     chi.append(nome, q);
     testa.append(faccia, chi);
     box.append(testa);
+
+    /**
+     * **Toccare il nome apre il profilo di quella persona.**
+     *
+     * Chiesto il 5 settembre 2026: «facciamo anche che se clicchi su un utente
+     * puoi vedere il suo profilo e le sue creazioni, solo quelle pubblicate
+     * pero' — un admin puo' vedere anche quelle non pubbliche».
+     *
+     * Il permesso non sta qui: sta nel gateway, che con «dove=bacheca» torna le
+     * pubblicate e con «dove=tutte» — che accetta solo da chi decide — torna
+     * tutto. Questa riga sceglie quale delle due chiedere, e il computer decide
+     * se puo'.
+     */
+    if (!v.mia && v.chi) {
+      testa.style.cursor = "pointer";
+      testa.addEventListener("click", (function (uno) {
+        return function () { void apriIlProfiloDi(uno); };
+      })(v));
+    }
 
     var vetro = document.createElement("button");
     vetro.type = "button";

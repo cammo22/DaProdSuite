@@ -87,6 +87,21 @@
     <string name="batteria_vai">Portami lì</string>
     <string name="batteria_no">Lascia stare</string>
     <string name="menu_batteria">Notifiche in ritardo?</string>
+    <string name="menu_permessi">Cosa mi serve per funzionare</string>
+
+    <!-- I permessi, chiesti all'avvio tutti insieme. Ognuno dice cosa succede
+         SENZA, che e' l'unica cosa che convince a darlo. -->
+    <string name="perm_titolo">Cosa mi serve per funzionare bene</string>
+    <string name="perm_intro">Nessuna di queste e\' obbligatoria: l\'app funziona lo stesso. Ma sono cose che ci si accorge di non aver dato quando e\' tardi.</string>
+    <string name="perm_tutto_ok">E\' tutto a posto: notifiche, batteria e aggiornamenti sono gia\' concessi.</string>
+    <string name="perm_dai">Dai «%1$s»</string>
+    <string name="perm_dopo">Salta per ora</string>
+    <string name="perm_notifiche">Notifiche</string>
+    <string name="perm_notifiche_perche">Senza, quando un lavoro e\' pronto lo scopri riaprendo l\'app.</string>
+    <string name="perm_batteria">Restare sveglia</string>
+    <string name="perm_batteria_perche">Android mette a dormire le app chiuse: senza questo, «il video e\' pronto» arriva mezz\'ora dopo.</string>
+    <string name="perm_installare">Installare gli aggiornamenti</string>
+    <string name="perm_installare_perche">Senza, ogni versione nuova va disinstallata e reinstallata a mano.</string>
 
     <!-- Il lettore: la notifica che tiene viva la musica quando l\'app va in tasca -->
     <string name="lettore_canale">Mentre suona</string>
