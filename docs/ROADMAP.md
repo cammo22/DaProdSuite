@@ -24,9 +24,9 @@ file si scrive quale delle due metà manca.
 
 ---
 
-## A che punto siamo — 27 agosto 2026
+## A che punto siamo — 5 settembre 2026
 
-**Ultima pubblicata: 0.9.0.** Nove schede dentro la suite, un ambiente Python
+**Ultima pubblicata: 0.9.1.** Nove schede dentro la suite, un ambiente Python
 solo, e il giro che conta — chiedo dal telefono, il computer fa, il file torna —
 **provato da chi la usa**, sul suo PC e sul suo telefono.
 
@@ -35,16 +35,34 @@ farsi dettare, ci sono i computer di casa in un elenco. E ha chiuso i tre motivi
 per cui l'app «spesso crashava e spesso non si collegava» — tutti e tre trovati
 **guardando dentro la WebView**, che fino a ieri non si poteva fare.
 
-⚠ **Cosa di questa versione non ha ancora visto nessuno**, e va guardato con
-sospetto: i video da 30 e 60 secondi (scritti, mai passati per una scheda
-video), due suite accese in due stanze diverse, il binario di Needle 2, e il
-suono con l'app in tasca su un telefono vero.
+La 0.9.1 non ha aggiunto niente di grosso: è **quaranta cose venute fuori
+usando la 0.9.0 per una sera**, e vale la pena dire perché ce ne sono quaranta.
+Fino alla 0.9.0 l'app era stata *provata*; la 0.9.0 è la prima che è stata
+**usata**. Provare vuol dire chiedere se il gesto funziona, usare vuol dire
+scoprire che funziona e non serve — «quello scelto sul computer» non era rotto,
+era una risposta sbagliata a una domanda che ha una risposta giusta.
+
+⚠ **Cosa non ha ancora visto nessuno**, e va guardato con sospetto: i video da
+30, 60 e 120 secondi (scritti, mai passati per una scheda video), il visualizer
+che non è ancora il motore WebGL di DaProdVisualizer, due suite accese in due
+stanze diverse, il binario di Needle 2, e il suono con l'app in tasca su un
+telefono vero.
 
 Parole sue, provando la 0.7.1: «funziona molto bene, sia l'app android che pc
 fanno quello che ti ho chiesto».
 
 | Pezzo | Come sta |
 |---|---|
+| **I predefiniti veri al posto di «quello scelto sul computer»** | nuovo nella 0.9.1; **visto nell'app sull'emulatore**: FLUX.2 Klein 4B, LTX 2.5, ACE-Step XL, italiano |
+| **La copertina di un brano chiesta dal telefono** | scritta; **mai passata per un motore acceso** |
+| **Tonalità, ritmo, voce, e da 1 a 4 brani** | **visti nell'app sull'emulatore**, con le spiegazioni tenendo premuto |
+| **«Crea il piano»: un tasto invece di far indovinare al modello** | scritto; **contro LM Studio vero no** |
+| **Il visualizer dentro il palco, con la barra del tempo** | provato nell'app sull'emulatore; **⚠ non è ancora il motore WebGL di DaProdVisualizer** |
+| **La galleria: nuovo, Salvati, Archivio, la data vera** | **visti nell'app sull'emulatore**, con date vere |
+| **DaProd: carica da dove vuoi, profilo altrui, com'è fatta** | fatto e **provato nel banco della console**; con due persone vere no |
+| **I prompt che contengono tutto, non un pezzo** | scritto; **il giro salva-e-ritrova su un modulo vero no** |
+| **Permessi chiesti all'avvio, e impostazioni diverse per chi decide** | **provati nell'app sull'emulatore** con l'account CammoBot |
+| **Condividere un mp3** | era il nome senza estensione; chiuso, **da rifare a mano su un telefono vero** |
 | **I computer si annunciano, il telefono li trova** | l'annuncio ha una prova automatica (prova-gateway); **due macchine vere no** |
 | **Bussare invece di battere un codice** | il giro intero ha una prova automatica; **provato anche a mano contro un gateway vero** |
 | **Il crash della WebView che non porta via l'app** | **provato davvero**, mandando un crash alla pagina dall'emulatore |
@@ -91,51 +109,58 @@ Il giro base regge e i difetti grossi sono chiusi. Quello che resta è **provare
 sul vero** quello che è stato scritto, in quest'ordine — che è l'ordine in cui
 si vede se è servito:
 
-1. **La 0.8.1 sul PC vero e sul telefono vero**: un video nuovo con il suo
-   fotogramma, la foto del profilo che cambia davvero, un commento che arriva
-   all'altro telefono.
+1. **Il motore vero del visualizer.** È l'unica cosa della 0.9.1 che è rimasta a
+   metà, ed è scritta anche nel changelog: DaProdVisualizer gira su WebGL con
+   Three.js dentro un'app React, la console si serve da sé e non carica niente
+   da fuori. Il posto adesso è quello giusto e gli effetti sono cinque; il
+   motore no.
 
-2. **La 0.8.0 sul PC vero e sul telefono vero.** Sette correzioni, e sette gesti
-   da rifare a mano:
-   - genero un video e guardo la Galleria di DaProdCinema: il fotogramma c'è?
-   - lo stesso video chiesto **dal telefono**: dopo la rinomina l'anteprima resta?
-   - chiedo un brano da Android con un nome scritto: il file si chiama così?
-   - chiedo una canzone al modello: scrive in italiano o in napoletano?
-   - dal telefono, «Metti una foto»: si apre il selettore?
-   - chiudo l'app con un video in corso: quanto ci mette la notifica?
-   - la scheda delle persone sul computer: i tasti stanno in fila?
+2. **Una clip vera che esce dal disco**, e subito dopo **una storia da 30
+   secondi**. I pezzi incatenati sono scritti da due versioni e non hanno mai
+   visto una scheda video: finché non esce un mp4, «30, 60, 120» sono tre
+   numeri in un menu.
 
-3. **Guardare se restano ancora processi** dopo tre aperture e tre chiusure. Se
-   il libro dei processi fa il suo mestiere, il terminale non serve più.
+3. **La 0.9.1 sul telefono vero.** Sull'emulatore si è visto tutto, ma tre cose
+   l'emulatore non le sa dire:
+   - la musica che continua con l'app in tasca e lo schermo spento;
+   - la notifica che arriva a lavoro **ricevuto**, con l'app chiusa;
+   - un mp3 condiviso su WhatsApp: adesso arriva come canzone o come documento?
 
-4. **Le tre cose della 0.7.6 mai provate contro il vero**: la chiacchierata
-   contro LM Studio, la copertina cucita dentro un mp3, lo specchio offline su
-   un telefono.
+4. **La bacheca con due persone vere**: i mi piace, il «tieni», il profilo di un
+   altro e gli stili condivisi hanno senso solo in due, e finora li ha provati
+   uno solo.
 
-5. **La bacheca con due persone vere**: i mi piace e il «tieni» hanno senso solo
-   in due, e finora li ha provati uno solo.
+5. **Le tre cose mai provate contro il vero**: la chiacchierata (e il nuovo
+   «Crea il piano») contro LM Studio, la copertina cucita dentro un mp3, lo
+   specchio offline su un telefono.
 
-6. **Le parole di tutta la suite** — il telefono e il collegamento sono a posto;
+6. **Due suite accese in due stanze diverse**: l'annuncio, la bussata, e un
+   lavoro passato all'altro computer.
+
+7. **Le parole di tutta la suite** — il telefono e il collegamento sono a posto;
    l'hub e le altre schede no (§ «Le parole di tutta la suite», qui sotto).
 
-7. Tailscale sul telefono, fuori casa.
-
-8. Una storia intera generata guardando la barra.
+8. Tailscale sul telefono, fuori casa.
 
 ---
 
 
 # Quello che resta da fare
 
-## 0.9.0 — DaProdCinema: le due strade che restano
+## 0.10.0 — DaProdCinema: le due strade che restano
 
-> **Perché non è più la 0.8.0.** Quel numero è andato alle correzioni del 27
-> agosto 2026 — le sette cose lasciate indietro. Era stato tenuto da parte per
-> questa sezione, e la regola resta quella di sempre: il numero dice **cosa** è
-> cambiato, non quanto lavoro c'è dentro. La 0.8.0 non ha portato una scheda
-> nuova, ma ha chiuso sette difetti che si vedevano usandola tutti i giorni, e
-> quello è un cambio di stato della suite: da «funziona, con delle cose che non
-> vanno» a «funziona».
+> **Perché non è più la 0.9.0, e prima non era più la 0.8.0.** È la seconda
+> volta che questa sezione si sposta in avanti, e la ragione è la stessa tutte
+> e due le volte: il numero dice **cosa** è cambiato, non quanto lavoro c'è
+> dentro. La 0.8.0 è andata alle sette correzioni del 27 agosto, la 0.9.0 al
+> primo minuto dell'app — i computer di casa in un elenco al posto di un codice
+> da farsi dettare. Nessuna delle due ha portato una scheda nuova, e tutte e
+> due hanno cambiato lo stato della suite più di quanto lo cambierebbe una
+> riga in più in un menu.
+>
+> Che una sezione slitti due volte, però, vuol dire qualcosa: questa è la parte
+> ferma da 0.4.2, e resta ferma finché non esce **un mp4 dal disco** — vedi il
+> primo punto, che è l'unico che conta.
 
 
 **La scheda è nata nella 0.4.0**, nella 0.4.1 ha preso i suoi modelli — LTX 2.5 e
@@ -236,8 +261,11 @@ i modelli e i preset dal telefono, e i file mandati a mano trascinandoli.
 
 - **provarlo con due persone vere**, che è la cosa che qui non si può fare da
   soli;
-- **la bacheca non ha altro**, e non deve averlo: niente cuori, niente
-  commenti. Serve a vedere chi ha fatto cosa;
+- ~~**la bacheca non ha altro**, e non deve averlo: niente cuori, niente
+  commenti~~ — è cambiato, ed è stato chiesto: i mi piace sono della 0.7.6, i
+  commenti della 0.8.1, e nella 0.9.1 DaProd ha il profilo di chi ha fatto una
+  cosa. Resta vero il perché di quella riga: serve a vedere chi ha fatto cosa,
+  e ogni cosa aggiunta lì deve rispondere a quello;
 - **il nome del file per quello che generi tu** al computer resta quello del
   motore: in galleria si legge il prompt, sul disco no. Rinominarlo mentre la
   scheda ce l'ha ancora in mano vuol dire anteprime che si rompono, e va fatto
@@ -271,11 +299,25 @@ in [AZIONI-E-MCP.md](AZIONI-E-MCP.md); qui restano i tre passi e a che punto son
    dipendenze. Un agente si accoppia col codice di otto cifre come il telefono,
    e da lì Claude Code guida la suite. Gli strumenti nascono dal catalogo: se ne
    aggiungi uno lì, compare lì.
-3. ⬜ **Needle 2 al posto giusto: dentro.** Questo no.
+3. 🟨 **Needle 2 al posto giusto: dentro.** Il posto c'è dalla 0.9.0
+   (`apps/shell/src/main/needle.ts`, e la rotta `/capisci` del gateway): una
+   frase entra, un'azione col suo modulo riempito esce, e se il binario non c'è
+   ci pensa LM Studio. **Il binario vero non è mai stato scaricato**: tutto
+   quello che si sa di questo giro lo si sa con un Needle finto.
 
-⚠ **Nota del 26 agosto 2026.** Chiesto: «se needle sta funzionando bene
-sfruttiamolo ancora di più». Needle 2 **non è mai stato costruito** — è questa
-riga, ed è l'unico dei tre passi che manca. Quello che funziona bene, e che è
+⚠ **Nota del 26 agosto 2026, corretta il 5 settembre.** Chiesto: «se needle sta
+funzionando bene sfruttiamolo ancora di più». Alla data della nota Needle 2
+**non era mai stato costruito**; nella 0.9.0 è stato costruito il giro attorno,
+e resta fuori il modello.
+
+⚠ **E la casella dove scrivere la frase non c'è più.** Nella 0.9.0 era «Dillo e
+basta», in cima a Produzione; nella 0.9.1 è stata tolta, perché erano due
+caselle nella stessa schermata che facevano la stessa cosa — e perché il
+modello sbagliava spesso la decisione «sta chiacchierando o sta chiedendo?».
+Al suo posto c'è il tasto **«Crea il piano»**, che quella decisione la prende
+l'utente. La rotta `/capisci` resta, e la usano l'MCP e chi chiama da fuori:
+è **lì** che Needle serve, non in un modulo dove riempire i campi a mano è più
+veloce che descriverli. Quello che funziona bene, e che è
 stato sfruttato di più nella 0.7.6, è un'altra cosa con un nome simile: il
 **supervisore dei processi**, che adesso tiene un libro di quello che apre e sa
 spegnere un albero intero. Vale la pena non confonderli il giorno che si
@@ -459,6 +501,24 @@ col cursore.
 
 ⚠ Niente di tutto questo è stato provato: è ricerca, non un collaudo. La regola
 resta quella di sempre — prima la generazione base, poi le funzioni sopra.
+
+### Dove siamo arrivati, al 5 settembre 2026
+
+**L'incatenamento è scritto** (`apps/cinema/src/lungo.js`, dalla 0.9.0), e nella
+0.9.1 la storia è diventata **un'azione a sé** con 30 secondi, un minuto o due —
+non un cursore più lungo. Il perché è quello scritto qui sopra: una clip è **una**
+generazione e dura minuti, una storia sono da quattro a sedici generazioni
+incatenate e dura mezz'ora. Un cursore che scivola da 20 a 30 senza dire niente
+nasconde proprio il salto che conta.
+
+Il tetto dei 120 secondi non è pigrizia: è il numero di questa pagina. Chi ha
+scritto il flusso multishot dice di stare **entro ~4 incatenate** prima che la
+grana si accumuli, e due minuti a 20 secondi sono sei. Oltre, non è che non si
+possa — è che nessuno ha guardato il risultato.
+
+⚠ **E nessuno ha guardato nemmeno questo.** I 30, i 60 e i 120 secondi non sono
+mai passati per una scheda video: sono tre numeri in un menu finché non esce un
+mp4 dal disco.
 
 ---
 

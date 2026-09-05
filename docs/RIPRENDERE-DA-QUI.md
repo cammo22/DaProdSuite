@@ -1,27 +1,45 @@
 # Riprendere da qui
 
-Documento di passaggio fra una sessione e l'altra. Aggiornato il **27 agosto
-2026**, con la **0.8.2** appena pubblicata.
+Documento di passaggio fra una sessione e l'altra. Aggiornato il **5 settembre
+2026**, con la **0.9.1** appena pubblicata.
 
-> **Il prossimo passo è provare la 0.8.1 sul PC vero e sul telefono vero.** Tre
-> gesti, e il primo è quello che conta:
+> **Il prossimo passo è provare la 0.9.1 su un telefono vero.** Sull'emulatore
+> si è visto tutto — permessi, galleria, moduli, impostazioni da admin — ma tre
+> cose l'emulatore non le sa dire:
 >
-> 1. **genero un video nuovo e apro la Galleria.** Il fotogramma c'è? È la
->    quinta causa dello stesso difetto, e la prima quattro volte «corretta»: se
->    è ancora nero, si guarda `logs/anteprime.log`, che **adesso scrive perché**.
-> 2. **cambio la foto del profilo con una nuova.** Chiuso nella 0.8.2 e
->    **provato in un browser vero** con tre foto di tre colori: quello che resta
->    da vedere è il giro dal telefono, e con due persone collegate.
-> 3. **commento una cosa in bacheca**, da un telefono, e guardo se all'altro
->    arriva l'avviso. E se la X compare dove deve: su quello che ho scritto io,
->    e su quello che scrivono sotto alle mie cose.
+> 1. **la musica con l'app in tasca.** Metto un brano, abbasso, spengo lo
+>    schermo, e uso il telefono per cinque minuti: suona ancora? La fila va
+>    avanti da sola?
+> 2. **la notifica a lavoro ricevuto, con l'app chiusa.** Nella 0.9.1 ne è
+>    rimasta una sola per parte, e quella deve arrivare.
+> 3. **un mp3 condiviso su WhatsApp.** Era il difetto del nome senza
+>    estensione: adesso arriva come canzone o ancora come documento?
 >
-> Restano da provare le sette della 0.8.0 (§ più sotto) e le tre cose vecchie
-> mai fatte girare contro il vero: la chiacchierata contro LM Studio, la
-> copertina cucita dentro un mp3, lo specchio offline su un telefono.
+> Poi, in quest'ordine: **il motore vero del visualizer** (l'unica cosa della
+> 0.9.1 rimasta a metà), **una clip vera che esce dal disco** e subito dopo una
+> storia da 30 secondi, e **la bacheca con due persone vere**.
 >
 > Il dettaglio di cosa è provato e cosa no sta in fondo al
-> [CHANGELOG](../CHANGELOG.md), § 0.8.1.
+> [CHANGELOG](../CHANGELOG.md), § 0.9.1 «Cosa resta da fare», e in
+> [ROADMAP.md](ROADMAP.md) § «Il prossimo passo».
+
+> ⚠ **La lezione della 0.9.0: guardare dentro la WebView.** L'app Android è una
+> WebView sopra la console del gateway, e per mesi «spesso crasha e spesso non
+> si collega» è stato un sintomo senza cause, perché **dentro la pagina non si
+> poteva guardare**. Con `adb forward` e il Chrome DevTools Protocol si può:
+> `node apps/mobile/scripts/dentro-la-pagina.mjs` apre un ponte, e da lì si
+> leggono gli errori, si ispeziona il DOM e si può perfino mandare `Page.crash`
+> alla pagina per vedere cosa fa l'app quando il renderer muore.
+>
+> Le tre cause sono venute fuori tutte e tre di lì in una sera, e una — il
+> visualizer quasi nero — era una collisione di nomi di classe CSS che nessuna
+> prova automatica avrebbe mai visto.
+
+> ⚠ **La lezione della 0.9.1: provare non è usare.** Quaranta correzioni sono
+> uscite da **una sera d'uso**, non da un giro di collaudo. Provare vuol dire
+> chiedersi se il gesto funziona; usare vuol dire scoprire che funziona e non
+> serve. «Quello scelto sul computer» non era rotto: era una risposta sbagliata
+> a una domanda che ne ha una giusta, e nessuna prova automatica lo dice.
 
 > ⚠ **La lezione della 0.8.1, che vale più della correzione.** Il difetto delle
 > anteprime è durato quattro versioni perché **FFmpeg si lamentava e nessuno lo
@@ -35,13 +53,17 @@ Documento di passaggio fra una sessione e l'altra. Aggiornato il **27 agosto
 > non avevano visto.
 
 
-> **Due attrezzi che vanno usati**, e nessuno dei due vuole la suite accesa:
+> **Tre attrezzi che vanno usati**, e nessuno dei tre vuole la suite accesa:
 >
 > - `node apps/shell/scripts/banco-console.mjs` accende un gateway vero con dati
 >   finti e stampa due indirizzi — uno «come telefono», uno «come computer». Si
 >   aprono in un browser e si guarda la pagina vera. Nella 0.7.7 ha trovato tre
->   difetti che nessuna prova automatica poteva vedere; nella 0.8.0 ha
->   verificato il campo del titolo e la riga delle persone a 1280 e a 375 px.
+>   difetti che nessuna prova automatica poteva vedere; nella 0.9.1 ha tenuto in
+>   piedi l'account CammoBot da admin. Con `BANCO_PORTA` e `BANCO_DATI` la porta
+>   e i dati restano gli stessi fra un'accensione e l'altra, che è quello che
+>   serve per puntarci l'app Android.
+> - `node apps/mobile/scripts/dentro-la-pagina.mjs` entra nella WebView
+>   dell'app sull'emulatore (vedi la lezione della 0.9.0 qui sopra).
 > - `pnpm run prova` gira cicli, avvio, azioni, gateway e MCP in una decina di
 >   secondi. `prova-avvio.mjs` in particolare carica **tutti** i moduli del main
 >   con un Electron finto: è quello che vede un import circolare prima che
@@ -158,11 +180,21 @@ Repo pubblico: **https://github.com/cammo22/DaProdSuite**
 | **La 0.7.7: il collegamento che regge, la fila coi numeri, gli Stili** | fatto il 26 agosto. **Da provare tu**, e la prima cosa è il collegamento |
 | **Il banco della console** | `banco-console.mjs`: un gateway vero con dati finti, per guardare la pagina in un browser. Ha trovato tre difetti che le prove non vedevano |
 | **404 controlli automatici** | erano 300 nella 0.7.6. I nuovi guardano anche la pagina: variabili mai dichiarate, id cercati a vuoto, schede che non si leggono |
+| **La 0.7.8: gli Stili che si vedono** | fatto il 27 agosto: PR #27 e #28 |
+| **La 0.8.0: le sette cose lasciate indietro** | fatto il 27 agosto: PR #29 e #30. Il dettaglio sta nel paragrafo «Le sette cose lasciate indietro» qui sotto |
+| **La 0.8.1: la quinta causa delle anteprime** | fatto il 27 agosto: PR #31. FFmpeg si lamentava da 1269 esecuzioni e nessuno leggeva `stderr` |
+| **La 0.8.2: la foto del profilo** | fatto il 27 agosto: PR #32 |
+| **La 0.9.0: il telefono trova il computer** | fatto il 5 settembre: PR #33 e #34. I computer di casa in un elenco al posto di un codice da farsi dettare, la bussata al posto delle otto cifre, e i tre motivi per cui l'app «spesso crashava e spesso non si collegava» |
+| **Guardare dentro la WebView** | `apps/mobile/scripts/dentro-la-pagina.mjs`: `adb forward` più il Chrome DevTools Protocol. **È l'attrezzo che ha trovato tutte e tre le cause**, e non c'era |
+| **Il lettore dell'app: fila, palco, visualizer** | fatto nella 0.9.0, rifatto di posto nella 0.9.1. **⚠ Non è il motore WebGL di DaProdVisualizer**: quello sta in un'app React e nella console non ci entra così com'è |
+| **Video da 30, 60 e 120 secondi** | `apps/cinema/src/lungo.js`, pezzi incatenati per l'ultimo fotogramma. **⚠ Mai passati per una scheda video** |
+| **La 0.9.1: quaranta cose che si vedevano** | fatto il 5 settembre. Non funzioni nuove: quello che è venuto fuori **usando** la 0.9.0 per una sera. Il dettaglio sta nel CHANGELOG § 0.9.1 |
+| **L'account CammoBot** | nel banco della console c'è un admin di prova, e con `BANCO_PORTA`/`BANCO_DATI` la porta e i dati restano gli stessi fra un'accensione e l'altra: è quello che serve per puntarci l'app Android |
 
-Si lavora su un ramo per release e una PR: `release-0.2.0` è stata unita con le
-PR #3 e #4, la 0.3.1 con la #5, la 0.3.2 con la #6, la 0.3.3 con la #7, la
-0.3.4 con la #8, la 0.4.0 con la #9, la 0.4.1 con la #10, la 0.4.2 con la #11,
-la 0.4.3 con la #12, la 0.4.4 con la #13, la 0.4.5 con la #14, e questo giro sta su `release-0.4.6`.
+Si lavora su **un ramo per release e una PR**: `release-0.2.0` è stata unita con
+le PR #3 e #4, e da lì si è andati avanti così fino alla 0.9.0 (PR #33 e #34) e
+alla 0.9.1. Il ramo è la traccia di cosa cambia, non un cancello: **il merge lo
+fa chi lavora**, senza aspettare.
 
 ### Com'è fatto il giro della 0.7.6
 
@@ -766,6 +798,90 @@ cinque minuti se serve.
   valore che vuole il nodo di ACE-Step, lettera per lettera), `nome` (l'italiano
   della pastiglia) e `inglese` (quello che finisce nella descrizione per
   MiniMax, in `grafi.js` → `descrizione()`).
+
+## Com'è fatto il giro della 0.9.0 e della 0.9.1
+
+Due versioni nello stesso giorno, e sono una cosa sola: la 0.9.0 ha cambiato il
+primo minuto dell'app, la 0.9.1 è quello che si è visto **usandola**.
+
+### 1. I computer si annunciano, il telefono li trova
+
+`packages/gateway/src/rete.ts`, nuovo. UDP su `239.90.90.90:8791`, non mDNS:
+mDNS avrebbe voluto una dipendenza in più, e questo sta in centoventi righe.
+
+⚠ **Il difetto che ci è costato mezz'ora, e che è istruttivo.** La prima
+versione non trovava niente. La causa: chi ascolta in multicast risponde
+all'`ehi` **sul gruppo**, cioè sulla porta 8791 — ma chi ha chiesto è un socket
+con una porta effimera, e su 8791 non ci sente nessuno. La risposta va mandata
+**unicast a `rinfo.address:rinfo.port`**. E per essere trovati anche da chi il
+multicast non lo passa (certi router lo mangiano), l'`ehi` esce su quattro
+strade: il gruppo, `255.255.255.255`, il broadcast diretto di **ogni**
+interfaccia, e `127.0.0.1` per due suite sullo stesso PC.
+
+### 2. Bussare invece di battere un codice
+
+`packages/gateway/src/remoto.ts`, le funzioni `bussa` / `bussateVive` /
+`esitoBussata` / `rispondiAllaBussata`. In casa un codice a otto cifre da farsi
+dettare è teatro: si sceglie il computer dall'elenco, quello riceve un avviso e
+dice sì. Il segreto è **per bussata**, non per dispositivo, e scade.
+
+Il codice non è stato tolto: da fuori casa, dove non c'è multicast che tenga,
+serve ancora.
+
+### 3. Le tre cause del «spesso crasha e spesso non si collega»
+
+Tutte e tre trovate **guardando dentro la WebView**, che è la cosa che mancava:
+`node apps/mobile/scripts/dentro-la-pagina.mjs` apre `adb forward` sul socket
+CDP della WebView, e da lì si parla alla pagina come a una scheda di Chrome.
+
+1. **L'app moriva col renderer.** Se Android ammazza il processo di rendering
+   della WebView e nessuno gestisce `onRenderProcessGone`, **muore l'app
+   intera**. Adesso quel gancio ritorna `true` e la WebView si ricostruisce.
+   Provato per davvero: `Page.crash` mandato alla pagina dall'emulatore.
+2. **Il visualizer era quasi nero**, e non per un errore di disegno: la classe
+   CSS `.palco` del lettore nuovo **collideva** con la `.palco` interna della
+   lente, che ha `background:#04050afa; z-index:80`. Rinominata `.palcoLettore`.
+   Nessuna prova automatica vede una collisione di nomi in un foglio di stile.
+3. **Il tasto indietro usciva dall'app** con la lente aperta. Adesso la pagina
+   espone `window.DaProdPagina.chiudiQualcosa()` e il Kotlin lo chiede prima di
+   chiudere.
+
+### 4. Quaranta cose, dalla 0.9.1
+
+Il changelog le racconta tutte (§ 0.9.1). Quello che vale la pena portarsi
+dietro sono le regole che ne sono uscite:
+
+- **«Quello scelto sul computer» è una risposta sbagliata.** Chi chiede da fuori
+  non sa cosa c'è selezionato di là, e quello che c'è selezionato gli cambia
+  sotto ai piedi. Ogni campo modello adesso ha un `predefinito` in
+  `packages/azioni/src/catalogo.ts`.
+- **Due caselle che fanno la stessa cosa nella stessa schermata: una va via.**
+  «Dillo e basta» è durata una versione.
+- **Non far decidere al modello quello che può decidere l'utente.** «Crea il
+  piano» è un tasto perché la decisione «sta chiacchierando o sta chiedendo?»
+  il modello la sbagliava spesso.
+- **Trenta notifiche che non dicono niente insegnano a ignorare la prima che
+  direbbe qualcosa.** Sul computer ne è rimasta una: «qualcuno ha chiesto un
+  lavoro».
+- **Il nome di un file è il suo tipo, per le altre app.** Condividere un mp3 non
+  funzionava perché in libreria una cosa si chiama come il suo titolo *senza
+  estensione*: «Bum bum Opensource» non è un mp3 per nessuno.
+
+### ⚠ Cosa di questi due giri non ha ancora visto nessuno
+
+- **Il visualizer non è quello di DaProdVisualizer.** Quello gira su WebGL con
+  Three.js in un'app React; la console si serve da sé e non carica niente da
+  fuori. Il posto adesso è giusto (dentro il palco, non dietro alla pagina) e
+  gli effetti sono cinque, fatti a mano su canvas. Il motore vero è la prossima
+  cosa, ed è la sola della 0.9.1 rimasta a metà.
+- **I video da 30, 60 e 120 secondi**: scritti, mai passati per una scheda video.
+- **Due suite accese in due stanze diverse**: l'annuncio ha una prova
+  automatica, due macchine vere no.
+- **Il binario di Needle 2**: il giro attorno c'è, il modello non è mai stato
+  scaricato.
+- **Il suono con l'app in tasca**, su un telefono vero e non sull'emulatore.
+
+---
 
 ## La foto del profilo, e perché `no-cache` non bastava (la 0.8.2)
 
