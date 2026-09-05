@@ -1,5 +1,15 @@
 # Usarla da fuori
 
+> **Dalla 0.9.0 il codice non serve quasi più.** Apri l'app, scrivi come ti
+> chiami, e sotto compare l'elenco dei computer di casa con la suite accesa.
+> Ne tocchi uno: sul computer arriva un avviso, e chi ci sta davanti dice di
+> sì. Da quel momento sei collegato, e resti collegato.
+>
+> Il codice resta per **quando sei fuori casa**: là nessun annuncio arriva, e
+> l'indirizzo bisogna dirglielo. Lo trovi sotto la riga «Ho un codice, o sono
+> fuori casa».
+
+
 Dalla **0.5.0** la suite non si usa solo dal computer su cui gira: la comandi dal
 browser di un altro computer di casa, dal telefono, e — se ti interessa — da
 un'AI.

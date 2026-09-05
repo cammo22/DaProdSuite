@@ -26,21 +26,33 @@ file si scrive quale delle due metà manca.
 
 ## A che punto siamo — 27 agosto 2026
 
-**Ultima pubblicata: 0.8.1.** Nove schede dentro la suite, un ambiente Python
+**Ultima pubblicata: 0.9.0.** Nove schede dentro la suite, un ambiente Python
 solo, e il giro che conta — chiedo dal telefono, il computer fa, il file torna —
 **provato da chi la usa**, sul suo PC e sul suo telefono.
 
-La 0.8.0 non ha aggiunto niente: ha chiuso **sette difetti rimandati** mentre si
-costruiva il resto — le anteprime dei video, il nome del brano da Android, i
-modelli che scrivevano in napoletano, la foto del profilo, le notifiche in
-ritardo, la riga delle persone, gli stili. Il changelog li racconta uno per uno,
-con scritto cosa di quelle correzioni è stato provato e cosa no.
+La 0.9.0 ha cambiato **il primo minuto dell'app**: non c'è più un codice da
+farsi dettare, ci sono i computer di casa in un elenco. E ha chiuso i tre motivi
+per cui l'app «spesso crashava e spesso non si collegava» — tutti e tre trovati
+**guardando dentro la WebView**, che fino a ieri non si poteva fare.
+
+⚠ **Cosa di questa versione non ha ancora visto nessuno**, e va guardato con
+sospetto: i video da 30 e 60 secondi (scritti, mai passati per una scheda
+video), due suite accese in due stanze diverse, il binario di Needle 2, e il
+suono con l'app in tasca su un telefono vero.
 
 Parole sue, provando la 0.7.1: «funziona molto bene, sia l'app android che pc
 fanno quello che ti ho chiesto».
 
 | Pezzo | Come sta |
 |---|---|
+| **I computer si annunciano, il telefono li trova** | l'annuncio ha una prova automatica (prova-gateway); **due macchine vere no** |
+| **Bussare invece di battere un codice** | il giro intero ha una prova automatica; **provato anche a mano contro un gateway vero** |
+| **Il crash della WebView che non porta via l'app** | **provato davvero**, mandando un crash alla pagina dall'emulatore |
+| **Il computer ritrovato quando cambia indirizzo** | scritto; **da provare cambiando rete davvero** |
+| **Il lettore: fila, visualizer, palco, trascinamento** | provato nell'app sull'emulatore; **il suono in tasca no** |
+| **Stili e prompt condivisi in DaProd** | fatto e **provato nel banco della console** |
+| **«Dillo e basta»: una frase diventa un lavoro** | provato con un finto Needle; **con il binario vero no** |
+| **Video da 30 e 60 secondi (pezzi incatenati)** | ⚠ scritto e compilato, **mai passato per una scheda video** |
 | Guscio, hub, arbitro GPU, supervisore | fatto e provato a lungo |
 | Ambiente Python unico (4,05 GB invece di 14,7) | fatto e provato |
 | Installer NSIS + aggiornamento da GitHub Releases | fatto e provato |
