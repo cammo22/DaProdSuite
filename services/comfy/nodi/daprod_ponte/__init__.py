@@ -269,6 +269,85 @@ async def cuci(request):
     return web.json_response({"ok": True, "file": str(uscita.relative_to(radice)).replace("\\", "/")})
 
 
+# --------------------------------------------------- l'ultimo fotogramma
+
+
+"""L'ultimo fotogramma di una clip, messo dove il grafo dopo lo ritrova.
+
+**A cosa serve.** Nessun modello che sta in 8 GB fa un minuto di video in un
+colpo: venti secondi è il tetto di LTX 2.5, e non è un numero scelto da noi.
+Un minuto si fa a pezzi — e perché fra un pezzo e l'altro non si veda il
+taglio, il pezzo dopo deve **cominciare dove finisce quello prima**. LTX 2.5
+prende un primo e un ultimo fotogramma: gli si dà come primo l'ultimo di
+quello di prima, e il taglio sparisce perché non c'è un taglio, è lo stesso
+fotogramma.
+
+Sta qui e non nello shell per la ragione degli altri due: qui c'è già un
+Python acceso che sa dov'è la cartella dei risultati e dove sta la cartella
+`input` da cui `LoadImage` pesca, e c'è già FFmpeg. Passare dallo shell
+vorrebbe dire una rotta IPC nuova e due posti che devono essere d'accordo su
+cosa sia un percorso valido.
+
+**`-sseof -1`** è la parte che conta: dice a FFmpeg di partire da un secondo
+prima della fine invece di leggere tutto il file. Su una clip da venti secondi
+la differenza è fra un decimo di secondo e qualche secondo, e questa cosa si
+fa una volta per pezzo.
+"""
+
+
+@routes.post("/daprod/ultimo-fotogramma")
+async def ultimo_fotogramma(request):
+    """Tira fuori l'ultimo fotogramma di una clip e lo mette in `input`.
+
+    `clip` è un percorso relativo alla cartella dei risultati, quello che
+    ComfyUI stesso ha appena scritto. Torna il nome con cui il grafo dopo lo
+    ritrova, sottocartella compresa: è quello che `LoadImage` si aspetta.
+    """
+    dati = await request.json()
+    nome = str(dati.get("clip") or "")
+    if not nome:
+        return web.json_response({"ok": False, "motivo": "Non hai detto di quale clip."}, status=400)
+
+    vero = _dentro_i_risultati(nome)
+    if vero is None:
+        return web.json_response({"ok": False, "motivo": f"Manca {nome}."}, status=404)
+
+    binario = _ffmpeg()
+    if not binario:
+        return web.json_response(
+            {"ok": False, "motivo": "FFmpeg non si trova, né nel sistema né nell'ambiente della suite."},
+            status=503,
+        )
+
+    import folder_paths
+
+    dentro = Path(folder_paths.get_input_directory()) / "daprodcinema"
+    dentro.mkdir(parents=True, exist_ok=True)
+    uscita = dentro / f"coda-{vero.stem}.png"
+
+    comando = [
+        binario, "-y", "-hide_banner", "-loglevel", "error",
+        # Un secondo prima della fine, e si prende l'ultimo fotogramma che c'è.
+        "-sseof", "-1", "-i", str(vero),
+        "-update", "1", "-frames:v", "1",
+        str(uscita),
+    ]
+
+    def lavora():
+        return subprocess.run(comando, capture_output=True, text=True)
+
+    esito = await asyncio.get_running_loop().run_in_executor(None, lavora)
+    if esito.returncode != 0 or not uscita.is_file():
+        logging.error("[daprod] ultimo fotogramma fallito: %s", esito.stderr[-2000:])
+        return web.json_response(
+            {"ok": False, "motivo": (esito.stderr or "ffmpeg si è fermato").strip()[-500:]},
+            status=500,
+        )
+
+    logging.info("[daprod] ultimo fotogramma di %s in %s", vero.name, uscita.name)
+    return web.json_response({"ok": True, "file": f"daprodcinema/{uscita.name}"})
+
+
 """Traduzione italiano → inglese.
 
 I modelli di immagini capiscono l'inglese: una descrizione in italiano dà

@@ -84,6 +84,25 @@ export const NEGATIVO =
 
 const PREFISSO = "video/daprodcinema/clip";
 
+/**
+ * La cartella in cui finiscono i pezzi di un video lungo.
+ *
+ * ⚠ **La libreria la salta apposta** (vedi `CARTELLA_PEZZI` in `libreria.ts`), e
+ * non è per pulizia: chi chiede un video da un minuto da fuori riceve **il primo
+ * file nuovo** che compare, e senza questa cartella riceverebbe il primo pezzo
+ * da otto secondi mentre il film vero arriva dieci minuti dopo, a nessuno.
+ */
+export const CARTELLA_PEZZI = "pezzi";
+export const PREFISSO_PEZZI = `video/daprodcinema/${CARTELLA_PEZZI}`;
+
+/**
+ * Dove salva questo grafo.
+ *
+ * Di suo, accanto alle altre clip. `p.dove` lo cambia, e serve a una cosa sola:
+ * i pezzi di un video lungo, che vanno dove la libreria non guarda.
+ */
+const doveSalvare = (p) => (p && p.dove ? String(p.dove) : PREFISSO);
+
 /* ---------------------------------------------------------------- LTX 2.5 */
 
 /**
@@ -435,7 +454,7 @@ function grafoLtx(m, p) {
     "9": { class_type: "CreateVideo", inputs: { images: ["8", 0], fps: FPS, audio: ["21", 0] } },
     "12": {
       class_type: "SaveVideo",
-      inputs: { video: ["9", 0], filename_prefix: PREFISSO, format: "mp4", codec: "h264" },
+      inputs: { video: ["9", 0], filename_prefix: doveSalvare(p), format: "mp4", codec: "h264" },
     },
   });
 
@@ -575,7 +594,7 @@ function grafoH3(m, p) {
     "9": { class_type: "CreateVideo", inputs: { images: ["8", 0], fps: FPS, audio: ["21", 0] } },
     "12": {
       class_type: "SaveVideo",
-      inputs: { video: ["9", 0], filename_prefix: PREFISSO, format: "mp4", codec: "h264" },
+      inputs: { video: ["9", 0], filename_prefix: doveSalvare(p), format: "mp4", codec: "h264" },
     },
   });
 

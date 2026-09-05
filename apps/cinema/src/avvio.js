@@ -16,9 +16,10 @@ import {
   scrivi,
 } from "/comune/da-fuori.js";
 import { el, mostraScheda, suApertura } from "./dom.js";
-import { collegaCrea } from "./crea.js";
+import { collegaCrea, lungoDaFuori } from "./crea.js";
 import { aggiornaGalleria, collegaGalleria } from "./galleria.js";
 import { collegaStoria } from "./storia.js";
+import { vuoleLaCatena } from "./lungo.js";
 import { caricaUltimi, messaggioDalMotore, riallinea } from "./coda.js";
 // I quadratini di cosa occupa la memoria: uguali in tutte le app, quindi stanno
 // in `packages/ui` e la suite li serve sotto `/comune/`.
@@ -80,9 +81,21 @@ collegaLavoriDaFuori(async (richiesta) => {
   // già deciso chi ha preparato la scheda.
   mostraScheda("crea");
   scrivi(el.prompt, richiesta.testo);
-  if (richiesta.opzioni.secondi) {
-    scrivi(el.durata, String(numero(richiesta.opzioni.secondi, 2, 20, 5)));
-  }
+  const quanto = numero(richiesta.opzioni.secondi, 2, 60, 5);
+  // Sopra il tetto di una generazione sola il cursore non ci arriva: si tiene
+  // al massimo e la durata vera la porta la catena.
+  scrivi(el.durata, String(Math.min(quanto, 20)));
   if (scegliInMenu(el.modello, richiesta.opzioni.modello)) await aspettaPremibile(el.genera);
+
+  /**
+   * Trenta secondi e un minuto **non sono una clip piu' lunga**: sono una
+   * catena di pezzi cuciti, ognuno che riparte dall'ultimo fotogramma del
+   * precedente. Vedi `lungo.js` per il perche' di ogni scelta.
+   */
+  if (vuoleLaCatena(quanto)) {
+    await lungoDaFuori(quanto);
+    return;
+  }
+
   premi(el.genera, "DaProdCinema non è pronta a generare: manca il modello, o la scheda video.");
 });

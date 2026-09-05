@@ -27,6 +27,7 @@ import {
 } from "./dom.js";
 import { ESTETICHE, PROPOSTE } from "./dati/estetiche.js";
 import { NEGATIVO, grafoClip, secondiVeri } from "./grafi.js";
+import { videoLungo } from "./lungo.js";
 import { collegaFormato, misuraScelta } from "./formato.js";
 import { collegaScelta, modelloCorrente, modelloUsabile, modoCorrente } from "./scelta-modello.js";
 import { caricaIngressi, collegaIngressi } from "./riferimenti.js";
@@ -109,6 +110,52 @@ function raccontaDurata() {
 /** «Genera» si accende solo se con questo modello si può davvero generare. */
 function accendiBottoni() {
   el.genera.disabled = !modelloUsabile();
+}
+
+/**
+ * Un video lungo, chiesto da fuori.
+ *
+ * **Non aspetta che finisca**, ed è voluto: fra il telefono e questa funzione
+ * c'è lo shell, che sta fermo finché la scheda non dice «è partita» (vedi
+ * `collegaLavoriDaFuori`). Un minuto di video sono parecchi minuti di lavoro, e
+ * tenerlo in attesa vorrebbe dire far scadere la richiesta prima ancora del
+ * primo pezzo. Si fa partire e si torna; il file cucito lo trova lo shell da sé
+ * quando compare, come per tutte le altre generazioni.
+ *
+ * L'avanzamento si racconta nel riquadro degli errori — che è l'unico posto di
+ * questa scheda in cui si scrive a chi guarda — e non è un errore: la classe
+ * cambia, e quando finisce sparisce.
+ */
+export async function lungoDaFuori(secondi) {
+  const m = modelloCorrente();
+  const p = leggiModulo();
+  if (!p.prompt) throw new Error("Scrivi cosa vuoi vedere.");
+  if (m.ingressi !== "fotogrammi") {
+    throw new Error(
+      "Per un video lungo serve LTX 2.5: e' l'unico che sa ripartire da un fotogramma.",
+    );
+  }
+
+  await faiSpazio((detto) => occupa(el.genera, detto));
+
+  // Fire and forget, con le sue parole: quello che va storto si legge qui.
+  void videoLungo(m, { ...p, secondi }, (detto) => {
+    el.error.style.display = "block";
+    el.error.classList.add("lavorando");
+    el.error.textContent = `Video lungo: ${detto}`;
+  })
+    .then(() => {
+      el.error.textContent = "Video lungo: cucito. Lo trovi in galleria.";
+      setTimeout(() => nascondiErrore(), 6000);
+    })
+    .catch((e) => {
+      el.error.classList.remove("lavorando");
+      mostraErrore(String(e.message || e));
+    })
+    .finally(() => {
+      el.error.classList.remove("lavorando");
+      libera(el.genera, !modelloUsabile());
+    });
 }
 
 export async function collegaCrea() {
