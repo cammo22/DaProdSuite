@@ -96,6 +96,22 @@ export const PAGINE = `<header>
     tasti rapidi per interagire con l'app».
   -->
   <section class="pagina" id="pag-casa">
+    <!--
+      Qualcuno ha scelto questo computer e aspetta un sì.
+
+      Sta **sopra** alla pausa e sopra al semaforo perché è l'unica cosa in
+      questa pagina che riguarda una persona che sta aspettando adesso: tutto il
+      resto racconta una macchina, e una macchina può aspettare.
+    -->
+    <div class="pausa bussano" id="fascia-bussate" hidden>
+      <span class="segno">&#9993;</span>
+      <div class="dentro">
+        <b id="bussate-chi">Qualcuno vuole collegarsi</b>
+        <small id="bussate-dove"></small>
+      </div>
+      <button class="mini" id="vedi-bussate">Guarda</button>
+    </div>
+
     <div class="pausa" id="fascia-pausa" hidden>
       <span class="segno">&#9208;</span>
       <div class="dentro">

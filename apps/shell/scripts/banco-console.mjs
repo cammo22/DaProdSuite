@@ -362,7 +362,15 @@ for (const [testo, stato] of [
 }
 archivio.scriviAdesso();
 
-const porta = await gateway.ascolta(0, "127.0.0.1");
+/**
+ * La porta: casuale di suo, fissa se qualcuno la chiede.
+ *
+ * Casuale va bene per chi apre il banco a mano e copia l'indirizzo. Serve
+ * poterla fissare (`BANCO_PORTA=8799`) a chi guida il banco da fuori — un
+ * browser pilotato, una prova che confronta due schermate — e non ha modo di
+ * leggere un numero che cambia ogni volta.
+ */
+const porta = await gateway.ascolta(Number(process.env.BANCO_PORTA) || 0, "127.0.0.1");
 const base = `http://127.0.0.1:${porta}`;
 
 console.log("\n  Il banco è acceso.\n");

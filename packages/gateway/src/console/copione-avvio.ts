@@ -61,6 +61,20 @@ export const COPIONE_AVVIO = `
     try { disegnaStato(await chiama("/stato")); } catch (e) { /* offline */ }
     try { await leggiPannello(); } catch (e) { /* offline */ }
     try { await leggiChiacchierata(); } catch (e) { /* offline */ }
+    /**
+     * La rete: si guarda subito, e poi ogni dodici secondi.
+     *
+     * **Perché un giro suo e non il flusso.** Il flusso lo spinge il gateway
+     * quando cambia qualcosa che *lui* sa; una bussata lo sveglia (vedi
+     * «suBussata»), ma il computer di fianco che si accende no — quello arriva
+     * da un datagramma UDP, e non c'è niente che lo faccia diventare un
+     * evento. Dodici secondi sono un secondo e mezzo di ritardo medio su un
+     * annuncio che parte ogni otto, e una GET corta ogni dodici secondi su una
+     * rete di casa non si sente.
+     */
+    try { await guardaLaRete(); } catch (e) { /* offline */ }
+    if (giroRete) clearInterval(giroRete);
+    giroRete = setInterval(function () { guardaLaRete().catch(function () {}); }, 12000);
     apriFlusso();
   }
 
@@ -80,6 +94,10 @@ export const COPIONE_AVVIO = `
       leggiMacchina().catch(function () {});
       leggiPannello().catch(function () {});
       leggiRegali().catch(function () {});
+      // Una bussata sveglia il flusso: rileggerla qui vuol dire che la fascia
+      // compare **nel momento** in cui qualcuno preme «collegati», non fino a
+      // dodici secondi dopo.
+      guardaLaRete().catch(function () {});
     };
     flusso.onerror = function () {
       var box = $("semaforo");
@@ -98,6 +116,7 @@ export const COPIONE_AVVIO = `
   $("manda").addEventListener("click", manda);
   $("annulla").addEventListener("click", chiudiModulo);
   $("apri-impostazioni").addEventListener("click", apriImpostazioni);
+  $("vedi-bussate").addEventListener("click", function () { void apriLaRete(); });
   $("chi").addEventListener("click", function () { vaiA("daprod"); });
   $("apri-profilo").addEventListener("click", apriIlProfilo);
   $("comincia-chiacchiera").addEventListener("click", cominciaChiacchierata);
@@ -139,6 +158,7 @@ export const COPIONE_AVVIO = `
     leggiMacchina().catch(function () {});
     leggiPannello().catch(function () {});
     leggiRegali().catch(function () {});
+    guardaLaRete().catch(function () {});
     // Il flusso, dopo un po' in secondo piano, il telefono lo chiude: si riapre.
     if (!flusso || flusso.readyState === 2) apriFlusso();
   });

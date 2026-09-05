@@ -18,7 +18,7 @@
 
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
-import type { Dispositivo, Invio, Invito, Notifica, Richiesta } from "./types";
+import type { Bussata, Dispositivo, Invio, Invito, Notifica, Richiesta } from "./types";
 
 export interface DatiRemoto {
   versione: 1;
@@ -28,6 +28,23 @@ export interface DatiRemoto {
   inviti: Invito[];
   /** I file mandati a mano a qualcuno. Vuoto negli archivi scritti prima della 0.7.2. */
   invii: Invio[];
+  /**
+   * Chi ha bussato: chiesto di entrare scegliendo questo computer da un elenco.
+   *
+   * Vuoto negli archivi scritti prima della 0.9.0. Si tengono anche quelle
+   * chiuse per qualche minuto: chi ha bussato deve poter ritirare la risposta
+   * anche se nel frattempo ha messo il telefono in tasca.
+   */
+  bussate: Bussata[];
+  /**
+   * Il nome con cui questo computer si presenta agli altri sulla rete.
+   *
+   * Sta nell'archivio e non si ricalcola: se cambiasse a ogni avvio, ogni
+   * riavvio farebbe comparire un computer nuovo nell'elenco di tutti gli altri
+   * e quello di prima resterebbe lì a spegnersi da solo per quarantacinque
+   * secondi.
+   */
+  ioId?: string;
   /**
    * L'ultimo numero dato a un lavoro. Non riparte mai da capo.
    *
@@ -45,6 +62,7 @@ const VUOTI: DatiRemoto = {
   notifiche: [],
   inviti: [],
   invii: [],
+  bussate: [],
   ultimoNumero: 0,
 };
 
@@ -61,7 +79,15 @@ export class Archivio {
 
   private carica(): DatiRemoto {
     if (!existsSync(this.file)) {
-      return { ...VUOTI, dispositivi: [], richieste: [], notifiche: [], inviti: [], invii: [] };
+      return {
+        ...VUOTI,
+        dispositivi: [],
+        richieste: [],
+        notifiche: [],
+        inviti: [],
+        invii: [],
+        bussate: [],
+      };
     }
     try {
       const letto = JSON.parse(readFileSync(this.file, "utf8")) as Partial<DatiRemoto>;
@@ -74,6 +100,8 @@ export class Archivio {
         // Un archivio scritto da una versione precedente non ce l'ha: si parte
         // da vuoto invece di rifiutarlo.
         invii: Array.isArray(letto.invii) ? letto.invii : [],
+        bussate: Array.isArray(letto.bussate) ? letto.bussate : [],
+        ioId: typeof letto.ioId === "string" ? letto.ioId : undefined,
         ultimoNumero: Number(letto.ultimoNumero) || 0,
       };
     } catch {

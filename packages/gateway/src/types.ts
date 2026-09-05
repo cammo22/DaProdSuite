@@ -256,6 +256,53 @@ export interface InvitoQr {
   ruolo: Ruolo;
 }
 
+/* ---------------------------------------------------------------- bussate */
+
+/**
+ * Qualcuno ha scelto questo computer da un elenco e chiede di entrare.
+ *
+ * **È l'altra metà dell'annuncio** (vedi `rete.ts`): l'annuncio dice «ci sono»,
+ * la bussata dice «vorrei entrare». Nasce il 5 settembre 2026, chiesta così:
+ * «quando si seleziona il pc, il pc riceve una notifica e si può accettare, e
+ * da quel momento l'utente è sempre collegato all'app».
+ *
+ * **Perché non basta l'invito.** Un invito è un codice che chi ha il computer
+ * genera *prima* e detta a voce a chi ha il telefono: pretende che i due siano
+ * nello stesso posto nello stesso momento. Una bussata gira la direzione — è
+ * chi arriva a farsi avanti, e chi ha il computer decide con calma, anche
+ * cinque minuti dopo. L'invito resta e serve ancora: da fuori casa, dove
+ * nessun annuncio arriva, non c'è elenco da toccare.
+ *
+ * **Il segreto, e perché serve.** L'id di una bussata compare nel pannello di
+ * chi decide, quindi non è un segreto. Ma chi bussa deve poter chiedere «e
+ * allora?» senza avere ancora un token: senza un segreto suo, chiunque sulla
+ * stessa rete potrebbe ritirare il token di un altro sapendone l'id. Il segreto
+ * nasce col telefono che bussa, resta nel telefono, e il gateway lo confronta.
+ */
+export interface Bussata {
+  id: string;
+  /** Come vuole farsi chiamare chi bussa. È il nome che comparirà in DaProd. */
+  nome: string;
+  /** Che apparecchio è: «SM-A536B», «Il fisso di Marco». Per riconoscerlo. */
+  apparecchio: string;
+  /** Il segreto che solo chi ha bussato conosce. Non esce mai dal gateway. */
+  segreto: string;
+  quando: number;
+  stato: "attesa" | "accettata" | "rifiutata";
+  /** L'indirizzo da cui è arrivata: si mostra a chi decide. */
+  da: string;
+  /** Vero se a bussare è un altro computer con la suite, non una persona. */
+  computer?: boolean;
+  /** Compilati quando si accetta: da qui chi bussa ritira la sua credenziale. */
+  token?: string;
+  dispositivoId?: string;
+  /** Il ruolo dato accettando. */
+  ruolo?: Ruolo;
+}
+
+/** Una bussata come la vede chi decide: senza il segreto e senza il token. */
+export type BussataPubblica = Omit<Bussata, "segreto" | "token">;
+
 /* ------------------------------------------------------------- la libreria */
 
 /**
@@ -520,6 +567,14 @@ export interface FornitorePannello {
   revoca(id: string): void;
   /** Cambia il nome di un dispositivo collegato. */
   rinomina(id: string, nome: string): void;
+  /**
+   * Solo gli indirizzi, senza sapere chi sta chiedendo.
+   *
+   * Serve a chi ha appena bussato: nel momento in cui gli si dà il token non è
+   * ancora nessuno — `stato()` vuole un dispositivo, e qui il dispositivo
+   * esiste da mezzo secondo. Torna la stessa lista di `stato().indirizzi`.
+   */
+  soloIndirizzi?(): IndirizzoPubblico[];
 }
 
 /* ------------------------------------------------------------ il modello */

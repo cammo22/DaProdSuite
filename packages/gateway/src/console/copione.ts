@@ -19,6 +19,7 @@ import { COPIONE_LAVORI } from "./copione-lavori";
 import { COPIONE_GALLERIA } from "./copione-galleria";
 import { COPIONE_STILI } from "./copione-stili";
 import { COPIONE_DAPROD } from "./copione-daprod";
+import { COPIONE_RETE } from "./copione-rete";
 import { COPIONE_IMPOSTAZIONI } from "./copione-impostazioni";
 import { COPIONE_AVVIO } from "./copione-avvio";
 
@@ -30,5 +31,6 @@ export const COPIONE = [
   COPIONE_STILI,
   COPIONE_DAPROD,
   COPIONE_IMPOSTAZIONI,
+  COPIONE_RETE,
   COPIONE_AVVIO,
 ].join("\n");

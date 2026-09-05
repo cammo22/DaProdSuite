@@ -1231,6 +1231,77 @@ console.log("\n— le azioni sanno gli stili di chi chiede —");
   dice("e la lingua si sceglie", (lingua?.scelte || []).includes("it"));
 }
 
+console.log("\n— bussare invece di battere un codice —");
+{
+  // Il giro intero, come lo fa un telefono che ha scelto questo computer da un
+  // elenco: bussa, chi decide lo vede, accetta, e il token nuovo funziona.
+  const b = await chiama("/bussa", {
+    metodo: "POST",
+    corpo: { nome: "chi bussa", apparecchio: "SM-A536B" },
+  });
+  dice("bussare non vuole un token", b.stato === 201, "→ " + b.stato);
+  dice("torna un'attesa e un segreto", !!b.dati?.attesa && !!b.dati?.segreto);
+
+  const rete = await chiama("/rete", { token: tokenAdmin });
+  dice("chi decide la vede", (rete.dati?.bussate || []).length === 1);
+  dice("e non vede il segreto", !(rete.dati?.bussate || [])[0]?.segreto);
+  dice("e nemmeno il token", !(rete.dati?.bussate || [])[0]?.token);
+
+  const spiando = await chiama("/bussa/" + b.dati.attesa + "?segreto=sbagliato");
+  dice("col segreto sbagliato non si ritira niente", spiando.stato === 404);
+
+  const prima = await chiama("/bussa/" + b.dati.attesa + "?segreto=" + b.dati.segreto);
+  dice("prima del si' si aspetta", prima.dati?.stato === "attesa");
+
+  const si = await chiama("/bussate/" + b.dati.attesa, {
+    metodo: "POST",
+    token: tokenAdmin,
+    corpo: { accetta: true, ruolo: "ospite" },
+  });
+  dice("chi decide dice di si'", si.stato === 200, "→ " + si.stato);
+
+  const dopo = await chiama("/bussa/" + b.dati.attesa + "?segreto=" + b.dati.segreto);
+  dice("e il telefono ritira la sua credenziale", dopo.dati?.stato === "accettata" && !!dopo.dati?.token);
+
+  const io = await chiama("/io", { token: dopo.dati?.token });
+  dice("che funziona davvero", io.stato === 200 && io.dati?.nome === "chi bussa");
+
+  /**
+   * Chi e' appena entrato da ospite **non puo' far entrare altri**.
+   *
+   * Si prova con la credenziale nata due righe fa e non con quella dell'ospite
+   * di prima: quella, a questo punto del copione, e' gia' stata revocata, e un
+   * 401 al posto di un 403 racconterebbe che la regola vale quando invece sta
+   * solo rispondendo a un token morto.
+   */
+  const secondo = await chiama("/bussa", {
+    metodo: "POST",
+    corpo: { nome: "un altro che bussa", apparecchio: "un tablet" },
+  });
+  const daOspite = await chiama("/bussate/" + secondo.dati.attesa, {
+    metodo: "POST",
+    token: dopo.dati?.token,
+    corpo: { accetta: true },
+  });
+  dice("un ospite non puo' far entrare nessuno", daOspite.stato === 403, "→ " + daOspite.stato);
+
+  const laReteDaOspite = await chiama("/rete", { token: dopo.dati?.token });
+  dice("e non vede nemmeno chi sta bussando", (laReteDaOspite.dati?.bussate || []).length === 0);
+
+  const doppio = await chiama("/bussate/" + b.dati.attesa, {
+    metodo: "POST",
+    token: tokenAdmin,
+    corpo: { accetta: true },
+  });
+  dice("e non si puo' accettare due volte", doppio.stato === 409, "→ " + doppio.stato);
+
+  const nomePreso = await chiama("/bussa", {
+    metodo: "POST",
+    corpo: { nome: "chi bussa", apparecchio: "un altro telefono" },
+  });
+  dice("un nome gia' preso si ferma qui", !!nomePreso.dati?.errore, "→ " + nomePreso.stato);
+}
+
 console.log("\n— il limite dei tentativi —");
 {
   let bloccato = false;
@@ -1239,6 +1310,34 @@ console.log("\n— il limite dei tentativi —");
     if (r.dati?.errore?.includes("Troppi tentativi")) { bloccato = true; break; }
   }
   dice("la forza bruta si ferma", bloccato);
+}
+
+console.log("\n— i computer si sentono fra loro —");
+{
+  /**
+   * L'annuncio UDP, provato davvero: uno parla, uno ascolta.
+   *
+   * ⚠ Questa prova esiste perché la prima stesura **non funzionava** e sembrava
+   * funzionare: chi riceveva un «ehi» rispondeva al gruppo sulla porta 8791,
+   * che va benissimo fra due computer e non arriva mai a un telefono, il quale
+   * apre una porta qualunque. Senza questo giro non se ne sarebbe accorto
+   * nessuno prima di avere due macchine accese.
+   */
+  const annuncio = new G.Rete(() => ({
+    id: "pc_diprova",
+    nome: "PC-CHE-SI-ANNUNCIA",
+    versione: "0.9.0",
+    porta: 8790,
+    basi: ["http://127.0.0.1:8790"],
+    apre: true,
+  }));
+  annuncio.accendi();
+  const sentiti = await G.ascoltaUnMomento(1500);
+  const lui = sentiti.find((p) => p.id === "pc_diprova");
+  dice("chi ascolta lo sente", !!lui, "→ " + sentiti.length + " sentiti");
+  dice("e sa come si chiama", lui?.nome === "PC-CHE-SI-ANNUNCIA");
+  dice("e dove bussargli", (lui?.basi || []).length > 0);
+  annuncio.spegni();
 }
 
 await gateway.chiudi();

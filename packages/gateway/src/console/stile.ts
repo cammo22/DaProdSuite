@@ -608,6 +608,24 @@ export const STILE = `  :root {
   .pausa .dentro { flex: 1; min-width: 0; }
   .pausa b { display: block; font-size: 13.5px; }
   .pausa small { color: var(--dim); font-size: 12px; }
+  /* Quando qualcuno bussa la fascia cambia colore: il giallo dice «aspetta»,
+     il viola dice «qualcuno ti sta chiedendo qualcosa». Due cose diverse non
+     possono avere lo stesso colore nello stesso posto. */
+  .pausa.bussano {
+    border-color: #8b5cf655;
+    background: linear-gradient(180deg, #1a1230, var(--panel));
+  }
+  .pausa.bussano .segno { color: var(--accent); }
+
+  /* Una riga della rete: chi bussa, o un altro computer. */
+  .bussa {
+    display: flex; gap: 10px; align-items: center;
+    padding: 10px 12px; margin-top: 8px;
+    background: var(--panel2); border: 1px solid var(--line2); border-radius: 12px;
+  }
+  .bussa .cresce { flex: 1; min-width: 0; }
+  .bussa b { display: block; font-size: 13.5px; }
+  .bussa small { color: var(--dim); font-size: 11.5px; display: block; overflow-wrap: anywhere; }
 
   /* ------------------------------------------------------------- gli stili */
   /* Una carta per stile: il nome grande, le parole sotto. Si tocca per usarlo,
