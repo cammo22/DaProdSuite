@@ -108,6 +108,22 @@ export async function aspettaPremibile(bottone, ms = 10000) {
   }
 }
 
+/**
+ * Accende o spegne un interruttore, **e lo dice**.
+ *
+ * Come `scrivi`, ma per le caselle da spuntare: `checked` da solo non fa
+ * scattare nessun ascoltatore, e una pagina che ricalcola qualcosa quando la
+ * spunti resterebbe ferma a com'era.
+ */
+export function spunta(casella, acceso) {
+  if (!casella) return;
+  const voluto = acceso === true || acceso === "true" || acceso === "1";
+  if (casella.checked === voluto) return;
+  casella.checked = voluto;
+  casella.dispatchEvent(new Event("input", { bubbles: true }));
+  casella.dispatchEvent(new Event("change", { bubbles: true }));
+}
+
 /** Scrive in una casella **e lo dice**: certe pagine reagiscono solo all'evento. */
 export function scrivi(campo, testo) {
   if (!campo) return;

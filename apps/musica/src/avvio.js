@@ -23,6 +23,7 @@ import {
   premi,
   scegliInMenu,
   scrivi,
+  spunta,
 } from "/comune/da-fuori.js";
 import { collegaModelliInMemoria } from "/comune/modelli-in-memoria.js";
 import { collegaBonsai } from "./bonsai.js";
@@ -120,6 +121,26 @@ collegaLavoriDaFuori(async (richiesta) => {
   if (richiesta.opzioni.secondi) {
     scrivi(el.duration, String(numero(richiesta.opzioni.secondi, 15, 300, 60)));
   }
+
+  /**
+   * I comandi che fino alla 0.8.2 si potevano toccare **solo dal computer**.
+   *
+   * Chiesto il 5 settembre 2026: «in produzione musica aggiungiamo tutti i
+   * settaggi mancanti tipo bpm». Stanno sotto «Avanzati» e ci sono da sempre;
+   * da fuori non arrivavano, quindi da un telefono si poteva chiedere una
+   * canzone ma non *quella* canzone.
+   *
+   * ⚠ **Valgono per MiniMax Music 3.** ACE-Step non ha queste caselle
+   * (`usaCampo` in grafi.js lo dice riga per riga): scriverle non rompe niente
+   * e non cambia niente, e il catalogo delle azioni lo dichiara invece di far
+   * credere il contrario. «Strumentale» invece vale per tutti e due.
+   */
+  if (richiesta.opzioni.bpm) {
+    scrivi(el.bpm, String(numero(richiesta.opzioni.bpm, 40, 220, 120)));
+  }
+  if (richiesta.opzioni.tonalita) scegliInMenu(el.tonalita, richiesta.opzioni.tonalita);
+  if (richiesta.opzioni.tempo) scegliInMenu(el.tempo, richiesta.opzioni.tempo);
+  if (richiesta.opzioni.strumentale) spunta(el.instrumental, richiesta.opzioni.strumentale);
   // Qui il menu dei modelli si chiama «qualità», che è il nome che ha nella
   // pagina: gli id però sono gli stessi del catalogo delle azioni.
   if (scegliInMenu(el.qualita, richiesta.opzioni.modello)) await aspettaPremibile(el.go);

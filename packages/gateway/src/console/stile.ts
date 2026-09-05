@@ -654,15 +654,27 @@ export const STILE = `  :root {
   /* ------------------------------------------------------- il visualizer */
   /* Dietro a tutto, e senza toccare niente: nessun evento del mouse arriva
      qui, quindi la pagina sopra funziona esattamente come prima. */
+  /**
+   * Dietro a tutto, e **con uno z-index negativo**.
+   *
+   * La prima stesura lo metteva a zero e alzava a uno la testata, il corpo e la
+   * barra delle schede. Sembra la stessa cosa e non lo era: quella riga
+   * arrivava dopo la regola della testata e le portava via il «position:
+   * sticky», e dentro la WebView di Android il risultato era che la lente e il
+   * palco si vedevano quasi neri. Trovato provando sull'app, non leggendo.
+   *
+   * Con «-1» il canvas sta sotto al contenuto della pagina e sopra allo sfondo
+   * del corpo senza che nessun altro debba cambiare: e' il modo classico, e non
+   * tocca niente di quello che c'era prima.
+   */
   #visual {
-    position: fixed; inset: 0; z-index: 0;
+    position: fixed; inset: 0; z-index: -1;
     width: 100%; height: 100%;
     pointer-events: none;
   }
   /* Con il visualizer acceso lo sfondo del corpo si smorza: due sfumature
      sovrapposte sono fango, e quella che deve vedersi e' quella che si muove. */
   body.convisual { background-image: none; background-color: #05060a; }
-  main, header, nav.fondo { position: relative; z-index: 1; }
 
   /* ----------------------------------------------------- la barra che suona */
   .barraLettore {
@@ -702,35 +714,48 @@ export const STILE = `  :root {
   body.consuono { padding-bottom: calc(var(--fondo-alto) + 58px + env(safe-area-inset-bottom)); }
 
   /* --------------------------------------------------------------- il palco */
-  .palco {
+  /**
+   * ⚠ Si chiama «palcoLettore» e non «palco», e la ragione e' un difetto vero.
+   *
+   * La lente — il riquadro che si apre toccando una cosa in galleria — ha
+   * dentro di se' un elemento con classe «palco», che e' il posto dove sta la
+   * foto. Chiamando «palco» anche questo, le regole di qui sono cadute anche
+   * su quello: lo sfondo quasi nero e lo z-index 80 di un riquadro a schermo
+   * intero, addosso a un pezzo di lente. Risultato: dentro l'app, la lente si
+   * apriva **quasi nera**, con il titolo e i tasti dietro a una lastra.
+   *
+   * Trovato guardando dentro la WebView con dentro-la-pagina.mjs, non
+   * leggendo il codice: da fuori sembrava un problema di «backdrop-filter».
+   */
+  .palcoLettore {
     position: fixed; inset: 0; z-index: 80;
     background: #04050afa;
     display: flex; flex-direction: column;
     padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom);
     animation: entra .18s ease-out;
   }
-  .palco .cima { display: flex; align-items: center; gap: 10px; padding: 10px 14px; }
-  .palco .cima .titolo { flex: 1; min-width: 0; }
-  .palco .cima .titolo b {
+  .palcoLettore .cima { display: flex; align-items: center; gap: 10px; padding: 10px 14px; }
+  .palcoLettore .cima .titolo { flex: 1; min-width: 0; }
+  .palcoLettore .cima .titolo b {
     display: block; font-size: 14px; font-weight: 600;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
-  .palco .cima .titolo small { display: block; color: var(--dim); font-size: 11.5px; }
-  .palco .dentro {
+  .palcoLettore .cima .titolo small { display: block; color: var(--dim); font-size: 11.5px; }
+  .palcoLettore .dentro {
     flex: 1; min-height: 0; display: grid; place-items: center; padding: 6px 12px;
     transition: transform .12s linear, opacity .12s linear;
   }
-  .palco .dentro img, .palco .dentro video {
+  .palcoLettore .dentro img, .palcoLettore .dentro video {
     max-width: 100%; max-height: 100%; display: block;
     border-radius: 12px; object-fit: contain; background: #000;
   }
-  .palco .dentro .copertinona {
+  .palcoLettore .dentro .copertinona {
     width: min(72vw, 340px); aspect-ratio: 1; border-radius: 20px; object-fit: cover;
     box-shadow: 0 24px 70px -24px #000;
   }
-  .palco .sotto { display: flex; align-items: center; gap: 10px; padding: 10px 16px 18px; }
-  .palco .sotto .effetto { color: var(--fioco); font-size: 11.5px; letter-spacing: .4px; }
-  .palco .tondo.grosso { width: 54px; height: 54px; font-size: 22px; border-color: var(--accent); }
+  .palcoLettore .sotto { display: flex; align-items: center; gap: 10px; padding: 10px 16px 18px; }
+  .palcoLettore .sotto .effetto { color: var(--fioco); font-size: 11.5px; letter-spacing: .4px; }
+  .palcoLettore .tondo.grosso { width: 54px; height: 54px; font-size: 22px; border-color: var(--accent); }
 
   /* ------------------------------------------------------------- gli stili */
   /* Una carta per stile: il nome grande, le parole sotto. Si tocca per usarlo,

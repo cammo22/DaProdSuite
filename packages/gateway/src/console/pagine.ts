@@ -387,7 +387,7 @@ export const PAGINE = `<!--
   Si esce trascinando su o giu', che e' il gesto che ogni app di foto ha
   insegnato a tutti. Il tasto con la X c'e' lo stesso, per chi e' col mouse.
 -->
-<div class="palco" id="palco" hidden>
+<div class="palcoLettore" id="palco" hidden>
   <div class="cima">
     <div class="titolo">
       <b id="palco-nome"></b>

@@ -64,6 +64,9 @@ android {
     }
     buildFeatures {
         viewBinding = true
+        // Serve a `BuildConfig.DEBUG`, che decide se la pagina dentro la
+        // WebView si puo' ispezionare da un computer. Vedi `preparaWeb`.
+        buildConfig = true
     }
 }
 

@@ -287,7 +287,20 @@ class MainActivity : AppCompatActivity() {
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 when {
-                    dove == Dove.SUITE && binding.web.canGoBack() -> binding.web.goBack()
+                    /**
+                     * Dentro la suite, **prima si chiede alla pagina**.
+                     *
+                     * Con la lente o il palco aperti il tasto indietro usciva
+                     * dall'app: la pagina sapeva chiuderli con Esc, ma il tasto
+                     * di Android non è Esc e non arriva mai fin dentro il
+                     * documento. Adesso glielo si chiede, e solo se risponde di
+                     * no si fa quello che si faceva prima.
+                     *
+                     * La risposta arriva dopo, non subito: `evaluateJavascript`
+                     * torna quando la pagina ha finito. Per questo il resto del
+                     * gesto sta dentro la lambda invece che qui.
+                     */
+                    dove == Dove.SUITE -> chiediAllaPaginaDiChiudere()
                     // Da «sto aspettando» si torna all'elenco, non fuori: chi
                     // ha bussato per sbaglio deve poter cambiare computer senza
                     // uscire dall'app.
@@ -373,6 +386,31 @@ class MainActivity : AppCompatActivity() {
         // troppo: quella che conta, in quel momento, è quella della musica.
         if (staSuonando) return
         if (dove == Dove.SUITE && chi != null) Sentinella.diGuardia(this)
+    }
+
+    /**
+     * Chiede alla pagina di chiudere quello che ha aperto sopra di sé.
+     *
+     * Se non c'era niente da chiudere si torna indietro nella cronologia della
+     * WebView, e se non c'è nemmeno quella si esce dall'app — cioè quello che
+     * il tasto indietro faceva prima. Una pagina vecchia, che questa funzione
+     * non ce l'ha, risponde `null`: vale come «non ho chiuso niente».
+     */
+    private fun chiediAllaPaginaDiChiudere() {
+        binding.web.evaluateJavascript(
+            "(window.DaProdPagina && window.DaProdPagina.chiudiQualcosa()) === true",
+        ) { risposta ->
+            if (risposta == "true") return@evaluateJavascript
+            when {
+                binding.web.canGoBack() -> binding.web.goBack()
+                Profili.tutti(this).size > 1 -> {
+                    Profili.esci(this)
+                    chi = null
+                    mostra(Dove.UTENTI)
+                }
+                else -> finish()
+            }
+        }
     }
 
     /* ------------------------------------------------------ le schermate */
@@ -551,6 +589,9 @@ class MainActivity : AppCompatActivity() {
         binding.scopriVuoto.visibility = View.GONE
         binding.elencoComputer.removeAllViews()
         binding.scopriSotto.setText(R.string.scopri_sotto)
+        // La tastiera resta aperta sopra all'elenco se non la si manda via: si
+        // era appena scritto un nome, e Android non la chiude da solo.
+        nascondiLaTastiera()
         mostra(Dove.SCOPRI)
         cerca()
     }
@@ -736,6 +777,14 @@ class MainActivity : AppCompatActivity() {
      * «SM-A536B». Serve a distinguere due richieste con lo stesso nome, e a far
      * riconoscere a chi guarda il pannello il telefono che ha in mano.
      */
+    /** Manda via la tastiera: si usa passando da una schermata all'altra. */
+    private fun nascondiLaTastiera() {
+        val gestore = getSystemService(android.view.inputmethod.InputMethodManager::class.java)
+        val fuoco = currentFocus ?: binding.root
+        gestore?.hideSoftInputFromWindow(fuoco.windowToken, 0)
+        fuoco.clearFocus()
+    }
+
     private fun comeMiChiamo(): String =
         listOf(Build.MANUFACTURER, Build.MODEL)
             .filter { it.isNotBlank() }
@@ -1228,6 +1277,23 @@ class MainActivity : AppCompatActivity() {
     @SuppressLint("SetJavaScriptEnabled")
     private fun preparaWeb() {
         val w: WebView = binding.web
+        /**
+         * **Guardare dentro la pagina, ma solo nelle build di prova.**
+         *
+         * L'app è un vetro su una pagina web, e fino alla 0.8.2 quando quella
+         * pagina si comportava male dentro la WebView non c'era **nessun** modo
+         * di guardarci dentro: si tirava a indovinare confrontando screenshot.
+         * È il motivo per cui certi difetti — «i video non si vedono bene»,
+         * «spesso crasha» — sono rimasti aperti a lungo.
+         *
+         * Con questa riga, da un computer collegato via USB si apre
+         * `chrome://inspect` e si vede la console, la rete, gli stili. Vale
+         * **solo per le build di debug**: `BuildConfig.DEBUG` è falso
+         * nell'APK che si scarica dalla Release, e un'app pubblicata che lascia
+         * ispezionare la propria pagina è un'app che regala il token a chiunque
+         * abbia il telefono in mano per due minuti.
+         */
+        if (BuildConfig.DEBUG) WebView.setWebContentsDebuggingEnabled(true)
         w.setBackgroundColor(getColor(R.color.sfondo))
         w.settings.javaScriptEnabled = true
         // La console tiene il token e le preferenze nel `localStorage`, come fa

@@ -157,17 +157,33 @@ export const COPIONE_AVVIO = `
     })(b.dataset.pagina));
   }
 
-  // Il tasto «indietro» del telefono, e il tasto Esc: chiudono quello che è
-  // aperto sopra la pagina prima di uscire dall'app.
+  /**
+   * Quello che è aperto **sopra** la pagina, chiuso uno alla volta.
+   *
+   * ⚠ Il difetto che questo cura, visto sull'app il 5 settembre 2026: con la
+   * lente aperta, il tasto «indietro» del telefono **usciva dall'app**. La
+   * pagina aveva sempre saputo chiudere le sue cose con Esc, ma il tasto
+   * indietro di Android non è Esc: non genera nessun evento nella pagina, e
+   * l'app non aveva modo di sapere che c'era qualcosa da chiudere.
+   *
+   * Adesso lo chiede. L'ordine è quello di quanto stanno in alto — il palco, la
+   * lente, il foglio — e la risposta dice se qualcosa è stato chiuso: se no,
+   * l'app fa quello che faceva prima.
+   */
+  window.DaProdPagina = {
+    chiudiQualcosa: function () {
+      if (palcoAperto) { chiudiPalco(); return true; }
+      var lente = document.querySelector(".lente");
+      if (lente) { lente.remove(); return true; }
+      if (document.getElementById("foglio")) { chiudiFoglio(); return true; }
+      return false;
+    },
+  };
+
+  // Il tasto Esc: la stessa cosa, per chi è davanti a una tastiera.
   document.addEventListener("keydown", function (ev) {
     if (ev.key !== "Escape") return;
-    // L'ordine e' quello di quanto stanno in alto: prima il palco, poi la
-    // lente, poi il foglio. Chiudere quello sotto lasciando quello sopra
-    // sarebbe premere un tasto e non vedere succedere niente.
-    if (palcoAperto) { chiudiPalco(); return; }
-    var lente = document.querySelector(".lente");
-    if (lente) { lente.remove(); return; }
-    chiudiFoglio();
+    window.DaProdPagina.chiudiQualcosa();
   });
 
   // Tornare sulla pagina è il momento in cui si vuole sapere com'è andata.
