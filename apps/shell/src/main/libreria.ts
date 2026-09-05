@@ -740,6 +740,21 @@ function accompagnatori(prima: string, dopo: string): [string, string][] {
   ];
 }
 
+/**
+ * La cartella che la libreria **non guarda**.
+ *
+ * Nasce nella 0.9.0 con i video lunghi. Un video da un minuto non lo fa nessun
+ * modello in un colpo (venti secondi è il tetto di LTX 2.5): si generano dei
+ * pezzi e li si cuce. Quei pezzi finiscono qui dentro, e la libreria li salta.
+ *
+ * **Non è per pulizia.** È perché chi ha chiesto un video da un minuto riceve
+ * quello che è uscito per primo: lo shell consegna **il primo file nuovo** che
+ * vede comparire (vedi `aspettaIlFile` in esecuzione.ts), e senza questa riga
+ * quel file sarebbe il primo pezzo da otto secondi. Il film finito arriverebbe
+ * dieci minuti dopo, e non lo riceverebbe nessuno.
+ */
+export const CARTELLA_PEZZI = "pezzi";
+
 function raccogli(
   radice: string,
   dir: string,
@@ -757,6 +772,9 @@ function raccogli(
     const percorso = join(dir, voce.name);
 
     if (voce.isDirectory()) {
+      // I pezzi di un video lungo non sono video: sono i mattoni di quello che
+      // uscirà quando saranno cuciti. Vedi CARTELLA_PEZZI.
+      if (voce.name === CARTELLA_PEZZI) continue;
       raccogli(radice, percorso, app, fuori);
       continue;
     }

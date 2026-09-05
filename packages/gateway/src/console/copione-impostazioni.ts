@@ -134,6 +134,24 @@ export const COPIONE_IMPOSTAZIONI = `
     }
 
     /**
+     * La rete: chi bussa, e gli altri computer.
+     *
+     * **Si vede anche da ospite**, ed e' voluto: sapere che in casa c'e' un
+     * altro computer con la suite accesa e' un'informazione, non un permesso.
+     * La fila delle bussate dentro al foglio la nasconde il gateway, non questa
+     * riga: chi non decide riceve un elenco vuoto.
+     */
+    voceFoglio(
+      carta,
+      "\u2318",
+      "La rete di casa",
+      laRete && laRete.bussate && laRete.bussate.length
+        ? laRete.bussate.length + " in attesa di entrare"
+        : "gli altri computer, e chi chiede di entrare",
+      function () { void apriLaRete(); },
+    );
+
+    /**
      * Il governo della macchina: **solo dal computer**.
      *
      * Vedi l'intestazione di questo file per il perché. La riga qui sotto è

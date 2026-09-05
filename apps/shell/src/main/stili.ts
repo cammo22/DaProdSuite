@@ -58,6 +58,27 @@ export interface Stile {
    */
   tipo: TipoStile;
   /**
+   * Se è **uno stile** o **un prompt intero**. Nuovo dalla 0.9.0.
+   *
+   * Chiesto il 5 settembre 2026: «lo stesso anche con i prompt — canzoni,
+   * immagini e video si possono condividere, in modo da usarli e modificarli a
+   * piacere».
+   *
+   * **Perché la stessa cosa e non una seconda.** Uno stile e un prompt salvato
+   * sono lo stesso oggetto: un nome, delle parole, un tipo, un padrone, e la
+   * possibilità di metterlo in vetrina. Farne due archivi separati vorrebbe
+   * dire due file, due rotte, due schermate e due modi di condividere — e il
+   * giorno che uno dei due impara una cosa, l'altro non la impara.
+   *
+   * Cambia **dove finiscono le parole**: uno stile si aggiunge a quello che
+   * scrivi, un prompt lo sostituisce. È tutta lì la differenza, e sta scritta
+   * qui invece che in due implementazioni.
+   *
+   * Chi ne ha salvati prima di oggi non ha questo campo, e sono stili: erano
+   * l'unica cosa che esistesse.
+   */
+  genere?: "stile" | "prompt";
+  /**
    * Da dove viene: `partenza` è uno dei ventiquattro, `mio` l'ha fatto la
    * persona, `preso` l'ha copiato da qualcun altro.
    *
@@ -130,8 +151,11 @@ function segnaSetDato(chi: string, tipi: TipoStile[]): void {
 
 /** Uno stile vecchio, senza tipo, è musica: era l'unico che esistesse. */
 function conTipo(s: Stile): Stile {
-  if (s.tipo === "immagine" || s.tipo === "video" || s.tipo === "musica") return s;
-  return { ...s, tipo: "musica" };
+  const genere = s.genere === "prompt" ? "prompt" : "stile";
+  if (s.tipo === "immagine" || s.tipo === "video" || s.tipo === "musica") {
+    return s.genere ? s : { ...s, genere };
+  }
+  return { ...s, tipo: "musica", genere };
 }
 
 /**
@@ -141,9 +165,15 @@ function conTipo(s: Stile): Stile {
  * riavvio della suite la rifarebbe da capo e chi ne avesse buttato uno se lo
  * ritroverebbe.
  */
-export function stiliDi(chi: string, tipo?: TipoStile): Stile[] {
+export function stiliDi(chi: string, tipo?: TipoStile, genere?: "stile" | "prompt"): Stile[] {
   const tutti = leggiTutti(chi);
-  return tipo ? tutti.filter((s) => s.tipo === tipo) : tutti;
+  return tutti.filter(
+    (s) =>
+      (!tipo || s.tipo === tipo) &&
+      // Senza genere si torna **tutto**: è quello che serve alla vetrina, che
+      // mostra le due cose insieme.
+      (!genere || (s.genere ?? "stile") === genere),
+  );
 }
 
 function leggiTutti(chi: string): Stile[] {
@@ -204,7 +234,7 @@ function senzaDoppioni(stili: Stile[]): Stile[] {
   const visti = new Set<string>();
   const buoni: Stile[] = [];
   for (const s of stili) {
-    const chiave = `${s.tipo}|${s.nome.toLocaleLowerCase("it")}`;
+    const chiave = `${s.genere ?? "stile"}|${s.tipo}|${s.nome.toLocaleLowerCase("it")}`;
     if (visti.has(chiave)) continue;
     visti.add(chiave);
     buoni.push(s);
@@ -219,6 +249,7 @@ function quelliDiPartenza(tipo: TipoStile): Stile[] {
     nome,
     testo,
     tipo,
+    genere: "stile" as const,
     da: "partenza" as const,
     quando: adesso,
   }));
@@ -253,6 +284,7 @@ export function salvaStile(
     nome: string;
     testo: string;
     tipo?: TipoStile;
+    genere?: "stile" | "prompt";
     da?: Stile["da"];
     daNome?: string;
   },
@@ -268,10 +300,15 @@ export function salvaStile(
     dati.tipo ?? (dati.id ? miei.find((s) => s.id === dati.id)?.tipo : undefined) ?? "musica";
   // Due stili con lo stesso nome ma di tipo diverso sono due cose diverse:
   // «Ora dorata» ha senso per una foto e per un video, e non si sovrascrivono.
+  const genere: "stile" | "prompt" =
+    dati.genere ??
+    (dati.id ? miei.find((s) => s.id === dati.id)?.genere : undefined) ??
+    "stile";
   const stessoNome = miei.find(
     (s) =>
       s.id !== dati.id &&
       s.tipo === tipo &&
+      (s.genere ?? "stile") === genere &&
       s.nome.toLocaleLowerCase("it") === nome.toLocaleLowerCase("it"),
   );
   const daCambiare = miei.find((s) => s.id === dati.id) ?? stessoNome;
@@ -293,6 +330,7 @@ export function salvaStile(
     nome,
     testo,
     tipo,
+    genere,
     da: dati.da ?? "mio",
     daNome: dati.daNome,
     quando: Date.now(),

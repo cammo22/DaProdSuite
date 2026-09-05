@@ -61,6 +61,29 @@ export const COPIONE_GALLERIA = `
       },
     ];
 
+    /**
+     * **Il terzo tasto, e lo vede solo chi decide.**
+     *
+     * Chiesto il 5 settembre 2026: «quando un utente diventa admin, l'admin
+     * dall'app puo' vedere le generazioni di tutti». Ribalta la regola del 22
+     * agosto — «anche gli admin vedono solo le proprie foto» — ed e' un
+     * cambiamento di cosa vuol dire essere admin, non una svista: prima era
+     * «decide sulla fila», adesso e' «governa il computer da fuori come se ci
+     * stesse davanti».
+     *
+     * Il divieto vero sta nel gateway: chi non e' admin, chiedendo «tutte»,
+     * riceve le sue.
+     */
+    if (puoiDecidere) {
+      pezzi.push({
+        id: "tutte",
+        nome: "Di tutti",
+        sotto: "tutto quello che c\u0027\u00e8 sul computer",
+        tinta: "ciano",
+        segno: "\\u25A3",
+      });
+    }
+
     for (var x of pezzi) {
       var b = document.createElement("button");
       b.type = "button";
@@ -118,12 +141,20 @@ export const COPIONE_GALLERIA = `
 
     try {
       var risposta = await chiama(
-        "/libreria?quanti=60&dove=mie" + (filtro ? "&tipo=" + filtro : ""),
+        "/libreria?quanti=60&dove=" + (dove === "tutte" ? "tutte" : "mie") +
+          (filtro ? "&tipo=" + filtro : ""),
       );
       var voci = (risposta && risposta.voci) || [];
+      // Quello che si sta guardando adesso: serve al lettore, che quando si
+      // tocca un brano mette in fila **tutto quello che c'e' sotto** invece di
+      // quel brano solo. E' quello che fa qualunque app di musica, ed e' la
+      // differenza fra un lettore e un tasto play.
+      vociMostrate = voci;
       casella.innerHTML = "";
       $("galleria-vuota").hidden = voci.length > 0;
-      $("galleria-vuota").textContent = "Ancora niente di tuo. Quello che chiedi finisce qui.";
+      $("galleria-vuota").textContent = dove === "tutte"
+        ? "Su questo computer non c\u0027\u00e8 ancora niente."
+        : "Ancora niente di tuo. Quello che chiedi finisce qui.";
       for (var v of voci) casella.append(quadro(v));
     } catch (e) {
       casella.innerHTML = "";
@@ -131,6 +162,9 @@ export const COPIONE_GALLERIA = `
       $("galleria-vuota").textContent = e.message;
     }
   }
+
+  /** Le voci che la galleria sta mostrando adesso: la fila che nasce da un tocco. */
+  var vociMostrate = [];
 
   /** L'indirizzo del file vero, e quello dell'anteprima. */
   function indirizzoDi(v) { return "/libreria/file/" + encodeURIComponent(v.id); }
@@ -209,7 +243,22 @@ export const COPIONE_GALLERIA = `
       vetro.append(nota);
     }
 
-    vetro.addEventListener("click", function () { apriLaLente(v); });
+    /**
+     * Toccare **fa partire la fila**, se e' roba che suona.
+     *
+     * Un brano e un video si ascoltano e si guardano uno dietro l'altro; una
+     * foto si guarda e basta, e per quella la lente resta quello che era. La
+     * fila nasce da quello che c'e' sullo schermo in quel momento — i filtri
+     * valgono anche per lei, e cosi' «solo musica» diventa una scaletta.
+     */
+    vetro.addEventListener("click", function () {
+      if (v.tipo === "audio" || v.tipo === "video") {
+        accodaTutto(vociMostrate, v);
+        apriPalco();
+      } else {
+        apriLaLente(v);
+      }
+    });
     box.append(vetro);
 
     var sotto = document.createElement("div");
@@ -320,6 +369,26 @@ export const COPIONE_GALLERIA = `
 
     var attrezzi = document.createElement("div");
     attrezzi.className = "attrezzi";
+
+    /**
+     * Metterla in fila, dalla lente.
+     *
+     * La lente resta quello che era — una cosa sola, guardata da vicino, con i
+     * tasti per salvarla e condividerla — e da qui si passa al lettore, che e'
+     * l'altra cosa: una fila che va avanti da sola. Chiesto il 5 settembre
+     * 2026: «con anche la possibilita' di aggiungere contenuti in coda cosi'
+     * posso ascoltare piu' canzoni una dietro l'altra».
+     */
+    if (v.tipo === "audio" || v.tipo === "video" || v.tipo === "immagine") {
+      var inFila = document.createElement("button");
+      inFila.className = "mini";
+      inFila.textContent = "\\u2630 Mettila in fila";
+      inFila.addEventListener("click", function () {
+        var quante = accoda(v);
+        inFila.textContent = "\\u2713 " + quante + " in fila";
+      });
+      attrezzi.append(inFila);
+    }
 
     var salva = document.createElement("button");
     salva.className = "mini";

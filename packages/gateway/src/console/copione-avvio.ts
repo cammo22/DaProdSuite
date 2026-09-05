@@ -61,6 +61,20 @@ export const COPIONE_AVVIO = `
     try { disegnaStato(await chiama("/stato")); } catch (e) { /* offline */ }
     try { await leggiPannello(); } catch (e) { /* offline */ }
     try { await leggiChiacchierata(); } catch (e) { /* offline */ }
+    /**
+     * La rete: si guarda subito, e poi ogni dodici secondi.
+     *
+     * **Perché un giro suo e non il flusso.** Il flusso lo spinge il gateway
+     * quando cambia qualcosa che *lui* sa; una bussata lo sveglia (vedi
+     * «suBussata»), ma il computer di fianco che si accende no — quello arriva
+     * da un datagramma UDP, e non c'è niente che lo faccia diventare un
+     * evento. Dodici secondi sono un secondo e mezzo di ritardo medio su un
+     * annuncio che parte ogni otto, e una GET corta ogni dodici secondi su una
+     * rete di casa non si sente.
+     */
+    try { await guardaLaRete(); } catch (e) { /* offline */ }
+    if (giroRete) clearInterval(giroRete);
+    giroRete = setInterval(function () { guardaLaRete().catch(function () {}); }, 12000);
     apriFlusso();
   }
 
@@ -80,6 +94,10 @@ export const COPIONE_AVVIO = `
       leggiMacchina().catch(function () {});
       leggiPannello().catch(function () {});
       leggiRegali().catch(function () {});
+      // Una bussata sveglia il flusso: rileggerla qui vuol dire che la fascia
+      // compare **nel momento** in cui qualcuno preme «collegati», non fino a
+      // dodici secondi dopo.
+      guardaLaRete().catch(function () {});
     };
     flusso.onerror = function () {
       var box = $("semaforo");
@@ -96,8 +114,28 @@ export const COPIONE_AVVIO = `
   $("codice").addEventListener("keydown", function (ev) { if (ev.key === "Enter") collega(); });
   $("nome").addEventListener("keydown", function (ev) { if (ev.key === "Enter") $("codice").focus(); });
   $("manda").addEventListener("click", manda);
+  $("dillo-vai").addEventListener("click", function () { void dilloEBasta(); });
+  $("dillo-cosa").addEventListener("keydown", function (ev) {
+    if (ev.key === "Enter") { ev.preventDefault(); void dilloEBasta(); }
+  });
   $("annulla").addEventListener("click", chiudiModulo);
   $("apri-impostazioni").addEventListener("click", apriImpostazioni);
+  $("vedi-bussate").addEventListener("click", function () { void apriLaRete(); });
+
+  /* ------------------------------------------------------------ il lettore */
+
+  $("lettore-faccia").addEventListener("click", apriPalco);
+  $("lettore-apri").addEventListener("click", apriPalco);
+  $("lettore-play").addEventListener("click", pausaOSuona);
+  $("lettore-prima").addEventListener("click", precedente);
+  $("lettore-poi").addEventListener("click", prossimo);
+  $("lettore-chiudi").addEventListener("click", fermaTutto);
+  $("palco-chiudi").addEventListener("click", chiudiPalco);
+  $("palco-play").addEventListener("click", pausaOSuona);
+  $("palco-prima").addEventListener("click", precedente);
+  $("palco-poi").addEventListener("click", prossimo);
+  $("palco-cambia").addEventListener("click", function () { cambiaEffetto(false); });
+  aggangiaIlTrascinamento($("palco"));
   $("chi").addEventListener("click", function () { vaiA("daprod"); });
   $("apri-profilo").addEventListener("click", apriIlProfilo);
   $("comincia-chiacchiera").addEventListener("click", cominciaChiacchierata);
@@ -123,13 +161,33 @@ export const COPIONE_AVVIO = `
     })(b.dataset.pagina));
   }
 
-  // Il tasto «indietro» del telefono, e il tasto Esc: chiudono quello che è
-  // aperto sopra la pagina prima di uscire dall'app.
+  /**
+   * Quello che è aperto **sopra** la pagina, chiuso uno alla volta.
+   *
+   * ⚠ Il difetto che questo cura, visto sull'app il 5 settembre 2026: con la
+   * lente aperta, il tasto «indietro» del telefono **usciva dall'app**. La
+   * pagina aveva sempre saputo chiudere le sue cose con Esc, ma il tasto
+   * indietro di Android non è Esc: non genera nessun evento nella pagina, e
+   * l'app non aveva modo di sapere che c'era qualcosa da chiudere.
+   *
+   * Adesso lo chiede. L'ordine è quello di quanto stanno in alto — il palco, la
+   * lente, il foglio — e la risposta dice se qualcosa è stato chiuso: se no,
+   * l'app fa quello che faceva prima.
+   */
+  window.DaProdPagina = {
+    chiudiQualcosa: function () {
+      if (palcoAperto) { chiudiPalco(); return true; }
+      var lente = document.querySelector(".lente");
+      if (lente) { lente.remove(); return true; }
+      if (document.getElementById("foglio")) { chiudiFoglio(); return true; }
+      return false;
+    },
+  };
+
+  // Il tasto Esc: la stessa cosa, per chi è davanti a una tastiera.
   document.addEventListener("keydown", function (ev) {
     if (ev.key !== "Escape") return;
-    var lente = document.querySelector(".lente");
-    if (lente) { lente.remove(); return; }
-    chiudiFoglio();
+    window.DaProdPagina.chiudiQualcosa();
   });
 
   // Tornare sulla pagina è il momento in cui si vuole sapere com'è andata.
@@ -139,6 +197,7 @@ export const COPIONE_AVVIO = `
     leggiMacchina().catch(function () {});
     leggiPannello().catch(function () {});
     leggiRegali().catch(function () {});
+    guardaLaRete().catch(function () {});
     // Il flusso, dopo un po' in secondo piano, il telefono lo chiude: si riapre.
     if (!flusso || flusso.readyState === 2) apriFlusso();
   });

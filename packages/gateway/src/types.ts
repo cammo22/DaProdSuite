@@ -256,6 +256,53 @@ export interface InvitoQr {
   ruolo: Ruolo;
 }
 
+/* ---------------------------------------------------------------- bussate */
+
+/**
+ * Qualcuno ha scelto questo computer da un elenco e chiede di entrare.
+ *
+ * **È l'altra metà dell'annuncio** (vedi `rete.ts`): l'annuncio dice «ci sono»,
+ * la bussata dice «vorrei entrare». Nasce il 5 settembre 2026, chiesta così:
+ * «quando si seleziona il pc, il pc riceve una notifica e si può accettare, e
+ * da quel momento l'utente è sempre collegato all'app».
+ *
+ * **Perché non basta l'invito.** Un invito è un codice che chi ha il computer
+ * genera *prima* e detta a voce a chi ha il telefono: pretende che i due siano
+ * nello stesso posto nello stesso momento. Una bussata gira la direzione — è
+ * chi arriva a farsi avanti, e chi ha il computer decide con calma, anche
+ * cinque minuti dopo. L'invito resta e serve ancora: da fuori casa, dove
+ * nessun annuncio arriva, non c'è elenco da toccare.
+ *
+ * **Il segreto, e perché serve.** L'id di una bussata compare nel pannello di
+ * chi decide, quindi non è un segreto. Ma chi bussa deve poter chiedere «e
+ * allora?» senza avere ancora un token: senza un segreto suo, chiunque sulla
+ * stessa rete potrebbe ritirare il token di un altro sapendone l'id. Il segreto
+ * nasce col telefono che bussa, resta nel telefono, e il gateway lo confronta.
+ */
+export interface Bussata {
+  id: string;
+  /** Come vuole farsi chiamare chi bussa. È il nome che comparirà in DaProd. */
+  nome: string;
+  /** Che apparecchio è: «SM-A536B», «Il fisso di Marco». Per riconoscerlo. */
+  apparecchio: string;
+  /** Il segreto che solo chi ha bussato conosce. Non esce mai dal gateway. */
+  segreto: string;
+  quando: number;
+  stato: "attesa" | "accettata" | "rifiutata";
+  /** L'indirizzo da cui è arrivata: si mostra a chi decide. */
+  da: string;
+  /** Vero se a bussare è un altro computer con la suite, non una persona. */
+  computer?: boolean;
+  /** Compilati quando si accetta: da qui chi bussa ritira la sua credenziale. */
+  token?: string;
+  dispositivoId?: string;
+  /** Il ruolo dato accettando. */
+  ruolo?: Ruolo;
+}
+
+/** Una bussata come la vede chi decide: senza il segreto e senza il token. */
+export type BussataPubblica = Omit<Bussata, "segreto" | "token">;
+
 /* ------------------------------------------------------------- la libreria */
 
 /**
@@ -366,7 +413,28 @@ export interface FornitoreLibreria {
     app?: string;
     quanti?: number;
     chi: string;
-    dove?: "mie" | "bacheca";
+    /**
+     * Quali cose. **Tre, dalla 0.9.0.**
+     *
+     * - `mie`: le proprie, e quelle tenute da parte. È il caso normale.
+     * - `bacheca`: quelle che qualcuno ha deciso di far vedere.
+     * - `tutte`: **tutto quello che c'è sul computer.**
+     *
+     * ⚠ `tutte` ribalta una decisione presa il 22 agosto 2026 — «anche gli
+     * admin possono vedere ognuno solo le proprie foto» — e il motivo del
+     * ribaltamento è quello dichiarato il 5 settembre: «quando un utente
+     * diventa admin, l'admin dall'app può vedere le generazioni di tutti».
+     *
+     * Non è una svista dell'una o dell'altra volta: è cambiato cosa vuol dire
+     * essere admin. Prima era «decide sulla fila»; adesso è «governa il
+     * computer da fuori come se ci stesse davanti» — e chi sta davanti al
+     * computer vede già tutto, perché i file stanno sul suo disco. Chi decide
+     * di dare i permessi a qualcuno lo sta facendo entrare in casa.
+     *
+     * Chi non è admin e chiede `tutte` riceve `mie`: il divieto sta nel
+     * gateway, non qui.
+     */
+    dove?: "mie" | "bacheca" | "tutte";
   }): VoceLibreria[];
   /**
    * Il file di una voce: percorso sul disco e come si chiama. Null se non c'è
@@ -520,6 +588,14 @@ export interface FornitorePannello {
   revoca(id: string): void;
   /** Cambia il nome di un dispositivo collegato. */
   rinomina(id: string, nome: string): void;
+  /**
+   * Solo gli indirizzi, senza sapere chi sta chiedendo.
+   *
+   * Serve a chi ha appena bussato: nel momento in cui gli si dà il token non è
+   * ancora nessuno — `stato()` vuole un dispositivo, e qui il dispositivo
+   * esiste da mezzo secondo. Torna la stessa lista di `stato().indirizzi`.
+   */
+  soloIndirizzi?(): IndirizzoPubblico[];
 }
 
 /* ------------------------------------------------------------ il modello */
@@ -549,6 +625,29 @@ export interface FornitoreAi {
    * che si legga bene ad alta voce.
    */
   migliora(opzioni: { testo: string; app: string }): Promise<{ testo: string; parole?: string }>;
+  /**
+   * Legge una frase e dice **che lavoro sarebbe**.
+   *
+   * Nuovo dalla 0.9.0: è la casella in cui uno scrive «fammi una foto di un
+   * faro al tramonto» e si ritrova il modulo della Produzione già riempito.
+   * Torna `null` quando nessuna azione può servire quella frase — e non è un
+   * guasto, è la risposta giusta a una casella in cui la gente scrive quello
+   * che le pare.
+   *
+   * **Non fa partire niente**: dice cosa ha capito, e il sì lo dà chi ha
+   * scritto guardando il modulo. Una casella che manda in coda da sola è il
+   * modo più veloce di far generare a qualcuno una cosa che non aveva chiesto.
+   *
+   * Facoltativa: una suite che non ce l'ha risponde 501 invece di sparire.
+   */
+  capisci?(frase: string): Promise<{
+    azione: string;
+    valori: Record<string, string>;
+    fiducia: number;
+    perche?: string;
+    /** Chi ha risposto: `needle` in millisecondi, `modello` in secondi. */
+    da: string;
+  } | null>;
 }
 
 /* ------------------------------------------------------------- i preset */
@@ -844,6 +943,19 @@ export interface StileRemoto {
    * immagine dentro la Produzione immagini e non dentro quella dei brani.
    */
   tipo?: string;
+  /**
+   * Se è **uno stile** o **un prompt intero**: `stile` (di suo) o `prompt`.
+   *
+   * Nuovo dalla 0.9.0, chiesto il 5 settembre 2026: «lo stesso anche con i
+   * prompt — canzoni, immagini e video si possono condividere, in modo da
+   * usarli e modificarli a piacere».
+   *
+   * Sono la stessa cosa e non due: un nome, delle parole, un tipo, un padrone,
+   * e la possibilità di metterlo in vetrina. Cambia dove finiscono le parole —
+   * uno stile si aggiunge a quello che scrivi, un prompt lo sostituisce — ed è
+   * tutta lì la differenza.
+   */
+  genere?: string;
   /** `partenza`, `mio`, `preso`: da dove viene. */
   da: string;
   /** Chi l'ha fatto, se è arrivato da un altro. */
@@ -858,8 +970,13 @@ export interface StileRemoto {
 
 /** Chi sa rispondere sugli stili: lo passa lo shell. */
 export interface FornitoreStili {
-  /** I miei. Alla prima volta, quelli di partenza. */
-  miei(chi: string): StileRemoto[];
+  /**
+   * I miei. Alla prima volta, quelli di partenza.
+   *
+   * `genere` sceglie fra gli stili e i prompt; senza, tornano tutti e due —
+   * che è quello che serve alla scheda Stili, la quale li separa da sé.
+   */
+  miei(chi: string, genere?: string): StileRemoto[];
   /** Quelli che gli altri hanno messo in vetrina. */
   vetrina(chi: string): StileRemoto[];
   /** Salva uno stile: nuovo, o al posto di uno che c'era. */
@@ -870,6 +987,7 @@ export interface FornitoreStili {
       nome: string;
       testo: string;
       tipo?: string;
+      genere?: string;
       da?: string;
       daNome?: string;
     },

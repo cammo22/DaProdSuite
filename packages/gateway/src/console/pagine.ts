@@ -24,7 +24,21 @@
  * basso. Una scheda in fondo è un posto dove si passa ogni giorno; le
  * impostazioni si aprono, si guardano e si chiudono.
  */
-export const PAGINE = `<header>
+export const PAGINE = `<!--
+  Il visualizer, dietro a tutto.
+
+  Non e' una scheda e non e' una finestra: e' **lo sfondo della pagina** mentre
+  suona una canzone. Chiesto il 5 settembre 2026 — «lo sfondo del visualizer
+  parte sullo sfondo in random e effetti shuffle» — e la differenza fra questo
+  e una schermata dedicata e' tutta qui: si continua a girare per l'app, e
+  dietro c'e' la musica che si muove.
+
+  Nascosto finche' non suona niente: un canvas che ridisegna sessanta volte al
+  secondo dietro a una pagina ferma e' solo batteria buttata.
+-->
+<canvas id="visual" hidden></canvas>
+
+<header>
   <div class="marchio">DaProd<span>Suite</span></div>
   <div class="cresci"></div>
   <button class="chi" id="chi" hidden>
@@ -96,6 +110,22 @@ export const PAGINE = `<header>
     tasti rapidi per interagire con l'app».
   -->
   <section class="pagina" id="pag-casa">
+    <!--
+      Qualcuno ha scelto questo computer e aspetta un sì.
+
+      Sta **sopra** alla pausa e sopra al semaforo perché è l'unica cosa in
+      questa pagina che riguarda una persona che sta aspettando adesso: tutto il
+      resto racconta una macchina, e una macchina può aspettare.
+    -->
+    <div class="pausa bussano" id="fascia-bussate" hidden>
+      <span class="segno">&#9993;</span>
+      <div class="dentro">
+        <b id="bussate-chi">Qualcuno vuole collegarsi</b>
+        <small id="bussate-dove"></small>
+      </div>
+      <button class="mini" id="vedi-bussate">Guarda</button>
+    </div>
+
     <div class="pausa" id="fascia-pausa" hidden>
       <span class="segno">&#9208;</span>
       <div class="dentro">
@@ -143,6 +173,25 @@ export const PAGINE = `<header>
     <div class="scheda">
       <h2>Produzione</h2>
       <p class="sotto">Lo fa il computer. Tu scegli cosa, e lui lo mette in lavorazione.</p>
+
+      <!--
+        **Dillo e basta.** La casella in cui si scrive una frase in italiano e
+        il modulo qui sotto si riempie da solo.
+
+        E' il terzo passo che docs/AZIONI-E-MCP.md aveva segnato un anno fa e
+        che era rimasto aperto: il catalogo delle azioni e l'MCP c'erano gia',
+        mancava **il posto in cui scrivere la frase**. A rispondere e' Needle 2
+        se sul computer c'e', il modello di LM Studio se no.
+
+        Non manda in coda niente: riempie il modulo e ti fa vedere cosa ha
+        capito. Il si' lo dai tu, con il tasto di sempre.
+      -->
+      <div class="dillo">
+        <input id="dillo-cosa" autocomplete="off"
+               placeholder="Dillo e basta: «un faro al tramonto, in foto»">
+        <button id="dillo-vai" class="mini">Capiscimi</button>
+      </div>
+      <div class="avviso" id="dillo-avviso"></div>
       <div class="tastoni" id="elenco-azioni"></div>
       <div class="filtri" id="altre-azioni" style="margin-top:12px"></div>
       <form id="modulo" hidden onsubmit="return false"></form>
@@ -311,6 +360,15 @@ export const PAGINE = `<header>
       <div class="avviso" id="avviso-bacheca"></div>
     </div>
 
+    <!--
+      Gli stili e i prompt che gli altri fanno provare.
+
+      Stanno in cima e fuori dalla bacheca perche' non sono la stessa cosa: la
+      bacheca e' quello che le persone hanno **fatto**, questa e' la cassetta
+      degli attrezzi con cui l'hanno fatto.
+    -->
+    <div id="da-provare" hidden></div>
+
     <div class="filtri" id="filtri-daprod"></div>
     <div id="bacheca"></div>
     <div class="vuoto" id="bacheca-vuota" hidden>
@@ -328,6 +386,54 @@ export const PAGINE = `<header>
   solo perche' le parole sono corte. Se un giorno ne servisse una settima, la
   risposta non e' restringere ancora: e' che due di queste dicono la stessa cosa.
 -->
+<!--
+  La riga che dice cosa sta suonando.
+
+  Sta **sopra** alle schede e non al posto loro: mentre si ascolta si continua
+  a girare per l'app, ed e' tutto il punto di avere una fila. Toccarla apre il
+  palco; i tre tasti fanno quello che dicono.
+-->
+<div class="barraLettore" id="barra-lettore" hidden>
+  <button class="faccia" id="lettore-faccia" title="A schermo intero"></button>
+  <button class="dentro" id="lettore-apri">
+    <b id="lettore-nome"></b>
+    <small id="lettore-sotto"></small>
+  </button>
+  <button class="tondo" id="lettore-prima" title="Precedente">&#9198;</button>
+  <button class="tondo" id="lettore-play" title="Pausa">&#9208;</button>
+  <button class="tondo" id="lettore-poi" title="Prossimo">&#9197;</button>
+  <button class="tondo" id="lettore-chiudi" title="Chiudi">&#10005;</button>
+</div>
+
+<!--
+  Il palco: quello che suona, grande quanto lo schermo.
+
+  Non e' la lente con un nome nuovo. La lente apriva **un file** e chiudendola
+  finiva tutto; il palco e' una finestra su una fila che va avanti lo stesso —
+  si apre, si chiude, e la musica non se ne accorge.
+
+  Si esce trascinando su o giu', che e' il gesto che ogni app di foto ha
+  insegnato a tutti. Il tasto con la X c'e' lo stesso, per chi e' col mouse.
+-->
+<div class="palcoLettore" id="palco" hidden>
+  <div class="cima">
+    <div class="titolo">
+      <b id="palco-nome"></b>
+      <small id="palco-sotto"></small>
+    </div>
+    <button class="tondo" id="palco-cambia" title="Cambia effetto">&#9881;</button>
+    <button class="tondo" id="palco-chiudi" title="Chiudi">&#10005;</button>
+  </div>
+  <div class="dentro" id="palco-dentro"></div>
+  <div class="sotto">
+    <span class="effetto" id="palco-effetto"></span>
+    <div class="cresci"></div>
+    <button class="tondo" id="palco-prima" title="Precedente">&#9198;</button>
+    <button class="tondo grosso" id="palco-play" title="Pausa">&#9208;</button>
+    <button class="tondo" id="palco-poi" title="Prossimo">&#9197;</button>
+  </div>
+</div>
+
 <nav class="fondo" id="fondo" hidden>
   <button data-pagina="casa" class="on"><span class="segno">&#9673;</span>Casa</button>
   <button data-pagina="produzione"><span class="segno">&#10010;</span>Produci</button>

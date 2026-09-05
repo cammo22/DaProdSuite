@@ -460,7 +460,31 @@ export const STILE = `  :root {
   }
   .faccia-tonda.grande { width: 66px; height: 66px; font-size: 24px; }
   .posta .vetro { display: block; width: 100%; border: 0; padding: 0; background: #000; cursor: pointer; position: relative; }
-  .posta .vetro img, .posta .vetro video { width: 100%; display: block; max-height: 66vh; object-fit: cover; }
+  /**
+   * Quanto e' grande una cosa in bacheca.
+   *
+   * ⚠ Il difetto del 5 settembre 2026: «la schermata daprod deve essere
+   * aggiustata a livello grafico, troppo grandi i contenuti soprattutto su
+   * dispositivi ad alta risoluzione».
+   *
+   * Era «max-height: 66vh», e su un telefono alto quella e' **due terzi di
+   * schermo per un riquadro**: si scorreva per venti secondi per vedere tre
+   * cose. Adesso il tetto e' il piu' stretto fra i due terzi dello schermo e
+   * 340 px, e su uno schermo largo comanda il rapporto della foto invece del
+   * ritaglio.
+   *
+   * «object-fit: contain» invece di «cover»: tagliare la faccia a
+   * un'immagine per farla stare in un rettangolo va bene per una miniatura,
+   * non per la cosa che uno ha deciso di far vedere agli altri.
+   */
+  .posta .vetro img, .posta .vetro video {
+    width: 100%; display: block;
+    max-height: min(52vh, 340px);
+    object-fit: contain;
+  }
+  @media (min-width: 620px) {
+    .posta .vetro img, .posta .vetro video { max-height: min(56vh, 420px); }
+  }
   .posta .senza { padding: 26px; text-align: center; font-size: 34px; color: #ffffff55; background: linear-gradient(150deg, #1b1533, #0b1a20); }
   .posta .parole { padding: 11px 14px 4px; font-size: 13.5px; overflow-wrap: anywhere; }
   .posta .piedi { display: flex; gap: 8px; padding: 10px 14px 13px; align-items: center; }
@@ -608,6 +632,138 @@ export const STILE = `  :root {
   .pausa .dentro { flex: 1; min-width: 0; }
   .pausa b { display: block; font-size: 13.5px; }
   .pausa small { color: var(--dim); font-size: 12px; }
+  /* Quando qualcuno bussa la fascia cambia colore: il giallo dice «aspetta»,
+     il viola dice «qualcuno ti sta chiedendo qualcosa». Due cose diverse non
+     possono avere lo stesso colore nello stesso posto. */
+  .pausa.bussano {
+    border-color: #8b5cf655;
+    background: linear-gradient(180deg, #1a1230, var(--panel));
+  }
+  .pausa.bussano .segno { color: var(--accent); }
+
+  /* Una riga della rete: chi bussa, o un altro computer. */
+  .bussa {
+    display: flex; gap: 10px; align-items: center;
+    padding: 10px 12px; margin-top: 8px;
+    background: var(--panel2); border: 1px solid var(--line2); border-radius: 12px;
+  }
+  .bussa .cresce { flex: 1; min-width: 0; }
+  .bussa b { display: block; font-size: 13.5px; }
+  .bussa small { color: var(--dim); font-size: 11.5px; display: block; overflow-wrap: anywhere; }
+
+  /* --------------------------------------------------------- dillo e basta */
+  /* Una riga sola: la casella e il tasto. Sta in cima alla Produzione perche'
+     e' il modo piu' corto per arrivare a un lavoro, e quello piu' corto va
+     davanti agli altri. */
+  .dillo { display: flex; gap: 8px; margin: 12px 0 4px; }
+  .dillo input { flex: 1; min-width: 0; margin: 0; }
+  .dillo button { flex: 0 0 auto; }
+
+  /* ------------------------------------------------------- il visualizer */
+  /* Dietro a tutto, e senza toccare niente: nessun evento del mouse arriva
+     qui, quindi la pagina sopra funziona esattamente come prima. */
+  /**
+   * Dietro a tutto, e **con uno z-index negativo**.
+   *
+   * La prima stesura lo metteva a zero e alzava a uno la testata, il corpo e la
+   * barra delle schede. Sembra la stessa cosa e non lo era: quella riga
+   * arrivava dopo la regola della testata e le portava via il «position:
+   * sticky», e dentro la WebView di Android il risultato era che la lente e il
+   * palco si vedevano quasi neri. Trovato provando sull'app, non leggendo.
+   *
+   * Con «-1» il canvas sta sotto al contenuto della pagina e sopra allo sfondo
+   * del corpo senza che nessun altro debba cambiare: e' il modo classico, e non
+   * tocca niente di quello che c'era prima.
+   */
+  #visual {
+    position: fixed; inset: 0; z-index: -1;
+    width: 100%; height: 100%;
+    pointer-events: none;
+  }
+  /* Con il visualizer acceso lo sfondo del corpo si smorza: due sfumature
+     sovrapposte sono fango, e quella che deve vedersi e' quella che si muove. */
+  body.convisual { background-image: none; background-color: #05060a; }
+
+  /* ----------------------------------------------------- la barra che suona */
+  .barraLettore {
+    position: fixed; left: 0; right: 0; z-index: 30;
+    bottom: calc(var(--fondo-alto) + env(safe-area-inset-bottom));
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 10px;
+    background: #0d0f16f2; backdrop-filter: blur(12px);
+    border-top: 1px solid var(--line2);
+  }
+  .barraLettore .faccia {
+    width: 40px; height: 40px; flex: 0 0 auto; border-radius: 10px;
+    background: var(--panel2) center/cover no-repeat;
+    border: 1px solid var(--line2); color: var(--txt);
+    display: grid; place-items: center; font-size: 16px; cursor: pointer; padding: 0;
+  }
+  .barraLettore .dentro {
+    flex: 1; min-width: 0; text-align: left; background: none; border: 0;
+    color: var(--txt); cursor: pointer; padding: 0;
+  }
+  .barraLettore .dentro b {
+    display: block; font-size: 13px; font-weight: 600;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .barraLettore .dentro small {
+    display: block; color: var(--dim); font-size: 11px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .barraLettore .tondo { width: 32px; height: 32px; font-size: 14px; }
+  /* Su uno schermo stretto i tasti «prima» e «chiudi» stanno di troppo: play e
+     prossimo sono quelli che si premono, gli altri stanno nel palco. */
+  @media (max-width: 400px) {
+    #lettore-prima, #lettore-chiudi { display: none; }
+  }
+  /* Con la barra accesa il fondo della pagina scende, o le ultime cose
+     finirebbero sotto. */
+  body.consuono { padding-bottom: calc(var(--fondo-alto) + 58px + env(safe-area-inset-bottom)); }
+
+  /* --------------------------------------------------------------- il palco */
+  /**
+   * ⚠ Si chiama «palcoLettore» e non «palco», e la ragione e' un difetto vero.
+   *
+   * La lente — il riquadro che si apre toccando una cosa in galleria — ha
+   * dentro di se' un elemento con classe «palco», che e' il posto dove sta la
+   * foto. Chiamando «palco» anche questo, le regole di qui sono cadute anche
+   * su quello: lo sfondo quasi nero e lo z-index 80 di un riquadro a schermo
+   * intero, addosso a un pezzo di lente. Risultato: dentro l'app, la lente si
+   * apriva **quasi nera**, con il titolo e i tasti dietro a una lastra.
+   *
+   * Trovato guardando dentro la WebView con dentro-la-pagina.mjs, non
+   * leggendo il codice: da fuori sembrava un problema di «backdrop-filter».
+   */
+  .palcoLettore {
+    position: fixed; inset: 0; z-index: 80;
+    background: #04050afa;
+    display: flex; flex-direction: column;
+    padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom);
+    animation: entra .18s ease-out;
+  }
+  .palcoLettore .cima { display: flex; align-items: center; gap: 10px; padding: 10px 14px; }
+  .palcoLettore .cima .titolo { flex: 1; min-width: 0; }
+  .palcoLettore .cima .titolo b {
+    display: block; font-size: 14px; font-weight: 600;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .palcoLettore .cima .titolo small { display: block; color: var(--dim); font-size: 11.5px; }
+  .palcoLettore .dentro {
+    flex: 1; min-height: 0; display: grid; place-items: center; padding: 6px 12px;
+    transition: transform .12s linear, opacity .12s linear;
+  }
+  .palcoLettore .dentro img, .palcoLettore .dentro video {
+    max-width: 100%; max-height: 100%; display: block;
+    border-radius: 12px; object-fit: contain; background: #000;
+  }
+  .palcoLettore .dentro .copertinona {
+    width: min(72vw, 340px); aspect-ratio: 1; border-radius: 20px; object-fit: cover;
+    box-shadow: 0 24px 70px -24px #000;
+  }
+  .palcoLettore .sotto { display: flex; align-items: center; gap: 10px; padding: 10px 16px 18px; }
+  .palcoLettore .sotto .effetto { color: var(--fioco); font-size: 11.5px; letter-spacing: .4px; }
+  .palcoLettore .tondo.grosso { width: 54px; height: 54px; font-size: 22px; border-color: var(--accent); }
 
   /* ------------------------------------------------------------- gli stili */
   /* Una carta per stile: il nome grande, le parole sotto. Si tocca per usarlo,

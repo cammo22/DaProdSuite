@@ -92,6 +92,7 @@ import { join, normalize } from "node:path";
 import { elencoAzioni, eseguiAzione, type Esecutore } from "./azioni";
 import { paginaConsole } from "./console";
 import { Remoto } from "./remoto";
+import type { Rete } from "./rete";
 import type {
   Dispositivo,
   DispositivoPubblico,
@@ -153,6 +154,14 @@ export interface GatewayOpzioni {
   chiacchierata?: FornitoreChiacchierata;
   /** Chi tiene gli stili musicali di ogni persona. */
   stili?: FornitoreStili;
+  /**
+   * L'annunciatore sulla rete locale, se questa suite ce l'ha.
+   *
+   * Facoltativo come gli altri: le prove costruiscono un gateway nudo, e un
+   * gateway senza annuncio è un gateway che si raggiunge col codice — cioè
+   * quello che si faceva fino alla 0.8.2.
+   */
+  rete?: Rete;
 }
 
 /** Ogni quanto il gateway manda un segno di vita a chi è in ascolto. */
@@ -215,6 +224,7 @@ export class Gateway {
   private macchina: FornitoreMacchina | undefined;
   private chiacchierata: FornitoreChiacchierata | undefined;
   private stili: FornitoreStili | undefined;
+  private rete: Rete | undefined;
 
   constructor(opzioni: GatewayOpzioni) {
     this.remoto = opzioni.remoto;
@@ -229,6 +239,7 @@ export class Gateway {
     this.macchina = opzioni.macchina;
     this.chiacchierata = opzioni.chiacchierata;
     this.stili = opzioni.stili;
+    this.rete = opzioni.rete;
     this.server = createServer((req, res) => {
       void this.maneggia(req, res);
     });
@@ -344,6 +355,66 @@ export class Gateway {
         return;
       }
 
+      /**
+       * Bussare: le altre due rotte senza token, e per lo stesso motivo.
+       *
+       * Chi bussa non ha ancora una credenziale — è tutto il punto. Quello che
+       * ha, dalla prima riga, è un **segreto suo**, che gli serve per venire a
+       * ritirare la risposta: senza, chiunque sulla stessa rete potrebbe
+       * prendersi il token di un altro sapendone l'id.
+       *
+       * `/bussa` è protetta dallo stesso conto dei tentativi
+       * dell'accoppiamento, che sta dentro `Remoto`: non è una rotta che si può
+       * martellare.
+       */
+      if (percorso === "/bussa" && req.method === "POST") {
+        const dati = (corpo ?? {}) as { nome?: string; apparecchio?: string; computer?: boolean };
+        const esito = this.remoto.bussa({
+          nome: String(dati.nome ?? ""),
+          apparecchio: String(dati.apparecchio ?? ""),
+          da: daDove(req),
+          computer: dati.computer === true,
+        });
+        if ("errore" in esito) {
+          this.errore(res, 429, esito.errore);
+          return;
+        }
+        this.json(res, 201, {
+          attesa: esito.bussata.id,
+          segreto: esito.segreto,
+          computer: this.computer,
+          versione: this.versione,
+        });
+        this.aggiorna();
+        return;
+      }
+      const laBussata = percorso.match(/^\/bussa\/([^/]+)$/);
+      if (laBussata && req.method === "GET") {
+        const esito = this.remoto.esitoBussata(
+          decodeURIComponent(laBussata[1] ?? ""),
+          url.searchParams.get("segreto") ?? "",
+        );
+        if (!esito) {
+          // Scaduta, o segreto sbagliato: per chi chiede è la stessa cosa, e
+          // dirlo in due modi diversi sarebbe dire a chi prova che ci ha preso.
+          this.errore(res, 404, "Questa richiesta non c'è più. Riprova a bussare.");
+          return;
+        }
+        if (esito.stato === "accettata") {
+          this.json(res, 200, {
+            stato: "accettata",
+            token: esito.token,
+            dispositivo: esito.dispositivo,
+            computer: this.computer,
+            versione: this.versione,
+            basi: this.pannello?.soloIndirizzi?.().map((i) => i.base) ?? [],
+          });
+          return;
+        }
+        this.json(res, 200, { stato: esito.stato, computer: this.computer });
+        return;
+      }
+
       const dispositivo = this.chiE(req, url);
       if (!dispositivo) {
         this.errore(res, 401, "Token mancante o non riconosciuto.");
@@ -368,7 +439,19 @@ export class Gateway {
         this.json(
           res,
           200,
-          elencoAzioni(dispositivo, this.stili ? (chi) => this.stili!.miei(chi) : undefined),
+          /**
+           * Nel campo «uno stile pronto» ci vanno **gli stili**, non i prompt.
+           *
+           * Dalla 0.9.0 lo stesso archivio tiene tutte e due le cose (vedi
+           * `StileRemoto.genere`): un prompt intero dentro un menu che si
+           * chiama «stile» sarebbe una parola che promette una cosa e ne fa
+           * un'altra — lo stile si aggiunge a quello che scrivi, il prompt lo
+           * sostituisce.
+           */
+          elencoAzioni(
+            dispositivo,
+            this.stili ? (chi) => this.stili!.miei(chi, "stile") : undefined,
+          ),
         );
         return;
       }
@@ -563,6 +646,28 @@ export class Gateway {
        * meno per la generazione che sta girando, e chi non decide non ha modo
        * di sapere cosa sta facendo il computer in quel momento.
        */
+      /**
+       * Una frase, e che lavoro sarebbe.
+       *
+       * È la rotta della casella «dillo e basta» in Produzione. Non mette
+       * niente in coda: dice quale azione e con che campi, e la pagina riempie
+       * il modulo. Chi legge decide.
+       */
+      if (percorso === "/capisci" && req.method === "POST") {
+        if (!this.ai?.capisci) {
+          return this.errore(res, 501, "Su questo computer non c'\u00e8 nessuno che capisca le frasi.");
+        }
+        const frase = String(((corpo ?? {}) as { frase?: string }).frase ?? "").slice(0, 500);
+        if (!frase.trim()) return this.errore(res, 400, "Scrivi cosa vuoi.");
+        const capito = await this.ai.capisci(frase);
+        if (!capito) {
+          this.json(res, 200, { ok: false, motivo: "Non ho capito che lavoro sarebbe." });
+          return;
+        }
+        this.json(res, 200, { ok: true, ...capito });
+        return;
+      }
+
       if (percorso === "/ai/migliora" && req.method === "POST") {
         if (!this.ai) return this.errore(res, 501, "Questa suite non ha un modello a cui chiedere.");
         if (dispositivo.ruolo !== "admin") {
@@ -795,7 +900,16 @@ export class Gateway {
               // Chi guarda decide cosa vede: le sue, o quelle che qualcuno ha
               // messo in bacheca. Non e' un filtro comodo, e' il permesso.
               chi: dispositivo.id,
-              dove: url.searchParams.get("dove") === "bacheca" ? "bacheca" : "mie",
+              /**
+               * **«Tutte» lo può chiedere solo chi decide.**
+               *
+               * Il controllo sta qui e non nello shell, come tutti gli altri
+               * permessi: lo shell sa dove stanno i file, il gateway sa chi sta
+               * chiedendo. Chi non è admin e prova a chiedere «tutte» non
+               * riceve un errore — riceve le sue, che è quello che avrebbe
+               * ricevuto comunque.
+               */
+              dove: dovePuoiGuardare(url.searchParams.get("dove"), dispositivo),
             }) ?? [],
         });
         return;
@@ -1150,6 +1264,131 @@ export class Gateway {
         return;
       }
 
+      /* -------------------------------------------------- la rete di casa */
+
+      /**
+       * Chi c'è, in rete, adesso — e chi sta bussando alla porta.
+       *
+       * Una rotta sola per due cose che si guardano insieme: l'elenco dei
+       * computer con la suite accesa, e la fila di chi ha chiesto di entrare.
+       * Chi non decide vede i computer (gli servono per sapere dove potrebbe
+       * spostarsi) ma non le bussate: quelle sono decisioni, e le decisioni
+       * sono di chi ha il computer.
+       */
+      if (percorso === "/rete" && req.method === "GET") {
+        // Un giro di «ehi» a ogni apertura: chi apre il pannello non deve
+        // aspettare fino a otto secondi per vedere un computer acceso da un'ora.
+        this.rete?.chiediChiCe();
+        const decide = dispositivo.ruolo === "admin";
+        this.json(res, 200, {
+          io: {
+            id: this.remoto.ioSullaRete(),
+            nome: this.computer,
+            versione: this.versione,
+            basi: this.pannello?.soloIndirizzi?.().map((i) => i.base) ?? [],
+          },
+          /**
+           * Ogni computer esce di qui con **almeno un indirizzo**.
+           *
+           * Chi si annuncia li manda già; chi non ce li ha (una versione più
+           * vecchia, una scheda che non sa dire il suo IP) resterebbe una riga
+           * senza il tasto per aprirlo. L'indirizzo da cui è arrivato
+           * l'annuncio è quello che di sicuro funziona: si costruisce qui, e
+           * non nella pagina, così la console resta una pagina che non scrive
+           * indirizzi di nessuno.
+           */
+          pari: (this.rete?.elenco() ?? []).map((p) => ({
+            ...p,
+            basi: p.basi.length ? p.basi : [`http://${p.visto_da}:${p.porta}`],
+          })),
+          annuncia: Boolean(this.rete),
+          bussate: decide ? this.remoto.bussateVive() : [],
+        });
+        return;
+      }
+
+      /**
+       * Il sì o il no a chi ha bussato.
+       *
+       * **Solo chi decide**, e per una ragione che vale la pena scrivere: qui
+       * si crea una credenziale. Un ospite che potesse accettare bussate
+       * potrebbe far entrare chi vuole, e da quel momento il computer non
+       * sarebbe più di chi ci sta davanti.
+       */
+      const laRisposta = percorso.match(/^\/bussate\/([^/]+)$/);
+      if (laRisposta && req.method === "POST") {
+        if (dispositivo.ruolo !== "admin") {
+          return this.errore(res, 403, "Far entrare qualcuno lo decide chi ha il computer.");
+        }
+        const dati = (corpo ?? {}) as { accetta?: boolean; ruolo?: string };
+        const esito = this.remoto.rispondiAllaBussata(
+          decodeURIComponent(laRisposta[1] ?? ""),
+          dati.accetta !== false,
+          dati.ruolo === "admin" ? "admin" : "ospite",
+        );
+        if ("errore" in esito) {
+          this.errore(res, 409, esito.errore);
+          return;
+        }
+        this.json(res, 200, {
+          ok: true,
+          dispositivo: esito.dispositivo ? senzaToken(esito.dispositivo) : undefined,
+        });
+        this.aggiorna();
+        return;
+      }
+
+      /**
+       * Passare un lavoro a un altro computer.
+       *
+       * Chiesto il 5 settembre 2026: «tutti i pc possono collaborare, nel caso
+       * ci sono 2 pc collegati posso inviare i messaggi in coda agli altri
+       * computer». È la cosa che rende due computer una coppia invece di due
+       * computer: quando questo ha la fila piena — o non ha il modello che
+       * serve — il lavoro va di là.
+       *
+       * **Come si fa, in una riga:** questo computer si è accoppiato con
+       * quell'altro come si accoppia un telefono (bussando, e l'altro ha
+       * accettato), quindi ha un token suo. Passare un lavoro è creare una
+       * richiesta là con quel token. Nessun protocollo nuovo: la strada è
+       * quella che l'app usa da sempre, ed è quella che sappiamo funzionare.
+       */
+      if (percorso === "/rete/passa" && req.method === "POST") {
+        if (dispositivo.ruolo !== "admin") {
+          return this.errore(res, 403, "Passare un lavoro a un altro computer lo decide chi ha il computer.");
+        }
+        const dati = (corpo ?? {}) as {
+          pari?: string;
+          base?: string;
+          token?: string;
+          richiesta?: { tipo?: string; app?: string; testo?: string; opzioni?: Record<string, string> };
+        };
+        const dove = dati.base || this.rete?.trova(String(dati.pari ?? ""))?.basi[0];
+        if (!dove || !dati.token) {
+          return this.errore(res, 400, "Non so a chi passarlo: manca l'indirizzo o la credenziale.");
+        }
+        try {
+          const risposta = await fetch(`${dove.replace(/\/$/, "")}/richieste`, {
+            method: "POST",
+            headers: {
+              "content-type": "application/json",
+              authorization: `Bearer ${dati.token}`,
+            },
+            body: JSON.stringify(dati.richiesta ?? {}),
+            signal: AbortSignal.timeout(10_000),
+          });
+          const testo = await risposta.text();
+          if (!risposta.ok) {
+            this.errore(res, 502, `L'altro computer ha detto di no (${risposta.status}).`);
+            return;
+          }
+          this.json(res, 201, { ok: true, la: JSON.parse(testo || "{}") });
+        } catch {
+          this.errore(res, 502, "L'altro computer non risponde: forse è spento o ha cambiato rete.");
+        }
+        return;
+      }
+
       /* ------------------------------------------- la chiacchierata */
 
       /** Con chi si può parlare: i modelli installati su quel computer. */
@@ -1274,8 +1513,11 @@ export class Gateway {
        * browser*, non di quella persona. Cambiavi dispositivo e non c'era più.
        */
       if (percorso === "/stili" && req.method === "GET") {
+        // `genere` sceglie fra stili e prompt; senza, tornano tutti e due.
         if (!this.stili) return this.json(res, 200, { stili: [] });
-        this.json(res, 200, { stili: this.stili.miei(dispositivo.id) });
+        this.json(res, 200, {
+          stili: this.stili.miei(dispositivo.id, url.searchParams.get("genere") ?? undefined),
+        });
         return;
       }
 
@@ -1286,12 +1528,14 @@ export class Gateway {
           nome?: string;
           testo?: string;
           tipo?: string;
+          genere?: string;
         };
         const salvato = this.stili.salva(dispositivo.id, {
           id: dati.id,
           nome: String(dati.nome ?? ""),
           testo: String(dati.testo ?? ""),
           tipo: dati.tipo ? String(dati.tipo) : undefined,
+          genere: dati.genere ? String(dati.genere) : undefined,
         });
         if (!salvato) return this.errore(res, 400, "Servono un nome e delle parole.");
         this.json(res, 201, { ok: true, stile: salvato });
@@ -1318,12 +1562,14 @@ export class Gateway {
           nome?: string;
           testo?: string;
           tipo?: string;
+          genere?: string;
           daNome?: string;
         };
         const preso = this.stili.salva(dispositivo.id, {
           nome: String(dati.nome ?? ""),
           testo: String(dati.testo ?? ""),
           tipo: dati.tipo ? String(dati.tipo) : undefined,
+          genere: dati.genere ? String(dati.genere) : undefined,
           da: "preso",
           daNome: dati.daNome ? String(dati.daNome).slice(0, 40) : undefined,
         });
@@ -1986,6 +2232,41 @@ export function indirizzoDellaFoto(d: { id: string; foto?: string }): string | u
   if (!d.foto) return undefined;
   const versione = createHash("sha1").update(d.foto).digest("hex").slice(0, 10);
   return `/io/foto/${encodeURIComponent(d.id)}?v=${versione}`;
+}
+
+/**
+ * Da dove sta bussando qualcuno, in una riga da mostrare a chi decide.
+ *
+ * **Non è una prova di niente**, ed è il motivo per cui non si usa per
+ * decidere: dietro un proxy `remoteAddress` è il proxy, e `X-Forwarded-For` lo
+ * scrive chi vuole. Serve a una cosa sola e la fa bene: far riconoscere a chi
+ * guarda il pannello che quella bussata arriva dal telefono che ha in mano —
+ * «192.168.1.42» accanto a un nome è la differenza fra accettare con
+ * cognizione e accettare a caso.
+ */
+function daDove(req: IncomingMessage): string {
+  const diretto = req.socket.remoteAddress ?? "";
+  // Node scrive gli IPv4 dentro IPv6 come «::ffff:192.168.1.42».
+  return diretto.replace(/^::ffff:/, "").slice(0, 45) || "sconosciuto";
+}
+
+/**
+ * Da che parte questa persona può guardare la libreria.
+ *
+ * `tutte` è la novità della 0.9.0 e vale solo per chi decide: chiesto il 5
+ * settembre 2026, «quando un utente diventa admin, l'admin dall'app può vedere
+ * le generazioni di tutti». Chi non è admin e la chiede ottiene `mie` — un
+ * rifiuto qui non aggiungerebbe sicurezza (il filtro c'è comunque) e
+ * toglierebbe una schermata a chi ha una versione dell'app più nuova del
+ * computer.
+ */
+function dovePuoiGuardare(
+  chiesto: string | null,
+  dispositivo: Dispositivo,
+): "mie" | "bacheca" | "tutte" {
+  if (chiesto === "bacheca") return "bacheca";
+  if (chiesto === "tutte" && dispositivo.ruolo === "admin") return "tutte";
+  return "mie";
 }
 
 function senzaToken(d: Dispositivo): DispositivoPubblico {

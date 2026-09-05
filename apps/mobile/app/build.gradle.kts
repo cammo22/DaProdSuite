@@ -41,8 +41,8 @@ android {
         targetSdk = 34
         // Segue la versione della suite: l'app e il gateway si tengono per mano,
         // e sapere che numero ha in mano il telefono serve quando qualcosa non torna.
-        versionCode = 20
-        versionName = "0.8.2"
+        versionCode = 21
+        versionName = "0.9.0"
     }
 
     buildTypes {
@@ -64,6 +64,9 @@ android {
     }
     buildFeatures {
         viewBinding = true
+        // Serve a `BuildConfig.DEBUG`, che decide se la pagina dentro la
+        // WebView si puo' ispezionare da un computer. Vedi `preparaWeb`.
+        buildConfig = true
     }
 }
 
@@ -89,4 +92,15 @@ dependencies {
 
     // Lavori in background: il polling che porta le notifiche anche ore dopo.
     implementation("androidx.work:work-runtime-ktx:2.9.1")
+
+    /*
+     * La sessione e la notifica della musica.
+     *
+     * **Non è un lettore.** Il suono lo fa la pagina dentro la WebView, che è
+     * l'unico posto da cui il visualizer può sentirlo; questa libreria serve a
+     * due cose sole: la MediaSession (i tasti sulle cuffie e sulla schermata di
+     * blocco) e lo stile della notifica. Media3/ExoPlayer farebbe il resto, ma
+     * il resto qui non serve: sarebbero tre megabyte per non usarne il lettore.
+     */
+    implementation("androidx.media:media:1.7.0")
 }

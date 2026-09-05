@@ -30,7 +30,19 @@ import { createRequire } from "node:module";
 const require = createRequire(import.meta.url);
 const G = require(join(import.meta.dirname, "..", "..", "..", "packages", "gateway", "dist", "index.js"));
 
-const radice = mkdtempSync(join(tmpdir(), "daprod-banco-"));
+/**
+ * Dove il banco tiene le sue cose.
+ *
+ * Di suo, una cartella nuova a ogni accensione: e' quello che serve a chi lo
+ * apre per guardare una schermata, e non lascia in giro niente.
+ *
+ * Con `BANCO_DATI` si fissa. Serve a chi sta provando **con un telefono
+ * collegato**: a ogni riavvio del banco i token cambiano, e il telefono si
+ * ritroverebbe scollegato a ogni ricompilazione — cioe' dieci volte in
+ * un'ora. Con la cartella ferma, l'accoppiamento resta.
+ */
+const radice = process.env.BANCO_DATI || mkdtempSync(join(tmpdir(), "daprod-banco-"));
+mkdirSync(radice, { recursive: true });
 const archivio = new G.Archivio(join(radice, "remoto.json"));
 const remoto = new G.Remoto(archivio, radice);
 
@@ -299,6 +311,25 @@ const gateway = new G.Gateway({
       testo: `[${app}] ${testo}, scritto meglio`,
       parole: "[Verse] due parole cantate",
     }),
+    /**
+     * Un finto Needle: guarda tre parole e decide.
+     *
+     * Non deve essere bravo — deve far comparire il modulo riempito, che e' la
+     * cosa che si guarda con gli occhi. Il vero sta in `needle.ts`.
+     */
+    capisci: async (frase) => {
+      const f = frase.toLowerCase();
+      if (/video|clip|filmat/.test(f)) {
+        return { azione: "genera.video", valori: { prompt: frase, secondi: "5" }, fiducia: 0.9, perche: "«video» → una clip", da: "needle" };
+      }
+      if (/canzon|brano|music/.test(f)) {
+        return { azione: "genera.brano", valori: { descrizione: frase, secondi: "60" }, fiducia: 0.9, perche: "«canzone» → un brano", da: "needle" };
+      }
+      if (/foto|immagin|quadro|disegn/.test(f)) {
+        return { azione: "genera.immagine", valori: { prompt: frase, quante: "1" }, fiducia: 0.9, perche: "«foto» → un'immagine", da: "needle" };
+      }
+      return null;
+    },
   },
   preset: {
     elenco: () => [{ id: "p1", app: "musica", nome: "il mio solito", testo: "nu disco", campi: {} }],
@@ -339,8 +370,19 @@ const gateway = new G.Gateway({
 
 /* --------------------------------------------------------- si accende */
 
-const invito = remoto.nuovoInvito("admin");
-const esito = remoto.accoppia(invito.codice, "chi prova");
+/**
+ * Chi prova: si accoppia una volta, e le volte dopo si ritrova.
+ *
+ * Con la cartella dei dati fissa (`BANCO_DATI`) l'archivio sopravvive al
+ * riavvio, e riaccoppiarsi con lo stesso nome fallisce — il nome e' gia' preso,
+ * da se stessi. Prima questa riga faceva morire il banco all'avvio con un
+ * errore che non diceva niente.
+ */
+const gia = remoto.archivi.datiCorrenti.dispositivi.find((d) => d.nome === "chi prova");
+const esito = gia
+  ? { dispositivo: gia, token: gia.token }
+  : remoto.accoppia(remoto.nuovoInvito("admin").codice, "chi prova");
+if ("errore" in esito) throw new Error(esito.errore);
 
 // Qualche richiesta finta, per riempire il Riepilogo e vedere i numeri.
 for (const [testo, stato] of [
@@ -362,7 +404,15 @@ for (const [testo, stato] of [
 }
 archivio.scriviAdesso();
 
-const porta = await gateway.ascolta(0, "127.0.0.1");
+/**
+ * La porta: casuale di suo, fissa se qualcuno la chiede.
+ *
+ * Casuale va bene per chi apre il banco a mano e copia l'indirizzo. Serve
+ * poterla fissare (`BANCO_PORTA=8799`) a chi guida il banco da fuori — un
+ * browser pilotato, una prova che confronta due schermate — e non ha modo di
+ * leggere un numero che cambia ogni volta.
+ */
+const porta = await gateway.ascolta(Number(process.env.BANCO_PORTA) || 0, "127.0.0.1");
 const base = `http://127.0.0.1:${porta}`;
 
 console.log("\n  Il banco è acceso.\n");

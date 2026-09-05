@@ -12,7 +12,142 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ## Non ancora pubblicato
 
-Niente: la 0.8.2 è appena uscita.
+Niente: la 0.9.0 è appena uscita.
+
+---
+
+## 0.9.0 — Il telefono trova il computer
+
+La più grossa da quando esiste l'app del telefono. Cambia il **primo minuto**,
+che era la parte peggiore: non c'è più un codice da farsi dettare.
+
+### Adesso il telefono li trova da solo
+
+Apri l'app, scrivi come ti chiami, e sotto compare **l'elenco dei computer di
+casa** con la suite accesa. Ne tocchi uno: di là arriva un avviso — una
+notifica di Windows, e una fascia in cima a DaProdConnessione con due tasti — e
+chi ci sta davanti dice di sì. Da quel momento sei collegato, come prima.
+
+Il codice resta, sotto una riga da toccare, e serve ancora: **da fuori casa
+nessun annuncio arriva**. Chi l'ha già usato una volta se lo ritrova aperto,
+con dentro l'indirizzo dell'ultima volta.
+
+Sul computer c'è la scheda nuova **«La rete di casa»**, nelle impostazioni: chi
+sta bussando, e gli altri computer con la suite accesa. Due computer accesi in
+casa si vedono, e uno può passare un lavoro all'altro.
+
+*Sul perché non si è usato [tailcat](https://github.com/tailscale/tailcat),
+uscito da poco e chiesto espressamente: è un trasporto, non un sistema di
+utenti. Non ha elenco, non ha identità, non ha permessi, ed è scritto in Go —
+ci si scambia comunque un indirizzo fuori banda, cioè quello che il QR fa già.
+Resta segnato come possibile sostituto del tunnel, non di questo.*
+
+### Tre difetti dell'app, e tutti e tre si vedevano
+
+Sono quelli detti così: «spesso crasha e spesso non si collega».
+
+- **La pagina moriva e si portava via l'app.** La WebView di Android gira in un
+  processo suo, che il sistema uccide quando la memoria scarseggia — e questa
+  pagina tiene immagini, video e un canvas che disegna sessanta volte al
+  secondo. Quando quel processo muore, Android di suo **fa morire anche
+  l'app**: si chiude e basta, senza un errore. Adesso l'app se ne accorge,
+  butta la pagina morta, ne fa una nuova e riapre la suite. Provato mandando un
+  crash vero alla pagina: l'app resta in piedi e torna da sola in tre secondi.
+- **Cambiando indirizzo il computer si perdeva per sempre.** Cambia il router,
+  o il PC riparte e prende un IP diverso: tutti gli indirizzi salvati muoiono
+  insieme, e l'unica strada era rifare il codice — cioè tornare davanti al PC.
+  Adesso il telefono si ricorda **chi** è quel computer, e quando nessun
+  indirizzo risponde lo cerca in giro e si riscrive l'indirizzo da solo.
+- **Tornando a casa restava sulla copia.** Esci, il telefono passa ai dati,
+  compare la copia; torni, il wifi si riattacca, e l'app restava lì finché non
+  la chiudevi. Adesso guarda la rete e riprova da sola.
+
+E il **tasto indietro**, che con una foto aperta chiudeva l'app invece della
+foto.
+
+### Un lettore, con la fila e il visualizer
+
+Toccare un brano in galleria non apre più un file: **mette in fila tutto quello
+che c'è sotto**, filtri compresi — così «solo musica» diventa una scaletta.
+Brani e video finiscono da soli, **le immagini durano dieci secondi**. Sotto
+resta una barra che dice cosa suona; a schermo intero ci si va toccandola, e si
+esce **trascinando su o giù**.
+
+Mentre suona una canzone, **dietro alla pagina parte il visualizer**: cinque
+effetti, uno a caso a ogni brano e uno nuovo ogni venticinque secondi, più il
+tasto per cambiarlo a mano.
+
+E **la musica continua con l'app in tasca**: il suono resta nella pagina — è il
+solo posto da cui il visualizer lo può sentire — mentre l'app tiene vivo il
+processo e mette i comandi nella tendina e sulla schermata di blocco.
+
+### Gli stili e i prompt si condividono in DaProd
+
+In cima a DaProd c'è **«Da provare»**: gli stili e i prompt che gli altri hanno
+messo lì. Ne prendi uno e diventa tuo — lo cambi come vuoi, e resta scritto di
+chi era.
+
+I **prompt** sono la novità: si salvano dalla Produzione, un secondo dopo
+averli scritti, e si condividono come gli stili. La differenza fra le due cose è
+una sola, ed è quella che conta: **uno stile si aggiunge** a quello che scrivi,
+**un prompt lo sostituisce**.
+
+### Dillo e basta
+
+In cima alla Produzione c'è una casella: scrivi «fammi un video di una barca che
+entra in porto» e il modulo sotto **si riempie da solo**. A rispondere è
+[Needle 2](https://huggingface.co/Cactus-Compute/needle2) se sul computer c'è —
+14 MB, non tocca la scheda video, risponde in millisecondi — oppure il modello
+di LM Studio.
+
+Non manda in coda niente: riempie e ti fa vedere cosa ha capito. Il sì lo dai tu.
+
+### Il modello che scrive è cambiato
+
+Adesso è **Spark X2.5 4B**, caricato a **64K** di contesto (128K il tetto; i
+256K non compaiono più). È nato per il mestiere che gli chiediamo — leggere le
+azioni della suite e riempirne i campi — e sta in un paio di giga: su una scheda
+da 8 restano sei giga al modello che genera.
+
+### Produzione
+
+- **Immagini**: via «cosa non ci deve essere». Non è solo una richiesta: i
+  modelli di quella scheda lavorano tutti a CFG 1, e a CFG 1 un prompt negativo
+  **non fa niente**. Era una casella che accettava del testo e non cambiava un
+  pixel.
+- **Musica**: BPM, tonalità, tempo e «senza voce» si scelgono anche dal
+  telefono. Erano gli unici comandi che si toccavano solo dal PC. Le lingue del
+  canto sono due, italiano e inglese: erano undici, e nove promettevano una cosa
+  che nessuno ha mai provato.
+- **Video**: 30 e 60 secondi. Venti è il tetto di LTX 2.5 in una generazione
+  sola; sopra, il video si fa a pezzi **incatenati** — l'ultimo fotogramma di
+  uno diventa il primo del prossimo, così la giuntura non si vede perché non
+  c'è. Ci mette il doppio o il triplo, e la scheda lo dice prima.
+
+### E chi decide vede tutto
+
+In Galleria compare un terzo tasto, **«Di tutti»**, per chi ha i permessi.
+Ribalta la regola di agosto — «anche gli admin vedono solo le proprie foto» — e
+non è una svista: è cambiato cosa vuol dire essere admin. Prima era «decide
+sulla fila», adesso è «governa il computer da fuori come se ci stesse davanti».
+
+### In DaProd i contenuti erano troppo grossi
+
+Erano alti due terzi di schermo: si scorreva venti secondi per vedere tre cose.
+Adesso stanno in metà schermo e si vedono interi invece che ritagliati.
+
+### ⚠ Cosa non è stato ancora provato
+
+- **I video da 30 e 60 secondi**: scritti e compilati, mai passati per una
+  scheda video. È il pezzo di questa versione con più probabilità di dover
+  essere aggiustato.
+- **La rete fra due computer**: l'annuncio è provato (c'è un controllo
+  automatico che lo verifica), ma due suite accese in due stanze diverse non le
+  ha ancora viste nessuno.
+- **Needle 2**: il giro con il binario vero non è stato fatto. Senza binario si
+  passa dal modello di LM Studio, e quella strada funziona.
+- **Il suono con l'app in tasca**: provato su un emulatore, non su un telefono
+  vero con lo schermo spento.
 
 ---
 

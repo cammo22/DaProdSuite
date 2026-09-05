@@ -385,6 +385,81 @@ class GatewayClient(
             }
 
         /**
+         * Bussare: chiedere di entrare **senza avere un codice**.
+         *
+         * È l'altra strada per collegarsi, e dalla 0.9.0 è quella normale in
+         * casa: si sceglie un computer dall'elenco (vedi `Scoperta`), gli si
+         * bussa, e da quel momento si aspetta che qualcuno di là dica di sì.
+         *
+         * Il **segreto** che torna non è il token: è la prova che chi verrà a
+         * ritirare la risposta è chi ha bussato. Va tenuto finché la risposta
+         * non arriva, e poi non serve più.
+         */
+        suspend fun bussa(base: String, nome: String, apparecchio: String): Bussata =
+            withContext(Dispatchers.IO) {
+                val corpo = JSONObject()
+                    .put("nome", nome)
+                    .put("apparecchio", apparecchio)
+                    .toString()
+                val req = Request.Builder()
+                    .url("${base.trimEnd('/')}/bussa")
+                    .post(corpo.toRequestBody(JSON))
+                    .build()
+                condiviso.newCall(req).execute().use { res ->
+                    val testo = res.body?.string().orEmpty()
+                    if (!res.isSuccessful) throw GatewayException(messaggioDi(testo, res.code))
+                    val obj = JSONObject(testo)
+                    Bussata(
+                        attesa = obj.getString("attesa"),
+                        segreto = obj.getString("segreto"),
+                        computer = obj.optString("computer", base),
+                    )
+                }
+            }
+
+        /**
+         * Com'è finita: si aspetta, ci hanno detto di sì, o ci hanno detto di no.
+         *
+         * **Si chiede, non si viene chiamati.** Un telefono cambia indirizzo IP
+         * di continuo — wifi, dati, standby — e un computer che provasse a
+         * richiamare troverebbe quasi sempre nessuno. Chiedere ogni due secondi
+         * costa una GET corta e funziona sempre.
+         */
+        suspend fun esitoBussata(base: String, attesa: String, segreto: String): EsitoBussata =
+            withContext(Dispatchers.IO) {
+                val url = "${base.trimEnd('/')}/bussa/${pezzoSicuro(attesa)}" +
+                    "?segreto=" + android.net.Uri.encode(segreto)
+                val req = Request.Builder().url(url).build()
+                condiviso.newCall(req).execute().use { res ->
+                    val testo = res.body?.string().orEmpty()
+                    // 404 vuol dire «scaduta, o non è tua»: per chi aspetta è la
+                    // stessa cosa, e va raccontata come «rifà il giro».
+                    if (res.code == 404) return@withContext EsitoBussata.Sparita
+                    if (!res.isSuccessful) throw GatewayException(messaggioDi(testo, res.code))
+                    val obj = JSONObject(testo)
+                    when (obj.optString("stato")) {
+                        "accettata" -> {
+                            val arr = obj.optJSONArray("basi")
+                            val basi = buildList {
+                                for (i in 0 until (arr?.length() ?: 0)) {
+                                    arr?.optString(i)?.takeIf { it.isNotBlank() }?.let { add(it) }
+                                }
+                            }
+                            EsitoBussata.Dentro(
+                                token = obj.getString("token"),
+                                computer = obj.optString("computer", base),
+                                ruolo = obj.optJSONObject("dispositivo")
+                                    ?.optString("ruolo", "ospite") ?: "ospite",
+                                basi = basi,
+                            )
+                        }
+                        "rifiutata" -> EsitoBussata.No
+                        else -> EsitoBussata.Aspetta
+                    }
+                }
+            }
+
+        /**
          * Un pezzo di percorso, senza sorprese.
          *
          * Gli id della libreria contengono le barre delle sottocartelle
@@ -411,5 +486,31 @@ class GatewayClient(
 
 /** Chi si è collegato, e a cosa. */
 data class Accoppiamento(val token: String, val computer: String, val ruolo: String)
+
+/** Una richiesta di entrare, appena mandata: cosa aspettare e con che prova. */
+data class Bussata(val attesa: String, val segreto: String, val computer: String)
+
+/** Com'è finita una bussata. Quattro esiti, e ognuno vuole una schermata diversa. */
+sealed interface EsitoBussata {
+    /** Nessuno ha ancora deciso. */
+    data object Aspetta : EsitoBussata
+
+    /** Ci hanno fatto entrare: ecco la credenziale. */
+    data class Dentro(
+        val token: String,
+        val computer: String,
+        val ruolo: String,
+        val basi: List<String>,
+    ) : EsitoBussata
+
+    /** Ci hanno detto di no. */
+    data object No : EsitoBussata
+
+    /**
+     * L'attesa non c'è più: è passato troppo tempo, o il computer è stato
+     * riavviato. Non è un errore da mostrare in rosso: è «rifà il giro».
+     */
+    data object Sparita : EsitoBussata
+}
 
 class GatewayException(message: String) : Exception(message)

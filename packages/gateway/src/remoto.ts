@@ -14,7 +14,10 @@
 import { Archivio, cartellaInvii, cartellaRisultati } from "./archivio";
 import { nuovoCodice, nuovoId, nuovoToken } from "./casuale";
 import type {
+  Bussata,
+  BussataPubblica,
   Dispositivo,
+  DispositivoPubblico,
   Invio,
   Invito,
   Notifica,
@@ -224,6 +227,200 @@ export class Remoto {
      */
     this.archivio.salvaSubito();
     return { dispositivo, token: dispositivo.token };
+  }
+
+  /* ------------------------------------------------------------ bussate */
+
+  /**
+   * Qualcuno ha scelto questo computer da un elenco e chiede di entrare.
+   *
+   * **Non fa entrare nessuno**: crea un'attesa, e chi ha il computer decide.
+   * È la differenza fra questo e l'accoppiamento col codice — là la decisione
+   * è già stata presa quando il codice è stato generato, qui si prende adesso,
+   * guardando in faccia chi bussa.
+   *
+   * Il nome si controlla subito, per lo stesso motivo per cui si controlla
+   * nell'accoppiamento: scoprire che «Marco» era già preso *dopo* che il PC ha
+   * accettato vorrebbe dire far rifare tutto a tutti e due.
+   */
+  bussa(dati: {
+    nome: string;
+    apparecchio: string;
+    da: string;
+    computer?: boolean;
+  }): { bussata: Bussata; segreto: string } | { errore: string } {
+    this.spazzaBussate();
+    const archivio = this.archivio.datiCorrenti;
+
+    // Lo stesso limite dell'accoppiamento, e per la stessa ragione: bussare
+    // costa niente a chi bussa, e cento bussate al minuto sono un pannello
+    // inutilizzabile per chi decide.
+    const unMinutoFa = Date.now() - 60_000;
+    this.tentativi = this.tentativi.filter((t) => t > unMinutoFa);
+    if (this.tentativi.length >= TENTATIVI_AL_MINUTO) {
+      return { errore: "Troppe richieste da questa rete. Aspetta un minuto." };
+    }
+
+    const nome = (dati.nome ?? "").trim().slice(0, 40);
+    if (!nome) return { errore: "Serve un nome: è quello con cui comparirai." };
+    if (archivio.dispositivi.some((d) => stessoNome(d.nome, nome))) {
+      return { errore: `«${nome}» è già di qualcun altro su questo computer. Scegline un altro.` };
+    }
+
+    /**
+     * Bussare due volte non fa due file.
+     *
+     * Chi chiude l'app e la riapre mentre aspetta ribussa: se ogni tentativo
+     * lasciasse una riga, chi decide si troverebbe cinque volte la stessa
+     * persona e non saprebbe quale accettare.
+     */
+    const gia = archivio.bussate.find(
+      (b) => b.stato === "attesa" && stessoNome(b.nome, nome) && b.apparecchio === dati.apparecchio,
+    );
+    if (gia) {
+      gia.quando = Date.now();
+      gia.da = dati.da;
+      this.archivio.salvaSubito();
+      return { bussata: gia, segreto: gia.segreto };
+    }
+
+    this.tentativi.push(Date.now());
+    const bussata: Bussata = {
+      id: nuovoId("bus"),
+      nome,
+      apparecchio: (dati.apparecchio ?? "").trim().slice(0, 60) || "un apparecchio",
+      segreto: nuovoToken(),
+      quando: Date.now(),
+      stato: "attesa",
+      da: dati.da,
+      computer: dati.computer === true ? true : undefined,
+    };
+    archivio.bussate.push(bussata);
+    this.archivio.salvaSubito();
+    for (const fn of this.bussatori) {
+      try {
+        fn(bussata);
+      } catch {
+        // Chi ascolta serve a far comparire una notifica: se scoppia, la
+        // bussata resta comunque nel pannello.
+      }
+    }
+    return { bussata, segreto: bussata.segreto };
+  }
+
+  /** Chi vuole sapere che qualcuno ha bussato (per far comparire l'avviso). */
+  private bussatori: ((bussata: Bussata) => void)[] = [];
+
+  suBussata(fn: (bussata: Bussata) => void): void {
+    this.bussatori.push(fn);
+  }
+
+  /** Chi sta aspettando una risposta, per chi deve decidere. */
+  bussateVive(): BussataPubblica[] {
+    this.spazzaBussate();
+    return this.archivio.datiCorrenti.bussate
+      .filter((b) => b.stato === "attesa")
+      .map(senzaSegreto)
+      .sort((a, b) => b.quando - a.quando);
+  }
+
+  /**
+   * Com'è finita, per chi ha bussato.
+   *
+   * Il segreto è l'unica cosa che distingue chi ha bussato da chiunque altro
+   * sulla stessa rete: senza confronto, sapere l'id basterebbe a rubare il
+   * token di un altro.
+   */
+  esitoBussata(
+    id: string,
+    segreto: string,
+  ): { stato: Bussata["stato"]; token?: string; dispositivo?: DispositivoPubblico } | null {
+    this.spazzaBussate();
+    const b = this.archivio.datiCorrenti.bussate.find((x) => x.id === id);
+    if (!b || b.segreto !== segreto) return null;
+    if (b.stato !== "accettata") return { stato: b.stato };
+    const dispositivo = this.archivio.datiCorrenti.dispositivi.find((d) => d.id === b.dispositivoId);
+    if (!dispositivo) return { stato: b.stato, token: b.token };
+    const { token: _via, ...pubblico } = dispositivo;
+    return { stato: b.stato, token: b.token, dispositivo: pubblico };
+  }
+
+  /**
+   * Chi decide dice sì o no.
+   *
+   * Dire sì **crea il dispositivo qui e adesso**, e ne mette il token dentro la
+   * bussata perché chi aspetta se lo venga a prendere. Non si manda niente al
+   * telefono: il telefono chiede, e chiedere funziona anche se nel frattempo ha
+   * cambiato indirizzo IP — che con un telefono succede di continuo.
+   */
+  rispondiAllaBussata(
+    id: string,
+    accetta: boolean,
+    ruolo: Ruolo = "ospite",
+  ): { ok: true; dispositivo?: Dispositivo } | { errore: string } {
+    const archivio = this.archivio.datiCorrenti;
+    const b = archivio.bussate.find((x) => x.id === id);
+    if (!b) return { errore: "Questa richiesta non c'è più." };
+    if (b.stato !== "attesa") return { errore: "A questa è già stato risposto." };
+
+    if (!accetta) {
+      b.stato = "rifiutata";
+      this.archivio.salvaSubito();
+      return { ok: true };
+    }
+
+    if (archivio.dispositivi.some((d) => stessoNome(d.nome, b.nome))) {
+      return { errore: `Nel frattempo «${b.nome}» se l'è preso qualcun altro.` };
+    }
+
+    const dispositivo: Dispositivo = {
+      id: nuovoId(b.computer ? "pc" : "tel"),
+      nome: b.nome,
+      ruolo,
+      token: nuovoToken(),
+      accoppiato: Date.now(),
+      ultimoAccesso: Date.now(),
+    };
+    archivio.dispositivi.push(dispositivo);
+    b.stato = "accettata";
+    b.token = dispositivo.token;
+    b.dispositivoId = dispositivo.id;
+    b.ruolo = ruolo;
+    // Subito: è la riga che decide chi sei, e la scrittura differita è
+    // esattamente quella che nella 0.7.7 faceva perdere gli accoppiamenti.
+    this.archivio.salvaSubito();
+    return { ok: true, dispositivo };
+  }
+
+  /**
+   * Butta le bussate vecchie.
+   *
+   * Un'attesa vive **dieci minuti**: chi ha il computer deve poter accettare
+   * dopo essere andato a prendere un caffè, ma una richiesta di ieri che
+   * compare stamattina non si sa più di chi sia.
+   *
+   * Una risposta si tiene **cinque minuti** dopo che è stata data: tanto basta
+   * al telefono per venirsela a prendere, e non un giorno di più — dentro c'è
+   * un token.
+   */
+  spazzaBussate(): void {
+    const archivio = this.archivio.datiCorrenti;
+    const adesso = Date.now();
+    const prima = archivio.bussate.length;
+    archivio.bussate = archivio.bussate.filter((b) =>
+      b.stato === "attesa" ? adesso - b.quando < 10 * 60_000 : adesso - b.quando < 15 * 60_000,
+    );
+    if (archivio.bussate.length !== prima) this.archivio.salva();
+  }
+
+  /** Chi sono io sulla rete: un id che non cambia fra un riavvio e l'altro. */
+  ioSullaRete(): string {
+    const archivio = this.archivio.datiCorrenti;
+    if (!archivio.ioId) {
+      archivio.ioId = nuovoId("pc");
+      this.archivio.salvaSubito();
+    }
+    return archivio.ioId;
   }
 
   /** Chi eseguirà le richieste accettate. Lo aggancia lo shell. */
@@ -825,6 +1022,18 @@ function breve(testo: string): string {
  * la stessa persona per chiunque li legga, e devono esserlo anche qui — se no
  * il controllo sull'unicità si aggira battendo una lettera maiuscola.
  */
+/**
+ * Una bussata come la può vedere chi decide.
+ *
+ * Via il segreto e via il token: il primo è di chi ha bussato, il secondo è la
+ * credenziale che nascerà. Nel pannello non serve né l'uno né l'altro, e quello
+ * che non serve in un pannello è quello che finisce in uno screenshot.
+ */
+function senzaSegreto(b: Bussata): BussataPubblica {
+  const { segreto: _s, token: _t, ...pubblica } = b;
+  return pubblica;
+}
+
 function stessoNome(a: string, b: string): boolean {
   return a.trim().toLocaleLowerCase("it") === b.trim().toLocaleLowerCase("it");
 }

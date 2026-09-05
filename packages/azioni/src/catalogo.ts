@@ -12,7 +12,15 @@
  */
 
 import type { Azione } from "./tipi";
-import { DURATE_BRANO, DURATE_VIDEO, LINGUE_CANTO, SEZIONI } from "./stili";
+import {
+  BPM_TIPICI,
+  DURATE_BRANO,
+  DURATE_VIDEO,
+  LINGUE_CANTO,
+  SEZIONI,
+  TEMPI_CANTO,
+  TONALITA_CANTO,
+} from "./stili";
 
 /** Le app che possono ricevere un lavoro da fuori, oggi. */
 export const APP_REMOTE = ["foto", "cinema", "musica", "voce"] as const;
@@ -131,14 +139,21 @@ export const AZIONI: readonly Azione[] = [
         esempio: "un faro sulla scogliera al tramonto, luce calda, fotografia",
       },
       campoStile("cosa deve esserci"),
-      {
-        nome: "negativo",
-        etichetta: "Cosa non ci deve essere",
-        descrizione: "Quello da evitare. Si può lasciare vuoto.",
-        tipo: "testo",
-        obbligatorio: false,
-        maxLunghezza: 500,
-      },
+      /**
+       * ⚠ **«Cosa non ci deve essere» non c'è più.** Tolto il 5 settembre 2026,
+       * chiesto così: «nella produzione immagini togliamo "cosa non ci deve
+       * essere"».
+       *
+       * Ed è la cosa giusta, non solo quella chiesta. I modelli di questa
+       * scheda lavorano tutti a CFG 1 — Anima è distillata, FLUX.2 Klein pure —
+       * e a CFG 1 **il prompt negativo non fa niente**: non c'è una seconda
+       * passata da cui sottrarlo. Era una casella che accettava del testo, lo
+       * mandava al motore, e non cambiava un pixel. Peggio: chi la riempiva
+       * pensava di aver detto una cosa.
+       *
+       * La scheda sul PC continua a mandare il suo negativo di serie, che è
+       * l'unico posto in cui serve ancora.
+       */
       {
         nome: "quante",
         etichetta: "Quante immagini",
@@ -159,7 +174,10 @@ export const AZIONI: readonly Azione[] = [
     app: "cinema",
     titolo: "Fai un video",
     descrizione:
-      "Genera una clip video da una descrizione, con DaProdCinema. È la cosa più lenta della suite: minuti, non secondi.",
+      "Genera un video da una descrizione, con DaProdCinema. È la cosa più lenta della suite: " +
+      "minuti, non secondi. Fino a 20 secondi è una generazione sola; a 30 e 60 il video si fa " +
+      "a pezzi incatenati — l'ultimo fotogramma di uno diventa il primo del prossimo — e ci " +
+      "mette il doppio o il triplo.",
     produce: "file",
     risultato: "video",
     permesso: "tutti",
@@ -179,11 +197,13 @@ export const AZIONI: readonly Azione[] = [
       {
         nome: "secondi",
         etichetta: "Quanto dura",
-        descrizione: "Durata della clip in secondi. Più dura, più ci mette.",
+        descrizione:
+          "Durata in secondi. Fino a 20 è una generazione sola. 30 e 60 si fanno a pezzi " +
+          "incatenati, per restare coerenti: ci mettono molto di più.",
         tipo: "numero",
         obbligatorio: false,
         min: 2,
-        max: 10,
+        max: 60,
         predefinito: 5,
         valoriTipici: DURATE_VIDEO,
       },
@@ -276,6 +296,65 @@ export const AZIONI: readonly Azione[] = [
         max: 240,
         predefinito: 60,
         valoriTipici: DURATE_BRANO,
+      },
+      /**
+       * ⚠ I quattro campi qui sotto **mancavano**, ed erano gli unici comandi
+       * della scheda che da fuori non si potevano toccare.
+       *
+       * Chiesto il 5 settembre 2026: «in produzione musica aggiungiamo tutti i
+       * settaggi mancanti tipo bpm». Sul computer stanno sotto «Avanzati» e ci
+       * sono da sempre; da telefono si poteva chiedere il genere e la durata, e
+       * basta — cioè si poteva chiedere una canzone, non *quella* canzone.
+       *
+       * **Valgono per MiniMax Music 3.** ACE-Step non ha caselle per BPM,
+       * tonalità e tempo: gliele si dà e non succede niente, e la descrizione
+       * lo dice invece di far credere il contrario. «Strumentale» invece vale
+       * per tutti e due.
+       */
+      {
+        nome: "bpm",
+        etichetta: "Quanto va veloce",
+        descrizione:
+          "Battiti al minuto: 70 è una ballata, 120 un pezzo da ballare, 170 una corsa. " +
+          "Lo capisce MiniMax Music 3; ACE-Step decide da sé.",
+        tipo: "numero",
+        obbligatorio: false,
+        min: 40,
+        max: 220,
+        valoriTipici: BPM_TIPICI,
+      },
+      {
+        nome: "tonalita",
+        etichetta: "In che tonalità",
+        descrizione:
+          "La scala del brano. Le minori suonano malinconiche, le maggiori aperte. " +
+          "Vuoto vuol dire quella scelta sul computer. Solo MiniMax Music 3.",
+        tipo: "scelta",
+        obbligatorio: false,
+        vuoto: "\u2014 quella scelta sul computer \u2014",
+        scelte: TONALITA_CANTO.map((t) => t.id),
+        etichette: Object.fromEntries(TONALITA_CANTO.map((t) => [t.id, t.nome])),
+      },
+      {
+        nome: "tempo",
+        etichetta: "Che ritmo",
+        descrizione:
+          "Quanti movimenti per battuta: 4/4 è quasi tutta la musica moderna, 3/4 è il valzer, " +
+          "6/8 la ballata lenta. Solo MiniMax Music 3.",
+        tipo: "scelta",
+        obbligatorio: false,
+        vuoto: "\u2014 quello scelto sul computer \u2014",
+        scelte: TEMPI_CANTO.map((t) => t.id),
+        etichette: Object.fromEntries(TEMPI_CANTO.map((t) => [t.id, t.nome])),
+      },
+      {
+        nome: "strumentale",
+        etichetta: "Senza voce",
+        descrizione:
+          "Solo la musica, nessuno che canta. È quello che succede anche lasciando vuoto il " +
+          "testo, ma dirlo qui è più chiaro — e vale anche se un testo l'hai scritto.",
+        tipo: "booleano",
+        obbligatorio: false,
       },
       campoModello(MODELLI_MUSICA),
     ],

@@ -59,6 +59,23 @@ export const COPIONE_STILI = `
    */
   var tipoStili = "immagine";
 
+  /**
+   * Stili, o prompt interi. Nuovo nella 0.9.0.
+   *
+   * Chiesto il 5 settembre 2026: «lo stesso anche con i prompt — canzoni,
+   * immagini e video si possono condividere, in modo da usarli e modificarli a
+   * piacere». Sono la stessa cosa salvata nello stesso posto: cambia dove
+   * finiscono le parole. **Uno stile si aggiunge** a quello che scrivi, **un
+   * prompt lo sostituisce** — ed e' tutta li' la differenza.
+   */
+  var genereStili = "stile";
+
+  function genereDi(s) { return s && s.genere === "prompt" ? "prompt" : "stile"; }
+  function eUnPrompt() { return genereStili === "prompt"; }
+  function comeSiChiama(uno) {
+    return eUnPrompt() ? (uno ? "un prompt" : "prompt") : (uno ? "uno stile" : "stili");
+  }
+
   /** I tre tipi, con la scheda che li usa e un esempio di come si scrivono. */
   var TIPI_STILE = [
     { id: "immagine", nome: "Immagini", segno: "\u25c9", azione: "genera.immagine", esempio: "photorealistic, 35mm photography, natural light" },
@@ -89,6 +106,25 @@ export const COPIONE_STILI = `
     disegnaStili();
   }
 
+  /**
+   * La vetrina, chiesta da sola.
+   *
+   * «leggiStili» la chiede solo quando si sta guardando da quella parte, ed e'
+   * giusto: e' un giro di rete in piu' che a chi sta guardando i suoi non
+   * serve. Ma dalla 0.9.0 la vetrina compare **anche in DaProd** — «cosi' chi
+   * va in daprod puo' importare lo stile per usarlo» — e quella scheda non
+   * passa da li'.
+   */
+  async function leggiVetrina() {
+    try {
+      var altri = await chiama("/stili/vetrina");
+      stiliDegliAltri = (altri && altri.stili) || [];
+    } catch (e) {
+      stiliDegliAltri = [];
+    }
+    return stiliDegliAltri;
+  }
+
   function disegnaStili() {
     disegnaTipiStili();
     disegnaDueTastiStili();
@@ -96,12 +132,12 @@ export const COPIONE_STILI = `
     var casella = $("elenco-stili");
     casella.innerHTML = "";
     var quali = (doveStili === "vetrina" ? stiliDegliAltri : mieiStili)
-      .filter(function (s) { return tipoDi(s) === tipoStili; });
+      .filter(function (s) { return tipoDi(s) === tipoStili && genereDi(s) === genereStili; });
 
     $("stili-vuoti").hidden = quali.length > 0;
     $("stili-vuoti").textContent = doveStili === "vetrina"
-      ? "Nessuno ha ancora messo in vetrina uno stile per " + tipoOra().nome.toLowerCase() + ". Mettici il tuo: tieni premuto e scegli «condividi»."
-      : "Non hai ancora nessuno stile per " + tipoOra().nome.toLowerCase() + ".";
+      ? "Nessuno ha ancora messo in DaProd " + comeSiChiama(true) + " per " + tipoOra().nome.toLowerCase() + ". Mettici il tuo: tieni premuto e scegli «condividi»."
+      : "Non hai ancora " + (eUnPrompt() ? "nessun prompt" : "nessuno stile") + " per " + tipoOra().nome.toLowerCase() + ".";
 
     for (var s of quali) casella.append(cartaStile(s));
   }
@@ -116,11 +152,39 @@ export const COPIONE_STILI = `
     var casella = $("tipi-stili");
     if (!casella) return;
     casella.innerHTML = "";
-    var dentro = doveStili === "vetrina" ? stiliDegliAltri : mieiStili;
+    var dentro = (doveStili === "vetrina" ? stiliDegliAltri : mieiStili)
+      .filter(function (s) { return genereDi(s) === genereStili; });
+
+    /**
+     * Prima la domanda grossa — stili o prompt — poi i tre tipi.
+     *
+     * Sono due scelte diverse e vanno su due righe: mettere sei pastiglie in
+     * fila vorrebbe dire far scegliere insieme cose che non stanno insieme.
+     */
+    var riga = document.createElement("div");
+    riga.className = "filtri";
+    riga.style.marginBottom = "8px";
+    for (var g of [
+      { id: "stile", nome: "Stili", sotto: "si aggiungono a quello che scrivi" },
+      { id: "prompt", nome: "Prompt", sotto: "sostituiscono quello che scrivi" },
+    ]) {
+      var bg = document.createElement("button");
+      bg.type = "button";
+      bg.className = "mini" + (g.id === genereStili ? " on" : "");
+      bg.textContent = g.nome;
+      bg.title = g.sotto;
+      bg.addEventListener("click", (function (quale) {
+        return function () { genereStili = quale; disegnaStili(); };
+      })(g.id));
+      riga.append(bg);
+    }
+    casella.append(riga);
+
     for (var t of TIPI_STILE) {
       var quanti = dentro.filter((function (quale) {
         return function (s) { return tipoDi(s) === quale; };
       })(t.id)).length;
+      // I tre tipi vanno nella riga sotto a quella del genere.
       var b = document.createElement("button");
       b.type = "button";
       b.className = "mini" + (t.id === tipoStili ? " on" : "");
@@ -135,10 +199,12 @@ export const COPIONE_STILI = `
   function disegnaDueTastiStili() {
     var casella = $("due-tasti-stili");
     casella.innerHTML = "";
-    var quantiMiei = mieiStili.filter(function (s) { return tipoDi(s) === tipoStili; }).length;
+    var quantiMiei = mieiStili.filter(function (s) {
+      return tipoDi(s) === tipoStili && genereDi(s) === genereStili;
+    }).length;
     var pezzi = [
-      { id: "miei", nome: "I miei stili", sotto: quantiMiei + " per " + tipoOra().nome.toLowerCase(), tinta: "ciano", segno: tipoOra().segno },
-      { id: "vetrina", nome: "In vetrina", sotto: "quelli che gli altri fanno provare", tinta: "rosa", segno: "\\u2726" },
+      { id: "miei", nome: eUnPrompt() ? "I miei prompt" : "I miei stili", sotto: quantiMiei + " per " + tipoOra().nome.toLowerCase(), tinta: "ciano", segno: tipoOra().segno },
+      { id: "vetrina", nome: "In DaProd", sotto: "quelli che gli altri fanno provare", tinta: "rosa", segno: "\\u2726" },
     ];
     for (var x of pezzi) {
       var b = document.createElement("button");
@@ -227,6 +293,14 @@ export const COPIONE_STILI = `
    *
    * È la cosa per cui uno stile esiste, quindi è il gesto più corto: un tocco.
    */
+  /**
+   * Mette in Produzione quello che si e' toccato.
+   *
+   * Vale sia per uno stile sia per un prompt, e fa la stessa cosa: apre la
+   * scheda giusta e scrive il testo nella casella principale. La differenza fra
+   * i due sta in **cosa ci si mette dentro** — poche parole di modo, o una
+   * richiesta intera — e da li' in poi si cambia a mano, che e' il punto.
+   */
   function usaLoStile(s) {
     var info = infoTipo(tipoDi(s));
     var azione = azioni.filter(function (a) { return a.id === info.azione; })[0];
@@ -289,9 +363,14 @@ export const COPIONE_STILI = `
    */
   function apriModificaStile(s) {
     var suo = s && s.tipo ? s.tipo : tipoStili;
+    var ilGenere = s ? genereDi(s) : genereStili;
+    var prompt = ilGenere === "prompt";
     var info = infoTipo(suo);
     var carta = apriFoglio(
-      (s && s.id ? "Modifica lo stile" : "Uno stile nuovo") + " \u00b7 " + info.nome.toLowerCase(),
+      (s && s.id
+        ? (prompt ? "Modifica il prompt" : "Modifica lo stile")
+        : (prompt ? "Un prompt nuovo" : "Uno stile nuovo")) +
+        " \u00b7 " + info.nome.toLowerCase(),
     );
 
     var eNome = document.createElement("label");
@@ -303,7 +382,7 @@ export const COPIONE_STILI = `
     campoNome.placeholder = suo === "musica" ? "Neomelodico trap" : (suo === "video" ? "Carrellata lenta" : "Fotografia vera");
 
     var eTesto = document.createElement("label");
-    eTesto.textContent = "Le parole per il modello";
+    eTesto.textContent = prompt ? "Il prompt, per intero" : "Le parole per il modello";
     var campoTesto = document.createElement("textarea");
     campoTesto.value = (s && s.testo) || "";
     campoTesto.placeholder = info.esempio;
@@ -311,7 +390,11 @@ export const COPIONE_STILI = `
 
     var nota = document.createElement("p");
     nota.className = "nota";
-    nota.textContent = suo === "musica"
+    nota.textContent = prompt
+      ? "Un prompt intero, quello che vorresti chiedere. Ritrovandolo, prende il posto di " +
+        "quello che hai scritto — e da li' lo cambi come vuoi. Tenendolo premuto lo metti " +
+        "in DaProd, e chi lo trova puo' prenderselo."
+      : suo === "musica"
       ? "Tre o quattro generi in inglese, separati da virgola. Niente strumenti, niente " +
         "atmosfera, niente BPM: una descrizione dettagliata restringe il modello e fa uscire " +
         "sempre la stessa cosa. Si affina sui sottogeneri, non aggiungendo parole."
@@ -338,6 +421,7 @@ export const COPIONE_STILI = `
             nome: campoNome.value.trim(),
             testo: campoTesto.value.trim(),
             tipo: suo,
+            genere: ilGenere,
           }),
         });
         chiudiFoglio();
@@ -379,7 +463,15 @@ export const COPIONE_STILI = `
     try {
       await chiama("/stili/vetrina/prendi", {
         method: "POST",
-        body: JSON.stringify({ nome: s.nome, testo: s.testo, tipo: tipoDi(s), daNome: s.chiNome }),
+        body: JSON.stringify({
+          nome: s.nome,
+          testo: s.testo,
+          tipo: tipoDi(s),
+          // Un prompt preso resta un prompt: senza questa riga finirebbe fra
+          // gli stili, e la volta dopo si aggiungerebbe invece di sostituire.
+          genere: genereDi(s),
+          daNome: s.chiNome,
+        }),
       });
       tasto.textContent = "\\u2713 \\u00e8 tuo";
       // Gli stili dell'azione cambiano: si rileggono, se no la Produzione

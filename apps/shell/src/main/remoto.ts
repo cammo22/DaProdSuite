@@ -19,6 +19,7 @@ import {
   Archivio,
   Gateway,
   Remoto,
+  Rete,
   indirizzoDellaFoto,
   type Dispositivo,
   type Esecutore,
@@ -74,6 +75,7 @@ import {
   togliDallaFila,
 } from "./esecuzione";
 import { avvisaSulComputer } from "./avvisi";
+import { capisciComunque } from "./needle";
 import { cartelleImportanti, tieniInDaProd } from "./cartelle";
 import {
   buttaLaCartella,
@@ -363,6 +365,17 @@ const esegui: Esecutore = async (id, valori, dispositivo) => {
  * libreria — e una funzione che da quell'id ricava il file. Un id che la
  * libreria non riconosce non produce nessun percorso, e la rotta risponde 404.
  */
+/**
+ * Vero se questa persona ha i permessi di decidere.
+ *
+ * Serve alla libreria, che conosce solo un id: dalla 0.9.0 chi decide vede — e
+ * quindi apre — tutto quello che c'e' sul computer, e senza questa domanda i
+ * riquadri di «Di tutti» comparirebbero e non si aprirebbero.
+ */
+function decide(chi: string): boolean {
+  return remoto.listaDispositivi().find((d) => d.id === chi)?.ruolo === "admin";
+}
+
 const fornitoreLibreria: FornitoreLibreria = {
   /**
    * **Ognuno vede le sue, e della bacheca quello che gli altri hanno voluto.**
@@ -383,6 +396,15 @@ const fornitoreLibreria: FornitoreLibreria = {
     if (filtro.app) cerca.app = filtro.app as AppId;
     const bacheca = filtro.dove === "bacheca";
     /**
+     * **Chi decide vede tutto quello che c'è sul computer.**
+     *
+     * Il permesso l'ha già controllato il gateway: qui arriva «tutte» solo se
+     * chi chiede è admin. Vale la stessa cosa che vale per il computer, ed è
+     * la stessa riga: dare a qualcuno i permessi di decidere vuol dire farlo
+     * entrare in casa, non solo lasciargli accettare le richieste.
+     */
+    const vedeTutto = filtro.dove === "tutte";
+    /**
      * **Il computer vede tutto.**
      *
      * Chiesto il 23 agosto 2026: «sulla suite devono essere presenti in
@@ -396,7 +418,7 @@ const fornitoreLibreria: FornitoreLibreria = {
     return libreria
       .cerca(cerca)
       .filter((e) => {
-        if (eIlComputer) return true;
+        if (eIlComputer || vedeTutto) return true;
         if (bacheca) return libreria.inBacheca(e);
         /**
          * **Le tue, e quelle che hai tenuto da parte.**
@@ -449,8 +471,10 @@ const fornitoreLibreria: FornitoreLibreria = {
   file(id, chi) {
     const elemento = libreria.trova(id);
     if (!elemento) return null;
-    // Il computer vede tutto quello che ha sul disco, come sopra.
-    const suo = libreria.padrone(elemento) === chi || chi === PADRONE_DI_CASA;
+    // Il computer vede tutto quello che ha sul disco, come sopra — e dalla
+    // 0.9.0 anche chi decide: senza questa riga, l'elenco «Di tutti» mostrerebbe
+    // dei riquadri che non si aprono.
+    const suo = libreria.padrone(elemento) === chi || chi === PADRONE_DI_CASA || decide(chi);
     if (!suo && !libreria.inBacheca(elemento)) return null;
     return {
       percorso: elemento.percorso,
@@ -514,7 +538,7 @@ const fornitoreLibreria: FornitoreLibreria = {
   async anteprima(id, chi) {
     const elemento = libreria.trova(id);
     if (!elemento) return null;
-    const suo = libreria.padrone(elemento) === chi || chi === PADRONE_DI_CASA;
+    const suo = libreria.padrone(elemento) === chi || chi === PADRONE_DI_CASA || decide(chi);
     const vista = suo || libreria.inBacheca(elemento);
     if (!vista) return null;
     return anteprimaDi(elemento);
@@ -770,7 +794,8 @@ function nomeScheda(app: string): string {
  * vetrina senza un nome sopra, e va bene così: lo stile è ancora buono.
  */
 const fornitoreStili: FornitoreStili = {
-  miei: (chi) => stiliDi(chi),
+  miei: (chi, genere) =>
+    stiliDi(chi, undefined, genere === "prompt" || genere === "stile" ? genere : undefined),
   vetrina: (chi) =>
     stiliInVetrina(
       chi,
@@ -785,6 +810,7 @@ const fornitoreStili: FornitoreStili = {
         dati.tipo === "immagine" || dati.tipo === "video" || dati.tipo === "musica"
           ? dati.tipo
           : undefined,
+      genere: dati.genere === "prompt" ? "prompt" : "stile",
       da: dati.da === "preso" || dati.da === "partenza" ? dati.da : "mio",
       daNome: dati.daNome,
     }),
@@ -849,6 +875,14 @@ collegaChiacchierata({
  * cui si può chiedere di scrivere.
  */
 const fornitoreAi: FornitoreAi = {
+  /**
+   * La frase che diventa un lavoro: prima Needle, poi il modello.
+   *
+   * Vedi `needle.ts` per il perché di tutte e due le strade. Qui c'è solo il
+   * collegamento: il gateway non deve sapere che esiste un binario da 14 MB.
+   */
+  capisci: async (frase) => capisciComunque(frase),
+
   disponibile: () => aiDisponibile(),
   migliora: (opzioni) => migliora(opzioni),
 };
@@ -1046,6 +1080,45 @@ function disegnaQr(payload: string): Promise<string> {
   });
 }
 
+/* --------------------------------------------------------- la rete di casa */
+
+/**
+ * L'annuncio sulla rete locale: «questo computer c'è, e si chiama così».
+ *
+ * Nasce con la suite e vive quanto lei, ma **parla solo quando la connessione
+ * è accesa** (vedi `accendi`). Chi lo ascolta è l'app del telefono, che così
+ * mostra un elenco di computer invece di chiedere un codice, e gli altri PC
+ * della casa, che così sanno a chi possono passare un lavoro.
+ */
+const annunciatore = new Rete(() => ({
+  id: remoto.ioSullaRete(),
+  nome: osNome(),
+  versione: app.getVersion(),
+  porta: portaReale || PORTA,
+  basi: indirizziPubblici().map((i) => i.base),
+  // «Apre» vuol dire che qualcuno può bussare: con la connessione spenta il
+  // gateway non è nemmeno raggiungibile da fuori.
+  apre: impostazioni().connessione === true,
+}));
+
+/**
+ * Quando qualcuno bussa, chi ha il computer lo deve **sapere**.
+ *
+ * Chiesto il 5 settembre 2026: «quando si seleziona il pc, il pc riceve una
+ * notifica e si può accettare». La notifica di Windows è metà del gesto:
+ * l'altra metà è la riga che compare in DaProdConnessione, che c'è comunque —
+ * questa serve a chi la suite ce l'ha aperta dietro a un browser.
+ */
+remoto.suBussata((bussata) => {
+  avvisaSulComputer(
+    "Qualcuno vuole collegarsi",
+    `${bussata.nome} (${bussata.apparecchio}) chiede di usare questo computer. Apri DaProdConnessione per decidere.`,
+    `bussata-${bussata.id}`,
+  );
+  sveglia();
+  gateway?.aggiorna();
+});
+
 /* ------------------------------------------------------------ gateway */
 
 async function accendi(): Promise<StatoAccesso> {
@@ -1063,12 +1136,23 @@ async function accendi(): Promise<StatoAccesso> {
     macchina: fornitoreMacchina,
     chiacchierata: fornitoreChiacchierata,
     stili: fornitoreStili,
+    rete: annunciatore,
   });
   // Chi può arrivare: tutta la rete se la connessione è accesa, solo questo
   // computer se è spenta. In tutti e due i casi il gateway **c'è**, perché è
   // lui a servire la pagina di DaProdConnessione.
   portaReale = await nuovo.ascolta(PORTA, impostazioni().connessione ? "0.0.0.0" : "127.0.0.1");
   gateway = nuovo;
+  /**
+   * L'annuncio parte **solo se la connessione è accesa**.
+   *
+   * Con la connessione spenta il gateway ascolta su 127.0.0.1: nessuno da
+   * fuori ci arriverebbe comunque, e un computer che si annuncia su una porta
+   * che poi rifiuta di rispondere è peggio di un computer che tace — compare
+   * nell'elenco del telefono e poi non si collega.
+   */
+  if (impostazioni().connessione) annunciatore.accendi();
+  else annunciatore.spegni();
   sveglia();
   // Si guarda **adesso**, non prima: la porta vera la si conosce solo dopo che
   // il server è in ascolto. Non si aspetta la risposta — `netsh` è un processo
@@ -1394,36 +1478,45 @@ function nuovoTokenDiCasa(): string {
  * espone su `/pannello`. Prima stavano solo nell'hub, in IPC, e il telefono non
  * poteva né invitare nessuno né sapere perché non lo raggiungeva.
  */
+/**
+ * Gli indirizzi su cui questo PC si fa trovare, in ordine di utilità.
+ *
+ * **In cima quello che funziona anche fuori casa.** Lo stesso ordine di
+ * `basi()`, e per la stessa ragione: quello che conta è arrivarci da fuori. Il
+ * primo di questo elenco è quello che la pagina scrive sotto al QR, per chi lo
+ * deve copiare a mano sul telefono — e scrivere l'indirizzo della wifi di casa
+ * vorrebbe dire dare a qualcuno un indirizzo che smette di funzionare appena
+ * esce dalla porta.
+ *
+ * Vive fuori da `stato()` dalla 0.9.0: la chiede anche chi ha appena bussato,
+ * che non è ancora un dispositivo e quindi non può passare da lì.
+ */
+function indirizziPubblici(): StatoPannello["indirizzi"] {
+  const fuori = statoTunnel();
+  const schede = reti().filter((r) => r.dove !== "virtuale");
+  const daScheda = (r: { ip: string; che: string; dove: string }) => ({
+    base: `http://${r.ip}:${portaReale || PORTA}`,
+    che: r.che,
+    dove: (r.dove === "ovunque" ? "ovunque" : "casa") as "ovunque" | "casa",
+  });
+  const elenco: StatoPannello["indirizzi"] = schede
+    .filter((r) => r.dove === "ovunque")
+    .map(daScheda);
+  if (fuori.fase === "acceso" && fuori.indirizzo) {
+    elenco.push({ base: fuori.indirizzo, che: "da Internet, cifrato", dove: "ovunque" });
+  }
+  elenco.push(...schede.filter((r) => r.dove !== "ovunque").map(daScheda));
+  return elenco;
+}
+
 const fornitorePannello: FornitorePannello = {
   stato(dispositivo) {
     const fuori = statoTunnel();
-    /**
-     * **In cima quello che funziona anche fuori casa.**
-     *
-     * Lo stesso ordine di `basi()`, e per la stessa ragione: quello che conta è
-     * arrivarci da fuori. Il primo di questo elenco è quello che la pagina
-     * scrive sotto al QR, per chi lo deve copiare a mano sul telefono — e
-     * scrivere l'indirizzo della wifi di casa vorrebbe dire dare a qualcuno un
-     * indirizzo che smette di funzionare appena esce dalla porta.
-     */
-    const schede = reti().filter((r) => r.dove !== "virtuale");
-    const daScheda = (r: { ip: string; che: string; dove: string }) => ({
-      base: `http://${r.ip}:${portaReale || PORTA}`,
-      che: r.che,
-      dove: (r.dove === "ovunque" ? "ovunque" : "casa") as "ovunque" | "casa",
-    });
-    const elenco: StatoPannello["indirizzi"] = schede
-      .filter((r) => r.dove === "ovunque")
-      .map(daScheda);
-    if (fuori.fase === "acceso" && fuori.indirizzo) {
-      elenco.push({ base: fuori.indirizzo, che: "da Internet, cifrato", dove: "ovunque" });
-    }
-    elenco.push(...schede.filter((r) => r.dove !== "ovunque").map(daScheda));
 
     return {
       computer: osNome(),
       versione: app.getVersion(),
-      indirizzi: elenco,
+      indirizzi: indirizziPubblici(),
       tunnel: {
         fase: fuori.fase,
         indirizzo: fuori.indirizzo,
@@ -1465,6 +1558,16 @@ const fornitorePannello: FornitorePannello = {
     sveglia();
     gateway?.aggiorna();
   },
+
+  /**
+   * Gli indirizzi, senza sapere chi chiede.
+   *
+   * Serve a chi ha appena bussato ed è stato accettato: nel momento in cui
+   * riceve il token deve anche sapere **dove** trovare questo computer domani,
+   * e a quel punto è un dispositivo che esiste da mezzo secondo. È la stessa
+   * lista di `stato().indirizzi`, costruita dallo stesso pezzo di codice.
+   */
+  soloIndirizzi: () => indirizziPubblici(),
 };
 
 /**
@@ -1644,6 +1747,10 @@ export async function spegniAccessoRemoto(): Promise<void> {
   // Prima il tunnel: è un processo figlio, e lasciarlo vivo vorrebbe dire un
   // indirizzo su Internet che punta a una porta che sta per chiudersi.
   await spegniTunnel();
+  // L'annuncio prima del gateway: un computer che continua a dire «ci sono»
+  // mentre la porta si chiude fa comparire nell'elenco degli altri una riga
+  // che non porta da nessuna parte.
+  annunciatore.spegni();
   if (gateway) await gateway.chiudi();
   gateway = null;
   // L'archivio salva in differita: alla chiusura non c'è un "poco dopo".

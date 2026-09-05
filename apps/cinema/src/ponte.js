@@ -106,6 +106,23 @@ export async function cuci(clip, nome) {
   return risposta.json().catch(() => ({ ok: false, motivo: "Il motore non ha risposto." }));
 }
 
+/**
+ * L'ultimo fotogramma di una clip, messo dove il grafo dopo lo ritrova.
+ *
+ * È il pezzo che rende possibili i video lunghi: il fotogramma con cui finisce
+ * un pezzo diventa quello con cui comincia il prossimo, e la giuntura non si
+ * vede perché non c'è. Il lavoro lo fa il motore, che ha FFmpeg — vedi
+ * `/daprod/ultimo-fotogramma` in `services/comfy/nodi/daprod_ponte`.
+ */
+export async function ultimoFotogramma(clip) {
+  const risposta = await fetch(`${motore}/daprod/ultimo-fotogramma`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ clip }),
+  });
+  return risposta.json().catch(() => ({ ok: false, motivo: "Il motore non ha risposto." }));
+}
+
 export async function risultati(id) {
   try {
     const storia = await (await fetch(`${motore}/history/${id}`)).json();

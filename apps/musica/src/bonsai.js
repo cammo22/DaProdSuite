@@ -215,7 +215,7 @@ export function collegaBonsai() {
   void disponibile().then((motivo) => {
     el.bonsaiStato.textContent = motivo
       ? motivo
-      : "Pronto. Consigliato Bonsai 27B con 64K di contesto, ma va bene qualunque modello di LM Studio.";
+      : "Pronto. Consigliato Spark X2.5 4B con 64K di contesto, ma va bene qualunque modello di LM Studio.";
     el.bonsaiStato.classList.toggle("guasto", Boolean(motivo));
   });
 }

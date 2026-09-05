@@ -13,9 +13,27 @@
  * offre su un'API compatibile OpenAI a `127.0.0.1:1234`. Rifare quel lavoro
  * dentro la suite vorrebbe dire un secondo runtime da mantenere per sempre.
  *
- * Il modello consigliato è **Bonsai 27B** (`prism-ml/bonsai-27b`): ternario, sta
- * in 4 GB, ha 262K di contesto e ragiona prima di rispondere. Ma qui dentro non
- * c'è niente che lo pretenda: si parla con quello che LM Studio ha caricato.
+ * Il modello consigliato, dalla 0.9.0, è **Spark X2.5 4B**
+ * ([XHToken/Spark-X2.5-4B](https://huggingface.co/XHToken/Spark-X2.5-4B)):
+ * quattro miliardi di parametri, attenzione ibrida — uno strato pieno ogni tre
+ * a finestra scorrevole — e un milione di token di contesto dichiarati. Ma qui
+ * dentro non c'è niente che lo pretenda: si parla con quello che LM Studio ha
+ * caricato.
+ *
+ * **Perché ha preso il posto di Bonsai 27B**, chiesto il 5 settembre 2026: «per
+ * il modello facciamo che funzioni tutto bene con questo daprod/spark-x2.5-4b».
+ * Le ragioni, oltre alla scelta di chi la usa:
+ *
+ * - **è nato per questo mestiere.** Spark X2.5 è addestrato sugli usi agentici e
+ *   sulle chiamate a strumenti, che è esattamente quello che questa suite gli
+ *   chiede: leggere il catalogo delle azioni e riempirne i campi. Bonsai era un
+ *   modello da conversazione a cui chiedevamo di fare il centralinista;
+ * - **è piccolo davvero.** Quattro miliardi quantizzati stanno in un paio di
+ *   giga: su una scheda da 8 GB restano sei giga per il modello che genera, e
+ *   quel margine è la differenza fra scrivere il testo e poi generare, o
+ *   scrivere il testo e poi finire in out-of-memory;
+ * - **parla italiano.** Duecento lingue dichiarate, e in questa suite si scrive
+ *   in italiano.
  */
 
 import type { EsitoLlm, ModelloLlm, StatoLlm } from "@daprod/ipc";
@@ -30,24 +48,68 @@ import { impostazioni } from "./impostazioni";
 /** Dove ascolta LM Studio quando accendi il suo server locale. */
 const BASE = "http://127.0.0.1:1234/v1";
 
-/** Il modello che consigliamo, e che l'hub dice di scaricare se manca. */
-export const MODELLO_CONSIGLIATO = "prism-ml/bonsai-27b";
+/**
+ * Il modello che consigliamo, e che l'hub dice di scaricare se manca.
+ *
+ * È il nome con cui esce dalla nostra raccolta. Quello ufficiale di chi l'ha
+ * fatto è un altro, e vale lo stesso: vedi [ALTRI_NOMI].
+ */
+export const MODELLO_CONSIGLIATO = "daprod/spark-x2.5-4b";
+
+/**
+ * Gli altri nomi con cui lo stesso modello può comparire in LM Studio.
+ *
+ * **Serve, e non è pignoleria.** Lo stesso modello si scarica da tre posti —
+ * la nostra raccolta, il repository di chi l'ha fatto, la comunità di LM Studio
+ * — e ognuno gli dà il suo nome. Guardando un nome solo, la suite direbbe
+ * «manca» a chi ce l'ha già installato, e gli farebbe scaricare due giga per
+ * niente.
+ *
+ * L'ordine conta: il primo che si trova installato è quello che si usa.
+ */
+export const ALTRI_NOMI = [
+  "daprod/spark-x2.5-4b",
+  "xhtoken/spark-x2.5-4b-gguf",
+  "xhtoken/spark-x2.5-4b",
+  "lmstudio-community/spark-x2.5-4b-gguf",
+] as const;
+
+/**
+ * Vero se questo id è il modello consigliato, comunque si chiami.
+ *
+ * Il confronto è **senza maiuscole**: LM Studio scrive gli id come li ha scritti
+ * chi ha pubblicato il modello, e «XHToken» e «xhtoken» sono la stessa cosa.
+ */
+export function eIlConsigliato(id: string): boolean {
+  const pulito = id.trim().toLowerCase();
+  return ALTRI_NOMI.some((n) => pulito === n || pulito.startsWith(`${n}@`));
+}
+
+/** Quale dei nomi del consigliato è installato, se ce n'è uno. */
+export function ilConsigliatoFra(installati: readonly string[]): string | null {
+  return installati.find((id) => eIlConsigliato(id)) ?? null;
+}
 
 /**
  * Come va caricato in LM Studio, e perché questi numeri.
  *
- * **64K di contesto, non 262K.** Bonsai arriva a 262K, ma il contesto si paga
- * in memoria: la cache delle chiavi cresce con la lunghezza, e ogni GB che
- * prende è un GB che non sta ai pesi. 64K sono già dieci volte quello che serve
- * per finire il testo di una canzone o descrivere un video, e lasciano posto
- * perché il modello stia **tutto in GPU** — che è la differenza fra una risposta
- * in dieci secondi e una in due minuti.
+ * **64K di contesto, e 128K il tetto.** Chiesto il 5 settembre 2026: «sempre
+ * 64k, max 128k, deve capire bene come usare». Spark X2.5 ne dichiara un
+ * milione, ma il contesto si paga in memoria: la cache delle chiavi cresce con
+ * la lunghezza, e ogni GB che prende è un GB che non sta ai pesi. 64K sono già
+ * dieci volte quello che serve per finire il testo di una canzone o descrivere
+ * un video, e lasciano posto perché il modello stia **tutto in GPU** — che è la
+ * differenza fra una risposta in dieci secondi e una in due minuti.
  *
- * **In GPU quello che conta, in RAM il resto.** Ternario, Bonsai sta in ~4 GB:
- * su una scheda da 8 ci sta intero, e vale la pena spingere l'offload GPU al
- * massimo che regge senza far uscire dalla VRAM il modello di immagini o di
- * musica, se stanno lavorando anche loro. Quando non ci sta tutto, LM Studio
- * tiene in RAM gli strati in fondo: rallenta, non rompe.
+ * 128K resta come tetto per chi ha una scheda più grande e un lavoro lungo — la
+ * Storia di DaProdCinema, che spezza mezz'ora di film in cento inquadrature.
+ * Oltre non si va: dalla 0.9.0 i 256K non compaiono nemmeno più fra le scelte.
+ *
+ * **In GPU quello che conta, in RAM il resto.** Quantizzato, Spark sta in un
+ * paio di giga: su una scheda da 8 ci sta largo, e vale la pena spingere
+ * l'offload GPU al massimo che regge senza far uscire dalla VRAM il modello di
+ * immagini o di musica, se stanno lavorando anche loro. Quando non ci sta
+ * tutto, LM Studio tiene in RAM gli strati in fondo: rallenta, non rompe.
  *
  * Sono istruzioni per LM Studio, non impostazioni nostre: il caricamento lo
  * decide lui, e la suite non gli mette le mani in tasca.
@@ -586,7 +648,7 @@ async function preparaDomanda(
   const scelto =
     (domanda.modello && stato.modelli.includes(domanda.modello) ? domanda.modello : null) ??
     caricati[0] ??
-    (stato.modelli.includes(MODELLO_CONSIGLIATO) ? MODELLO_CONSIGLIATO : null) ??
+    ilConsigliatoFra(stato.modelli) ??
     stato.modelli[0] ??
     MODELLO_CONSIGLIATO;
 

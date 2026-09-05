@@ -10,7 +10,7 @@ Un programma solo per fare musica, immagini, video, voci e parlare con un avatar
 Ogni app la installi quando ti serve e la disinstalli quando non ti serve più.
 Gira sul tuo computer: niente account, niente chiavi API, codice aperto.
 
-[![versione](https://img.shields.io/badge/versione-0.8.2-7c5cff)](https://github.com/cammo22/DaProdSuite/releases/latest)
+[![versione](https://img.shields.io/badge/versione-0.9.0-7c5cff)](https://github.com/cammo22/DaProdSuite/releases/latest)
 [![licenza](https://img.shields.io/badge/licenza-MIT-5cff9d)](LICENSE)
 [![piattaforma](https://img.shields.io/badge/Windows-x64-3ddbff)](#requisiti)
 [![sito](https://img.shields.io/badge/sito-cammo22.github.io-ffa63d)](https://cammo22.github.io/DaProdSuite/)
@@ -87,26 +87,25 @@ Alcune app possono scrivere al posto tuo: il testo di una canzone, la
 descrizione di un'immagine. Per farlo serve un modello LLM caricato in
 [LM Studio](https://lmstudio.ai) — **qualunque modello**, la suite usa quello
 che trova. Noi lavoriamo con
-[Bonsai 27B](https://lmstudio.ai/models/prism-ml/bonsai-27b) perché l'abbiamo
-misurato a fondo, ma non è obbligatorio, e senza LLM le app funzionano tutte
-lo stesso.
+[Spark X2.5 4B](https://huggingface.co/XHToken/Spark-X2.5-4B-GGUF), caricato a
+64K di contesto: è nato per il mestiere che gli chiediamo — leggere le azioni
+della suite e riempirne i campi — e sta in un paio di giga, che su una scheda
+da 8 è quello che conta. Non è obbligatorio, e senza LLM le app funzionano
+tutte lo stesso.
 
 ## A che punto siamo
 
-**Ultima pubblicata: 0.8.2 — «La faccia giusta».** Una cosa sola: la foto del
-profilo, che cambiandola continuava a comparire quella di prima.
+**Ultima pubblicata: 0.9.0 — «Il telefono trova il computer».** La più grossa
+da quando esiste l'app del telefono, e cambia il primo minuto: non c'è più un
+codice da farsi dettare. Scegli come ti chiami, e sotto compare l'elenco dei
+computer di casa; ne tocchi uno, di là arriva un avviso, e chi ci sta davanti
+dice di sì.
 
-> La 0.8.1 aveva chiesto al browser di non tenersi la vecchia, e non era
-> bastato. Le facce non sono immagini, sono uno **sfondo**, e un browser riusa
-> uno sfondo il cui indirizzo non è cambiato **senza andare a chiedere**.
-> Adesso l'indirizzo dice **quale** foto è, non solo di chi: foto diversa,
-> indirizzo diverso, e non resta niente da riusare. Cambiarla la fa cambiare
-> dappertutto e subito.
->
-> Per strada: chi non ha una foto adesso mostra le sue iniziali invece di un
-> tondino vuoto.
->
-> ⚠ Cosa è provato e cosa no sta in fondo al [CHANGELOG](CHANGELOG.md) § 0.8.2.
+Dentro ci sono anche il lettore con la fila e il visualizer, gli stili e i
+prompt che si condividono in DaProd, la casella «dillo e basta» che trasforma
+una frase in un lavoro, e tre difetti dell'app chiusi guardando dentro la
+pagina invece che indovinando: il crash che se la portava via, il computer che
+si perdeva cambiando indirizzo, e il tasto indietro che usciva dall'app.
 
 **Prima, la 0.8.1 — «Il fotogramma, la foto, e le parole sotto».** La causa vera
 delle anteprime dei video: FFmpeg scriveva su un file `.part` e sceglie il

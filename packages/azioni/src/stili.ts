@@ -85,24 +85,24 @@ export const SEZIONI: readonly string[] = [
 ];
 
 /**
- * Le lingue in cui si può cantare.
+ * Le lingue in cui si può cantare. **Due, dalla 0.9.0.**
  *
  * ACE-Step la riceve come impostazione vera; MiniMax non ha una casella per la
  * lingua e se la trova aggiunta alla descrizione dello stile. Chi chiede da
  * fuori non deve sapere quale dei due sta usando: dice la lingua e basta.
+ *
+ * ⚠ **Erano undici, e dieci non servivano a nessuno.** Chiesto il 5 settembre
+ * 2026: «come lingue lasciamo solo italiano e inglese». Non è una potatura per
+ * ordine: un menu di undici voci su un telefono sono undici righe da scorrere
+ * per arrivare alle due che si usano, e le altre nove promettevano una cosa che
+ * nessuno ha mai provato — un ritornello in coreano cantato da un modello
+ * addestrato soprattutto su inglese e cinese non è una funzione, è una
+ * scommessa. Chi ne vuole un'altra la scrive nella descrizione, che è la strada
+ * che MiniMax usa comunque.
  */
 export const LINGUE_CANTO: readonly { id: string; nome: string }[] = [
   { id: "it", nome: "Italiano" },
   { id: "en", nome: "Inglese" },
-  { id: "es", nome: "Spagnolo" },
-  { id: "fr", nome: "Francese" },
-  { id: "de", nome: "Tedesco" },
-  { id: "pt", nome: "Portoghese" },
-  { id: "ja", nome: "Giapponese" },
-  { id: "ko", nome: "Coreano" },
-  { id: "zh", nome: "Cinese" },
-  { id: "ru", nome: "Russo" },
-  { id: "ar", nome: "Arabo" },
 ];
 
 /**
@@ -115,8 +115,83 @@ export const LINGUE_CANTO: readonly { id: string; nome: string }[] = [
  */
 export const DURATE_BRANO: readonly number[] = [30, 60, 80, 120, 220];
 
-/** Le durate di una clip video, con la stessa logica. */
-export const DURATE_VIDEO: readonly number[] = [3, 5, 8, 10];
+/**
+ * Le durate di un video, con la stessa logica — e due che non esistevano.
+ *
+ * Da 3 a 20 secondi è **una generazione sola**: venti è il tetto di LTX 2.5, e
+ * non è un numero scelto da noi (vedi `apps/cinema/src/grafi.js`).
+ *
+ * **30 e 60 sono un'altra cosa**, chiesta il 5 settembre 2026: «facciamo video
+ * di 30 secondi e 1 minuto coerenti, mostrando sempre le stesse identiche
+ * cose». Nessun modello che sta in 8 GB fa un minuto in un colpo. Quello che si
+ * può fare — e che LTX 2.5 sa fare bene, perché prende un primo e un ultimo
+ * fotogramma — è **incatenare**: si genera un pezzo, si prende il suo ultimo
+ * fotogramma, e lo si dà come primo al pezzo dopo. Il taglio non si vede
+ * perché non c'è un taglio: il fotogramma è lo stesso.
+ *
+ * Chi chiede 30 o 60 secondi sta chiedendo qualche minuto in più di attesa, e
+ * la descrizione dell'azione glielo dice prima.
+ */
+export const DURATE_VIDEO: readonly number[] = [3, 5, 8, 10, 20, 30, 60];
+
+/**
+ * I battiti al minuto che si scelgono davvero.
+ *
+ * Sono cinque andature, non un cursore: 70 una ballata, 90 un mid-tempo, 120 un
+ * pezzo da ballare, 140 una dance, 170 una corsa. Su un telefono cinque
+ * pulsanti si premono, un cursore da 40 a 220 no.
+ */
+export const BPM_TIPICI: readonly number[] = [70, 90, 120, 140, 170];
+
+/**
+ * Le tonalità, con il nome in italiano.
+ *
+ * Gli id sono quelli che il motore vuole («A minor»), i nomi sono quelli che
+ * una persona riconosce («La minore»). Sono le stesse dodici note per due
+ * modi: l'elenco è lungo, ma è un menu — non una fila di pulsanti.
+ */
+export const TONALITA_CANTO: readonly { id: string; nome: string }[] = (() => {
+  const note: readonly [string, string][] = [
+    ["C", "Do"],
+    ["C#", "Do diesis"],
+    ["D", "Re"],
+    ["D#", "Re diesis"],
+    ["E", "Mi"],
+    ["F", "Fa"],
+    ["F#", "Fa diesis"],
+    ["G", "Sol"],
+    ["G#", "Sol diesis"],
+    ["A", "La"],
+    ["A#", "La diesis"],
+    ["B", "Si"],
+  ];
+  return [
+    ...note.map(([sigla, nome]) => ({ id: `${sigla} minor`, nome: `${nome} minore` })),
+    ...note.map(([sigla, nome]) => ({ id: `${sigla} major`, nome: `${nome} maggiore` })),
+  ];
+})();
+
+/**
+ * Il tempo, cioè quanti movimenti stanno in una battuta.
+ *
+ * Gli id sono i numeri che la scheda manda al motore, non le frazioni: è così
+ * che sono scritti in `apps/musica/index.html`, e due verità su cosa sia «4»
+ * sarebbero una di troppo.
+ */
+export const TEMPI_CANTO: readonly { id: string; nome: string }[] = [
+  { id: "4", nome: "4/4 \u2014 quasi tutta la musica" },
+  { id: "3", nome: "3/4 \u2014 il valzer" },
+  { id: "2", nome: "2/4 \u2014 la marcia" },
+  { id: "6", nome: "6/8 \u2014 la ballata lenta" },
+];
+
+/**
+ * Oltre quanti secondi un video si fa a pezzi incatenati.
+ *
+ * Venti è il tetto di LTX 2.5. Sopra, si spezza — e sotto non si spezza mai,
+ * perché una generazione sola è sempre più coerente di due cucite.
+ */
+export const VIDEO_TUTTO_INTERO = 20;
 
 /* ==========================================================================
    Gli stili delle altre due schede: immagini e video.
