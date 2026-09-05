@@ -55,6 +55,7 @@ export const COPIONE_DAPROD = `
   async function leggiBacheca() {
     disegnaMioProfilo();
     disegnaFiltriDaprod();
+    void disegnaDaProvare();
     var casella = $("bacheca");
     try {
       var risposta = await chiama(
@@ -69,6 +70,89 @@ export const COPIONE_DAPROD = `
       $("bacheca-vuota").hidden = false;
       $("bacheca-vuota").textContent = e.message;
     }
+  }
+
+  /**
+   * Gli stili e i prompt che gli altri fanno provare, in cima a DaProd.
+   *
+   * Chiesto il 5 settembre 2026: «tenendo premuto lo stile e condividendolo in
+   * daprod, cosi' chi va in daprod puo' importare lo stile per usarlo — lo
+   * stesso anche con i prompt».
+   *
+   * **Perche' in cima e non in mezzo alla bacheca.** Perche' non sono la stessa
+   * cosa: la bacheca e' quello che le persone hanno **fatto**, questa e' la
+   * cassetta degli attrezzi con cui l'hanno fatto. Mischiarle vorrebbe dire
+   * scorrere venti foto per trovare uno stile.
+   *
+   * Se non c'e' niente in vetrina la riga non compare: uno spazio vuoto con
+   * scritto «ancora niente» in cima a ogni schermata e' un promemoria che si
+   * impara a saltare.
+   */
+  async function disegnaDaProvare() {
+    var dove = $("da-provare");
+    if (!dove) return;
+    dove.innerHTML = "";
+    var quali = await leggiVetrina();
+    if (!quali.length) { dove.hidden = true; return; }
+    dove.hidden = false;
+
+    var titolo = document.createElement("h3");
+    titolo.textContent = "Da provare";
+    dove.append(titolo);
+
+    var sotto = document.createElement("p");
+    sotto.className = "sotto";
+    sotto.textContent =
+      "Stili e prompt che gli altri hanno messo qui. Prendine uno e diventa tuo: " +
+      "lo cambi come vuoi, e resta scritto di chi era.";
+    dove.append(sotto);
+
+    var riga = document.createElement("div");
+    riga.className = "stili";
+    for (var s of quali) riga.append(cartaDaProvare(s));
+    dove.append(riga);
+  }
+
+  /** Uno stile o un prompt in vetrina: cos'e', di chi e', e il tasto per prenderlo. */
+  function cartaDaProvare(s) {
+    var box = document.createElement("div");
+    box.className = "stile";
+
+    var nome = document.createElement("div");
+    nome.className = "nome";
+    nome.textContent = s.nome;
+
+    var che = document.createElement("div");
+    che.className = "sotto";
+    var etichetta = genereDi(s) === "prompt" ? "prompt" : "stile";
+    che.textContent =
+      etichetta + " per " + infoTipo(tipoDi(s)).nome.toLowerCase() +
+      (s.chiNome ? " \u00b7 di " + s.chiNome : "");
+
+    var parole = document.createElement("div");
+    parole.className = "parole";
+    parole.textContent = s.testo;
+
+    var fila = document.createElement("div");
+    fila.className = "fila";
+
+    var usa = document.createElement("button");
+    usa.className = "mini";
+    usa.textContent = "\u25B6 Provalo";
+    usa.addEventListener("click", (function (uno) {
+      return function () { usaLoStile(uno); };
+    })(s));
+
+    var prendi = document.createElement("button");
+    prendi.className = "mini";
+    prendi.textContent = "\u2913 Prendilo";
+    prendi.addEventListener("click", (function (uno, tasto) {
+      return function () { void prendiLoStile(uno, tasto); };
+    })(s, prendi));
+
+    fila.append(usa, prendi);
+    box.append(nome, che, parole, fila);
+    return box;
   }
 
   /** Una cosa in bacheca: la faccia sopra, la roba in mezzo, i tasti sotto. */

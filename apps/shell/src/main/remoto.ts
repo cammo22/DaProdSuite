@@ -364,6 +364,17 @@ const esegui: Esecutore = async (id, valori, dispositivo) => {
  * libreria — e una funzione che da quell'id ricava il file. Un id che la
  * libreria non riconosce non produce nessun percorso, e la rotta risponde 404.
  */
+/**
+ * Vero se questa persona ha i permessi di decidere.
+ *
+ * Serve alla libreria, che conosce solo un id: dalla 0.9.0 chi decide vede — e
+ * quindi apre — tutto quello che c'e' sul computer, e senza questa domanda i
+ * riquadri di «Di tutti» comparirebbero e non si aprirebbero.
+ */
+function decide(chi: string): boolean {
+  return remoto.listaDispositivi().find((d) => d.id === chi)?.ruolo === "admin";
+}
+
 const fornitoreLibreria: FornitoreLibreria = {
   /**
    * **Ognuno vede le sue, e della bacheca quello che gli altri hanno voluto.**
@@ -384,6 +395,15 @@ const fornitoreLibreria: FornitoreLibreria = {
     if (filtro.app) cerca.app = filtro.app as AppId;
     const bacheca = filtro.dove === "bacheca";
     /**
+     * **Chi decide vede tutto quello che c'è sul computer.**
+     *
+     * Il permesso l'ha già controllato il gateway: qui arriva «tutte» solo se
+     * chi chiede è admin. Vale la stessa cosa che vale per il computer, ed è
+     * la stessa riga: dare a qualcuno i permessi di decidere vuol dire farlo
+     * entrare in casa, non solo lasciargli accettare le richieste.
+     */
+    const vedeTutto = filtro.dove === "tutte";
+    /**
      * **Il computer vede tutto.**
      *
      * Chiesto il 23 agosto 2026: «sulla suite devono essere presenti in
@@ -397,7 +417,7 @@ const fornitoreLibreria: FornitoreLibreria = {
     return libreria
       .cerca(cerca)
       .filter((e) => {
-        if (eIlComputer) return true;
+        if (eIlComputer || vedeTutto) return true;
         if (bacheca) return libreria.inBacheca(e);
         /**
          * **Le tue, e quelle che hai tenuto da parte.**
@@ -450,8 +470,10 @@ const fornitoreLibreria: FornitoreLibreria = {
   file(id, chi) {
     const elemento = libreria.trova(id);
     if (!elemento) return null;
-    // Il computer vede tutto quello che ha sul disco, come sopra.
-    const suo = libreria.padrone(elemento) === chi || chi === PADRONE_DI_CASA;
+    // Il computer vede tutto quello che ha sul disco, come sopra — e dalla
+    // 0.9.0 anche chi decide: senza questa riga, l'elenco «Di tutti» mostrerebbe
+    // dei riquadri che non si aprono.
+    const suo = libreria.padrone(elemento) === chi || chi === PADRONE_DI_CASA || decide(chi);
     if (!suo && !libreria.inBacheca(elemento)) return null;
     return {
       percorso: elemento.percorso,
@@ -515,7 +537,7 @@ const fornitoreLibreria: FornitoreLibreria = {
   async anteprima(id, chi) {
     const elemento = libreria.trova(id);
     if (!elemento) return null;
-    const suo = libreria.padrone(elemento) === chi || chi === PADRONE_DI_CASA;
+    const suo = libreria.padrone(elemento) === chi || chi === PADRONE_DI_CASA || decide(chi);
     const vista = suo || libreria.inBacheca(elemento);
     if (!vista) return null;
     return anteprimaDi(elemento);
@@ -771,7 +793,8 @@ function nomeScheda(app: string): string {
  * vetrina senza un nome sopra, e va bene così: lo stile è ancora buono.
  */
 const fornitoreStili: FornitoreStili = {
-  miei: (chi) => stiliDi(chi),
+  miei: (chi, genere) =>
+    stiliDi(chi, undefined, genere === "prompt" || genere === "stile" ? genere : undefined),
   vetrina: (chi) =>
     stiliInVetrina(
       chi,
@@ -786,6 +809,7 @@ const fornitoreStili: FornitoreStili = {
         dati.tipo === "immagine" || dati.tipo === "video" || dati.tipo === "musica"
           ? dati.tipo
           : undefined,
+      genere: dati.genere === "prompt" ? "prompt" : "stile",
       da: dati.da === "preso" || dati.da === "partenza" ? dati.da : "mio",
       daNome: dati.daNome,
     }),

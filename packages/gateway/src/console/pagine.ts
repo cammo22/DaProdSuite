@@ -341,6 +341,15 @@ export const PAGINE = `<!--
       <div class="avviso" id="avviso-bacheca"></div>
     </div>
 
+    <!--
+      Gli stili e i prompt che gli altri fanno provare.
+
+      Stanno in cima e fuori dalla bacheca perche' non sono la stessa cosa: la
+      bacheca e' quello che le persone hanno **fatto**, questa e' la cassetta
+      degli attrezzi con cui l'hanno fatto.
+    -->
+    <div id="da-provare" hidden></div>
+
     <div class="filtri" id="filtri-daprod"></div>
     <div id="bacheca"></div>
     <div class="vuoto" id="bacheca-vuota" hidden>

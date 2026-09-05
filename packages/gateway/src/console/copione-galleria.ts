@@ -61,6 +61,29 @@ export const COPIONE_GALLERIA = `
       },
     ];
 
+    /**
+     * **Il terzo tasto, e lo vede solo chi decide.**
+     *
+     * Chiesto il 5 settembre 2026: «quando un utente diventa admin, l'admin
+     * dall'app puo' vedere le generazioni di tutti». Ribalta la regola del 22
+     * agosto — «anche gli admin vedono solo le proprie foto» — ed e' un
+     * cambiamento di cosa vuol dire essere admin, non una svista: prima era
+     * «decide sulla fila», adesso e' «governa il computer da fuori come se ci
+     * stesse davanti».
+     *
+     * Il divieto vero sta nel gateway: chi non e' admin, chiedendo «tutte»,
+     * riceve le sue.
+     */
+    if (puoiDecidere) {
+      pezzi.push({
+        id: "tutte",
+        nome: "Di tutti",
+        sotto: "tutto quello che c\u0027\u00e8 sul computer",
+        tinta: "ciano",
+        segno: "\\u25A3",
+      });
+    }
+
     for (var x of pezzi) {
       var b = document.createElement("button");
       b.type = "button";
@@ -118,7 +141,8 @@ export const COPIONE_GALLERIA = `
 
     try {
       var risposta = await chiama(
-        "/libreria?quanti=60&dove=mie" + (filtro ? "&tipo=" + filtro : ""),
+        "/libreria?quanti=60&dove=" + (dove === "tutte" ? "tutte" : "mie") +
+          (filtro ? "&tipo=" + filtro : ""),
       );
       var voci = (risposta && risposta.voci) || [];
       // Quello che si sta guardando adesso: serve al lettore, che quando si
@@ -128,7 +152,9 @@ export const COPIONE_GALLERIA = `
       vociMostrate = voci;
       casella.innerHTML = "";
       $("galleria-vuota").hidden = voci.length > 0;
-      $("galleria-vuota").textContent = "Ancora niente di tuo. Quello che chiedi finisce qui.";
+      $("galleria-vuota").textContent = dove === "tutte"
+        ? "Su questo computer non c\u0027\u00e8 ancora niente."
+        : "Ancora niente di tuo. Quello che chiedi finisce qui.";
       for (var v of voci) casella.append(quadro(v));
     } catch (e) {
       casella.innerHTML = "";

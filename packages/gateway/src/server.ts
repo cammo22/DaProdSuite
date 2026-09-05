@@ -439,7 +439,19 @@ export class Gateway {
         this.json(
           res,
           200,
-          elencoAzioni(dispositivo, this.stili ? (chi) => this.stili!.miei(chi) : undefined),
+          /**
+           * Nel campo «uno stile pronto» ci vanno **gli stili**, non i prompt.
+           *
+           * Dalla 0.9.0 lo stesso archivio tiene tutte e due le cose (vedi
+           * `StileRemoto.genere`): un prompt intero dentro un menu che si
+           * chiama «stile» sarebbe una parola che promette una cosa e ne fa
+           * un'altra — lo stile si aggiunge a quello che scrivi, il prompt lo
+           * sostituisce.
+           */
+          elencoAzioni(
+            dispositivo,
+            this.stili ? (chi) => this.stili!.miei(chi, "stile") : undefined,
+          ),
         );
         return;
       }
@@ -866,7 +878,16 @@ export class Gateway {
               // Chi guarda decide cosa vede: le sue, o quelle che qualcuno ha
               // messo in bacheca. Non e' un filtro comodo, e' il permesso.
               chi: dispositivo.id,
-              dove: url.searchParams.get("dove") === "bacheca" ? "bacheca" : "mie",
+              /**
+               * **«Tutte» lo può chiedere solo chi decide.**
+               *
+               * Il controllo sta qui e non nello shell, come tutti gli altri
+               * permessi: lo shell sa dove stanno i file, il gateway sa chi sta
+               * chiedendo. Chi non è admin e prova a chiedere «tutte» non
+               * riceve un errore — riceve le sue, che è quello che avrebbe
+               * ricevuto comunque.
+               */
+              dove: dovePuoiGuardare(url.searchParams.get("dove"), dispositivo),
             }) ?? [],
         });
         return;
@@ -1470,8 +1491,11 @@ export class Gateway {
        * browser*, non di quella persona. Cambiavi dispositivo e non c'era più.
        */
       if (percorso === "/stili" && req.method === "GET") {
+        // `genere` sceglie fra stili e prompt; senza, tornano tutti e due.
         if (!this.stili) return this.json(res, 200, { stili: [] });
-        this.json(res, 200, { stili: this.stili.miei(dispositivo.id) });
+        this.json(res, 200, {
+          stili: this.stili.miei(dispositivo.id, url.searchParams.get("genere") ?? undefined),
+        });
         return;
       }
 
@@ -1482,12 +1506,14 @@ export class Gateway {
           nome?: string;
           testo?: string;
           tipo?: string;
+          genere?: string;
         };
         const salvato = this.stili.salva(dispositivo.id, {
           id: dati.id,
           nome: String(dati.nome ?? ""),
           testo: String(dati.testo ?? ""),
           tipo: dati.tipo ? String(dati.tipo) : undefined,
+          genere: dati.genere ? String(dati.genere) : undefined,
         });
         if (!salvato) return this.errore(res, 400, "Servono un nome e delle parole.");
         this.json(res, 201, { ok: true, stile: salvato });
@@ -1514,12 +1540,14 @@ export class Gateway {
           nome?: string;
           testo?: string;
           tipo?: string;
+          genere?: string;
           daNome?: string;
         };
         const preso = this.stili.salva(dispositivo.id, {
           nome: String(dati.nome ?? ""),
           testo: String(dati.testo ?? ""),
           tipo: dati.tipo ? String(dati.tipo) : undefined,
+          genere: dati.genere ? String(dati.genere) : undefined,
           da: "preso",
           daNome: dati.daNome ? String(dati.daNome).slice(0, 40) : undefined,
         });
@@ -2198,6 +2226,25 @@ function daDove(req: IncomingMessage): string {
   const diretto = req.socket.remoteAddress ?? "";
   // Node scrive gli IPv4 dentro IPv6 come «::ffff:192.168.1.42».
   return diretto.replace(/^::ffff:/, "").slice(0, 45) || "sconosciuto";
+}
+
+/**
+ * Da che parte questa persona può guardare la libreria.
+ *
+ * `tutte` è la novità della 0.9.0 e vale solo per chi decide: chiesto il 5
+ * settembre 2026, «quando un utente diventa admin, l'admin dall'app può vedere
+ * le generazioni di tutti». Chi non è admin e la chiede ottiene `mie` — un
+ * rifiuto qui non aggiungerebbe sicurezza (il filtro c'è comunque) e
+ * toglierebbe una schermata a chi ha una versione dell'app più nuova del
+ * computer.
+ */
+function dovePuoiGuardare(
+  chiesto: string | null,
+  dispositivo: Dispositivo,
+): "mie" | "bacheca" | "tutte" {
+  if (chiesto === "bacheca") return "bacheca";
+  if (chiesto === "tutte" && dispositivo.ruolo === "admin") return "tutte";
+  return "mie";
 }
 
 function senzaToken(d: Dispositivo): DispositivoPubblico {

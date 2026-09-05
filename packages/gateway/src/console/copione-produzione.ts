@@ -98,6 +98,102 @@ export const COPIONE_PRODUZIONE = `
   }
 
   /** Costruisce il modulo dai campi dichiarati: qui non si sa cosa siano. */
+  /**
+   * I prompt salvati per questa scheda, e il tasto per salvarne uno nuovo.
+   *
+   * Nasce nella 0.9.0, chiesta cosi': «lo stesso anche con i prompt — canzoni,
+   * immagini e video si possono condividere, in modo da usarli e modificarli a
+   * piacere».
+   *
+   * **Perche' qui e non solo nella scheda Stili.** Perche' il momento in cui
+   * uno vuole salvare un prompt e' un secondo dopo averlo scritto, non mezz'ora
+   * dopo in un'altra schermata — e il momento in cui vuole riusarlo e' un
+   * secondo prima di scriverne un altro. Toccarne uno **sostituisce** quello
+   * che c'e' scritto: e' un punto di partenza da cambiare, non una gabbia.
+   */
+  /** Una riga d'avviso sotto al modulo: la stessa che usa «manda». */
+  function avvisaAzione(testo, male) {
+    var dove = $("avviso-azione");
+    if (!dove) return;
+    dove.textContent = testo;
+    dove.className = "avviso" + (male ? " male" : " bene");
+  }
+
+  function rigaPrompt(a) {
+    var riga = document.createElement("div");
+    riga.className = "filtri";
+    riga.style.marginTop = "10px";
+
+    var quale = null;
+    for (var t of TIPI_STILE) if (t.azione === a.id) quale = t.id;
+    if (!quale) return riga;
+
+    var miei = mieiStili.filter(function (s) {
+      return genereDi(s) === "prompt" && tipoDi(s) === quale;
+    });
+
+    for (var pr of miei) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "mini";
+      b.textContent = "\u270E " + pr.nome;
+      b.title = pr.testo;
+      b.addEventListener("click", (function (uno) {
+        return function () {
+          var principale = document.querySelector("#modulo [data-principale]");
+          if (!principale) return;
+          principale.value = uno.testo;
+          principale.dispatchEvent(new Event("input"));
+          principale.focus();
+        };
+      })(pr));
+      riga.append(b);
+    }
+
+    var salva = document.createElement("button");
+    salva.type = "button";
+    salva.className = "mini";
+    salva.textContent = miei.length ? "\u002B salva questo" : "\u002B salva come prompt";
+    salva.addEventListener("click", (function (tipo) {
+      return function () { void salvaComePrompt(tipo); };
+    })(quale));
+    riga.append(salva);
+
+    return riga;
+  }
+
+  /**
+   * Salva quello che c'e' scritto adesso, con un nome.
+   *
+   * Il nome lo si chiede con la finestrella del browser e non con un foglio, ed e'
+   * l'unico posto della console in cui succede: qui la domanda e' una parola
+   * sola, e un foglio che sale per una parola sola sarebbe piu' lento del gesto
+   * che deve rendere veloce.
+   */
+  async function salvaComePrompt(tipo) {
+    var principale = document.querySelector("#modulo [data-principale]");
+    var testo = principale ? principale.value.trim() : "";
+    if (!testo) {
+      avvisaAzione("Scrivi prima cosa vuoi: e\u0027 quello che verrebbe salvato.", true);
+      return;
+    }
+    var nome = window.prompt("Come lo chiami?", testo.slice(0, 40));
+    if (!nome) return;
+    try {
+      await chiama("/stili", {
+        method: "POST",
+        body: JSON.stringify({ nome: nome.trim(), testo: testo, tipo: tipo, genere: "prompt" }),
+      });
+      await leggiStili();
+      // Il modulo si ridisegna perche' la riga dei prompt e' dentro di lui: senza,
+      // quello appena salvato comparirebbe solo cambiando scheda e tornando.
+      scegli(scelta);
+      avvisaAzione("Salvato. Lo ritrovi qui e nella scheda Stili.", false);
+    } catch (e) {
+      avvisaAzione(e.message, true);
+    }
+  }
+
   function scegli(a) {
     scelta = a;
     var modulo = $("modulo");
@@ -112,6 +208,8 @@ export const COPIONE_PRODUZIONE = `
     // I modi di generare messi da parte per questa scheda: si toccano e il
     // modulo si riempie. Stanno sul computer, quindi ci sono anche qui.
     modulo.append(rigaPreset(a));
+    // I prompt salvati: quelli tuoi, e quelli che ti sei preso da DaProd.
+    modulo.append(rigaPrompt(a));
 
     for (var campo of a.campi) {
       var etichetta = document.createElement("label");

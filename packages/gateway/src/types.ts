@@ -413,7 +413,28 @@ export interface FornitoreLibreria {
     app?: string;
     quanti?: number;
     chi: string;
-    dove?: "mie" | "bacheca";
+    /**
+     * Quali cose. **Tre, dalla 0.9.0.**
+     *
+     * - `mie`: le proprie, e quelle tenute da parte. È il caso normale.
+     * - `bacheca`: quelle che qualcuno ha deciso di far vedere.
+     * - `tutte`: **tutto quello che c'è sul computer.**
+     *
+     * ⚠ `tutte` ribalta una decisione presa il 22 agosto 2026 — «anche gli
+     * admin possono vedere ognuno solo le proprie foto» — e il motivo del
+     * ribaltamento è quello dichiarato il 5 settembre: «quando un utente
+     * diventa admin, l'admin dall'app può vedere le generazioni di tutti».
+     *
+     * Non è una svista dell'una o dell'altra volta: è cambiato cosa vuol dire
+     * essere admin. Prima era «decide sulla fila»; adesso è «governa il
+     * computer da fuori come se ci stesse davanti» — e chi sta davanti al
+     * computer vede già tutto, perché i file stanno sul suo disco. Chi decide
+     * di dare i permessi a qualcuno lo sta facendo entrare in casa.
+     *
+     * Chi non è admin e chiede `tutte` riceve `mie`: il divieto sta nel
+     * gateway, non qui.
+     */
+    dove?: "mie" | "bacheca" | "tutte";
   }): VoceLibreria[];
   /**
    * Il file di una voce: percorso sul disco e come si chiama. Null se non c'è
@@ -899,6 +920,19 @@ export interface StileRemoto {
    * immagine dentro la Produzione immagini e non dentro quella dei brani.
    */
   tipo?: string;
+  /**
+   * Se è **uno stile** o **un prompt intero**: `stile` (di suo) o `prompt`.
+   *
+   * Nuovo dalla 0.9.0, chiesto il 5 settembre 2026: «lo stesso anche con i
+   * prompt — canzoni, immagini e video si possono condividere, in modo da
+   * usarli e modificarli a piacere».
+   *
+   * Sono la stessa cosa e non due: un nome, delle parole, un tipo, un padrone,
+   * e la possibilità di metterlo in vetrina. Cambia dove finiscono le parole —
+   * uno stile si aggiunge a quello che scrivi, un prompt lo sostituisce — ed è
+   * tutta lì la differenza.
+   */
+  genere?: string;
   /** `partenza`, `mio`, `preso`: da dove viene. */
   da: string;
   /** Chi l'ha fatto, se è arrivato da un altro. */
@@ -913,8 +947,13 @@ export interface StileRemoto {
 
 /** Chi sa rispondere sugli stili: lo passa lo shell. */
 export interface FornitoreStili {
-  /** I miei. Alla prima volta, quelli di partenza. */
-  miei(chi: string): StileRemoto[];
+  /**
+   * I miei. Alla prima volta, quelli di partenza.
+   *
+   * `genere` sceglie fra gli stili e i prompt; senza, tornano tutti e due —
+   * che è quello che serve alla scheda Stili, la quale li separa da sé.
+   */
+  miei(chi: string, genere?: string): StileRemoto[];
   /** Quelli che gli altri hanno messo in vetrina. */
   vetrina(chi: string): StileRemoto[];
   /** Salva uno stile: nuovo, o al posto di uno che c'era. */
@@ -925,6 +964,7 @@ export interface FornitoreStili {
       nome: string;
       testo: string;
       tipo?: string;
+      genere?: string;
       da?: string;
       daNome?: string;
     },
