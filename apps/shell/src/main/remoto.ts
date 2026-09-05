@@ -75,6 +75,7 @@ import {
   togliDallaFila,
 } from "./esecuzione";
 import { avvisaSulComputer } from "./avvisi";
+import { capisciComunque } from "./needle";
 import { cartelleImportanti, tieniInDaProd } from "./cartelle";
 import {
   buttaLaCartella,
@@ -874,6 +875,14 @@ collegaChiacchierata({
  * cui si può chiedere di scrivere.
  */
 const fornitoreAi: FornitoreAi = {
+  /**
+   * La frase che diventa un lavoro: prima Needle, poi il modello.
+   *
+   * Vedi `needle.ts` per il perché di tutte e due le strade. Qui c'è solo il
+   * collegamento: il gateway non deve sapere che esiste un binario da 14 MB.
+   */
+  capisci: async (frase) => capisciComunque(frase),
+
   disponibile: () => aiDisponibile(),
   migliora: (opzioni) => migliora(opzioni),
 };

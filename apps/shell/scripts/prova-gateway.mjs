@@ -114,6 +114,18 @@ const fintaAi = {
       ? { testo: `[${app}] ${testo}, scritto meglio`, parole: "[Verse] due parole cantate" }
       : { testo: `[${app}] ${testo}, scritto meglio` };
   },
+  /**
+   * La frase che diventa un lavoro.
+   *
+   * Il vero sta in `needle.ts` e passa da un binario da 14 MB; qui basta che
+   * risponda in modo credibile, perche' quello che si prova e' **il contratto
+   * della rotta**: chi puo' chiamarla, cosa torna, e cosa succede quando non ha
+   * capito.
+   */
+  capisci: async (frase) =>
+    /video/i.test(frase)
+      ? { azione: "genera.video", valori: { prompt: frase, secondi: "5" }, fiducia: 0.9, perche: "«video»", da: "needle" }
+      : null,
 };
 
 /** I preset, tenuti in memoria per la durata della prova. */
@@ -1229,6 +1241,32 @@ console.log("\n— le azioni sanno gli stili di chi chiede —");
   dice("le durate sono pulsanti", (durata?.valoriTipici || []).includes(220));
   const lingua = brano?.campi?.find((c) => c.nome === "lingua");
   dice("e la lingua si sceglie", (lingua?.scelte || []).includes("it"));
+}
+
+console.log("\n— la frase che diventa un lavoro —");
+{
+  const fatto = await chiama("/capisci", {
+    metodo: "POST",
+    token: tokenAdmin,
+    corpo: { frase: "fammi un video di una barca" },
+  });
+  dice("capisce una frase", fatto.dati?.ok === true);
+  dice("e dice quale azione", fatto.dati?.azione === "genera.video");
+  dice("con i campi dentro", !!fatto.dati?.valori?.prompt);
+  dice("e chi ha risposto", fatto.dati?.da === "needle");
+
+  const boh = await chiama("/capisci", {
+    metodo: "POST",
+    token: tokenAdmin,
+    corpo: { frase: "che ore sono" },
+  });
+  dice("non capire non e' un errore", boh.stato === 200 && boh.dati?.ok === false);
+
+  const vuota = await chiama("/capisci", { metodo: "POST", token: tokenAdmin, corpo: { frase: "  " } });
+  dice("una frase vuota si ferma qui", vuota.stato === 400);
+
+  const senzaToken = await chiama("/capisci", { metodo: "POST", corpo: { frase: "fammi un video" } });
+  dice("e senza credenziale non si chiede", senzaToken.stato === 401);
 }
 
 console.log("\n— bussare invece di battere un codice —");

@@ -651,6 +651,14 @@ export const STILE = `  :root {
   .bussa b { display: block; font-size: 13.5px; }
   .bussa small { color: var(--dim); font-size: 11.5px; display: block; overflow-wrap: anywhere; }
 
+  /* --------------------------------------------------------- dillo e basta */
+  /* Una riga sola: la casella e il tasto. Sta in cima alla Produzione perche'
+     e' il modo piu' corto per arrivare a un lavoro, e quello piu' corto va
+     davanti agli altri. */
+  .dillo { display: flex; gap: 8px; margin: 12px 0 4px; }
+  .dillo input { flex: 1; min-width: 0; margin: 0; }
+  .dillo button { flex: 0 0 auto; }
+
   /* ------------------------------------------------------- il visualizer */
   /* Dietro a tutto, e senza toccare niente: nessun evento del mouse arriva
      qui, quindi la pagina sopra funziona esattamente come prima. */

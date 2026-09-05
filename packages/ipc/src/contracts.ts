@@ -218,7 +218,7 @@ export type ChiPassaSubito = "mai" | "admin" | "tutti";
  * 64K è quello con cui abbiamo lavorato finora, 128K serve a chi dà in pasto
  * documenti lunghi, 256K è il massimo di Bonsai e su otto GB lo si paga.
  */
-export const CONTESTI_LLM = [32_768, 65_536, 131_072, 262_144] as const;
+export const CONTESTI_LLM = [32_768, 65_536, 131_072] as const;
 
 /* ----------------------------------------------------------------------- llm */
 

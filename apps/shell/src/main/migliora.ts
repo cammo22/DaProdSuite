@@ -35,8 +35,8 @@
  */
 
 import {
-  CONTESTO_CONSIGLIATO,
-  MODELLO_CONSIGLIATO,
+  contestoScelto,
+  eIlConsigliato,
   caricaModello,
   chiediAllLlm,
   puoiCaricare,
@@ -173,21 +173,25 @@ export async function aiDisponibile(): Promise<string | null> {
 /**
  * Sceglie il modello, e se serve lo carica con i 64K.
  *
- * Se Bonsai è installato ma spento lo si accende **a 64K di contesto**, che è
- * il punto di tutta la faccenda: lasciarlo caricare a LM Studio vorrebbe dire
- * prendersi il contesto predefinito, che su questo modello è quattro volte
- * tanto e non ci sta in scheda insieme a niente.
+ * Se il consigliato è installato ma spento lo si accende **al contesto scelto**
+ * (64K di suo), che è il punto di tutta la faccenda: lasciarlo caricare a LM
+ * Studio vorrebbe dire prendersi il contesto predefinito, che su Spark X2.5 è
+ * un milione di token e non ci starebbe in scheda insieme a niente.
+ *
+ * Il nome con cui è installato può essere uno dei tanti (la nostra raccolta, il
+ * repository di chi l'ha fatto, la comunità di LM Studio): si cerca per tutti,
+ * e si usa quello che si trova. Vedi `ALTRI_NOMI` in llm.ts.
  */
 async function conChiParlo(): Promise<string | undefined> {
   const stato = await statoLlm();
-  const bonsai = stato.disponibili?.find((m) => m.id === MODELLO_CONSIGLIATO);
-  if (!bonsai) return stato.modelli[0];
-  if (!bonsai.caricato && puoiCaricare()) {
+  const quale = stato.disponibili?.find((m) => eIlConsigliato(m.id));
+  if (!quale) return stato.modelli[0];
+  if (!quale.caricato && puoiCaricare()) {
     // Se il caricamento non riesce non è la fine: LM Studio lo carica da sé
     // alla prima domanda, solo con il contesto che decide lui.
-    await caricaModello(MODELLO_CONSIGLIATO, CONTESTO_CONSIGLIATO);
+    await caricaModello(quale.id, contestoScelto());
   }
-  return MODELLO_CONSIGLIATO;
+  return quale.id;
 }
 
 /**

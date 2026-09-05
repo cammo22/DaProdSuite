@@ -625,6 +625,29 @@ export interface FornitoreAi {
    * che si legga bene ad alta voce.
    */
   migliora(opzioni: { testo: string; app: string }): Promise<{ testo: string; parole?: string }>;
+  /**
+   * Legge una frase e dice **che lavoro sarebbe**.
+   *
+   * Nuovo dalla 0.9.0: è la casella in cui uno scrive «fammi una foto di un
+   * faro al tramonto» e si ritrova il modulo della Produzione già riempito.
+   * Torna `null` quando nessuna azione può servire quella frase — e non è un
+   * guasto, è la risposta giusta a una casella in cui la gente scrive quello
+   * che le pare.
+   *
+   * **Non fa partire niente**: dice cosa ha capito, e il sì lo dà chi ha
+   * scritto guardando il modulo. Una casella che manda in coda da sola è il
+   * modo più veloce di far generare a qualcuno una cosa che non aveva chiesto.
+   *
+   * Facoltativa: una suite che non ce l'ha risponde 501 invece di sparire.
+   */
+  capisci?(frase: string): Promise<{
+    azione: string;
+    valori: Record<string, string>;
+    fiducia: number;
+    perche?: string;
+    /** Chi ha risposto: `needle` in millisecondi, `modello` in secondi. */
+    da: string;
+  } | null>;
 }
 
 /* ------------------------------------------------------------- i preset */

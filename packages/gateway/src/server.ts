@@ -646,6 +646,28 @@ export class Gateway {
        * meno per la generazione che sta girando, e chi non decide non ha modo
        * di sapere cosa sta facendo il computer in quel momento.
        */
+      /**
+       * Una frase, e che lavoro sarebbe.
+       *
+       * È la rotta della casella «dillo e basta» in Produzione. Non mette
+       * niente in coda: dice quale azione e con che campi, e la pagina riempie
+       * il modulo. Chi legge decide.
+       */
+      if (percorso === "/capisci" && req.method === "POST") {
+        if (!this.ai?.capisci) {
+          return this.errore(res, 501, "Su questo computer non c'\u00e8 nessuno che capisca le frasi.");
+        }
+        const frase = String(((corpo ?? {}) as { frase?: string }).frase ?? "").slice(0, 500);
+        if (!frase.trim()) return this.errore(res, 400, "Scrivi cosa vuoi.");
+        const capito = await this.ai.capisci(frase);
+        if (!capito) {
+          this.json(res, 200, { ok: false, motivo: "Non ho capito che lavoro sarebbe." });
+          return;
+        }
+        this.json(res, 200, { ok: true, ...capito });
+        return;
+      }
+
       if (percorso === "/ai/migliora" && req.method === "POST") {
         if (!this.ai) return this.errore(res, 501, "Questa suite non ha un modello a cui chiedere.");
         if (dispositivo.ruolo !== "admin") {

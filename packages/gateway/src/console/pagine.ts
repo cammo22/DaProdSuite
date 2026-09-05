@@ -173,6 +173,25 @@ export const PAGINE = `<!--
     <div class="scheda">
       <h2>Produzione</h2>
       <p class="sotto">Lo fa il computer. Tu scegli cosa, e lui lo mette in lavorazione.</p>
+
+      <!--
+        **Dillo e basta.** La casella in cui si scrive una frase in italiano e
+        il modulo qui sotto si riempie da solo.
+
+        E' il terzo passo che docs/AZIONI-E-MCP.md aveva segnato un anno fa e
+        che era rimasto aperto: il catalogo delle azioni e l'MCP c'erano gia',
+        mancava **il posto in cui scrivere la frase**. A rispondere e' Needle 2
+        se sul computer c'e', il modello di LM Studio se no.
+
+        Non manda in coda niente: riempie il modulo e ti fa vedere cosa ha
+        capito. Il si' lo dai tu, con il tasto di sempre.
+      -->
+      <div class="dillo">
+        <input id="dillo-cosa" autocomplete="off"
+               placeholder="Dillo e basta: «un faro al tramonto, in foto»">
+        <button id="dillo-vai" class="mini">Capiscimi</button>
+      </div>
+      <div class="avviso" id="dillo-avviso"></div>
       <div class="tastoni" id="elenco-azioni"></div>
       <div class="filtri" id="altre-azioni" style="margin-top:12px"></div>
       <form id="modulo" hidden onsubmit="return false"></form>

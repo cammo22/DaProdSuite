@@ -87,9 +87,11 @@ Alcune app possono scrivere al posto tuo: il testo di una canzone, la
 descrizione di un'immagine. Per farlo serve un modello LLM caricato in
 [LM Studio](https://lmstudio.ai) — **qualunque modello**, la suite usa quello
 che trova. Noi lavoriamo con
-[Bonsai 27B](https://lmstudio.ai/models/prism-ml/bonsai-27b) perché l'abbiamo
-misurato a fondo, ma non è obbligatorio, e senza LLM le app funzionano tutte
-lo stesso.
+[Spark X2.5 4B](https://huggingface.co/XHToken/Spark-X2.5-4B-GGUF), caricato a
+64K di contesto: è nato per il mestiere che gli chiediamo — leggere le azioni
+della suite e riempirne i campi — e sta in un paio di giga, che su una scheda
+da 8 è quello che conta. Non è obbligatorio, e senza LLM le app funzionano
+tutte lo stesso.
 
 ## A che punto siamo
 

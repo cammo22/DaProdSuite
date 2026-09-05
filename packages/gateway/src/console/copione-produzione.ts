@@ -111,6 +111,104 @@ export const COPIONE_PRODUZIONE = `
    * secondo prima di scriverne un altro. Toccarne uno **sostituisce** quello
    * che c'e' scritto: e' un punto di partenza da cambiare, non una gabbia.
    */
+  /* ---------------------------------------------------------- dillo e basta */
+
+  /**
+   * Una frase in italiano, e il modulo si riempie.
+   *
+   * Chi risponde e' Needle 2 se sul computer c'e', il modello di LM Studio se
+   * no (vedi needle.ts nello shell). Qui non cambia niente: si manda la frase,
+   * si riceve **quale azione e con che campi**, e si riempie il modulo.
+   *
+   * ⚠ **Non si manda in coda.** Riempire e' tutto quello che fa: quello che ha
+   * capito resta sotto gli occhi di chi ha scritto, e il si' lo da' lui con il
+   * tasto di sempre. Una casella che fa partire lavori senza far vedere cosa ha
+   * capito e' il modo piu' veloce di far generare a qualcuno una cosa che non
+   * aveva chiesto.
+   */
+  async function dilloEBasta() {
+    var casella = $("dillo-cosa");
+    var tasto = $("dillo-vai");
+    var avviso = $("dillo-avviso");
+    var frase = casella.value.trim();
+    if (!frase) { casella.focus(); return; }
+
+    tasto.disabled = true;
+    var prima = tasto.textContent;
+    tasto.textContent = "un attimo\u2026";
+    avviso.textContent = "";
+    avviso.className = "avviso";
+
+    try {
+      var esito = await chiama("/capisci", {
+        method: "POST",
+        body: JSON.stringify({ frase: frase }),
+      });
+      if (!esito || !esito.ok) {
+        avviso.textContent = (esito && esito.motivo) ||
+          "Non ho capito che lavoro sarebbe. Prova a dirlo con altre parole, " +
+          "oppure scegli qui sotto cosa vuoi fare.";
+        avviso.className = "avviso male";
+        return;
+      }
+      riempiDaCapito(esito);
+      avviso.className = "avviso bene";
+      avviso.textContent =
+        "Ho capito: " + (nomeAzione(esito.azione) || esito.azione) +
+        (esito.perche ? " \u00b7 " + esito.perche : "") +
+        ". Guarda qui sotto e cambia quello che vuoi.";
+      casella.value = "";
+    } catch (e) {
+      avviso.textContent = e.message;
+      avviso.className = "avviso male";
+    } finally {
+      tasto.disabled = false;
+      tasto.textContent = prima;
+    }
+  }
+
+  /** Il titolo di un'azione, per dirlo a parole invece che con un id. */
+  function nomeAzione(id) {
+    for (var a of azioni) if (a.id === id) return a.titolo;
+    return "";
+  }
+
+  /**
+   * Apre l'azione capita e ci mette dentro i campi.
+   *
+   * I campi si scrivono **uno per uno e solo se esistono**: un modello che si
+   * inventa un campo non deve poter far comparire una casella che l'azione non
+   * ha, e uno che ne dimentica uno non deve svuotare quelli che c'erano.
+   */
+  function riempiDaCapito(esito) {
+    var azione = null;
+    for (var a of azioni) if (a.id === esito.azione) azione = a;
+    if (!azione) return;
+    scegli(azione);
+
+    for (var nome in esito.valori) {
+      if (!Object.prototype.hasOwnProperty.call(esito.valori, nome)) continue;
+      var campo = document.querySelector('#modulo [data-campo="' + nome + '"]');
+      if (!campo) continue;
+      var valore = esito.valori[nome];
+      if (campo.type === "checkbox") {
+        campo.checked = valore === "true" || valore === "1" || valore === "si";
+      } else {
+        campo.value = valore;
+      }
+      campo.dispatchEvent(new Event("input", { bubbles: true }));
+      campo.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+
+    // Le pastiglie non guardano il campo nascosto: si ridisegnano da sole
+    // quando cambia, e senza questo giro resterebbero accese su quella di prima.
+    for (var p of document.querySelectorAll("#modulo .filtri button[data-valore]")) {
+      var nascosto = p.parentElement && p.parentElement.previousElementSibling;
+      if (!nascosto || !nascosto.dataset) continue;
+      p.classList.toggle("on", p.dataset.valore === nascosto.value);
+    }
+  }
+
   /** Una riga d'avviso sotto al modulo: la stessa che usa «manda». */
   function avvisaAzione(testo, male) {
     var dove = $("avviso-azione");

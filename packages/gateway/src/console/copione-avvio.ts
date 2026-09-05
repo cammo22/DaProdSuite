@@ -114,6 +114,10 @@ export const COPIONE_AVVIO = `
   $("codice").addEventListener("keydown", function (ev) { if (ev.key === "Enter") collega(); });
   $("nome").addEventListener("keydown", function (ev) { if (ev.key === "Enter") $("codice").focus(); });
   $("manda").addEventListener("click", manda);
+  $("dillo-vai").addEventListener("click", function () { void dilloEBasta(); });
+  $("dillo-cosa").addEventListener("keydown", function (ev) {
+    if (ev.key === "Enter") { ev.preventDefault(); void dilloEBasta(); }
+  });
   $("annulla").addEventListener("click", chiudiModulo);
   $("apri-impostazioni").addEventListener("click", apriImpostazioni);
   $("vedi-bussate").addEventListener("click", function () { void apriLaRete(); });

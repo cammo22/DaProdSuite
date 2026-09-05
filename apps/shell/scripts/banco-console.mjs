@@ -311,6 +311,25 @@ const gateway = new G.Gateway({
       testo: `[${app}] ${testo}, scritto meglio`,
       parole: "[Verse] due parole cantate",
     }),
+    /**
+     * Un finto Needle: guarda tre parole e decide.
+     *
+     * Non deve essere bravo — deve far comparire il modulo riempito, che e' la
+     * cosa che si guarda con gli occhi. Il vero sta in `needle.ts`.
+     */
+    capisci: async (frase) => {
+      const f = frase.toLowerCase();
+      if (/video|clip|filmat/.test(f)) {
+        return { azione: "genera.video", valori: { prompt: frase, secondi: "5" }, fiducia: 0.9, perche: "«video» → una clip", da: "needle" };
+      }
+      if (/canzon|brano|music/.test(f)) {
+        return { azione: "genera.brano", valori: { descrizione: frase, secondi: "60" }, fiducia: 0.9, perche: "«canzone» → un brano", da: "needle" };
+      }
+      if (/foto|immagin|quadro|disegn/.test(f)) {
+        return { azione: "genera.immagine", valori: { prompt: frase, quante: "1" }, fiducia: 0.9, perche: "«foto» → un'immagine", da: "needle" };
+      }
+      return null;
+    },
   },
   preset: {
     elenco: () => [{ id: "p1", app: "musica", nome: "il mio solito", testo: "nu disco", campi: {} }],
