@@ -49,6 +49,23 @@ data class Profilo(
     val ruolo: String,
     /** Come si chiama il computer a cui è collegata questa persona. */
     val computer: String,
+    /**
+     * L'id con cui quel computer si annuncia sulla rete. Dalla 0.9.0.
+     *
+     * ⚠ **È la cura di «spesso non si collega».** Gli indirizzi sono fotografie:
+     * cambia il router, il computer prende un IP nuovo, e tutti quelli salvati
+     * diventano morti insieme. Prima da lì non si tornava indietro — l'unica
+     * strada era rifare il codice, cioè tornare davanti al PC.
+     *
+     * Con questo id il telefono può **ritrovarlo**: quando nessun indirizzo
+     * risponde, chiede in giro chi c'è (vedi `Scoperta`) e se sente un computer
+     * con questo id si riscrive l'indirizzo da solo. Il token resta quello: non
+     * è cambiato il computer, è cambiato dove sta.
+     *
+     * Vuoto per chi si è accoppiato col codice o prima della 0.9.0: per loro
+     * vale quello che valeva prima.
+     */
+    val pcId: String = "",
     val ultimoUso: Long,
 ) {
     val ePadrone: Boolean get() = ruolo == "admin"
@@ -135,6 +152,7 @@ object Profili {
                     .put("token", p.token)
                     .put("ruolo", p.ruolo)
                     .put("computer", p.computer)
+                    .put("pcId", p.pcId)
                     .put("ultimoUso", p.ultimoUso),
             )
         }
@@ -157,6 +175,7 @@ object Profili {
         token = j.optString("token"),
         ruolo = j.optString("ruolo", "ospite"),
         computer = j.optString("computer"),
+        pcId = j.optString("pcId"),
         ultimoUso = j.optLong("ultimoUso"),
     )
 

@@ -127,6 +127,9 @@ class MainActivity : AppCompatActivity() {
      */
     private var staSuonando = false
 
+    /** Chi guarda se la rete torna, per riprovare da soli. */
+    private var guardiaRete: android.net.ConnectivityManager.NetworkCallback? = null
+
     /** Dove stiamo: la schermata visibile adesso. */
     /**
      * Le quattro schermate, e SCOPRI è quella nuova della 0.9.0.
@@ -327,6 +330,7 @@ class MainActivity : AppCompatActivity() {
             cercaAggiornamento(dilloSempre = false)
         }
 
+        guardaLaRete()
         riprendi()
     }
 
@@ -751,6 +755,9 @@ class MainActivity : AppCompatActivity() {
             token = esito.token,
             ruolo = esito.ruolo,
             computer = esito.computer,
+            // L'id con cui quel computer si annuncia: è quello che permetterà
+            // di ritrovarlo il giorno che cambia indirizzo. Vedi `Profilo.pcId`.
+            pcId = c.id,
             ultimoUso = System.currentTimeMillis(),
         )
         Profili.salva(this, profilo)
@@ -1011,7 +1018,34 @@ class MainActivity : AppCompatActivity() {
             diCheEStatoTolto(persona)
             return@launch
         }
-        val vivo = (esito as? Indirizzi.Esito.Trovato)?.base
+        var vivo = (esito as? Indirizzi.Esito.Trovato)?.base
+
+        /**
+         * Nessun indirizzo risponde: **prima di arrendersi, si guarda in giro.**
+         *
+         * ⚠ È la cura di «spesso non si collega», ed è il caso che capitava di
+         * più senza che si capisse perché: cambia il router, o il computer
+         * riparte e il DHCP gli dà un IP diverso, e **tutti** gli indirizzi
+         * salvati muoiono insieme. Da lì non si tornava indietro — l'unica
+         * strada era rifare il codice, cioè tornare davanti al PC, che è
+         * esattamente la cosa che uno non può fare dal divano.
+         *
+         * Adesso il telefono chiede in giro chi c'è, e se sente un computer con
+         * lo stesso id di quello a cui è collegato si riscrive l'indirizzo da
+         * solo. Il token resta quello: non è cambiato il computer, è cambiato
+         * dove sta.
+         */
+        if (vivo == null && persona.pcId.isNotBlank()) {
+            binding.attesa.visibility = View.VISIBLE
+            val sentiti = Scoperta.cerca(this@MainActivity, 3_000)
+            binding.attesa.visibility = View.GONE
+            val suo = sentiti.firstOrNull { it.id == persona.pcId }
+            if (suo != null && GatewayClient(suo.doveBussare, persona.token).raggiungibile(4_000)) {
+                vivo = suo.doveBussare
+                Profili.ricordaBasi(this@MainActivity, persona.id, suo.tutti)
+            }
+        }
+
         if (vivo == null) {
             apriDallaCopia(persona)
             return@launch
@@ -1530,6 +1564,41 @@ class MainActivity : AppCompatActivity() {
             }
 
             /**
+             * ⚠ **Il processo della pagina è morto. Senza questa funzione, muore l'app.**
+             *
+             * È quasi certamente la causa principale di «spesso crasha». La
+             * WebView di Android non gira dentro l'app: gira in un processo suo,
+             * che il sistema può uccidere quando la memoria scarseggia — e
+             * questa pagina tiene in memoria immagini, video e un canvas che
+             * disegna sessanta volte al secondo. Quando quel processo muore,
+             * il comportamento **predefinito di Android è far morire anche
+             * l'app**, senza un errore, senza una schermata: si chiude e basta.
+             *
+             * Rispondendo `true` si dice «me ne occupo io». E occuparsene vuol
+             * dire tre righe: si butta via la WebView morta — usarla ancora
+             * fa esplodere l'app un attimo dopo — se ne fa una nuova, e si
+             * riapre la suite. Chi guarda vede un lampo e la pagina che torna,
+             * invece dell'app che sparisce.
+             *
+             * `didCrash` distingue un guasto vero da un'uccisione per memoria:
+             * si scrive nel registro perché sono due cose diverse da inseguire,
+             * ma la cura è la stessa.
+             */
+            override fun onRenderProcessGone(
+                view: WebView?,
+                dettaglio: android.webkit.RenderProcessGoneDetail?,
+            ): Boolean {
+                val perche = if (dettaglio?.didCrash() == true) "un guasto" else "la memoria"
+                rinasciLaWebView()
+                Toast.makeText(
+                    this@MainActivity,
+                    "La pagina si e' chiusa da sola ($perche). L'ho riaperta.",
+                    Toast.LENGTH_SHORT,
+                ).show()
+                return true
+            }
+
+            /**
              * Se cade la pagina principale si passa alla copia.
              *
              * Un'immagine che non arriva non è un motivo per cambiare tutto:
@@ -1544,6 +1613,96 @@ class MainActivity : AppCompatActivity() {
                 if (stiamoOffline) return
                 chi?.let { apriDallaCopia(it) }
             }
+        }
+    }
+
+    /**
+     * Butta la WebView morta e ne mette una nuova al suo posto.
+     *
+     * ⚠ **La riga che conta è `destroy()`.** Una WebView il cui processo è
+     * morto non si può riusare: la prima chiamata dopo — anche solo un
+     * `loadUrl` — fa esplodere l'app, e questa volta davvero. Va tolta dalla
+     * gerarchia, distrutta, e ricostruita da zero.
+     *
+     * La nuova prende lo stesso posto e lo stesso id di quella di prima, così
+     * `binding.web` continua a puntare a qualcosa di vivo e tutto il resto del
+     * file non si accorge di niente.
+     */
+    private fun rinasciLaWebView() {
+        val vecchia = binding.web
+        val padre = vecchia.parent as? ViewGroup ?: return
+        val posto = padre.indexOfChild(vecchia)
+        val dimensioni = vecchia.layoutParams
+
+        padre.removeView(vecchia)
+        vecchia.destroy()
+
+        val nuova = WebView(this).apply {
+            id = vecchia.id
+            layoutParams = dimensioni
+            visibility = View.GONE
+        }
+        padre.addView(nuova, posto)
+        // Il binding tiene un riferimento a quella di prima: si riaggancia,
+        // altrimenti da qui in poi si parlerebbe con un fantasma.
+        rifaiIlLegame(nuova)
+        preparaWeb()
+        chi?.let { apriSuite() }
+    }
+
+    /**
+     * Rimette la WebView nuova dentro il binding.
+     *
+     * ViewBinding tiene i suoi campi in sola lettura — è il suo mestiere — e
+     * qui serve l'unica cosa che non prevede: sostituire una view viva. Si
+     * rifà il binding sulla radice, che è la strada pulita: non tocca niente
+     * di privato e non si rompe il giorno che la libreria cambia.
+     */
+    private fun rifaiIlLegame(@Suppress("UNUSED_PARAMETER") nuova: WebView) {
+        binding = ActivityMainBinding.bind(binding.root)
+    }
+
+    /**
+     * La rete torna: **si riprova, senza che nessuno prema niente.**
+     *
+     * ⚠ È la seconda metà di «spesso non si collega». Il caso vero: si esce di
+     * casa, il telefono passa ai dati, la suite non risponde più e l'app mostra
+     * la copia. Si torna a casa, il wifi si riattacca — e l'app resta lì, con
+     * la copia, finché non la si chiude e riapre. Da fuori sembra rotta.
+     *
+     * Con questo, appena una rete diventa disponibile e stavamo guardando la
+     * copia, si rifà il giro degli indirizzi. Se il computer c'è, la pagina
+     * torna quella vera da sola.
+     *
+     * `onAvailable` arriva su un thread suo: tutto quello che tocca le view va
+     * rimandato al thread giusto, ed è il motivo del `runOnUiThread`.
+     */
+    private fun guardaLaRete() {
+        val gestore = getSystemService(android.net.ConnectivityManager::class.java) ?: return
+        guardiaRete = object : android.net.ConnectivityManager.NetworkCallback() {
+            override fun onAvailable(rete: android.net.Network) {
+                runOnUiThread {
+                    if (dove == Dove.SUITE && stiamoOffline && chi != null) apriSuite()
+                }
+            }
+        }
+        try {
+            gestore.registerDefaultNetworkCallback(guardiaRete!!)
+        } catch (_: Exception) {
+            // Su qualche telefono la registrazione può fallire: si resta come
+            // prima, cioè con il tasto «ricarica». Non è un motivo per morire.
+            guardiaRete = null
+        }
+    }
+
+    private fun smettiDiGuardareLaRete() {
+        val guardia = guardiaRete ?: return
+        guardiaRete = null
+        try {
+            getSystemService(android.net.ConnectivityManager::class.java)
+                ?.unregisterNetworkCallback(guardia)
+        } catch (_: Exception) {
+            // Già tolta.
         }
     }
 
@@ -1953,6 +2112,7 @@ class MainActivity : AppCompatActivity() {
         // premuto nella tendina non fa niente invece di far cadere l'app.
         Lettore.comandi = null
         Lettore.basta(this)
+        smettiDiGuardareLaRete()
         super.onDestroy()
         polling?.cancel()
         // Un `ValueCallback` che non riceve mai risposta tiene bloccato il suo
