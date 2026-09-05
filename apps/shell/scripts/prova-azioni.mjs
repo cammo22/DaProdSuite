@@ -111,7 +111,12 @@ console.log("\n— la pagina della console —");
   for (const quale of ["entra", "casa", "produzione", "stili", "riepilogo", "galleria", "daprod"]) {
     dice(`la pagina "${quale}" c'è`, html.includes(`id="pag-${quale}"`));
   }
-  for (const quale of ["casa", "produzione", "stili", "riepilogo", "galleria", "daprod"]) {
+  /**
+   * ⚠ **Gli stili non sono piu' nella barra**, dalla 0.9.1: la loro pagina c'e'
+   * ancora — si arriva da «Gestione stili» in Produzione — ma in fondo restano
+   * cinque schede, che su un telefono si leggono meglio di sei.
+   */
+  for (const quale of ["casa", "produzione", "riepilogo", "galleria", "daprod"]) {
     dice(`e la barra in fondo ci porta`, html.includes(`data-pagina="${quale}"`));
   }
 

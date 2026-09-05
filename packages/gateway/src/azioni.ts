@@ -65,16 +65,29 @@ export function elencoAzioni(
     const voluto = STILE_PER_APP[a.app ?? ""] ?? "musica";
     // Chi ha stili salvati prima della 0.7.8 non ha il tipo: sono musica.
     const stili = tutti.filter((x) => (x.tipo ?? "musica") === voluto);
+    /**
+     * Gli stili immagine, che servono anche **dentro un'altra scheda**.
+     *
+     * Dalla 0.9.1 la produzione musica ha la copertina, e una copertina è
+     * un'immagine: i suoi stili sono quelli delle immagini, non quelli della
+     * musica. È il primo campo che chiede stili di un tipo diverso da quello
+     * della scheda in cui sta, ed è il motivo per cui questo elenco esiste
+     * accanto a `stili`.
+     */
+    const stiliImmagine = tutti.filter((x) => (x.tipo ?? "musica") === "immagine");
+
     const campi = a.campi.map((c) => {
-      if (c.nome !== "stile" || !stili.length) return c;
+      const quali =
+        c.nome === "stile" ? stili : c.nome === "stileCopertina" ? stiliImmagine : null;
+      if (!quali || !quali.length) return c;
       return {
         ...c,
-        scelte: stili.map((x) => x.nome),
+        scelte: quali.map((x) => x.nome),
         // Il testo dello stile viaggia insieme al nome: chi sceglie «Neomelodico
         // trap» sul telefono deve poter riempire la descrizione **senza** un
         // secondo giro di rete, e il gateway non è il posto dove tenere una
         // tabella di traduzione che qualcuno dovrebbe poi mantenere.
-        testi: Object.fromEntries(stili.map((x) => [x.nome, x.testo])),
+        testi: Object.fromEntries(quali.map((x) => [x.nome, x.testo])),
       };
     });
     return {

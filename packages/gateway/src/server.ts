@@ -1466,6 +1466,22 @@ export class Gateway {
           this.json(res, 200, esito);
           return;
         }
+        /**
+         * «Adesso fammi il piano».
+         *
+         * Una rotta a sé e non un campo di `/dico`: qui il modello non risponde
+         * a niente, trasforma quello che si sono detti in lavori. Vedi
+         * `faiIlPiano` in chiacchierata.ts per il perché.
+         */
+        if (coda === "/fai-piano" && req.method === "POST") {
+          const esito = await this.chiacchierata.faiIlPiano({
+            id,
+            dispositivoId: dispositivo.id,
+          });
+          if ("errore" in esito) return this.errore(res, 409, esito.errore);
+          this.json(res, 200, esito);
+          return;
+        }
         if (coda === "/piano" && req.method === "POST") {
           const dati = (corpo ?? {}) as { quali?: number[]; modelli?: Record<string, string> };
           /**

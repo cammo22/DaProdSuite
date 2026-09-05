@@ -101,6 +101,8 @@ export const SEZIONI: readonly string[] = [
  * che MiniMax usa comunque.
  */
 export const LINGUE_CANTO: readonly { id: string; nome: string }[] = [
+  // L'italiano per primo, ed è quello che parte: «mettiamo default italiano
+  // selezionata». È la lingua della suite e di chi la usa.
   { id: "it", nome: "Italiano" },
   { id: "en", nome: "Inglese" },
 ];
@@ -118,21 +120,31 @@ export const DURATE_BRANO: readonly number[] = [30, 60, 80, 120, 220];
 /**
  * Le durate di un video, con la stessa logica — e due che non esistevano.
  *
- * Da 3 a 20 secondi è **una generazione sola**: venti è il tetto di LTX 2.5, e
- * non è un numero scelto da noi (vedi `apps/cinema/src/grafi.js`).
+ * Da 3 a 20 secondi, ed è **una generazione sola**: venti è il tetto di LTX 2.5,
+ * e non è un numero scelto da noi (vedi `apps/cinema/src/grafi.js`).
  *
- * **30 e 60 sono un'altra cosa**, chiesta il 5 settembre 2026: «facciamo video
- * di 30 secondi e 1 minuto coerenti, mostrando sempre le stesse identiche
- * cose». Nessun modello che sta in 8 GB fa un minuto in un colpo. Quello che si
- * può fare — e che LTX 2.5 sa fare bene, perché prende un primo e un ultimo
- * fotogramma — è **incatenare**: si genera un pezzo, si prende il suo ultimo
- * fotogramma, e lo si dà come primo al pezzo dopo. Il taglio non si vede
- * perché non c'è un taglio: il fotogramma è lo stesso.
- *
- * Chi chiede 30 o 60 secondi sta chiedendo qualche minuto in più di attesa, e
- * la descrizione dell'azione glielo dice prima.
+ * Sopra i venti non c'è un cursore più lungo: c'è **la storia**, che è
+ * un'azione a sé (`genera.storia`). Vedi `DURATE_STORIA` qui sotto per il
+ * perché sono due cose e non una.
  */
-export const DURATE_VIDEO: readonly number[] = [3, 5, 8, 10, 20, 30, 60];
+export const DURATE_VIDEO: readonly number[] = [3, 5, 8, 10, 15, 20];
+
+/**
+ * Le durate di una **storia**: 30 secondi, un minuto, due minuti.
+ *
+ * Stanno separate da quelle di una clip, e dalla 0.9.1 anche in un'azione
+ * diversa. Chiesto il 5 settembre 2026: «in produzione video deve esserci la
+ * modalità normale come prima, oppure un tasto che ti fa entrare in modalità
+ * storia dove si può creare il video da 30 secondi o 1 minuto o 2 minuti — ma
+ * solo in modalità storia».
+ *
+ * **Perché due azioni e non un cursore più lungo.** Perché sono due cose
+ * diverse, e mescolarle le fa sembrare la stessa: una clip è **una
+ * generazione** e dura minuti; una storia sono sette o quindici generazioni
+ * incatenate e dura mezz'ora. Un cursore che passa da 20 a 30 senza dire niente
+ * nasconde quel salto, e chi lo trascina scopre l'attesa dopo.
+ */
+export const DURATE_STORIA: readonly number[] = [30, 60, 120];
 
 /**
  * I battiti al minuto che si scelgono davvero.
@@ -150,7 +162,7 @@ export const BPM_TIPICI: readonly number[] = [70, 90, 120, 140, 170];
  * una persona riconosce («La minore»). Sono le stesse dodici note per due
  * modi: l'elenco è lungo, ma è un menu — non una fila di pulsanti.
  */
-export const TONALITA_CANTO: readonly { id: string; nome: string }[] = (() => {
+export const TONALITA_CANTO: readonly { id: string; nome: string; spiega: string }[] = (() => {
   const note: readonly [string, string][] = [
     ["C", "Do"],
     ["C#", "Do diesis"],
@@ -165,9 +177,43 @@ export const TONALITA_CANTO: readonly { id: string; nome: string }[] = (() => {
     ["A#", "La diesis"],
     ["B", "Si"],
   ];
+
+  /**
+   * Che effetto fa, non cos'è.
+   *
+   * Chiesto il 5 settembre 2026: «se tengo premuto re maggiore mi dice che
+   * effetto fa». Chi chiede una canzone non sa cosa sia una tonalità, e finora
+   * quelle ventiquattro pastiglie erano sigle fra cui si sceglieva a caso.
+   *
+   * Le due righe qui sotto valgono per tutte: **minore = malinconica, maggiore
+   * = aperta**, ed è il novanta per cento di quello che serve sapere. Le tre
+   * eccezioni sono le tonalità che in questa musica si usano davvero, e per
+   * quelle vale la pena dire di più.
+   */
+  const speciali: Readonly<Record<string, string>> = {
+    "A minor": "La più usata nel pop: malinconica ma non cupa. Se non sai quale scegliere, questa.",
+    "C major": "La più aperta e semplice di tutte: allegra, senza ombre.",
+    "E minor": "Malinconica e calda. È la tonalità della chitarra: canzoni d'amore e ballate.",
+    "G major": "Luminosa e popolare: canzoni che si cantano insieme.",
+    "D minor": "La più triste delle minori: drammatica, seria.",
+    "F# minor": "Cupa e moderna: trap, elettronica, cose notturne.",
+  };
+
   return [
-    ...note.map(([sigla, nome]) => ({ id: `${sigla} minor`, nome: `${nome} minore` })),
-    ...note.map(([sigla, nome]) => ({ id: `${sigla} major`, nome: `${nome} maggiore` })),
+    ...note.map(([sigla, nome]) => ({
+      id: `${sigla} minor`,
+      nome: `${nome} minore`,
+      spiega:
+        speciali[`${sigla} minor`] ??
+        `Malinconica: le tonalità minori suonano tristi o intense. ${nome} minore è una delle dodici.`,
+    })),
+    ...note.map(([sigla, nome]) => ({
+      id: `${sigla} major`,
+      nome: `${nome} maggiore`,
+      spiega:
+        speciali[`${sigla} major`] ??
+        `Aperta e serena: le tonalità maggiori suonano allegre. ${nome} maggiore è una delle dodici.`,
+    })),
   ];
 })();
 
@@ -178,11 +224,20 @@ export const TONALITA_CANTO: readonly { id: string; nome: string }[] = (() => {
  * che sono scritti in `apps/musica/index.html`, e due verità su cosa sia «4»
  * sarebbero una di troppo.
  */
-export const TEMPI_CANTO: readonly { id: string; nome: string }[] = [
-  { id: "4", nome: "4/4 \u2014 quasi tutta la musica" },
-  { id: "3", nome: "3/4 \u2014 il valzer" },
-  { id: "2", nome: "2/4 \u2014 la marcia" },
-  { id: "6", nome: "6/8 \u2014 la ballata lenta" },
+export const TEMPI_CANTO: readonly { id: string; nome: string; spiega: string }[] = [
+  /**
+   * **A caso è quello che parte**, dalla 0.9.1.
+   *
+   * Chiesto il 5 settembre 2026: «ritmo di default è randomico». Ed è la scelta
+   * giusta, non solo quella chiesta: il tempo è la cosa che meno si sa di una
+   * canzone prima di sentirla, e mettere 4/4 fisso vorrebbe dire che tutte le
+   * canzoni fatte da chi non tocca quella riga suonano uguali.
+   */
+  { id: "caso", nome: "A caso", spiega: "Lo decide il modello, e cambia a ogni brano. È quello che parte se non tocchi niente." },
+  { id: "4", nome: "4/4", spiega: "Quattro movimenti per battuta: pop, rock, trap, quasi tutta la musica che senti." },
+  { id: "3", nome: "3/4", spiega: "Tre movimenti: il valzer. Gira, ondeggia — canzoni che sembrano un ballo lento." },
+  { id: "2", nome: "2/4", spiega: "Due movimenti: la marcia. Secco, deciso, va avanti a passo." },
+  { id: "6", nome: "6/8", spiega: "Sei movimenti a coppie di tre: la ballata lenta, quella che culla." },
 ];
 
 /**

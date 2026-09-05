@@ -898,6 +898,19 @@ export interface FornitoreChiacchierata {
     dispositivoId: string;
     testo: string;
   }): Promise<{ sessione: Chiacchierata } | { errore: string }>;
+  /**
+   * **Adesso fammi il piano.** Nuova dalla 0.9.1.
+   *
+   * A ogni battuta il modello doveva fare due cose insieme: capire se stavi
+   * chiacchierando o chiedendo, e nel secondo caso riempire otto campi. Un
+   * modello piccolo quella decisione la sbaglia spesso, e quando la sbaglia
+   * lascia il piano vuoto senza dirlo. Con un tasto la decisione la prende la
+   * persona, e al modello resta **un lavoro solo**.
+   */
+  faiIlPiano(opzioni: {
+    id: string;
+    dispositivoId: string;
+  }): Promise<{ sessione: Chiacchierata } | { errore: string }>;
   /** La sessione di questo dispositivo, se ce n'è una viva. */
   mia(dispositivoId: string): Chiacchierata | null;
   /** Il posto in fila di questo dispositivo, se sta aspettando. */

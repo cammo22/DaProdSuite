@@ -114,10 +114,7 @@ export const COPIONE_AVVIO = `
   $("codice").addEventListener("keydown", function (ev) { if (ev.key === "Enter") collega(); });
   $("nome").addEventListener("keydown", function (ev) { if (ev.key === "Enter") $("codice").focus(); });
   $("manda").addEventListener("click", manda);
-  $("dillo-vai").addEventListener("click", function () { void dilloEBasta(); });
-  $("dillo-cosa").addEventListener("keydown", function (ev) {
-    if (ev.key === "Enter") { ev.preventDefault(); void dilloEBasta(); }
-  });
+  $("apri-stili").addEventListener("click", function () { vaiA("stili"); });
   $("annulla").addEventListener("click", chiudiModulo);
   $("apri-impostazioni").addEventListener("click", apriImpostazioni);
   $("vedi-bussate").addEventListener("click", function () { void apriLaRete(); });
@@ -143,6 +140,7 @@ export const COPIONE_AVVIO = `
   $("esci-dalla-fila").addEventListener("click", esciDallaFilaDelParlare);
   $("stile-nuovo").addEventListener("click", function () { apriModificaStile(null); });
   $("dillo").addEventListener("click", dilloAlModello);
+  $("fai-il-piano").addEventListener("click", function () { void chiediIlPiano(); });
   $("cosa-dico").addEventListener("keydown", function (ev) {
     // Invio manda, invio col maiuscolo va a capo: è quello che fa ogni chat, e
     // aspettarsi il contrario da questa sarebbe una sorpresa gratis.

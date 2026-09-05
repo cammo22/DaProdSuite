@@ -10,6 +10,7 @@ export { APP_REMOTE, AZIONI, MODELLI_DICHIARATI, azione, azioniPer } from "./cat
 export {
   BPM_TIPICI,
   DURATE_BRANO,
+  DURATE_STORIA,
   DURATE_VIDEO,
   LINGUE_CANTO,
   TEMPI_CANTO,

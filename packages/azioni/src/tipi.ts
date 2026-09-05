@@ -78,6 +78,29 @@ export interface Campo {
   maxLunghezza?: number;
   /** Il valore che vale se il campo non arriva. */
   predefinito?: string | number | boolean;
+  /**
+   * Quale altro campo riempie, quando lo si sceglie.
+   *
+   * Serve agli stili: sceglierne uno non è una risposta a sé, è un modo di
+   * riempire un'altra casella con le parole giuste. Di suo riempie **il campo
+   * principale** — il prompt di un'immagine, la descrizione di un brano — e
+   * questo campo serve alle eccezioni: dalla 0.9.1 lo stile della copertina di
+   * un brano riempie «la copertina», non «che genere».
+   */
+  riempie?: string;
+  /**
+   * Cosa vuol dire ognuna delle scelte, per chi non lo sa.
+   *
+   * Chiesto il 5 settembre 2026: «se si tiene premuto re maggiore mi dice che
+   * effetto fa». Una tonalità o un tempo sono parole che chi fa musica capisce
+   * e chi vuole una canzone no — e finora quelle pastiglie erano dodici sigle
+   * fra cui si sceglieva a caso.
+   *
+   * Non è una descrizione tecnica: è **che effetto fa**. «La minore» non dice
+   * niente, «malinconica, la più usata nel pop» sì. Si legge tenendo premuto,
+   * che è il gesto per «e questo cos'è?» su un telefono.
+   */
+  spiegazioni?: Readonly<Record<string, string>>;
   /** Un esempio vero, che aiuta chi compila più di qualunque descrizione. */
   esempio?: string;
   /**

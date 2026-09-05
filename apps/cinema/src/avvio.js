@@ -19,7 +19,6 @@ import { el, mostraScheda, suApertura } from "./dom.js";
 import { collegaCrea, lungoDaFuori } from "./crea.js";
 import { aggiornaGalleria, collegaGalleria } from "./galleria.js";
 import { collegaStoria } from "./storia.js";
-import { vuoleLaCatena } from "./lungo.js";
 import { caricaUltimi, messaggioDalMotore, riallinea } from "./coda.js";
 // I quadratini di cosa occupa la memoria: uguali in tutte le app, quindi stanno
 // in `packages/ui` e la suite li serve sotto `/comune/`.
@@ -81,21 +80,30 @@ collegaLavoriDaFuori(async (richiesta) => {
   // già deciso chi ha preparato la scheda.
   mostraScheda("crea");
   scrivi(el.prompt, richiesta.testo);
-  const quanto = numero(richiesta.opzioni.secondi, 2, 60, 5);
-  // Sopra il tetto di una generazione sola il cursore non ci arriva: si tiene
-  // al massimo e la durata vera la porta la catena.
-  scrivi(el.durata, String(Math.min(quanto, 20)));
-  if (scegliInMenu(el.modello, richiesta.opzioni.modello)) await aspettaPremibile(el.genera);
 
   /**
-   * Trenta secondi e un minuto **non sono una clip piu' lunga**: sono una
-   * catena di pezzi cuciti, ognuno che riparte dall'ultimo fotogramma del
-   * precedente. Vedi `lungo.js` per il perche' di ogni scelta.
+   * **Una storia non e' una clip piu' lunga.** Sono due azioni, ed e' voluto.
+   *
+   * Chiesto il 5 settembre 2026: «in produzione video deve esserci la modalita'
+   * normale come prima, oppure un tasto che ti fa entrare in modalita' storia
+   * dove si puo' creare il video da 30 secondi o 1 minuto o 2 minuti — ma solo
+   * in modalita' storia». Una clip e' **una** generazione e dura minuti; una
+   * storia sono da quattro a sedici generazioni incatenate e dura mezz'ora.
+   *
+   * Il modello, in una storia, non si sceglie: LTX 2.5 e' l'unico che sa
+   * ripartire da un fotogramma, e senza quello la catena non esiste.
    */
-  if (vuoleLaCatena(quanto)) {
+  if (richiesta.opzioni.azione === "genera.storia") {
+    const quanto = numero(richiesta.opzioni.secondi, 30, 120, 30);
+    scrivi(el.durata, "20");
+    if (scegliInMenu(el.modello, "ltx25")) await aspettaPremibile(el.genera);
     await lungoDaFuori(quanto);
     return;
   }
 
+  if (richiesta.opzioni.secondi) {
+    scrivi(el.durata, String(numero(richiesta.opzioni.secondi, 2, 20, 5)));
+  }
+  if (scegliInMenu(el.modello, richiesta.opzioni.modello)) await aspettaPremibile(el.genera);
   premi(el.genera, "DaProdCinema non è pronta a generare: manca il modello, o la scheda video.");
 });

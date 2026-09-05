@@ -651,13 +651,11 @@ export const STILE = `  :root {
   .bussa b { display: block; font-size: 13.5px; }
   .bussa small { color: var(--dim); font-size: 11.5px; display: block; overflow-wrap: anywhere; }
 
-  /* --------------------------------------------------------- dillo e basta */
-  /* Una riga sola: la casella e il tasto. Sta in cima alla Produzione perche'
-     e' il modo piu' corto per arrivare a un lavoro, e quello piu' corto va
-     davanti agli altri. */
-  .dillo { display: flex; gap: 8px; margin: 12px 0 4px; }
-  .dillo input { flex: 1; min-width: 0; margin: 0; }
-  .dillo button { flex: 0 0 auto; }
+  /* Un po' di respiro in fondo alle pagine lunghe.
+     Chiesto il 5 settembre 2026: «in produci lascia un po' di spazio in fondo,
+     cosi' lasciamo un po' di spazio quando si scrolla». Senza, l'ultimo campo
+     finisce appiccicato alla barra delle schede e per toccarlo si sbaglia. */
+  #pag-produzione, #pag-daprod, #pag-galleria { padding-bottom: 40px; }
 
   /* ------------------------------------------------------- il visualizer */
   /* Dietro a tutto, e senza toccare niente: nessun evento del mouse arriva
@@ -792,7 +790,7 @@ export const STILE = `  :root {
   */
   nav.fondo {
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
-    display: grid; grid-template-columns: repeat(6, 1fr);
+    display: grid; grid-template-columns: repeat(5, 1fr);
     background: #0a0c11f2; backdrop-filter: blur(10px);
     border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom);
   }
@@ -820,7 +818,7 @@ export const STILE = `  :root {
     border-radius: 99px; padding: 0 5px; min-width: 16px; text-align: center;
   }
   @media (min-width: 760px) {
-    nav.fondo { grid-template-columns: repeat(6, auto); justify-content: center; gap: 10px; }
+    nav.fondo { grid-template-columns: repeat(5, auto); justify-content: center; gap: 10px; }
     nav.fondo button { flex-direction: row; padding: 13px 18px; font-size: 13px; }
   }
 

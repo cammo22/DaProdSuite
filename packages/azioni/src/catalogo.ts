@@ -15,6 +15,7 @@ import type { Azione } from "./tipi";
 import {
   BPM_TIPICI,
   DURATE_BRANO,
+  DURATE_STORIA,
   DURATE_VIDEO,
   LINGUE_CANTO,
   SEZIONI,
@@ -47,6 +48,15 @@ const PROMPT_MAX = 2000;
  * chiede da fuori non è tenuto a sapere che modelli ci sono.
  */
 const MODELLI_FOTO = {
+  /**
+   * **FLUX.2 Klein 4B è quello che parte**, dalla 0.9.1.
+   *
+   * Chiesto il 5 settembre 2026: «rendiamo flux klein 4b default per le
+   * immagini, lo stesso per le copertine». Anima resta ed è più veloce; Klein
+   * 4B capisce descrizioni lunghe, che è quello che la gente scrive davvero
+   * quando chiede una foto da un telefono.
+   */
+  predefinito: "flux2-4b",
   scelte: ["anima", "anima2", "flux2-4b", "flux2-9b"],
   etichette: {
     anima: "Anima — pronta, veloce",
@@ -57,6 +67,8 @@ const MODELLI_FOTO = {
 } as const;
 
 const MODELLI_CINEMA = {
+  /** LTX 2.5: è l'unico che sa ripartire da un fotogramma, e serve alle storie. */
+  predefinito: "ltx25",
   scelte: ["ltx25", "h3"],
   etichette: {
     ltx25: "LTX 2.5 — video e suono insieme",
@@ -65,6 +77,13 @@ const MODELLI_CINEMA = {
 } as const;
 
 const MODELLI_MUSICA = {
+  /**
+   * **ACE-Step XL**, dalla 0.9.1: «metti default ace step xl».
+   *
+   * È più lento del Turbo e va in offload sulla scheda da 8 GB, ma di un brano
+   * si aspetta comunque qualche minuto — e la differenza fra i due si sente.
+   */
+  predefinito: "ace-xl-turbo",
   scelte: ["ace-turbo", "ace-xl-turbo", "migliore"],
   etichette: {
     "ace-turbo": "ACE-Step Turbo — otto passi, il più veloce",
@@ -73,20 +92,58 @@ const MODELLI_MUSICA = {
   },
 } as const;
 
-/** Il campo «con cosa lo faccio», uguale in tutte le schede che scelgono. */
+/**
+ * Il campo «con cosa lo faccio», uguale in tutte le schede che scelgono.
+ *
+ * ⚠ **Dalla 0.9.1 non c'è più «quello scelto sul computer».** Chiesto il 5
+ * settembre 2026, per tutte e tre le schede: «togli il pulsante quello scelto
+ * sul computer e metti default …».
+ *
+ * Non è solo una pastiglia in meno. Quella voce voleva dire «non lo so, decidi
+ * tu», e su un telefono è la risposta sbagliata a una domanda che ha una
+ * risposta giusta: chi chiede da fuori non ha idea di cosa sia selezionato in
+ * quel momento sul PC, e quello che sceglie chi sta al computer cambia sotto ai
+ * piedi di chi sta sul divano. Adesso c'è un predefinito, scritto qui, uguale
+ * per tutti — e chi vuole un altro modello lo tocca.
+ */
 function campoModello(quali: {
   readonly scelte: readonly string[];
   readonly etichette: Readonly<Record<string, string>>;
+  readonly predefinito: string;
 }) {
   return {
     nome: "modello",
     etichetta: "Con che modello",
-    descrizione: "Vuoto vuol dire: quello scelto adesso sul computer.",
+    descrizione: "Quello che parte se non tocchi niente è già selezionato.",
     tipo: "scelta",
     obbligatorio: false,
     scelte: quali.scelte,
     etichette: quali.etichette,
-    vuoto: "\u2014 quello scelto sul computer \u2014",
+    predefinito: quali.predefinito,
+  } as const;
+}
+
+/**
+ * Con che modello si fa **la copertina** di un brano. Nuovo nella 0.9.1.
+ *
+ * Le scelte sono meno di quelle delle immagini, e apposta: una copertina è un
+ * quadrato da 512 px che si guarda in una lista. I due grossi ci starebbero,
+ * ma vorrebbero dire caricare un secondo modello in scheda subito dopo aver
+ * fatto un brano — e su 8 GB è la strada per l'out-of-memory.
+ */
+function campoModelloCopertina() {
+  return {
+    nome: "modelloCopertina",
+    etichetta: "Con che modello, la copertina",
+    descrizione: "Quello che parte se non tocchi niente è già selezionato.",
+    tipo: "scelta",
+    obbligatorio: false,
+    predefinito: "flux2-4b",
+    scelte: ["anima", "flux2-4b"],
+    etichette: {
+      anima: "Anima — la più veloce",
+      "flux2-4b": "FLUX.2 Klein 4B — capisce le descrizioni lunghe",
+    },
   } as const;
 }
 
@@ -174,10 +231,9 @@ export const AZIONI: readonly Azione[] = [
     app: "cinema",
     titolo: "Fai un video",
     descrizione:
-      "Genera un video da una descrizione, con DaProdCinema. È la cosa più lenta della suite: " +
-      "minuti, non secondi. Fino a 20 secondi è una generazione sola; a 30 e 60 il video si fa " +
-      "a pezzi incatenati — l'ultimo fotogramma di uno diventa il primo del prossimo — e ci " +
-      "mette il doppio o il triplo.",
+      "Genera una clip video da una descrizione, con DaProdCinema. È la cosa più lenta della " +
+      "suite: minuti, non secondi. Fino a 20 secondi, che è quanto fa il modello in una volta " +
+      "sola. Per un video più lungo c'è «Fai una storia».",
     produce: "file",
     risultato: "video",
     permesso: "tutti",
@@ -197,17 +253,76 @@ export const AZIONI: readonly Azione[] = [
       {
         nome: "secondi",
         etichetta: "Quanto dura",
-        descrizione:
-          "Durata in secondi. Fino a 20 è una generazione sola. 30 e 60 si fanno a pezzi " +
-          "incatenati, per restare coerenti: ci mettono molto di più.",
+        descrizione: "Durata della clip in secondi. Più dura, più ci mette.",
         tipo: "numero",
         obbligatorio: false,
         min: 2,
-        max: 60,
+        max: 20,
         predefinito: 5,
         valoriTipici: DURATE_VIDEO,
       },
       campoModello(MODELLI_CINEMA),
+    ],
+  },
+
+  {
+    /**
+     * **Una storia: mezzo minuto, un minuto, due.** Nuova nella 0.9.1.
+     *
+     * Chiesto il 5 settembre 2026: «in produzione video deve esserci la
+     * modalità normale come prima, oppure un tasto che ti fa entrare in
+     * modalità storia dove si può creare il video da 30 secondi o 1 minuto o 2
+     * minuti — ma solo in modalità storia».
+     *
+     * **Perché un'azione a sé e non una durata più lunga.** Perché sono due
+     * cose diverse e mescolarle le fa sembrare la stessa. Una clip è una
+     * generazione e dura minuti; una storia sono da quattro a quindici
+     * generazioni incatenate — l'ultimo fotogramma di ognuna diventa il primo
+     * della prossima — e dura mezz'ora o più. Un cursore che passa da 20 a 30
+     * senza dire niente nasconde quel salto, e chi lo trascina scopre l'attesa
+     * dopo.
+     *
+     * Il modello è LTX 2.5 e basta: è l'unico che sa ripartire da un
+     * fotogramma, e senza quello la catena non si può fare. Per questo qui non
+     * c'è il campo del modello.
+     */
+    id: "genera.storia",
+    app: "cinema",
+    titolo: "Fai una storia",
+    descrizione:
+      "Un video lungo — 30 secondi, un minuto, due — fatto di pezzi incatenati: l'ultimo " +
+      "fotogramma di uno diventa il primo del prossimo, così non si vedono i tagli. " +
+      "⚠ Ci mette molto: mezz'ora per un minuto, e anche di più.",
+    produce: "file",
+    risultato: "video",
+    permesso: "tutti",
+    coda: true,
+    campi: [
+      {
+        nome: "prompt",
+        etichetta: "Cosa deve succedere",
+        principale: true,
+        descrizione:
+          "La scena, e resta la stessa per tutta la storia: è quello che tiene insieme i pezzi.",
+        tipo: "testo",
+        obbligatorio: true,
+        maxLunghezza: PROMPT_MAX,
+        esempio: "una barca che entra in porto all'alba, la camera la segue da destra",
+      },
+      campoStile("cosa deve succedere"),
+      {
+        nome: "secondi",
+        etichetta: "Quanto dura",
+        descrizione:
+          "Mezzo minuto sono quattro pezzi, un minuto otto, due minuti sedici. " +
+          "Ogni pezzo è una generazione: conta qualche minuto ciascuno.",
+        tipo: "numero",
+        obbligatorio: false,
+        min: 30,
+        max: 120,
+        predefinito: 30,
+        valoriTipici: DURATE_STORIA,
+      },
     ],
   },
 
@@ -282,7 +397,10 @@ export const AZIONI: readonly Azione[] = [
           "aggiunta alla descrizione: da qui non cambia niente, si dice e basta.",
         tipo: "scelta",
         obbligatorio: false,
-        vuoto: "\u2014 quella scelta sul computer \u2014",
+        // Italiano di partenza, dalla 0.9.1: è la lingua della suite e di chi la
+        // usa, e «quella scelta sul computer» non voleva dire niente a chi
+        // chiede da fuori.
+        predefinito: "it",
         scelte: LINGUE_CANTO.map((l) => l.id),
         etichette: Object.fromEntries(LINGUE_CANTO.map((l) => [l.id, l.nome])),
       },
@@ -327,36 +445,129 @@ export const AZIONI: readonly Azione[] = [
         nome: "tonalita",
         etichetta: "In che tonalità",
         descrizione:
-          "La scala del brano. Le minori suonano malinconiche, le maggiori aperte. " +
-          "Vuoto vuol dire quella scelta sul computer. Solo MiniMax Music 3.",
+          "La scala del brano: le minori suonano malinconiche, le maggiori aperte. " +
+          "Tieni premuta una tonalità per sapere che effetto fa. Solo MiniMax Music 3.",
         tipo: "scelta",
         obbligatorio: false,
-        vuoto: "\u2014 quella scelta sul computer \u2014",
+        // La minore, la più usata nel pop: è quella che si sceglierebbe
+        // comunque, e averla già accesa toglie una domanda a chi non la sa.
+        predefinito: "A minor",
         scelte: TONALITA_CANTO.map((t) => t.id),
         etichette: Object.fromEntries(TONALITA_CANTO.map((t) => [t.id, t.nome])),
+        spiegazioni: Object.fromEntries(TONALITA_CANTO.map((t) => [t.id, t.spiega])),
       },
       {
         nome: "tempo",
         etichetta: "Che ritmo",
         descrizione:
-          "Quanti movimenti per battuta: 4/4 è quasi tutta la musica moderna, 3/4 è il valzer, " +
-          "6/8 la ballata lenta. Solo MiniMax Music 3.",
+          "Quanti movimenti per battuta. Tieni premuto per sapere che effetto fa. " +
+          "Solo MiniMax Music 3.",
         tipo: "scelta",
         obbligatorio: false,
-        vuoto: "\u2014 quello scelto sul computer \u2014",
+        // A caso, dalla 0.9.1: il tempo è la cosa che meno si sa di una canzone
+        // prima di sentirla, e uno fisso farebbe suonare uguali tutti i brani
+        // di chi non tocca questa riga.
+        predefinito: "caso",
         scelte: TEMPI_CANTO.map((t) => t.id),
         etichette: Object.fromEntries(TEMPI_CANTO.map((t) => [t.id, t.nome])),
+        spiegazioni: Object.fromEntries(TEMPI_CANTO.map((t) => [t.id, t.spiega])),
       },
       {
-        nome: "strumentale",
-        etichetta: "Senza voce",
-        descrizione:
-          "Solo la musica, nessuno che canta. È quello che succede anche lasciando vuoto il " +
-          "testo, ma dirlo qui è più chiaro — e vale anche se un testo l'hai scritto.",
-        tipo: "booleano",
+        /**
+         * **La voce: accesa o spenta.**
+         *
+         * Era «Senza voce», una casella da spuntare, e chiesto il 5 settembre
+         * 2026: «fai un pulsante per mettere voce on o off, su off fa una
+         * strumentale». Due pastiglie invece di una spunta, e la differenza non
+         * è estetica: una spunta si legge solo se si sa cosa vuol dire il suo
+         * nome, due pastiglie dicono tutte e due le strade.
+         */
+        nome: "voce",
+        etichetta: "La voce",
+        descrizione: "Con la voce che canta il testo, oppure solo la musica.",
+        tipo: "scelta",
         obbligatorio: false,
+        predefinito: "si",
+        scelte: ["si", "no"],
+        etichette: { si: "Cantata", no: "Strumentale" },
+        spiegazioni: {
+          si: "Il testo viene cantato. Se non scrivi un testo, il modello se lo inventa.",
+          no: "Solo la musica, nessuno che canta. Il testo, se c'è, viene ignorato.",
+        },
+      },
+      {
+        /**
+         * Quanti brani in un colpo, come in DaProdFoto.
+         *
+         * Chiesto il 5 settembre 2026: «in produzione musica mettiamo anche lì
+         * default ne fa una, ma si può selezionare da 1 a 4». Un brano sono
+         * minuti di scheda video: quattro sono quattro volte, e la descrizione
+         * lo dice invece di lasciarlo scoprire aspettando.
+         */
+        nome: "quante",
+        etichetta: "Quanti brani",
+        descrizione: "Da 1 a 4. Ognuno è un giro di scheda video: quattro costano quattro volte.",
+        tipo: "numero",
+        obbligatorio: false,
+        min: 1,
+        max: 4,
+        predefinito: 1,
+        valoriTipici: [1, 2, 3, 4],
       },
       campoModello(MODELLI_MUSICA),
+
+      /* ------------------------------------------------------ la copertina */
+
+      /**
+       * **La copertina, chiesta dal telefono.** Nuova nella 0.9.1.
+       *
+       * Chiesto il 5 settembre 2026: «mettiamo nell'app android, durante la
+       * generazione della musica, anche la possibilità di inserire una foto —
+       * ci saranno sia gli stili per le foto che si hanno, più si può scrivere
+       * un prompt per la foto per la copertina, e anche la possibilità di
+       * scegliere anima o flux per la copertina».
+       *
+       * **Perché conta più di quanto sembri.** Un brano senza copertina, in
+       * galleria e in DaProd, è un quadrato con una nota dentro: si scorre via.
+       * Sul computer la copertina si fa da sempre; da fuori no, e i brani
+       * chiesti dal telefono restavano gli unici senza faccia.
+       *
+       * Vuoto vuol dire **come fa la scheda**: la copertina la genera lo stesso,
+       * ricavando la descrizione dal brano. Qui si scrive solo quando si vuole
+       * una cosa precisa.
+       */
+      {
+        nome: "copertina",
+        etichetta: "La copertina",
+        descrizione:
+          "Cosa deve esserci nell'immagine del brano. Vuoto vuol dire che la ricavo dal brano.",
+        tipo: "testo",
+        obbligatorio: false,
+        maxLunghezza: 600,
+        esempio: "un cuore fatto di luna piena e luna rossa, sopra un lago di notte",
+      },
+      {
+        /**
+         * Gli stili **delle immagini**, dentro la scheda della musica.
+         *
+         * È l'unico campo della suite che chiede stili di un tipo diverso da
+         * quello della sua scheda: il gateway lo sa e lo riempie con quelli
+         * giusti (vedi `stileCopertina` in `azioni.ts`).
+         */
+        nome: "stileCopertina",
+        etichetta: "Con che stile, la copertina",
+        // Riempie «la copertina», non il campo principale: è l'unica eccezione
+        // della suite, e sta scritta qui invece che dentro la pagina.
+        riempie: "copertina",
+        descrizione:
+          "Uno dei tuoi stili per le immagini. Riempie «la copertina» con le parole giuste.",
+        tipo: "scelta",
+        obbligatorio: false,
+        vuoto: "\u2014 scrivo io \u2014",
+        // Riempite dal computer con gli stili immagine di chi sta chiedendo.
+        scelte: [],
+      },
+      campoModelloCopertina(),
     ],
   },
 

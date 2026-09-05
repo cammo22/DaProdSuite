@@ -111,70 +111,16 @@ export const COPIONE_PRODUZIONE = `
    * secondo prima di scriverne un altro. Toccarne uno **sostituisce** quello
    * che c'e' scritto: e' un punto di partenza da cambiare, non una gabbia.
    */
-  /* ---------------------------------------------------------- dillo e basta */
-
-  /**
-   * Una frase in italiano, e il modulo si riempie.
-   *
-   * Chi risponde e' Needle 2 se sul computer c'e', il modello di LM Studio se
-   * no (vedi needle.ts nello shell). Qui non cambia niente: si manda la frase,
-   * si riceve **quale azione e con che campi**, e si riempie il modulo.
-   *
-   * ⚠ **Non si manda in coda.** Riempire e' tutto quello che fa: quello che ha
-   * capito resta sotto gli occhi di chi ha scritto, e il si' lo da' lui con il
-   * tasto di sempre. Una casella che fa partire lavori senza far vedere cosa ha
-   * capito e' il modo piu' veloce di far generare a qualcuno una cosa che non
-   * aveva chiesto.
-   */
-  async function dilloEBasta() {
-    var casella = $("dillo-cosa");
-    var tasto = $("dillo-vai");
-    var avviso = $("dillo-avviso");
-    var frase = casella.value.trim();
-    if (!frase) { casella.focus(); return; }
-
-    tasto.disabled = true;
-    var prima = tasto.textContent;
-    tasto.textContent = "un attimo\u2026";
-    avviso.textContent = "";
-    avviso.className = "avviso";
-
-    try {
-      var esito = await chiama("/capisci", {
-        method: "POST",
-        body: JSON.stringify({ frase: frase }),
-      });
-      if (!esito || !esito.ok) {
-        avviso.textContent = (esito && esito.motivo) ||
-          "Non ho capito che lavoro sarebbe. Prova a dirlo con altre parole, " +
-          "oppure scegli qui sotto cosa vuoi fare.";
-        avviso.className = "avviso male";
-        return;
-      }
-      riempiDaCapito(esito);
-      avviso.className = "avviso bene";
-      avviso.textContent =
-        "Ho capito: " + (nomeAzione(esito.azione) || esito.azione) +
-        (esito.perche ? " \u00b7 " + esito.perche : "") +
-        ". Guarda qui sotto e cambia quello che vuoi.";
-      casella.value = "";
-    } catch (e) {
-      avviso.textContent = e.message;
-      avviso.className = "avviso male";
-    } finally {
-      tasto.disabled = false;
-      tasto.textContent = prima;
-    }
-  }
-
-  /** Il titolo di un'azione, per dirlo a parole invece che con un id. */
-  function nomeAzione(id) {
-    for (var a of azioni) if (a.id === id) return a.titolo;
-    return "";
-  }
+  /* --------------------------------------------------- riempire dal capito */
 
   /**
    * Apre l'azione capita e ci mette dentro i campi.
+   *
+   * ⚠ La casella «dillo e basta» che chiamava questa funzione e' durata una
+   * versione: erano due caselle nella stessa schermata che facevano la stessa
+   * cosa (vedi il commento in pagine.ts). La funzione resta perche' la usa
+   * **la chiacchierata**, che e' il posto giusto: li' si parla, e quando si e'
+   * soddisfatti si preme «crea il piano».
    *
    * I campi si scrivono **uno per uno e solo se esistono**: un modello che si
    * inventa un campo non deve poter far comparire una casella che l'azione non
@@ -333,7 +279,19 @@ export const COPIONE_PRODUZIONE = `
          */
         controllo = document.createElement("input");
         controllo.type = "hidden";
-        controllo.value = campo.obbligatorio ? (campo.scelte || [])[0] || "" : "";
+        /**
+         * Il valore di partenza, in tre gradi.
+         *
+         * 1. **il predefinito del catalogo**, se c'e'. Dalla 0.9.1 i modelli ce
+         *    l'hanno tutti, e con lui sparisce la pastiglia «quello scelto sul
+         *    computer»: chi chiede da fuori non sa cosa c'e' selezionato di la',
+         *    e quello che c'e' selezionato cambia sotto ai suoi piedi.
+         * 2. **la prima scelta**, se il campo e' obbligatorio;
+         * 3. **niente**, e allora compare la pastiglia del vuoto.
+         */
+        controllo.value = campo.predefinito !== undefined && campo.predefinito !== null
+          ? String(campo.predefinito)
+          : campo.obbligatorio ? (campo.scelte || [])[0] || "" : "";
         accanto = pastiglieDiScelta(campo, controllo);
       } else if (campo.tipo === "numero") {
         controllo = document.createElement("input");
@@ -421,8 +379,13 @@ export const COPIONE_PRODUZIONE = `
        * deve poterla toccare. Il testo arriva insieme al nome (vedi
        * elencoAzioni nel gateway), quindi non serve un secondo giro di rete.
        */
-      if (campo.nome === "stile" && campo.testi && (campo.testi[quale] || !quale)) {
-        var principale = document.querySelector("#modulo [data-principale]");
+      if ((campo.nome === "stile" || campo.nome === "stileCopertina") &&
+          campo.testi && (campo.testi[quale] || !quale)) {
+        // Di suo lo stile riempie il campo principale; «riempie» dice quale
+        // altro, e dalla 0.9.1 lo usa lo stile della copertina di un brano.
+        var principale = campo.riempie
+          ? document.querySelector('#modulo [data-campo="' + campo.riempie + '"]')
+          : document.querySelector("#modulo [data-principale]");
         // Tornando a «scrivo io» c'e' solo da togliere: la casella del brano
         // invece si lascia com'e', perche' li' lo stile **e'** la richiesta e
         // svuotarla vorrebbe dire cancellare quello che si sta per chiedere.
@@ -458,10 +421,19 @@ export const COPIONE_PRODUZIONE = `
       }
     };
 
-    if (!campo.obbligatorio) {
+    /**
+     * La pastiglia del vuoto c'e' **solo se non c'e' un predefinito**.
+     *
+     * Un campo con un predefinito ha gia' una risposta: aggiungerci «— quello
+     * scelto sul computer —» vorrebbe dire offrire una seconda risposta che
+     * dice «non lo so», e su un telefono e' la scelta sbagliata a una domanda
+     * che ne ha una giusta.
+     */
+    var haUnPredefinito = campo.predefinito !== undefined && campo.predefinito !== null && campo.predefinito !== "";
+    if (!campo.obbligatorio && !haUnPredefinito) {
       var niente = document.createElement("button");
       niente.type = "button";
-      niente.className = "mini on";
+      niente.className = "mini" + (nascosto.value === "" ? " on" : "");
       niente.dataset.valore = "";
       niente.textContent = campo.vuoto || "\\u2014 tutte \\u2014";
       niente.addEventListener("click", function () { accendi(""); });
@@ -477,6 +449,39 @@ export const COPIONE_PRODUZIONE = `
       // Il nome per una persona se il catalogo ce l'ha: «anima2» non vuol dire
       // niente a chi lo legge una volta sola, «Anima v2» si'.
       b.textContent = (campo.etichette && campo.etichette[opt]) || opt;
+      /**
+       * **Tenendo premuto, dice che effetto fa.**
+       *
+       * Chiesto il 5 settembre 2026: «se tengo premuto re maggiore mi dice che
+       * effetto fa». Una tonalita' o un tempo sono parole che chi fa musica
+       * capisce e chi vuole una canzone no: ventiquattro pastiglie di sigle
+       * sono ventiquattro scelte fatte a caso.
+       *
+       * Il gesto e' lo stesso su tutte e due le strade: tenere premuto col dito,
+       * e il tasto destro col mouse. Il posto in cui si legge e' la riga sotto
+       * al modulo, che e' dove questa pagina parla a chi la usa.
+       */
+      if (campo.spiegazioni && campo.spiegazioni[opt]) {
+        var dice = (function (quale) {
+          return function (ev) {
+            if (ev) ev.preventDefault();
+            avvisaAzione(
+              (campo.etichette && campo.etichette[quale] ? campo.etichette[quale] + ": " : "") +
+                campo.spiegazioni[quale],
+              false,
+            );
+          };
+        })(opt);
+        b.addEventListener("contextmenu", dice);
+        var timer = null;
+        b.addEventListener("touchstart", function () {
+          timer = setTimeout(function () { dice(null); timer = null; }, 450);
+        }, { passive: true });
+        var basta = function () { if (timer) { clearTimeout(timer); timer = null; } };
+        b.addEventListener("touchend", basta, { passive: true });
+        b.addEventListener("touchmove", basta, { passive: true });
+        b.addEventListener("touchcancel", basta, { passive: true });
+      }
       b.addEventListener("click", (function (quale) {
         return function () { accendi(quale); };
       })(opt));
@@ -951,6 +956,39 @@ export const COPIONE_PRODUZIONE = `
       sessione.battute.push({ chi: "modello", testo: e.message, quando: Date.now() });
     }
     aspettaIlModello(false);
+    disegnaChiacchierata();
+  }
+
+  /**
+   * «Adesso fammi il piano».
+   *
+   * Il modello non risponde a niente: legge quello che vi siete detti e ne fa
+   * dei lavori. Se non ci riesce lo dice, e si puo' ripremere dopo avergli
+   * scritto una riga piu' chiara.
+   */
+  async function chiediIlPiano() {
+    if (!sessione) return;
+    var tasto = $("fai-il-piano");
+    var avviso = $("avviso-chiacchiera");
+    tasto.disabled = true;
+    var prima = tasto.textContent;
+    tasto.textContent = "ci sto pensando\u2026";
+    avviso.className = "avviso";
+    avviso.textContent = "";
+    aspettaIlModello(true);
+    try {
+      var risposta = await chiama(
+        "/chiacchierata/" + encodeURIComponent(sessione.id) + "/fai-piano",
+        { method: "POST", body: JSON.stringify({}) },
+      );
+      sessione = risposta.sessione;
+    } catch (e) {
+      avviso.className = "avviso male";
+      avviso.textContent = e.message;
+    }
+    aspettaIlModello(false);
+    tasto.disabled = false;
+    tasto.textContent = prima;
     disegnaChiacchierata();
   }
 
