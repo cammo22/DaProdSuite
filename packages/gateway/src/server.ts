@@ -910,6 +910,9 @@ export class Gateway {
                * ricevuto comunque.
                */
               dove: dovePuoiGuardare(url.searchParams.get("dove"), dispositivo),
+              // Le cose di una persona sola: il suo profilo in DaProd. Il
+              // permesso resta quello di `dove`; qui si dice solo di chi.
+              di: url.searchParams.get("di") || undefined,
             }) ?? [],
         });
         return;
@@ -981,6 +984,40 @@ export class Gateway {
        * chi mette una cosa in bacheca non sa se l'ha guardata qualcuno, e la
        * volta dopo non ce la mette.
        */
+      /**
+       * Vista, o rimessa nuova. E archiviata, o tirata fuori.
+       *
+       * Due gesti piccoli che servono a una cosa sola e grossa: **tenere in
+       * ordine**. Una notte di lavoro lascia trenta file, e la mattina dopo non
+       * c'è modo di sapere quali si sono già guardati.
+       *
+       * Tutti e due sono **per persona**: la stessa cosa è nuova per te e
+       * vecchia per chi l'ha fatta, e archiviarla non la fa sparire a lui.
+       */
+      const laVista = percorso.match(/^\/libreria\/(.+)\/vista$/);
+      if (laVista && req.method === "POST") {
+        if (!this.libreria?.segnaVista) return this.errore(res, 501, "Qui non si tiene il conto.");
+        const fatto = this.libreria.segnaVista(
+          decodeURIComponent(laVista[1] ?? ""),
+          dispositivo.id,
+          ((corpo ?? {}) as { vista?: boolean }).vista !== false,
+        );
+        this.json(res, fatto ? 200 : 404, { ok: fatto });
+        return;
+      }
+      const lArchivio = percorso.match(/^\/libreria\/(.+)\/archivia$/);
+      if (lArchivio && req.method === "POST") {
+        if (!this.libreria?.archivia) return this.errore(res, 501, "Qui non c'è un archivio.");
+        const fatto = this.libreria.archivia(
+          decodeURIComponent(lArchivio[1] ?? ""),
+          dispositivo.id,
+          ((corpo ?? {}) as { dentro?: boolean }).dentro !== false,
+        );
+        this.json(res, fatto ? 200 : 404, { ok: fatto });
+        this.aggiorna();
+        return;
+      }
+
       const ilMiPiace = percorso.match(/^\/libreria\/(.+)\/mipiace$/);
       if (ilMiPiace && req.method === "POST") {
         if (!this.libreria?.miPiace) return this.errore(res, 501, "Qui non si mette mi piace.");
@@ -2279,8 +2316,10 @@ function daDove(req: IncomingMessage): string {
 function dovePuoiGuardare(
   chiesto: string | null,
   dispositivo: Dispositivo,
-): "mie" | "bacheca" | "tutte" {
+): "mie" | "bacheca" | "tutte" | "salvati" | "archivio" {
   if (chiesto === "bacheca") return "bacheca";
+  if (chiesto === "salvati") return "salvati";
+  if (chiesto === "archivio") return "archivio";
   if (chiesto === "tutte" && dispositivo.ruolo === "admin") return "tutte";
   return "mie";
 }

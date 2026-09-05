@@ -193,6 +193,10 @@ export const STILE = `  :root {
   .tastone.rosa  { --tinta: #f472b6; }
   .tastone.ciano { --tinta: #22d3ee; }
   .tastone.ambra { --tinta: #fb923c; }
+  /* L'archivio: grigio, e non e' pigrizia. E' la sezione di quello che si e'
+     gia' guardato e messo via, e un colore acceso la farebbe sembrare una cosa
+     da guardare. */
+  .tastone.grigio { --tinta: #6b7280; }
   .tastone.verde { --tinta: #34d399; }
   .tastone.on { border-color: var(--tinta); }
   .tastone.on::after { opacity: .5; }
@@ -352,6 +356,37 @@ export const STILE = `  :root {
   .filtri { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 12px; }
   .filtri button.on { border-color: var(--accent); color: var(--txt); background: #1b1533; }
   .quadri { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 11px; }
+
+  /**
+   * ⚠ **Mai guardata.** Nuovo nella 0.9.1.
+   *
+   * Chiesto il 5 settembre 2026: «la possibilita' di vedere quando un item e'
+   * nuovo, mai visualizzato, colorandolo diversamente». Non e' decorazione: una
+   * notte di lavoro lascia trenta file, e la mattina dopo non c'e' modo di
+   * sapere quali si sono gia' guardati.
+   *
+   * Il segno e' **il bordo e un pallino**, non lo sfondo: lo sfondo di un
+   * riquadro e' l'immagine, e tingerla sarebbe mentire su come e' venuta.
+   */
+  .quadro.nuova { border-color: var(--accent); box-shadow: 0 0 0 1px #8b5cf644; }
+  .quadro.nuova .sotto .nome::after {
+    content: "";
+    display: inline-block; vertical-align: middle;
+    width: 7px; height: 7px; margin-left: 6px; border-radius: 99px;
+    background: var(--accent);
+  }
+  /* Di chi e', quando si guarda la roba di tutti. Piu' visibile di una spilla:
+     e' l'unica cosa che distingue due foto uguali fatte da due persone. */
+  .quadro .padrone {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: #8b5cf622; border: 1px solid #8b5cf655; color: var(--txt);
+    border-radius: 99px; padding: 2px 8px; font-size: 11px; margin-top: 4px;
+  }
+  .quadro .padrone .faccia-tonda { width: 16px; height: 16px; font-size: 9px; }
+  /* Le cose non pubblicate, nel profilo di qualcun altro visto da chi decide:
+     un colore diverso, perche' guardarle e' un permesso e non la normalita'. */
+  .quadro.privata { border-color: #fb923c66; }
+  .quadro.privata .sotto .riga::before { content: "non pubblicata \u00b7 "; color: var(--ambra); }
   @media (min-width: 620px) { .quadri { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); } }
   .quadro { border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: #0b0d13; }
   .quadro .vetro { position: relative; display: block; width: 100%; cursor: pointer; border: 0; padding: 0; background: #000; }

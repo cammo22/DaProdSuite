@@ -581,6 +581,89 @@ class Libreria extends EventEmitter {
     return leggiElenco(elemento.meta?.["tenutaDa"]).includes(chi);
   }
 
+  /**
+   * Segna una cosa come vista, o la rimette come nuova. Nuovo nella 0.9.1.
+   *
+   * ⚠ **Si tiene l'elenco di chi l'ha vista, non un sì/no.** Sembra più
+   * complicato del necessario e non lo è: la stessa cosa può essere nuova per
+   * chi si collega oggi e vecchia per chi l'ha fatta ieri, e in una casa con
+   * tre persone un flag solo vorrebbe dire che chi apre per primo la marca
+   * vista per tutti.
+   */
+  segnaVista(id: string, chi: string, vista: boolean): boolean {
+    const elemento = this.trova(id);
+    if (!elemento) return false;
+    const prima = leggiElenco(elemento.meta?.["vistaDa"]);
+    const dopo = vista ? [...new Set([...prima, chi])] : prima.filter((x) => x !== chi);
+    this.aggiornaMeta(elemento, { vistaDa: dopo });
+    return true;
+  }
+
+  /** Vero se questa persona l'ha già guardata. */
+  laHaVista(elemento: ElementoLibreria, chi: string): boolean {
+    return leggiElenco(elemento.meta?.["vistaDa"]).includes(chi);
+  }
+
+  /**
+   * Mette una cosa in archivio, o la tira fuori.
+   *
+   * Archiviare **non cancella niente**: il file resta dov'è, e la cosa esce
+   * dalla galleria per comparire nella scheda «Archivio». Si butta davvero da
+   * lì, con il tasto di sempre, che è un secondo gesto — e per una cosa che non
+   * torna indietro un secondo gesto è quello che ci vuole.
+   *
+   * Anche questo è **per persona**: chi archivia una cosa di un altro (l'ha
+   * tenuta da parte, o è admin) non la fa sparire a chi l'ha fatta.
+   */
+  archivia(id: string, chi: string, dentro: boolean): boolean {
+    const elemento = this.trova(id);
+    if (!elemento) return false;
+    const prima = leggiElenco(elemento.meta?.["archiviataDa"]);
+    const dopo = dentro ? [...new Set([...prima, chi])] : prima.filter((x) => x !== chi);
+    this.aggiornaMeta(elemento, { archiviataDa: dopo });
+    return true;
+  }
+
+  /** Vero se questa persona l'ha messa in archivio. */
+  eArchiviata(elemento: ElementoLibreria, chi: string): boolean {
+    return leggiElenco(elemento.meta?.["archiviataDa"]).includes(chi);
+  }
+
+  /**
+   * Come è stata fatta: quello che era stato chiesto, campo per campo.
+   *
+   * Sta nei `meta` da sempre — ce lo scrive `intitola` con `extra` — ma non era
+   * mai uscito di lì. Dalla 0.9.1 viaggia con l'elenco: «mettiamo insieme al
+   * contenuto il prompt usato, così quando pubblichiamo sappiamo come è stato
+   * fatto il contenuto».
+   *
+   * Si tengono **solo i campi che una persona vuole leggere**: il seed, i passi
+   * e il modello sono roba da chi rigenera, e in un riquadro sotto a una foto
+   * sarebbero rumore. Quelli restano nel `.json` accanto al file.
+   */
+  comeEStataFatta(elemento: ElementoLibreria): Record<string, string> | undefined {
+    const meta = elemento.meta ?? {};
+    const fuori: Record<string, string> = {};
+    for (const [chiave, come] of [
+      ["prompt", "Il prompt"],
+      ["descrizione", "Che genere"],
+      ["testo", "Il testo"],
+      ["stile", "Lo stile"],
+      ["titolo", "Il titolo"],
+      ["lingua", "La lingua"],
+      ["secondi", "Quanto dura"],
+      ["bpm", "I battiti"],
+      ["tonalita", "La tonalità"],
+      ["copertina", "La copertina"],
+      ["modello", "Con che modello"],
+    ] as const) {
+      const valore = meta[chiave];
+      if (typeof valore === "string" && valore.trim()) fuori[come] = valore.trim();
+      else if (typeof valore === "number") fuori[come] = String(valore);
+    }
+    return Object.keys(fuori).length ? fuori : undefined;
+  }
+
   /** Vero se è un file caricato a mano da una persona, non generato dalla suite. */
   eCaricata(elemento: ElementoLibreria): boolean {
     return elemento.meta?.["caricata"] === true;

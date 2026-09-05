@@ -405,6 +405,9 @@ const fornitoreLibreria: FornitoreLibreria = {
      * entrare in casa, non solo lasciargli accettare le richieste.
      */
     const vedeTutto = filtro.dove === "tutte";
+    /** Le cose messe da parte, e quelle messe via. Due schede nuove della 0.9.1. */
+    const salvati = filtro.dove === "salvati";
+    const archivio = filtro.dove === "archivio";
     /**
      * **Il computer vede tutto.**
      *
@@ -419,6 +422,25 @@ const fornitoreLibreria: FornitoreLibreria = {
     return libreria
       .cerca(cerca)
       .filter((e) => {
+        /**
+         * **L'archivio si guarda solo quando lo si chiede.**
+         *
+         * Sta prima di tutto il resto perche' e' una domanda diversa dalle
+         * altre: «mie», «tutte» e «bacheca» dicono *di chi*, l'archivio dice
+         * *in che stato*. Una cosa archiviata non deve comparire da nessuna
+         * parte tranne che li', o archiviare non servirebbe a niente.
+         */
+        if (archivio) return libreria.eArchiviata(e, filtro.chi);
+        if (libreria.eArchiviata(e, filtro.chi)) return false;
+
+        // Le cose di una persona sola: il suo profilo. Il permesso resta
+        // quello di `dove` — qui si dice solo di chi.
+        if (filtro.di && libreria.padrone(e) !== filtro.di) return false;
+
+        // Messe da parte: quelle di altri che hai tenuto, e che loro tengono
+        // in bacheca. Le tue non ci vanno: sono gia' fra le tue.
+        if (salvati) return libreria.laTiene(e, filtro.chi) && libreria.inBacheca(e);
+
         if (eIlComputer || vedeTutto) return true;
         if (bacheca) return libreria.inBacheca(e);
         /**
@@ -447,6 +469,12 @@ const fornitoreLibreria: FornitoreLibreria = {
         // versione, una foto nuova continuava a comparire come quella vecchia.
         chiFoto: fotoDi(libreria.padrone(e)),
         pubblicato: libreria.inBacheca(e),
+        // Mai guardata da chi sta guardando adesso. Il segno e' per persona:
+        // la stessa cosa e' nuova per te e vecchia per chi l'ha fatta.
+        nuova: !libreria.laHaVista(e, filtro.chi),
+        archiviata: libreria.eArchiviata(e, filtro.chi),
+        // Come e' stata fatta: quello che era stato chiesto, campo per campo.
+        comeEStataFatta: libreria.comeEStataFatta(e),
         mia: libreria.padrone(e) === filtro.chi,
         quantiMiPiace: libreria.miPiaceDi(e, filtro.chi).quanti,
         mioMiPiace: libreria.miPiaceDi(e, filtro.chi).mio,
@@ -612,6 +640,33 @@ const fornitoreLibreria: FornitoreLibreria = {
     const elemento = libreria.trova(id);
     if (!elemento || !libreria.inBacheca(elemento)) return false;
     const fatto = libreria.tieni(id, chi, tenere);
+    if (fatto) sveglia();
+    return fatto;
+  },
+
+  /**
+   * Vista, o rimessa nuova. **Solo su quello che si può vedere.**
+   *
+   * Il controllo è lo stesso di `file`: chi non può aprirla non deve poterne
+   * cambiare lo stato, o si avrebbe un modo di scoprire cosa esiste sul
+   * computer di qualcun altro premendo dei tasti a caso.
+   */
+  segnaVista(id, chi, vista) {
+    const elemento = libreria.trova(id);
+    if (!elemento) return false;
+    const suo =
+      libreria.padrone(elemento) === chi || chi === PADRONE_DI_CASA || decide(chi);
+    if (!suo && !libreria.inBacheca(elemento)) return false;
+    return libreria.segnaVista(id, chi, vista);
+  },
+
+  archivia(id, chi, dentro) {
+    const elemento = libreria.trova(id);
+    if (!elemento) return false;
+    const suo =
+      libreria.padrone(elemento) === chi || chi === PADRONE_DI_CASA || decide(chi);
+    if (!suo && !libreria.inBacheca(elemento)) return false;
+    const fatto = libreria.archivia(id, chi, dentro);
     if (fatto) sveglia();
     return fatto;
   },
