@@ -15,7 +15,21 @@
 
     <!-- Entrare -->
     <string name="passo_uno">1 · SCEGLI COME FARTI CHIAMARE</string>
-    <string name="passo_due">2 · BATTI IL CODICE DEL COMPUTER</string>
+    <string name="passo_due">IL CODICE DEL COMPUTER</string>
+    <string name="btn_cerca">Cerca i computer di casa</string>
+    <string name="btn_ho_un_codice">Ho un codice, o sono fuori casa</string>
+
+    <!-- Scoprire i computer: la schermata nuova della 0.9.0 -->
+    <string name="scopri_titolo">A quale ti colleghi?</string>
+    <string name="scopri_sotto">Sto guardando chi c\'è su questa rete. Tocca un computer: gli arriva un avviso, e chi ci sta davanti dice di sì.</string>
+    <string name="scopri_vuoto">Non ho trovato nessun computer su questa rete.\n\nControlla che sulla suite la connessione sia accesa, che il telefono sia sulla stessa wifi (non sui dati), e che il firewall di Windows lasci passare DaProd. Se sei fuori casa, usa un codice.</string>
+    <string name="btn_uso_un_codice">Non lo trovo: uso un codice</string>
+    <string name="attesa_sotto">Sul computer è comparso un avviso. Appena qualcuno dice di sì, entri — e da quel momento resti collegato.</string>
+    <string name="btn_lascia_perdere">Lascia perdere</string>
+    <string name="bussato_a">Ho bussato a %1$s</string>
+    <string name="bussata_no">Da %1$s hanno detto di no.</string>
+    <string name="bussata_sparita">L\'attesa è scaduta. Prova a bussare di nuovo.</string>
+    <string name="computer_chiuso">non accetta collegamenti</string>
     <string name="hint_nome">Il tuo nome</string>
     <string name="nota_nome">Dev\'essere libero: se è già di qualcuno te lo dico e ne scegli un altro.</string>
     <string name="btn_scansiona">Oppure inquadra il QR</string>
@@ -73,4 +87,9 @@
     <string name="batteria_vai">Portami lì</string>
     <string name="batteria_no">Lascia stare</string>
     <string name="menu_batteria">Notifiche in ritardo?</string>
+
+    <!-- Il lettore: la notifica che tiene viva la musica quando l\'app va in tasca -->
+    <string name="lettore_canale">Mentre suona</string>
+    <string name="lettore_descrizione">I comandi della musica nella tendina e sulla schermata di blocco, e il permesso di continuare a suonare con l\'app chiusa.</string>
+    <string name="lettore_sotto">DaProd Suite</string>
 </resources>

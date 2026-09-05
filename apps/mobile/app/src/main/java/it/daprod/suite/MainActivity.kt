@@ -38,7 +38,9 @@ import it.daprod.suite.databinding.ActivityMainBinding
 import it.daprod.suite.net.Accoppiamento
 import it.daprod.suite.net.GatewayClient
 import it.daprod.suite.net.GatewayException
+import it.daprod.suite.net.EsitoBussata
 import it.daprod.suite.net.Indirizzi
+import it.daprod.suite.net.Scoperta
 import it.daprod.suite.net.ServitoreOffline
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -115,13 +117,43 @@ class MainActivity : AppCompatActivity() {
      */
     private var stiamoOffline = false
 
+    /**
+     * Vero mentre la pagina sta suonando qualcosa.
+     *
+     * Serve a una decisione sola e importante: **con la musica accesa l'app che
+     * va in secondo piano non mette di guardia la sentinella.** Due servizi in
+     * primo piano insieme sono due notifiche per lo stesso telefono, e quella
+     * che conta in quel momento è quella della musica.
+     */
+    private var staSuonando = false
+
     /** Dove stiamo: la schermata visibile adesso. */
-    private enum class Dove { UTENTI, ENTRA, SUITE }
+    /**
+     * Le quattro schermate, e SCOPRI è quella nuova della 0.9.0.
+     *
+     * Prima erano tre, e fra «scrivi il tuo nome» e «sei dentro» ci stava un
+     * codice di otto cifre da farsi dettare. Adesso in mezzo c'è un elenco di
+     * computer: si tocca quello giusto, di là compare un avviso, e chi ci sta
+     * davanti dice di sì. Il codice resta ed è la strada di fuori casa, dove
+     * nessun annuncio arriva.
+     */
+    private enum class Dove { UTENTI, ENTRA, SCOPRI, SUITE }
 
     private var dove = Dove.UTENTI
 
     /** Il nome scritto nella schermata d'ingresso, tenuto da parte. */
     private var nomeInCorso = ""
+
+    /* ------------------------------------------------- cercare e bussare */
+
+    /** Il giro che chiede «chi c'è» finché la schermata è aperta. */
+    private var giroScoperta: Job? = null
+
+    /** Il giro che chiede «e allora?» dopo aver bussato. */
+    private var giroAttesa: Job? = null
+
+    /** I computer sentiti, per id: chi risponde due volte non compare due volte. */
+    private val computerTrovati = LinkedHashMap<String, Scoperta.Computer>()
 
     /** Lo scanner del QR: il contenuto è l'invito della suite. */
     private val scannerQr = registerForActivityResult(ScanContract()) { risultato ->
@@ -203,6 +235,30 @@ class MainActivity : AppCompatActivity() {
 
         Notifiche.creaCanale(this)
         Sentinella.creaCanale(this)
+        Lettore.creaCanale(this)
+
+        /**
+         * I tasti della tendina e delle cuffie: non fanno il lavoro, lo chiedono.
+         *
+         * La fila la conosce solo la pagina, quindi premere «prossimo» sulla
+         * schermata di blocco deve finire nella stessa funzione in cui finisce
+         * premere «prossimo» dentro l'app. Se fossero due strade, un giorno una
+         * delle due farebbe una cosa leggermente diversa dall'altra.
+         */
+        Lettore.comandi = { comando ->
+            val quale = when (comando) {
+                Lettore.Comando.PAUSA_O_SUONA -> "pausaOSuona"
+                Lettore.Comando.PROSSIMO -> "prossimo"
+                Lettore.Comando.PRECEDENTE -> "precedente"
+                Lettore.Comando.FERMA -> "ferma"
+            }
+            runOnUiThread {
+                binding.web.evaluateJavascript(
+                    "window.DaProdLettore && window.DaProdLettore.$quale();",
+                    null,
+                )
+            }
+        }
         SyncWorker.programma(this)
         if (Build.VERSION.SDK_INT >= 33 &&
             ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) !=
@@ -218,6 +274,13 @@ class MainActivity : AppCompatActivity() {
         binding.btnTornaUtenti.setOnClickListener { mostra(Dove.UTENTI) }
         binding.btnScansiona.setOnClickListener { apriScanner() }
         binding.btnConnetti.setOnClickListener { connettiDaCodice() }
+        binding.btnCerca.setOnClickListener { vaiAScoprire() }
+        binding.btnMostraCodice.setOnClickListener { mostraIlCodice() }
+        binding.btnScopriCodice.setOnClickListener {
+            mostra(Dove.ENTRA)
+            mostraIlCodice()
+        }
+        binding.btnLasciaPerdere.setOnClickListener { smettiDiAspettare() }
 
         // Il tasto «indietro» del telefono: dentro la suite torna indietro
         // nella pagina, e solo quando non c'è più niente dietro chiude l'app.
@@ -225,6 +288,11 @@ class MainActivity : AppCompatActivity() {
             override fun handleOnBackPressed() {
                 when {
                     dove == Dove.SUITE && binding.web.canGoBack() -> binding.web.goBack()
+                    // Da «sto aspettando» si torna all'elenco, non fuori: chi
+                    // ha bussato per sbaglio deve poter cambiare computer senza
+                    // uscire dall'app.
+                    dove == Dove.SCOPRI && giroAttesa != null -> smettiDiAspettare()
+                    dove == Dove.SCOPRI -> mostra(Dove.ENTRA)
                     dove == Dove.ENTRA -> mostra(Dove.UTENTI)
                     dove != Dove.UTENTI && Profili.tutti(this@MainActivity).size > 1 -> {
                         Profili.esci(this@MainActivity)
@@ -300,6 +368,10 @@ class MainActivity : AppCompatActivity() {
      */
     override fun onStop() {
         super.onStop()
+        // Con la musica accesa il processo è già tenuto vivo dal [Lettore], e
+        // due notifiche in primo piano per lo stesso telefono sono una di
+        // troppo: quella che conta, in quel momento, è quella della musica.
+        if (staSuonando) return
         if (dove == Dove.SUITE && chi != null) Sentinella.diGuardia(this)
     }
 
@@ -309,11 +381,18 @@ class MainActivity : AppCompatActivity() {
         dove = quale
         binding.schermoUtenti.visibility = if (quale == Dove.UTENTI) View.VISIBLE else View.GONE
         binding.schermoCollega.visibility = if (quale == Dove.ENTRA) View.VISIBLE else View.GONE
+        binding.schermoScopri.visibility = if (quale == Dove.SCOPRI) View.VISIBLE else View.GONE
         binding.web.visibility = if (quale == Dove.SUITE) View.VISIBLE else View.GONE
         // Dentro la suite la barra sparisce: la pagina ha la sua testata, con il
         // nome, la faccia e la rotella. Due intestazioni sono una di troppo.
         binding.barra.visibility = if (quale == Dove.SUITE) View.GONE else View.VISIBLE
         if (quale != Dove.SUITE) binding.attesa.visibility = View.GONE
+        // Cercare costa una porta UDP aperta e un pacchetto ogni due secondi:
+        // fuori da quella schermata non serve a niente e si spegne.
+        if (quale != Dove.SCOPRI) {
+            giroScoperta?.cancel()
+            giroScoperta = null
+        }
         if (quale == Dove.UTENTI) disegnaUtenti()
         aggiornaBarra()
     }
@@ -421,10 +500,248 @@ class MainActivity : AppCompatActivity() {
         // L'indirizzo dell'ultima volta: chi si ricollega allo stesso computer
         // deve solo battere le otto cifre.
         binding.campoIndirizzo.setText(Store.base(this) ?: "")
+        /**
+         * Il codice riparte chiuso, **tranne quando non c'è mai stata una rete**.
+         *
+         * Chi si è già collegato una volta da fuori casa ha un indirizzo
+         * salvato: per lui la strada del codice è quella che usa, e ritrovarla
+         * chiusa ogni volta sarebbe un tocco in più a ogni giro.
+         */
+        val giaUsatoIlCodice = !Store.base(this).isNullOrBlank()
+        binding.bloccoCodice.visibility = if (giaUsatoIlCodice) View.VISIBLE else View.GONE
+        binding.btnMostraCodice.visibility = if (giaUsatoIlCodice) View.GONE else View.VISIBLE
         binding.btnTornaUtenti.visibility =
             if (Profili.tutti(this).isEmpty()) View.GONE else View.VISIBLE
         mostra(Dove.ENTRA)
     }
+
+    /**
+     * Il codice, che dalla 0.9.0 sta sotto una riga da toccare.
+     *
+     * Non è nascosto per snobismo: è nascosto perché **in casa non serve più**,
+     * e due caselle piene di cifre in cima alla prima schermata dicono a chi
+     * apre l'app per la prima volta che questa cosa è complicata. Chi è fuori
+     * casa preme la riga e le ritrova tutte e due, con dentro l'indirizzo
+     * dell'ultima volta.
+     */
+    private fun mostraIlCodice() {
+        binding.bloccoCodice.visibility = View.VISIBLE
+        binding.btnMostraCodice.visibility = View.GONE
+        binding.campoCodice.requestFocus()
+    }
+
+    /* ------------------------------------------------- cercare e bussare */
+
+    /**
+     * Va a vedere chi c'è, e ci resta finché non si sceglie.
+     *
+     * Il nome si prende **adesso**: bussare senza dire come ci si chiama non
+     * ha senso, e chiederlo dopo aver scelto il computer vorrebbe dire una
+     * casella in mezzo a un gesto che deve essere un tocco solo.
+     */
+    private fun vaiAScoprire() {
+        nomeInCorso = binding.campoNome.text.toString().trim()
+        if (nomeInCorso.isBlank()) {
+            avvisa("Scrivi prima come vuoi farti chiamare: è il nome che vedranno gli altri.")
+            binding.campoNome.requestFocus()
+            return
+        }
+        computerTrovati.clear()
+        binding.bloccoAttesa.visibility = View.GONE
+        binding.scopriVuoto.visibility = View.GONE
+        binding.elencoComputer.removeAllViews()
+        binding.scopriSotto.setText(R.string.scopri_sotto)
+        mostra(Dove.SCOPRI)
+        cerca()
+    }
+
+    /**
+     * Il giro che cerca: quattro secondi di ascolto, poi si ricomincia.
+     *
+     * **Non finisce mai da solo**, e non è una svista: un computer acceso
+     * mentre questa schermata è aperta deve comparire senza che nessuno prema
+     * niente. Si ferma uscendo dalla schermata (vedi `mostra`) o bussando.
+     */
+    private fun cerca() {
+        giroScoperta?.cancel()
+        giroScoperta = lifecycleScope.launch {
+            var primoGiro = true
+            while (isActive) {
+                val sentiti = Scoperta.cerca(this@MainActivity, 4_000)
+                for (c in sentiti) computerTrovati[c.id] = c
+                disegnaComputer()
+                // Il riquadro che spiega cosa controllare compare **dopo** il
+                // primo giro: farlo comparire subito vorrebbe dire dare torto a
+                // una rete che stava solo rispondendo con calma.
+                if (!primoGiro || computerTrovati.isNotEmpty()) {
+                    binding.scopriVuoto.visibility =
+                        if (computerTrovati.isEmpty()) View.VISIBLE else View.GONE
+                }
+                primoGiro = false
+                delay(600)
+            }
+        }
+    }
+
+    private fun disegnaComputer() {
+        val elenco = binding.elencoComputer
+        elenco.removeAllViews()
+        for (c in computerTrovati.values) elenco.addView(rigaComputer(c))
+    }
+
+    /** Un computer nell'elenco: il nome, la versione, e si tocca per bussare. */
+    private fun rigaComputer(c: Scoperta.Computer): View {
+        val riga = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setBackgroundResource(R.drawable.sfondo_carta)
+            setPadding(dp(16), dp(14), dp(16), dp(14))
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+            ).apply { bottomMargin = dp(10) }
+            isClickable = c.apre
+            alpha = if (c.apre) 1f else 0.5f
+        }
+        riga.addView(TextView(this).apply {
+            text = c.nome
+            setTextColor(ContextCompat.getColor(this@MainActivity, R.color.testo))
+            textSize = 17f
+            setTypeface(typeface, android.graphics.Typeface.BOLD)
+        })
+        riga.addView(TextView(this).apply {
+            text = buildString {
+                append("DaProd Suite ")
+                append(c.versione.ifBlank { "?" })
+                append(" · ")
+                append(c.visto)
+                if (!c.apre) {
+                    append(" · ")
+                    append(getString(R.string.computer_chiuso))
+                }
+            }
+            setTextColor(ContextCompat.getColor(this@MainActivity, R.color.testo_debole))
+            textSize = 12f
+        })
+        if (c.apre) riga.setOnClickListener { bussaA(c) }
+        return riga
+    }
+
+    /**
+     * Bussa, e poi aspetta.
+     *
+     * Chi bussa non riceve niente subito: riceve un'attesa e un segreto. Il
+     * segreto serve a venire a ritirare la risposta — senza, chiunque sulla
+     * stessa rete potrebbe prendersi il token di un altro sapendo l'id
+     * dell'attesa, che invece compare nel pannello di chi decide.
+     */
+    private fun bussaA(c: Scoperta.Computer) {
+        giroScoperta?.cancel()
+        giroScoperta = null
+        binding.bloccoAttesa.visibility = View.VISIBLE
+        binding.scopriVuoto.visibility = View.GONE
+        binding.elencoComputer.visibility = View.GONE
+        binding.attesaTitolo.text = getString(R.string.bussato_a, c.nome)
+
+        giroAttesa = lifecycleScope.launch {
+            val dove = c.doveBussare
+            val bussata = try {
+                GatewayClient.bussa(dove, nomeInCorso, comeMiChiamo())
+            } catch (e: Exception) {
+                smettiDiAspettare()
+                avvisa(spiega(e))
+                return@launch
+            }
+
+            /**
+             * Si chiede ogni due secondi, per dieci minuti.
+             *
+             * Dieci minuti è quanto vive una bussata dall'altra parte: chiedere
+             * più a lungo vorrebbe dire aspettare una risposta a una domanda
+             * che non esiste più. Uno che non risponde entro dieci minuti non
+             * sta rispondendo.
+             */
+            val fine = System.currentTimeMillis() + 10 * 60_000
+            while (isActive && System.currentTimeMillis() < fine) {
+                delay(2_000)
+                val esito = try {
+                    GatewayClient.esitoBussata(dove, bussata.attesa, bussata.segreto)
+                } catch (_: Exception) {
+                    // Un buco di rete non è un no: si riprova al giro dopo.
+                    continue
+                }
+                when (esito) {
+                    is EsitoBussata.Aspetta -> Unit
+                    is EsitoBussata.No -> {
+                        smettiDiAspettare()
+                        avvisa(getString(R.string.bussata_no, c.nome))
+                        return@launch
+                    }
+                    is EsitoBussata.Sparita -> {
+                        smettiDiAspettare()
+                        avvisa(getString(R.string.bussata_sparita))
+                        return@launch
+                    }
+                    is EsitoBussata.Dentro -> {
+                        entraDopoLaBussata(c, esito)
+                        return@launch
+                    }
+                }
+            }
+            smettiDiAspettare()
+        }
+    }
+
+    /**
+     * Ci hanno fatto entrare: si salva il profilo e si apre la suite.
+     *
+     * Gli indirizzi si tengono **tutti**: quello da cui è arrivata la risposta
+     * (che da questa rete funziona di sicuro) davanti, e dietro quelli che il
+     * computer ha annunciato — Tailscale, il tunnel — che servono il giorno
+     * che si esce di casa.
+     */
+    private fun entraDopoLaBussata(c: Scoperta.Computer, esito: EsitoBussata.Dentro) {
+        giroAttesa = null
+        val indirizzi = (listOf(c.doveBussare) + esito.basi + c.basi).distinct()
+        val profilo = Profilo(
+            id = UUID.randomUUID().toString(),
+            nome = nomeInCorso,
+            base = c.doveBussare,
+            basi = indirizzi,
+            token = esito.token,
+            ruolo = esito.ruolo,
+            computer = esito.computer,
+            ultimoUso = System.currentTimeMillis(),
+        )
+        Profili.salva(this, profilo)
+        nomeInCorso = ""
+        binding.elencoComputer.visibility = View.VISIBLE
+        binding.bloccoAttesa.visibility = View.GONE
+        avvisa("Collegato a ${esito.computer}.")
+        entra(profilo)
+    }
+
+    /** Smette di aspettare e torna all'elenco, che intanto ricomincia a cercare. */
+    private fun smettiDiAspettare() {
+        giroAttesa?.cancel()
+        giroAttesa = null
+        binding.bloccoAttesa.visibility = View.GONE
+        binding.elencoComputer.visibility = View.VISIBLE
+        if (dove == Dove.SCOPRI) cerca()
+    }
+
+    /**
+     * Come si chiama questo telefono, per chi deve decidere.
+     *
+     * Non è il nome della persona — quello lo sceglie lei — è l'apparecchio:
+     * «SM-A536B». Serve a distinguere due richieste con lo stesso nome, e a far
+     * riconoscere a chi guarda il pannello il telefono che ha in mano.
+     */
+    private fun comeMiChiamo(): String =
+        listOf(Build.MANUFACTURER, Build.MODEL)
+            .filter { it.isNotBlank() }
+            .joinToString(" ")
+            .take(60)
+            .ifBlank { "un telefono" }
 
     /* ---------------------------------------------------- accoppiamento */
 
@@ -1044,6 +1361,30 @@ class MainActivity : AppCompatActivity() {
                 /** Vero se il file di questa cosa e' gia' nel telefono. */
                 @JavascriptInterface
                 fun ceLHoQui(id: String): Boolean = deposito?.ceLho(id) == true
+
+                /**
+                 * La pagina dice che sta suonando qualcosa (o che ha smesso).
+                 *
+                 * **È la sola cosa che l'app fa per la musica**, e basta a
+                 * curare il difetto del 5 settembre 2026 — «fare in modo che la
+                 * riproduzione continui anche se minimizzato». Il suono resta
+                 * dov'era, dentro la pagina, che è l'unico posto da cui il
+                 * visualizer può sentirlo; quello che manca a una pagina è il
+                 * **permesso di restare viva**, e quello lo dà un servizio in
+                 * primo piano. Vedi [Lettore].
+                 *
+                 * Arriva dal thread della WebView, non da quello dell'interfaccia:
+                 * far partire un servizio da lì funziona, ma tutto quello che
+                 * tocca le view va rimandato — ed è il motivo del `runOnUiThread`.
+                 */
+                @JavascriptInterface
+                fun suonando(sta: Boolean, titolo: String, chi: String) {
+                    runOnUiThread {
+                        staSuonando = sta
+                        if (sta) Lettore.suona(this@MainActivity, titolo, chi, true)
+                        else Lettore.basta(this@MainActivity)
+                    }
+                }
             },
             "DaProdApp",
         )
@@ -1541,6 +1882,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
+        // Un riferimento statico a un'activity morta è la perdita di memoria
+        // più classica che ci sia: si toglie qui, e da quel momento un tasto
+        // premuto nella tendina non fa niente invece di far cadere l'app.
+        Lettore.comandi = null
+        Lettore.basta(this)
         super.onDestroy()
         polling?.cancel()
         // Un `ValueCallback` che non riceve mai risposta tiene bloccato il suo

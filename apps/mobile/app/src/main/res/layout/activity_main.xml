@@ -230,10 +230,44 @@
                         android:textColor="@color/testo_debole"
                         android:textSize="11sp" />
 
+                    <!--
+                      Il tasto grosso della 0.9.0: cerca il computer.
+
+                      Chiesto il 5 settembre 2026: «all'avvio la creazione del
+                      profilo e automaticamente alla fine si vede in automatico
+                      tutti i pc collegati e si decide a quale collegarsi».
+                      Quindi il passo due non è più «batti otto cifre»: è
+                      «guarda chi c'è». Il codice resta, sotto, per chi è fuori
+                      casa — dove nessun annuncio arriva.
+                    -->
+                    <Button
+                        android:id="@+id/btn_cerca"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="18dp"
+                        android:text="@string/btn_cerca" />
+
+                    <Button
+                        android:id="@+id/btn_mostra_codice"
+                        style="?android:attr/borderlessButtonStyle"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="@string/btn_ho_un_codice"
+                        android:textColor="@color/testo_debole"
+                        android:textSize="13sp" />
+
+                    <LinearLayout
+                        android:id="@+id/blocco_codice"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:visibility="gone">
+
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="20dp"
+                        android:layout_marginTop="12dp"
                         android:text="@string/passo_due"
                         android:textColor="@color/accento"
                         android:textSize="12sp"
@@ -280,6 +314,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="18dp"
                         android:text="@string/btn_entra" />
+                    </LinearLayout>
                 </LinearLayout>
 
                 <Button
@@ -298,6 +333,124 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="@string/torna_indietro"
+                    android:textColor="@color/testo_debole"
+                    android:textSize="13sp" />
+            </LinearLayout>
+        </androidx.core.widget.NestedScrollView>
+
+        <!-- =============================== SCOPRI ================================
+             I computer di casa, trovati da soli.
+
+             Nasce nella 0.9.0. Prima di questa schermata collegarsi voleva dire
+             farsi dettare otto cifre da chi stava davanti al PC; adesso vuol
+             dire toccare un nome in un elenco. Il computer riceve una notifica
+             e chi ci sta davanti decide.
+
+             La lista si riempie da sola e non ha un tasto «cerca»: cercare è
+             quello che questa schermata fa mentre è aperta.
+        -->
+        <androidx.core.widget.NestedScrollView
+            android:id="@+id/schermo_scopri"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone"
+            android:paddingHorizontal="20dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingBottom="32dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="26dp"
+                    android:text="@string/scopri_titolo"
+                    android:textColor="@color/testo"
+                    android:textSize="24sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/scopri_sotto"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:layout_marginBottom="16dp"
+                    android:text="@string/scopri_sotto"
+                    android:textColor="@color/testo_debole"
+                    android:textSize="13sp" />
+
+                <LinearLayout
+                    android:id="@+id/elenco_computer"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" />
+
+                <!-- Mentre si aspetta che qualcuno dica di sì. Prende il posto
+                     dell'elenco: in quel momento non c'è nient'altro da fare. -->
+                <LinearLayout
+                    android:id="@+id/blocco_attesa"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone"
+                    android:background="@drawable/sfondo_carta"
+                    android:padding="18dp">
+
+                    <TextView
+                        android:id="@+id/attesa_titolo"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textColor="@color/testo"
+                        android:textSize="17sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/attesa_sotto"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:text="@string/attesa_sotto"
+                        android:textColor="@color/testo_debole"
+                        android:textSize="13sp" />
+
+                    <ProgressBar
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_horizontal"
+                        android:layout_marginTop="16dp" />
+
+                    <Button
+                        android:id="@+id/btn_lascia_perdere"
+                        style="?android:attr/borderlessButtonStyle"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:text="@string/btn_lascia_perdere"
+                        android:textColor="@color/testo_debole"
+                        android:textSize="13sp" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/scopri_vuoto"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:padding="14dp"
+                    android:background="@drawable/sfondo_carta"
+                    android:text="@string/scopri_vuoto"
+                    android:textColor="@color/testo_debole"
+                    android:textSize="13sp"
+                    android:visibility="gone" />
+
+                <Button
+                    android:id="@+id/btn_scopri_codice"
+                    style="?android:attr/borderlessButtonStyle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:text="@string/btn_uso_un_codice"
                     android:textColor="@color/testo_debole"
                     android:textSize="13sp" />
             </LinearLayout>

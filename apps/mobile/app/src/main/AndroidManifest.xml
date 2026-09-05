@@ -6,6 +6,17 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- Per vedere se il PC di casa è raggiungibile quando si è fuori. -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!--
+      Trovare i computer di casa senza sapere il loro indirizzo.
+
+      Il wifi, per far durare la batteria, butta via i pacchetti che non sono
+      indirizzati al telefono: `MulticastLock` gli dice di tenerli finché la
+      schermata «a quale ti colleghi?» è aperta. Senza questi due permessi
+      l'elenco resterebbe vuoto anche con tre computer accesi in casa.
+      Vedi net/Scoperta.kt.
+    -->
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
     <!-- Le notifiche quando un lavoro finisce. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!--
@@ -16,6 +27,14 @@
     -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <!--
+      La musica che continua quando l\'app va in tasca.
+
+      Il suono lo fa la pagina dentro la WebView; questo permesso serve al
+      servizio che tiene il processo in primo piano — senza, Android è libero di
+      spegnerlo dopo un minuto e la canzone finisce a metà. Vedi Lettore.kt.
+    -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
     <!-- Per installare l'aggiornamento dell'app che si scarica da sola.
          Su Android 8 e oltre va comunque concesso a mano una volta sola. -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
@@ -61,6 +80,15 @@
             android:name=".Sentinella"
             android:exported="false"
             android:foregroundServiceType="dataSync" />
+
+        <!--
+          Il lettore. Non suona niente: tiene vivo il processo mentre la pagina
+          suona, e mette i comandi nella tendina e sulla schermata di blocco.
+        -->
+        <service
+            android:name=".Lettore"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback" />
 
         <!-- Lo scanner del QR: un'activity della libreria zxing. -->
         <activity

@@ -460,7 +460,31 @@ export const STILE = `  :root {
   }
   .faccia-tonda.grande { width: 66px; height: 66px; font-size: 24px; }
   .posta .vetro { display: block; width: 100%; border: 0; padding: 0; background: #000; cursor: pointer; position: relative; }
-  .posta .vetro img, .posta .vetro video { width: 100%; display: block; max-height: 66vh; object-fit: cover; }
+  /**
+   * Quanto e' grande una cosa in bacheca.
+   *
+   * ⚠ Il difetto del 5 settembre 2026: «la schermata daprod deve essere
+   * aggiustata a livello grafico, troppo grandi i contenuti soprattutto su
+   * dispositivi ad alta risoluzione».
+   *
+   * Era «max-height: 66vh», e su un telefono alto quella e' **due terzi di
+   * schermo per un riquadro**: si scorreva per venti secondi per vedere tre
+   * cose. Adesso il tetto e' il piu' stretto fra i due terzi dello schermo e
+   * 340 px, e su uno schermo largo comanda il rapporto della foto invece del
+   * ritaglio.
+   *
+   * «object-fit: contain» invece di «cover»: tagliare la faccia a
+   * un'immagine per farla stare in un rettangolo va bene per una miniatura,
+   * non per la cosa che uno ha deciso di far vedere agli altri.
+   */
+  .posta .vetro img, .posta .vetro video {
+    width: 100%; display: block;
+    max-height: min(52vh, 340px);
+    object-fit: contain;
+  }
+  @media (min-width: 620px) {
+    .posta .vetro img, .posta .vetro video { max-height: min(56vh, 420px); }
+  }
   .posta .senza { padding: 26px; text-align: center; font-size: 34px; color: #ffffff55; background: linear-gradient(150deg, #1b1533, #0b1a20); }
   .posta .parole { padding: 11px 14px 4px; font-size: 13.5px; overflow-wrap: anywhere; }
   .posta .piedi { display: flex; gap: 8px; padding: 10px 14px 13px; align-items: center; }
@@ -626,6 +650,87 @@ export const STILE = `  :root {
   .bussa .cresce { flex: 1; min-width: 0; }
   .bussa b { display: block; font-size: 13.5px; }
   .bussa small { color: var(--dim); font-size: 11.5px; display: block; overflow-wrap: anywhere; }
+
+  /* ------------------------------------------------------- il visualizer */
+  /* Dietro a tutto, e senza toccare niente: nessun evento del mouse arriva
+     qui, quindi la pagina sopra funziona esattamente come prima. */
+  #visual {
+    position: fixed; inset: 0; z-index: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+  }
+  /* Con il visualizer acceso lo sfondo del corpo si smorza: due sfumature
+     sovrapposte sono fango, e quella che deve vedersi e' quella che si muove. */
+  body.convisual { background-image: none; background-color: #05060a; }
+  main, header, nav.fondo { position: relative; z-index: 1; }
+
+  /* ----------------------------------------------------- la barra che suona */
+  .barraLettore {
+    position: fixed; left: 0; right: 0; z-index: 30;
+    bottom: calc(var(--fondo-alto) + env(safe-area-inset-bottom));
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 10px;
+    background: #0d0f16f2; backdrop-filter: blur(12px);
+    border-top: 1px solid var(--line2);
+  }
+  .barraLettore .faccia {
+    width: 40px; height: 40px; flex: 0 0 auto; border-radius: 10px;
+    background: var(--panel2) center/cover no-repeat;
+    border: 1px solid var(--line2); color: var(--txt);
+    display: grid; place-items: center; font-size: 16px; cursor: pointer; padding: 0;
+  }
+  .barraLettore .dentro {
+    flex: 1; min-width: 0; text-align: left; background: none; border: 0;
+    color: var(--txt); cursor: pointer; padding: 0;
+  }
+  .barraLettore .dentro b {
+    display: block; font-size: 13px; font-weight: 600;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .barraLettore .dentro small {
+    display: block; color: var(--dim); font-size: 11px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .barraLettore .tondo { width: 32px; height: 32px; font-size: 14px; }
+  /* Su uno schermo stretto i tasti «prima» e «chiudi» stanno di troppo: play e
+     prossimo sono quelli che si premono, gli altri stanno nel palco. */
+  @media (max-width: 400px) {
+    #lettore-prima, #lettore-chiudi { display: none; }
+  }
+  /* Con la barra accesa il fondo della pagina scende, o le ultime cose
+     finirebbero sotto. */
+  body.consuono { padding-bottom: calc(var(--fondo-alto) + 58px + env(safe-area-inset-bottom)); }
+
+  /* --------------------------------------------------------------- il palco */
+  .palco {
+    position: fixed; inset: 0; z-index: 80;
+    background: #04050afa;
+    display: flex; flex-direction: column;
+    padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom);
+    animation: entra .18s ease-out;
+  }
+  .palco .cima { display: flex; align-items: center; gap: 10px; padding: 10px 14px; }
+  .palco .cima .titolo { flex: 1; min-width: 0; }
+  .palco .cima .titolo b {
+    display: block; font-size: 14px; font-weight: 600;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .palco .cima .titolo small { display: block; color: var(--dim); font-size: 11.5px; }
+  .palco .dentro {
+    flex: 1; min-height: 0; display: grid; place-items: center; padding: 6px 12px;
+    transition: transform .12s linear, opacity .12s linear;
+  }
+  .palco .dentro img, .palco .dentro video {
+    max-width: 100%; max-height: 100%; display: block;
+    border-radius: 12px; object-fit: contain; background: #000;
+  }
+  .palco .dentro .copertinona {
+    width: min(72vw, 340px); aspect-ratio: 1; border-radius: 20px; object-fit: cover;
+    box-shadow: 0 24px 70px -24px #000;
+  }
+  .palco .sotto { display: flex; align-items: center; gap: 10px; padding: 10px 16px 18px; }
+  .palco .sotto .effetto { color: var(--fioco); font-size: 11.5px; letter-spacing: .4px; }
+  .palco .tondo.grosso { width: 54px; height: 54px; font-size: 22px; border-color: var(--accent); }
 
   /* ------------------------------------------------------------- gli stili */
   /* Una carta per stile: il nome grande, le parole sotto. Si tocca per usarlo,

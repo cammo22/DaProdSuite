@@ -24,7 +24,21 @@
  * basso. Una scheda in fondo è un posto dove si passa ogni giorno; le
  * impostazioni si aprono, si guardano e si chiudono.
  */
-export const PAGINE = `<header>
+export const PAGINE = `<!--
+  Il visualizer, dietro a tutto.
+
+  Non e' una scheda e non e' una finestra: e' **lo sfondo della pagina** mentre
+  suona una canzone. Chiesto il 5 settembre 2026 — «lo sfondo del visualizer
+  parte sullo sfondo in random e effetti shuffle» — e la differenza fra questo
+  e una schermata dedicata e' tutta qui: si continua a girare per l'app, e
+  dietro c'e' la musica che si muove.
+
+  Nascosto finche' non suona niente: un canvas che ridisegna sessanta volte al
+  secondo dietro a una pagina ferma e' solo batteria buttata.
+-->
+<canvas id="visual" hidden></canvas>
+
+<header>
   <div class="marchio">DaProd<span>Suite</span></div>
   <div class="cresci"></div>
   <button class="chi" id="chi" hidden>
@@ -344,6 +358,54 @@ export const PAGINE = `<header>
   solo perche' le parole sono corte. Se un giorno ne servisse una settima, la
   risposta non e' restringere ancora: e' che due di queste dicono la stessa cosa.
 -->
+<!--
+  La riga che dice cosa sta suonando.
+
+  Sta **sopra** alle schede e non al posto loro: mentre si ascolta si continua
+  a girare per l'app, ed e' tutto il punto di avere una fila. Toccarla apre il
+  palco; i tre tasti fanno quello che dicono.
+-->
+<div class="barraLettore" id="barra-lettore" hidden>
+  <button class="faccia" id="lettore-faccia" title="A schermo intero"></button>
+  <button class="dentro" id="lettore-apri">
+    <b id="lettore-nome"></b>
+    <small id="lettore-sotto"></small>
+  </button>
+  <button class="tondo" id="lettore-prima" title="Precedente">&#9198;</button>
+  <button class="tondo" id="lettore-play" title="Pausa">&#9208;</button>
+  <button class="tondo" id="lettore-poi" title="Prossimo">&#9197;</button>
+  <button class="tondo" id="lettore-chiudi" title="Chiudi">&#10005;</button>
+</div>
+
+<!--
+  Il palco: quello che suona, grande quanto lo schermo.
+
+  Non e' la lente con un nome nuovo. La lente apriva **un file** e chiudendola
+  finiva tutto; il palco e' una finestra su una fila che va avanti lo stesso —
+  si apre, si chiude, e la musica non se ne accorge.
+
+  Si esce trascinando su o giu', che e' il gesto che ogni app di foto ha
+  insegnato a tutti. Il tasto con la X c'e' lo stesso, per chi e' col mouse.
+-->
+<div class="palco" id="palco" hidden>
+  <div class="cima">
+    <div class="titolo">
+      <b id="palco-nome"></b>
+      <small id="palco-sotto"></small>
+    </div>
+    <button class="tondo" id="palco-cambia" title="Cambia effetto">&#9881;</button>
+    <button class="tondo" id="palco-chiudi" title="Chiudi">&#10005;</button>
+  </div>
+  <div class="dentro" id="palco-dentro"></div>
+  <div class="sotto">
+    <span class="effetto" id="palco-effetto"></span>
+    <div class="cresci"></div>
+    <button class="tondo" id="palco-prima" title="Precedente">&#9198;</button>
+    <button class="tondo grosso" id="palco-play" title="Pausa">&#9208;</button>
+    <button class="tondo" id="palco-poi" title="Prossimo">&#9197;</button>
+  </div>
+</div>
+
 <nav class="fondo" id="fondo" hidden>
   <button data-pagina="casa" class="on"><span class="segno">&#9673;</span>Casa</button>
   <button data-pagina="produzione"><span class="segno">&#10010;</span>Produci</button>

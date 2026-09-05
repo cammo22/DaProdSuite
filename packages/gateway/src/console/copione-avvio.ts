@@ -117,6 +117,21 @@ export const COPIONE_AVVIO = `
   $("annulla").addEventListener("click", chiudiModulo);
   $("apri-impostazioni").addEventListener("click", apriImpostazioni);
   $("vedi-bussate").addEventListener("click", function () { void apriLaRete(); });
+
+  /* ------------------------------------------------------------ il lettore */
+
+  $("lettore-faccia").addEventListener("click", apriPalco);
+  $("lettore-apri").addEventListener("click", apriPalco);
+  $("lettore-play").addEventListener("click", pausaOSuona);
+  $("lettore-prima").addEventListener("click", precedente);
+  $("lettore-poi").addEventListener("click", prossimo);
+  $("lettore-chiudi").addEventListener("click", fermaTutto);
+  $("palco-chiudi").addEventListener("click", chiudiPalco);
+  $("palco-play").addEventListener("click", pausaOSuona);
+  $("palco-prima").addEventListener("click", precedente);
+  $("palco-poi").addEventListener("click", prossimo);
+  $("palco-cambia").addEventListener("click", function () { cambiaEffetto(false); });
+  aggangiaIlTrascinamento($("palco"));
   $("chi").addEventListener("click", function () { vaiA("daprod"); });
   $("apri-profilo").addEventListener("click", apriIlProfilo);
   $("comincia-chiacchiera").addEventListener("click", cominciaChiacchierata);
@@ -146,6 +161,10 @@ export const COPIONE_AVVIO = `
   // aperto sopra la pagina prima di uscire dall'app.
   document.addEventListener("keydown", function (ev) {
     if (ev.key !== "Escape") return;
+    // L'ordine e' quello di quanto stanno in alto: prima il palco, poi la
+    // lente, poi il foglio. Chiudere quello sotto lasciando quello sopra
+    // sarebbe premere un tasto e non vedere succedere niente.
+    if (palcoAperto) { chiudiPalco(); return; }
     var lente = document.querySelector(".lente");
     if (lente) { lente.remove(); return; }
     chiudiFoglio();
