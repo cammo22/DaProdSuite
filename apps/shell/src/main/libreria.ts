@@ -431,10 +431,25 @@ class Libreria extends EventEmitter {
    * senza, ognuno vede le sue e basta. E' una decisione di chi ha generato, e
    * per questo il controllo sta qui e non nell'interfaccia.
    */
-  pubblica(id: string, chi: string, pubblicato: boolean): boolean {
+  /**
+   * Mette una cosa in bacheca, o la toglie.
+   *
+   * ⚠ **`decide` la puo' mettere anche se non e' sua.** Chiesto il 6 settembre
+   * 2026: «un admin puo' condividere i contenuti anche degli altri in DaProd».
+   *
+   * Prima passava solo il padrone, e la regola sembrava ovvia: e' roba tua,
+   * decidi tu. Ma la bacheca di casa non e' il profilo di ognuno — e' la
+   * vetrina comune, ed e' proprio la cosa che chi ospita cura per tutti: e' lui
+   * che ci mette la canzone venuta bene di suo figlio, non e' suo figlio che
+   * deve ricordarsene.
+   *
+   * Quello che **non** cambia: di chi e' la cosa. `padrone` resta quello di
+   * prima, la faccia sopra in DaProd resta la sua. Cambia chi puo' premere.
+   */
+  pubblica(id: string, chi: string, pubblicato: boolean, decide = false): boolean {
     const elemento = this.trova(id);
     if (!elemento) return false;
-    if (this.padrone(elemento) !== chi) return false;
+    if (!decide && this.padrone(elemento) !== chi) return false;
 
     const meta = { ...(elemento.meta ?? {}), pubblicato };
     writeFileSync(

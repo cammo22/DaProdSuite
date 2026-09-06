@@ -50,6 +50,118 @@ export const COPIONE_IMPOSTAZIONI = `
    * Un foglio alla volta: aprirne uno mentre ce n'è un altro chiude il primo.
    * Due fogli sovrapposti sono due tasti «chiudi» e nessuno che sa quale.
    */
+  /**
+   * ⚠ **I permessi, disegnati da noi.** Rifatto nella 1.0.0.
+   *
+   * Chiesto il 6 settembre 2026: «facciamo meglio lo stile del menu permessi,
+   * tutto a tema». Il foglio di prima era una finestra di **Android**: bianca,
+   * con i tasti di sistema, in mezzo a un'app scura e tonda. Stonava perche'
+   * non era nostra.
+   *
+   * La divisione giusta: **il disegno lo fa la pagina, il permesso lo chiede
+   * l'app.** Un permesso e' di Android e una pagina web non lo puo' chiedere —
+   * ma non c'e' nessun motivo per cui debba essere Android a disegnare
+   * l'elenco.
+   *
+   * Ogni riga dice **cosa succede senza**, che e' l'unica cosa che convince a
+   * darlo. E ci sono tutte, anche quelle gia' date: questa e' la pagina dove
+   * uno viene a **controllare**, e una voce che compare solo quando manca non
+   * si trova quando serve.
+   */
+  function apriIPermessi() {
+    var carta = apriFoglio("Permessi");
+
+    var stato = {};
+    try {
+      stato = JSON.parse(window.DaProdApp.comeStannoIPermessi() || "{}");
+    } catch (e) { stato = {}; }
+
+    var quali = [
+      {
+        id: "notifiche",
+        nome: "Notifiche",
+        aPosto: stato.notifiche === true,
+        senza: "senza, non sai quando un lavoro \u00e8 pronto finch\u00e9 non riapri l'app",
+      },
+      {
+        id: "batteria",
+        nome: "Lavorare in sottofondo",
+        aPosto: stato.batteria === true,
+        senza: "senza, Android mette l'app a dormire e «\u00e8 pronto» arriva mezz'ora dopo",
+      },
+      {
+        id: "installare",
+        nome: "Installare gli aggiornamenti",
+        aPosto: stato.installare === true,
+        senza: "senza, l'app scarica la versione nuova e poi non riesce a metterla",
+      },
+      {
+        id: "file",
+        nome: "File e memoria",
+        aPosto: true,
+        senza: "non serve un permesso: si salva nella tua galleria e si leggono i file che scegli tu",
+      },
+    ];
+
+    for (var i = 0; i < quali.length; i++) {
+      var q = quali[i];
+      voceFoglio(
+        carta,
+        q.aPosto ? "\u2713" : "\u2717",
+        q.nome + (q.aPosto ? "" : " \u2014 manca"),
+        q.senza,
+        (function (quale) {
+          return function () {
+            chiudiFoglio();
+            try { window.DaProdApp.chiediIlPermesso(quale); } catch (e) { /* app vecchia */ }
+          };
+        })(q.id),
+        !q.aPosto,
+      );
+    }
+  }
+
+  /**
+   * Il QR con cui si scarica l'app, disegnato dal computer.
+   *
+   * L'indirizzo dentro non punta a un file ma alla **pagina dell'ultima
+   * release**: il nome dell'APK contiene la versione, quindi un indirizzo
+   * diretto andrebbe rifatto a ogni pubblicazione — cioe' esattamente quello
+   * che questo tasto esiste per non far fare.
+   */
+  async function apriIlQrDellApp() {
+    var carta = apriFoglio("Scarica l'app");
+    var attesa = document.createElement("p");
+    attesa.className = "nota";
+    attesa.textContent = "Lo disegno\u2026";
+    carta.append(attesa);
+    try {
+      var esito = await chiama("/pannello/qr-app");
+      attesa.remove();
+
+      var img = document.createElement("img");
+      img.className = "qrGrande";
+      img.src = esito.qr;
+      img.alt = "QR per scaricare l'app";
+      carta.append(img);
+
+      var come = document.createElement("p");
+      come.className = "nota";
+      come.textContent =
+        "Inquadralo con la fotocamera del telefono. Porta sempre all'ultima versione: " +
+        "questo QR non va rifatto quando esce una release nuova.";
+      carta.append(come);
+
+      var dove = document.createElement("p");
+      dove.className = "nota indirizzo";
+      dove.textContent = esito.url;
+      carta.append(dove);
+    } catch (e) {
+      attesa.className = "avviso male";
+      attesa.textContent = e.message;
+    }
+  }
+
   function apriFoglio(titolo) {
     chiudiFoglio();
     var fuori = document.createElement("div");
@@ -231,8 +343,29 @@ export const COPIONE_IMPOSTAZIONI = `
         "notifiche, aggiornamenti, file — e cosa succede senza",
         function () {
           chiudiFoglio();
-          window.DaProdApp.permessi();
+          apriIPermessi();
         },
+      );
+    }
+
+    /**
+     * ⚠ **Il QR per scaricare l'app.** Nuovo nella 1.0.0.
+     *
+     * Chiesto il 6 settembre 2026: «un tasto che mostra il QR per scaricare
+     * l'app Android; fai in automatico che il QR viene generato al volo e
+     * prende sempre l'apk dell'ultima release».
+     *
+     * Sta accanto a «Aggiungi una persona» perche' e' il gesto che viene
+     * **prima**: uno arriva a casa, inquadra, installa, e solo dopo gli si da'
+     * un invito. Prima quel primo passo si faceva a voce.
+     */
+    if (puoiDecidere) {
+      voceFoglio(
+        carta,
+        "\u25A6",
+        "Scarica l'app sul telefono",
+        "un QR da inquadrare: prende sempre l'ultima versione",
+        function () { void apriIlQrDellApp(); },
       );
     }
 

@@ -263,12 +263,48 @@ export const COPIONE_GALLERIA = `
      * una spunta; **fuori** manda il file vero a WhatsApp, e quello parte dal
      * telefono.
      */
-    if (v.mia) {
+    /**
+     * **Mettila in fila.** Nuovo nella 1.0.0, e vale per brani, video e
+     * immagini: la fila del lettore li prende tutti e tre.
+     *
+     * E' la meta' che mancava alla scelta della 0.9.4 — tolta la fila che si
+     * formava da sola, non restava nessun modo di farsene una.
+     */
+    if (v.tipo === "audio" || v.tipo === "video" || v.tipo === "immagine") {
+      voceFoglio(carta, "\u2261", "Mettila in fila", "la senti dopo quella di adesso", function () {
+        chiudiFoglio();
+        var posto = mettiInFila(v);
+        if (posto === 0) avvisa("Sta gi\u00e0 suonando questa.");
+        else if (posto < 0) avvisa("Ce l'hai gi\u00e0 in fila.");
+        else avvisa(posto === 1 ? "Parte adesso." : posto + "\u00aa in fila.", "bene");
+      });
+    }
+
+    /**
+     * ⚠ **Chi decide pubblica anche le cose degli altri.** Dalla 1.0.0.
+     *
+     * Chiesto il 6 settembre 2026: «un admin puo' condividere i contenuti anche
+     * degli altri in DaProd».
+     *
+     * Prima la condizione era «v.mia» e basta: chi decide vedeva tutto quello
+     * che c'era sul computer — quello gia' valeva — ma di quello degli altri
+     * non poteva fare niente. E la bacheca di casa e' proprio la cosa che uno
+     * cura per tutti: e' lui che mette in mostra la canzone venuta bene di suo
+     * figlio, non e' suo figlio che deve ricordarsene.
+     *
+     * La faccia sopra resta **quella di chi l'ha fatta**: pubblicarla non vuol
+     * dire prendersela. Cambia chi puo' premere, non di chi e' la cosa.
+     */
+    if (v.mia || puoiDecidere) {
       voceFoglio(
         carta,
         v.pubblicato ? "\u2713" : "\u263C",
         v.pubblicato ? "Toglila da DaProd" : "Condividila in DaProd",
-        v.pubblicato ? "smette di stare in bacheca" : "la vedono tutti, con la tua faccia sopra",
+        v.pubblicato
+          ? "smette di stare in bacheca"
+          : (v.mia
+              ? "la vedono tutti, con la tua faccia sopra"
+              : "la vedono tutti, con la faccia di " + (v.chiNome || "chi l'ha fatta")),
         function () { chiudiFoglio(); void metti0Togli(v); },
       );
     }

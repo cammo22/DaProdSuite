@@ -1,7 +1,24 @@
 # Riprendere da qui
 
 Documento di passaggio fra una sessione e l'altra. Aggiornato il **6 settembre
-2026 (notte)**, con la **0.9.9** appena pubblicata.
+2026 (notte)**, con la **1.0.0** appena pubblicata.
+
+> ⚠ **La lezione della 1.0.0: separare non e' spiegare.**
+>
+> Nella 0.9.1 avevo staccato «Storia» da «Video» con una ragione buona: una
+> clip e' una generazione e dura minuti, una storia sono da quattro a sedici
+> generazioni incatenate e dura mezz'ora, e nascondere quel salto dentro un
+> cursore sarebbe stato disonesto.
+>
+> La ragione era giusta, la conclusione no. Da separati, i due non si potevano
+> piu' **confrontare**: chi voleva un video toccava «Produzione Video» e non
+> sapeva nemmeno che l'altra cosa esistesse, e chi vedeva «Storia» non sapeva
+> in cosa fosse diversa. Il costo lo si scopriva dopo mezz'ora.
+>
+> Adesso stanno nello stesso posto e la differenza e' **scritta accanto**:
+> «qualche minuto» contro «pezzi incatenati, e ci mette mezz'ora». Quando una
+> differenza conta, la si mette **davanti agli occhi nel momento della
+> scelta** — non in un altro angolo dello schermo.
 
 > ⚠ **La lezione della 0.9.9: un gesto che non si vede non e' un gesto.**
 >
@@ -262,6 +279,7 @@ Repo pubblico: **https://github.com/cammo22/DaProdSuite**
 | **Il lettore dell'app: fila, palco, visualizer** | fatto nella 0.9.0, rifatto di posto nella 0.9.1. **⚠ Non è il motore WebGL di DaProdVisualizer**: quello sta in un'app React e nella console non ci entra così com'è |
 | **Video da 30, 60 e 120 secondi** | `apps/cinema/src/lungo.js`, pezzi incatenati per l'ultimo fotogramma. **⚠ Mai passati per una scheda video** |
 | **La 0.9.1: quaranta cose che si vedevano** | fatto il 5 settembre. Non funzioni nuove: quello che è venuto fuori **usando** la 0.9.0 per una sera. Il dettaglio sta nel CHANGELOG § 0.9.1 |
+| **La 1.0.0: uno** | fatto il 6 settembre (notte). Il QR che porta sempre all'ultima release, i permessi disegnati da noi, la storia dentro la produzione video, i filtri che vanno a capo, la fila che si costruisce tenendo premuto, e chi decide che pubblica anche le cose degli altri |
 | **La 0.9.9: il login a prova di aggiornamenti** | fatto il 6 settembre. La chiave in due posti da tutte e due le parti, il ruolo che si sceglie guardando, e venti prove sotto |
 | **La 0.9.8: chi ha detto di no** | fatto il 6 settembre. L'account che salta, **riprodotto** e corretto in tutte e due le direzioni; il motore spento che la fila aspettava in silenzio; e un archivio che se non si leggeva si cancellava da solo |
 | **La 0.9.7: il testo della canzone** | fatto il 6 settembre. Il pannello «Com'e' stata fatta» leggeva i campi sbagliati da sei versioni: il `.json` di un brano tiene due dizionari mescolati con nomi diversi per la stessa cosa |

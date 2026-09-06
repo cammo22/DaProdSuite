@@ -643,6 +643,15 @@ export interface FornitorePannello {
   tunnel(acceso: boolean): Promise<void>;
   /** Chiede a Windows di lasciar entrare. Torna il motivo se non è andata. */
   apriLaPorta(): Promise<string | null>;
+  /**
+   * Il QR con cui si scarica l'app Android.
+   *
+   * ⚠ **Non punta a un file, punta alla pagina dell'ultima release.** Il nome
+   * dell'APK contiene la versione, quindi un indirizzo diretto andrebbe rifatto
+   * a ogni pubblicazione — che e' esattamente la cosa che questo tasto esiste
+   * per non far fare. `releases/latest` non cambia mai.
+   */
+  qrApp(): Promise<{ url: string; qr: string }>;
   revoca(id: string): void;
   /** Cambia il nome di un dispositivo collegato. */
   rinomina(id: string, nome: string): void;

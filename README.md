@@ -10,7 +10,7 @@ Un programma solo per fare musica, immagini, video, voci e parlare con un avatar
 Ogni app la installi quando ti serve e la disinstalli quando non ti serve più.
 Gira sul tuo computer: niente account, niente chiavi API, codice aperto.
 
-[![versione](https://img.shields.io/badge/versione-0.9.9-7c5cff)](https://github.com/cammo22/DaProdSuite/releases/latest)
+[![versione](https://img.shields.io/badge/versione-1.0.0-7c5cff)](https://github.com/cammo22/DaProdSuite/releases/latest)
 [![licenza](https://img.shields.io/badge/licenza-MIT-5cff9d)](LICENSE)
 [![piattaforma](https://img.shields.io/badge/Windows-x64-3ddbff)](#requisiti)
 [![sito](https://img.shields.io/badge/sito-cammo22.github.io-ffa63d)](https://cammo22.github.io/DaProdSuite/)
@@ -95,11 +95,17 @@ tutte lo stesso.
 
 ## A che punto siamo
 
-**Ultima pubblicata: 0.9.9 — «Il login a prova di aggiornamenti».** La chiave di
-casa non sta più in un posto solo: né sul computer né sul telefono. E la
-trappola che aveva fatto entrare come utente invece che come admin — un tasto
-che dava il permesso piccolo, con quello grosso nascosto in un tenere premuto —
-adesso è una scelta che si vede. Venti prove automatiche sotto.
+**Ultima pubblicata: 1.0.0 — «Uno».** Il numero cambia di uno intero perché
+adesso la suite si usa senza che nessuno debba spiegarla. Il telefono si
+installa inquadrando un QR che sta nelle impostazioni e che punta sempre
+all'ultima versione — non va rifatto a ogni release. I permessi sono una
+pagina nostra, scura e tonda come tutto il resto, invece di una finestra
+bianca di Android. Le storie stanno dentro la produzione video, dove uno le
+cerca. I quadratini tornano a andare a capo invece di scorrere di lato. Si
+tiene premuta una canzone e va in fila, dalla galleria e dalla bacheca. Si
+ritocca quella che sta suonando e non riparte da capo: si apre a schermo
+pieno. E chi decide può mettere in bacheca anche le cose degli altri, con la
+faccia di chi le ha fatte sopra.
 
 Quello che cambia a ogni giro sta in [CHANGELOG.md](CHANGELOG.md), il percorso
 completo in [docs/ROADMAP.md](docs/ROADMAP.md).
