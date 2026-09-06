@@ -10,7 +10,7 @@ Un programma solo per fare musica, immagini, video, voci e parlare con un avatar
 Ogni app la installi quando ti serve e la disinstalli quando non ti serve più.
 Gira sul tuo computer: niente account, niente chiavi API, codice aperto.
 
-[![versione](https://img.shields.io/badge/versione-0.9.8-7c5cff)](https://github.com/cammo22/DaProdSuite/releases/latest)
+[![versione](https://img.shields.io/badge/versione-0.9.9-7c5cff)](https://github.com/cammo22/DaProdSuite/releases/latest)
 [![licenza](https://img.shields.io/badge/licenza-MIT-5cff9d)](LICENSE)
 [![piattaforma](https://img.shields.io/badge/Windows-x64-3ddbff)](#requisiti)
 [![sito](https://img.shields.io/badge/sito-cammo22.github.io-ffa63d)](https://cammo22.github.io/DaProdSuite/)
@@ -95,12 +95,11 @@ tutte lo stesso.
 
 ## A che punto siamo
 
-**Ultima pubblicata: 0.9.8 — «Chi ha detto di no».** Il difetto dell'account
-che salta a ogni aggiornamento, riprodotto su un telefono vero e corretto in
-tutte e due le direzioni. Più: «va in coda e non genera» era il motore spento, e
-adesso lo dice in dieci secondi invece di aspettare tre quarti d'ora in
-silenzio. E un archivio che, se non si leggeva, si cancellava da solo.
-
+**Ultima pubblicata: 0.9.9 — «Il login a prova di aggiornamenti».** La chiave di
+casa non sta più in un posto solo: né sul computer né sul telefono. E la
+trappola che aveva fatto entrare come utente invece che come admin — un tasto
+che dava il permesso piccolo, con quello grosso nascosto in un tenere premuto —
+adesso è una scelta che si vede. Venti prove automatiche sotto.
 
 Quello che cambia a ogni giro sta in [CHANGELOG.md](CHANGELOG.md), il percorso
 completo in [docs/ROADMAP.md](docs/ROADMAP.md).

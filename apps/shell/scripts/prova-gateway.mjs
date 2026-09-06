@@ -382,6 +382,85 @@ console.log("\n— la console web —");
  * Qui si prende lo script vero dalla pagina servita e lo si da' in pasto al
  * parser di Node. Se non si legge, si sa **adesso** e si sa **perche'**.
  */
+/**
+ * ⚠ **L'archivio non porta via le chiavi a nessuno.**
+ *
+ * `remoto.json` e' l'unico posto dove vive chi ha il permesso di entrare, e
+ * «ad ogni aggiornamento devo rifare l'account» e' stato detto **quattro
+ * volte**. Queste prove tengono ferme le due reti messe sotto:
+ *
+ * 1. **si tiene una copia**, e la si scrive **prima** del file vero, cosi' la
+ *    copia e' sempre l'ultimo stato completo e mai uno a meta';
+ * 2. **se il file non si legge, si riparte dalla copia** invece che da zero;
+ * 3. **se non si legge nemmeno quella, non si scrive piu' niente**: una lista
+ *    vuota scritta sopra a un file che forse si sarebbe recuperato e' un danno
+ *    definitivo fatto per comodita'.
+ *
+ * La terza e' quella che conta di piu' ed e' la piu' facile da disfare senza
+ * accorgersene: basta togliere un `if` e tutto continua a funzionare — tranne
+ * il giorno del guasto.
+ */
+console.log("\n— l'archivio tiene le chiavi —");
+{
+  const { mkdtempSync, writeFileSync, readFileSync, existsSync, rmSync } = await import("node:fs");
+  const { tmpdir } = await import("node:os");
+  const { join } = await import("node:path");
+
+  const dove = mkdtempSync(join(tmpdir(), "daprod-archivio-"));
+  const file = join(dove, "remoto.json");
+
+  // Un archivio con dentro una persona, scritto come lo scrive la suite.
+  const primo = new G.Archivio(file);
+  primo.datiCorrenti.dispositivi.push({
+    id: "tel_prova",
+    nome: "Cammo",
+    ruolo: "admin",
+    token: "t".repeat(64),
+    accoppiato: 1,
+    ultimoAccesso: 1,
+  });
+  primo.salvaSubito();
+  dice("l'archivio si scrive", existsSync(file));
+
+  // La seconda scrittura e' quella che crea la copia: la prima non aveva
+  // niente da copiare.
+  primo.datiCorrenti.dispositivi[0].ultimoAccesso = 2;
+  primo.salvaSubito();
+  dice("e si tiene una copia", existsSync(`${file}.bak`));
+  dice(
+    "la copia ha dentro la persona",
+    JSON.parse(readFileSync(`${file}.bak`, "utf8")).dispositivi.length === 1,
+  );
+
+  // Adesso il guasto: il file principale diventa illeggibile.
+  writeFileSync(file, "{ questo non e' json", "utf8");
+  const dopoIlGuasto = new G.Archivio(file);
+  dice(
+    "con il file rotto si riparte dalla copia",
+    dopoIlGuasto.datiCorrenti.dispositivi.length === 1,
+    `→ ${dopoIlGuasto.datiCorrenti.dispositivi.length} dispositivi`,
+  );
+  dice("e il token e' quello giusto", dopoIlGuasto.datiCorrenti.dispositivi[0]?.token === "t".repeat(64));
+  dice("e si continua a scrivere normalmente", dopoIlGuasto.eRotto === false);
+
+  // Il caso peggiore: rotto il file **e** la copia.
+  writeFileSync(file, "nemmeno questo", "utf8");
+  writeFileSync(`${file}.bak`, "nemmeno questa", "utf8");
+  const alBuio = new G.Archivio(file);
+  dice("senza ne' l'uno ne' l'altra si parte vuoti", alBuio.datiCorrenti.dispositivi.length === 0);
+  /**
+   * ⚠ La riga che conta: da li' in poi **non si scrive**. Senza, la lista vuota
+   * finirebbe sopra al file — e quello che forse si sarebbe recuperato a mano
+   * non si recupera piu'.
+   */
+  dice("e non si tocca piu' quel file", alBuio.eRotto === true);
+  const prima = readFileSync(file, "utf8");
+  alBuio.salvaSubito();
+  dice("infatti il file rotto e' rimasto com'era", readFileSync(file, "utf8") === prima);
+
+  rmSync(dove, { recursive: true, force: true });
+}
+
 console.log("\n— il copione si legge —");
 {
   const r = await fetch(base + "/");

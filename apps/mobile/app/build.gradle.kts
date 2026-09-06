@@ -41,8 +41,8 @@ android {
         targetSdk = 34
         // Segue la versione della suite: l'app e il gateway si tengono per mano,
         // e sapere che numero ha in mano il telefono serve quando qualcosa non torna.
-        versionCode = 28
-        versionName = "0.9.8"
+        versionCode = 29
+        versionName = "0.9.9"
     }
 
     buildTypes {
@@ -84,6 +84,19 @@ android {
  */
 dependencies {
     testImplementation("junit:junit:4.13.2")
+    /**
+     * ⚠ **org.json vero, sul banco delle prove.**
+     *
+     * Dentro Android `org.json` c'e' ed e' vero; nelle prove sulla JVM Android
+     * mette al suo posto un **guscio vuoto**, e ogni metodo solleva «not
+     * mocked». Senza questa riga le prove che leggono un profilo passerebbero
+     * per il motivo sbagliato: il parser solleva, il codice cattura, e la lista
+     * vuota che ne esce sembra la risposta giusta.
+     *
+     * Questa dipendenza sta **solo** nelle prove: nell'app continua a valere
+     * quello di Android.
+     */
+    testImplementation("org.json:json:20240303")
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("com.google.android.material:material:1.12.0")

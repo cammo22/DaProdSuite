@@ -73,6 +73,14 @@ data class Profilo(
 
 object Profili {
     private const val PREFS = "daprod_profili"
+
+    /**
+     * Dove sta la copia.
+     *
+     * Un file di preferenze **separato**: se quello buono si corrompe, questo
+     * non se ne accorge. Vedi `scrivi` e `tutti`.
+     */
+    private const val PREFS_COPIA = "daprod_profili_copia"
     private const val CHIAVE = "elenco"
     private const val CHIAVE_ATTIVO = "attivo"
 
@@ -80,11 +88,47 @@ object Profili {
 
     /** Tutte le persone di questo telefono, dall'ultima che ha usato l'app. */
     fun tutti(context: Context): List<Profilo> {
-        val grezzo = prefs(context).getString(CHIAVE, "[]") ?: "[]"
+        val suo = leggi(prefs(context).getString(CHIAVE, "[]"))
+        if (suo.isNotEmpty()) return suo
+
+        /**
+         * ⚠ **Vuoto non vuol dire vuoto: prima si guarda la copia.**
+         *
+         * Se l'elenco buono e' sparito — un file di preferenze scritto a meta'
+         * mentre Android sostituiva l'app, un JSON che non si legge — qui
+         * arriverebbe una lista vuota, e una lista vuota vuol dire la schermata
+         * «Chi sei?»: cioe' rifare l'accoppiamento, cioe' tornare davanti al
+         * computer.
+         *
+         * La copia sta in un file suo e non si corrompe insieme. Se ha
+         * qualcosa, si riparte da li' **e si riscrive subito il buono**: al
+         * prossimo avvio la rete e' di nuovo tesa.
+         *
+         * Vuoto davvero — la prima volta che si apre l'app — resta vuoto: la
+         * copia e' vuota anche lei, e non succede niente.
+         */
+        val dallaCopia = leggi(
+            context.getSharedPreferences(PREFS_COPIA, Context.MODE_PRIVATE).getString(CHIAVE, "[]"),
+        )
+        if (dallaCopia.isNotEmpty()) scrivi(context, dallaCopia)
+        return dallaCopia
+    }
+
+    /**
+     * La stessa lettura, aperta alla prova.
+     *
+     * Le preferenze di Android non si provano senza Android; **come si legge
+     * quel JSON** si', ed e' li' che sta il rischio. Vedi `ProfiliTest`.
+     */
+    internal fun perLaProva(grezzo: String?): List<Profilo> = leggi(grezzo)
+
+    /** Un elenco di persone da come sta scritto. Lista vuota se non si legge. */
+    private fun leggi(grezzo: String?): List<Profilo> {
         return try {
-            val arr = JSONArray(grezzo)
+            val arr = JSONArray(grezzo ?: "[]")
             (0 until arr.length())
                 .map { daJson(arr.getJSONObject(it)) }
+                .filter { it.id.isNotBlank() && it.token.isNotBlank() }
                 .sortedByDescending { it.ultimoUso }
         } catch (_: Exception) {
             emptyList()
@@ -170,7 +214,33 @@ object Profili {
                     .put("ultimoUso", p.ultimoUso),
             )
         }
-        prefs(context).edit().putString(CHIAVE, arr.toString()).apply()
+        val testo = arr.toString()
+        /**
+         * ⚠ **Si scrive in due posti, e con `commit` non con `apply`.**
+         *
+         * Chiesto il 6 settembre 2026, dopo la quarta volta: «voglio essere
+         * sicuro per il login, a prova di aggiornamenti».
+         *
+         * Due cose, e tutte e due contano.
+         *
+         * **La copia.** Questo elenco e' l'unico posto dove vive la chiave di
+         * casa. Un posto solo vuol dire che, perdendolo, si ricomincia da capo
+         * — e ricominciare da capo vuol dire tornare davanti al computer. La
+         * copia sta in un file di preferenze **suo**, non nello stesso: se
+         * quello si corrompe, l'altro non se ne accorge nemmeno.
+         *
+         * **`commit`.** `apply` scrive in memoria subito e su disco **quando
+         * gli pare**. Nel novantanove per cento dei casi va bene; il caso che
+         * resta e' proprio il nostro — un aggiornamento dell'app, cioe' il
+         * momento in cui Android **ammazza il processo** per sostituirlo.
+         * `commit` torna quando il file e' scritto davvero, e costa qualche
+         * millisecondo su un gesto che si fa una volta ogni tanto.
+         */
+        prefs(context).edit().putString(CHIAVE, testo).commit()
+        context.getSharedPreferences(PREFS_COPIA, Context.MODE_PRIVATE)
+            .edit()
+            .putString(CHIAVE, testo)
+            .commit()
     }
 
     private fun daJson(j: JSONObject): Profilo {

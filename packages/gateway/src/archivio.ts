@@ -91,6 +91,25 @@ export class Archivio {
     this.dati = this.carica();
   }
 
+  /**
+   * ⚠ **La copia di sicurezza, e perche' c'e'.**
+   *
+   * Chiesto il 6 settembre 2026, dopo la quarta volta: «voglio essere sicuro
+   * per il login, a prova di aggiornamenti».
+   *
+   * Questo file e' **l'unico posto** dove vive chi ha il permesso di entrare.
+   * Un file solo vuol dire un punto solo che, rompendosi, porta via tutti i
+   * telefoni di casa — e non c'e' modo di rimetterli a posto se non
+   * riaccoppiandoli uno per uno.
+   *
+   * La copia si scrive **prima** di ogni scrittura vera, e solo quando quella
+   * di adesso si e' letta bene: cosi' contiene sempre l'ultimo stato **buono**,
+   * mai quello a meta'. Non e' una cronologia — non serve — e' una rete.
+   */
+  private get copia(): string {
+    return `${this.file}.bak`;
+  }
+
   private carica(): DatiRemoto {
     if (!existsSync(this.file)) {
       return {
@@ -104,20 +123,9 @@ export class Archivio {
       };
     }
     try {
-      const letto = JSON.parse(readFileSync(this.file, "utf8")) as Partial<DatiRemoto>;
-      return {
-        versione: 1,
-        dispositivi: Array.isArray(letto.dispositivi) ? letto.dispositivi : [],
-        richieste: Array.isArray(letto.richieste) ? letto.richieste : [],
-        notifiche: Array.isArray(letto.notifiche) ? letto.notifiche : [],
-        inviti: Array.isArray(letto.inviti) ? letto.inviti : [],
-        // Un archivio scritto da una versione precedente non ce l'ha: si parte
-        // da vuoto invece di rifiutarlo.
-        invii: Array.isArray(letto.invii) ? letto.invii : [],
-        bussate: Array.isArray(letto.bussate) ? letto.bussate : [],
-        ioId: typeof letto.ioId === "string" ? letto.ioId : undefined,
-        ultimoNumero: Number(letto.ultimoNumero) || 0,
-      };
+      // Un archivio scritto da una versione precedente non ha tutti i campi:
+      // `leggiDa` mette una lista vuota dove manca, invece di rifiutarlo.
+      return this.leggiDa(this.file);
     } catch (male) {
       /**
        * ⚠ **Un archivio illeggibile non è un archivio vuoto.**
@@ -145,17 +153,64 @@ export class Archivio {
        * della sessione. La suite parte lo stesso — chi sta al computer la usa —
        * ma non porta via a nessuno la sua chiave.
        */
-      this.rotto = true;
+      const perche = male instanceof Error ? male.message : String(male);
+      console.error(`[remoto] non riesco a leggere ${this.file}: ${perche}`);
+
+      // Prima di tutto: si tiene da parte quello che non si e' capito, perche'
+      // guardarlo dopo e' l'unico modo di sapere cos'era successo.
       try {
         const salvataggio = `${this.file}.rotto-${new Date().toISOString().replace(/[:.]/g, "-")}`;
         copyFileSync(this.file, salvataggio);
-        console.error(`[remoto] non riesco a leggere ${this.file}: ${male instanceof Error ? male.message : String(male)}`);
-        console.error(`[remoto] la copia di com'era sta in ${salvataggio}. Non scriverò su quel file finché non si riparte.`);
+        console.error(`[remoto] com'era, messo da parte in ${salvataggio}`);
       } catch {
-        console.error("[remoto] archivio illeggibile, e non riesco nemmeno a farne una copia.");
+        console.error("[remoto] e non riesco nemmeno a farne una copia.");
       }
+
+      /**
+       * **E poi si prova la copia.** E' la differenza fra «hai perso tutti i
+       * telefoni» e «ci siamo persi l'ultimo mezzo minuto».
+       *
+       * Se la copia si legge, si riparte da li' e si continua a lavorare
+       * normalmente: quello che manca e' al massimo quello che era cambiato fra
+       * l'ultima scrittura buona e il guasto, cioe' un `ultimoAccesso` o una
+       * notifica. Le chiavi ci sono tutte.
+       */
+      if (existsSync(this.copia)) {
+        try {
+          const dallaCopia = this.leggiDa(this.copia);
+          console.error(`[remoto] riparto dalla copia: ${dallaCopia.dispositivi.length} dispositivi salvati.`);
+          return dallaCopia;
+        } catch {
+          console.error("[remoto] anche la copia non si legge.");
+        }
+      }
+
+      /**
+       * Ne' l'uno ne' l'altra. Si parte vuoti — la suite dev'essere usabile da
+       * chi ci sta davanti — ma **non si scrive piu' niente** su quel file: una
+       * lista vuota scritta sopra a un file che forse si sarebbe recuperato e'
+       * un danno definitivo fatto per comodita'.
+       */
+      this.rotto = true;
+      console.error("[remoto] parto senza dispositivi e non scrivo su quel file: nessuno perde la sua chiave.");
       return { ...VUOTI };
     }
+  }
+
+  /** Legge un archivio da un percorso, e lo normalizza. Solleva se non si capisce. */
+  private leggiDa(percorso: string): DatiRemoto {
+    const letto = JSON.parse(readFileSync(percorso, "utf8")) as Partial<DatiRemoto>;
+    return {
+      versione: 1,
+      dispositivi: Array.isArray(letto.dispositivi) ? letto.dispositivi : [],
+      richieste: Array.isArray(letto.richieste) ? letto.richieste : [],
+      notifiche: Array.isArray(letto.notifiche) ? letto.notifiche : [],
+      inviti: Array.isArray(letto.inviti) ? letto.inviti : [],
+      invii: Array.isArray(letto.invii) ? letto.invii : [],
+      bussate: Array.isArray(letto.bussate) ? letto.bussate : [],
+      ioId: typeof letto.ioId === "string" ? letto.ioId : undefined,
+      ultimoNumero: Number(letto.ultimoNumero) || 0,
+    };
   }
 
   /**
@@ -207,6 +262,27 @@ export class Archivio {
     if (this.rotto) return;
     try {
       mkdirSync(dirname(this.file), { recursive: true });
+
+      /**
+       * ⚠ **La copia si fa prima, e solo del file buono.**
+       *
+       * L'ordine conta: si copia quello che c'e' **adesso** — che si e' letto
+       * bene all'avvio, quindi e' buono — e solo dopo si scrive il nuovo. Se il
+       * computer si spegne nel mezzo, la copia e' l'ultimo stato completo.
+       *
+       * Copiare **dopo** avrebbe voluto dire, prima o poi, una copia fatta di
+       * un file scritto a meta': cioe' una rete con un buco proprio dove uno ci
+       * cade.
+       */
+      if (existsSync(this.file)) {
+        try {
+          copyFileSync(this.file, this.copia);
+        } catch {
+          // La copia non e' riuscita: si scrive lo stesso. Meglio un archivio
+          // aggiornato senza rete che uno fermo a ieri.
+        }
+      }
+
       const temporaneo = `${this.file}.tmp`;
       writeFileSync(temporaneo, `${JSON.stringify(this.dati, null, 2)}\n`, "utf8");
       renameSync(temporaneo, this.file);

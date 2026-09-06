@@ -328,6 +328,12 @@ export const PAGINE = `<header>
 
     <div class="scheda">
       <div class="filtri" id="filtri-lavori"></div>
+      <!--
+        La riga che dice perche' la fila non si muove: compare **solo** a chi
+        non puo' decidere, e solo se ha qualcosa in attesa. Vedi
+        «diCosaAspetta» nel copione.
+      -->
+      <p class="avviso" id="coda-avviso" hidden></p>
       <ul class="voci compatta" id="coda"></ul>
     </div>
   </section>
