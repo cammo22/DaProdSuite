@@ -1,7 +1,22 @@
 # Riprendere da qui
 
 Documento di passaggio fra una sessione e l'altra. Aggiornato il **6 settembre
-2026 (notte)**, con la **0.9.7** appena pubblicata.
+2026 (notte)**, con la **0.9.8** appena pubblicata.
+
+> ⚠ **La lezione della 0.9.8: riprodurre batte dedurre, e costa meno.**
+>
+> Lo stesso difetto — «ad ogni aggiornamento devo rifare l'account» — l'ho
+> corretto **quattro volte**. Le prime tre leggendo codice, e ogni volta
+> correggendo una cosa vera che non era la causa. La quarta ho installato l'app
+> sull'emulatore, le ho piantato un profilo realistico con `run-as`, e la
+> schermata sbagliata e' comparsa **al primo colpo** — con una foto da allegare.
+>
+> Da li' la causa vera si e' vista in due minuti, ed era piu' larga di tutte e
+> tre le ipotesi. Riprodurre e' costato mezz'ora; dedurre era costato tre
+> versioni.
+>
+> Gli attrezzi c'erano gia' tutti: `adb`, l'emulatore, `run-as` per scrivere le
+> preferenze di una build debug, `screencap` per la prova. Non li avevo usati.
 
 > ⚠ **La lezione della 0.9.5, e vale piu' della correzione.** Lo stesso difetto
 > e' stato corretto **tre volte**: «ad ogni aggiornamento devo eliminare e
@@ -234,6 +249,7 @@ Repo pubblico: **https://github.com/cammo22/DaProdSuite**
 | **Il lettore dell'app: fila, palco, visualizer** | fatto nella 0.9.0, rifatto di posto nella 0.9.1. **⚠ Non è il motore WebGL di DaProdVisualizer**: quello sta in un'app React e nella console non ci entra così com'è |
 | **Video da 30, 60 e 120 secondi** | `apps/cinema/src/lungo.js`, pezzi incatenati per l'ultimo fotogramma. **⚠ Mai passati per una scheda video** |
 | **La 0.9.1: quaranta cose che si vedevano** | fatto il 5 settembre. Non funzioni nuove: quello che è venuto fuori **usando** la 0.9.0 per una sera. Il dettaglio sta nel CHANGELOG § 0.9.1 |
+| **La 0.9.8: chi ha detto di no** | fatto il 6 settembre. L'account che salta, **riprodotto** e corretto in tutte e due le direzioni; il motore spento che la fila aspettava in silenzio; e un archivio che se non si leggeva si cancellava da solo |
 | **La 0.9.7: il testo della canzone** | fatto il 6 settembre. Il pannello «Com'e' stata fatta» leggeva i campi sbagliati da sei versioni: il `.json` di un brano tiene due dizionari mescolati con nomi diversi per la stessa cosa |
 | **La 0.9.6: il secondo giro sul disegno** | fatto il 6 settembre. E due difetti che erano lo stesso difetto: `min-height` che batte `height`, in due punti a due giorni di distanza |
 | **La 0.9.5: vince chi risponde da vicino** | fatto il 6 settembre (notte). Il telefono preferisce l'indirizzo di casa a quello del tunnel: uno non cambia mai, l'altro scade a ogni riavvio della suite. Con sette prove automatiche e la voce «Da dove passa» nel menu |

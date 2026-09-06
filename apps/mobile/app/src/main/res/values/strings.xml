@@ -123,4 +123,13 @@
     <string name="da_dove_casa">la rete di casa \u2014 non cambia mai</string>
     <string name="da_dove_tailscale">Tailscale \u2014 funziona ovunque, e non cambia</string>
     <string name="da_dove_tunnel">il tunnel \u2014 funziona ovunque, ma cambia a ogni riavvio della suite</string>
+
+    <!--
+        La riga della memoria: c'e' per farsi vedere, non per chiedere qualcosa.
+        Su Android moderno un permesso per i file non esiste piu' — si salva
+        nella galleria passando dal sistema e si leggono solo i file scelti nel
+        selettore — ma «non compare» e «non c'e'» si assomigliano troppo.
+    -->
+    <string name="perm_file">File e memoria</string>
+    <string name="perm_file_perche">Non serve un permesso: la suite salva nella tua galleria e legge solo i file che scegli tu. Tocca per vedere tutto in Android.</string>
 </resources>

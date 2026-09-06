@@ -85,6 +85,23 @@ object Permessi {
             .apply()
     }
 
+    /**
+     * La pagina di Android con tutto quello che questa app puo' fare.
+     *
+     * Serve alla riga «File e memoria», che non ha un interruttore suo: li' si
+     * vede l'elenco intero, che e' quello che uno cerca quando viene a
+     * guardare.
+     */
+    fun apriImpostazioniApp(attivita: android.app.Activity) {
+        prova(
+            attivita,
+            Intent(
+                Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                android.net.Uri.parse("package:" + attivita.packageName),
+            ),
+        )
+    }
+
     fun haLeNotifiche(contesto: Context): Boolean {
         if (Build.VERSION.SDK_INT < 33) return true
         return androidx.core.content.ContextCompat.checkSelfPermission(

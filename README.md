@@ -10,7 +10,7 @@ Un programma solo per fare musica, immagini, video, voci e parlare con un avatar
 Ogni app la installi quando ti serve e la disinstalli quando non ti serve più.
 Gira sul tuo computer: niente account, niente chiavi API, codice aperto.
 
-[![versione](https://img.shields.io/badge/versione-0.9.7-7c5cff)](https://github.com/cammo22/DaProdSuite/releases/latest)
+[![versione](https://img.shields.io/badge/versione-0.9.8-7c5cff)](https://github.com/cammo22/DaProdSuite/releases/latest)
 [![licenza](https://img.shields.io/badge/licenza-MIT-5cff9d)](LICENSE)
 [![piattaforma](https://img.shields.io/badge/Windows-x64-3ddbff)](#requisiti)
 [![sito](https://img.shields.io/badge/sito-cammo22.github.io-ffa63d)](https://cammo22.github.io/DaProdSuite/)
@@ -95,25 +95,11 @@ tutte lo stesso.
 
 ## A che punto siamo
 
-**Ultima pubblicata: 0.9.7 — «Il testo della canzone».** Il pannello «Com'è
-stata fatta» leggeva i campi sbagliati: mostrava il titolo dove doveva esserci
-il testo cantato, e lo stile di un brano non lo mostrava mai. Sbagliato da sei
-versioni, e adesso c'è una prova automatica — su dati presi da un file vero —
-che lo tiene fermo.
-
-| | |
-|---|---|
-| **0.8.1** | La causa vera delle anteprime dei video, la cache della foto, e i commenti |
-| **0.8.0** | Sette cose lasciate indietro: anteprime, titolo del brano, italiano, foto del profilo, notifiche |
-| **0.7.8** | Gli stili diventano tre — immagini, video, musica — e la barra del telefono torna una riga |
-| **0.7.7** | Provata a lungo: il collegamento non si perde più, la fila ha i numeri, venti cose viste usandola |
-| **0.7.6** | Due facce per la stessa pagina: chi governa dal computer, chi fa dal telefono. E lo specchio offline |
-| **0.7.5** | Da fuori casa davvero: il tunnel si accende da sé e il telefono impara l'indirizzo nuovo |
-| **0.7.0** – **0.7.4** | DaProdConnessione, i lavori che partono davvero, i video che arrivano interi |
-| **0.6.0** | Il telefono *è* la suite: una sola interfaccia, servita dal computer |
-| **0.5.x** | La suite non è più solo quel computer: gateway, azioni, QR, app Android |
-| **0.4.x** | DaProdCinema, DaProdVoce, un secondo modo di fare musica |
-| **0.1.0** – **0.3.x** | Le fondamenta, l'installer, e le prime sei app |
+**Ultima pubblicata: 0.9.8 — «Chi ha detto di no».** Il difetto dell'account
+che salta a ogni aggiornamento, riprodotto su un telefono vero e corretto in
+tutte e due le direzioni. Più: «va in coda e non genera» era il motore spento, e
+adesso lo dice in dieci secondi invece di aspettare tre quarti d'ora in
+silenzio. E un archivio che, se non si leggeva, si cancellava da solo.
 
 
 Quello che cambia a ogni giro sta in [CHANGELOG.md](CHANGELOG.md), il percorso

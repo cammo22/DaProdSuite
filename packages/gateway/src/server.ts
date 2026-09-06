@@ -350,6 +350,34 @@ export class Gateway {
 
       // L'accoppiamento è l'unica rotta senza token: è il momento in cui il
       // dispositivo non ha ancora una credenziale, e gliela si dà.
+      /**
+       * **Chi sei tu?** — e risponde **senza token**. Nuova nella 0.9.8.
+       *
+       * ⚠ Serve a chiudere l'ultimo buco di «ad ogni aggiornamento devo rifare
+       * l'account», ed e' il pezzo che mancava dopo tre correzioni.
+       *
+       * Il telefono, quando un indirizzo gli risponde **401**, deve decidere
+       * una cosa sola: «mi hanno tolto» oppure «questo non e' il mio
+       * computer». Fino a ieri non poteva saperlo — l'unica rotta che dice chi
+       * risponde e' `/io`, e `/io` vuole un token valido, che e' esattamente
+       * quello che manca in quel momento. Cosi' un rifiuto veniva sempre letto
+       * come una revoca, anche quando arrivava da un nome di tunnel riciclato o
+       * da una **copia vecchia della suite rimasta attaccata alla porta**.
+       *
+       * Qui non c'e' niente di personale: il nome del computer e il suo id di
+       * rete sono le stesse due cose che questo computer **grida da solo** in
+       * multicast a tutta la rete di casa, venti volte al minuto. Dirle a chi
+       * bussa non aggiunge niente a quello che si sa gia' stando in casa.
+       */
+      if (percorso === "/chi-sei" && req.method === "GET") {
+        this.json(res, 200, {
+          pcId: this.remoto.ioSullaRete(),
+          computer: this.computer,
+          versione: this.versione,
+        });
+        return;
+      }
+
       if (percorso === "/accoppiamento" && req.method === "POST") {
         this.accoppia(res, corpo);
         return;

@@ -16,7 +16,7 @@
  * stanno in un unico posto, il server.
  */
 
-import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import type { Bussata, Dispositivo, Invio, Invito, Notifica, Richiesta } from "./types";
 
@@ -73,6 +73,20 @@ export class Archivio {
   private dati: DatiRemoto;
   private differita: ReturnType<typeof setTimeout> | null = null;
 
+  /**
+   * Vero quando il file c'era e non si è capito.
+   *
+   * Finché è vero **non si scrive**: quello che c'è in memoria è una lista
+   * vuota, e scriverla vorrebbe dire cancellare per sempre chi poteva entrare.
+   * Vedi `carica()`.
+   */
+  private rotto = false;
+
+  /** Vero se l'archivio su disco non si è capito e non lo si tocca più. */
+  get eRotto(): boolean {
+    return this.rotto;
+  }
+
   constructor(private file: string) {
     this.dati = this.carica();
   }
@@ -104,7 +118,42 @@ export class Archivio {
         ioId: typeof letto.ioId === "string" ? letto.ioId : undefined,
         ultimoNumero: Number(letto.ultimoNumero) || 0,
       };
-    } catch {
+    } catch (male) {
+      /**
+       * ⚠ **Un archivio illeggibile non è un archivio vuoto.**
+       *
+       * Qui c'era `return { ...VUOTI }`, e sembrava prudente: se il file non si
+       * legge, si riparte da zero invece di morire. È il ragionamento giusto
+       * per una cache. Questo file **non è una cache**: è l'unico posto dove
+       * vive chi ha il permesso di entrare.
+       *
+       * Cosa succedeva davvero. Il file non si legge — un disco che fa i
+       * capricci, un antivirus che lo tiene aperto un istante di troppo, una
+       * scrittura interrotta da uno spegnimento — e la suite si accende con
+       * **zero dispositivi**. Poi, alla prima cosa che cambia, `salva()`
+       * scrive quella lista vuota **sopra al file buono**: da lì in poi tutti i
+       * telefoni di casa prendono 401, e l'unica cosa che l'app sa dire è «sei
+       * stato tolto dal computer, rifai il collegamento».
+       *
+       * Una perdita di dati silenziosa, e per giunta permanente al secondo
+       * avvio. Non è mai stato dimostrato che sia successo a Cammo — ma è
+       * esattamente la faccia che ha il difetto che ha riportato tre volte, e
+       * un caso così non si lascia in piedi «finché non si prova».
+       *
+       * Adesso: si tiene una copia di quello che non si è capito, si dice a
+       * voce alta, e **non si scrive più niente** su quel file per il resto
+       * della sessione. La suite parte lo stesso — chi sta al computer la usa —
+       * ma non porta via a nessuno la sua chiave.
+       */
+      this.rotto = true;
+      try {
+        const salvataggio = `${this.file}.rotto-${new Date().toISOString().replace(/[:.]/g, "-")}`;
+        copyFileSync(this.file, salvataggio);
+        console.error(`[remoto] non riesco a leggere ${this.file}: ${male instanceof Error ? male.message : String(male)}`);
+        console.error(`[remoto] la copia di com'era sta in ${salvataggio}. Non scriverò su quel file finché non si riparte.`);
+      } catch {
+        console.error("[remoto] archivio illeggibile, e non riesco nemmeno a farne una copia.");
+      }
       return { ...VUOTI };
     }
   }
@@ -153,6 +202,9 @@ export class Archivio {
       clearTimeout(this.differita);
       this.differita = null;
     }
+    // ⚠ L'archivio non si è capito all'avvio: quello che abbiamo in memoria è
+    // vuoto, e scriverlo cancellerebbe le chiavi di tutti. Vedi `carica()`.
+    if (this.rotto) return;
     try {
       mkdirSync(dirname(this.file), { recursive: true });
       const temporaneo = `${this.file}.tmp`;

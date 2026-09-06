@@ -12,7 +12,110 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ## Non ancora pubblicato
 
-Niente: la 0.9.7 è appena uscita.
+Niente: la 0.9.8 è appena uscita.
+
+---
+
+## 0.9.8 — Chi ha detto di no
+
+La quarta volta sullo stesso difetto, e la prima in cui l'ho **riprodotto**
+invece di dedurlo. Più un difetto nuovo trovato nei registri, e uno grave
+trovato per strada.
+
+### L'account che salta: riprodotto, e corretto in tutte e due le direzioni
+
+Le prime tre volte ho letto codice. Questa volta ho fatto la cosa ovvia: ho
+installato l'app su un Android vero, le ho piantato un profilo realistico, e
+**ho guardato**.
+
+La schermata «"Cammo" non è più collegato» è comparsa al primo colpo. E la causa
+è più larga di quella che avevo corretto: **quella schermata compare ogni volta
+che un gateway qualunque risponde e non riconosce il token**. Non solo il tuo
+computer — anche:
+
+- un nome di tunnel riciclato da Cloudflare, che adesso porta al servizio di
+  qualcun altro;
+- **una copia vecchia della suite rimasta attaccata alla porta** del computer
+  giusto. Quella ha in memoria i dispositivi di quando si è accesa *lei*: un
+  telefono accoppiato dopo, per lei, non esiste.
+
+E il secondo caso è esattamente quello che capita **a ogni aggiornamento**.
+
+Tre correzioni, una per anello:
+
+1. **Il gateway dice chi è anche a chi non riconosce** (`/chi-sei`, senza
+   token). Non è un buco di riservatezza: sono le stesse due cose che il
+   computer grida da solo in multicast a tutta la rete di casa venti volte al
+   minuto.
+2. **Il telefono lo chiede prima di credere a una revoca.** Se chi ha detto di
+   no non è il nostro computer, non è una revoca: è un indirizzo sbagliato, e si
+   apre lo specchio. Se non si sa, **non si dichiara niente**: buttare un
+   accoppiamento è irreversibile e non lo si fa su un forse.
+3. **La porta occupata non si ingoia più.** C'era un `catch` vuoto con scritto
+   «porta occupata, rete assente: il pannello lo dirà». Il pannello **non lo
+   diceva**. Adesso finisce nel registro e chi sta al computer se lo vede in
+   faccia — è l'unico che può chiudere quell'altro processo.
+
+**Provato in tutte e due le direzioni, su Android vero, con le foto:** con il
+`pcId` giusto e un token davvero sconosciuto dice «non sei più collegato», ed è
+giusto. Con lo stesso rifiuto da un computer che non è il nostro, **non lo dice
+più**: apre lo specchio e tiene l'accoppiamento.
+
+### «Va in coda e non genera»: era il motore spento
+
+Detto mentre lavoravo, e i registri l'hanno chiuso in cinque minuti: il lavoro
+partiva, la scheda si apriva, e nel registro del motore non arrivava **niente**.
+ComfyUI non era acceso — si era chiuso con un `ConnectionResetError` e non era
+più tornato su.
+
+Quello che rendeva la cosa incomprensibile non era il motore spento, che
+capita: era il **silenzio**. La scheda, non riuscendo a mandare il grafo,
+scriveva l'errore sulla propria pagina — che nessuno stava guardando — e la fila
+restava ad aspettare un file per **quarantacinque minuti**. Da fuori: «va in coda
+e non genera», senza una riga da nessuna parte.
+
+Adesso, prima di dare un lavoro a una scheda, si bussa al motore: se non
+risponde il lavoro fallisce **subito**, con scritto perché e cosa fare. E se il
+motore se ne va **mentre** genera, si smette di aspettarlo dopo mezzo minuto
+invece che dopo tre quarti d'ora.
+
+### ⚠ Un archivio che si cancellava da solo
+
+Trovato per strada, e non è mai stato dimostrato che sia successo — ma è
+esattamente la faccia del difetto riportato quattro volte, e un caso così non si
+lascia in piedi «finché non si prova».
+
+`remoto.json` è l'unico posto dove vive chi ha il permesso di entrare. Se non si
+leggeva — un disco che fa i capricci, un antivirus che lo tiene aperto un
+istante di troppo — il codice faceva `return { ...VUOTI }`: la suite si accendeva
+con **zero dispositivi**, e alla prima cosa che cambiava scriveva quella lista
+vuota **sopra al file buono**. Da lì in poi tutti i telefoni di casa prendono
+401, e l'unica cosa che l'app sa dire è «sei stato tolto, rifai il
+collegamento».
+
+Adesso: si tiene una copia di quello che non si è capito, si dice a voce alta, e
+**non si scrive più niente** su quel file per il resto della sessione.
+
+### I permessi, tutti e quattro
+
+> «i permessi sono solo per il background, manca la memoria e le notifiche.»
+
+Vero, e la causa era una riga: la schermata **elencava solo quello che mancava**.
+Sul suo telefono le notifiche erano già date, quindi non comparivano — e una cosa
+che non compare, per chi guarda, non esiste.
+
+Adesso ci sono tutte, ognuna con il suo segno: ✓ se è a posto, ✗ se manca, e si
+tocca per andare dove si sistema. Compresa **la memoria**, che un interruttore
+non ce l'ha: su Android moderno un permesso per i file non esiste più — la suite
+salva nella galleria passando dal sistema e legge solo i file che scegli tu — ma
+«non compare» e «non c'è» si assomigliano troppo.
+
+### ⚠ Cosa resta da fare
+
+- **Perché ComfyUI si è chiuso** e non è tornato su: il registro dice
+  `ConnectionResetError` e basta. Adesso almeno lo si sa subito.
+- I video da 30/60/120 secondi · le copertine col titolo contro FLUX vero ·
+  AudioBloom e CosmicDust · i cinque fogli di stile copiati.
 
 ---
 
