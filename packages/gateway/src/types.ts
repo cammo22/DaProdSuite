@@ -637,6 +637,22 @@ export interface InvitoVivo {
  * quattro azioni valgono per il PC, per il portatile e per il telefono senza
  * scriverle tre volte.
  */
+/** Com'e' messo l'indirizzo che non cambia mai. Vedi `funnel` nel pannello. */
+export interface StatoIndirizzoStabile {
+  /** Tailscale c'e' su questo computer. */
+  ceTailscale: boolean;
+  /** Il nome pubblico della macchina, per esempio «casa.tailXXXX.ts.net». */
+  nome: string;
+  /** E' acceso adesso. */
+  acceso: boolean;
+  /** Il tailnet lo permette. */
+  permesso: boolean;
+  /** Cosa dire a chi guarda, in italiano. */
+  perche: string;
+  /** L'indirizzo completo, quando c'e'. */
+  indirizzo: string;
+}
+
 export interface FornitorePannello {
   stato(dispositivo: Dispositivo): StatoPannello;
   invita(opzioni: { ruolo: Ruolo; quante: number }): Promise<InvitoVivo>;
@@ -652,6 +668,23 @@ export interface FornitorePannello {
    * per non far fare. `releases/latest` non cambia mai.
    */
   qrApp(): Promise<{ url: string; qr: string }>;
+  /**
+   * ⚠ **L'indirizzo che non cambia mai** — Tailscale Funnel. Dalla 1.0.3.
+   *
+   * Il tunnel gratuito prende un nome nuovo a ogni accensione della suite, e da
+   * fuori casa quello e' l'unico difetto che conta davvero: il telefono resta
+   * con in mano un indirizzo morto e non ha modo di impararne uno nuovo.
+   * Funnel da' un nome pubblico costruito sul nome della macchina, che non
+   * cambia mai.
+   *
+   * `guarda` non tocca niente; `accendi` mette la suite su Internet sotto quel
+   * nome, e per questo si chiama solo da un gesto di chi la usa.
+   */
+  funnel?: {
+    guarda(): Promise<StatoIndirizzoStabile>;
+    accendi(): Promise<StatoIndirizzoStabile>;
+    spegni(): Promise<StatoIndirizzoStabile>;
+  };
   revoca(id: string): void;
   /** Cambia il nome di un dispositivo collegato. */
   rinomina(id: string, nome: string): void;

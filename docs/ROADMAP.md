@@ -26,7 +26,7 @@ file si scrive quale delle due metà manca.
 
 ## A che punto siamo — 6 settembre 2026 (notte fonda)
 
-**Ultima pubblicata: 1.0.2.** Nove schede dentro la suite, un ambiente Python
+**Ultima pubblicata: 1.0.3.** Nove schede dentro la suite, un ambiente Python
 solo, e il giro che conta — chiedo dal telefono, il computer fa, il file torna —
 **provato da chi la usa**, sul suo PC e sul suo telefono.
 
@@ -114,6 +114,10 @@ fanno quello che ti ho chiesto».
 | **I filtri che vanno a capo (1.0.0)** | **misurato a 375 px**: tre righe, e la pagina non scorre mai di lato |
 | **La fila si costruisce tenendo premuto (1.0.0)** | e' la meta' che mancava alla scelta della 0.9.4. **Provata nel banco** da galleria e bacheca, compresi «gia' in fila» e «sta gia' suonando» |
 | **Ritoccare quella che suona apre il palco (1.0.0)** | non riparte da capo. **Provato nel banco** |
+| **Il conto che «si perdeva» (1.0.3)** | ⚠ **sesta correzione, e la prima trovata guardando invece che deducendo.** Non si perdeva: mancava un `mostra()`, e l'app finiva su una lista mai disegnata. **Riprodotto sull'emulatore da internet** e verificato con la foto, prima e dopo |
+| **Un indirizzo che non cambia mai (1.0.3)** | Tailscale Funnel: nome pubblico stabile, niente da installare sul telefono. Si accende con un tocco. ⚠ Va permesso dal tailnet — due interruttori nella console — e l'app mostra il link esatto |
+| **`ContoNonPersoTest`** | gira sull'emulatore a ogni giro. Sulla JVM sarebbe passata tutte e sei le volte: il difetto non era nella logica, era in cosa finiva sullo schermo |
+| **Il 416 che buttava nove giga (1.0.3)** | il numero nel catalogo era arrotondato e il ramo del 416 cancellava il file. Adesso il catalogo e' un'indicazione: la verita' la si chiede al server |
 | **Modificare una foto dal telefono (1.0.2)** | **provata nel banco con le dita**: la foto presa dalla galleria e caricata, il ridimensionamento annunciato, il pennello che dipinge, e la richiesta che arriva in fila con foto **e** maschera. ⚠ Contro un motore acceso no |
 | **Niente dipinto vuol dire tutta la foto (1.0.2)** | **provato**: la richiesta arriva senza maschera, e il grafo salta i nodi che la userebbero |
 | **LLaDA-Image (1.0.2)** | ⚠ **non entra negli 8 GB** e gliel'ho detto prima: 6,6 GB di trasformatore, 9,2 di text encoder, quasi 16 da scaricare. Messo su sua richiesta, con lo scarico in RAM. **Mai provato contro un motore acceso**, e vuole un pacco di nodi di terzi con sei stelle e nessuna licenza dichiarata |

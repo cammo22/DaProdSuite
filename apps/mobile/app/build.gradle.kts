@@ -41,8 +41,8 @@ android {
         targetSdk = 34
         // Segue la versione della suite: l'app e il gateway si tengono per mano,
         // e sapere che numero ha in mano il telefono serve quando qualcosa non torna.
-        versionCode = 32
-        versionName = "1.0.2"
+        versionCode = 33
+        versionName = "1.0.3"
 
         // Serve alle prove che girano sull'emulatore: vedi TailponteTest.
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -138,6 +138,9 @@ dependencies {
      */
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.test:runner:1.6.2")
+    // ActivityScenario: serve ad accendere davvero MainActivity dentro la
+    // prova, che e' l'unico modo di vedere cosa finisce sullo schermo.
+    androidTestImplementation("androidx.test:core-ktx:1.6.1")
     /**
      * ⚠ **org.json vero, sul banco delle prove.**
      *

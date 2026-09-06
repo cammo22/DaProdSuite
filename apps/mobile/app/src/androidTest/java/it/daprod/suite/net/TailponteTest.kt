@@ -57,12 +57,33 @@ class TailponteTest {
              * c'e' linea e c'e' un guaio scritto. Tutti e due vanno bene:
              * quello che si sta provando e' che **il Go gira**.
              */
-            val url = tailponte.Tailponte.urlDiLogin()
-            val guaio = tailponte.Tailponte.ultimoGuaio()
+            /*
+             * ⚠ **Si aspetta chiedendo, non contando fino a dodici.**
+             *
+             * La prima versione guardava una volta sola dopo l'attesa che si
+             * concede `Avvia`, e ogni tanto era rossa senza che niente fosse
+             * rotto: il nodo deve arrivare ai server di Tailscale, e da un
+             * emulatore che sta girando altre tre prove quel viaggio a volte
+             * dura di piu'. Una prova che fallisce a caso e' peggio di nessuna
+             * prova — la seconda volta che succede la si smette di leggere.
+             *
+             * `Acceso()` rilegge anche l'indirizzo di login, quindi chiedere in
+             * un giro fa avanzare le cose invece di stare a guardare.
+             */
+            var url = ""
+            var guaio = ""
+            val fine = System.currentTimeMillis() + 90_000
+            while (System.currentTimeMillis() < fine) {
+                if (tailponte.Tailponte.acceso()) break
+                url = tailponte.Tailponte.urlDiLogin()
+                guaio = tailponte.Tailponte.ultimoGuaio()
+                if (url.isNotBlank() || guaio.isNotBlank()) break
+                Thread.sleep(2_000)
+            }
             assertTrue(
-                "Il nodo non ha ne' un indirizzo di login ne' un guaio: url=" +
-                    url + " guaio=" + guaio,
-                url.isNotBlank() || guaio.isNotBlank(),
+                "In novanta secondi il nodo non ha detto ne' dove fare il login " +
+                    "ne' cosa non andava. url=" + url + " guaio=" + guaio,
+                url.isNotBlank() || guaio.isNotBlank() || tailponte.Tailponte.acceso(),
             )
             assertNotNull(tailponte.Tailponte.mioIndirizzo())
         } finally {

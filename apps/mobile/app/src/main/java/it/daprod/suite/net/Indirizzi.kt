@@ -127,6 +127,20 @@ object Indirizzi {
              */
             dentro == "127.0.0.1" || dentro == "localhost" -> VIA_TAILSCALE
             /**
+             * ⚠ **Un nome «.ts.net» non scade mai.** Dalla 1.0.3.
+             *
+             * E' l'indirizzo pubblico che Tailscale Funnel da' alla macchina:
+             * `casa.tailXXXX.ts.net`. Vale come Tailscale — anzi, e' meglio,
+             * perche' lo raggiunge **chiunque**, anche chi nel tailnet non c'e'.
+             *
+             * Sta qui e non fra i tunnel perche' la differenza che conta, in
+             * questa funzione, e' una sola: **se l'indirizzo scade**. Un nome di
+             * trycloudflare campa fino al prossimo riavvio della suite; questo
+             * si chiama cosi' anche fra un anno. E' esattamente il difetto che
+             * ha fatto rifare l'account sei volte.
+             */
+            dentro.endsWith(".ts.net") -> VIA_TAILSCALE
+            /**
              * ⚠ **Un `100.x` nudo, dal telefono, non risponde mai.**
              *
              * Sul computer Tailscale e' una scheda di rete vera e quell'

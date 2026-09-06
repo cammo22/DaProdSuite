@@ -12,9 +12,112 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ## Non ancora pubblicato
 
-**Togliere del tutto il tunnel Cloudflare.** Tailscale «sembra funzionare» dopo
-la 1.0.1, e la 1.0.2 è il giro che serve a vederlo reggere. Se regge, il tunnel
-sparisce nella prossima.
+**Togliere del tutto il tunnel Cloudflare.** Resta il ripiego finché
+l'indirizzo stabile della 1.0.3 non avrà retto un giro vero fuori casa.
+
+---
+
+## 1.0.3 — Il conto non si perde più
+
+> «ho fatto l'aggiornamento e non comunica con il pc, dovrei di nuovo togliere
+> l'account e rimetterlo. Non lo faccio, aggiusta.»
+
+Sesta volta. E stavolta, invece di leggere codice, ho guardato il computer
+mentre era rotto e poi l'ho riprodotto su un emulatore, da fuori.
+
+### ⚠ Il conto non si è mai perso. Era una riga che mancava
+
+Il profilo restava sul disco, intero, con il suo token buono. Quello che
+mancava era **una riga sola**: quando il computer non risponde e non c'è ancora
+una copia offline, `apriDallaCopia` mostrava un dialogo e faceva `return`
+**senza dire a nessuna schermata di farsi vedere**.
+
+Sotto restava la lista delle persone come l'aveva lasciata il layout — cioè
+**mai disegnata**, cioè vuota. Sullo schermo restava scritto «Chi sei? /
+Aggiungi una persona».
+
+Da fuori è indistinguibile da «il tuo account non c'è più». E chi legge quello
+fa l'unica cosa che l'app gli lascia fare: ne aggiunge un altro. Sul computer
+resta il vecchio, e il giro ricomincia. **Sei volte.**
+
+Adesso quella strada finisce nella lista, disegnata, dove il conto c'è, si vede
+e dice come sta: *«non lo raggiungo adesso — tocca per riprovare; se sei fuori
+casa, riesce appena torni sulla tua wifi»*. E il messaggio dice a chiare lettere
+**«non serve rifare l'account»**.
+
+⚠ **La lezione, che vale più della correzione:** una funzione che può finire
+senza portare da nessuna parte lascia in mano all'utente l'ultima schermata *per
+caso*. Ogni strada deve finire in un posto **scelto**.
+
+### La causa sotto: un indirizzo che scade
+
+Misurata sul suo computer, mentre era rotto:
+
+- la suite girava, aggiornata, con il tunnel acceso su un nome nuovo;
+- il nome vecchio che aveva il telefono rispondeva **530**, il nuovo **200**;
+- nel registro del tunnel di quel computer si contano **46 nomi diversi**;
+- e il telefono, da fuori, non ha modo di imparare quello nuovo: per impararlo
+  dovrebbe parlare col computer, e per parlare col computer gli serve un
+  indirizzo che funziona.
+
+Tailscale nell'app (1.0.1) avrebbe risolto, ma richiede un accesso col browser
+che non era mai stato fatto — nel suo tailnet ci sono tre computer e nessun
+telefono. Una cura che chiede un passo manuale non cura il caso in cui non puoi
+fare passi.
+
+### Un indirizzo che non cambia mai
+
+Da qui la cosa nuova: **Tailscale Funnel**. Dà alla macchina un indirizzo
+pubblico costruito sul suo nome — `casa.tailXXXX.ts.net` — con certificato
+vero, raggiungibile **da chiunque, senza niente installato sul telefono**. E
+quel nome non cambia: non a un riavvio, non a un aggiornamento, non fra un anno.
+
+Si accende dalle impostazioni, in «Da fuori casa», ed è un tocco solo. Non parte
+da sé perché mette la suite su Internet sotto un nome pubblico, e le decisioni
+di quel peso si prendono guardandole. ⚠ Va anche **permesso dal tailnet** —
+certificati HTTPS e attributo `funnel`, due interruttori nella console di
+Tailscale: se mancano, l'app adesso mostra il link esatto per accenderli invece
+di lasciare un errore in un log.
+
+Nell'elenco degli indirizzi sta **davanti a tutti**, ed è l'unico che non scade.
+
+### E il download che buttava nove giga
+
+> «HTTP 416 Range Not Satisfiable dopo 4 tentativi.»
+
+Nel catalogo avevo scritto **9182000000** byte a occhio per il text encoder di
+LLaDA; il file ne fa **9181912960**. Ottantasettemila di differenza, lo 0,001%.
+Il download chiedeva un pezzo oltre la fine, il server rispondeva 416 — e il
+ramo del 416 **cancellava il file parziale**. Nove giga già scaricati, buttati
+per un numero arrotondato.
+
+Corretti i tre numeri con quelli veri, così quello che è già sul disco viene
+accettato senza riscaricare niente. E soprattutto: **il numero nel catalogo
+adesso è un'indicazione, non la verità.** Su un 416 si chiede al server quanto
+pesa davvero e si guarda — ce l'abbiamo tutto e si è finito, ne abbiamo di più
+ed è il file sbagliato, ne manca e si riprova. Cancellare resta possibile, ma
+solo **sapendo** perché.
+
+### Come è stato provato
+
+Non leggendo codice.
+
+1. **Guardato il computer rotto**: processo, porta, archivio, log del tunnel,
+   tailnet. Il conto del telefono era ancora lì, registrato admin.
+2. **Riprodotto sull'emulatore da internet**: un banco raggiungibile *solo*
+   attraverso un tunnel — legato a `127.0.0.1`, quindi nessuna scorciatoia via
+   rete locale — e un conto piantato con dentro **solo indirizzi morti**. La
+   schermata sbagliata è comparsa al primo colpo, con la foto.
+3. **Verificata la correzione** sulla stessa scena: il conto si vede, dice come
+   sta, e il dialogo dice di non rifarlo.
+4. **Verificata la ripresa**: rimessa una strada buona, l'app è rientrata **con
+   lo stesso conto**, e si è imparata da sola gli indirizzi di oggi.
+
+E una prova che gira sull'emulatore a ogni giro perché non torni:
+`ContoNonPersoTest`. Sulla JVM sarebbe passata tutte e sei le volte — il difetto
+non era nella logica, era in cosa finiva sullo schermo.
+
+Prove: 18 sulla JVM, **4 su Android vero**, più `build`, `typecheck` e `prova`.
 
 ---
 

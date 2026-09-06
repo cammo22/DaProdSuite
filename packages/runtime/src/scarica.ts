@@ -314,6 +314,53 @@ async function aPezzi(
   }
 }
 
+/**
+ * ⚠ **Quanto pesa davvero il file sul server.**
+ *
+ * ## Il guaio che chiude, e quanto e' costato
+ *
+ * Il 6 settembre 2026, scaricando il text encoder di LLaDA:
+ *
+ *     HTTP 416 Range Not Satisfiable ... dopo 4 tentativi
+ *
+ * Nove giga gia' sul disco, completi, e il download che si rifiutava di
+ * chiuderli. La causa: nel catalogo avevo scritto **9182000000** byte a occhio,
+ * e il file ne fa **9181912960**. Ottantasettemila byte di differenza, cioe'
+ * lo 0,001%.
+ *
+ * Il codice, con l'atteso piu' grande del reale, chiedeva «dammi da 9181912960
+ * in poi» — che e' oltre la fine — e il server rispondeva giustamente 416.
+ * Peggio: il ramo del 416 **cancellava il file parziale** e ricominciava da
+ * zero. Nove giga buttati per un numero arrotondato in un file di catalogo.
+ *
+ * ## La regola che ne esce
+ *
+ * **Il numero nel catalogo e' un'indicazione, non la verita'.** Serve a
+ * mostrare una percentuale e a decidere se vale la pena scaricare a pezzi. La
+ * verita' su quanto pesa un file ce l'ha **solo il server**, e quando i due non
+ * sono d'accordo si chiede a lui invece di distruggere il lavoro fatto.
+ *
+ * Torna 0 se non si riesce a sapere: chi chiama, in quel caso, si tiene il
+ * dubbio e non cancella niente — che e' sempre la scelta giusta fra le due.
+ */
+async function veraDimensione(url: string, segnale?: AbortSignal): Promise<number> {
+  try {
+    const risposta = await fetch(url, {
+      method: "HEAD",
+      headers: { "user-agent": "DaProdSuite" },
+      signal: segnale,
+      redirect: "follow",
+    });
+    if (!risposta.ok) return 0;
+    const detto = Number(risposta.headers.get("content-length") ?? 0);
+    return Number.isFinite(detto) && detto > 0 ? detto : 0;
+  } catch {
+    // Niente linea, o un server che HEAD non lo sa fare: non si sa, e non
+    // sapere non e' un motivo per buttare via niente.
+    return 0;
+  }
+}
+
 /* -------------------------------------------------------- una connessione -- */
 
 async function unFlusso(
@@ -323,12 +370,28 @@ async function unFlusso(
 ): Promise<void> {
   let gia = await dimensione(parziale);
 
-  // Un `.parte` più grande dell'atteso non è un download a metà: è un file
-  // sbagliato, o il catalogo è cambiato. In entrambi i casi va rifatto.
+  /**
+   * ⚠ **Un `.parte` piu' grande dell'atteso: si chiede al server, non si butta.**
+   *
+   * Qui si cancellava e si ripartiva, e la ragione scritta era buona — «e' un
+   * file sbagliato, o il catalogo e' cambiato». Manca la terza possibilita', ed
+   * e' quella che e' successa davvero: **il catalogo aveva il numero sbagliato
+   * e il file era giusto**. Vedi `veraDimensione`.
+   *
+   * Quindi prima si domanda. Solo se il server conferma di averne meno di
+   * quanti ne abbiamo si butta.
+   */
   if (gia > bytes) {
-    onLine?.("Il file parziale è più grande dell'atteso: lo ributto e riparto.");
-    await rm(parziale, { force: true });
-    gia = 0;
+    const vero = await veraDimensione(url, segnale);
+    if (vero > 0 && gia === vero) {
+      onLine?.("C'era gia' tutto: il catalogo diceva una misura sbagliata.");
+      return;
+    }
+    if (vero === 0 || gia > vero) {
+      onLine?.("Il file parziale e' piu' grande di quello sul server: lo ributto e riparto.");
+      await rm(parziale, { force: true });
+      gia = 0;
+    }
   }
   if (gia === bytes) return;
 
@@ -338,10 +401,46 @@ async function unFlusso(
   const risposta = await fetch(url, { headers: intestazioni, signal: segnale, redirect: "follow" });
 
   if (!risposta.ok) {
-    // 416 = "quel Range non esiste": il file sul server è cambiato di dimensione.
+    /**
+     * ⚠ **416 non vuol dire «butta tutto».**
+     *
+     * Vuol dire una cosa sola: «il pezzo che chiedi comincia oltre la fine del
+     * file». E le ragioni possibili sono due, non una:
+     *
+     * 1. il file sul server e' davvero cambiato ed e' diventato piu' piccolo;
+     * 2. **ce l'abbiamo gia' tutto**, e a essere sbagliato e' il numero che
+     *    avevamo in mano.
+     *
+     * Qui c'era scritto solo la prima, e il file parziale si cancellava. Il 6
+     * settembre 2026 quel ramo ha buttato nove giga gia' scaricati per un
+     * numero arrotondato nel catalogo — vedi `veraDimensione`.
+     *
+     * Adesso si chiede al server quanto pesa, e si guarda:
+     * ce l'abbiamo tutto e abbiamo finito; ne abbiamo di piu' ed e' il file
+     * sbagliato; ne abbiamo di meno e si riprova col numero giusto. Cancellare
+     * resta possibile, ma solo **sapendo** perche'.
+     */
     if (risposta.status === 416) {
-      await rm(parziale, { force: true });
-      throw new Error("il file sul server è cambiato, riparto da zero");
+      const vero = await veraDimensione(url, segnale);
+      if (vero > 0 && gia === vero) {
+        onLine?.("C'era gia' tutto: il catalogo diceva una misura sbagliata.");
+        return;
+      }
+      if (vero > 0 && gia > vero) {
+        onLine?.("Il file sul server e' piu' piccolo di quello che ho: lo ributto.");
+        await rm(parziale, { force: true });
+        throw new Error("il file sul server e' cambiato, riparto da zero");
+      }
+      /*
+       * Non si sa, o ne manca ancora: **non si cancella**. Fra riscaricare
+       * qualche giga e buttarne nove, il dubbio si risolve sempre dalla parte
+       * di chi ha gia' aspettato.
+       */
+      throw new Error(
+        vero > 0
+          ? `il server ne dichiara ${vero} e io ne ho ${gia}: riprovo`
+          : "il server non dice quanto pesa: riprovo senza buttare niente",
+      );
     }
     throw new Error(`HTTP ${risposta.status} ${risposta.statusText}`);
   }
