@@ -10,7 +10,7 @@ Un programma solo per fare musica, immagini, video, voci e parlare con un avatar
 Ogni app la installi quando ti serve e la disinstalli quando non ti serve più.
 Gira sul tuo computer: niente account, niente chiavi API, codice aperto.
 
-[![versione](https://img.shields.io/badge/versione-1.0.5-7c5cff)](https://github.com/cammo22/DaProdSuite/releases/latest)
+[![versione](https://img.shields.io/badge/versione-1.0.6-7c5cff)](https://github.com/cammo22/DaProdSuite/releases/latest)
 [![licenza](https://img.shields.io/badge/licenza-MIT-5cff9d)](LICENSE)
 [![piattaforma](https://img.shields.io/badge/Windows-x64-3ddbff)](#requisiti)
 [![sito](https://img.shields.io/badge/sito-cammo22.github.io-ffa63d)](https://cammo22.github.io/DaProdSuite/)
@@ -95,20 +95,12 @@ tutte lo stesso.
 
 ## A che punto siamo
 
-**Ultima pubblicata: 1.0.5 — «La misura si sceglie, e LLaDA trova il GGUF».**
-Chiedendo una foto dal telefono adesso si sceglie **che forma** e **quanto
-grande**: prima partiva quello che era rimasto selezionato sul computer. E
-LLaDA, che dava errore da due giorni, genera: mancava una voce obbligatoria nel
-grafo, ComfyUI-GGUF veniva cercato dentro ComfyUI mentre noi i nodi di terzi li
-teniamo accanto al motore, lo scarico girava sul processore invece che sulla
-scheda, e l'ultimo passo — il VAE, 168 MB — decodificava in RAM mentre la
-scheda stava a guardare. Quattro difetti in fila, uno nascosto dietro l'altro,
-trovati tutti col motore acceso: adesso un 512×512 esce in **99 secondi**,
-caricamento dei 16 GB di pesi compreso.
-
-Prima, nella 1.0.4, «Modifica» è tornata dentro «Produzione Immagini» e la zona
-da cambiare è diventata una domanda con due risposte invece di essere quello
-che capitava col dito.
+**Ultima pubblicata: 1.0.6 — «Due messaggi che dicevano il falso».** Nel
+foglio «Da fuori casa» c'erano due frasi sbagliate: **«Acceso»** in verde mentre
+il telefono era entrato in un'altra rete Tailscale e non raggiungeva niente, e
+**«Questa suite non sa farlo»** quando invece l'app era solo offline. Adesso
+l'app **prova davvero** ad arrivare al computer prima di dire che ci arriva, e
+quando non ci arriva dice in quale rete è finita e come uscirne.
 
 Quello che cambia a ogni giro sta in [CHANGELOG.md](CHANGELOG.md), il percorso
 completo in [docs/ROADMAP.md](docs/ROADMAP.md).

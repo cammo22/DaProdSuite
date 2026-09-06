@@ -192,8 +192,52 @@ export const COPIONE_IMPOSTAZIONI = `
     if (come.come === "dentro") {
       var bene = document.createElement("p");
       bene.className = "avviso bene";
-      bene.textContent = "Acceso. Questo telefono adesso si chiama " + (come.mio || "") + ".";
+      // «Acceso» da solo non voleva dire niente: adesso si dice quello che
+      // conta, cioe' che il computer da qui si raggiunge davvero.
+      bene.textContent =
+        "Acceso, e da qui il computer si raggiunge. Questo telefono si chiama " +
+        (come.mio || "") + ".";
       carta.append(bene);
+    } else if (come.come === "altra-rete") {
+      /**
+       * ⚠ **Acceso, ma in un'altra rete Tailscale.** Dalla 1.0.6.
+       *
+       * Parole sue: «ho collegato tailscale a google e comunque stesso
+       * problema». Qui compariva **«Acceso. Questo telefono adesso si chiama
+       * 100.87.91.65»**, in verde, e non raggiungeva niente.
+       *
+       * Era vero e inutile. Entrando con Google si finisce nel tailnet di
+       * quell'account; il computer sta nel suo. Due nodi accesi che non si
+       * vedranno mai — e il foglio diceva che andava tutto bene.
+       *
+       * Adesso si dice cosa e' successo e **cosa fare**: rientrare con lo stesso
+       * account del computer. Il verde se lo merita solo chi ci arriva davvero.
+       */
+      var storto = document.createElement("p");
+      storto.className = "avviso male";
+      storto.textContent =
+        "Acceso, ma in un\u0027altra rete Tailscale: da qui il computer non si raggiunge.";
+      carta.append(storto);
+
+      var spiegone = document.createElement("p");
+      spiegone.className = "nota";
+      spiegone.textContent =
+        "Questo telefono \u00e8 entrato come " + (come.tailnet || come.mio || "un altro nodo") +
+        ", e il computer sta in un\u0027altra rete. Succede quando si entra con un account " +
+        "diverso da quello che usa il computer \u2014 per esempio Google al posto di quello di prima.";
+      carta.append(spiegone);
+
+      voceFoglio(
+        carta,
+        "\u21BA",
+        "Esci e rientra con l\u0027account giusto",
+        "quello che usa il computer, non un altro",
+        function () {
+          window.DaProdApp.vogliolTailscale(false);
+          chiudiFoglio();
+          avvisa("Spento. Riaprilo e rientra con l\u0027account del computer.");
+        },
+      );
     } else if (come.come === "serve-il-browser") {
       voceFoglio(
         carta,
@@ -248,9 +292,22 @@ export const COPIONE_IMPOSTAZIONI = `
     try {
       stato = await chiama("/pannello/indirizzo-stabile");
     } catch (e) {
+      /**
+       * ⚠ **Qui c'era scritto «Questa suite non sa farlo», ed era falso.**
+       *
+       * Il 6 settembre 2026 gli e' comparso proprio quello, con una foto: la
+       * suite lo sapeva fare benissimo — la rotta risponde 200 — ma l'app in
+       * quel momento **era offline**, e la domanda al computer non arrivava
+       * nemmeno.
+       *
+       * E' lo stesso errore di sempre, in piccolo: dire «non si puo'» quando la
+       * verita' e' «adesso non lo so». La prima chiude la strada, la seconda
+       * dice di riprovare.
+       */
       var male = document.createElement("p");
       male.className = "nota";
-      male.textContent = "Questa suite non sa farlo.";
+      male.textContent =
+        "Non riesco a chiederlo al computer adesso: riprova quando l\u0027app lo raggiunge.";
       scatola.append(male);
       return scatola;
     }
