@@ -38,7 +38,15 @@ export type Esecutore = (
 
 /** Cosa torna a chi ha chiesto un'azione. */
 export type EsitoAzione =
-  | { esito: "in-coda"; richiesta: Richiesta }
+  /**
+   * In fila. `richiesta` e' la prima.
+   *
+   * ⚠ **`quante` e `tutte` ci sono solo quando i lavori sono piu' d'uno.**
+   * Dalla 0.9.4 una richiesta con `quante: 3` diventa **tre richieste** — vedi
+   * il commento in `eseguiAzione` — e chi ha chiesto merita di saperlo:
+   * altrimenti vede aprirsi un lavoro e ne trova tre in fila.
+   */
+  | { esito: "in-coda"; richiesta: Richiesta; quante?: number; tutte?: string[] }
   | { esito: "fatto"; risultato: unknown }
   | { esito: "errore"; errore: string; codice: number };
 
@@ -103,6 +111,19 @@ export function elencoAzioni(
   });
 }
 
+/**
+ * Quante generazioni vuole questa richiesta.
+ *
+ * Il tetto a quattro è quello del catalogo: qui non ci si fida di quello che
+ * arriva da fuori, si rilegge. Un `quante` assente vale uno, che è il caso di
+ * ogni azione che quel campo non ce l'ha.
+ */
+function quanteNeVuole(detto: string | undefined): number {
+  const n = Number(detto);
+  if (!Number.isFinite(n)) return 1;
+  return Math.max(1, Math.min(4, Math.round(n)));
+}
+
 export async function eseguiAzione(
   remoto: Remoto,
   esecutore: Esecutore,
@@ -128,18 +149,63 @@ export async function eseguiAzione(
   }
 
   if (azione.coda) {
-    const richiesta = remoto.creaRichiesta({
-      // `tipo` è quel che verrà fuori: serve al pannello per scegliere l'icona
-      // e all'app per sapere che file aspettarsi.
-      tipo: azione.risultato ?? "testo",
-      app: azione.app ?? "suite",
-      testo: testoPrincipale(azione, controllo.valori),
-      // L'id dell'azione viaggia con le opzioni: chi esegue la richiesta deve
-      // poter ritrovare **quale** azione era, non solo l'app di destinazione.
-      opzioni: { azione: azione.id, ...opzioniDi(azione, controllo.valori) },
-      daDispositivo: dispositivo,
-    });
-    return { esito: "in-coda", richiesta };
+    const opzioni: Record<string, string> = { azione: azione.id, ...opzioniDi(azione, controllo.valori) };
+
+    /**
+     * ⚠ **Ogni generazione è una richiesta.** Cambiato nella 0.9.4.
+     *
+     * Chiesto il 6 settembre 2026: «continua a dare problemi il fatto di
+     * mandare due o più canzoni, che vengono viste come una richiesta. Ogni
+     * generazione deve essere una richiesta, non uniamoli: genera due canzoni,
+     * quindi funziona, ma ogni canzone è una richiesta».
+     *
+     * ## Perché la 0.9.3 non bastava
+     *
+     * Nella 0.9.3 la fila aveva imparato ad **aspettare più file** per una
+     * richiesta sola: `quante: 2` voleva dire un lavoro che consegna due
+     * canzoni. Tecnicamente funzionava, e resta il difetto di fondo: una
+     * richiesta è l'unità con cui questa suite conta tutto. Chi decide accetta
+     * *una richiesta*; i tetti della fila contano *richieste*; la notifica
+     * dice «il tuo lavoro è pronto», al singolare; e fermarne una ferma
+     * tutte e quattro le canzoni.
+     *
+     * Quindi «due canzoni» non erano un lavoro che produce due cose: erano
+     * **due lavori**. Farne uno solo era comodo per la fila e sbagliato per
+     * chiunque la guardasse.
+     *
+     * ## Cosa fa adesso
+     *
+     * `quante: 3` diventa tre richieste da una, in fila una dietro l'altra.
+     * Ognuna ha il suo numero, il suo sì, la sua notifica, e si può fermare da
+     * sola. La scheda non se ne accorge — riceve tre volte lo stesso modulo con
+     * `quante: 1` — e chi guarda la fila vede tre righe, che è quello che sta
+     * per succedere davvero.
+     *
+     * Si torna la **prima**: è quella che chi ha chiesto vede aprirsi, e le
+     * altre le trova sotto.
+     */
+    const quante = quanteNeVuole(opzioni["quante"]);
+    if (quante > 1) delete opzioni["quante"];
+
+    const nate = [];
+    for (let i = 0; i < quante; i++) {
+      nate.push(
+        remoto.creaRichiesta({
+          // `tipo` è quel che verrà fuori: serve al pannello per scegliere
+          // l'icona e all'app per sapere che file aspettarsi.
+          tipo: azione.risultato ?? "testo",
+          app: azione.app ?? "suite",
+          testo: testoPrincipale(azione, controllo.valori),
+          // L'id dell'azione viaggia con le opzioni: chi esegue la richiesta
+          // deve poter ritrovare **quale** azione era, non solo l'app.
+          opzioni: { ...opzioni },
+          daDispositivo: dispositivo,
+        }),
+      );
+    }
+    return quante > 1
+      ? { esito: "in-coda", richiesta: nate[0]!, quante, tutte: nate.map((r) => r.id) }
+      : { esito: "in-coda", richiesta: nate[0]! };
   }
 
   try {

@@ -473,6 +473,23 @@ console.log("\n— le azioni —");
   dice("l'azione viaggia nelle opzioni", r.dati?.richiesta?.opzioni?.azione === "genera.immagine");
   dice("il tipo è immagine", r.dati?.richiesta?.tipo === "immagine");
   dice("non è passata dall'esecutore", eseguite.length === 0);
+
+  /**
+   * ⚠ **Due immagini sono due richieste.** Cambiato nella 0.9.4.
+   *
+   * Chiesto il 6 settembre 2026: «ogni generazione deve essere una richiesta,
+   * non uniamoli». Prima `quante: 2` faceva **una** richiesta che poi
+   * consegnava due file; e una richiesta è l'unità con cui questa suite conta
+   * tutto — chi decide ne accetta una, i tetti ne contano una, fermarla le
+   * ferma tutte e due.
+   *
+   * Questa prova è qui perché è il genere di cosa che si può disfare senza
+   * accorgersene: basta rimettere `quante` nelle opzioni e tutto continua a
+   * funzionare, tranne il conto.
+   */
+  dice("due immagini fanno due richieste", r.dati?.quante === 2, `→ ${r.dati?.quante}`);
+  dice("e la fila ne ha davvero due", Array.isArray(r.dati?.tutte) && r.dati.tutte.length === 2);
+  dice("e nessuna delle due porta più «quante»", r.dati?.richiesta?.opzioni?.quante === undefined);
 }
 {
   const r = await chiama("/azioni/libreria.ultimi", { metodo: "POST", token: tokenAdmin, corpo: { quanti: 5 } });
@@ -523,7 +540,10 @@ let tokenOspite;
   const suoi = await chiama("/richieste", { token: tokenOspite });
   dice("e poi la vede", suoi.dati.length === 1);
   const tutte = await chiama("/richieste", { token: tokenAdmin });
-  dice("l'admin le vede tutte", tutte.dati.length === 2, `→ ${tutte.dati.length}`);
+  // Tre e non due: la generazione dell'admin qui sopra chiedeva `quante: 2`, e
+  // dalla 0.9.4 quello vuol dire **due richieste**. Vedi «due immagini fanno
+  // due richieste».
+  dice("l'admin le vede tutte", tutte.dati.length === 3, `→ ${tutte.dati.length}`);
 }
 
 console.log("\n— decidere —");

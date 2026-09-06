@@ -215,7 +215,7 @@ export const COPIONE_DAPROD = `
       disegnaMioProfilo();
       await leggiBacheca();
     } catch (e) {
-      alert(e.message);
+      avvisaDelMale(e);
     }
   }
 
@@ -496,7 +496,7 @@ export const COPIONE_DAPROD = `
           tieni.className = "cuore" + (v.tenuta ? " mio" : "");
           segnalibro.textContent = v.tenuta ? "\\u2605" : "\\u2606";
           parola.textContent = v.tenuta ? "tenuta" : "tieni";
-        } catch (e) { alert(e.message); }
+        } catch (e) { avvisaDelMale(e); }
       });
       piedi.append(tieni);
     } else {
@@ -510,7 +510,7 @@ export const COPIONE_DAPROD = `
             body: JSON.stringify({ pubblicato: false }),
           });
           await leggiBacheca();
-        } catch (e) { alert(e.message); }
+        } catch (e) { avvisaDelMale(e); }
       });
       piedi.append(togli);
     }
@@ -625,7 +625,7 @@ export const COPIONE_DAPROD = `
         casella.value = "";
         disegnaCommenti(v, filo, esito.commenti || [], aggiornaConto);
       } catch (e) {
-        alert(e.message);
+        avvisaDelMale(e);
       }
       manda.disabled = false;
       casella.disabled = false;
@@ -679,7 +679,7 @@ export const COPIONE_DAPROD = `
             { method: "DELETE" },
           );
           disegnaCommenti(v, filo, esito.commenti || [], aggiornaConto);
-        } catch (e) { alert(e.message); }
+        } catch (e) { avvisaDelMale(e); }
       });
       riga.append(via);
     }

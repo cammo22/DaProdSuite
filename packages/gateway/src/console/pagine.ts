@@ -25,13 +25,35 @@
  * impostazioni si aprono, si guardano e si chiudono.
  */
 export const PAGINE = `<header>
-  <div class="marchio">DaProd<span>Suite</span></div>
+  <!--
+    **Il marchio si tocca.** Chiesto il 6 settembre 2026: «un easter egg se
+    clicchi la scritta DaProdSuite». Sette tocchi, e succede qualcosa —
+    vedi «easterEgg()» nel copione. Sette perche' e' il numero che Android usa
+    per «numero di build», ed e' abbastanza da non capitare per sbaglio.
+  -->
+  <button class="marchio" id="marchio" title="DaProd Suite">DaProd<span>Suite</span></button>
   <div class="cresci"></div>
   <button class="chi" id="chi" hidden>
     <span class="faccina" id="mia-faccina"></span>
     <span class="nome" id="mio-nome"></span>
   </button>
-  <button class="tondo" id="apri-impostazioni" title="Impostazioni" hidden>&#9881;</button>
+  <!--
+    **L'ingranaggio, disegnato.** Chiesto il 6 settembre 2026: «fai meglio il
+    pulsante impostazioni, che e' diverso dal nome utente affianco».
+
+    Era vero e si vedeva: la pastiglia del nome ha un bordo tondo e un fondo
+    pieno, l'ingranaggio era un glifo tipografico dentro un cerchio con un bordo
+    piu' tenue — due pesi diversi appaiati. Adesso e' un segno disegnato, dello
+    stesso peso del resto, in un tondo che ha lo **stesso fondo e lo stesso
+    bordo** della pastiglia accanto. Sono due tasti della stessa famiglia,
+    perche' fanno parte della stessa riga.
+  -->
+  <button class="tondo pari" id="apri-impostazioni" title="Impostazioni" hidden>
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 8.6a3.4 3.4 0 1 0 0 6.8 3.4 3.4 0 0 0 0-6.8zm0 5.4a2 2 0 1 1 0-4 2 2 0 0 1 0 4z"/>
+      <path d="M20.3 13.1c.04-.36.06-.73.06-1.1s-.02-.74-.06-1.1l1.72-1.28a.6.6 0 0 0 .16-.76l-1.7-2.94a.6.6 0 0 0-.72-.26l-2.02.75a6.7 6.7 0 0 0-1.9-1.1l-.3-2.14a.6.6 0 0 0-.6-.5h-3.4a.6.6 0 0 0-.6.5l-.3 2.14c-.7.28-1.33.65-1.9 1.1l-2.02-.75a.6.6 0 0 0-.72.26l-1.7 2.94a.6.6 0 0 0 .16.76L5.7 10.9c-.04.36-.06.73-.06 1.1s.02.74.06 1.1l-1.72 1.28a.6.6 0 0 0-.16.76l1.7 2.94c.15.26.45.36.72.26l2.02-.75c.57.45 1.2.82 1.9 1.1l.3 2.14c.05.29.3.5.6.5h3.4c.3 0 .55-.21.6-.5l.3-2.14c.7-.28 1.33-.65 1.9-1.1l2.02.75c.27.1.57 0 .72-.26l1.7-2.94a.6.6 0 0 0-.16-.76L20.3 13.1zm-1.55 2.1.14 1.1-.87 1.5-1.04-.38-.98-.36-.83.65c-.43.34-.9.62-1.42.82l-.98.4-.15 1.04-.16 1.1h-1.74l-.16-1.1-.15-1.04-.98-.4a5.3 5.3 0 0 1-1.42-.82l-.83-.65-.98.36-1.04.38-.87-1.5.88-.66.84-.62-.1-1.05a7.3 7.3 0 0 1 0-1.72l.1-1.05-.84-.62-.88-.66.87-1.5 1.04.38.98.36.83-.65c.43-.34.9-.62 1.42-.82l.98-.4.15-1.04.16-1.1h1.74l.16 1.1.15 1.04.98.4c.52.2 1 .48 1.42.82l.83.65.98-.36 1.04-.38.87 1.5-.88.66-.84.62.1 1.05a7.3 7.3 0 0 1 0 1.72l-.1 1.05.84.62z"/>
+    </svg>
+  </button>
 </header>
 
 <main>
@@ -409,6 +431,33 @@ export const PAGINE = `<header>
   a girare per l'app, ed e' tutto il punto di avere una fila. Toccarla apre il
   palco; i tre tasti fanno quello che dicono.
 -->
+<!--
+  **Il visualizer, anche dietro alla pagina.** Chiesto il 6 settembre 2026:
+  «usiamo le animazioni del visualizer sullo sfondo dell'app in tutte le schede,
+  ma molto molto sfocato e trasparente, direi un 22 percento su 100».
+
+  ⚠ **E non e' un ritorno alla 0.9.0.** Li' il visualizer era *solo* lo sfondo,
+  e a schermo intero si guardava una lista della spesa con le onde dietro —
+  giustamente bocciato. Qui sono due cose diverse con due mestieri diversi: nel
+  palco il visualizer **e' il contenuto**, nitido; qui e' **atmosfera**, sfocato
+  a venti pixel e al ventidue per cento, sotto a tutto, e nessun evento lo
+  raggiunge.
+
+  Vive solo mentre suona qualcosa: a musica ferma sparisce, e con lui il costo.
+-->
+<!--
+  Dove finiscono i messaggini. Vuoto quasi sempre: e' un posto, non una cosa.
+-->
+<div class="avvisi" id="avvisi" aria-live="polite"></div>
+
+<!--
+  **Gli stili scelti per il mix.** Vuoto quasi sempre: compare quando ce n'e'
+  almeno uno. Una barra sempre presente che dice «0 scelti» e' rumore.
+-->
+<div class="mixStili" id="mix-stili" hidden></div>
+
+<canvas id="sfondo-visual" aria-hidden="true"></canvas>
+
 <div class="barraLettore" id="barra-lettore" hidden>
   <button class="faccia" id="lettore-faccia" title="A schermo intero"></button>
   <button class="dentro" id="lettore-apri">
@@ -447,13 +496,22 @@ export const PAGINE = `<header>
   -->
   <canvas id="visual"></canvas>
 
+  <!--
+    **In alto resta una X.** Chiesto il 6 settembre 2026: «il tasto impostazioni
+    e la freccia verso il basso togliamoli».
+
+    Aveva ragione, e per due ragioni diverse. La **freccia in giu'** faceva
+    esattamente quello che fa il trascinamento verso il basso, che e' il gesto
+    che tutti usano gia': due modi per la stessa cosa, uno dei due e' ingombro.
+    L'**ingranaggio** cambiava effetto, e un ingranaggio vuol dire
+    «impostazioni» in ogni app del mondo — era il simbolo sbagliato nel posto
+    sbagliato. Adesso gli effetti stanno sotto, con il loro menu.
+  -->
   <div class="cima">
     <div class="titolo">
       <b id="palco-nome"></b>
       <small id="palco-sotto"></small>
     </div>
-    <button class="tondo" id="palco-cambia" title="Cambia effetto">&#9881;</button>
-    <button class="tondo" id="palco-giu" title="Abbassa e continua">&#8595;</button>
     <button class="tondo" id="palco-chiudi" title="Chiudi">&#10005;</button>
   </div>
 
@@ -488,27 +546,85 @@ export const PAGINE = `<header>
   </div>
 
   <!--
-    **Sei tasti sono diventati cinque.** Chiesto il 5 settembre 2026: «il tasto
-    a sinistra, asterisco, toglilo — e togli anche le scritte del nome
-    dell'effetto».
+    **I comandi, ridisegnati.** Chiesto il 6 settembre 2026: «i pulsanti del
+    play e avanti indietro vanno ridisegnati bene perche' sono bruttissimi».
 
-    Aveva ragione, e la ragione non e' l'ingombro: quel tasto cambiava effetto,
-    e dalla 0.9.2 l'effetto si cambia da solo ogni quarantacinque secondi
-    aspettando un colpo forte. Un tasto che fa una cosa che succede comunque e'
-    un tasto che insegna a non guardare i tasti. Chi lo vuole a mano ce l'ha
-    ancora: si tocca il visualizer.
+    Cosa non andava, guardando la foto: erano tre cerchi neri uguali su uno
+    sfondo che si muove, con dentro tre glifi di un alfabeto tipografico —
+    «⏮ ⏸ ⏭» — che hanno pesi e allineamenti diversi fra loro e che su fondo
+    scuro si leggono male. Il tondo del play era acceso di arancione, che non e'
+    un colore di questa suite, e gli altri due sparivano.
 
-    Le tre linee restano dove stavano ma cambiano mestiere: aprono e chiudono
-    le info di quello che sta suonando.
+    Adesso i segni sono **disegnati** (SVG), quindi hanno tutti lo stesso peso e
+    lo stesso centro; il play e' piu' grande degli altri due perche' e' quello
+    che si preme; e i tre stanno su un vetro solo invece che su tre cerchi
+    staccati, cosi' si leggono anche sopra a un visualizer che lampeggia.
+
+    Ai lati, due tasti con lo stesso mestiere: a sinistra gli **effetti**, a
+    destra le **info**. Sono simmetrici perche' fanno la stessa cosa —
+    aprire un pannello — e stanno lontani dal play perche' non si premono per
+    sbaglio mentre si cerca la pausa.
   -->
   <div class="sotto">
+    <button class="tondo" id="palco-effetti" title="Effetti">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="12" r="3.2"/>
+        <circle cx="12" cy="4.4" r="1.9"/>
+        <circle cx="12" cy="19.6" r="1.9"/>
+        <circle cx="4.4" cy="12" r="1.9"/>
+        <circle cx="19.6" cy="12" r="1.9"/>
+      </svg>
+    </button>
+
     <div class="cresci"></div>
-    <button class="tondo" id="palco-prima" title="Precedente">&#9198;</button>
-    <button class="tondo grosso" id="palco-play" title="Pausa">&#9208;</button>
-    <button class="tondo" id="palco-poi" title="Prossimo">&#9197;</button>
+
+    <div class="comandi">
+      <button id="palco-prima" title="Precedente">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M18 5.5v13a1 1 0 0 1-1.55.83L7.5 13.5v5a1 1 0 0 1-2 0v-13a1 1 0 0 1 2 0v5l8.95-5.83A1 1 0 0 1 18 5.5z"/>
+        </svg>
+      </button>
+      <button id="palco-play" class="grosso" title="Pausa">
+        <svg viewBox="0 0 24 24" aria-hidden="true" id="palco-play-segno">
+          <rect x="7" y="5" width="3.6" height="14" rx="1.4"/>
+          <rect x="13.4" y="5" width="3.6" height="14" rx="1.4"/>
+        </svg>
+      </button>
+      <button id="palco-poi" title="Prossimo">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M6 5.5v13a1 1 0 0 0 1.55.83L16.5 13.5v5a1 1 0 0 0 2 0v-13a1 1 0 0 0-2 0v5L7.55 4.67A1 1 0 0 0 6 5.5z"/>
+        </svg>
+      </button>
+    </div>
+
     <div class="cresci"></div>
-    <button class="tondo" id="palco-fila" title="Com&#8217;&#232; stata fatta">&#9776;</button>
+
+    <!--
+      **«Mostra info», e adesso si chiama cosi'.** Chiesto il 6 settembre 2026:
+      «se si clicca il pulsante in basso a destra mostra le info, lo chiamiamo
+      "mostra info"». Il nome sta nel titolo e sotto al segno: tre linee da sole
+      volevano dire «menu» a chiunque, ed era la ragione per cui il tasto non
+      sembrava fare niente.
+    -->
+    <button class="tondo" id="palco-fila" title="Mostra info">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="6.4" r="1.5"/>
+        <rect x="10.7" y="10" width="2.6" height="8.4" rx="1.3"/>
+      </svg>
+    </button>
   </div>
+
+  <!--
+    **Il menu degli effetti.** Chiesto il 6 settembre 2026: «se lo clicchiamo si
+    apre un piccolo menu con tutti gli effetti; se ne clicchiamo uno si fissa su
+    quell'effetto, se ci riclicco torna deselezionato e torna in cambio
+    automatico».
+
+    Quindi non e' un elenco di scelte: e' un elenco con **uno stato acceso**, e
+    quello acceso vuol dire «resta qui». Nessuno acceso vuol dire «cambia da
+    solo», che e' come parte.
+  -->
+  <div class="effetti" id="palco-effetti-menu" hidden></div>
 </div>
 
 <nav class="fondo" id="fondo" hidden>

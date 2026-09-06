@@ -143,7 +143,15 @@ let strumenti = [];
   dice("non è marcata come errore", !r.result?.isError);
   dice("non è passata dall'esecutore", eseguite.length === 0);
   const inFila = remoto.archivi.datiCorrenti.richieste;
-  dice("la richiesta esiste davvero", inFila.length === 1 && inFila[0].testo === "un faro sulla scogliera");
+  /**
+   * ⚠ **Due, perché erano `quante: 2`.** Cambiato nella 0.9.4: ogni generazione
+   * è una richiesta sua — vedi «eseguiAzione» in packages/gateway/src/azioni.ts.
+   *
+   * Vale anche per un agente che chiede dall'MCP, ed è giusto così: se la fila
+   * mostrasse un lavoro solo, accettarlo ne farebbe partire due.
+   */
+  dice("le richieste esistono davvero", inFila.length === 2, `→ ${inFila.length}`);
+  dice("e portano il testo giusto", inFila.every((r) => r.testo === "un faro sulla scogliera"));
   dice("porta con sé l'azione", inFila[0]?.opzioni?.azione === "genera.immagine");
 }
 {

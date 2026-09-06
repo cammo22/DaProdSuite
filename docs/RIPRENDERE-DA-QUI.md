@@ -1,7 +1,15 @@
 # Riprendere da qui
 
 Documento di passaggio fra una sessione e l'altra. Aggiornato il **6 settembre
-2026**, con la **0.9.3** appena pubblicata.
+2026 (sera)**, con la **0.9.4** appena pubblicata.
+
+> ⚠ **La lezione della 0.9.4: una cosa mal disegnata e una cosa che sceglie per
+> te si somigliano.** Tutte e due tolgono il controllo a chi guarda, e infatti
+> sono uscite dalla stessa serata d'uso. Tre esempi dallo stesso giro: toccare
+> una foto metteva in coda sessanta cose; toccare uno stile cancellava quello
+> di prima; chiedere quattro canzoni faceva un lavoro solo che non si poteva
+> fermare a meta'. Nessuna delle tre era un difetto — erano tre scelte
+> ragionevoli fatte da qualcun altro.
 
 > **Il prossimo passo è far uscire una clip vera dal disco**, e subito dopo una
 > storia da 30 secondi. È il punto più vecchio della roadmap — i pezzi
@@ -202,6 +210,7 @@ Repo pubblico: **https://github.com/cammo22/DaProdSuite**
 | **Il lettore dell'app: fila, palco, visualizer** | fatto nella 0.9.0, rifatto di posto nella 0.9.1. **⚠ Non è il motore WebGL di DaProdVisualizer**: quello sta in un'app React e nella console non ci entra così com'è |
 | **Video da 30, 60 e 120 secondi** | `apps/cinema/src/lungo.js`, pezzi incatenati per l'ultimo fotogramma. **⚠ Mai passati per una scheda video** |
 | **La 0.9.1: quaranta cose che si vedevano** | fatto il 5 settembre. Non funzioni nuove: quello che è venuto fuori **usando** la 0.9.0 per una sera. Il dettaglio sta nel CHANGELOG § 0.9.1 |
+| **La 0.9.4: il design, e le cose che decidevano da sole** | fatto il 6 settembre (sera). Comandi ridisegnati, menu degli effetti, visualizer come sfondo, navbar sottile, messaggi nostri al posto di quelli di Android, e tre decisioni restituite a chi usa la suite |
 | **La 0.9.3: il visualizer vero, e le cose che non tornavano** | fatto il 6 settembre. Nove shader di DaProdVisualizer portati con uno script, gli utenti che restano dopo un aggiornamento, due canzoni che escono in due, e il titolo sulle copertine |
 | **`porta-il-visualizer.mjs`** | il travaso degli shader. **Si rilancia**, non si riscrive: se lo si riscrivesse, alla terza correzione i due visualizer sarebbero due cose diverse con lo stesso nome |
 | **L'account CammoBot** | nel banco della console c'è un admin di prova, e con `BANCO_PORTA`/`BANCO_DATI` la porta e i dati restano gli stessi fra un'accensione e l'altra: è quello che serve per puntarci l'app Android |

@@ -298,7 +298,7 @@ export const COPIONE_LAVORI = `
       filtroLavori = "vivi";
       await leggiCoda();
       await leggiMacchina();
-    } catch (e) { alert(e.message); }
+    } catch (e) { avvisaDelMale(e); }
   }
 
   async function togliRichiesta(r, come) {
@@ -308,7 +308,7 @@ export const COPIONE_LAVORI = `
         method: come === "cancella" ? "DELETE" : "PATCH",
       });
       await leggiCoda();
-    } catch (e) { alert(e.message); }
+    } catch (e) { avvisaDelMale(e); }
   }
 
   async function decidi(id, stato, motivo) {
@@ -319,7 +319,7 @@ export const COPIONE_LAVORI = `
       });
       await leggiCoda();
     } catch (e) {
-      alert(e.message);
+      avvisaDelMale(e);
     }
   }
 
@@ -338,7 +338,7 @@ export const COPIONE_LAVORI = `
     var risposta = await fetch("/risultati/" + encodeURIComponent(nome), {
       headers: { Authorization: "Bearer " + token },
     });
-    if (!risposta.ok) { alert("Non riesco a scaricarlo."); return; }
+    if (!risposta.ok) { avvisa("Non riesco a scaricarlo."); return; }
     var blob = await risposta.blob();
     portaViaIlFile(blob, nome);
   }

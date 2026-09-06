@@ -275,8 +275,23 @@ class MainActivity : AppCompatActivity() {
          *
          * Chiesto il 5 settembre 2026: «facciamo che all'avvio si devono
          * accettare tutti i requisiti, come notifiche aggiornamento ecc».
+         *
+         * ⚠ **E il 6 settembre e' stato disfatto**, dopo averlo usato: «l'app
+         * all'avvio mostra il fatto delle autorizzazioni: non deve farlo
+         * all'avvio, ma ci deve essere una sezione permessi in impostazioni».
+         *
+         * Aveva ragione, ed e' una lezione che vale oltre a questa schermata.
+         * Il difetto di partenza era vero — i permessi sparsi in quattro posti,
+         * nessuno li dava tutti — ma la cura era peggio: **la prima cosa che
+         * l'app faceva era chiedere**. Prima di mostrare cosa sa fare, prima
+         * che uno avesse un motivo per dire di si'. Un foglio di richieste
+         * all'avvio non e' una spiegazione, e' un pedaggio: si preme quello che
+         * fa sparire il foglio, che di solito e' «no».
+         *
+         * Adesso i permessi stanno **nelle impostazioni**, in un posto solo —
+         * che era la meta' giusta di quella correzione — e si aprono quando uno
+         * li cerca, cioe' quando gli serve. Vedi la voce «Permessi» nel menu.
          */
-        if (Permessi.daChiedere(this)) mostraIPermessi(true)
 
         preparaWeb()
 

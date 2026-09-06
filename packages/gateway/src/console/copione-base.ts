@@ -76,15 +76,15 @@ export const COPIONE_BASE = `
   /**
    * **Chi sta guardando, e con che faccia.**
    *
-   * - \`telefono\`: la faccia di chi fa una cosa. Niente quadrati della rete,
+   * - «telefono»: la faccia di chi fa una cosa. Niente quadrati della rete,
    *   niente elenco dei collegati, niente azioni di servizio.
-   * - \`computer\`: la faccia di chi governa. Tutto, comprese le azioni che
+   * - «computer»: la faccia di chi governa. Tutto, comprese le azioni che
    *   leggono la libreria e raccontano lo stato della suite.
    *
-   * Lo dice l'app del telefono nel frammento (\`m=telefono\`), perché è l'unica
+   * Lo dice l'app del telefono nel frammento («m=telefono»), perché è l'unica
    * che lo sa per certo. Se non lo dice nessuno si guarda la larghezza dello
    * schermo, che è un indizio e non una prova, ma è meglio di niente — e
-   * comunque \`sonoLaCasa\` decide da solo la parte che conta davvero, cioè gli
+   * comunque «sonoLaCasa» decide da solo la parte che conta davvero, cioè gli
    * interruttori della macchina.
    */
   var modo = "computer";
@@ -157,6 +157,49 @@ export const COPIONE_BASE = `
   }
 
   /**
+   * **Un messaggio che sale dal basso, e se ne va da solo.**
+   *
+   * ⚠ Sostituisce la finestra di sistema, e non e' una scelta di gusto. In una WebView
+   * «alert» disegna la finestra **di Android**: grigia, col pulsante di
+   * sistema, e con **l'indirizzo della pagina in cima** — cioe' l'indirizzo del
+   * tunnel Cloudflare, a caratteri grandi, sopra a una frase di sei parole.
+   * Chiesto il 6 settembre 2026: «quel messaggio in quello stile non mi piace,
+   * l'ho visto anche per altre cose: curiamo tutto bene».
+   *
+   * E poi «alert» blocca tutto finche' non si preme OK, che con una musica in
+   * corso vuol dire una musica che salta.
+   *
+   * «come» vale «male» quando e' un errore, «bene» quando e' andata: l'errore
+   * resta il doppio del tempo, perche' e' quello che uno vuole rileggere.
+   */
+  function avvisa(testo, come) {
+    var dove = $("avvisi");
+    if (!dove) return;
+    var riga = document.createElement("div");
+    riga.className = "avviso-su" + (come ? " " + come : "");
+    riga.textContent = String(testo);
+    dove.append(riga);
+    // Piu' di tre messaggi in colonna sono una lista di errori, non un avviso:
+    // il piu' vecchio se ne va per far posto.
+    while (dove.children.length > 3) dove.firstElementChild.remove();
+    setTimeout(function () {
+      riga.classList.add("va");
+      setTimeout(function () { riga.remove(); }, 320);
+    }, come === "male" ? 5200 : 2800);
+  }
+
+  /**
+   * Un errore, detto come si deve.
+   *
+   * Prende quello che arriva da una «catch»: a volte e' un Error, a volte una
+   * stringa, a volte un oggetto che non c'entra niente. Chi legge merita una
+   * frase, non «[object Object]».
+   */
+  function avvisaDelMale(e) {
+    avvisa((e && e.message) ? e.message : String(e || "Qualcosa non ha funzionato."), "male");
+  }
+
+  /**
    * Quanti 401 di fila abbiamo preso. Uno solo non vuol dire niente.
    *
    * ⚠ **Il conto sopravvive alla ricarica**, e senza questa riga il resto non
@@ -182,7 +225,7 @@ export const COPIONE_BASE = `
    * 0.7.6: «quando chiudo e apro l'app spesso devo cancellare l'account e
    * riscannerizzare il codice».
    *
-   * Prima bastava **un** 401 e si buttava via il token da \`localStorage\`. Un
+   * Prima bastava **un** 401 e si buttava via il token da «localStorage». Un
    * 401 però capita anche per ragioni che non sono «ti ho revocato»: la suite
    * si sta ancora accendendo, la pagina è stata riaperta da una copia mentre il
    * computer tornava, una chiamata è partita nel mezzo di un riavvio del
@@ -193,7 +236,7 @@ export const COPIONE_BASE = `
    * Adesso:
    *
    * 1. **si chiede all'app di rimetterlo.** La credenziale vera vive nel
-   *    profilo del telefono, che è il posto durevole: \`localStorage\` è solo
+   *    profilo del telefono, che è il posto durevole: «localStorage» è solo
    *    dove la pagina la tiene a portata di mano. Se l'app c'è, la rimette.
    * 2. **si insiste tre volte** prima di credere che sia una revoca vera.
    * 3. **e anche allora non si butta niente in silenzio**: si torna alla
@@ -316,6 +359,14 @@ export const COPIONE_BASE = `
     if (quale === "galleria") leggiGalleria();
     if (quale === "daprod") leggiBacheca();
     if (quale === "stili") leggiStili();
+    /**
+     * Uscendo dagli Stili il mix si azzera.
+     *
+     * Una selezione che sopravvive a un cambio di scheda e' una sorpresa
+     * quando si torna: tre stili accesi che uno non ricorda di aver scelto, e
+     * una riga in fondo che non si capisce da dove viene.
+     */
+    else scordaIlMix();
     // Chi apre LM Studio a suite gia' accesa deve ritrovare i tasti accesi
     // senza riaprire niente: si richiede quando si va dove servono.
     if (quale === "produzione" || quale === "riepilogo") void guardaAi();

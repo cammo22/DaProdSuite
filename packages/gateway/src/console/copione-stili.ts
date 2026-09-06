@@ -71,6 +71,108 @@ export const COPIONE_STILI = `
   var genereStili = "stile";
 
   function genereDi(s) { return s && s.genere === "prompt" ? "prompt" : "stile"; }
+
+  /**
+   * ⚠ **Gli stili si sommano.** Nuovo nella 0.9.4.
+   *
+   * Chiesto il 6 settembre 2026: «facciamo che gli stili si possono sommare e
+   * mixare: per aggiungerli basta selezionarli, deselezionarli per toglierli,
+   * cosi' da fare dei mix».
+   *
+   * ## Perche' e' la cosa giusta, e perche' vale solo per gli stili
+   *
+   * Uno stile e' **poche parole di modo** — «neon noir, night city, wet asphalt
+   * reflections». Due stili messi insieme non si contraddicono: fanno una terza
+   * cosa, e chi produce immagini lo fa in continuazione. Prima toccarne uno
+   * cancellava quello di prima, cioe' l'unico modo di mescolarli era copiarli a
+   * mano in un blocco note.
+   *
+   * Un **prompt** no: contiene tutto — titolo, testo, durata, tonalita' — e due
+   * prompt sommati non fanno un prompt piu' ricco, fanno due canzoni diverse
+   * appiccicate. Quindi i prompt restano uno alla volta, e non e' una
+   * limitazione: e' la differenza fra le due cose.
+   *
+   * Gli id scelti, non gli oggetti: la lista si ridisegna a ogni filtro e gli
+   * oggetti cambiano identita' sotto ai piedi.
+   */
+  var stiliScelti = [];
+
+  function eScelto(s) { return stiliScelti.indexOf(s.id) >= 0; }
+
+  /** Azzera il mix e toglie la riga. La chiama «vaiA» uscendo dagli Stili. */
+  function scordaIlMix() {
+    if (!stiliScelti.length) return;
+    stiliScelti = [];
+    disegnaIlMix();
+  }
+
+  function segnaOTogli(s) {
+    var dove = stiliScelti.indexOf(s.id);
+    if (dove >= 0) stiliScelti.splice(dove, 1);
+    else stiliScelti.push(s.id);
+    disegnaStili();
+  }
+
+  /**
+   * La riga in fondo: quanti ne hai scelti, e cosa puoi farci.
+   *
+   * Compare solo quando ce n'e' almeno uno. Una barra sempre presente che dice
+   * «0 scelti» e' rumore; una che appare quando serve e' una risposta.
+   */
+  function disegnaIlMix() {
+    var barra = $("mix-stili");
+    if (!barra) return;
+    barra.innerHTML = "";
+    barra.hidden = true;
+    if (!stiliScelti.length) return;
+
+    var quali = mieiStili.filter(eScelto);
+    if (!quali.length) { stiliScelti = []; return; }
+    barra.hidden = false;
+
+    var dice = document.createElement("div");
+    dice.className = "quali";
+    var b = document.createElement("b");
+    b.textContent = quali.length === 1 ? "1 stile" : quali.length + " stili";
+    var come = document.createElement("small");
+    come.textContent = quali.map(function (x) { return x.nome; }).join(" + ");
+    dice.append(b, come);
+
+    var azzera = document.createElement("button");
+    azzera.className = "mini";
+    azzera.textContent = "Azzera";
+    azzera.addEventListener("click", function () { stiliScelti = []; disegnaStili(); });
+
+    var usa = document.createElement("button");
+    usa.className = "mini acceso";
+    usa.textContent = "\u2192 Usali";
+    usa.addEventListener("click", function () { usaIlMix(quali); });
+
+    barra.append(dice, azzera, usa);
+  }
+
+  /**
+   * Porta il mix in Produzione.
+   *
+   * I testi si uniscono con una virgola, che e' come sono scritti dentro: sono
+   * elenchi di parole di modo, e la virgola e' il modo in cui un modello di
+   * immagini li legge. Il nome che finisce nella pastiglia e' quello del mix —
+   * «Anime + Ora dorata» — cosi' chi guarda il modulo sa cosa ci ha messo.
+   */
+  function usaIlMix(quali) {
+    if (!quali.length) return;
+    var finto = {
+      id: "mix",
+      nome: quali.map(function (x) { return x.nome; }).join(" + "),
+      testo: quali.map(function (x) { return x.testo; }).join(", "),
+      tipo: quali[0].tipo,
+      genere: "stile",
+    };
+    stiliScelti = [];
+    disegnaIlMix();
+    usaLoStile(finto);
+  }
+
   function eUnPrompt() { return genereStili === "prompt"; }
   function comeSiChiama(uno) {
     return eUnPrompt() ? (uno ? "un prompt" : "prompt") : (uno ? "uno stile" : "stili");
@@ -131,6 +233,9 @@ export const COPIONE_STILI = `
   function disegnaStili() {
     disegnaTipiStili();
     disegnaDueTastiStili();
+    // La riga del mix si ridisegna con la lista: cambiare filtro non deve
+    // lasciare in fondo il conto di stili che adesso non si vedono piu'.
+    disegnaIlMix();
 
     var casella = $("elenco-stili");
     casella.innerHTML = "";
@@ -272,7 +377,20 @@ export const COPIONE_STILI = `
       return box;
     }
 
-    box.addEventListener("click", function () { usaLoStile(s); });
+    /**
+     * ⚠ **Uno stile si somma, un prompt si usa.**
+     *
+     * Toccare uno stile lo aggiunge al mix e non porta via dalla pagina: si
+     * scelgono, si vede la riga in fondo crescere, e si va quando si e' finito.
+     * Toccare un prompt invece porta dritto in Produzione — un prompt contiene
+     * tutto, sommarne due non vuol dire niente.
+     */
+    if (genereDi(s) === "prompt") {
+      box.addEventListener("click", function () { usaLoStile(s); });
+    } else {
+      if (eScelto(s)) box.classList.add("scelto");
+      box.addEventListener("click", function () { segnaOTogli(s); });
+    }
     // Tenere premuto: sul telefono è il gesto per «cosa posso farci», e sul
     // computer il tasto destro fa la stessa cosa.
     var premuto = null;
@@ -307,7 +425,7 @@ export const COPIONE_STILI = `
   function usaLoStile(s) {
     var info = infoTipo(tipoDi(s));
     var azione = azioni.filter(function (a) { return a.id === info.azione; })[0];
-    if (!azione) { alert("Su questo computer non si pu\u00f2 fare questo."); return; }
+    if (!azione) { avvisa("Su questo computer non si pu\u00f2 fare questo."); return; }
     vaiA("produzione");
     scegli(azione);
     var principale = document.querySelector("#modulo [data-principale]");
@@ -494,7 +612,7 @@ export const COPIONE_STILI = `
       });
       chiudiFoglio();
       await leggiStili();
-    } catch (e) { alert(e.message); }
+    } catch (e) { avvisaDelMale(e); }
   }
 
   async function buttaLoStile(s) {
@@ -502,7 +620,7 @@ export const COPIONE_STILI = `
       await chiama("/stili/" + encodeURIComponent(s.id), { method: "DELETE" });
       chiudiFoglio();
       await leggiStili();
-    } catch (e) { alert(e.message); }
+    } catch (e) { avvisaDelMale(e); }
   }
 
   async function prendiLoStile(s, tasto) {
@@ -526,7 +644,7 @@ export const COPIONE_STILI = `
       // continua a offrire quelli di prima finché non si riapre l'app.
       try { azioni = await chiama("/azioni"); } catch (e) { /* al giro dopo */ }
     } catch (e) {
-      alert(e.message);
+      avvisaDelMale(e);
       tasto.disabled = false;
       tasto.textContent = "\\u2913 Prendilo";
     }

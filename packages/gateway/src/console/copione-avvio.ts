@@ -132,11 +132,90 @@ export const COPIONE_AVVIO = `
   $("palco-prima").addEventListener("click", precedente);
   $("palco-poi").addEventListener("click", prossimo);
   /**
-   * L'ingranaggio cambia effetto **adesso**, senza aspettare i quarantacinque
-   * secondi. Dalla 0.9.2 il motore ne sceglie uno a caso fra i nove veri.
+   * ⚠ **L'ingranaggio e la freccia in giu' non ci sono piu'.** Chiesto il 6
+   * settembre 2026: «il tasto impostazioni e la freccia verso il basso
+   * togliamoli».
+   *
+   * La freccia faceva quello che fa gia' il trascinamento verso il basso, e
+   * l'ingranaggio cambiava effetto — un simbolo che in ogni app del mondo vuol
+   * dire «impostazioni». Adesso gli effetti hanno il loro tasto, in basso a
+   * sinistra, con il loro menu.
    */
-  $("palco-cambia").addEventListener("click", function () { Visual.cambia(null); });
-  $("palco-giu").addEventListener("click", chiudiPalco);
+  $("palco-effetti").addEventListener("click", giraGliEffetti);
+
+  /**
+   * **L'easter egg.** Chiesto il 6 settembre 2026: «un easter egg se clicchi la
+   * scritta DaProdSuite».
+   *
+   * Sette tocchi, che e' il numero che Android usa per «diventa sviluppatore»:
+   * abbastanza da non capitare per sbaglio, abbastanza pochi da arrivarci se
+   * uno ci sta provando. Dal terzo in poi lo dice, perche' un easter egg che
+   * non da' nessun segno finche' non e' finito e' un easter egg che nessuno
+   * trova.
+   *
+   * Cosa fa: accende il visualizer sullo sfondo **anche senza musica**, e lo
+   * lascia li'. E' la cosa piu' bella che questa suite sa fare e l'unica che
+   * non si puo' guardare stando fermi.
+   */
+  var tocchiMarchio = 0;
+  var ultimoTocco = 0;
+  $("marchio").addEventListener("click", function () {
+    var adesso = Date.now();
+    // Piu' di un secondo e mezzo fra un tocco e l'altro non e' una sequenza:
+    // e' qualcuno che ha toccato il logo due volte in dieci minuti.
+    tocchiMarchio = (adesso - ultimoTocco < 1500) ? tocchiMarchio + 1 : 1;
+    ultimoTocco = adesso;
+
+    var m = $("marchio");
+    m.classList.remove("lampo");
+    void m.offsetWidth;
+    m.classList.add("lampo");
+
+    if (tocchiMarchio >= 7) {
+      tocchiMarchio = 0;
+      easterEgg();
+      return;
+    }
+    if (tocchiMarchio >= 3) {
+      avvisa("Ancora " + (7 - tocchiMarchio) + "\u2026");
+    }
+  });
+
+  /**
+   * Il visualizer come sfondo, e basta: senza musica, senza palco.
+   *
+   * Si spegne ritoccando sette volte, o al primo brano che parte — da li' in
+   * poi torna a seguire il suono, che e' il suo mestiere.
+   */
+  function easterEgg() {
+    var acceso = document.body.classList.toggle("sognante");
+    if (acceso) {
+      var tela = $("visual");
+      if (tela && Visual.accendi(tela)) {
+        var dietro = $("sfondo-visual");
+        if (dietro) dietro.style.opacity = "";
+        if (!sogno) sogno = requestAnimationFrame(unSogno);
+      }
+      avvisa("Va da solo. Ritoccalo sette volte per farlo smettere.", "bene");
+    } else {
+      if (sogno) { cancelAnimationFrame(sogno); sogno = null; }
+      if (!palcoAperto) {
+        var d = $("sfondo-visual");
+        if (d) d.style.opacity = "0";
+      }
+      avvisa("Buonanotte.");
+    }
+  }
+
+  var sogno = null;
+  function unSogno() {
+    sogno = requestAnimationFrame(unSogno);
+    // Senza niente che suona il motore disegna comunque: le feature scendono a
+    // zero e gli effetti si muovono piano, che e' esattamente quello che serve
+    // a uno sfondo.
+    Visual.disegna(suonante);
+    Visual.copiaSulloSfondo();
+  }
   /**
    * ⚠ **Le tre linee cambiano mestiere.** Chiesto il 5 settembre 2026: «il
    * tasto con le tre linee a destra durante la riproduzione DaProd non

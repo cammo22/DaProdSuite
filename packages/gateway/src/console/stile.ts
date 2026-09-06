@@ -31,7 +31,15 @@ export const STILE = `  :root {
     --rosa: #f472b6;
     --ambra: #fb923c;
     --raggio: 18px;
-    --fondo-alto: 58px;
+    /**
+     * ⚠ **La barra delle schede e' piu' sottile.** Chiesto il 6 settembre
+     * 2026: «la navbar falla piu' sottile».
+     *
+     * Da 58 a 50. Otto pixel sembrano niente e sono l'altezza di una riga di
+     * testo: su un telefono, moltiplicata per la barra che suona che le sta
+     * sopra, e' la differenza fra vedere l'ultimo riquadro e no.
+     */
+    --fondo-alto: 50px;
     /* Quanto e' alta la barra che suona. Vedi il commento su «.barraLettore». */
     --lettore-alto: 58px;
     /**
@@ -67,11 +75,48 @@ export const STILE = `  :root {
     background: #0a0c11ee; backdrop-filter: blur(10px);
     border-bottom: 1px solid var(--line);
   }
-  .marchio { font-weight: 700; font-size: 16px; letter-spacing: .2px; }
+  /* Il marchio adesso e' un tasto (l'easter egg), ma non deve sembrarlo. */
+  /* Alto come la pastiglia e l'ingranaggio: e' una riga sola di tre cose, e
+     con il marchio a 24 e gli altri a 38 la riga sembrava scivolata. */
+  .marchio {
+    font-weight: 700; font-size: 16px; letter-spacing: .2px;
+    background: none; border: 0; padding: 0; color: var(--txt);
+    min-height: var(--tasto-alto); display: inline-flex; align-items: center;
+    cursor: pointer; user-select: none; -webkit-user-select: none;
+  }
   .marchio span { color: var(--accent); }
+  .marchio:active { transform: none; }
+  /* Il settimo tocco: un lampo, e poi si vede cosa succede. */
+  @keyframes lampoMarchio {
+    0% { filter: none; }
+    40% { filter: drop-shadow(0 0 14px var(--accent)) brightness(1.5); }
+    100% { filter: none; }
+  }
+  .marchio.lampo { animation: lampoMarchio .6s ease-out; }
+
+  /**
+   * ⚠ **L'ingranaggio e la pastiglia del nome sono della stessa famiglia.**
+   *
+   * Chiesto il 6 settembre 2026: «fai meglio il pulsante impostazioni, che e'
+   * diverso dal nome utente affianco». Era vero: la pastiglia aveva un fondo
+   * pieno e un bordo netto, il tondo un bordo piu' tenue e dentro un glifo
+   * tipografico. Due pesi diversi appaiati sulla stessa riga si vedono anche
+   * senza sapere perche'.
+   *
+   * «pari» vuol dire: stesso fondo, stesso bordo, stessa altezza. Il segno e'
+   * disegnato, quindi ha lo stesso peso ottico della faccia accanto.
+   */
+  .tondo.pari { background: var(--panel2); border-color: var(--line2); }
+  .tondo svg { width: 19px; height: 19px; fill: currentColor; display: block; }
+  .tondo:active { transform: scale(.93); }
   .cresci { flex: 1; }
+  /* ⚠ «min-height: 0» e non e' pedanteria: il tasto grande dichiara
+     «min-height: var(--tastone-alto)», e un minimo batte un'altezza. Senza
+     questa riga l'ingranaggio veniva alto 48 accanto a una pastiglia di 38 —
+     misurato nella pagina vera, che e' l'unico modo di accorgersene. */
   .tondo {
-    width: var(--tasto-alto); height: var(--tasto-alto); border-radius: 99px; padding: 0;
+    width: var(--tasto-alto); height: var(--tasto-alto); min-height: 0;
+    border-radius: 99px; padding: 0;
     background: var(--panel2); border: 1px solid var(--line2); color: var(--txt);
     font-size: 15px; display: grid; place-items: center; cursor: pointer;
   }
@@ -422,7 +467,32 @@ export const STILE = `  :root {
   }
   .spilla.in-bacheca { color: var(--accent2); border-color: #22d3ee55; }
   .quadro .attrezzi { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 9px; }
-  .filtri { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 12px; }
+  /**
+   * ⚠ **Una riga sola, e scorre.** Chiesto il 6 settembre 2026, con la foto
+   * degli Stili: «guarda in alto, Musica va sotto: vorrei tutto su una riga».
+   *
+   * «flex-wrap: wrap» mandava a capo la terza pastiglia appena la somma delle
+   * larghezze superava lo schermo — e con i numeri accanto («Immagini · 16»)
+   * la supera sempre su un telefono stretto. Andare a capo, per una fila di
+   * filtri, e' la scelta peggiore: la riga sotto sembra un'altra cosa, e su un
+   * riquadro come quello degli Stili si perde in mezzo al resto.
+   *
+   * Una riga che **scorre di lato** invece dice quello che e': ci sono altre
+   * scelte, sono di la'. Vale a qualunque larghezza e non invecchia quando se
+   * ne aggiunge una quarta.
+   *
+   * La barra dello scorrimento si nasconde: e' un gesto, non un comando.
+   */
+  .filtri {
+    display: flex; gap: 7px; flex-wrap: nowrap; margin-bottom: 12px;
+    overflow-x: auto; overscroll-behavior-x: contain;
+    scrollbar-width: none; -webkit-overflow-scrolling: touch;
+    /* Un filo di respiro a destra: l'ultima pastiglia non deve sembrare
+       tagliata dal bordo dello schermo. */
+    padding-right: 12px;
+  }
+  .filtri::-webkit-scrollbar { display: none; }
+  .filtri button { flex: 0 0 auto; }
   .filtri button.on { border-color: var(--accent); color: var(--txt); background: #1b1533; }
   .quadri { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 11px; }
 
@@ -514,6 +584,50 @@ export const STILE = `  :root {
      Chiesto così — «mettiamo lì il pulsante impostazioni e lì possiamo vedere
      le cose» — e il posto giusto per una cosa che si apre, si guarda e si
      chiude non è una delle cinque schede che si usano ogni giorno. */
+/**
+   * ⚠ **Il messaggino, al posto di «alert».** Nuovo nella 0.9.4.
+   *
+   * Chiesto il 6 settembre 2026, con la foto di «rifai la copertina»: «quel
+   * messaggio in quello stile non mi piace, l'ho visto anche per altre cose:
+   * curiamo tutto bene».
+   *
+   * Aveva ragione, e il difetto non era solo estetico. «alert()» dentro una
+   * WebView disegna la finestra **di Android**, non la nostra: grigia, con il
+   * pulsante blu di sistema, e — questa e' la parte che fa male —
+   * **con l'indirizzo della pagina in cima**. Nella sua foto si leggeva
+   * l'indirizzo del tunnel Cloudflare a caratteri grandi, sopra a una frase di
+   * sei parole. Un dettaglio interno della macchina, dato in pasto a chi
+   * voleva solo sapere che la copertina era in fila.
+   *
+   * E poi ferma tutto: «alert» blocca il thread finche' non si preme OK, il
+   * che su un telefono vuol dire una musica che salta.
+   *
+   * Questo invece e' un rettangolo nostro che sale dal basso, sta tre secondi e
+   * se ne va. Sopra alla barra che suona, sotto ai fogli, e non ruba il tocco.
+   */
+  .avvisi {
+    position: fixed; left: 12px; right: 12px; z-index: 90;
+    bottom: calc(var(--fondo-alto) + 14px + env(safe-area-inset-bottom));
+    display: flex; flex-direction: column; gap: 8px; align-items: center;
+    pointer-events: none;
+  }
+  body.consuono .avvisi {
+    bottom: calc(var(--fondo-alto) + var(--lettore-alto) + 14px + env(safe-area-inset-bottom));
+  }
+  .avviso-su {
+    max-width: 460px; width: fit-content;
+    padding: 12px 16px; border-radius: 14px;
+    background: #161922f5; border: 1px solid var(--line2); color: var(--txt);
+    font-size: 13px; line-height: 1.45; text-align: center;
+    box-shadow: 0 18px 44px -18px #000; backdrop-filter: blur(14px);
+    animation: avvisoEntra .22s cubic-bezier(.2,1.2,.4,1);
+  }
+  .avviso-su.male { border-color: #f8717166; color: #fecaca; }
+  .avviso-su.bene { border-color: #34d39966; }
+  .avviso-su.va { animation: avvisoEsce .3s ease-in forwards; }
+  @keyframes avvisoEntra { from { opacity: 0; transform: translateY(14px) scale(.96); } to { opacity: 1; transform: none; } }
+  @keyframes avvisoEsce { to { opacity: 0; transform: translateY(8px) scale(.98); } }
+
   .foglio {
     position: fixed; inset: 0; z-index: 60; display: flex; align-items: flex-end;
     background: #05060ad0; backdrop-filter: blur(5px); animation: entra .18s ease-out;
@@ -668,7 +782,24 @@ export const STILE = `  :root {
   .inFila b { display: block; font-size: 14px; }
   .inFila small { color: var(--dim); font-size: 12px; }
 
-  .piano {
+  /**
+   * ⚠ **«piano» sono due cose diverse, e si pestavano i piedi.**
+   *
+   * «button.piano» (qui sopra) e' un tasto **quieto** — grigio, senza il
+   * gradiente viola. Questo «.piano» invece e' il **riquadro del piano di
+   * lavoro**, quello che il modello propone con l'elenco dei lavori. Stesso
+   * nome, due significati nati in due momenti diversi.
+   *
+   * Il risultato si vedeva misurando: il tasto «Gestione stili e prompt» ha
+   * classe «piano largo», quindi si prendeva il bordo viola, il gradiente e il
+   * padding del riquadro — e veniva alto 51 dove tutti gli altri stanno a 48.
+   * Un tasto che non e' come gli altri senza che nessuno l'abbia deciso.
+   *
+   * «:not(button)» toglie di mezzo la collisione senza rinominare niente in
+   * quattro file. Il nome resta ambiguo, ed e' segnato qui perche' il giorno
+   * che si rinomina si sappia perche'.
+   */
+  .piano:not(button) {
     border: 1px solid var(--accent); border-radius: 16px; padding: 13px 14px;
     background: linear-gradient(180deg, #1a1330, var(--panel2)); margin-top: 12px;
   }
@@ -769,11 +900,28 @@ export const STILE = `  :root {
      Chiesto il 5 settembre 2026: «in produci lascia un po' di spazio in fondo,
      cosi' lasciamo un po' di spazio quando si scrolla». Senza, l'ultimo campo
      finisce appiccicato alla barra delle schede e per toccarlo si sbaglia. */
-  /* Lo spazio in fondo vale per tutte le schede lunghe, Casa compresa: era
-     l'unica senza, e si vedeva — l'ultimo riquadro finiva appiccicato alla
-     barra. Chiesto per Produzione il 5 settembre 2026, e la ragione non era
-     di quella scheda: «cosi' lasciamo un po' di spazio quando si scrolla». */
-  #pag-casa, #pag-produzione, #pag-daprod, #pag-galleria { padding-bottom: 40px; }
+  /**
+   * ⚠ **Lo spazio in fondo vale per TUTTE le schede.** E adesso e' scritto
+   * cosi': «main > section», non un elenco di quattro id.
+   *
+   * Chiesto il 6 settembre 2026, con la foto degli Stili: «lo fa con tutte le
+   * pagine — come vedi, quando c'e' un contenuto in riproduzione la barra
+   * nasconde un po'; spaziamo bene la parte finale di tutte le schede».
+   *
+   * Aveva ragione due volte. La prima: l'elenco a mano copriva quattro schede
+   * su sei, e Stili e Fila erano rimaste fuori — un elenco di id e' una lista
+   * che invecchia ogni volta che si aggiunge una scheda. La seconda, piu'
+   * importante: quaranta pixel bastavano **senza** la barra che suona, e con
+   * quella accesa mancavano.
+   *
+   * Adesso lo spazio e' calcolato: la barra delle schede, la barra che suona
+   * quando c'e', e un pollice di respiro. Il «body.consuono» qui sopra sposta
+   * gia' il fondo del corpo; questo e' il respiro **dentro** la scheda, che e'
+   * quello che rende leggibile l'ultimo riquadro invece di farlo finire
+   * appiccicato al vetro.
+   */
+  main > section { padding-bottom: 34px; }
+  body.consuono main > section { padding-bottom: 48px; }
 
   /* ------------------------------------------------------- il visualizer */
   /* Dietro a tutto, e senza toccare niente: nessun evento del mouse arriva
@@ -791,6 +939,38 @@ export const STILE = `  :root {
    * Sta in fondo al palco e non tocca niente: nessun evento del mouse arriva
    * qui, quindi i tasti sopra funzionano esattamente come prima.
    */
+  /**
+   * ⚠ **Il visualizer come atmosfera, dietro alla pagina.** Nuovo nella 0.9.4.
+   *
+   * Chiesto il 6 settembre 2026: «usiamo le animazioni del visualizer sullo
+   * sfondo dell'app in tutte le schede, ma molto molto sfocato e trasparente,
+   * direi un 22 percento su 100».
+   *
+   * **E non e' un ritorno alla 0.9.0**, dove il visualizer era *solo* lo sfondo
+   * e a schermo intero si guardava una lista della spesa con le onde dietro.
+   * Qui sono due cose con due mestieri: nel palco il visualizer **e' il
+   * contenuto**, nitido e a fuoco; qui e' **atmosfera** — sfocato a venti
+   * pixel, al ventidue per cento, sotto a tutto.
+   *
+   * Tre righe che contano piu' di quanto sembri:
+   * - «pointer-events: none», o meta' pagina smetterebbe di rispondere;
+   * - «z-index: -1» con il corpo trasparente sopra: e' l'unico modo perche'
+   *   stia **sotto** senza entrare nell'ordine di impilamento delle schede;
+   * - «will-change: opacity», perche' un blur a venti pixel ridipinto sessanta
+   *   volte al secondo senza un livello suo fa scattare lo scorrimento.
+   */
+  #sfondo-visual {
+    position: fixed; inset: 0; z-index: -1;
+    width: 100%; height: 100%;
+    opacity: .22; filter: blur(20px) saturate(130%);
+    /* Il blur mangia i bordi: si allarga un po' oltre lo schermo, o si
+       vedrebbe una cornice piu' chiara tutt'intorno. */
+    transform: scale(1.12);
+    pointer-events: none; will-change: opacity;
+    transition: opacity .8s ease;
+  }
+  #sfondo-visual[hidden] { display: block !important; opacity: 0; }
+
   .palcoLettore #visual {
     position: absolute; inset: 0; z-index: 0;
     width: 100%; height: 100%;
@@ -924,9 +1104,25 @@ export const STILE = `  :root {
    * sono tanti (un testo cantato e' lungo), e non si prende mai piu' di un
    * terzo dello schermo: e' una cosa da leggere di sfuggita, non una pagina.
    */
+  /**
+   * ⚠ **Con le info aperte si scorre il riquadro, non si abbassa il media.**
+   *
+   * Chiesto il 6 settembre 2026: «quando e' attivato, lo swipe non abbassa piu'
+   * il media ma posso scrollare il quadrato delle info».
+   *
+   * Il conflitto era vero e inevitabile: il palco intero ascolta il
+   * trascinamento verticale per chiudersi, e un pannello che scorre vuole
+   * esattamente lo stesso gesto nello stesso posto. Vince il pannello, perche'
+   * e' quello che l'utente sta guardando quando lo apre — e chiudere il palco
+   * si puo' fare comunque trascinando **fuori** dal riquadro, o con la X.
+   *
+   * «touch-action: pan-y» lo dice al browser prima ancora che il copione se ne
+   * accorga: quel rettangolo si scorre in verticale e il resto non lo riguarda.
+   */
   .palcoLettore .infoPalco {
     position: relative; z-index: 1;
     margin: 0 14px 6px; padding: 12px 14px; max-height: 34vh; overflow-y: auto;
+    touch-action: pan-y; overscroll-behavior: contain;
     background: #0d0f16e6; border: 1px solid var(--line2); border-radius: 14px;
     -webkit-overflow-scrolling: touch;
   }
@@ -943,9 +1139,97 @@ export const STILE = `  :root {
   /* Il tasto acceso dice che il pannello e' aperto: senza, il secondo tocco e'
      un tentativo invece che un gesto. */
   .palcoLettore .tondo.acceso { border-color: var(--accent); color: var(--accent); }
-  .palcoLettore .sotto { display: flex; align-items: center; gap: 10px; padding: 10px 16px 18px; }
-  .palcoLettore .sotto .effetto { color: var(--fioco); font-size: 11.5px; letter-spacing: .4px; }
-  .palcoLettore .tondo.grosso { width: 54px; height: 54px; font-size: 22px; border-color: var(--accent); }
+  .palcoLettore .sotto { display: flex; align-items: center; gap: 10px; padding: 8px 16px 20px; }
+
+  /**
+   * ⚠ **I comandi, ridisegnati.** Chiesto il 6 settembre 2026: «i pulsanti del
+   * play e avanti indietro vanno ridisegnati bene perche' sono bruttissimi».
+   *
+   * Cosa non andava, e vale la pena scriverlo perche' e' l'errore piu' comune
+   * quando si mettono dei tasti sopra a qualcosa che si muove:
+   *
+   * 1. erano **tre cerchi neri uguali**, e il piu' importante dei tre non si
+   *    distingueva dagli altri se non per un colore arancione che in questa
+   *    suite non esiste da nessun'altra parte;
+   * 2. i segni erano **glifi tipografici** (⏮ ⏸ ⏭), che hanno pesi e
+   *    allineamenti decisi da chi ha disegnato il font — su Android uno, su un
+   *    browser un altro — e che a 22px su fondo mosso si leggono male;
+   * 3. **niente li teneva insieme**: tre tondi staccati su un visualizer che
+   *    lampeggia sono tre macchie, non un gruppo.
+   *
+   * Adesso: un **vetro solo** dietro ai tre, segni **disegnati** (stesso peso,
+   * stesso centro), e il play piu' grande degli altri due perche' e' quello che
+   * si preme. Il colore acceso e' quello della suite.
+   */
+  .palcoLettore .comandi {
+    display: flex; align-items: center; gap: 6px;
+    padding: 5px; border-radius: 99px;
+    background: #0c0e15b8; border: 1px solid #ffffff14;
+    backdrop-filter: blur(14px) saturate(130%);
+    box-shadow: 0 10px 34px -14px #000;
+  }
+  .palcoLettore .comandi button {
+    width: 46px; height: 46px; padding: 0; border-radius: 99px;
+    background: none; border: 0; color: var(--txt);
+    display: grid; place-items: center; min-height: 0;
+    transition: background .16s ease, transform .12s ease;
+  }
+  .palcoLettore .comandi button svg { width: 22px; height: 22px; fill: currentColor; display: block; }
+  .palcoLettore .comandi button:hover { background: #ffffff12; }
+  .palcoLettore .comandi button:active { transform: scale(.9); }
+  /* Il play: piu' grande, e pieno del colore della suite. Un tasto che si
+     preme cento volte a sera merita di essere quello che si trova a occhi
+     chiusi. */
+  .palcoLettore .comandi button.grosso {
+    width: 58px; height: 58px;
+    background: linear-gradient(180deg, #9b6cff, #7c3aed);
+    box-shadow: 0 8px 22px -8px #7c3aed;
+  }
+  .palcoLettore .comandi button.grosso svg { width: 26px; height: 26px; }
+  .palcoLettore .comandi button.grosso:hover { background: linear-gradient(180deg, #a87dff, #8b4bf0); }
+
+  /* I due tasti ai lati: stesso mestiere, stessa misura, e stanno lontani dal
+     play perche' non si premono per sbaglio mentre si cerca la pausa. */
+  .palcoLettore .sotto .tondo {
+    width: 44px; height: 44px; min-height: 0;
+    background: #0c0e15b8; border: 1px solid #ffffff14;
+    backdrop-filter: blur(14px);
+  }
+  .palcoLettore .sotto .tondo svg { width: 20px; height: 20px; fill: currentColor; }
+  .palcoLettore .sotto .tondo.acceso { border-color: var(--accent); color: var(--accent); }
+
+  /**
+   * **Il menu degli effetti.** Chiesto il 6 settembre 2026: «si apre un piccolo
+   * menu con tutti gli effetti; se ne clicchiamo uno si fissa su
+   * quell'effetto, se ci riclicco torna deselezionato e torna in cambio
+   * automatico».
+   *
+   * Sta dentro il palco e non in un foglio, per la stessa ragione delle info:
+   * un foglio sopra a un riquadro a schermo intero finisce sotto. Sale da
+   * sinistra, dove sta il suo tasto.
+   */
+  .palcoLettore .effetti {
+    position: absolute; left: 14px; right: 14px; bottom: 86px; z-index: 3;
+    display: flex; flex-wrap: wrap; gap: 7px;
+    padding: 12px; border-radius: 16px;
+    background: #0c0e15f2; border: 1px solid var(--line2);
+    backdrop-filter: blur(16px); box-shadow: 0 18px 50px -20px #000;
+    animation: saleSu .18s ease-out;
+  }
+  @keyframes saleSu { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+  .palcoLettore .effetti button {
+    min-height: 34px; height: 34px; padding: 0 12px; border-radius: 99px;
+    font-size: 12px; font-weight: 500;
+    background: var(--panel2); border: 1px solid var(--line2); color: var(--dim);
+  }
+  /* Quello fissato: acceso. Nessuno acceso vuol dire «cambia da solo», che e'
+     come parte, e la riga in cima al menu lo dice a parole. */
+  .palcoLettore .effetti button.fisso {
+    border-color: var(--accent); color: var(--txt); background: #1b1533;
+  }
+  .palcoLettore .effetti .comeVa {
+    flex: 1 0 100%; font-size: 11px; color: var(--fioco); margin-bottom: 2px;
+  }
 
   /* ------------------------------------------------------------- gli stili */
   /* Una carta per stile: il nome grande, le parole sotto. Si tocca per usarlo,
@@ -958,6 +1242,42 @@ export const STILE = `  :root {
     -webkit-user-select: none; -webkit-touch-callout: none;
   }
   .stile:hover { border-color: var(--accent2); }
+  /**
+   * **Scelto per il mix.** Il bordo acceso e la spunta: due segni per la stessa
+   * cosa, perche' su una griglia di venti carte un bordo solo si perde.
+   */
+  .stile.scelto { border-color: var(--accent); background: #1b1533; }
+  .stile.scelto::after {
+    content: "✓"; position: absolute; top: 10px; right: 12px;
+    color: var(--accent); font-weight: 700; font-size: 14px;
+  }
+  .stile { position: relative; }
+
+  /**
+   * La riga del mix, in fondo allo schermo.
+   *
+   * Sta sopra alla barra delle schede e sopra a quella che suona: e' un
+   * comando che si sta usando adesso, e deve stare piu' in alto di quelli che
+   * stanno li' sempre.
+   */
+  .mixStili {
+    position: fixed; left: 12px; right: 12px; z-index: 40;
+    bottom: calc(var(--fondo-alto) + 12px + env(safe-area-inset-bottom));
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; border-radius: 16px;
+    background: #161922f5; border: 1px solid var(--accent);
+    box-shadow: 0 18px 44px -18px #000; backdrop-filter: blur(14px);
+    animation: avvisoEntra .2s cubic-bezier(.2,1.2,.4,1);
+  }
+  body.consuono .mixStili {
+    bottom: calc(var(--fondo-alto) + var(--lettore-alto) + 12px + env(safe-area-inset-bottom));
+  }
+  .mixStili .quali { flex: 1; min-width: 0; }
+  .mixStili .quali b { display: block; font-size: 13px; }
+  .mixStili .quali small {
+    display: block; color: var(--dim); font-size: 11px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
   .stile.inVetrina { border-color: #f472b655; }
   .nomeStile { font-weight: 650; font-size: 14px; }
   .testoStile { color: var(--dim); font-size: 12px; margin-top: 4px; line-height: 1.45; }
@@ -995,25 +1315,50 @@ export const STILE = `  :root {
        con «content-box» la barra veniva 59 e il fondo della pagina 58, e
        l'ultimo pixel di contenuto finiva sotto. */
     box-sizing: border-box; height: var(--fondo-alto);
-    background: #0a0c11f2; backdrop-filter: blur(10px);
+    background: #0a0c11ee; backdrop-filter: blur(18px) saturate(140%);
     border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom);
   }
   nav.fondo button {
-    background: none; border: 0; border-radius: 0; color: var(--dim);
-    font-size: 9.5px; font-weight: 500; padding: 8px 1px 9px;
-    display: flex; flex-direction: column; align-items: center; gap: 3px;
-    min-width: 0; overflow: hidden; white-space: nowrap;
+    position: relative;
+    background: none; border: 0; border-radius: 0; color: var(--fioco);
+    font-size: 9px; font-weight: 500; padding: 0 1px;
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+    min-width: 0; overflow: hidden; white-space: nowrap; min-height: 0;
+    transition: color .18s ease;
   }
-  nav.fondo button .segno { font-size: 16px; line-height: 1; }
-  /*
-    **Mentre si scrive, la barra si toglie di mezzo.**
-    Su Android la tastiera alza il fondo della pagina e la barra fissa si
-    piazzava sopra alla casella e alle ultime battute: «quando scrivo con il
-    modello la barra sotto nasconde la chat». Chi sta scrivendo non sta
-    cambiando scheda, quindi la barra in quel momento non serve a niente.
-  */
-  body.scrivendo nav.fondo { display: none; }
-  body.scrivendo { padding-bottom: 14px; }
+  nav.fondo button .segno { font-size: 15px; line-height: 1; transition: transform .22s cubic-bezier(.2,1.4,.4,1); }
+
+  /**
+   * **Gli effetti della barra.** Chiesto il 6 settembre 2026: «la navbar falla
+   * piu' sottile, aggiungici degli effetti».
+   *
+   * Due, e nessuno dei due e' una decorazione fine a se' stessa:
+   *
+   * - **la lampada sopra alla scheda accesa.** Dice dove sei prima che tu legga
+   *   la parola, ed e' l'unica cosa che una barra di schede deve fare bene;
+   * - **il segno che si alza** quando la scheda si accende. Un movimento di due
+   *   pixel: serve a far capire che il tocco e' arrivato, che su un telefono
+   *   lento e' l'unica differenza fra «ha risposto» e «ripremo».
+   *
+   * La lampada e' un pseudo-elemento e non un div: non aggiunge nodi, non si
+   * puo' toccare, e sparisce da sola quando la scheda si spegne.
+   */
+  nav.fondo button::before {
+    content: ""; position: absolute; top: 0; left: 50%;
+    width: 26px; height: 2px; border-radius: 0 0 3px 3px;
+    background: var(--accent); transform: translateX(-50%) scaleX(0);
+    transition: transform .24s cubic-bezier(.2,1.4,.4,1);
+  }
+  nav.fondo button::after {
+    content: ""; position: absolute; top: -14px; left: 50%; width: 54px; height: 30px;
+    transform: translateX(-50%); pointer-events: none; opacity: 0;
+    background: radial-gradient(50% 60% at 50% 0%, var(--accent) 0%, transparent 70%);
+    transition: opacity .28s ease;
+  }
+  nav.fondo button.on::before { transform: translateX(-50%) scaleX(1); }
+  nav.fondo button.on::after { opacity: .30; }
+  nav.fondo button.on .segno { transform: translateY(-2px); }
+  nav.fondo button:active .segno { transform: scale(.86); }
   nav.fondo button.on { color: var(--txt); }
   nav.fondo button.on .segno { color: var(--accent); }
   nav.fondo .bollo {
