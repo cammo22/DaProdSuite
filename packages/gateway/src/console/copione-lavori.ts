@@ -8,6 +8,33 @@
  * loro. Chiesto così: «più compatta possibile».
  */
 export const COPIONE_LAVORI = `
+  /**
+   * ⚠ **Se i tuoi lavori aspettano un sì, si dice.** Nuovo nella 0.9.9.
+   *
+   * Chiesto così, il 6 settembre 2026: «non funziona un cazzo, va in coda e non
+   * genera». E stava funzionando: quel telefono era entrato come **utente**, e
+   * le richieste di un utente aspettano che chi sta al computer dica di sì.
+   *
+   * Il difetto non era il permesso — quello è una scelta legittima, ed è il
+   * motivo per cui i ruoli esistono. Il difetto era che **da dentro non si
+   * capiva**: le richieste comparivano in fila con scritto «in attesa», che
+   * sembra «sta per partire» e invece vuol dire «aspetta una persona». Nessuna
+   * riga diceva chi.
+   *
+   * Adesso lo dice, e lo dice **solo a chi non può decidere**: a chi decide
+   * quella riga sarebbe rumore, perché lui il sì può darlo da sé.
+   */
+  function diCosaAspetta(quante) {
+    var dove = $("coda-avviso");
+    if (!dove) return;
+    if (puoiDecidere || !quante) { dove.hidden = true; return; }
+    dove.hidden = false;
+    dove.textContent =
+      quante === 1
+        ? "Il tuo lavoro aspetta un sì da chi sta al computer: parte quando lo dà."
+        : quante + " tuoi lavori aspettano un sì da chi sta al computer.";
+  }
+
   async function leggiCoda() {
     richieste = await chiama("/richieste");
     var elenco = $("coda");
@@ -34,6 +61,7 @@ export const COPIONE_LAVORI = `
       elenco.append(vuoto);
     }
     disegnaFiltriLavori();
+    diCosaAspetta(attesa);
 
     $("bollo").hidden = attesa === 0;
     $("bollo").textContent = attesa;

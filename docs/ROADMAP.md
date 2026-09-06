@@ -26,7 +26,7 @@ file si scrive quale delle due metà manca.
 
 ## A che punto siamo — 6 settembre 2026 (sera)
 
-**Ultima pubblicata: 0.9.8.** Nove schede dentro la suite, un ambiente Python
+**Ultima pubblicata: 0.9.9.** Nove schede dentro la suite, un ambiente Python
 solo, e il giro che conta — chiedo dal telefono, il computer fa, il file torna —
 **provato da chi la usa**, sul suo PC e sul suo telefono.
 
@@ -77,6 +77,8 @@ fanno quello che ti ho chiesto».
 | **L'account che salta (0.9.8)** | ⚠ **quarta correzione**, e la prima **riprodotta**: su Android vero, con le foto, in tutte e due le direzioni. La causa larga: quella schermata compariva per **qualunque** gateway che risponde e non riconosce il token |
 | **«Va in coda e non genera» (0.9.8)** | era il motore spento, e la fila aspettava 45 minuti in silenzio. Adesso lo dice in dieci secondi |
 | **L'archivio che si cancellava da solo (0.9.8)** | un file illeggibile faceva partire la suite con zero dispositivi, e poi ci scriveva sopra |
+| **Il login a prova di aggiornamenti (0.9.9)** | la chiave non sta piu' in un posto solo: copia sul computer **e** sul telefono, con **nove + quattro prove**. Il giro vero, aggiornando davvero, resta da fare |
+| **Il ruolo si sceglie guardando (0.9.9)** | «Fallo entrare» dava **utente**, e l'admin era in un tenere premuto: un gesto che non si vede non e' un gesto |
 | **Le prove del telefono** | `pnpm run prova-telefono`: il primo banco di `apps/mobile`, sulla JVM senza Android |
 | **«Da dove passa» nel menu dell'app** | dice quale indirizzo si sta usando e se scade: e' uno strumento di diagnosi, non una funzione |
 | **Due canzoni chieste insieme** | la fila adesso le aspetta tutte; **mai provato contro il motore acceso** |

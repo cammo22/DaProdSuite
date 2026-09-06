@@ -173,12 +173,30 @@ export const COPIONE_RETE = `
     dove.textContent = b.apparecchio + " \\u00b7 " + b.da;
     dati.append(nome, dove);
 
+    /**
+     * ⚠ **Si sceglie con che permessi, e si sceglie guardando.**
+     *
+     * Qui c'era un tasto solo, «Fallo entrare», che faceva entrare come
+     * **utente**; per farlo entrare come admin bisognava **tenerlo premuto**.
+     * La ragione scritta allora era buona — «un gesto grosso non pu\\u00f2 stare
+     * accanto a uno piccolo con la stessa forma» — e la soluzione era
+     * sbagliata: un gesto che non si vede non e'' un gesto, e'' una funzione che
+     * non esiste per chi non l\\u2019ha letta nel codice.
+     *
+     * Cosa e'' costato, il 6 settembre 2026: ri-accoppiando il proprio telefono
+     * si toccava «Fallo entrare» e si diventava **utente**. Le richieste di un
+     * utente **aspettano un s\\u00ec**: vanno in fila e restano l\\u00ec. Da fuori,
+     * «non funziona un cazzo, va in coda e non genera» — e la causa era un
+     * permesso, scelto senza saperlo, con un tocco.
+     *
+     * Adesso il tasto apre due righe che dicono **cosa cambia**, non come si
+     * chiamano. Resta un tocco in pi\\u00f9, e quel tocco e'' il punto: e'' il
+     * momento in cui la decisione si vede.
+     */
     var si = document.createElement("button");
     si.className = "mini";
     si.textContent = "Fallo entrare";
-    si.addEventListener("click", function () {
-      void rispondiBussata(b.id, true, false, riga);
-    });
+    si.addEventListener("click", function () { chiediConCheRuolo(b, riga); });
 
     var no = document.createElement("button");
     no.className = "mini male";
@@ -187,21 +205,47 @@ export const COPIONE_RETE = `
       void rispondiBussata(b.id, false, false, riga);
     });
 
-    /**
-     * Far entrare **come chi decide**: tenuto premuto, non a portata di dito.
-     *
-     * Dare i permessi di admin \\u00e8 il gesto pi\\u00f9 grosso di questo pannello — da
-     * quel momento quella persona pu\\u00f2 far entrare altri — e un gesto grosso non
-     * pu\\u00f2 stare accanto a uno piccolo con la stessa forma.
-     */
-    si.addEventListener("contextmenu", function (ev) {
-      ev.preventDefault();
-      if (!confirm("Far entrare " + b.nome + " con i permessi di chi decide? Potr\\u00e0 far entrare altri e vedere le generazioni di tutti.")) return;
-      void rispondiBussata(b.id, true, true, riga);
-    });
-
     riga.append(faccia, dati, si, no);
     return riga;
+  }
+
+  /**
+   * Con che permessi lo faccio entrare?
+   *
+   * Le due righe dicono **cosa succede**, non come si chiama il ruolo: chi sta
+   * scegliendo non deve sapere cosa vuol dire «admin», deve sapere che uno fa
+   * partire i lavori e l\\u2019altro li mette in fila ad aspettare.
+   *
+   * «Chi decide» sta sotto e ha il colore dell\\u2019avviso, perch\\u00e9 e'' il gesto
+   * grosso: da quel momento quella persona pu\\u00f2 far entrare altri.
+   */
+  function chiediConCheRuolo(b, riga) {
+    var carta = apriFoglio("Far entrare " + b.nome);
+
+    var dice = document.createElement("p");
+    dice.className = "nota";
+    dice.textContent = b.apparecchio + " \u00b7 " + b.da;
+    carta.append(dice);
+
+    voceFoglio(
+      carta,
+      "\u263C",
+      "Come utente",
+      "manda richieste, e tu decidi quali far partire",
+      function () { chiudiFoglio(); void rispondiBussata(b.id, true, false, riga); },
+    );
+
+    voceFoglio(
+      carta,
+      "\u2605",
+      "Come chi decide",
+      "fa partire quello che chiede, vede tutto, e pu\u00f2 far entrare altri",
+      function () {
+        chiudiFoglio();
+        void rispondiBussata(b.id, true, true, riga);
+      },
+      true,
+    );
   }
 
   async function rispondiBussata(id, accetta, comeAdmin, riga) {

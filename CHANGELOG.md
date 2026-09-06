@@ -12,7 +12,93 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ## Non ancora pubblicato
 
-Niente: la 0.9.8 è appena uscita.
+Niente: la 0.9.9 è appena uscita.
+
+---
+
+## 0.9.9 — Il login a prova di aggiornamenti
+
+> «voglio essere sicuro per il login, a prova di aggiornamenti.»
+
+E prima di tutto: **la generazione non era rotta**. La scheda video era piena —
+un `llama-server` di LM Studio teneva 6,5 GB degli 8 — e ComfyUI non aveva più
+spazio per caricare niente. Verificato generando un'immagine vera appena la
+memoria si è liberata: `pronta … un cerchio blu su fondo bianco.png`.
+
+### La trappola che ha fatto tutto il resto
+
+Ri-accoppiando il telefono si toccava **«Fallo entrare»** e si entrava come
+**utente**. Per entrare come chi decide bisognava **tenere premuto** lo stesso
+tasto.
+
+La ragione scritta allora era buona — «un gesto grosso non può stare accanto a
+uno piccolo con la stessa forma» — e la soluzione era sbagliata: **un gesto che
+non si vede non è un gesto**, è una funzione che esiste solo per chi l'ha letta
+nel codice.
+
+Cosa è costato: le richieste di un utente **aspettano un sì**. Vanno in fila e
+restano lì. Da fuori — «non funziona un cazzo, va in coda e non genera» — e la
+causa era un permesso, scelto senza saperlo, con un tocco.
+
+Adesso «Fallo entrare» apre due righe che dicono **cosa cambia**, non come si
+chiamano: *«manda richieste, e tu decidi quali far partire»* oppure *«fa partire
+quello che chiede, vede tutto, e può far entrare altri»*. Un tocco in più, e
+quel tocco è il punto: è il momento in cui la decisione si vede.
+
+E dall'altra parte: **se i tuoi lavori aspettano un sì, l'app te lo dice.**
+Prima comparivano in fila con scritto «in attesa», che sembra «sta per partire»
+e invece vuol dire «aspetta una persona». La riga compare solo a chi non può
+decidere — a chi decide sarebbe rumore.
+
+### La chiave di casa non sta più in un posto solo
+
+Questo è il pezzo che risponde alla domanda vera. Il token che ti fa entrare
+viveva in **un file sul computer** e in **un file sul telefono**: due punti
+soli, e ognuno dei due, rompendosi, portava via tutto.
+
+**Sul computer.** `remoto.json` adesso ha una copia, scritta **prima** della
+scrittura vera — così contiene sempre l'ultimo stato *completo*, mai uno a metà.
+Se il file principale non si legge, si riparte dalla copia e si continua a
+lavorare: quello che si perde è al massimo l'ultimo mezzo minuto. Se non si
+legge **nemmeno la copia**, si parte vuoti ma **non si scrive più niente** su
+quel file — una lista vuota scritta sopra a un file che forse si sarebbe
+recuperato è un danno definitivo fatto per comodità.
+
+**Sul telefono.** L'elenco delle persone si scrive in **due** file di
+preferenze separati, e con `commit` invece di `apply`: `apply` scrive su disco
+«quando gli pare», e il caso che resta scoperto è proprio il nostro — un
+aggiornamento dell'app, cioè il momento in cui Android **ammazza il processo**
+per sostituirlo. Se l'elenco buono sparisce, si riparte dalla copia e lo si
+riscrive subito.
+
+### Venti prove, e girano a ogni giro
+
+Nove sull'archivio del computer: che la copia si scriva, che con il file rotto
+si riparta dalla copia con il token giusto, e — la più importante — che con
+tutti e due rotti **non si tocchi più quel file**. È la riga più facile da
+disfare senza accorgersene: basta togliere un `if` e tutto continua a
+funzionare, tranne il giorno del guasto.
+
+Quattro sul telefono, e una dipendenza che serviva: dentro Android `org.json`
+funziona, nelle prove sulla JVM Android ci mette un **guscio vuoto** e ogni
+metodo solleva. Senza `org.json` vero sul banco, quelle prove sarebbero passate
+**per il motivo sbagliato** — il parser solleva, il codice cattura, e la lista
+vuota che ne esce sembra la risposta giusta.
+
+Più le sette che c'erano già sulla scelta dell'indirizzo.
+
+### ⚠ Cosa resta da fare
+
+- **Il giro vero**: aggiornare e vedere se l'account resta. Adesso ci sono
+  quattro reti sotto — l'indirizzo più vicino, la verifica di chi ha detto di
+  no, la copia sul computer, la copia sul telefono — e venti prove che le
+  tengono ferme. Ma la prova che conta la fa un aggiornamento vero.
+- **Perché ComfyUI si era chiuso**, e perché LM Studio teneva la scheda: la
+  suite libera il modello prima di generare, ma quel `llama-server` era
+  orfano — `lms ps` diceva «nessun modello caricato» mentre teneva 6,5 GB.
+  Da guardare quando ricapita.
+- I video da 30/60/120 secondi · le copertine col titolo contro FLUX vero ·
+  AudioBloom e CosmicDust · i cinque fogli di stile copiati.
 
 ---
 
