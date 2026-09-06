@@ -357,6 +357,20 @@ async function esegui(richiesta: DaEseguire): Promise<void> {
   // Da qui in poi conta il tempo: il file buono è quello che compare **dopo**.
   const da = Date.now();
 
+  /**
+   * ⚠ **Prima di aprire la scheda, si guarda se il motore c'e'.**
+   *
+   * Se non c'e', fallire adesso con una frase e' molto meglio che aprire una
+   * scheda che non potra' mandare niente e restare ad aspettare un file per
+   * tre quarti d'ora. Vedi `ilMotoreRisponde`.
+   */
+  if (VOGLIONO_IL_MOTORE.has(app) && !(await ilMotoreRisponde())) {
+    throw new Error(
+      "Il motore delle immagini non risponde. Apri la suite sul computer e " +
+        "guarda la scheda: se dice che manca qualcosa, c'e' il tasto per rimetterlo a posto.",
+    );
+  }
+
   const finestra = await apriEAspetta(app);
   if (!finestra) throw new Error(`Non riesco ad aprire DaProd${maiuscola(app)}.`);
 
@@ -666,6 +680,44 @@ function attendiRisposta(id: string): Promise<string> {
  * stessa dimensione, e non zero. Costa qualche secondo in più e toglie di mezzo
  * una consegna sbagliata su tre.
  */
+/**
+ * ⚠ **Il motore c'e'?** Nuovo nella 0.9.8.
+ *
+ * Chiesto il 6 settembre 2026: «fai attenzione che non mi genera piu', le cose
+ * vanno in coda ma non genera».
+ *
+ * Non era la fila. Guardando i registri: il lavoro **partiva**, la scheda si
+ * apriva, e poi non usciva niente — e nel registro del motore non c'era
+ * nessuna richiesta arrivata. ComfyUI non era acceso: si era chiuso con un
+ * `ConnectionResetError` e non era piu' tornato su.
+ *
+ * Quello che rendeva la cosa incomprensibile non era il motore spento — quello
+ * capita — era il **silenzio**. La scheda, non riuscendo a mandare il grafo,
+ * scriveva l'errore **sulla propria pagina**, che nessuno stava guardando; e la
+ * fila restava li' ad aspettare un file per **quarantacinque minuti**. Da
+ * fuori: «va in coda e non genera», senza una riga da nessuna parte.
+ *
+ * Adesso, prima di dare un lavoro a una scheda, si bussa al motore. Se non
+ * risponde il lavoro fallisce **subito**, con scritto perche' — e chi ha
+ * chiesto lo legge sul telefono invece di aspettare tre quarti d'ora.
+ *
+ * Le schede che il motore non lo usano (il modello che scrive) non passano di
+ * qui: si guarda solo per quelle che generano.
+ */
+async function ilMotoreRisponde(): Promise<boolean> {
+  try {
+    const risposta = await fetch("http://127.0.0.1:8188/system_stats", {
+      signal: AbortSignal.timeout(4000),
+    });
+    return risposta.ok;
+  } catch {
+    return false;
+  }
+}
+
+/** Le schede che per lavorare hanno bisogno del motore acceso. */
+const VOGLIONO_IL_MOTORE = new Set<string>(["foto", "musica", "cinema", "voce", "dream"]);
+
 async function aspettaIFile(
   app: AppId,
   da: number,
@@ -686,6 +738,8 @@ async function aspettaIFile(
    */
   const ATTESA_COMPAGNO_MS = 10 * 60_000;
   let ultimoArrivo = Date.now();
+  /** Quando si e' guardato l'ultima volta se il motore c'e' ancora. */
+  let ultimoControllo = Date.now();
 
   while (Date.now() < scaduta) {
     await pausa(3000);
@@ -707,6 +761,23 @@ async function aspettaIFile(
       presi.push(libreria.trova(candidato.id) ?? candidato);
       ultimoArrivo = Date.now();
       if (presi.length >= quanti) return presi;
+    }
+
+    /**
+     * ⚠ **Se il motore se ne va mentre aspettiamo, si smette di aspettare.**
+     *
+     * Un motore che muore a meta' generazione non produce piu' niente, e
+     * restare li' fino allo scadere dei quarantacinque minuti vuol dire una
+     * fila ferma per tre quarti d'ora senza una parola. Si guarda ogni mezzo
+     * minuto — non a ogni giro, che sarebbe una chiamata ogni tre secondi per
+     * niente.
+     */
+    if (!presi.length && Date.now() - da > 45_000 && Date.now() - ultimoControllo > 30_000) {
+      ultimoControllo = Date.now();
+      if (!(await ilMotoreRisponde())) {
+        annota(`${id}: il motore non risponde piu', smetto di aspettare`);
+        throw new Error("Il motore si e' fermato mentre generava. Riprova, e se ricapita riavvia la suite.");
+      }
     }
 
     if (presi.length && Date.now() - ultimoArrivo > ATTESA_COMPAGNO_MS) {

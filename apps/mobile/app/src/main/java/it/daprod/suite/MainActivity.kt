@@ -423,6 +423,32 @@ class MainActivity : AppCompatActivity() {
      * il tasto indietro faceva prima. Una pagina vecchia, che questa funzione
      * non ce l'ha, risponde `null`: vale come «non ho chiuso niente».
      */
+    /**
+     * Ci hanno tolti davvero, o abbiamo bussato alla porta sbagliata?
+     *
+     * Si chiede a ogni indirizzo che conosciamo **chi e'**, con `/chi-sei` —
+     * che risponde senza token. Basta che **uno** dica di essere il nostro
+     * computer perche' la revoca sia vera: quello e' lui, ci ha risposto, e non
+     * ci riconosce.
+     *
+     * Se nessuno si dichiara nostro — o se nessuno risponde a quella rotta —
+     * torna false: **nel dubbio non si dichiara niente**. Un accoppiamento
+     * buttato non si riprende, e una schermata che dice «ti hanno tolto»
+     * quando non e' vero e' peggio di una che dice «non risponde».
+     *
+     * ⚠ Con un profilo senza `pcId` (accoppiato col codice prima della 0.9.3)
+     * non si puo' confrontare niente, e allora vale la regola prudente: false.
+     */
+    private suspend fun veraRevoca(persona: Profilo): Boolean {
+        if (persona.pcId.isBlank()) return false
+        val quali = (listOf(persona.base) + persona.basi).distinct().filter { it.isNotBlank() }
+        for (base in quali) {
+            val chi = GatewayClient(base, persona.token).chiRisponde()
+            if (chi != null && chi.pcId.isNotBlank() && chi.pcId == persona.pcId) return true
+        }
+        return false
+    }
+
     private fun chiediAllaPaginaDiChiudere() {
         binding.web.evaluateJavascript(
             "(window.DaProdPagina && window.DaProdPagina.chiudiQualcosa()) === true",
@@ -1095,14 +1121,36 @@ class MainActivity : AppCompatActivity() {
 
         if (vivo == null) {
             /**
-             * Nessuno ci ha aperto. Se qualcuno ci aveva detto di no **ed era
-             * l'unico che ha risposto**, allora la revoca e' vera: si dice cosa
-             * e' successo invece di mostrare una copia che sembra funzionare.
-             * Se invece era silenzio, si apre lo specchio: il computer e'
-             * spento, e domani sara' li'.
+             * ⚠ **Prima di dire «ti hanno tolto», si chiede a chi ha detto di
+             * no chi e'.** Nuovo nella 0.9.8.
+             *
+             * Un `401` non basta, e la ragione l'ho vista riprodotta: la
+             * schermata «non sei piu' collegato» compare **ogni volta che un
+             * gateway qualunque risponde e non riconosce il token**. Non solo
+             * il nostro computer: anche
+             *
+             * - un nome di tunnel riciclato da Cloudflare, che adesso porta al
+             *   servizio di qualcun altro;
+             * - **una copia vecchia della suite rimasta attaccata alla porta**
+             *   del computer giusto. Quella ha in memoria i dispositivi di
+             *   quando si e' accesa lei: un telefono accoppiato dopo, per lei,
+             *   non esiste. Ed e' il caso che capita a ogni aggiornamento —
+             *   che e' la frase che ho sentito tre volte.
+             *
+             * Adesso si chiede a `/chi-sei`, che risponde senza token. Se
+             * quello che ha detto di no **non e' il nostro computer**, non e'
+             * una revoca: e' un indirizzo sbagliato, e si apre lo specchio come
+             * quando nessuno risponde.
+             *
+             * Se non si sa — versione vecchia, o non risponde nemmeno a quella
+             * — si resta prudenti: **non si dichiara niente**. Buttare un
+             * accoppiamento e' irreversibile, e non lo si fa su un forse.
              */
-            if (esito is Indirizzi.Esito.Revocato) diCheEStatoTolto(persona)
-            else apriDallaCopia(persona)
+            if (esito is Indirizzi.Esito.Revocato && veraRevoca(persona)) {
+                diCheEStatoTolto(persona)
+            } else {
+                apriDallaCopia(persona)
+            }
             return@launch
         }
 
@@ -1924,92 +1972,87 @@ class MainActivity : AppCompatActivity() {
      * dicono **cosa succede senza** — che è l'unica cosa che convince a dare un
      * permesso.
      */
+    /**
+     * ⚠ **Tutti i permessi, non solo quelli che mancano.** Rifatto nella 0.9.8.
+     *
+     * Chiesto il 6 settembre 2026: «i permessi sono solo per il background,
+     * manca la memoria e le notifiche».
+     *
+     * Aveva ragione, e la causa era una riga di troppo: questa schermata
+     * **elencava solo quello che mancava**. Sul suo telefono le notifiche erano
+     * gia' date, quindi non comparivano — e una cosa che non compare, per chi
+     * guarda, non esiste. Era nata cosi' perche' all'avvio ha senso chiedere
+     * solo quello che serve; ma da quando si apre dalle impostazioni (0.9.6) e'
+     * diventata la pagina dove uno **va a controllare**, e li' serve l'elenco
+     * intero, con accanto come sta.
+     *
+     * Adesso ci sono tutte e quattro, ognuna con il suo segno: ✓ se e' a posto,
+     * ✗ se manca. Si tocca una riga e si va dove si sistema.
+     */
     private fun mostraIPermessi(allAvvio: Boolean) {
         val stato = Permessi.stato(this)
-        val righe = buildList {
-            if (!stato.notifiche) {
-                add(
-                    Triple(
-                        getString(R.string.perm_notifiche),
-                        getString(R.string.perm_notifiche_perche),
-                        { chiediNotifiche.launch(Manifest.permission.POST_NOTIFICATIONS) },
-                    ),
-                )
-            }
-            if (!stato.batteria) {
-                add(
-                    Triple(
-                        getString(R.string.perm_batteria),
-                        getString(R.string.perm_batteria_perche),
-                        { Permessi.apriBatteria(this@MainActivity) },
-                    ),
-                )
-            }
-            if (!stato.installare) {
-                add(
-                    Triple(
-                        getString(R.string.perm_installare),
-                        getString(R.string.perm_installare_perche),
-                        { Permessi.apriInstallazione(this@MainActivity) },
-                    ),
-                )
-            }
-        }
 
-        if (righe.isEmpty()) {
-            AlertDialog.Builder(this)
-                .setTitle(R.string.perm_titolo)
-                .setMessage(R.string.perm_tutto_ok)
-                .setPositiveButton(android.R.string.ok, null)
-                .show()
-            Permessi.segnaChiesti(this)
-            return
-        }
+        /** Nome, com'e' messo, perche' serve, e cosa fare toccandolo. */
+        data class Voce(
+            val nome: String,
+            val aPosto: Boolean,
+            val perche: String,
+            val fai: () -> Unit,
+        )
 
-        val corpo = buildString {
-            append(getString(R.string.perm_intro))
-            append("\n")
-            for ((nome, perche, _) in righe) {
-                append("\n\u2022 ")
-                append(nome)
-                append("\n   ")
-                append(perche)
-                append("\n")
-            }
-        }
+        val voci = listOf(
+            Voce(
+                getString(R.string.perm_notifiche),
+                stato.notifiche,
+                getString(R.string.perm_notifiche_perche),
+            ) { chiediNotifiche.launch(Manifest.permission.POST_NOTIFICATIONS) },
+            Voce(
+                getString(R.string.perm_batteria),
+                stato.batteria,
+                getString(R.string.perm_batteria_perche),
+            ) { Permessi.apriBatteria(this@MainActivity) },
+            Voce(
+                getString(R.string.perm_installare),
+                stato.installare,
+                getString(R.string.perm_installare_perche),
+            ) { Permessi.apriInstallazione(this@MainActivity) },
+            /**
+             * **La memoria, e perche' non c'e' un interruttore.**
+             *
+             * Chiesto insieme agli altri, e la risposta onesta e' che su
+             * Android moderno **un permesso per i file non esiste piu'**: la
+             * suite salva nella galleria passando dal sistema, e legge solo i
+             * file che scegli tu nel selettore. Nessuna delle due cose vuole
+             * un permesso, ed e' il motivo per cui non compariva.
+             *
+             * Ma «non compare» e «non c'e'» si assomigliano troppo: la riga sta
+             * qui, dice com'e' fatta, e toccandola porta alla pagina di Android
+             * dove si vede tutto quello che questa app puo' e non puo' fare.
+             */
+            Voce(
+                getString(R.string.perm_file),
+                true,
+                getString(R.string.perm_file_perche),
+            ) { Permessi.apriImpostazioniApp(this@MainActivity) },
+        )
 
-        /**
-         * Un tasto per volta, e non tre.
-         *
-         * Android non lascia chiedere tre permessi in una finestra sola — due
-         * dei tre aprono una schermata di sistema — quindi si offre il primo
-         * che manca e si riapre questa dopo. Chi ne dà uno e chiude, la
-         * prossima volta si vede solo quello che resta.
-         */
-        val (nome, _, fai) = righe.first()
+        val etichette = voci
+            .map { "${if (it.aPosto) "\u2713" else "\u2717"}  ${it.nome}\n     ${it.perche}" }
+            .toTypedArray()
+
+        val mancano = voci.count { !it.aPosto }
         AlertDialog.Builder(this)
             .setTitle(R.string.perm_titolo)
-            .setMessage(corpo)
-            .setPositiveButton(getString(R.string.perm_dai, nome.lowercase())) { _, _ ->
-                Permessi.segnaChiesti(this)
-                fai()
-            }
-            .setNegativeButton(if (allAvvio) R.string.perm_dopo else android.R.string.cancel) { _, _ ->
-                Permessi.segnaChiesti(this)
-            }
+            .setItems(etichette) { _, quale -> voci[quale].fai() }
+            .setPositiveButton(
+                if (mancano == 0) android.R.string.ok else R.string.perm_dopo,
+                null,
+            )
+            .setOnDismissListener { if (allAvvio) Permessi.segnaChiesti(this) }
             .show()
+        if (!allAvvio) Permessi.segnaChiesti(this)
     }
 
-
-    /* ------------------------------------------------------------- la fila */
-
-    /**
-     * La coda offline parte, una voce per volta.
-     *
-     * Al primo errore ci si ferma: se il PC se n'è andato di nuovo, insistere
-     * sulle altre vorrebbe dire una decina di timeout in fila e un'app che
-     * sembra piantata.
-     */
     private fun mandaLaCoda(cl: GatewayClient): Job = lifecycleScope.launch {
         var partitaQualcuna = false
         // Solo le proprie: sullo stesso telefono ci possono essere le richieste

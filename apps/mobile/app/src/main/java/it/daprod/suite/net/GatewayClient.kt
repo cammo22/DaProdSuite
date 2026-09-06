@@ -210,6 +210,34 @@ class GatewayClient(
      */
     data class Chi(val basi: List<String>, val pcId: String)
 
+    /**
+     * Chi risponde a questo indirizzo, **senza bisogno di essere riconosciuti**.
+     *
+     * ⚠ Serve quando un indirizzo ci ha appena detto di no. Un `401` da solo
+     * non dice se ci hanno tolto o se abbiamo bussato alla porta sbagliata — e
+     * la porta sbagliata capita piu' spesso di quanto sembri: un nome di tunnel
+     * riciclato, o una copia vecchia della suite rimasta attaccata alla porta
+     * del computer giusto.
+     *
+     * Torna null se la' non c'e' una suite, o se e' una versione che questa
+     * rotta non ce l'ha (prima della 0.9.8): in quel caso non si sa, e non
+     * sapere e' meglio che indovinare.
+     */
+    suspend fun chiRisponde(attesa: Long = 4_000): Chi? = withContext(Dispatchers.IO) {
+        try {
+            val cliente = condiviso.newBuilder()
+                .callTimeout(attesa, java.util.concurrent.TimeUnit.MILLISECONDS)
+                .build()
+            cliente.newCall(Request.Builder().url(a("/chi-sei")).get().build()).execute().use { res ->
+                if (!res.isSuccessful) return@withContext null
+                val corpo = JSONObject(res.body?.string().orEmpty())
+                Chi(emptyList(), corpo.optString("pcId"))
+            }
+        } catch (_: Exception) {
+            null
+        }
+    }
+
     suspend fun chiSei(): Chi? = withContext(Dispatchers.IO) {
         try {
             val req = conToken().url(a("/io")).build()

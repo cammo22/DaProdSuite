@@ -1288,9 +1288,44 @@ export function riprendiAccessoRemoto(): void {
       // 127.0.0.1, e serve comunque la pagina di DaProdConnessione.
       await accendi();
       if (scelte.connessione && scelte.internet) await accendiInternet();
-    } catch {
-      // Porta occupata, rete assente: il pannello lo dirà. Non è un motivo per
-      // non far partire la suite.
+    } catch (male) {
+      /**
+       * ⚠ **La porta occupata non si ingoia più.**
+       *
+       * Qui c'era un `catch` vuoto con scritto «porta occupata, rete assente:
+       * il pannello lo dirà». Il pannello **non lo diceva**, e quel caso è il
+       * più pericoloso che ci sia.
+       *
+       * Cosa vuol dire «porta occupata»: che su 8790 risponde **qualcun
+       * altro** — quasi sempre una suite di prima rimasta viva. E quella suite
+       * ha in memoria l'elenco dei dispositivi di quando *lei* si è accesa. Un
+       * telefono accoppiato dopo, per lei, non esiste: gli risponde **401**, e
+       * l'app fa l'unica cosa che sa fare con un 401 — «sei stato tolto dal
+       * computer, per rientrare serve un codice nuovo».
+       *
+       * Cioè: un processo vecchio rimasto attaccato alla porta si presenta come
+       * una revoca. E siccome un aggiornamento è esattamente il momento in cui
+       * un processo vecchio può restare attaccato, si presenta **a ogni
+       * aggiornamento**. Che è la frase che ho sentito tre volte.
+       *
+       * Su questa macchina i processi zombie esistono: cercandone uno il 6
+       * settembre 2026 ne è saltato fuori uno di tredici ore prima, ancora
+       * attaccato alla sua porta.
+       *
+       * Adesso si scrive nel registro, e la suite lo mette in faccia a chi sta
+       * al computer: e' l'unico che puo' chiudere quell'altro processo.
+       */
+      const perche = male instanceof Error ? male.message : String(male);
+      const occupata = perche.includes("EADDRINUSE");
+      console.error(`[remoto] l'accesso remoto non si e' acceso: ${perche}`);
+      if (occupata) {
+        avvisaSulComputer(
+          "Un'altra copia della suite ha la porta",
+          "Il telefono parlerà con quella, e non riconoscerà i collegamenti nuovi. " +
+            "Chiudi tutte le finestre di DaProd Suite e riaprila.",
+          "porta-occupata",
+        );
+      }
     }
   })();
 }
