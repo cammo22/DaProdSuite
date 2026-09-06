@@ -26,7 +26,7 @@ file si scrive quale delle due metà manca.
 
 ## A che punto siamo — 6 settembre 2026 (sera)
 
-**Ultima pubblicata: 0.9.6.** Nove schede dentro la suite, un ambiente Python
+**Ultima pubblicata: 0.9.7.** Nove schede dentro la suite, un ambiente Python
 solo, e il giro che conta — chiedo dal telefono, il computer fa, il file torna —
 **provato da chi la usa**, sul suo PC e sul suo telefono.
 
@@ -73,6 +73,7 @@ fanno quello che ti ho chiesto».
 | **Gli utenti che restano dopo un aggiornamento** | ⚠ **corretto tre volte.** La causa vera (0.9.5): il telefono si salvava l'indirizzo del tunnel, che scade a ogni accensione della suite. Adesso fra quelli che rispondono vince il piu' vicino, con **sette prove automatiche** sotto; **il giro vero, aggiornando davvero, resta da fare** |
 | **Il secondo giro sul disegno (0.9.6)** | player minimizzato disegnato, effetti a piu' d'uno, stili tre per riga, sfumature nel palco, permessi nelle impostazioni: **misurato nella pagina vera** |
 | **`niente-backtick.mjs`** | la guardia contro l'errore rifatto sette volte in due giorni. Gira per prima dentro `pnpm run prova` |
+| **«Com'e' stata fatta» legge i campi giusti (0.9.7)** | sbagliato per sei versioni; **dieci prove automatiche** su dati presi da un file vero, e verificate al contrario |
 | **Le prove del telefono** | `pnpm run prova-telefono`: il primo banco di `apps/mobile`, sulla JVM senza Android |
 | **«Da dove passa» nel menu dell'app** | dice quale indirizzo si sta usando e se scade: e' uno strumento di diagnosi, non una funzione |
 | **Due canzoni chieste insieme** | la fila adesso le aspetta tutte; **mai provato contro il motore acceso** |

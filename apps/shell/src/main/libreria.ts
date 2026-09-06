@@ -657,23 +657,82 @@ class Libreria extends EventEmitter {
   comeEStataFatta(elemento: ElementoLibreria): Record<string, string> | undefined {
     const meta = elemento.meta ?? {};
     const fuori: Record<string, string> = {};
-    for (const [chiave, come] of [
-      ["prompt", "Il prompt"],
-      ["descrizione", "Che genere"],
-      ["testo", "Il testo"],
-      ["stile", "Lo stile"],
-      ["titolo", "Il titolo"],
-      ["lingua", "La lingua"],
-      ["secondi", "Quanto dura"],
-      ["bpm", "I battiti"],
-      ["tonalita", "La tonalità"],
-      ["copertina", "La copertina"],
-      ["modello", "Con che modello"],
+
+    /**
+     * ⚠ **I nomi veri dei campi, non quelli che sembravano.**
+     *
+     * Chiesto il 6 settembre 2026: «vedi bene perché qui non si vede il testo
+     * della canzone, ma magari è vecchia per questo». Non era vecchia: era un
+     * difetto, e di quelli che si vedono solo aprendo un file.
+     *
+     * Il `.json` accanto a un brano tiene **due** dizionari mescolati insieme:
+     * i campi con cui la scheda ha generato (`lyrics`, `caption`, `duration`) e
+     * quelli con cui la richiesta era arrivata da fuori (`testo`, `secondi`,
+     * `prompt`). Hanno nomi diversi per la stessa cosa, e questa tabella
+     * leggeva i secondi.
+     *
+     * Il risultato, nella sua foto: «IL TESTO → Che sbandata», che è **il
+     * titolo**. Il testo cantato — trenta righe con `[Intro]` e `[verse]` —
+     * stava in `lyrics` e non lo guardava nessuno. E «Lo stile» non compariva
+     * mai per un brano, perché lo stile di un brano si chiama `caption`.
+     *
+     * Perché `testo` diceva il titolo: per `genera.brano` il campo principale
+     * della richiesta è **il titolo**, quindi `testo` è il titolo. Per
+     * un'immagine invece `testo` è il prompt. Un campo che vuol dire due cose a
+     * seconda dell'azione non si può mettere in una tabella fissa: è sparito da
+     * qui, e quello che dice lo dicono già «Il titolo» e «Il prompt».
+     */
+    const prendi = (chiavi: readonly string[]): string => {
+      for (const chiave of chiavi) {
+        const valore = meta[chiave];
+        if (typeof valore === "string" && valore.trim()) return valore.trim();
+        if (typeof valore === "number") return String(valore);
+      }
+      return "";
+    };
+
+    for (const [chiavi, come] of [
+      [["prompt", "caption", "descrizione"], "Il prompt"],
+      // Il testo cantato: `lyrics` è come lo chiama DaProdMusica.
+      [["lyrics", "testoCantato"], "Il testo"],
+      // Lo stile di un brano è la `caption`; quello di un'immagine è `stile`.
+      [["stile", "estetica"], "Lo stile"],
+      [["titolo"], "Il titolo"],
+      [["lingua"], "La lingua"],
+      // `secondi` è quello che è stato chiesto, `duration` quello che la scheda
+      // ha usato: sono lo stesso numero, e il primo che c'è va bene.
+      [["secondi", "duration"], "Quanto dura"],
+      // La misura di un'immagine: c'e' sempre nei suoi metadati e non compariva.
+      [["formato", "misura"], "Che misura"],
+      [["bpm"], "I battiti"],
+      [["tonalita"], "La tonalità"],
+      [["copertina"], "La copertina"],
+      [["modello", "qualita"], "Con che modello"],
     ] as const) {
-      const valore = meta[chiave];
-      if (typeof valore === "string" && valore.trim()) fuori[come] = valore.trim();
-      else if (typeof valore === "number") fuori[come] = String(valore);
+      const valore = prendi(chiavi);
+      if (valore) fuori[come] = valore;
     }
+
+    /**
+     * «caso» è un id, non una parola.
+     *
+     * Dalla 0.9.3 la tonalità di serie è «a caso» e il ritmo pure, e quell'id
+     * finiva così com'era sotto a «LA TONALITÀ». Chi legge merita una frase.
+     */
+    if (fuori["La tonalità"] === "caso") fuori["La tonalità"] = "scelta dal modello";
+
+    /**
+     * ⚠ **Un testo cantato non è una riga.**
+     *
+     * Sono trenta righe con le indicazioni fra parentesi quadre, ed è giusto
+     * che si leggano tutte — ma dentro l'elenco della galleria viaggiano per
+     * **ogni** brano, e trenta canzoni fanno un elenco da mezzo mega su una
+     * connessione di casa. Qui si taglia a milleduecento caratteri, che è una
+     * canzone intera con margine; oltre, c'è il file.
+     */
+    const testo = fuori["Il testo"];
+    if (testo && testo.length > 1200) fuori["Il testo"] = `${testo.slice(0, 1200)}…`;
+
     return Object.keys(fuori).length ? fuori : undefined;
   }
 
