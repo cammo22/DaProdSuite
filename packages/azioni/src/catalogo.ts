@@ -100,6 +100,12 @@ const MODELLI_MODIFICA = {
     "flux2-9b": "FLUX.2 Klein 9B — col pennello, il più bravo",
     llada: "LLaDA-Image — a parole, guarda tutta la foto. È lento",
   },
+  /**
+   * LLaDA e la zona dipinta non c'entrano niente l'uno con l'altra: il suo
+   * nodo non ha un ingresso per la maschera. Sceglierlo spegne la domanda
+   * sulla zona, invece di farla e poi buttare la risposta.
+   */
+  senzaZona: ["llada"],
 } as const;
 
 const MODELLI_CINEMA = {
@@ -146,6 +152,8 @@ function campoModello(quali: {
   readonly scelte: readonly string[];
   readonly etichette: Readonly<Record<string, string>>;
   readonly predefinito: string;
+  /** Chi, fra questi, non sa usare una zona dipinta. Vedi `senzaZona` in tipi.ts. */
+  readonly senzaZona?: readonly string[];
 }) {
   return {
     nome: "modello",
@@ -156,6 +164,7 @@ function campoModello(quali: {
     scelte: quali.scelte,
     etichette: quali.etichette,
     predefinito: quali.predefinito,
+    ...(quali.senzaZona ? { senzaZona: quali.senzaZona } : {}),
   } as const;
 }
 

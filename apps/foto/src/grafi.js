@@ -203,20 +203,44 @@ function caricaLlada(m) {
         vae: m.vae,
         dtype: "bfloat16",
         /**
-         * ⚠ **`cpu`, non `cuda`**, ed e' l'unica ragione per cui questo
+         * ⚠ **`sequential_cpu_offload`**, ed e' l'unica ragione per cui questo
          * modello gira su questa macchina.
          *
          * I pesi sono 6,6 GB di trasformatore piu' 9,2 di text encoder: su una
-         * scheda da 8 GB non ci stanno insieme nemmeno da lontano. Con lo
-         * scarico in RAM il motore tiene sulla scheda solo il pezzo che sta
-         * lavorando e passa l'altro al sistema.
+         * scheda da 8 GB non ci stanno insieme nemmeno da lontano. Con questo
+         * scarico il motore tiene sulla scheda **solo il pezzo che sta
+         * lavorando** e passa l'altro alla RAM di sistema.
          *
          * Costa tempo, e va detto invece che scoperto: e' il motivo per cui
          * LLaDA e' il piu' lento della scheda pur facendo solo 4 passi. Il
          * workflow di esempio del pacco dice `cuda` perche' e' scritto per chi
          * ha 24 GB.
+         *
+         * ⚠ **Fino alla 1.0.3 qui c'era scritto `cpu`, ed era un'altra cosa.**
+         * Il commento diceva gia' quello che c'e' scritto sopra — «tiene sulla
+         * scheda solo il pezzo che sta lavorando» — ma `cpu`, per questo pacco
+         * di nodi, vuol dire `pipe.to("cpu")`: la scheda video **non la tocca
+         * proprio**, e i 4 passi li fa il processore. Il nome che fa quello che
+         * dice il commento e' questo, ed e' anche il valore di serie del nodo.
          */
-        offload: "cpu",
+        offload: "sequential_cpu_offload",
+        /**
+         * ⚠ **Obbligatorio, e senza non parte.** Trovato il 6 settembre 2026,
+         * provando a generare: «required input is missing: vae_tiling»,
+         * `LLaDAImageLoader`.
+         *
+         * Il nodo lo dichiara fra i `required` — un elenco di tre voci con
+         * scritto «di serie: On» accanto — e un valore di serie, in ComfyUI,
+         * vale per chi monta il grafo a mano nella pagina, non per chi lo manda
+         * scritto: li' quello che non arriva non esiste, e la richiesta si
+         * ferma prima di caricare qualunque cosa.
+         *
+         * `On` non e' solo il suo di serie: e' anche quello che serve qui.
+         * Decodificare a piastrelle vuol dire non tenere in memoria l'immagine
+         * intera in un colpo solo, ed e' l'ultimo passo — quello che su una
+         * scheda gia' piena e' il piu' facile da far scoppiare.
+         */
+        vae_tiling: "On",
       },
     },
   };

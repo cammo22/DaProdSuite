@@ -63,7 +63,17 @@ export const COPIONE_PRODUZIONE = `
      * Immagini», non una tessera che si chiama «Modifica». Le due strade si
      * scelgono **dopo**, con scritto accanto in cosa sono diverse.
      */
-    "modifica.immagine": { dentroTitolo: "Da una foto che hai", dentroSotto: "la carichi e dici cosa cambiare \u2014 col dito, o a parole", nome: "Modifica", sotto: "parti da una foto", tinta: "verde", segno: "\u270E", dentroA: "genera.immagine" },
+    /**
+     * \u26A0 **Si chiama \u00ABModifica\u00BB e basta.** Cambiato il 6 settembre 2026:
+     * \u00ABda una foto e' sbagliato, chiamalo modifica\u00BB.
+     *
+     * Prima diceva \u00ABDa una foto che hai\u00BB, per stare in rima con \u00ABDa una
+     * descrizione\u00BB sopra. La rima costava piu' di quanto valeva: le due voci
+     * dicevano **da dove parti**, e quello che uno sta scegliendo li' e'
+     * **cosa fa** \u2014 una foto nuova, o una che c'e' gia' e va cambiata. La
+     * riga sotto continua a dire da dove parte.
+     */
+    "modifica.immagine": { dentroTitolo: "Modifica", dentroSotto: "parti da una foto che hai gia' e dici cosa cambiare", nome: "Modifica", sotto: "parti da una foto", tinta: "verde", segno: "\u270E", dentroA: "genera.immagine" },
     "genera.brano": { nome: "Produzione Musica", sotto: "una canzone, anche cantata", tinta: "ciano", segno: "\\u266B" },
     "genera.voce": { nome: "Produzione Audio", sotto: "un testo letto ad alta voce", tinta: "ambra", segno: "\\u275E" },
   };
@@ -91,7 +101,19 @@ export const COPIONE_PRODUZIONE = `
   function disegnaAzioni() {
     var casella = $("elenco-azioni");
     casella.innerHTML = "";
-    for (var a of azioni.filter(function (x) { return x.coda; })) {
+    /**
+     * ⚠ **Anche qui niente tessera per chi sta dentro a un'altra.**
+     *
+     * Fino alla 1.0.3 questo elenco non lo filtrava, e la Casa si': in
+     * Produzione comparivano sei tastoni — «Modifica» e «Storia» in mezzo agli
+     * altri — mentre in Casa erano quattro. Le stesse cose in due posti
+     * dicevano due cose diverse, e «Modifica» sembrava una scheda a se'.
+     *
+     * Segnalato il 6 settembre 2026: «hai messo un pulsante modifica». Il
+     * filtro e' identico a quello di «disegnaTessere», e le due schermate
+     * tornano a essere gli stessi quattro tastoni disegnati due volte.
+     */
+    for (var a of azioni.filter(function (x) { return x.coda && !(PRODUZIONI[x.id] || {}).dentroA; })) {
       casella.append(tastoneAzione(a));
     }
 
@@ -310,6 +332,18 @@ export const COPIONE_PRODUZIONE = `
     scelta = a;
     var modulo = $("modulo");
     modulo.innerHTML = "";
+    /**
+     * ⚠ **Il modulo di prima si porta via anche quello che aveva da preparare.**
+     *
+     * «primaDiMandare» e «quandoCambiaUnCampo» sono elenchi di funzioni che i
+     * campi ci lasciano dentro mentre si disegnano. Svuotare il modulo toglie
+     * le caselle ma non loro: senza queste due righe, aprire la modifica,
+     * tornare indietro e riaprirla lasciava in giro il pennello di prima —
+     * che al momento di mandare caricava sul computer una maschera vecchia,
+     * disegnata su una foto che non c'e' piu'.
+     */
+    primaDiMandare = [];
+    quandoCambiaUnCampo = [];
 
     var spiega = document.createElement("p");
     spiega.className = "sotto";
@@ -461,6 +495,19 @@ export const COPIONE_PRODUZIONE = `
     var accendi = function (quale) {
       nascosto.value = quale;
       for (var b of tutte) b.classList.toggle("on", b.dataset.valore === quale);
+      /**
+       * ⚠ **Chi cambia una pastiglia lo dice al modulo.**
+       *
+       * La casella nascosta cambia da sola, e chi guarda un campo che non e' il
+       * suo non ha modo di accorgersene: la domanda sulla zona dipinta, per
+       * esempio, si spegne quando si sceglie LLaDA — vedi «senzaZona» nel
+       * catalogo — e senza questo avviso resterebbe accesa a offrire un
+       * pennello che quel modello non sa tenere in mano.
+       *
+       * L'evento sale (\«bubbles\»), cosi' basta un ascoltatore sul modulo
+       * invece di uno per ogni campo che vuole saperlo.
+       */
+      nascosto.dispatchEvent(new Event("change", { bubbles: true }));
       /**
        * Uno stile riempie la casella che **e'** la richiesta.
        *
@@ -857,6 +904,7 @@ export const COPIONE_PRODUZIONE = `
     // Senza questa riga, il pennello di un modulo chiuso resterebbe iscritto e
     // il prossimo invio andrebbe a cercare una tela che non c'e'.
     primaDiMandare = [];
+    quandoCambiaUnCampo = [];
     $("fila-manda").hidden = true;
   }
 
@@ -871,6 +919,36 @@ export const COPIONE_PRODUZIONE = `
    * iscrive qui, e chi manda aspetta tutti senza chiedersi chi sono.
    */
   var primaDiMandare = [];
+
+  /**
+   * Chi vuole sapere che **un altro campo** e' cambiato.
+   *
+   * Stessa idea di «primaDiMandare», per l'altra meta' del problema: la
+   * domanda sulla zona dipinta deve reagire al modello scelto, e i due campi
+   * non si conoscono — quando il riquadro della foto si disegna, le pastiglie
+   * dei modelli non esistono ancora. Chi ha bisogno di guardare si iscrive
+   * qui, e un solo ascoltatore sul modulo li chiama tutti.
+   */
+  var quandoCambiaUnCampo = [];
+
+  /**
+   * L'ascoltatore, montato una volta sola sul modulo.
+   *
+   * Il modulo si svuota a ogni azione scelta ma **resta lo stesso elemento**:
+   * montarlo dentro chi disegna un campo vorrebbe dire un ascoltatore in piu'
+   * a ogni apertura, e dopo dieci giri lo stesso cambio verrebbe raccontato
+   * dieci volte.
+   */
+  function ascoltaIlModulo() {
+    var modulo = $("modulo");
+    if (modulo.dataset.ascolta) return;
+    modulo.dataset.ascolta = "1";
+    modulo.addEventListener("change", function (ev) {
+      var quale = ev.target && ev.target.dataset ? ev.target.dataset.campo : null;
+      if (!quale) return;
+      for (var f of quandoCambiaUnCampo) f(quale);
+    });
+  }
 
   /**
    * ⚠ **Quanto grande arriva al motore.** Chiesto il 6 settembre 2026:
@@ -955,7 +1033,18 @@ export const COPIONE_PRODUZIONE = `
 
     var vuoto = document.createElement("p");
     vuoto.className = "nota";
-    vuoto.textContent = "Scegli una foto: da quelle che hai fatto, o dal telefono.";
+    /**
+     * ⚠ **Le due strade si dicono prima, non dopo.** Chiesto il 6 settembre
+     * 2026: «devi poter scegliere — o una foto tra quelle generate, o caricare
+     * un file dalla galleria del telefono».
+     *
+     * C'erano gia' tutte e due, ed e' proprio il punto: erano due tastini
+     * sotto a una riga che diceva «scegli una foto», e chi apriva la modifica
+     * leggeva quella riga come un'istruzione senza vedere **dove** si sceglie.
+     * Adesso la riga dice che le strade sono due e i due tasti le ripetono con
+     * le stesse parole.
+     */
+    vuoto.textContent = "Da dove parti? Una foto che hai gia' fatto, o una dalla galleria del telefono.";
     scatola.append(vuoto);
 
     // La foto sotto e il disegno sopra, sovrapposti. Due tele e non una perche'
@@ -974,11 +1063,11 @@ export const COPIONE_PRODUZIONE = `
     var dalleMie = document.createElement("button");
     dalleMie.type = "button";
     dalleMie.className = "mini";
-    dalleMie.textContent = "▦ Dalle tue cose";
+    dalleMie.textContent = "▦ Una foto che hai fatto";
     var dalTelefono = document.createElement("button");
     dalTelefono.type = "button";
     dalTelefono.className = "mini";
-    dalTelefono.textContent = "↑ Dal telefono";
+    dalTelefono.textContent = "↑ Dalla galleria del telefono";
     var pulisci = document.createElement("button");
     pulisci.type = "button";
     pulisci.className = "mini";
@@ -1000,16 +1089,117 @@ export const COPIONE_PRODUZIONE = `
      */
     scegliFile.accept = "image/" + "*";
     scegliFile.hidden = true;
-    tasti.append(dalleMie, dalTelefono, pulisci, scegliFile);
+    tasti.append(dalleMie, dalTelefono, scegliFile);
     scatola.append(tasti);
 
     var dice = document.createElement("div");
     dice.className = "nota";
     scatola.append(dice);
 
+    /* ------------------------------------------- la domanda sulla zona */
+
+    /**
+     * ⚠ **«Tutta la foto» o «una zona»: si sceglie, non si indovina.**
+     * Chiesto il 6 settembre 2026: «poi c'e' la questione se vuoi selezionare
+     * una zona o no».
+     *
+     * Prima la risposta era **quello che facevi col dito**: se dipingevi
+     * qualcosa era una zona, se non dipingevi niente era tutta la foto. Regola
+     * giusta e invisibile — chi non sapeva di poter dipingere non lo scopriva,
+     * e chi sfiorava la foto scorrendo la pagina si trovava una zona che non
+     * aveva chiesto.
+     *
+     * Adesso la domanda si vede e ha due risposte. Il pennello compare solo
+     * dopo la seconda, e la prima resta quella di partenza: cambiare tutta la
+     * foto e' quello che fa la maggior parte delle volte chi tocca «Modifica».
+     */
+    var domandaZona = document.createElement("p");
+    domandaZona.className = "nota";
+    domandaZona.style.marginTop = "10px";
+    domandaZona.textContent = "Cosa cambio?";
+
+    var sceltaZona = document.createElement("div");
+    sceltaZona.className = "filtri";
+
+    var tuttaLaFoto = document.createElement("button");
+    tuttaLaFoto.type = "button";
+    tuttaLaFoto.className = "mini on";
+    tuttaLaFoto.textContent = "Tutta la foto";
+
+    var unaZona = document.createElement("button");
+    unaZona.type = "button";
+    unaZona.className = "mini";
+    unaZona.textContent = "Solo una zona, la dipingo io";
+
+    sceltaZona.append(tuttaLaFoto, unaZona, pulisci);
+
+    var perche = document.createElement("div");
+    perche.className = "nota";
+
+    var laZona = document.createElement("div");
+    laZona.hidden = true;
+    laZona.append(domandaZona, sceltaZona, perche);
+    scatola.append(laZona);
+
     modulo.append(scatola);
 
     var telaFoto = null;
+    var comeZona = "tutta";
+
+    /** Il modello scelto adesso sa usare una zona dipinta? Vedi «senzaZona». */
+    function laZonaSiPuo() {
+      var casella = modulo.querySelector('[data-campo="modello"]');
+      if (!casella) return true;
+      var suo = null;
+      for (var c of ((scelta || {}).campi || [])) if (c.nome === "modello") suo = c;
+      var mai = (suo && suo.senzaZona) || [];
+      return mai.indexOf(casella.value) < 0;
+    }
+
+    function mettiZona(quale) {
+      comeZona = quale;
+      tuttaLaFoto.classList.toggle("on", quale === "tutta");
+      unaZona.classList.toggle("on", quale === "zona");
+      // Il pennello non si nasconde e basta: si toglie di mezzo. Una tela
+      // trasparente sopra alla foto si prende i tocchi anche quando non deve.
+      sopra.style.pointerEvents = quale === "zona" ? "auto" : "none";
+      sopra.style.opacity = quale === "zona" ? "1" : "0";
+      pulisci.hidden = quale !== "zona";
+      if (quale === "tutta") {
+        sopra.getContext("2d").clearRect(0, 0, sopra.width, sopra.height);
+        haDipinto = false;
+      }
+    }
+
+    /**
+     * Guarda il modello e, se non sa tenere il pennello, chiude la domanda.
+     *
+     * Non la nasconde: la **spiega**. Chi ha appena dipinto una zona e sceglie
+     * LLaDA deve vedere perche' il suo disegno e' sparito, altrimenti la
+     * prossima volta lo rifa'.
+     */
+    function guardaIlModello() {
+      var si = laZonaSiPuo();
+      unaZona.disabled = !si;
+      if (!si && comeZona === "zona") {
+        mettiZona("tutta");
+        avvisa("Questo modello guarda tutta la foto: la zona l\\u0027ho tolta.");
+      }
+      perche.textContent = si
+        ? ""
+        : "Questo modello non dipinge una zona: guarda tutta la foto e fa quello che gli dici.";
+    }
+
+    ascoltaIlModulo();
+    quandoCambiaUnCampo.push(function (quale) {
+      if (quale === "modello") guardaIlModello();
+    });
+
+    tuttaLaFoto.addEventListener("click", function () { mettiZona("tutta"); });
+    unaZona.addEventListener("click", function () {
+      mettiZona("zona");
+      avvisa("Dipingi col dito la zona da cambiare.");
+    });
 
     /* ------------------------------------------------ mettere la foto */
 
@@ -1029,7 +1219,11 @@ export const COPIONE_PRODUZIONE = `
 
         pila.hidden = false;
         vuoto.hidden = true;
-        pulisci.hidden = false;
+        // La foto c'e': adesso ha senso chiedere cosa cambiarne, e la risposta
+        // riparte da «tutta» anche se sulla foto di prima si era dipinto.
+        laZona.hidden = false;
+        mettiZona("tutta");
+        guardaIlModello();
 
         dice.textContent = "La carico…";
         var id = await caricaSulComputer(await telaInBlob(telaFoto), "sorgente");
@@ -1040,8 +1234,7 @@ export const COPIONE_PRODUZIONE = `
           comeSiChiama +
           (quantera === adesso
             ? " · " + adesso
-            : " · era " + quantera + ", l'ho portata a " + adesso) +
-          " · dipingi col dito la zona da cambiare, o non dipingere niente e la cambio tutta.";
+            : " · era " + quantera + ", l'ho portata a " + adesso);
       } catch (e) {
         dice.textContent = "";
         avvisa(e.message, "male");
@@ -1119,7 +1312,7 @@ export const COPIONE_PRODUZIONE = `
     pulisci.addEventListener("click", function () {
       sopra.getContext("2d").clearRect(0, 0, sopra.width, sopra.height);
       haDipinto = false;
-      avvisa("Disegno cancellato: cambio tutta la foto.");
+      avvisa("Disegno cancellato: ridipingi la zona, o scegli «Tutta la foto».");
     });
 
     /* ------------------------------- la maschera, appena prima di mandare */
@@ -1140,7 +1333,9 @@ export const COPIONE_PRODUZIONE = `
       // quello che e', non da come si chiama.
       var casella = modulo.querySelector('[data-campo="maschera"]');
       if (!casella) return;
-      if (!haDipinto || !telaFoto) { casella.value = ""; return; }
+      // «Tutta la foto» vuol dire nessuna maschera, e lo vuol dire anche quando
+      // sotto c'e' un disegno vecchio: comanda la risposta data, non la tela.
+      if (comeZona !== "zona" || !haDipinto || !telaFoto) { casella.value = ""; return; }
 
       // Il nodo del motore guarda il canale rosso su fondo nero: quello che qui
       // e' trasparente li' deve essere nero, non trasparente.

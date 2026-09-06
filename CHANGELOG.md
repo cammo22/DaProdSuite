@@ -17,6 +17,84 @@ l'indirizzo stabile della 1.0.3 non avrà retto un giro vero fuori casa.
 
 ---
 
+## 1.0.4 — LLaDA parte, e la modifica si capisce
+
+> «la suite dà questo errore quando si prova a generare con LLaDA»
+>
+> «hai messo un pulsante modifica … da una foto è sbagliato, chiamalo modifica»
+>
+> «devi poter scegliere: o una foto tra quelle generate, o caricare un file
+> dalla galleria del telefono; selezioni il modello, e poi c'è la questione se
+> vuoi selezionare una zona o no»
+
+### ⚠ LLaDA non partiva: mancava una parola al caricatore
+
+L'errore era `required input is missing: vae_tiling`, e arrivava prima di
+qualunque cosa: il motore leggeva il grafo, vedeva che al nodo che carica il
+modello mancava una voce, e si fermava lì senza toccare un file.
+
+Il nodo la dichiara fra quelle obbligatorie, con scritto accanto «di serie:
+On». Quel «di serie» però vale per chi monta il grafo a mano nella pagina di
+ComfyUI, non per chi glielo manda già scritto — e la suite glielo manda già
+scritto. Adesso c'è, e vale `On`: decodificare a piastrelle vuol dire non
+tenere in memoria l'immagine intera in un colpo solo, che sull'ultimo passo di
+una scheda già piena è la differenza fra una foto e un errore di memoria.
+
+### ⚠ E intanto girava sul processore, non sulla scheda video
+
+Guardando il caricatore per aggiungere quella voce, ne è saltata fuori una
+seconda che era lì dalla 1.0.2. Lo scarico in RAM era scritto `cpu`, e il
+commento accanto diceva «tiene sulla scheda solo il pezzo che sta lavorando».
+Non era la stessa cosa: per questo pacco di nodi `cpu` vuol dire **la scheda
+video non la tocco proprio**, e i quattro passi li faceva il processore.
+
+Adesso c'è scritto `sequential_cpu_offload`, che è il nome del comportamento
+descritto in quel commento ed è anche quello di serie del nodo: sulla scheda ci
+sale un pezzo per volta, il resto aspetta in RAM. LLaDA resta il più lento
+della scheda — sono 6,6 GB di trasformatore e 9,2 di text encoder che si danno
+il cambio — ma il lavoro lo fa dove va fatto.
+
+### «Modifica» si chiama Modifica, e sta in un posto solo
+
+Nella Produzione c'era un tastone «Modifica» accanto agli altri quattro, e in
+Casa no: lo stesso elenco disegnato due volte diceva due cose diverse, perché
+la Produzione non nascondeva le azioni che stanno **dentro** un'altra. Adesso
+le nasconde come fa la Casa, e i tastoni sono gli stessi quattro nelle due
+schermate — «Modifica» e «Storia» si raggiungono da «Produzione Immagini» e da
+«Produzione Video», che è dove uno le cerca.
+
+Dentro, la voce si chiamava «Da una foto che hai». Diceva da dove parti, e
+quello che uno sta scegliendo lì è cosa fa: adesso si chiama **Modifica**, e da
+dove parte lo dice la riga sotto.
+
+### Da dove parti, e cosa cambio
+
+Le due strade per la foto di partenza c'erano già — una che hai fatto, o una
+dalla galleria del telefono — ed erano due tastini sotto a una riga che diceva
+«scegli una foto», cioè un'istruzione senza il posto dove eseguirla. Adesso la
+riga dice che le strade sono due e i due tasti le ripetono con le stesse
+parole: «Una foto che hai fatto», «Dalla galleria del telefono».
+
+Poi c'è la domanda che prima non si vedeva. La zona da cambiare era **quello
+che facevi col dito**: dipingevi, ed era una zona; non dipingevi, ed era tutta
+la foto. Regola giusta e invisibile — chi non sapeva di poter dipingere non lo
+scopriva, e chi sfiorava la foto scorrendo si ritrovava una zona che non aveva
+chiesto. Adesso, appena la foto è lì, la pagina chiede **cosa cambio**: tutta
+la foto, che è quello che parte, oppure solo una zona — e il pennello compare
+dopo la seconda risposta, non prima.
+
+### E se il modello la zona non la sa usare, lo dice
+
+LLaDA cambia una foto **a parole**: guarda tutta l'immagine e segue
+l'istruzione, e il nodo che lo fa girare non ha proprio un ingresso per la
+maschera. Fino a ieri la pagina offriva il pennello lo stesso e poi buttava via
+il disegno senza dire niente. Adesso sceglierlo spegne la domanda sulla zona e
+scrive perché: «questo modello non dipinge una zona: guarda tutta la foto e fa
+quello che gli dici». Quali modelli siano sta scritto nel catalogo delle azioni
+— un posto solo, che leggono telefono, console e agente insieme.
+
+---
+
 ## 1.0.3 — Il conto non si perde più
 
 > «ho fatto l'aggiornamento e non comunica con il pc, dovrei di nuovo togliere

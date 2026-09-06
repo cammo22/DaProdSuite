@@ -26,7 +26,7 @@ file si scrive quale delle due metà manca.
 
 ## A che punto siamo — 6 settembre 2026 (notte fonda)
 
-**Ultima pubblicata: 1.0.3.** Nove schede dentro la suite, un ambiente Python
+**Ultima pubblicata: 1.0.4.** Nove schede dentro la suite, un ambiente Python
 solo, e il giro che conta — chiedo dal telefono, il computer fa, il file torna —
 **provato da chi la usa**, sul suo PC e sul suo telefono.
 
@@ -118,6 +118,9 @@ fanno quello che ti ho chiesto».
 | **Un indirizzo che non cambia mai (1.0.3)** | Tailscale Funnel: nome pubblico stabile, niente da installare sul telefono. Si accende con un tocco. ⚠ Va permesso dal tailnet — due interruttori nella console — e l'app mostra il link esatto |
 | **`ContoNonPersoTest`** | gira sull'emulatore a ogni giro. Sulla JVM sarebbe passata tutte e sei le volte: il difetto non era nella logica, era in cosa finiva sullo schermo |
 | **Il 416 che buttava nove giga (1.0.3)** | il numero nel catalogo era arrotondato e il ramo del 416 cancellava il file. Adesso il catalogo e' un'indicazione: la verita' la si chiede al server |
+| **LLaDA che non partiva (1.0.4)** | `required input is missing: vae_tiling`. Il nodo lo da' per obbligatorio e il «di serie: On» vale solo per chi monta il grafo a mano nella pagina, non per chi lo manda scritto. ⚠ Nello stesso posto lo scarico diceva `cpu`, che per quel pacco vuol dire **niente scheda video**: adesso e' `sequential_cpu_offload`, che e' quello che il commento diceva gia' |
+| **«Modifica» in un posto solo (1.0.4)** | la Produzione non filtrava le azioni che stanno **dentro** un'altra e la Casa si': sei tastoni contro quattro. **Provato nel banco**, le due schermate adesso combaciano |
+| **La zona e' una domanda (1.0.4)** | prima era quello che facevi col dito — invisibile a chi non sapeva di poter dipingere. Adesso: tutta la foto (di serie) o una zona, e il pennello compare dopo. Con LLaDA la domanda si spegne e dice perche' (`senzaZona` nel catalogo). **Provato nel banco**: maschera mandata solo con «una zona» dipinta |
 | **Modificare una foto dal telefono (1.0.2)** | **provata nel banco con le dita**: la foto presa dalla galleria e caricata, il ridimensionamento annunciato, il pennello che dipinge, e la richiesta che arriva in fila con foto **e** maschera. ⚠ Contro un motore acceso no |
 | **Niente dipinto vuol dire tutta la foto (1.0.2)** | **provato**: la richiesta arriva senza maschera, e il grafo salta i nodi che la userebbero |
 | **LLaDA-Image (1.0.2)** | ⚠ **non entra negli 8 GB** e gliel'ho detto prima: 6,6 GB di trasformatore, 9,2 di text encoder, quasi 16 da scaricare. Messo su sua richiesta, con lo scarico in RAM. **Mai provato contro un motore acceso**, e vuole un pacco di nodi di terzi con sei stelle e nessuna licenza dichiarata |

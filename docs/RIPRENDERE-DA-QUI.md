@@ -1,7 +1,22 @@
 # Riprendere da qui
 
 Documento di passaggio fra una sessione e l'altra. Aggiornato il **6 settembre
-2026 (notte fonda)**, con la **1.0.3** appena pubblicata.
+2026 (notte fonda)**, con la **1.0.4** appena pubblicata.
+
+> ⚠ **La lezione della 1.0.4: un valore di serie non e' un valore mandato.**
+>
+> LLaDA non partiva: `required input is missing: vae_tiling`. Il nodo dichiara
+> quella voce fra le obbligatorie e le mette accanto un «di serie: On» — che
+> vale per chi monta il grafo a mano nella pagina di ComfyUI. Chi il grafo lo
+> manda gia' scritto, come facciamo noi, quel valore lo deve scrivere: li'
+> dentro quello che non arriva non esiste.
+>
+> Andandolo a mettere e' saltata fuori la seconda: lo scarico era `cpu`, e il
+> commento accanto raccontava `sequential_cpu_offload`. **Il commento diceva
+> l'intenzione, il codice ne faceva un'altra** — e nessuno se n'era accorto
+> perche' il sintomo di «gira sul processore» e' «e' lento», che di LLaDA era
+> gia' scritto ovunque. Quando un commento e il valore accanto non dicono la
+> stessa cosa, uno dei due e' un difetto: qui era il valore.
 
 > ⚠ **La lezione della 1.0.3: ogni strada deve finire in un posto scelto.**
 >
