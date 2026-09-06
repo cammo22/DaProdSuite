@@ -302,7 +302,7 @@
       "dir": "diffusion_models",
       "file": "LLaDA-Image-Turbo-INT8.safetensors",
       "url": "https://huggingface.co/realrebelai/LLaDa-Image-Turbo_ComfyUI/resolve/main/LLaDA-Image-Turbo-INT8.safetensors",
-      "nodi": ["llada-image"],
+      "nodi": ["llada-image", "comfyui-gguf"],
       "bytes": 6592330548
     },
     "llada-text-encoder": {
@@ -312,7 +312,7 @@
       "dir": "text_encoders",
       "file": "LLaDA-Image-Turbo-text_encoder-Q4_K_M.gguf",
       "url": "https://huggingface.co/realrebelai/LLaDa-Image-Turbo_ComfyUI/resolve/main/LLaDA-Image-Turbo-text_encoder-Q4_K_M.gguf",
-      "nodi": ["llada-image"],
+      "nodi": ["llada-image", "comfyui-gguf"],
       "bytes": 9181912960
     },
     "llada-vae": {
@@ -321,7 +321,7 @@
       "dir": "vae",
       "file": "LLaDa_VAE.safetensors",
       "url": "https://huggingface.co/realrebelai/LLaDa-Image-Turbo_ComfyUI/resolve/main/LLaDa_VAE.safetensors",
-      "nodi": ["llada-image"],
+      "nodi": ["llada-image", "comfyui-gguf"],
       "bytes": 168120872
     },
     "flux2-vae": {

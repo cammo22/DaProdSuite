@@ -1,7 +1,25 @@
 # Riprendere da qui
 
 Documento di passaggio fra una sessione e l'altra. Aggiornato il **6 settembre
-2026 (notte fonda)**, con la **1.0.4** appena pubblicata.
+2026 (sera)**, con la **1.0.5** appena pubblicata.
+
+> ⚠ **La lezione della 1.0.5: un grafo si prova col motore acceso.**
+>
+> La 1.0.4 ha «aggiustato» LLaDA leggendo il codice dei nodi e confrontandolo
+> col commento accanto. Il ragionamento era giusto e il risultato peggiore di
+> prima: `sequential_cpu_offload` con quel modello non parte affatto, e per
+> saperlo bastava mandargli un grafo — quindici minuti, contro le ore di lettura
+> che ci sono volute a convincersi.
+>
+> In quella stessa mezz'ora di motore acceso sono venuti fuori tre difetti che
+> nessuna lettura aveva trovato: la voce obbligatoria che mancava, ComfyUI-GGUF
+> cercato nella cartella sbagliata, e il VAE lasciato in RAM a decodificare col
+> processore. **Uno alla volta**, ognuno nascosto dietro il precedente.
+>
+> La regola per la prossima volta: quando si tocca un grafo, si accende
+> `services/comfy/avvio.py` su una porta libera e gli si manda il grafo piu'
+> piccolo che lo esercita. Non e' una prova automatica e non entra in
+> `pnpm run prova`: e' il gesto da fare prima di dire che e' fatto.
 
 > ⚠ **La lezione della 1.0.4: un valore di serie non e' un valore mandato.**
 >

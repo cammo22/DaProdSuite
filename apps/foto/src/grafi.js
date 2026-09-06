@@ -203,27 +203,35 @@ function caricaLlada(m) {
         vae: m.vae,
         dtype: "bfloat16",
         /**
-         * ⚠ **`sequential_cpu_offload`**, ed e' l'unica ragione per cui questo
-         * modello gira su questa macchina.
+         * ⚠ **`cuda`, ed e' il contrario di quello che sembra.**
          *
          * I pesi sono 6,6 GB di trasformatore piu' 9,2 di text encoder: su una
-         * scheda da 8 GB non ci stanno insieme nemmeno da lontano. Con questo
-         * scarico il motore tiene sulla scheda **solo il pezzo che sta
-         * lavorando** e passa l'altro alla RAM di sistema.
+         * scheda da 8 GB non ci stanno insieme nemmeno da lontano. `cuda`,
+         * qui, **non** vuol dire «carica tutto sulla scheda»: il pacco di nodi
+         * evita apposta il `pipe.to("cuda")` di diffusers e mette in scheda
+         * solo i parametri non quantizzati del trasformatore, lasciando le
+         * matrici INT8 in RAM e portandone su **una per volta** mentre lavora.
+         * E' scritto nel loro codice, ed e' quello che usano i due workflow di
+         * esempio del pacco.
          *
-         * Costa tempo, e va detto invece che scoperto: e' il motivo per cui
-         * LLaDA e' il piu' lento della scheda pur facendo solo 4 passi. Il
-         * workflow di esempio del pacco dice `cuda` perche' e' scritto per chi
-         * ha 24 GB.
+         * ⚠ **Le altre due strade sono state provate, e non vanno.**
          *
-         * ⚠ **Fino alla 1.0.3 qui c'era scritto `cpu`, ed era un'altra cosa.**
-         * Il commento diceva gia' quello che c'e' scritto sopra — «tiene sulla
-         * scheda solo il pezzo che sta lavorando» — ma `cpu`, per questo pacco
-         * di nodi, vuol dire `pipe.to("cpu")`: la scheda video **non la tocca
-         * proprio**, e i 4 passi li fa il processore. Il nome che fa quello che
-         * dice il commento e' questo, ed e' anche il valore di serie del nodo.
+         * - `cpu` (com'era dalla 1.0.2 alla 1.0.3) vuol dire `pipe.to("cpu")`:
+         *   la scheda video non la tocca proprio, e i quattro passi li fa il
+         *   processore.
+         * - `sequential_cpu_offload` (la 1.0.4, per mezza giornata) e' quello
+         *   che il nome promette e con questo modello **non parte**: lo scarico
+         *   di accelerate manda i pesi sul dispositivo «meta» ricreandoli, e i
+         *   tensori GGUF del text encoder non si lasciano ricreare —
+         *   `TypeError: GGMLTensor.__new__() missing 2 required keyword-only
+         *   arguments`. Non e' aggiustabile da qui: e' fra accelerate e i nodi
+         *   GGUF di City96.
+         *
+         * Resta il piu' lento della scheda pur facendo solo 4 passi, e va detto
+         * invece che scoperto: le matrici che vanno e vengono dalla RAM si
+         * pagano a ogni passo.
          */
-        offload: "sequential_cpu_offload",
+        offload: "cuda",
         /**
          * ⚠ **Obbligatorio, e senza non parte.** Trovato il 6 settembre 2026,
          * provando a generare: «required input is missing: vae_tiling»,

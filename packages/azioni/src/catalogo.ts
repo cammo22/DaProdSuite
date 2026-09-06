@@ -65,7 +65,7 @@ const MODELLI_FOTO = {
     "flux2-9b": "FLUX.2 Klein 9B — il più bravo con le descrizioni lunghe",
     // Dice cosa costa nell'etichetta, non solo cosa sa fare: è il più lento
     // della scheda e non ci sta nella scheda video. Vedi `grafi.js`.
-    llada: "LLaDA-Image — modifica una foto a parole, ma è lento",
+    llada: "LLaDA-Image — a parole; un minuto e mezzo a immagine",
   },
 } as const;
 
@@ -98,7 +98,7 @@ const MODELLI_MODIFICA = {
     anima2: "Anima v2 — col pennello, anime e illustrazione",
     "flux2-4b": "FLUX.2 Klein 4B — col pennello, leggero",
     "flux2-9b": "FLUX.2 Klein 9B — col pennello, il più bravo",
-    llada: "LLaDA-Image — a parole, guarda tutta la foto. È lento",
+    llada: "LLaDA-Image — a parole, guarda tutta la foto. Un minuto e mezzo",
   },
   /**
    * LLaDA e la zona dipinta non c'entrano niente l'uno con l'altra: il suo
@@ -256,6 +256,53 @@ export const AZIONI: readonly Azione[] = [
        * La scheda sul PC continua a mandare il suo negativo di serie, che è
        * l'unico posto in cui serve ancora.
        */
+      /**
+       * ⚠ **Che forma ha e quanto è grande.** Nuovi nella 1.0.5.
+       *
+       * Chiesto il 6 settembre 2026: «nella produzione immagini non si può
+       * scegliere la risoluzione». Era vero: da fuori partiva sempre quello
+       * che era rimasto selezionato sulla scheda del computer — cioè una
+       * scelta fatta da un'altra persona in un altro momento, che è la stessa
+       * cosa che nella 0.9.1 abbiamo tolto dai modelli.
+       *
+       * **Le voci sono quelle della scheda, non altre.** Forma e risoluzione
+       * sono le due file di pulsanti di `apps/foto/src/formato.js`, e i pixel
+       * veri li decide quel file: qui non ci sono numeri, così non esistono
+       * due tabelle di misure che devono restare d'accordo. Chi chiede da
+       * fuori preme gli stessi tasti che premerebbe di persona.
+       *
+       * Il predefinito è quadrato a 1080p: è quello che parte sulla scheda
+       * appena installata, ed è la foto che si guarda su un telefono.
+       */
+      {
+        nome: "forma",
+        etichetta: "Che forma",
+        descrizione: "Il rettangolo dell'immagine. 1:1 è il quadrato.",
+        tipo: "scelta",
+        obbligatorio: false,
+        predefinito: "1:1",
+        scelte: ["16:9", "9:16", "4:3", "1:1"],
+        etichette: {
+          "16:9": "16:9 — orizzontale, da schermo",
+          "9:16": "9:16 — verticale, da telefono",
+          "4:3": "4:3 — orizzontale, classico",
+          "1:1": "1:1 — quadrato",
+        },
+      },
+      {
+        nome: "risoluzione",
+        etichetta: "Quanto grande",
+        descrizione: "Più grande vuol dire più bella e più lenta. I pixel veri li mostra la scheda.",
+        tipo: "scelta",
+        obbligatorio: false,
+        predefinito: "1080",
+        scelte: ["480", "720", "1080"],
+        etichette: {
+          "480": "480 — la più veloce",
+          "720": "720 — una via di mezzo",
+          "1080": "1080p — la più grande",
+        },
+      },
       {
         nome: "quante",
         etichetta: "Quante immagini",

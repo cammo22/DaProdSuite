@@ -19,8 +19,10 @@ import asyncio
 import logging
 import os
 import subprocess
+import sys
 import threading
 import time
+import types
 from pathlib import Path
 
 from aiohttp import web
@@ -728,6 +730,168 @@ async def traduci(request):
         {"tradotto": tradotto, "originale": testo, "tradotta": True},
         headers={"Cache-Control": "no-store"},
     )
+
+
+# --------------------------------------------------- la strada verso ComfyUI-GGUF
+
+
+def _apri_la_strada_al_gguf() -> None:
+    """Fa trovare ComfyUI-GGUF ai nodi di LLaDA-Image.
+
+    ⚠ **Il difetto, come si presentava:** generando con LLaDA il motore
+    rispondeva ``RuntimeError: ComfyUI-GGUF was not found. Install/enable
+    City96 ComfyUI-GGUF first.`` — con ComfyUI-GGUF **installato**, in
+    ``engines/custom_nodes``, e usato tutti i giorni da FLUX.2 Klein.
+
+    La ragione e' una scelta nostra che quel pacco non poteva conoscere. I nodi
+    di terzi non stanno **dentro** ComfyUI (vedi ``packages/runtime/nodi.ts``):
+    stanno accanto al motore, e glieli indichiamo con
+    ``--extra-model-paths-config``, cosi' sopravvivono al suo aggiornamento.
+    L'adattatore di LLaDA invece cerca ComfyUI-GGUF in un posto solo:
+    ``cartella-di-ComfyUI/custom_nodes``, dove da noi non c'e' niente.
+
+    **Perche' si aggiusta qui e non li'.** Quel file e' di altri e si riscarica
+    da capo a ogni installazione: una riga cambiata a mano sarebbe sparita al
+    primo aggiornamento del nodo, e sarebbe tornato lo stesso errore senza che
+    nessuno avesse toccato niente. L'adattatore pero' lascia una porta aperta —
+    se il pacchetto e' **gia' registrato** con il suo nome interno, se lo tiene
+    e non va a cercarlo. Gliel'ho registrato: il nome e' quello che usa lui, la
+    cartella e' la nostra.
+
+    Non importa niente adesso: si registra solo il pacchetto vuoto con dentro
+    scritto dove sta. I moduli veri (``loader``, ``dequant``, ``ops``) li carica
+    LLaDA quando gli servono, che e' anche l'unico momento in cui vale la pena
+    tirare dentro torch e gguf.
+    """
+    alias = "_llada_city96_gguf"
+    if alias in sys.modules:
+        return
+
+    motore = os.environ.get("DAPROD_MOTORE")
+    if not motore:
+        return
+
+    # Prima la nostra, poi quella di ComfyUI: se un giorno il pacco arrivasse
+    # per la strada normale, quella e' gia' buona e non c'e' niente da fare.
+    cartelle = [Path(motore).parent / "custom_nodes", Path(motore) / "custom_nodes"]
+
+    for cartella in cartelle:
+        if not cartella.is_dir():
+            continue
+        for candidato in sorted(cartella.iterdir()):
+            if not candidato.is_dir() or "gguf" not in candidato.name.lower():
+                continue
+            # Gli stessi tre file che cerca lui: e' il modo in cui riconosce il
+            # pacco, e riconoscerlo in due modi diversi vorrebbe dire due idee
+            # diverse di cosa sia installato.
+            if not all((candidato / f).is_file() for f in ("loader.py", "dequant.py", "ops.py")):
+                continue
+            pacchetto = types.ModuleType(alias)
+            pacchetto.__path__ = [str(candidato)]
+            pacchetto.__package__ = alias
+            sys.modules[alias] = pacchetto
+            logging.info("[daprod] ComfyUI-GGUF per LLaDA: %s", candidato)
+            return
+
+    logging.info("[daprod] ComfyUI-GGUF non trovato: LLaDA-Image non potra' partire")
+
+
+_apri_la_strada_al_gguf()
+
+
+# ------------------------------------------- LLaDA: la decodifica sulla scheda
+
+
+_llada_sistemato = False
+
+
+def _porta_il_vae_in_scheda(pipe) -> None:
+    """Sposta sulla scheda video il VAE di LLaDA, se e' rimasto in RAM.
+
+    ⚠ **Il difetto, in una riga:** i quattro passi duravano 14 secondi e poi
+    l'immagine non arrivava per venti minuti, con un core del processore al
+    100% e la scheda video ferma al 13%.
+
+    Il pacco di nodi, in modalita' ``cuda``, evita apposta di spostare tutta la
+    pipeline sulla scheda — ed e' la scelta giusta, perche' il trasformatore
+    INT8 e il text encoder GGUF non ci starebbero. Ma insieme a loro resta in
+    RAM anche il **VAE**, che e' l'ultimo passo: il pipeline fa
+    ``latents.to(self.vae.device)`` e decodifica dove sta lui, cioe' sul
+    processore, un tile alla volta.
+
+    Il VAE di LLaDA pesa **168 MB**. Sulla scheda ci sta con qualunque cosa
+    d'altro ci sia sopra, e li' la decodifica e' un lavoro da secondi.
+
+    **Non si tocca niente altro**, ed e' la parte importante: il trasformatore
+    e il text encoder restano dove il pacco li ha messi. Questo sposta un pezzo
+    solo, quello che pesa poco e costa tanto.
+    """
+    import torch
+
+    if not torch.cuda.is_available():
+        return
+
+    vae = getattr(pipe, "vae", None)
+    if vae is None or not hasattr(vae, "to"):
+        return
+
+    # Con lo scarico di accelerate (``sequential_cpu_offload`` e
+    # ``model_cpu_offload``) i pezzi li muove lui, e mettersi in mezzo vuol dire
+    # rompergli i conti. Si riconosce dal gancio che lascia attaccato.
+    if getattr(vae, "_hf_hook", None) is not None:
+        return
+
+    try:
+        dove = next(vae.parameters()).device
+    except StopIteration:
+        return
+    if dove.type == "cuda":
+        return
+
+    vae.to("cuda")
+    logging.info("[daprod] LLaDA: VAE portato sulla scheda video (era in RAM)")
+
+
+def _sistema_llada(dati=None):
+    """Avvolge il caricatore di LLaDA, una volta sola, alla prima richiesta.
+
+    Si fa qui e non all'importazione perche' all'importazione i nodi di LLaDA
+    potrebbero non essere ancora stati caricati: l'ordine fra cartelle di nodi
+    non e' garantito. Alla prima richiesta invece ci sono tutti, di sicuro.
+    """
+    global _llada_sistemato
+    if _llada_sistemato:
+        return dati
+    try:
+        from nodes import NODE_CLASS_MAPPINGS
+
+        classe = NODE_CLASS_MAPPINGS.get("LLaDAImageLoader")
+        if classe is None:
+            return dati
+        originale = classe.load
+
+        def load(self, *argomenti, **parole):
+            esito = originale(self, *argomenti, **parole)
+            try:
+                _porta_il_vae_in_scheda(esito[0])
+            except Exception as guasto:  # noqa: BLE001
+                # Una decodifica lenta e' meglio di una generazione che muore:
+                # se lo spostamento non riesce, si va avanti com'era.
+                logging.warning("[daprod] LLaDA: VAE lasciato in RAM (%s)", guasto)
+            return esito
+
+        classe.load = load
+        _llada_sistemato = True
+        logging.info("[daprod] LLaDA: caricatore avvolto, il VAE andra' in scheda")
+    except Exception as guasto:  # noqa: BLE001
+        logging.warning("[daprod] LLaDA: non sono riuscito a sistemare il VAE (%s)", guasto)
+    return dati
+
+
+try:
+    PromptServer.instance.add_on_prompt_handler(_sistema_llada)
+except Exception as _guasto:  # noqa: BLE001
+    logging.warning("[daprod] LLaDA: niente gancio sulle richieste (%s)", _guasto)
 
 
 # ComfyUI cerca queste due in ogni nodo: senza, si lamenta di un pacchetto rotto.
