@@ -244,6 +244,43 @@ vecchio prometteva un'altra cosa — e dalla **0.7.7** ce n'è una in più, gli
   con due tasti: *salva nel telefono* e *condividi*;
 - **DaProd** — la bacheca, e il tuo profilo. Vedi sotto.
 
+### Quando vuoi cambiare una foto che hai già
+
+Dalla **1.0.2** non si fa solo una foto nuova: se ne può cambiare una che hai
+già. Si tocca **Produzione Immagini** e la pagina chiede quale delle due:
+
+- **Da una descrizione** — la scrivi e nasce dal niente;
+- **Modifica** — parti da una foto che hai già e dici cosa cambiare.
+
+*(Fino alla 1.0.3 la seconda si chiamava «Da una foto che hai», e in Produzione
+c'era anche un tastone «Modifica» per conto suo. Dalla **1.0.4** il nome è uno
+e il posto è uno.)*
+
+Dentro **Modifica** le domande sono quattro, in quest'ordine.
+
+**Da dove parti.** Due strade, e le trovi scritte tutte e due: *Una foto che hai
+fatto* apre le tue Produzioni e ne scegli una; *Dalla galleria del telefono*
+apre la galleria. Da qualunque parte arrivi, la foto viene rimpicciolita a 1024
+sul lato lungo prima di partire: è la misura su cui questi modelli lavorano, e
+mandare i dodici mega della fotocamera vorrebbe dire aspettare il caricamento e
+poi vedersela rimpicciolire lo stesso.
+
+**Cosa deve cambiare.** Una frase: «fai diventare il cielo un tramonto
+arancione».
+
+**Con che modello.** Gli stessi delle foto nuove, e sanno cambiarle tutti — ma
+in due modi diversi. I quattro col **pennello** (Anima, Anima v2, i due FLUX.2)
+rifanno **solo la zona che dipingi** e lasciano il resto identico, pixel per
+pixel. **LLaDA** invece lavora **a parole**: guarda tutta la foto e segue
+l'istruzione. È il più lento della scheda.
+
+**Cosa cambio.** Dalla **1.0.4** è una domanda, non più quello che capita col
+dito: *tutta la foto* — ed è quello che parte — oppure *solo una zona, la
+dipingo io*, e allora compare il pennello e la dipingi col dito (in rosso: il
+rosso è quello che si rifà). C'è anche *cancella il disegno*, se sbagli.
+Scegliendo LLaDA la domanda si spegne e c'è scritto perché: lui la zona non la
+sa usare, guarda tutta la foto.
+
 ### Quando chiedi una canzone
 
 Dalla **0.7.7** dal telefono c'è tutto quello che c'è sul computer, e sono

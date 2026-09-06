@@ -113,6 +113,21 @@ export interface Campo {
    * che è il gesto per «e questo cos'è?» su un telefono.
    */
   spiegazioni?: Readonly<Record<string, string>>;
+  /**
+   * ⚠ **Quali scelte non sanno usare la zona dipinta.** Nuovo nella 1.0.4.
+   *
+   * Sta sul campo del modello di «modifica.immagine», ed è l'unico posto in
+   * cui questa cosa è scritta per chi sta fuori dal computer: LLaDA modifica
+   * **seguendo l'istruzione** e guarda tutta la foto — il nodo che lo fa
+   * girare non ha proprio un ingresso per la maschera (vedi `senzaPennello` in
+   * `apps/foto/src/grafi.js`). Chi dipinge una zona e poi sceglie LLaDA sta
+   * dipingendo per niente, e finora nessuno glielo diceva.
+   *
+   * Chi disegna il modulo lo legge e spegne la domanda sulla zona quando il
+   * modello scelto è in questo elenco. Chi non lo guarda si comporta come
+   * prima: è una cosa in più, non un obbligo.
+   */
+  senzaZona?: readonly string[];
   /** Un esempio vero, che aiuta chi compila più di qualunque descrizione. */
   esempio?: string;
   /**
