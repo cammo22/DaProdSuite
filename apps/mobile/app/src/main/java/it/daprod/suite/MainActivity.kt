@@ -1458,6 +1458,27 @@ class MainActivity : AppCompatActivity() {
                     runOnUiThread { apriSuite() }
                 }
 
+                /**
+                 * ⚠ **I permessi, chiesti dalla pagina.** Nuovo nella 0.9.6.
+                 *
+                 * Chiesto il 6 settembre 2026: «ancora non vedo nelle
+                 * impostazioni la sezione permessi per notifiche, aggiornamenti
+                 * e file».
+                 *
+                 * Aveva ragione e la mia correzione era mezza: nella 0.9.5 li
+                 * ho tolti dall'avvio — che era la parte giusta — e li ho
+                 * lasciati **solo** nel menu di Android, cioe' in un posto che
+                 * dentro la suite non si vede. Uno che cerca le impostazioni
+                 * tocca l'ingranaggio, non il menu dell'app.
+                 *
+                 * Il foglio vero lo deve aprire l'app: i permessi sono di
+                 * Android, e una pagina web non li puo' chiedere.
+                 */
+                @JavascriptInterface
+                fun permessi() {
+                    runOnUiThread { mostraIPermessi(false) }
+                }
+
                 @JavascriptInterface
                 fun aggiorna() {
                     runOnUiThread { cercaAggiornamento(dilloSempre = true) }
