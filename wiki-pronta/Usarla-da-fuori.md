@@ -244,6 +244,20 @@ vecchio prometteva un'altra cosa — e dalla **0.7.7** ce n'è una in più, gli
   con due tasti: *salva nel telefono* e *condividi*;
 - **DaProd** — la bacheca, e il tuo profilo. Vedi sotto.
 
+### Quando chiedi una foto
+
+Dalla **1.0.5** la misura si sceglie da qui, e non è più quella rimasta
+selezionata sul computer:
+
+- **che forma** — 16:9 e 4:3 sono orizzontali, 9:16 è quella del telefono, 1:1
+  è il quadrato;
+- **quanto grande** — 480 è la più veloce, 1080p la più grande. I pixel veri
+  (1088 e non 1080, per esempio) li decide la scheda: questi modelli lavorano
+  per multipli di 16, e il numero tondo non è sempre uno di quelli.
+
+Di serie parte un quadrato a 1080p. Poi c'è **quante immagini** (da 1 a 4:
+ognuna è un giro di scheda video) e **con che modello**.
+
 ### Quando vuoi cambiare una foto che hai già
 
 Dalla **1.0.2** non si fa solo una foto nuova: se ne può cambiare una che hai

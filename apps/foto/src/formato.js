@@ -55,6 +55,24 @@ export function misuraScelta() {
   return { larghezza, altezza, etichetta: `${larghezza}x${altezza}` };
 }
 
+/**
+ * Sceglie forma e risoluzione da fuori: dal telefono, dalla console, da un agente.
+ *
+ * ⚠ **Non si ricorda.** Gli altri due gesti — i pulsanti — scrivono la scelta
+ * nel `localStorage`, perche' chi lavora in verticale ci lavora tutto il
+ * pomeriggio. Questa no: la scelta arriva da un'altra persona, e non deve
+ * cambiare sotto le mani a chi sta al computer la prossima volta che apre la
+ * scheda. Vale per la generazione che parte adesso e basta.
+ *
+ * Quello che non riconosce lo lascia com'e': un valore inventato non deve
+ * spegnere una generazione, deve solo non cambiare niente.
+ */
+export function scegliMisura(qualeForma, qualeRisoluzione) {
+  if (qualeForma && MISURE[qualeForma]) forma = qualeForma;
+  if (qualeRisoluzione && MISURE[forma][qualeRisoluzione]) risoluzione = qualeRisoluzione;
+  disegna();
+}
+
 function disegna() {
   const misura = misuraScelta();
   el.misura.textContent = `${misura.larghezza} × ${misura.altezza} px`;

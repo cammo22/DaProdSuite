@@ -17,6 +17,99 @@ l'indirizzo stabile della 1.0.3 non avrà retto un giro vero fuori casa.
 
 ---
 
+## 1.0.5 — La misura si sceglie, e LLaDA trova il GGUF
+
+> «nella produzione immagini non si puo scegliere la risoluzione»
+>
+> «llada continua a dare problemi mi sto stancando di ripetere sempre le stesse
+> cose bro — RuntimeError: ComfyUI-GGUF was not found. Install/enable City96
+> ComfyUI-GGUF first.»
+
+### La forma e la risoluzione, anche da fuori
+
+Chiedendo una foto dal telefono partiva sempre **quello che era rimasto
+selezionato sulla scheda del computer**: una scelta fatta da un'altra persona
+in un altro momento. È la stessa cosa che nella 0.9.1 avevamo tolto dai
+modelli, e qui era rimasta.
+
+Adesso nella Produzione Immagini ci sono due file di pastiglie in più: **che
+forma** (16:9, 9:16, 4:3, 1:1) e **quanto grande** (480, 720, 1080p). Sono le
+stesse due file che stanno sulla scheda del computer — non un secondo elenco di
+misure — e i pixel veri li decide sempre lei: chi chiede da fuori preme gli
+stessi tasti che premerebbe di persona. Di serie: quadrato a 1080p.
+
+### ⚠ «ComfyUI-GGUF non trovato», con ComfyUI-GGUF installato
+
+Il text encoder di LLaDA è un GGUF, e i suoi nodi si appoggiano al codice di
+City96 per leggerlo. Lo cercano in un posto solo: dentro la cartella di
+ComfyUI. **Noi i nodi di terzi non li teniamo lì** — stanno accanto al motore,
+così sopravvivono al suo aggiornamento — e quindi non lo trovavano mai, pur
+essendo installato e usato tutti i giorni da FLUX.2 Klein.
+
+Aggiustarlo dentro il loro file sarebbe durato fino al primo aggiornamento del
+nodo. L'adattatore però lascia una porta aperta: se il pacchetto è **già
+registrato** col suo nome interno, se lo tiene e non va a cercarlo. Adesso è il
+ponte della suite a registrarglielo, all'accensione del motore, con la nostra
+cartella dentro. Nel log del motore si legge una riga sola: *«ComfyUI-GGUF per
+LLaDA: …»*.
+
+E i tre file di LLaDA, nel catalogo dei modelli, adesso dichiarano tutti e due
+i nodi: chi installa LLaDA senza aver mai usato FLUX.2 se li ritrova
+ugualmente.
+
+### ⚠ Lo scarico: la 1.0.4 l'aveva peggiorato
+
+Nella 1.0.4 avevo cambiato lo scarico da `cpu` a `sequential_cpu_offload`,
+perché il commento accanto descriveva il secondo mentre il codice diceva il
+primo. Il ragionamento era giusto e la conclusione sbagliata, e l'ho scoperto
+accendendo il motore: con questo modello `sequential_cpu_offload` **non parte
+proprio**. Lo scarico di accelerate ricrea i pesi su un dispositivo finto, e i
+tensori GGUF del text encoder non si lasciano ricreare — `TypeError:
+GGMLTensor.__new__() missing 2 required keyword-only arguments`. Non è
+aggiustabile da noi: sta fra accelerate e i nodi GGUF di City96.
+
+La strada giusta è `cuda`, che in questo pacco vuol dire il contrario di quello
+che sembra: **non** carica tutto sulla scheda. Ci mette solo i pesi non
+quantizzati del trasformatore e porta su le matrici INT8 una per volta, mentre
+lavora. È quello che usano i due workflow di esempio del pacco. Provato sul
+motore vero: i quattro passi girano sulla scheda in **14 secondi**
+occupandone **1,5 GB su 8**.
+
+### ⚠ E poi l'immagine non arrivava lo stesso: decodificava il processore
+
+Quattro passi in quattordici secondi, e poi venti minuti di niente, con un core
+del processore al 100% e la scheda video ferma. Detto da chi guardava:
+«troppo lento bro, usa la gpu e offloada».
+
+L'ultimo passo di una generazione è il VAE, che trasforma il latente in
+un'immagine vera. Quel pacco di nodi, in modalità `cuda`, evita apposta di
+spostare tutta la pipeline sulla scheda — ed è giusto, perché il trasformatore
+e il text encoder non ci starebbero — ma insieme a loro lascia in RAM anche il
+**VAE**, e il pipeline decodifica dove sta lui: sul processore, un quadretto
+alla volta.
+
+Il VAE di LLaDA pesa **168 MB**. Sulla scheda ci sta con qualunque cosa ci sia
+sopra. Adesso ce lo mette il ponte della suite, all'apertura del modello, e
+sposta **solo quello**: trasformatore e text encoder restano dove il pacco li
+ha messi.
+
+Il risultato, misurato sul motore vero: un 512×512 in **99 secondi contando il
+caricamento dei 16 GB di pesi**, e **94 a modello già caldo**.
+
+E quei 94 secondi vanno detti per intero, perché è quello che si aspetta chi
+preme: i quattro passi sono **14**. Gli altri ottanta sono il text encoder da
+9,2 GB che lavora in RAM, e su una scheda da 8 GB non c'è modo di farlo salire
+— è il prezzo di questo modello su questa macchina, non un difetto rimasto
+aperto. LLaDA resta la scelta lenta del menu, e continua a non essere quella
+che parte da sola.
+
+Provata anche **la modifica**, che è l'altro nodo: alla mela rossa appena
+generata è stato detto «fai diventare verde la mela», e la mela è diventata
+verde restando la stessa mela sullo stesso tavolo. **116 secondi.** Nel menu,
+adesso, accanto a LLaDA c'è scritto quanto costa: «un minuto e mezzo».
+
+---
+
 ## 1.0.4 — LLaDA parte, e la modifica si capisce
 
 > «la suite dà questo errore quando si prova a generare con LLaDA»

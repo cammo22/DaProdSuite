@@ -80,6 +80,19 @@ export const NODI: Record<string, NodoCustom> = {
    *
    * ## Perche' lo mettiamo lo stesso
    *
+   * ## ⚠ Da solo non basta: vuole anche ComfyUI-GGUF
+   *
+   * Il text encoder di LLaDA e' un GGUF, e questi nodi non lo sanno leggere:
+   * si appoggiano al codice di City96, che e' il nodo qui sopra. Se non lo
+   * trovano, la generazione muore con *«ComfyUI-GGUF was not found»* — che
+   * dalla 1.0.4 e' successo con ComfyUI-GGUF **installato**, perche' lo
+   * cercavano dentro la cartella di ComfyUI e i nostri nodi stanno accanto al
+   * motore. La strada gliela apre `services/comfy/nodi/daprod_ponte`.
+   *
+   * Per questo i tre file di LLaDA in `manifest/models.json` chiedono tutti e
+   * due i nodi: chi installa LLaDA senza aver mai usato FLUX.2 deve ritrovarsi
+   * ugualmente con il GGUF sul disco.
+   *
    * Chiesto il 6 settembre 2026, dopo avergli detto che non entra negli 8 GB:
    * «mettilo lo stesso». Sa cosa costa — il text encoder da solo e' 9,2 GB e
    * dovra' passare dalla RAM — e lo vuole. Il modello resta **una scelta in

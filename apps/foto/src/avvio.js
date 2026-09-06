@@ -28,6 +28,7 @@ import { collegaLente } from "./lente.js";
 import { collegaTrascinamento, eImmagine } from "./trascina.js";
 import { collegaTraduzione } from "./lingua.js";
 import { apriImmagine, disegnaLaMaschera } from "./ritocco.js";
+import { scegliMisura } from "./formato.js";
 import { collega, modelliInVram, scaricaDallaVram } from "./ponte.js";
 
 document.querySelectorAll("nav button").forEach((b) => {
@@ -130,6 +131,18 @@ collegaLavoriDaFuori(async (richiesta) => {
 
   mostraScheda("crea");
   scrivi(el.prompt, richiesta.testo);
+  /**
+   * ⚠ **La misura arriva da chi chiede.** Dalla 1.0.5.
+   *
+   * Chiesto il 6 settembre 2026: «nella produzione immagini non si puo'
+   * scegliere la risoluzione». Prima partiva quella rimasta selezionata qui
+   * sulla scheda: una scelta di un'altra persona, di un altro momento.
+   *
+   * Non e' `scrivi` come gli altri campi perche' non e' una casella: sono due
+   * file di pulsanti, e chi le comanda e' `formato.js`. Se non arriva niente
+   * resta quello che c'e', che e' il comportamento di prima.
+   */
+  scegliMisura(richiesta.opzioni.forma, richiesta.opzioni.risoluzione);
   if (richiesta.opzioni.negativo) scrivi(el.negativo, richiesta.opzioni.negativo);
   scrivi(el.quante, String(numero(richiesta.opzioni.quante, 1, 4, 1)));
   // Il modello si può scegliere da fuori dalla 0.7.2. Cambiarlo fa ripartire il

@@ -10,7 +10,7 @@ Un programma solo per fare musica, immagini, video, voci e parlare con un avatar
 Ogni app la installi quando ti serve e la disinstalli quando non ti serve più.
 Gira sul tuo computer: niente account, niente chiavi API, codice aperto.
 
-[![versione](https://img.shields.io/badge/versione-1.0.4-7c5cff)](https://github.com/cammo22/DaProdSuite/releases/latest)
+[![versione](https://img.shields.io/badge/versione-1.0.5-7c5cff)](https://github.com/cammo22/DaProdSuite/releases/latest)
 [![licenza](https://img.shields.io/badge/licenza-MIT-5cff9d)](LICENSE)
 [![piattaforma](https://img.shields.io/badge/Windows-x64-3ddbff)](#requisiti)
 [![sito](https://img.shields.io/badge/sito-cammo22.github.io-ffa63d)](https://cammo22.github.io/DaProdSuite/)
@@ -95,22 +95,20 @@ tutte lo stesso.
 
 ## A che punto siamo
 
-**Ultima pubblicata: 1.0.4 — «LLaDA parte, e la modifica si capisce».**
-Generare con LLaDA si fermava prima di cominciare: al nodo che carica il
-modello mancava una voce obbligatoria, e già che c'era il lavoro lo faceva il
-processore invece della scheda video — adesso parte, e sulla scheda ci sale un
-pezzo per volta. Nella pagina, «Modifica» ha smesso di essere un tastone a sé
-in Produzione e sta dove uno la cerca, dentro «Produzione Immagini»; la foto di
-partenza si prende da quelle che hai fatto o dalla galleria del telefono, con
-scritto che le strade sono due; e la zona da cambiare adesso è **una domanda**
-— tutta la foto o solo un pezzo — invece di essere quello che capitava col
-dito. Chi sceglie LLaDA la domanda non ce l'ha, e c'è scritto perché: lui
-guarda tutta la foto e segue l'istruzione.
+**Ultima pubblicata: 1.0.5 — «La misura si sceglie, e LLaDA trova il GGUF».**
+Chiedendo una foto dal telefono adesso si sceglie **che forma** e **quanto
+grande**: prima partiva quello che era rimasto selezionato sul computer. E
+LLaDA, che dava errore da due giorni, genera: mancava una voce obbligatoria nel
+grafo, ComfyUI-GGUF veniva cercato dentro ComfyUI mentre noi i nodi di terzi li
+teniamo accanto al motore, lo scarico girava sul processore invece che sulla
+scheda, e l'ultimo passo — il VAE, 168 MB — decodificava in RAM mentre la
+scheda stava a guardare. Quattro difetti in fila, uno nascosto dietro l'altro,
+trovati tutti col motore acceso: adesso un 512×512 esce in **99 secondi**,
+caricamento dei 16 GB di pesi compreso.
 
-Prima, nella 1.0.3, il difetto raccontato sei volte — «dopo l'aggiornamento
-devo togliere l'account e rimetterlo» — era una riga che mancava, più
-**un indirizzo che non cambia mai** (Tailscale Funnel) per il computer visto da
-fuori casa.
+Prima, nella 1.0.4, «Modifica» è tornata dentro «Produzione Immagini» e la zona
+da cambiare è diventata una domanda con due risposte invece di essere quello
+che capitava col dito.
 
 Quello che cambia a ogni giro sta in [CHANGELOG.md](CHANGELOG.md), il percorso
 completo in [docs/ROADMAP.md](docs/ROADMAP.md).
