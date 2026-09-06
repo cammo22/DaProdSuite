@@ -1,7 +1,24 @@
 # Riprendere da qui
 
 Documento di passaggio fra una sessione e l'altra. Aggiornato il **6 settembre
-2026 (sera)**, con la **0.9.4** appena pubblicata.
+2026 (notte)**, con la **0.9.5** appena pubblicata.
+
+> ⚠ **La lezione della 0.9.5, e vale piu' della correzione.** Lo stesso difetto
+> e' stato corretto **tre volte**: «ad ogni aggiornamento devo eliminare e
+> rifare l'account». Le prime due correzioni erano cose vere e non erano la
+> causa.
+>
+> L'errore non era nel codice, era nel metodo: le prime due volte ho cercato la
+> seconda ipotesi **nello stesso posto della prima** — dentro il codice che
+> gestisce il collegamento. La terza volta ho guardato **cosa aveva in mano il
+> telefono**, e la prova stava in una sua foto di due versioni prima: la
+> finestra di sistema mostrava l'indirizzo della pagina, ed era un nome di
+> `trycloudflare.com`. Il telefono usava il tunnel **da casa**, e il tunnel
+> cambia nome a ogni accensione della suite.
+>
+> Quando una correzione non funziona, non serve una seconda ipotesi: serve **un
+> dato nuovo**. E il dato nuovo di solito e' gia' li' — nei log, in una foto, in
+> un file di stato — e nessuno l'ha letto.
 
 > ⚠ **La lezione della 0.9.4: una cosa mal disegnata e una cosa che sceglie per
 > te si somigliano.** Tutte e due tolgono il controllo a chi guarda, e infatti
@@ -84,6 +101,9 @@ Documento di passaggio fra una sessione e l'altra. Aggiornato il **6 settembre
 > - `node packages/gateway/scripts/porta-il-visualizer.mjs` ritravasa gli shader
 >   di DaProdVisualizer dentro la console. **Si rilancia quando si tocca uno
 >   shader nell'app**, e non si scrive mai a mano quel file.
+> - `pnpm run prova-telefono` gira le prove di `apps/mobile` sulla JVM, senza
+>   Android e senza rete: provano la parte che **decide**, a cominciare da
+>   quale indirizzo del computer usare.
 > - `pnpm run prova` gira cicli, avvio, azioni, gateway e MCP in una decina di
 >   secondi. Dalla 0.9.3 controlla anche che il copione della console **si
 >   legga**: quei file sono template literal, quindi per `tsc` il loro contenuto
@@ -210,6 +230,7 @@ Repo pubblico: **https://github.com/cammo22/DaProdSuite**
 | **Il lettore dell'app: fila, palco, visualizer** | fatto nella 0.9.0, rifatto di posto nella 0.9.1. **⚠ Non è il motore WebGL di DaProdVisualizer**: quello sta in un'app React e nella console non ci entra così com'è |
 | **Video da 30, 60 e 120 secondi** | `apps/cinema/src/lungo.js`, pezzi incatenati per l'ultimo fotogramma. **⚠ Mai passati per una scheda video** |
 | **La 0.9.1: quaranta cose che si vedevano** | fatto il 5 settembre. Non funzioni nuove: quello che è venuto fuori **usando** la 0.9.0 per una sera. Il dettaglio sta nel CHANGELOG § 0.9.1 |
+| **La 0.9.5: vince chi risponde da vicino** | fatto il 6 settembre (notte). Il telefono preferisce l'indirizzo di casa a quello del tunnel: uno non cambia mai, l'altro scade a ogni riavvio della suite. Con sette prove automatiche e la voce «Da dove passa» nel menu |
 | **La 0.9.4: il design, e le cose che decidevano da sole** | fatto il 6 settembre (sera). Comandi ridisegnati, menu degli effetti, visualizer come sfondo, navbar sottile, messaggi nostri al posto di quelli di Android, e tre decisioni restituite a chi usa la suite |
 | **La 0.9.3: il visualizer vero, e le cose che non tornavano** | fatto il 6 settembre. Nove shader di DaProdVisualizer portati con uno script, gli utenti che restano dopo un aggiornamento, due canzoni che escono in due, e il titolo sulle copertine |
 | **`porta-il-visualizer.mjs`** | il travaso degli shader. **Si rilancia**, non si riscrive: se lo si riscrivesse, alla terza correzione i due visualizer sarebbero due cose diverse con lo stesso nome |

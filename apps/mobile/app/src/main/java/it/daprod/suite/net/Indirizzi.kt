@@ -60,6 +60,66 @@ object Indirizzi {
         data object Silenzio : Esito
     }
 
+    /**
+     * ⚠ **Quanto è lontano un indirizzo.** Più basso è meglio.
+     *
+     * Serve a scegliere fra due che rispondono tutti e due, ed è la cura di
+     * «ad ogni aggiornamento devo eliminare e rifare l'account» — detto tre
+     * volte, e le prime due l'ho curato dalla parte sbagliata.
+     *
+     * ## La causa vera
+     *
+     * Il computer offre i suoi indirizzi in quest'ordine: **Tailscale, il
+     * tunnel, la rete di casa** (vedi `indirizziDiOggi` in remoto.ts). Quell'
+     * ordine è giusto per il **QR**, ed è stato scelto apposta nella 0.7.3:
+     * «l'app connessione deve funzionare solo su internet, non ci interessa su
+     * lan» — un telefono che si ricorda l'indirizzo di casa smette di
+     * funzionare appena esce dalla porta.
+     *
+     * Ma qui non si sta scegliendo cosa mettere nel QR: si sta scegliendo **da
+     * dove passare adesso**, e sono due domande diverse che avevano la stessa
+     * risposta. Il risultato è che a casa il telefono usava **il tunnel**: ogni
+     * immagine della galleria usciva su Internet, arrivava a Cloudflare e
+     * tornava indietro per fare due metri.
+     *
+     * E soprattutto: il telefono si salva come `base` l'indirizzo che ha
+     * funzionato, quindi si salvava **il tunnel**. Un indirizzo di
+     * `trycloudflare.com` è una fotografia con la data sopra: cambia a **ogni
+     * accensione della suite**, cioè a ogni aggiornamento. Nel registro del
+     * tunnel di questo computer se ne contano dodici diversi. Il giorno dopo
+     * quel nome risponde `530` — non è più il nostro computer, non è più
+     * nessuno — e il telefono resta senza strada.
+     *
+     * Un indirizzo di casa, invece, **non cambia**. Preferirlo quando risponde
+     * vuol dire che dopo il primo collegamento il telefono non dipende più da
+     * un nome che scade.
+     *
+     * Fuori casa non cambia niente: la rete di casa non risponde, e vince
+     * quello che risponde — Tailscale se c'è, altrimenti il tunnel.
+     */
+    internal fun quantoLontano(base: String): Int {
+        val dentro = base.substringAfter("://").substringBefore(":").substringBefore("/")
+        return when {
+            // La rete di casa: due metri, e l'indirizzo non cambia mai.
+            dentro.startsWith("192.168.") || dentro.startsWith("10.") -> 0
+            Regex("^172\\.(1[6-9]|2[0-9]|3[01])\\.").containsMatchIn(dentro) -> 0
+            // Tailscale (100.64.0.0/10): esce di casa, ma l'indirizzo è stabile.
+            Regex("^100\\.(6[4-9]|[7-9][0-9]|1[01][0-9]|12[0-7])\\.").containsMatchIn(dentro) -> 1
+            // Tutto il resto: il tunnel. Funziona ovunque e scade sempre.
+            else -> 2
+        }
+    }
+
+    /**
+     * Fra quelli che hanno risposto, il piu' vicino.
+     *
+     * Una riga sola, e sta in una funzione sua per una ragione: e' la regola
+     * che e' costata tre giri di correzioni sbagliate, ed e' l'unica cosa di
+     * questo file che si puo' provare senza una rete. Vedi `IndirizziTest`.
+     */
+    internal fun ilPiuVicino(vivi: List<String>): String? =
+        vivi.minByOrNull { quantoLontano(it) }
+
     suspend fun cerca(basi: List<String>, preferito: String?, token: String): Esito {
         val puliti = (listOfNotNull(preferito) + basi)
             .map { it.trim().trimEnd('/') }
@@ -67,9 +127,24 @@ object Indirizzi {
             .distinct()
         if (puliti.isEmpty()) return Esito.Silenzio
 
-        // Il preferito da solo: se c'è ancora, abbiamo finito qui.
+        /**
+         * **La scorciatoia, e quando non vale.**
+         *
+         * Se il preferito è già il più vicino che abbiamo, e risponde, abbiamo
+         * finito: è il caso di nove aperture su dieci e costa un colpetto.
+         *
+         * Se invece il preferito è più lontano di qualcosa che abbiamo in
+         * elenco — è il tunnel e c'è anche la rete di casa — allora **vale la
+         * pena provarli tutti**, perché quello vicino potrebbe rispondere e
+         * sarebbe la scelta giusta. Costa qualche centinaio di millisecondi
+         * una volta all'apertura, e in cambio l'indirizzo che ci si salva non è
+         * più uno che scade.
+         */
+        val piuVicino = puliti.minOf { quantoLontano(it) }
         val primo = puliti.first()
         var qualcunoHaDettoNo = false
+        if (quantoLontano(primo) > piuVicino) return fraTutti(puliti, token)
+
         when (colpo(primo, token)) {
             GatewayClient.Colpo.RISPONDE -> return Esito.Trovato(primo)
             /**
@@ -104,31 +179,50 @@ object Indirizzi {
 
         val altri = puliti.drop(1)
         if (altri.isEmpty()) return if (qualcunoHaDettoNo) Esito.Revocato else Esito.Silenzio
+        return fraTutti(altri, token, qualcunoHaDettoNo)
+    }
 
-        // Gli altri tutti insieme: vince il primo che risponde.
-        return withContext(Dispatchers.IO) {
-            coroutineScope {
-                val prove = altri.map { base -> async { base to colpo(base, token) } }
-                var trovato: Esito? = null
-                for (p in prove) {
-                    val (base, come) = p.await()
-                    if (come == GatewayClient.Colpo.RISPONDE) {
-                        trovato = Esito.Trovato(base)
-                        break
-                    }
-                    if (come == GatewayClient.Colpo.RIFIUTA) qualcunoHaDettoNo = true
-                }
-                for (p in prove) p.cancel()
-                /**
-                 * **Revocato solo se nessuno ha aperto e qualcuno ha detto no.**
-                 *
-                 * «Non risponde» e «non ti conosco» restano due cose diverse e
-                 * si raccontano diversamente — è il motivo per cui questo enum
-                 * ha tre valori e non due — ma la seconda adesso ha bisogno di
-                 * un accordo, non della parola di un indirizzo solo.
-                 */
-                trovato ?: if (qualcunoHaDettoNo) Esito.Revocato else Esito.Silenzio
+    /**
+     * Li prova tutti insieme, e **fra quelli che rispondono sceglie il più
+     * vicino** — non il più veloce.
+     *
+     * ⚠ È la riga che conta. Prima vinceva il primo che rispondeva, e il primo
+     * dell'elenco è il tunnel: quindi a casa si passava da Internet, e
+     * l'indirizzo che il telefono si salvava era quello che scade a ogni
+     * riavvio della suite. Vedi `quantoLontano`.
+     *
+     * Si aspettano tutti e poi si sceglie: aspettare tutti costa il timeout del
+     * più lento — sei secondi nel caso peggiore — e succede una volta
+     * all'apertura. Fermarsi al primo costava un account da rifare a ogni
+     * aggiornamento.
+     */
+    private suspend fun fraTutti(
+        quali: List<String>,
+        token: String,
+        giaUnNo: Boolean = false,
+    ): Esito = withContext(Dispatchers.IO) {
+        coroutineScope {
+            val prove = quali.map { base -> async { base to colpo(base, token) } }
+            var qualcunoHaDettoNo = giaUnNo
+            val vivi = mutableListOf<String>()
+            for (p in prove) {
+                val (base, come) = p.await()
+                if (come == GatewayClient.Colpo.RISPONDE) vivi.add(base)
+                if (come == GatewayClient.Colpo.RIFIUTA) qualcunoHaDettoNo = true
             }
+            val migliore = ilPiuVicino(vivi)
+            /**
+             * **Revocato solo se nessuno ha aperto e qualcuno ha detto no.**
+             *
+             * «Non risponde» e «non ti conosco» restano due cose diverse e si
+             * raccontano diversamente — è il motivo per cui questo enum ha tre
+             * valori e non due — ma la seconda ha bisogno di un accordo, non
+             * della parola di un indirizzo solo. Un `401` può arrivare da un
+             * nome di tunnel riciclato che non è più il nostro computer.
+             */
+            if (migliore != null) Esito.Trovato(migliore)
+            else if (qualcunoHaDettoNo) Esito.Revocato
+            else Esito.Silenzio
         }
     }
 
