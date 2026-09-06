@@ -1,7 +1,28 @@
 # Riprendere da qui
 
-Documento di passaggio fra una sessione e l'altra. Aggiornato il **6 settembre
-2026 (sera)**, con la **1.0.5** appena pubblicata.
+Documento di passaggio fra una sessione e l'altra. Aggiornato il **7 settembre
+2026**, con la **1.0.10** appena pubblicata.
+
+> ⚠ **La lezione della 1.0.10: una verita' sul mondo di fuori non si mette in
+> memoria e basta.**
+>
+> «Dopo l'update non si ricollega» e' stato detto **sette volte**. La causa di
+> stavolta: l'indirizzo Funnel veniva chiesto a Tailscale **una volta**, all'
+> avvio, e il risultato restava in una variabile per tutta la sessione. Se quel
+> singolo controllo cadeva — Tailscale che ci mette due secondi in piu' — il
+> computer passava il resto della giornata a dire al telefono soltanto indirizzi
+> che scadono.
+>
+> Una cosa che sta fuori dal nostro processo (un servizio di sistema, una rete,
+> un tunnel) **cambia senza avvisarci**: metterla in una variabile all'avvio vuol
+> dire dare per fermo qualcosa che non lo e'. O si guarda quando serve, o si
+> riguarda ogni tanto — e il costo qui era una chiamata a un comando ogni tre
+> minuti.
+>
+> Il metodo, invece, ha funzionato: prima di leggere codice ho misurato dal PC
+> tutto quello che si poteva misurare — profilo, token, `/io`, e una bussata a
+> ognuno dei quattro indirizzi. Sono quei quattro `200` che hanno escluso in due
+> minuti le due cause delle volte precedenti.
 
 > ⚠ **La lezione della 1.0.5: un grafo si prova col motore acceso.**
 >

@@ -18,6 +18,65 @@ ancora lì.
 
 ---
 
+## 1.0.10 — L'indirizzo che non scade si ricontrolla
+
+> «ancora una volta ho fatto l'update e non funziona più, l'app mobile non si
+> ricollega, che dobbiamo fare?»
+
+Settima volta. E stavolta, prima di toccare una riga, ho misurato tutto quello
+che si poteva misurare da questa parte:
+
+- il computer **risponde da Internet**: `daprodmain.tail56d4ae.ts.net` torna 200;
+- il profilo del telefono è **intero**, con il suo token, e l'ultimo contatto
+  col PC è di **sette minuti prima** del messaggio;
+- e **tutti e quattro** gli indirizzi di oggi — il nome fisso, il tailnet, il
+  tunnel, la wifi di casa — rispondono `200` bussando con quel token.
+
+Cioè: niente account perso, niente computer irraggiungibile. Le due cose che
+avevo curato le altre volte non c'entravano.
+
+### ⚠ Il difetto: una fotografia scattata nel secondo peggiore
+
+L'indirizzo che non cambia mai (Tailscale Funnel) il computer se lo segna in
+una variabile, `funnel`, e quella variabile veniva riempita in **tre soli
+momenti**: l'avvio della suite e i due interruttori nelle impostazioni. Da lì in
+poi restava quella per tutta la sessione.
+
+Il guaio è che quel controllo può andare male senza che sia successo niente di
+grave — Tailscale che nel primo secondo dopo l'avvio non ha ancora finito di
+collegarsi risponde «non acceso». Da quel momento, per tutta la sessione, il QR
+e la risposta a `/io` **smettono di nominare l'unico indirizzo che non scade**, e
+il telefono impara una lista fatta solo di indirizzi che muoiono: il tunnel, che
+cambia nome a ogni accensione; la rete di casa, che da fuori non esiste; il
+`100.x` del tailnet, dove il telefono non entra più dalla 1.0.7.
+
+Da fuori casa, da lì in avanti, non c'è più nessuna strada. E riaprire la suite
+non aggiusta niente, perché al riavvio dopo il tunnel ha un altro nome ancora.
+**È esattamente il difetto che l'indirizzo fisso doveva chiudere, rientrato
+dalla finestra.**
+
+Adesso quel controllo si rifà **da solo ogni tre minuti** — e una prima volta
+venti secondi dopo l'avvio, che è quella che ripara il Tailscale non ancora
+pronto. Costa una chiamata al comando di Tailscale, la stessa che fa il pannello
+quando lo apri; in cambio, quello che il computer racconta di sé non è più una
+fotografia scattata nell'istante sbagliato. Quando l'indirizzo compare o sparisce
+finisce nel registro, e gli inviti già dati si rifanno.
+
+### Il gesto che rimette a posto un telefono già rimasto indietro
+
+La correzione impedisce che succeda ancora, ma non insegna niente a un telefono
+che ha già in tasca solo indirizzi morti. Per quello basta **una** connessione:
+la wifi di casa, oppure l'indirizzo fisso battuto a mano con il codice a otto
+cifre. Da lì il telefono si scrive il nome che non cambia, e da quel momento
+ritrova il computer da qualunque rete.
+
+Perché si capisca senza doverlo chiedere, la schermata «il computer non
+risponde» adesso lo dice: *attaccati una volta alla wifi di casa e apri la
+suite*. E il suggerimento nella casella dell'indirizzo non mostra più un nome di
+`trycloudflare`, che era il consiglio di prima che tutto questo esistesse.
+
+---
+
 ## 1.0.9 — Il lavoro parte anche se la scheda non era aperta
 
 > «a volte la produzione immagini dice non fatto a prescindere dal prompt; se

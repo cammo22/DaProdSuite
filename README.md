@@ -10,7 +10,7 @@ Un programma solo per fare musica, immagini, video, voci e parlare con un avatar
 Ogni app la installi quando ti serve e la disinstalli quando non ti serve più.
 Gira sul tuo computer: niente account, niente chiavi API, codice aperto.
 
-[![versione](https://img.shields.io/badge/versione-1.0.9-7c5cff)](https://github.com/cammo22/DaProdSuite/releases/latest)
+[![versione](https://img.shields.io/badge/versione-1.0.10-7c5cff)](https://github.com/cammo22/DaProdSuite/releases/latest)
 [![licenza](https://img.shields.io/badge/licenza-MIT-5cff9d)](LICENSE)
 [![piattaforma](https://img.shields.io/badge/Windows-x64-3ddbff)](#requisiti)
 [![sito](https://img.shields.io/badge/sito-cammo22.github.io-ffa63d)](https://cammo22.github.io/DaProdSuite/)
@@ -95,24 +95,21 @@ tutte lo stesso.
 
 ## A che punto siamo
 
-**Ultima pubblicata: 1.0.9 — «Il lavoro parte anche se la scheda non era
-aperta».** Chiedendo una foto dal telefono capitava di leggere «non fatto»
-qualunque cosa avessi scritto, e bastava aprire DaProdFoto sul computer perché
-tutto funzionasse: le schede premevano il proprio tasto Genera mezzo secondo
-dopo essersi aperte, quando è ancora spento perché sta controllando i pesi.
-Adesso aspettano che sia pronto — tutte e quattro, la voce non aspettava
-affatto. Il tasto **Usa l'AI** non scavalca più la fila: caricava il modello in
-scheda video prima di prendere il turno, e chi stava generando in quel momento
-ci rimetteva. E **LLaDA adesso la scheda video la usa**: il testo veniva letto
-dal processore perché il suo encoder restava in RAM — spostato lui e i due
-pezzi che lo accompagnano, un'immagine passa da 94 a **33 secondi**.
+**Ultima pubblicata: 1.0.10 — «L'indirizzo che non scade si ricontrolla».**
+«Dopo l'update l'app del telefono non si ricollega» è stato detto sette volte.
+Stavolta i numeri hanno escluso subito le cause di prima — il computer
+rispondeva da Internet, il profilo del telefono era intero, e tutti e quattro
+gli indirizzi tornavano `200` bussando col suo token. Il difetto era che il
+computer chiedeva a Tailscale il proprio indirizzo fisso **una volta sola,
+all'avvio**: se quel controllo cadeva (Tailscale che ci mette due secondi in
+più), per tutta la sessione smetteva di nominarlo, e al telefono restavano solo
+indirizzi che scadono. Adesso si ricontrolla da solo ogni tre minuti. Un
+telefono rimasto indietro si rimette a posto con **una** connessione dalla wifi
+di casa.
 
-Prima, nella 1.0.7, il computer ha preso un nome pubblico suo che **non cambia
-mai**, con certificato vero: chi si collega non installa niente e non fa il
-login di niente. Con quello se n'è andato Tailscale dal telefono, e con lui
-7 MB di app; è rimasto **un** modo di far entrare qualcuno, il QR, che adesso
-funziona ovunque. E nella 1.0.5 la forma e la risoluzione si scelgono anche da
-fuori.
+Prima, nella 1.0.9, i lavori chiesti dal telefono partono anche a scheda chiusa,
+il tasto «Usa l'AI» non scavalca più la fila, e LLaDA usa la scheda video (da 94
+a 33 secondi).
 
 Quello che cambia a ogni giro sta in [CHANGELOG.md](CHANGELOG.md), il percorso
 completo in [docs/ROADMAP.md](docs/ROADMAP.md).

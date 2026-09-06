@@ -44,7 +44,7 @@
     <string name="stato_non_raggiungibile">non raggiungibile adesso</string>
 
     <!-- Senza computer -->
-    <string name="senza_pc_avviso">Il computer non risponde: vedi quello che è arrivato fin qui, e quello che chiedi parte da solo appena torna.</string>
+    <string name="senza_pc_avviso">Il computer non risponde: vedi quello che è arrivato fin qui, e quello che chiedi parte da solo appena torna. Se sei fuori casa, attaccati una volta alla wifi di casa e apri la suite: il telefono impara da solo il nome che non cambia mai, e da lì in poi ti ritrova ovunque.</string>
     <!--
       ⚠ Riscritta il 6 settembre 2026. Prima diceva "collegati una volta con lui
       acceso", che chi la legge traduce in "rifai il collegamento" — ed e' esattamente
@@ -56,7 +56,7 @@
 
     <!-- Chiedere -->
     <string name="salvata_in_coda">PC non raggiungibile: la tengo qui e parte da sola quando torna.</string>
-    <string name="hint_indirizzo">https://qualcosa.trycloudflare.com</string>
+    <string name="hint_indirizzo">https://ilcomputer.tailXXXX.ts.net</string>
 
     <!-- Il menu dei tre puntini -->
     <string name="menu_cambia">Cambia persona</string>
