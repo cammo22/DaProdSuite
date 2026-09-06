@@ -258,8 +258,19 @@ export const COPIONE_PRODUZIONE = `
     riga.className = "filtri";
     riga.style.marginTop = "10px";
 
+    /**
+     * Di che tipo sono i prompt di questa azione.
+     *
+     * ⚠ **E se l'azione non e' una delle tre, si guarda la scheda.** Dalla
+     * 1.0.6: «Modifica una foto» e «Una storia» sono nate dopo questa tabella
+     * e non ci sono dentro, quindi la riga dei prompt spariva del tutto — in
+     * quei due moduli non si poteva ne' usarne uno ne' salvarne uno, senza che
+     * niente lo dicesse. Un prompt pero' e' del **tipo della scheda**, non
+     * dell'azione: quello che vale per una foto vale per una foto modificata.
+     */
     var quale = null;
     for (var t of TIPI_STILE) if (t.azione === a.id) quale = t.id;
+    if (!quale) quale = { foto: "immagine", cinema: "video", musica: "musica" }[a.app] || null;
     if (!quale) return riga;
 
     var miei = mieiStili.filter(function (s) {
@@ -1044,7 +1055,7 @@ export const COPIONE_PRODUZIONE = `
      * Adesso la riga dice che le strade sono due e i due tasti le ripetono con
      * le stesse parole.
      */
-    vuoto.textContent = "Da dove parti? Una foto che hai gia' fatto, o una dalla galleria del telefono.";
+    vuoto.textContent = "Da dove parti? Una foto che hai gia' fatto, una dalla galleria, o scattala adesso.";
     scatola.append(vuoto);
 
     // La foto sotto e il disegno sopra, sovrapposti. Due tele e non una perche'
@@ -1073,6 +1084,42 @@ export const COPIONE_PRODUZIONE = `
     pulisci.className = "mini";
     pulisci.textContent = "↺ Cancella il disegno";
     pulisci.hidden = true;
+    /**
+     * ⚠ **La terza strada: scattarla adesso.** Nuova nella 1.0.6.
+     *
+     * Chiesto il 7 settembre 2026: «oltre a caricare un'immagine dalla galleria
+     * del telefono, facciamo che posso anche scattare una foto al volo dalla
+     * camera».
+     *
+     * E' un secondo «<input type="file">» e non un tasto diverso, ed e' il
+     * punto: cambia solo «capture», e da li' in poi la foto fa la stessa strada
+     * delle altre due — rimpicciolita a 1024, allineata a 32, caricata sul
+     * computer. Una strada sola per arrivare al motore, tre modi di imboccarla.
+     *
+     * «capture» lo capiscono il telefono e l'app (vedi «onShowFileChooser» in
+     * MainActivity.kt, dove l'intento della fotocamera lo costruiamo noi
+     * perche' Android non lo mette). Su un computer il tasto non compare: non
+     * c'e' niente da inquadrare.
+     */
+    var scattaOra = document.createElement("button");
+    scattaOra.type = "button";
+    scattaOra.className = "mini";
+    scattaOra.textContent = "◉ Scattala adesso";
+    var scattaFile = document.createElement("input");
+    scattaFile.type = "file";
+    scattaFile.accept = "image/" + "*";
+    /*
+     * ⚠ **«setAttribute», non «scattaFile.capture = ...».** La proprieta' non
+     * la riflettono tutti i motori: dove non la conoscono si scrive un campo
+     * qualunque sull'oggetto e l'attributo non compare — provato nel banco,
+     * dove «input[capture]» non trovava niente. Ad Android arriva l'attributo,
+     * non la proprieta': senza, «isCaptureEnabled» e' falso e la fotocamera non
+     * si apre mai.
+     */
+    scattaFile.setAttribute("capture", "environment");
+    scattaFile.hidden = true;
+    if (!suTelefono()) scattaOra.hidden = true;
+
     var scegliFile = document.createElement("input");
     scegliFile.type = "file";
     /*
@@ -1089,7 +1136,7 @@ export const COPIONE_PRODUZIONE = `
      */
     scegliFile.accept = "image/" + "*";
     scegliFile.hidden = true;
-    tasti.append(dalleMie, dalTelefono, scegliFile);
+    tasti.append(dalleMie, dalTelefono, scattaOra, scegliFile, scattaFile);
     scatola.append(tasti);
 
     var dice = document.createElement("div");
@@ -1241,15 +1288,23 @@ export const COPIONE_PRODUZIONE = `
       }
     }
 
-    dalTelefono.addEventListener("click", function () { scegliFile.click(); });
-    scegliFile.addEventListener("change", function () {
-      var f = scegliFile.files && scegliFile.files[0];
+    /** Le due caselle dei file si comportano uguale: cambia solo chi le apre. */
+    function daUnaCasella(casella, comeSiChiama) {
+      var f = casella.files && casella.files[0];
       if (!f) return;
       var lettore = new FileReader();
-      lettore.onload = function () { void metti(lettore.result, f.name); };
+      lettore.onload = function () { void metti(lettore.result, comeSiChiama || f.name); };
       lettore.readAsDataURL(f);
-      scegliFile.value = "";
-    });
+      casella.value = "";
+    }
+
+    dalTelefono.addEventListener("click", function () { scegliFile.click(); });
+    scegliFile.addEventListener("change", function () { daUnaCasella(scegliFile); });
+
+    scattaOra.addEventListener("click", function () { scattaFile.click(); });
+    // Il nome di un file appena scattato e' una data con dentro dei numeri:
+    // «appena scattata» dice quello che c'e' da sapere.
+    scattaFile.addEventListener("change", function () { daUnaCasella(scattaFile, "appena scattata"); });
 
     dalleMie.addEventListener("click", function () { void apriLeMieFoto(metti); });
 

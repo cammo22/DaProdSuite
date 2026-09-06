@@ -58,14 +58,22 @@ const MODELLI_FOTO = {
    */
   predefinito: "flux2-4b",
   scelte: ["anima", "anima2", "flux2-4b", "flux2-9b", "llada"],
+  /**
+   * ⚠ **Solo i nomi.** Chiesto il 7 settembre 2026: «togli la scritta un
+   * minuto e mezzo da LLaDA-Image, lascia solo i nomi, anche con gli altri
+   * modelli».
+   *
+   * Le etichette raccontavano ognuna la sua storia — «pronta, veloce», «il più
+   * bravo con le descrizioni lunghe» — e su un telefono erano cinque righe di
+   * testo dove servivano cinque pastiglie da toccare. Quello che un modello sa
+   * fare si impara usandolo; il nome serve a ritrovarlo.
+   */
   etichette: {
-    anima: "Anima — pronta, veloce",
-    anima2: "Anima v2 — anime e illustrazione",
-    "flux2-4b": "FLUX.2 Klein 4B — leggero",
-    "flux2-9b": "FLUX.2 Klein 9B — il più bravo con le descrizioni lunghe",
-    // Dice cosa costa nell'etichetta, non solo cosa sa fare: è il più lento
-    // della scheda e non ci sta nella scheda video. Vedi `grafi.js`.
-    llada: "LLaDA-Image — a parole; un minuto e mezzo a immagine",
+    anima: "Anima",
+    anima2: "Anima v2",
+    "flux2-4b": "FLUX.2 Klein 4B",
+    "flux2-9b": "FLUX.2 Klein 9B",
+    llada: "LLaDA-Image",
   },
 } as const;
 
@@ -93,12 +101,15 @@ const MODELLI_FOTO = {
 const MODELLI_MODIFICA = {
   predefinito: "flux2-4b",
   scelte: ["anima", "anima2", "flux2-4b", "flux2-9b", "llada"],
+  // Solo i nomi, come per la generazione. Chi non sa usare la zona lo dice il
+  // modulo quando lo scegli, che è il momento in cui serve saperlo: vedi
+  // `senzaZona` qui sotto.
   etichette: {
-    anima: "Anima — col pennello, veloce",
-    anima2: "Anima v2 — col pennello, anime e illustrazione",
-    "flux2-4b": "FLUX.2 Klein 4B — col pennello, leggero",
-    "flux2-9b": "FLUX.2 Klein 9B — col pennello, il più bravo",
-    llada: "LLaDA-Image — a parole, guarda tutta la foto. Un minuto e mezzo",
+    anima: "Anima",
+    anima2: "Anima v2",
+    "flux2-4b": "FLUX.2 Klein 4B",
+    "flux2-9b": "FLUX.2 Klein 9B",
+    llada: "LLaDA-Image",
   },
   /**
    * LLaDA e la zona dipinta non c'entrano niente l'uno con l'altra: il suo
@@ -113,8 +124,8 @@ const MODELLI_CINEMA = {
   predefinito: "ltx25",
   scelte: ["ltx25", "h3"],
   etichette: {
-    ltx25: "LTX 2.5 — video e suono insieme",
-    h3: "MiniMax H3 — parte da immagini di riferimento",
+    ltx25: "LTX 2.5",
+    h3: "MiniMax H3",
   },
 } as const;
 
@@ -128,9 +139,9 @@ const MODELLI_MUSICA = {
   predefinito: "ace-xl-turbo",
   scelte: ["ace-turbo", "ace-xl-turbo", "migliore"],
   etichette: {
-    "ace-turbo": "ACE-Step Turbo — otto passi, il più veloce",
-    "ace-xl-turbo": "ACE-Step XL — più grande, più lento",
-    migliore: "MiniMax Music 3 — il più bello, il più lento",
+    "ace-turbo": "ACE-Step Turbo",
+    "ace-xl-turbo": "ACE-Step XL",
+    migliore: "MiniMax Music 3",
   },
 } as const;
 
@@ -186,8 +197,8 @@ function campoModelloCopertina() {
     predefinito: "flux2-4b",
     scelte: ["anima", "flux2-4b"],
     etichette: {
-      anima: "Anima — la più veloce",
-      "flux2-4b": "FLUX.2 Klein 4B — capisce le descrizioni lunghe",
+      anima: "Anima",
+      "flux2-4b": "FLUX.2 Klein 4B",
     },
   } as const;
 }
@@ -379,25 +390,21 @@ export const AZIONI: readonly Azione[] = [
         tipo: "immagine",
         obbligatorio: false,
       },
-      {
-        /**
-         * Quanto può allontanarsi da com'era.
-         *
-         * Il nome tecnico è «denoise» e non lo si usa: chi legge «denoise 0,6»
-         * non sa cosa aspettarsi, chi legge «quanto la cambio» sì.
-         */
-        nome: "forza",
-        etichetta: "Quanto la cambio",
-        descrizione:
-          "Da 1 a 10. Basso ritocca e lascia riconoscibile quello che c'era, alto rifà da capo. " +
-          "LLaDA non lo usa: lui segue l'istruzione e basta.",
-        tipo: "numero",
-        obbligatorio: false,
-        min: 1,
-        max: 10,
-        predefinito: 6,
-        valoriTipici: [3, 6, 8, 10],
-      },
+      /**
+       * ⚠ **«Quanto la cambio» non c'è più.** Tolto il 7 settembre 2026:
+       * «l'impostazione quanto la cambio in modifica immagine togliamola,
+       * usiamo le impostazioni standard dei vari modelli».
+       *
+       * Era il `denoise` con un nome leggibile, da 1 a 10, e chiedeva a chi
+       * scrive «fai diventare il cielo arancione» di indovinare anche **quanto
+       * forte**. Ogni modello ha il suo punto di lavoro buono — la scheda lo
+       * mette da sola quando lo scegli, e su LLaDA quel numero non esisteva
+       * proprio.
+       *
+       * Il campo resta nella scheda sul computer, dove c'è un cursore, si vede
+       * il risultato e si può rifare: è lì che serve, non in un modulo che si
+       * riempie una volta da un telefono.
+       */
       campoModello(MODELLI_MODIFICA),
     ],
   },

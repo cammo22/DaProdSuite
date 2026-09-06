@@ -242,10 +242,28 @@ export const COPIONE_STILI = `
     var quali = (doveStili === "vetrina" ? stiliDegliAltri : mieiStili)
       .filter(function (s) { return tipoDi(s) === tipoStili && genereDi(s) === genereStili; });
 
+    /**
+     * Quando qui non c'e' niente, si dice **dov'e' finito quello che c'e'**.
+     *
+     * Chi salva un prompt dalla Produzione e poi apre questa scheda la trova
+     * su «Stili», che e' un altro elenco: dirgli «non hai ancora nessuno
+     * stile» e' vero e lo manda a cercare una cosa che ha gia'.
+     */
+    var altroGenere = genereStili === "prompt" ? "stile" : "prompt";
+    var quantiDiLa = (doveStili === "vetrina" ? stiliDegliAltri : mieiStili)
+      .filter(function (s) { return tipoDi(s) === tipoStili && genereDi(s) === altroGenere; }).length;
+    var comeSiChiamaLa = altroGenere === "prompt"
+      ? (quantiDiLa === 1 ? "prompt" : "prompt")
+      : (quantiDiLa === 1 ? "stile" : "stili");
+
     $("stili-vuoti").hidden = quali.length > 0;
     $("stili-vuoti").textContent = doveStili === "vetrina"
       ? "Nessuno ha ancora messo in DaProd " + comeSiChiama(true) + " per " + tipoOra().nome.toLowerCase() + ". Mettici il tuo: tieni premuto e scegli «condividi»."
-      : "Non hai ancora " + (eUnPrompt() ? "nessun prompt" : "nessuno stile") + " per " + tipoOra().nome.toLowerCase() + ".";
+      : "Non hai ancora " + (eUnPrompt() ? "nessun prompt" : "nessuno stile") + " per " + tipoOra().nome.toLowerCase() + "."
+        + (quantiDiLa
+            ? " Ne hai pero' " + quantiDiLa + " fra i " + (altroGenere === "prompt" ? "prompt" : "tuoi stili")
+              + ": tocca «" + (altroGenere === "prompt" ? "Prompt" : "Stili") + "» qui sopra."
+            : "");
 
     for (var s of quali) casella.append(cartaStile(s));
   }
@@ -272,14 +290,32 @@ export const COPIONE_STILI = `
     var riga = document.createElement("div");
     riga.className = "filtri";
     riga.style.marginBottom = "8px";
+    /**
+     * ⚠ **Il numero sta anche qui, dalla 1.0.6.**
+     *
+     * Detto da chi non li trovava: «ho aggiunto vari prompt dall'app, ma non me
+     * li ritrovo nel gestore stili». C'erano, ed erano dietro questa pastiglia:
+     * la scheda si apre su «Stili», i prompt sono l'altra meta', e chi salva un
+     * prompt dalla Produzione atterra qui e legge «non hai ancora nessuno
+     * stile». Vero, e fuorviante.
+     *
+     * Il conto sui tre tipi c'era gia' proprio per questo — «dice se l'elenco
+     * vuoto che stai guardando e' perche' non hai stili, o perche' stai
+     * guardando dalla parte sbagliata» — e mancava sulla domanda piu' grossa
+     * delle due. Adesso «Prompt · 1» si vede prima di premere.
+     */
+    var tuoi = doveStili === "vetrina" ? stiliDegliAltri : mieiStili;
     for (var g of [
       { id: "stile", nome: "Stili", sotto: "si aggiungono a quello che scrivi" },
       { id: "prompt", nome: "Prompt", sotto: "sostituiscono quello che scrivi" },
     ]) {
+      var quantiDelGenere = tuoi.filter((function (quale) {
+        return function (s) { return genereDi(s) === quale && tipoDi(s) === tipoStili; };
+      })(g.id)).length;
       var bg = document.createElement("button");
       bg.type = "button";
       bg.className = "mini" + (g.id === genereStili ? " on" : "");
-      bg.textContent = g.nome;
+      bg.textContent = g.nome + " · " + quantiDelGenere;
       bg.title = g.sotto;
       bg.addEventListener("click", (function (quale) {
         return function () { genereStili = quale; disegnaStili(); };

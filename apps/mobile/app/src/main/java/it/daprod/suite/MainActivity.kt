@@ -7,6 +7,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.provider.MediaStore
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.JavascriptInterface
@@ -239,6 +240,79 @@ class MainActivity : AppCompatActivity() {
     private fun nessunFileScelto() {
         attesaFile?.onReceiveValue(null)
         attesaFile = null
+    }
+
+    /* ------------------------------------------------ scattare una foto */
+
+    /**
+     * ⚠ **Scattare al volo, senza passare dalla galleria.** Nuovo nella 1.0.6.
+     *
+     * Chiesto il 7 settembre 2026: «oltre a caricare un'immagine dalla galleria
+     * del telefono, facciamo che posso anche scattare una foto al volo dalla
+     * camera».
+     *
+     * Il pezzo che manca ad Android sta tutto in una riga della documentazione:
+     * `FileChooserParams.createIntent()` **non contiene la fotocamera**, mai,
+     * nemmeno quando la pagina scrive `capture="environment"`. Quel `capture`
+     * arriva fin qui — è `isCaptureEnabled` — e poi tocca a noi costruire
+     * l'intento dello scatto e dire dove va messa la foto.
+     *
+     * Il file va in `cache/scatti`, che il nostro FileProvider sa passare ad
+     * altre app (vedi `res/xml/percorsi_file.xml`): la fotocamera è un'altra
+     * app, e senza un indirizzo `content://` da Android 7 non può scriverci.
+     */
+    private var scattoInCorso: Uri? = null
+
+    private val scattaUnaFoto =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { esito ->
+            val chiAspetta = attesaFile ?: return@registerForActivityResult
+            attesaFile = null
+            val dove = scattoInCorso
+            scattoInCorso = null
+            if (esito.resultCode == RESULT_OK && dove != null) {
+                chiAspetta.onReceiveValue(arrayOf(dove))
+            } else {
+                // Annullata: si risponde comunque, o quell'input resta morto.
+                chiAspetta.onReceiveValue(null)
+            }
+        }
+
+    /**
+     * Il permesso della camera **per lo scatto**, che è un'altra strada da
+     * quella del QR: lì si apre lo scanner, qui si riprende in mano la pagina
+     * che sta aspettando un file.
+     */
+    private val chiediCameraPerScatto =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { concesso ->
+            if (concesso) {
+                apriLaFotocamera()
+            } else {
+                nessunFileScelto()
+                avvisa("Senza il permesso della camera non posso scattare. Puoi prenderla dalla galleria.")
+            }
+        }
+
+    /** Apre la fotocamera del telefono e le dice dove mettere la foto. */
+    private fun apriLaFotocamera() {
+        val cartella = File(cacheDir, "scatti").apply { mkdirs() }
+        val file = File(cartella, "scatto-" + System.currentTimeMillis() + ".jpg")
+        val dove = FileProvider.getUriForFile(
+            this,
+            "$packageName.file",
+            file,
+        )
+        scattoInCorso = dove
+        val intento = Intent(MediaStore.ACTION_IMAGE_CAPTURE).apply {
+            putExtra(MediaStore.EXTRA_OUTPUT, dove)
+            addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+        }
+        try {
+            scattaUnaFoto.launch(intento)
+        } catch (_: Exception) {
+            scattoInCorso = null
+            nessunFileScelto()
+            avvisa("Su questo telefono non trovo un'app per scattare foto.")
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -1804,6 +1878,26 @@ class MainActivity : AppCompatActivity() {
                 // Se ne era rimasto uno appeso — si tocca due volte, capita —
                 // gli si risponde adesso: quell'input altrimenti resta morto.
                 nessunFileScelto()
+
+                /*
+                 * ⚠ La pagina puo' chiedere **la fotocamera**, non un file.
+                 * `capture="environment"` arriva qui come `isCaptureEnabled`,
+                 * e `createIntent()` la fotocamera non la mette mai: da questa
+                 * strada in giu' l'intento lo costruiamo noi. Vedi
+                 * `apriLaFotocamera`.
+                 */
+                if (comeLoVuole?.isCaptureEnabled == true) {
+                    attesaFile = chiAspetta
+                    if (ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.CAMERA)
+                        == PackageManager.PERMISSION_GRANTED
+                    ) {
+                        apriLaFotocamera()
+                    } else {
+                        chiediCameraPerScatto.launch(Manifest.permission.CAMERA)
+                    }
+                    return true
+                }
+
                 val intento = comeLoVuole?.createIntent() ?: return false
                 attesaFile = chiAspetta
                 return try {

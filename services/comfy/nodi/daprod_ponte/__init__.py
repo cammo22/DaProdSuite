@@ -805,6 +805,92 @@ _apri_la_strada_al_gguf()
 _llada_sistemato = False
 
 
+def _quanto_pesa(modulo) -> int:
+    """Quanti byte occupano i pesi **registrati** di un pezzo della pipeline.
+
+    I pesi GGUF e INT8 di questo pacco non sono registrati apposta — restano
+    mappati su disco e si dequantizzano al volo — quindi quello che si conta
+    qui e' solo cio' che un `.to("cuda")` sposterebbe davvero.
+    """
+    totale = 0
+    for t in list(modulo.parameters()) + list(modulo.buffers()):
+        try:
+            totale += t.numel() * t.element_size()
+        except Exception:  # noqa: BLE001
+            pass
+    return totale
+
+
+def _porta_i_pezzi_leggeri_in_scheda(pipe) -> None:
+    """Manda sulla scheda i pezzi piccoli che il pacco lascia in RAM.
+
+    ⚠ **Il difetto, detto da chi guardava il contatore:** «occupa poca gpu, al
+    suo picco sta a 2.8 su 8, qualcosa non va; ci mette piu' tempo a caricarsi
+    che a generare».
+
+    Aveva ragione, e il perche' sta in una riga del pipeline di LLaDA::
+
+        text_encoder_device = self.text_encoder.device
+        input_ids = text_inputs.input_ids.to(text_encoder_device)
+
+    Il testo viene codificato **dove sta il text encoder**, e in modalita'
+    `cuda` questo pacco sposta sulla scheda il solo trasformatore: encoder,
+    queryformer, text_projection e sigvq restano in RAM, quindi il processore
+    si fa tutta la lettura del prompt. Nei nostri 94 secondi, i quattro passi
+    erano 14: gli altri ottanta erano questo.
+
+    Spostare quei pezzi non vuol dire caricarci i 9,2 GB del text encoder: i
+    suoi pesi sono GGUF e **non sono registrati** (vedi `LazyGGUFLinear` nel
+    loro adattatore), restano mappati su disco e salgono un blocco per volta
+    dentro `forward`, gia' quantizzati. Quello che si sposta davvero sono le
+    normalizzazioni e le tabelle piccole — e con loro si sposta **il device su
+    cui si lavora**, che e' la cosa che conta.
+
+    Il tetto e' una precauzione, non un dettaglio: se un giorno arrivasse un
+    encoder con i pesi registrati per davvero, un `.to("cuda")` da nove giga
+    farebbe morire la generazione invece di rallentarla. Sopra il tetto si
+    lascia dov'e' e si scrive perche'.
+    """
+    import torch
+
+    if not torch.cuda.is_available():
+        return
+
+    # ⚠ **Un giga e mezzo, ed è una misura presa, non un numero a caso.**
+    #
+    # Sotto il tetto passano text_encoder (40 MB), queryformer (102) e
+    # text_projection (652). Sopra resta il **sigvq**, che di pesi registrati ne
+    # ha 2594: provato a farlo salire alzando il tetto a tre giga, il tempo di
+    # una generazione non cambia — 32,8 secondi contro 33,8, che è rumore — e la
+    # scheda passa da 4,1 a 6,6 GB occupati su 8. Due giga e mezzo di memoria
+    # video per niente, e sono esattamente quelli che servono a decodificare
+    # un'immagine grande. Quindi resta dov'è.
+    TETTO = 1_500_000_000
+
+    for nome in ("text_encoder", "queryformer", "text_projection", "sigvq"):
+        pezzo = getattr(pipe, nome, None)
+        if pezzo is None or not hasattr(pezzo, "to"):
+            continue
+        if getattr(pezzo, "_hf_hook", None) is not None:
+            continue
+        try:
+            dove = next(pezzo.parameters()).device
+        except (StopIteration, AttributeError):
+            continue
+        if dove.type == "cuda":
+            continue
+        pesa = _quanto_pesa(pezzo)
+        if pesa > TETTO:
+            logging.info(
+                "[daprod] LLaDA: %s resta in RAM, pesa %.1f GB di pesi registrati",
+                nome,
+                pesa / 1e9,
+            )
+            continue
+        pezzo.to("cuda")
+        logging.info("[daprod] LLaDA: %s sulla scheda video (%.0f MB)", nome, pesa / 1e6)
+
+
 def _porta_il_vae_in_scheda(pipe) -> None:
     """Sposta sulla scheda video il VAE di LLaDA, se e' rimasto in RAM.
 
@@ -874,6 +960,7 @@ def _sistema_llada(dati=None):
             esito = originale(self, *argomenti, **parole)
             try:
                 _porta_il_vae_in_scheda(esito[0])
+                _porta_i_pezzi_leggeri_in_scheda(esito[0])
             except Exception as guasto:  # noqa: BLE001
                 # Una decodifica lenta e' meglio di una generazione che muore:
                 # se lo spostamento non riesce, si va avanti com'era.

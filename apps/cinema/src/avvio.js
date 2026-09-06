@@ -9,6 +9,7 @@
 
 import {
   aspettaPremibile,
+  premiQuandoPuoi,
   collegaLavoriDaFuori,
   numero,
   premi,
@@ -96,7 +97,8 @@ collegaLavoriDaFuori(async (richiesta) => {
   if (richiesta.opzioni.azione === "genera.storia") {
     const quanto = numero(richiesta.opzioni.secondi, 30, 120, 30);
     scrivi(el.durata, "20");
-    if (scegliInMenu(el.modello, "ltx25")) await aspettaPremibile(el.genera);
+    scegliInMenu(el.modello, "ltx25");
+    await aspettaPremibile(el.genera);
     await lungoDaFuori(quanto);
     return;
   }
@@ -104,6 +106,11 @@ collegaLavoriDaFuori(async (richiesta) => {
   if (richiesta.opzioni.secondi) {
     scrivi(el.durata, String(numero(richiesta.opzioni.secondi, 2, 20, 5)));
   }
-  if (scegliInMenu(el.modello, richiesta.opzioni.modello)) await aspettaPremibile(el.genera);
-  premi(el.genera, "DaProdCinema non è pronta a generare: manca il modello, o la scheda video.");
+  // L'attesa vale sempre, non solo quando cambia il modello: vedi
+  // `premiQuandoPuoi` in `packages/ui/src/da-fuori.js`.
+  scegliInMenu(el.modello, richiesta.opzioni.modello);
+  await premiQuandoPuoi(
+    el.genera,
+    "DaProdCinema non è pronta a generare: manca il modello, o la scheda video.",
+  );
 });

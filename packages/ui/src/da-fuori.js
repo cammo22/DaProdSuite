@@ -109,6 +109,39 @@ export async function aspettaPremibile(bottone, ms = 10000) {
 }
 
 /**
+ * ⚠ **Aspetta che il tasto sia pronto, e poi lo preme.** Dalla 1.0.6.
+ *
+ * **Il difetto che cura**, detto da chi l'ha visto: «a volte la produzione
+ * immagini dice "non fatto" a prescindere dal prompt; se poi da PC apro proprio
+ * io DaProdFoto e rimando il lavoro dall'app, allora funziona».
+ *
+ * Ed era esattamente cosi', e la ragione e' che l'attesa era attaccata alla
+ * cosa sbagliata. Le schede aspettavano **solo se il lavoro cambiava modello**:
+ *
+ *     if (scegliInMenu(el.modello, richiesta.opzioni.modello)) await aspettaPremibile(el.genera);
+ *     premi(el.genera, "...non e' pronta...");
+ *
+ * Ma il tasto Genera non e' spento perche' e' cambiato il modello: e' spento
+ * **appena la scheda si apre**, perche' sta chiedendo alla suite se quei pesi
+ * sono sul disco. Chiedere il modello che era gia' selezionato — cioe' il caso
+ * normale, visto che il predefinito del catalogo e' lo stesso della scheda —
+ * saltava l'attesa e premeva un tasto ancora spento, mezzo secondo dopo
+ * l'apertura della finestra. Da fuori: «non fatto», sempre, qualunque prompt.
+ *
+ * Aprendo la scheda a mano il difetto spariva, perche' quando il lavoro
+ * arrivava il controllo dei pesi era finito da un pezzo. E' anche il motivo per
+ * cui non si e' visto prima: chi prova apre la scheda per guardare.
+ *
+ * Quindici secondi e non dieci: su un disco lento il primo controllo dopo
+ * l'accensione ci mette. Se allo scadere e' ancora spento, `premi` dice perche'
+ * con le sue parole, e quel motivo arriva fino al telefono.
+ */
+export async function premiQuandoPuoi(bottone, perche, ms = 15000) {
+  await aspettaPremibile(bottone, ms);
+  premi(bottone, perche);
+}
+
+/**
  * Accende o spegne un interruttore, **e lo dice**.
  *
  * Come `scrivi`, ma per le caselle da spuntare: `checked` da solo non fa

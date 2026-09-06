@@ -42,6 +42,7 @@ import {
   puoiCaricare,
   statoLlm,
 } from "./llm";
+import { colTurno } from "./turno";
 
 /**
  * Le istruzioni, una per scheda.
@@ -209,7 +210,37 @@ export async function migliora(opzioni: {
 
   const brano = opzioni.app === "musica";
   const mestiere = MESTIERI[opzioni.app] ?? MESTIERI.foto!;
-  const esito = await chiediAllLlm({
+
+  /**
+   * ⚠ **Il turno si prende PRIMA di caricare il modello.** Dalla 1.0.6.
+   *
+   * **Il difetto, detto da chi l'ha subito:** «il tasto ai non funziona con la
+   * coda, lo carica e basta; mi è capitato che mentre facevo cose l'ho
+   * cliccato e mi ha rovinato tutto».
+   *
+   * Ed era vero, e stava in una riga sola: `modello: await conChiParlo()`.
+   * `chiediAllLlm` il turno se lo prende — quello funzionava — ma
+   * `conChiParlo` veniva valutato **prima**, per costruire l'argomento, e
+   * dentro c'è `caricaModello`: quattro giga e mezzo che entrano in scheda
+   * video mentre una generazione ci sta lavorando. La fila era rispettata
+   * dalla domanda e scavalcata dal caricamento.
+   *
+   * Adesso il turno lo prende questa funzione, e dentro al turno ci sta
+   * **tutto**: prima si guarda con chi si parla (e semmai lo si carica), poi
+   * si chiede. `turnoGiaPreso` dice a `chiediAllLlm` di non prenderne un
+   * secondo — se lo facesse aspetterebbe sé stesso per sempre.
+   *
+   * La corsia è quella di chi arriva da fuori: chi sta al computer passa
+   * davanti, come per ogni altro lavoro. Vedi `turno.ts`.
+   */
+  const esito = await colTurno(
+    {
+      mestiere: "modello",
+      corsia: "in-fila",
+      che: `Riscrivo una richiesta per ${opzioni.app}`,
+    },
+    async () => chiediAllLlm({
+    turnoGiaPreso: true,
     modello: await conChiParlo(),
     /**
      * **Lo lasciamo pensare**, ed è costato una prova per capirlo.
@@ -234,7 +265,8 @@ export async function migliora(opzioni: {
         `Non cambiare il soggetto:\n\n"${opzioni.testo}"`,
     schema: brano ? SCHEMA_BRANO : SCHEMA,
     nomeSchema: brano ? "canzone" : "richiesta",
-  });
+    }),
+  );
 
   if (!esito.ok) throw new Error(esito.motivo || "Il modello non ha risposto.");
 

@@ -230,6 +230,12 @@ vecchio prometteva un'altra cosa — e dalla **0.7.7** ce n'è una in più, gli
   chi era. Sono tuoi e stanno sul computer, quindi li ritrovi da qualunque
   telefono. E li ritrovi anche **dentro il modulo**: il campo «uno stile pronto»
   c'è in Immagini, Video e Musica, e mostra solo quelli del suo tipo;
+  I **prompt** che salvi dalla Produzione (il tasto «✚ salva come prompt» sotto
+  alla casella) finiscono qui dentro, ma sotto la pastiglia **Prompt**, che è
+  l'altra metà di questa scheda: gli stili si *aggiungono* a quello che scrivi,
+  i prompt lo *sostituiscono*. Dalla **1.0.6** il numero sta su tutte e due le
+  pastiglie — «Stili · 3», «Prompt · 1» — e se guardi dalla parte sbagliata te
+  lo dice;
 - **Fila** (era «Lavori», poi «Riepilogo») — quattro numeri in cima — in
   lavorazione, in fila, pronti, aspettano il sì — e sotto **cosa sta girando
   adesso**, da quanto, per chi. Dalla 0.7.7 **ogni lavoro ha il suo numero**
@@ -241,7 +247,9 @@ vecchio prometteva un'altra cosa — e dalla **0.7.7** ce n'è una in più, gli
   **I video hanno il loro fotogramma** e **i brani la loro copertina**: si vede
   cosa c'è senza premere play. *(Dalla **0.8.0** ce l'hanno davvero tutti,
   compresi quelli fatti prima.)* Tocchi una cosa e si apre **a schermo intero**,
-  con due tasti: *salva nel telefono* e *condividi*;
+  con due tasti: *salva nel telefono* e *condividi*. Dalla **1.0.6**, se tocchi
+  la foto, titolo e tasti spariscono e resta solo lei sul nero: tocchi di nuovo
+  e tornano;
 - **DaProd** — la bacheca, e il tuo profilo. Vedi sotto.
 
 ### Quando chiedi una foto
@@ -272,12 +280,13 @@ e il posto è uno.)*
 
 Dentro **Modifica** le domande sono quattro, in quest'ordine.
 
-**Da dove parti.** Due strade, e le trovi scritte tutte e due: *Una foto che hai
+**Da dove parti.** Tre strade, e le trovi scritte tutte e tre: *Una foto che hai
 fatto* apre le tue Produzioni e ne scegli una; *Dalla galleria del telefono*
-apre la galleria. Da qualunque parte arrivi, la foto viene rimpicciolita a 1024
-sul lato lungo prima di partire: è la misura su cui questi modelli lavorano, e
-mandare i dodici mega della fotocamera vorrebbe dire aspettare il caricamento e
-poi vedersela rimpicciolire lo stesso.
+apre la galleria; *Scattala adesso* (dalla **1.0.6**) apre la fotocamera e la
+foto che scatti parte da lì. Da qualunque parte arrivi, la foto viene
+rimpicciolita a 1024 sul lato lungo prima di partire: è la misura su cui questi
+modelli lavorano, e mandare i dodici mega della fotocamera vorrebbe dire
+aspettare il caricamento e poi vedersela rimpicciolire lo stesso.
 
 **Cosa deve cambiare.** Una frase: «fai diventare il cielo un tramonto
 arancione».
@@ -287,6 +296,10 @@ in due modi diversi. I quattro col **pennello** (Anima, Anima v2, i due FLUX.2)
 rifanno **solo la zona che dipingi** e lasciano il resto identico, pixel per
 pixel. **LLaDA** invece lavora **a parole**: guarda tutta la foto e segue
 l'istruzione. È il più lento della scheda.
+
+*(Dalla **1.0.6** «quanto la cambio» non c'è più: ogni modello ha il suo punto
+di lavoro e la scheda lo mette da sola. Quel cursore resta sul computer, dove
+vedi il risultato e puoi rifare.)*
 
 **Cosa cambio.** Dalla **1.0.4** è una domanda, non più quello che capita col
 dito: *tutta la foto* — ed è quello che parte — oppure *solo una zona, la

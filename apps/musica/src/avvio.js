@@ -18,6 +18,7 @@ import { aggiornaImmagini, collegaImmagini } from "./immagini.js";
 // stanno in `packages/ui` e la suite li serve sotto `/comune/`.
 import {
   aspettaPremibile,
+  premiQuandoPuoi,
   collegaLavoriDaFuori,
   numero,
   premi,
@@ -187,6 +188,11 @@ collegaLavoriDaFuori(async (richiesta) => {
   }
   // Qui il menu dei modelli si chiama «qualità», che è il nome che ha nella
   // pagina: gli id però sono gli stessi del catalogo delle azioni.
-  if (scegliInMenu(el.qualita, richiesta.opzioni.modello)) await aspettaPremibile(el.go);
-  premi(el.go, "DaProdMusica non è pronta a generare: apri la scheda e guarda cosa manca.");
+  // L'attesa vale sempre, non solo quando cambia il modello: vedi
+  // `premiQuandoPuoi` in `packages/ui/src/da-fuori.js`.
+  scegliInMenu(el.qualita, richiesta.opzioni.modello);
+  await premiQuandoPuoi(
+    el.go,
+    "DaProdMusica non è pronta a generare: apri la scheda e guarda cosa manca.",
+  );
 });
