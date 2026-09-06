@@ -11,8 +11,8 @@ import {
 } from "./dom.js";
 import { DEMO_LYRICS, PRESETS, STILI, TAGS } from "./dati/stili.js";
 import { ESTETICHE } from "./dati/estetiche.js";
-import { MODELLI, grafoBrano, grafoImmagine, modello, promptCopertina, titoloAuto, usaCampo } from "./grafi.js";
-import { LINGUA_PREDEFINITA, LINGUE, TONALITA, TONALITA_PREDEFINITA } from "./dati/ace.js";
+import { MODELLI, grafoBrano, grafoImmagine, modello, promptCopertina, titoloAuto, usaCampo, scrittaDelTitolo } from "./grafi.js";
+import { LINGUA_PREDEFINITA, LINGUE, TONALITA, TONALITA_PREDEFINITA, tonalitaVera } from "./dati/ace.js";
 import { aggiungiLavoro } from "./coda.js";
 import { controllaAnima } from "./anima.js";
 // La barra di quello che sta arrivando: uguale in tutte le app, quindi sta in
@@ -255,7 +255,9 @@ function leggiModulo() {
     // niente, e vuol dire che riaprendo un brano vecchio i suoi valori tornano
     // al loro posto invece di sparire.
     bpm: parseInt(el.bpm.value) || 120,
-    tonalita: el.tonalita.value,
+    // «A caso» diventa una tonalità vera **adesso**, non quando si e' scelto:
+    // tirandola alla scelta, due brani di fila uscirebbero uguali.
+    tonalita: tonalitaVera(el.tonalita.value),
     tempo: el.tempo.value,
     // La lingua invece si legge sempre e vale per tutti e due: ACE-Step la
     // riceve come impostazione, MiniMax se la ritrova nella descrizione.
@@ -341,9 +343,23 @@ async function creaBrano(p, racconta = () => {}) {
     // Se Bonsai (o tu) hai scritto un'idea per la copertina, quella vince: è
     // scritta guardando la canzone intera, mentre i motivi la indovinano da
     // qualche parola del testo.
+    /**
+     * **Il titolo ci va comunque**, che l'idea l'abbia scritta qualcuno o no.
+     *
+     * Chiesto il 6 settembre 2026: «rendiamo questa cosa di default, cosi'
+     * tutte le immagini di copertina hanno il nome della canzone; in generale,
+     * anche se uno non scrive un prompt immagine, l'immagine viene generata
+     * randomicamente ma sempre con un titolo».
+     *
+     * Quindi le due strade — l'idea scritta e i motivi indovinati dal testo —
+     * si ricongiungono qui: cambia cosa si vede nella scena, non il fatto che
+     * sopra ci sia scritto come si chiama. Vedi `scrittaDelTitolo`.
+     */
     const idea = el.ideaCopertina.value.trim();
     const prompt = idea
-      ? `album cover artwork, ${idea}, square composition, no text`
+      ? ["album cover artwork", idea, "square composition", scrittaDelTitolo(p.titolo)]
+          .filter(Boolean)
+          .join(", ")
       : promptCopertina(p.titolo, p.lyrics, el.coverStyleNew.value);
     // Con che modello: dalla 0.9.1 si sceglie, e di suo è FLUX.2 Klein 4B.
     // Vedi `MODELLI_COPERTINA` in grafi.js per il perché sono due e non quattro.

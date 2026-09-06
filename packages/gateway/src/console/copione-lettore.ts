@@ -75,24 +75,19 @@ export const COPIONE_LETTORE = `
 
   /* ---------------------------------------------------------- il visualizer */
 
-  var contestoAudio = null;
-  var analizzatore = null;
-  var datiSpettro = null;
-  /** L'elemento già collegato al contesto audio: collegarlo due volte solleva. */
-  var giaCollegato = null;
-  var disegnoVivo = null;
-  var effettoOra = 0;
-  var orologioEffetti = null;
-  var partitoIl = 0;
-
   /**
-   * Gli effetti. Cinque, e ognuno guarda il suono in un modo diverso.
+   * ⚠ **Il disegno non sta più qui.** Dalla 0.9.2 lo fa «Visual», che è il
+   * motore vero di DaProdVisualizer — stessi shader, stesse feature audio,
+   * stesso post-processing. Vedi «copione-visual.ts».
    *
-   * Non sono cinque temi di colore: uno segue le frequenze basse, uno le alte,
-   * uno il volume complessivo. Cambiando effetto cambia **cosa si vede della
-   * stessa canzone**, ed è il motivo per cui vale la pena averne più di uno.
+   * Qui restano le due cose che sono del lettore e non del motore: il giro di
+   * fotogrammi (che vive con il palco aperto) e il collegamento fra l'elemento
+   * che suona e l'analizzatore.
    */
-  var EFFETTI = ["onde", "barre", "cerchio", "polvere", "nebbia"];
+  var disegnoVivo = null;
+
+  /** Vero quando il pannello con le info della canzone è aperto. */
+  var infoAperte = false;
 
   /* ------------------------------------------------------------ metterci roba */
 
@@ -338,22 +333,104 @@ export const COPIONE_LETTORE = `
       img.alt = v.nome;
       dentro.append(img);
     } else if (v.anteprima) {
+      /**
+       * ⚠ **La copertina si vede attraverso.** Chiesto il 5 settembre 2026:
+       * «la copertina 70 percento trasparenza, cosi' da vedere il visualizer
+       * bene», e prima, sulla stessa cosa: «l'immagine mettiamola 70 percento
+       * trasparenza, cioe' 30 percento trasparente, 70 si vede».
+       *
+       * Le due frasi dicono due numeri diversi, e ho preso il secondo perche'
+       * e' quello in cui si e' corretto da solo: **si vede al 70%**. La
+       * copertina resta riconoscibile e il visualizer le passa dietro invece
+       * di essere coperto da un quadrato. Il numero sta in un posto solo — la
+       * classe «attraverso» nel foglio di stile: se e' troppo, si cambia li'.
+       */
       var cop = document.createElement("img");
-      cop.className = "copertinona";
+      cop.className = "copertinona attraverso";
       cop.src = anteprimaDi(v);
       cop.alt = v.nome;
       dentro.append(cop);
     }
 
     $("palco-nome").textContent = v.didascalia || v.nome;
-    $("palco-sotto").textContent =
+    /**
+     * «3 di 12» **si tocca**, e apre la fila.
+     *
+     * Il tasto con le tre linee faceva questo, e dalla 0.9.2 fa un altro
+     * mestiere (le info). La fila non si perde: va dove uno la cerca, cioe'
+     * addosso al numero che dice a che punto e'.
+     */
+    var sotto = $("palco-sotto");
+    sotto.textContent =
       (inCoda + 1) + " di " + coda.length + (v.chiNome ? " \\u00b7 " + v.chiNome : "");
-    $("palco-effetto").textContent = "\\u2732";
-    $("palco-effetto").title = "Effetto: " + EFFETTI[effettoOra];
+    sotto.title = "Tocca per vedere la fila";
     // La barra del tempo non ha senso su un'immagine: dieci secondi fissi non
     // sono un tempo dentro cui spostarsi.
     $("palco-tempo").hidden = v.tipo === "immagine";
     disegnaIlTempo();
+    disegnaLeInfo();
+  }
+
+  /**
+   * **Com'e' fatta questa cosa**, dentro il palco.
+   *
+   * ⚠ Chiesto il 5 settembre 2026: «il tasto con le tre linee a destra durante
+   * la riproduzione DaProd non funziona: rendilo il tasto che, se cliccato,
+   * mostra tutte le info della canzone, e se lo riclicchi scompare».
+   *
+   * Non funzionava per una ragione precisa, e vale la pena scriverla: apriva
+   * un foglio, e un foglio sopra al palco — che sta a schermo intero, con
+   * z-index 80 — finiva sotto. Il tasto rispondeva, solo che quello che
+   * apriva non si vedeva. Qui invece il pannello e' **dentro** il palco, e si
+   * accende e si spegne con lo stesso tasto.
+   *
+   * I campi sono quelli veri della richiesta, gli stessi che la galleria mostra
+   * in «Com'e' stata fatta»: per una canzone titolo, testo, stile e durata; per
+   * una foto il prompt.
+   */
+  function disegnaLeInfo() {
+    var scatola = $("palco-info");
+    if (!scatola) return;
+    scatola.hidden = !infoAperte || inCoda < 0;
+    if (scatola.hidden) return;
+    var v = coda[inCoda];
+    scatola.innerHTML = "";
+    /**
+     * I campi sono quelli che il computer manda con la voce: la stessa mappa
+     * che la galleria mostra in «Com'è stata fatta». Un posto solo, non due
+     * elenchi che col tempo divergono.
+     */
+    var righe = [];
+    var fatta = v.comeEStataFatta || {};
+    for (var come in fatta) {
+      if (!Object.prototype.hasOwnProperty.call(fatta, come)) continue;
+      righe.push([come, fatta[come]]);
+    }
+    if (!righe.length) {
+      var niente = document.createElement("p");
+      niente.className = "nota";
+      niente.textContent = "Di questa non so com'e' stata fatta.";
+      scatola.append(niente);
+      return;
+    }
+    for (var i = 0; i < righe.length; i++) {
+      var riga = document.createElement("div");
+      riga.className = "rigaInfo";
+      var chiave = document.createElement("b");
+      chiave.textContent = righe[i][0];
+      var valore = document.createElement("span");
+      valore.textContent = righe[i][1];
+      riga.append(chiave, valore);
+      scatola.append(riga);
+    }
+  }
+
+  /** Accende e spegne il pannello. E' tutto quello che fa il tasto. */
+  function giraLeInfo() {
+    infoAperte = !infoAperte;
+    var tasto = $("palco-fila");
+    if (tasto) tasto.classList.toggle("acceso", infoAperte);
+    disegnaLeInfo();
   }
 
   /**
@@ -417,7 +494,7 @@ export const COPIONE_LETTORE = `
     palcoAperto = true;
     disegnaPalco();
     // Il disegno vive con il palco: si accende qui e si spegne chiudendolo.
-    if (analizzatore && !disegnoVivo) disegnoVivo = requestAnimationFrame(disegna);
+    if (!disegnoVivo) avviaIlDisegno();
   }
 
   /**
@@ -518,226 +595,43 @@ export const COPIONE_LETTORE = `
   /**
    * Accende l'analisi e il disegno.
    *
-   * Il contesto audio si crea **una volta sola** e si riusa: un browser ne
-   * concede pochi, e crearne uno per canzone finisce con il silenzio dopo la
-   * sesta. Ogni elemento invece va collegato una volta e una sola — collegarlo
-   * due volte solleva, ed è il motivo della variabile «giaCollegato».
+   * ⚠ **Dalla 0.9.2 il motore è quello vero.** Fino alla 0.9.1 qui c'erano un
+   * canvas 2D e cinque effetti fatti a mano, e la risposta è stata: «le visual
+   * non sono quelle del mio programma daprodvisualizer bro, è già la seconda
+   * volta: fai un port vero». Adesso disegna «Visual», che ha dentro gli stessi
+   * nove shader dell'app, gli stessi legami fra suono e immagine, e le stesse
+   * quattro passate di post-processing.
+   *
+   * Restano vere le due cose che erano vere prima: il contesto audio si crea
+   * una volta sola, e un elemento si collega una volta e una sola.
    */
   function accendiIlVisualizer(elemento) {
-    try {
-      var Contesto = window.AudioContext || window.webkitAudioContext;
-      if (!Contesto) return;
-      if (!contestoAudio) contestoAudio = new Contesto();
-      // I browser tengono il contesto sospeso finché non c'è un tocco: qui il
-      // tocco c'è appena stato (si è premuto per far partire), quindi riprende.
-      if (contestoAudio.state === "suspended") void contestoAudio.resume();
-      if (!analizzatore) {
-        analizzatore = contestoAudio.createAnalyser();
-        analizzatore.fftSize = 512;
-        analizzatore.smoothingTimeConstant = 0.75;
-        analizzatore.connect(contestoAudio.destination);
-        datiSpettro = new Uint8Array(analizzatore.frequencyBinCount);
-      }
-      if (giaCollegato !== elemento) {
-        contestoAudio.createMediaElementSource(elemento).connect(analizzatore);
-        giaCollegato = elemento;
-      }
-    } catch (e) {
-      // Niente Web Audio su questo browser: il visualizer si disegna lo stesso,
-      // muovendosi da solo. Meglio di uno sfondo nero.
-      analizzatore = null;
-    }
+    Visual.collega(elemento);
+    // Un brano nuovo è un pezzo nuovo: il guadagno automatico, il conto dei
+    // colpi e la stima del tempo ripartono, o il primo minuto sarebbe tarato
+    // sulla canzone di prima.
+    Visual.ricomincia();
+    // Il disegno gira **solo con il palco aperto**: uno shader a schermo intero
+    // dietro a un palco chiuso è batteria buttata.
+    if (palcoAperto && !disegnoVivo) avviaIlDisegno();
+  }
 
-    cambiaEffetto(true);
-    if (orologioEffetti) clearInterval(orologioEffetti);
-    /**
-     * Un effetto nuovo ogni venticinque secondi.
-     *
-     * Chiesto «effetti shuffle». Venticinque secondi è più o meno una strofa:
-     * cambiare più spesso stanca, cambiare più di rado non si nota.
-     */
-    orologioEffetti = setInterval(function () { cambiaEffetto(true); }, 25000);
+  /** Accende il giro dei fotogrammi, se il motore c'è. */
+  function avviaIlDisegno() {
+    var tela = $("visual");
+    if (!tela) return;
+    if (!Visual.accendi(tela)) return;
+    disegnoVivo = requestAnimationFrame(unGiro);
+  }
 
-    partitoIl = performance.now();
-    // Il disegno gira **solo con il palco aperto**: un canvas che ridisegna
-    // sessanta volte al secondo dietro a un palco chiuso e' batteria buttata,
-    // e dalla 0.9.1 il visualizer si vede solo li'.
-    if (palcoAperto && !disegnoVivo) disegnoVivo = requestAnimationFrame(disegna);
+  function unGiro() {
+    disegnoVivo = requestAnimationFrame(unGiro);
+    var tela = $("visual");
+    if (!tela || tela.hidden || !palcoAperto) return;
+    Visual.disegna(suonante);
   }
 
   function spegniIlVisualizer() {
-    if (orologioEffetti) { clearInterval(orologioEffetti); orologioEffetti = null; }
     if (disegnoVivo) { cancelAnimationFrame(disegnoVivo); disegnoVivo = null; }
-  }
-
-  /** Un effetto a caso, diverso da quello di adesso. */
-  function cambiaEffetto(aCaso) {
-    if (aCaso) {
-      var scelto = effettoOra;
-      // Un «a caso» che può ridare lo stesso non sembra a caso: sembra rotto.
-      for (var giri = 0; giri < 8 && scelto === effettoOra; giri++) {
-        scelto = Math.floor(Math.random() * EFFETTI.length);
-      }
-      effettoOra = scelto;
-    } else {
-      effettoOra = (effettoOra + 1) % EFFETTI.length;
-    }
-    var nome = $("palco-effetto");
-    if (nome) nome.textContent = EFFETTI[effettoOra];
-  }
-
-  /**
-   * Un fotogramma.
-   *
-   * Il canvas si ridimensiona **qui** e non su resize: su un telefono la
-   * finestra cambia altezza ogni volta che compare la tastiera o la barra
-   * dell'indirizzo, e un ascoltatore di resize su un canvas a schermo intero è
-   * il modo più semplice di far scattare tutto.
-   */
-  function disegna() {
-    disegnoVivo = requestAnimationFrame(disegna);
-    var tela = $("visual");
-    if (!tela || tela.hidden) return;
-    var ctx = tela.getContext("2d");
-    if (!ctx) return;
-
-    /**
-     * Si disegna a metà risoluzione, apposta.
-     *
-     * Su un telefono con schermo ad alta densità un canvas a piena risoluzione
-     * vuol dire quattro volte i pixel da riempire sessanta volte al secondo, e
-     * il risultato è una pagina che scatta mentre si scorre. Metà risoluzione,
-     * su una cosa fatta di sfumature e di macchie, non si distingue.
-     */
-    var larga = Math.floor(tela.clientWidth * 0.5);
-    var alta = Math.floor(tela.clientHeight * 0.5);
-    if (larga < 2 || alta < 2) return;
-    if (tela.width !== larga || tela.height !== alta) {
-      tela.width = larga;
-      tela.height = alta;
-    }
-
-    if (analizzatore && datiSpettro) analizzatore.getByteFrequencyData(datiSpettro);
-    var t = (performance.now() - partitoIl) / 1000;
-
-    ctx.clearRect(0, 0, larga, alta);
-    var quale = EFFETTI[effettoOra];
-    if (quale === "onde") onde(ctx, larga, alta, t);
-    else if (quale === "barre") barre(ctx, larga, alta, t);
-    else if (quale === "cerchio") cerchio(ctx, larga, alta, t);
-    else if (quale === "polvere") polvere(ctx, larga, alta, t);
-    else nebbia(ctx, larga, alta, t);
-  }
-
-  /**
-   * Quanto forte va, da 0 a 1, in una banda.
-   *
-   * Senza analizzatore si finge: una sinusoide lenta. Uno sfondo che si muove
-   * senza seguire la musica è meglio di uno sfondo fermo, e capita su qualche
-   * browser vecchio dove Web Audio non c'è.
-   */
-  function forza(da, a, t, sfasa) {
-    if (!datiSpettro) return 0.35 + 0.25 * Math.sin(t * 1.7 + (sfasa || 0));
-    var somma = 0;
-    var quanti = 0;
-    var primo = Math.floor(datiSpettro.length * da);
-    var ultimo = Math.floor(datiSpettro.length * a);
-    for (var i = primo; i < ultimo; i++) { somma += datiSpettro[i]; quanti++; }
-    return quanti ? (somma / quanti) / 255 : 0;
-  }
-
-  /** Onde che salgono e scendendo si sovrappongono. Segue i bassi. */
-  function onde(ctx, w, h, t) {
-    var bassi = forza(0, 0.12, t);
-    var medi = forza(0.12, 0.4, t, 1);
-    for (var riga = 0; riga < 3; riga++) {
-      ctx.beginPath();
-      var ampiezza = h * (0.06 + bassi * 0.22) * (1 - riga * 0.22);
-      var centro = h * (0.45 + riga * 0.12);
-      for (var x = 0; x <= w; x += 6) {
-        var y = centro +
-          Math.sin(x / (60 + riga * 24) + t * (1.1 + riga * 0.35)) * ampiezza +
-          Math.sin(x / 23 - t * 2.2) * ampiezza * 0.25 * medi;
-        if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-      }
-      ctx.lineTo(w, h);
-      ctx.lineTo(0, h);
-      ctx.closePath();
-      ctx.fillStyle = ["#8b5cf633", "#22d3ee2a", "#f472b622"][riga];
-      ctx.fill();
-    }
-  }
-
-  /** Le barre dello spettro, dal basso. Il più letterale dei cinque. */
-  function barre(ctx, w, h, t) {
-    var quante = 40;
-    var largaUna = w / quante;
-    for (var i = 0; i < quante; i++) {
-      var v = forza(i / quante * 0.7, (i + 1) / quante * 0.7, t, i);
-      var altezza = Math.pow(v, 1.4) * h * 0.75;
-      var tinta = 260 + (i / quante) * 90;
-      ctx.fillStyle = "hsla(" + tinta + ", 85%, 62%, .30)";
-      ctx.fillRect(i * largaUna + 1, h - altezza, largaUna - 2, altezza);
-    }
-  }
-
-  /** Un anello che respira col volume, con i raggi sullo spettro. */
-  function cerchio(ctx, w, h, t) {
-    var cx = w / 2;
-    var cy = h / 2;
-    var tutto = forza(0, 0.6, t);
-    var raggio = Math.min(w, h) * (0.16 + tutto * 0.10);
-    var quanti = 72;
-    ctx.lineWidth = Math.max(1, Math.min(w, h) / 220);
-    for (var i = 0; i < quanti; i++) {
-      var ang = (i / quanti) * Math.PI * 2 + t * 0.18;
-      var v = forza(i / quanti * 0.65, (i + 1) / quanti * 0.65, t, i);
-      var lungo = raggio + v * Math.min(w, h) * 0.24;
-      ctx.beginPath();
-      ctx.moveTo(cx + Math.cos(ang) * raggio, cy + Math.sin(ang) * raggio);
-      ctx.lineTo(cx + Math.cos(ang) * lungo, cy + Math.sin(ang) * lungo);
-      ctx.strokeStyle = "hsla(" + (250 + i * 1.6) + ", 90%, 66%, .32)";
-      ctx.stroke();
-    }
-  }
-
-  /** Puntini che vanno per conto loro e scattano sui colpi. */
-  function polvere(ctx, w, h, t) {
-    var colpo = forza(0, 0.08, t);
-    var quanti = 90;
-    for (var i = 0; i < quanti; i++) {
-      var s = i * 12.9898;
-      var rx = (Math.sin(s) * 43758.5453) % 1;
-      var ry = (Math.sin(s * 1.7) * 21374.1234) % 1;
-      var x = ((Math.abs(rx) + t * (0.02 + Math.abs(ry) * 0.05)) % 1) * w;
-      var y = ((Math.abs(ry) + t * 0.012) % 1) * h;
-      var r = 1 + Math.abs(rx) * 2.4 + colpo * 4;
-      ctx.beginPath();
-      ctx.arc(x, y, r, 0, Math.PI * 2);
-      ctx.fillStyle = "hsla(" + (200 + Math.abs(ry) * 140) + ", 90%, 70%, " + (0.10 + colpo * 0.30) + ")";
-      ctx.fill();
-    }
-  }
-
-  /** Macchie grosse che si allargano e si stringono. La più calma. */
-  function nebbia(ctx, w, h, t) {
-    var bassi = forza(0, 0.1, t);
-    var alti = forza(0.5, 0.95, t, 2);
-    var macchie = [
-      [0.28, 0.34, 0.34 + bassi * 0.3, "#7c3aed"],
-      [0.72, 0.28, 0.28 + alti * 0.3, "#06b6d4"],
-      [0.52, 0.76, 0.30 + bassi * 0.22, "#db2777"],
-    ];
-    for (var i = 0; i < macchie.length; i++) {
-      var m = macchie[i];
-      var x = (m[0] + Math.sin(t * 0.3 + i) * 0.06) * w;
-      var y = (m[1] + Math.cos(t * 0.24 + i * 1.7) * 0.06) * h;
-      var r = Math.min(w, h) * m[2];
-      var g = ctx.createRadialGradient(x, y, 0, x, y, r);
-      g.addColorStop(0, m[3] + "55");
-      g.addColorStop(1, m[3] + "00");
-      ctx.fillStyle = g;
-      ctx.fillRect(0, 0, w, h);
-    }
   }
 `;

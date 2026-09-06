@@ -67,10 +67,39 @@ const NOTE = [
   ["Ab", "Lab"], ["A", "La"], ["A#", "La#"], ["Bb", "Sib"], ["B", "Si"],
 ];
 
+/**
+ * ⚠ **«A caso» sta in cima, ed è quella che parte.** Dalla 0.9.3.
+ *
+ * Chiesto il 5 settembre 2026: «in produzione musica deve essere selezionata
+ * "casuale"; se uno vuole poi cambia, ma di default mettiamo un tasto casuale
+ * che fa decidere al modello».
+ *
+ * Prima partiva La minore, perché è la tonalità più usata nel pop. Vero, e
+ * sbagliato come predefinito: un valore fisso su un campo che quasi nessuno
+ * tocca non toglie una domanda, mette una firma su tutto quello che produci —
+ * e dodici brani nella stessa tonalità si somigliano senza che nessuno abbia
+ * scelto che si somiglino.
+ */
+export const TONALITA_A_CASO = "caso";
+
 export const TONALITA = [
+  [TONALITA_A_CASO, "A caso"],
   ...NOTE.map(([sigla, nome]) => [`${sigla} major`, `${nome} maggiore`]),
   ...NOTE.map(([sigla, nome]) => [`${sigla} minor`, `${nome} minore`]),
 ];
 
-/** Quella che parte: La minore, la tonalità più comune nella musica pop. */
-export const TONALITA_PREDEFINITA = "A minor";
+/** Quella che parte: la sceglie il modello, e cambia a ogni brano. */
+export const TONALITA_PREDEFINITA = TONALITA_A_CASO;
+
+/**
+ * Una tonalità vera al posto di «a caso».
+ *
+ * Si tira **quando si genera**, non quando si sceglie: tirandola alla scelta,
+ * il menu mostrerebbe una tonalità che nessuno ha deciso e due brani di fila
+ * uscirebbero uguali.
+ */
+export function tonalitaVera(scelta) {
+  if (scelta !== TONALITA_A_CASO) return scelta;
+  const vere = TONALITA.filter(([id]) => id !== TONALITA_A_CASO);
+  return vere[Math.floor(Math.random() * vere.length)][0];
+}

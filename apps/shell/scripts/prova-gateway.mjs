@@ -364,6 +364,43 @@ console.log("\n— la console web —");
   dice("ha una CSP", !!r.headers.get("content-security-policy"));
 }
 
+/**
+ * ⚠ **Il copione della console si legge davvero.**
+ *
+ * C'e' un buco che il compilatore non puo' vedere, e ci si e' caduti quattro
+ * volte in due giorni: i file di `console/` **sono** template literal, quindi
+ * per TypeScript il loro contenuto e' una stringa. Dentro quella stringa si
+ * puo' scrivere qualunque sciocchezza — una parentesi in meno, una virgola di
+ * troppo, una variabile scritta storta — e `tsc` non fiata: e' testo, e il
+ * testo e' sempre valido.
+ *
+ * L'errore lo trova il browser, e lo trova **in silenzio**: la pagina si
+ * carica, il tag script muore alla prima riga, e quello che si vede e' una
+ * schermata che non risponde. Senza un browser aperto e la console guardata,
+ * quel guasto arriva fino al telefono.
+ *
+ * Qui si prende lo script vero dalla pagina servita e lo si da' in pasto al
+ * parser di Node. Se non si legge, si sa **adesso** e si sa **perche'**.
+ */
+console.log("\n— il copione si legge —");
+{
+  const r = await fetch(base + "/");
+  const html = await r.text();
+  const dentro = html.match(/<script>([\s\S]*?)<\/script>/);
+  dice("la pagina ha il suo copione", !!dentro && dentro[1].length > 1000);
+  if (dentro) {
+    let male = "";
+    try {
+      // `new Function` compila senza eseguire: e' esattamente il controllo che
+      // serve, e non fa partire niente.
+      new Function(dentro[1]);
+    } catch (e) {
+      male = String(e && e.message ? e.message : e);
+    }
+    dice("il copione si legge senza errori", male === "", male);
+  }
+}
+
 console.log("\n— senza token non si entra —");
 for (const rotta of ["/stato", "/azioni", "/richieste", "/notifiche"]) {
   const r = await chiama(rotta);

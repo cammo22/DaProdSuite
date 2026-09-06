@@ -24,9 +24,9 @@ file si scrive quale delle due metà manca.
 
 ---
 
-## A che punto siamo — 5 settembre 2026
+## A che punto siamo — 6 settembre 2026
 
-**Ultima pubblicata: 0.9.1.** Nove schede dentro la suite, un ambiente Python
+**Ultima pubblicata: 0.9.3.** Nove schede dentro la suite, un ambiente Python
 solo, e il giro che conta — chiedo dal telefono, il computer fa, il file torna —
 **provato da chi la usa**, sul suo PC e sul suo telefono.
 
@@ -42,9 +42,18 @@ Fino alla 0.9.0 l'app era stata *provata*; la 0.9.0 è la prima che è stata
 scoprire che funziona e non serve — «quello scelto sul computer» non era rotto,
 era una risposta sbagliata a una domanda che ha una risposta giusta.
 
+La 0.9.3 ha chiuso le tre cose che erano state chieste **due volte**, e vale la
+pena dire perché ce n'erano tre. Il visualizer non era quello dell'app perché
+portarlo sembrava voler dire portare Three.js; guardando cosa fa Three lì dentro
+si è visto che per nove preset su undici non fa niente — sono un rettangolo e un
+fragment shader. Gli utenti saltavano a ogni aggiornamento per un commento che
+sembrava solido e aveva una premessa falsa. E le due canzoni ne facevano una
+perché la fila aspettava «il» file, al singolare, e poi chiudeva la scheda che
+stava generando la seconda.
+
 ⚠ **Cosa non ha ancora visto nessuno**, e va guardato con sospetto: i video da
-30, 60 e 120 secondi (scritti, mai passati per una scheda video), il visualizer
-che non è ancora il motore WebGL di DaProdVisualizer, due suite accese in due
+30, 60 e 120 secondi (scritti, mai passati per una scheda video — è la terza
+versione), le copertine col titolo contro FLUX vero, due suite accese in due
 stanze diverse, il binario di Needle 2, e il suono con l'app in tasca su un
 telefono vero.
 
@@ -53,11 +62,16 @@ fanno quello che ti ho chiesto».
 
 | Pezzo | Come sta |
 |---|---|
+| **Il visualizer vero di DaProdVisualizer** | nove shader su undici portati con lo script; **provati in un browser vero**, tutti e nove disegnano. Su un telefono vero no |
+| **Gli utenti che restano dopo un aggiornamento** | la causa trovata e chiusa (un `401` da un indirizzo che non era piu' il nostro computer); **il giro vero, aggiornando davvero, e' da fare** |
+| **Due canzoni chieste insieme** | la fila adesso le aspetta tutte; **mai provato contro il motore acceso** |
+| **Il titolo scritto sulla copertina** | scritto; **mai passato per FLUX vero** |
+| **La grafica misurata invece che guardata** | **fatto e verificato** a 375 px su tutte e cinque le schede: nessun tasto disallineato |
 | **I predefiniti veri al posto di «quello scelto sul computer»** | nuovo nella 0.9.1; **visto nell'app sull'emulatore**: FLUX.2 Klein 4B, LTX 2.5, ACE-Step XL, italiano |
 | **La copertina di un brano chiesta dal telefono** | scritta; **mai passata per un motore acceso** |
 | **Tonalità, ritmo, voce, e da 1 a 4 brani** | **visti nell'app sull'emulatore**, con le spiegazioni tenendo premuto |
 | **«Crea il piano»: un tasto invece di far indovinare al modello** | scritto; **contro LM Studio vero no** |
-| **Il visualizer dentro il palco, con la barra del tempo** | provato nell'app sull'emulatore; **⚠ non è ancora il motore WebGL di DaProdVisualizer** |
+| **Il visualizer dentro il palco, con la barra del tempo** | provato nell'app sull'emulatore; il motore vero è arrivato nella 0.9.3 (riga qui sopra) |
 | **La galleria: nuovo, Salvati, Archivio, la data vera** | **visti nell'app sull'emulatore**, con date vere |
 | **DaProd: carica da dove vuoi, profilo altrui, com'è fatta** | fatto e **provato nel banco della console**; con due persone vere no |
 | **I prompt che contengono tutto, non un pezzo** | scritto; **il giro salva-e-ritrova su un modulo vero no** |
@@ -109,38 +123,39 @@ Il giro base regge e i difetti grossi sono chiusi. Quello che resta è **provare
 sul vero** quello che è stato scritto, in quest'ordine — che è l'ordine in cui
 si vede se è servito:
 
-1. **Il motore vero del visualizer.** È l'unica cosa della 0.9.1 che è rimasta a
-   metà, ed è scritta anche nel changelog: DaProdVisualizer gira su WebGL con
-   Three.js dentro un'app React, la console si serve da sé e non carica niente
-   da fuori. Il posto adesso è quello giusto e gli effetti sono cinque; il
-   motore no.
+1. **Una clip vera che esce dal disco**, e subito dopo **una storia da 30
+   secondi**. I pezzi incatenati sono scritti da tre versioni e non hanno mai
+   visto una scheda video: finché non esce un mp4, «30, 60, 120» sono tre numeri
+   in un menu. È il punto più vecchio di questa lista, ed è ora.
 
-2. **Una clip vera che esce dal disco**, e subito dopo **una storia da 30
-   secondi**. I pezzi incatenati sono scritti da due versioni e non hanno mai
-   visto una scheda video: finché non esce un mp4, «30, 60, 120» sono tre
-   numeri in un menu.
+2. **La 0.9.3 sul telefono vero.** Sull'emulatore e nel banco si è visto tutto,
+   ma quattro cose non le sanno dire:
+   - il visualizer che gira davvero, con la musica, e a quanti fotogrammi;
+   - **un aggiornamento vero**, per vedere se gli utenti restano;
+   - la musica con l'app in tasca e lo schermo spento;
+   - un mp3 condiviso su WhatsApp: arriva come canzone o come documento?
 
-3. **La 0.9.1 sul telefono vero.** Sull'emulatore si è visto tutto, ma tre cose
-   l'emulatore non le sa dire:
-   - la musica che continua con l'app in tasca e lo schermo spento;
-   - la notifica che arriva a lavoro **ricevuto**, con l'app chiusa;
-   - un mp3 condiviso su WhatsApp: adesso arriva come canzone o come documento?
+3. **Una copertina generata con FLUX vero**, per vedere quanto bene scrive il
+   titolo. Il prompt è giusto; il risultato lo dice solo il modello.
 
 4. **La bacheca con due persone vere**: i mi piace, il «tieni», il profilo di un
-   altro e gli stili condivisi hanno senso solo in due, e finora li ha provati
-   uno solo.
+   altro e gli stili condivisi hanno senso solo in due.
 
-5. **Le tre cose mai provate contro il vero**: la chiacchierata (e il nuovo
-   «Crea il piano») contro LM Studio, la copertina cucita dentro un mp3, lo
-   specchio offline su un telefono.
+5. **Le tre cose mai provate contro il vero**: la chiacchierata (e «Crea il
+   piano») contro LM Studio, la copertina cucita dentro un mp3, lo specchio
+   offline su un telefono.
 
 6. **Due suite accese in due stanze diverse**: l'annuncio, la bussata, e un
    lavoro passato all'altro computer.
 
-7. **Le parole di tutta la suite** — il telefono e il collegamento sono a posto;
+7. **AudioBloom e CosmicDust**, i due preset con le particelle, dentro la
+   console. Vogliono un grafo di scena, quindi vogliono una decisione: o si
+   riscrivono come shader, o si accetta che restino solo nell'app.
+
+8. **Le parole di tutta la suite** — il telefono e il collegamento sono a posto;
    l'hub e le altre schede no (§ «Le parole di tutta la suite», qui sotto).
 
-8. Tailscale sul telefono, fuori casa.
+9. Tailscale sul telefono, fuori casa.
 
 ---
 

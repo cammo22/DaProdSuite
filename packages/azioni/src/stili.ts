@@ -163,6 +163,28 @@ export const BPM_TIPICI: readonly number[] = [70, 90, 120, 140, 170];
  * modi: l'elenco è lungo, ma è un menu — non una fila di pulsanti.
  */
 export const TONALITA_CANTO: readonly { id: string; nome: string; spiega: string }[] = (() => {
+  /**
+   * ⚠ **«A caso» sta in cima, ed e' quella che parte.** Dalla 0.9.3.
+   *
+   * Chiesto il 5 settembre 2026: «in produzione musica deve essere selezionata
+   * "casuale" — e se uno vuole poi cambia, ma di default mettiamo un tasto
+   * casuale che fa decidere al modello».
+   *
+   * Fino alla 0.9.2 partiva **La minore**, e la ragione era buona: e' la
+   * tonalita' piu' usata nel pop, quindi quella che uno sceglierebbe comunque.
+   * Ma «quella che sceglieresti comunque» applicata a ogni brano vuol dire
+   * dodici canzoni nella stessa tonalita', cioe' dodici canzoni che si
+   * somigliano senza che nessuno abbia scelto che si somiglino.
+   *
+   * E' la stessa correzione fatta al ritmo nella 0.9.1, per lo stesso motivo:
+   * un predefinito fisso su un campo che quasi nessuno tocca non e' un aiuto,
+   * e' una firma involontaria su tutto quello che produci.
+   */
+  const aCaso = {
+    id: "caso",
+    nome: "A caso",
+    spiega: "Lo decide il modello, e cambia a ogni brano. È quello che parte se non tocchi niente.",
+  };
   const note: readonly [string, string][] = [
     ["C", "Do"],
     ["C#", "Do diesis"],
@@ -200,6 +222,7 @@ export const TONALITA_CANTO: readonly { id: string; nome: string; spiega: string
   };
 
   return [
+    aCaso,
     ...note.map(([sigla, nome]) => ({
       id: `${sigla} minor`,
       nome: `${nome} minore`,

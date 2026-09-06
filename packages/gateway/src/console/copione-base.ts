@@ -152,12 +152,28 @@ export const COPIONE_BASE = `
     }
     // Una risposta buona azzera il conto: quello che conta sono i 401 **di
     // fila**, non i 401 in assoluto.
-    quantiNo = 0;
+    if (quantiNoSono()) segnaUnNo(0);
     return corpo;
   }
 
-  /** Quanti 401 di fila abbiamo preso. Uno solo non vuol dire niente. */
-  var quantiNo = 0;
+  /**
+   * Quanti 401 di fila abbiamo preso. Uno solo non vuol dire niente.
+   *
+   * ⚠ **Il conto sopravvive alla ricarica**, e senza questa riga il resto non
+   * funzionava. Quando l'app rimette la credenziale **ricarica la pagina**, e
+   * una pagina nuova ripartiva da zero: il conto non arrivava mai a tre, la
+   * revoca vera non veniva mai riconosciuta, e l'app si ricaricava all'infinito
+   * mostrando ogni volta un lampo di schermata d'ingresso.
+   *
+   * «sessionStorage» e non «localStorage» apposta: il conto vale per questa
+   * sessione, e chiudere e riaprire l'app deve essere un modo di ricominciare.
+   */
+  function quantiNoSono() {
+    try { return Number(sessionStorage.getItem("daprod.no401")) || 0; } catch (e) { return 0; }
+  }
+  function segnaUnNo(quanti) {
+    try { sessionStorage.setItem("daprod.no401", String(quanti)); } catch (e) { /* pazienza */ }
+  }
 
   /**
    * Il computer dice che non ci conosce. **Non è detto che abbia ragione.**
@@ -184,7 +200,8 @@ export const COPIONE_BASE = `
    *    pagina d'ingresso con scritto cosa è successo.
    */
   function perdutaLaCredenziale() {
-    quantiNo += 1;
+    var quantiNo = quantiNoSono() + 1;
+    segnaUnNo(quantiNo);
 
     if (window.DaProdApp && window.DaProdApp.riprendiCredenziale && quantiNo <= 3) {
       // L'app rimette il token e ricarica: se era una scivolata, da qui in poi

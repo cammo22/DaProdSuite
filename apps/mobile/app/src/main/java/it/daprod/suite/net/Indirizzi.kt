@@ -69,32 +69,65 @@ object Indirizzi {
 
         // Il preferito da solo: se c'è ancora, abbiamo finito qui.
         val primo = puliti.first()
+        var qualcunoHaDettoNo = false
         when (colpo(primo, token)) {
             GatewayClient.Colpo.RISPONDE -> return Esito.Trovato(primo)
-            // Un rifiuto è una risposta, e vale per tutti gli indirizzi dello
-            // stesso computer: è il token a non andare bene, non la strada.
-            GatewayClient.Colpo.RIFIUTA -> return Esito.Revocato
+            /**
+             * ⚠ **Un rifiuto non ferma più la ricerca.**
+             *
+             * Qui c'era `return Esito.Revocato`, e la riga sopra spiegava
+             * perché: un 401 vale per tutti gli indirizzi dello stesso
+             * computer, quindi provarne altri è tempo perso.
+             *
+             * Il ragionamento è giusto e la premessa no: **non tutti gli
+             * indirizzi di questa lista sono lo stesso computer.** Uno di essi
+             * è il tunnel, e il tunnel prende un nome nuovo a ogni accensione
+             * della suite — cioè a ogni aggiornamento. Il nome vecchio non
+             * resta vuoto: Cloudflare lo ricicla, e quello che risponde di là
+             * è il servizio di qualcun altro, che al nostro token dice 401.
+             *
+             * E `preferito` è quello che ha funzionato l'ultima volta: basta
+             * aver usato l'app fuori casa una volta perché il tunnel sia il
+             * primo della lista. Risultato: si aggiornava la suite, l'app
+             * bussava a un indirizzo che non era più il nostro computer, si
+             * prendeva un no e dichiarava una revoca — con il computer acceso
+             * in salotto. Da lì l'unica strada che l'app offriva era rifare
+             * l'accoppiamento, ed è esattamente quello che è stato riportato:
+             * «ad ogni aggiornamento devo togliere e rimettere gli utenti».
+             *
+             * Adesso un no si segna e si va avanti. Una revoca vera la dicono
+             * **tutti** gli indirizzi, non uno.
+             */
+            GatewayClient.Colpo.RIFIUTA -> qualcunoHaDettoNo = true
             GatewayClient.Colpo.NIENTE -> Unit
         }
 
         val altri = puliti.drop(1)
-        if (altri.isEmpty()) return Esito.Silenzio
+        if (altri.isEmpty()) return if (qualcunoHaDettoNo) Esito.Revocato else Esito.Silenzio
 
         // Gli altri tutti insieme: vince il primo che risponde.
         return withContext(Dispatchers.IO) {
             coroutineScope {
                 val prove = altri.map { base -> async { base to colpo(base, token) } }
-                var esito: Esito = Esito.Silenzio
+                var trovato: Esito? = null
                 for (p in prove) {
                     val (base, come) = p.await()
                     if (come == GatewayClient.Colpo.RISPONDE) {
-                        esito = Esito.Trovato(base)
+                        trovato = Esito.Trovato(base)
                         break
                     }
-                    if (come == GatewayClient.Colpo.RIFIUTA) esito = Esito.Revocato
+                    if (come == GatewayClient.Colpo.RIFIUTA) qualcunoHaDettoNo = true
                 }
                 for (p in prove) p.cancel()
-                esito
+                /**
+                 * **Revocato solo se nessuno ha aperto e qualcuno ha detto no.**
+                 *
+                 * «Non risponde» e «non ti conosco» restano due cose diverse e
+                 * si raccontano diversamente — è il motivo per cui questo enum
+                 * ha tre valori e non due — ma la seconda adesso ha bisogno di
+                 * un accordo, non della parola di un indirizzo solo.
+                 */
+                trovato ?: if (qualcunoHaDettoNo) Esito.Revocato else Esito.Silenzio
             }
         }
     }

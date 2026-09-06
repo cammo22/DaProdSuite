@@ -1022,10 +1022,6 @@ class MainActivity : AppCompatActivity() {
          * cancellare il profilo e rifare il codice. Adesso si dice cos'è
          * successo, e si offre il gesto giusto.
          */
-        if (esito is Indirizzi.Esito.Revocato) {
-            diCheEStatoTolto(persona)
-            return@launch
-        }
         var vivo = (esito as? Indirizzi.Esito.Trovato)?.base
 
         /**
@@ -1043,19 +1039,55 @@ class MainActivity : AppCompatActivity() {
          * solo. Il token resta quello: non è cambiato il computer, è cambiato
          * dove sta.
          */
-        if (vivo == null && persona.pcId.isNotBlank()) {
+        /**
+         * ⚠ **Si guarda in giro anche quando qualcuno ha detto di no.**
+         *
+         * Fino alla 0.9.2 una revoca usciva da questa funzione due righe piu'
+         * su, prima di arrivare qui: se un indirizzo rispondeva 401, l'app
+         * diceva «ti hanno tolto» e proponeva di cancellare il profilo. Ma un
+         * 401 puo' venire da un indirizzo che **non e' piu' il nostro
+         * computer** — il tunnel cambia nome a ogni accensione della suite e
+         * Cloudflare ricicla quello vecchio. Vedi `Indirizzi.cerca`.
+         *
+         * Adesso, prima di credere a una revoca, si chiede in giro chi c'e'. Se
+         * il computer con il nostro id risponde e ci riconosce, non era una
+         * revoca: era un indirizzo morto.
+         */
+        if (vivo == null) {
             binding.attesa.visibility = View.VISIBLE
             val sentiti = Scoperta.cerca(this@MainActivity, 3_000)
             binding.attesa.visibility = View.GONE
-            val suo = sentiti.firstOrNull { it.id == persona.pcId }
-            if (suo != null && GatewayClient(suo.doveBussare, persona.token).raggiungibile(4_000)) {
+            /**
+             * Con il `pcId` si cerca **quel** computer. Senza — chi si e'
+             * accoppiato con il codice prima della 0.9.3 — vale la regola del
+             * buon senso: se in casa ce n'e' **uno solo** e ci riconosce, e'
+             * lui. Con due o piu' non si indovina: si dice che non risponde.
+             */
+            val candidati = when {
+                persona.pcId.isNotBlank() -> sentiti.filter { it.id == persona.pcId }
+                sentiti.size == 1 -> sentiti
+                else -> emptyList()
+            }
+            val suo = candidati.firstOrNull {
+                GatewayClient(it.doveBussare, persona.token).raggiungibile(4_000)
+            }
+            if (suo != null) {
                 vivo = suo.doveBussare
                 Profili.ricordaBasi(this@MainActivity, persona.id, suo.tutti)
+                Profili.ricordaPcId(this@MainActivity, persona.id, suo.id)
             }
         }
 
         if (vivo == null) {
-            apriDallaCopia(persona)
+            /**
+             * Nessuno ci ha aperto. Se qualcuno ci aveva detto di no **ed era
+             * l'unico che ha risposto**, allora la revoca e' vera: si dice cosa
+             * e' successo invece di mostrare una copia che sembra funzionare.
+             * Se invece era silenzio, si apre lo specchio: il computer e'
+             * spento, e domani sara' li'.
+             */
+            if (esito is Indirizzi.Esito.Revocato) diCheEStatoTolto(persona)
+            else apriDallaCopia(persona)
             return@launch
         }
 
@@ -1075,7 +1107,11 @@ class MainActivity : AppCompatActivity() {
          * fuori casa è un indirizzo morto. Appena si arriva al PC — di solito
          * dalla wifi di casa — ci si fa dire i suoi indirizzi di oggi.
          */
-        val adesso = (client ?: cl).indirizziDiAdesso()
+        val chiEra = (client ?: cl).chiSei()
+        // Con che nome si annuncia: e' la via di ritorno il giorno che tutti
+        // gli indirizzi salvati muoiono insieme. Si impara qui, gratis.
+        if (chiEra != null) Profili.ricordaPcId(this@MainActivity, attuale.id, chiEra.pcId)
+        val adesso = chiEra?.basi ?: emptyList()
         if (adesso.isNotEmpty()) {
             Profili.ricordaBasi(this@MainActivity, attuale.id, adesso)
             attuale = attuale.copy(basi = (adesso + attuale.basi).distinct())

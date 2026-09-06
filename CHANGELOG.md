@@ -12,7 +12,238 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ## Non ancora pubblicato
 
-Niente: la 0.9.1 è appena uscita.
+Niente: la 0.9.3 è appena uscita.
+
+---
+
+## 0.9.3 — Il visualizer vero, e le cose che non tornavano
+
+Tre cose grosse e un ripasso. Le prime due erano state chieste **due volte** —
+è il modo in cui una versione si merita il numero.
+
+### Il visualizer è quello di DaProdVisualizer. Davvero, stavolta
+
+> «le visual non sono quelle del mio programma daprodvisualizer bro, è già la
+> seconda volta: fai un port vero del visualizer.»
+
+Aveva ragione due volte. Nella 0.9.0 il visualizer era un canvas 2D con cinque
+effetti fatti a mano; nella 0.9.1 lo stesso canvas, spostato dove serviva. Due
+volte «somiglia», mai «è».
+
+**Un port vero non è «rifatto uguale»: è lo stesso codice che disegna.** Il
+problema era che DaProdVisualizer è React più Three.js, e nella console non ci
+entra — la regola è che questa pagina si serve da sé, e Three da solo pesa più
+di tutto il resto messo insieme.
+
+La via d'uscita era guardare cosa fa davvero Three lì dentro: **niente**. Nove
+degli undici preset sono un rettangolo grande quanto lo schermo con sopra un
+fragment shader, e quel rettangolo WebGL lo disegna in trenta righe. Quello che
+fa l'effetto è il GLSL.
+
+Quindi adesso nella console ci sono:
+
+- **gli stessi nove shader**, presi dai file dell'app;
+- **lo stesso prologo condiviso**, con `band()`, `fbm()`, `palette()`;
+- **gli stessi manifest** — parametri e legami fra suono e immagine. È la riga
+  `{bassi → tunnelScale, 0.8, 0.15}` a decidere che il tunnel respira sui bassi
+  e non sugli acuti: senza, gli shader compilano e restano fermi;
+- **lo stesso analizzatore**: sessantaquattro bande logaritmiche, guadagno
+  automatico, flusso spettrale, onset, colpo con periodo refrattario, centroide,
+  stima del tempo dalla mediana degli intervalli;
+- **le stesse quattro passate** di post-processing: soglia morbida, sfocatura a
+  raggio raddoppiato, tone map filmico con vignettatura e grana, e le quattro
+  transizioni.
+
+**E non si scriverà mai a mano.** Il travaso lo fa uno script
+(`porta-il-visualizer.mjs`): quando in DaProdVisualizer si corregge uno shader,
+lo si rilancia. Riscriverli a mano vorrebbe dire che alla terza correzione
+sarebbero di nuovo due cose diverse con lo stesso nome, che è precisamente il
+difetto di cui sopra.
+
+**⚠ Due preset restano fuori**: AudioBloom e CosmicDust sono scene con
+particelle e mesh, e quelle Three lo usano davvero. Sono gli unici due, ed è
+scritto qui perché si sappia cosa manca invece di scoprirlo.
+
+**Provato in un browser vero**, non solo compilato: tutti e nove disegnano un
+fotogramma con il suono finto in ingresso, e nessuno esce nero.
+
+### Gli utenti non saltano più a ogni aggiornamento
+
+> «ad ogni aggiornamento devo togliere e rimettere gli utenti.»
+
+La causa non era l'accoppiamento, ed è istruttiva. Quando l'app si apre prova
+gli indirizzi salvati del computer, e il primo che prova è **quello che ha
+funzionato l'ultima volta**. Se un indirizzo rispondeva `401`, l'app si fermava
+lì e dichiarava: **ti hanno tolto**. Il ragionamento era scritto in un commento
+e sembrava solido — «un rifiuto vale per tutti gli indirizzi dello stesso
+computer, è il token a non andare bene, non la strada».
+
+Giusto, e con una premessa falsa: **non tutti quegli indirizzi sono lo stesso
+computer.** Uno è il tunnel, e il tunnel prende un nome nuovo a ogni accensione
+della suite — cioè a ogni aggiornamento. Il nome vecchio non resta vuoto:
+Cloudflare lo ricicla, e chi risponde di là è il servizio di qualcun altro, che
+al nostro token dice `401`. Basta aver usato l'app fuori casa **una volta**
+perché quell'indirizzo sia il primo della fila.
+
+Risultato: si aggiornava, l'app bussava a un indirizzo che non era più il nostro
+computer, si prendeva un no, e proponeva di cancellare il profilo — con il
+computer acceso in salotto. L'unica strada che offriva era rifare
+l'accoppiamento.
+
+Adesso: **una revoca vuole l'accordo di tutti.** Un no si segna e si va avanti;
+si crede a una revoca solo se nessun indirizzo ha aperto. E prima di crederci,
+il telefono **chiede in giro chi c'è**: se il computer con il suo id risponde e
+lo riconosce, non era una revoca, era un indirizzo morto.
+
+Quella via di ritorno esisteva dalla 0.9.0 ma la conosceva solo chi si era
+accoppiato **bussando**: chi aveva battuto il codice a otto cifre non aveva l'id
+del computer, e per lui non c'era ritorno. Adesso lo impara da sé la prima volta
+che il computer risponde.
+
+E un difetto che stava lì accanto: il conto dei rifiuti **si azzerava a ogni
+ricarica**, e l'app ricarica proprio per rimettere la credenziale. Il conto non
+arrivava mai a tre, la revoca vera non veniva mai riconosciuta, e l'app si
+ricaricava all'infinito.
+
+### Due canzoni chieste insieme, adesso escono in due
+
+> «se mando due canzoni contemporaneamente non funziona, ne fa solo una.»
+
+La scheda il suo lavoro lo faceva: `quante` finisce nel campo «batch» e
+DaProdMusica genera due brani uno dopo l'altro. Il difetto stava nella fila, e
+si aspettava **il** file, al singolare. Appena usciva il primo il lavoro
+risultava finito, la fila passava al prossimo e — quando la fila si svuota — la
+suite **chiude le schede che ha aperto per liberare la scheda video**. Cioè
+ammazzava la seconda canzone mentre la stava generando.
+
+Una consegna incompleta che diventava una generazione uccisa: ecco perché si
+vedeva come «ne fa solo una» e non come «me ne consegna una sola». Adesso si
+aspettano tutti, e ognuno prende titolo e padrone come il primo. Con un tetto a
+parte per i ritardatari: se il secondo non arriva entro dieci minuti si consegna
+quello che c'è, invece di perdere anche quello.
+
+### Il nome della canzone, scritto sulla copertina
+
+> «quando facciamo una produzione musicale, al punto di inserire la copertina,
+> fai che in automatico di aggiungere sempre una bella scritta a tema con il
+> nome della canzone.»
+
+Le virgolette non sono decorazione: sono il modo in cui FLUX capisce dove
+finisce la descrizione e comincia **il testo da disegnare**. Senza, il titolo si
+scioglie nella scena e il modello disegna qualcosa *a proposito* di quelle
+parole invece delle parole.
+
+E c'era da togliere il contrario: fino alla 0.9.2 tutti i prompt di copertina
+finivano con `no text`. Non era una svista — era la scelta giusta per Anima e
+per SD, che a scrivere fanno scarabocchi. FLUX.2 Klein, che dalla 0.9.1 è il
+modello di serie per le copertine, le lettere le sa fare: quella riga era un
+divieto ereditato.
+
+Vale anche quando nessuno scrive niente: «anche se uno non scrive un prompt
+immagine, l'immagine viene generata randomicamente ma sempre con un titolo».
+
+### Rifare una copertina, tenendo premuto
+
+Una canzone in galleria, tenuta premuta, si può **rifare la copertina** — con lo
+stesso prompt o cambiandolo. Passa dalla fila come tutti gli altri lavori, con
+gli stessi tetti e la stessa notifica: se avesse una corsia sua, tre copertine
+rifatte di fila scavalcherebbero chi aspetta un video da venti minuti. Quando
+l'immagine è pronta non finisce in galleria: va addosso al brano.
+
+### Il ripasso della grafica, con il metro
+
+> «ci sono molte zone dove le cose si sovrappongono, poca simmetria, pulsanti di
+> diverse grandezze.»
+
+Misurato nella pagina vera a 375 px, non a occhio:
+
+- **i riquadri di Casa erano alti 148, 148, 148, 148 e 116.** La colpa è di un
+  valore di serie che quasi nessuno guarda: dentro una riga la griglia allunga
+  tutti alla stessa altezza, **fra** una riga e l'altra no. Una parola —
+  `grid-auto-rows: 1fr` — e la griglia smette di sembrare scivolata;
+- **i tasti piccoli erano alti 35, 34 e da 25 a 28**, tre misure per tre tasti
+  che stanno sulla stessa riga, e nessuna delle tre decisa: erano il risultato
+  di tre padding scritti in tre momenti. Adesso c'è un numero solo;
+- **i tasti grandi erano 47 e 51**, perché quello col bordo cresceva di due
+  pixel. Stessa cura;
+- **i simboli stanno in un quadrato fisso**: «▶» riempie il suo spazio, «◉» ne
+  occupa metà, e senza un riquadro i titoli sotto partivano da altezze diverse;
+- **la Casa era l'unica scheda senza respiro in fondo**, e l'ultimo riquadro
+  finiva appiccicato alla barra;
+- **la barra in fondo si misura col suo bordo**: era alta 59 e il fondo della
+  pagina 58, e l'ultimo pixel finiva sotto.
+
+Dopo: su tutte e cinque le schede, nessun tasto disallineato rispetto ai suoi
+vicini di riga.
+
+### Il resto della lista
+
+**Il gap fra la barra che suona e le schede.** La barra si appoggiava a
+`--fondo-alto`, che dice 64px; la barra delle schede però un'altezza non ce
+l'aveva — la decidevano i suoi tasti, e venivano 48. In mezzo si vedeva la
+galleria. Adesso quel numero non è una stima, è la misura.
+
+**Le immagini in DaProd si trascinano.** Un brano e un video aprivano il palco,
+che il trascinamento ce l'ha dalla 0.9.1; un'immagine apriva **la lente**, che è
+un'altra cosa e non l'aveva mai avuto. Due gesti identici, due riquadri diversi,
+uno solo che rispondeva.
+
+**Di chi è, una volta sola.** Sullo stesso riquadro comparivano la faccia col
+nome e la spilla «di Cammo». Le due righe erano nate in due momenti e la seconda
+chiedeva «non è mia?» invece di «l'ho già detto?».
+
+**Il tasto con le tre linee adesso apre le info**, e ricliccandolo si chiude.
+Non funzionava per una ragione precisa: apriva un foglio, e un foglio sopra al
+palco — che sta a schermo intero — finiva **sotto**. Il tasto rispondeva; quello
+che apriva stava dietro. La fila non si perde: si tocca il «3 di 12».
+
+**L'asterisco se n'è andato**, e con lui i nomi degli effetti a schermo. Quel
+tasto cambiava effetto, e adesso l'effetto cambia da solo ogni quarantacinque
+secondi aspettando un colpo forte: un tasto che fa una cosa che succede comunque
+insegna a non guardare i tasti. Chi lo vuole a mano tocca il visualizer.
+
+**La copertina si vede al 70%**, così il visualizer le passa dietro invece di
+essere coperto da un quadrato.
+
+**Archiviare fa sparire il riquadro subito.** Il computer lo faceva già — il
+filtro esclude le archiviate da tutte le sezioni, «Di tutti» compresa. Mancava
+qui: fra il tocco e la galleria riletta passano andata, scrittura e ritorno, e
+in quel mezzo secondo uno guarda, non vede niente, e preme di nuovo.
+
+**Tenendo premuto si condivide**, in DaProd e fuori. I due tasti c'erano già ma
+dentro la lente: per arrivarci bisognava aprire la cosa e cercarli in fondo.
+
+**La tonalità di serie è «a caso».** Prima era La minore, perché è la più usata
+nel pop. Vero, e sbagliato come predefinito: un valore fisso su un campo che
+quasi nessuno tocca non toglie una domanda, mette una firma su tutto quello che
+produci — dodici brani nella stessa tonalità si somigliano senza che nessuno
+abbia scelto che si somiglino.
+
+### Due prove nuove, e una che aveva torto
+
+**Il copione della console adesso si legge davvero.** C'è un buco che il
+compilatore non può vedere: quei file *sono* template literal, quindi per
+TypeScript il loro contenuto è una stringa, e dentro una stringa si può
+scrivere qualunque sciocchezza senza che nessuno fiati. L'errore lo trova il
+browser, e lo trova **in silenzio**: la pagina si carica, il tag script muore
+alla prima riga, e si vede una schermata che non risponde. Adesso lo script
+servito passa dal parser di Node a ogni giro di prove.
+
+**E una prova che accusava il codice giusto.** Il controllo sulle variabili nate
+per sbaglio leggeva solo il primo nome di una dichiarazione: di
+`var quadrati = 0, cimaAss = 0;` vedeva `quadrati` e basta. Un controllo che
+accusa il codice giusto è peggio di nessun controllo — la prima volta si perde
+tempo a cercare un difetto che non c'è, la seconda lo si ignora, e la terza è
+quella in cui aveva ragione.
+
+### ⚠ Cosa resta da fare
+
+- **AudioBloom e CosmicDust**, i due preset con le particelle, restano fuori dal
+  visualizer della console.
+- **I video da 30, 60 e 120 secondi** restano scritti e mai passati per una
+  scheda video. È la terza versione che lo scrivo.
+- **Le copertine col titolo non sono mai passate per FLUX vero**: il prompt è
+  giusto, quanto bene scriva quel modello si sa solo generandone una.
 
 ---
 
