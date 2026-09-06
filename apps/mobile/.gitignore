@@ -10,3 +10,9 @@ captures/
 .idea/
 *.iml
 .kotlin/
+
+# Il ponte Tailscale: si ricompila con scripts/compila-tailponte.mjs.
+# 30 MB di roba compilata non stanno in git.
+app/libs/tailponte.aar
+app/libs/*-sources.jar
+

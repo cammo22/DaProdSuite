@@ -40,6 +40,7 @@ import it.daprod.suite.net.GatewayClient
 import it.daprod.suite.net.GatewayException
 import it.daprod.suite.net.EsitoBussata
 import it.daprod.suite.net.Indirizzi
+import it.daprod.suite.net.Tailnet
 import it.daprod.suite.net.Scoperta
 import it.daprod.suite.net.ServitoreOffline
 import kotlinx.coroutines.Job
@@ -1033,6 +1034,36 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
+     * Accende Tailscale, se lo si vuole, e torna gli indirizzi su cui bussare.
+     *
+     * ⚠ **Non blocca niente se va male.** Tailscale è una strada in più,
+     * non un requisito: se il nodo non parte, se serve il browser, se non c'è
+     * linea, si torna l'elenco di prima e l'app funziona come ha sempre fatto.
+     * L'unico posto dove un guaio di Tailscale si deve vedere è la sua riga
+     * nelle impostazioni, dove uno è andato apposta per guardarla.
+     */
+    private suspend fun preparaTailscale(persona: Profilo): List<String> {
+        val tutte = (listOf(persona.base) + persona.basi)
+            .filter { it.isNotBlank() }
+            .distinct()
+        if (!Tailnet.loVuole(this)) {
+            // Spento: via i `100.x`, che dal telefono non rispondono mai.
+            return Indirizzi.strade(tutte) { null }
+        }
+        val stato = Tailnet.accendi(this, comeSiChiamaQuestoTelefono())
+        if (stato !is Tailnet.Stato.Dentro) {
+            return Indirizzi.strade(tutte) { null }
+        }
+        return Indirizzi.strade(tutte) { dentroIlTailnet -> Tailnet.buco(dentroIlTailnet) }
+    }
+
+    /** Il nome con cui questo telefono comparirà nell'elenco di Tailscale. */
+    private fun comeSiChiamaQuestoTelefono(): String {
+        val mio = chi?.nome?.takeIf { it.isNotBlank() }
+        return "daprod-" + (mio ?: android.os.Build.MODEL ?: "telefono")
+    }
+
+    /**
      * Apre la suite. **Sempre la suite**, col computer o senza.
      *
      * Due strade, e la seconda è la novità della 0.7.6:
@@ -1049,9 +1080,25 @@ class MainActivity : AppCompatActivity() {
         val cl = client ?: return@launch
 
         binding.attesa.visibility = View.VISIBLE
+
+        /**
+         * ⚠ **Tailscale prima di bussare**, nuovo nella 1.0.1.
+         *
+         * Se è acceso, qui si accende il nodo e si apre il buco: da quel
+         * momento fra gli indirizzi da provare ce n'è uno che passa dal
+         * tailnet, e quello **non scade mai**. Se è spento non succede
+         * niente e si tira dritto come prima.
+         *
+         * Sta qui e non nell'avvio dell'app per una ragione: aprire il buco
+         * costa qualche secondo la prima volta, e farlo all'apertura vorrebbe
+         * dire ritardare di qualche secondo anche chi è in casa e non ne ha
+         * bisogno. Qui si paga solo quando serve, e una volta sola.
+         */
+        val strade = preparaTailscale(persona)
+
         // **Quale indirizzo risponde adesso**, non quale rispondeva l'altra
         // volta: è tutto il motivo per cui l'app si ricollega da sola.
-        val esito = Indirizzi.cerca(persona.basi, persona.base, persona.token)
+        val esito = Indirizzi.cerca(strade, persona.base, persona.token)
         binding.attesa.visibility = View.GONE
 
         /**
@@ -1548,6 +1595,77 @@ class MainActivity : AppCompatActivity() {
                         .put("batteria", st.batteria)
                         .put("installare", st.installare)
                         .toString()
+                }
+
+                /**
+                 * ⚠ **Com'e' messo Tailscale**, per farlo disegnare alla pagina.
+                 *
+                 * Nuovo nella 1.0.1. Stessa divisione dei permessi: **il
+                 * disegno lo fa la pagina, il mestiere lo fa l'app**. Qui
+                 * dentro non c'e' nessuna decisione, solo lo stato tradotto in
+                 * qualcosa che JavaScript sa leggere.
+                 */
+                @JavascriptInterface
+                fun comeStaTailscale(): String {
+                    val vuole = Tailnet.loVuole(this@MainActivity)
+                    val stato = if (vuole) Tailnet.comeSta() else Tailnet.Stato.Spento
+                    val j = org.json.JSONObject().put("vuole", vuole)
+                    when (stato) {
+                        is Tailnet.Stato.Dentro -> j.put("come", "dentro").put("mio", stato.mio)
+                        is Tailnet.Stato.ServeIlBrowser ->
+                            j.put("come", "serve-il-browser").put("indirizzo", stato.indirizzo)
+                        is Tailnet.Stato.Guaio -> j.put("come", "guaio").put("perche", stato.perche)
+                        Tailnet.Stato.Spento -> j.put("come", "spento")
+                    }
+                    return j.toString()
+                }
+
+                /**
+                 * Accende o spegne Tailscale.
+                 *
+                 * Accendere e' lento — il nodo parla in rete — quindi qui si
+                 * dice solo «lo voglio» e si torna subito: il nodo parte in
+                 * sottofondo, e la pagina richiede lo stato quando le pare.
+                 * Bloccare JavaScript per dieci secondi vorrebbe dire bloccare
+                 * tutta la pagina, compresa la musica che sta suonando.
+                 */
+                @JavascriptInterface
+                fun vogliolTailscale(si: Boolean) {
+                    if (!si) {
+                        Tailnet.spegni(this@MainActivity)
+                        return
+                    }
+                    Tailnet.loVuole(this@MainActivity, true)
+                    lifecycleScope.launch {
+                        Tailnet.accendi(this@MainActivity, comeSiChiamaQuestoTelefono())
+                    }
+                }
+
+                /**
+                 * Apre nel browser l'indirizzo con cui questo telefono entra
+                 * nel tailnet.
+                 *
+                 * Si apre **fuori**, nel browser vero, e non dentro la nostra
+                 * WebView: e' una pagina di Tailscale dove si mette una
+                 * password, e una pagina dove si mette una password la si
+                 * guarda nella barra degli indirizzi del proprio browser. Chi
+                 * la apre dentro un'app altrui sta insegnando alla gente
+                 * un'abitudine che poi le costa cara.
+                 */
+                @JavascriptInterface
+                fun entraNelTailnet() {
+                    val dove = Tailnet.comeSta()
+                    if (dove !is Tailnet.Stato.ServeIlBrowser) return
+                    runOnUiThread {
+                        try {
+                            startActivity(
+                                Intent(Intent.ACTION_VIEW, Uri.parse(dove.indirizzo))
+                                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                            )
+                        } catch (e: Exception) {
+                            avvisa("Non si apre il browser.")
+                        }
+                    }
                 }
 
                 /** Chiede **un** permesso. Il nome e' quello che manda la pagina. */

@@ -24,9 +24,9 @@ file si scrive quale delle due metà manca.
 
 ---
 
-## A che punto siamo — 6 settembre 2026 (notte)
+## A che punto siamo — 6 settembre 2026 (notte fonda)
 
-**Ultima pubblicata: 1.0.0.** Nove schede dentro la suite, un ambiente Python
+**Ultima pubblicata: 1.0.1.** Nove schede dentro la suite, un ambiente Python
 solo, e il giro che conta — chiedo dal telefono, il computer fa, il file torna —
 **provato da chi la usa**, sul suo PC e sul suo telefono.
 
@@ -62,6 +62,16 @@ disegnati da noi invece che da Android, la storia dentro la produzione video, i
 filtri che tornano a andare a capo, la fila che si costruisce tenendo premuto, e
 chi decide che può mettere in bacheca anche le cose degli altri.
 
+La **1.0.1** mette Tailscale **dentro l'app**. Non è una funzione in più: è la
+cura dell'unica cosa che si rompeva davvero, e che era stata corretta cinque
+volte dalla parte sbagliata. Fuori casa il telefono passava da un tunnel
+Cloudflare prestato, il cui nome cambia a ogni accensione della suite — 43 nomi
+diversi nel registro di questo computer — quindi ogni aggiornamento lasciava il
+telefono con in mano un indirizzo morto e nessun modo di impararne uno nuovo.
+Adesso c'è un indirizzo che non cambia mai, senza VPN di sistema e senza
+installare niente a parte. ⚠ **Il tunnel resta acceso come ripiego**: si toglie
+quando la strada nuova avrà retto un giro vero fuori casa.
+
 ⚠ **Cosa non ha ancora visto nessuno**, e va guardato con sospetto: i video da
 30, 60 e 120 secondi (scritti, mai passati per una scheda video — è la terza
 versione), le copertine col titolo contro FLUX vero, due suite accese in due
@@ -96,6 +106,10 @@ fanno quello che ti ho chiesto».
 | **I filtri che vanno a capo (1.0.0)** | **misurato a 375 px**: tre righe, e la pagina non scorre mai di lato |
 | **La fila si costruisce tenendo premuto (1.0.0)** | e' la meta' che mancava alla scelta della 0.9.4. **Provata nel banco** da galleria e bacheca, compresi «gia' in fila» e «sta gia' suonando» |
 | **Ritoccare quella che suona apre il palco (1.0.0)** | non riparte da capo. **Provato nel banco** |
+| **Tailscale dentro l'app (1.0.1)** | `tsnet` in spazio utente, senza VPN di sistema e senza permessi. **Provato su Android vero**: il nodo parte, chiede il login e arriva ai server di Tailscale. ⚠ **Il giro completo — entrare nel tailnet e raggiungere il PC da fuori casa — no**: serve un account, e un account non si prende in prestito |
+| **I due muri di Android (1.0.1)** | `netlinkrib: permission denied` (le schede di rete le passa Java) e `panic: no safe place found to store log state` (le cartelle gliele diciamo noi). Nessuno dei due lo vedeva un compilatore, e nessuno dei due lo vedeva una prova sulla JVM |
+| **`TailponteTest`** | la prima prova del repository che gira **su un emulatore** e non sulla JVM. C'e' perche' un pezzo in Go dentro una libreria nativa o si carica o non si carica, e la differenza non la dice nessuno prima |
+| **Il tunnel Cloudflare** | ⚠ **ancora acceso**, ultimo di tre. Toglierlo prima che Tailscale abbia funzionato una volta vorrebbe dire restare fuori senza modo di rientrare **ne' di aggiornare l'app** per rimediare |
 | **Chi decide pubblica anche le cose degli altri (1.0.0)** | la faccia sopra resta quella di chi l'ha fatta, e l'avviso lo dice prima di premere. **Con due persone vere no** |
 | **Le prove del telefono** | `pnpm run prova-telefono`: il primo banco di `apps/mobile`, sulla JVM senza Android |
 | **«Da dove passa» nel menu dell'app** | dice quale indirizzo si sta usando e se scade: e' uno strumento di diagnosi, non una funzione |
