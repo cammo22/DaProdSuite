@@ -1104,7 +1104,8 @@ class MainActivity : AppCompatActivity() {
             // Spento: via i `100.x`, che dal telefono non rispondono mai.
             return Indirizzi.strade(tutte) { null }
         }
-        val stato = Tailnet.accendi(this, comeSiChiamaQuestoTelefono())
+        val suo = Tailnet.quelloDelTailnet(tutte) ?: ""
+        val stato = Tailnet.accendi(this, comeSiChiamaQuestoTelefono(), suo)
         if (stato !is Tailnet.Stato.Dentro) {
             return Indirizzi.strade(tutte) { null }
         }
@@ -1689,10 +1690,21 @@ class MainActivity : AppCompatActivity() {
                 @JavascriptInterface
                 fun comeStaTailscale(): String {
                     val vuole = Tailnet.loVuole(this@MainActivity)
-                    val stato = if (vuole) Tailnet.comeSta() else Tailnet.Stato.Spento
+                    // L'indirizzo del computer dentro il tailnet: senza, non si
+                    // puo' rispondere alla domanda vera, che e' «ci arrivo?».
+                    val suo = Tailnet.quelloDelTailnet(
+                        (listOf(chi?.base ?: "") + (chi?.basi ?: emptyList())).filter { it.isNotBlank() },
+                    ) ?: ""
+                    val stato = if (vuole) Tailnet.comeSta(suo) else Tailnet.Stato.Spento
                     val j = org.json.JSONObject().put("vuole", vuole)
                     when (stato) {
                         is Tailnet.Stato.Dentro -> j.put("come", "dentro").put("mio", stato.mio)
+                        is Tailnet.Stato.AltraRete ->
+                            j.put("come", "altra-rete")
+                                .put("mio", stato.mio)
+                                .put("perche", stato.perche)
+                                .put("tailnet", Tailnet.mioTailnet())
+                                .put("computer", suo)
                         is Tailnet.Stato.ServeIlBrowser ->
                             j.put("come", "serve-il-browser").put("indirizzo", stato.indirizzo)
                         is Tailnet.Stato.Guaio -> j.put("come", "guaio").put("perche", stato.perche)

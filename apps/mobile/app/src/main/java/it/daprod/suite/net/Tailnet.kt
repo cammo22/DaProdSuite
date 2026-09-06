@@ -94,8 +94,30 @@ object Tailnet {
         /** Partito, e aspetta che qualcuno apra l'indirizzo nel browser. */
         data class ServeIlBrowser(val indirizzo: String) : Stato
 
-        /** Dentro. `mio` e' l'indirizzo che questo telefono ha nel tailnet. */
+        /**
+         * Dentro **e ci si arriva**: `mio` e' l'indirizzo di questo telefono.
+         *
+         * ⚠ «Dentro» da solo non voleva dire niente — vedi [Stato.AltraRete].
+         */
         data class Dentro(val mio: String) : Stato
+
+        /**
+         * ⚠ **Acceso, ma in un'altra rete Tailscale.** Nuovo nella 1.0.6.
+         *
+         * Il 6 settembre 2026, con l'app in mano: «ho collegato tailscale a
+         * google e comunque stesso problema». Il foglio diceva **«Acceso.
+         * Questo telefono adesso si chiama 100.87.91.65»**, in verde, e non
+         * raggiungeva niente.
+         *
+         * Era vero e inutile: entrando con Google si finisce nel tailnet di
+         * quell'account, e il computer sta in un altro. Due nodi accesi che non
+         * si vedranno mai — e nessuno lo diceva.
+         *
+         * `mio` e' il nome di questo telefono, `perche` il motivo per cui il
+         * computer non si raggiunge. Da mostrare come un guaio, non come un
+         * successo.
+         */
+        data class AltraRete(val mio: String, val perche: String) : Stato
 
         /** Ci ha provato e non ce l'ha fatta. */
         data class Guaio(val perche: String) : Stato
@@ -108,7 +130,11 @@ object Tailnet {
      * subito. La prima volta ci mette qualche secondo; le volte dopo, avendo
      * gia' le chiavi in [cartella], torna quasi subito.
      */
-    suspend fun accendi(context: Context, nomeDelTelefono: String): Stato =
+    suspend fun accendi(
+        context: Context,
+        nomeDelTelefono: String,
+        dentroIlTailnet: String = "",
+    ): Stato =
         withContext(Dispatchers.IO) {
             if (!loVuole(context)) return@withContext Stato.Spento
             try {
@@ -128,14 +154,29 @@ object Tailnet {
             } catch (e: Throwable) {
                 return@withContext Stato.Guaio(e.message ?: "Tailscale non e' partito.")
             }
-            comeSta()
+            comeSta(dentroIlTailnet)
         }
 
-    /** Come sta, senza accendere niente. */
-    fun comeSta(): Stato {
+    /**
+     * Come sta, senza accendere niente.
+     *
+     * `dentroIlTailnet` e' l'indirizzo del computer visto dal tailnet. Quando
+     * c'e', **si prova ad arrivarci davvero** invece di fidarsi del fatto che il
+     * nodo sia acceso: vedi [Stato.AltraRete] per il perche'.
+     */
+    fun comeSta(dentroIlTailnet: String = ""): Stato {
         return try {
             if (tailponte.Tailponte.acceso()) {
-                Stato.Dentro(tailponte.Tailponte.mioIndirizzo())
+                val mio = tailponte.Tailponte.mioIndirizzo()
+                val dove = ospiteEPorta(dentroIlTailnet)
+                if (dove == null) return Stato.Dentro(mio)
+                /*
+                 * ⚠ La domanda vera non e' «sono acceso» ma «ci arrivo». Un
+                 * secondo di attesa qui vale sei versioni di malintesi.
+                 */
+                val guaio = tailponte.Tailponte.provo(dove)
+                if (guaio.isBlank()) Stato.Dentro(mio)
+                else Stato.AltraRete(mio, guaio)
             } else {
                 val url = tailponte.Tailponte.urlDiLogin()
                 if (url.isNotBlank()) Stato.ServeIlBrowser(url)
@@ -188,6 +229,10 @@ object Tailnet {
      */
     fun quelloDelTailnet(basi: List<String>): String? =
         basi.firstOrNull { Indirizzi.quantoLontano(it) == Indirizzi.VIA_TAILSCALE }
+
+    /** In che rete Tailscale e' entrato questo telefono. Vuoto se non e' acceso. */
+    fun mioTailnet(): String =
+        try { tailponte.Tailponte.mioTailnet() } catch (e: Throwable) { "" }
 
     /** Chiude tutto. Si usa quando si spegne Tailscale dalle impostazioni. */
     fun spegni(context: Context) {

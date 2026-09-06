@@ -373,6 +373,72 @@ func unaConnessione(di_qua net.Conn, n *tsnet.Server, dove string) {
 	<-fine
 }
 
+/*
+ * ⚠ **Ci arrivo davvero, da qui?**
+ *
+ * Torna stringa vuota se si arriva, e il motivo se no.
+ *
+ * ## Perche' serve, e cosa ha nascosto
+ *
+ * Il 6 settembre 2026, con l'app in mano: «ho collegato tailscale a google e
+ * comunque dopo l'update stesso problema». Nel foglio c'era scritto **«Acceso.
+ * Questo telefono adesso si chiama 100.87.91.65»**, in verde, e non raggiungeva
+ * niente.
+ *
+ * Era vero e non voleva dire niente. Il nodo era acceso davvero — ma dentro
+ * **un'altra rete Tailscale**: entrando con Google si finisce nel tailnet di
+ * quell'account, e il computer sta in un altro. Due nodi accesi che non si
+ * vedranno mai.
+ *
+ * «Acceso» rispondeva alla domanda sbagliata. La domanda e' una sola — **ci
+ * arrivo al computer?** — e la risposta la puo' dare solo una connessione vera.
+ * Da qui questa funzione: apre un socket verso il computer e guarda com'e'
+ * andata. Un secondo, e non si puo' sbagliare.
+ */
+func Provo(destinazione string) string {
+	mu.Lock()
+	n := nodo
+	mu.Unlock()
+	if n == nil {
+		return "Tailscale non e' acceso."
+	}
+	dove := strings.TrimSpace(destinazione)
+	if dove == "" {
+		return "non mi hai detto dove"
+	}
+	ctx, stop := context.WithTimeout(context.Background(), 12*time.Second)
+	defer stop()
+	c, err := n.Dial(ctx, "tcp", dove)
+	if err != nil {
+		return err.Error()
+	}
+	_ = c.Close()
+	return ""
+}
+
+// MioTailnet torna il nome completo di questo nodo, tipo
+// «telefono.tailXXXX.ts.net». Serve a far vedere **in quale rete** si e'
+// entrati, che e' la cosa che l'utente non poteva sapere.
+func MioTailnet() string {
+	mu.Lock()
+	n := nodo
+	mu.Unlock()
+	if n == nil {
+		return ""
+	}
+	lc, err := n.LocalClient()
+	if err != nil {
+		return ""
+	}
+	ctx, stop := context.WithTimeout(context.Background(), 5*time.Second)
+	defer stop()
+	st, err := lc.Status(ctx)
+	if err != nil || st == nil || st.Self == nil {
+		return ""
+	}
+	return strings.TrimSuffix(st.Self.DNSName, ".")
+}
+
 // Porta dice su quale porta di 127.0.0.1 c'e' il buco adesso. 0 se non ce n'e'.
 func Porta() int {
 	mu.Lock()

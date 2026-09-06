@@ -12,10 +12,65 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ## Non ancora pubblicato
 
-**Togliere del tutto il tunnel Cloudflare.** Resta il ripiego finché
-l'indirizzo stabile della 1.0.3 non avrà retto un giro vero fuori casa.
+**Togliere il tunnel Cloudflare.** Resta finché non c'è un indirizzo stabile che
+abbia retto un giro vero fuori casa.
 
 ---
+
+## 1.0.6 — Due messaggi che dicevano il falso
+
+> «ho collegato tailscale a google, cosa che non mi piace, e comunque dopo
+> l'update stesso problema che non funziona.»
+
+Con una foto, ed è la foto che ha detto tutto. Nel foglio «Da fuori casa»
+c'erano due frasi, e **tutte e due erano false**.
+
+### «Acceso. Questo telefono adesso si chiama 100.87.91.65»
+
+In verde, come un successo. Era vero e non voleva dire niente: il nodo era
+acceso davvero, ma dentro **un'altra rete Tailscale**. Entrando con Google si
+finisce nel tailnet di quell'account; il computer sta nel suo — `tailcc66b8` —
+e due nodi accesi in reti diverse non si vedranno mai.
+
+L'app rispondeva alla domanda sbagliata. La domanda è una sola — **ci arrivo al
+computer?** — e la risposta la può dare solo una connessione vera. Adesso
+l'app la prova: apre un socket verso il computer e guarda com'è andata. Se non
+ci arriva lo dice in rosso, dice **in quale rete è finito**, e offre di uscire e
+rientrare con l'account giusto.
+
+⚠ È lo stesso difetto della 1.0.3, in un altro punto: dire una cosa vera che
+suona come «va tutto bene» quando non va bene. **Il verde se lo merita solo chi
+ci arriva davvero.**
+
+### «Questa suite non sa farlo»
+
+Sotto «Un indirizzo che non cambia mai». Falso: la suite lo sa fare, la rotta
+risponde `200`. L'app in quel momento era **offline**, e la domanda al computer
+non partiva nemmeno.
+
+«Non si può» chiude la strada; «adesso non lo so» dice di riprovare. Adesso dice
+la seconda.
+
+### Cosa serve ancora, e perché non posso farlo io
+
+L'indirizzo stabile (Tailscale Funnel) è pronto e funziona: il computer sa già
+come si chiamerebbe — `daprodmain.tailcc66b8.ts.net` — e la suite chiede di
+accenderlo. Il tailnet però deve **permetterlo**, ed è un interruttore
+nell'account di chi lo possiede.
+
+Quando manca, Tailscale risponde con un indirizzo da aprire, e la suite lo mostra
+invece di seppellirlo in un log. ⚠ **Va aperto col browser loggato nello stesso
+account del computer**: aperto con un account diverso, quella pagina risponde
+`404 node not found` — che è esattamente quello che è successo.
+
+### Prove
+
+`build`, `typecheck`, `prova`, `prova-telefono` verdi.
+
+⚠ **Quello che nessuno ha ancora visto:** un telefono nella *stessa* rete
+Tailscale del computer che ci arriva davvero. Il pezzo che apre la strada c'è ed
+è provato su Android vero, ma l'unico telefono che ha provato a usarlo era in
+un'altra rete — cioè non l'ha mai attraversata.
 
 ## 1.0.5 — La misura si sceglie, e LLaDA trova il GGUF
 
