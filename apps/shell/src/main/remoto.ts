@@ -101,6 +101,7 @@ import {
 } from "./chiacchierata";
 import { accendiTunnel, spegniTunnel, statoTunnel, suTunnelCambiato } from "./tunnel";
 import { accendiFunnel, comeStaFunnel, spegniFunnel, type StatoFunnel } from "./funnel";
+import { salvaIndirizzoStabile } from "./impostazioni";
 import { apriLaPorta, statoFirewall, type StatoFirewall } from "./firewall";
 
 /** Su quale porta ascolta il gateway. */
@@ -296,6 +297,8 @@ async function accendiIndirizzoStabile(): Promise<StatoFunnel> {
   const porta = portaReale || PORTA;
   funnel = await accendiFunnel(porta);
   if (funnel.acceso) {
+    // Si segna, cosi' al prossimo avvio riparte da solo.
+    salvaIndirizzoStabile(true);
     /*
      * Gli inviti gia' dati puntano all'indirizzo vecchio, che era un tunnel
      * destinato a morire. Adesso ce n'e' uno che non muore: si buttano, cosi'
@@ -310,6 +313,7 @@ async function accendiIndirizzoStabile(): Promise<StatoFunnel> {
 /** Spegni l'indirizzo stabile e torna al tunnel. */
 async function spegniIndirizzoStabile(): Promise<StatoFunnel> {
   const porta = portaReale || PORTA;
+  salvaIndirizzoStabile(false);
   await spegniFunnel(porta);
   funnel = await comeStaFunnel(porta);
   remoto.buttaInviti();
@@ -1519,7 +1523,24 @@ async function accendiInternet(): Promise<StatoAccesso> {
    * acceso Funnel, quello e' la strada buona e va davanti a tutto in `basi()`.
    * Guardare non accende niente — vedi il commento in cima a funnel.ts.
    */
-  funnel = await comeStaFunnel(portaReale || PORTA);
+  /**
+   * ⚠ **L'indirizzo stabile si riaccende da solo**, se e' stato scelto.
+   *
+   * Chiesto il 7 settembre 2026: «quando il pc e' acceso con la suite aperta e
+   * collegato a internet DEVE funzionare». Un indirizzo che va acceso a mano a
+   * ogni avvio non e' un indirizzo che funziona sempre: e' un altro modo di
+   * dimenticarsene.
+   *
+   * Si riaccende **solo se qualcuno l'ha acceso una volta**, e la scelta sta
+   * nelle impostazioni. Di suo resta spento: mettere la suite su Internet sotto
+   * un nome pubblico e' una decisione, e non la si prende al posto di nessuno —
+   * nemmeno la prima volta.
+   */
+  if (impostazioni().indirizzoStabile) {
+    funnel = await accendiFunnel(portaReale || PORTA);
+  } else {
+    funnel = await comeStaFunnel(portaReale || PORTA);
+  }
   await accendiTunnel(portaReale || PORTA);
   remoto.buttaInviti();
   sveglia();

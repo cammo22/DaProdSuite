@@ -12,10 +12,92 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ## Non ancora pubblicato
 
-**Togliere il tunnel Cloudflare.** Resta finché non c'è un indirizzo stabile che
-abbia retto un giro vero fuori casa.
+**Togliere il tunnel Cloudflare.** Resta come ripiego per chi non ha acceso
+l'indirizzo fisso. Chi ce l'ha non lo usa più.
+
+**Togliere il codice della schermata «cerca i computer di casa».** La strada è
+chiusa — il tasto non c'è più — ma il codice dietro è ancora lì, irraggiungibile.
+Si toglie con calma e con le prove, non alle undici di sera.
 
 ---
+
+## 1.0.7 — Un indirizzo solo, e nessun login
+
+> «non dobbiamo mettere questi vincoli di account, il pc è già loggato con un
+> account. Io voglio poter aggiungere chi mi pare su internet senza fargli fare
+> login vari e deve funzionare sempre. Togliamola proprio la funzionalità in
+> casa che non ci sto capendo niente: solo online.»
+
+Aveva ragione su tutto, e due delle cose che ha chiesto di togliere le avevo
+messe io.
+
+### L'indirizzo che non cambia mai, acceso e verificato
+
+Il computer adesso ha un nome pubblico suo — `daprodmain.tail56d4ae.ts.net` —
+con certificato vero. **Non cambia**: né a un riavvio, né a un aggiornamento, né
+fra un anno.
+
+Verificato **da una rete esterna**, senza Tailscale e senza niente installato:
+
+```
+GET https://daprodmain.tail56d4ae.ts.net/chi-sei
+→ {"pcId":"pc_mtokdhj22f3b8a25","computer":"DAPRODMAIN","versione":"1.0.6"}
+```
+
+E si riaccende da solo a ogni avvio, perché un indirizzo da riaccendere a mano
+non è un indirizzo che funziona sempre. Resta **spento di suo** per chi non l'ha
+mai scelto: mettere la suite su Internet sotto un nome pubblico è una decisione.
+
+⚠ Una cosa da sapere: la prima richiesta dopo l'accensione ci mette ~25 secondi
+(Tailscale sta prendendo il certificato). Dalla seconda in poi sono millisecondi.
+
+### ⚠ Tailscale è uscito dal telefono, ed era un mio errore
+
+L'avevo messo nella 1.0.1 per dare un indirizzo che non scade. Risolveva il
+problema giusto **dalla parte sbagliata**: obbligava *ogni* telefono a fare un
+login, e chi sbagliava account — Google al posto di quello del computer — finiva
+in una rete Tailscale diversa, dove il computer non esiste. È successo davvero, e
+il foglio diceva «Acceso» in verde.
+
+Funnel fa la stessa cosa dalla parte giusta: **l'indirizzo fisso ce l'ha il
+computer**, e chi si collega non installa e non logga niente. Un solo account in
+tutto il giro, ed è quello che c'era già.
+
+Con lui se ne va il ponte in Go, il runtime di Go, la libreria nativa e i due
+muri di Android che erano serviti a farla partire. **L'app torna da 13,1 a 6,0
+MB.**
+
+### Una strada sola per far entrare qualcuno
+
+Via il tasto «cerca i computer di casa». C'erano **due** modi di far entrare una
+persona — bussare da dentro casa, o un codice — con due comportamenti diversi a
+seconda di dove ti trovavi, e chi li usava non capiva quale dei due stesse
+usando.
+
+Adesso ce n'è uno: **il QR**, che funziona ovunque perché l'indirizzo dentro non
+scade più. Non c'è niente che la ricerca sulla wifi sapesse fare e il QR no.
+
+`Scoperta` resta viva ma **non si vede**: la usa `veraRevoca` come rete di
+sicurezza quando *tutti* gli indirizzi salvati sono morti e bisogna decidere se
+il collegamento è stato tolto davvero. Lì non è una modalità, è un controllo, e
+non lo sceglie nessuno.
+
+### Cosa resta invisibile, e perché
+
+L'indirizzo di casa non è stato cancellato: resta nell'elenco, **senza nessuna
+schermata, nessuna scelta, nessuna parola**. Serve a una cosa sola — se il
+telefono è sulla stessa wifi, un video da 200 MB lo prende dai due metri che vi
+separano invece che da Internet. Funnel ha un limite di banda dichiarato dalla
+documentazione di Tailscale, e non è il caso di scoprire con un film che è basso.
+
+### Prove
+
+`build`, `typecheck`, `prova` verdi; **14** prove del telefono (le tre del buco
+di Tailscale sostituite da tre sull'indirizzo fisso). L'indirizzo pubblico
+provato da fuori, come sopra.
+
+⚠ **Quello che nessuno ha ancora visto:** un telefono che si accoppia da zero
+con il QR nuovo e poi funziona da fuori casa. È il giro che tocca a lui.
 
 ## 1.0.6 — Due messaggi che dicevano il falso
 

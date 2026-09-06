@@ -36,6 +36,24 @@ Documento di passaggio fra una sessione e l'altra. Aggiornato il **6 settembre
 > gia' scritto ovunque. Quando un commento e il valore accanto non dicono la
 > stessa cosa, uno dei due e' un difetto: qui era il valore.
 
+> ⚠ **La lezione della 1.0.7: risolvere il problema giusto dalla parte
+> sbagliata.**
+>
+> Nella 1.0.1 ho messo Tailscale **dentro l'app**, per dare al telefono un
+> indirizzo che non scade. Il problema era quello giusto. La parte era
+> sbagliata: mettendolo nel telefono, ogni persona doveva fare un login — e chi
+> sbagliava account finiva in una rete dove il computer non esiste, con il
+> foglio che diceva «Acceso» in verde.
+>
+> La stessa cura, messa sul **computer** (Funnel), non chiede niente a nessuno:
+> un indirizzo pubblico fisso, e chi si collega apre un link. Un solo account in
+> tutto il giro, ed era gia' li'.
+>
+> La domanda da farsi prima: **chi paga per questa cura?** Se la risposta e'
+> «ognuno di quelli che la usano», quasi sempre esiste la stessa cura pagata da
+> uno solo. Cercarla costa un pomeriggio; non cercarla e' costato due release e
+> un telefono in una rete sbagliata.
+
 > ⚠ **La lezione della 1.0.3: ogni strada deve finire in un posto scelto.**
 >
 > «Dopo l'aggiornamento devo togliere l'account e rimetterlo» e' stato detto
@@ -375,6 +393,7 @@ Repo pubblico: **https://github.com/cammo22/DaProdSuite**
 | **Il lettore dell'app: fila, palco, visualizer** | fatto nella 0.9.0, rifatto di posto nella 0.9.1. **⚠ Non è il motore WebGL di DaProdVisualizer**: quello sta in un'app React e nella console non ci entra così com'è |
 | **Video da 30, 60 e 120 secondi** | `apps/cinema/src/lungo.js`, pezzi incatenati per l'ultimo fotogramma. **⚠ Mai passati per una scheda video** |
 | **La 0.9.1: quaranta cose che si vedevano** | fatto il 5 settembre. Non funzioni nuove: quello che è venuto fuori **usando** la 0.9.0 per una sera. Il dettaglio sta nel CHANGELOG § 0.9.1 |
+| **La 1.0.7: un indirizzo solo, e nessun login** | fatto il 7 settembre. Funnel sul computer, verificato da fuori; Tailscale via dal telefono (e 7 MB di app); una strada sola per far entrare qualcuno |
 | **La 1.0.3: il conto non si perde piu'** | fatto il 6 settembre (notte). La sesta correzione, e la prima trovata **guardando**: mancava un `mostra()`. Piu' l'indirizzo stabile con Tailscale Funnel, e il 416 che buttava nove giga di download. `ContoNonPersoTest` gira sull'emulatore perche' non torni |
 | **La 1.0.2: cambiare una foto che hai gia'** | fatto il 6 settembre (notte fonda). La modifica foto dal telefono, col pennello e col ridimensionamento annunciato; LLaDA-Image, che non entra negli 8 GB e c'e' lo stesso su sua richiesta; e i pensieri presi dalle proprie cose senza far viaggiare i byte |
 | **La 1.0.1: Tailscale dentro l'app** | fatto il 6 settembre (notte fonda). `apps/mobile/tailponte`, un pacchetto Go compilato con `gomobile` in un `.aar` che non sta in git: lo rifa' `scripts/compila-tailponte.mjs`, e lo rifa' anche la CI. Il buco su `127.0.0.1` che sbuca nel tailnet, e i due muri di Android nella lezione qui sopra |

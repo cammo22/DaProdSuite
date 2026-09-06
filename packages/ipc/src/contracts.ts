@@ -129,6 +129,20 @@ export interface Impostazioni {
    */
   guidaFatta: boolean;
   /**
+   * ⚠ **L'indirizzo che non cambia mai e' acceso.** Dalla 1.0.7.
+   *
+   * Tailscale Funnel: il computer prende un nome pubblico costruito sul suo —
+   * `casa.tailXXXX.ts.net` — che non cambia a un riavvio, a un aggiornamento,
+   * ne' fra un anno. Chi si collega **non installa e non fa il login di
+   * niente**: e' un indirizzo HTTPS come un altro.
+   *
+   * Si ricorda perche' un indirizzo da riaccendere a mano a ogni avvio non e'
+   * un indirizzo che funziona sempre. Di suo e' **spento**: mettere la suite su
+   * Internet sotto un nome pubblico e' una decisione, e non la si prende al
+   * posto di nessuno.
+   */
+  indirizzoStabile?: boolean;
+  /**
    * La connessione da fuori resta accesa, e si riaccende al prossimo avvio.
    *
    * **Accesa di suo, dalla 0.7.0.** Prima c'era un interruttore «Accendi» in

@@ -40,7 +40,6 @@ import it.daprod.suite.net.GatewayClient
 import it.daprod.suite.net.GatewayException
 import it.daprod.suite.net.EsitoBussata
 import it.daprod.suite.net.Indirizzi
-import it.daprod.suite.net.Tailnet
 import it.daprod.suite.net.Scoperta
 import it.daprod.suite.net.ServitoreOffline
 import kotlinx.coroutines.Job
@@ -313,7 +312,6 @@ class MainActivity : AppCompatActivity() {
         binding.btnTornaUtenti.setOnClickListener { mostra(Dove.UTENTI) }
         binding.btnScansiona.setOnClickListener { apriScanner() }
         binding.btnConnetti.setOnClickListener { connettiDaCodice() }
-        binding.btnCerca.setOnClickListener { vaiAScoprire() }
         binding.btnMostraCodice.setOnClickListener { mostraIlCodice() }
         binding.btnScopriCodice.setOnClickListener {
             mostra(Dove.ENTRA)
@@ -903,6 +901,26 @@ class MainActivity : AppCompatActivity() {
             .take(60)
             .ifBlank { "un telefono" }
 
+    /*
+     * ⚠ **Una strada sola per entrare.** Dal 7 settembre 2026.
+     *
+     * C'era anche «cerca i computer di casa»: il telefono ascoltava gli annunci
+     * sulla wifi e bussava. E' stata tolta perche' erano **due** modi di fare la
+     * stessa cosa, con due comportamenti diversi a seconda di dove ti trovavi —
+     * e chi la usava non capiva quale delle due stesse usando.
+     *
+     * Adesso il computer ha un indirizzo che non cambia mai (Tailscale Funnel,
+     * vedi apps/shell/src/main/funnel.ts), quindi il QR funziona **ovunque**: in
+     * casa, dai dati, dall'altra parte del mondo. Non c'e' piu' niente che la
+     * ricerca sulla wifi sapesse fare e il QR no.
+     *
+     * `Scoperta` resta viva ma non si vede: la usa `veraRevoca` come rete di
+     * sicurezza, quando **tutti** gli indirizzi salvati sono morti e bisogna
+     * decidere se ci hanno tolti davvero o se e' solo la strada a essere
+     * sparita. Li' non e' una modalita': e' un controllo, e non lo sceglie
+     * nessuno.
+     */
+
     /* ---------------------------------------------------- accoppiamento */
 
     private fun apriScanner() {
@@ -1088,35 +1106,22 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Accende Tailscale, se lo si vuole, e torna gli indirizzi su cui bussare.
+     * ⚠ **Gli indirizzi su cui bussare.** Rifatta il 7 settembre 2026.
      *
-     * ⚠ **Non blocca niente se va male.** Tailscale è una strada in più,
-     * non un requisito: se il nodo non parte, se serve il browser, se non c'è
-     * linea, si torna l'elenco di prima e l'app funziona come ha sempre fatto.
-     * L'unico posto dove un guaio di Tailscale si deve vedere è la sua riga
-     * nelle impostazioni, dove uno è andato apposta per guardarla.
+     * Qui prima si accendeva Tailscale dentro l'app e si apriva un «buco» verso
+     * il computer. Tolto: obbligava **ogni telefono** a fare un login, e chi
+     * sbagliava account finiva in una rete dove il computer non esiste — con
+     * scritto «Acceso» in verde. Parole sue: «non voglio fargli fare login
+     * vari».
+     *
+     * Adesso l'indirizzo che non scade ce l'ha **il computer** (Tailscale
+     * Funnel, vedi apps/shell/src/main/funnel.ts): un nome pubblico fisso che
+     * il telefono usa come userebbe qualunque altro indirizzo. Qui non resta
+     * niente da preparare.
      */
-    private suspend fun preparaTailscale(persona: Profilo): List<String> {
-        val tutte = (listOf(persona.base) + persona.basi)
-            .filter { it.isNotBlank() }
-            .distinct()
-        if (!Tailnet.loVuole(this)) {
-            // Spento: via i `100.x`, che dal telefono non rispondono mai.
-            return Indirizzi.strade(tutte) { null }
-        }
-        val suo = Tailnet.quelloDelTailnet(tutte) ?: ""
-        val stato = Tailnet.accendi(this, comeSiChiamaQuestoTelefono(), suo)
-        if (stato !is Tailnet.Stato.Dentro) {
-            return Indirizzi.strade(tutte) { null }
-        }
-        return Indirizzi.strade(tutte) { dentroIlTailnet -> Tailnet.buco(dentroIlTailnet) }
-    }
+    private fun stradeDi(persona: Profilo): List<String> =
+        (listOf(persona.base) + persona.basi).filter { it.isNotBlank() }.distinct()
 
-    /** Il nome con cui questo telefono comparirà nell'elenco di Tailscale. */
-    private fun comeSiChiamaQuestoTelefono(): String {
-        val mio = chi?.nome?.takeIf { it.isNotBlank() }
-        return "daprod-" + (mio ?: android.os.Build.MODEL ?: "telefono")
-    }
 
     /**
      * Apre la suite. **Sempre la suite**, col computer o senza.
@@ -1149,7 +1154,7 @@ class MainActivity : AppCompatActivity() {
          * dire ritardare di qualche secondo anche chi è in casa e non ne ha
          * bisogno. Qui si paga solo quando serve, e una volta sola.
          */
-        val strade = preparaTailscale(persona)
+        val strade = stradeDi(persona)
 
         // **Quale indirizzo risponde adesso**, non quale rispondeva l'altra
         // volta: è tutto il motivo per cui l'app si ricollega da sola.
@@ -1677,88 +1682,6 @@ class MainActivity : AppCompatActivity() {
                         .put("batteria", st.batteria)
                         .put("installare", st.installare)
                         .toString()
-                }
-
-                /**
-                 * ⚠ **Com'e' messo Tailscale**, per farlo disegnare alla pagina.
-                 *
-                 * Nuovo nella 1.0.1. Stessa divisione dei permessi: **il
-                 * disegno lo fa la pagina, il mestiere lo fa l'app**. Qui
-                 * dentro non c'e' nessuna decisione, solo lo stato tradotto in
-                 * qualcosa che JavaScript sa leggere.
-                 */
-                @JavascriptInterface
-                fun comeStaTailscale(): String {
-                    val vuole = Tailnet.loVuole(this@MainActivity)
-                    // L'indirizzo del computer dentro il tailnet: senza, non si
-                    // puo' rispondere alla domanda vera, che e' «ci arrivo?».
-                    val suo = Tailnet.quelloDelTailnet(
-                        (listOf(chi?.base ?: "") + (chi?.basi ?: emptyList())).filter { it.isNotBlank() },
-                    ) ?: ""
-                    val stato = if (vuole) Tailnet.comeSta(suo) else Tailnet.Stato.Spento
-                    val j = org.json.JSONObject().put("vuole", vuole)
-                    when (stato) {
-                        is Tailnet.Stato.Dentro -> j.put("come", "dentro").put("mio", stato.mio)
-                        is Tailnet.Stato.AltraRete ->
-                            j.put("come", "altra-rete")
-                                .put("mio", stato.mio)
-                                .put("perche", stato.perche)
-                                .put("tailnet", Tailnet.mioTailnet())
-                                .put("computer", suo)
-                        is Tailnet.Stato.ServeIlBrowser ->
-                            j.put("come", "serve-il-browser").put("indirizzo", stato.indirizzo)
-                        is Tailnet.Stato.Guaio -> j.put("come", "guaio").put("perche", stato.perche)
-                        Tailnet.Stato.Spento -> j.put("come", "spento")
-                    }
-                    return j.toString()
-                }
-
-                /**
-                 * Accende o spegne Tailscale.
-                 *
-                 * Accendere e' lento — il nodo parla in rete — quindi qui si
-                 * dice solo «lo voglio» e si torna subito: il nodo parte in
-                 * sottofondo, e la pagina richiede lo stato quando le pare.
-                 * Bloccare JavaScript per dieci secondi vorrebbe dire bloccare
-                 * tutta la pagina, compresa la musica che sta suonando.
-                 */
-                @JavascriptInterface
-                fun vogliolTailscale(si: Boolean) {
-                    if (!si) {
-                        Tailnet.spegni(this@MainActivity)
-                        return
-                    }
-                    Tailnet.loVuole(this@MainActivity, true)
-                    lifecycleScope.launch {
-                        Tailnet.accendi(this@MainActivity, comeSiChiamaQuestoTelefono())
-                    }
-                }
-
-                /**
-                 * Apre nel browser l'indirizzo con cui questo telefono entra
-                 * nel tailnet.
-                 *
-                 * Si apre **fuori**, nel browser vero, e non dentro la nostra
-                 * WebView: e' una pagina di Tailscale dove si mette una
-                 * password, e una pagina dove si mette una password la si
-                 * guarda nella barra degli indirizzi del proprio browser. Chi
-                 * la apre dentro un'app altrui sta insegnando alla gente
-                 * un'abitudine che poi le costa cara.
-                 */
-                @JavascriptInterface
-                fun entraNelTailnet() {
-                    val dove = Tailnet.comeSta()
-                    if (dove !is Tailnet.Stato.ServeIlBrowser) return
-                    runOnUiThread {
-                        try {
-                            startActivity(
-                                Intent(Intent.ACTION_VIEW, Uri.parse(dove.indirizzo))
-                                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
-                            )
-                        } catch (e: Exception) {
-                            avvisa("Non si apre il browser.")
-                        }
-                    }
                 }
 
                 /** Chiede **un** permesso. Il nome e' quello che manda la pagina. */

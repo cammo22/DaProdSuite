@@ -230,22 +230,6 @@
                         android:textColor="@color/testo_debole"
                         android:textSize="11sp" />
 
-                    <!--
-                      Il tasto grosso della 0.9.0: cerca il computer.
-
-                      Chiesto il 5 settembre 2026: «all'avvio la creazione del
-                      profilo e automaticamente alla fine si vede in automatico
-                      tutti i pc collegati e si decide a quale collegarsi».
-                      Quindi il passo due non è più «batti otto cifre»: è
-                      «guarda chi c'è». Il codice resta, sotto, per chi è fuori
-                      casa — dove nessun annuncio arriva.
-                    -->
-                    <Button
-                        android:id="@+id/btn_cerca"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="18dp"
-                        android:text="@string/btn_cerca" />
 
                     <Button
                         android:id="@+id/btn_mostra_codice"

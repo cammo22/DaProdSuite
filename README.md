@@ -10,7 +10,7 @@ Un programma solo per fare musica, immagini, video, voci e parlare con un avatar
 Ogni app la installi quando ti serve e la disinstalli quando non ti serve più.
 Gira sul tuo computer: niente account, niente chiavi API, codice aperto.
 
-[![versione](https://img.shields.io/badge/versione-1.0.6-7c5cff)](https://github.com/cammo22/DaProdSuite/releases/latest)
+[![versione](https://img.shields.io/badge/versione-1.0.7-7c5cff)](https://github.com/cammo22/DaProdSuite/releases/latest)
 [![licenza](https://img.shields.io/badge/licenza-MIT-5cff9d)](LICENSE)
 [![piattaforma](https://img.shields.io/badge/Windows-x64-3ddbff)](#requisiti)
 [![sito](https://img.shields.io/badge/sito-cammo22.github.io-ffa63d)](https://cammo22.github.io/DaProdSuite/)
@@ -95,12 +95,13 @@ tutte lo stesso.
 
 ## A che punto siamo
 
-**Ultima pubblicata: 1.0.6 — «Due messaggi che dicevano il falso».** Nel
-foglio «Da fuori casa» c'erano due frasi sbagliate: **«Acceso»** in verde mentre
-il telefono era entrato in un'altra rete Tailscale e non raggiungeva niente, e
-**«Questa suite non sa farlo»** quando invece l'app era solo offline. Adesso
-l'app **prova davvero** ad arrivare al computer prima di dire che ci arriva, e
-quando non ci arriva dice in quale rete è finita e come uscirne.
+**Ultima pubblicata: 1.0.7 — «Un indirizzo solo, e nessun login».** Il computer
+ha un nome pubblico suo che **non cambia mai**, con certificato vero: chi si
+collega non installa e non fa il login di niente. Con questo se n'è andato
+Tailscale dal telefono — che obbligava ogni persona a un accesso, e chi
+sbagliava account finiva in una rete dove il computer non esiste — e con lui
+7 MB di app. Via anche «cerca i computer di casa»: c'era **un** modo di far
+entrare qualcuno, il QR, e adesso funziona ovunque.
 
 Quello che cambia a ogni giro sta in [CHANGELOG.md](CHANGELOG.md), il percorso
 completo in [docs/ROADMAP.md](docs/ROADMAP.md).

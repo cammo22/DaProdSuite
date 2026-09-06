@@ -145,6 +145,15 @@ export function impostaConnessione(accesa: boolean): Impostazioni {
   return salva({ connessione: accesa });
 }
 
+/**
+ * L'indirizzo che non cambia mai, ricordato allo stesso modo.
+ *
+ * Spento di suo: vedi `indirizzoStabile` in @daprod/ipc.
+ */
+export function salvaIndirizzoStabile(acceso: boolean): Impostazioni {
+  return salva({ indirizzoStabile: acceso });
+}
+
 /** Il tunnel verso Internet, ricordato allo stesso modo. */
 export function impostaInternet(acceso: boolean): Impostazioni {
   return salva({ internet: acceso });
