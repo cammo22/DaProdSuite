@@ -60,6 +60,15 @@ object Indirizzi {
         data object Silenzio : Esito
     }
 
+    /** La rete di casa: due metri, e l'indirizzo non cambia mai. */
+    internal const val QUI_IN_CASA = 0
+
+    /** Tailscale: esce di casa, e l'indirizzo non cambia mai. */
+    internal const val VIA_TAILSCALE = 1
+
+    /** Il tunnel: funziona ovunque, e scade sempre. */
+    internal const val IL_TUNNEL = 2
+
     /**
      * ⚠ **Quanto è lontano un indirizzo.** Più basso è meglio.
      *
@@ -101,13 +110,71 @@ object Indirizzi {
         val dentro = base.substringAfter("://").substringBefore(":").substringBefore("/")
         return when {
             // La rete di casa: due metri, e l'indirizzo non cambia mai.
-            dentro.startsWith("192.168.") || dentro.startsWith("10.") -> 0
-            Regex("^172\\.(1[6-9]|2[0-9]|3[01])\\.").containsMatchIn(dentro) -> 0
-            // Tailscale (100.64.0.0/10): esce di casa, ma l'indirizzo è stabile.
-            Regex("^100\\.(6[4-9]|[7-9][0-9]|1[01][0-9]|12[0-7])\\.").containsMatchIn(dentro) -> 1
+            dentro.startsWith("192.168.") || dentro.startsWith("10.") -> QUI_IN_CASA
+            Regex("^172\\.(1[6-9]|2[0-9]|3[01])\\.").containsMatchIn(dentro) -> QUI_IN_CASA
+            /**
+             * ⚠ **`127.0.0.1` qui vuol dire «passando da Tailscale».**
+             *
+             * Non e' il telefono che parla con se stesso: e' il buco che apre
+             * `tailponte`, cioe' una porta locale che sbuca dentro il gateway
+             * dall'altra parte del tailnet. Vedi `Tailnet.buco`.
+             *
+             * Vale come Tailscale perche' **e'** Tailscale: l'indirizzo non
+             * scade, e funziona uguale in casa e fuori. Sta dietro alla rete di
+             * casa e non davanti perche' quando si e' sul divano il salto
+             * diretto resta piu' corto — due metri contro un giro che, se il
+             * buco diretto non si forma, passa da un relay.
+             */
+            dentro == "127.0.0.1" || dentro == "localhost" -> VIA_TAILSCALE
+            /**
+             * ⚠ **Un `100.x` nudo, dal telefono, non risponde mai.**
+             *
+             * Sul computer Tailscale e' una scheda di rete vera e quell'
+             * indirizzo si raggiunge. Sul telefono no: il nostro nodo vive
+             * **dentro l'app**, in spazio utente, e ci si passa solo per il
+             * buco. Una chiamata normale a `100.88.254.19` esce dalla rete del
+             * telefono, dove quell'indirizzo non esiste, e muore in timeout.
+             *
+             * Il valore serve lo stesso, e serve a due cose: `Tailnet` lo usa
+             * per riconoscere **dove** far sbucare il buco, e `strade` lo usa
+             * per togliere di mezzo l'indirizzo nudo.
+             */
+            Regex("^100\\.(6[4-9]|[7-9][0-9]|1[01][0-9]|12[0-7])\\.").containsMatchIn(dentro) -> VIA_TAILSCALE
             // Tutto il resto: il tunnel. Funziona ovunque e scade sempre.
-            else -> 2
+            else -> IL_TUNNEL
         }
+    }
+
+    /**
+     * ⚠ **Gli indirizzi su cui bussare davvero**, dati quelli che il
+     * computer dice di avere.
+     *
+     * Fa una sostituzione sola, e conta: dove il computer offre il suo
+     * indirizzo Tailscale — che dal telefono non risponde mai, vedi sopra —
+     * ci mette **il buco**, che e' lo stesso posto raggiunto per la via giusta.
+     *
+     * Se Tailscale nel telefono non e' acceso, `apriIlBuco` torna null e il
+     * `100.x` sparisce e basta: bussare a un indirizzo che non puo' rispondere
+     * costa sei secondi di schermata bianca e non porta niente.
+     */
+    fun strade(basi: List<String>, apriIlBuco: (String) -> String?): List<String> {
+        val fuori = mutableListOf<String>()
+        var bucoMesso = false
+        for (b in basi) {
+            val suo = quantoLontano(b)
+            val nudo = suo == VIA_TAILSCALE && !b.contains("127.0.0.1") && !b.contains("localhost")
+            if (!nudo) {
+                fuori.add(b)
+                continue
+            }
+            if (bucoMesso) continue
+            val buco = apriIlBuco(b)
+            if (buco != null) {
+                fuori.add(buco)
+                bucoMesso = true
+            }
+        }
+        return fuori.distinct()
     }
 
     /**

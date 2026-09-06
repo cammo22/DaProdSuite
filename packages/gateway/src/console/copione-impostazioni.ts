@@ -122,6 +122,99 @@ export const COPIONE_IMPOSTAZIONI = `
   }
 
   /**
+   * ⚠ **Il foglio di Tailscale**, nuovo nella 1.0.1.
+   *
+   * ## Cosa cura
+   *
+   * Fuori casa il telefono arrivava al computer solo attraverso un tunnel
+   * Cloudflare, e il nome di quel tunnel cambia **a ogni accensione della
+   * suite** — cioe' a ogni aggiornamento. Il telefono restava con in mano un
+   * indirizzo morto, e per impararne uno nuovo avrebbe dovuto parlare col
+   * computer: cosa che non poteva fare, appunto.
+   *
+   * Un indirizzo Tailscale non cambia mai. E siccome «non voglio dover
+   * scaricare altre app», Tailscale sta **dentro** questa: vedi
+   * apps/mobile/tailponte.
+   *
+   * ## Perche' e' spento di suo
+   *
+   * Perche' accenderlo vuol dire far entrare questo telefono in una rete
+   * privata, e una cosa del genere non la si accende al posto di nessuno. Chi
+   * sta bene com'e' — in casa sulla wifi, fuori casa raramente — non ha
+   * niente da fare.
+   */
+  async function apriTailscale() {
+    var carta = apriFoglio("Da fuori casa");
+
+    var come = {};
+    try {
+      come = JSON.parse(window.DaProdApp.comeStaTailscale() || "{}");
+    } catch (e) { come = {}; }
+
+    var spiega = document.createElement("p");
+    spiega.className = "nota";
+    spiega.textContent =
+      "Quando sei fuori casa, il telefono raggiunge il computer da un indirizzo " +
+      "prestato che cambia ogni volta che la suite si riaccende. Questo ne fa uno " +
+      "tuo, che non cambia mai: stessa strada in casa e fuori, e niente che passa " +
+      "da un servizio di mezzo.";
+    carta.append(spiega);
+
+    if (!come.vuole) {
+      voceFoglio(
+        carta,
+        "⇄",
+        "Accendilo",
+        "una volta sola: poi non ci pensi piu\u0300",
+        function () {
+          window.DaProdApp.vogliolTailscale(true);
+          chiudiFoglio();
+          avvisa("Lo sto accendendo\u2026 riapri fra un minuto per vedere come e\u0300 andata.");
+        },
+      );
+      return;
+    }
+
+    if (come.come === "dentro") {
+      var bene = document.createElement("p");
+      bene.className = "avviso bene";
+      bene.textContent = "Acceso. Questo telefono adesso si chiama " + (come.mio || "") + ".";
+      carta.append(bene);
+    } else if (come.come === "serve-il-browser") {
+      voceFoglio(
+        carta,
+        "\u2197",
+        "Finisci nel browser",
+        "un s\u00ec da dare una volta sola, sulla pagina di Tailscale",
+        function () { window.DaProdApp.entraNelTailnet(); },
+      );
+    } else if (come.come === "guaio") {
+      var male = document.createElement("p");
+      male.className = "avviso male";
+      male.textContent = come.perche || "Non e\u0300 riuscito ad accendersi.";
+      carta.append(male);
+    } else {
+      var attesa = document.createElement("p");
+      attesa.className = "nota";
+      attesa.textContent = "Sta partendo\u2026 riapri fra poco.";
+      carta.append(attesa);
+    }
+
+    voceFoglio(
+      carta,
+      "\u2715",
+      "Spegnilo",
+      "si torna all'indirizzo prestato di prima",
+      function () {
+        window.DaProdApp.vogliolTailscale(false);
+        chiudiFoglio();
+        avvisa("Spento.");
+      },
+      true,
+    );
+  }
+
+  /**
    * Il QR con cui si scarica l'app, disegnato dal computer.
    *
    * L'indirizzo dentro non punta a un file ma alla **pagina dell'ultima
@@ -345,6 +438,28 @@ export const COPIONE_IMPOSTAZIONI = `
           chiudiFoglio();
           apriIPermessi();
         },
+      );
+    }
+
+    /**
+     * ⚠ **Tailscale**, nuovo nella 1.0.1.
+     *
+     * Chiesto il 6 settembre 2026, con l'app in mano fuori casa: «il problema
+     * e' Cloudflare che cambia sempre». Ed era proprio quello — fuori casa
+     * l'unica strada era il tunnel, e il nome di un tunnel gratuito cambia a
+     * ogni accensione della suite.
+     *
+     * La riga dice **cosa cambia**, non come si chiama la cosa: «l'indirizzo
+     * che non scade». Chi non sa cos'e' un tailnet non deve saperlo per
+     * capire se gli serve.
+     */
+    if (window.DaProdApp && window.DaProdApp.comeStaTailscale) {
+      voceFoglio(
+        carta,
+        "⇄",
+        "Da fuori casa",
+        "l'indirizzo che non scade, invece del tunnel",
+        function () { chiudiFoglio(); apriTailscale(); },
       );
     }
 

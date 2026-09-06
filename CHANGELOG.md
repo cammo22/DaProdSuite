@@ -12,7 +12,134 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ## Non ancora pubblicato
 
-Niente: la 1.0.0 è appena uscita.
+**Togliere del tutto il tunnel Cloudflare.** In questa versione è ancora acceso
+come ripiego, e il perché sta scritto qui sotto in «Cosa non ho tolto». Si
+toglie quando Tailscale avrà funzionato da un telefono vero, fuori casa.
+
+---
+
+## 1.0.1 — L'indirizzo che non scade
+
+> «ok, togliamo Cloudflare, implementa Tailscale nell'app: non voglio dover
+> scaricare altre app.»
+
+### Da dove nasce
+
+Detto con l'app in mano, fuori casa: «continua a dare problemi quando aggiorno».
+Guardato fino in fondo, il guasto non era nel telefono né nel computer, era
+**l'indirizzo**.
+
+Fuori casa il telefono raggiungeva il computer solo attraverso un tunnel
+Cloudflare gratuito, e il nome di quel tunnel cambia **a ogni accensione della
+suite** — nel registro di questo computer se ne contano 43 diversi. Aggiornare
+vuol dire riaccendere, riaccendere vuol dire un nome nuovo, e il telefono resta
+con in mano un indirizzo che risponde `530`. Per impararne uno nuovo dovrebbe
+parlare col computer, e per parlare col computer gli serve un indirizzo che
+funziona: un cane che si morde la coda, che si spezzava solo tornando sulla
+wifi di casa.
+
+Un indirizzo Tailscale non cambia mai. Il computer ne aveva già uno; mancava il
+telefono. E siccome «non voglio dover scaricare altre app», Tailscale adesso sta
+**dentro** questa: `apps/mobile/tailponte`, un pezzo in Go compilato dentro
+l'APK.
+
+### Non è una VPN, ed è il punto
+
+Una VPN di sistema dirotta **tutto** il telefono, chiede il permesso
+`VpnService`, e ne può stare accesa una sola per volta: prendersi quello slot
+per far passare le nostre richieste sarebbe sproporzionato, e romperebbe la VPN
+di chi ne usa già una.
+
+Qui serve molto meno: **una sola app che sa parlare col tailnet**. È
+esattamente ciò che fa `tsnet` — una pila di rete in spazio utente, dentro il
+processo. Nessun permesso, nessuna VPN, e nessun'altra app del telefono si
+accorge di niente.
+
+### Una porta che sbuca dall'altra parte
+
+La prima versione di questo pezzo l'avevo fatta come un **proxy**, ed era la
+scelta sbagliata: un proxy vale per tutta l'app, la WebView si configura solo
+con `ProxyController`, e allora servono le regole di scavalcamento — perché
+`192.168.1.8` dentro il tailnet non esiste, e `trycloudflare.com` nemmeno. Tre
+modi diversi di sbagliare, e tutti e tre visibili solo fuori casa.
+
+Quello che serviva era più piccolo: **un buco**. Il pezzo Go apre
+`127.0.0.1:qualcosa`, e tutto quello che ci entra esce dentro il gateway
+dall'altra parte del tailnet. Così «passare da Tailscale» diventa un indirizzo
+come gli altri, e la logica che sceglie fra gli indirizzi — quella che c'era già
+— si ritrova un candidato in più senza sapere cos'è un tailnet. E siccome si
+travasa TCP e basta, passano allo stesso modo pagine, immagini, video e
+websocket.
+
+L'ordine di preferenza adesso è: **la wifi di casa** (due metri), **Tailscale**
+(non scade), **il tunnel** (ultimo). E l'indirizzo `100.x` nudo, che dal
+telefono non risponderebbe mai, viene tolto dai candidati invece di prendersi
+sei secondi di attesa a ogni apertura.
+
+### I due muri, e come si sono visti
+
+Questa parte vale più della funzione, perché è la ragione per cui adesso c'è una
+prova che gira **su Android vero** e non sulla JVM come tutte le altre.
+
+Il pacchetto compilava per `android/arm64` senza una parola. Poi, girando
+davvero sull'emulatore:
+
+**Primo muro.** `tsnet: route ip+net: netlinkrib: permission denied`. Da Android
+11 un'app non può leggere la tabella di routing, e il `net` di Go la legge da lì.
+È l'issue 2293 di Tailscale, ed è una porta chiusa dal sistema. La via prevista
+c'è: le schede di rete gliele passa Java, che ci arriva per un'altra strada.
+
+**Secondo muro**, peggiore: `panic: no safe place found to store log state`, e
+l'app che sparisce con un `SIGABRT`. Tailscale cerca dove tenere lo stato dei
+log fra quattro posti che conosce, e su Android **non ne esiste nessuno**: le
+cartelle di sistema sono vietate, `UserCacheDir` vuole `HOME` che nessuno
+imposta, la cartella corrente è `/`, e `/tmp` non c'è. Finiti i posti, va in
+panico — e un panico dentro una libreria nativa non è un'eccezione che si
+cattura, è l'app che muore.
+
+Nessuno dei due l'avrebbe trovato un compilatore, e nessuno dei due l'avrebbe
+trovato una prova sulla JVM. Da qui `TailponteTest`, che gira sull'emulatore con
+`pnpm run prova-telefono-vero`.
+
+### ⚠ Cosa non ho tolto, e perché
+
+**Il tunnel Cloudflare è ancora acceso.** La richiesta era di toglierlo, e non
+l'ho fatto in questa versione: se Tailscale non dovesse partire sul telefono
+mentre si è fuori casa, senza il ripiego non ci sarebbe **nessun modo di
+rientrare** — e nemmeno di aggiornare l'app per rimediare. Togliere la vecchia
+strada prima che la nuova abbia funzionato una volta su un telefono vero è
+esattamente il tipo di decisione che qui è già costata cinque giri.
+
+Resta come ripiego, ultimo di tre. Appena Tailscale avrà retto un giro fuori
+casa, sparisce.
+
+### Cosa costa
+
+L'APK passa da **5,8 a 13,7 MB**: dentro c'è il runtime di Go più Tailscale.
+Senza `-s -w` sui simboli e senza comprimere la libreria sarebbe stato 47.
+Solo `arm64-v8a`, che è qualunque telefono dal 2016 in poi.
+
+### Come si accende
+
+Impostazioni → **«Da fuori casa»** → «Accendilo», poi «Finisci nel browser» una
+volta sola. Si apre il browser vero e non la nostra WebView, apposta: è una
+pagina dove si mette una password, e quelle si guardano nella barra degli
+indirizzi del proprio browser.
+
+È **spento di suo**: accenderlo vuol dire far entrare il telefono in una rete
+privata, e una cosa così non la si accende al posto di nessuno. Chi non lo
+accende continua come prima — wifi in casa, tunnel fuori.
+
+### Le prove
+
+18 sulla JVM (`pnpm run prova-telefono`), di cui **sette nuove** sulla scelta
+dell'indirizzo col buco aperto e spento; 2 su Android vero
+(`prova-telefono-vero`), che sono quelle che hanno trovato i due muri qui sopra.
+Tutto il resto verde.
+
+**Quello che nessuno ha ancora visto:** il giro vero, cioè questo telefono che
+entra nel tailnet e raggiunge il computer da fuori casa. Quel passo ha bisogno
+di un account Tailscale, e un account non è una cosa che si prende in prestito.
 
 ---
 

@@ -109,4 +109,80 @@ class IndirizziTest {
         assertEquals(atteso, Indirizzi.ilPiuVicino(listOf(tunnel, casa, tailscale)))
         assertEquals(atteso, Indirizzi.ilPiuVicino(listOf(tailscale, tunnel, casa)))
     }
+
+    /* ------------------------------------------- il buco di Tailscale (1.0.1) */
+
+    /**
+     * ⚠ **Un `100.x` nudo vale come Tailscale, ma dal telefono non risponde.**
+     *
+     * Il valore serve a riconoscerlo — e' cosi' che `strade` sa quale
+     * indirizzo sostituire col buco — ma l'indirizzo in se' non e'
+     * raggiungibile: il nodo del telefono vive dentro l'app, in spazio utente.
+     */
+    @Test
+    fun `il buco vale come Tailscale`() {
+        assertEquals(Indirizzi.VIA_TAILSCALE, Indirizzi.quantoLontano("http://127.0.0.1:41732"))
+        assertEquals(Indirizzi.VIA_TAILSCALE, Indirizzi.quantoLontano(tailscale))
+    }
+
+    /**
+     * E resta **dietro alla rete di casa**: sul divano il salto diretto e' piu'
+     * corto di un giro che, se il collegamento diretto non si forma, passa da
+     * un relay.
+     */
+    @Test
+    fun `in casa vince la wifi anche col buco aperto`() {
+        assertEquals(casa, Indirizzi.ilPiuVicino(listOf("http://127.0.0.1:41732", casa, tunnel)))
+    }
+
+    /** Fuori casa, invece, il buco batte il tunnel: uno non scade, l'altro si'. */
+    @Test
+    fun `fuori casa il buco batte il tunnel`() {
+        assertEquals(
+            "http://127.0.0.1:41732",
+            Indirizzi.ilPiuVicino(listOf(tunnel, "http://127.0.0.1:41732")),
+        )
+    }
+
+    /**
+     * ⚠ **Col ponte acceso, l'indirizzo nudo sparisce e resta il buco.**
+     *
+     * E' la prova che tiene: se restassero tutti e due, ogni apertura
+     * dell'app spenderebbe sei secondi a bussare a un indirizzo che non puo'
+     * rispondere — che e' esattamente il genere di attesa che non si vede nel
+     * codice e si sente in mano.
+     */
+    @Test
+    fun `col ponte acceso il cento punto x diventa il buco`() {
+        val dentro = Indirizzi.strade(listOf(tailscale, casa, tunnel)) { "http://127.0.0.1:41732" }
+        assertEquals(listOf("http://127.0.0.1:41732", casa, tunnel), dentro)
+    }
+
+    /** E col ponte spento sparisce e basta: non lo si va a bussare per niente. */
+    @Test
+    fun `col ponte spento il cento punto x sparisce`() {
+        assertEquals(listOf(casa, tunnel), Indirizzi.strade(listOf(tailscale, casa, tunnel)) { null })
+    }
+
+    /** Chi Tailscale non ce l'ha non si accorge di niente. */
+    @Test
+    fun `senza Tailscale la lista non cambia`() {
+        assertEquals(listOf(casa, tunnel), Indirizzi.strade(listOf(casa, tunnel)) { null })
+    }
+
+    /**
+     * Il buco si apre **una volta sola**, anche se il computer offre due
+     * indirizzi del tailnet: ne serve uno, e aprirne due vorrebbe dire tenere
+     * due porte per la stessa strada.
+     */
+    @Test
+    fun `il buco si apre una volta sola`() {
+        var quante = 0
+        val dentro = Indirizzi.strade(listOf(tailscale, "http://100.70.1.2:8790", casa)) {
+            quante++
+            "http://127.0.0.1:41732"
+        }
+        assertEquals(1, quante)
+        assertEquals(listOf("http://127.0.0.1:41732", casa), dentro)
+    }
 }

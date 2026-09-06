@@ -1,7 +1,25 @@
 # Riprendere da qui
 
 Documento di passaggio fra una sessione e l'altra. Aggiornato il **6 settembre
-2026 (notte)**, con la **1.0.0** appena pubblicata.
+2026 (notte fonda)**, con la **1.0.1** appena pubblicata.
+
+> ⚠ **La lezione della 1.0.1: compilare non e' girare.**
+>
+> `tailponte` — il pezzo in Go che mette Tailscale dentro l'app — compilava per
+> `android/arm64` senza una parola. Poi, la prima volta che e' girato davvero
+> su un emulatore, e' morto due volte di fila per ragioni che **nessun
+> compilatore poteva vedere**: Android vieta alle app di leggere la tabella di
+> routing (`netlinkrib: permission denied`), e Tailscale non trova nessuno dei
+> quattro posti dove sa scrivere lo stato dei log, quindi va in panico e porta
+> giu' il processo.
+>
+> Tutte e due sono cose del **sistema**, non del codice: si vedono solo dentro
+> il sistema. Da qui `TailponteTest`, che e' l'unica prova del repository che
+> gira su un emulatore, e che c'e' apposta per questo.
+>
+> La regola: quando un pezzo attraversa un confine — un altro linguaggio, una
+> libreria nativa, un sistema operativo con le sue regole — **il compilatore
+> smette di essere una prova**. Da li' in poi vale solo averlo fatto girare.
 
 > ⚠ **La lezione della 1.0.0: separare non e' spiegare.**
 >
@@ -279,6 +297,7 @@ Repo pubblico: **https://github.com/cammo22/DaProdSuite**
 | **Il lettore dell'app: fila, palco, visualizer** | fatto nella 0.9.0, rifatto di posto nella 0.9.1. **⚠ Non è il motore WebGL di DaProdVisualizer**: quello sta in un'app React e nella console non ci entra così com'è |
 | **Video da 30, 60 e 120 secondi** | `apps/cinema/src/lungo.js`, pezzi incatenati per l'ultimo fotogramma. **⚠ Mai passati per una scheda video** |
 | **La 0.9.1: quaranta cose che si vedevano** | fatto il 5 settembre. Non funzioni nuove: quello che è venuto fuori **usando** la 0.9.0 per una sera. Il dettaglio sta nel CHANGELOG § 0.9.1 |
+| **La 1.0.1: Tailscale dentro l'app** | fatto il 6 settembre (notte fonda). `apps/mobile/tailponte`, un pacchetto Go compilato con `gomobile` in un `.aar` che non sta in git: lo rifa' `scripts/compila-tailponte.mjs`, e lo rifa' anche la CI. Il buco su `127.0.0.1` che sbuca nel tailnet, e i due muri di Android nella lezione qui sopra |
 | **La 1.0.0: uno** | fatto il 6 settembre (notte). Il QR che porta sempre all'ultima release, i permessi disegnati da noi, la storia dentro la produzione video, i filtri che vanno a capo, la fila che si costruisce tenendo premuto, e chi decide che pubblica anche le cose degli altri |
 | **La 0.9.9: il login a prova di aggiornamenti** | fatto il 6 settembre. La chiave in due posti da tutte e due le parti, il ruolo che si sceglie guardando, e venti prove sotto |
 | **La 0.9.8: chi ha detto di no** | fatto il 6 settembre. L'account che salta, **riprodotto** e corretto in tutte e due le direzioni; il motore spento che la fila aspettava in silenzio; e un archivio che se non si leggeva si cancellava da solo |
