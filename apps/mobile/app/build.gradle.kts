@@ -41,10 +41,9 @@ android {
         targetSdk = 34
         // Segue la versione della suite: l'app e il gateway si tengono per mano,
         // e sapere che numero ha in mano il telefono serve quando qualcosa non torna.
-        versionCode = 36
-        versionName = "1.0.6"
+        versionCode = 37
+        versionName = "1.0.7"
 
-        // Serve alle prove che girano sull'emulatore: vedi TailponteTest.
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         /**
@@ -58,19 +57,10 @@ android {
          * `x86_64` c'e' **solo nella build di debug**, e solo perche'
          * l'emulatore e' un PC: e' l'unico modo di provare questa roba senza
          * un telefono in mano. Vedi `--con-emulatore` in
-         * `scripts/compila-tailponte.mjs`.
          */
-        ndk {
-            abiFilters.add("arm64-v8a")
-        }
     }
 
     buildTypes {
-        debug {
-            // L'emulatore e' un PC: senza questo, sull'emulatore il ponte non
-            // c'e' e non si puo' provare niente.
-            ndk { abiFilters.add("x86_64") }
-        }
         release {
             isMinifyEnabled = false
             // La chiave stabile qui sopra, non quella di debug: è ciò che
@@ -100,11 +90,6 @@ android {
      * Fra «parte 40 millisecondi prima» e «pesa la meta' da scaricare», per
      * un'app che si distribuisce cosi' vince la seconda.
      */
-    packaging {
-        jniLibs {
-            useLegacyPackaging = true
-        }
-    }
 
     buildFeatures {
         viewBinding = true
@@ -134,7 +119,6 @@ dependencies {
      *
      * Ce n'e' una sola famiglia, ed e' quella del ponte Tailscale: e' un pezzo
      * in Go dentro una libreria nativa, e se non si carica non lo dice nessun
-     * compilatore. Vedi `TailponteTest`.
      */
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.test:runner:1.6.2")
@@ -188,10 +172,7 @@ dependencies {
     implementation("androidx.media:media:1.7.0")
 
     /**
-     * ⚠ **Tailscale dentro l'app**, nuovo nella 1.0.1.
      *
-     * Non e' una libreria di Maven: e' `tailponte/`, il nostro pacchetto Go,
-     * compilato in un `.aar` da `scripts/compila-tailponte.mjs`. Non sta in
      * git — 14 MB di roba compilata — quindi **se questa riga non trova
      * niente, il file va rifatto**, e la compilazione lo dice.
      *
@@ -199,7 +180,6 @@ dependencies {
      * in Go, e riscrivere WireGuard piu' il piano di controllo di Tailscale in
      * Kotlin non e' una cosa che si fa. Vedi il commento in cima a `ponte.go`.
      */
-    implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.aar"))))
 
     /**
      * Serve a far passare **anche la WebView** dal ponte.
@@ -209,5 +189,4 @@ dependencies {
      * pagina dentro la WebView no: meta' dell'app funzionerebbe da fuori casa e
      * meta' no, che e' peggio di non funzionare — perche' non si capisce.
      */
-    implementation("androidx.webkit:webkit:1.11.0")
 }

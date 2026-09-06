@@ -114,6 +114,9 @@ fanno quello che ti ho chiesto».
 | **I filtri che vanno a capo (1.0.0)** | **misurato a 375 px**: tre righe, e la pagina non scorre mai di lato |
 | **La fila si costruisce tenendo premuto (1.0.0)** | e' la meta' che mancava alla scelta della 0.9.4. **Provata nel banco** da galleria e bacheca, compresi «gia' in fila» e «sta gia' suonando» |
 | **Ritoccare quella che suona apre il palco (1.0.0)** | non riparte da capo. **Provato nel banco** |
+| **L'indirizzo che non cambia mai (1.0.7)** | Tailscale Funnel sul **computer**: nome pubblico fisso, certificato vero, e chi si collega non installa ne' logga niente. **Verificato da una rete esterna.** Si riaccende da solo a ogni avvio |
+| **Tailscale fuori dal telefono (1.0.7)** | ⚠ era un mio errore: obbligava ogni telefono a un login, e chi sbagliava account finiva in una rete dove il computer non esiste — col foglio che diceva «Acceso» in verde. Via il ponte in Go: l'app torna da 13,1 a **6,0 MB** |
+| **Una strada sola per entrare (1.0.7)** | via «cerca i computer di casa». Resta il QR, che adesso funziona ovunque perche' l'indirizzo dentro non scade. `Scoperta` resta invisibile, come rete di sicurezza in `veraRevoca` |
 | **Il conto che «si perdeva» (1.0.3)** | ⚠ **sesta correzione, e la prima trovata guardando invece che deducendo.** Non si perdeva: mancava un `mostra()`, e l'app finiva su una lista mai disegnata. **Riprodotto sull'emulatore da internet** e verificato con la foto, prima e dopo |
 | **Un indirizzo che non cambia mai (1.0.3)** | Tailscale Funnel: nome pubblico stabile, niente da installare sul telefono. Si accende con un tocco. ⚠ Va permesso dal tailnet — due interruttori nella console — e l'app mostra il link esatto |
 | **`ContoNonPersoTest`** | gira sull'emulatore a ogni giro. Sulla JVM sarebbe passata tutte e sei le volte: il difetto non era nella logica, era in cosa finiva sullo schermo |

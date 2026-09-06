@@ -106,28 +106,6 @@ jobs:
 
       - uses: android-actions/setup-android@v3
 
-      # ⚠ Da qui in giù serve a **tailponte**: il pezzo Go che mette Tailscale
-      # dentro l'app (vedi apps/mobile/tailponte). Non sta in git — sono 14 MB
-      # di roba compilata — quindi la CI se lo rifà a ogni giro.
-      - uses: actions/setup-go@v5
-        with:
-          go-version: "1.24"
-          cache-dependency-path: apps/mobile/tailponte/go.sum
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
-      # L'NDK non c'è di suo nel runner: senza, il Go non si può compilare per
-      # un processore ARM.
-      - name: Installa l'NDK
-        run: |
-          sdkmanager --install "ndk;27.2.12479018"
-          echo "ANDROID_NDK_HOME=$ANDROID_SDK_ROOT/ndk/27.2.12479018" >> "$GITHUB_ENV"
-
-      - name: Compila il ponte Tailscale
-        run: node apps/mobile/scripts/compila-tailponte.mjs
-
       - name: Compila l'APK
         working-directory: apps/mobile
         run: ./gradlew assembleRelease --no-daemon

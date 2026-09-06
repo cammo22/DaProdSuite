@@ -122,155 +122,32 @@ export const COPIONE_IMPOSTAZIONI = `
   }
 
   /**
-   * ⚠ **Il foglio di Tailscale**, nuovo nella 1.0.1.
+   * Il foglio «Da fuori casa».
    *
-   * ## Cosa cura
+   * ⚠ Prima qui dentro c'erano due cose: l'indirizzo stabile del computer e
+   * Tailscale **dentro il telefono**. La seconda e' stata tolta il 7 settembre
+   * 2026, e con lei mezzo foglio: pretendeva un login da ogni persona, e chi
+   * sbagliava account finiva in una rete dove il computer non c'e' — con
+   * scritto «Acceso» in verde.
    *
-   * Fuori casa il telefono arrivava al computer solo attraverso un tunnel
-   * Cloudflare, e il nome di quel tunnel cambia **a ogni accensione della
-   * suite** — cioe' a ogni aggiornamento. Il telefono restava con in mano un
-   * indirizzo morto, e per impararne uno nuovo avrebbe dovuto parlare col
-   * computer: cosa che non poteva fare, appunto.
-   *
-   * Un indirizzo Tailscale non cambia mai. E siccome «non voglio dover
-   * scaricare altre app», Tailscale sta **dentro** questa: vedi
-   * apps/mobile/tailponte.
-   *
-   * ## Perche' e' spento di suo
-   *
-   * Perche' accenderlo vuol dire far entrare questo telefono in una rete
-   * privata, e una cosa del genere non la si accende al posto di nessuno. Chi
-   * sta bene com'e' — in casa sulla wifi, fuori casa raramente — non ha
-   * niente da fare.
+   * Resta una cosa sola, che e' quella che serviva davvero: **il computer ha un
+   * indirizzo che non cambia mai**. Chi si collega non deve fare niente.
    */
   async function apriTailscale() {
     var carta = apriFoglio("Da fuori casa");
 
-    var come = {};
-    try {
-      come = JSON.parse(window.DaProdApp.comeStaTailscale() || "{}");
-    } catch (e) { come = {}; }
-
     var spiega = document.createElement("p");
     spiega.className = "nota";
     spiega.textContent =
-      "Quando sei fuori casa, il telefono raggiunge il computer da un indirizzo " +
-      "prestato che cambia ogni volta che la suite si riaccende. \u00c8 il motivo " +
-      "per cui, dopo un aggiornamento, l'app a volte non lo trova pi\u00f9.";
+      "Di suo, da fuori casa il telefono raggiunge il computer con un indirizzo " +
+      "prestato che cambia ogni volta che la suite si riaccende: \u00e8 il motivo " +
+      "per cui, dopo un aggiornamento, a volte non lo trova pi\u00f9. Qui gliene " +
+      "dai uno tuo, che non cambia mai.";
     carta.append(spiega);
 
-    /**
-     * ⚠ **L'indirizzo che non cambia mai**, in cima al foglio. Dalla 1.0.3.
-     *
-     * Sta **prima** di Tailscale nel telefono, e non e' un dettaglio di
-     * disposizione: e' la cosa che risolve il problema per davvero, e non chiede
-     * niente a chi ha il telefono in mano. Un indirizzo che non scade vuol dire
-     * che il telefono non perde piu' il computer, punto — nemmeno dopo un
-     * aggiornamento, nemmeno stando fuori una settimana.
-     *
-     * Tailscale nel telefono resta sotto: e' cifrato punto a punto e non mette
-     * niente su Internet, quindi per chi lo vuole e' meglio. Ma va acceso su
-     * ogni telefono, e questo no.
-     */
-    if (puoiDecidere) carta.append(await rigaIndirizzoStabile());
-
-    if (!come.vuole) {
-      voceFoglio(
-        carta,
-        "⇄",
-        "Accendilo",
-        "una volta sola: poi non ci pensi piu\u0300",
-        function () {
-          window.DaProdApp.vogliolTailscale(true);
-          chiudiFoglio();
-          avvisa("Lo sto accendendo\u2026 riapri fra un minuto per vedere come e\u0300 andata.");
-        },
-      );
-      return;
-    }
-
-    if (come.come === "dentro") {
-      var bene = document.createElement("p");
-      bene.className = "avviso bene";
-      // «Acceso» da solo non voleva dire niente: adesso si dice quello che
-      // conta, cioe' che il computer da qui si raggiunge davvero.
-      bene.textContent =
-        "Acceso, e da qui il computer si raggiunge. Questo telefono si chiama " +
-        (come.mio || "") + ".";
-      carta.append(bene);
-    } else if (come.come === "altra-rete") {
-      /**
-       * ⚠ **Acceso, ma in un'altra rete Tailscale.** Dalla 1.0.6.
-       *
-       * Parole sue: «ho collegato tailscale a google e comunque stesso
-       * problema». Qui compariva **«Acceso. Questo telefono adesso si chiama
-       * 100.87.91.65»**, in verde, e non raggiungeva niente.
-       *
-       * Era vero e inutile. Entrando con Google si finisce nel tailnet di
-       * quell'account; il computer sta nel suo. Due nodi accesi che non si
-       * vedranno mai — e il foglio diceva che andava tutto bene.
-       *
-       * Adesso si dice cosa e' successo e **cosa fare**: rientrare con lo stesso
-       * account del computer. Il verde se lo merita solo chi ci arriva davvero.
-       */
-      var storto = document.createElement("p");
-      storto.className = "avviso male";
-      storto.textContent =
-        "Acceso, ma in un\u0027altra rete Tailscale: da qui il computer non si raggiunge.";
-      carta.append(storto);
-
-      var spiegone = document.createElement("p");
-      spiegone.className = "nota";
-      spiegone.textContent =
-        "Questo telefono \u00e8 entrato come " + (come.tailnet || come.mio || "un altro nodo") +
-        ", e il computer sta in un\u0027altra rete. Succede quando si entra con un account " +
-        "diverso da quello che usa il computer \u2014 per esempio Google al posto di quello di prima.";
-      carta.append(spiegone);
-
-      voceFoglio(
-        carta,
-        "\u21BA",
-        "Esci e rientra con l\u0027account giusto",
-        "quello che usa il computer, non un altro",
-        function () {
-          window.DaProdApp.vogliolTailscale(false);
-          chiudiFoglio();
-          avvisa("Spento. Riaprilo e rientra con l\u0027account del computer.");
-        },
-      );
-    } else if (come.come === "serve-il-browser") {
-      voceFoglio(
-        carta,
-        "\u2197",
-        "Finisci nel browser",
-        "un s\u00ec da dare una volta sola, sulla pagina di Tailscale",
-        function () { window.DaProdApp.entraNelTailnet(); },
-      );
-    } else if (come.come === "guaio") {
-      var male = document.createElement("p");
-      male.className = "avviso male";
-      male.textContent = come.perche || "Non e\u0300 riuscito ad accendersi.";
-      carta.append(male);
-    } else {
-      var attesa = document.createElement("p");
-      attesa.className = "nota";
-      attesa.textContent = "Sta partendo\u2026 riapri fra poco.";
-      carta.append(attesa);
-    }
-
-    voceFoglio(
-      carta,
-      "\u2715",
-      "Spegnilo",
-      "si torna all'indirizzo prestato di prima",
-      function () {
-        window.DaProdApp.vogliolTailscale(false);
-        chiudiFoglio();
-        avvisa("Spento.");
-      },
-      true,
-    );
+    carta.append(await rigaIndirizzoStabile());
   }
+
 
   /**
    * La riga dell'indirizzo che non cambia mai.
@@ -625,13 +502,25 @@ export const COPIONE_IMPOSTAZIONI = `
      * che non scade». Chi non sa cos'e' un tailnet non deve saperlo per
      * capire se gli serve.
      */
-    if (window.DaProdApp && window.DaProdApp.comeStaTailscale) {
+    /**
+     * ⚠ **Da fuori casa: un indirizzo, e basta.** Rifatta il 7 settembre 2026.
+     *
+     * Qui compariva solo dentro l'app Android, perche' dietro c'era Tailscale
+     * **nel telefono**. Quella strada e' stata tolta: obbligava ogni persona a
+     * fare un login, e chi sbagliava account finiva in una rete dove il
+     * computer non esiste — con scritto «Acceso» in verde.
+     *
+     * Adesso l'indirizzo che non scade ce l'ha il **computer**, e chi si
+     * collega non installa e non logga niente. Quindi la voce vale per chi
+     * decide, ovunque stia guardando.
+     */
+    if (puoiDecidere) {
       voceFoglio(
         carta,
-        "⇄",
+        "\u21C4",
         "Da fuori casa",
-        "l'indirizzo che non scade, invece del tunnel",
-        function () { chiudiFoglio(); apriTailscale(); },
+        "l'indirizzo che non cambia mai",
+        function () { chiudiFoglio(); void apriTailscale(); },
       );
     }
 
