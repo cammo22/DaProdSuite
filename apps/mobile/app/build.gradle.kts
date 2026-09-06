@@ -41,8 +41,8 @@ android {
         targetSdk = 34
         // Segue la versione della suite: l'app e il gateway si tengono per mano,
         // e sapere che numero ha in mano il telefono serve quando qualcosa non torna.
-        versionCode = 24
-        versionName = "0.9.4"
+        versionCode = 25
+        versionName = "0.9.5"
     }
 
     buildTypes {
@@ -70,7 +70,20 @@ android {
     }
 }
 
+/**
+ * ⚠ **Il primo banco di prova di questo modulo.** Nuovo nella 0.9.5.
+ *
+ * Fino a ieri qui non si provava niente, e si vedeva: «ad ogni aggiornamento
+ * devo eliminare e rifare l'account» e' stato detto **tre volte**, e le prime
+ * due l'ho curato dalla parte sbagliata. La regola che mancava — fra due
+ * indirizzi che rispondono vince quello vicino, perche' l'altro scade — e'
+ * esattamente il genere di cosa che si disfa senza accorgersene.
+ *
+ * Sono prove **senza Android**: girano sulla JVM in mezzo secondo con
+ * `gradlew test`, e provano la parte che decide, non quella che parla in rete.
+ */
 dependencies {
+    testImplementation("junit:junit:4.13.2")
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("com.google.android.material:material:1.12.0")

@@ -1786,6 +1786,16 @@ class MainActivity : AppCompatActivity() {
         // voce che compare solo quando manca qualcosa e' una voce che non si
         // trova quando serve.
         menu.menu.add(0, 4, 3, R.string.menu_permessi)
+        /**
+         * ⚠ **Da dove passa adesso.** Nuova nella 0.9.5.
+         *
+         * «Ad ogni aggiornamento devo eliminare e rifare l'account» e' stato
+         * detto **tre volte**, e le prime due l'ho curato dalla parte
+         * sbagliata: la causa vera stava in quale indirizzo il telefono si
+         * salvava, e da fuori non si vedeva. Questa voce la rende visibile in
+         * due tocchi — cosi' la quarta volta non si indovina, si guarda.
+         */
+        menu.menu.add(0, 5, 4, R.string.menu_da_dove)
 
         menu.setOnMenuItemClickListener { voce ->
             when (voce.itemId) {
@@ -1801,10 +1811,61 @@ class MainActivity : AppCompatActivity() {
                 2 -> vaiAdEntrare()
                 3 -> cercaAggiornamento(dilloSempre = true)
                 4 -> mostraIPermessi(false)
+                5 -> mostraDaDove()
             }
             true
         }
         menu.show()
+    }
+
+    /**
+     * **Da dove passa adesso**, e quali altre strade conosce.
+     *
+     * Serve a una cosa sola e la fa bene: quando «non si collega», dice se il
+     * telefono sta usando la rete di casa (un indirizzo che non cambia mai) o
+     * il tunnel (un nome che scade a ogni riavvio della suite). Sono i due casi
+     * che si comportano in modo diverso dopo un aggiornamento, e finora la
+     * differenza non si vedeva da nessuna parte.
+     */
+    private fun mostraDaDove() {
+        val p = chi
+        if (p == null) {
+            Toast.makeText(this, R.string.da_dove_nessuno, Toast.LENGTH_SHORT).show()
+            return
+        }
+        val righe = StringBuilder()
+        righe.append(getString(R.string.da_dove_ora)).append("\n").append(p.base).append("\n")
+        righe.append("  ").append(comeSiChiama(p.base)).append("\n\n")
+        righe.append(getString(R.string.da_dove_altre)).append("\n")
+        for (b in p.basi.filter { it != p.base }) {
+            righe.append("\u2022 ").append(b).append("  \u2014 ").append(comeSiChiama(b)).append("\n")
+        }
+        if (p.pcId.isNotBlank()) {
+            righe.append("\n").append(getString(R.string.da_dove_id)).append(" ").append(p.pcId)
+        }
+        AlertDialog.Builder(this)
+            .setTitle(R.string.menu_da_dove)
+            .setMessage(righe.toString().trim())
+            .setPositiveButton(android.R.string.ok, null)
+            .show()
+    }
+
+    /**
+     * Che razza di indirizzo e', detto in italiano.
+     *
+     * Le stesse tre famiglie che decidono la scelta in `Indirizzi.quantoLontano`:
+     * se un giorno cambia una delle due, deve cambiare anche l'altra.
+     */
+    private fun comeSiChiama(base: String): String {
+        val dentro = base.substringAfter("://").substringBefore(":").substringBefore("/")
+        return when {
+            dentro.startsWith("192.168.") || dentro.startsWith("10.") ||
+                Regex("^172\\.(1[6-9]|2[0-9]|3[01])\\.").containsMatchIn(dentro) ->
+                getString(R.string.da_dove_casa)
+            Regex("^100\\.(6[4-9]|[7-9][0-9]|1[01][0-9]|12[0-7])\\.").containsMatchIn(dentro) ->
+                getString(R.string.da_dove_tailscale)
+            else -> getString(R.string.da_dove_tunnel)
+        }
     }
 
     /* ---------------------------------------------------------- batteria */

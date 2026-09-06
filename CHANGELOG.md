@@ -12,7 +12,114 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ## Non ancora pubblicato
 
-Niente: la 0.9.4 è appena uscita.
+Niente: la 0.9.5 è appena uscita.
+
+---
+
+## 0.9.5 — Vince chi risponde da vicino
+
+Una versione per una riga di codice. La riga chiude un difetto detto **tre
+volte** — «ad ogni aggiornamento devo eliminare e rifare l'account» — e le
+prime due volte l'avevo curato dalla parte sbagliata.
+
+### Cos'era davvero
+
+Il computer offre i suoi indirizzi in quest'ordine: **Tailscale, il tunnel, la
+rete di casa**. Quell'ordine è giusto, ed è stato scelto apposta nella 0.7.3:
+«l'app connessione deve funzionare solo su internet, non ci interessa su lan».
+Un telefono che si ricorda l'indirizzo di casa smette di funzionare appena esce
+dalla porta; uno che si ricorda l'indirizzo da Internet funziona in tutti e due
+i posti.
+
+Il difetto è che il telefono usava **quello stesso ordine** per rispondere a
+un'altra domanda: non «cosa metto nel QR» ma «da dove passo adesso». Provava gli
+indirizzi e si fermava al primo che rispondeva — e il primo che rispondeva, a
+casa, era il tunnel.
+
+Due conseguenze. La prima si vedeva ed era solo brutta: ogni immagine della
+galleria usciva su Internet, arrivava a Cloudflare e tornava indietro per fare
+due metri. La seconda non si vedeva ed era quella che rompeva tutto: **il
+telefono si salvava il tunnel come indirizzo preferito.**
+
+Un nome di `trycloudflare.com` è una fotografia con la data sopra. Cambia a
+**ogni accensione della suite**, cioè a ogni aggiornamento: nel registro del
+tunnel di questo computer se ne contano dodici diversi. Il giorno dopo, quel
+nome risponde `530` — non è più il nostro computer, non è più nessuno — e il
+telefono resta senza strada. Da lì l'unica cosa che l'app sapeva offrire era
+rifare l'accoppiamento.
+
+### La correzione
+
+**Fra gli indirizzi che rispondono vince il più vicino, non il più veloce.**
+
+- la **rete di casa** (`192.168.x`, `10.x`, `172.16-31.x`): due metri, e non
+  cambia mai;
+- **Tailscale** (`100.64-127.x`): esce di casa, e l'indirizzo è stabile;
+- **il tunnel**: funziona ovunque, e scade sempre.
+
+Fuori casa non cambia niente: la rete di casa non risponde, e vince quello che
+c'è. A casa invece il telefono si salva un indirizzo che **non scade**, e da lì
+in poi un aggiornamento non lo tocca più — mentre continua a imparare il tunnel
+nuovo a ogni apertura, per quando esce.
+
+C'è anche una scorciatoia, perché la correzione non costi: se l'indirizzo di
+ieri è già il più vicino che si conosce e risponde, si finisce lì — è il caso di
+nove aperture su dieci. Si prova tutto solo quando il preferito è più lontano di
+qualcosa che c'è in elenco, cioè quando c'è davvero qualcosa da guadagnare.
+
+### Perché ci sono voluti tre giri
+
+Vale la pena scriverlo, perché l'errore non è stato nel codice.
+
+- **Il primo giro** ha corretto una cosa vera: un `401` da un indirizzo solo
+  faceva dichiarare una revoca. Era un difetto, ed è giusto che sia chiuso — ma
+  non era questo, perché un tunnel morto risponde `530`, non `401`. L'ho
+  verificato solo stavolta, chiamando i vecchi indirizzi presi dal registro.
+- **Il secondo giro** ha aggiunto la scoperta sulla rete per chi si era
+  accoppiato col codice. Utile, e di nuovo non la causa.
+- **Il terzo** ha guardato **cosa aveva in mano il telefono** invece di cosa
+  faceva il codice. La prova decisiva era in una sua foto di due versioni fa:
+  la finestra di sistema mostrava l'indirizzo della pagina, ed era un nome di
+  `trycloudflare.com`. Il telefono stava usando il tunnel **da casa**, e quello
+  si vedeva da settimane senza che nessuno lo leggesse.
+
+La lezione: quando una correzione non funziona, la seconda ipotesi non va
+cercata nello stesso posto della prima. Va cercato **un dato nuovo**.
+
+### E adesso si vede
+
+**Una voce nel menu: «Da dove passa».** Dice quale indirizzo il telefono sta
+usando adesso, che razza di indirizzo è — «la rete di casa, non cambia mai»,
+«il tunnel, cambia a ogni riavvio della suite» — e quali altre strade conosce.
+
+Non è una funzione: è uno strumento di diagnosi, e sta lì perché la quarta volta
+non si debba indovinare.
+
+### Sette prove, e il primo banco del telefono
+
+`apps/mobile` non aveva **nessuna prova**, e si vedeva: la regola che è costata
+tre giri è di due righe, e il codice continua a funzionare benissimo anche
+scegliendo l'indirizzo sbagliato — si rompe una settimana dopo, dopo un
+aggiornamento.
+
+Adesso c'è `pnpm run prova-telefono`: gira sulla JVM senza Android e senza rete,
+e prova la parte che **decide**. Fra le sette, quella che tiene fermo il caso
+insidioso: `100.88.254.19` è Tailscale, `10.88.254.19` è casa, e un controllo
+scritto con distrazione li confonderebbe.
+
+Sta a parte da `pnpm run prova` apposta: quello dev'essere veloce, questo vuole
+Gradle.
+
+### ⚠ Cosa resta da fare
+
+- **Il giro vero**: aggiornare davvero e vedere se l'account resta. È la terza
+  volta che si corregge, e stavolta c'è una prova automatica sotto — ma la prova
+  copre la scelta, non la rete.
+- **Il testo delle canzoni vecchie** nelle info: quei brani sono nati prima che
+  si salvassero i campi. Da riguardare su un brano nuovo.
+- **AudioBloom e CosmicDust** fuori dal visualizer della console.
+- **I video da 30, 60 e 120 secondi**: mai passati per una scheda video.
+- **Le copertine col titolo** mai passate per FLUX vero.
 
 ---
 

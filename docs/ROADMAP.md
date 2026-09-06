@@ -26,7 +26,7 @@ file si scrive quale delle due metà manca.
 
 ## A che punto siamo — 6 settembre 2026 (sera)
 
-**Ultima pubblicata: 0.9.4.** Nove schede dentro la suite, un ambiente Python
+**Ultima pubblicata: 0.9.5.** Nove schede dentro la suite, un ambiente Python
 solo, e il giro che conta — chiedo dal telefono, il computer fa, il file torna —
 **provato da chi la usa**, sul suo PC e sul suo telefono.
 
@@ -70,7 +70,9 @@ fanno quello che ti ho chiesto».
 | **Ogni generazione e' una richiesta** | fatto, e **con una prova automatica** che lo tiene fermo |
 | **I messaggi non sono piu' quelli di Android** | quarantadue posti; **provato nel banco** |
 | **Il visualizer vero di DaProdVisualizer** | nove shader su undici portati con lo script; **provati in un browser vero**, tutti e nove disegnano. Su un telefono vero no |
-| **Gli utenti che restano dopo un aggiornamento** | la causa trovata e chiusa (un `401` da un indirizzo che non era piu' il nostro computer); **il giro vero, aggiornando davvero, e' da fare** |
+| **Gli utenti che restano dopo un aggiornamento** | ⚠ **corretto tre volte.** La causa vera (0.9.5): il telefono si salvava l'indirizzo del tunnel, che scade a ogni accensione della suite. Adesso fra quelli che rispondono vince il piu' vicino, con **sette prove automatiche** sotto; **il giro vero, aggiornando davvero, resta da fare** |
+| **Le prove del telefono** | `pnpm run prova-telefono`: il primo banco di `apps/mobile`, sulla JVM senza Android |
+| **«Da dove passa» nel menu dell'app** | dice quale indirizzo si sta usando e se scade: e' uno strumento di diagnosi, non una funzione |
 | **Due canzoni chieste insieme** | la fila adesso le aspetta tutte; **mai provato contro il motore acceso** |
 | **Il titolo scritto sulla copertina** | scritto; **mai passato per FLUX vero** |
 | **La grafica misurata invece che guardata** | **fatto e verificato** a 375 px su tutte e cinque le schede: nessun tasto disallineato |

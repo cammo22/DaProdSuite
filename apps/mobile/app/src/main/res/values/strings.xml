@@ -107,4 +107,20 @@
     <string name="lettore_canale">Mentre suona</string>
     <string name="lettore_descrizione">I comandi della musica nella tendina e sulla schermata di blocco, e il permesso di continuare a suonare con l\'app chiusa.</string>
     <string name="lettore_sotto">DaProd Suite</string>
+
+    <!--
+        **Da dove passa adesso.** La voce di menu che rende visibile quale
+        indirizzo sta usando il telefono: e' la differenza fra un indirizzo che
+        non cambia mai (la rete di casa) e uno che scade a ogni riavvio della
+        suite (il tunnel), ed e' la causa di «ad ogni aggiornamento devo rifare
+        l'account».
+    -->
+    <string name="menu_da_dove">Da dove passa</string>
+    <string name="da_dove_nessuno">Non sei collegato a nessun computer.</string>
+    <string name="da_dove_ora">Adesso passa da qui:</string>
+    <string name="da_dove_altre">Le altre strade che conosce:</string>
+    <string name="da_dove_id">Il computer si annuncia come:</string>
+    <string name="da_dove_casa">la rete di casa \u2014 non cambia mai</string>
+    <string name="da_dove_tailscale">Tailscale \u2014 funziona ovunque, e non cambia</string>
+    <string name="da_dove_tunnel">il tunnel \u2014 funziona ovunque, ma cambia a ogni riavvio della suite</string>
 </resources>
