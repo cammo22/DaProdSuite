@@ -486,16 +486,29 @@ export const STILE = `  :root {
    *
    * La barra dello scorrimento si nasconde: e' un gesto, non un comando.
    */
+  /**
+   * ⚠ **A cascata, non a scorrimento.** Rimesso nella 1.0.0.
+   *
+   * Nella 0.9.6 le avevo messe su **una riga sola che scorre di lato**, per non
+   * farle andare a capo. La risposta, provandola: «facciamo tornare i
+   * quadratini stile e altro a cascata, non voglio swipare, e' fastidioso:
+   * vorrei tutto a schermo ma ordinato».
+   *
+   * Ha ragione, e il ragionamento di prima era sbagliato in un punto precente:
+   * avevo trattato «va a capo» come un difetto. Non lo e' — **e' l'unico modo
+   * di vedere tutto insieme**. Quello che era brutto era che andando a capo la
+   * riga sotto sembrava un'altra cosa, e quello si risolve con lo spazio, non
+   * nascondendo meta' delle scelte dietro a un gesto.
+   *
+   * Uno scorrimento laterale, per una fila di filtri, ha un difetto che si paga
+   * ogni volta: **non si sa che c'e' altro**. Un elenco a cascata lo si legge
+   * tutto in un colpo d'occhio, e su un telefono e' esattamente quello che
+   * serve.
+   */
   .filtri {
-    display: flex; gap: 7px; flex-wrap: nowrap; margin-bottom: 12px;
-    overflow-x: auto; overscroll-behavior-x: contain;
-    scrollbar-width: none; -webkit-overflow-scrolling: touch;
-    /* Un filo di respiro a destra: l'ultima pastiglia non deve sembrare
-       tagliata dal bordo dello schermo. */
-    padding-right: 12px;
+    display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 12px;
+    align-items: center;
   }
-  .filtri::-webkit-scrollbar { display: none; }
-  .filtri button { flex: 0 0 auto; }
   .filtri button.on { border-color: var(--accent); color: var(--txt); background: #1b1533; }
   .quadri { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 11px; }
 
@@ -1308,6 +1321,23 @@ export const STILE = `  :root {
   }
   .palcoLettore .effetti .comeVa {
     flex: 1 0 100%; font-size: 11px; color: var(--fioco); margin-bottom: 2px;
+  }
+
+  /**
+   * Il QR grande, dentro un foglio.
+   *
+   * Fondo bianco e non trasparente: un QR su fondo scuro non lo legge nessuna
+   * fotocamera, e il bordo bianco intorno fa parte del codice — senza, molti
+   * lettori non lo agganciano.
+   */
+  .qrGrande {
+    display: block; width: min(72vw, 300px); aspect-ratio: 1; margin: 14px auto 10px;
+    background: #fff; border-radius: 14px; padding: 10px;
+    box-shadow: 0 18px 44px -20px #000;
+  }
+  .nota.indirizzo {
+    font-size: 11px; color: var(--fioco); text-align: center;
+    overflow-wrap: anywhere; margin-top: 8px;
   }
 
   /* ------------------------------------------------------------- gli stili */

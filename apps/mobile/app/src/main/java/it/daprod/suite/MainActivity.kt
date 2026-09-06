@@ -1527,6 +1527,42 @@ class MainActivity : AppCompatActivity() {
                     runOnUiThread { mostraIPermessi(false) }
                 }
 
+                /**
+                 * ⚠ **Com'e' messo ogni permesso**, per farlo disegnare alla pagina.
+                 *
+                 * Chiesto il 6 settembre 2026: «facciamo meglio lo stile del menu
+                 * permessi, tutto a tema». Il foglio di prima era una finestra di
+                 * **Android**: bianca, con i tasti di sistema, in mezzo a un'app
+                 * che e' scura e tonda. Stonava, e stonava perche' non era nostra.
+                 *
+                 * La divisione giusta e' questa: **il disegno lo fa la pagina, il
+                 * permesso lo chiede l'app.** Un permesso e' di Android e una
+                 * pagina web non lo puo' chiedere — ma non c'e' nessun motivo per
+                 * cui debba essere Android a disegnare l'elenco.
+                 */
+                @JavascriptInterface
+                fun comeStannoIPermessi(): String {
+                    val st = Permessi.stato(this@MainActivity)
+                    return org.json.JSONObject()
+                        .put("notifiche", st.notifiche)
+                        .put("batteria", st.batteria)
+                        .put("installare", st.installare)
+                        .toString()
+                }
+
+                /** Chiede **un** permesso. Il nome e' quello che manda la pagina. */
+                @JavascriptInterface
+                fun chiediIlPermesso(quale: String) {
+                    runOnUiThread {
+                        when (quale) {
+                            "notifiche" -> chiediNotifiche.launch(Manifest.permission.POST_NOTIFICATIONS)
+                            "batteria" -> Permessi.apriBatteria(this@MainActivity)
+                            "installare" -> Permessi.apriInstallazione(this@MainActivity)
+                            else -> Permessi.apriImpostazioniApp(this@MainActivity)
+                        }
+                    }
+                }
+
                 @JavascriptInterface
                 fun aggiorna() {
                     runOnUiThread { cercaAggiornamento(dilloSempre = true) }

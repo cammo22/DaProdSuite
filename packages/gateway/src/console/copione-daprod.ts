@@ -298,6 +298,8 @@ export const COPIONE_DAPROD = `
     }
     vetro.addEventListener("click", function () {
       chiudiFoglio();
+      // «suonaSubito» (dentro «accodaTutto») apre gia' il palco da se' quando
+      // quella cosa sta gia' suonando, e in quel caso **non ricomincia**.
       if (v.tipo === "audio" || v.tipo === "video") { accodaTutto([v], v); apriPalco(); }
       else apriLaLente(v);
     });
@@ -406,6 +408,38 @@ export const COPIONE_DAPROD = `
         apriLaLente(v);
       }
     });
+
+    /**
+     * ⚠ **Tenendo premuto: mettila in fila.** Nuovo nella 1.0.0.
+     *
+     * Chiesto il 6 settembre 2026: «se tieni premuta una canzone, sia dalla
+     * galleria che da DaProd, puoi metterla in coda». Lo stesso gesto nei due
+     * posti, perche' sono le stesse cose guardate da due parti — e un gesto che
+     * funziona di la' e non di qua e' un gesto che non si impara.
+     */
+    if (v.tipo === "audio" || v.tipo === "video" || v.tipo === "immagine") {
+      var premutoInFila = null;
+      var inFila = function () {
+        var posto = mettiInFila(v);
+        if (posto === 0) avvisa("Sta già suonando questa.");
+        else if (posto < 0) avvisa("Ce l'hai già in fila.");
+        else avvisa(posto === 1 ? "Parte adesso." : posto + "ª in fila.", "bene");
+      };
+      vetro.addEventListener("pointerdown", function () {
+        premutoInFila = setTimeout(function () { premutoInFila = null; inFila(); }, 500);
+      });
+      var mollaInFila = function () {
+        if (premutoInFila) { clearTimeout(premutoInFila); premutoInFila = null; }
+      };
+      vetro.addEventListener("pointerup", mollaInFila);
+      vetro.addEventListener("pointerleave", mollaInFila);
+      vetro.addEventListener("pointercancel", mollaInFila);
+      vetro.addEventListener("contextmenu", function (ev) {
+        ev.preventDefault();
+        mollaInFila();
+        inFila();
+      });
+    }
 
     /**
      * **Due tocchi: mi piace.** Chiesto il 5 settembre 2026: «facciamo doppio

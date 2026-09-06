@@ -31,7 +31,27 @@ export const COPIONE_PRODUZIONE = `
   var PRODUZIONI = {
     "genera.immagine": { nome: "Produzione Immagini", sotto: "una foto da una descrizione", tinta: "viola", segno: "\\u25C9" },
     "genera.video": { nome: "Produzione Video", sotto: "una clip, col suono", tinta: "rosa", segno: "\\u25B6" },
-    "genera.storia": { nome: "Storia", sotto: "30 secondi, un minuto, due", tinta: "rosa", segno: "\\u29C9" },
+    /**
+     * ⚠ **La storia non ha piu' una tessera sua.** Cambiato nella 1.0.0.
+     *
+     * Chiesto il 6 settembre 2026: «facciamo che la modalita' storia e' dentro
+     * la produzione video».
+     *
+     * Ha ragione, ed e' una correzione a una scelta mia della 0.9.1: li' avevo
+     * separato la storia dalla clip perche' «una clip e' **una** generazione e
+     * dura minuti, una storia sono da quattro a sedici generazioni incatenate e
+     * dura mezz'ora», e nascondere quel salto dentro un cursore era sbagliato.
+     *
+     * Quel ragionamento resta vero, e la conclusione era troppo larga: **la
+     * differenza va detta, non messa in un altro posto.** Chi vuole un video
+     * cerca «Produzione Video» — se quello che vuole e' lungo, lo scopre li'
+     * dentro, con scritto quanto costa. Cercarlo in una tessera che si chiama
+     * «Storia», accanto a quella dei video, e' un indovinello.
+     *
+     * L'azione resta nel catalogo e resta separata: e' un'altra cosa per il
+     * computer, l'agente MCP la vede come sempre. Cambia solo dove si trova.
+     */
+    "genera.storia": { nome: "Storia", sotto: "30 secondi, un minuto, due", tinta: "rosa", segno: "\\u29C9", dentroA: "genera.video" },
     "genera.brano": { nome: "Produzione Musica", sotto: "una canzone, anche cantata", tinta: "ciano", segno: "\\u266B" },
     "genera.voce": { nome: "Produzione Audio", sotto: "un testo letto ad alta voce", tinta: "ambra", segno: "\\u275E" },
   };
@@ -40,7 +60,9 @@ export const COPIONE_PRODUZIONE = `
   function disegnaTessere() {
     var casella = $("tessere");
     casella.innerHTML = "";
-    for (var a of azioni.filter(function (x) { return x.coda; })) {
+    // Quelle che stanno **dentro** a un'altra non hanno una tessera loro: le
+    // si raggiunge da li'. Vedi «dentroA» in PRODUZIONI.
+    for (var a of azioni.filter(function (x) { return x.coda && !(PRODUZIONI[x.id] || {}).dentroA; })) {
       casella.append(tastoneAzione(a));
     }
   }
@@ -94,7 +116,40 @@ export const COPIONE_PRODUZIONE = `
     var p = document.createElement("small");
     p.textContent = come.sotto || scheda.che;
     b.append(s, n, p);
-    b.addEventListener("click", function () { vaiA("produzione"); scegli(a); });
+    /**
+     * Se qualcosa sta **dentro** a questa, prima si sceglie quale delle due.
+     *
+     * Una riga sola dice cosa cambia — una clip corta, o una lunga fatta di
+     * pezzi incatenati — e accanto c'e' scritto **quanto costa**, che e' la
+     * cosa che uno vuole sapere prima di premere e non dopo mezz'ora.
+     */
+    var dentro = azioni.filter(function (x) {
+      return (PRODUZIONI[x.id] || {}).dentroA === a.id;
+    });
+    b.addEventListener("click", function () {
+      if (!dentro.length) { vaiA("produzione"); scegli(a); return; }
+      var carta = apriFoglio(come.nome || a.titolo);
+      voceFoglio(
+        carta,
+        come.segno || scheda.segno,
+        "Una clip",
+        (come.sotto || scheda.che) + " \u2014 qualche minuto",
+        function () { chiudiFoglio(); vaiA("produzione"); scegli(a); },
+      );
+      for (var i = 0; i < dentro.length; i++) {
+        var altra = dentro[i];
+        var suo = PRODUZIONI[altra.id] || {};
+        voceFoglio(
+          carta,
+          suo.segno || "\u29C9",
+          "Una storia",
+          "30 secondi, un minuto, due \u2014 pezzi incatenati, e ci mette mezz\u0027ora",
+          (function (quale) {
+            return function () { chiudiFoglio(); vaiA("produzione"); scegli(quale); };
+          })(altra),
+        );
+      }
+    });
     return b;
   }
 

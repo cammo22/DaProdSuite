@@ -12,7 +12,133 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ## Non ancora pubblicato
 
-Niente: la 0.9.9 è appena uscita.
+Niente: la 1.0.0 è appena uscita.
+
+---
+
+## 1.0.0 — Uno
+
+> «lavoriamo alla versione 1.0.0, molto importante, questa è una major release.»
+
+Il numero cambia di uno intero, e non perché ci sia dentro più lavoro delle
+altre volte — le rifiniture stavano nelle 0.9.x e ci stavano bene. Cambia
+perché sparisce l'ultima cosa che rendeva questa suite una cosa da spiegare a
+voce: **come si mette l'app sul telefono di qualcuno che entra in casa.**
+
+### Il QR che non va rifatto
+
+Nelle impostazioni, per chi decide, c'è **«Scarica l'app sul telefono»**: si
+tocca, esce un quadrato, l'altro lo inquadra con la fotocamera e si trova la
+pagina da cui scaricare.
+
+La parte che conta non si vede: dentro il quadrato **non c'è il nome di un
+file**, c'è l'indirizzo dell'*ultima release*. Il nome dell'APK contiene la
+versione — `DaProdSuite-1.0.0.apk` — quindi un QR con dentro un file diretto
+andrebbe rifatto a ogni pubblicazione, cioè esattamente la cosa che questo
+tasto esiste per non far fare. Il quadrato lo disegna il computer al momento,
+e vale per sempre.
+
+Sta accanto ad «Aggiungi una persona» perché è il gesto che viene **prima**:
+uno arriva, inquadra, installa, e *solo dopo* gli si dà un codice.
+
+### I permessi disegnati da noi
+
+> «facciamo meglio lo stile del menu permessi, tutto a tema.»
+
+Il foglio dei permessi era una finestra di **Android**: bianca, coi tasti di
+sistema, in mezzo a un'app che è scura e tonda. Stonava, e stonava per una
+ragione precisa — non era nostra.
+
+La divisione giusta è questa: **il disegno lo fa la pagina, il permesso lo
+chiede l'app.** Un permesso appartiene ad Android e una pagina web non lo può
+chiedere; ma non c'è nessun motivo per cui debba essere Android a disegnare
+l'elenco. Adesso l'app risponde a due domande sole — *come sta messo questo* e
+*chiedimi questo* — e tutto il resto è una pagina come le altre.
+
+Quattro righe, con ✓ o ✗, e ognuna dice **cosa succede senza**, che è l'unica
+cosa che convince a dare un permesso. Ci sono tutte, anche quelle già date:
+questa è la pagina dove uno viene a *controllare*, e una voce che compare solo
+quando manca non si trova quando serve.
+
+### La storia sta dentro il video
+
+> «facciamo che la modalità storia è all'interno della produzione video.»
+
+Ha ragione, ed è una correzione a una scelta mia della 0.9.1. Lì avevo separato
+la storia dalla clip perché «una clip è **una** generazione e dura minuti, una
+storia sono da quattro a sedici generazioni incatenate e dura mezz'ora», e
+nascondere quel salto dentro un cursore era sbagliato.
+
+Quel ragionamento resta vero. La conclusione era troppo larga: **la differenza
+va detta, non messa in un altro posto.** Chi vuole un video cerca «Produzione
+Video»; se quello che vuole è lungo lo scopre lì dentro, con scritto quanto
+costa — *«pezzi incatenati, e ci mette mezz'ora»*. Cercarlo in una tessera
+chiamata «Storia», accanto a quella dei video, era un indovinello.
+
+Per il computer restano due cose diverse: l'agente MCP vede le azioni come
+sempre. Cambia solo dove si trovano con un dito.
+
+### I quadratini tornano a andare a capo
+
+> «non voglio swipare, è fastidioso: vorrei tutto a schermo ma ordinato.»
+
+I filtri — stili, tipi, categorie — erano diventati una striscia che scorreva
+di lato. Su carta sembra ordinato; in mano vuol dire che **metà delle scelte
+non esistono finché non le cerchi**, e che per cercarle devi indovinare che si
+scorre. Adesso vanno a capo: al telefono stanno su due o tre righe, si vedono
+tutte insieme, e la pagina non scorre mai di lato.
+
+### La fila si costruisce a mano
+
+> «se tieni premuta una canzone, sia dalla galleria che da DaProd, puoi metterla
+> in coda.»
+
+Nella 0.9.4 avevo tolto la fila che si formava da sola — toccare una foto
+metteva in coda sessanta cose — e la ragione resta buona: una fila è una
+decisione, e non la si prende al posto di nessuno. Ma tolta quella, **non
+restava nessun modo di farsene una**: il lettore era lungo uno e basta.
+
+Adesso si tiene premuto quello che si vuole sentire dopo, dalla galleria e
+dalla bacheca, e vale per brani, video e immagini. La risposta dice **il posto
+preso** — «terza in fila» — e non una frase sempre uguale: un avviso che dice
+sempre la stessa cosa non fa capire se il dito ha funzionato.
+
+### Ritoccare quella che suona non la fa ripartire
+
+> «se sto riproducendo una canzone e riclicco sulla stessa canzone non
+> ricominci, ma metta a schermo pieno il player continuando la riproduzione.»
+
+Difetto di quelli che si sentono invece di vedersi: sei a due minuti e mezzo di
+un pezzo, torni in galleria per guardare la copertina, la tocchi — e riparte da
+zero. Il gesto voleva dire «fammi vedere questa» e veniva letto come «rifalla da
+capo». Adesso la stessa cosa già in mano vuol dire **aprire il palco**, che è
+l'unica cosa che quel tocco poteva ragionevolmente voler dire.
+
+### Chi decide pubblica anche le cose degli altri
+
+> «un admin può condividere i contenuti anche degli altri in DaProd.»
+
+Prima la condizione era «è mia» e basta. Chi decide vedeva tutto quello che
+c'era sul computer — quello già valeva — ma di quello degli altri non poteva
+fare niente. E la bacheca di casa è proprio la cosa che uno cura per tutti: è
+lui che mette in mostra la canzone venuta bene di suo figlio, non è suo figlio
+che deve ricordarsene.
+
+La faccia sopra resta **quella di chi l'ha fatta**, e l'avviso lo dice prima di
+premere: *«la vedono tutti, con la faccia di Giulia»*. Pubblicarla non vuol dire
+prendersela.
+
+### Come è stato provato
+
+Le prove automatiche passano tutte (`pnpm run prova`, `prova-telefono`), e
+tutto quello che c'è qui sopra è stato **fatto con le dita** in un banco di
+prova con la pagina vera: il foglio del QR (quadrato di 270 px, l'indirizzo
+giusto sotto), il foglio dei permessi (quattro righe, il ✗ che chiama l'app
+chiedendo `batteria`), i filtri che vanno a capo su tre righe a 375 px senza
+scorrimento laterale, «Mettila in fila» dalla galleria e dalla bacheca —
+compreso quello che risponde quando ce l'hai già in fila o sta già suonando —
+la scelta fra clip e storia toccando Produzione Video, e il palco che si apre
+senza far ripartire il brano.
 
 ---
 

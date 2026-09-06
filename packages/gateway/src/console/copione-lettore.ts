@@ -113,10 +113,56 @@ export const COPIONE_LETTORE = `
     return coda.length;
   }
 
-  /** Butta la fila e parte da questa. */
+  /**
+   * Fa partire questa, e basta questa.
+   *
+   * ⚠ **Se sta gia' suonando lei, non ricomincia.** Chiesto il 6 settembre
+   * 2026: «se sto riproducendo una canzone e riclicco sulla stessa canzone non
+   * ricominci, ma metta a schermo pieno il player continuando la
+   * riproduzione».
+   *
+   * Ha ragione, e il difetto e' di quelli che si sentono invece di vedersi: sei
+   * a due minuti e mezzo di un pezzo, torni in galleria per guardare la
+   * copertina, la tocchi — e riparte da zero. Il gesto voleva dire «fammi
+   * vedere questa», e veniva letto come «rifalla da capo».
+   *
+   * Quindi: stessa cosa gia' in mano vuol dire **aprire il palco**, che e'
+   * l'unica cosa che quel tocco poteva ragionevolmente voler dire.
+   */
   function suonaSubito(v) {
+    if (staGiaSuonando(v)) { apriPalco(); return; }
     coda = [v];
     suonaIlNumero(0);
+  }
+
+  /** Vero se quella cosa e' proprio quella che il lettore ha in mano adesso. */
+  function staGiaSuonando(v) {
+    return inCoda >= 0 && coda[inCoda] && v && coda[inCoda].id === v.id;
+  }
+
+  /**
+   * **Mettila in fila, dopo quella che sta suonando.** Nuovo nella 1.0.0.
+   *
+   * Chiesto il 6 settembre 2026: «se tieni premuta una canzone, sia dalla
+   * galleria che da DaProd, puoi metterla in coda».
+   *
+   * E' la meta' che mancava alla scelta della 0.9.4. Li' avevo tolto la fila
+   * che si formava da sola — toccare una foto metteva in coda sessanta cose —
+   * e la ragione resta buona: una fila e' una decisione, e non la si prende al
+   * posto di nessuno. Ma tolta quella, **non restava nessun modo di farsene
+   * una**: il lettore era lungo uno e basta.
+   *
+   * Adesso la fila **si costruisce**: si tiene premuto quello che si vuole
+   * sentire dopo. Torna il posto che ha preso, cosi' chi tocca legge «terza in
+   * fila» invece di una frase sempre uguale — un tasto che dice sempre la
+   * stessa cosa non fa capire se e' stato premuto.
+   */
+  function mettiInFila(v) {
+    if (staGiaSuonando(v)) return 0;
+    for (var i = 0; i < coda.length; i++) {
+      if (coda[i].id === v.id) return -1;
+    }
+    return accoda(v);
   }
 
   /**

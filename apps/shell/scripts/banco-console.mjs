@@ -337,6 +337,25 @@ const gateway = new G.Gateway({
     elimina: () => true,
   },
   pannello: {
+    /**
+     * Il QR per scaricare l'app.
+     *
+     * Qui non si disegna davvero — il banco non ha `qrcode` — ma la forma della
+     * risposta e' quella vera, e l'indirizzo pure: e' quello che conta per
+     * guardare come viene il foglio.
+     */
+    qrApp: async () => ({
+      url: "https://github.com/cammo22/DaProdSuite/releases/latest",
+      qr:
+        "data:image/svg+xml;base64," +
+        Buffer.from(
+          '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 8" shape-rendering="crispEdges">' +
+            '<rect width="8" height="8" fill="#fff"/>' +
+            '<path fill="#000" d="M0 0h3v3H0zM5 0h3v3H5zM0 5h3v3H0zM4 4h1v1H4zM6 5h1v1H6zM4 6h1v1H4z"/>' +
+            "</svg>",
+        ).toString("base64"),
+    }),
+
     stato: (d) => ({
       computer: "BANCO-DI-PROVA",
       versione: "0.7.7-banco",

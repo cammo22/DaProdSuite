@@ -514,7 +514,9 @@ const fornitoreLibreria: FornitoreLibreria = {
   },
 
   pubblica(id, chi, pubblicato, didascalia) {
-    const fatto = libreria.pubblica(id, chi, pubblicato);
+    // `decide()` risponde alla stessa domanda che fa la galleria: chi ha il
+    // permesso di decidere cura la bacheca di casa anche per gli altri.
+    const fatto = libreria.pubblica(id, chi, pubblicato, decide(chi));
     if (!fatto) return false;
     /**
      * Le due righe scritte sotto, se chi pubblica ne ha scritte.
@@ -1139,6 +1141,33 @@ export async function nuovoInvito(
   return { codice: invito.codice, ruolo: invito.ruolo, scade: invito.scade, url: urlo, qr };
 }
 
+/**
+ * **Il QR per scaricare l'app**, disegnato al volo.
+ *
+ * ⚠ Chiesto il 6 settembre 2026: «quando sei admin, nelle impostazioni oltre a
+ * invitare le persone vorrei un tasto che mostra il QR per scaricare l'app
+ * Android; ad ogni release aggiorniamo il QR, o fai in automatico che il QR
+ * viene generato al volo e prende sempre l'apk dell'ultima release».
+ *
+ * La seconda: **generato al volo, e senza doverlo aggiornare mai.**
+ *
+ * L'indirizzo non punta a un file, punta alla **pagina dell'ultima release**.
+ * Sembra un dettaglio ed e' la scelta che rende vera la parte «non si aggiorna
+ * mai»: il nome dell'APK contiene il numero di versione
+ * (`DaProdSuite-telefono-1.0.0.apk`), quindi un indirizzo diretto al file
+ * andrebbe rifatto a ogni release — cioe' esattamente quello che si voleva
+ * evitare. `releases/latest` invece e' un indirizzo che non cambia mai e che
+ * mostra sempre l'ultima, con dentro l'APK da scaricare.
+ *
+ * Non serve niente da questo computer: e' un indirizzo pubblico, e chi lo
+ * inquadra scarica da GitHub. Vale anche per un telefono che non e' in casa.
+ */
+export const DOVE_SI_SCARICA = "https://github.com/cammo22/DaProdSuite/releases/latest";
+
+export async function qrPerScaricareLApp(): Promise<{ url: string; qr: string }> {
+  return { url: DOVE_SI_SCARICA, qr: await disegnaQr(DOVE_SI_SCARICA) };
+}
+
 function disegnaQr(payload: string): Promise<string> {
   return new Promise((resolve, reject) => {
     QRCode.toDataURL(payload, { margin: 1, width: 420, errorCorrectionLevel: "M" }, (err, url) => {
@@ -1635,6 +1664,10 @@ const fornitorePannello: FornitorePannello = {
       puoiDecidere: dispositivo.ruolo === "admin",
       codaAutomatica: true,
     };
+  },
+
+  qrApp() {
+    return qrPerScaricareLApp();
   },
 
   async invita({ ruolo, quante }) {

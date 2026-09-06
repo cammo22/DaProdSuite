@@ -1252,6 +1252,20 @@ export class Gateway {
         return;
       }
 
+      /**
+       * Il QR per scaricare l'app. **Chi decide**, e per una ragione precisa:
+       * non e' un segreto — l'indirizzo e' una pagina pubblica di GitHub — ma
+       * e' un gesto di chi ospita, come invitare qualcuno.
+       */
+      if (percorso === "/pannello/qr-app" && req.method === "GET") {
+        if (!this.pannello?.qrApp) return this.errore(res, 501, "Questa suite non sa disegnarlo.");
+        if (dispositivo.ruolo !== "admin") {
+          return this.errore(res, 403, "Questo lo può fare solo chi ha il permesso di decidere.");
+        }
+        this.json(res, 200, await this.pannello.qrApp());
+        return;
+      }
+
       const azionePannello = percorso.match(/^\/pannello\/(invito|tunnel|porta)$/);
       if (azionePannello && req.method === "POST") {
         if (!this.pannello) return this.errore(res, 501, "Questa suite non ha il pannello.");

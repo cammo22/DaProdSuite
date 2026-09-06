@@ -24,9 +24,9 @@ file si scrive quale delle due metà manca.
 
 ---
 
-## A che punto siamo — 6 settembre 2026 (sera)
+## A che punto siamo — 6 settembre 2026 (notte)
 
-**Ultima pubblicata: 0.9.9.** Nove schede dentro la suite, un ambiente Python
+**Ultima pubblicata: 1.0.0.** Nove schede dentro la suite, un ambiente Python
 solo, e il giro che conta — chiedo dal telefono, il computer fa, il file torna —
 **provato da chi la usa**, sul suo PC e sul suo telefono.
 
@@ -50,6 +50,17 @@ fragment shader. Gli utenti saltavano a ogni aggiornamento per un commento che
 sembrava solido e aveva una premessa falsa. E le due canzoni ne facevano una
 perché la fila aspettava «il» file, al singolare, e poi chiudeva la scheda che
 stava generando la seconda.
+
+La **1.0.0** cambia il numero di uno intero, e non perché ci sia dentro più
+lavoro delle altre volte — le rifiniture stavano bene nelle 0.9.x. Cambia
+perché sparisce l'ultima cosa che rendeva questa suite una cosa da spiegare a
+voce: **come si mette l'app sul telefono di chi entra in casa.** Adesso c'è un
+QR nelle impostazioni, e dentro non c'è il nome di un file ma l'indirizzo
+dell'ultima release — così non va rifatto a ogni pubblicazione, che è
+esattamente quello che quel tasto esiste per non far fare. Insieme: i permessi
+disegnati da noi invece che da Android, la storia dentro la produzione video, i
+filtri che tornano a andare a capo, la fila che si costruisce tenendo premuto, e
+chi decide che può mettere in bacheca anche le cose degli altri.
 
 ⚠ **Cosa non ha ancora visto nessuno**, e va guardato con sospetto: i video da
 30, 60 e 120 secondi (scritti, mai passati per una scheda video — è la terza
@@ -79,6 +90,13 @@ fanno quello che ti ho chiesto».
 | **L'archivio che si cancellava da solo (0.9.8)** | un file illeggibile faceva partire la suite con zero dispositivi, e poi ci scriveva sopra |
 | **Il login a prova di aggiornamenti (0.9.9)** | la chiave non sta piu' in un posto solo: copia sul computer **e** sul telefono, con **nove + quattro prove**. Il giro vero, aggiornando davvero, resta da fare |
 | **Il ruolo si sceglie guardando (0.9.9)** | «Fallo entrare» dava **utente**, e l'admin era in un tenere premuto: un gesto che non si vede non e' un gesto |
+| **Il QR per scaricare l'app (1.0.0)** | dentro c'e' l'indirizzo dell'**ultima release**, non di un file: non va rifatto. **Provato nel banco**: quadrato di 270 px, indirizzo giusto sotto |
+| **I permessi disegnati da noi (1.0.0)** | il disegno lo fa la pagina, il permesso lo chiede l'app. **Provato nel banco** con un finto ponte Android: quattro righe, il ✗ chiama l'app chiedendo `batteria` |
+| **La storia dentro la produzione video (1.0.0)** | correzione a una scelta della 0.9.1: la differenza va **detta**, non messa in un'altra tessera. **Provato nel banco**: quattro tessere, e Video apre la scelta fra clip e storia |
+| **I filtri che vanno a capo (1.0.0)** | **misurato a 375 px**: tre righe, e la pagina non scorre mai di lato |
+| **La fila si costruisce tenendo premuto (1.0.0)** | e' la meta' che mancava alla scelta della 0.9.4. **Provata nel banco** da galleria e bacheca, compresi «gia' in fila» e «sta gia' suonando» |
+| **Ritoccare quella che suona apre il palco (1.0.0)** | non riparte da capo. **Provato nel banco** |
+| **Chi decide pubblica anche le cose degli altri (1.0.0)** | la faccia sopra resta quella di chi l'ha fatta, e l'avviso lo dice prima di premere. **Con due persone vere no** |
 | **Le prove del telefono** | `pnpm run prova-telefono`: il primo banco di `apps/mobile`, sulla JVM senza Android |
 | **«Da dove passa» nel menu dell'app** | dice quale indirizzo si sta usando e se scade: e' uno strumento di diagnosi, non una funzione |
 | **Due canzoni chieste insieme** | la fila adesso le aspetta tutte; **mai provato contro il motore acceso** |
