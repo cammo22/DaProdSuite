@@ -12,7 +12,148 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ## Non ancora pubblicato
 
-Niente: la 0.9.5 è appena uscita.
+Niente: la 0.9.6 è appena uscita.
+
+---
+
+## 0.9.6 — Il secondo giro sul disegno
+
+Nove cose viste usando la 0.9.5, e due difetti che sono lo **stesso difetto** in
+due punti diversi.
+
+### Il player minimizzato aveva ancora i vecchi tasti
+
+Vero, e la dimenticanza si vedeva peggio di prima: nel palco i comandi erano
+diventati segni disegnati, nella barra erano rimasti i glifi tipografici. Due
+lettori nella stessa app con due alfabeti diversi — e sono lo **stesso** lettore,
+uno grande e uno piccolo.
+
+Adesso i disegni sono gli stessi, più piccoli, e senza cerchi: su una barra alta
+cinquantotto pixel quattro cerchi col bordo in fila sono quattro macchie. Il play
+si accende del colore della suite, come di là.
+
+### La copertina che non si vedeva, ed è lo stesso difetto della 0.9.4
+
+Il riquadro della copertina chiedeva 40 pixel e ne veniva **48**: il tasto grande
+dichiara `min-height: 48`, e **un minimo batte un'altezza**. Dentro una barra
+alta 58 con otto pixel di padding restano quarantadue di spazio, quindi il
+riquadro sfondava la barra e quello che si vedeva era il pezzo tagliato — un
+rettangolo vuoto.
+
+È **identico** al difetto dell'ingranaggio della 0.9.4, nello stesso file, due
+giorni dopo. Da qui una regola: chi dichiara un'altezza dichiara anche che non ha
+un minimo.
+
+E una rete di sicurezza che prima non c'era: se l'anteprima non arriva davvero,
+al posto del riquadro vuoto torna il segno della scheda. Un riquadro vuoto è il
+risultato peggiore, perché sembra un guasto.
+
+### Il play della barra si cancellava da solo
+
+Trovato contando gli `svg` nella pagina vera: tre su quattro. Il codice che
+aggiorna la barra scriveva il carattere della pausa con `textContent`, e
+`textContent` **cancella il disegno che sta dentro**. Cioè il primo aggiornamento
+buttava via l'SVG appena messo nel markup.
+
+Adesso pausa e play li disegna **una funzione sola**, per il palco e per la
+barra.
+
+### Gli effetti si scelgono a più d'uno
+
+> «fai in modo che posso selezionare più effetti e le animazioni loopano solo
+> quelle selezionate; se tutte deselezionate è normale.»
+
+Non è un cambio di comodo. «Uno fissato» vuol dire *resta fermo qui*; una lista
+vuol dire *gira, ma fra questi*. La seconda contiene la prima — una lista di uno
+non cambia mai — e in più permette la cosa che serviva davvero: tre effetti che
+stanno bene con un pezzo, e gli altri sei fuori.
+
+Lista vuota vuol dire tutti e nove, e la riga in cima al menu lo dice a parole.
+
+### La lineetta sulle schede se n'è andata
+
+> «i pulsanti ora hanno quella linea brutta, tutti, quando selezionati.»
+
+L'avevo messa nella 0.9.4 perché «dice dove sei prima che tu legga la parola», e
+la ragione resta buona — solo che quel lavoro lo facevano già il colore e
+l'alone. Era una **terza** cosa che diceva la stessa cosa, attaccata al bordo di
+sopra, e su cinque schede in fila l'occhio la legge come un difetto di
+allineamento invece che come un segno.
+
+### L'ingranaggio, ridisegnato leggero
+
+Il primo disegno era una ruota **piena**, con i denti ricavati dal contorno: a
+diciannove pixel una forma piena con otto denti diventa una macchia tonda con dei
+bozzi. Adesso è **a filo** — un cerchio, un anello, otto denti dello stesso
+spessore — come la «i» delle info e le frecce del lettore. Sono tutti segni della
+stessa mano.
+
+### Il fondo che clippava, per la terza volta
+
+Le due spinte non si sommavano: il corpo scendeva delle due barre, e il respiro
+dentro la sezione era quello che serve **senza** niente sotto. Con due barre
+sovrapposte, alte insieme centootto, l'ultima riga finiva sotto il vetro — nella
+sua foto era «DaProd Suite 0.9.5 su DAPRODMAIN», tagliata a metà. Adesso il conto
+è scritto: **le barre più un pollice**.
+
+### Gli stili, tre per riga
+
+`minmax(210px, 1fr)` su uno schermo da 375 dava **una colonna**: 210 è la
+larghezza minima pensata sul computer. Venti carte in colonna sono venti
+schermate per scegliere uno stile. Tre per riga vuol dire carte da centodieci
+pixel, e con quella larghezza il testo si accorcia a due righe — è la scelta
+giusta lo stesso: il nome è quello che si cerca, il testo è un promemoria, e
+tenendo premuto si legge tutto. Da 560 px in su tornano larghe.
+
+### Le sfumature nel palco, e il pannello che scorre
+
+Le sfumature non sono decorazione: il visualizer dietro cambia colore in
+continuazione, e un titolo bianco sopra a un lampo bianco sparisce. Due velature
+danno ai comandi un fondo su cui appoggiarsi senza coprire quello che sta in
+mezzo.
+
+E **con le info aperte si scorre il riquadro** invece di abbassare il media.
+Nella 0.9.4 avevo messo `touch-action: pan-y` sul pannello e non bastava: quella
+riga dice al browser cosa fare *di suo*, ma lì c'è un ascoltatore non passivo che
+chiama `preventDefault`. Vince l'ascoltatore, sempre. L'unico modo è **non
+ascoltare**: se il dito parte da dentro il pannello, il palco non se ne occupa.
+
+### I permessi, dove uno li cerca
+
+> «ancora non vedo nelle impostazioni la sezione permessi.»
+
+Nella 0.9.5 li avevo tolti dall'avvio — giusto — e li avevo lasciati **solo** nel
+menu dell'app. Che è un posto vero e non è quello: chi cerca le impostazioni tocca
+l'ingranaggio. Adesso c'è la voce «Permessi» nel foglio delle impostazioni, e apre
+lo stesso foglio: non un doppione, lo stesso posto raggiungibile da dove lo si
+cerca.
+
+### E uno strumento, perché smetta di ricapitare
+
+`packages/gateway/scripts/niente-backtick.mjs`, e gira per primo dentro
+`pnpm run prova`.
+
+I file di `console/` **sono** template literal: un backtick lì dentro chiude il
+template a metà, e `tsc` si lamenta settanta righe più in basso dove il file non
+c'entra niente. L'ho rifatto **sette volte in due giorni** — e le prime volte
+l'ho anche "corretto" a mano con una sostituzione grezza che mangiava il backtick
+di **apertura**, cioè rompeva il file in un modo nuovo mentre ne riparava un
+altro.
+
+⚠ **E la prima versione dello strumento diceva sempre «ok».** Il pattern per
+trovare i backtick *scappati* — che sono legittimi — era scritto con due barre
+invece di quattro, e in una regex scappare un backtick non serve a niente: quindi
+li toglieva **tutti** e non trovava mai niente. Il modo peggiore di sbagliare: un
+controllo che dice sempre di sì è peggio di nessun controllo, perché ci si smette
+di guardare. Trovato perché `tsc` si è lamentato subito dopo che lo strumento
+aveva detto «ok».
+
+### ⚠ Cosa resta da fare
+
+- **Il giro vero dell'aggiornamento**, per vedere se l'account resta (0.9.5).
+- Il testo delle canzoni vecchie nelle info · AudioBloom e CosmicDust fuori dal
+  visualizer · i video lunghi mai passati per una scheda video · le copertine col
+  titolo mai passate per FLUX vero.
 
 ---
 

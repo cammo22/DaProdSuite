@@ -28,9 +28,9 @@
  * Quindi qui c'e':
  *
  * - **gli stessi nove shader**, presi dai file dell'app da
- *   `porta-il-visualizer.mjs` (vedi `copione-visual-glsl.ts`);
- * - **lo stesso prologo** `common.glsl`, con `band()`, `fbm()`, `palette()`;
- * - **gli stessi manifest**: parametri e `audioMappings`, che sono la meta' del
+ *   «porta-il-visualizer.mjs» (vedi «copione-visual-glsl.ts»);
+ * - **lo stesso prologo** «common.glsl», con «band()», «fbm()», «palette()»;
+ * - **gli stessi manifest**: parametri e «audioMappings», che sono la meta' del
  *   carattere di un effetto — e' quella riga a decidere che il tunnel respira
  *   sui bassi e non sugli acuti;
  * - **lo stesso analizzatore**: bande logaritmiche, guadagno automatico,
@@ -146,8 +146,13 @@ export const COPIONE_VISUAL =
     var daQuandoCambio = 0;
     var aspettoIlColpo = false;
     var aspettatoDa = 0;
-    /** L'effetto fissato a mano: finche' c'e', non si cambia da soli. */
-    var fissato = "";
+    /**
+     * Gli effetti scelti a mano: il giro automatico gira dentro questa lista.
+     *
+     * Vuota vuol dire tutti e nove. Con uno solo non si cambia mai — che e' il
+     * «fissato» delle versioni prima, senza essere l'unica cosa possibile.
+     */
+    var scelti = [];
 
     var largo = 0;
     var alto = 0;
@@ -787,12 +792,23 @@ export const COPIONE_VISUAL =
       }
     }
 
-    /** Un preset a caso, diverso da quello passato. */
+    /**
+     * Un preset a caso, diverso da quello di adesso — e **fra quelli scelti**,
+     * se qualcuno ne ha scelti.
+     *
+     * Con un solo effetto scelto torna sempre quello, quindi il giro automatico
+     * non cambia niente: e' il modo in cui «tenerne uno» viene da se' invece di
+     * essere un caso a parte scritto da qualche altra parte.
+     */
     function unoACaso(escluso) {
-      var scelta = PRESET_VISUAL;
+      var base = scelti.length
+        ? PRESET_VISUAL.filter(function (m) { return scelti.indexOf(m.chiave) >= 0; })
+        : PRESET_VISUAL;
+      if (!base.length) base = PRESET_VISUAL;
+      var scelta = base;
       if (escluso) {
-        scelta = PRESET_VISUAL.filter(function (m) { return m.chiave !== escluso; });
-        if (!scelta.length) scelta = PRESET_VISUAL;
+        scelta = base.filter(function (m) { return m.chiave !== escluso; });
+        if (!scelta.length) scelta = base;
       }
       return scelta[Math.floor(Math.random() * scelta.length)];
     }
@@ -804,25 +820,41 @@ export const COPIONE_VISUAL =
      * quell'effetto; se ci riclicco torna deselezionato e torna in cambio
      * automatico». Chiave vuota vuol dire: ricomincia a cambiare da solo.
      */
-    function fissa(chiave) {
-      fissato = chiave || "";
-      if (fissato && (!attivo || attivo.m.chiave !== fissato)) {
-        var m = null;
-        for (var i = 0; i < PRESET_VISUAL.length; i++) {
-          if (PRESET_VISUAL[i].chiave === fissato) m = PRESET_VISUAL[i];
-        }
-        if (m) cambia(m);
-      }
-      // Il tempo riparte da adesso: chi sfissa non deve vedere un cambio
-      // subito dopo solo perche' i quarantacinque secondi erano gia' passati.
+    /**
+     * ⚠ **Sceglie o toglie un effetto dal giro.** Cambiato nella 0.9.6.
+     *
+     * Chiesto il 6 settembre 2026: «fai in modo che posso selezionare piu'
+     * effetti, e le animazioni loopano solo quelle selezionate; se tutte
+     * deselezionate e' normale».
+     *
+     * Prima era **uno fissato**, e la differenza non e' di comodo: uno fissato
+     * vuol dire «resta fermo qui», una lista vuol dire «gira, ma fra questi».
+     * La seconda contiene la prima — una lista di uno non cambia mai — e in
+     * piu' permette la cosa che serviva davvero: tre effetti che stanno bene
+     * con un pezzo, e gli altri sei fuori.
+     *
+     * Lista vuota vuol dire tutti e nove, che e' come parte.
+     */
+    function segna(chiave) {
+      var dove = scelti.indexOf(chiave);
+      if (dove >= 0) scelti.splice(dove, 1);
+      else scelti.push(chiave);
+
+      // Se quello che si vede adesso non e' piu' fra quelli scelti, si passa
+      // subito a uno che c'e': restare su un effetto tolto sarebbe un tasto
+      // premuto che non fa niente.
+      if (scelti.length && attivo && scelti.indexOf(attivo.m.chiave) < 0) cambia(null);
+
+      // Il tempo riparte da adesso: chi tocca il menu non deve vedere un cambio
+      // mezzo secondo dopo solo perche' i quarantacinque secondi erano scaduti.
       daQuandoCambio = 0;
       aspettoIlColpo = false;
     }
 
-    /** L'elenco per il menu: chiave, nome, e chi e' fissato. */
+    /** L'elenco per il menu: chiave, nome, e chi e' fra gli scelti. */
     function elenco() {
       return PRESET_VISUAL.map(function (m) {
-        return { chiave: m.chiave, nome: m.nome, fisso: m.chiave === fissato };
+        return { chiave: m.chiave, nome: m.nome, fisso: scelti.indexOf(m.chiave) >= 0 };
       });
     }
 
@@ -917,9 +949,14 @@ export const COPIONE_VISUAL =
          * calmo, un finale — si cambia lo stesso.
          */
         daQuandoCambio += dt;
-        // Con un effetto fissato non si cambia: e' tutto il senso di fissarlo.
-        if (fissato) daQuandoCambio = 0;
-        if (!fissato && !aspettoIlColpo && daQuandoCambio >= DURATA_PRESET) {
+        /**
+         * Con **un solo** effetto scelto non si cambia: cambiare vorrebbe dire
+         * tornare a quello stesso, cioe' una transizione da lui a lui. Con due
+         * o piu' si cambia come sempre, ma solo fra quelli.
+         */
+        var fermo = scelti.length === 1;
+        if (fermo) daQuandoCambio = 0;
+        if (!fermo && !aspettoIlColpo && daQuandoCambio >= DURATA_PRESET) {
           aspettoIlColpo = true;
           aspettatoDa = 0;
         }
@@ -1004,7 +1041,7 @@ export const COPIONE_VISUAL =
 
     return {
       copiaSulloSfondo: copiaSulloSfondo,
-      fissa: fissa,
+      segna: segna,
       elenco: elenco,
       accendi: accendi,
       collega: collega,

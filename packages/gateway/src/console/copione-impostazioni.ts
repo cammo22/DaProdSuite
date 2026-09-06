@@ -208,6 +208,34 @@ export const COPIONE_IMPOSTAZIONI = `
       );
     }
 
+    /**
+     * ⚠ **I permessi, qui dentro.** Nuovo nella 0.9.6.
+     *
+     * Chiesto il 6 settembre 2026: «ancora non vedo nelle impostazioni la
+     * sezione permessi per notifiche, aggiornamenti e file».
+     *
+     * Nella 0.9.5 li avevo tolti dall'avvio — giusto, un foglio di richieste
+     * come prima cosa e' un pedaggio, non una spiegazione — ma li avevo
+     * lasciati **solo** nel menu dell'app. Che e' un posto vero e non e'
+     * questo: chi cerca le impostazioni tocca l'ingranaggio.
+     *
+     * Non e' un doppione: e' **lo stesso foglio**, raggiungibile da dove uno lo
+     * cerca. Il foglio lo apre l'app, perche' i permessi sono di Android e una
+     * pagina web non li puo' chiedere.
+     */
+    if (window.DaProdApp && window.DaProdApp.permessi) {
+      voceFoglio(
+        carta,
+        "⚿",
+        "Permessi",
+        "notifiche, aggiornamenti, file — e cosa succede senza",
+        function () {
+          chiudiFoglio();
+          window.DaProdApp.permessi();
+        },
+      );
+    }
+
     if (window.DaProdApp && window.DaProdApp.aggiorna) {
       voceFoglio(carta, "\\u2913", "Aggiorna l'app", "guarda se c'\\u00e8 una versione nuova", function () {
         chiudiFoglio();

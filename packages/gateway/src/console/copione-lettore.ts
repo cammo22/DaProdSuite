@@ -47,7 +47,7 @@
  * **Il suono che continua** quando si minimizza non si può fare da qui: lo fa
  * l'app, tenendo vivo il processo con un servizio in primo piano e mettendo i
  * comandi sulla schermata di blocco. Questa pagina glielo dice, e basta —
- * vedi `window.DaProdApp.suonando`.
+ * vedi «window.DaProdApp.suonando».
  *
  * Le regole del file valgono anche qui: niente backtick, niente template
  * literal. Questo file *è* un template literal.
@@ -290,6 +290,13 @@ export const COPIONE_LETTORE = `
     ferma: fermaTutto,
   };
 
+  /** Il segno di una cosa senza anteprima: un tipo, tre disegni. */
+  function segnoDi(v) {
+    if (v.tipo === "video") return "\\u25B6";
+    if (v.tipo === "immagine") return "\\u25A3";
+    return "\\u266B";
+  }
+
   /* ------------------------------------------------------------- la barra */
 
   /**
@@ -310,15 +317,43 @@ export const COPIONE_LETTORE = `
     if (v.anteprima) {
       faccia.style.backgroundImage = "url(" + anteprimaDi(v) + ")";
       faccia.textContent = "";
+      /**
+       * ⚠ **Se l'anteprima non arriva, resta il segno.**
+       *
+       * Il computer dice «anteprima: true» guardando se il file di fianco c'e',
+       * ma fra quel controllo e la richiesta possono succedere cose — un
+       * riquadro vuoto e' il risultato peggiore, perche' sembra un guasto. Si
+       * chiede l'immagine a parte e, se non arriva, si torna al segno.
+       */
+      var prova = new Image();
+      prova.onerror = (function (quale) {
+        return function () {
+          if (coda[inCoda] !== quale) return;
+          faccia.style.backgroundImage = "";
+          faccia.textContent = segnoDi(quale);
+        };
+      })(v);
+      prova.src = anteprimaDi(v);
     } else {
       faccia.style.backgroundImage = "";
-      faccia.textContent = v.tipo === "video" ? "\\u25B6" : (v.tipo === "immagine" ? "\\u25A3" : "\\u266B");
+      faccia.textContent = segnoDi(v);
     }
     $("lettore-nome").textContent = v.didascalia || v.nome;
     $("lettore-sotto").textContent =
       (inCoda + 1) + " di " + coda.length +
       (v.chiNome ? " \\u00b7 " + v.chiNome : "");
-    $("lettore-play").textContent = (suonante && !suonante.paused) ? "\\u23F8" : "\\u25B6";
+    /**
+     * ⚠ **Anche questo si disegna**, e la riga di prima faceva danno: metteva
+     * un carattere dentro al tasto con «textContent», e «textContent»
+     * **cancella il disegno** che ci sta dentro. Cioe' il primo aggiornamento
+     * della barra buttava via l'SVG appena messo nel markup, e da li' in poi
+     * quel tasto era un glifo tipografico come prima.
+     *
+     * Trovato contando gli «svg» nella pagina vera: tre su quattro.
+     */
+    disegnaUnPlay($("lettore-play-segno"), !!(suonante && !suonante.paused));
+    var pl2 = $("lettore-play");
+    if (pl2) pl2.classList.toggle("acceso", true);
     /**
      * ⚠ **Il play del palco e' disegnato, non scritto.**
      *
@@ -332,14 +367,22 @@ export const COPIONE_LETTORE = `
     disegnaIlPlay(!!(suonante && !suonante.paused));
   }
 
-  /** Pausa o play, disegnati. Due forme, e un posto solo che le decide. */
-  function disegnaIlPlay(staSuonando) {
-    var segno = $("palco-play-segno");
+  /**
+   * Pausa o play, disegnati.
+   *
+   * Due forme e **un posto solo** che le decide, per il palco e per la barra:
+   * erano due lettori con due alfabeti, e uno dei due si cancellava da solo.
+   */
+  function disegnaUnPlay(segno, staSuonando) {
     if (!segno) return;
     segno.innerHTML = staSuonando
       ? '<rect x="7" y="5" width="3.6" height="14" rx="1.4"></rect>' +
         '<rect x="13.4" y="5" width="3.6" height="14" rx="1.4"></rect>'
       : '<path d="M8.4 4.9a1 1 0 0 1 1.52-.85l8.1 6.05a1.2 1.2 0 0 1 0 1.92l-8.1 6.05a1 1 0 0 1-1.52-.85V4.9z"></path>';
+  }
+
+  function disegnaIlPlay(staSuonando) {
+    disegnaUnPlay($("palco-play-segno"), staSuonando);
     var tasto = $("palco-play");
     if (tasto) tasto.title = staSuonando ? "Pausa" : "Riprendi";
   }
@@ -578,9 +621,30 @@ export const COPIONE_LETTORE = `
        * movimento del dito e' orizzontale, ma basta un pixel in verticale
        * perche' il palco creda che lo si stia buttando giu'.
        */
+      /**
+       * ⚠ **Tre posti dove il dito non trascina il palco.**
+       *
+       * La barra del tempo (o spostarsi dentro una canzone lo chiuderebbe), i
+       * comandi, e — dalla 0.9.6 — **il pannello delle info**.
+       *
+       * Chiesto il 6 settembre 2026: «quando clicco il pulsante info devo poter
+       * interagire con il quadrato info e scrollare sotto senza che si attivi
+       * l'effetto swipe».
+       *
+       * Nella 0.9.4 avevo messo «touch-action: pan-y» sul pannello, e non
+       * bastava: quella riga dice al browser cosa fare **di suo**, ma qui c'e'
+       * un ascoltatore non passivo che chiama «preventDefault» sul movimento
+       * verticale. Vince l'ascoltatore, sempre. L'unico modo e' non ascoltare:
+       * se il dito parte da dentro il pannello, il palco non se ne occupa.
+       */
       var sopra = ev.target;
       while (sopra && sopra !== palco) {
-        if (sopra.id === "palco-tempo" || sopra.tagName === "INPUT") { partenza = null; return; }
+        if (sopra.id === "palco-tempo" || sopra.id === "palco-info" ||
+            sopra.id === "palco-effetti-menu" ||
+            sopra.tagName === "INPUT" || sopra.tagName === "BUTTON") {
+          partenza = null;
+          return;
+        }
         sopra = sopra.parentElement;
       }
       partenza = ev.touches[0].clientY;
@@ -715,14 +779,30 @@ export const COPIONE_LETTORE = `
     if (!menu) return;
     menu.innerHTML = "";
     var quali = Visual.elenco();
-    var uno = null;
-    for (var i = 0; i < quali.length; i++) { if (quali[i].fisso) uno = quali[i]; }
+    var scelti = quali.filter(function (x) { return x.fisso; });
 
+    /**
+     * ⚠ **Se ne possono scegliere piu' d'uno.** Chiesto il 6 settembre 2026:
+     * «fai in modo che posso selezionare piu' effetti, e le animazioni loopano
+     * solo quelle selezionate; se tutte deselezionate e' normale».
+     *
+     * Quindi non e' piu' «fisso su uno»: e' **una lista di quelli che ti
+     * piacciono**, e il giro automatico gira dentro quella lista invece che fra
+     * tutti e nove. Uno solo scelto vuol dire che non cambia mai — cioe' il
+     * «fissato» di prima, che resta possibile senza essere l'unica cosa
+     * possibile.
+     *
+     * Nessuno scelto vuol dire tutti e nove, che e' come parte. Lo dice la riga
+     * qui sotto, perche' uno stato che si riconosce solo dall'assenza di bordi
+     * accesi non lo riconosce nessuno.
+     */
+    var quanti = scelti.length;
     var come = document.createElement("div");
     come.className = "comeVa";
-    come.textContent = uno
-      ? "Fisso su \u00ab" + uno.nome + "\u00bb. Toccalo di nuovo per tornare al cambio automatico."
-      : "Cambiano da soli. Toccane uno per fissarlo.";
+    come.textContent =
+      quanti === 0 ? "Girano tutti e nove. Toccane qualcuno per tenere solo quelli."
+      : quanti === 1 ? "Resta su \u00ab" + scelti[0].nome + "\u00bb. Toccane un altro per farli girare in due."
+      : "Girano solo questi " + quanti + ". Toccali di nuovo per toglierli.";
     menu.append(come);
 
     for (var j = 0; j < quali.length; j++) {
@@ -731,12 +811,12 @@ export const COPIONE_LETTORE = `
       b.type = "button";
       b.className = e.fisso ? "fisso" : "";
       b.textContent = e.nome;
-      b.addEventListener("click", (function (quale, eraFisso) {
+      b.addEventListener("click", (function (quale) {
         return function () {
-          Visual.fissa(eraFisso ? "" : quale);
+          Visual.segna(quale);
           disegnaGliEffetti();
         };
-      })(e.chiave, e.fisso));
+      })(e.chiave));
       menu.append(b);
     }
   }

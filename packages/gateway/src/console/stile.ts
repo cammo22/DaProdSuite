@@ -108,6 +108,9 @@ export const STILE = `  :root {
    */
   .tondo.pari { background: var(--panel2); border-color: var(--line2); }
   .tondo svg { width: 19px; height: 19px; fill: currentColor; display: block; }
+  /* I segni «a filo»: disegnati con la linea invece che pieni. A diciannove
+     pixel una forma piena diventa una macchia; una linea resta un segno. */
+  svg.afilo { fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; }
   .tondo:active { transform: scale(.93); }
   .cresci { flex: 1; }
   /* ⚠ «min-height: 0» e non e' pedanteria: il tasto grande dichiara
@@ -920,8 +923,26 @@ export const STILE = `  :root {
    * quello che rende leggibile l'ultimo riquadro invece di farlo finire
    * appiccicato al vetro.
    */
-  main > section { padding-bottom: 34px; }
-  body.consuono main > section { padding-bottom: 48px; }
+  /**
+   * ⚠ **Il fondo, per la terza volta.** Chiesto il 6 settembre 2026: «notiamo
+   * ancora che la parte sotto clippa, anche nelle altre schermate».
+   *
+   * Aveva ragione, e la ragione e' che le due spinte non si sommavano. Il corpo
+   * scende di «--fondo-alto + --lettore-alto» (la barra delle schede piu'
+   * quella che suona), e questo padding **si aggiunge dentro alla sezione** —
+   * ma trentaquattro pixel di respiro sono quello che serve **senza** niente
+   * sotto. Con due barre sovrapposte, alte insieme centootto, l'ultima riga
+   * finiva sotto il vetro. Nella sua foto era la riga «DaProd Suite 0.9.5 su
+   * DAPRODMAIN», tagliata a meta'.
+   *
+   * Adesso il conto e' scritto: **le barre piu' un pollice**. Un pollice
+   * (36 px) e' quanto serve perche' l'ultima riga si legga e si possa toccare
+   * senza che il dito copra proprio quella.
+   */
+  main > section { padding-bottom: 36px; }
+  body.consuono main > section {
+    padding-bottom: calc(var(--lettore-alto) + 36px);
+  }
 
   /* ------------------------------------------------------- il visualizer */
   /* Dietro a tutto, e senza toccare niente: nessun evento del mouse arriva
@@ -986,11 +1007,26 @@ export const STILE = `  :root {
     background: #0d0f16f2; backdrop-filter: blur(12px);
     border-top: 1px solid var(--line2);
   }
+  /**
+   * ⚠ **«min-height: 0», e senza questa riga la copertina non si vedeva.**
+   *
+   * Chiesto il 6 settembre 2026: «vedi bene che non funziona l'immagine».
+   * Era vero e la causa non era l'immagine: il tasto grande dichiara
+   * «min-height: var(--tastone-alto)», cioe' 48, e un minimo batte un'altezza.
+   * Questo riquadro chiedeva 40 e veniva 48, dentro una barra alta 58 con otto
+   * pixel di padding — quarantadue di spazio. Il riquadro sfondava la barra e
+   * quello che si vedeva era il pezzo tagliato: un rettangolo vuoto.
+   *
+   * E' lo stesso difetto dell'ingranaggio della 0.9.4, nello stesso giorno, in
+   * un altro punto. Da qui la regola: chi dichiara un'altezza dichiara anche
+   * che non ha un minimo.
+   */
   .barraLettore .faccia {
-    width: 40px; height: 40px; flex: 0 0 auto; border-radius: 10px;
+    width: 42px; height: 42px; min-height: 0; flex: 0 0 auto; border-radius: 11px;
     background: var(--panel2) center/cover no-repeat;
     border: 1px solid var(--line2); color: var(--txt);
-    display: grid; place-items: center; font-size: 16px; cursor: pointer; padding: 0;
+    display: grid; place-items: center; font-size: 17px; cursor: pointer; padding: 0;
+    overflow: hidden;
   }
   .barraLettore .dentro {
     flex: 1; min-width: 0; text-align: left; background: none; border: 0;
@@ -1004,7 +1040,27 @@ export const STILE = `  :root {
     display: block; color: var(--dim); font-size: 11px;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
-  .barraLettore .tondo { width: 32px; height: 32px; font-size: 14px; }
+  /**
+   * I comandi della barra: gli stessi del palco, piu' piccoli.
+   *
+   * Niente cerchi col bordo, che su una barra alta cinquantotto pixel sono
+   * quattro macchie in fila. Il play si accende del colore della suite, come di
+   * la': e' l'unico dei quattro che si preme davvero.
+   */
+  .barraLettore .cmd {
+    width: 36px; height: 36px; min-height: 0; padding: 0; flex: 0 0 auto;
+    border-radius: 99px; background: none; border: 0; color: var(--dim);
+    display: grid; place-items: center;
+    transition: background .16s ease, color .16s ease, transform .12s ease;
+  }
+  .barraLettore .cmd svg { width: 18px; height: 18px; fill: currentColor; display: block; }
+  .barraLettore .cmd:hover { background: #ffffff10; color: var(--txt); }
+  .barraLettore .cmd:active { transform: scale(.88); }
+  .barraLettore .cmd.acceso {
+    background: linear-gradient(180deg, #9b6cff, #7c3aed); color: #fff;
+    box-shadow: 0 4px 14px -6px #7c3aed;
+  }
+  .barraLettore .cmd.acceso svg { width: 20px; height: 20px; }
   /* Su uno schermo stretto i tasti «prima» e «chiudi» stanno di troppo: play e
      prossimo sono quelli che si premono, gli altri stanno nel palco. */
   @media (max-width: 400px) {
@@ -1048,6 +1104,29 @@ export const STILE = `  :root {
   .palcoLettore .dentro,
   .palcoLettore .tempo,
   .palcoLettore .sotto { position: relative; z-index: 1; }
+  /**
+   * **Le sfumature.** Chiesto il 6 settembre 2026: «il player a schermo intero
+   * molto bello, aggiungiamo delle sfumature in alto e in basso».
+   *
+   * Non sono decorazione: il visualizer dietro cambia colore in continuazione, e
+   * un titolo bianco sopra a un lampo bianco sparisce. Due velature — scura in
+   * cima e in fondo, trasparente al centro — danno ai comandi un fondo su cui
+   * appoggiarsi senza coprire quello che sta in mezzo, che e' la cosa da
+   * guardare. Non prendono i tocchi.
+   */
+  .palcoLettore::before,
+  .palcoLettore::after {
+    content: ""; position: absolute; left: 0; right: 0; height: 34%;
+    pointer-events: none; z-index: 0;
+  }
+  .palcoLettore::before {
+    top: 0;
+    background: linear-gradient(180deg, #04050ac2 0%, #04050a70 38%, transparent 100%);
+  }
+  .palcoLettore::after {
+    bottom: 0;
+    background: linear-gradient(0deg, #04050ad9 0%, #04050a85 40%, transparent 100%);
+  }
   .palcoLettore .cima { display: flex; align-items: center; gap: 10px; padding: 10px 14px; }
 
   /* La barra del tempo: si legge dove sei e ci si sposta. */
@@ -1235,12 +1314,34 @@ export const STILE = `  :root {
   /* Una carta per stile: il nome grande, le parole sotto. Si tocca per usarlo,
      si tiene premuto per il resto — quattro tasti su ognuna delle ventiquattro
      carte sarebbero una schermata illeggibile. */
-  .stili { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px; }
+  /**
+   * ⚠ **Almeno tre per riga.** Chiesto il 6 settembre 2026: «non mi piacciono
+   * su una sola riga, mettiamo almeno 3 box per riga, facciamoli entrare».
+   *
+   * «minmax(210px, 1fr)» su uno schermo da 375 dava **una colonna**: 210 e' la
+   * larghezza minima di una carta com'era pensata sul computer, e su un
+   * telefono non ce ne stanno due. Il risultato erano venti carte in colonna,
+   * cioe' venti schermate per scegliere uno stile.
+   *
+   * Tre per riga vuol dire carte da un centoquindici pixel, e con quella
+   * larghezza il testo dello stile non ci sta piu' su una riga: **si accorcia a
+   * due righe** e il resto si taglia. E' la scelta giusta lo stesso — il nome
+   * e' quello che si cerca, il testo e' un promemoria — e tenendo premuto si
+   * legge tutto.
+   *
+   * Da 560 px in su tornano larghe: li' lo spazio c'e'.
+   */
+  .stili { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  @media (min-width: 560px) {
+    .stili { grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px; }
+  }
   .stile {
-    border: 1px solid var(--line2); border-radius: 15px; padding: 13px 14px;
+    border: 1px solid var(--line2); border-radius: 13px; padding: 10px 11px;
     background: var(--panel2); cursor: pointer; user-select: none;
     -webkit-user-select: none; -webkit-touch-callout: none;
+    min-width: 0;
   }
+  @media (min-width: 560px) { .stile { border-radius: 15px; padding: 13px 14px; } }
   .stile:hover { border-color: var(--accent2); }
   /**
    * **Scelto per il mix.** Il bordo acceso e la spunta: due segni per la stessa
@@ -1279,8 +1380,20 @@ export const STILE = `  :root {
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
   .stile.inVetrina { border-color: #f472b655; }
-  .nomeStile { font-weight: 650; font-size: 14px; }
-  .testoStile { color: var(--dim); font-size: 12px; margin-top: 4px; line-height: 1.45; }
+  /* Il nome puo' andare a capo ma non sfondare: su una carta da centoquindici
+     pixel una parola lunga uscirebbe dal riquadro. */
+  .nomeStile { font-weight: 650; font-size: 13px; overflow-wrap: anywhere; }
+  /* Due righe e poi basta: il testo e' un promemoria, il nome e' quello che si
+     cerca. Chi vuole leggerlo tutto tiene premuto. */
+  .testoStile {
+    color: var(--dim); font-size: 11px; margin-top: 4px; line-height: 1.4;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    overflow: hidden; overflow-wrap: anywhere;
+  }
+  @media (min-width: 560px) {
+    .nomeStile { font-size: 14px; }
+    .testoStile { font-size: 12px; -webkit-line-clamp: 3; }
+  }
   .daChi { color: var(--fioco); font-size: 11px; margin-top: 6px; }
 
   /* --------------------------------------------------------- barra in fondo */
@@ -1343,19 +1456,25 @@ export const STILE = `  :root {
    * La lampada e' un pseudo-elemento e non un div: non aggiunge nodi, non si
    * puo' toccare, e sparisce da sola quando la scheda si spegne.
    */
-  nav.fondo button::before {
-    content: ""; position: absolute; top: 0; left: 50%;
-    width: 26px; height: 2px; border-radius: 0 0 3px 3px;
-    background: var(--accent); transform: translateX(-50%) scaleX(0);
-    transition: transform .24s cubic-bezier(.2,1.4,.4,1);
-  }
+  /**
+   * ⚠ **La lineetta se n'e' andata.** Chiesto il 6 settembre 2026: «i pulsanti
+   * ora hanno quella linea brutta, tutti, quando selezionati».
+   *
+   * L'avevo messa nella 0.9.4 perche' «dice dove sei prima che tu legga la
+   * parola», e la ragione resta buona — solo che quel lavoro lo facevano gia'
+   * il colore e l'alone. La lineetta era una **terza** cosa che diceva la
+   * stessa cosa, attaccata al bordo di sopra, e su cinque schede in fila
+   * l'occhio la legge come un difetto di allineamento invece che come un segno.
+   *
+   * Restano i due che bastano: il segno si accende e si alza, e sotto c'e'
+   * l'alone. Tre segni per un'informazione sono due di troppo.
+   */
   nav.fondo button::after {
     content: ""; position: absolute; top: -14px; left: 50%; width: 54px; height: 30px;
     transform: translateX(-50%); pointer-events: none; opacity: 0;
     background: radial-gradient(50% 60% at 50% 0%, var(--accent) 0%, transparent 70%);
     transition: opacity .28s ease;
   }
-  nav.fondo button.on::before { transform: translateX(-50%) scaleX(1); }
   nav.fondo button.on::after { opacity: .30; }
   nav.fondo button.on .segno { transform: translateY(-2px); }
   nav.fondo button:active .segno { transform: scale(.86); }

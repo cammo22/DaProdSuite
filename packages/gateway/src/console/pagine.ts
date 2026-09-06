@@ -48,10 +48,24 @@ export const PAGINE = `<header>
     bordo** della pastiglia accanto. Sono due tasti della stessa famiglia,
     perche' fanno parte della stessa riga.
   -->
+  <!--
+    ⚠ **L'ingranaggio, ridisegnato leggero.** Chiesto il 6 settembre 2026:
+    «anche il pulsante impostazioni e' strano».
+
+    Era vero: il primo disegno era una ruota **piena**, con i denti ricavati dal
+    contorno. A diciannove pixel una forma piena con otto denti diventa una
+    macchia tonda con dei bozzi, e accanto a una pastiglia leggera pesava il
+    doppio di tutto il resto.
+
+    Adesso e' **a filo**: un cerchio, un anello, e otto denti dritti dello
+    stesso spessore. Lo stesso peso della «i» delle info e delle frecce del
+    lettore, che e' il punto — sono tutti segni della stessa mano.
+  -->
   <button class="tondo pari" id="apri-impostazioni" title="Impostazioni" hidden>
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M12 8.6a3.4 3.4 0 1 0 0 6.8 3.4 3.4 0 0 0 0-6.8zm0 5.4a2 2 0 1 1 0-4 2 2 0 0 1 0 4z"/>
-      <path d="M20.3 13.1c.04-.36.06-.73.06-1.1s-.02-.74-.06-1.1l1.72-1.28a.6.6 0 0 0 .16-.76l-1.7-2.94a.6.6 0 0 0-.72-.26l-2.02.75a6.7 6.7 0 0 0-1.9-1.1l-.3-2.14a.6.6 0 0 0-.6-.5h-3.4a.6.6 0 0 0-.6.5l-.3 2.14c-.7.28-1.33.65-1.9 1.1l-2.02-.75a.6.6 0 0 0-.72.26l-1.7 2.94a.6.6 0 0 0 .16.76L5.7 10.9c-.04.36-.06.73-.06 1.1s.02.74.06 1.1l-1.72 1.28a.6.6 0 0 0-.16.76l1.7 2.94c.15.26.45.36.72.26l2.02-.75c.57.45 1.2.82 1.9 1.1l.3 2.14c.05.29.3.5.6.5h3.4c.3 0 .55-.21.6-.5l.3-2.14c.7-.28 1.33-.65 1.9-1.1l2.02.75c.27.1.57 0 .72-.26l1.7-2.94a.6.6 0 0 0-.16-.76L20.3 13.1zm-1.55 2.1.14 1.1-.87 1.5-1.04-.38-.98-.36-.83.65c-.43.34-.9.62-1.42.82l-.98.4-.15 1.04-.16 1.1h-1.74l-.16-1.1-.15-1.04-.98-.4a5.3 5.3 0 0 1-1.42-.82l-.83-.65-.98.36-1.04.38-.87-1.5.88-.66.84-.62-.1-1.05a7.3 7.3 0 0 1 0-1.72l.1-1.05-.84-.62-.88-.66.87-1.5 1.04.38.98.36.83-.65c.43-.34.9-.62 1.42-.82l.98-.4.15-1.04.16-1.1h1.74l.16 1.1.15 1.04.98.4c.52.2 1 .48 1.42.82l.83.65.98-.36 1.04-.38.87 1.5-.88.66-.84.62.1 1.05a7.3 7.3 0 0 1 0 1.72l-.1 1.05.84.62z"/>
+    <svg viewBox="0 0 24 24" aria-hidden="true" class="afilo">
+      <circle cx="12" cy="12" r="3.1"/>
+      <path d="M12 4.4v2.2M12 17.4v2.2M4.4 12h2.2M17.4 12h2.2M6.6 6.6l1.6 1.6M15.8 15.8l1.6 1.6M17.4 6.6l-1.6 1.6M8.2 15.8l-1.6 1.6"/>
+      <circle cx="12" cy="12" r="7.6"/>
     </svg>
   </button>
 </header>
@@ -464,10 +478,40 @@ export const PAGINE = `<header>
     <b id="lettore-nome"></b>
     <small id="lettore-sotto"></small>
   </button>
-  <button class="tondo" id="lettore-prima" title="Precedente">&#9198;</button>
-  <button class="tondo" id="lettore-play" title="Pausa">&#9208;</button>
-  <button class="tondo" id="lettore-poi" title="Prossimo">&#9197;</button>
-  <button class="tondo" id="lettore-chiudi" title="Chiudi">&#10005;</button>
+  <!--
+    ⚠ **Anche questi sono disegnati.** Chiesto il 6 settembre 2026: «il player
+    minimizzato ha ancora i vecchi pulsanti».
+
+    Vero, e la dimenticanza si vedeva peggio di prima: nel palco i comandi erano
+    diventati segni disegnati, qui erano rimasti i glifi tipografici. Due
+    lettori nella stessa app con due alfabeti diversi — e sono lo stesso
+    lettore, uno grande e uno piccolo.
+
+    Stessi disegni del palco, piu' piccoli. E niente cerchi: qui i tasti stanno
+    su una barra alta cinquantotto pixel, e quattro cerchi con il bordo in fila
+    sono quattro macchie. Il play si accende del colore della suite, come di la'.
+  -->
+  <button class="cmd" id="lettore-prima" title="Precedente">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M18 5.5v13a1 1 0 0 1-1.55.83L7.5 13.5v5a1 1 0 0 1-2 0v-13a1 1 0 0 1 2 0v5l8.95-5.83A1 1 0 0 1 18 5.5z"/>
+    </svg>
+  </button>
+  <button class="cmd acceso" id="lettore-play" title="Pausa">
+    <svg viewBox="0 0 24 24" aria-hidden="true" id="lettore-play-segno">
+      <rect x="7" y="5" width="3.6" height="14" rx="1.4"/>
+      <rect x="13.4" y="5" width="3.6" height="14" rx="1.4"/>
+    </svg>
+  </button>
+  <button class="cmd" id="lettore-poi" title="Prossimo">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M6 5.5v13a1 1 0 0 0 1.55.83L16.5 13.5v5a1 1 0 0 0 2 0v-13a1 1 0 0 0-2 0v5L7.55 4.67A1 1 0 0 0 6 5.5z"/>
+    </svg>
+  </button>
+  <button class="cmd" id="lettore-chiudi" title="Chiudi">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M6.4 5a1 1 0 0 0-.7 1.7L11 12l-5.3 5.3a1 1 0 1 0 1.4 1.4L12 13.4l5.3 5.3a1 1 0 0 0 1.4-1.4L13.4 12l5.3-5.3a1 1 0 0 0-1.4-1.4L12 10.6 6.7 5.3a1 1 0 0 0-.3-.3z"/>
+    </svg>
+  </button>
 </div>
 
 <!--
