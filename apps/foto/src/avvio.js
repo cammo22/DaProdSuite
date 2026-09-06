@@ -10,6 +10,7 @@ import {
   collegaLavoriDaFuori,
   numero,
   premi,
+  premiQuandoPuoi,
   scegliInMenu,
   scrivi,
 } from "/comune/da-fuori.js";
@@ -115,14 +116,14 @@ collegaLavoriDaFuori(async (richiesta) => {
     await disegnaLaMaschera(richiesta.opzioni.maschera);
     scrivi(el.promptRitocco, richiesta.testo);
     /*
-     * «Quanto la cambio» va da 1 a 10 perche' un numero da 0 a 1 con la
-     * virgola, su un telefono, non lo capisce nessuno. Il motore vuole l'altro.
+     * ⚠ **Il «quanto la cambio» non arriva piu' da fuori.** Dalla 1.0.6, e non
+     * e' una dimenticanza: chiesto di toglierlo e di lasciare il punto di
+     * lavoro che la scheda mette da sola quando si sceglie il modello. Qui
+     * quindi non si tocca `el.denoise`: resta quello che c'e', che e' quello
+     * giusto per il modello scelto. Vedi il catalogo delle azioni.
      */
-    if (richiesta.opzioni.forza) {
-      scrivi(el.denoise, String(numero(richiesta.opzioni.forza, 1, 10, 6) / 10));
-    }
-    if (scegliInMenu(el.modello, richiesta.opzioni.modello)) await aspettaPremibile(el.rigenera);
-    premi(
+    scegliInMenu(el.modello, richiesta.opzioni.modello);
+    await premiQuandoPuoi(
       el.rigenera,
       "Il modello di DaProdFoto non e' pronto: apri la scheda sul computer e guarda cosa manca.",
     );
@@ -145,11 +146,15 @@ collegaLavoriDaFuori(async (richiesta) => {
   scegliMisura(richiesta.opzioni.forma, richiesta.opzioni.risoluzione);
   if (richiesta.opzioni.negativo) scrivi(el.negativo, richiesta.opzioni.negativo);
   scrivi(el.quante, String(numero(richiesta.opzioni.quante, 1, 4, 1)));
-  // Il modello si può scegliere da fuori dalla 0.7.2. Cambiarlo fa ripartire il
-  // controllo dei pesi sul disco, che tiene Genera spento finché non risponde:
-  // per questo si aspetta invece di premere subito.
-  if (scegliInMenu(el.modello, richiesta.opzioni.modello)) await aspettaPremibile(el.genera);
-  premi(
+  /**
+   * Il modello si può scegliere da fuori dalla 0.7.2.
+   *
+   * ⚠ **L'attesa non è legata al cambio di modello**, dalla 1.0.6: Genera è
+   * spento anche solo perché la scheda si è appena aperta e sta guardando i
+   * pesi sul disco. Vedi `premiQuandoPuoi` in `packages/ui/src/da-fuori.js`.
+   */
+  scegliInMenu(el.modello, richiesta.opzioni.modello);
+  await premiQuandoPuoi(
     el.genera,
     "Il modello di DaProdFoto non è pronto: apri la scheda sul computer e guarda cosa manca.",
   );

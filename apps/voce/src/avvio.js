@@ -7,7 +7,7 @@
  * prime che si fanno la prima volta che si apre questa scheda.
  */
 
-import { collegaLavoriDaFuori, premi, scrivi } from "/comune/da-fuori.js";
+import { collegaLavoriDaFuori, premiQuandoPuoi, scrivi } from "/comune/da-fuori.js";
 import { el, mostraScheda, suApertura } from "./dom.js";
 import { accendiBottoni, collegaParla, motoreCollegato } from "./parla.js";
 import { caricaVoci, collegaVoci } from "./voci.js";
@@ -51,9 +51,14 @@ await collega((vivo) => {
  * questa scelta — invece di costruire il grafo qui — sta in
  * `packages/ui/src/da-fuori.js`.
  */
-collegaLavoriDaFuori((richiesta) => {
+collegaLavoriDaFuori(async (richiesta) => {
   mostraScheda("parla");
   scrivi(el.testo, richiesta.testo);
   if (richiesta.opzioni.voce && el.voce) scrivi(el.voce, richiesta.opzioni.voce);
-  premi(el.parla, "DaProdVoce non è pronta: apri la scheda sul computer e guarda cosa manca.");
+  // Si aspetta che il tasto sia pronto: appena aperta, la scheda sta ancora
+  // guardando i pesi. Vedi `premiQuandoPuoi` in `packages/ui/src/da-fuori.js`.
+  await premiQuandoPuoi(
+    el.parla,
+    "DaProdVoce non è pronta: apri la scheda sul computer e guarda cosa manca.",
+  );
 });

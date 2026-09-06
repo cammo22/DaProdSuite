@@ -875,6 +875,34 @@ export const COPIONE_GALLERIA = `
       var img = document.createElement("img");
       img.src = indirizzoDi(v);
       img.alt = v.nome;
+      /**
+       * ⚠ **Toccando la foto, i tasti se ne vanno.** Dalla 1.0.6.
+       *
+       * Chiesto il 7 settembre 2026: «le immagini, quando le mettiamo a schermo
+       * intero, facciamo che se riclicchiamo toglie la gui così da vedere
+       * l'immagine bene, e se riclicco ricompare la gui».
+       *
+       * Vale solo per le foto: un video ha i suoi comandi dentro, e farli
+       * sparire vorrebbe dire non poterlo piu' mettere in pausa.
+       *
+       * ⚠ «stopPropagation» non e' un dettaglio: senza, questo stesso tocco
+       * arriverebbe al fondo scuro, che chiude la lente — la foto si
+       * spoglierebbe e sparirebbe nello stesso istante. E per lo stesso motivo
+       * la prima volta si scrive **come si torna indietro**: una schermata
+       * senza un solo tasto, su un telefono, non ha nessun indizio.
+       */
+      img.addEventListener("click", function (ev) {
+        ev.stopPropagation();
+        var nuda = fuori.classList.toggle("nuda");
+        var vecchio = fuori.querySelector(".sussurro");
+        if (vecchio) vecchio.remove();
+        if (!nuda) return;
+        var dice = document.createElement("div");
+        dice.className = "sussurro";
+        dice.textContent = "tocca la foto per rivedere i tasti";
+        fuori.append(dice);
+        setTimeout(function () { dice.remove(); }, 2200);
+      });
       palco.append(img);
     } else if (v.tipo === "video") {
       var vid = document.createElement("video");
@@ -1051,7 +1079,7 @@ export const COPIONE_GALLERIA = `
    * Si può condividere?
    *
    * Dentro l'app sì, sempre: lo fa lei con il menu di Android. Nel browser solo
-   * se c'è \`navigator.share\` **con i file**: su un desktop non c'è, e mostrare
+   * se c'è \«navigator.share\» **con i file**: su un desktop non c'è, e mostrare
    * un tasto che apre una finestra di errore è peggio di non mostrarlo.
    */
   function sipuoCondividere() {

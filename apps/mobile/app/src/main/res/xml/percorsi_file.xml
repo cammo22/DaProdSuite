@@ -18,4 +18,10 @@
 <paths>
     <cache-path name="aggiornamenti" path="aggiornamenti/" />
     <cache-path name="condivisi" path="condivisi/" />
+    <!--
+      3. **scatti**: la foto appena scattata dalla fotocamera. Da Android 7 la
+         fotocamera e' un'altra app e non puo' scrivere in un percorso nostro:
+         le si passa un indirizzo `content://`, e questo e' il posto che apre.
+    -->
+    <cache-path name="scatti" path="scatti/" />
 </paths>

@@ -595,6 +595,22 @@ export const STILE = `  :root {
   .lente .attrezzi { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
   .lente .didascalia { color: var(--dim); font-size: 12.5px; text-align: center; margin-bottom: 10px; overflow-wrap: anywhere; }
 
+  /* Una foto guardata **senza niente intorno**: si tocca la foto e i tasti se
+     ne vanno, si ritocca e tornano. Chiesto il 7 settembre 2026 — «quando le
+     mettiamo a schermo intero, se riclicchiamo toglie la gui così da vedere
+     l'immagine bene, e se riclicco ricompare». Il nero pieno e il riquadro
+     senza angoli tondi sono parte della stessa cosa: sparisce la finestra,
+     resta la foto. */
+  .lente.nuda { background: #000; }
+  .lente.nuda .cima, .lente.nuda .sotto { display: none; }
+  .lente.nuda .palco { padding: 0; }
+  .lente.nuda .palco img { border-radius: 0; max-height: 100vh; }
+  .lente .sussurro {
+    position: absolute; left: 50%; bottom: 22px; transform: translateX(-50%);
+    background: #000000b0; color: #fff; font-size: 12px; padding: 6px 12px;
+    border-radius: 999px; pointer-events: none; animation: entra .18s ease-out;
+  }
+
   /* -------------------------------------------------------- il foglio */
   /* Le impostazioni non sono una scheda in fondo: sono un foglio che sale.
      Chiesto così — «mettiamo lì il pulsante impostazioni e lì possiamo vedere

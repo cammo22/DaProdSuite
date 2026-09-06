@@ -18,6 +18,116 @@ ancora lì.
 
 ---
 
+## 1.0.9 — Il lavoro parte anche se la scheda non era aperta
+
+> «a volte la produzione immagini dice non fatto a prescindere dal prompt; se
+> poi da PC apro proprio io DaProdFoto e rimando il lavoro dall'app, allora
+> funziona — confermo che se non sono io ad aprire DaProdFoto non funziona»
+>
+> «il tasto ai non funziona con la coda, lo carica e basta; mi è capitato che
+> mentre facevo cose l'ho cliccato e mi ha rovinato tutto»
+>
+> «llada è un po' strano come gira, occupa poca gpu… al suo picco sta a 2.8 su
+> 8, qualcosa non va»
+
+### ⚠ «Non fatto» a prescindere dal prompt
+
+Era vero, ed era la stessa cosa in tutte e quattro le schede. Quando un lavoro
+arriva da fuori, lo shell apre la scheda giusta e la scheda preme il proprio
+tasto Genera. Solo che Genera, **appena la scheda si apre**, è spento: sta
+chiedendo alla suite se i pesi del modello sono sul disco. L'attesa c'era, ma
+era attaccata alla cosa sbagliata — si aspettava **solo se il lavoro cambiava
+modello**:
+
+    if (scegliInMenu(el.modello, richiesta.opzioni.modello)) await aspettaPremibile(el.genera);
+
+E dato che il predefinito del catalogo è lo stesso della scheda, il caso normale
+è proprio quello in cui il modello **non** cambia: l'attesa saltava e il tasto
+veniva premuto mezzo secondo dopo l'apertura della finestra, ancora spento. Da
+fuori: «non fatto», qualunque cosa avessi scritto.
+
+Aprendo la scheda a mano spariva, perché quando il lavoro arrivava il controllo
+dei pesi era finito da un pezzo. Ed è anche il motivo per cui non si era mai
+visto in prova: chi prova la scheda ce l'ha aperta davanti.
+
+Adesso l'attesa non dipende più da niente: si aspetta che il tasto sia pronto e
+poi si preme (`premiQuandoPuoi`, quindici secondi al massimo). Vale per foto,
+video, musica e voce — la voce non aspettava affatto.
+
+### ⚠ Il tasto AI scavalcava la fila
+
+Stava in una riga: `modello: await conChiParlo()`. La domanda al modello il
+turno se lo prendeva — quello funzionava — ma l'argomento veniva **valutato
+prima**, e lì dentro c'è il caricamento: quattro giga e mezzo che entrano in
+scheda video mentre una generazione ci sta lavorando. La fila era rispettata
+dalla domanda e scavalcata dal caricamento.
+
+Adesso il turno lo prende tutta l'operazione, caricamento compreso. Chi sta al
+computer passa davanti come sempre.
+
+### LLaDA: la scheda video adesso lavora
+
+Il picco era 2,8 GB su 8, e il tempo se ne andava tutto prima dei quattro passi.
+Il perché sta in una riga del pipeline di LLaDA: il testo viene codificato
+**dove sta il text encoder**, e in modalità `cuda` quel pacco sposta sulla
+scheda il solo trasformatore. Encoder, queryformer, text_projection e sigvq
+restavano in RAM: il processore si faceva tutta la lettura del prompt.
+
+Spostarli non vuol dire caricare i 9,2 GB del text encoder in scheda: i suoi
+pesi sono GGUF e **non sono registrati** — restano mappati su disco e salgono un
+blocco per volta, già quantizzati. Quello che si sposta davvero sono 40 MB di
+normalizzazioni; con loro si sposta il dispositivo su cui si lavora, che è la
+cosa che conta.
+
+**Misurato sul motore vero, prima e dopo:**
+
+| | prima | adesso |
+|---|---|---|
+| un 512×512 | 94 s | **33 s** |
+| un 1024×1024 | — | **67 s** |
+| scheda video al picco | 2,8 GB | 4,1 GB su 8 |
+
+Il **sigvq** resta in RAM, e non per dimenticanza: provato a mandare in scheda
+anche lui, il tempo non cambia — 32,8 secondi contro 33,8, che è rumore — e la
+scheda passa da 4,1 a 6,6 GB occupati. Due giga e mezzo per niente, e sono
+proprio quelli che servono a decodificare un'immagine grande. La misura sta
+scritta accanto al numero nel codice, così chi sarà tentato di alzarlo sa già
+com'è andata.
+
+### Le altre cose chieste
+
+- **«Quanto la cambio» non c'è più** nella modifica: ogni modello ha il suo
+  punto di lavoro e la scheda lo mette da sola. Il cursore resta sul computer,
+  dove si vede il risultato e si può rifare.
+- **I modelli si chiamano per nome**: niente più «— pronta, veloce» o «un minuto
+  e mezzo» appiccicati. Cinque pastiglie da toccare, non cinque righe da
+  leggere.
+- **I prompt salvati dal telefono si ritrovano.** C'erano — sotto la pastiglia
+  «Prompt», che è l'altra metà della scheda Stili — ma chi ne salvava uno
+  atterrava su «Stili» e leggeva «non hai ancora nessuno stile». Adesso il conto
+  sta anche su quella pastiglia («Prompt · 1») e la riga dell'elenco vuoto dice
+  dov'è finito quello che hai. In più: in **Modifica** e in **Storia** la riga
+  dei prompt non c'era proprio, perché quelle due azioni sono nate dopo la
+  tabella che le mappa; adesso un prompt è del tipo della scheda, non
+  dell'azione.
+- **La foto a schermo intero si guarda davvero**: toccandola, titolo e tasti
+  spariscono e resta la foto sul nero; si tocca di nuovo e tornano.
+- **Si può scattare al volo.** In Modifica c'è una terza strada accanto a «una
+  foto che hai fatto» e «dalla galleria»: **scattala adesso**. Da lì in poi la
+  foto fa la stessa strada delle altre due. Il pezzo che mancava era nell'app
+  Android: `createIntent()` non contiene mai la fotocamera, nemmeno quando la
+  pagina la chiede — l'intento dello scatto lo costruiamo noi.
+
+### LLaDA senza filtro: cercato, non c'è
+
+Chiesto di guardare se esiste una versione «uncensored» o «abliterated» di
+LLaDA-Image. Su Hugging Face oggi ci sono solo i pesi ufficiali di inclusionAI
+(Base, Turbo, le due FP8) e i reimpacchettamenti per ComfyUI: nessun fine-tune
+senza filtro, di nessuno. Il modello è uscito il 4 settembre 2026 — tre giorni
+fa — e le versioni ripulite arrivano sempre dopo. Si aspetta, come detto.
+
+---
+
 ## 1.0.8 — E anche chi era già collegato lo impara
 
 Un buco trovato subito dopo la 1.0.7, confrontando due elenchi che dovevano
