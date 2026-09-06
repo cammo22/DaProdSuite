@@ -327,6 +327,71 @@ async function comeStaIndirizzoStabile(): Promise<StatoFunnel> {
   return funnel;
 }
 
+/** Ogni quanto si ricontrolla l'indirizzo che non cambia mai. */
+const OGNI_QUANTO_GUARDO_FUNNEL = 3 * 60_000;
+
+/**
+ * ⚠ **L'indirizzo che non scade si ricontrolla, invece di crederci una volta.**
+ * Nuovo nella 1.0.10.
+ *
+ * **Il difetto, detto per la settima volta:** «ancora una volta ho fatto
+ * l'update e non funziona piu', l'app mobile non si ricollega». E stavolta i
+ * numeri c'erano: il PC raggiungibile, il profilo del telefono intero col suo
+ * token, tutti e quattro gli indirizzi che rispondevano 200 — e il telefono che
+ * diceva «il computer non risponde».
+ *
+ * La spiegazione sta in una variabile: `funnel`. E' la **memoria** di com'era
+ * l'indirizzo stabile, e veniva riempita in tre soli momenti — l'avvio della
+ * suite, e i due interruttori delle impostazioni. Da li' in poi restava quella
+ * per tutta la sessione.
+ *
+ * Il guaio e' che quel controllo puo' andare male senza che sia successo
+ * niente di grave: Tailscale che al primo secondo dopo l'avvio non ha ancora
+ * finito di collegarsi, e `comeStaFunnel` risponde «non acceso». In quel caso
+ * `basi()` e `indirizziPubblici()` — cioe' **il QR e la risposta a `/io`** —
+ * smettono di nominare l'unico indirizzo che non scade, e il telefono impara
+ * una lista fatta solo di indirizzi che muoiono: il tunnel, che cambia nome a
+ * ogni accensione, la rete di casa, che da fuori non esiste, e il 100.x del
+ * tailnet, dove il telefono non entra piu' dalla 1.0.7.
+ *
+ * Da fuori casa, da quel momento, non c'e' piu' nessuna strada — e riaprire la
+ * suite non aggiusta niente, perche' al riavvio dopo il tunnel ha un altro nome
+ * ancora. **E' esattamente il difetto che l'indirizzo fisso doveva chiudere**,
+ * rientrato dalla finestra.
+ *
+ * Adesso lo si guarda ogni tre minuti. Costa una chiamata al comando di
+ * Tailscale — la stessa che fa il pannello quando lo apri — e in cambio la
+ * verita' su cosa il computer sa offrire non e' piu' una fotografia scattata
+ * nel secondo peggiore.
+ */
+function vegliaSullIndirizzoStabile(): void {
+  const guarda = async (): Promise<void> => {
+    try {
+      const prima = funnel?.acceso ? funnel.indirizzo : "";
+      funnel = await comeStaFunnel(portaReale || PORTA);
+      const dopo = funnel.acceso ? funnel.indirizzo : "";
+      if (prima === dopo) return;
+      console.log(
+        dopo
+          ? `[remoto] l'indirizzo che non cambia mai adesso c'e': ${dopo}`
+          : "[remoto] l'indirizzo che non cambia mai non risponde piu'",
+      );
+      // Gli inviti gia' dati portano dentro gli indirizzi di prima: se ne e'
+      // comparso uno che non scade, quelli vecchi vanno rifatti.
+      remoto.buttaInviti();
+      sveglia();
+    } catch {
+      /* si riguarda fra tre minuti: qui non c'e' niente da salvare */
+    }
+  };
+  // Il primo giro presto, non fra tre minuti: e' quello che ripara un Tailscale
+  // che all'avvio della suite non era ancora pronto.
+  setTimeout(() => void guarda(), 20_000);
+  const battito = setInterval(() => void guarda(), OGNI_QUANTO_GUARDO_FUNNEL);
+  // Non tiene sveglio il processo: se la suite si chiude, si chiude.
+  battito.unref?.();
+}
+
 /**
  * Cambia l'indirizzo su cui farsi trovare.
  *
@@ -1389,6 +1454,9 @@ export function riprendiAccessoRemoto(): void {
       // 127.0.0.1, e serve comunque la pagina di DaProdConnessione.
       await accendi();
       if (scelte.connessione && scelte.internet) await accendiInternet();
+      // Da qui in poi l'indirizzo che non scade si ricontrolla da solo, invece
+      // di restare quello che sembrava al primo secondo. Vedi la funzione.
+      vegliaSullIndirizzoStabile();
     } catch (male) {
       /**
        * ⚠ **La porta occupata non si ingoia più.**
