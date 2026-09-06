@@ -10,7 +10,7 @@ Un programma solo per fare musica, immagini, video, voci e parlare con un avatar
 Ogni app la installi quando ti serve e la disinstalli quando non ti serve più.
 Gira sul tuo computer: niente account, niente chiavi API, codice aperto.
 
-[![versione](https://img.shields.io/badge/versione-0.9.6-7c5cff)](https://github.com/cammo22/DaProdSuite/releases/latest)
+[![versione](https://img.shields.io/badge/versione-0.9.7-7c5cff)](https://github.com/cammo22/DaProdSuite/releases/latest)
 [![licenza](https://img.shields.io/badge/licenza-MIT-5cff9d)](LICENSE)
 [![piattaforma](https://img.shields.io/badge/Windows-x64-3ddbff)](#requisiti)
 [![sito](https://img.shields.io/badge/sito-cammo22.github.io-ffa63d)](https://cammo22.github.io/DaProdSuite/)
@@ -95,13 +95,11 @@ tutte lo stesso.
 
 ## A che punto siamo
 
-**Ultima pubblicata: 0.9.6 — «Il secondo giro sul disegno».** Il player
-minimizzato ha i comandi disegnati come quello grande, la copertina si vede
-davvero, gli effetti si scelgono a più d'uno e il giro gira solo fra quelli, gli
-stili stanno tre per riga, il palco ha le sue sfumature, e i permessi sono dove
-uno li cerca — nelle impostazioni.
-
-### Le versioni prima di questa
+**Ultima pubblicata: 0.9.7 — «Il testo della canzone».** Il pannello «Com'è
+stata fatta» leggeva i campi sbagliati: mostrava il titolo dove doveva esserci
+il testo cantato, e lo stile di un brano non lo mostrava mai. Sbagliato da sei
+versioni, e adesso c'è una prova automatica — su dati presi da un file vero —
+che lo tiene fermo.
 
 | | |
 |---|---|

@@ -12,7 +12,66 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ## Non ancora pubblicato
 
-Niente: la 0.9.6 è appena uscita.
+Niente: la 0.9.7 è appena uscita.
+
+---
+
+## 0.9.7 — Il testo della canzone
+
+Una correzione sola, e la prova che la tiene ferma.
+
+### Cosa non andava
+
+> «vedi bene perché qui non si vede il testo della canzone, ma magari è vecchia
+> per questo.»
+
+Non era vecchia. Era un difetto, ed è stato sbagliato **per sei versioni**.
+
+Il `.json` che sta accanto a un brano tiene **due dizionari mescolati**: i campi
+con cui la scheda ha generato (`lyrics`, `caption`, `duration`) e quelli con cui
+la richiesta era arrivata da fuori (`testo`, `secondi`, `prompt`). Hanno nomi
+diversi per la stessa cosa, e il pannello «Com'è stata fatta» leggeva i secondi.
+
+Il risultato, nella sua foto: **«IL TESTO → Che sbandata»**, che è il titolo. Il
+testo cantato — trenta righe con `[Intro]` e `[verse]` — stava in `lyrics` e non
+lo guardava nessuno. E «Lo stile» non compariva **mai** per un brano, perché lo
+stile di un brano si chiama `caption`.
+
+Perché `testo` diceva il titolo: per `genera.brano` il campo principale della
+richiesta **è** il titolo. Per un'immagine è il prompt. Un campo che vuol dire
+due cose a seconda dell'azione non si può mettere in una tabella fissa — è
+sparito da lì, e quello che diceva lo dicono già «Il titolo» e «Il prompt».
+
+Più due cose piccole trovate insieme: la tonalità mostrava `caso`, che è un id e
+non una parola (adesso dice «scelta dal modello»), e di un'immagine non si
+leggeva la misura, che nei suoi metadati c'è sempre.
+
+### E una prova che ci guarda
+
+Nessun controllo di tipi poteva vedere questo difetto: sono stringhe che escono
+da un oggetto libero. Quindi la prova.
+
+`prova-avvio.mjs` nasce per rispondere a «si accende?», e per sei versioni è
+rimasto solo quello — ma con l'Electron finto in piedi i moduli del main sono
+**caricati e usabili**, e buttare via quel banco appena finito di guardare se si
+accendono è uno spreco. Adesso ci girano sopra dieci controlli su questa
+tabella.
+
+I dati sono **presi da un file vero** — «Che sbandata», 6 settembre 2026 —
+perché una prova scritta a memoria proverebbe quello che mi ricordo, non quello
+che c'è sul disco. E l'ho verificata al contrario: rimesso il codice vecchio, la
+prova diventa rossa e dice **quale** campo sta leggendo.
+
+### ⚠ Cosa resta da fare
+
+- **Il giro vero dell'aggiornamento**, per vedere se l'account resta (0.9.5).
+- **AudioBloom e CosmicDust** fuori dal visualizer della console.
+- **I video da 30, 60 e 120 secondi**: mai passati per una scheda video.
+- **Le copertine col titolo** mai passate per FLUX vero.
+- **I cinque fogli di stile copiati** (`apps/*/stile.css`, 91 KB in tutto):
+  guardati e **non toccati**, perché deduplicarli vuol dire cambiare l'aspetto
+  di cinque schede che non si possono provare senza aprire la suite. È il primo
+  candidato per una sessione che ha il tempo di guardarle.
 
 ---
 
