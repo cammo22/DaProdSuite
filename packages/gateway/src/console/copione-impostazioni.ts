@@ -387,7 +387,7 @@ export const COPIONE_IMPOSTAZIONI = `
         });
         disegnaPausa();
         apriIlComputer();
-      } catch (e) { alert(e.message); pausa.disabled = false; }
+      } catch (e) { avvisaDelMale(e); pausa.disabled = false; }
     });
     carta.append(pausa);
 
@@ -509,7 +509,7 @@ export const COPIONE_IMPOSTAZIONI = `
         }),
       });
       apriIlComputer();
-    } catch (e) { alert(e.message); }
+    } catch (e) { avvisaDelMale(e); }
   }
 
   async function cambiaRegole(cambi) {
@@ -524,7 +524,7 @@ export const COPIONE_IMPOSTAZIONI = `
         }),
       });
       apriIlComputer();
-    } catch (e) { alert(e.message); }
+    } catch (e) { avvisaDelMale(e); }
   }
 
   /* --------------------------------------------------------- le persone */
@@ -642,7 +642,7 @@ export const COPIONE_IMPOSTAZIONI = `
           })
             .then(leggiPannello)
             .then(disegnaDispositivi)
-            .catch(function (e) { alert(e.message); });
+            .catch(function (e) { avvisaDelMale(e); });
         });
         azioni.append(permesso);
       }
@@ -655,7 +655,7 @@ export const COPIONE_IMPOSTAZIONI = `
         chiama("/dispositivi/" + encodeURIComponent(d.id), { method: "DELETE" })
           .then(leggiPannello)
           .then(disegnaDispositivi)
-          .catch(function (e) { alert(e.message); });
+          .catch(function (e) { avvisaDelMale(e); });
       });
       azioni.append(via);
 
@@ -879,15 +879,15 @@ export const COPIONE_IMPOSTAZIONI = `
       });
       disegnaSemaforo();
       if (document.getElementById("foglio")) apriComeSiamoMessi();
-    } catch (e) { alert(e.message); }
+    } catch (e) { avvisaDelMale(e); }
   }
 
   async function sbloccaLaPorta() {
     try {
       var esito = await chiama("/pannello/porta", { method: "POST", body: "{}" });
-      if (!esito.ok && esito.errore) alert(esito.errore);
+      if (!esito.ok && esito.errore) avvisa(esito.errore);
       await leggiPannello();
       if (document.getElementById("foglio")) apriComeSiamoMessi();
-    } catch (e) { alert(e.message); }
+    } catch (e) { avvisaDelMale(e); }
   }
 `;

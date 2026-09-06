@@ -12,7 +12,173 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ## Non ancora pubblicato
 
-Niente: la 0.9.3 è appena uscita.
+Niente: la 0.9.4 è appena uscita.
+
+---
+
+## 0.9.4 — Il design, e le cose che decidevano da sole
+
+Due mestieri in una versione: **disegnare** quello che c'era, e **smettere di
+decidere** al posto di chi usa la suite. Sono venuti insieme perché nascono
+dalla stessa serata d'uso, e perché una cosa mal disegnata e una cosa che
+sceglie per te si somigliano: tutte e due tolgono il controllo a chi guarda.
+
+### I comandi del lettore, ridisegnati
+
+> «i pulsanti del play e avanti indietro vanno ridisegnati bene perché sono
+> bruttissimi.»
+
+Aveva ragione, e vale la pena dire **perché** erano brutti, perché è l'errore
+più comune quando si mettono dei tasti sopra a qualcosa che si muove:
+
+1. erano **tre cerchi neri uguali**, e il più importante non si distingueva se
+   non per un arancione che in questa suite non esiste da nessun'altra parte;
+2. i segni erano **glifi tipografici** (⏮ ⏸ ⏭): pesi e allineamenti li decide
+   chi ha disegnato il font — su Android uno, su un browser un altro — e a
+   ventidue pixel su fondo mosso si leggono storti;
+3. **niente li teneva insieme**: tre tondi staccati su un visualizer che
+   lampeggia sono tre macchie, non un gruppo.
+
+Adesso: un **vetro solo** dietro ai tre, segni **disegnati** con lo stesso peso
+e lo stesso centro, e il play più grande degli altri due perché è quello che si
+preme cento volte a sera.
+
+### Gli effetti si scelgono
+
+Il tasto con l'ingranaggio se n'è andato — un ingranaggio vuol dire
+«impostazioni» in ogni app del mondo, e quello cambiava effetto — e con lui la
+freccia in giù, che faceva quello che fa già il trascinamento.
+
+Al loro posto, in basso a sinistra, **un menu con tutti e nove gli effetti**.
+Toccarne uno lo fissa; ritoccarlo lo libera e si torna al cambio automatico. Non
+è un elenco di scelte, è un elenco **con uno stato acceso**: nessuno acceso vuol
+dire «cambia da solo», e la riga in cima lo dice a parole — uno stato che si
+riconosce solo dall'assenza di un bordo colorato non lo riconosce nessuno.
+
+### Il visualizer anche come atmosfera
+
+> «usiamo le animazioni del visualizer sullo sfondo dell'app in tutte le schede,
+> ma molto molto sfocato e trasparente, direi un 22 percento su 100.»
+
+**E non è un ritorno alla 0.9.0**, dove il visualizer era *solo* lo sfondo e a
+schermo intero si guardava una lista della spesa con le onde dietro. Sono due
+cose con due mestieri: nel palco il visualizer **è il contenuto**, nitido; dietro
+alla pagina è **atmosfera** — sfocato a venti pixel, al ventidue per cento,
+sotto a tutto, e nessun evento lo raggiunge.
+
+Non è un secondo motore: è **una copia** del fotogramma, a un quarto della
+risoluzione e un fotogramma su tre. Un secondo giro di shader sarebbe stato il
+doppio del lavoro per la scheda video di un telefono, per un'immagine di cui poi
+non si distingue un pixel.
+
+### La barra delle schede, e l'ingranaggio
+
+Da 58 a **50 pixel**. Otto pixel sembrano niente e sono l'altezza di una riga:
+moltiplicati per la barra che suona che le sta sopra, sono la differenza fra
+vedere l'ultimo riquadro e no.
+
+Con due effetti, e nessuno dei due è decorazione: una **lampada** sopra alla
+scheda accesa, che dice dove sei prima che tu legga la parola; e il segno che si
+**alza** quando la scheda si accende, perché su un telefono lento quel movimento
+di due pixel è l'unica differenza fra «ha risposto» e «ripremo».
+
+E **l'ingranaggio è disegnato**, con lo stesso fondo e lo stesso bordo della
+pastiglia del nome accanto: erano due pesi diversi appaiati sulla stessa riga,
+e si vedeva anche senza sapere perché.
+
+### Sette tocchi sul marchio
+
+Un easter egg: accende il visualizer sullo sfondo **anche senza musica**, e lo
+lascia lì. Dal terzo tocco lo dice — un easter egg che non dà nessun segno
+finché non è finito è un easter egg che nessuno trova.
+
+### I messaggi sono i nostri
+
+> «quel messaggio in quello stile non mi piace, l'ho visto anche per altre cose:
+> curiamo tutto bene.»
+
+`alert()` dentro una WebView disegna la finestra **di Android**: grigia, col
+pulsante di sistema, e — la parte che fa male — **con l'indirizzo della pagina
+in cima**. Nella sua foto si leggeva l'indirizzo del tunnel Cloudflare a
+caratteri grandi, sopra a una frase di sei parole: un dettaglio interno della
+macchina, dato in pasto a chi voleva solo sapere che la copertina era in fila.
+
+E poi blocca tutto finché non si preme OK, che con una musica in corso vuol dire
+una musica che salta. **Quarantadue** posti, tutti sostituiti da un messaggino
+che sale dal basso e se ne va da solo.
+
+### Tre cose che decidevano al posto tuo
+
+**Toccare un contenuto non mette più in coda tutto.** Nella 0.9.0 toccare una
+cosa in galleria metteva in fila **tutto quello che si stava guardando**, com'è
+giusto in una libreria di canzoni. Ma questa galleria non è una libreria di
+canzoni: è tutto quello che il computer ha prodotto, mescolato. Toccare una foto
+voleva dire far partire sessanta cose, e la barra diceva «1 di 60» a chi ne
+voleva una. Adesso la fila **si costruisce**, non si eredita.
+
+**Gli stili si sommano.** Uno stile è poche parole di modo — «neon noir, wet
+asphalt reflections» — e due stili insieme non si contraddicono: fanno una terza
+cosa. Prima toccarne uno cancellava quello di prima, cioè l'unico modo di
+mescolarli era copiarli a mano in un blocco note. Adesso si selezionano, una riga
+in fondo dice quanti sono, e «Usali» li porta in Produzione uniti. I **prompt**
+no, e non è una limitazione: un prompt contiene tutto, e due prompt sommati non
+fanno un prompt più ricco — fanno due canzoni appiccicate.
+
+**Ogni generazione è una richiesta.** Nella 0.9.3 la fila aveva imparato ad
+aspettare più file per una richiesta sola. Tecnicamente funzionava, e restava il
+difetto di fondo: una richiesta è **l'unità con cui questa suite conta tutto**.
+Chi decide accetta *una richiesta*; i tetti contano *richieste*; la notifica dice
+«il tuo lavoro è pronto», al singolare; e fermarne una fermava tutte e quattro
+le canzoni. Quindi «due canzoni» non erano un lavoro che produce due cose: erano
+**due lavori**.
+
+### I permessi non si chiedono più all'avvio
+
+> «l'app all'avvio mostra il fatto delle autorizzazioni: non deve farlo
+> all'avvio, ma ci deve essere una sezione permessi in impostazioni.»
+
+Il difetto di partenza era vero — i permessi sparsi in quattro posti, nessuno li
+dava tutti — ma la cura della 0.9.1 era peggio: **la prima cosa che l'app faceva
+era chiedere**. Prima di mostrare cosa sa fare, prima che uno avesse un motivo
+per dire di sì. Un foglio di richieste all'avvio non è una spiegazione, è un
+pedaggio: si preme quello che fa sparire il foglio, che di solito è «no».
+
+Restano in un posto solo — che era la metà giusta di quella correzione — e si
+aprono quando uno li cerca.
+
+### Il resto, misurato e non guardato
+
+- **Le info del brano si scorrono** invece di abbassare il media. Il conflitto
+  era vero e inevitabile: il palco ascolta il trascinamento verticale per
+  chiudersi, e un pannello che scorre vuole lo stesso gesto nello stesso posto.
+  Vince il pannello, perché è quello che stai guardando quando lo apri.
+- **Il tasto in basso a destra si chiama «Mostra info»**: tre linee da sole
+  volevano dire «menu» a chiunque.
+- **I filtri stanno su una riga sola** e scorrono di lato: andare a capo, per una
+  fila di filtri, è la scelta peggiore — la riga sotto sembra un'altra cosa.
+- **Lo spazio in fondo vale per tutte le schede**, ed è scritto `main > section`
+  invece di un elenco di quattro id. Un elenco di id è una lista che invecchia
+  ogni volta che si aggiunge una scheda: Stili e Fila erano rimaste fuori.
+- **`.piano` erano due cose diverse** — un tasto quieto e il riquadro del piano
+  di lavoro — e si pestavano i piedi: il tasto «Gestione stili» si prendeva il
+  bordo viola e il padding del riquadro, e veniva alto 51 dove tutti gli altri
+  stanno a 48.
+- **`min-height` batteva `height`**, e l'ingranaggio veniva 48 accanto a una
+  pastiglia di 38. Trovato misurando la pagina vera, che è l'unico modo.
+
+Dopo: su tutte e cinque le schede, **nessun tasto disallineato** rispetto ai
+suoi vicini di riga.
+
+### ⚠ Cosa resta da fare
+
+- **Il testo delle canzoni vecchie non si vede** nelle info: nella foto «IL
+  TESTO» diceva «Madama Blu», cioè il titolo. Quel brano è stato generato prima
+  che la 0.9.1 cominciasse a salvare i campi, quindi il testo non c'è proprio.
+  **Da riguardare su un brano nuovo**: se succede anche lì, è un difetto.
+- **AudioBloom e CosmicDust** fuori dal visualizer della console.
+- **I video da 30, 60 e 120 secondi**: quarta versione che restano scritti e mai
+  passati per una scheda video.
+- **Le copertine col titolo** non sono mai passate per FLUX vero.
 
 ---
 

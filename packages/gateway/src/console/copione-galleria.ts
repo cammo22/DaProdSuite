@@ -342,7 +342,7 @@ export const COPIONE_GALLERIA = `
       });
       await leggiGalleria();
     } catch (e) {
-      alert(e.message);
+      avvisaDelMale(e);
     }
   }
 
@@ -396,10 +396,10 @@ export const COPIONE_GALLERIA = `
           body: JSON.stringify({ prompt: casella.value.trim() }),
         });
         chiudiFoglio();
-        alert("La copertina è in fila. Compare qui appena è pronta.");
+        avvisa("La copertina è in fila. Compare qui appena è pronta.");
       } catch (e) {
         vai.disabled = false;
-        alert(e.message);
+        avvisaDelMale(e);
       }
     });
     fila.append(vai);
@@ -434,7 +434,7 @@ export const COPIONE_GALLERIA = `
       });
       await leggiGalleria();
     } catch (e) {
-      alert(e.message);
+      avvisaDelMale(e);
       await leggiGalleria();
     }
   }
@@ -444,7 +444,7 @@ export const COPIONE_GALLERIA = `
       await chiama("/libreria/" + encodeURIComponent(v.id), { method: "DELETE" });
       await leggiGalleria();
     } catch (e) {
-      alert(e.message);
+      avvisaDelMale(e);
     }
   }
 
@@ -522,7 +522,7 @@ export const COPIONE_GALLERIA = `
       try { await leggiStili(); } catch (e) { /* al giro dopo */ }
     } catch (e) {
       tasto.disabled = false;
-      alert(e.message);
+      avvisaDelMale(e);
     }
   }
 
@@ -952,7 +952,7 @@ export const COPIONE_GALLERIA = `
           pubblica.className = "mini" + (v.pubblicato ? " acceso" : "");
           pubblica.textContent = v.pubblicato ? "\\u2713 in bacheca" : "\\u263C Metti in DaProd";
           await leggiGalleria();
-        } catch (e) { alert(e.message); }
+        } catch (e) { avvisaDelMale(e); }
         pubblica.disabled = false;
       });
 
@@ -965,7 +965,7 @@ export const COPIONE_GALLERIA = `
           await chiama("/libreria/" + encodeURIComponent(v.id), { method: "DELETE" });
           fuori.remove();
           await leggiGalleria();
-        } catch (e) { alert(e.message); }
+        } catch (e) { avvisaDelMale(e); }
       });
       attrezzi.append(pubblica, butta);
     }
@@ -1006,7 +1006,7 @@ export const COPIONE_GALLERIA = `
       tasto.textContent = "\\u2713 salvato";
     } catch (e) {
       if (tasto) tasto.textContent = prima;
-      alert(e.message);
+      avvisaDelMale(e);
     }
     if (tasto) tasto.disabled = false;
   }
@@ -1194,7 +1194,7 @@ export const COPIONE_GALLERIA = `
     var risposta = await fetch("/invii/" + encodeURIComponent(i.id) + "/file", {
       headers: { Authorization: "Bearer " + token },
     });
-    if (!risposta.ok) { alert("Non riesco a scaricarlo."); return; }
+    if (!risposta.ok) { avvisa("Non riesco a scaricarlo."); return; }
     portaViaIlFile(await risposta.blob(), i.nome);
   }
 
@@ -1251,7 +1251,7 @@ export const COPIONE_GALLERIA = `
       try {
         await chiama("/invii/" + encodeURIComponent(i.id), { method: "DELETE" });
         await leggiGalleria();
-      } catch (e) { alert(e.message); }
+      } catch (e) { avvisaDelMale(e); }
     });
     attrezzi.append(tieni, butta);
     sotto.append(attrezzi);

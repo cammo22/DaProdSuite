@@ -215,7 +215,7 @@ export const COPIONE_RETE = `
       await leggiPannello();
       disegnaDispositivi();
     } catch (e) {
-      alert(e.message);
+      avvisaDelMale(e);
     }
   }
 

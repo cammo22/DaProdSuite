@@ -146,6 +146,8 @@ export const COPIONE_VISUAL =
     var daQuandoCambio = 0;
     var aspettoIlColpo = false;
     var aspettatoDa = 0;
+    /** L'effetto fissato a mano: finche' c'e', non si cambia da soli. */
+    var fissato = "";
 
     var largo = 0;
     var alto = 0;
@@ -795,6 +797,35 @@ export const COPIONE_VISUAL =
       return scelta[Math.floor(Math.random() * scelta.length)];
     }
 
+    /**
+     * Fissa un effetto, o torna al cambio automatico.
+     *
+     * Chiesto il 6 settembre 2026: «se ne clicchiamo uno si fissa su
+     * quell'effetto; se ci riclicco torna deselezionato e torna in cambio
+     * automatico». Chiave vuota vuol dire: ricomincia a cambiare da solo.
+     */
+    function fissa(chiave) {
+      fissato = chiave || "";
+      if (fissato && (!attivo || attivo.m.chiave !== fissato)) {
+        var m = null;
+        for (var i = 0; i < PRESET_VISUAL.length; i++) {
+          if (PRESET_VISUAL[i].chiave === fissato) m = PRESET_VISUAL[i];
+        }
+        if (m) cambia(m);
+      }
+      // Il tempo riparte da adesso: chi sfissa non deve vedere un cambio
+      // subito dopo solo perche' i quarantacinque secondi erano gia' passati.
+      daQuandoCambio = 0;
+      aspettoIlColpo = false;
+    }
+
+    /** L'elenco per il menu: chiave, nome, e chi e' fissato. */
+    function elenco() {
+      return PRESET_VISUAL.map(function (m) {
+        return { chiave: m.chiave, nome: m.nome, fisso: m.chiave === fissato };
+      });
+    }
+
     /** Comincia il passaggio a un altro preset, con una transizione a caso. */
     function cambia(quale) {
       if (!gl || entrante) return;
@@ -886,7 +917,9 @@ export const COPIONE_VISUAL =
          * calmo, un finale — si cambia lo stesso.
          */
         daQuandoCambio += dt;
-        if (!aspettoIlColpo && daQuandoCambio >= DURATA_PRESET) {
+        // Con un effetto fissato non si cambia: e' tutto il senso di fissarlo.
+        if (fissato) daQuandoCambio = 0;
+        if (!fissato && !aspettoIlColpo && daQuandoCambio >= DURATA_PRESET) {
           aspettoIlColpo = true;
           aspettatoDa = 0;
         }
@@ -943,7 +976,36 @@ export const COPIONE_VISUAL =
       return attivo ? attivo.m.nome : "";
     }
 
+    /**
+     * **Lo stesso fotogramma, anche dietro alla pagina.**
+     *
+     * Chiesto il 6 settembre 2026: «usiamo le animazioni del visualizer sullo
+     * sfondo dell'app in tutte le schede, ma molto molto sfocato e trasparente».
+     *
+     * ⚠ **Si copia, non si ridisegna.** La tentazione era un secondo contesto
+     * WebGL con un secondo giro di shader: sarebbe stato il doppio del lavoro
+     * per la scheda video, su un telefono, per un'immagine che poi viene
+     * sfocata a venti pixel e messa al ventidue per cento — cioe' per
+     * un'immagine di cui non si distingue un pixel.
+     *
+     * «drawImage» da un canvas all'altro invece e' una copia sola, e a un
+     * quarto della risoluzione: quello che si vede dopo il blur e' identico.
+     */
+    function copiaSulloSfondo() {
+      var dietro = document.getElementById("sfondo-visual");
+      if (!dietro || !tela || !largo || !alto) return;
+      var q = dietro.getContext("2d");
+      if (!q) return;
+      var w = Math.max(2, largo >> 2);
+      var h = Math.max(2, alto >> 2);
+      if (dietro.width !== w || dietro.height !== h) { dietro.width = w; dietro.height = h; }
+      try { q.drawImage(tela, 0, 0, w, h); } catch (e) { /* la tela non e' pronta */ }
+    }
+
     return {
+      copiaSulloSfondo: copiaSulloSfondo,
+      fissa: fissa,
+      elenco: elenco,
       accendi: accendi,
       collega: collega,
       ricomincia: ricomincia,

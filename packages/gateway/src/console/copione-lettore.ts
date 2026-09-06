@@ -89,6 +89,14 @@ export const COPIONE_LETTORE = `
   /** Vero quando il pannello con le info della canzone è aperto. */
   var infoAperte = false;
 
+  /**
+   * L'effetto fissato a mano, o vuoto quando cambia da solo.
+   *
+   * Chiesto il 6 settembre 2026: «se clicchiamo un effetto si fissa su quello;
+   * se ci riclicco torna deselezionato e torna in cambio automatico».
+   */
+  var effettoFisso = "";
+
   /* ------------------------------------------------------------ metterci roba */
 
   /**
@@ -112,22 +120,32 @@ export const COPIONE_LETTORE = `
   }
 
   /**
-   * Mette in fila tutto quello che si sta guardando, partendo da una.
+   * ⚠ **Si tocca una cosa, e parte quella. Una sola.**
    *
-   * È il gesto che rende la galleria un lettore: si tocca una cosa e da lì in
-   * poi vanno tutte, come in qualunque app di musica. Le cose che non si
-   * possono suonare — un file di testo, un progetto — restano fuori.
+   * Chiesto il 6 settembre 2026: «il player di default mette in coda tutto,
+   * questo non va bene: se clicco un media deve riprodurre solo quello, una
+   * volta, e quando finisce si ferma. Se nel frattempo aggiungo qualcosa alla
+   * coda, allora si forma la coda».
+   *
+   * ## Perché prima faceva l'opposto, e perché aveva torto
+   *
+   * Nella 0.9.0 toccare una cosa in galleria metteva in fila **tutto quello che
+   * si stava guardando**, partendo da lì. Era copiato da come funzionano le app
+   * di musica, e per una libreria di canzoni è la scelta giusta.
+   *
+   * Ma questa galleria non è una libreria di canzoni: è **tutto quello che il
+   * computer ha prodotto**, mescolato. Toccare una foto per guardarla voleva
+   * dire far partire sessanta cose, e la barra in fondo diceva «1 di 60» a chi
+   * ne voleva una. Una fila che si forma da sola non è una comodità: è una
+   * decisione presa al posto tuo, e su sessanta elementi è una decisione grossa.
+   *
+   * Adesso la fila **si costruisce**, non si eredita: si tocca «metti in fila»
+   * su quello che si vuole sentire dopo, e finché non lo si fa la fila è lunga
+   * uno. «elenco» resta nella firma perché chi chiama continua a passarlo — e
+   * il giorno che servisse un «suona tutto» ha già quello che gli serve.
    */
   function accodaTutto(elenco, daQui) {
-    var buoni = elenco.filter(function (x) {
-      return x.tipo === "audio" || x.tipo === "video" || x.tipo === "immagine";
-    });
-    var partenza = 0;
-    for (var i = 0; i < buoni.length; i++) {
-      if (buoni[i].id === daQui.id) { partenza = i; break; }
-    }
-    coda = buoni;
-    suonaIlNumero(partenza);
+    suonaSubito(daQui);
   }
 
   /* ------------------------------------------------------------- suonare */
@@ -301,8 +319,29 @@ export const COPIONE_LETTORE = `
       (inCoda + 1) + " di " + coda.length +
       (v.chiNome ? " \\u00b7 " + v.chiNome : "");
     $("lettore-play").textContent = (suonante && !suonante.paused) ? "\\u23F8" : "\\u25B6";
-    var pl = $("palco-play");
-    if (pl) pl.textContent = (suonante && !suonante.paused) ? "\\u23F8" : "\\u25B6";
+    /**
+     * ⚠ **Il play del palco e' disegnato, non scritto.**
+     *
+     * Chiesto il 6 settembre 2026: «i pulsanti del play e avanti indietro vanno
+     * ridisegnati bene perche' sono bruttissimi». I glifi «⏸» e «▶» hanno pesi
+     * e centri decisi da chi ha disegnato il font — su Android uno, su un
+     * browser un altro — e a ventisei pixel sopra a un visualizer che lampeggia
+     * si leggevano storti. Due rettangoli e un triangolo disegnati da noi hanno
+     * lo stesso peso ovunque.
+     */
+    disegnaIlPlay(!!(suonante && !suonante.paused));
+  }
+
+  /** Pausa o play, disegnati. Due forme, e un posto solo che le decide. */
+  function disegnaIlPlay(staSuonando) {
+    var segno = $("palco-play-segno");
+    if (!segno) return;
+    segno.innerHTML = staSuonando
+      ? '<rect x="7" y="5" width="3.6" height="14" rx="1.4"></rect>' +
+        '<rect x="13.4" y="5" width="3.6" height="14" rx="1.4"></rect>'
+      : '<path d="M8.4 4.9a1 1 0 0 1 1.52-.85l8.1 6.05a1.2 1.2 0 0 1 0 1.92l-8.1 6.05a1 1 0 0 1-1.52-.85V4.9z"></path>';
+    var tasto = $("palco-play");
+    if (tasto) tasto.title = staSuonando ? "Pausa" : "Riprendi";
   }
 
   /* -------------------------------------------------------------- il palco */
@@ -621,17 +660,92 @@ export const COPIONE_LETTORE = `
     var tela = $("visual");
     if (!tela) return;
     if (!Visual.accendi(tela)) return;
+    var dietro = $("sfondo-visual");
+    if (dietro) dietro.style.opacity = "";
     disegnoVivo = requestAnimationFrame(unGiro);
   }
 
+  /**
+   * Un fotogramma: il palco, e poi la copia sullo sfondo.
+   *
+   * ⚠ **Lo sfondo si aggiorna un fotogramma su tre.** Sedici volte al secondo
+   * sono piu' che sufficienti per una macchia sfocata al ventidue per cento, e
+   * la copia costa: farla sessanta volte al secondo su un telefono si sente
+   * mentre si scorre una galleria.
+   */
   function unGiro() {
     disegnoVivo = requestAnimationFrame(unGiro);
     var tela = $("visual");
     if (!tela || tela.hidden || !palcoAperto) return;
     Visual.disegna(suonante);
+    fotogramma++;
+    if (fotogramma % 3 === 0) Visual.copiaSulloSfondo();
+  }
+
+  var fotogramma = 0;
+
+  /**
+   * **Il menu degli effetti.** Nuovo nella 0.9.4.
+   *
+   * Chiesto il 6 settembre 2026: «si apre un piccolo menu con tutti gli
+   * effetti; se ne clicchiamo uno si fissa su quell'effetto, se ci riclicco
+   * torna deselezionato e torna in cambio automatico».
+   *
+   * Non e' un elenco di scelte: e' un elenco **con uno stato acceso**. Nessuno
+   * acceso vuol dire «cambia da solo», che e' come parte — e la riga in cima lo
+   * dice a parole, perche' uno stato che si riconosce solo dall'assenza di un
+   * bordo colorato non lo riconosce nessuno.
+   */
+  function giraGliEffetti() {
+    var menu = $("palco-effetti-menu");
+    if (!menu) return;
+    var tasto = $("palco-effetti");
+    if (!menu.hidden) {
+      menu.hidden = true;
+      if (tasto) tasto.classList.remove("acceso");
+      return;
+    }
+    disegnaGliEffetti();
+    menu.hidden = false;
+    if (tasto) tasto.classList.add("acceso");
+  }
+
+  function disegnaGliEffetti() {
+    var menu = $("palco-effetti-menu");
+    if (!menu) return;
+    menu.innerHTML = "";
+    var quali = Visual.elenco();
+    var uno = null;
+    for (var i = 0; i < quali.length; i++) { if (quali[i].fisso) uno = quali[i]; }
+
+    var come = document.createElement("div");
+    come.className = "comeVa";
+    come.textContent = uno
+      ? "Fisso su \u00ab" + uno.nome + "\u00bb. Toccalo di nuovo per tornare al cambio automatico."
+      : "Cambiano da soli. Toccane uno per fissarlo.";
+    menu.append(come);
+
+    for (var j = 0; j < quali.length; j++) {
+      var e = quali[j];
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = e.fisso ? "fisso" : "";
+      b.textContent = e.nome;
+      b.addEventListener("click", (function (quale, eraFisso) {
+        return function () {
+          Visual.fissa(eraFisso ? "" : quale);
+          disegnaGliEffetti();
+        };
+      })(e.chiave, e.fisso));
+      menu.append(b);
+    }
   }
 
   function spegniIlVisualizer() {
     if (disegnoVivo) { cancelAnimationFrame(disegnoVivo); disegnoVivo = null; }
+    // Lo sfondo vive con la musica: fermo il disegno, si dissolve invece di
+    // restare congelato su un fotogramma che non vuol dire piu' niente.
+    var dietro = $("sfondo-visual");
+    if (dietro) dietro.style.opacity = "0";
   }
 `;

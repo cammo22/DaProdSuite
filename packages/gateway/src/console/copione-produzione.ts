@@ -650,7 +650,7 @@ export const COPIONE_PRODUZIONE = `
       await chiama("/preset/" + encodeURIComponent(x.id), { method: "DELETE" });
       await leggiPreset();
       if (scelta) scegli(scelta);
-    } catch (e) { alert(e.message); }
+    } catch (e) { avvisaDelMale(e); }
   }
 
   /** Il tasto che fa riscrivere al modello quello che c'è nella casella. */
@@ -737,7 +737,7 @@ export const COPIONE_PRODUZIONE = `
         if (c.dataset.principale) { testo = c.value.trim(); continue; }
         if (c.value.trim()) campi[c.dataset.campo] = c.value.trim();
       }
-      if (!testo) { alert("Scrivi prima cosa vuoi: \\u00e8 quello che si salva."); return; }
+      if (!testo) { avvisa("Scrivi prima cosa vuoi: \\u00e8 quello che si salva."); return; }
       try {
         await chiama("/preset", {
           method: "POST",
@@ -746,7 +746,7 @@ export const COPIONE_PRODUZIONE = `
         nome.value = "";
         await leggiPreset();
         if (scelta) scegli(scelta);
-      } catch (e) { alert(e.message); }
+      } catch (e) { avvisaDelMale(e); }
     });
 
     fila.append(nome, b);
@@ -785,6 +785,15 @@ export const COPIONE_PRODUZIONE = `
       if (esito.esito === "in-coda") {
         chiudiModulo();
         await leggiCoda();
+        /**
+         * ⚠ **Se ne sono nate piu' d'una, si dice.** Dalla 0.9.4 chiedere
+         * quattro canzoni vuol dire **quattro richieste**, non una che ne
+         * consegna quattro — vedi «eseguiAzione». Chi ha premuto una volta si
+         * ritrova quattro righe in fila, e senza una parola sembra un errore.
+         */
+        if (esito.quante > 1) {
+          avvisa(esito.quante + " lavori in fila: uno per ognuna.", "bene");
+        }
         vaiA("riepilogo");
       } else {
         mostraRisposta(esito.risultato);
@@ -1140,7 +1149,7 @@ export const COPIONE_PRODUZIONE = `
     si.textContent = "S\\u00ec, fallo";
     si.addEventListener("click", async function () {
       var quali = caselle.filter(function (c) { return c.checked; }).map(function (c) { return Number(c.dataset.indice); });
-      if (!quali.length) { alert("Spunta almeno una cosa."); return; }
+      if (!quali.length) { avvisa("Spunta almeno una cosa."); return; }
       si.disabled = true;
       si.textContent = "metto in fila\\u2026";
       try {
@@ -1156,7 +1165,7 @@ export const COPIONE_PRODUZIONE = `
         $("sotto-riepilogo").textContent =
           quanti === 1 ? "Una cosa \\u00e8 andata in fila." : quanti + " cose sono andate in fila.";
       } catch (e) {
-        alert(e.message);
+        avvisaDelMale(e);
         si.disabled = false;
         si.textContent = "S\\u00ec, fallo";
       }
@@ -1367,7 +1376,7 @@ export const COPIONE_PRODUZIONE = `
           await chiama("/macchina/ferma", { method: "POST", body: "{}" });
           await leggiMacchina();
           await leggiCoda();
-        } catch (e) { alert(e.message); ferma.disabled = false; }
+        } catch (e) { avvisaDelMale(e); ferma.disabled = false; }
       });
       box.append(ferma);
     }
@@ -1434,7 +1443,7 @@ export const COPIONE_PRODUZIONE = `
                 await chiama("/macchina/fila/" + encodeURIComponent(quale), { method: "DELETE" });
                 await leggiMacchina();
                 await leggiCoda();
-              } catch (e) { alert(e.message); tasto.disabled = false; }
+              } catch (e) { avvisaDelMale(e); tasto.disabled = false; }
             };
           })(f.id, via));
           li.append(via);
@@ -1493,7 +1502,7 @@ export const COPIONE_PRODUZIONE = `
           await leggiMacchina();
           $("sotto-riepilogo").textContent =
             (esito.quante || ferme.length) + " lavori sono andati in fila, in ordine di arrivo.";
-        } catch (e) { alert(e.message); }
+        } catch (e) { avvisaDelMale(e); }
         b.disabled = false;
         b.textContent = "\\u25B6 Falle partire tutte";
       });
