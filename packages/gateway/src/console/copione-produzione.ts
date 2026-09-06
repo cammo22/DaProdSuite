@@ -26,11 +26,11 @@ export const COPIONE_PRODUZIONE = `
    *
    * La chiave è l'id dell'azione nel catalogo: se un giorno il catalogo ne
    * aggiunge una, quella compare lo stesso — con il suo titolo e il suo colore
-   * di ripiego — perché l'elenco vero resta \`/azioni\`, non questo.
+   * di ripiego — perché l'elenco vero resta \«/azioni\», non questo.
    */
   var PRODUZIONI = {
-    "genera.immagine": { nome: "Produzione Immagini", sotto: "una foto da una descrizione", tinta: "viola", segno: "\\u25C9" },
-    "genera.video": { nome: "Produzione Video", sotto: "una clip, col suono", tinta: "rosa", segno: "\\u25B6" },
+    "genera.immagine": { dentroTitolo: "Da una descrizione", dentroSotto: " \u2014 la scrivi e nasce dal niente", nome: "Produzione Immagini", sotto: "una foto da una descrizione", tinta: "viola", segno: "\\u25C9" },
+    "genera.video": { dentroTitolo: "Una clip", dentroSotto: " \u2014 qualche minuto", nome: "Produzione Video", sotto: "una clip, col suono", tinta: "rosa", segno: "\\u25B6" },
     /**
      * ⚠ **La storia non ha piu' una tessera sua.** Cambiato nella 1.0.0.
      *
@@ -51,7 +51,19 @@ export const COPIONE_PRODUZIONE = `
      * L'azione resta nel catalogo e resta separata: e' un'altra cosa per il
      * computer, l'agente MCP la vede come sempre. Cambia solo dove si trova.
      */
-    "genera.storia": { nome: "Storia", sotto: "30 secondi, un minuto, due", tinta: "rosa", segno: "\\u29C9", dentroA: "genera.video" },
+    "genera.storia": { dentroTitolo: "Una storia", dentroSotto: "30 secondi, un minuto, due \u2014 pezzi incatenati, e ci mette mezz\u0027ora", nome: "Storia", sotto: "30 secondi, un minuto, due", tinta: "rosa", segno: "\\u29C9", dentroA: "genera.video" },
+    /**
+     * ⚠ **La modifica sta dentro la produzione immagini.** Nuova nella 1.0.2.
+     *
+     * Chiesto il 6 settembre 2026: «l'utente clicca su produzione foto e puo'
+     * scegliere tra generazione da testo e modifica da foto».
+     *
+     * E' il meccanismo della 1.0.0 per le storie dentro ai video, e qui vale
+     * per la stessa ragione: chi vuole cambiare una foto cerca «Produzione
+     * Immagini», non una tessera che si chiama «Modifica». Le due strade si
+     * scelgono **dopo**, con scritto accanto in cosa sono diverse.
+     */
+    "modifica.immagine": { dentroTitolo: "Da una foto che hai", dentroSotto: "la carichi e dici cosa cambiare \u2014 col dito, o a parole", nome: "Modifica", sotto: "parti da una foto", tinta: "verde", segno: "\u270E", dentroA: "genera.immagine" },
     "genera.brano": { nome: "Produzione Musica", sotto: "una canzone, anche cantata", tinta: "ciano", segno: "\\u266B" },
     "genera.voce": { nome: "Produzione Audio", sotto: "un testo letto ad alta voce", tinta: "ambra", segno: "\\u275E" },
   };
@@ -132,8 +144,8 @@ export const COPIONE_PRODUZIONE = `
       voceFoglio(
         carta,
         come.segno || scheda.segno,
-        "Una clip",
-        (come.sotto || scheda.che) + " \u2014 qualche minuto",
+        come.dentroTitolo || "Una clip",
+        (come.sotto || scheda.che) + (come.dentroSotto || " \u2014 qualche minuto"),
         function () { chiudiFoglio(); vaiA("produzione"); scegli(a); },
       );
       for (var i = 0; i < dentro.length; i++) {
@@ -142,8 +154,8 @@ export const COPIONE_PRODUZIONE = `
         voceFoglio(
           carta,
           suo.segno || "\u29C9",
-          "Una storia",
-          "30 secondi, un minuto, due \u2014 pezzi incatenati, e ci mette mezz\u0027ora",
+          suo.dentroTitolo || suo.nome || "L\u0027altra strada",
+          suo.dentroSotto || suo.sotto || "",
           (function (quale) {
             return function () { chiudiFoglio(); vaiA("produzione"); scegli(quale); };
           })(altra),
@@ -320,7 +332,29 @@ export const COPIONE_PRODUZIONE = `
       var controllo;
       var accanto = null;
 
-      if (campo.tipo === "scelta") {
+      if (campo.tipo === "immagine") {
+        /**
+         * ⚠ **La maschera non ha un controllo suo.**
+         *
+         * E' un campo dell'azione — ci viaggia dentro un id come per la foto —
+         * ma nessuno la sceglie: la dipinge il dito sopra alla foto. Quindi qui
+         * si mette solo la casellina nascosta che porta il valore, e a
+         * riempirla ci pensa il pennello.
+         *
+         * L'etichetta appena scritta sopra va tolta: una riga che dice «La zona
+         * dipinta» sopra al niente fa cercare un controllo che non c'e'.
+         */
+        if (campo.nome === "maschera") {
+          etichetta.remove();
+          controllo = document.createElement("input");
+          controllo.type = "hidden";
+          controllo.id = "campo-" + campo.nome;
+          controllo.dataset.campo = campo.nome;
+          modulo.append(controllo);
+          continue;
+        }
+        controllo = riquadroDellaFoto(campo, modulo);
+      } else if (campo.tipo === "scelta") {
         /**
          * **Pastiglie, non un menu a tendina.**
          *
@@ -819,11 +853,376 @@ export const COPIONE_PRODUZIONE = `
     scelta = null;
     $("modulo").hidden = true;
     $("modulo").innerHTML = "";
+    // Il modulo se n'e' andato: quello che aveva da preparare non esiste piu'.
+    // Senza questa riga, il pennello di un modulo chiuso resterebbe iscritto e
+    // il prossimo invio andrebbe a cercare una tela che non c'e'.
+    primaDiMandare = [];
     $("fila-manda").hidden = true;
+  }
+
+  /* --------------------------------------------- la foto da modificare */
+
+  /**
+   * ⚠ **Le cose da fare prima di mandare la richiesta.**
+   *
+   * Ce n'e' una sola per ora — caricare la maschera dipinta — e sta in un
+   * elenco invece che dentro «manda» per una ragione: «manda» non deve sapere
+   * che esiste un pennello. Un campo che ha bisogno di preparare qualcosa si
+   * iscrive qui, e chi manda aspetta tutti senza chiedersi chi sono.
+   */
+  var primaDiMandare = [];
+
+  /**
+   * ⚠ **Quanto grande arriva al motore.** Chiesto il 6 settembre 2026:
+   * «facciamo attenzione alle risoluzioni massime di input e output; in caso di
+   * input troppo grande in app facciamo un rapido aggiusto e possiamo
+   * procedere».
+   *
+   * Mille e ventiquattro sul lato lungo, e non e' un numero tondo a caso: e' la
+   * misura su cui questi modelli sono stati addestrati e quella che entra in
+   * una scheda da 8 GB. Una foto fatta col telefono ne fa quattromila: mandarla
+   * intera vorrebbe dire aspettare il caricamento di dodici mega **e poi**
+   * vedersela rimpicciolire dal motore.
+   *
+   * E si arrotonda a multipli di 32 perche' e' quello che vogliono tutti: FLUX
+   * e Anima lavorano a multipli di 8 o 16, e LLaDA, modificando, pretende 32.
+   * Prendere il piu' esigente vuol dire non doversene ricordare mai piu'.
+   */
+  var LATO_MASSIMO = 1024;
+  var PASSO = 32;
+
+  function misuraGiusta(l, a) {
+    var scala = Math.min(1, LATO_MASSIMO / Math.max(l, a));
+    var largo = Math.max(PASSO, Math.round((l * scala) / PASSO) * PASSO);
+    var alto = Math.max(PASSO, Math.round((a * scala) / PASSO) * PASSO);
+    return { largo: largo, alto: alto };
+  }
+
+  /**
+   * Rimpicciolisce se serve, e torna la tela con dentro la foto.
+   *
+   * Torna **sempre** una tela, anche quando la foto era gia' piccola: cosi' chi
+   * la usa non ha due strade da tenere in piedi, e il pennello disegna sempre
+   * sulle stesse coordinate.
+   */
+  function suUnaTela(immagine) {
+    var m = misuraGiusta(immagine.naturalWidth, immagine.naturalHeight);
+    var tela = document.createElement("canvas");
+    tela.width = m.largo;
+    tela.height = m.alto;
+    tela.getContext("2d").drawImage(immagine, 0, 0, m.largo, m.alto);
+    return tela;
+  }
+
+  function caricaImmagine(sorgente) {
+    return new Promise(function (risolvi, rifiuta) {
+      var im = new Image();
+      im.onload = function () { risolvi(im); };
+      im.onerror = function () { rifiuta(new Error("Non riesco ad aprire questa immagine.")); };
+      im.src = sorgente;
+    });
+  }
+
+  function telaInBlob(tela) {
+    return new Promise(function (risolvi) {
+      tela.toBlob(function (b) { risolvi(b); }, "image/png");
+    });
+  }
+
+  /** Manda un PNG al computer e torna l'id con cui lo ritrovera'. */
+  async function caricaSulComputer(blob, che) {
+    var esito = await chiama("/sorgente?che=" + che, {
+      method: "POST",
+      body: blob,
+      tipo: "image/png",
+    });
+    return esito.id;
+  }
+
+  /**
+   * Il riquadro della foto: sceglila, guardala, dipingici sopra.
+   *
+   * Torna la casellina nascosta che porta l'id, perche' e' quello che «manda»
+   * si aspetta di trovare. Tutto il resto — l'anteprima, i tasti, la tela del
+   * pennello — sta nel riquadro sopra.
+   */
+  function riquadroDellaFoto(campo, modulo) {
+    var valore = document.createElement("input");
+    valore.type = "hidden";
+
+    var scatola = document.createElement("div");
+    scatola.className = "fotoDaModificare";
+
+    var vuoto = document.createElement("p");
+    vuoto.className = "nota";
+    vuoto.textContent = "Scegli una foto: da quelle che hai fatto, o dal telefono.";
+    scatola.append(vuoto);
+
+    // La foto sotto e il disegno sopra, sovrapposti. Due tele e non una perche'
+    // il disegno si deve poter cancellare senza ricaricare la foto.
+    var pila = document.createElement("div");
+    pila.className = "pilaFoto";
+    pila.hidden = true;
+    var sotto = document.createElement("canvas");
+    var sopra = document.createElement("canvas");
+    sopra.className = "ilPennello";
+    pila.append(sotto, sopra);
+    scatola.append(pila);
+
+    var tasti = document.createElement("div");
+    tasti.className = "fila";
+    var dalleMie = document.createElement("button");
+    dalleMie.type = "button";
+    dalleMie.className = "mini";
+    dalleMie.textContent = "▦ Dalle tue cose";
+    var dalTelefono = document.createElement("button");
+    dalTelefono.type = "button";
+    dalTelefono.className = "mini";
+    dalTelefono.textContent = "↑ Dal telefono";
+    var pulisci = document.createElement("button");
+    pulisci.type = "button";
+    pulisci.className = "mini";
+    pulisci.textContent = "↺ Cancella il disegno";
+    pulisci.hidden = true;
+    var scegliFile = document.createElement("input");
+    scegliFile.type = "file";
+    /*
+     * ⚠ **Spezzato in due, e non e' un vezzo.**
+     *
+     * Scritto tutto attaccato, dentro questa stringa ci sono i due caratteri
+     * che **aprono un commento**. Il file lo compila lo stesso — per
+     * JavaScript e' una stringa e basta — ma qualunque cosa legga il copione
+     * da fuori senza eseguirlo si convince che da qui comincia un commento, e
+     * da li' in poi legge tutto sfasato.
+     *
+     * Non e' teoria: le prove della console fanno esattamente quello, e la
+     * prima volta hanno accusato una riga a quarantamila caratteri di distanza.
+     */
+    scegliFile.accept = "image/" + "*";
+    scegliFile.hidden = true;
+    tasti.append(dalleMie, dalTelefono, pulisci, scegliFile);
+    scatola.append(tasti);
+
+    var dice = document.createElement("div");
+    dice.className = "nota";
+    scatola.append(dice);
+
+    modulo.append(scatola);
+
+    var telaFoto = null;
+
+    /* ------------------------------------------------ mettere la foto */
+
+    async function metti(sorgente, comeSiChiama) {
+      dice.textContent = "La preparo…";
+      try {
+        var im = await caricaImmagine(sorgente);
+        var quantera = im.naturalWidth + "×" + im.naturalHeight;
+        telaFoto = suUnaTela(im);
+
+        sotto.width = telaFoto.width;
+        sotto.height = telaFoto.height;
+        sotto.getContext("2d").drawImage(telaFoto, 0, 0);
+        sopra.width = telaFoto.width;
+        sopra.height = telaFoto.height;
+        sopra.getContext("2d").clearRect(0, 0, sopra.width, sopra.height);
+
+        pila.hidden = false;
+        vuoto.hidden = true;
+        pulisci.hidden = false;
+
+        dice.textContent = "La carico…";
+        var id = await caricaSulComputer(await telaInBlob(telaFoto), "sorgente");
+        valore.value = id;
+
+        var adesso = telaFoto.width + "×" + telaFoto.height;
+        dice.textContent =
+          comeSiChiama +
+          (quantera === adesso
+            ? " · " + adesso
+            : " · era " + quantera + ", l'ho portata a " + adesso) +
+          " · dipingi col dito la zona da cambiare, o non dipingere niente e la cambio tutta.";
+      } catch (e) {
+        dice.textContent = "";
+        avvisa(e.message, "male");
+      }
+    }
+
+    dalTelefono.addEventListener("click", function () { scegliFile.click(); });
+    scegliFile.addEventListener("change", function () {
+      var f = scegliFile.files && scegliFile.files[0];
+      if (!f) return;
+      var lettore = new FileReader();
+      lettore.onload = function () { void metti(lettore.result, f.name); };
+      lettore.readAsDataURL(f);
+      scegliFile.value = "";
+    });
+
+    dalleMie.addEventListener("click", function () { void apriLeMieFoto(metti); });
+
+    /* --------------------------------------------------- il pennello */
+
+    /**
+     * ⚠ **Si dipinge di rosso**, e non e' una scelta di gusto: i grafi leggono
+     * la maschera col nodo «LoadImageMask» sul **canale rosso**. Quello che e'
+     * rosso si rifa'. Vedi «ritoccoAnima» in apps/foto/src/grafi.js.
+     */
+    var disegnando = false;
+    var haDipinto = false;
+
+    function dove(ev) {
+      var r = sopra.getBoundingClientRect();
+      return {
+        x: ((ev.clientX - r.left) / r.width) * sopra.width,
+        y: ((ev.clientY - r.top) / r.height) * sopra.height,
+      };
+    }
+
+    function segna(ev) {
+      var c = sopra.getContext("2d");
+      var q = dove(ev);
+      c.fillStyle = "#ff2d2d";
+      c.beginPath();
+      // Il pennello grosso come un dito, non come un cursore: un raggio in
+      // pixel fissi su una foto piccola dipinge mezza immagine, su una grande
+      // non si vede. Si tiene proporzionato al lato lungo.
+      c.arc(q.x, q.y, Math.max(10, sopra.width / 22), 0, Math.PI * 2);
+      c.fill();
+      haDipinto = true;
+    }
+
+    sopra.addEventListener("pointerdown", function (ev) {
+      disegnando = true;
+      /*
+       * ⚠ **Prendere il dito puo' fallire, e non deve portarsi via la
+       * pennellata.**
+       *
+       * «setPointerCapture» serve a non perdere il dito quando esce dal bordo
+       * della tela, ed e' un di piu': se il dito non c'e' piu' — o e' un tocco
+       * che il browser non riconosce come attivo — solleva. Stando prima di
+       * «segna», una sollevata li' vuol dire **niente dipinto**, e chi dipinge
+       * vede il dito passare e non succedere niente.
+       *
+       * Trovato nel banco, dove i tocchi sono finti e la cattura fallisce
+       * sempre: la prima pennellata contava zero pixel rossi.
+       */
+      try { sopra.setPointerCapture(ev.pointerId); } catch (e) { /* si dipinge lo stesso */ }
+      segna(ev);
+      ev.preventDefault();
+    });
+    sopra.addEventListener("pointermove", function (ev) {
+      if (disegnando) { segna(ev); ev.preventDefault(); }
+    });
+    sopra.addEventListener("pointerup", function () { disegnando = false; });
+    sopra.addEventListener("pointercancel", function () { disegnando = false; });
+
+    pulisci.addEventListener("click", function () {
+      sopra.getContext("2d").clearRect(0, 0, sopra.width, sopra.height);
+      haDipinto = false;
+      avvisa("Disegno cancellato: cambio tutta la foto.");
+    });
+
+    /* ------------------------------- la maschera, appena prima di mandare */
+
+    /**
+     * ⚠ **Niente dipinto vuol dire tutta la foto**, ed e' la richiesta:
+     * «se non si seleziona la zona allora prende tutta l'immagine».
+     *
+     * Qui si traduce in **non mandare nessuna maschera**. Il grafo, senza,
+     * salta i nodi che la userebbero e lavora sull'immagine intera. Mandare una
+     * maschera tutta bianca darebbe lo stesso risultato e costerebbe un
+     * caricamento in piu' e un nodo in piu' da sbagliare.
+     */
+    primaDiMandare.push(async function () {
+      // Nel modulo, non per id: gli id qui li costruisce un pezzo di codice
+      // («campo-» piu' il nome), e cercarne uno scritto a mano vuol dire avere
+      // due posti che devono restare d'accordo. Il campo lo si riconosce da
+      // quello che e', non da come si chiama.
+      var casella = modulo.querySelector('[data-campo="maschera"]');
+      if (!casella) return;
+      if (!haDipinto || !telaFoto) { casella.value = ""; return; }
+
+      // Il nodo del motore guarda il canale rosso su fondo nero: quello che qui
+      // e' trasparente li' deve essere nero, non trasparente.
+      var m = document.createElement("canvas");
+      m.width = sopra.width;
+      m.height = sopra.height;
+      var c = m.getContext("2d");
+      c.fillStyle = "#000000";
+      c.fillRect(0, 0, m.width, m.height);
+      c.drawImage(sopra, 0, 0);
+      casella.value = await caricaSulComputer(await telaInBlob(m), "maschera");
+    });
+
+    return valore;
+  }
+
+  /**
+   * Le foto che hai gia' fatto, per sceglierne una da modificare.
+   *
+   * ⚠ **Si riscarica e si ricarica**, anche se il file sta gia' sul computer
+   * che poi la modifichera'. Sembra uno spreco ed e' la strada giusta: la foto
+   * va comunque rimpicciolita a 1024 e allineata a 32 prima di andare al
+   * motore, e quel lavoro lo fa la pagina. Facendo passare tutte e due le
+   * strade — dalla galleria e dal telefono — per lo stesso punto, esiste **un**
+   * modo in cui una foto arriva al motore invece di due.
+   */
+  async function apriLeMieFoto(metti) {
+    var carta = apriFoglio("Le tue foto");
+    var attesa = document.createElement("p");
+    attesa.className = "nota";
+    attesa.textContent = "Le cerco…";
+    carta.append(attesa);
+    try {
+      var risposta = await chiama("/libreria?quanti=60&dove=mie&tipo=immagine");
+      var voci = (risposta && risposta.voci) || [];
+      attesa.remove();
+      if (!voci.length) {
+        var niente = document.createElement("p");
+        niente.className = "nota";
+        niente.textContent = "Non hai ancora nessuna foto. Prendine una dal telefono.";
+        carta.append(niente);
+        return;
+      }
+      var griglia = document.createElement("div");
+      griglia.className = "quadri";
+      for (var i = 0; i < voci.length; i++) {
+        griglia.append(riquadroDaScegliere(voci[i], metti));
+      }
+      carta.append(griglia);
+    } catch (e) {
+      attesa.className = "avviso male";
+      attesa.textContent = e.message;
+    }
+  }
+
+  function riquadroDaScegliere(v, metti) {
+    var q = document.createElement("button");
+    q.type = "button";
+    q.className = "vetro sceglibile";
+    var im = document.createElement("img");
+    im.loading = "lazy";
+    im.src = "/libreria/anteprima/" + encodeURIComponent(v.id);
+    im.alt = v.nome || "";
+    q.append(im);
+    q.addEventListener("click", function () {
+      chiudiFoglio();
+      void metti("/libreria/file/" + encodeURIComponent(v.id), v.nome || "questa");
+    });
+    return q;
   }
 
   async function manda() {
     if (!scelta) return;
+    // Chi ha qualcosa da preparare lo prepara adesso: la maschera dipinta si
+    // carica qui, non a ogni pennellata. Vedi «primaDiMandare».
+    try {
+      for (var quello of primaDiMandare) await quello();
+    } catch (e) {
+      $("avviso-azione").textContent = e.message;
+      $("avviso-azione").className = "avviso male";
+      return;
+    }
     var valori = {};
     for (var c of $("modulo").querySelectorAll("[data-campo]")) {
       var v = c.value.trim();
@@ -899,7 +1298,7 @@ export const COPIONE_PRODUZIONE = `
   /**
    * Dieci minuti col modello che gira sul computer.
    *
-   * Il meccanismo sta nello shell (\`chiacchierata.ts\`), e lì c'è scritto il
+   * Il meccanismo sta nello shell (\«chiacchierata.ts\»), e lì c'è scritto il
    * perché di ogni vincolo. Qui c'è la faccia che ha: un menu per scegliere con
    * chi parlare, un cronometro che dice quanto resta, delle bolle, e — quando
    * il modello propone qualcosa — un riquadro con le caselle da spuntare.

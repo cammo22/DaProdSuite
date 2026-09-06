@@ -102,6 +102,31 @@ function valore(
       return { valore: scelto };
     }
 
+    /**
+     * ⚠ **Un'immagine e' un id, e un id lo si controlla come un nome di file.**
+     *
+     * Qui non arriva mai un'immagine: arriva quello che ha risposto
+     * `POST /sorgente`, cioe' il nome con cui il file sta sul disco. Chi
+     * esegue lo attacchera' a una cartella per farne un percorso, ed e'
+     * esattamente li' che un valore storto diventa pericoloso: `../../` dentro
+     * un nome di file e' il modo classico di farsi leggere qualcosa che non si
+     * doveva.
+     *
+     * Quindi: lettere, numeri, punto, trattino. Niente barre, niente due punti,
+     * niente spazi. Non e' una cortesia verso chi sbaglia a scrivere: e' il
+     * punto in cui una richiesta che arriva dalla rete smette di poter
+     * nominare un file qualunque del computer.
+     */
+    case "immagine": {
+      const id = String(grezzo).trim();
+      if (!/^[A-Za-z0-9._-]{1,200}$/.test(id) || id.includes("..")) {
+        return {
+          errore: `"${campo.nome}" non e' un id di immagine valido. Carica la foto su /sorgente e usa l'id che ti torna.`,
+        };
+      }
+      return { valore: id };
+    }
+
     case "booleano": {
       if (typeof grezzo === "boolean") return { valore: grezzo };
       const testo = String(grezzo).trim().toLowerCase();

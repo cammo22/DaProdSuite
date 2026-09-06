@@ -166,6 +166,132 @@ function ritoccoFlux(m, p) {
   };
 }
 
+/* ------------------------------------------------------------- LLaDA-Image */
+
+/**
+ * ⚠ **LLaDA non e' fatto come gli altri due**, e conviene saperlo prima di
+ * leggere i due grafi qui sotto.
+ *
+ * Anima e FLUX.2 sono montati a pezzi: un caricatore per il modello, uno per il
+ * text encoder, uno per il VAE, un campionatore, un decodificatore. Si vede
+ * tutto e si puo' mettere le mani in mezzo — e' cosi' che funziona il ritocco
+ * col pennello, infilando una maschera nel latente.
+ *
+ * LLaDA e' **una scatola**: un nodo carica tutto insieme e torna una
+ * `LLADA_PIPELINE`, e un secondo nodo prende quella e sputa fuori un'immagine
+ * gia' fatta. Niente latenti, niente VAEDecode, niente in mezzo.
+ *
+ * Da qui discendono due cose che si vedono nell'interfaccia:
+ *
+ * 1. **Il pennello non c'e'.** Il nodo di modifica non ha un ingresso per la
+ *    maschera, e non e' una dimenticanza: LLaDA modifica **seguendo
+ *    l'istruzione**, guardando tutta la foto, non ridipingendo una zona. «fai
+ *    diventare bianca la volpe» e' il suo modo; «rifai questo angolo» e' quello
+ *    degli altri due. Vedi `senzaPennello` nel catalogo.
+ * 2. **Le misure devono essere divisibili per 32** quando modifica (16 quando
+ *    genera). Sopra ci pensa `misuraBuona`.
+ */
+
+/** Il caricatore, uguale per generare e per modificare. */
+function caricaLlada(m) {
+  return {
+    "1": {
+      class_type: "LLaDAImageLoader",
+      inputs: {
+        diffusion_model: m.dit,
+        text_encoder: m.txt,
+        vae: m.vae,
+        dtype: "bfloat16",
+        /**
+         * ⚠ **`cpu`, non `cuda`**, ed e' l'unica ragione per cui questo
+         * modello gira su questa macchina.
+         *
+         * I pesi sono 6,6 GB di trasformatore piu' 9,2 di text encoder: su una
+         * scheda da 8 GB non ci stanno insieme nemmeno da lontano. Con lo
+         * scarico in RAM il motore tiene sulla scheda solo il pezzo che sta
+         * lavorando e passa l'altro al sistema.
+         *
+         * Costa tempo, e va detto invece che scoperto: e' il motivo per cui
+         * LLaDA e' il piu' lento della scheda pur facendo solo 4 passi. Il
+         * workflow di esempio del pacco dice `cuda` perche' e' scritto per chi
+         * ha 24 GB.
+         */
+        offload: "cpu",
+      },
+    },
+  };
+}
+
+function immagineLlada(m, p) {
+  return {
+    ...caricaLlada(m),
+    "2": {
+      class_type: "LLaDAImageTextToImage",
+      inputs: {
+        pipeline: ["1", 0],
+        prompt: p.prompt,
+        width: misuraBuona(p.larghezza, 16),
+        height: misuraBuona(p.altezza, 16),
+        steps: p.step,
+        guidance_scale: p.cfg,
+        seed: p.seed,
+        negative_prompt: p.negativo || "",
+      },
+    },
+    "3": {
+      class_type: "SaveImage",
+      inputs: { images: ["2", 0], filename_prefix: "immagini/daprod" },
+    },
+  };
+}
+
+/**
+ * La modifica: si da' una foto e si dice **cosa cambiare**.
+ *
+ * Nessuna maschera, nessun `denoise`: quei due parametri qui non esistono
+ * proprio. Se il grafo li ricevesse li butterebbe, ed e' meglio che
+ * l'interfaccia non li faccia nemmeno vedere — vedi `senzaPennello`.
+ */
+function modificaLlada(m, p) {
+  return {
+    ...caricaLlada(m),
+    "4": { class_type: "LoadImage", inputs: { image: p.immagine } },
+    "2": {
+      class_type: "LLaDAImageEdit",
+      inputs: {
+        pipeline: ["1", 0],
+        image: ["4", 0],
+        prompt: p.prompt,
+        // Modificando, il modello vuole misure divisibili per 32 e non per 16.
+        width: misuraBuona(p.larghezza, 32),
+        height: misuraBuona(p.altezza, 32),
+        steps: p.step,
+        guidance_scale: p.cfg,
+        seed: p.seed,
+        negative_prompt: p.negativo || "",
+      },
+    },
+    "3": {
+      class_type: "SaveImage",
+      inputs: { images: ["2", 0], filename_prefix: "immagini/modifica" },
+    },
+  };
+}
+
+/**
+ * La misura buona piu' vicina, verso il basso.
+ *
+ * ⚠ **Verso il basso e non verso l'alto**, ed e' una scelta: arrotondando in su
+ * si chiede al modello qualche pixel in piu' di quelli che gli si e' promesso,
+ * e su una scheda gia' al limite quei pixel sono la differenza fra un'immagine
+ * e un errore di memoria. Meglio otto pixel in meno.
+ */
+function misuraBuona(quanti, passo) {
+  const n = Math.floor(Number(quanti) || 1024);
+  const giusta = Math.floor(n / passo) * passo;
+  return Math.max(passo, giusta);
+}
+
 /* ------------------------------------------------------------- il catalogo */
 
 /**
@@ -286,6 +412,51 @@ export const MODELLI = {
     dit: "flux-2-klein-4b-Q5_K_M.gguf",
     txt: "Qwen3-4B-Q5_K_M.gguf",
     catalogo: ["flux2-klein-4b-q5km", "flux2-4b-text-encoder", "flux2-vae"],
+    serveScheda: true,
+  },
+  /**
+   * ⚠ **LLaDA-Image-Turbo.** Nuovo nella 1.0.2.
+   *
+   * Chiesto il 6 settembre 2026: «e' uscito questo bel modellino, vorrei usare
+   * il 4step fp8». Il 4 passi c'e' — e' questo, il Turbo distillato. L'fp8no:
+   * l'unico impacchettamento che ComfyUI sa aprire e' un INT8, e l'fp8
+   * ufficiale e' in formato diffusers, che vorrebbe dire scriverci intorno un
+   * nodo da zero.
+   *
+   * ⚠ **E non entra negli 8 GB.** Gliel'ho detto prima di metterlo: 6,6 GB di
+   * trasformatore, 9,2 di text encoder, quasi 16 da scaricare. La risposta e'
+   * stata «mettilo lo stesso», quindi c'e' — con lo scarico in RAM, e con
+   * scritto qui e nel menu che e' il piu' lento di tutti.
+   *
+   * Perche' vale la pena averlo lo stesso: e' **l'unico della scheda che
+   * modifica una foto seguendo un'istruzione**. Gli altri tre sanno ridipingere
+   * una zona che gli indichi col pennello, che e' una cosa diversa e a volte
+   * non e' quella che si vuole.
+   */
+  llada: {
+    id: "llada",
+    nome: "LLaDA-Image Turbo",
+    riga: "Sa modificare una foto a parole. \u26a0 Non ci sta nella scheda: passa dalla RAM, ed e' il piu' lento.",
+    dit: "LLaDA-Image-Turbo-INT8.safetensors",
+    txt: "LLaDA-Image-Turbo-text_encoder-Q4_K_M.gguf",
+    vae: "LLaDa_VAE.safetensors",
+    catalogo: ["llada-turbo-int8", "llada-text-encoder", "llada-vae"],
+    // Distillato a 4 passi: di piu' non migliora, rallenta e basta.
+    step: { min: 2, max: 8, valore: 4 },
+    cfg: { min: 1, max: 4, valore: 1 },
+    usaNegativo: false,
+    immagine: immagineLlada,
+    // La sua modifica non e' un ritocco col pennello: vedi `senzaPennello`.
+    ritocco: modificaLlada,
+    /**
+     * ⚠ **Niente pennello, e l'interfaccia lo deve sapere.**
+     *
+     * Il nodo `LLaDAImageEdit` non ha un ingresso per la maschera. Mostrare il
+     * pennello e poi ignorare quello che uno ha dipinto sarebbe la cosa
+     * peggiore: chi lo usa penserebbe di aver detto una cosa, e il modello
+     * cambierebbe tutta la foto senza che si capisca perche'.
+     */
+    senzaPennello: true,
     serveScheda: true,
   },
   "flux2-9b": {

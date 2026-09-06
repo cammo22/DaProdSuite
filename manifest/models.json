@@ -295,6 +295,35 @@
       "nodi": ["comfyui-gguf"],
       "bytes": 5851113280
     },
+    "llada-turbo-int8": {
+      "label": "LLaDA-Image-Turbo INT8 \u2014 genera e modifica con lo stesso modello",
+      "kind": "file",
+      "$comment": "6B distillato a 4 passi, e l'unico della scheda che sa MODIFICARE una foto seguendo un'istruzione invece di ridipingere una zona col pennello. \u26a0 Non entra negli 8 GB: 6,6 GB solo il trasformatore, e il text encoder qui sotto ne fa altri 9,2 \u2014 il grafo lo scarica in RAM (vedi offload in grafi.js). Aggiunto il 6 settembre 2026 su richiesta, dopo avergli detto cosa costa. Vuole i nodi llada-image, che ComfyUI di suo non ha.",
+      "dir": "diffusion_models",
+      "file": "LLaDA-Image-Turbo-INT8.safetensors",
+      "url": "https://huggingface.co/realrebelai/LLaDa-Image-Turbo_ComfyUI/resolve/main/LLaDA-Image-Turbo-INT8.safetensors",
+      "nodi": ["llada-image"],
+      "bytes": 6592000000
+    },
+    "llada-text-encoder": {
+      "label": "Text encoder di LLaDA-Image \u2014 Q4_K_M (9,2 GB)",
+      "kind": "file",
+      "$comment": "\u26a0 E' LUI il pezzo grosso, non il modello: 9,2 GB contro i 6,6 del trasformatore, ed e' gia' quantizzato a 4 bit. Su una scheda da 8 GB non ci sta, quindi il grafo lo tiene in RAM: legge il prompt, poi lascia il posto al trasformatore. E' la ragione per cui LLaDA e' lento su questa macchina anche facendo solo 4 passi.",
+      "dir": "text_encoders",
+      "file": "LLaDA-Image-Turbo-text_encoder-Q4_K_M.gguf",
+      "url": "https://huggingface.co/realrebelai/LLaDa-Image-Turbo_ComfyUI/resolve/main/LLaDA-Image-Turbo-text_encoder-Q4_K_M.gguf",
+      "nodi": ["llada-image"],
+      "bytes": 9182000000
+    },
+    "llada-vae": {
+      "label": "VAE di LLaDA-Image (non quello di FLUX)",
+      "kind": "file",
+      "dir": "vae",
+      "file": "LLaDa_VAE.safetensors",
+      "url": "https://huggingface.co/realrebelai/LLaDa-Image-Turbo_ComfyUI/resolve/main/LLaDa_VAE.safetensors",
+      "nodi": ["llada-image"],
+      "bytes": 168000000
+    },
     "flux2-vae": {
       "label": "VAE di FLUX.2 (non quello di FLUX.1)",
       "kind": "file",

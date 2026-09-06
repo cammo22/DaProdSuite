@@ -55,6 +55,46 @@ export const NODI: Record<string, NodoCustom> = {
     perche: "Carica i modelli quantizzati GGUF (FLUX.2 Klein e il suo text encoder).",
     licenza: "Apache-2.0",
   },
+
+  /**
+   * ⚠ **I nodi di LLaDA-Image.** Nuovo nella 1.0.2.
+   *
+   * LLaDA-Image e' un modello che genera **e modifica** immagini con lo stesso
+   * peso, e non parla ComfyUI: il codice ufficiale e' diffusers. Questo pacco
+   * e' l'unico ponte che esiste, ed e' quello che il modello impacchettato per
+   * ComfyUI si aspetta.
+   *
+   * ## Cosa c'e' da sapere prima di fidarsene
+   *
+   * Al 6 settembre 2026 questo repository ha **sei stelle**, l'ultimo carico e'
+   * di oggi, e **non dichiara una licenza**. Il modello a monte e' Apache-2.0 e
+   * su quello non c'e' problema; questi nodi no, e senza licenza vuol dire che
+   * non si possono ridistribuire. Non li ridistribuiamo — si scaricano dal loro
+   * repository, come ComfyUI stesso — ma va scritto, perche' il giorno che
+   * qualcuno impacchetta la suite deve saperlo.
+   *
+   * Ed e' il motivo per cui e' **fissato a un commit** e non segue il ramo: un
+   * pacco giovane che cambia tutti i giorni, lasciato libero di aggiornarsi,
+   * e' un modo per svegliarsi con la generazione rotta senza aver toccato
+   * niente.
+   *
+   * ## Perche' lo mettiamo lo stesso
+   *
+   * Chiesto il 6 settembre 2026, dopo avergli detto che non entra negli 8 GB:
+   * «mettilo lo stesso». Sa cosa costa — il text encoder da solo e' 9,2 GB e
+   * dovra' passare dalla RAM — e lo vuole. Il modello resta **una scelta in
+   * piu' nel menu**, mai il predefinito.
+   */
+  "llada-image": {
+    nome: "LLaDa-Image_ComfyUI",
+    repo: "RealRebelAI/LLaDa-Image_ComfyUI",
+    // 6 settembre 2026: il commit con cui i due workflow di esempio nel
+    // repository corrispondono ai nomi dei file su Hugging Face.
+    commit: "67bf73705eae7a15bb6f33371f404e649bf7ac06",
+    perche: "Fa girare LLaDA-Image, che genera e modifica immagini con lo stesso modello.",
+    // ⚠ Non e' una svista: il repository non ne dichiara nessuna. Vedi sopra.
+    licenza: "non dichiarata",
+  },
 };
 
 export interface InstallaNodoOptions {

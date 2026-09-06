@@ -201,6 +201,17 @@ const MASSIMO_FOTO = 4 * 1024 * 1024;
  * chiesto, una cosa in bacheca la vedono tutti e resta lì. Cento mega sono un
  * video di qualche minuto, che è quello che ha senso mostrare in una bacheca.
  */
+/**
+ * Quanto puo' pesare una foto da modificare, o la sua maschera.
+ *
+ * Otto mega: i modelli lavorano a 1024 pixel, quindi qualunque cosa piu' grande
+ * verrebbe rimpicciolita subito. La pagina la rimpicciolisce **prima** di
+ * mandarla — vedi `rimpicciolisci` nella console — e questo numero e' solo la
+ * rete di sicurezza sotto, per il giorno che qualcuno chiami questa rotta a
+ * mano.
+ */
+const MASSIMO_SORGENTE = 8 * 1024 * 1024;
+
 const MASSIMO_IN_BACHECA = 100 * 1024 * 1024;
 
 /** Una connessione SSE aperta: il gateway le tiene d'occhio per spingere. */
@@ -334,6 +345,29 @@ export class Gateway {
           return;
         }
         await this.riceviFotoProfilo(req, res, chi, url);
+        return;
+      }
+      /**
+       * ⚠ **La foto da modificare, e la zona dipinta col pennello.**
+       * Nuova nella 1.0.2.
+       *
+       * Sta **qui**, insieme agli altri file e prima di `leggiCorpo`, per la
+       * stessa ragione degli altri: il corpo e' l'immagine, non un JSON.
+       * `leggiCorpo` tiene in memoria fino a un mega e poi butta — e una foto
+       * fatta col telefono ne fa cinque.
+       *
+       * Torna un `id`, che e' il nome del file sul disco. Quell'id viaggia
+       * dentro la richiesta come un campo qualunque, e chi la esegue lo
+       * ritrasforma in un percorso. Cosi' la foto **non passa mai dentro il
+       * JSON della richiesta**, che e' l'unico modo di non farla esplodere.
+       */
+      if (percorso === "/sorgente" && req.method === "POST") {
+        const chi = this.chiE(req, url);
+        if (!chi) {
+          this.errore(res, 401, "Token mancante o non riconosciuto.");
+          return;
+        }
+        await this.riceviSorgente(req, res, url);
         return;
       }
       if (percorso === "/bacheca" && req.method === "POST") {
@@ -877,6 +911,62 @@ export class Gateway {
        * **Nessun byte passa dalla rete.** Il file e' gia' sul disco del
        * computer: si copia da li' a li', e quello che viaggia e' un id.
        */
+      /**
+       * ⚠ **Un pensiero preso dalle proprie cose.** Nuova nella 1.0.2.
+       *
+       * Chiesto il 6 settembre 2026: «quando clicco su manda pensiero vorrei
+       * poter selezionare dai contenuti dell'app o dal telefono».
+       *
+       * Prima si poteva solo dal telefono: si toccava «mandagli un pensiero» e
+       * si apriva la finestra dei file di Android. Per mandare a qualcuno una
+       * canzone appena fatta col computer bisognava prima salvarsela nel
+       * telefono e poi ricaricarla — cioe' far fare a un file da venti mega il
+       * giro completo, per rimetterlo esattamente dov'era.
+       *
+       * ⚠ **Nessun byte passa dalla rete**, ed e' il punto: il file e' gia' sul
+       * disco del computer, si copia da li' a li', e quello che viaggia e' un
+       * id. E' la stessa strada della foto del profilo, qui sotto, per la
+       * stessa ragione.
+       */
+      if (percorso === "/invii/dalla-libreria" && req.method === "POST") {
+        if (dispositivo.ruolo !== "admin") {
+          return this.errore(res, 403, "Mandare un pensiero lo puo' fare solo chi ha il permesso di decidere.");
+        }
+        if (!this.libreria?.file) return this.errore(res, 501, "Questa suite non ha la libreria.");
+
+        const dati = (corpo ?? {}) as { a?: string; id?: string; messaggio?: string };
+        const a = String(dati.a ?? "");
+        if (!a) return this.errore(res, 400, "Manca a chi mandarlo.");
+
+        const quale = this.libreria.file(String(dati.id ?? ""), dispositivo.id);
+        if (!quale) return this.errore(res, 404, "Questa cosa non la trovo, o non e' tua.");
+
+        const suDisco = Date.now().toString(36) + "-" + quale.nome.replace(/[^\p{L}\p{N} _.()\[\]-]+/gu, "_");
+        try {
+          mkdirSync(this.remoto.inviiDir, { recursive: true });
+          copyFileSync(quale.percorso, join(this.remoto.inviiDir, suDisco));
+        } catch {
+          return this.errore(res, 500, "Non sono riuscito a copiarla.");
+        }
+
+        const esito = this.remoto.regala({
+          a,
+          daNome: dispositivo.nome,
+          nome: quale.nome,
+          mime: quale.mime,
+          bytes: quale.bytes,
+          percorso: suDisco,
+          messaggio: (dati.messaggio ?? "").slice(0, 300) || undefined,
+        });
+        if ("errore" in esito) {
+          buttaIlFile(join(this.remoto.inviiDir, suDisco));
+          return this.errore(res, 404, esito.errore);
+        }
+        this.json(res, 201, { ok: true, invio: esito });
+        this.aggiorna();
+        return;
+      }
+
       if (percorso === "/io/foto/dalla-libreria" && req.method === "POST") {
         if (!this.libreria?.file) return this.errore(res, 501, "Questa suite non ha la libreria.");
         const id = String(((corpo ?? {}) as { id?: string }).id ?? "");
@@ -2315,6 +2405,35 @@ export class Gateway {
     }
     this.json(res, 201, { ok: true, voce });
     this.aggiorna();
+  }
+
+  /**
+   * Riceve una foto da modificare, o la maschera dipinta sopra.
+   *
+   * ⚠ **Non entra in libreria e non e' un regalo**: e' materiale di lavoro, e
+   * finisce nella stessa cartella degli invii perche' quella cartella esiste
+   * gia' ed e' fatta per file che arrivano da fuori. Chi esegue la richiesta lo
+   * legge da li' e lo passa al motore.
+   *
+   * Il limite e' basso apposta — otto mega. Una foto piu' grande di cosi' non
+   * serve a nessuno dei modelli, che lavorano a 1024 pixel: mandarla intera
+   * vorrebbe dire aspettare per niente. E' la pagina che la rimpicciolisce
+   * prima di mandarla, e questo numero e' la rete di sicurezza sotto.
+   */
+  private async riceviSorgente(
+    req: IncomingMessage,
+    res: ServerResponse,
+    url: URL,
+  ): Promise<void> {
+    const che = url.searchParams.get("che") === "maschera" ? "maschera" : "sorgente";
+    const nome = che + "-" + Date.now() + ".png";
+
+    const esito = await this.scriviIlCorpo(req, nome, MASSIMO_SORGENTE);
+    if ("errore" in esito) {
+      this.errore(res, esito.codice, esito.errore);
+      return;
+    }
+    this.json(res, 201, { ok: true, id: esito.suDisco, bytes: esito.bytes });
   }
 
   /** Il file di un regalo, a chi era destinato e a nessun altro. */

@@ -208,6 +208,38 @@ function raccontaIlTasto() {
 }
 
 /**
+ * ⚠ **Dipingi la maschera che arriva da fuori.** Nuova nella 1.0.2.
+ *
+ * Chi ritocca dal telefono dipinge la zona sulla console e la manda come
+ * immagine. Qui quell'immagine si ridisegna sulla tela di sopra — quella del
+ * pennello — invece che passarla dritta al motore.
+ *
+ * Sembra un giro piu' lungo del necessario, e non lo e': la maschera va
+ * **allineata alla foto**, e la foto e' stata ridisegnata su misura del VAE
+ * appena e' entrata (vedi `misure`). Passando il PNG del telefono direttamente
+ * al motore, una maschera di 1024x768 finirebbe sopra a una foto di 1024x752, e
+ * il modello rifarebbe una zona spostata di sedici pixel. Ridisegnandola qui,
+ * qualunque cosa arrivi finisce sulle coordinate giuste.
+ *
+ * Torna `false` se non c'e' niente da dipingere, cosi' chi chiama sa che si
+ * lavora su tutta la foto — che e' il comportamento giusto e non un ripiego.
+ */
+export async function disegnaLaMaschera(sorgente) {
+  if (!sorgente || !sopra) return false;
+  const immagine = await new Promise((risolvi, rifiuta) => {
+    const im = new Image();
+    im.onload = () => risolvi(im);
+    im.onerror = () => rifiuta(new Error("La maschera non si apre."));
+    im.src = sorgente;
+  });
+  const contesto = sopra.getContext("2d");
+  contesto.clearRect(0, 0, sopra.width, sopra.height);
+  contesto.drawImage(immagine, 0, 0, sopra.width, sopra.height);
+  return true;
+}
+
+
+/**
  * La maschera come la vuole il motore: fondo nero, zona dipinta rossa.
  *
  * `LoadImageMask` legge il canale rosso, e la trasparenza in mezzo lascerebbe

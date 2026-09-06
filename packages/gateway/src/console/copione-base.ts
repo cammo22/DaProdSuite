@@ -135,7 +135,14 @@ export const COPIONE_BASE = `
 
   async function chiama(percorso, opzioni) {
     opzioni = opzioni || {};
-    var testate = { "Content-Type": "application/json" };
+    /**
+     * ⚠ **Il tipo del corpo si puo' cambiare.** Dalla 1.0.2.
+     *
+     * Quasi tutto qui dentro manda JSON, e per quello va bene un valore fisso.
+     * Ma una foto da modificare non e' JSON: e' un PNG, e mandarlo dicendo che
+     * e' JSON vuol dire che dall'altra parte nessuno sa cos'e'.
+     */
+    var testate = { "Content-Type": opzioni.tipo || "application/json" };
     if (token) testate.Authorization = "Bearer " + token;
 
     var risposta = await fetch(percorso, {

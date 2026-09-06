@@ -108,6 +108,43 @@ for (const nome of readdirSync(CARTELLA).filter((f) => f.endsWith(".ts"))) {
   );
 }
 
+/**
+ * ⚠ **E gli «apri commento» dentro le stringhe.** Aggiunto nella 1.0.2.
+ *
+ * `scegliFile.accept = "image/*"` compila benissimo: per JavaScript quella e'
+ * una stringa e i due caratteri in mezzo non vogliono dire niente. Ma
+ * **qualunque cosa legga il copione senza eseguirlo** — le prove della console,
+ * per esempio, che tolgono commenti e stringhe per cercare le variabili nate
+ * per sbaglio — li legge come l'inizio di un commento, e da li' in poi legge
+ * tutto sfasato.
+ *
+ * Quanto e' costato scoprirlo: la prova ha accusato tre variabili a
+ * quarantamila caratteri di distanza, dentro uno shader GLSL che non c'entrava
+ * niente. Un'ora, per due caratteri.
+ *
+ * Si scrive spezzato — `"image/" + "*"` — e non serve altro. Vale la pena avere
+ * una guardia perche' e' un errore che **non si vede**: il file compila, l'app
+ * funziona, e a rompersi e' solo chi il codice lo legge.
+ */
+const APRI_COMMENTO = new RegExp('"[^"\n]*/\\*[^"\n]*"', "g");
+let trappole = 0;
+for (const nome of readdirSync(CARTELLA).filter((f) => f.endsWith(".ts"))) {
+  const percorso = join(CARTELLA, nome);
+  const testo = readFileSync(percorso, "utf8");
+  for (const m of testo.matchAll(APRI_COMMENTO)) {
+    const riga = testo.slice(0, m.index).split("\n").length;
+    console.log(`  ${nome}:${riga} — ${m[0]} apre un commento dentro una stringa`);
+    trappole++;
+  }
+}
+if (trappole) {
+  console.log(
+    `\n  ${trappole} da spezzare in due, cosi': "image/" + "*".` +
+      "\n  Compila lo stesso, ma chi legge il copione da fuori si perde.\n",
+  );
+  process.exit(1);
+}
+
 if (sporchi === 0) {
   console.log("  ok   nessun backtick dentro ai template della console");
   process.exit(0);

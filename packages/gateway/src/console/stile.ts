@@ -1324,6 +1324,35 @@ export const STILE = `  :root {
   }
 
   /**
+   * ⚠ **La foto da modificare, con sopra il disegno.** Dalla 1.0.2.
+   *
+   * Due tele sovrapposte: sotto la foto, sopra quello che dipinge il dito. Non
+   * una sola, perche' il disegno si deve poter cancellare senza ricaricare la
+   * foto — e perche' la maschera che va al motore e' **solo** quella di sopra.
+   */
+  .fotoDaModificare { margin: 6px 0 2px; }
+  .fotoDaModificare .fila { margin-top: 8px; flex-wrap: wrap; }
+  .pilaFoto {
+    position: relative; border-radius: 12px; overflow: hidden;
+    border: 1px solid var(--line); background: #06070b;
+    line-height: 0;
+  }
+  .pilaFoto canvas { display: block; width: 100%; height: auto; }
+  /**
+   * La tela del pennello sta esattamente sopra all'altra, ed e' semitrasparente
+   * apposta: si deve vedere **cosa c'e' sotto la vernice**, o non si capisce
+   * cosa si sta per far rifare al modello.
+   */
+  .pilaFoto .ilPennello {
+    position: absolute; inset: 0; opacity: .55;
+    /* Senza questa riga, dipingere su un telefono scorre la pagina. */
+    touch-action: none; cursor: crosshair;
+  }
+  /* I riquadri fra cui si sceglie una foto gia' fatta. */
+  .vetro.sceglibile { padding: 0; border-radius: 12px; overflow: hidden; aspect-ratio: 1; }
+  .vetro.sceglibile img { width: 100%; height: 100%; object-fit: cover; }
+
+  /**
    * Il QR grande, dentro un foglio.
    *
    * Fondo bianco e non trasparente: un QR su fondo scuro non lo legge nessuna

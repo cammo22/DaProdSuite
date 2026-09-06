@@ -27,7 +27,7 @@ import { collegaModelliInMemoria } from "/comune/modelli-in-memoria.js";
 import { collegaLente } from "./lente.js";
 import { collegaTrascinamento, eImmagine } from "./trascina.js";
 import { collegaTraduzione } from "./lingua.js";
-import { apriImmagine } from "./ritocco.js";
+import { apriImmagine, disegnaLaMaschera } from "./ritocco.js";
 import { collega, modelliInVram, scaricaDallaVram } from "./ponte.js";
 
 document.querySelectorAll("nav button").forEach((b) => {
@@ -90,6 +90,44 @@ await collega(
  * `packages/ui/src/da-fuori.js`.
  */
 collegaLavoriDaFuori(async (richiesta) => {
+  /**
+   * ⚠ **Modificare una foto e' un'altra scheda.** Dalla 1.0.2.
+   *
+   * Chiesto il 6 settembre 2026: «l'utente clicca su produzione foto e puo'
+   * scegliere tra generazione da testo e modifica da foto, carica la foto e la
+   * modifica».
+   *
+   * Vale la stessa regola di tutto il resto di questa funzione — **si preme lo
+   * stesso tasto che premeresti tu** — solo che il tasto sta nella scheda
+   * Ritocco. La foto arriva come indirizzo «daprod://file/…», che lo shell ha
+   * fatto dall'id caricato dal telefono (vedi `daIdAIndirizzi` in
+   * esecuzione.ts): da qui in giu' e' un'immagine come quelle che si aprono
+   * trascinandole dentro.
+   *
+   * La maschera puo' non esserci, ed e' il caso normale: senza, il ritocco
+   * lavora su tutta la foto. Vedi «Niente dipinto non e' piu' un errore» in
+   * ritocco.js.
+   */
+  if (richiesta.azione === "modifica.immagine") {
+    mostraScheda("ritocco");
+    await apriImmagine(richiesta.opzioni.immagine);
+    await disegnaLaMaschera(richiesta.opzioni.maschera);
+    scrivi(el.promptRitocco, richiesta.testo);
+    /*
+     * «Quanto la cambio» va da 1 a 10 perche' un numero da 0 a 1 con la
+     * virgola, su un telefono, non lo capisce nessuno. Il motore vuole l'altro.
+     */
+    if (richiesta.opzioni.forza) {
+      scrivi(el.denoise, String(numero(richiesta.opzioni.forza, 1, 10, 6) / 10));
+    }
+    if (scegliInMenu(el.modello, richiesta.opzioni.modello)) await aspettaPremibile(el.rigenera);
+    premi(
+      el.rigenera,
+      "Il modello di DaProdFoto non e' pronto: apri la scheda sul computer e guarda cosa manca.",
+    );
+    return;
+  }
+
   mostraScheda("crea");
   scrivi(el.prompt, richiesta.testo);
   if (richiesta.opzioni.negativo) scrivi(el.negativo, richiesta.opzioni.negativo);
