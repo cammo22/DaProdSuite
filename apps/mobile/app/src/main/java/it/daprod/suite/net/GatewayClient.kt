@@ -191,17 +191,38 @@ class GatewayClient(
      * Torna una lista vuota se qualcosa va storto: e' un di piu', non un
      * passaggio obbligato, e non deve poter impedire di aprire la suite.
      */
-    suspend fun indirizziDiAdesso(): List<String> = withContext(Dispatchers.IO) {
+    suspend fun indirizziDiAdesso(): List<String> = chiSei()?.basi ?: emptyList()
+
+    /**
+     * Chi risponde a `/io`: i suoi indirizzi di oggi, e **con che nome si
+     * annuncia sulla rete**.
+     *
+     * ⚠ Il secondo pezzo e' nuovo nella 0.9.3 ed e' la cura di «ad ogni
+     * aggiornamento devo togliere e rimettere gli utenti». Con quell'id il
+     * telefono puo' **ritrovare** il computer quando tutti gli indirizzi
+     * salvati muoiono insieme: chiede in giro chi c'e' e cerca quello. Prima lo
+     * sapeva solo chi si era accoppiato bussando; chi aveva battuto il codice a
+     * otto cifre non aveva ritorno.
+     *
+     * Si prende da qui e non da un'altra rotta perche' `/io` e' la porta a cui
+     * l'app bussa ogni volta che si apre: costa niente e vale per tutti,
+     * compresi i profili fatti due versioni fa.
+     */
+    data class Chi(val basi: List<String>, val pcId: String)
+
+    suspend fun chiSei(): Chi? = withContext(Dispatchers.IO) {
         try {
             val req = conToken().url(a("/io")).build()
             condiviso.newCall(req).execute().use { res ->
-                if (!res.isSuccessful) return@withContext emptyList()
-                val arr = JSONObject(res.body?.string().orEmpty()).optJSONArray("basi")
-                    ?: return@withContext emptyList()
-                (0 until arr.length()).mapNotNull { arr.optString(it).takeIf { s -> s.isNotBlank() } }
+                if (!res.isSuccessful) return@withContext null
+                val corpo = JSONObject(res.body?.string().orEmpty())
+                val arr = corpo.optJSONArray("basi")
+                val basi = if (arr == null) emptyList() else
+                    (0 until arr.length()).mapNotNull { arr.optString(it).takeIf { s -> s.isNotBlank() } }
+                Chi(basi, corpo.optString("pcId"))
             }
         } catch (_: Exception) {
-            emptyList()
+            null
         }
     }
 

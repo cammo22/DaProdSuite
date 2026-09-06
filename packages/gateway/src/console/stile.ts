@@ -31,7 +31,18 @@ export const STILE = `  :root {
     --rosa: #f472b6;
     --ambra: #fb923c;
     --raggio: 18px;
-    --fondo-alto: 64px;
+    --fondo-alto: 58px;
+    /* Quanto e' alta la barra che suona. Vedi il commento su «.barraLettore». */
+    --lettore-alto: 58px;
+    /**
+     * Quanto e' alto un tasto piccolo: «mini», «tondo», «cuore».
+     *
+     * Un numero solo, perche' erano tre e nessuno l'aveva scelto. Vedi il
+     * commento su «button.mini».
+     */
+    --tasto-alto: 38px;
+    /* E quanto e' alto un tasto grande, quello che si preme per fare una cosa. */
+    --tastone-alto: 48px;
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body { height: 100%; }
@@ -60,14 +71,17 @@ export const STILE = `  :root {
   .marchio span { color: var(--accent); }
   .cresci { flex: 1; }
   .tondo {
-    width: 34px; height: 34px; border-radius: 99px; padding: 0;
+    width: var(--tasto-alto); height: var(--tasto-alto); border-radius: 99px; padding: 0;
     background: var(--panel2); border: 1px solid var(--line2); color: var(--txt);
     font-size: 15px; display: grid; place-items: center; cursor: pointer;
   }
   .tondo:hover { border-color: var(--accent); }
+  /* Alto come l'ingranaggio che gli sta accanto: erano 34 e 38, sulla stessa
+     riga, ed e' il genere di differenza che si vede senza saperla nominare. */
   .chi {
     font-size: 12.5px; color: var(--txt); background: var(--panel2);
-    border: 1px solid var(--line2); border-radius: 99px; padding: 4px 6px 4px 4px;
+    min-height: var(--tasto-alto);
+    border: 1px solid var(--line2); border-radius: 99px; padding: 0 8px 0 4px;
     cursor: pointer; display: flex; align-items: center; gap: 7px;
     /* 46vw su un telefono sono 170 px; su un monitor da 27 pollici sono metà
        schermo per scriverci un nome. Vince il più stretto dei due. */
@@ -170,7 +184,25 @@ export const STILE = `  :root {
   /* I quattro della Produzione, e i due della Galleria. Grandi, colorati, con
      due parole sotto che dicono cosa esce fuori: su un telefono un tasto si
      riconosce dal colore prima ancora di leggere cosa c'è scritto. */
-  .tastoni { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 11px; }
+  /**
+   * ⚠ **Le righe sono alte uguali.** Chiesto il 6 settembre 2026: «ci sono
+   * molte zone dove le cose si sovrappongono, poca simmetria, pulsanti di
+   * diverse grandezze».
+   *
+   * Misurato nella pagina vera, a 375 px: in Casa i cinque tastoni erano alti
+   * 148, 148, 148, 148 e **116**. La causa e' «grid-auto-rows: auto», che e' il
+   * valore di serie: dentro una riga la griglia allunga tutti alla stessa
+   * altezza, **fra** una riga e l'altra no. Le prime due righe avevano un
+   * titolo su due righe di testo e si alzavano; l'ultima, con un titolo corto e
+   * da sola, restava bassa. Il risultato e' una griglia che sembra scivolata.
+   *
+   * «1fr» dice: tutte le righe alte come la piu' alta. Costa una parola e
+   * toglie l'unica asimmetria vera di questa pagina.
+   */
+  .tastoni {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    grid-auto-rows: 1fr; gap: 11px;
+  }
   .tastone {
     position: relative; overflow: hidden;
     text-align: left; padding: 17px 16px 15px; border-radius: 18px; min-height: 116px;
@@ -178,7 +210,19 @@ export const STILE = `  :root {
     background: var(--panel2);
     display: flex; flex-direction: column; gap: 5px; justify-content: flex-end;
   }
-  .tastone .segno { font-size: 26px; line-height: 1; margin-bottom: auto; }
+  /**
+   * **Il segno sta in un quadrato, e il quadrato e' sempre lo stesso.**
+   *
+   * Non e' pignoleria: i simboli di questo alfabeto hanno larghezze molto
+   * diverse — «▶» riempie il suo spazio, «◉» ne occupa meta' — e senza un
+   * riquadro fisso i titoli sotto partivano da altezze diverse riquadro per
+   * riquadro. Con una scatola di 28x28 e il contenuto centrato, quello che
+   * cambia e' il disegno, non la posizione di tutto il resto.
+   */
+  .tastone .segno {
+    font-size: 24px; line-height: 1; margin-bottom: auto;
+    width: 28px; height: 28px; display: grid; place-items: center;
+  }
   .tastone .nome { font-weight: 700; font-size: 15.5px; letter-spacing: -.2px; }
   .tastone small { color: var(--dim); font-size: 11.5px; line-height: 1.35; }
   .tastone::after {
@@ -201,7 +245,7 @@ export const STILE = `  :root {
   .tastone.on { border-color: var(--tinta); }
   .tastone.on::after { opacity: .5; }
   .tastone.piccolo { min-height: 84px; padding: 13px 14px 12px; }
-  .tastone.piccolo .segno { font-size: 20px; }
+  .tastone.piccolo .segno { font-size: 19px; width: 22px; height: 22px; }
   .tastone.piccolo .nome { font-size: 14px; }
 
   /* ------------------------------------------------------------- moduli */
@@ -213,17 +257,42 @@ export const STILE = `  :root {
   input:focus, textarea:focus, select:focus { outline: none; border-color: var(--accent); }
   textarea { min-height: 96px; resize: vertical; }
 
+  /**
+   * Il tasto grande, uno solo di altezza.
+   *
+   * Misurato nella pagina vera: 47px per un tasto normale e 51px per uno con
+   * il bordo — perche' «piano» aggiunge un bordo di 1px per lato e il padding
+   * era su «content-box». Due tasti che fanno la stessa cosa e sembrano di due
+   * misure. «border-box» piu' un'altezza dichiarata li rimette pari, e il
+   * bordo smette di essere una differenza.
+   */
   button {
     font: inherit; font-weight: 600; cursor: pointer; border: 0; color: #fff;
     background: linear-gradient(180deg, #9b6cff, #7c3aed);
-    border-radius: 12px; padding: 12px 18px;
+    box-sizing: border-box; min-height: var(--tastone-alto);
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    border-radius: 12px; padding: 0 18px;
   }
   button:active { transform: translateY(1px); }
   button:disabled { opacity: .45; cursor: default; }
   button.piano { background: var(--panel2); border: 1px solid var(--line2); color: var(--txt); font-weight: 500; }
   button.largo { width: 100%; }
+  /**
+   * ⚠ **Una misura sola per i tasti piccoli**, e non piu' «quella che viene».
+   *
+   * Misurato nella pagina vera: «.mini» alto 35, «.tondo» 34, «.cuore» fra 25 e
+   * 28. Tre altezze per tre tasti che stanno **sulla stessa riga**, e nessuna
+   * delle tre decisa: erano il risultato di tre padding scritti in tre momenti.
+   *
+   * Adesso c'e' un numero, «--tasto-alto», e vale per tutti e tre. E' 38 e non
+   * 44 — che sarebbe la misura di riferimento per un dito — perche' questi
+   * tasti stanno in file da quattro dentro riquadri stretti, e portarli a 44
+   * manderebbe a capo mezza galleria. Trentotto e' il compromesso: **uguali**,
+   * che era il problema, e piu' grandi di prima.
+   */
   button.mini {
-    padding: 7px 12px; font-size: 12.5px; font-weight: 500;
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    min-height: var(--tasto-alto); padding: 0 12px; font-size: 12.5px; font-weight: 500;
     background: var(--panel2); border: 1px solid var(--line2); color: var(--txt); border-radius: 10px;
   }
   button.mini:hover { border-color: var(--accent); }
@@ -524,8 +593,9 @@ export const STILE = `  :root {
   .posta .parole { padding: 11px 14px 4px; font-size: 13.5px; overflow-wrap: anywhere; }
   .posta .piedi { display: flex; gap: 8px; padding: 10px 14px 13px; align-items: center; }
   .cuore {
-    background: none; border: 0; padding: 4px 6px; color: var(--dim); font-size: 13px;
-    display: flex; align-items: center; gap: 6px; cursor: pointer; font-weight: 500;
+    background: none; border: 0; padding: 0 8px; color: var(--dim); font-size: 13px;
+    min-height: var(--tasto-alto);
+    display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-weight: 500;
   }
 
   /* ---------------------------------------------------------- i commenti
@@ -699,7 +769,11 @@ export const STILE = `  :root {
      Chiesto il 5 settembre 2026: «in produci lascia un po' di spazio in fondo,
      cosi' lasciamo un po' di spazio quando si scrolla». Senza, l'ultimo campo
      finisce appiccicato alla barra delle schede e per toccarlo si sbaglia. */
-  #pag-produzione, #pag-daprod, #pag-galleria { padding-bottom: 40px; }
+  /* Lo spazio in fondo vale per tutte le schede lunghe, Casa compresa: era
+     l'unica senza, e si vedeva — l'ultimo riquadro finiva appiccicato alla
+     barra. Chiesto per Produzione il 5 settembre 2026, e la ragione non era
+     di quella scheda: «cosi' lasciamo un po' di spazio quando si scrolla». */
+  #pag-casa, #pag-produzione, #pag-daprod, #pag-galleria { padding-bottom: 40px; }
 
   /* ------------------------------------------------------- il visualizer */
   /* Dietro a tutto, e senza toccare niente: nessun evento del mouse arriva
@@ -758,7 +832,15 @@ export const STILE = `  :root {
   }
   /* Con la barra accesa il fondo della pagina scende, o le ultime cose
      finirebbero sotto. */
-  body.consuono { padding-bottom: calc(var(--fondo-alto) + 58px + env(safe-area-inset-bottom)); }
+  /**
+   * Anche questa e' dichiarata, e per lo stesso motivo: il fondo del corpo
+   * scende di «--lettore-alto», e quel numero dev'essere l'altezza vera o le
+   * ultime cose finiscono sotto la barra.
+   */
+  .barraLettore { box-sizing: border-box; height: var(--lettore-alto); }
+  body.consuono {
+    padding-bottom: calc(var(--fondo-alto) + var(--lettore-alto) + env(safe-area-inset-bottom));
+  }
 
   /* --------------------------------------------------------------- il palco */
   /**
@@ -803,7 +885,12 @@ export const STILE = `  :root {
     display: block; font-size: 14px; font-weight: 600;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
-  .palcoLettore .cima .titolo small { display: block; color: var(--dim); font-size: 11.5px; }
+  /* «3 di 12» apre la fila: sottolineato tratteggiato, che e' il modo piu'
+     discreto di dire «questo si tocca» senza farlo sembrare un tasto. */
+  .palcoLettore .cima .titolo small {
+    display: block; color: var(--dim); font-size: 11.5px; cursor: pointer;
+    text-decoration: underline dotted var(--line2); text-underline-offset: 3px;
+  }
   .palcoLettore .dentro {
     flex: 1; min-height: 0; display: grid; place-items: center; padding: 6px 12px;
     transition: transform .12s linear, opacity .12s linear;
@@ -816,6 +903,46 @@ export const STILE = `  :root {
     width: min(72vw, 340px); aspect-ratio: 1; border-radius: 20px; object-fit: cover;
     box-shadow: 0 24px 70px -24px #000;
   }
+  /**
+   * ⚠ **La copertina si vede attraverso.** Chiesto il 5 settembre 2026: «la
+   * copertina 70 percento trasparenza, cosi' da vedere il visualizer bene».
+   *
+   * Il numero sta **solo qui**: se e' troppo o troppo poco si cambia questa
+   * riga e basta. «opacity: .7» vuol dire che si vede al settanta per cento,
+   * che e' il verso in cui la frase e' stata corretta mentre veniva detta
+   * («cioe' 30 percento trasparente, 70 si vede»).
+   *
+   * L'ombra sparisce: un'ombra sotto a una cosa trasparente disegna un alone
+   * scuro proprio dove il visualizer sta lavorando.
+   */
+  .palcoLettore .dentro .copertinona.attraverso { opacity: .7; box-shadow: none; }
+
+  /**
+   * **Com'e' stata fatta**, dentro il palco.
+   *
+   * Sta sopra al visualizer e sotto ai comandi, scorre da sola quando i campi
+   * sono tanti (un testo cantato e' lungo), e non si prende mai piu' di un
+   * terzo dello schermo: e' una cosa da leggere di sfuggita, non una pagina.
+   */
+  .palcoLettore .infoPalco {
+    position: relative; z-index: 1;
+    margin: 0 14px 6px; padding: 12px 14px; max-height: 34vh; overflow-y: auto;
+    background: #0d0f16e6; border: 1px solid var(--line2); border-radius: 14px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .palcoLettore .infoPalco .rigaInfo { margin-bottom: 9px; }
+  .palcoLettore .infoPalco .rigaInfo:last-child { margin-bottom: 0; }
+  .palcoLettore .infoPalco .rigaInfo b {
+    display: block; font-size: 11px; color: var(--fioco);
+    text-transform: uppercase; letter-spacing: .5px; margin-bottom: 2px;
+  }
+  .palcoLettore .infoPalco .rigaInfo span {
+    display: block; font-size: 12.5px; color: var(--txt); line-height: 1.45;
+    white-space: pre-wrap; word-break: break-word;
+  }
+  /* Il tasto acceso dice che il pannello e' aperto: senza, il secondo tocco e'
+     un tentativo invece che un gesto. */
+  .palcoLettore .tondo.acceso { border-color: var(--accent); color: var(--accent); }
   .palcoLettore .sotto { display: flex; align-items: center; gap: 10px; padding: 10px 16px 18px; }
   .palcoLettore .sotto .effetto { color: var(--fioco); font-size: 11.5px; letter-spacing: .4px; }
   .palcoLettore .tondo.grosso { width: 54px; height: 54px; font-size: 22px; border-color: var(--accent); }
@@ -845,9 +972,29 @@ export const STILE = `  :root {
     strette apposta e vanno su una riga sola: se un giorno servisse una settima
     scheda, la risposta non è restringere ancora.
   */
+  /**
+   * ⚠ **L'altezza e' dichiarata, e non e' un dettaglio di stile.**
+   *
+   * Il difetto della foto del 5 settembre 2026, segnato in rosso: fra la barra
+   * che suona e le schede si vedeva una striscia di galleria, larga una
+   * quindicina di pixel. «Aggiusta quel gap dove c'e' il segno rosso».
+   *
+   * La causa: «--fondo-alto» dice 64px ed e' quello che tutto il resto usa per
+   * fare spazio — il fondo del corpo, e soprattutto il «bottom» della barra
+   * che suona, che si appoggia esattamente li'. Ma questa barra un'altezza non
+   * ce l'aveva: la decidevano i suoi tasti, e veniva **48px**. La barra si
+   * fermava sedici pixel sopra, e in mezzo si vedeva la pagina.
+   *
+   * Dichiararla toglie il buco e toglie anche la classe di difetti a cui
+   * appartiene: da qui in poi «--fondo-alto» non e' una stima, e' la misura.
+   */
   nav.fondo {
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
-    display: grid; grid-template-columns: repeat(5, 1fr);
+    display: grid; grid-template-columns: repeat(5, 1fr); align-items: center;
+    /* «border-box», cosi' l'altezza dichiarata **comprende** il bordo di sopra:
+       con «content-box» la barra veniva 59 e il fondo della pagina 58, e
+       l'ultimo pixel di contenuto finiva sotto. */
+    box-sizing: border-box; height: var(--fondo-alto);
     background: #0a0c11f2; backdrop-filter: blur(10px);
     border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom);
   }

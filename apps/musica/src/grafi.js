@@ -428,10 +428,50 @@ export function promptCopertina(titolo, testo, estetica) {
     "album cover artwork",
     ...scena,
     stile,
-    "square composition, no text",
+    "square composition",
+    scrittaDelTitolo(titolo),
   ]
     .filter(Boolean)
     .join(", ");
+}
+
+/**
+ * **Il nome della canzone, scritto sopra.** Nuovo nella 0.9.3.
+ *
+ * Chiesto il 6 settembre 2026: «quando facciamo una produzione musicale, al
+ * punto di inserire la copertina, fai che in automatico — quando viene mandata
+ * la richiesta a Flux — di aggiungere sempre una bella scritta a tema con il
+ * nome della canzone. Solitamente gli devi scrivere tra virgolette il nome
+ * della canzone, es: "aggiungi un testo a tema Nome Canzone". Rendiamo questa
+ * cosa di default, cosi' tutte le immagini di copertina hanno il nome della
+ * canzone».
+ *
+ * ## Le virgolette non sono decorazione
+ *
+ * FLUX sa scrivere, e sa scrivere **quello che gli metti fra virgolette**: e'
+ * il modo in cui il modello capisce dove finisce la descrizione e comincia il
+ * testo da disegnare. Senza, il titolo si scioglie nella scena e il modello
+ * disegna qualcosa *a proposito* di quelle parole invece delle parole.
+ *
+ * ## E soprattutto: prima c'era scritto il contrario
+ *
+ * Fino alla 0.9.2 tutti i prompt di copertina finivano con **`no text`**. Non
+ * era una svista: era la scelta giusta per Anima e per SD, che a scrivere fanno
+ * scarabocchi, e quella riga li teneva puliti. FLUX.2 Klein — che dalla 0.9.1 e'
+ * il modello di serie per le copertine — le lettere le sa fare, quindi quella
+ * riga adesso e' solo un divieto ereditato.
+ *
+ * Il titolo si ripulisce prima: le virgolette dentro al nome chiuderebbero
+ * quelle del prompt, e un titolo di quaranta parole diventerebbe un muro.
+ */
+export function scrittaDelTitolo(titolo) {
+  const pulito = String(titolo || "")
+    .replace(/["\u00ab\u00bb\u201c\u201d]/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 60);
+  if (!pulito) return "";
+  return `with the title text "${pulito}" written across the artwork in a lettering style that matches the mood`;
 }
 
 /** Dalla descrizione libera della scheda Immagini, con i motivi come rinforzo. */

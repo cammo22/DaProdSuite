@@ -41,7 +41,7 @@
  * per quella richiesta»; per adesso è scritto qui.
  */
 
-import { copyFile, mkdir } from "node:fs/promises";
+import { copyFile, mkdir, readFile } from "node:fs/promises";
 import { statSync } from "node:fs";
 import { basename, extname, join } from "node:path";
 import type { AppId, ElementoLibreria, RichiestaDaFuori } from "@daprod/ipc";
@@ -360,10 +360,28 @@ async function esegui(richiesta: DaEseguire): Promise<void> {
   const finestra = await apriEAspetta(app);
   if (!finestra) throw new Error(`Non riesco ad aprire DaProd${maiuscola(app)}.`);
 
+  /**
+   * **Se e' una copertina, il titolo entra nel prompt qui.**
+   *
+   * Chiesto il 6 settembre 2026: «fai che in automatico, quando viene mandata
+   * la richiesta a Flux, di aggiungere sempre una bella scritta a tema con il
+   * nome della canzone». Sul computer lo fa DaProdMusica quando genera la
+   * copertina insieme al brano; questa strada e' l'altra — «rifai la copertina»
+   * dalla galleria — e passa da DaProdFoto, che di canzoni non sa niente.
+   *
+   * Si scrive **qui** e non nella scheda per la stessa ragione per cui il
+   * grafo lo costruisce la scheda: DaProdFoto deve restare una scheda che fa
+   * immagini, non una che sa cos'e' un album.
+   */
+  const perCopertina = (richiesta.opzioni["perCopertinaDi"] ?? "").trim();
+  const testoDaMandare = perCopertina
+    ? promptDiCopertina(richiesta.testo, richiesta.opzioni["titoloBrano"] ?? "")
+    : richiesta.testo;
+
   const carico: RichiestaDaFuori = {
     id: richiesta.id,
     azione: richiesta.azione,
-    testo: richiesta.testo,
+    testo: testoDaMandare,
     opzioni: richiesta.opzioni,
     da: richiesta.da,
   };
@@ -373,13 +391,33 @@ async function esegui(richiesta: DaEseguire): Promise<void> {
   const errore = await partita;
   if (errore) throw new Error(errore);
 
-  annota(`partita ${richiesta.id} su ${app}, aspetto il file`);
-  const uscito = await aspettaIlFile(app, da, richiesta.id);
+  /**
+   * ⚠ **Quanti file aspettare, e non «uno».**
+   *
+   * Chiesto il 5 settembre 2026: «se mando due canzoni contemporaneamente non
+   * funziona, ne fa solo una».
+   *
+   * Ed era vero, e la causa non stava nella scheda: DaProdMusica il ciclo lo
+   * faceva — `quante` finisce nel campo «batch» e la scheda genera due brani
+   * uno dopo l'altro. Il difetto stava **qui**: si aspettava *il* file, al
+   * singolare. Appena usciva il primo, questo lavoro risultava finito, la fila
+   * passava al prossimo e — quando la fila si svuota — la suite **chiude le
+   * schede che ha aperto per liberare la scheda video**. Cioe' ammazzava la
+   * seconda canzone mentre la stava generando.
+   *
+   * Quindi il difetto era una consegna incompleta che diventava una
+   * generazione uccisa, ed e' il motivo per cui si vedeva come «ne fa solo
+   * una» invece che come «me ne consegna una sola».
+   */
+  const quanti = quantiNeAspetto(richiesta);
+  annota(`partita ${richiesta.id} su ${app}, aspetto ${quanti} file`);
+  const usciti = await aspettaIFile(app, da, richiesta.id, quanti);
   if (daFermare === richiesta.id) {
     daFermare = "";
     throw new Error("Fermato da chi sta al computer.");
   }
-  if (!uscito) throw new Error("Il lavoro è partito ma non ne è uscito niente.");
+  if (!usciti.length) throw new Error("Il lavoro è partito ma non ne è uscito niente.");
+  const uscito = usciti[0]!;
 
   /**
    * Il file prende il nome di quello che era stato chiesto, e il suo padrone.
@@ -451,9 +489,112 @@ async function esegui(richiesta: DaEseguire): Promise<void> {
     annota(`non sono riuscito a rinominare ${uscito.id}: ${err instanceof Error ? err.message : String(err)}`);
   }
 
+  /**
+   * **Una copertina non e' un risultato: e' la faccia di un brano.**
+   *
+   * Non si consegna e non si mostra come immagine — chi ha premuto «rifai la
+   * copertina» non voleva una foto in galleria, voleva che quel brano avesse
+   * un'altra faccia. Si attacca al brano e l'immagine si butta: lasciarla
+   * vorrebbe dire una copia in galleria per ogni tentativo.
+   */
+  if (perCopertina) {
+    const fatta = await attaccaLaCopertina(perCopertina, battezzato);
+    // Si consegna comunque il file: chi ha chiesto vede il lavoro «pronto» e,
+    // se l'aggancio non e' riuscito, ha almeno l'immagine in mano.
+    cablaggio?.consegna(richiesta.id, await portaNeiRisultati(battezzato));
+    if (fatta) {
+      // Attaccata: la copia in galleria non serve piu' e sarebbe una foto in
+      // piu' per ogni tentativo. Il `.cover.jpg` accanto al brano resta.
+      try { libreria.elimina(battezzato.id); } catch { /* resta in galleria: pazienza */ }
+      annota(`copertina rifatta per ${perCopertina}`);
+    } else {
+      annota(`la copertina di ${perCopertina} non si e' attaccata: resta in galleria`);
+    }
+    return;
+  }
+
   const copiato = await portaNeiRisultati(battezzato);
   cablaggio?.consegna(richiesta.id, copiato);
   annota(`pronta ${richiesta.id}: ${copiato.nome}`);
+
+  /**
+   * **Gli altri file dello stesso lavoro.**
+   *
+   * Il primo e' «il risultato» — quello che si scarica dalla notifica — e gli
+   * altri prendono nome e padrone come lui, cosi' in galleria compaiono tutti e
+   * quattro con il titolo giusto invece che come `daprod_00042_.png`.
+   */
+  for (let i = 1; i < usciti.length; i++) {
+    const altro = usciti[i]!;
+    try {
+      await libreria.intitola(altro.id, {
+        titolo: comeSiChiama,
+        chi: richiesta.daId,
+        chiNome: richiesta.da,
+        extra: {
+          richiesta: richiesta.id,
+          azione: richiesta.azione,
+          ...richiesta.opzioni,
+          prompt: richiesta.opzioni["prompt"] ?? richiesta.testo,
+        },
+      });
+    } catch (err) {
+      annota(`il numero ${i + 1} di ${richiesta.id} resta senza nome: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+  if (usciti.length > 1) annota(`e con lei altre ${usciti.length - 1} in galleria`);
+}
+
+/**
+ * Quanti file deve produrre questo lavoro.
+ *
+ * `quante` esiste per le immagini da sempre e per i brani dalla 0.9.1. Il tetto
+ * a quattro e' quello del catalogo: qui non ci si fida di quello che arriva da
+ * fuori, si rilegge.
+ */
+function quantiNeAspetto(richiesta: DaEseguire): number {
+  const detto = Number(richiesta.opzioni["quante"]);
+  if (!Number.isFinite(detto)) return 1;
+  return Math.max(1, Math.min(4, Math.round(detto)));
+}
+
+/**
+ * Il prompt di una copertina, con il titolo scritto sopra.
+ *
+ * Le virgolette non sono decorazione: sono il modo in cui FLUX capisce dove
+ * finisce la descrizione e comincia il testo da disegnare. Senza, il titolo si
+ * scioglie nella scena e il modello disegna qualcosa *a proposito* di quelle
+ * parole invece delle parole.
+ *
+ * ⚠ Fino alla 0.9.2 i prompt di copertina finivano con `no text`, e non era una
+ * svista: era giusto per Anima e per SD, che a scrivere fanno scarabocchi.
+ * FLUX.2 Klein — di serie per le copertine dalla 0.9.1 — le lettere le sa fare.
+ */
+function promptDiCopertina(idea: string, titolo: string): string {
+  const pulito = titolo.replace(/["\u00ab\u00bb\u201c\u201d]/g, "").replace(/\s+/g, " ").trim().slice(0, 60);
+  const pezzi = ["album cover artwork", idea.trim(), "square composition"];
+  if (pulito) {
+    pezzi.push(`with the title text "${pulito}" written across the artwork in a lettering style that matches the mood`);
+  }
+  return pezzi.filter(Boolean).join(", ");
+}
+
+/**
+ * Attacca un'immagine appena generata come copertina di un brano.
+ *
+ * Passa da `impostaCopertina`, che e' la stessa strada di DaProdMusica: scrive
+ * il `.cover.jpg` accanto al brano e, se FFmpeg c'e', la cuce anche dentro
+ * l'mp3. Un posto solo per una cosa sola.
+ */
+async function attaccaLaCopertina(idBrano: string, immagine: ElementoLibreria): Promise<boolean> {
+  try {
+    const dati = await readFile(immagine.percorso);
+    const tipo = extname(immagine.percorso).toLowerCase() === ".png" ? "image/png" : "image/jpeg";
+    return libreria.impostaCopertina(idBrano, `data:${tipo};base64,${dati.toString("base64")}`);
+  } catch (err) {
+    annota(`non sono riuscito ad attaccare la copertina: ${err instanceof Error ? err.message : String(err)}`);
+    return false;
+  }
 }
 
 /**
@@ -525,25 +666,55 @@ function attendiRisposta(id: string): Promise<string> {
  * stessa dimensione, e non zero. Costa qualche secondo in più e toglie di mezzo
  * una consegna sbagliata su tre.
  */
-async function aspettaIlFile(app: AppId, da: number, id: string): Promise<ElementoLibreria | null> {
+async function aspettaIFile(
+  app: AppId,
+  da: number,
+  id: string,
+  quanti: number,
+): Promise<ElementoLibreria[]> {
   const scaduta = da + ATTESA_FILE_MS;
+  const presi: ElementoLibreria[] = [];
+  const visti = new Set<string>();
+  /**
+   * Quanto si aspetta un compagno dopo che il primo e' arrivato.
+   *
+   * ⚠ Serve un tetto a parte, e piu' corto di quello grande: se la scheda ne
+   * genera due e il secondo fallisce, senza questo si starebbe fermi
+   * quarantacinque minuti prima di consegnare il primo — cioe' si perderebbe
+   * anche quello che era riuscito. Dieci minuti bastano a una canzone e a
+   * un'immagine; oltre, si consegna quello che c'e'.
+   */
+  const ATTESA_COMPAGNO_MS = 10 * 60_000;
+  let ultimoArrivo = Date.now();
+
   while (Date.now() < scaduta) {
     await pausa(3000);
     // Qualcuno ha detto basta: si smette di aspettare, e il lavoro risulta
     // annullato invece che fallito. Sono due cose diverse e chi guarda lo vede.
-    if (daFermare === id) return null;
+    if (daFermare === id) return presi;
+
     const nuovi = libreria
       .cerca({ app })
-      .filter((e) => e.creato > da)
+      .filter((e) => e.creato > da && !visti.has(e.id))
       .sort((a, b) => a.creato - b.creato);
-    const primo = nuovi[0];
-    if (!primo) continue;
-    const fermo = await aspettaCheSiaFermo(primo.percorso);
-    if (fermo) return libreria.trova(primo.id) ?? primo;
-    // Ha smesso di esistere mentre lo guardavamo — capita con i file
-    // temporanei di certi motori: si riparte dal giro dopo.
+
+    for (const candidato of nuovi) {
+      const fermo = await aspettaCheSiaFermo(candidato.percorso);
+      // Ha smesso di esistere mentre lo guardavamo — capita con i file
+      // temporanei di certi motori: si riparte dal giro dopo.
+      if (!fermo) continue;
+      visti.add(candidato.id);
+      presi.push(libreria.trova(candidato.id) ?? candidato);
+      ultimoArrivo = Date.now();
+      if (presi.length >= quanti) return presi;
+    }
+
+    if (presi.length && Date.now() - ultimoArrivo > ATTESA_COMPAGNO_MS) {
+      annota(`ne aspettavo ${quanti}, ne sono arrivati ${presi.length}: consegno questi`);
+      return presi;
+    }
   }
-  return null;
+  return presi;
 }
 
 /**

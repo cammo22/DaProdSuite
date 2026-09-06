@@ -10,7 +10,7 @@ Un programma solo per fare musica, immagini, video, voci e parlare con un avatar
 Ogni app la installi quando ti serve e la disinstalli quando non ti serve più.
 Gira sul tuo computer: niente account, niente chiavi API, codice aperto.
 
-[![versione](https://img.shields.io/badge/versione-0.9.1-7c5cff)](https://github.com/cammo22/DaProdSuite/releases/latest)
+[![versione](https://img.shields.io/badge/versione-0.9.3-7c5cff)](https://github.com/cammo22/DaProdSuite/releases/latest)
 [![licenza](https://img.shields.io/badge/licenza-MIT-5cff9d)](LICENSE)
 [![piattaforma](https://img.shields.io/badge/Windows-x64-3ddbff)](#requisiti)
 [![sito](https://img.shields.io/badge/sito-cammo22.github.io-ffa63d)](https://cammo22.github.io/DaProdSuite/)
@@ -95,17 +95,13 @@ tutte lo stesso.
 
 ## A che punto siamo
 
-**Ultima pubblicata: 0.9.1 — «Quaranta cose che si vedevano».** Nessuna funzione
-nuova grossa: quaranta difetti e rifiniture trovati usando la 0.9.0 per una
-sera. I default veri al posto di «quello scelto sul computer», la copertina di
-un brano chiesta dal telefono, il visualizer spostato dove serve, la galleria
-che segna cosa non hai ancora guardato, l'archivio, i permessi chiesti
-all'avvio, e le impostazioni che non sono più le stesse per tutti.
-
-**Prima, la 0.8.1 — «Il fotogramma, la foto, e le parole sotto».** La causa vera
-delle anteprime dei video: FFmpeg scriveva su un file `.part` e sceglie il
-formato dall'estensione, quindi rifiutava — 1269 volte, in silenzio. E i
-commenti sotto alle cose in bacheca.
+**Ultima pubblicata: 0.9.3 — «Il visualizer vero, e le cose che non tornavano».**
+Il visualizer della console adesso è **quello di DaProdVisualizer**: gli stessi
+nove shader, gli stessi legami fra suono e immagine, le stesse quattro passate
+di post-processing — non una somiglianza, lo stesso codice. Più le due cose
+invisibili che costavano di più: gli utenti non saltano più a ogni
+aggiornamento, e due canzoni chieste insieme adesso escono in due. E il nome
+del brano scritto sopra alla copertina, sempre.
 
 
 **Prima, la 0.8.0 — «Le cose lasciate indietro».** Sette difetti rimandati

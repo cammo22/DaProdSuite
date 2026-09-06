@@ -306,7 +306,33 @@ console.log("\n— niente variabili nate per sbaglio —");
     .replace(/'(?:[^'\\]|\\.)*'/g, "''");
 
   const dichiarate = new Set();
-  for (const m of nudo.matchAll(/\b(?:var|let|const)\s+([A-Za-z_$][\w$]*)/g)) dichiarate.add(m[1]);
+  /** Un nome per volta, saltando quello che sta a destra di un «=». */
+  const dichiaraDa = (pezzo) => {
+    const nome = pezzo.trim().split("=")[0].trim();
+    if (/^[A-Za-z_$][\w$]*$/.test(nome)) dichiarate.add(nome);
+  };
+  /**
+   * ⚠ **Anche i nomi dopo la prima virgola.**
+   *
+   * Qui si prendeva solo il nome subito dopo «var», quindi di
+   * `var quadrati = 0, cimaAss = 0;` si vedeva `quadrati` e basta: `cimaAss`
+   * finiva fra le variabili nate per sbaglio, e non lo era.
+   *
+   * Un controllo che accusa il codice giusto è peggio di nessun controllo:
+   * la prima volta si perde tempo a cercare un difetto che non c'è, la
+   * seconda lo si ignora — e la terza è quella in cui aveva ragione.
+   */
+  for (const m of nudo.matchAll(/\b(?:var|let|const)\s+([^;\n]*)/g)) {
+    let profondita = 0;
+    let pezzo = "";
+    for (const ch of m[1]) {
+      if ("([{".includes(ch)) profondita++;
+      else if (")]}".includes(ch)) profondita--;
+      if (ch === "," && profondita <= 0) { dichiaraDa(pezzo); pezzo = ""; continue; }
+      pezzo += ch;
+    }
+    dichiaraDa(pezzo);
+  }
   for (const m of nudo.matchAll(/\bfunction\s+([A-Za-z_$][\w$]*)/g)) dichiarate.add(m[1]);
   // I parametri: `function (a, b)`, `function nome(a, b)`, `(a, b) =>`.
   for (const m of nudo.matchAll(/(?:function\s*[A-Za-z_$][\w$]*\s*|function\s*|\bcatch\s*)\(([^)]*)\)/g)) {

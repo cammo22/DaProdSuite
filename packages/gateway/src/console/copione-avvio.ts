@@ -131,10 +131,29 @@ export const COPIONE_AVVIO = `
   $("palco-play").addEventListener("click", pausaOSuona);
   $("palco-prima").addEventListener("click", precedente);
   $("palco-poi").addEventListener("click", prossimo);
-  $("palco-cambia").addEventListener("click", function () { cambiaEffetto(false); });
-  $("palco-effetto").addEventListener("click", function () { cambiaEffetto(false); });
+  /**
+   * L'ingranaggio cambia effetto **adesso**, senza aspettare i quarantacinque
+   * secondi. Dalla 0.9.2 il motore ne sceglie uno a caso fra i nove veri.
+   */
+  $("palco-cambia").addEventListener("click", function () { Visual.cambia(null); });
   $("palco-giu").addEventListener("click", chiudiPalco);
-  $("palco-fila").addEventListener("click", apriLaFila);
+  /**
+   * ⚠ **Le tre linee cambiano mestiere.** Chiesto il 5 settembre 2026: «il
+   * tasto con le tre linee a destra durante la riproduzione DaProd non
+   * funziona: rendilo il tasto che, se cliccato, mostra tutte le info della
+   * canzone, e se lo riclicchi scompare».
+   */
+  $("palco-fila").addEventListener("click", giraLeInfo);
+  /** E la fila va dove uno la cerca: addosso al «3 di 12». */
+  $("palco-sotto").addEventListener("click", apriLaFila);
+  /**
+   * Un tocco sul visualizer cambia effetto.
+   *
+   * E' il posto dove finisce il gesto che aveva il tasto asterisco, tolto dalla
+   * barra: chi vuole cambiare tocca quello che sta guardando, che e' piu'
+   * naturale di cercare un simbolo in un angolo.
+   */
+  $("visual").addEventListener("click", function () { Visual.cambia(null); });
   // La barra del tempo: mentre il dito e' sopra, il brano non la muove.
   $("palco-barra").addEventListener("input", function () { stoTrascinando = true; });
   $("palco-barra").addEventListener("change", function () { stoTrascinando = false; vaiAlPunto(); });

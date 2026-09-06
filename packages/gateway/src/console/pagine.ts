@@ -460,6 +460,20 @@ export const PAGINE = `<header>
   <div class="dentro" id="palco-dentro"></div>
 
   <!--
+    **Com'e' stata fatta**, dentro il palco e non in un foglio.
+
+    ⚠ Chiesto il 5 settembre 2026: «il tasto con le tre linee a destra durante
+    la riproduzione DaProd non funziona: rendilo il tasto che, se cliccato,
+    mostra tutte le info della canzone, e se lo riclicchi scompare».
+
+    Non funzionava per una ragione precisa: apriva un foglio, e un foglio sopra
+    al palco — che sta a schermo intero con z-index 80 — finiva sotto. Il tasto
+    rispondeva; quello che apriva stava dietro. Qui il pannello e' dentro al
+    palco, quindi il problema non si ripresenta.
+  -->
+  <div class="infoPalco" id="palco-info" hidden></div>
+
+  <!--
     **Il tempo, e ci si sposta dentro.** Chiesto il 5 settembre 2026: «lo swipe
     funziona in galleria, ma non e' possibile andare avanti e indietro nel tempo
     della canzone».
@@ -473,14 +487,27 @@ export const PAGINE = `<header>
     <span class="ora" id="palco-durata">0:00</span>
   </div>
 
+  <!--
+    **Sei tasti sono diventati cinque.** Chiesto il 5 settembre 2026: «il tasto
+    a sinistra, asterisco, toglilo — e togli anche le scritte del nome
+    dell'effetto».
+
+    Aveva ragione, e la ragione non e' l'ingombro: quel tasto cambiava effetto,
+    e dalla 0.9.2 l'effetto si cambia da solo ogni quarantacinque secondi
+    aspettando un colpo forte. Un tasto che fa una cosa che succede comunque e'
+    un tasto che insegna a non guardare i tasti. Chi lo vuole a mano ce l'ha
+    ancora: si tocca il visualizer.
+
+    Le tre linee restano dove stavano ma cambiano mestiere: aprono e chiudono
+    le info di quello che sta suonando.
+  -->
   <div class="sotto">
-    <button class="tondo" id="palco-effetto" title="Cambia effetto"></button>
     <div class="cresci"></div>
     <button class="tondo" id="palco-prima" title="Precedente">&#9198;</button>
     <button class="tondo grosso" id="palco-play" title="Pausa">&#9208;</button>
     <button class="tondo" id="palco-poi" title="Prossimo">&#9197;</button>
     <div class="cresci"></div>
-    <button class="tondo" id="palco-fila" title="La fila">&#9776;</button>
+    <button class="tondo" id="palco-fila" title="Com&#8217;&#232; stata fatta">&#9776;</button>
   </div>
 </div>
 

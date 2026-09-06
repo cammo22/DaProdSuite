@@ -1,73 +1,86 @@
 # Riprendere da qui
 
-Documento di passaggio fra una sessione e l'altra. Aggiornato il **5 settembre
-2026**, con la **0.9.1** appena pubblicata.
+Documento di passaggio fra una sessione e l'altra. Aggiornato il **6 settembre
+2026**, con la **0.9.3** appena pubblicata.
 
-> **Il prossimo passo è provare la 0.9.1 su un telefono vero.** Sull'emulatore
-> si è visto tutto — permessi, galleria, moduli, impostazioni da admin — ma tre
-> cose l'emulatore non le sa dire:
+> **Il prossimo passo è far uscire una clip vera dal disco**, e subito dopo una
+> storia da 30 secondi. È il punto più vecchio della roadmap — i pezzi
+> incatenati sono scritti da tre versioni e non hanno mai visto una scheda
+> video — e finché non esce un mp4, «30, 60, 120» sono tre numeri in un menu.
 >
-> 1. **la musica con l'app in tasca.** Metto un brano, abbasso, spengo lo
->    schermo, e uso il telefono per cinque minuti: suona ancora? La fila va
->    avanti da sola?
-> 2. **la notifica a lavoro ricevuto, con l'app chiusa.** Nella 0.9.1 ne è
->    rimasta una sola per parte, e quella deve arrivare.
-> 3. **un mp3 condiviso su WhatsApp.** Era il difetto del nome senza
->    estensione: adesso arriva come canzone o ancora come documento?
+> Poi **la 0.9.3 su un telefono vero**, e quattro cose che né l'emulatore né il
+> banco sanno dire:
 >
-> Poi, in quest'ordine: **il motore vero del visualizer** (l'unica cosa della
-> 0.9.1 rimasta a metà), **una clip vera che esce dal disco** e subito dopo una
-> storia da 30 secondi, e **la bacheca con due persone vere**.
+> 1. **il visualizer che gira davvero**, con la musica, e a quanti fotogrammi:
+>    nove shader e quattro passate di post-processing su una GPU da telefono
+>    sono un'incognita vera;
+> 2. **un aggiornamento vero**, per vedere se gli utenti restano — la causa è
+>    stata trovata e chiusa, ma il giro non è stato rifatto;
+> 3. la musica con l'app in tasca e lo schermo spento;
+> 4. un mp3 condiviso su WhatsApp.
 >
 > Il dettaglio di cosa è provato e cosa no sta in fondo al
-> [CHANGELOG](../CHANGELOG.md), § 0.9.1 «Cosa resta da fare», e in
+> [CHANGELOG](../CHANGELOG.md), § 0.9.3 «Cosa resta da fare», e in
 > [ROADMAP.md](ROADMAP.md) § «Il prossimo passo».
 
-> ⚠ **La lezione della 0.9.0: guardare dentro la WebView.** L'app Android è una
-> WebView sopra la console del gateway, e per mesi «spesso crasha e spesso non
-> si collega» è stato un sintomo senza cause, perché **dentro la pagina non si
-> poteva guardare**. Con `adb forward` e il Chrome DevTools Protocol si può:
-> `node apps/mobile/scripts/dentro-la-pagina.mjs` apre un ponte, e da lì si
-> leggono gli errori, si ispeziona il DOM e si può perfino mandare `Page.crash`
-> alla pagina per vedere cosa fa l'app quando il renderer muore.
+> ⚠ **La lezione della 0.9.3: la premessa di un commento va guardata come il
+> codice.**
 >
-> Le tre cause sono venute fuori tutte e tre di lì in una sera, e una — il
-> visualizer quasi nero — era una collisione di nomi di classe CSS che nessuna
-> prova automatica avrebbe mai visto.
+> Gli utenti saltavano a ogni aggiornamento per colpa di quattro righe che
+> spiegavano perché fermarsi al primo rifiuto: «un no vale per tutti gli
+> indirizzi dello stesso computer, è il token a non andare bene, non la strada».
+> Il ragionamento è corretto. La premessa — che quegli indirizzi siano lo stesso
+> computer — è falsa: uno è il tunnel, che cambia nome a ogni accensione e viene
+> riciclato da Cloudflare.
+>
+> Un commento che spiega bene un ragionamento sbagliato è più difficile da
+> trovare di uno assente, perché chi legge si ferma soddisfatto. Quando una
+> cosa non torna, il commento che dice perché è **il primo posto da mettere in
+> dubbio**, non l'ultimo.
+
+> ⚠ **La lezione del visualizer: guardare cosa fa davvero la libreria.**
+>
+> Per due versioni il port è stato rimandato perché «DaProdVisualizer è
+> Three.js, e Three nella console non ci sta». Vero, e irrilevante: aprendo il
+> motore si vede che per **nove preset su undici** Three disegna due triangoli e
+> basta. Tutto il carattere sta nel GLSL, che si porta com'è.
+>
+> «Dipende da una libreria grossa» non vuol dire «ha bisogno di una libreria
+> grossa». Vale la pena aprire e guardare prima di dire di no.
 
 > ⚠ **La lezione della 0.9.1: provare non è usare.** Quaranta correzioni sono
-> uscite da **una sera d'uso**, non da un giro di collaudo. Provare vuol dire
+> uscite da una sera d'uso, non da un giro di collaudo. Provare vuol dire
 > chiedersi se il gesto funziona; usare vuol dire scoprire che funziona e non
-> serve. «Quello scelto sul computer» non era rotto: era una risposta sbagliata
-> a una domanda che ne ha una giusta, e nessuna prova automatica lo dice.
+> serve.
 
-> ⚠ **La lezione della 0.8.1, che vale più della correzione.** Il difetto delle
-> anteprime è durato quattro versioni perché **FFmpeg si lamentava e nessuno lo
-> scriveva**: `gira()` guardava il codice di uscita e buttava via `stderr`. Il
-> conto finale è stato 1269 esecuzioni e zero file prodotti.
->
-> Quando una cosa non funziona e non c'è niente nel log, il primo sospetto è che
-> **il log non ci sia**, non che la causa sia sottile. E prima di leggere il
-> codice: contare. `grep -c` sul registro dei processi contro `ls | wc -l` sulla
-> cartella dei risultati ha detto in due comandi quello che tre giri di lettura
-> non avevano visto.
+> ⚠ **La lezione della 0.9.0: guardare dentro la WebView.** L'app Android è una
+> WebView sopra la console, e per mesi «spesso crasha e spesso non si collega» è
+> stato un sintomo senza cause perché dentro la pagina non si poteva guardare.
+> Con `adb forward` e il Chrome DevTools Protocol si può:
+> `node apps/mobile/scripts/dentro-la-pagina.mjs`.
+
+> ⚠ **La lezione della 0.8.1.** Il difetto delle anteprime è durato quattro
+> versioni perché **FFmpeg si lamentava e nessuno lo scriveva**: `gira()`
+> guardava il codice di uscita e buttava via `stderr`. Quando una cosa non
+> funziona e non c'è niente nel log, il primo sospetto è che **il log non ci
+> sia**, non che la causa sia sottile.
 
 
-> **Tre attrezzi che vanno usati**, e nessuno dei tre vuole la suite accesa:
+> **Quattro attrezzi che vanno usati**, e nessuno vuole la suite accesa:
 >
 > - `node apps/shell/scripts/banco-console.mjs` accende un gateway vero con dati
->   finti e stampa due indirizzi — uno «come telefono», uno «come computer». Si
->   aprono in un browser e si guarda la pagina vera. Nella 0.7.7 ha trovato tre
->   difetti che nessuna prova automatica poteva vedere; nella 0.9.1 ha tenuto in
->   piedi l'account CammoBot da admin. Con `BANCO_PORTA` e `BANCO_DATI` la porta
->   e i dati restano gli stessi fra un'accensione e l'altra, che è quello che
->   serve per puntarci l'app Android.
-> - `node apps/mobile/scripts/dentro-la-pagina.mjs` entra nella WebView
->   dell'app sull'emulatore (vedi la lezione della 0.9.0 qui sopra).
+>   finti e stampa due indirizzi. Con `BANCO_PORTA` e `BANCO_DATI` la porta e i
+>   dati restano gli stessi fra un'accensione e l'altra.
+> - `node apps/mobile/scripts/dentro-la-pagina.mjs` entra nella WebView dell'app
+>   sull'emulatore.
+> - `node packages/gateway/scripts/porta-il-visualizer.mjs` ritravasa gli shader
+>   di DaProdVisualizer dentro la console. **Si rilancia quando si tocca uno
+>   shader nell'app**, e non si scrive mai a mano quel file.
 > - `pnpm run prova` gira cicli, avvio, azioni, gateway e MCP in una decina di
->   secondi. `prova-avvio.mjs` in particolare carica **tutti** i moduli del main
->   con un Electron finto: è quello che vede un import circolare prima che
->   ammazzi la suite all'avvio.
+>   secondi. Dalla 0.9.3 controlla anche che il copione della console **si
+>   legga**: quei file sono template literal, quindi per `tsc` il loro contenuto
+>   è testo e un errore di sintassi lì dentro non lo vede nessuno fino al
+>   browser.
 
 
 **Se stai leggendo questo all'inizio di una conversazione nuova**: leggi anche
@@ -189,6 +202,8 @@ Repo pubblico: **https://github.com/cammo22/DaProdSuite**
 | **Il lettore dell'app: fila, palco, visualizer** | fatto nella 0.9.0, rifatto di posto nella 0.9.1. **⚠ Non è il motore WebGL di DaProdVisualizer**: quello sta in un'app React e nella console non ci entra così com'è |
 | **Video da 30, 60 e 120 secondi** | `apps/cinema/src/lungo.js`, pezzi incatenati per l'ultimo fotogramma. **⚠ Mai passati per una scheda video** |
 | **La 0.9.1: quaranta cose che si vedevano** | fatto il 5 settembre. Non funzioni nuove: quello che è venuto fuori **usando** la 0.9.0 per una sera. Il dettaglio sta nel CHANGELOG § 0.9.1 |
+| **La 0.9.3: il visualizer vero, e le cose che non tornavano** | fatto il 6 settembre. Nove shader di DaProdVisualizer portati con uno script, gli utenti che restano dopo un aggiornamento, due canzoni che escono in due, e il titolo sulle copertine |
+| **`porta-il-visualizer.mjs`** | il travaso degli shader. **Si rilancia**, non si riscrive: se lo si riscrivesse, alla terza correzione i due visualizer sarebbero due cose diverse con lo stesso nome |
 | **L'account CammoBot** | nel banco della console c'è un admin di prova, e con `BANCO_PORTA`/`BANCO_DATI` la porta e i dati restano gli stessi fra un'accensione e l'altra: è quello che serve per puntarci l'app Android |
 
 Si lavora su **un ramo per release e una PR**: `release-0.2.0` è stata unita con

@@ -248,10 +248,65 @@ export const COPIONE_GALLERIA = `
       },
     );
 
+    /**
+     * **Condividere, tenendo premuto.** Chiesto il 5 settembre 2026: «fai in
+     * modo che tenendo premuto un contenuto della galleria si possa condividere
+     * nella DaProd e anche condividere esternamente».
+     *
+     * I due tasti c'erano gia', ma **dentro la lente**: per arrivarci bisognava
+     * aprire la cosa, guardarla, e poi cercarli in fondo. Tenendo premuto si
+     * sceglie senza aprire, che e' quello che uno fa quando ne pubblica sei di
+     * fila.
+     *
+     * Sono due condivisioni diverse e vale la pena non confonderle: **in
+     * DaProd** non muove un byte — la cosa e' gia' sul computer e si accende
+     * una spunta; **fuori** manda il file vero a WhatsApp, e quello parte dal
+     * telefono.
+     */
+    if (v.mia) {
+      voceFoglio(
+        carta,
+        v.pubblicato ? "\u2713" : "\u263C",
+        v.pubblicato ? "Toglila da DaProd" : "Condividila in DaProd",
+        v.pubblicato ? "smette di stare in bacheca" : "la vedono tutti, con la tua faccia sopra",
+        function () { chiudiFoglio(); void metti0Togli(v); },
+      );
+    }
+
+    if (sipuoCondividere()) {
+      voceFoglio(carta, "\u21AA", "Condividila fuori", "WhatsApp, Telegram, quello che hai", function () {
+        chiudiFoglio();
+        void condividiFuori(v, null);
+      });
+    }
+
+    voceFoglio(carta, "\u2913", "Salvala nel telefono", "finisce nelle tue foto", function () {
+      chiudiFoglio();
+      void tieniNelTelefono(v, null);
+    });
+
+    /**
+     * **Rifare la copertina di un brano.** Chiesto il 5 settembre 2026:
+     * «sempre in galleria facciamo che, se teniamo premuta una canzone,
+     * possiamo rigenerare la sua copertina — o usando lo stesso prompt o
+     * cambiandolo: la canzone viene tolta, viene cambiata l'immagine e
+     * ricaricata».
+     *
+     * Il prompt di serie e' **quello con cui era stata fatta**, che sta nei
+     * campi di «Com'e' stata fatta»: nove volte su dieci non piaceva
+     * l'immagine, non l'idea, e ripartire da zero vorrebbe dire riscriverla.
+     */
+    if (v.tipo === "audio") {
+      voceFoglio(carta, "\u25A3", "Rifai la copertina", "stesso prompt, o cambialo", function () {
+        chiudiFoglio();
+        apriRifaiLaCopertina(v);
+      });
+    }
+
     if (dove === "archivio") {
       voceFoglio(carta, "\u21B6", "Tirala fuori dall\u0027archivio", "torna in galleria", function () {
         chiudiFoglio();
-        void archivia(v, false);
+        void archivia(v, false, box);
       });
       voceFoglio(carta, "\u2715", "Buttala davvero", "il file sparisce dal computer", function () {
         if (!confirm("Cancellare \u00ab" + v.nome + "\u00bb dal computer? Non si torna indietro.")) return;
@@ -261,12 +316,117 @@ export const COPIONE_GALLERIA = `
     } else {
       voceFoglio(carta, "\u2637", "Mettila in archivio", "esce dalla galleria, non si cancella", function () {
         chiudiFoglio();
-        void archivia(v, true);
+        void archivia(v, true, box);
       });
     }
   }
 
-  async function archivia(v, dentro) {
+  /** Mette o toglie una cosa dalla bacheca. Lo stesso gesto nei due versi. */
+  async function metti0Togli(v) {
+    try {
+      var didascalia;
+      if (!v.pubblicato) {
+        didascalia = window.prompt(
+          "Due parole sotto, se ti va:",
+          v.didascalia || v.nome,
+        );
+        // Annullare vuol dire annullare, non pubblicare senza didascalia.
+        if (didascalia === null) return;
+      }
+      await chiama("/libreria/" + encodeURIComponent(v.id) + "/pubblica", {
+        method: "POST",
+        body: JSON.stringify({
+          pubblicato: !v.pubblicato,
+          didascalia: didascalia ? didascalia.trim() : undefined,
+        }),
+      });
+      await leggiGalleria();
+    } catch (e) {
+      alert(e.message);
+    }
+  }
+
+  /**
+   * Rifare la copertina: si conferma il prompt, e si aspetta.
+   *
+   * Il lavoro passa dalla fila come tutti gli altri — stessi limiti, stessa
+   * notifica quando e' pronto — e quando l'immagine esce **non finisce in
+   * galleria**: va addosso al brano. Vedi «perCopertinaDi» in esecuzione.ts.
+   */
+  function apriRifaiLaCopertina(v) {
+    var fatta = v.comeEStataFatta || {};
+    var prima = fatta["La copertina"] || fatta["Il prompt"] || "";
+    var carta = apriFoglio("Rifai la copertina");
+
+    var quale = document.createElement("p");
+    quale.className = "sotto";
+    quale.textContent = v.didascalia || v.nome;
+    carta.append(quale);
+
+    var eti = document.createElement("label");
+    eti.textContent = "Cosa ci deve essere";
+    var casella = document.createElement("textarea");
+    casella.rows = 3;
+    casella.value = prima;
+    casella.placeholder = "un tramonto sul mare, colori caldi";
+    carta.append(eti, casella);
+
+    /**
+     * **Il nome ci va comunque, e non si chiede.** Chiesto il 6 settembre
+     * 2026: «fai che in automatico, quando viene mandata la richiesta a Flux,
+     * di mettere sempre una bella scritta a tema con il nome della canzone».
+     * Qui si dice che succedera', perche' una cosa che succede da sola e non
+     * si vede scritta sembra un errore la prima volta.
+     */
+    var nota = document.createElement("p");
+    nota.className = "nota";
+    nota.textContent = "Il titolo del brano lo scrive sopra da sé.";
+    carta.append(nota);
+
+    var fila = document.createElement("div");
+    fila.className = "fila";
+    var vai = document.createElement("button");
+    vai.className = "primario";
+    vai.textContent = "\u25B6 Rifalla";
+    vai.addEventListener("click", async function () {
+      vai.disabled = true;
+      try {
+        await chiama("/libreria/" + encodeURIComponent(v.id) + "/copertina", {
+          method: "POST",
+          body: JSON.stringify({ prompt: casella.value.trim() }),
+        });
+        chiudiFoglio();
+        alert("La copertina è in fila. Compare qui appena è pronta.");
+      } catch (e) {
+        vai.disabled = false;
+        alert(e.message);
+      }
+    });
+    fila.append(vai);
+    carta.append(fila);
+  }
+
+  /**
+   * Mette via una cosa, o la tira fuori.
+   *
+   * ⚠ **Il riquadro sparisce subito**, prima della risposta. Chiesto il 5
+   * settembre 2026, due volte nella stessa lista: «quando una canzone viene
+   * spostata nell'archivio deve scomparire dalla galleria», e «anche se sono
+   * admin e metto in archivio un contenuto di altri, quello deve sparire dalla
+   * galleria e andare in archivio».
+   *
+   * Il computer lo faceva gia' — il filtro esclude le archiviate da tutte le
+   * sezioni, «Di tutti» compresa. Quello che mancava era **qui**: fra il tocco
+   * e la galleria riletta passano il viaggio di andata, la scrittura del file e
+   * il viaggio di ritorno, e in quel mezzo secondo la cosa e' ancora li'. Su un
+   * telefono mezzo secondo e' il tempo in cui uno guarda se e' successo
+   * qualcosa, non lo vede, e preme di nuovo.
+   *
+   * Se il computer poi dice di no, la rilettura la rimette al suo posto: si e'
+   * mostrato in anticipo l'esito piu' probabile, non si e' mentito.
+   */
+  async function archivia(v, dentro, box) {
+    if (box && box.parentNode) box.remove();
     try {
       await chiama("/libreria/" + encodeURIComponent(v.id) + "/archivia", {
         method: "POST",
@@ -275,6 +435,7 @@ export const COPIONE_GALLERIA = `
       await leggiGalleria();
     } catch (e) {
       alert(e.message);
+      await leggiGalleria();
     }
   }
 
@@ -547,12 +708,26 @@ export const COPIONE_GALLERIA = `
       sotto.append(padrone);
     }
 
+    /**
+     * ⚠ **Di chi e', una volta sola.** Chiesto il 5 settembre 2026, guardando
+     * una foto della galleria: «vedi, nell'immagine viene ripetuto due volte di
+     * chi e' la canzone».
+     *
+     * Ed era vero: qui sopra la faccia con il nome («Ⓒ Cammo») e qui sotto la
+     * spilla («di Cammo»), sullo stesso riquadro. Le due righe erano nate in
+     * due momenti diversi e nessuna delle due sapeva dell'altra — la seconda
+     * chiedeva «non e' mia?» invece di «l'ho gia' detto?».
+     *
+     * Adesso la domanda e' quella giusta: la spilla compare **solo** se la
+     * faccia non c'e'.
+     */
+    var giaDetto = sotto.querySelector(".padrone") !== null;
     if (v.mia && v.pubblicato) {
       var mostra = document.createElement("span");
       mostra.className = "spilla in-bacheca";
       mostra.textContent = "in bacheca";
       sotto.append(mostra);
-    } else if (!v.mia && v.chiNome) {
+    } else if (!v.mia && v.chiNome && !giaDetto) {
       var chi = document.createElement("span");
       chi.className = "spilla";
       chi.textContent = "di " + v.chiNome;
@@ -561,6 +736,69 @@ export const COPIONE_GALLERIA = `
 
     box.append(sotto);
     return box;
+  }
+
+  /**
+   * **Trascinare per chiudere, anche qui.**
+   *
+   * ⚠ Chiesto il 5 settembre 2026: «i video e le immagini in DaProd si swipano
+   * bene, tranne le immagini».
+   *
+   * La causa era una divisione che dall'esterno non si vede. In DaProd un brano
+   * e un video aprono **il palco**, che il trascinamento ce l'ha dalla 0.9.1;
+   * un'immagine apre **la lente**, che e' un'altra cosa e non ce l'aveva mai
+   * avuto. Due gesti identici, due riquadri diversi, e uno solo che rispondeva.
+   *
+   * Le regole sono quelle del palco, e valgono per la stessa ragione:
+   *
+   * - **novanta pixel** di soglia: sotto e' uno scorrimento involontario mentre
+   *   si cerca un tasto, sopra e' una persona che sta chiudendo;
+   * - **non passivo**, perche' con «passive: true» il browser non lascia
+   *   fermare lo scorrimento e il gesto diventa due movimenti insieme: il
+   *   contenuto che segue il dito e la pagina che scorre sotto;
+   * - **il contenuto segue il dito**, o non si sa se sta funzionando.
+   */
+  function trascinaPerChiudere(riquadro, dentro) {
+    var partenza = null;
+
+    riquadro.addEventListener("touchstart", function (ev) {
+      if (ev.touches.length !== 1) { partenza = null; return; }
+      // Il dito sui controlli di un video non trascina la lente: mettere in
+      // pausa e chiudere sono due gesti diversi.
+      var sopra = ev.target;
+      while (sopra && sopra !== riquadro) {
+        if (sopra.tagName === "VIDEO" || sopra.tagName === "INPUT" || sopra.tagName === "BUTTON") {
+          partenza = null;
+          return;
+        }
+        sopra = sopra.parentElement;
+      }
+      partenza = ev.touches[0].clientY;
+    }, { passive: true });
+
+    riquadro.addEventListener("touchmove", function (ev) {
+      if (partenza === null || ev.touches.length !== 1) return;
+      var quanto = ev.touches[0].clientY - partenza;
+      if (Math.abs(quanto) > 6 && ev.cancelable) ev.preventDefault();
+      dentro.style.transform = "translateY(" + quanto + "px)";
+      dentro.style.opacity = String(Math.max(0.25, 1 - Math.abs(quanto) / 400));
+    }, { passive: false });
+
+    var molla = function (ev) {
+      if (partenza === null) return;
+      var finale = ev.changedTouches && ev.changedTouches[0] ? ev.changedTouches[0].clientY : partenza;
+      var quanto = finale - partenza;
+      partenza = null;
+      dentro.style.transform = "";
+      dentro.style.opacity = "";
+      if (Math.abs(quanto) > 90) riquadro.remove();
+    };
+    riquadro.addEventListener("touchend", molla, { passive: true });
+    riquadro.addEventListener("touchcancel", function () {
+      partenza = null;
+      dentro.style.transform = "";
+      dentro.style.opacity = "";
+    }, { passive: true });
   }
 
   /* ---------------------------------------------------------------- la lente */
@@ -740,29 +978,37 @@ export const COPIONE_GALLERIA = `
     fuori.addEventListener("click", function (ev) {
       if (ev.target === fuori || ev.target === palco) fuori.remove();
     });
+    trascinaPerChiudere(fuori, palco);
     document.body.append(fuori);
   }
 
   /** Porta questa cosa nel telefono, con l'app se c'è, con un link se no. */
+  /**
+   * «tasto» puo' essere null.
+   *
+   * Dalla 0.9.3 questi due gesti si raggiungono anche **tenendo premuto** un
+   * riquadro, e li' un tasto da illuminare non c'e': il foglio si e' gia'
+   * chiuso quando il lavoro parte.
+   */
   async function tieniNelTelefono(v, tasto) {
     if (window.DaProdApp && window.DaProdApp.scaricaLibreria) {
       window.DaProdApp.scaricaLibreria(v.id, v.nome);
-      tasto.textContent = "\\u2713 nel telefono";
+      if (tasto) tasto.textContent = "\\u2713 nel telefono";
       return;
     }
-    var prima = tasto.textContent;
-    tasto.disabled = true;
-    tasto.textContent = "un attimo\\u2026";
+    var prima = tasto ? tasto.textContent : "";
+    if (tasto) tasto.disabled = true;
+    if (tasto) tasto.textContent = "un attimo\\u2026";
     try {
       var risposta = await fetch(indirizzoDi(v), { headers: { Authorization: "Bearer " + token } });
       if (!risposta.ok) throw new Error("Non riesco a scaricarlo.");
       portaViaIlFile(await risposta.blob(), v.nome);
       tasto.textContent = "\\u2713 salvato";
     } catch (e) {
-      tasto.textContent = prima;
+      if (tasto) tasto.textContent = prima;
       alert(e.message);
     }
-    tasto.disabled = false;
+    if (tasto) tasto.disabled = false;
   }
 
   /**
@@ -782,9 +1028,9 @@ export const COPIONE_GALLERIA = `
       window.DaProdApp.condividi(v.id, v.nome);
       return;
     }
-    var prima = tasto.textContent;
-    tasto.disabled = true;
-    tasto.textContent = "preparo\\u2026";
+    var prima = tasto ? tasto.textContent : "";
+    if (tasto) tasto.disabled = true;
+    if (tasto) tasto.textContent = "preparo\\u2026";
     try {
       var risposta = await fetch(indirizzoDi(v), { headers: { Authorization: "Bearer " + token } });
       var blob = await risposta.blob();
@@ -798,8 +1044,8 @@ export const COPIONE_GALLERIA = `
       // Chi annulla la condivisione fa scattare un errore: non è un guasto e
       // non merita un avviso.
     }
-    tasto.disabled = false;
-    tasto.textContent = prima;
+    if (tasto) tasto.disabled = false;
+    if (tasto) tasto.textContent = prima;
   }
 
   /* ------------------------------------------------------ le ultime cose */

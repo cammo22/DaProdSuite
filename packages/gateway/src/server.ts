@@ -811,6 +811,23 @@ export class Gateway {
           computer: this.computer,
           versione: this.versione,
           basi: this.pannello?.stato(dispositivo).indirizzi.map((i) => i.base) ?? [],
+          /**
+           * **Con che nome questo computer si annuncia sulla rete.** Dalla 0.9.3.
+           *
+           * ⚠ E' la seconda meta' della cura a «ad ogni aggiornamento devo
+           * togliere e rimettere gli utenti». Il telefono, quando nessun
+           * indirizzo salvato risponde, chiede in giro chi c'e' e cerca il
+           * computer con questo id: se lo sente, si riscrive l'indirizzo da
+           * solo e il token resta quello — non e' cambiato il computer, e'
+           * cambiato dove sta.
+           *
+           * Quella strada esisteva dalla 0.9.0 ma la conosceva **solo chi si
+           * era accoppiato bussando**: chi aveva battuto il codice a otto cifre
+           * questo id non ce l'aveva, e per lui non c'era ritorno. Dirlo qui —
+           * su `/io`, la porta a cui l'app bussa ogni volta che si apre — lo da'
+           * a tutti, compresi quelli accoppiati due versioni fa.
+           */
+          pcId: this.remoto.ioSullaRete(),
           // Il profilo, dalla 0.7.6: la faccia e la riga sotto al nome. Senza,
           // in DaProd uno è una stringa di testo fra altre stringhe di testo.
           foto: indirizzoDellaFoto(dispositivo),
@@ -1054,6 +1071,45 @@ export class Gateway {
         this.json(res, fatto ? 200 : 404, { ok: fatto });
         return;
       }
+      /**
+       * **Rifai la copertina di un brano.** Nuova nella 0.9.3.
+       *
+       * Chiesto il 5 settembre 2026: «in galleria facciamo che, se teniamo
+       * premuta una canzone, possiamo rigenerare la sua copertina — o usando lo
+       * stesso prompt o cambiandolo: la canzone viene tolta, viene cambiata
+       * l'immagine e ricaricata».
+       *
+       * **Non e' una rotta nuova travestita: e' una richiesta normale.** Passa
+       * dalla fila come tutte le altre, con gli stessi tetti e la stessa
+       * notifica — se avesse una corsia sua, tre copertine rifatte di seguito
+       * scavalcherebbero chi sta aspettando un video da venti minuti.
+       *
+       * L'unica differenza sta in un'opzione, `perCopertinaDi`: quando
+       * l'immagine e' pronta non finisce in galleria come immagine, va addosso
+       * al brano. Vedi `esecuzione.ts`.
+       */
+      const laCopertina = percorso.match(/^\/libreria\/(.+)\/copertina$/);
+      if (laCopertina && req.method === "POST") {
+        const id = decodeURIComponent(laCopertina[1] ?? "");
+        const quale = this.libreria?.file?.(id, dispositivo.id);
+        if (!quale) return this.errore(res, 404, "Questo brano non lo trovo, o non è tuo.");
+        const dati = (corpo ?? {}) as { prompt?: string };
+        const richiesta = this.remoto.creaRichiesta({
+          tipo: "immagine",
+          app: "foto",
+          // Vuoto va bene: il titolo del brano da solo e' gia' una richiesta
+          // sensata, e il resto lo mette `copertinaConIlTitolo`.
+          testo: String(dati.prompt ?? "").trim() || "copertina",
+          // `nome` e' il titolo del brano: in libreria una cosa si chiama come il
+          // suo titolo (senza estensione, che e' il difetto chiuso nella 0.9.1).
+          opzioni: { perCopertinaDi: id, titoloBrano: quale.nome },
+          daDispositivo: dispositivo,
+        });
+        this.json(res, 201, richiesta);
+        this.aggiorna();
+        return;
+      }
+
       const lArchivio = percorso.match(/^\/libreria\/(.+)\/archivia$/);
       if (lArchivio && req.method === "POST") {
         if (!this.libreria?.archivia) return this.errore(res, 501, "Qui non c'è un archivio.");

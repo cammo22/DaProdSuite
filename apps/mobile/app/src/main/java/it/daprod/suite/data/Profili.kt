@@ -122,6 +122,20 @@ object Profili {
     }
 
     /**
+     * Si segna con che nome quel computer si annuncia sulla rete.
+     *
+     * ⚠ Serve a ritrovarlo il giorno che cambia indirizzo, ed e' la meta'
+     * mancante della cura a «ad ogni aggiornamento devo togliere e rimettere
+     * gli utenti»: chi si era accoppiato con il codice a otto cifre questo id
+     * non ce l'aveva, e per lui non c'era strada di ritorno. Adesso lo impara
+     * alla prima volta che il computer risponde. Vedi `Profilo.pcId`.
+     */
+    fun ricordaPcId(context: Context, id: String, pcId: String) {
+        if (pcId.isBlank()) return
+        scrivi(context, tutti(context).map { if (it.id == id) it.copy(pcId = pcId) else it })
+    }
+
+    /**
      * Toglie una persona da questo telefono.
      *
      * **Non è una revoca.** Il dispositivo resta nell'elenco della suite finché

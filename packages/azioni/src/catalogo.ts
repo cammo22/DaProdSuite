@@ -446,12 +446,25 @@ export const AZIONI: readonly Azione[] = [
         etichetta: "In che tonalità",
         descrizione:
           "La scala del brano: le minori suonano malinconiche, le maggiori aperte. " +
+          "Di suo la sceglie il modello, e cambia a ogni brano. " +
           "Tieni premuta una tonalità per sapere che effetto fa. Solo MiniMax Music 3.",
         tipo: "scelta",
         obbligatorio: false,
-        // La minore, la più usata nel pop: è quella che si sceglierebbe
-        // comunque, e averla già accesa toglie una domanda a chi non la sa.
-        predefinito: "A minor",
+        /**
+         * ⚠ **A caso, dalla 0.9.3.** Prima era «La minore», con questa
+         * spiegazione: «la più usata nel pop, quindi quella che si
+         * sceglierebbe comunque».
+         *
+         * Vera, e sbagliata come predefinito. Chiesto il 5 settembre 2026: «in
+         * produzione musica deve essere selezionata "casuale"; se uno vuole poi
+         * cambia, ma di default mettiamo un tasto casuale che fa decidere al
+         * modello». Un valore fisso su un campo che quasi nessuno tocca non
+         * toglie una domanda: mette una firma su tutto quello che produci, e
+         * dodici brani nella stessa tonalità si somigliano senza che nessuno
+         * abbia scelto che si somiglino. Vedi il ritmo, corretto per lo stesso
+         * motivo nella 0.9.1.
+         */
+        predefinito: "caso",
         scelte: TONALITA_CANTO.map((t) => t.id),
         etichette: Object.fromEntries(TONALITA_CANTO.map((t) => [t.id, t.nome])),
         spiegazioni: Object.fromEntries(TONALITA_CANTO.map((t) => [t.id, t.spiega])),
