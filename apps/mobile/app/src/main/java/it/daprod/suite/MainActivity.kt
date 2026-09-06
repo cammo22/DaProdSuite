@@ -148,6 +148,18 @@ class MainActivity : AppCompatActivity() {
     /** Il nome scritto nella schermata d'ingresso, tenuto da parte. */
     private var nomeInCorso = ""
 
+    /**
+     * ⚠ **Chi non si e' riusciti a raggiungere in questa apertura.**
+     *
+     * Serve a scrivere «non lo raggiungo adesso» **sulla riga di quel
+     * collegamento**, invece di lasciarlo identico a uno che funziona.
+     *
+     * Non e' una cosa che si salva sul disco, ed e' voluto: e' vera solo adesso.
+     * Basta cambiare rete perche' non lo sia piu', e una scritta che sopravvive
+     * al motivo per cui e' comparsa e' peggio del silenzio.
+     */
+    private var nonLoRaggiungo: String? = null
+
     /* ------------------------------------------------- cercare e bussare */
 
     /** Il giro che chiede «chi c'è» finché la schermata è aperta. */
@@ -502,7 +514,23 @@ class MainActivity : AppCompatActivity() {
     private fun disegnaUtenti() {
         val elenco = binding.elencoUtenti
         elenco.removeAllViews()
-        for (p in Profili.tutti(this)) elenco.addView(rigaPersona(p))
+        val tutti = Profili.tutti(this)
+        for (p in tutti) elenco.addView(rigaPersona(p))
+        /*
+         * ⚠ **Se non c'e' nessuno, si dice che non c'e' nessuno.**
+         *
+         * Prima questa schermata, vuota, era identica sia quando non hai mai
+         * collegato niente sia quando il tuo collegamento c'e' ma il computer
+         * non risponde. Due situazioni opposte, la stessa faccia — ed e' cosi'
+         * che si finisce a rifare un account che c'era gia'.
+         */
+        if (tutti.isEmpty()) {
+            elenco.addView(TextView(this).apply {
+                text = getString(R.string.nessun_collegamento)
+                setTextColor(getColor(R.color.testo_debole))
+                textSize = 13f
+            })
+        }
     }
 
     /**
@@ -531,17 +559,43 @@ class MainActivity : AppCompatActivity() {
             setTextColor(getColor(R.color.testo))
             textSize = 17f
         })
+        val perso = p.id == nonLoRaggiungo
         riga.addView(TextView(this).apply {
             text = buildString {
                 append(p.computer.ifBlank { "un computer" })
                 append(" · ")
-                append(if (p.ePadrone) "può anche decidere" else "può chiedere")
-                append(" · ")
-                append(quandoUltimo(p.ultimoUso))
+                /*
+                 * ⚠ Quando non si raggiunge, la riga dice **quello** e non i
+                 * permessi: chi guarda lo schermo in quel momento ha una domanda
+                 * sola in testa, ed e' «e adesso?». Rispondere con «puo' anche
+                 * decidere» vuol dire non rispondere.
+                 */
+                if (perso) {
+                    append("non lo raggiungo adesso")
+                } else {
+                    append(if (p.ePadrone) "può anche decidere" else "può chiedere")
+                    append(" · ")
+                    append(quandoUltimo(p.ultimoUso))
+                }
             }
-            setTextColor(getColor(R.color.testo_debole))
+            setTextColor(getColor(if (perso) R.color.testo else R.color.testo_debole))
             textSize = 12f
         })
+        if (perso) {
+            /*
+             * E si dice **cosa fare**, perche' la cosa da fare c'e' ed e' una
+             * sola: tornare sulla rete di casa una volta. Da li' il telefono si
+             * fa dire gli indirizzi di oggi e non lo perde piu' — vedi
+             * `ricordaBasi`. Senza questa riga, l'unica strada che si vede resta
+             * «Aggiungi una persona», che e' quella sbagliata.
+             */
+            riga.addView(TextView(this).apply {
+                text = "Tocca per riprovare. Se sei fuori casa, riesce appena torni sulla tua wifi."
+                setTextColor(getColor(R.color.testo_debole))
+                textSize = 12f
+                setPadding(0, dp(4), 0, 0)
+            })
+        }
 
         riga.setOnClickListener { entra(p) }
         // Tenere premuto per togliere: è un gesto che non si fa per sbaglio, e
@@ -1269,12 +1323,39 @@ class MainActivity : AppCompatActivity() {
     private fun apriDallaCopia(p: Profilo) {
         val html = deposito?.paginaSalvata()
         if (html.isNullOrBlank()) {
-            // Non c'è ancora niente da mostrare: è successo una volta sola, la
-            // prima, e si dice cosa fare invece di aprire una pagina vuota.
+            /**
+             * ⚠ **Qui c'era il difetto raccontato sei volte.**
+             *
+             * Parole sue, il 6 settembre 2026 e le cinque volte prima: «ho fatto
+             * l'aggiornamento e non comunica con il pc, dovrei di nuovo togliere
+             * l'account e rimetterlo».
+             *
+             * Il collegamento **non si perdeva**. Il profilo restava sul disco,
+             * intero, con il suo token buono. Quello che mancava era una riga:
+             * questo ramo mostrava il dialogo e faceva `return`, **senza dire a
+             * nessuna schermata di farsi vedere**. Sotto restava la lista delle
+             * persone come l'aveva lasciata il layout — cioe' **mai disegnata**,
+             * cioe' vuota — e l'unica cosa scritta sullo schermo diventava
+             * «Aggiungi una persona».
+             *
+             * Da fuori e' indistinguibile da «l'account non c'e' piu'». E chi
+             * legge quello fa l'unica cosa che l'app gli lascia fare: ne aggiunge
+             * un altro. Sul computer resta il vecchio, e il giro ricomincia.
+             *
+             * Adesso si va **alla lista, disegnata**, dove il suo account c'e',
+             * si vede, e dice come sta. Il dialogo resta perche' spiega, ma non e'
+             * piu' l'unica cosa in mezzo allo schermo.
+             *
+             * ⚠ **La lezione**: una funzione che puo' finire senza portare da
+             * nessuna parte lascia in mano all'utente l'ultima schermata per caso.
+             * Ogni strada deve finire in un posto **scelto**.
+             */
+            nonLoRaggiungo = p.id
+            mostra(Dove.UTENTI)
             AlertDialog.Builder(this)
-                .setTitle("Il computer non risponde")
+                .setTitle("Non riesco a raggiungere ${p.computer.ifBlank { "il computer" }}")
                 .setMessage(R.string.senza_copia)
-                .setPositiveButton("Riprova") { _, _ -> apriSuite() }
+                .setPositiveButton("Riprova") { _, _ -> entra(p) }
                 .setNegativeButton("Va bene", null)
                 .show()
             return

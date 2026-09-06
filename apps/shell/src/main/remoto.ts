@@ -100,6 +100,7 @@ import {
   modelliPerChiacchierare,
 } from "./chiacchierata";
 import { accendiTunnel, spegniTunnel, statoTunnel, suTunnelCambiato } from "./tunnel";
+import { accendiFunnel, comeStaFunnel, spegniFunnel, type StatoFunnel } from "./funnel";
 import { apriLaPorta, statoFirewall, type StatoFirewall } from "./firewall";
 
 /** Su quale porta ascolta il gateway. */
@@ -130,6 +131,19 @@ remoto.decideLaFila(() => {
 
 let gateway: Gateway | null = null;
 let portaReale = 0;
+
+/**
+ * ⚠ **L'indirizzo che non cambia mai**, quando c'e'. Dalla 1.0.3.
+ *
+ * Si tiene qui perche' `basi()` lo deve poter mettere davanti a tutto senza
+ * chiedere niente a nessuno: quella funzione viene chiamata spesso, e chiedere
+ * ogni volta a Tailscale come sta vorrebbe dire far partire un processo a ogni
+ * apertura di pagina.
+ *
+ * Si aggiorna all'accensione e quando qualcuno tocca l'interruttore. Vedi
+ * `funnel.ts` per il perche' di tutta la faccenda.
+ */
+let funnel: StatoFunnel | null = null;
 
 /** I listener che aspettano il prossimo cambiamento (il pannello dell'hub). */
 const ascoltatori = new Set<() => void>();
@@ -231,8 +245,11 @@ function base(): string {
 function basi(): string[] {
   if (!gateway) return [];
   const elenco = indirizziBuoni(portaReale || PORTA);
+  const stabileSolo = funnel?.acceso && funnel.indirizzo ? [funnel.indirizzo] : [];
   const fuori = statoTunnel();
-  if (fuori.fase !== "acceso" || !fuori.indirizzo) return elenco;
+  // Col tunnel spento, Funnel resta: e' l'unica strada da fuori che non
+  // dipende da Cloudflare, e chi l'ha acceso l'ha acceso per quello.
+  if (fuori.fase !== "acceso" || !fuori.indirizzo) return [...stabileSolo, ...elenco];
 
   /**
    * **Il tunnel prima della rete di casa**, dalla 0.7.3.
@@ -252,7 +269,58 @@ function basi(): string[] {
   const schede = reti().filter((r) => r.dove !== "virtuale");
   const ovunque = schede.filter((r) => r.dove === "ovunque").map((r) => `http://${r.ip}:${porta}`);
   const casa = schede.filter((r) => r.dove !== "ovunque").map((r) => `http://${r.ip}:${porta}`);
-  return [...ovunque, fuori.indirizzo, ...casa];
+  /**
+   * ⚠ **Funnel davanti a tutto**, quando c'e'.
+   *
+   * E' l'unico indirizzo di questo elenco che **non scade**: il tunnel cambia
+   * nome a ogni accensione, quello di casa non esiste da fuori, e Tailscale
+   * nudo lo raggiunge solo chi e' nel tailnet. Questo funziona da qualunque
+   * rete, per chiunque, e domani si chiama ancora cosi'.
+   *
+   * Sta per primo perche' il telefono impara **quello che gli mandiamo**: se
+   * l'indirizzo buono e' in fondo a una lista, il telefono lo trova lo stesso,
+   * ma solo dopo aver bussato agli altri.
+   */
+  const stabile = funnel?.acceso && funnel.indirizzo ? [funnel.indirizzo] : [];
+  return [...stabile, ...ovunque, fuori.indirizzo, ...casa];
+}
+
+/**
+ * ⚠ **Accendi l'indirizzo che non cambia mai.** Dalla 1.0.3.
+ *
+ * Lo chiama chi tocca «Da fuori casa» nelle impostazioni, e non l'avvio: e' un
+ * gesto che mette la suite su Internet sotto un nome pubblico, e quei gesti si
+ * fanno guardandoli. Vedi il commento in cima a funnel.ts.
+ */
+async function accendiIndirizzoStabile(): Promise<StatoFunnel> {
+  const porta = portaReale || PORTA;
+  funnel = await accendiFunnel(porta);
+  if (funnel.acceso) {
+    /*
+     * Gli inviti gia' dati puntano all'indirizzo vecchio, che era un tunnel
+     * destinato a morire. Adesso ce n'e' uno che non muore: si buttano, cosi'
+     * chi ne fa uno nuovo lo fa con dentro quello buono.
+     */
+    remoto.buttaInviti();
+    sveglia();
+  }
+  return funnel;
+}
+
+/** Spegni l'indirizzo stabile e torna al tunnel. */
+async function spegniIndirizzoStabile(): Promise<StatoFunnel> {
+  const porta = portaReale || PORTA;
+  await spegniFunnel(porta);
+  funnel = await comeStaFunnel(porta);
+  remoto.buttaInviti();
+  sveglia();
+  return funnel;
+}
+
+/** Come sta l'indirizzo stabile, per il pannello. */
+async function comeStaIndirizzoStabile(): Promise<StatoFunnel> {
+  funnel = await comeStaFunnel(portaReale || PORTA);
+  return funnel;
 }
 
 /**
@@ -1446,6 +1514,12 @@ async function sbloccaLaPorta(): Promise<string | null> {
  */
 async function accendiInternet(): Promise<StatoAccesso> {
   if (!gateway) await accendi();
+  /*
+   * Prima si guarda se c'e' gia' un indirizzo che non scade: se qualcuno ha
+   * acceso Funnel, quello e' la strada buona e va davanti a tutto in `basi()`.
+   * Guardare non accende niente — vedi il commento in cima a funnel.ts.
+   */
+  funnel = await comeStaFunnel(portaReale || PORTA);
   await accendiTunnel(portaReale || PORTA);
   remoto.buttaInviti();
   sveglia();
@@ -1668,6 +1742,18 @@ const fornitorePannello: FornitorePannello = {
 
   qrApp() {
     return qrPerScaricareLApp();
+  },
+
+  /**
+   * L'indirizzo che non cambia mai. Vedi funnel.ts.
+   *
+   * `accendi` sta dietro a un tocco nelle impostazioni e non parte da sola: e'
+   * un gesto che mette la suite su Internet sotto un nome pubblico.
+   */
+  funnel: {
+    guarda: () => comeStaIndirizzoStabile(),
+    accendi: () => accendiIndirizzoStabile(),
+    spegni: () => spegniIndirizzoStabile(),
   },
 
   async invita({ ruolo, quante }) {

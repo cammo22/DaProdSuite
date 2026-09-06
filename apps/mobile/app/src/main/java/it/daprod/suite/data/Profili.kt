@@ -122,6 +122,23 @@ object Profili {
      */
     internal fun perLaProva(grezzo: String?): List<Profilo> = leggi(grezzo)
 
+    /**
+     * ⚠ **Pianta un elenco di persone, per le prove che girano su Android.**
+     *
+     * Serve a `ContoNonPersoTest`, che ha bisogno di partire da un conto
+     * **valido con indirizzi morti** — la fotografia del guasto raccontato sei
+     * volte. Non c'e' altro modo di arrivarci: quella situazione la si crea
+     * solo scrivendo lo stato prima che l'app si accenda.
+     *
+     * `internal`, quindi non esce dal modulo, e chiama `scrivi` come tutti gli
+     * altri: se domani cambia il modo in cui si salva, cambia anche qui e la
+     * prova continua a provare la cosa vera.
+     */
+    internal fun perLaProva(context: Context, profili: List<Profilo>) {
+        scrivi(context, profili)
+        prefs(context).edit().putString(CHIAVE_ATTIVO, profili.firstOrNull()?.id).apply()
+    }
+
     /** Un elenco di persone da come sta scritto. Lista vuota se non si legge. */
     private fun leggi(grezzo: String?): List<Profilo> {
         return try {

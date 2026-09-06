@@ -10,7 +10,7 @@ Un programma solo per fare musica, immagini, video, voci e parlare con un avatar
 Ogni app la installi quando ti serve e la disinstalli quando non ti serve più.
 Gira sul tuo computer: niente account, niente chiavi API, codice aperto.
 
-[![versione](https://img.shields.io/badge/versione-1.0.2-7c5cff)](https://github.com/cammo22/DaProdSuite/releases/latest)
+[![versione](https://img.shields.io/badge/versione-1.0.3-7c5cff)](https://github.com/cammo22/DaProdSuite/releases/latest)
 [![licenza](https://img.shields.io/badge/licenza-MIT-5cff9d)](LICENSE)
 [![piattaforma](https://img.shields.io/badge/Windows-x64-3ddbff)](#requisiti)
 [![sito](https://img.shields.io/badge/sito-cammo22.github.io-ffa63d)](https://cammo22.github.io/DaProdSuite/)
@@ -95,15 +95,14 @@ tutte lo stesso.
 
 ## A che punto siamo
 
-**Ultima pubblicata: 1.0.2 — «Cambiare una foto che hai già».** Toccando
-Produzione Immagini si sceglie fra fare una foto da una descrizione e
-**modificarne una che hai già**: la carichi dalle tue cose o dal telefono,
-dipingi col dito la zona da rifare — o non dipingi niente e cambia tutta — e
-dici cosa deve diventare. La foto viene rimpicciolita nel telefono prima di
-partire, e te lo dice. C'è anche **LLaDA-Image**, l'unico modello che modifica
-seguendo un'istruzione invece di ridipingere una zona: ⚠ non entra negli 8 GB,
-passa dalla RAM ed è il più lento della scheda. E un pensiero si può mandare
-scegliendolo fra le proprie cose, senza che i byte attraversino la rete.
+**Ultima pubblicata: 1.0.3 — «Il conto non si perde più».** Il difetto
+raccontato sei volte — «dopo l'aggiornamento devo togliere l'account e
+rimetterlo» — era una riga che mancava: il conto restava sul disco, intero, ma
+l'app finiva su una lista mai disegnata dove l'unica scritta era «Aggiungi una
+persona». Adesso il conto si vede, dice **«non lo raggiungo adesso»**, e il
+messaggio dice a chiare lettere che non va rifatto. Sotto c'era una causa vera:
+l'indirizzo da fuori casa cambia a ogni riavvio. Da qui **un indirizzo che non
+cambia mai** (Tailscale Funnel), che si accende con un tocco dalle impostazioni.
 
 Quello che cambia a ogni giro sta in [CHANGELOG.md](CHANGELOG.md), il percorso
 completo in [docs/ROADMAP.md](docs/ROADMAP.md).

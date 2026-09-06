@@ -1347,6 +1347,40 @@ export class Gateway {
        * non e' un segreto — l'indirizzo e' una pagina pubblica di GitHub — ma
        * e' un gesto di chi ospita, come invitare qualcuno.
        */
+      /**
+       * ⚠ **L'indirizzo che non cambia mai.** Dalla 1.0.3.
+       *
+       * GET dice com'e' messo, POST lo accende o lo spegne. Solo chi decide:
+       * accenderlo mette la suite su Internet sotto un nome pubblico, e non e'
+       * una cosa che si fa dal telefono di un ospite.
+       *
+       * Perche' esiste: il tunnel gratuito cambia nome a ogni accensione della
+       * suite, e da fuori casa quello e' l'unico difetto che conta — il
+       * telefono resta con in mano un indirizzo morto e non ha modo di
+       * impararne uno nuovo. Vedi apps/shell/src/main/funnel.ts.
+       */
+      if (percorso === "/pannello/indirizzo-stabile") {
+        if (dispositivo.ruolo !== "admin") {
+          return this.errore(res, 403, "Questo lo puo' guardare solo chi decide.");
+        }
+        if (!this.pannello?.funnel) {
+          return this.errore(res, 501, "Questa suite non sa fare l'indirizzo stabile.");
+        }
+        if (req.method === "GET") {
+          this.json(res, 200, await this.pannello.funnel.guarda());
+          return;
+        }
+        if (req.method === "POST") {
+          const vuole = ((corpo ?? {}) as { acceso?: boolean }).acceso === true;
+          const dopo = vuole
+            ? await this.pannello.funnel.accendi()
+            : await this.pannello.funnel.spegni();
+          this.json(res, 200, dopo);
+          this.aggiorna();
+          return;
+        }
+      }
+
       if (percorso === "/pannello/qr-app" && req.method === "GET") {
         if (!this.pannello?.qrApp) return this.errore(res, 501, "Questa suite non sa disegnarlo.");
         if (dispositivo.ruolo !== "admin") {

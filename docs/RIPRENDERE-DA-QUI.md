@@ -1,7 +1,34 @@
 # Riprendere da qui
 
 Documento di passaggio fra una sessione e l'altra. Aggiornato il **6 settembre
-2026 (notte fonda)**, con la **1.0.2** appena pubblicata.
+2026 (notte fonda)**, con la **1.0.3** appena pubblicata.
+
+> ⚠ **La lezione della 1.0.3: ogni strada deve finire in un posto scelto.**
+>
+> «Dopo l'aggiornamento devo togliere l'account e rimetterlo» e' stato detto
+> **sei volte**. Le prime cinque l'ho curato leggendo codice, e ogni volta ho
+> corretto una cosa vera che non era la causa.
+>
+> La causa era una riga che mancava. `apriDallaCopia`, quando il computer non
+> risponde e non c'e' una copia offline, mostrava un dialogo e faceva `return`
+> **senza dire a nessuna schermata di farsi vedere**. Sotto restava la lista
+> delle persone come l'aveva lasciata il layout: mai disegnata, quindi vuota.
+> Sullo schermo restava «Aggiungi una persona», che da fuori e'
+> indistinguibile da «il tuo account non c'e' piu'».
+>
+> Il conto era sul disco tutte e sei le volte. Nessuna delle cinque correzioni
+> precedenti poteva trovarlo, perche' **cercavano tutte nella logica** — e la
+> logica era giusta. Il difetto era in **cosa finiva sullo schermo**.
+>
+> Due regole da qui:
+>
+> 1. Una funzione che puo' finire senza portare da nessuna parte lascia in mano
+>    all'utente l'ultima schermata **per caso**. Ogni ramo che esce deve dire
+>    dove si va.
+> 2. Quando un sintomo torna per la terza volta, il posto dove guardare non e'
+>    il codice: e' **lo schermo**. Questa volta ho aperto l'emulatore, piantato
+>    un conto con indirizzi morti, e la schermata sbagliata e' comparsa al primo
+>    colpo — con la foto. Mezz'ora, contro cinque versioni.
 
 > ⚠ **La lezione della 1.0.2: due caratteri dentro una stringa.**
 >
@@ -315,6 +342,7 @@ Repo pubblico: **https://github.com/cammo22/DaProdSuite**
 | **Il lettore dell'app: fila, palco, visualizer** | fatto nella 0.9.0, rifatto di posto nella 0.9.1. **⚠ Non è il motore WebGL di DaProdVisualizer**: quello sta in un'app React e nella console non ci entra così com'è |
 | **Video da 30, 60 e 120 secondi** | `apps/cinema/src/lungo.js`, pezzi incatenati per l'ultimo fotogramma. **⚠ Mai passati per una scheda video** |
 | **La 0.9.1: quaranta cose che si vedevano** | fatto il 5 settembre. Non funzioni nuove: quello che è venuto fuori **usando** la 0.9.0 per una sera. Il dettaglio sta nel CHANGELOG § 0.9.1 |
+| **La 1.0.3: il conto non si perde piu'** | fatto il 6 settembre (notte). La sesta correzione, e la prima trovata **guardando**: mancava un `mostra()`. Piu' l'indirizzo stabile con Tailscale Funnel, e il 416 che buttava nove giga di download. `ContoNonPersoTest` gira sull'emulatore perche' non torni |
 | **La 1.0.2: cambiare una foto che hai gia'** | fatto il 6 settembre (notte fonda). La modifica foto dal telefono, col pennello e col ridimensionamento annunciato; LLaDA-Image, che non entra negli 8 GB e c'e' lo stesso su sua richiesta; e i pensieri presi dalle proprie cose senza far viaggiare i byte |
 | **La 1.0.1: Tailscale dentro l'app** | fatto il 6 settembre (notte fonda). `apps/mobile/tailponte`, un pacchetto Go compilato con `gomobile` in un `.aar` che non sta in git: lo rifa' `scripts/compila-tailponte.mjs`, e lo rifa' anche la CI. Il buco su `127.0.0.1` che sbuca nel tailnet, e i due muri di Android nella lezione qui sopra |
 | **La 1.0.0: uno** | fatto il 6 settembre (notte). Il QR che porta sempre all'ultima release, i permessi disegnati da noi, la storia dentro la produzione video, i filtri che vanno a capo, la fila che si costruisce tenendo premuto, e chi decide che pubblica anche le cose degli altri |

@@ -303,7 +303,7 @@
       "file": "LLaDA-Image-Turbo-INT8.safetensors",
       "url": "https://huggingface.co/realrebelai/LLaDa-Image-Turbo_ComfyUI/resolve/main/LLaDA-Image-Turbo-INT8.safetensors",
       "nodi": ["llada-image"],
-      "bytes": 6592000000
+      "bytes": 6592330548
     },
     "llada-text-encoder": {
       "label": "Text encoder di LLaDA-Image \u2014 Q4_K_M (9,2 GB)",
@@ -313,7 +313,7 @@
       "file": "LLaDA-Image-Turbo-text_encoder-Q4_K_M.gguf",
       "url": "https://huggingface.co/realrebelai/LLaDa-Image-Turbo_ComfyUI/resolve/main/LLaDA-Image-Turbo-text_encoder-Q4_K_M.gguf",
       "nodi": ["llada-image"],
-      "bytes": 9182000000
+      "bytes": 9181912960
     },
     "llada-vae": {
       "label": "VAE di LLaDA-Image (non quello di FLUX)",
@@ -322,7 +322,7 @@
       "file": "LLaDa_VAE.safetensors",
       "url": "https://huggingface.co/realrebelai/LLaDa-Image-Turbo_ComfyUI/resolve/main/LLaDa_VAE.safetensors",
       "nodi": ["llada-image"],
-      "bytes": 168000000
+      "bytes": 168120872
     },
     "flux2-vae": {
       "label": "VAE di FLUX.2 (non quello di FLUX.1)",

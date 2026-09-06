@@ -45,7 +45,14 @@
 
     <!-- Senza computer -->
     <string name="senza_pc_avviso">Il computer non risponde: vedi quello che è arrivato fin qui, e quello che chiedi parte da solo appena torna.</string>
-    <string name="senza_copia">Il computer non risponde e su questo telefono non c\'è ancora una copia della sua pagina. Collegati una volta con lui acceso.</string>
+    <!--
+      ⚠ Riscritta il 6 settembre 2026. Prima diceva "collegati una volta con lui
+      acceso", che chi la legge traduce in "rifai il collegamento" — ed e' esattamente
+      la cosa sbagliata: il collegamento c'e' gia' e funziona, manca solo la strada
+      per arrivarci. Adesso dice cosa succede e cosa fare.
+    -->
+    <string name="senza_copia">Il tuo collegamento c\'è ancora: è il computer che adesso non si fa trovare. Succede quando sei fuori casa e la suite si è riavviata, perché l\'indirizzo da fuori cambia a ogni riavvio.\n\nRiprova, e se sei fuori casa riesce appena torni sulla tua wifi. Non serve rifare l\'account.</string>
+    <string name="nessun_collegamento">Qui non c\'è ancora nessun collegamento. Inquadra il QR sul computer per farne uno.</string>
 
     <!-- Chiedere -->
     <string name="salvata_in_coda">PC non raggiungibile: la tengo qui e parte da sola quando torna.</string>

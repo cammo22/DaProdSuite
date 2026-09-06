@@ -155,10 +155,24 @@ export const COPIONE_IMPOSTAZIONI = `
     spiega.className = "nota";
     spiega.textContent =
       "Quando sei fuori casa, il telefono raggiunge il computer da un indirizzo " +
-      "prestato che cambia ogni volta che la suite si riaccende. Questo ne fa uno " +
-      "tuo, che non cambia mai: stessa strada in casa e fuori, e niente che passa " +
-      "da un servizio di mezzo.";
+      "prestato che cambia ogni volta che la suite si riaccende. \u00c8 il motivo " +
+      "per cui, dopo un aggiornamento, l'app a volte non lo trova pi\u00f9.";
     carta.append(spiega);
+
+    /**
+     * ⚠ **L'indirizzo che non cambia mai**, in cima al foglio. Dalla 1.0.3.
+     *
+     * Sta **prima** di Tailscale nel telefono, e non e' un dettaglio di
+     * disposizione: e' la cosa che risolve il problema per davvero, e non chiede
+     * niente a chi ha il telefono in mano. Un indirizzo che non scade vuol dire
+     * che il telefono non perde piu' il computer, punto — nemmeno dopo un
+     * aggiornamento, nemmeno stando fuori una settimana.
+     *
+     * Tailscale nel telefono resta sotto: e' cifrato punto a punto e non mette
+     * niente su Internet, quindi per chi lo vuole e' meglio. Ma va acceso su
+     * ogni telefono, e questo no.
+     */
+    if (puoiDecidere) carta.append(await rigaIndirizzoStabile());
 
     if (!come.vuole) {
       voceFoglio(
@@ -212,6 +226,107 @@ export const COPIONE_IMPOSTAZIONI = `
       },
       true,
     );
+  }
+
+  /**
+   * La riga dell'indirizzo che non cambia mai.
+   *
+   * Tre stati, e ognuno dice **la cosa da fare**, non come si chiama la cosa:
+   * acceso (e allora si vede l'indirizzo), spento ma si puo' accendere, oppure
+   * manca qualcosa e si dice cosa.
+   */
+  async function rigaIndirizzoStabile() {
+    var scatola = document.createElement("div");
+    scatola.className = "scheda";
+    scatola.style.marginTop = "10px";
+
+    var titolo = document.createElement("b");
+    titolo.textContent = "Un indirizzo che non cambia mai";
+    scatola.append(titolo);
+
+    var stato = null;
+    try {
+      stato = await chiama("/pannello/indirizzo-stabile");
+    } catch (e) {
+      var male = document.createElement("p");
+      male.className = "nota";
+      male.textContent = "Questa suite non sa farlo.";
+      scatola.append(male);
+      return scatola;
+    }
+
+    var dice = document.createElement("p");
+    dice.className = "nota";
+    scatola.append(dice);
+
+    if (stato.acceso) {
+      dice.textContent =
+        "Acceso. Il telefono ti trova da qualunque rete, e questo indirizzo " +
+        "sar\u00e0 lo stesso anche fra un anno.";
+      var dove = document.createElement("p");
+      dove.className = "nota indirizzo";
+      dove.textContent = stato.indirizzo;
+      scatola.append(dove);
+      scatola.append(
+        tastoRiga("Spegnilo", "si torna all'indirizzo prestato", async function () {
+          await cambiaIndirizzoStabile(false);
+        }),
+      );
+      return scatola;
+    }
+
+    if (!stato.ceTailscale) {
+      dice.textContent =
+        "Serve Tailscale sul computer: \u00e8 gratis, si installa una volta e " +
+        "non chiede niente al telefono. " + (stato.perche || "");
+      return scatola;
+    }
+
+    dice.textContent =
+      "Adesso da fuori si passa da un indirizzo prestato che cambia a ogni " +
+      "riavvio. Questo ne fa uno tuo, fisso: " +
+      (stato.nome ? stato.nome + "." : "costruito sul nome del computer.");
+    scatola.append(
+      tastoRiga("Accendilo", "una volta sola, poi non ci pensi pi\u00f9", async function () {
+        await cambiaIndirizzoStabile(true);
+      }),
+    );
+    return scatola;
+  }
+
+  function tastoRiga(testo, sotto, cosaFa) {
+    var b = document.createElement("button");
+    b.className = "mini acceso";
+    b.style.marginTop = "8px";
+    b.textContent = testo;
+    b.title = sotto;
+    b.addEventListener("click", function () { void cosaFa(); });
+    return b;
+  }
+
+  async function cambiaIndirizzoStabile(acceso) {
+    avvisa(acceso ? "Lo accendo\u2026" : "Lo spengo\u2026");
+    try {
+      var dopo = await chiama("/pannello/indirizzo-stabile", {
+        method: "POST",
+        body: JSON.stringify({ acceso: acceso }),
+      });
+      chiudiFoglio();
+      if (acceso && dopo.acceso) {
+        avvisa("Fatto: " + dopo.indirizzo + " non cambier\u00e0 pi\u00f9.", "bene");
+      } else if (acceso) {
+        /*
+         * Il caso vero piu' comune: il tailnet non ha ancora Funnel acceso, e
+         * Tailscale risponde con l'indirizzo da aprire per accenderlo. Farlo
+         * vedere trasforma un errore in un'istruzione.
+         */
+        avvisa(dopo.perche || "Non ci sono riuscito.", "male");
+      } else {
+        avvisa("Spento.");
+      }
+    } catch (e) {
+      avvisa(e.message, "male");
+    }
   }
 
   /**
