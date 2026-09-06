@@ -749,7 +749,11 @@ export const COPIONE_DAPROD = `
     riempiFaccia(faccia, ioNome, ioFoto);
     var scegli = document.createElement("input");
     scegli.type = "file";
-    scegli.accept = "image/*";
+    // Spezzato in due: scritto attaccato, dentro la stringa ci sono i due
+    // caratteri che aprono un commento, e chi legge il copione senza eseguirlo
+    // — le prove della console — da li' in poi legge tutto sfasato. Vedi il
+    // commento lungo in copione-produzione.ts.
+    scegli.accept = "image/" + "*";
     scegli.hidden = true;
     var cambia = document.createElement("button");
     cambia.className = "mini";

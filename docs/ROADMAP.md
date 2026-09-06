@@ -26,7 +26,7 @@ file si scrive quale delle due metà manca.
 
 ## A che punto siamo — 6 settembre 2026 (notte fonda)
 
-**Ultima pubblicata: 1.0.1.** Nove schede dentro la suite, un ambiente Python
+**Ultima pubblicata: 1.0.2.** Nove schede dentro la suite, un ambiente Python
 solo, e il giro che conta — chiedo dal telefono, il computer fa, il file torna —
 **provato da chi la usa**, sul suo PC e sul suo telefono.
 
@@ -72,6 +72,14 @@ Adesso c'è un indirizzo che non cambia mai, senza VPN di sistema e senza
 installare niente a parte. ⚠ **Il tunnel resta acceso come ripiego**: si toglie
 quando la strada nuova avrà retto un giro vero fuori casa.
 
+La **1.0.2** porta la modifica delle foto dentro al telefono: si sceglie fra
+«da una descrizione» e «da una foto che hai», si dipinge col dito la zona da
+rifare — o non si dipinge niente e cambia tutta — e la foto viene rimpicciolita
+prima di partire, dicendolo. Il ritocco col pennello **c'era già** sul computer
+per tutti e quattro i modelli: quello che mancava era il modo di chiederlo da
+fuori. Con la 1.0.2 arriva anche **LLaDA-Image**, che modifica seguendo
+un'istruzione invece di ridipingere una zona — ⚠ e non entra negli 8 GB.
+
 ⚠ **Cosa non ha ancora visto nessuno**, e va guardato con sospetto: i video da
 30, 60 e 120 secondi (scritti, mai passati per una scheda video — è la terza
 versione), le copertine col titolo contro FLUX vero, due suite accese in due
@@ -106,6 +114,11 @@ fanno quello che ti ho chiesto».
 | **I filtri che vanno a capo (1.0.0)** | **misurato a 375 px**: tre righe, e la pagina non scorre mai di lato |
 | **La fila si costruisce tenendo premuto (1.0.0)** | e' la meta' che mancava alla scelta della 0.9.4. **Provata nel banco** da galleria e bacheca, compresi «gia' in fila» e «sta gia' suonando» |
 | **Ritoccare quella che suona apre il palco (1.0.0)** | non riparte da capo. **Provato nel banco** |
+| **Modificare una foto dal telefono (1.0.2)** | **provata nel banco con le dita**: la foto presa dalla galleria e caricata, il ridimensionamento annunciato, il pennello che dipinge, e la richiesta che arriva in fila con foto **e** maschera. ⚠ Contro un motore acceso no |
+| **Niente dipinto vuol dire tutta la foto (1.0.2)** | **provato**: la richiesta arriva senza maschera, e il grafo salta i nodi che la userebbero |
+| **LLaDA-Image (1.0.2)** | ⚠ **non entra negli 8 GB** e gliel'ho detto prima: 6,6 GB di trasformatore, 9,2 di text encoder, quasi 16 da scaricare. Messo su sua richiesta, con lo scarico in RAM. **Mai provato contro un motore acceso**, e vuole un pacco di nodi di terzi con sei stelle e nessuna licenza dichiarata |
+| **Un pensiero dalle proprie cose (1.0.2)** | **provato nel banco**: nessun byte attraversa la rete, si copia da cartella a cartella e viaggia un id |
+| **La trappola di «image/*» (1.0.2)** | due caratteri dentro una stringa aprivano un commento per chiunque leggesse il copione senza eseguirlo. Stava li' da mesi; adesso c'e' una guardia |
 | **Tailscale dentro l'app (1.0.1)** | `tsnet` in spazio utente, senza VPN di sistema e senza permessi. **Provato su Android vero**: il nodo parte, chiede il login e arriva ai server di Tailscale. ⚠ **Il giro completo — entrare nel tailnet e raggiungere il PC da fuori casa — no**: serve un account, e un account non si prende in prestito |
 | **I due muri di Android (1.0.1)** | `netlinkrib: permission denied` (le schede di rete le passa Java) e `panic: no safe place found to store log state` (le cartelle gliele diciamo noi). Nessuno dei due lo vedeva un compilatore, e nessuno dei due lo vedeva una prova sulla JVM |
 | **`TailponteTest`** | la prima prova del repository che gira **su un emulatore** e non sulla JVM. C'e' perche' un pezzo in Go dentro una libreria nativa o si carica o non si carica, e la differenza non la dice nessuno prima |

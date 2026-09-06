@@ -951,7 +951,18 @@ export const COPIONE_IMPOSTAZIONI = `
       // Galleria, nella notifica che arriva sul telefono, nella bacheca. Una
       // cosa sola non può avere due nomi a seconda della schermata.
       mandaUno.textContent = "mandagli un pensiero";
-      mandaUno.addEventListener("click", function () { scegli.click(); });
+      /**
+       * ⚠ **Prima si sceglie da dove.** Dalla 1.0.2.
+       *
+       * Chiesto il 6 settembre 2026: «quando clicco su manda pensiero vorrei
+       * poter selezionare dai contenuti dell'app o dal telefono».
+       *
+       * Prima questo tasto apriva dritto la finestra dei file di Android. Per
+       * mandare a qualcuno una canzone appena fatta col computer bisognava
+       * salvarsela nel telefono e poi ricaricarla: un file da venti mega che
+       * fa il giro completo per tornare dov'era.
+       */
+      mandaUno.addEventListener("click", function () { daDoveIlPensiero(d, scegli); });
       azioni.append(mandaUno, scegli);
 
       // **Trascinaci sopra un file e glielo mandi.** Chiesto così, ed è il
@@ -978,6 +989,108 @@ export const COPIONE_IMPOSTAZIONI = `
       });
     }
     return li;
+  }
+
+  /**
+   * Da dove viene il pensiero: dalle proprie cose, o dal telefono.
+   *
+   * Due voci e basta. Non e' un menu «avanzato»: sono i due posti in cui una
+   * cosa da mandare puo' stare, e chi apre questo foglio sa gia' quale dei due
+   * e' il suo.
+   */
+  function daDoveIlPensiero(d, scegliFile) {
+    var carta = apriFoglio("Un pensiero per " + d.nome);
+    voceFoglio(
+      carta,
+      "\u25A6",
+      "Dalle tue cose",
+      "quello che hai fatto fare al computer",
+      function () { chiudiFoglio(); void apriLeTueCose(d); },
+    );
+    voceFoglio(
+      carta,
+      "\u2191",
+      "Dal telefono",
+      "una foto, un video, un file qualunque",
+      function () { chiudiFoglio(); scegliFile.click(); },
+    );
+  }
+
+  /**
+   * Le proprie cose, per sceglierne una da regalare.
+   *
+   * ⚠ **Non si scarica niente.** Si manda **l'id**, e il computer si copia il
+   * file da solo da una sua cartella a un'altra: vedi «/invii/dalla-libreria».
+   * Un pensiero da venti mega parte in un decimo di secondo, anche da fuori
+   * casa, perche' quei venti mega non si muovono.
+   */
+  async function apriLeTueCose(d) {
+    var carta = apriFoglio("Cosa gli mandi");
+    var attesa = document.createElement("p");
+    attesa.className = "nota";
+    attesa.textContent = "Le cerco\u2026";
+    carta.append(attesa);
+    try {
+      var risposta = await chiama("/libreria?quanti=60&dove=mie");
+      var voci = (risposta && risposta.voci) || [];
+      attesa.remove();
+      if (!voci.length) {
+        attesa.textContent = "Non hai ancora fatto niente da mandare.";
+        carta.append(attesa);
+        return;
+      }
+      for (var i = 0; i < voci.length; i++) {
+        carta.append(rigaDaRegalare(voci[i], d));
+      }
+    } catch (e) {
+      attesa.className = "avviso male";
+      attesa.textContent = e.message;
+    }
+  }
+
+  function rigaDaRegalare(v, d) {
+    var b = document.createElement("button");
+    b.className = "voceFoglio";
+    var segno = document.createElement("span");
+    segno.className = "segno";
+    segno.textContent =
+      v.tipo === "audio" ? "\u266B" : v.tipo === "video" ? "\u25B6" : "\u25A6";
+    var cresce = document.createElement("span");
+    cresce.className = "cresce";
+    cresce.textContent = v.nome || "senza nome";
+    var piccolo = document.createElement("small");
+    piccolo.textContent = quando(v.creato);
+    cresce.append(piccolo);
+    b.append(segno, cresce);
+    b.addEventListener("click", function () {
+      chiudiFoglio();
+      void regalaDallaLibreria(v, d);
+    });
+    return b;
+  }
+
+  async function regalaDallaLibreria(v, d) {
+    var avviso = document.getElementById("avviso-invio");
+    if (avviso) {
+      avviso.className = "avviso";
+      avviso.textContent = "Mando " + (v.nome || "questa") + " a " + d.nome + "\u2026";
+    }
+    try {
+      await chiama("/invii/dalla-libreria", {
+        method: "POST",
+        body: JSON.stringify({ a: d.id, id: v.id }),
+      });
+      if (avviso) {
+        avviso.className = "avviso bene";
+        avviso.textContent = "Mandato a " + d.nome + ".";
+      }
+      avvisa("Gli e\u0300 arrivato un pensiero.", "bene");
+    } catch (e) {
+      if (avviso) {
+        avviso.className = "avviso male";
+        avviso.textContent = e.message;
+      }
+    }
   }
 
   /**

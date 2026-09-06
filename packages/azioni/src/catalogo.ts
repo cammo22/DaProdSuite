@@ -57,12 +57,48 @@ const MODELLI_FOTO = {
    * quando chiede una foto da un telefono.
    */
   predefinito: "flux2-4b",
-  scelte: ["anima", "anima2", "flux2-4b", "flux2-9b"],
+  scelte: ["anima", "anima2", "flux2-4b", "flux2-9b", "llada"],
   etichette: {
     anima: "Anima — pronta, veloce",
     anima2: "Anima v2 — anime e illustrazione",
     "flux2-4b": "FLUX.2 Klein 4B — leggero",
     "flux2-9b": "FLUX.2 Klein 9B — il più bravo con le descrizioni lunghe",
+    // Dice cosa costa nell'etichetta, non solo cosa sa fare: è il più lento
+    // della scheda e non ci sta nella scheda video. Vedi `grafi.js`.
+    llada: "LLaDA-Image — modifica una foto a parole, ma è lento",
+  },
+} as const;
+
+/**
+ * ⚠ **Chi sa modificare una foto**, e in che modo.
+ *
+ * Chiesto il 6 settembre 2026: «in modifica devono apparire solo i modelli
+ * compatibili». Guardato il codice, la risposta e' che **li sanno fare tutti**
+ * — il sospetto era che Anima non ce la facesse, e invece `ritoccoAnima` c'e'
+ * da sempre. Quindi l'elenco non toglie nessuno.
+ *
+ * Quello che cambia davvero e' **come** modificano, e sono due mestieri
+ * diversi:
+ *
+ * - **Col pennello** (Anima, Anima v2, i due FLUX.2): si dipinge la zona e si
+ *   rifa' solo quella. Il resto della foto resta identico, pixel per pixel.
+ * - **A parole** (LLaDA): si dice cosa cambiare e il modello guarda tutta la
+ *   foto. Il pennello non ce l'ha proprio — vedi `senzaPennello` in
+ *   `apps/foto/src/grafi.js` — e mostrarglielo per poi ignorarlo sarebbe il
+ *   modo peggiore di sbagliare.
+ *
+ * Il predefinito e' FLUX.2 Klein 4B come per la generazione: e' quello che
+ * sulla scheda da 8 GB fa il lavoro migliore senza far aspettare.
+ */
+const MODELLI_MODIFICA = {
+  predefinito: "flux2-4b",
+  scelte: ["anima", "anima2", "flux2-4b", "flux2-9b", "llada"],
+  etichette: {
+    anima: "Anima — col pennello, veloce",
+    anima2: "Anima v2 — col pennello, anime e illustrazione",
+    "flux2-4b": "FLUX.2 Klein 4B — col pennello, leggero",
+    "flux2-9b": "FLUX.2 Klein 9B — col pennello, il più bravo",
+    llada: "LLaDA-Image — a parole, guarda tutta la foto. È lento",
   },
 } as const;
 
@@ -223,6 +259,90 @@ export const AZIONI: readonly Azione[] = [
         valoriTipici: [1, 2, 3, 4],
       },
       campoModello(MODELLI_FOTO),
+    ],
+  },
+
+  /**
+   * ⚠ **Modificare una foto che hai gia'.** Nuova nella 1.0.2.
+   *
+   * Chiesto il 6 settembre 2026: «l'utente clicca su produzione foto e puo'
+   * scegliere tra generazione da testo e modifica da foto, carica la foto e la
+   * modifica».
+   *
+   * E' un'azione **separata** da `genera.immagine` e non un interruttore
+   * dentro di essa, per la ragione di sempre: un agente MCP deve poter capire
+   * cosa fa senza leggere il valore di un campo. «Fai un'immagine» e «Modifica
+   * una foto» sono due cose diverse — una parte dal niente, l'altra parte da
+   * un file che devi avere. Nella pagina restano vicine: si tocca «Produzione
+   * Immagini» e si sceglie quale delle due, come per i video e le storie.
+   */
+  {
+    id: "modifica.immagine",
+    app: "foto",
+    titolo: "Modifica una foto",
+    descrizione:
+      "Cambia una foto che hai già, con DaProdFoto. Si può dipingere col dito la zona da rifare, " +
+      "e senza dipingere niente lavora su tutta l'immagine. Occupa la scheda video, quindi entra in coda.",
+    produce: "file",
+    risultato: "immagine",
+    permesso: "tutti",
+    coda: true,
+    campi: [
+      {
+        nome: "immagine",
+        etichetta: "La foto di partenza",
+        descrizione:
+          "L'id di una foto già caricata su POST /sorgente. Dalla pagina la scegli dalle tue cose o dal telefono.",
+        tipo: "immagine",
+        obbligatorio: true,
+      },
+      {
+        nome: "prompt",
+        etichetta: "Cosa deve cambiare",
+        principale: true,
+        descrizione:
+          "Cosa vuoi che sia diverso. Col pennello descrivi cosa va nella zona dipinta; " +
+          "senza pennello descrivi la modifica, tipo «fai diventare bianca la volpe».",
+        tipo: "testo",
+        obbligatorio: true,
+        maxLunghezza: PROMPT_MAX,
+        esempio: "fai diventare il cielo un tramonto arancione",
+      },
+      {
+        /**
+         * La zona dipinta, come id di una seconda immagine.
+         *
+         * ⚠ **Vuota vuol dire «tutta la foto»**, ed e' la richiesta: «se non si
+         * seleziona la zona allora prende tutta l'immagine». Non e' un caso
+         * limite da gestire, e' il caso normale di chi non vuole precisione.
+         */
+        nome: "maschera",
+        etichetta: "La zona dipinta",
+        descrizione:
+          "L'id della maschera caricata su POST /sorgente?che=maschera. Lasciala vuota e lavora su tutta la foto.",
+        tipo: "immagine",
+        obbligatorio: false,
+      },
+      {
+        /**
+         * Quanto può allontanarsi da com'era.
+         *
+         * Il nome tecnico è «denoise» e non lo si usa: chi legge «denoise 0,6»
+         * non sa cosa aspettarsi, chi legge «quanto la cambio» sì.
+         */
+        nome: "forza",
+        etichetta: "Quanto la cambio",
+        descrizione:
+          "Da 1 a 10. Basso ritocca e lascia riconoscibile quello che c'era, alto rifà da capo. " +
+          "LLaDA non lo usa: lui segue l'istruzione e basta.",
+        tipo: "numero",
+        obbligatorio: false,
+        min: 1,
+        max: 10,
+        predefinito: 6,
+        valoriTipici: [3, 6, 8, 10],
+      },
+      campoModello(MODELLI_MODIFICA),
     ],
   },
 

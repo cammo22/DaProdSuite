@@ -12,9 +12,120 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ## Non ancora pubblicato
 
-**Togliere del tutto il tunnel Cloudflare.** In questa versione è ancora acceso
-come ripiego, e il perché sta scritto qui sotto in «Cosa non ho tolto». Si
-toglie quando Tailscale avrà funzionato da un telefono vero, fuori casa.
+**Togliere del tutto il tunnel Cloudflare.** Tailscale «sembra funzionare» dopo
+la 1.0.1, e la 1.0.2 è il giro che serve a vederlo reggere. Se regge, il tunnel
+sparisce nella prossima.
+
+---
+
+## 1.0.2 — Cambiare una foto che hai già
+
+> «l'utente clicca su produzione foto e può scegliere tra generazione da testo e
+> modifica da foto.»
+
+### Si sceglie, come per i video
+
+Toccando **Produzione Immagini** adesso escono due strade: *«Da una
+descrizione»* — quella di sempre — e *«Da una foto che hai»*. È lo stesso
+meccanismo della 1.0.0 per le storie dentro ai video, e vale per la stessa
+ragione: chi vuole cambiare una foto cerca «Produzione Immagini», non una
+tessera che si chiama «Modifica».
+
+Si carica la foto **dalle proprie cose** o **dal telefono**, si scrive cosa
+deve cambiare, e si manda.
+
+### Il pennello, e cosa vuol dire non usarlo
+
+Si dipinge col dito la zona da rifare. E se non si dipinge niente, **si lavora
+su tutta l'immagine**: non è un caso limite gestito per scrupolo, è il caso
+normale di chi vuole cambiare la luce di una foto intera.
+
+Tecnicamente vuol dire non mandare nessuna maschera. Mandarne una tutta bianca
+darebbe lo stesso risultato e costerebbe un caricamento in più e un nodo in più
+da sbagliare.
+
+### ⚠ Anima il ritocco lo sapeva già fare
+
+Il sospetto era che non ce la facesse. Guardato il codice, `ritoccoAnima` c'è da
+sempre: **tutti e quattro** i modelli della scheda sanno rifare una zona
+dipinta. Quindi in modifica non manca nessuno, e l'elenco non toglie niente.
+
+Quello che cambia davvero è **come**, e sono due mestieri diversi — sta scritto
+accanto a ogni modello nel menu:
+
+- **col pennello** (Anima, Anima v2, i due FLUX.2): si dipinge la zona, si rifà
+  solo quella, il resto resta identico pixel per pixel;
+- **a parole** (LLaDA): si dice cosa cambiare e il modello guarda tutta la foto.
+
+### Le misure, aggiustate prima di partire
+
+> «facciamo attenzione alle risoluzioni massime di input e output; in caso di
+> input troppo grande in app facciamo un rapido aggiusto e possiamo procedere.»
+
+La foto si rimpicciolisce **nel telefono**, prima di mandarla: lato lungo entro
+1024 e lati multipli di 32. Il riquadro lo dice — *«era 4032×3024, l'ho portata
+a 1024×768»* — invece di farlo di nascosto.
+
+I due numeri non sono a caso. 1024 è la misura su cui questi modelli sono
+addestrati e quella che entra in una scheda da 8 GB; 32 è il passo del più
+esigente dei cinque (LLaDA, modificando), e prendere il più esigente vuol dire
+non doversene ricordare mai più. Una foto da telefono a piena risoluzione sono
+dodici mega che verrebbero rimpiccioliti comunque dall'altra parte.
+
+### LLaDA-Image, e cosa costa
+
+> «è uscito questo bel modellino, vorrei usare il 4step fp8.»
+
+Il 4 passi c'è ed è il Turbo distillato. L'fp8 no: l'unico impacchettamento che
+ComfyUI sa aprire è un INT8, e l'fp8 ufficiale è in formato diffusers.
+
+⚠ **E non entra negli 8 GB.** Gliel'ho detto prima di metterlo, con i numeri:
+6,6 GB di trasformatore, **9,2 di text encoder** — è lui il pezzo grosso, non il
+modello — più il VAE, quasi 16 GB da scaricare. La risposta è stata «mettilo lo
+stesso», quindi c'è, con lo scarico in RAM e con scritto **nel menu** che è il
+più lento di tutti.
+
+Vale la pena averlo perché è l'unico della scheda che modifica una foto
+**seguendo un'istruzione** invece di ridipingere una zona. Vuole un pacco di
+nodi ComfyUI di terzi, che al 6 settembre 2026 ha sei stelle e non dichiara una
+licenza: sta fissato a un commit, e il perché è scritto in `nodi.ts`.
+
+**Non è mai stato provato contro un motore acceso**, e va detto: qui si è
+verificata la catena fino alla fila, non la generazione.
+
+### Un pensiero preso dalle proprie cose
+
+> «quando clicco su manda pensiero vorrei poter selezionare dai contenuti
+> dell'app o dal telefono.»
+
+Prima quel tasto apriva dritto la finestra dei file di Android. Per mandare a
+qualcuno una canzone appena fatta col computer bisognava salvarsela nel telefono
+e poi ricaricarla: venti mega che fanno il giro completo per tornare dov'erano.
+
+Adesso si sceglie prima da dove. Dalle proprie cose **non viaggia nessun byte**:
+il file è già sul disco del computer, si copia da lì a lì, e quello che passa
+per la rete è un id.
+
+### ⚠ Una trappola che stava lì da mesi
+
+`scegliFile.accept = "image/*"` compila benissimo. Ma dentro quella stringa ci
+sono i due caratteri che **aprono un commento**, e qualunque cosa legga il
+copione della console senza eseguirlo — le prove, per esempio — da lì in poi
+legge tutto sfasato.
+
+Quanto è costato scoprirlo: la prova ha accusato tre variabili a quarantamila
+caratteri di distanza, dentro uno shader GLSL che non c'entrava niente. Adesso
+si scrive spezzato, e `niente-backtick.mjs` ha una guardia in più che lo trova.
+
+### Come è stato provato
+
+`build`, `typecheck`, `prova` e `prova-telefono` verdi. E la modifica foto
+**fatta con le dita** nel banco con la pagina vera: la scelta fra le due strade,
+la foto presa dalla galleria e caricata (id di ritorno vero), il ridimensionamento
+annunciato, il pennello che dipinge 371 pixel rossi su una tela di 32, la
+richiesta che arriva in fila con foto **e** maschera, e lo stesso giro senza
+dipingere che arriva **senza** maschera. Poi il pensiero: tre cose fra cui
+scegliere, e «Ammore mio» arrivato a destinazione senza che i byte si muovessero.
 
 ---
 

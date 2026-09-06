@@ -231,6 +231,20 @@ export const APPS: Record<AppId, AppDescriptor> = {
       "flux2-klein-q4ks",
       "flux2-text-encoder",
       "flux2-vae",
+      /**
+       * ⚠ **LLaDA-Image: quasi 16 GB, e non entra nella scheda.** Dalla 1.0.2.
+       *
+       * Sta qui perche' e' un modello della scheda Foto come gli altri, e va
+       * detto cosa costa: 6,6 GB di trasformatore, **9,2 di text encoder** —
+       * e' lui il pezzo grosso, non il modello — piu' il suo VAE. Su 8 GB di
+       * VRAM non ci stanno, quindi il grafo li fa passare dalla RAM.
+       *
+       * Vale la pena averlo perche' e' l'unico che **modifica una foto
+       * seguendo un'istruzione** invece di ridipingere una zona.
+       */
+      "llada-turbo-int8",
+      "llada-text-encoder",
+      "llada-vae",
     ],
     gpuHeavy: true,
     // Anima in CPU è lentissima ma arriva in fondo. FLUX.2 Klein no, ed è

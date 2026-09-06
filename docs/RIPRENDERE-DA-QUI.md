@@ -1,7 +1,25 @@
 # Riprendere da qui
 
 Documento di passaggio fra una sessione e l'altra. Aggiornato il **6 settembre
-2026 (notte fonda)**, con la **1.0.1** appena pubblicata.
+2026 (notte fonda)**, con la **1.0.2** appena pubblicata.
+
+> ⚠ **La lezione della 1.0.2: due caratteri dentro una stringa.**
+>
+> `scegliFile.accept = "image/*"` compila benissimo — per JavaScript e' una
+> stringa e basta. Ma dentro ci sono i due caratteri che **aprono un
+> commento**, e qualunque cosa legga il copione della console *senza
+> eseguirlo* — le prove, che tolgono commenti e stringhe per cercare le
+> variabili nate per sbaglio — da li' in poi legge tutto sfasato.
+>
+> Il conto: la prova ha accusato tre variabili a quarantamila caratteri di
+> distanza, dentro uno shader GLSL che non c'entrava niente. Un'ora, per due
+> caratteri, e la trappola stava li' da mesi — passava inosservata solo perche'
+> il pezzo sfasato non conteneva niente che somigliasse a un'assegnazione.
+>
+> La regola: **un errore che non si vede e' peggio di uno che rompe**. Il file
+> compilava, l'app funzionava, e a rompersi era solo chi il codice lo legge —
+> cioe' l'unica cosa che ci difende dagli altri errori. Da qui la guardia in
+> `niente-backtick.mjs`, accanto a quella dei backtick, per la stessa ragione.
 
 > ⚠ **La lezione della 1.0.1: compilare non e' girare.**
 >
@@ -297,6 +315,7 @@ Repo pubblico: **https://github.com/cammo22/DaProdSuite**
 | **Il lettore dell'app: fila, palco, visualizer** | fatto nella 0.9.0, rifatto di posto nella 0.9.1. **⚠ Non è il motore WebGL di DaProdVisualizer**: quello sta in un'app React e nella console non ci entra così com'è |
 | **Video da 30, 60 e 120 secondi** | `apps/cinema/src/lungo.js`, pezzi incatenati per l'ultimo fotogramma. **⚠ Mai passati per una scheda video** |
 | **La 0.9.1: quaranta cose che si vedevano** | fatto il 5 settembre. Non funzioni nuove: quello che è venuto fuori **usando** la 0.9.0 per una sera. Il dettaglio sta nel CHANGELOG § 0.9.1 |
+| **La 1.0.2: cambiare una foto che hai gia'** | fatto il 6 settembre (notte fonda). La modifica foto dal telefono, col pennello e col ridimensionamento annunciato; LLaDA-Image, che non entra negli 8 GB e c'e' lo stesso su sua richiesta; e i pensieri presi dalle proprie cose senza far viaggiare i byte |
 | **La 1.0.1: Tailscale dentro l'app** | fatto il 6 settembre (notte fonda). `apps/mobile/tailponte`, un pacchetto Go compilato con `gomobile` in un `.aar` che non sta in git: lo rifa' `scripts/compila-tailponte.mjs`, e lo rifa' anche la CI. Il buco su `127.0.0.1` che sbuca nel tailnet, e i due muri di Android nella lezione qui sopra |
 | **La 1.0.0: uno** | fatto il 6 settembre (notte). Il QR che porta sempre all'ultima release, i permessi disegnati da noi, la storia dentro la produzione video, i filtri che vanno a capo, la fila che si costruisce tenendo premuto, e chi decide che pubblica anche le cose degli altri |
 | **La 0.9.9: il login a prova di aggiornamenti** | fatto il 6 settembre. La chiave in due posti da tutte e due le parti, il ruolo che si sceglie guardando, e venti prove sotto |

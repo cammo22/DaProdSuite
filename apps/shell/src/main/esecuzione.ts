@@ -49,10 +49,54 @@ import { CHANNELS } from "@daprod/ipc";
 import { appManager } from "./app-manager";
 import { libreria } from "./libreria";
 import { createLogger } from "./logging";
+import { REMOTO_DIR } from "./paths";
 import { turno, type Corsia } from "./turno";
 
 const log = createLogger("fila");
 const annota = (riga: string): void => log.write(`${riga}\n`, false);
+
+/**
+ * ⚠ **Gli id delle immagini diventano indirizzi che la scheda sa aprire.**
+ * Nuovo nella 1.0.2.
+ *
+ * Una foto da modificare arriva dal telefono come **id** — il nome con cui il
+ * gateway l'ha scritta su disco, vedi «POST /sorgente». La scheda DaProdFoto
+ * quell'id non lo puo' usare: gira in una finestra, e una finestra legge
+ * indirizzi, non percorsi.
+ *
+ * Qui l'id diventa un «daprod://file/…», che e' lo schema con cui tutte le
+ * schede leggono i file del disco. Da li' in poi, per DaProdFoto, e'
+ * un'immagine come un'altra: non deve sapere niente ne' della fila ne' del
+ * telefono.
+ *
+ * ## Perche' il nome si ricontrolla, se e' gia' stato controllato
+ *
+ * Lo e' stato, quando la richiesta e' entrata — vedi il caso «immagine» in
+ * packages/azioni/src/verifica.ts. Si ricontrolla qui perche' **questo e' il
+ * punto in cui un nome diventa un percorso**, e un controllo che sta lontano
+ * dal punto in cui serve e' un controllo che prima o poi qualcuno aggira
+ * aprendo una strada nuova. Costa una riga.
+ */
+function daIdAIndirizzi(opzioni: Record<string, string>): Record<string, string> {
+  const fuori: Record<string, string> = { ...opzioni };
+  for (const campo of ["immagine", "maschera"]) {
+    const id = (fuori[campo] ?? "").trim();
+    if (!id) continue;
+    if (!/^[A-Za-z0-9._-]{1,200}$/.test(id) || id.includes("..")) {
+      /*
+       * Non si esegue e non si indovina: si toglie. Chi ritocca senza maschera
+       * lavora su tutta la foto, che e' il caso normale e non un ripiego;
+       * senza foto, la scheda dira' che manca.
+       */
+      delete fuori[campo];
+      annota("ho buttato un id di immagine che non mi piace: " + id);
+      continue;
+    }
+    fuori[campo] = "daprod://file/" + encodeURIComponent(join(REMOTO_DIR, "invii", id));
+  }
+  return fuori;
+}
+
 
 /** Quanto si aspetta un file, prima di dire che quel lavoro non è arrivato. */
 const ATTESA_FILE_MS = 45 * 60_000;
@@ -396,7 +440,7 @@ async function esegui(richiesta: DaEseguire): Promise<void> {
     id: richiesta.id,
     azione: richiesta.azione,
     testo: testoDaMandare,
-    opzioni: richiesta.opzioni,
+    opzioni: daIdAIndirizzi(richiesta.opzioni),
     da: richiesta.da,
   };
 

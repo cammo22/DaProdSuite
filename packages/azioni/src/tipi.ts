@@ -16,7 +16,19 @@
  */
 
 /** Di che tipo è un campo da riempire. Volutamente pochi: devono bastare. */
-export type TipoCampo = "testo" | "numero" | "scelta" | "booleano";
+/**
+ * ⚠ **`immagine` non e' un testo con dentro un file.** Nuovo nella 1.0.2.
+ *
+ * Il valore che viaggia e' **un id**, non l'immagine: la foto si carica prima,
+ * a parte, su `POST /sorgente`, e quella rotta torna un id. Dentro la
+ * richiesta ci finisce solo quello.
+ *
+ * E' l'unico modo che regge: una foto fatta col telefono sono cinque mega, e
+ * una richiesta e' un JSON che viene letto in memoria con un tetto di uno. Un
+ * campo «immagine» che contenesse davvero l'immagine farebbe saltare la
+ * richiesta prima ancora di arrivare alla fila.
+ */
+export type TipoCampo = "testo" | "numero" | "scelta" | "booleano" | "immagine";
 
 /** Un campo di un'azione: un dato che chi chiede deve (o può) fornire. */
 export interface Campo {
