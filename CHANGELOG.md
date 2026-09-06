@@ -12,14 +12,28 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ## Non ancora pubblicato
 
-**Togliere il tunnel Cloudflare.** Resta come ripiego per chi non ha acceso
-l'indirizzo fisso. Chi ce l'ha non lo usa più.
-
-**Togliere il codice della schermata «cerca i computer di casa».** La strada è
-chiusa — il tasto non c'è più — ma il codice dietro è ancora lì, irraggiungibile.
-Si toglie con calma e con le prove, non alle undici di sera.
+**Togliere il tunnel Cloudflare** per chi ha l'indirizzo fisso, e **togliere il
+codice** della schermata «cerca i computer di casa», che è irraggiungibile ma
+ancora lì.
 
 ---
+
+## 1.0.8 — E anche chi era già collegato lo impara
+
+Un buco trovato subito dopo la 1.0.7, confrontando due elenchi che dovevano
+dire la stessa cosa e non la dicevano.
+
+L'indirizzo fisso finiva nel **QR** di un accoppiamento nuovo (`basi()`), ma non
+nella risposta di **`/io`** (`indirizziPubblici()`) — che è quella con cui un
+telefono **già collegato** impara gli indirizzi di oggi.
+
+Voleva dire: chi si accoppiava da zero era a posto, chi era già dentro non
+avrebbe saputo **mai** che esisteva un indirizzo che non scade, e avrebbe
+continuato a inseguire un tunnel che cambia nome a ogni riavvio. Cioè
+esattamente il difetto che tutto questo esiste per chiudere.
+
+Adesso i due elenchi dicono la stessa cosa, e l'indirizzo fisso sta per primo in
+tutti e due.
 
 ## 1.0.7 — Un indirizzo solo, e nessun login
 

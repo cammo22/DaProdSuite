@@ -1726,9 +1726,28 @@ function indirizziPubblici(): StatoPannello["indirizzi"] {
     che: r.che,
     dove: (r.dove === "ovunque" ? "ovunque" : "casa") as "ovunque" | "casa",
   });
-  const elenco: StatoPannello["indirizzi"] = schede
-    .filter((r) => r.dove === "ovunque")
-    .map(daScheda);
+  const elenco: StatoPannello["indirizzi"] = [];
+  /**
+   * ⚠ **L'indirizzo che non cambia mai va per primo anche qui.**
+   *
+   * Questa funzione risponde a `/io` e al pannello, ed e' con `/io` che un
+   * telefono **gia' collegato** impara gli indirizzi di oggi (vedi
+   * `ricordaBasi`). Senza questa riga, l'indirizzo fisso finiva solo nel QR di
+   * un accoppiamento nuovo: chi era gia' dentro non l'avrebbe **mai** saputo, e
+   * avrebbe continuato a inseguire un tunnel che cambia nome a ogni riavvio —
+   * cioe' il difetto che tutto questo esiste per chiudere.
+   *
+   * Trovato il 7 settembre 2026 confrontando cosa finisce nel QR
+   * (`basi()`, che lo aveva) con cosa risponde `/io` (questa, che non lo aveva).
+   */
+  if (funnel?.acceso && funnel.indirizzo) {
+    elenco.push({
+      base: funnel.indirizzo,
+      che: "da Internet, e non cambia mai",
+      dove: "ovunque",
+    });
+  }
+  elenco.push(...schede.filter((r) => r.dove === "ovunque").map(daScheda));
   if (fuori.fase === "acceso" && fuori.indirizzo) {
     elenco.push({ base: fuori.indirizzo, che: "da Internet, cifrato", dove: "ovunque" });
   }
