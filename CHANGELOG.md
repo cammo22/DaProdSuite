@@ -18,6 +18,123 @@ ancora lì.
 
 ---
 
+## 1.2.2 — Quanto ci mette, e cosa sta facendo
+
+Provata la 1.2.1 a fondo — computer, telefono sui dati mobili, tablet — e questa
+è la risposta. Una richiesta sola era esplicita («aggiusta LLaDA, sta 15 minuti
+per una foto»); il resto sono le cose che rendono la Fila leggibile invece che
+un elenco che non dice niente.
+
+### LLaDA: non era rotto, era il conto — e adesso il conto torna
+
+> «È nella fase disegno da 15 minuti per una foto. Dobbiamo rientrare nei 5
+> minuti max, altrimenti dobbiamo toglierlo proprio.»
+
+Misurato davvero, col motore acceso, su questa macchina (RTX 4060, 8 GB), a
+1024×1024:
+
+| passi | quanto ci mette |
+|---|---|
+| 8 | ~2,8 minuti |
+| **12** | **4,2 minuti** |
+| 16 | 5,3 minuti |
+| 50 | ~17 minuti |
+
+Più una cinquantina di secondi la prima volta, per caricare i sedici GB.
+
+Quindi i 15 minuti erano esatti: **venti secondi per passo**, per cinquanta
+passi. E venti secondi a passo non è un difetto da aggiustare, è quello che
+costa un modello i cui pesi non stanno nella scheda e fanno avanti e indietro
+dalla memoria a ogni passo — per giunta due volte, perché a questa guida lavora
+su due immagini insieme.
+
+**Adesso ne fa dodici, e l'immagine è buona.** Messe una accanto all'altra,
+quella a 12 passi e quella a 16 non si distinguono. Il cursore arriva a 24 (otto
+minuti) e non più a 50: un comando che porta dove si aspetta un quarto d'ora è
+un modo di far perdere un quarto d'ora.
+
+Il numero di serie del foglietto ufficiale era 50. Su questa macchina quel
+numero non regge la promessa dei cinque minuti, quindi vale la misura.
+
+### E adesso LLaDA dice a che punto è
+
+Nella 1.2.1 era stato messo il racconto di **cosa** sta facendo il computer. Con
+LLaDA però non si muoveva niente lo stesso, e il motivo era che **LLaDA non lo
+diceva**: contava i suoi passi per conto suo, in un posto che non ascolta
+nessuno.
+
+Adesso li conta ad alta voce, e la barra si riempie davvero anche con lui.
+Provato col motore acceso: otto messaggi su otto passi.
+
+### La fase si vede sulla riga del **tuo** lavoro
+
+> «Dicevo quella in basso.»
+
+Nella 1.2.1 la fase era stata messa in due posti — la scheda sul computer e la
+striscia in cima alla Fila — ma non sulla riga che uno guarda davvero, che è la
+sua. Adesso c'è: «disegno 40%», sulla riga del proprio lavoro, mentre succede.
+
+### La Fila non è più pesante
+
+Era pesante per una ragione precisa, e l'avevamo creata noi nella 1.2.1: da
+quando arriva l'avanzamento, il computer manda una notizia a ogni punto
+percentuale — e a ogni notizia il telefono rileggeva **tutto**: le richieste, il
+pannello, i regali, la rete. Cinque giri di rete per far muovere una barra di due
+pixel.
+
+Adesso a ogni notizia si legge solo la cosa piccola che serve (chi sta girando e
+a che punto), e il resto ha un secondo e mezzo di respiro. La fase sulla riga si
+scrive **in casa**, senza ricaricare la lista.
+
+E l'elenco dei lavori si spazza da solo: si tengono le ultime **cento** righe
+finite, come chiesto. Quelle che aspettano o stanno lavorando non si toccano mai,
+e **i file non si buttano**: quelli stanno in galleria e li butta solo una
+persona.
+
+### Quando un lavoro non si fa, adesso lo dici
+
+Prima la notifica diceva «Stato cambiato — foto: scartata.», cioè il nome
+interno dello stato buttato addosso a chi aspettava una foto. Adesso dice
+**cos'è andato storto** e **cosa fare**: «non si è fatto: il motore delle
+immagini non risponde. Riprova fra poco con "rifallo"». Lo stesso per un lavoro
+scaduto in fila.
+
+E le notifiche inutili sono sparite: i passaggi interni non ne generano più.
+
+### Tira per aggiornare, su tutte le pagine
+
+> «Tutte le altre applicazioni del mondo lo fanno.»
+
+Adesso anche questa: tiri giù, compare il cerchio, rilasci e la pagina si
+aggiorna. Su tutte le schermate, perché è un gesto della pagina e non di una
+scheda.
+
+**E da solo non si aggiorna niente**, ed è metà della richiesta: fuori casa ogni
+rilettura è traffico e attesa, e quello che hai già sul telefono resta buono
+anche a computer spento. Si aggiorna quando lo chiedi tu.
+
+### Via il tasto «Usa l'AI», da tutti e tre i posti dove stava
+
+Era già stato tolto una volta, da **una** schermata sola — ed è per questo che ce
+l'avevi ancora davanti. Adesso non c'è più: né sotto la casella in Produzione, né
+nel menu di una richiesta ferma, né dentro «scrivila io».
+
+Le rotte del computer restano dove sono, quindi rimetterlo un domani vorrà dire
+riattaccare un bottone, non rifare un meccanismo.
+
+E «I tuoi soliti» adesso si chiama **«I tuoi prompt»**, che è il nome che quella
+cosa ha in tutto il resto del programma.
+
+### Una cosa piccola che mi ha fatto perdere un giro
+
+Il ponte che fa trovare a LLaDA il pezzo che gli serve si fermava **in silenzio**
+quando il motore veniva avviato a mano invece che dalla suite. Poi LLaDA falliva
+con l'errore di un altro programma, che diceva di installare una cosa già
+installata. Adesso se la variabile non c'è le cartelle se le fa dire a ComfyUI,
+che le sa.
+
+---
+
 ## 1.2.1 — Adesso che si arriva al computer, si guarda cosa c'è dentro
 
 Il tunnel funziona e il telefono è attaccato: la release di prima chiudeva quel

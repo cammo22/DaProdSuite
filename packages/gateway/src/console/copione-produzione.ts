@@ -463,11 +463,21 @@ export const COPIONE_PRODUZIONE = `
       modulo.append(controllo);
       if (accanto) modulo.append(accanto);
 
-      // Il tasto dell'AI sta **sotto la casella che è la richiesta**, non in
-      // cima alla pagina: è quello che riscrive, e si deve vedere cosa
-      // riscrive. Solo per chi decide, perché accende il modello sulla stessa
-      // scheda video che sta generando.
-      if (campo.principale && puoiDecidere) modulo.append(rigaAi(a, controllo));
+      /**
+       * ⚠ **Il tasto «Usa l'AI» non c'e' piu'.** Tolto nella 1.2.2.
+       *
+       * Chiesto il 7 settembre 2026: «il tasto usa le AI ha ancora quel
+       * problema che avevo detto di togliere, e alla fine magari l'hai tolto
+       * solo per una schermata». Aveva ragione su tutte e due le cose: c'era
+       * ancora, ed era sopravvissuto in due punti diversi — qui e nel menu di
+       * una richiesta ferma — proprio perche' era stato tolto **da uno solo**.
+       *
+       * Era un'eventualita', non una funzione decisa: si toglie adesso e si
+       * rifa' piu' avanti, nel redesign di tutta la parte AI. Le rotte del
+       * gateway restano dove sono — «/ai/migliora» e «/richieste/:id/migliora»
+       * rispondono ancora — quindi rimetterlo vorra' dire riattaccare un
+       * bottone, non riscrivere un meccanismo.
+       */
 
       if (campo.descrizione) {
         var nota = document.createElement("div");
@@ -745,7 +755,7 @@ export const COPIONE_PRODUZIONE = `
   /**
    * La riga dei preset di una scheda.
    *
-   * Vuota se non ce ne sono: un titolo «I tuoi soliti» sopra a niente è una
+   * Vuota se non ce ne sono: un titolo «I tuoi prompt» sopra a niente è una
    * promessa non mantenuta.
    */
   function rigaPreset(a) {
@@ -754,7 +764,16 @@ export const COPIONE_PRODUZIONE = `
     if (!a.app || !miei.length) return box;
 
     var titolo = document.createElement("label");
-    titolo.textContent = "I tuoi soliti";
+    /**
+     * ⚠ **Si chiamano «prompt», non «i tuoi soliti».** Cambiato nella 1.2.2.
+     *
+     * Detto il 7 settembre 2026: «ci sta sempre scritto i tuoi soliti, mettiamo
+     * bene prompt e stili». «I tuoi soliti» era un nome affettuoso che pero' non
+     * corrisponde a niente: la stessa cosa si chiama «prompt» nella scheda
+     * Stili, «preset» nel gateway e «i tuoi soliti» qui. Tre nomi per una cosa
+     * sola, per chi legge, sono tre cose.
+     */
+    titolo.textContent = "I tuoi prompt";
     box.append(titolo);
 
     var fila = document.createElement("div");
@@ -792,7 +811,7 @@ export const COPIONE_PRODUZIONE = `
   }
 
   async function togliPreset(x) {
-    if (!confirm("Togliere \\u00ab" + x.nome + "\\u00bb dai tuoi soliti?")) return;
+    if (!confirm("Togliere \\u00ab" + x.nome + "\\u00bb dai tuoi prompt?")) return;
     try {
       await chiama("/preset/" + encodeURIComponent(x.id), { method: "DELETE" });
       await leggiPreset();
@@ -800,67 +819,7 @@ export const COPIONE_PRODUZIONE = `
     } catch (e) { avvisaDelMale(e); }
   }
 
-  /** Il tasto che fa riscrivere al modello quello che c'è nella casella. */
-  function rigaAi(a, casella) {
-    var fila = document.createElement("div");
-    fila.className = "fila";
-    fila.style.marginTop = "8px";
-
-    var b = document.createElement("button");
-    b.type = "button";
-    b.className = "mini";
-    b.textContent = "\\u2728 Usa l'AI";
-    var nota = document.createElement("small");
-    nota.style.color = "var(--fioco)";
-    // Se non c'e' nessuno a cui chiedere si dice **perche'**, invece di
-    // lasciare un tasto che risponde male solo dopo che l'hai premuto.
-    if (aiMotivo) {
-      b.disabled = true;
-      nota.textContent = aiMotivo;
-    }
-
-    b.addEventListener("click", async function () {
-      var testo = casella.value.trim();
-      if (!testo) { nota.textContent = "Scrivi prima qualcosa, anche due parole."; return; }
-      b.disabled = true;
-      var prima = b.textContent;
-      b.textContent = "sto scrivendo\\u2026";
-      nota.textContent = "";
-      try {
-        var esito = await chiama("/ai/migliora", {
-          method: "POST",
-          body: JSON.stringify({ testo: testo, app: a.app || "foto" }),
-        });
-        casella.value = esito.testo;
-        nota.textContent = "riscritto: se non ti piace, rimettici mano";
-
-        /**
-         * Per un brano l'AI scrive **anche le parole**.
-         *
-         * Chiesto il 23 agosto 2026: «da telefono, quando fai un brano, l'AI
-         * dovrebbe scrivere anche il testo». Finiscono nella loro casella, e
-         * solo se è vuota: se ci avevi già scritto qualcosa resta la tua.
-         */
-        if (esito.parole) {
-          var canta = document.querySelector('#modulo [data-campo="testo"]');
-          if (canta && !canta.value.trim()) {
-            canta.value = esito.parole;
-            nota.textContent = "riscritto, e ti ha scritto anche il testo da cantare";
-          }
-        }
-      } catch (e) {
-        nota.textContent = e.message;
-      } finally {
-        b.disabled = false;
-        b.textContent = prima;
-      }
-    });
-
-    fila.append(b, nota);
-    return fila;
-  }
-
-  /** «Salvalo fra i tuoi soliti»: un nome e via. */
+  /** «Salvalo fra i tuoi prompt»: un nome e via. */
   function rigaSalvaPreset(a) {
     var fila = document.createElement("div");
     fila.className = "fila";
@@ -868,7 +827,7 @@ export const COPIONE_PRODUZIONE = `
     var nome = document.createElement("input");
     nome.type = "text";
     nome.maxLength = 40;
-    nome.placeholder = "salvalo coi tuoi soliti, con che nome?";
+    nome.placeholder = "salvalo fra i tuoi prompt, con che nome?";
     nome.style.flex = "1 1 200px";
 
     var b = document.createElement("button");

@@ -480,18 +480,41 @@ export const MODELLI = {
   llada: {
     id: "llada",
     nome: "LLaDA-Image",
-    riga: "Sa modificare una foto a parole. \u26a0 50 passi e i pesi che passano dalla RAM: mettila in conto, e' lunga.",
+    riga: "Sa modificare una foto a parole. \u26a0 I pesi passano dalla RAM: circa 4 minuti a foto, il piu' lento della scheda.",
     dit: "LLaDA-Image-Base-INT8.safetensors",
     txt: "LLaDA-Image-Base-text_encoder-Q4_K_M.gguf",
     vae: "LLaDa_VAE.safetensors",
     catalogo: ["llada-base-int8", "llada-text-encoder", "llada-vae"],
     /**
-     * 50 passi e guidance 5: sono i valori del modello pieno, quelli scritti
-     * nel README di inclusionAI. Il minimo resta basso apposta \u2014 chi vuole
-     * vedere in fretta se l'idea regge scende a 20 e poi rifa' \u2014 ma quello di
-     * serie e' il numero vero, non un compromesso messo qui di nascosto.
+     * \u26a0 **Dodici passi, non cinquanta \u2014 e il numero e' misurato.** Dalla 1.2.2.
+     *
+     * Il README di inclusionAI dice 50, e la 1.2.1 ci aveva creduto sulla
+     * parola. Provato: \u00abe' nella fase disegno da 15 minuti per una foto\u00bb. Il
+     * conto tornava. Misurato il 7 settembre 2026 su questa macchina
+     * (RTX 4060, 8 GB), 1024x1024, CFG 5, motore gia' caldo:
+     *
+     *     8 passi ->  ~2,8 min
+     *    12 passi ->   4,2 min   <- questo
+     *    16 passi ->   5,3 min
+     *    50 passi ->  ~17 min
+     *
+     * Piu' una cinquantina di secondi di caricamento, la prima volta. E'
+     * lineare, e si capisce perche': il costo sta tutto nei pesi che fanno
+     * avanti e indietro fra RAM e scheda. **Venti secondi per passo**, contro
+     * l'uno o due che ci metterebbe se ci stessero dentro. Il 4060 ha 8 GB, il
+     * trasformatore INT8 ne pesa 6,6, e a CFG 5 la pipeline lavora su **due**
+     * latenti per volta (vedi `do_classifier_free_guidance` nel loro
+     * `pipeline_llada_image.py`): non ci sta, e ogni passo si paga il viaggio.
+     *
+     * Il tetto era \u00abcinque minuti a foto, altrimenti si toglie\u00bb. Dodici passi
+     * ci stanno \u2014 **e l'immagine e' buona**: messe una accanto all'altra,
+     * quella a 12 e quella a 16 non si distinguono. Quindi resta, con il
+     * numero che regge la promessa invece di quello del foglietto.
+     *
+     * Il massimo e' 24 (otto minuti) e non 50: un cursore che arriva dove si
+     * aspetta un quarto d'ora e' un modo di far perdere un quarto d'ora.
      */
-    step: { min: 20, max: 60, valore: 50 },
+    step: { min: 8, max: 24, valore: 12 },
     cfg: { min: 1, max: 8, valore: 5 },
     // A guidance 5 la guida c'e' davvero: quello che si scrive nel negativo
     // cambia l'immagine. Tenerlo nascosto vorrebbe dire togliere un comando

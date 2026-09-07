@@ -445,6 +445,32 @@ export const STILE = `  :root {
     animation: scorre 1.7s linear infinite;
   }
   @keyframes scorre { from { transform: translateX(-100%); } to { transform: translateX(300%); } }
+
+  /**
+   * Il cerchio del «tira per aggiornare».
+   *
+   * Sta **fuori dal flusso della pagina** e parte sopra il bordo: cosi' scende
+   * da sotto la barra come ci si aspetta, senza spostare di un pixel quello
+   * che c'e' scritto sotto. Vedi «montaIlTiro».
+   */
+  .tiro {
+    position: fixed; top: -46px; left: 50%; z-index: 60;
+    transform: translate(-50%, 0); opacity: 0; pointer-events: none;
+    width: 34px; height: 34px; border-radius: 99px;
+    background: var(--pannello, #12141c);
+    border: 1px solid var(--line);
+    display: grid; place-items: center;
+    box-shadow: 0 6px 20px #0008;
+  }
+  .tiro .cerchio {
+    width: 17px; height: 17px; border-radius: 99px;
+    border: 2px solid var(--accent);
+    /* Un pezzo di bordo trasparente: e' quello che lo fa sembrare un cerchio
+       che gira invece di un anello fermo. */
+    border-top-color: transparent;
+  }
+  .tiro.gira .cerchio { animation: giraIlCerchio .7s linear infinite; }
+  @keyframes giraIlCerchio { to { transform: rotate(360deg); } }
   /**
    * La barra quando il motore dice **quanto**: si riempie e sta ferma.
    *

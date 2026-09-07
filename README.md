@@ -10,7 +10,7 @@ Un programma solo per fare musica, immagini, video, voci e parlare con un avatar
 Ogni app la installi quando ti serve e la disinstalli quando non ti serve più.
 Gira sul tuo computer: niente account, niente chiavi API, codice aperto.
 
-[![versione](https://img.shields.io/badge/versione-1.2.1-7c5cff)](https://github.com/cammo22/DaProdSuite/releases/latest)
+[![versione](https://img.shields.io/badge/versione-1.2.2-7c5cff)](https://github.com/cammo22/DaProdSuite/releases/latest)
 [![licenza](https://img.shields.io/badge/licenza-MIT-5cff9d)](LICENSE)
 [![piattaforma](https://img.shields.io/badge/Windows-x64-3ddbff)](#requisiti)
 [![sito](https://img.shields.io/badge/sito-cammo22.github.io-ffa63d)](https://cammo22.github.io/DaProdSuite/)
@@ -95,8 +95,15 @@ tutte lo stesso.
 
 ## A che punto siamo
 
-**Ultima pubblicata: 1.2.1 — «Adesso che si arriva al computer, si guarda cosa
-c'è dentro».** Col tunnel che regge (1.2.0: il computer si fa trovare dalla rete
+**Ultima pubblicata: 1.2.2 — «Quanto ci mette, e cosa sta facendo».** LLaDA-Image
+passa da 50 passi a 12: misurato col motore acceso, 50 passi su una scheda da
+8 GB sono 17 minuti a foto e 12 sono 4, con un'immagine che non si distingue.
+E adesso dice a che punto è, che prima era l'unico a non dirlo. La fase si legge
+sulla riga del proprio lavoro, la Fila si spazza da sola ogni cento righe e non
+pesa più, un lavoro che non si fa te lo dice con il motivo, e tutte le pagine si
+aggiornano tirando giù — ma solo quando lo chiedi tu.
+
+Prima, la 1.2.1 — «Adesso che si arriva al computer, si guarda cosa c'è dentro»: Col tunnel che regge (1.2.0: il computer si fa trovare dalla rete
 di casa, dal tunnel di Cloudflare o da Tailscale, e il telefono tiene quello che
 risponde), questa release raccoglie quello che si è visto **usando** la suite da
 lì. I lavori non falliscono più prima di partire: il motore delle immagini lo

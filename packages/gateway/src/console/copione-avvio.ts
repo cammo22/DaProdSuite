@@ -51,6 +51,9 @@ export const COPIONE_AVVIO = `
 
     disegnaDueTasti();
     disegnaFiltri();
+    // Il gesto del tirare vale per tutte le pagine, quindi si monta una volta
+    // sola quando si entra. Vedi «montaIlTiro».
+    montaIlTiro();
     try { await leggiStili(); } catch (e) { /* offline: restano quelli di prima */ }
     disegnaFiltriDaprod();
     await leggiPreset();
@@ -90,10 +93,23 @@ export const COPIONE_AVVIO = `
     flusso = new EventSource("/stato/stream?token=" + encodeURIComponent(token));
     flusso.onmessage = function (ev) {
       try { disegnaStato(JSON.parse(ev.data)); } catch (e) { return; }
-      leggiCoda().catch(function () {});
+      /**
+       * ⚠ **Prima la macchina, e solo lei a ogni spinta.**
+       *
+       * «/macchina» e' la risposta piccola che dice chi sta girando e a che
+       * punto e': va letta sempre, ed e' quella che fa muovere la fase sulla
+       * riga del lavoro. Va letta **per prima**, se no le righe si
+       * disegnerebbero con lo stato di un giro fa.
+       *
+       * Tutto il resto e' roba grossa che cambia di rado, e da quando arriva
+       * l'avanzamento (1.2.1) le spinte sono decine per lavoro invece di
+       * qualcuna al minuto. Un secondo e mezzo di respiro e la Fila torna
+       * leggera. Vedi «ogniTanto».
+       */
       leggiMacchina().catch(function () {});
-      leggiPannello().catch(function () {});
-      leggiRegali().catch(function () {});
+      ogniTanto("coda", 1500, function () { leggiCoda().catch(function () {}); });
+      ogniTanto("pannello", 1500, function () { leggiPannello().catch(function () {}); });
+      ogniTanto("regali", 1500, function () { leggiRegali().catch(function () {}); });
       // Una bussata sveglia il flusso: rileggerla qui vuol dire che la fascia
       // compare **nel momento** in cui qualcuno preme «collegati», non fino a
       // dodici secondi dopo.
