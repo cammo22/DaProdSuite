@@ -128,23 +128,6 @@ const fintaAi = {
       : null,
 };
 
-/** I preset, tenuti in memoria per la durata della prova. */
-const fintiPreset = [];
-const fintoPreset = {
-  elenco: (app) => fintiPreset.filter((x) => !app || x.app === app),
-  salva: (preset) => {
-    const nuovo = { ...preset, id: "p" + (fintiPreset.length + 1), quando: Date.now() };
-    fintiPreset.push(nuovo);
-    return nuovo;
-  },
-  elimina: (id, chi) => {
-    const dentro = fintiPreset.findIndex((x) => x.id === id && (!x.chi || x.chi === chi));
-    if (dentro < 0) return false;
-    fintiPreset.splice(dentro, 1);
-    return true;
-  },
-};
-
 /**
  * La macchina finta: le regole, la pausa, e chi è la casa.
  *
@@ -181,13 +164,17 @@ const macchinaFinta = {
  */
 const stiliDiTutti = new Map();
 const fintiStili = {
-  miei: (chi) => {
+  miei: (chi, genere) => {
     if (!stiliDiTutti.has(chi)) {
       stiliDiTutti.set(chi, [
         { id: "s1", nome: "Neomelodico trap", testo: "neapolitan neomelodic pop", da: "partenza", quando: 1 },
       ]);
     }
-    return stiliDiTutti.get(chi);
+    const tutti = stiliDiTutti.get(chi);
+    // Come quello vero: senza genere tornano stili e prompt insieme, ed e'
+    // quello che serve alla vetrina.
+    if (!genere) return tutti;
+    return tutti.filter((s) => (s.genere || "stile") === genere);
   },
   vetrina: (chi) => {
     const fuori = [];
@@ -289,7 +276,6 @@ const gateway = new G.Gateway({
   }),
   libreria: fintaLibreria,
   ai: fintaAi,
-  preset: fintoPreset,
   macchina: {
     stato: macchinaFinta.stato,
     pausa: macchinaFinta.pausa,
@@ -1004,21 +990,47 @@ console.log("\n— chi può decidere —");
   dice("tornando indietro", io.dati.ruolo === "ospite");
 }
 
-console.log("\n— i tuoi soliti —");
+/**
+ * Un magazzino solo per i prompt, e sono gli stili.
+ *
+ * ⚠ **Questa sezione si chiamava "i tuoi soliti" e provava le rotte
+ * /preset.** Erano il secondo magazzino: si salvava di qua e si guardava di
+ * la'. Tolte nella 1.2.3 — vedi apps/shell/src/main/travaso-preset.ts — e
+ * quello che resta da provare e' che il posto sia davvero uno: quello che
+ * salvo come prompt lo ritrovo chiedendo i prompt, e non si mischia con gli
+ * stili.
+ */
+console.log("\n— un magazzino solo per i prompt —");
 {
-  const r = await chiama("/preset", {
+  const r = await chiama("/stili", {
     metodo: "POST", token: tokenOspite,
-    corpo: { app: "foto", nome: "il mio stile", testo: "luce calda, pellicola", campi: { quante: "2" } },
+    corpo: {
+      nome: "il mio prompt",
+      testo: "un robot che suona la chitarra",
+      tipo: "immagine",
+      genere: "prompt",
+      campi: { quante: "2" },
+    },
   });
-  dice("si salva un modo di generare", r.stato === 201 && r.dati.nome === "il mio stile", `→ ${r.testo}`);
-  const elenco = await chiama("/preset?app=foto", { token: tokenAdmin });
-  dice("e lo vedono anche gli altri dispositivi", elenco.dati.preset.length === 1);
-  const altro = await chiama("/preset?app=musica", { token: tokenOspite });
-  dice("ma solo per la scheda giusta", altro.dati.preset.length === 0);
+  dice("si salva un prompt intero", r.stato === 201 && r.dati.stile.nome === "il mio prompt", `→ ${r.testo}`);
+  dice("e si porta dietro tutti i campi", r.dati.stile.campi?.quante === "2", `→ ${r.testo}`);
+
+  const prompt = await chiama("/stili?genere=prompt", { token: tokenOspite });
+  dice("si ritrova chiedendo i prompt", (prompt.dati?.stili || []).length === 1, `→ ${prompt.testo}`);
+
+  const stili = await chiama("/stili?genere=stile", { token: tokenOspite });
+  dice("e non si mischia con gli stili", (stili.dati?.stili || []).every((s) => s.genere !== "prompt"), `→ ${stili.testo}`);
+
+  const tutto = await chiama("/stili", { token: tokenOspite });
+  dice("chiedendo tutto ci sono tutti e due", (tutto.dati?.stili || []).length >= 2, `→ ${tutto.testo}`);
 }
 {
-  const r = await chiama("/preset", { metodo: "POST", token: tokenOspite, corpo: { app: "foto", nome: "" } });
+  const r = await chiama("/stili", { metodo: "POST", token: tokenOspite, corpo: { nome: "", testo: "" } });
   dice("uno senza nome si rifiuta", r.stato === 400, `→ ${r.stato}`);
+}
+{
+  const r = await chiama("/preset", { token: tokenOspite });
+  dice("e le vecchie rotte dei preset non ci sono piu'", r.stato === 404, `→ ${r.stato}`);
 }
 
 console.log("\n— il biscotto di sessione —");

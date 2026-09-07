@@ -768,37 +768,19 @@ export interface FornitoreAi {
 
 /* ------------------------------------------------------------- i preset */
 
-/**
- * Un modo di generare messo da parte, con un nome.
+/*
+ * ⚠ **I preset non esistono più: erano il secondo magazzino dei prompt.**
  *
- * Chiesto il 22 agosto 2026 insieme ai modelli: «l'app android deve poter
- * scegliere i vari modelli della suite con anche la possibilità dei preset».
+ * Dalla 1.2.3 un prompt messo da parte è **uno stile con `genere: "prompt"`** —
+ * `FornitoreStili` qui sopra, `stili.ts` nello shell — e le rotte `/preset`
+ * sono sparite insieme al tipo. Il perché sta per intero in
+ * `apps/shell/src/main/travaso-preset.ts`, insieme al travaso di quello che
+ * c'era: in due parole, gli stili sapevano già fare tutto quello che facevano i
+ * preset, più stare nella cartella della persona e andare in vetrina.
  *
- * Stanno **sul PC** e non nel browser di chi guarda: un preset salvato al
- * computer deve comparire sul telefono, e `localStorage` è una cosa del
- * telefono. Vale la regola di sempre — quello che la suite sa fare vale per
- * tutte le schede, non per una.
+ * Questo commento resta al posto del tipo perché la domanda «e i preset?»
+ * arriva di sicuro, e la risposta deve stare dove si va a cercarla.
  */
-export interface Preset {
-  id: string;
-  /** Per quale scheda: `foto`, `cinema`, `musica`, `voce`. */
-  app: string;
-  nome: string;
-  /** Il testo principale: il prompt, la descrizione, le parole da leggere. */
-  testo: string;
-  /** Gli altri campi dell'azione, già riempiti. */
-  campi?: Record<string, string>;
-  /** Chi l'ha salvato. Vuoto vuol dire: c'era già, è di tutti. */
-  chi?: string;
-  quando: number;
-}
-
-/** Chi sa rispondere sui preset: lo passa lo shell al gateway. */
-export interface FornitorePreset {
-  elenco(app?: string): Preset[];
-  salva(preset: Omit<Preset, "id" | "quando">): Preset;
-  elimina(id: string, chi: string): boolean;
-}
 
 /* ------------------------------------------------------------ la macchina */
 

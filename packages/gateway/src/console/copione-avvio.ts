@@ -56,7 +56,6 @@ export const COPIONE_AVVIO = `
     montaIlTiro();
     try { await leggiStili(); } catch (e) { /* offline: restano quelli di prima */ }
     disegnaFiltriDaprod();
-    await leggiPreset();
     await guardaAi();
     try { await leggiMacchina(); } catch (e) { /* offline */ }
     try { await leggiCoda(); } catch (e) { /* offline */ }

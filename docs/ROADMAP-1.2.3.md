@@ -11,7 +11,26 @@ prima. Il lavoro vive negli **issue di GitHub**, sotto il traguardo
 
 ---
 
-## La regola di questa release
+## ⚠ La regola è cambiata il 7 settembre 2026, a metà strada
+
+La regola era «non si pubblica niente finché non è finito tutto». Il 7 settembre,
+a blocco 1 finito, Cammo ha deciso il contrario e ha detto perché:
+
+> «Fammi un'ultima release così passo questi giorni provando a fondo quella, e
+> appena ti svegli mercoledì ci aggiorniamo.»
+
+Quindi la **1.2.3 è uscita col blocco 1 dentro**, più il filo del caricamento
+sul telefono. Il piano qui sotto **non cambia**: cambia il numero su cui esce il
+resto, che è la 1.2.4.
+
+Il motivo per cui la decisione è giusta, e vale la pena scriverlo: una versione
+che si può provare per tre giorni trova più difetti di una versione perfetta che
+arriva la settimana dopo. La regola serviva a non spezzettare il lavoro, non a
+tenere Cammo senza niente da provare.
+
+---
+
+## La regola com'era, e perché c'era
 
 **Non si pubblica niente finché non è finito tutto.** Non ci sono release
 intermedie, non ci sono commit sparsi al giorno. Si accumula su un ramo, si

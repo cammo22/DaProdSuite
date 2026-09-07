@@ -6,7 +6,7 @@
  * server MCP (che le espone a un agente). Nessuno dei tre conosce gli altri.
  */
 
-export { APP_REMOTE, AZIONI, MODELLI_DICHIARATI, azione, azioniPer } from "./catalogo";
+export { APP_REMOTE, AZIONI, MODELLI_DICHIARATI, PREDEFINITO_IMMAGINI, azione, azioniPer } from "./catalogo";
 export {
   BPM_TIPICI,
   DURATE_BRANO,

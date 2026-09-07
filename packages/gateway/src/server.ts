@@ -20,9 +20,6 @@
  *   DELETE /richieste/:id                       → buttala
  *   GET  /ai                                    → c'è qualcuno a cui chiedere?
  *   POST /ai/migliora     { testo, app }         → riscrive un testo (chi decide)
- *   GET  /preset?app=                           → i modi di generare messi da parte
- *   POST /preset      { app, nome, testo, campi? } → salvane uno
- *   DELETE /preset/:id                          → toglilo
  *   GET  /invii                                 → i regali arrivati a te
  *   POST /invii?a=&nome=&messaggio=             → mandane uno (il corpo è il file)
  *   GET  /invii/:id/file                        → scaricalo
@@ -50,7 +47,7 @@
  *   POST /macchina/ferma                        → ferma quello che gira adesso (solo il PC)
  *   POST /macchina/accetta-tutte                → dà il sì a tutto quello che aspetta
  *   POST /richieste/:id/rifai  { testo? }        → rifallo, uguale o modificato
- *   GET  /stili                                 → i tuoi stili (immagine, video, musica)
+ *   GET  /stili?genere=stile|prompt              → i tuoi stili e i tuoi prompt: un magazzino solo
  *   POST /stili   { id?, nome, testo, tipo }     → salvane uno, o cambialo
  *   DELETE /stili/:id                           → buttalo
  *   POST /stili/:id/condividi { condiviso }      → mettilo in vetrina, o toglilo
@@ -101,7 +98,6 @@ import type {
   FornitoreLibreria,
   FornitoreMacchina,
   FornitorePannello,
-  FornitorePreset,
   FornitoreStili,
   StatoRichiesta,
   StatoSuite,
@@ -142,8 +138,6 @@ export interface GatewayOpzioni {
    * c'e' nessuno a cui chiedere, invece di sparire.
    */
   ai?: FornitoreAi;
-  /** Chi sa rispondere sui modi di generare messi da parte. */
-  preset?: FornitorePreset;
   /**
    * Chi sa dire com'è messo il computer, e governarne la fila.
    *
@@ -231,7 +225,6 @@ export class Gateway {
   private libreria: FornitoreLibreria | undefined;
   private pannello: FornitorePannello | undefined;
   private ai: FornitoreAi | undefined;
-  private preset: FornitorePreset | undefined;
   private macchina: FornitoreMacchina | undefined;
   private chiacchierata: FornitoreChiacchierata | undefined;
   private stili: FornitoreStili | undefined;
@@ -246,7 +239,6 @@ export class Gateway {
     this.libreria = opzioni.libreria;
     this.pannello = opzioni.pannello;
     this.ai = opzioni.ai;
-    this.preset = opzioni.preset;
     this.macchina = opzioni.macchina;
     this.chiacchierata = opzioni.chiacchierata;
     this.stili = opzioni.stili;
@@ -751,37 +743,15 @@ export class Gateway {
         return;
       }
 
-      /* ------------------------------------------------------ i preset */
-
-      if (percorso === "/preset" && req.method === "GET") {
-        this.json(res, 200, { preset: this.preset?.elenco(url.searchParams.get("app") || undefined) ?? [] });
-        return;
-      }
-      if (percorso === "/preset" && req.method === "POST") {
-        if (!this.preset) return this.errore(res, 501, "Questa suite non tiene i preset.");
-        const dati = (corpo ?? {}) as { app?: string; nome?: string; testo?: string; campi?: Record<string, string> };
-        if (!dati.app || !dati.nome?.trim() || !dati.testo?.trim()) {
-          return this.errore(res, 400, "Un preset vuole la scheda, un nome e cosa deve dire.");
-        }
-        this.json(res, 201, this.preset.salva({
-          app: dati.app,
-          nome: dati.nome.trim().slice(0, 40),
-          testo: dati.testo.trim().slice(0, 4000),
-          campi: dati.campi,
-          chi: dispositivo.id,
-        }));
-        return;
-      }
-      const preset = percorso.match(/^\/preset\/([^/]+)$/);
-      if (preset && req.method === "DELETE") {
-        if (!this.preset) return this.errore(res, 501, "Questa suite non tiene i preset.");
-        const tolto = this.preset.elimina(preset[1] ?? "", dispositivo.id);
-        // Come per la libreria: un no si dice a parole, o alla pagina arriva
-        // solo il numero. Vedi il commento su DELETE /libreria/:id.
-        if (!tolto) return this.errore(res, 403, "Questo preset non e' tuo, o non c'e' piu'.");
-        this.json(res, 200, { ok: true });
-        return;
-      }
+      /*
+       * ⚠ **Le rotte `/preset` sono sparite nella 1.2.3.**
+       *
+       * Erano il secondo magazzino dei prompt: si salvava di qui e si guardava
+       * di là. Adesso un prompt e' **uno stile con `genere: "prompt"`**, e le
+       * rotte sono quelle di `/stili` qui sotto — `GET /stili?genere=prompt`
+       * per averli, `POST /stili` per salvarne uno. Il perche' e il travaso di
+       * quello che c'era stanno in `apps/shell/src/main/travaso-preset.ts`.
+       */
 
       /* ------------------------------------------------------- i regali */
 

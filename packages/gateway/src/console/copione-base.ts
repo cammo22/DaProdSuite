@@ -41,8 +41,6 @@ export const COPIONE_BASE = `
   var dove = "mie";
   /** Riepilogo: quelli che stanno lavorando, quelli finiti, o quelli messi via. */
   var filtroLavori = "vivi";
-  /** I modi di generare messi da parte, come li tiene il computer. */
-  var preset = [];
   /** Se c'è qualcuno a cui chiedere di scrivere. Vuoto vuol dire di sì. */
   var aiMotivo = "non lo so ancora";
   /** I pensieri arrivati, e quale pacco è aperto adesso. */
@@ -133,8 +131,84 @@ export const COPIONE_BASE = `
 
   /* ------------------------------------------------------------- chiamate */
 
+  /* ------------------------------------------------- il filo che dice «aspetta» */
+
+  /**
+   * Quante richieste sono per aria adesso.
+   *
+   * Un contatore e non un interruttore: la console apre spesso quattro o
+   * cinque chiamate insieme (la galleria, la fila, i regali, lo stato), e con
+   * un interruttore la prima che finisce spegnerebbe il filo mentre le altre
+   * quattro stanno ancora lavorando.
+   */
+  var quanteInVolo = 0;
+  var timerAcceso = null;
+  var accesoDa = 0;
+
+  /**
+   * Accende e spegne il filo del caricamento.
+   *
+   * ⚠ **Due ritardi, e servono tutti e due.** Senza, il filo diventa uno
+   * sfarfallio: quasi tutte le chiamate qui dentro finiscono in una manciata di
+   * millisecondi, e una luce che compare e sparisce venti volte al minuto e'
+   * peggio del silenzio.
+   *
+   * - **120 ms prima di accendersi**: quello che arriva subito non lo annuncia
+   *   nessuno, perche' non c'e' niente da aspettare.
+   * - **almeno 400 ms acceso**: una volta comparso resta abbastanza da essere
+   *   letto come «sta caricando» e non come un lampo.
+   */
+  function filoDelCaricamento() {
+    var filo = document.getElementById("filo");
+    if (!filo) return;
+
+    if (quanteInVolo > 0) {
+      if (filo.classList.contains("acceso") || timerAcceso) return;
+      timerAcceso = setTimeout(function () {
+        timerAcceso = null;
+        if (quanteInVolo <= 0) return;
+        accesoDa = Date.now();
+        filo.classList.add("acceso");
+      }, 120);
+      return;
+    }
+
+    if (timerAcceso) { clearTimeout(timerAcceso); timerAcceso = null; }
+    if (!filo.classList.contains("acceso")) return;
+    var quantoResta = Math.max(0, 400 - (Date.now() - accesoDa));
+    setTimeout(function () {
+      if (quanteInVolo <= 0) filo.classList.remove("acceso");
+    }, quantoResta);
+  }
+
+  /**
+   * Le rotte che **non** accendono il filo.
+   *
+   * Sono quelle che la console chiede da sola ogni pochi secondi per tenersi
+   * aggiornata. Nessuno le ha chieste, quindi nessuno le sta aspettando: farle
+   * annunciare vorrebbe dire un filo acceso in permanenza, che e' esattamente
+   * il rumore da togliere.
+   */
+  var DA_SOLE = ["/stato", "/macchina", "/richieste", "/coda", "/pannello", "/invii"];
+
+  function vaAnnunciata(percorso) {
+    var quale = percorso.split("?")[0];
+    for (var i = 0; i < DA_SOLE.length; i++) if (quale === DA_SOLE[i]) return false;
+    return true;
+  }
+
   async function chiama(percorso, opzioni) {
     opzioni = opzioni || {};
+    var annuncia = vaAnnunciata(percorso);
+    if (annuncia) { quanteInVolo++; filoDelCaricamento(); }
+    try {
+      return await chiamaDavvero(percorso, opzioni);
+    } finally {
+      if (annuncia) { quanteInVolo--; filoDelCaricamento(); }
+    }
+  }
+
+  async function chiamaDavvero(percorso, opzioni) {
     /**
      * ⚠ **Il tipo del corpo si puo' cambiare.** Dalla 1.0.2.
      *
@@ -378,7 +452,24 @@ export const COPIONE_BASE = `
   var TIRO_BASTA = 68;
   var TIRO_MASSIMO = 110;
 
+  /**
+   * ⚠ **Si monta una volta sola, e la guardia serve davvero.**
+   *
+   * «montaIlTiro» la chiama «entra», e «entra» puo' girare **due volte nella
+   * stessa pagina**: «scollega» non ricarica niente — riporta solo alla
+   * schermata d'ingresso — quindi chi esce e rientra col codice ci ripassa.
+   * Senza questa riga si ritrovava due cerchi appesi al body e **due giri di
+   * ascoltatori**: un tiro solo faceva partire due volte tutte le riletture, e
+   * uno dei due cerchi restava li' a mezza corsa.
+   *
+   * Trovato rileggendo il proprio codice, non usandolo: e' il tipo di difetto
+   * che si vede solo a chi esce e rientra, cioe' quasi mai — e poi capita.
+   */
+  var tiroMontato = false;
+
   function montaIlTiro() {
+    if (tiroMontato) return;
+    tiroMontato = true;
     var segno = document.createElement("div");
     segno.className = "tiro";
     segno.innerHTML = '<div class="cerchio"></div>';
@@ -436,10 +527,19 @@ export const COPIONE_BASE = `
       sto = true;
       segno.classList.add("gira");
       mostra(TIRO_BASTA);
-      aggiornaLaPagina().then(function () {
-        sto = false;
-        chiudi();
-      });
+      /**
+       * ⚠ **Il cerchio si ferma sempre, anche quando va male.**
+       *
+       * Senza il ramo dell'errore, una rilettura che rifiuta lasciava «sto» a
+       * vero: il cerchio girava per sempre e il gesto restava morto **per il
+       * resto della sessione**, con l'unico rimedio di chiudere l'app.
+       */
+      aggiornaLaPagina()
+        .catch(function () { /* il motivo l'ha gia' detto chi ha fallito */ })
+        .then(function () {
+          sto = false;
+          chiudi();
+        });
     }
     document.addEventListener("touchend", molla, { passive: true });
     document.addEventListener("touchcancel", molla, { passive: true });
@@ -458,10 +558,22 @@ export const COPIONE_BASE = `
     if (pagina === "daprod") lavori.push(leggiBacheca());
     if (pagina === "stili") lavori.push(leggiStili());
     if (pagina === "produzione") lavori.push(leggiModelli());
-    // Un giro che fallisce non deve lasciare il cerchio a girare per sempre:
-    // «allSettled», e chi ha sbagliato lo dice per conto suo.
-    try { await Promise.allSettled(lavori); } catch (e) { /* si vedra' */ }
-    avvisa("Aggiornato.", "bene");
+    /**
+     * ⚠ **«Aggiornato» si dice solo se e' vero.**
+     *
+     * «allSettled» non rifiuta mai, quindi prima si diceva «Aggiornato.» in
+     * verde anche quando **tutte** le riletture erano fallite: fuori casa, col
+     * computer spento, la pagina mostrava i dati di ieri e sopra la scritta che
+     * era andata bene. E' il momento in cui quella frase conta di piu', ed era
+     * quello in cui mentiva.
+     */
+    var esiti = await Promise.allSettled(lavori);
+    var riuscite = esiti.filter(function (x) { return x.status === "fulfilled"; }).length;
+    if (!riuscite) {
+      avvisa("Non sono riuscito ad aggiornare: quello che vedi e' l'ultima volta che c'era.", "male");
+      return;
+    }
+    avvisa(riuscite === esiti.length ? "Aggiornato." : "Aggiornato in parte.", "bene");
   }
 
   /* ---------------------------------------------------------- navigazione */
@@ -540,11 +652,34 @@ export const COPIONE_BASE = `
    * spinta, perche' e' una risposta piccola. Il resto passa di qui.
    */
   var ultimaVolta = {};
+  var inCodaDopo = {};
   function ogniTanto(nome, ms, fare) {
     var adesso = Date.now();
-    if (ultimaVolta[nome] && adesso - ultimaVolta[nome] < ms) return;
-    ultimaVolta[nome] = adesso;
-    fare();
+    var quando = ultimaVolta[nome] || 0;
+    if (adesso - quando >= ms) {
+      ultimaVolta[nome] = adesso;
+      fare();
+      return;
+    }
+    /**
+     * ⚠ **Quella che cade dentro la finestra si rimanda, non si butta.**
+     *
+     * Un freno senza coda finale scarta **l'ultima** notizia della raffica, che
+     * e' proprio quella che conta: se un lavoro finisce 1,4 secondi dopo la
+     * spinta precedente, la rilettura viene saltata e non ne arrivano altre —
+     * il lavoro e' finito. Risultato: la Fila resta a dire «ci sta lavorando»
+     * finche' non succede qualcos'altro, che e' esattamente il difetto che
+     * questo freno doveva curare, spostato di un passo piu' in la'.
+     *
+     * Una sola in attesa per nome: se ne arrivano venti, quella che parte alla
+     * fine e' comunque una rilettura sola con i dati di adesso.
+     */
+    if (inCodaDopo[nome]) return;
+    inCodaDopo[nome] = setTimeout(function () {
+      inCodaDopo[nome] = null;
+      ultimaVolta[nome] = Date.now();
+      fare();
+    }, ms - (adesso - quando));
   }
 
   /**

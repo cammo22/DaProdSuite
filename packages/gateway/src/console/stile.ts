@@ -69,12 +69,57 @@ export const STILE = `  :root {
   /* ------------------------------------------------------------ testata */
   header {
     position: sticky; top: 0; z-index: 20;
+    /* Perche' il filo del caricamento, che sta sul bordo di sotto, si misuri
+       da qui e non dalla pagina. */
+
     display: flex; align-items: center; gap: 10px;
     padding: 12px 16px;
     padding-top: calc(12px + env(safe-area-inset-top));
     background: #0a0c11ee; backdrop-filter: blur(10px);
     border-bottom: 1px solid var(--line);
   }
+  /**
+   * **Il filo del caricamento**, sotto alla testata.
+   *
+   * Chiesto il 7 settembre 2026, e la richiesta diceva anche come: «minimal e
+   * futuristica», «togli i dettagli di troppo». Quindi due pixel di luce che
+   * scorrono, e basta — nessun numero, nessuna percentuale, nessuna rotella
+   * che gira in mezzo allo schermo.
+   *
+   * **Perche' indeterminato e non una barra che avanza.** Perche' una barra
+   * che avanza promette un tempo, e qui il tempo non si sa: una risposta puo'
+   * arrivare in venti millisecondi o in dieci secondi, a seconda di dov'e' il
+   * telefono e di cosa sta facendo il computer. Una barra al 70% che resta
+   * ferma e' peggio di niente; una luce che scorre dice «sto lavorando» ed e'
+   * vera sempre.
+   *
+   * Sta sul bordo di sotto della testata e non sopra al contenuto: non copre
+   * niente e non sposta niente, quindi accendersi e spegnersi non fa saltare la
+   * pagina di due pixel.
+   */
+  .filo {
+    position: absolute; left: 0; right: 0; bottom: -1px; height: 2px;
+    overflow: hidden; pointer-events: none;
+    opacity: 0; transition: opacity .18s ease;
+  }
+  .filo.acceso { opacity: 1; }
+  .filo i {
+    display: block; height: 100%; width: 42%;
+    background: linear-gradient(90deg, transparent, var(--accent), #35d0ff, transparent);
+    /* Un filo di luce che rimbalza da un capo all'altro. Tre secondi tondi:
+       piu' veloce sembra nervoso, piu' lento sembra fermo. */
+    animation: filoScorre 1.5s ease-in-out infinite;
+  }
+  @keyframes filoScorre {
+    0% { transform: translateX(-110%); }
+    100% { transform: translateX(340%); }
+  }
+  /* Chi ha chiesto meno animazioni non le vuole nemmeno qui: resta una riga
+     accesa, che dice la stessa cosa senza muoversi. */
+  @media (prefers-reduced-motion: reduce) {
+    .filo i { width: 100%; animation: none; opacity: .55; }
+  }
+
   /* Il marchio adesso e' un tasto (l'easter egg), ma non deve sembrarlo. */
   /* Alto come la pastiglia e l'ingranaggio: e' una riga sola di tre cose, e
      con il marchio a 24 e gli altri a 38 la riga sembrava scivolata. */
@@ -949,14 +994,42 @@ export const STILE = `  :root {
   }
   .pausa.bussano .segno { color: var(--accent); }
 
-  /* Com'e' stata fatta una cosa: una riga per campo, dentro al foglio. */
-  .info {
-    padding: 9px 0; border-bottom: 1px solid var(--line);
+  /**
+   * **Com'e' stata fatta**: un riquadro con dentro una riga per campo.
+   *
+   * ⚠ **Vale in galleria e nel lettore, e prima erano due cose diverse.**
+   * Fino alla 1.2.2 la galleria disegnava le stesse informazioni con «.info»,
+   * dentro un foglio che saliva sopra la foto con un «indietro» che non
+   * c'entrava niente; il lettore aveva questo riquadro, dentro al palco, che si
+   * accende e si spegne con lo stesso tasto. Detto il 7 settembre 2026:
+   * «vorrei vederlo stesso come abbiamo fatto nel visualizer». Quindi vince
+   * questo, e le regole che erano dentro «.palcoLettore» stanno qui fuori.
+   *
+   * Dentro al palco cambia una cosa sola — sta sopra a un video che si muove,
+   * quindi ha uno sfondo suo e un'altezza massima — e quella riga sta piu'
+   * sotto, non qui.
+   */
+  .infoPalco {
+    margin: 0 0 6px; padding: 12px 14px;
+    background: var(--panel2); border: 1px solid var(--line2); border-radius: 14px;
+    max-height: 34vh; overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
-  .info b { display: block; font-size: 11.5px; color: var(--dim); font-weight: 600; }
-  .info .cosa {
-    font-size: 13.5px; margin-top: 3px; white-space: pre-wrap; overflow-wrap: anywhere;
+  .infoPalco .rigaInfo { margin-bottom: 9px; }
+  .infoPalco .rigaInfo:last-child { margin-bottom: 0; }
+  .infoPalco .rigaInfo b {
+    display: block; font-size: 11px; color: var(--fioco);
+    text-transform: uppercase; letter-spacing: .5px; margin-bottom: 2px;
   }
+  .infoPalco .rigaInfo span {
+    display: block; font-size: 12.5px; color: var(--txt); line-height: 1.45;
+    white-space: pre-wrap; word-break: break-word;
+  }
+  /* Il tasto acceso dice che il riquadro e' aperto: senza, il secondo tocco e'
+     un tentativo invece che un gesto. Vale per il tondo del palco e per la
+     pastiglia della lente. */
+  .infoPalco + .fila { margin-top: 10px; }
+
 
   /* Una riga della rete: chi bussa, o un altro computer. */
   .bussa {
@@ -1267,22 +1340,17 @@ export const STILE = `  :root {
    * «touch-action: pan-y» lo dice al browser prima ancora che il copione se ne
    * accorga: quel rettangolo si scorre in verticale e il resto non lo riguarda.
    */
+  /*
+   * Dentro al palco cambia solo quello che il palco impone: sta sopra a un
+   * video che si muove, quindi vuole uno sfondo suo e un margine ai lati, e il
+   * dito che scorre dentro il riquadro non deve chiudere il palco. Tutto il
+   * resto e' il riquadro di tutti, piu' su.
+   */
   .palcoLettore .infoPalco {
     position: relative; z-index: 1;
-    margin: 0 14px 6px; padding: 12px 14px; max-height: 34vh; overflow-y: auto;
+    margin: 0 14px 6px;
     touch-action: pan-y; overscroll-behavior: contain;
-    background: #0d0f16e6; border: 1px solid var(--line2); border-radius: 14px;
-    -webkit-overflow-scrolling: touch;
-  }
-  .palcoLettore .infoPalco .rigaInfo { margin-bottom: 9px; }
-  .palcoLettore .infoPalco .rigaInfo:last-child { margin-bottom: 0; }
-  .palcoLettore .infoPalco .rigaInfo b {
-    display: block; font-size: 11px; color: var(--fioco);
-    text-transform: uppercase; letter-spacing: .5px; margin-bottom: 2px;
-  }
-  .palcoLettore .infoPalco .rigaInfo span {
-    display: block; font-size: 12.5px; color: var(--txt); line-height: 1.45;
-    white-space: pre-wrap; word-break: break-word;
+    background: #0d0f16e6;
   }
   /* Il tasto acceso dice che il pannello e' aperto: senza, il secondo tocco e'
      un tentativo invece che un gesto. */

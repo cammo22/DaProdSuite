@@ -60,6 +60,44 @@ for (const [app, dichiarati] of Object.entries(A.MODELLI_DICHIARATI)) {
   if (mancanti.length) console.log(`       (da fuori non si può chiedere: ${mancanti.join(", ")})`);
 }
 
+/**
+ * Il modello che parte e' lo stesso di qua e di la'.
+ *
+ * — il difetto del 7 settembre 2026: da fuori partiva FLUX.2 Klein 4B, sulla
+ * scheda partiva Anima. Due schermate della stessa suite, due idee di cosa
+ * parte, e nessuno che se ne accorgesse finche' non si sono messe le immagini
+ * una accanto all'altra. Il valore adesso e' uno solo, scritto in
+ * PREDEFINITO_IMMAGINI, e la scheda ne tiene una copia perche' e' una pagina e
+ * non puo' importare un pacchetto Node: questa prova e' quello che tiene ferme
+ * le due copie.
+ */
+console.log("\n— il modello che parte e' lo stesso dappertutto —");
+{
+  const grafiFoto = await import(
+    new URL("../../../apps/foto/src/grafi.js", import.meta.url).href
+  );
+  dice(
+    "la scheda foto parte con quello dichiarato in azioni",
+    grafiFoto.PREDEFINITO === A.PREDEFINITO_IMMAGINI,
+    `→ la scheda dice ${grafiFoto.PREDEFINITO}, azioni dice ${A.PREDEFINITO_IMMAGINI}`,
+  );
+  dice(
+    "ed e' un modello che la scheda ha davvero",
+    Boolean(grafiFoto.MODELLI?.[A.PREDEFINITO_IMMAGINI]),
+    `→ ${A.PREDEFINITO_IMMAGINI}`,
+  );
+  for (const id of ["genera.immagine", "modifica.immagine"]) {
+    const azione = A.AZIONI.find((a) => a.id === id);
+    if (!azione) continue;
+    const campo = azione.campi.find((c) => c.nome === "modello");
+    dice(
+      `${id}: parte con lo stesso`,
+      campo?.predefinito === A.PREDEFINITO_IMMAGINI,
+      `→ ${campo?.predefinito}`,
+    );
+  }
+}
+
 console.log("\n— i campi del modello sono scritti per chi legge —");
 for (const azione of A.AZIONI) {
   const campo = azione.campi.find((c) => c.nome === "modello");

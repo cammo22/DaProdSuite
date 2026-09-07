@@ -15,7 +15,7 @@
  */
 
 import { el, escapeHtml } from "./dom.js";
-import { MODELLI, modello } from "./grafi.js";
+import { MODELLI, PREDEFINITO, modello } from "./grafi.js";
 import { traduzionePerModello } from "./lingua.js";
 // Il riquadro «manca, ecco i GB» con dentro la barra: nato qui, e dalla 0.4.1
 // è un pezzo di `packages/ui` che vale per tutte le app. Servito sotto `/comune/`.
@@ -24,7 +24,7 @@ import * as ponte from "./ponte.js";
 
 const RICORDO = "daprod.foto.modello";
 
-let corrente = MODELLI.anima;
+let corrente = MODELLI[PREDEFINITO];
 /** Vero quando i pesi del modello scelto sono tutti sul disco. */
 let pronto = true;
 /**
@@ -64,9 +64,23 @@ export async function collegaScelta() {
     )
     .join("");
 
+  /**
+   * L'ultimo usato, e in mancanza quello di serie.
+   *
+   * ⚠ **Quello di serie è `PREDEFINITO`, non Anima.** Fino alla 1.2.2 qui
+   * c'era `MODELLI.anima.id`, e dall'altra parte — telefono e console — ne
+   * partiva un altro: la stessa suite, due modelli diversi a seconda di dove
+   * premevi. Adesso il valore è uno solo, e sta in `grafi.js` accanto ai
+   * modelli.
+   *
+   * Su un computer senza scheda video il predefinito non si può usare, e
+   * allora si scende su Anima: è l'unica che arriva in fondo sulla CPU.
+   */
   const ricordato = localStorage.getItem(RICORDO);
   const valido = MODELLI[ricordato] && !(senzaScheda && MODELLI[ricordato].serveScheda);
-  el.modello.value = valido ? ricordato : MODELLI.anima.id;
+  const diSerie =
+    senzaScheda && MODELLI[PREDEFINITO].serveScheda ? MODELLI.anima.id : PREDEFINITO;
+  el.modello.value = valido ? ricordato : diSerie;
   el.modello.onchange = () => scegli(el.modello.value);
 
   barra = collegaScaricamento(el.avvisoModello, {

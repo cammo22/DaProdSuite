@@ -233,6 +233,17 @@ export const COPIONE_STILI = `
   function disegnaStili() {
     disegnaTipiStili();
     disegnaDueTastiStili();
+    /**
+     * Il tasto dice quello che fa: «un prompt nuovo» quando stai guardando i
+     * prompt, «uno stile nuovo» quando stai guardando gli stili. Fino alla
+     * 1.2.2 diceva sempre stile, e poi apriva un foglio intitolato «Un prompt
+     * nuovo»: due parole per la stessa cosa, a due centimetri di distanza.
+     */
+    var tastoNuovo = $("stile-nuovo");
+    if (tastoNuovo) {
+      tastoNuovo.textContent =
+        "\\u2726 " + (eUnPrompt() ? "Un prompt nuovo" : "Uno stile nuovo");
+    }
     // La riga del mix si ridisegna con la lista: cambiare filtro non deve
     // lasciare in fondo il conto di stili che adesso non si vedono piu'.
     disegnaIlMix();
@@ -555,56 +566,162 @@ export const COPIONE_STILI = `
   }
 
   /**
-   * Il foglio per scrivere uno stile.
+   * ESEMPI_PROMPT: come si scrive un prompt, per tipo.
    *
-   * Senza un id è uno nuovo; con l'id si cambia quello che c'era. La nota sotto
-   * la casella non è decorazione: è **la regola degli stili**, quella che non è
-   * ovvia e che si sbaglia sempre — niente strumenti, niente atmosfera, niente
-   * BPM. Metterla qui, dove si scrive, vale più che scriverla nella
-   * documentazione.
+   * Non sono gli esempi degli stili, e non e' un dettaglio: uno stile e' «come
+   * deve venire» (tre parole in inglese), un prompt e' «cosa voglio» (una frase
+   * intera). Fino alla 1.2.2 il campo del nome, creando un prompt, suggeriva
+   * «Fotografia vera» — che e' il nome di uno stile. Detto il 7 settembre 2026:
+   * «dice come si chiama, fotografia vera: queste cose scritte sempre strane».
    */
-  function apriModificaStile(s) {
-    var suo = s && s.tipo ? s.tipo : tipoStili;
-    var ilGenere = s ? genereDi(s) : genereStili;
+  var ESEMPI_PROMPT = {
+    immagine: {
+      nome: "Robot con la chitarra",
+      testo: "Un robot che suona una chitarra seduto in un teatro in fiamme",
+    },
+    video: {
+      nome: "Il drone sul porto",
+      testo: "Una ripresa dall'alto che scende lenta sul porto all'alba",
+    },
+    musica: {
+      nome: "Il pezzo per l'estate",
+      testo: "Un neomelodico trap che parla di una notte a Napoli",
+    },
+  };
+
+  function esempioPrompt(tipo) {
+    return ESEMPI_PROMPT[tipo] || ESEMPI_PROMPT.immagine;
+  }
+
+  /**
+   * Il foglio per scrivere uno stile o un prompt. **Uno solo, per tutte e tre
+   * le strade.**
+   *
+   * ⚠ **Fino alla 1.2.2 erano tre schermate che chiedevano cose diverse.**
+   * Dalla scheda Stili si apriva questo foglio, che il tipo non lo chiedeva
+   * proprio — lo prendeva dal filtro acceso — e suggeriva nomi da stile anche
+   * per i prompt. Dalla Produzione e dalla galleria si apriva invece la
+   * finestrella del browser, che chiedeva solo il nome e buttava via tutto il
+   * resto del modulo. Tre strade, tre domande diverse, e alla fine tre cose
+   * salvate in modo diverso.
+   *
+   * Detto il 7 settembre 2026: «mettiamo per cosa si tratta — immagini, musica,
+   * video — e poi ti esce piu' o meno la schermata che ci sta la'. Non facciamo
+   * mille cose che poi sono tutte diverse».
+   *
+   * Adesso le domande sono le stesse, nello stesso ordine, con le stesse
+   * parole:
+   *
+   * 1. **Per cosa** — immagini, video o musica. Sempre chiesta creando, anche
+   *    quando chi apre il foglio la risposta ce l'ha gia': si vede accesa, e si
+   *    puo' cambiare. E' la domanda che riempie il campo che prima restava
+   *    vuoto.
+   * 2. **Come lo chiami**
+   * 3. **Cosa dice** — il prompt intero, o le parole dello stile.
+   *
+   * «s» e' quello che si sta modificando (senza, e' nuovo). «avvio» e' quello
+   * che sa gia' chi apre il foglio: tipo, genere, testo, campi del modulo, e
+   * cosa fare dopo aver salvato.
+   */
+  function apriModificaStile(s, avvio) {
+    var a = avvio || {};
+    var siCrea = !(s && s.id);
+    var suo = (s && s.tipo) ? s.tipo : (a.tipo || tipoStili);
+    var ilGenere = s ? genereDi(s) : (a.genere || genereStili);
     var prompt = ilGenere === "prompt";
-    var info = infoTipo(suo);
-    var carta = apriFoglio(
-      (s && s.id
-        ? (prompt ? "Modifica il prompt" : "Modifica lo stile")
-        : (prompt ? "Un prompt nuovo" : "Uno stile nuovo")) +
-        " \u00b7 " + info.nome.toLowerCase(),
-    );
+    /**
+     * I campi del modulo, per un prompt che arriva da fuori.
+     *
+     * Un prompt e' un modulo compilato, non una frase: chi lo salva dalla
+     * Produzione o dalla galleria si porta dietro quante immagini, che durata,
+     * che modello. Qui non si mostrano — sono roba del modulo, non del foglio —
+     * ma si risalvano, se no ritrovandolo tornerebbero quelli di serie senza
+     * dire niente.
+     */
+    var campiSalvati = (s && s.campi) || a.campi || null;
+
+    var carta = apriFoglio("");
+    var titolo = carta.querySelector("h2");
+
+    /* ------------------------------------------------ 1. per cosa e' */
+
+    var ePerCosa = document.createElement("label");
+    ePerCosa.textContent = "Per cosa";
+    var scelte = document.createElement("div");
+    scelte.className = "filtri";
+    var pastiglie = [];
+    for (var t of TIPI_STILE) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "mini";
+      b.dataset.tipo = t.id;
+      b.textContent = t.segno + " " + t.nome;
+      b.addEventListener("click", (function (quale) {
+        return function () { suo = quale; aggiorna(); };
+      })(t.id));
+      pastiglie.push(b);
+      scelte.append(b);
+    }
+
+    /* --------------------------------------------------- 2. il nome */
 
     var eNome = document.createElement("label");
-    eNome.textContent = "Come si chiama";
+    eNome.textContent = "Come lo chiami";
     var campoNome = document.createElement("input");
     campoNome.type = "text";
     campoNome.maxLength = 60;
     campoNome.value = (s && s.nome) || "";
-    campoNome.placeholder = suo === "musica" ? "Neomelodico trap" : (suo === "video" ? "Carrellata lenta" : "Fotografia vera");
+
+    /* ------------------------------------------------- 3. cosa dice */
 
     var eTesto = document.createElement("label");
-    eTesto.textContent = prompt ? "Il prompt, per intero" : "Le parole per il modello";
     var campoTesto = document.createElement("textarea");
-    campoTesto.value = (s && s.testo) || "";
-    campoTesto.placeholder = info.esempio;
+    campoTesto.value = (s && s.testo) || a.testo || "";
     faCrescere(campoTesto);
 
     var nota = document.createElement("p");
     nota.className = "nota";
-    nota.textContent = prompt
-      ? "Un prompt intero, quello che vorresti chiedere. Ritrovandolo, prende il posto di " +
-        "quello che hai scritto — e da li' lo cambi come vuoi. Tenendolo premuto lo metti " +
-        "in DaProd, e chi lo trova puo' prenderselo."
-      : suo === "musica"
-      ? "Tre o quattro generi in inglese, separati da virgola. Niente strumenti, niente " +
-        "atmosfera, niente BPM: una descrizione dettagliata restringe il modello e fa uscire " +
-        "sempre la stessa cosa. Si affina sui sottogeneri, non aggiungendo parole."
-      : suo === "video"
-        ? "Poche parole in inglese: come si riprende, non cosa si riprende. La scena la " +
-          "scrivi ogni volta nella descrizione; qui ci va solo il modo."
-        : "Poche parole in inglese: il modo, non il soggetto. Il soggetto lo scrivi ogni " +
-          "volta nella descrizione; qui ci va come deve venire.";
+
+    /**
+     * Tutto quello che dipende dal tipo, in un posto solo.
+     *
+     * Cambiare la pastiglia cambia il titolo, i due esempi e la nota — senza
+     * riaprire niente. E' il «piu' o meno la schermata che ci sta la'»: la
+     * schermata resta quella, cambiano le parole giuste per quello che stai
+     * facendo.
+     */
+    function aggiorna() {
+      var info = infoTipo(suo);
+      titolo.textContent =
+        (siCrea
+          ? (prompt ? "Un prompt nuovo" : "Uno stile nuovo")
+          : (prompt ? "Modifica il prompt" : "Modifica lo stile")) +
+        " · " + info.nome.toLowerCase();
+
+      for (var p of pastiglie) p.classList.toggle("on", p.dataset.tipo === suo);
+
+      var esempio = esempioPrompt(suo);
+      campoNome.placeholder = prompt
+        ? esempio.nome
+        : (suo === "musica" ? "Neomelodico trap" : (suo === "video" ? "Carrellata lenta" : "Fotografia vera"));
+
+      eTesto.textContent = prompt ? "Cosa vuoi, per intero" : "Le parole per il modello";
+      campoTesto.placeholder = prompt ? esempio.testo : info.esempio;
+
+      nota.textContent = prompt
+        ? "Il prompt intero, quello che vorresti chiedere. Ritrovandolo, riempie il modulo " +
+          "al posto di quello che hai scritto — e da li' lo cambi come vuoi. Tenendolo " +
+          "premuto lo metti in DaProd, e chi lo trova puo' prenderselo."
+        : suo === "musica"
+        ? "Tre o quattro generi in inglese, separati da virgola. Niente strumenti, niente " +
+          "atmosfera, niente BPM: una descrizione dettagliata restringe il modello e fa uscire " +
+          "sempre la stessa cosa. Si affina sui sottogeneri, non aggiungendo parole."
+        : suo === "video"
+          ? "Poche parole in inglese: come si riprende, non cosa si riprende. La scena la " +
+            "scrivi ogni volta nella descrizione; qui ci va solo il modo."
+          : "Poche parole in inglese: il modo, non il soggetto. Il soggetto lo scrivi ogni " +
+            "volta nella descrizione; qui ci va come deve venire.";
+    }
 
     var avviso = document.createElement("div");
     avviso.className = "avviso";
@@ -624,10 +741,12 @@ export const COPIONE_STILI = `
             testo: campoTesto.value.trim(),
             tipo: suo,
             genere: ilGenere,
+            campi: campiSalvati || undefined,
           }),
         });
         chiudiFoglio();
         await leggiStili();
+        if (a.dopo) a.dopo();
       } catch (e) {
         avviso.textContent = e.message;
         avviso.className = "avviso male";
@@ -636,7 +755,16 @@ export const COPIONE_STILI = `
     });
     fila.append(salva);
 
+    /**
+     * «Per cosa» si chiede solo creando.
+     *
+     * Modificando, il tipo e' gia' suo e cambiarlo sposterebbe una cosa da uno
+     * scaffale all'altro senza che nessuno l'abbia chiesto: sta scritto nel
+     * titolo, e basta.
+     */
+    if (siCrea) carta.append(ePerCosa, scelte);
     carta.append(eNome, campoNome, eTesto, campoTesto, nota, fila, avviso);
+    aggiorna();
     campoNome.focus();
   }
 

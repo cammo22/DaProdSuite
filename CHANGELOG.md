@@ -18,6 +18,96 @@ ancora lì.
 
 ---
 
+## 1.2.3 — Un posto solo, e si vede quando carica
+
+Questa doveva uscire a lavoro finito, con tutti e quattro i blocchi dentro. Esce
+prima, e per una ragione buona: Cammo ha qualche giorno per provarla a fondo, e
+una versione da provare vale più di una versione perfetta che arriva dopo.
+
+Dentro c'è **il blocco 1** — quello che non si vede e che serviva più di tutto —
+più il caricamento che si vede sul telefono. Il resto del piano continua sulla
+1.2.4: il piano sta in [docs/ROADMAP-1.2.3.md](docs/ROADMAP-1.2.3.md) e non
+cambia, cambia solo su quale numero esce.
+
+### Il filo: sul telefono si vede che sta caricando
+
+> «Sul telefono mostrare il caricamento, gli aggiornamenti delle pagine.
+> L'utente finale deve avere tempistiche approssimative, ma l'importante è che
+> vede lo stato. Togli i dettagli di troppo, minimal e futuristica.»
+
+Un filo di due pixel sotto alla testata, che scorre finché la suite sta
+lavorando. Niente percentuali, niente rotelle in mezzo allo schermo, niente
+«sto caricando 3 di 7»: quello che deve dire è che sta succedendo qualcosa.
+
+Non promette un tempo apposta. Una risposta può arrivare in venti millisecondi o
+in dieci secondi, a seconda di dov'è il telefono: una barra ferma al 70% è
+peggio di niente, una luce che scorre è vera sempre.
+
+E non si accende per tutto. Le richieste che la console fa da sola ogni pochi
+secondi — lo stato, la fila, la macchina — non le sta aspettando nessuno, e
+farle annunciare vorrebbe dire un filo acceso in permanenza. Le cose brevi
+nemmeno: sotto un decimo di secondo non compare, così non sfarfalla.
+
+### I prompt salvati stanno in un posto solo
+
+> «I prompt continuano a non vederli, nonostante io ne abbia parecchi sul
+> telefono, e anzi non li vorrei perdere.»
+
+Non si erano persi: erano in **due cassetti che si chiamavano allo stesso
+modo**. «Salvalo fra i tuoi prompt» in Produzione scriveva in un file, «salvalo
+come prompt» dalla galleria ne scriveva un altro, e nessuno dei due mostrava
+quello che c'era nell'altro. Nella stessa schermata della Produzione c'erano
+perfino **due elenchi «I tuoi prompt»**, uno sotto l'altro, che leggevano
+cassetti diversi.
+
+Adesso il cassetto è uno — quello degli stili, dove un prompt è uno stile che
+riempie tutto il modulo invece di una casella. Quello che era nell'altro si
+sposta da solo al primo avvio, con la sua data, e il file vecchio resta lì da
+parte senza che niente lo cancelli.
+
+In più, salvando un prompt dalla Produzione si salva **tutto il modulo** e non
+solo la frase grande: ritrovandolo tornano anche quante immagini, che durata,
+che modello.
+
+### Creare un prompt fa le stesse domande da tutte le parti
+
+> «Quando premo su un nuovo prompt dice "come si chiama", "fotografia vera":
+> queste cose scritte sempre strane. Mettiamo "per cosa si tratta" — immagini,
+> musica, video — e poi ti esce più o meno la schermata che ci sta là. Non
+> facciamo mille cose che poi sono tutte diverse.»
+
+Le strade per salvare un prompt erano tre, e chiedevano tre cose diverse: dalla
+scheda Stili un foglio che il tipo non lo chiedeva proprio (lo prendeva dal
+filtro acceso) e suggeriva nomi da stile; dalla Produzione e dalla galleria una
+finestrella che chiedeva solo il nome.
+
+Adesso è **una schermata sola**, e le domande sono queste tre, in quest'ordine:
+per cosa è (immagini, video, musica), come lo chiami, cosa dice. Cambiando «per
+cosa» cambiano gli esempi e le spiegazioni: la schermata resta quella.
+
+### Il modello che parte è lo stesso dappertutto, ed è FLUX.2 Klein 9B
+
+Dal telefono partiva Klein 4B, sulla scheda del computer partiva Anima. La
+stessa suite, due modelli diversi a seconda di dove premevi.
+
+Adesso è uno solo, ed è **Klein 9B**: pesa 11,2 GB ed è più lento del 4B su una
+scheda da 8 — c'è scritto sotto al nome, dove si sceglie — ma è quello che
+capisce meglio le descrizioni lunghe. Quello che avevi scelto l'ultima volta
+resta quello che riparte; il 9B è per chi non ha ancora scelto niente.
+
+### «Com'è stata fatta» è la stessa cosa in galleria e nel lettore
+
+> «Quando clicco "come è stata fatta" rimane la foto aperta e apre un menu
+> indietro. In realtà vorrei vederlo stesso come abbiamo fatto nel visualizer.»
+
+In galleria saliva un foglio sopra la foto, con un «indietro» che non c'entrava
+niente. Adesso è come nel visualizer: un riquadro che si apre e si chiude con lo
+stesso tasto, senza portare via la foto, e il tasto resta acceso finché è
+aperto. Dentro c'è anche «salvalo come prompt», che è il momento in cui uno
+guarda com'è stata fatta una cosa e decide di rifarla.
+
+---
+
 ## 1.2.2 — Quanto ci mette, e cosa sta facendo
 
 Provata la 1.2.1 a fondo — computer, telefono sui dati mobili, tablet — e questa

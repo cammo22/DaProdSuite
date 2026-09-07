@@ -23,6 +23,7 @@ import { sorvegliaProcessi } from "@daprod/runtime";
 import { registra, ripulisciAvanzi, uccidiTutti } from "./processi";
 import { turno } from "./turno";
 import { motoreOccupato } from "./vram";
+import { travasaIPresetNegliStili } from "./travaso-preset";
 
 // Gli schemi privilegiati vanno dichiarati prima che l'app sia pronta: dopo,
 // Electron ha già deciso i privilegi e la registrazione non ha effetto. Per
@@ -52,6 +53,16 @@ async function start(): Promise<void> {
   Menu.setApplicationMenu(null);
 
   ensureDataDirs();
+
+  /**
+   * I vecchi preset diventano prompt, e il secondo magazzino chiude.
+   *
+   * Qui e non più tardi: chiunque legga gli stili dopo questa riga li trova già
+   * completi. Costa niente quando non c'è niente da travasare — un `existsSync`
+   * su un file che dalla 1.2.3 in poi non esiste più.
+   */
+  const travasati = travasaIPresetNegliStili();
+  if (travasati) console.log(`[prompt] ${travasati} preset diventati prompt negli stili`);
 
   /**
    * **Prima di tutto: si sgombera il campo.**
