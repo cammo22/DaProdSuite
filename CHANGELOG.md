@@ -18,6 +18,56 @@ ancora lì.
 
 ---
 
+## 1.1.3 — Un indirizzo fisso che il telefono raggiunge davvero
+
+> «ngrok, basta che non abbiamo più per davvero questo problema»
+
+### ⚠ Tailscale Funnel, per quel telefono, non esiste
+
+Provato dal suo browser, tre volte, con tre indirizzi diversi:
+`https://<nome>.ts.net` non si apre, la stessa cosa su `:8443` non si apre, e
+nemmeno l'IP nudo dei nodi di ingresso — «impossibile raggiungere il sito». Dallo
+stesso telefono, nello stesso minuto, un indirizzo `trycloudflare.com` risponde.
+E da una sonda esterna il Funnel risponde benissimo.
+
+Quindi non è rotto: **è irraggiungibile da quella rete**, e non è cosa che si
+aggiusti da qui. Su questo si reggeva tutta la strada da fuori casa dalla 1.0.7 —
+ed è per questo che a ogni aggiornamento il telefono restava fuori: l'unico altro
+indirizzo pubblico era il tunnel Cloudflare, che cambia nome a ogni accensione.
+
+Un indirizzo stabile che non si raggiunge è **peggio** di nessun indirizzo
+stabile: la suite lo offriva per primo, e chi era fuori bussava lì prima di
+tutto.
+
+### La cura: lo stesso mestiere, un'altra infrastruttura
+
+**ngrok** fa quello che fa il tunnel di Cloudflare — un tunnel in uscita, niente
+porte aperte sul router — e il piano gratuito regala **un dominio statico**. È un
+indirizzo che non cambia, su una rete che quel telefono raggiunge.
+
+Si accende dal pannello, con il tasto **«Indirizzo fisso»** accanto agli
+aggiornamenti. Chiede due cose, prese dal sito di ngrok una volta sola:
+
+- il **token** dell'account (Your Authtoken);
+- il **dominio statico** che l'account regala (Domains), tipo
+  `qualcosa.ngrok-free.app`.
+
+Da lì in poi quell'indirizzo **è** il computer: si riaccende da solo a ogni
+avvio, va davanti a tutti gli altri nella lista che il telefono impara, e non
+cambia più — nemmeno dopo un aggiornamento.
+
+L'attrezzo se lo scarica la suite da sé, come fa con `cloudflared`. Il token
+viaggia per **ambiente** e non sulla riga di comando: la riga di comando di un
+processo la legge chiunque guardi l'elenco dei processi, e quella è una chiave.
+
+### Cosa resta com'era
+
+Funnel non si butta: se un giorno quella rete lo raggiunge, resta in elenco
+subito dopo. E il tunnel Cloudflare resta dov'era, come terza strada. Il
+telefono, come sempre, prova quello che ha e tiene quello che risponde.
+
+---
+
 ## 1.1.2 — Il Funnel funziona: ero io a provarlo dal posto sbagliato
 
 > «niente da fare, non andiamo avanti finché questo problema non è risolto»

@@ -46,8 +46,41 @@
         <button class="bottone secondario" id="btn-telefoni" title="Se dopo un aggiornamento un telefono non ritrova il computer">
           Rimetti in riga i telefoni
         </button>
+        <!--
+          L'indirizzo fisso che il telefono raggiunge davvero: vedi ngrok.ts per
+          il perche' non basta quello di Tailscale.
+        -->
+        <button class="bottone secondario" id="btn-ngrok" title="Un indirizzo da fuori che non cambia mai">
+          Indirizzo fisso
+        </button>
       </div>
     </header>
+
+    <!--
+      Le due chiavi di ngrok. Un dialogo e non una schermata: si aprono, si
+      incollano una volta nella vita, e non si vedono mai piu'.
+    -->
+    <dialog id="ngrok-finestra" class="finestrella">
+      <h2>Indirizzo fisso da fuori</h2>
+      <p class="sotto">
+        Serve un account gratuito su <b>ngrok.com</b>. Da lì prendi due cose: il
+        <b>token</b> (Your Authtoken) e il <b>dominio statico</b> che l'account
+        regala (Domains), tipo <code>qualcosa.ngrok-free.app</code>. Si incollano
+        qui una volta sola: da quel momento il computer ha un indirizzo che non
+        cambia più, nemmeno dopo un aggiornamento.
+      </p>
+      <label for="ngrok-token">Il token</label>
+      <input id="ngrok-token" type="password" autocomplete="off" spellcheck="false" />
+      <label for="ngrok-dominio">Il dominio statico</label>
+      <input id="ngrok-dominio" type="text" autocomplete="off" spellcheck="false"
+             placeholder="qualcosa.ngrok-free.app" />
+      <p class="sotto" id="ngrok-esito"></p>
+      <div class="fila-bottoni">
+        <button class="bottone secondario" id="ngrok-spegni">Spegni</button>
+        <button class="bottone secondario" id="ngrok-chiudi">Chiudi</button>
+        <button class="bottone" id="ngrok-accendi">Accendi</button>
+      </div>
+    </dialog>
 
     <!-- L'ambiente Python, sempre in vista.
          Prima stava in due posti e nessuno dei due era questo: una spia nel

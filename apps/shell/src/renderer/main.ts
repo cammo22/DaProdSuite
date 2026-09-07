@@ -27,6 +27,11 @@ const griglia = document.getElementById("griglia") as HTMLElement;
 const statoAgg = document.getElementById("stato-agg") as HTMLElement;
 const btnAgg = document.getElementById("btn-agg") as HTMLButtonElement;
 const btnTelefoni = document.getElementById("btn-telefoni") as HTMLButtonElement;
+const btnNgrok = document.getElementById("btn-ngrok") as HTMLButtonElement;
+const finestraNgrok = document.getElementById("ngrok-finestra") as HTMLDialogElement;
+const campoToken = document.getElementById("ngrok-token") as HTMLInputElement;
+const campoDominio = document.getElementById("ngrok-dominio") as HTMLInputElement;
+const esitoNgrok = document.getElementById("ngrok-esito") as HTMLElement;
 const spiaGpu = document.getElementById("spia-gpu") as HTMLElement;
 
 /** Pezzi delle schede, per poterli aggiornare senza ridisegnare tutto. */
@@ -407,6 +412,78 @@ btnTelefoni.addEventListener("click", () => {
         statoAgg.textContent = prima ?? "";
         void api.update.state().then(aggiornaBarraAggiornamenti);
       }, 12_000);
+    }
+  })();
+});
+
+/**
+ * ⚠ **L'indirizzo fisso da fuori, quello che il telefono raggiunge davvero.**
+ * Nuovo nella 1.1.3.
+ *
+ * Perche' non basta quello di Tailscale sta scritto per esteso in `ngrok.ts`:
+ * in due righe, provato dal telefono di chi usa questa suite, quell'indirizzo
+ * non si apre in nessun modo, mentre uno su Cloudflare si'. Un indirizzo
+ * stabile che non si raggiunge e' peggio di nessun indirizzo stabile.
+ *
+ * Qui c'e' solo il gesto: due caselle, si incollano una volta nella vita.
+ */
+function raccontaNgrok(s: { fase: string; indirizzo: string; motivo?: string }): void {
+  if (s.fase === "acceso" && s.indirizzo) {
+    esitoNgrok.textContent = `Acceso: ${s.indirizzo} — questo indirizzo non cambia più.`;
+    return;
+  }
+  if (s.fase === "accendo" || s.fase === "scarico") {
+    esitoNgrok.textContent =
+      s.fase === "scarico" ? "Sto scaricando ngrok, la prima volta…" : "Lo accendo…";
+    return;
+  }
+  esitoNgrok.textContent = s.motivo ?? (s.fase === "spento" ? "Spento." : "");
+}
+
+btnNgrok.addEventListener("click", () => {
+  void (async () => {
+    esitoNgrok.textContent = "";
+    try {
+      raccontaNgrok(await api.ngrok.stato());
+    } catch {
+      /* la finestra si apre lo stesso: le due caselle si riempiono a mano */
+    }
+    finestraNgrok.showModal();
+  })();
+});
+
+document.getElementById("ngrok-chiudi")?.addEventListener("click", () => finestraNgrok.close());
+
+document.getElementById("ngrok-accendi")?.addEventListener("click", () => {
+  void (async () => {
+    const token = campoToken.value.trim();
+    if (!token) {
+      esitoNgrok.textContent = "Manca il token: lo trovi su ngrok.com, in «Your Authtoken».";
+      return;
+    }
+    esitoNgrok.textContent = "Lo accendo… la prima volta scarica ngrok, ci mette un minuto.";
+    try {
+      raccontaNgrok(
+        await api.ngrok.imposta({ acceso: true, token, dominio: campoDominio.value.trim() }),
+      );
+    } catch (male) {
+      esitoNgrok.textContent = String((male as Error)?.message ?? male);
+    }
+  })();
+});
+
+document.getElementById("ngrok-spegni")?.addEventListener("click", () => {
+  void (async () => {
+    try {
+      raccontaNgrok(
+        await api.ngrok.imposta({
+          acceso: false,
+          token: campoToken.value.trim(),
+          dominio: campoDominio.value.trim(),
+        }),
+      );
+    } catch (male) {
+      esitoNgrok.textContent = String((male as Error)?.message ?? male);
     }
   })();
 });

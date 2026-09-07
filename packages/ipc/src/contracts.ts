@@ -143,6 +143,26 @@ export interface Impostazioni {
    */
   indirizzoStabile?: boolean;
   /**
+   * ⚠ **L'indirizzo fisso che il telefono raggiunge davvero.** Dalla 1.1.3.
+   *
+   * Tailscale Funnel da' un indirizzo che non cambia mai, ed e' la strada
+   * giusta — **quando ci si arriva**. Il 7 settembre 2026 abbiamo scoperto che
+   * da un telefono vero non ci si arrivava: ne' per nome, ne' su un'altra
+   * porta, ne' per IP nudo, mentre dallo stesso telefono un indirizzo
+   * Cloudflare rispondeva. Non e' rotto: e' irraggiungibile da quella rete, e
+   * non e' cosa che si aggiusti da qui.
+   *
+   * ngrok fa la stessa cosa su un'altra infrastruttura, e il piano gratuito
+   * regala **un dominio statico**: e' l'indirizzo che non cambia, per chi il
+   * Funnel non lo raggiunge. Serve il token dell'account, e sta qui perche' la
+   * scelta e' di chi possiede l'account, non del programma.
+   */
+  ngrokAcceso?: boolean;
+  /** Il token dell'account ngrok. Vuoto = non configurato. */
+  ngrokToken?: string;
+  /** Il dominio statico regalato dall'account, tipo `qualcosa.ngrok-free.app`. */
+  ngrokDominio?: string;
+  /**
    * La connessione da fuori resta accesa, e si riaccende al prossimo avvio.
    *
    * **Accesa di suo, dalla 0.7.0.** Prima c'era un interruttore «Accendi» in
@@ -738,6 +758,22 @@ export interface SuiteApi {
     rimettiInRiga(): Promise<{ indirizzo: string; detto: string }>;
   };
 
+  /**
+   * L'indirizzo fisso via ngrok: si accende, si spegne, si guarda.
+   *
+   * `imposta` fa tutto in un colpo — token, dominio e acceso/spento — perche'
+   * dal punto di vista di chi lo usa e' un gesto solo: «ecco le mie due cose,
+   * accendilo».
+   */
+  ngrok: {
+    imposta(dati: {
+      acceso: boolean;
+      token: string;
+      dominio: string;
+    }): Promise<{ fase: string; indirizzo: string; motivo?: string }>;
+    stato(): Promise<{ fase: string; indirizzo: string; motivo?: string }>;
+  };
+
   gpu: {
     state(): Promise<GpuState>;
     onChanged(listener: (state: GpuState) => void): Unsubscribe;
@@ -1018,6 +1054,8 @@ export const CHANNELS = {
   impostazioniVelocita: "impostazioni:velocita",
   impostazioniProfilo: "impostazioni:profilo",
   impostazioniConnessione: "impostazioni:connessione",
+  ngrokImposta: "ngrok:imposta",
+  ngrokStato: "ngrok:stato",
   telefoniRimettiInRiga: "telefoni:rimetti-in-riga",
   impostazioniGuida: "impostazioni:guida-fatta",
 
