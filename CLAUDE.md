@@ -22,6 +22,26 @@ si cancella, non si allinea.
 contesto è finito e lo paga Cammo. Leggere la wiki intera per correggere un
 refuso è uno spreco; correggere il tunnel senza averla letta è peggio.
 
+## Su cosa si sta lavorando adesso
+
+**1.2.3**, e la regola è una: **niente release finché non è tutto risolto e
+provato.** Non ci sono pubblicazioni intermedie — si accumula sul ramo, si prova
+insieme, si pubblica una volta.
+
+- Il piano: **`docs/ROADMAP-1.2.3.md`** (da qui in poi ogni release ha la sua).
+- Il lavoro: gli **issue GitHub** sotto il traguardo `1.2.3`, in quattro blocchi.
+  `gh issue list --milestone 1.2.3` è il posto dove guardare, non questa pagina.
+- Un issue si chiude quando la sua riga «come si prova» è stata **fatta**.
+- Ogni tanto si dice a che punto siamo, in percentuale, contando gli issue
+  chiusi — non a occhio.
+- Se questa e' la tua prima sessione su questa release, il prompt completo — con
+  le trappole che sono gia' costate tempo — sta in **`docs/PROMPT-1.2.3.md`**.
+
+⚠ **Il filo che tiene insieme quasi tutto: una cosa sola, uguale ovunque.** Il
+7 settembre 2026 tre difetti diversi su tre erano la stessa malattia — una cosa
+fatta in due posti che si comportano diverso. Prima di aggiungere una funzione,
+guarda se esiste già la sua gemella altrove, e unificala.
+
 ## Le due pagine di wiki che valgono per tutto
 
 - `dapwikiGPT/DaProd-Operazioni/Metodo-DaProd.md` — **come si lavora qui**:
