@@ -18,6 +18,57 @@ ancora lì.
 
 ---
 
+## 1.1.2 — Il Funnel funziona: ero io a provarlo dal posto sbagliato
+
+> «niente da fare, non andiamo avanti finché questo problema non è risolto»
+
+Questa release **ritira** la correzione della 1.1.1, che era sbagliata, e lo
+scrive qui perché è la seconda volta di fila che sbaglio la stessa cosa: **una
+misura fatta dal posto sbagliato.**
+
+### ⚠ La sonda della 1.1.1 diceva sempre di no
+
+Nella 1.1.1 avevo insegnato alla suite a provare l'indirizzo Funnel «come lo
+farebbe un telefono» — IP da un DNS pubblico, richiesta a quell'IP. Da quella
+prova concludevo che l'indirizzo non serviva traffico, e lo mandavo **in fondo**
+alla fila degli indirizzi.
+
+Solo che quella prova, **su questa macchina, non può riuscire**: il client
+Tailscale prende in mano il traffico diretto ai nodi di ingresso del Funnel, e da
+lì non ci si arriva mai — anche quando dal resto del mondo ci si arriva
+benissimo.
+
+Verificato con una sonda che non era né il computer né il telefono di casa:
+`https://daprodmain.tail56d4ae.ts.net/chi-sei` ha risposto con il nome della
+macchina e la versione. **Il Funnel funziona.**
+
+Quindi la 1.1.1 faceva il contrario di quello che serviva: prendeva l'unico
+indirizzo che non scade e lo metteva per ultimo, e diceva al pannello una cosa
+falsa — che si vedeva scritta a schermo, «da Internet non risponde», mentre da
+Internet rispondeva.
+
+### Cosa resta, e cosa cambia
+
+`acceso` torna a voler dire quello che da questa macchina si può sapere davvero:
+**la configurazione c'è**. La funzione della sonda resta nel file, con sopra il
+cartello di cosa è successo, perché la lezione vale più del codice:
+
+> Una strada che serve a qualcun altro non si prova da casa propria. Chi
+> verifica è chi ci deve arrivare.
+
+Ed è già così che funziona: il telefono prova gli indirizzi che ha e tiene quello
+che risponde. Il computer dà le indicazioni, il viaggio lo fa lui.
+
+### Per rientrare, un indirizzo che non scade più
+
+Chi è rimasto fuori con tutti gli indirizzi morti adesso ha il tasto **«Ho
+l'indirizzo nuovo»** (arrivato con la 1.1.1) — e la cosa migliore da incollarci
+non è il tunnel di oggi: è **l'indirizzo Funnel**, che non cambia mai. Una volta
+solo, e da lì in poi il telefono ritrova il computer da qualunque rete, anche
+dopo un aggiornamento.
+
+---
+
 ## 1.1.1 — L'indirizzo che non cambia mai non rispondeva
 
 > «niente da fare, ancora non funziona e l'app telefono mi dice ancora 1.0.8»

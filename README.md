@@ -10,7 +10,7 @@ Un programma solo per fare musica, immagini, video, voci e parlare con un avatar
 Ogni app la installi quando ti serve e la disinstalli quando non ti serve più.
 Gira sul tuo computer: niente account, niente chiavi API, codice aperto.
 
-[![versione](https://img.shields.io/badge/versione-1.1.1-7c5cff)](https://github.com/cammo22/DaProdSuite/releases/latest)
+[![versione](https://img.shields.io/badge/versione-1.1.2-7c5cff)](https://github.com/cammo22/DaProdSuite/releases/latest)
 [![licenza](https://img.shields.io/badge/licenza-MIT-5cff9d)](LICENSE)
 [![piattaforma](https://img.shields.io/badge/Windows-x64-3ddbff)](#requisiti)
 [![sito](https://img.shields.io/badge/sito-cammo22.github.io-ffa63d)](https://cammo22.github.io/DaProdSuite/)
@@ -95,20 +95,15 @@ tutte lo stesso.
 
 ## A che punto siamo
 
-**Ultima pubblicata: 1.1.1 — «L'indirizzo che non cambia mai non rispondeva».**
-Dalla 1.0.7 la strada da fuori casa si reggeva su un indirizzo Tailscale Funnel
-che **non ha mai servito traffico**: il comando diceva «acceso», il certificato
-c'era, e da un telefono quell'indirizzo non si apriva. Non ce ne eravamo accorti
-perché la prova la facevamo dal computer, dove Tailscale risolve quel nome in
-casa e risponde senza uscire su Internet. Adesso «acceso» vuol dire «ha
-risposto»: si chiede l'IP a un DNS pubblico e si bussa lì, e gli indirizzi si
-mettono in fila per quello che fanno — davanti quelli che rispondono, in fondo
-quelli che promettono. E quando un telefono resta con tutti gli indirizzi morti,
-non serve più rifare l'account: c'è **«Ho l'indirizzo nuovo»**, si incolla quello
-di oggi e il profilo resta quello.
-
-Prima, nella 1.1.0, la console non si mette più in cache (la pagina usciva senza
-`Cache-Control`, e il telefono mostrava quella di ieri).
+**Ultima pubblicata: 1.1.2 — «Il Funnel funziona: ero io a provarlo dal posto
+sbagliato».** Ritira la correzione della 1.1.1: la prova che la suite faceva
+sull'indirizzo che non cambia mai **non può riuscire da quella macchina**, perché
+il client Tailscale prende in mano il traffico verso i propri nodi di ingresso.
+Verificato con una sonda esterna vera: quell'indirizzo risponde. La 1.1.1 lo
+mandava in fondo alla fila e scriveva nel pannello una cosa falsa. Adesso il
+computer dà le indicazioni e il viaggio lo verifica chi lo fa — il telefono, che
+prova gli indirizzi e tiene quello che risponde. Chi è rimasto fuori rientra con
+**«Ho l'indirizzo nuovo»**, incollandoci l'indirizzo Funnel: quello non scade.
 
 Quello che cambia a ogni giro sta in [CHANGELOG.md](CHANGELOG.md), il percorso
 completo in [docs/ROADMAP.md](docs/ROADMAP.md).
