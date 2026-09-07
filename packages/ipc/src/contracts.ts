@@ -819,6 +819,31 @@ export interface ApiApp {
     /** Cancella il file, i suoi metadati e la sua copertina. Non si torna indietro. */
     elimina(id: string): Promise<boolean>;
 
+    /**
+     * ⚠ **La foto com'era prima che la modificassi.** Nuova nella 1.2.1.
+     *
+     * Chiesto il 7 settembre 2026: «facciamo anche che quando si modifica una
+     * foto viene salvata anche l'originale, in modo da vedere il prima e il
+     * dopo».
+     *
+     * Sta qui e non fra i risultati del motore perche' **non e' un risultato**:
+     * nessun motore l'ha prodotta, e' la foto di partenza. Finisce in galleria
+     * accanto a quella nuova, con scritto nel `.json` di chi e' il prima e di
+     * chi e' il dopo — sono quei due campi che poi lasciano scegliere, quando
+     * si pubblica, se mandare in bacheca tutte e due o solo quella rifatta.
+     *
+     * L'immagine si passa come data URL, come la copertina: e' una foto sola,
+     * gia' rimpicciolita a misura del VAE, non un video.
+     *
+     * Torna l'id della copia salvata, o `null` se non ce l'ha fatta: chi chiama
+     * non deve far fallire una modifica riuscita perche' non si e' potuto
+     * tenere il prima.
+     */
+    originale(
+      dataUrl: string,
+      dati: { titolo: string; risultatoId: string; meta?: Record<string, unknown> },
+    ): Promise<string | null>;
+
     /** Notifica quando qualcuno produce o cancella un risultato. */
     onCambiata(listener: (elementi: ElementoLibreria[]) => void): Unsubscribe;
   };
@@ -927,6 +952,33 @@ export interface ApiApp {
 
   /** Dice alla suite com'è andata la consegna di un lavoro da fuori. */
   richiestaPartita(id: string, errore?: string): Promise<void>;
+
+  /**
+   * ⚠ **A che punto è il motore.** Nuova nella 1.2.1.
+   *
+   * Il difetto che cura, detto il 7 settembre 2026: «mentre è in lavorazione
+   * con LLaDA non si vede il progresso nella fila sull'app mobile, solo con
+   * LLaDA — con gli altri funziona».
+   *
+   * La ragione sta in come il motore racconta quello che fa. ComfyUI manda un
+   * messaggio `progress` **solo dai nodi che contano i passi**: un
+   * campionatore lo fa cinquanta volte e la barra si riempie. LLaDA no — è un
+   * nodo solo che carica quasi sedici GB, li fa passare dalla RAM e alla fine
+   * sputa l'immagine già fatta — quindi non arrivava niente, e da fuori si
+   * vedeva una riga ferma senza sapere se stava lavorando o era piantata.
+   *
+   * Adesso la scheda dice due cose invece di una: **quanto** (che può mancare,
+   * ed è legittimo) e **cosa sta facendo**, che si legge dal nodo che il motore
+   * ha in mano in questo momento — «carico il modello», «disegno», «salvo». La
+   * seconda c'è sempre, anche per LLaDA, ed è quella che risponde alla domanda
+   * vera di chi guarda da un'altra stanza.
+   *
+   * `quanto` va da 0 a 1, oppure è `null` quando il motore non lo dice. Si
+   * manda a ogni cambiamento, e vale per il lavoro che la suite sta seguendo
+   * adesso: chi genera a mano sulla scheda non ne ha bisogno — ha già la sua
+   * barra sotto gli occhi.
+   */
+  avanzamento(quanto: number | null, fase: string): Promise<void>;
 
   /**
    * Accende un motore che quest'app usa **solo a volte**, e ne torna
@@ -1045,9 +1097,11 @@ export const CHANNELS = {
   libreriaMeta: "libreria:meta",
   libreriaElimina: "libreria:elimina",
   libreriaSalva: "libreria:salva",
+  libreriaOriginale: "libreria:originale",
   libreriaCambiata: "libreria:cambiata",
   appInvia: "app:invia",
   appConsegna: "app:consegna",
+  appAvanzamento: "app:avanzamento",
   appRichiestaDaFuori: "app:richiesta-da-fuori",
   appRichiestaPartita: "app:richiesta-partita",
   appMotoreInPiu: "app:motore-in-piu",

@@ -238,7 +238,11 @@ vecchio prometteva un'altra cosa — e dalla **0.7.7** ce n'è una in più, gli
   lo dice;
 - **Fila** (era «Lavori», poi «Riepilogo») — quattro numeri in cima — in
   lavorazione, in fila, pronti, aspettano il sì — e sotto **cosa sta girando
-  adesso**, da quanto, per chi. Dalla 0.7.7 **ogni lavoro ha il suo numero**
+  adesso**, da quanto, per chi. Dalla **1.2.1** c'è scritto anche **cosa sta
+  facendo** — «carico il modello», «leggo la descrizione», «disegno», «salvo» —
+  e quando il motore sa dire a che punto è, la barra si riempie davvero con la
+  percentuale. Serve soprattutto con i modelli lenti: prima, uno che passava
+  cinque minuti a caricarsi sembrava piantato. Dalla 0.7.7 **ogni lavoro ha il suo numero**
   (`#47`) e tu vedi **a che posto sei**: se cambi idea, «togli» ti fa uscire
   dalla fila. Su un lavoro finito ci sono **rifallo** e **cambia e rifallo**. Le
   richieste stanno in tre pile: *adesso*, *finiti*, *messi via*;
@@ -283,7 +287,14 @@ Dentro **Modifica** le domande sono quattro, in quest'ordine.
 **Da dove parti.** Tre strade, e le trovi scritte tutte e tre: *Una foto che hai
 fatto* apre le tue Produzioni e ne scegli una; *Dalla galleria del telefono*
 apre la galleria; *Scattala adesso* (dalla **1.0.6**) apre la fotocamera e la
-foto che scatti parte da lì. Da qualunque parte arrivi, la foto viene
+foto che scatti parte da lì.
+
+*(Fino alla **1.2.1** capitava che, scegliendo dalla galleria, la suite dicesse
+che «manca l'immagine». Erano due cose: la foto si vedeva sullo schermo prima di
+essere arrivata al computer — quindi premendo subito «Fai» si mandava un modulo
+vuoto — e le foto grosse ogni tanto non si aprivano proprio. Adesso «Fai»
+aspetta che la foto sia arrivata, e se qualcosa va storto te lo scrive lì sotto
+invece di farlo sparire.)* Da qualunque parte arrivi, la foto viene
 rimpicciolita a 1024 sul lato lungo prima di partire: è la misura su cui questi
 modelli lavorano, e mandare i dodici mega della fotocamera vorrebbe dire
 aspettare il caricamento e poi vedersela rimpicciolire lo stesso.
@@ -291,11 +302,30 @@ aspettare il caricamento e poi vedersela rimpicciolire lo stesso.
 **Cosa deve cambiare.** Una frase: «fai diventare il cielo un tramonto
 arancione».
 
+### Il prima e il dopo
+
+Dalla **1.2.1**, quando modifichi una foto in galleria ne trovi **due**: quella
+nuova, e quella di partenza, con scritto sotto *prima della modifica*. Servono
+per guardarle una accanto all'altra, che è l'unico modo di dire se la modifica
+ha fatto quello che volevi.
+
+Sono legate. Quando metti in bacheca quella nuova, la suite ti chiede se
+mandarci anche il prima — per far vedere il confronto — o solo quella rifatta;
+togliendola dalla bacheca, il prima esce insieme a lei. In galleria restano
+tutte e due comunque: la bacheca è cosa fai vedere agli altri, la galleria è cosa
+hai.
+
 **Con che modello.** Gli stessi delle foto nuove, e sanno cambiarle tutti — ma
 in due modi diversi. I quattro col **pennello** (Anima, Anima v2, i due FLUX.2)
 rifanno **solo la zona che dipingi** e lasciano il resto identico, pixel per
 pixel. **LLaDA** invece lavora **a parole**: guarda tutta la foto e segue
-l'istruzione. È il più lento della scheda.
+l'istruzione. È il più lento della scheda — e dalla **1.2.1** lo è parecchio di
+più: fino a quella versione era la sua versione «ridotta», che faceva quattro
+passi per andare in fretta; adesso c'è quella piena, che ne fa cinquanta. Viene
+meglio e ci mette molto. Mettilo in conto quando lo scegli.
+
+*(Dalla **1.2.1**, con LLaDA la casella «cosa non voglio» torna a contare: la
+versione ridotta non la guardava, questa sì.)*
 
 *(Dalla **1.0.6** «quanto la cambio» non c'è più: ogni modello ha il suo punto
 di lavoro e la scheda lo mette da sola. Quel cursore resta sul computer, dove

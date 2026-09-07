@@ -445,6 +445,20 @@ export const STILE = `  :root {
     animation: scorre 1.7s linear infinite;
   }
   @keyframes scorre { from { transform: translateX(-100%); } to { transform: translateX(300%); } }
+  /**
+   * La barra quando il motore dice **quanto**: si riempie e sta ferma.
+   *
+   * Niente animazione «scorre» qui dentro: una barra che scorre e insieme si
+   * riempie non dice piu' niente. La transizione sulla larghezza serve perche'
+   * i numeri arrivano a scatti — un passo ogni tot secondi — e senza si
+   * vedrebbe saltare.
+   */
+  .barra.quanta i {
+    width: 0%;
+    animation: none;
+    background: var(--accent);
+    transition: width .35s linear;
+  }
 
   .compatta li { padding: 9px 0; gap: 8px; }
   .compatta .titolo { font-size: 13.5px; font-weight: 500; }

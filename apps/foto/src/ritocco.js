@@ -347,17 +347,39 @@ export function collegaRitocco() {
         altezza: sotto.height,
       };
 
-      const id = await ponte.invia(grafoRitocco(m, parametri));
-      aggiungiLavoro(id, `ritocco: ${testo}`, {
-        modello: m.nome,
-        testo,
-        prompt: parametri.prompt,
-        ritocco: true,
-        denoise,
-        step: parametri.step,
-        cfg: parametri.cfg,
-        seed: parametri.seed,
-      });
+      const grafo = grafoRitocco(m, parametri);
+      const id = await ponte.invia(grafo);
+      aggiungiLavoro(
+        id,
+        `ritocco: ${testo}`,
+        {
+          modello: m.nome,
+          testo,
+          prompt: parametri.prompt,
+          ritocco: true,
+          denoise,
+          step: parametri.step,
+          cfg: parametri.cfg,
+          seed: parametri.seed,
+        },
+        grafo,
+        /**
+         * ⚠ **La foto com'era, tenuta da parte.** Nuova nella 1.2.1.
+         *
+         * Chiesto il 7 settembre 2026: «facciamo anche che quando si modifica
+         * una foto viene salvata anche l'originale, in modo da vedere il prima
+         * e il dopo».
+         *
+         * Si prende **adesso**, non a lavoro finito, e per una ragione precisa:
+         * appena il ritocco esce, il risultato prende il posto dell'originale
+         * sulla tela (vedi l'ascoltatore di «ritocco-fatto» qui sotto) — e da
+         * quel momento il «prima» non esiste piu' da nessuna parte. E' la
+         * stessa tela che si e' appena mandata al motore, gia' su misura del
+         * VAE: quello che si salva e' esattamente quello che il modello ha
+         * guardato, non la foto come stava sul telefono.
+         */
+        sotto.toDataURL("image/png"),
+      );
     } catch (e) {
       mostraErrore(String(e.message || e), "erroreRitocco");
     } finally {

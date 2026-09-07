@@ -712,7 +712,20 @@ export const COPIONE_GALLERIA = `
      * stesso pomeriggio si distinguono solo con l'ora. Restano tutte e due —
      * il tempo passato si legge di sfuggita, la data si legge quando serve.
      */
-    riga.textContent = [nomeScheda(v.app), quando(v.creato), dataDi(v.creato), pesa(v.bytes)]
+    /**
+     * ⚠ **La copia del «prima» si dice che è un prima.** Nuovo nella 1.2.1.
+     *
+     * Senza questa riga, in galleria comparirebbero due foto quasi uguali una
+     * accanto all'altra e nessuna delle due direbbe quale è quale. È la prima
+     * cosa che serve sapere guardandole, quindi va davanti a tutto il resto.
+     */
+    riga.textContent = [
+      v.eOriginaleDi ? "prima della modifica" : "",
+      nomeScheda(v.app),
+      quando(v.creato),
+      dataDi(v.creato),
+      pesa(v.bytes),
+    ]
       .filter(Boolean)
       .join(" \\u00b7 ");
     sotto.append(nome, riga);
@@ -1006,12 +1019,40 @@ export const COPIONE_GALLERIA = `
       pubblica.className = "mini" + (v.pubblicato ? " acceso" : "");
       pubblica.textContent = v.pubblicato ? "\\u2713 in bacheca" : "\\u263C Metti in DaProd";
       pubblica.addEventListener("click", async function () {
+        /**
+         * ⚠ **Se ha un «prima», si chiede.** Nuovo nella 1.2.1.
+         *
+         * Chiesto il 7 settembre 2026: «se poi la vogliamo pubblicare su DaProd
+         * si puo' decidere se caricare tutte e due le foto o solo quella
+         * modificata».
+         *
+         * Si chiede **solo mettendo in bacheca**, non togliendo: togliere una
+         * cosa e' un gesto che si vuole veloce, e chi la toglie non sta
+         * decidendo niente sul prima. Togliendo, il prima esce insieme — resta
+         * in galleria come sempre, esce solo dalla vetrina.
+         */
+        var ancheIlPrima = false;
+        if (!v.pubblicato && v.originale) {
+          ancheIlPrima = confirm(
+            "Questa foto ha un prima. Metto in bacheca tutte e due, cos\\u00ec si vede " +
+              "il confronto?\\n\\nAnnulla = solo quella modificata.",
+          );
+        }
         pubblica.disabled = true;
         try {
           await chiama("/libreria/" + encodeURIComponent(v.id) + "/pubblica", {
             method: "POST",
             body: JSON.stringify({ pubblicato: !v.pubblicato }),
           });
+          // Il prima segue la modifica: insieme se lo si e' chiesto, e sempre
+          // quando si toglie dalla bacheca — una foto «prima di» da sola, in
+          // vetrina, non vuol dire niente.
+          if (v.originale && (ancheIlPrima || v.pubblicato)) {
+            await chiama("/libreria/" + encodeURIComponent(v.originale) + "/pubblica", {
+              method: "POST",
+              body: JSON.stringify({ pubblicato: !v.pubblicato }),
+            }).catch(function () { /* la modifica c'e': il prima e' un di piu' */ });
+          }
           v.pubblicato = !v.pubblicato;
           pubblica.className = "mini" + (v.pubblicato ? " acceso" : "");
           pubblica.textContent = v.pubblicato ? "\\u2713 in bacheca" : "\\u263C Metti in DaProd";

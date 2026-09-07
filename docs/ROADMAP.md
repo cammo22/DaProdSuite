@@ -24,9 +24,9 @@ file si scrive quale delle due metà manca.
 
 ---
 
-## A che punto siamo — 6 settembre 2026 (notte fonda)
+## A che punto siamo — 7 settembre 2026
 
-**Ultima pubblicata: 1.2.0.** Nove schede dentro la suite, un ambiente Python
+**Ultima pubblicata: 1.2.1.** Nove schede dentro la suite, un ambiente Python
 solo, e il giro che conta — chiedo dal telefono, il computer fa, il file torna —
 **provato da chi la usa**, sul suo PC e sul suo telefono.
 
@@ -126,6 +126,12 @@ fanno quello che ti ho chiesto».
 | **Il VAE che decodificava in RAM (1.0.5)** | 4 passi in 14 s e poi venti minuti di niente: il pacco lascia il VAE sul processore anche in modalita' `cuda`. Pesa 168 MB e adesso lo sposta il ponte, **solo lui**. **Misurato**: 512x512 in 99 s col caricamento dei 16 GB dentro |
 | **LLaDA provato per intero (1.0.5)** | col motore acceso, dai due nodi: `LLaDAImageTextToImage` 94 s a caldo, `LLaDAImageEdit` 116 s («fai diventare verde la mela», ed e' diventata verde). Il collo di bottiglia che resta e' il text encoder da 9,2 GB in RAM: su 8 GB di scheda non ci sale |
 | **Lo scarico di LLaDA (1.0.5)** | ⚠ la 1.0.4 l'aveva peggiorato: `sequential_cpu_offload` con questo modello non parte (accelerate ricrea i pesi su «meta», i tensori GGUF non si lasciano ricreare). La strada e' `cuda`, che qui vuol dire «solo i pesi non quantizzati in scheda, le matrici INT8 una per volta». **Provato**: 4 passi in 14 s, 1,5 GB su 8 |
+| **I lavori che fallivano prima di partire (1.2.1)** | ⚠ il motore delle immagini lo accende **l'apertura della scheda**, e glielo si chiedeva *prima* di aprirla: a computer appena acceso, o dopo che la fila si e' svuotata e le schede si sono richiuse per liberare la VRAM, la risposta era sempre no. Aprendo la scheda a mano spariva, ed e' esattamente cosi' che e' stato visto. Adesso si apre e **poi** si aspetta, fino a due minuti |
+| **«Butta» che dava 403 (1.2.1)** | ⚠ non e' una regressione del codice ma della **vista**: da quando chi decide vede le cose di tutti (1.1), in archivio finiscono anche quelle fatte al PC — il cui padrone e' il computer — e `elimina` era l'unico permesso senza `decide`. Archiviare si poteva gia'. Corretto anche il rifiuto muto: tre rotte rispondevano `403` **senza una frase dentro**, e la pagina poteva solo mostrare il numero |
+| **La foto dalla galleria (1.2.1)** | ⚠ due difetti sovrapposti, tutti e due «a volte»: una **corsa** (la casella con l'id si riempiva alla fine del caricamento, ma la foto si vedeva gia' — chi premeva in mezzo mandava un modulo vuoto) e la **memoria** (`readAsDataURL` fa una stringa un terzo piu' grande del file, e in WebView a volte non si alloca). Adesso «Fai» aspetta il caricamento, e la foto passa per un indirizzo temporaneo |
+| **Cosa sta facendo il motore (1.2.1)** | ⚠ ComfyUI manda `progress` **solo dai nodi che contano i passi**: LLaDA e' un nodo solo che carica 16 GB e sputa l'immagine, quindi non mandava niente e da fuori la riga sembrava ferma. Adesso la scheda racconta `quanto` (che puo' mancare, ed e' legittimo) **e** `fase`, letta dal `class_type` del nodo in `executing` — quella c'e' sempre |
+| **LLaDA pieno al posto del Turbo (1.2.1)** | provato e bocciato il distillato a 4 passi. Adesso `inclusionAI/LLaDA-Image`: stesso peso da scaricare, **50 passi** e guidance 5 invece di 1 — quindi il negativo torna a contare. ⚠ Molto piu' lento: dodici volte i passi su una scheda in cui i pesi passano dalla RAM a ognuno. **Non ancora provato contro un motore acceso** |
+| **Il prima e il dopo (1.2.1)** | modificare una foto ne lascia due in galleria, legate: la copia del «prima» va in una sottocartella sua e viene saltata dalla consegna (se no chi chiede una modifica si riprende indietro la foto che ha mandato). Pubblicandone una si sceglie se portarsi dietro l'altra |
 | **Una strada sola, e si spiega (1.2.0)** | tolti ngrok, «Indirizzo fisso» e «Rimetti in riga i telefoni»: erano rimedi al Funnel che non risponde, e col tunnel che non cambia piu' non servono. Restano tre indirizzi (casa, tunnel, Tailscale se serve) e il telefono tiene quello che risponde |
 | **Provato col telefono in mano (1.2.0)** | app sui dati mobili collegata, suite chiusa (tunnel vivo), suite riaperta («riuso il tunnel di prima»), telefono riavviato sui dati senza toccare niente: collegato |
 | **Il tunnel sopravvive agli aggiornamenti (1.1.4)** | ⚠ la cura vera di «dopo l'update non si ricollega», e non chiede niente a nessuno: `cloudflared` parte staccato e al riavvio si riusa, se il processo c'e', punta alla porta giusta e da Internet risponde **il nostro** gateway. Aggiorni e l'indirizzo non cambia |

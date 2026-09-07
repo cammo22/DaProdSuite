@@ -44,6 +44,13 @@ export function esponiApiApp(io: AppId): void {
       meta: (id: string, meta: Record<string, unknown>) =>
         ipcRenderer.invoke(CHANNELS.libreriaMeta, id, meta),
       elimina: (id: string) => ipcRenderer.invoke(CHANNELS.libreriaElimina, id),
+      // L'app la mette il preload, come per i modelli: la copia del «prima» va
+      // nella cartella della scheda che ha modificato, e quale sia non lo
+      // decide la pagina.
+      originale: (
+        dataUrl: string,
+        dati: { titolo: string; risultatoId: string; meta?: Record<string, unknown> },
+      ) => ipcRenderer.invoke(CHANNELS.libreriaOriginale, io, dataUrl, dati),
       onCambiata: (listener) =>
         subscribe<ElementoLibreria[]>(CHANNELS.libreriaCambiata, listener),
     },
@@ -96,6 +103,11 @@ export function esponiApiApp(io: AppId): void {
 
     richiestaPartita: (id: string, errore?: string) =>
       ipcRenderer.invoke(CHANNELS.appRichiestaPartita, id, errore),
+
+    // A che punto è il motore, per chi guarda da un'altra stanza. Vedi il
+    // commento su `avanzamento` in contracts.ts.
+    avanzamento: (quanto: number | null, fase: string) =>
+      ipcRenderer.invoke(CHANNELS.appAvanzamento, quanto, fase),
 
     // L'id dell'app lo mette il preload, come per i modelli: la pagina dice
     // solo *quale* motore vuole, e il catalogo decide se può averlo.

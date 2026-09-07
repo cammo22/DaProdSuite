@@ -18,6 +18,140 @@ ancora lì.
 
 ---
 
+## 1.2.1 — Adesso che si arriva al computer, si guarda cosa c'è dentro
+
+Il tunnel funziona e il telefono è attaccato: la release di prima chiudeva quel
+capitolo. Questa raccoglie quello che si è visto **usando** la suite da lì, e
+sono quasi tutte cose che prima funzionavano e si erano rotte lungo la strada.
+
+### Molti lavori fallivano prima di partire
+
+> «molti lavori falliscono prima di partire, questa cosa prima non succedeva; se
+> poi apro io manualmente l'app allora funziona»
+
+Ed era vero, con una fila di richieste che dicevano tutte la stessa cosa: «il
+motore delle immagini non risponde».
+
+Il motore lo accende **l'apertura della scheda**. La suite però lo chiedeva
+*prima* di aprirla — cioè lo chiedeva a un programma non ancora avviato — e a
+computer appena acceso la risposta era sempre no. Aprendo la scheda a mano il
+difetto spariva, perché a quel punto il motore era già acceso: è esattamente
+quello che si vedeva.
+
+Adesso l'ordine è quello giusto: si apre la scheda, e **poi** si aspetta il
+motore, con la pazienza che ci vuole (ComfyUI ci mette anche un minuto a
+tirarsi su). Solo se dopo due minuti tace ancora, il lavoro si ferma e lo dice.
+
+Lo stesso capita quando la fila si svuota: le schede aperte dalla suite si
+chiudono per liberare la scheda video, e il lavoro dopo ripartiva da spento.
+Adesso lo riaccende.
+
+### «Butta» dava 403
+
+> «quando provo a buttare definitivamente un item dell'app mobile non funziona,
+> dà errore 403; nelle precedenti versioni funzionava»
+
+Funzionava davvero, e il motivo per cui ha smesso è nella 1.1: da quando chi
+decide **vede le cose di tutti** dal telefono, in archivio finiscono anche
+quelle fatte stando al computer — e quelle il telefono non poteva buttarle.
+Archiviarle sì, buttarle no: un permesso rimasto indietro.
+
+Due cose:
+
+- **chi decide adesso può buttare anche quello che non ha fatto lui.** È la
+  stessa regola che vale già per l'archivio, e il senso di essere admin è
+  governare il computer da fuori come se ci si stesse davanti;
+- **un rifiuto adesso si legge.** Quel «403» era tutto quello che la pagina
+  poteva mostrare, perché la risposta arrivava senza una frase dentro. Un numero
+  non dice né cosa è successo né cosa fare. Corretto qui e in altri due posti
+  dove capitava lo stesso.
+
+### Caricare una foto dalla galleria diceva che l'immagine manca
+
+> «se scatto la foto funziona, ma se carico dalla galleria dice che manca
+> l'immagine; a volte va, a volte no»
+
+Erano due difetti sovrapposti, e «a volte» era la firma di tutti e due.
+
+**Il primo è una corsa.** Mettere una foto sono due tempi: disegnarla sullo
+schermo, e mandarla al computer. In mezzo la foto **si vede già**, quindi sembra
+tutto pronto — e chi tocca «Fai» in quel momento manda il modulo con la casella
+ancora vuota. Dalla fotocamera capitava di meno solo perché fra l'inquadrare e
+lo scattare passano dei secondi, e il caricamento faceva in tempo a finire.
+Adesso «Fai» **aspetta la foto**, e se il caricamento è fallito lo dice prima di
+far nascere la richiesta.
+
+**Il secondo è la memoria.** La foto veniva trasformata in una stringa lunga un
+terzo più del file — quindici milioni di caratteri, per una foto di un telefono
+di oggi — e dentro l'app quella stringa a volte non si allocava: nessun errore,
+niente, semplicemente non succedeva niente. Adesso non si copia più niente.
+
+E se qualcosa va storto, il motivo **resta scritto** sotto ai tasti invece di
+passare in tre secondi con la foto ancora lì che sembra a posto.
+
+### Con LLaDA non si vedeva se stava lavorando
+
+> «mentre è in lavorazione con LLaDA non si vede il progresso nella fila
+> sull'app mobile, solo con LLaDA — con gli altri funziona»
+
+Il motore racconta i passi **solo dai pezzi che li contano**: un disegno normale
+li conta cinquanta volte e la barra si riempie. LLaDA no — è un pezzo solo che
+carica sedici GB, se li fa passare dalla memoria e alla fine sputa l'immagine
+già fatta — quindi non arrivava niente, e da fuori si vedeva una riga ferma
+davanti a una macchina che stava lavorando benissimo.
+
+Adesso il computer racconta **due** cose invece di una:
+
+- **quanto**, quando il motore lo sa: la barra si riempie davvero, con la
+  percentuale;
+- **cosa sta facendo**, sempre: «carico il modello», «leggo la descrizione»,
+  «disegno», «sviluppo l'immagine», «salvo».
+
+La seconda è quella che mancava, ed è la risposta alla domanda vera di chi
+guarda da un'altra stanza: sta lavorando, o si è piantato? Si legge anche sulla
+scheda del computer, al posto di «in lavorazione».
+
+### LLaDA: via il 4 passi, dentro quello vero
+
+> «ho testato LLaDA e non mi piace, togliamo LLaDA 8 step e usiamo quella
+> originale 50 step»
+
+Fatto. Quello di prima era il **Turbo**, cioè lo stesso modello ridotto per
+andare in fretta; adesso c'è quello pieno.
+
+Cambia più di un numero: il Turbo lavorava **senza guida** — ed era il motivo
+per cui la casella «cosa non voglio» era spenta — mentre questo la guida ce
+l'ha, quindi quella casella torna a contare.
+
+⚠ **E costa.** Da scaricare pesa uguale (quasi 16 GB, di cui 9 sono solo il
+pezzo che legge le parole), ma i passi sono **dodici volte tanti**, su una
+scheda video in cui i pesi vanno e vengono dalla memoria a ognuno. Era il più
+lento della scheda facendone quattro. Adesso è un'altra cosa ancora, e il menu
+lo dice. Resta perché è l'unico che **modifica una foto a parole** invece di
+ridipingere una zona col pennello.
+
+Chi aveva scaricato il Turbo se lo ritrova sul disco: i file nuovi hanno un
+altro nome, quindi vanno scaricati, e i vecchi si possono cancellare a mano
+dalla cartella dei modelli.
+
+### Il prima e il dopo di una foto modificata
+
+> «facciamo anche che quando si modifica una foto viene salvata anche
+> l'originale, in modo da vedere il prima e il dopo — se poi la vogliamo
+> pubblicare su DaProd si può decidere se caricare tutte e due le foto o solo
+> quella modificata»
+
+Adesso modificare una foto ne lascia **due** in galleria: quella nuova, e quella
+di partenza, con scritto sotto «prima della modifica». Sono legate, quindi
+quando si mette in bacheca quella rifatta la suite chiede se mandarci anche il
+prima — per far vedere il confronto — o solo la nuova. Togliendola dalla
+bacheca, il prima esce con lei.
+
+I file del «prima» stanno in una cartella loro dentro i risultati, così aprendo
+la cartella con Esplora risorse si capisce cosa sono senza doverli aprire.
+
+---
+
 ## 1.2.0 — Come si arriva al computer, detto una volta sola
 
 Col telefono attaccato al computer, provato per intero e **funziona**. Questa

@@ -121,7 +121,11 @@ export function collegaCrea() {
         if (el.seedCasuale.checked || i > 0) el.seed.value = rnd();
         const parametri = { ...leggiModulo(), prompt: componiPrompt(inglese) };
 
-        const id = await ponte.invia(grafoImmagine(m, parametri));
+        // Il grafo si tiene: serve alla coda per dire **cosa** sta facendo il
+        // motore, leggendo il nodo che ha in mano. Vedi `fasePerNodo` in
+        // coda.js.
+        const grafo = grafoImmagine(m, parametri);
+        const id = await ponte.invia(grafo);
         aggiungiLavoro(id, p.testo, {
           modello: m.nome,
           testo: p.testo,
@@ -131,7 +135,7 @@ export function collegaCrea() {
           step: parametri.step,
           cfg: parametri.cfg,
           seed: parametri.seed,
-        });
+        }, grafo);
       }
     } catch (e) {
       mostraErrore(String(e.message || e));

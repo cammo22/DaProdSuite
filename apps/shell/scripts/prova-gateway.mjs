@@ -775,6 +775,20 @@ console.log("\n— ognuno vede le sue —");
     metodo: "DELETE", token: tokenAdmin,
   });
   dice("buttarla la può solo chi l'ha fatta", r.stato === 403, `→ ${r.stato}`);
+  /**
+   * ⚠ **E il no si legge.** Nuova nella 1.2.1.
+   *
+   * Il difetto, detto il 7 settembre 2026: «quando provo a buttare
+   * definitivamente un item dell'app mobile non funziona, dà errore 403». Il
+   * numero era tutto quello che la console poteva mostrare, perché la risposta
+   * arrivava senza il campo «errore» — e un numero, a chi legge, non dice né
+   * cosa è successo né cosa fare.
+   *
+   * Vale la pena provarlo qui e non a occhio: una rotta che risponde di no
+   * senza dire perché non rompe niente, quindi non se ne accorge nessuno
+   * finché non capita a una persona.
+   */
+  dice("e dice perché, invece di un numero", typeof r.dati?.errore === "string" && r.dati.errore.length > 10, `→ ${JSON.stringify(r.dati)}`);
 }
 
 console.log("\n— chi decide genera subito —");

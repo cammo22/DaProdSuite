@@ -376,6 +376,22 @@ export interface VoceLibreria {
   anteprima?: boolean;
   /** Un file caricato a mano da una persona, non generato dalla suite. */
   caricata?: boolean;
+  /**
+   * ⚠ **Il prima e il dopo di una modifica.** Nuovi nella 1.2.1.
+   *
+   * Su una foto rifatta, `originale` è l'id di com'era; sulla copia del
+   * «prima», `eOriginaleDi` è l'id della modifica. Chiesto il 7 settembre
+   * 2026: «quando si modifica una foto viene salvata anche l'originale, in modo
+   * da vedere il prima e il dopo — se poi la vogliamo pubblicare su DaProd si
+   * può decidere se caricare tutte e due le foto o solo quella modificata».
+   *
+   * Sono **due campi e non uno** perché il legame si guarda dai due lati: la
+   * galleria deve poter dire «questa ha un prima» e anche «questa è il prima di
+   * quella», e con un campo solo la seconda frase costerebbe un giro su tutto
+   * l'elenco.
+   */
+  originale?: string;
+  eOriginaleDi?: string;
   /** Le due righe scritte sotto da chi l'ha messa in bacheca. */
   didascalia?: string;
   /**
@@ -805,6 +821,24 @@ export interface StatoMacchina {
     richiesta?: string;
     /** Da quando sta girando, in millisecondi. Per il cronometro. */
     da?: number;
+    /**
+     * ⚠ **A che punto è, da 0 a 1 — e può mancare.** Nuovo nella 1.2.1.
+     *
+     * Manca quando il motore non lo dice, e non è un caso limite: LLaDA-Image
+     * è un nodo solo che carica sedici GB e poi sputa l'immagine, senza mai
+     * contare un passo. Chi disegna la barra deve saper fare le due cose —
+     * riempirla quando il numero c'è, e farla scorrere avanti e indietro
+     * quando non c'è — invece di mostrare uno zero che sembra «piantato».
+     */
+    quanto?: number | null;
+    /**
+     * Cosa sta facendo, a parole: «carico il modello», «disegno», «salvo».
+     *
+     * Si legge dal nodo che il motore ha in mano in questo momento, quindi c'è
+     * **sempre**, anche quando `quanto` manca. È la risposta vera a «sta
+     * lavorando o si è piantato?» per chi guarda da un'altra stanza.
+     */
+    fase?: string;
   } | null;
   /**
    * Chi aspetta, in ordine di partenza.

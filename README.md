@@ -10,7 +10,7 @@ Un programma solo per fare musica, immagini, video, voci e parlare con un avatar
 Ogni app la installi quando ti serve e la disinstalli quando non ti serve più.
 Gira sul tuo computer: niente account, niente chiavi API, codice aperto.
 
-[![versione](https://img.shields.io/badge/versione-1.2.0-7c5cff)](https://github.com/cammo22/DaProdSuite/releases/latest)
+[![versione](https://img.shields.io/badge/versione-1.2.1-7c5cff)](https://github.com/cammo22/DaProdSuite/releases/latest)
 [![licenza](https://img.shields.io/badge/licenza-MIT-5cff9d)](LICENSE)
 [![piattaforma](https://img.shields.io/badge/Windows-x64-3ddbff)](#requisiti)
 [![sito](https://img.shields.io/badge/sito-cammo22.github.io-ffa63d)](https://cammo22.github.io/DaProdSuite/)
@@ -95,16 +95,21 @@ tutte lo stesso.
 
 ## A che punto siamo
 
-**Ultima pubblicata: 1.2.0 — «Come si arriva al computer, detto una volta
-sola».** Il computer si fa trovare in tre modi — la rete di casa, il tunnel di
-Cloudflare, l'indirizzo Tailscale se il tuo tailnet lo serve — e il telefono li
-prova tutti e tiene quello che risponde. La novità che chiude la storia del
-«dopo l'aggiornamento non si ricollega»: **il tunnel non muore più quando
-aggiorni**. Prima `cloudflared` era un figlio della suite e moriva con lei;
-adesso vive per conto suo e la suite lo ritrova, quindi l'indirizzo da fuori
-resta lo stesso. Provato col telefono attaccato: app sui dati mobili, suite
-chiusa e riaperta, stesso indirizzo, «Il computer è libero». Tolti ngrok e i due
-pulsanti che servivano a rimediare: non servono più.
+**Ultima pubblicata: 1.2.1 — «Adesso che si arriva al computer, si guarda cosa
+c'è dentro».** Col tunnel che regge (1.2.0: il computer si fa trovare dalla rete
+di casa, dal tunnel di Cloudflare o da Tailscale, e il telefono tiene quello che
+risponde), questa release raccoglie quello che si è visto **usando** la suite da
+lì. I lavori non falliscono più prima di partire: il motore delle immagini lo
+accende l'apertura della scheda, e lo si chiedeva prima di aprirla. «Butta»
+funziona di nuovo per chi decide, e un rifiuto adesso si legge invece di essere
+un numero. Caricare una foto dalla galleria non dice più che l'immagine manca —
+erano una corsa e un problema di memoria, tutti e due tolti. Mentre il computer
+lavora, il telefono dice **cosa sta facendo** («carico il modello», «disegno»,
+«salvo») e non solo che sta facendo qualcosa: è quello che mancava con
+LLaDA-Image, che di passi non ne conta nessuno. LLaDA passa dalla versione
+ridotta a quella piena, più lenta e più brava. E modificare una foto adesso
+tiene anche **com'era prima**, da guardare accanto e da pubblicare insieme, se
+si vuole.
 
 Quello che cambia a ogni giro sta in [CHANGELOG.md](CHANGELOG.md), il percorso
 completo in [docs/ROADMAP.md](docs/ROADMAP.md).
