@@ -69,12 +69,57 @@ export const STILE = `  :root {
   /* ------------------------------------------------------------ testata */
   header {
     position: sticky; top: 0; z-index: 20;
+    /* Perche' il filo del caricamento, che sta sul bordo di sotto, si misuri
+       da qui e non dalla pagina. */
+
     display: flex; align-items: center; gap: 10px;
     padding: 12px 16px;
     padding-top: calc(12px + env(safe-area-inset-top));
     background: #0a0c11ee; backdrop-filter: blur(10px);
     border-bottom: 1px solid var(--line);
   }
+  /**
+   * **Il filo del caricamento**, sotto alla testata.
+   *
+   * Chiesto il 7 settembre 2026, e la richiesta diceva anche come: «minimal e
+   * futuristica», «togli i dettagli di troppo». Quindi due pixel di luce che
+   * scorrono, e basta — nessun numero, nessuna percentuale, nessuna rotella
+   * che gira in mezzo allo schermo.
+   *
+   * **Perche' indeterminato e non una barra che avanza.** Perche' una barra
+   * che avanza promette un tempo, e qui il tempo non si sa: una risposta puo'
+   * arrivare in venti millisecondi o in dieci secondi, a seconda di dov'e' il
+   * telefono e di cosa sta facendo il computer. Una barra al 70% che resta
+   * ferma e' peggio di niente; una luce che scorre dice «sto lavorando» ed e'
+   * vera sempre.
+   *
+   * Sta sul bordo di sotto della testata e non sopra al contenuto: non copre
+   * niente e non sposta niente, quindi accendersi e spegnersi non fa saltare la
+   * pagina di due pixel.
+   */
+  .filo {
+    position: absolute; left: 0; right: 0; bottom: -1px; height: 2px;
+    overflow: hidden; pointer-events: none;
+    opacity: 0; transition: opacity .18s ease;
+  }
+  .filo.acceso { opacity: 1; }
+  .filo i {
+    display: block; height: 100%; width: 42%;
+    background: linear-gradient(90deg, transparent, var(--accent), #35d0ff, transparent);
+    /* Un filo di luce che rimbalza da un capo all'altro. Tre secondi tondi:
+       piu' veloce sembra nervoso, piu' lento sembra fermo. */
+    animation: filoScorre 1.5s ease-in-out infinite;
+  }
+  @keyframes filoScorre {
+    0% { transform: translateX(-110%); }
+    100% { transform: translateX(340%); }
+  }
+  /* Chi ha chiesto meno animazioni non le vuole nemmeno qui: resta una riga
+     accesa, che dice la stessa cosa senza muoversi. */
+  @media (prefers-reduced-motion: reduce) {
+    .filo i { width: 100%; animation: none; opacity: .55; }
+  }
+
   /* Il marchio adesso e' un tasto (l'easter egg), ma non deve sembrarlo. */
   /* Alto come la pastiglia e l'ingranaggio: e' una riga sola di tre cose, e
      con il marchio a 24 e gli altri a 38 la riga sembrava scivolata. */

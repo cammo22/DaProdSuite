@@ -131,8 +131,84 @@ export const COPIONE_BASE = `
 
   /* ------------------------------------------------------------- chiamate */
 
+  /* ------------------------------------------------- il filo che dice «aspetta» */
+
+  /**
+   * Quante richieste sono per aria adesso.
+   *
+   * Un contatore e non un interruttore: la console apre spesso quattro o
+   * cinque chiamate insieme (la galleria, la fila, i regali, lo stato), e con
+   * un interruttore la prima che finisce spegnerebbe il filo mentre le altre
+   * quattro stanno ancora lavorando.
+   */
+  var quanteInVolo = 0;
+  var timerAcceso = null;
+  var accesoDa = 0;
+
+  /**
+   * Accende e spegne il filo del caricamento.
+   *
+   * ⚠ **Due ritardi, e servono tutti e due.** Senza, il filo diventa uno
+   * sfarfallio: quasi tutte le chiamate qui dentro finiscono in una manciata di
+   * millisecondi, e una luce che compare e sparisce venti volte al minuto e'
+   * peggio del silenzio.
+   *
+   * - **120 ms prima di accendersi**: quello che arriva subito non lo annuncia
+   *   nessuno, perche' non c'e' niente da aspettare.
+   * - **almeno 400 ms acceso**: una volta comparso resta abbastanza da essere
+   *   letto come «sta caricando» e non come un lampo.
+   */
+  function filoDelCaricamento() {
+    var filo = document.getElementById("filo");
+    if (!filo) return;
+
+    if (quanteInVolo > 0) {
+      if (filo.classList.contains("acceso") || timerAcceso) return;
+      timerAcceso = setTimeout(function () {
+        timerAcceso = null;
+        if (quanteInVolo <= 0) return;
+        accesoDa = Date.now();
+        filo.classList.add("acceso");
+      }, 120);
+      return;
+    }
+
+    if (timerAcceso) { clearTimeout(timerAcceso); timerAcceso = null; }
+    if (!filo.classList.contains("acceso")) return;
+    var quantoResta = Math.max(0, 400 - (Date.now() - accesoDa));
+    setTimeout(function () {
+      if (quanteInVolo <= 0) filo.classList.remove("acceso");
+    }, quantoResta);
+  }
+
+  /**
+   * Le rotte che **non** accendono il filo.
+   *
+   * Sono quelle che la console chiede da sola ogni pochi secondi per tenersi
+   * aggiornata. Nessuno le ha chieste, quindi nessuno le sta aspettando: farle
+   * annunciare vorrebbe dire un filo acceso in permanenza, che e' esattamente
+   * il rumore da togliere.
+   */
+  var DA_SOLE = ["/stato", "/macchina", "/richieste", "/coda", "/pannello", "/invii"];
+
+  function vaAnnunciata(percorso) {
+    var quale = percorso.split("?")[0];
+    for (var i = 0; i < DA_SOLE.length; i++) if (quale === DA_SOLE[i]) return false;
+    return true;
+  }
+
   async function chiama(percorso, opzioni) {
     opzioni = opzioni || {};
+    var annuncia = vaAnnunciata(percorso);
+    if (annuncia) { quanteInVolo++; filoDelCaricamento(); }
+    try {
+      return await chiamaDavvero(percorso, opzioni);
+    } finally {
+      if (annuncia) { quanteInVolo--; filoDelCaricamento(); }
+    }
+  }
+
+  async function chiamaDavvero(percorso, opzioni) {
     /**
      * ⚠ **Il tipo del corpo si puo' cambiare.** Dalla 1.0.2.
      *

@@ -12,6 +12,42 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ## Non ancora pubblicato
 
+**Togliere il tunnel Cloudflare** per chi ha l'indirizzo fisso, e **togliere il
+codice** della schermata «cerca i computer di casa», che è irraggiungibile ma
+ancora lì.
+
+---
+
+## 1.2.3 — Un posto solo, e si vede quando carica
+
+Questa doveva uscire a lavoro finito, con tutti e quattro i blocchi dentro. Esce
+prima, e per una ragione buona: Cammo ha qualche giorno per provarla a fondo, e
+una versione da provare vale più di una versione perfetta che arriva dopo.
+
+Dentro c'è **il blocco 1** — quello che non si vede e che serviva più di tutto —
+più il caricamento che si vede sul telefono. Il resto del piano continua sulla
+1.2.4: il piano sta in [docs/ROADMAP-1.2.3.md](docs/ROADMAP-1.2.3.md) e non
+cambia, cambia solo su quale numero esce.
+
+### Il filo: sul telefono si vede che sta caricando
+
+> «Sul telefono mostrare il caricamento, gli aggiornamenti delle pagine.
+> L'utente finale deve avere tempistiche approssimative, ma l'importante è che
+> vede lo stato. Togli i dettagli di troppo, minimal e futuristica.»
+
+Un filo di due pixel sotto alla testata, che scorre finché la suite sta
+lavorando. Niente percentuali, niente rotelle in mezzo allo schermo, niente
+«sto caricando 3 di 7»: quello che deve dire è che sta succedendo qualcosa.
+
+Non promette un tempo apposta. Una risposta può arrivare in venti millisecondi o
+in dieci secondi, a seconda di dov'è il telefono: una barra ferma al 70% è
+peggio di niente, una luce che scorre è vera sempre.
+
+E non si accende per tutto. Le richieste che la console fa da sola ogni pochi
+secondi — lo stato, la fila, la macchina — non le sta aspettando nessuno, e
+farle annunciare vorrebbe dire un filo acceso in permanenza. Le cose brevi
+nemmeno: sotto un decimo di secondo non compare, così non sfarfalla.
+
 ### I prompt salvati stanno in un posto solo
 
 > «I prompt continuano a non vederli, nonostante io ne abbia parecchi sul
@@ -69,10 +105,6 @@ niente. Adesso è come nel visualizer: un riquadro che si apre e si chiude con l
 stesso tasto, senza portare via la foto, e il tasto resta acceso finché è
 aperto. Dentro c'è anche «salvalo come prompt», che è il momento in cui uno
 guarda com'è stata fatta una cosa e decide di rifarla.
-
-**Togliere il tunnel Cloudflare** per chi ha l'indirizzo fisso, e **togliere il
-codice** della schermata «cerca i computer di casa», che è irraggiungibile ma
-ancora lì.
 
 ---
 

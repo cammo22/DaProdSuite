@@ -68,6 +68,21 @@ export const PAGINE = `<header>
       <circle cx="12" cy="12" r="7.6"/>
     </svg>
   </button>
+  <!--
+    **Il filo del caricamento.** Chiesto il 7 settembre 2026: «sul telefono
+    mostrare il caricamento, gli aggiornamenti delle pagine; l'utente finale
+    deve avere tempistiche approssimative, ma l'importante e' che vede lo
+    stato; togli i dettagli di troppo, minimal e futuristica».
+
+    Un filo di due pixel sotto alla testata, e nient'altro: niente percentuali,
+    niente «sto caricando 3 di 7», niente rotella in mezzo allo schermo. Non
+    dice quanto manca perche' non lo sa — quello che deve dire e' che la suite
+    sta facendo qualcosa, e per quello basta una cosa che si muove.
+
+    Sta qui dentro apposta: la testata e' appiccicata in cima, quindi il filo
+    resta visibile anche a meta' pagina, dove uno sta guardando.
+  -->
+  <div class="filo" id="filo" aria-hidden="true"><i></i></div>
 </header>
 
 <main>
