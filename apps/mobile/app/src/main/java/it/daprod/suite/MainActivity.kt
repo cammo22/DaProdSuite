@@ -1641,7 +1641,7 @@ class MainActivity : AppCompatActivity() {
                 "/pannello",
                 "/macchina",
                 "/stato",
-                "/preset",
+                "/stili",
                 "/modelli",
                 "/libreria?quanti=60&dove=mie",
                 "/libreria?quanti=6&dove=mie",

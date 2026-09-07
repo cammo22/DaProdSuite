@@ -41,8 +41,6 @@ export const COPIONE_BASE = `
   var dove = "mie";
   /** Riepilogo: quelli che stanno lavorando, quelli finiti, o quelli messi via. */
   var filtroLavori = "vivi";
-  /** I modi di generare messi da parte, come li tiene il computer. */
-  var preset = [];
   /** Se c'è qualcuno a cui chiedere di scrivere. Vuoto vuol dire di sì. */
   var aiMotivo = "non lo so ancora";
   /** I pensieri arrivati, e quale pacco è aperto adesso. */

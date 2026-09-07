@@ -253,58 +253,129 @@ export const COPIONE_PRODUZIONE = `
     dove.className = "avviso" + (male ? " male" : " bene");
   }
 
-  function rigaPrompt(a) {
-    var riga = document.createElement("div");
-    riga.className = "filtri";
-    riga.style.marginTop = "10px";
+  /**
+   * Di che tipo sono i prompt di questa azione.
+   *
+   * ⚠ **E se l'azione non e' una delle tre, si guarda la scheda.** Dalla
+   * 1.0.6: «Modifica una foto» e «Una storia» sono nate dopo questa tabella
+   * e non ci sono dentro, quindi la riga dei prompt spariva del tutto — in
+   * quei due moduli non si poteva ne' usarne uno ne' salvarne uno, senza che
+   * niente lo dicesse. Un prompt pero' e' del **tipo della scheda**, non
+   * dell'azione: quello che vale per una foto vale per una foto modificata.
+   */
+  function tipoDellaScheda(a) {
+    for (var t of TIPI_STILE) if (t.azione === a.id) return t.id;
+    return { foto: "immagine", cinema: "video", musica: "musica" }[a.app] || null;
+  }
 
-    /**
-     * Di che tipo sono i prompt di questa azione.
-     *
-     * ⚠ **E se l'azione non e' una delle tre, si guarda la scheda.** Dalla
-     * 1.0.6: «Modifica una foto» e «Una storia» sono nate dopo questa tabella
-     * e non ci sono dentro, quindi la riga dei prompt spariva del tutto — in
-     * quei due moduli non si poteva ne' usarne uno ne' salvarne uno, senza che
-     * niente lo dicesse. Un prompt pero' e' del **tipo della scheda**, non
-     * dell'azione: quello che vale per una foto vale per una foto modificata.
-     */
-    var quale = null;
-    for (var t of TIPI_STILE) if (t.azione === a.id) quale = t.id;
-    if (!quale) quale = { foto: "immagine", cinema: "video", musica: "musica" }[a.app] || null;
-    if (!quale) return riga;
+  /**
+   * La riga dei prompt: quelli che hai, e il tasto per salvarne uno.
+   *
+   * ⚠ **Fino alla 1.2.2 questa riga era due righe, e in due magazzini.**
+   * Sopra c'era «I tuoi prompt» che leggeva i preset da <preset.json>, sotto le
+   * pastiglie che leggevano gli stili con genere prompt. Nella stessa
+   * schermata, con lo stesso nome, e nessuna delle due vedeva quello che
+   * l'altra salvava: si salvava di qua e si guardava di la'. Detto il 7
+   * settembre 2026: «i prompt continuano a non vederli».
+   *
+   * Adesso il magazzino e' uno solo — gli stili, <genere: "prompt"> — e questa
+   * e' l'unica riga. Il perche' della scelta sta in
+   * <apps/shell/src/main/travaso-preset.ts>.
+   */
+  function rigaPrompt(a) {
+    var box = document.createElement("div");
+    box.style.marginTop = "10px";
+
+    var quale = tipoDellaScheda(a);
+    if (!quale) return box;
 
     var miei = mieiStili.filter(function (s) {
       return genereDi(s) === "prompt" && tipoDi(s) === quale;
     });
 
-    for (var pr of miei) {
-      var b = document.createElement("button");
-      b.type = "button";
-      b.className = "mini";
-      b.textContent = "\u270E " + pr.nome;
-      b.title = pr.testo;
-      b.addEventListener("click", (function (uno) {
-        return function () {
-          var principale = document.querySelector("#modulo [data-principale]");
-          if (!principale) return;
-          principale.value = uno.testo;
-          principale.dispatchEvent(new Event("input"));
-          principale.focus();
-        };
-      })(pr));
-      riga.append(b);
+    /**
+     * Il titolo c'e' solo se c'e' qualcosa sotto.
+     *
+     * «I tuoi prompt» sopra al vuoto e' una promessa non mantenuta: chi legge
+     * pensa di averne e di non trovarli, che e' esattamente il guaio da cui
+     * nasce tutta questa storia.
+     */
+    if (miei.length) {
+      var titolo = document.createElement("label");
+      titolo.textContent = "I tuoi prompt";
+      box.append(titolo);
     }
+
+    var riga = document.createElement("div");
+    riga.className = "filtri";
+
+    for (var pr of miei) riga.append(bottonePrompt(pr));
 
     var salva = document.createElement("button");
     salva.type = "button";
     salva.className = "mini";
-    salva.textContent = miei.length ? "\u002B salva questo" : "\u002B salva come prompt";
+    salva.textContent = miei.length ? "+ salva questo" : "+ salva come prompt";
     salva.addEventListener("click", (function (tipo) {
       return function () { void salvaComePrompt(tipo); };
     })(quale));
     riga.append(salva);
 
-    return riga;
+    box.append(riga);
+    return box;
+  }
+
+  /**
+   * Una pastiglia di prompt: toccala e il modulo si riempie.
+   *
+   * **Tutto il modulo, non solo la casella grande.** E' la differenza fra un
+   * prompt e uno stile, ed e' quella che si era persa: un prompt salvato si
+   * porta dietro titolo, durata, modello — tutto quello che c'era scritto — e
+   * ritrovandolo devi ritrovare il modulo com'era, non una frase.
+   *
+   * Col tasto destro, o tenendo premuto shift, si butta: un prompt sbagliato
+   * salvato per sempre e' peggio di nessun prompt.
+   */
+  function bottonePrompt(x) {
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "mini";
+    b.textContent = "✎ " + x.nome;
+    b.title = x.testo;
+    b.addEventListener("click", function (ev) {
+      if (ev.shiftKey) { void togliPrompt(x); return; }
+      riempiCon(x);
+    });
+    b.addEventListener("contextmenu", function (ev) {
+      ev.preventDefault();
+      void togliPrompt(x);
+    });
+    return b;
+  }
+
+  /** Rimette nel modulo quello che era stato salvato: campo per campo. */
+  function riempiCon(x) {
+    for (var c of $("modulo").querySelectorAll("[data-campo]")) {
+      if (c.dataset.principale) {
+        c.value = x.testo;
+        c.dispatchEvent(new Event("input"));
+        continue;
+      }
+      var da = (x.campi || {})[c.dataset.campo];
+      if (da !== undefined) {
+        c.value = da;
+        c.dispatchEvent(new Event("input", { bubbles: true }));
+        c.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+    }
+  }
+
+  async function togliPrompt(x) {
+    if (!confirm("Togliere \u00ab" + x.nome + "\u00bb dai tuoi prompt?")) return;
+    try {
+      await chiama("/stili/" + encodeURIComponent(x.id), { method: "DELETE" });
+      await leggiStili();
+      if (scelta) scegli(scelta);
+    } catch (e) { avvisaDelMale(e); }
   }
 
   /**
@@ -314,12 +385,21 @@ export const COPIONE_PRODUZIONE = `
    * l'unico posto della console in cui succede: qui la domanda e' una parola
    * sola, e un foglio che sale per una parola sola sarebbe piu' lento del gesto
    * che deve rendere veloce.
+   *
+   * **Si salva tutto il modulo.** Prima la casella grande finiva nel prompt e
+   * il resto si perdeva: ritrovandolo, durata e modello tornavano quelli di
+   * serie senza dire niente.
    */
   async function salvaComePrompt(tipo) {
-    var principale = document.querySelector("#modulo [data-principale]");
-    var testo = principale ? principale.value.trim() : "";
+    var testo = "";
+    var campi = {};
+    for (var c of $("modulo").querySelectorAll("[data-campo]")) {
+      if (c.dataset.principale) { testo = c.value.trim(); continue; }
+      var v = c.type === "checkbox" ? (c.checked ? "si" : "") : String(c.value || "").trim();
+      if (v) campi[c.dataset.campo] = v;
+    }
     if (!testo) {
-      avvisaAzione("Scrivi prima cosa vuoi: e\u0027 quello che verrebbe salvato.", true);
+      avvisaAzione("Scrivi prima cosa vuoi: e' quello che verrebbe salvato.", true);
       return;
     }
     var nome = window.prompt("Come lo chiami?", testo.slice(0, 40));
@@ -327,7 +407,13 @@ export const COPIONE_PRODUZIONE = `
     try {
       await chiama("/stili", {
         method: "POST",
-        body: JSON.stringify({ nome: nome.trim(), testo: testo, tipo: tipo, genere: "prompt" }),
+        body: JSON.stringify({
+          nome: nome.trim(),
+          testo: testo,
+          tipo: tipo,
+          genere: "prompt",
+          campi: campi,
+        }),
       });
       await leggiStili();
       // Il modulo si ridisegna perche' la riga dei prompt e' dentro di lui: senza,
@@ -362,10 +448,9 @@ export const COPIONE_PRODUZIONE = `
     spiega.textContent = a.descrizione;
     modulo.append(spiega);
 
-    // I modi di generare messi da parte per questa scheda: si toccano e il
-    // modulo si riempie. Stanno sul computer, quindi ci sono anche qui.
-    modulo.append(rigaPreset(a));
-    // I prompt salvati: quelli tuoi, e quelli che ti sei preso da DaProd.
+    // I prompt salvati per questa scheda: si toccano e il modulo si riempie.
+    // Stanno sul computer, quindi ci sono anche qui — ed e' l'unica riga: fino
+    // alla 1.2.2 ce n'erano due, che leggevano due magazzini diversi.
     modulo.append(rigaPrompt(a));
 
     for (var campo of a.campi) {
@@ -487,9 +572,6 @@ export const COPIONE_PRODUZIONE = `
         modulo.append(nota);
       }
     }
-
-    // Salvare quello che si è appena scritto, per ritrovarlo domani.
-    if (a.coda) modulo.append(rigaSalvaPreset(a));
 
     modulo.hidden = false;
     $("fila-manda").hidden = false;
@@ -747,124 +829,21 @@ export const COPIONE_PRODUZIONE = `
       casella.style.height = Math.min(casella.scrollHeight + 2, 460) + "px";
     };
     casella.addEventListener("input", adatta);
-    // Anche adesso: il modulo puo' nascere con dentro qualcosa (un preset, una
+    // Anche adesso: il modulo puo' nascere con dentro qualcosa (un prompt, una
     // richiesta da riscrivere), e in quel caso deve nascere gia' alto.
     setTimeout(adatta, 0);
   }
 
-  /**
-   * La riga dei preset di una scheda.
+  /*
+   * ⚠ **Qui sotto c'erano <rigaPreset>, <rigaSalvaPreset> e <leggiPreset>.**
    *
-   * Vuota se non ce ne sono: un titolo «I tuoi prompt» sopra a niente è una
-   * promessa non mantenuta.
+   * Erano la gemella vecchia della riga dei prompt: stesso titolo «I tuoi
+   * prompt», stessa schermata, altro magazzino — <preset.json> invece degli
+   * stili. Chi salvava col tasto di sotto non si ritrovava niente nell'elenco
+   * di sopra, e viceversa. Tolte nella 1.2.3 insieme alle rotte di prima:
+   * quello che facevano lo fa <rigaPrompt>, che sta piu' su, e il travaso di
+   * quello che c'era dentro sta in <apps/shell/src/main/travaso-preset.ts>.
    */
-  function rigaPreset(a) {
-    var box = document.createElement("div");
-    var miei = preset.filter(function (x) { return x.app === a.app; });
-    if (!a.app || !miei.length) return box;
-
-    var titolo = document.createElement("label");
-    /**
-     * ⚠ **Si chiamano «prompt», non «i tuoi soliti».** Cambiato nella 1.2.2.
-     *
-     * Detto il 7 settembre 2026: «ci sta sempre scritto i tuoi soliti, mettiamo
-     * bene prompt e stili». «I tuoi soliti» era un nome affettuoso che pero' non
-     * corrisponde a niente: la stessa cosa si chiama «prompt» nella scheda
-     * Stili, «preset» nel gateway e «i tuoi soliti» qui. Tre nomi per una cosa
-     * sola, per chi legge, sono tre cose.
-     */
-    titolo.textContent = "I tuoi prompt";
-    box.append(titolo);
-
-    var fila = document.createElement("div");
-    fila.className = "filtri";
-    for (var x of miei) fila.append(bottonePreset(x));
-    box.append(fila);
-    return box;
-  }
-
-  function bottonePreset(x) {
-    var b = document.createElement("button");
-    b.type = "button";
-    b.className = "mini";
-    b.textContent = x.nome;
-    b.title = x.testo;
-    b.addEventListener("click", function (ev) {
-      // Col tasto destro, o tenendo premuto shift, lo si toglie: un preset
-      // sbagliato salvato per sempre è peggio di nessun preset.
-      if (ev.shiftKey) { void togliPreset(x); return; }
-      riempiCon(x);
-    });
-    b.addEventListener("contextmenu", function (ev) {
-      ev.preventDefault();
-      void togliPreset(x);
-    });
-    return b;
-  }
-
-  function riempiCon(x) {
-    for (var c of $("modulo").querySelectorAll("[data-campo]")) {
-      if (c.dataset.principale) { c.value = x.testo; continue; }
-      var da = (x.campi || {})[c.dataset.campo];
-      if (da !== undefined) c.value = da;
-    }
-  }
-
-  async function togliPreset(x) {
-    if (!confirm("Togliere \\u00ab" + x.nome + "\\u00bb dai tuoi prompt?")) return;
-    try {
-      await chiama("/preset/" + encodeURIComponent(x.id), { method: "DELETE" });
-      await leggiPreset();
-      if (scelta) scegli(scelta);
-    } catch (e) { avvisaDelMale(e); }
-  }
-
-  /** «Salvalo fra i tuoi prompt»: un nome e via. */
-  function rigaSalvaPreset(a) {
-    var fila = document.createElement("div");
-    fila.className = "fila";
-
-    var nome = document.createElement("input");
-    nome.type = "text";
-    nome.maxLength = 40;
-    nome.placeholder = "salvalo fra i tuoi prompt, con che nome?";
-    nome.style.flex = "1 1 200px";
-
-    var b = document.createElement("button");
-    b.type = "button";
-    b.className = "mini";
-    b.textContent = "salva";
-    b.addEventListener("click", async function () {
-      var comeSiChiama = nome.value.trim();
-      if (!comeSiChiama) { nome.focus(); return; }
-      var campi = {};
-      var testo = "";
-      for (var c of $("modulo").querySelectorAll("[data-campo]")) {
-        if (c.dataset.principale) { testo = c.value.trim(); continue; }
-        if (c.value.trim()) campi[c.dataset.campo] = c.value.trim();
-      }
-      if (!testo) { avvisa("Scrivi prima cosa vuoi: \\u00e8 quello che si salva."); return; }
-      try {
-        await chiama("/preset", {
-          method: "POST",
-          body: JSON.stringify({ app: a.app, nome: comeSiChiama, testo: testo, campi: campi }),
-        });
-        nome.value = "";
-        await leggiPreset();
-        if (scelta) scegli(scelta);
-      } catch (e) { avvisaDelMale(e); }
-    });
-
-    fila.append(nome, b);
-    return fila;
-  }
-
-  async function leggiPreset() {
-    try {
-      var risposta = await chiama("/preset");
-      preset = (risposta && risposta.preset) || [];
-    } catch (e) { preset = []; }
-  }
 
   function chiudiModulo() {
     scelta = null;

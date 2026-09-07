@@ -12,6 +12,27 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ## Non ancora pubblicato
 
+### I prompt salvati stanno in un posto solo
+
+> «I prompt continuano a non vederli, nonostante io ne abbia parecchi sul
+> telefono, e anzi non li vorrei perdere.»
+
+Non si erano persi: erano in **due cassetti che si chiamavano allo stesso
+modo**. «Salvalo fra i tuoi prompt» in Produzione scriveva in un file, «salvalo
+come prompt» dalla galleria ne scriveva un altro, e nessuno dei due mostrava
+quello che c'era nell'altro. Nella stessa schermata della Produzione c'erano
+perfino **due elenchi «I tuoi prompt»**, uno sotto l'altro, che leggevano
+cassetti diversi.
+
+Adesso il cassetto è uno — quello degli stili, dove un prompt è uno stile che
+riempie tutto il modulo invece di una casella. Quello che era nell'altro si
+sposta da solo al primo avvio, con la sua data, e il file vecchio resta lì da
+parte senza che niente lo cancelli.
+
+In più, salvando un prompt dalla Produzione si salva **tutto il modulo** e non
+solo la frase grande: ritrovandolo tornano anche quante immagini, che durata,
+che modello.
+
 **Togliere il tunnel Cloudflare** per chi ha l'indirizzo fisso, e **togliere il
 codice** della schermata «cerca i computer di casa», che è irraggiungibile ma
 ancora lì.

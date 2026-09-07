@@ -28,7 +28,6 @@ import {
   type FornitoreLibreria,
   type FornitoreMacchina,
   type FornitorePannello,
-  type FornitorePreset,
   type FornitoreStili,
   type InvitoQr,
   type InvitoVivo,
@@ -55,7 +54,6 @@ import type {
 import { appManager } from "./app-manager";
 import { PADRONE_DI_CASA, libreria } from "./libreria";
 import { aiDisponibile, migliora } from "./migliora";
-import { elencoPreset, eliminaPreset, salvaPreset } from "./preset";
 import { REMOTO_ARCHIVIO, REMOTO_DIR } from "./paths";
 import { indirizziBuoni, ipLocale, reti } from "./reti";
 import {
@@ -1148,13 +1146,6 @@ const fornitoreAi: FornitoreAi = {
   migliora: (opzioni) => migliora(opzioni),
 };
 
-/** Chi sa rispondere sui modi di generare messi da parte. */
-const fornitorePreset: FornitorePreset = {
-  elenco: (app) => elencoPreset(app),
-  salva: (preset) => salvaPreset(preset),
-  elimina: (id, chi) => eliminaPreset(id, chi),
-};
-
 /**
  * Il tipo MIME dall'estensione.
  *
@@ -1420,7 +1411,6 @@ async function accendi(): Promise<StatoAccesso> {
     libreria: fornitoreLibreria,
     pannello: fornitorePannello,
     ai: fornitoreAi,
-    preset: fornitorePreset,
     macchina: fornitoreMacchina,
     chiacchierata: fornitoreChiacchierata,
     stili: fornitoreStili,

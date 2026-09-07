@@ -301,6 +301,15 @@ export function salvaStile(
     campi?: Record<string, string>;
     da?: Stile["da"];
     daNome?: string;
+    /**
+     * Quando è nato davvero.
+     *
+     * Serve solo a chi travasa roba vecchia (vedi `travaso-preset.ts`): un
+     * prompt salvato ad agosto deve restare di agosto, se no il giorno
+     * dell'aggiornamento diventano tutti «di oggi» e l'ordine dal più recente
+     * non vuol dire più niente. Chi salva normalmente non lo passa.
+     */
+    quando?: number;
   },
 ): Stile | null {
   const nome = dati.nome.trim().slice(0, 60);
@@ -335,7 +344,7 @@ export function salvaStile(
     if (daCambiare.da === "partenza") daCambiare.da = "mio";
     if (dati.daNome) daCambiare.daNome = dati.daNome;
     if (dati.campi) daCambiare.campi = dati.campi;
-    daCambiare.quando = Date.now();
+    daCambiare.quando = dati.quando ?? Date.now();
     scrivi(chi, miei);
     return daCambiare;
   }
@@ -349,7 +358,7 @@ export function salvaStile(
     campi: dati.campi,
     da: dati.da ?? "mio",
     daNome: dati.daNome,
-    quando: Date.now(),
+    quando: dati.quando ?? Date.now(),
   };
   miei.push(nuovo);
   scrivi(chi, miei);
