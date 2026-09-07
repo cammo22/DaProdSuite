@@ -18,6 +18,60 @@ ancora lì.
 
 ---
 
+## 1.1.4 — Il tunnel non muore più quando aggiorni
+
+> «risolvi UNA VOLTA E PER TUTTE»
+
+Con il telefono attaccato al computer, finalmente, e tre risposte definitive.
+
+### ⚠ Tailscale Funnel: chiude la connessione, e non è la tua rete
+
+Dal telefono, sui dati mobili: il nome si risolve, il ping arriva, la porta 443
+**è aperta** — e appena parte il TLS la connessione si chiude.
+`ERR_CONNECTION_CLOSED`, la stessa cosa che vedevo dal computer. Non è il DNS,
+non è il gestore, non è un blocco: è il Funnel che non serve quel traffico.
+Capitolo chiuso.
+
+### ⚠ ngrok: l'antivirus lo cancella, e non chiedo eccezioni al buio
+
+Scaricato dal sito ufficiale, Windows Defender lo rimuove appena estratto —
+`Trojan:Win32/Kepavll!rfn`, un riconoscimento a naso di quelli che colpiscono
+gli attrezzi per i tunnel. E blocca perfino la lettura della firma digitale,
+quindi **non possiamo verificare che quel file sia autentico**.
+
+Chiedere di fare un'eccezione per un file che il proprio antivirus chiama Trojan,
+senza poterlo verificare, non si fa. Il codice resta — se un giorno lo vuoi
+usare, è pronto — ma il messaggio adesso dice cos'è successo e non consiglia
+niente a scatola chiusa.
+
+### La cura vera, con quello che c'è già
+
+Il tunnel di Cloudflare funziona, il telefono lo raggiunge, ed è gratis. Il suo
+unico difetto era il nome che cambia **a ogni accensione della suite** — cioè a
+ogni aggiornamento.
+
+Ma il nome cambia perché cambia il **processo**. E un processo può vivere più a
+lungo di chi l'ha avviato: adesso `cloudflared` parte **staccato** dalla suite e
+non viene più spento quando la suite si chiude. All'avvio, prima di aprirne uno
+nuovo, si guarda se quello di prima è ancora lì — e se risponde ancora **per
+questo computer**, si riusa.
+
+Tre controlli prima di fidarsi, perché un indirizzo di Cloudflare che non è più
+nostro risponde lo stesso: il processo esiste, punta alla porta che stiamo
+usando, e da Internet risponde il nostro gateway (`/chi-sei` con il nostro id).
+Riusare un tunnel di un estraneo vorrebbe dire mandarci il telefono.
+
+**Cosa vuol dire per chi lo usa:** aggiorni la suite e l'indirizzo da fuori resta
+identico. Il telefono non si accorge di niente. Cambia solo se riavvii il
+computer — e in quel caso, di solito, sei a casa.
+
+Il prezzo, detto per intero: a suite chiusa quel tunnel resta aperto e punta a
+una porta dove non risponde più nessuno (Cloudflare risponde 502). Non è una
+porta aperta sul computer: è un tunnel in uscita verso una serratura chiusa. Chi
+lo vuole chiuso davvero lo spegne dal pannello, e quello uccide il processo.
+
+---
+
 ## 1.1.3 — Un indirizzo fisso che il telefono raggiunge davvero
 
 > «ngrok, basta che non abbiamo più per davvero questo problema»

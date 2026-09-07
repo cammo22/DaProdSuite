@@ -2231,9 +2231,24 @@ export const accessoRemoto = {
 /** Alla chiusura della suite il gateway si spegne con tutto il resto. */
 export async function spegniAccessoRemoto(): Promise<void> {
   fermaGuardiaFirewall();
-  // Prima il tunnel: è un processo figlio, e lasciarlo vivo vorrebbe dire un
-  // indirizzo su Internet che punta a una porta che sta per chiudersi.
-  await spegniTunnel();
+  /**
+   * ⚠ **Il tunnel non si spegne piu' chiudendo la suite.** Dalla 1.1.4.
+   *
+   * Qui c'era `await spegniTunnel()`, con scritto accanto che lasciarlo vivo
+   * vorrebbe dire «un indirizzo su Internet che punta a una porta che sta per
+   * chiudersi». E' vero, ed e' il male minore: quell'indirizzo **e' l'unica
+   * cosa che il telefono ha in tasca**, e spegnerlo a ogni chiusura vuol dire
+   * che al riavvio ne nasce uno con un altro nome — cioe' il difetto raccontato
+   * otto volte, «dopo l'aggiornamento non si ricollega».
+   *
+   * Cosa resta acceso, detto per intero: un tunnel in uscita verso una porta
+   * dove non risponde piu' nessuno. Chi ci arriva riceve un 502 di Cloudflare.
+   * Non e' una porta aperta sul computer, e alla prossima accensione della
+   * suite quello stesso indirizzo torna a funzionare — che e' tutto il punto.
+   *
+   * Chi lo vuole chiuso davvero lo spegne dal pannello: quello uccide il
+   * processo e cancella il ricordo. Vedi `spegniTunnel` in tunnel.ts.
+   */
   // L'annuncio prima del gateway: un computer che continua a dire «ci sono»
   // mentre la porta si chiude fa comparire nell'elenco degli altri una riga
   // che non porta da nessuna parte.

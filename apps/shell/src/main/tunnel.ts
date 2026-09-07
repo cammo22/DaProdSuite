@@ -36,9 +36,17 @@
  */
 
 import { spawn, type ChildProcess } from "node:child_process";
-import { registra, uccidiAlbero } from "./processi";
-import { chmodSync, existsSync, mkdirSync, renameSync, statSync, unlinkSync } from "node:fs";
-import { writeFile } from "node:fs/promises";
+import { uccidiAlbero } from "./processi";
+import {
+  chmodSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  renameSync,
+  statSync,
+  unlinkSync,
+} from "node:fs";
+import { rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { TOOLS_DIR } from "./paths";
 import { createLogger } from "./logging";
@@ -68,6 +76,97 @@ const ATTESA_INDIRIZZO_MS = 90_000;
 
 /** L'indirizzo che Cloudflare stampa quando il tunnel è su. */
 const RIGA_INDIRIZZO = /https:\/\/[a-z0-9-]+\.trycloudflare\.com/i;
+
+/**
+ * ⚠ **Dove si segna il tunnel che sta girando.** Nuovo nella 1.1.4.
+ *
+ * **Il difetto che chiude**, detto otto volte: «dopo l'aggiornamento l'app del
+ * telefono non si ricollega». La catena era questa: aggiornare vuol dire
+ * riavviare la suite, riavviare vuol dire un `cloudflared` nuovo, e un
+ * `cloudflared` nuovo vuol dire **un indirizzo con un altro nome**. Il telefono,
+ * fuori casa, quel nome non ha modo di impararlo — per impararlo dovrebbe
+ * parlare col computer, e per parlare col computer gli serve l'indirizzo.
+ *
+ * La cura vera sarebbe un nome che non cambia. Ci abbiamo provato con Tailscale
+ * Funnel (da quel telefono chiude la connessione, vedi CHANGELOG 1.1.3) e con
+ * ngrok (l'antivirus lo cancella appena scaricato, e senza poterlo verificare
+ * non si chiede a nessuno di fare un'eccezione). Restava una terza strada, che
+ * non chiede niente a nessuno: **far sopravvivere il tunnel che c'e' gia'**.
+ *
+ * `cloudflared` e' un processo, e un processo puo' vivere piu' a lungo di chi
+ * l'ha avviato. Se resta in piedi mentre la suite si aggiorna e riparte,
+ * l'indirizzo **non cambia** — e il telefono non si accorge di niente.
+ *
+ * Qui dentro si segna quello che serve a ritrovarlo: l'indirizzo, il numero del
+ * processo e la porta a cui punta.
+ */
+const RICORDO = join(TOOLS_DIR, "tunnel-vivo.json");
+
+interface TunnelRicordato {
+  indirizzo: string;
+  pid: number;
+  porta: number;
+}
+
+function leggiRicordo(): TunnelRicordato | null {
+  try {
+    if (!existsSync(RICORDO)) return null;
+    const dati = JSON.parse(readFileSync(RICORDO, "utf8")) as Partial<TunnelRicordato>;
+    if (!dati.indirizzo || !dati.pid || !dati.porta) return null;
+    return { indirizzo: dati.indirizzo, pid: dati.pid, porta: dati.porta };
+  } catch {
+    return null;
+  }
+}
+
+async function scriviRicordo(dati: TunnelRicordato): Promise<void> {
+  try {
+    await writeFile(RICORDO, JSON.stringify(dati), "utf8");
+  } catch {
+    /* se non si riesce a scriverlo, al prossimo avvio si riparte da capo */
+  }
+}
+
+async function scordaIlTunnel(): Promise<void> {
+  await rm(RICORDO, { force: true }).catch(() => {});
+}
+
+/** Il processo con questo numero e' ancora vivo? */
+function eVivo(pid: number): boolean {
+  try {
+    // Il segnale 0 non fa niente: serve solo a chiedere «esisti?».
+    process.kill(pid, 0);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Il tunnel di prima e' ancora buono?
+ *
+ * Tre domande, e devono rispondere tutte e tre di si': il processo c'e', punta
+ * alla porta che stiamo usando adesso, e da Internet **risponde davvero questo
+ * computer**. L'ultima non e' pignoleria: un indirizzo di Cloudflare che non e'
+ * piu' nostro risponde lo stesso — con un 530, o peggio con la roba di
+ * qualcun altro — e riusarlo vorrebbe dire mandare il telefono da un estraneo.
+ */
+async function tunnelDiPrimaAncoraBuono(porta: number): Promise<TunnelRicordato | null> {
+  const ricordo = leggiRicordo();
+  if (!ricordo || ricordo.porta !== porta || !eVivo(ricordo.pid)) return null;
+  try {
+    const risposta = await fetch(`${ricordo.indirizzo}/chi-sei`, {
+      signal: AbortSignal.timeout(8_000),
+    });
+    if (!risposta.ok) return null;
+    const dati = (await risposta.json()) as { pcId?: unknown };
+    // `/chi-sei` la serve il nostro gateway sulla porta locale: se risponde con
+    // un id, dall'altra parte del tunnel ci siamo noi.
+    return typeof dati.pcId === "string" && dati.pcId ? ricordo : null;
+  } catch {
+    return null;
+  }
+}
 
 export type FaseTunnel = "spento" | "scarico" | "accendo" | "acceso" | "guasto";
 
@@ -198,6 +297,36 @@ async function assicuraEseguibile(): Promise<void> {
  */
 export async function accendiTunnel(porta: number, rialzo = false): Promise<StatoTunnel> {
   if (stato.fase === "acceso" && processo) return statoTunnel();
+
+  /**
+   * ⚠ **Prima di aprirne uno nuovo, si guarda se quello di prima e' ancora li'.**
+   *
+   * E' la riga che chiude «dopo l'aggiornamento non si ricollega»: la suite si
+   * riavvia, `cloudflared` no, e l'indirizzo resta quello di ieri — che e'
+   * l'unico indirizzo che il telefono ha in tasca. Vedi `RICORDO`.
+   */
+  if (!rialzo) {
+    const buono = await tunnelDiPrimaAncoraBuono(porta);
+    if (buono) {
+      annota(`riuso il tunnel di prima: ${buono.indirizzo} (processo ${buono.pid})`);
+      vogliamoAcceso = true;
+      portaUltima = porta;
+      cadute = 0;
+      cambia({ fase: "acceso", indirizzo: buono.indirizzo, motivo: undefined });
+      return statoTunnel();
+    }
+    /*
+     * Non e' buono: se il processo c'e' ancora ma non risponde piu' per noi, va
+     * chiuso, se no resta in giro a occupare la rete per sempre.
+     */
+    const vecchio = leggiRicordo();
+    if (vecchio && eVivo(vecchio.pid)) {
+      annota(`chiudo il tunnel di prima, non risponde piu' per noi (${vecchio.pid})`);
+      uccidiAlbero(vecchio.pid);
+    }
+    await scordaIlTunnel();
+  }
+
   await spegniTunnel(true);
   vogliamoAcceso = true;
   portaUltima = porta;
@@ -230,12 +359,34 @@ export async function accendiTunnel(porta: number, rialzo = false): Promise<Stat
         "--url",
         `http://127.0.0.1:${porta}`,
       ],
-      { windowsHide: true, stdio: ["ignore", "pipe", "pipe"] },
+      {
+        windowsHide: true,
+        stdio: ["ignore", "pipe", "pipe"],
+        /**
+         * ⚠ **Staccato dalla suite**, dalla 1.1.4.
+         *
+         * Cosi' sopravvive a un aggiornamento: la suite si chiude, si
+         * reinstalla, riparte — e l'indirizzo da fuori e' sempre quello. E'
+         * tutta la cura di «dopo l'update non si ricollega».
+         *
+         * Il prezzo va detto: a suite chiusa quel tunnel resta aperto, e punta
+         * a una porta dove non risponde piu' nessuno (Cloudflare risponde 502).
+         * Non e' una porta aperta sul computer — e' un tunnel in uscita verso
+         * una serratura chiusa — e alla prossima accensione torna utile.
+         *
+         * Chi lo vuole chiuso davvero lo spegne dal pannello: quello uccide il
+         * processo e cancella il ricordo.
+         */
+        detached: true,
+      },
     );
     processo = figlio;
-    // Nel libro dei processi: `cloudflared` era uno dei quattro che restavano
-    // in giro quando la suite si chiudeva male.
-    registra(figlio, "cloudflared (strada da Internet)");
+    /*
+     * ⚠ **Non si registra piu' nel libro dei processi**, e non e' una
+     * dimenticanza: quel libro serve a `uccidiTutti()` alla chiusura della
+     * suite, ed e' esattamente quello che qui non deve succedere.
+     */
+    figlio.unref();
 
     let deciso = false;
     const scadenza = setTimeout(() => {
@@ -268,6 +419,10 @@ export async function accendiTunnel(porta: number, rialzo = false): Promise<Stat
       clearTimeout(scadenza);
       cadute = 0;
       cambia({ fase: "acceso", indirizzo: trovato[0], motivo: undefined });
+      // Si segna adesso: e' quello che al prossimo avvio evita un indirizzo nuovo.
+      if (figlio.pid) {
+        void scriviRicordo({ indirizzo: trovato[0], pid: figlio.pid, porta });
+      }
       risolvi(statoTunnel());
     };
 
@@ -320,6 +475,13 @@ export async function spegniTunnel(perRiaccendere = false): Promise<void> {
   if (!perRiaccendere) {
     vogliamoAcceso = false;
     cadute = 0;
+    /*
+     * Spegnere per davvero vuol dire anche **scordarselo**: se no al prossimo
+     * avvio lo si riuserebbe, e chi l'ha spento se lo ritroverebbe acceso.
+     */
+    const ricordo = leggiRicordo();
+    if (ricordo && eVivo(ricordo.pid)) uccidiAlbero(ricordo.pid);
+    await scordaIlTunnel();
   }
   fermaRisveglio();
   const figlio = processo;
