@@ -26,7 +26,7 @@ file si scrive quale delle due metà manca.
 
 ## A che punto siamo — 6 settembre 2026 (notte fonda)
 
-**Ultima pubblicata: 1.1.4.** Nove schede dentro la suite, un ambiente Python
+**Ultima pubblicata: 1.2.0.** Nove schede dentro la suite, un ambiente Python
 solo, e il giro che conta — chiedo dal telefono, il computer fa, il file torna —
 **provato da chi la usa**, sul suo PC e sul suo telefono.
 
@@ -126,6 +126,8 @@ fanno quello che ti ho chiesto».
 | **Il VAE che decodificava in RAM (1.0.5)** | 4 passi in 14 s e poi venti minuti di niente: il pacco lascia il VAE sul processore anche in modalita' `cuda`. Pesa 168 MB e adesso lo sposta il ponte, **solo lui**. **Misurato**: 512x512 in 99 s col caricamento dei 16 GB dentro |
 | **LLaDA provato per intero (1.0.5)** | col motore acceso, dai due nodi: `LLaDAImageTextToImage` 94 s a caldo, `LLaDAImageEdit` 116 s («fai diventare verde la mela», ed e' diventata verde). Il collo di bottiglia che resta e' il text encoder da 9,2 GB in RAM: su 8 GB di scheda non ci sale |
 | **Lo scarico di LLaDA (1.0.5)** | ⚠ la 1.0.4 l'aveva peggiorato: `sequential_cpu_offload` con questo modello non parte (accelerate ricrea i pesi su «meta», i tensori GGUF non si lasciano ricreare). La strada e' `cuda`, che qui vuol dire «solo i pesi non quantizzati in scheda, le matrici INT8 una per volta». **Provato**: 4 passi in 14 s, 1,5 GB su 8 |
+| **Una strada sola, e si spiega (1.2.0)** | tolti ngrok, «Indirizzo fisso» e «Rimetti in riga i telefoni»: erano rimedi al Funnel che non risponde, e col tunnel che non cambia piu' non servono. Restano tre indirizzi (casa, tunnel, Tailscale se serve) e il telefono tiene quello che risponde |
+| **Provato col telefono in mano (1.2.0)** | app sui dati mobili collegata, suite chiusa (tunnel vivo), suite riaperta («riuso il tunnel di prima»), telefono riavviato sui dati senza toccare niente: collegato |
 | **Il tunnel sopravvive agli aggiornamenti (1.1.4)** | ⚠ la cura vera di «dopo l'update non si ricollega», e non chiede niente a nessuno: `cloudflared` parte staccato e al riavvio si riusa, se il processo c'e', punta alla porta giusta e da Internet risponde **il nostro** gateway. Aggiorni e l'indirizzo non cambia |
 | **Funnel e ngrok, chiusi con dati (1.1.4)** | col telefono attaccato: il Funnel apre la 443 e poi chiude il TLS (`ERR_CONNECTION_CLOSED`, non e' la rete); ngrok lo cancella Defender appena estratto, e blocca anche la lettura della firma — niente eccezioni al buio |
 | **ngrok: l'indirizzo fisso che si raggiunge (1.1.3)** | ⚠ il Funnel da quel telefono non si apre in nessun modo (nome, `:8443`, IP nudo) mentre Cloudflare si': non e' rotto, e' irraggiungibile da quella rete. ngrok fa lo stesso mestiere su un'altra infrastruttura e il piano gratuito regala un dominio statico. Si accende dal pannello, token per ambiente e non sulla riga di comando |

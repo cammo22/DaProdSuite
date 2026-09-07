@@ -62,7 +62,6 @@ import {
   impostaAccettaDaSola,
   impostaConnessione,
   impostaInternet,
-  salvaNgrok,
   impostaLimiti,
   impostaPausa,
   impostazioni,
@@ -102,11 +101,6 @@ import {
 } from "./chiacchierata";
 import { accendiTunnel, spegniTunnel, statoTunnel, suTunnelCambiato } from "./tunnel";
 import { accendiFunnel, comeStaFunnel, spegniFunnel, type StatoFunnel } from "./funnel";
-import { accendiNgrok, spegniNgrok, statoNgrok, suNgrokCambiato } from "./ngrok";
-
-// Quando l'indirizzo fisso compare o sparisce, i pannelli lo devono vedere
-// scorrere: e' lo stesso trattamento del tunnel qui sotto.
-suNgrokCambiato(() => sveglia());
 import { salvaIndirizzoStabile } from "./impostazioni";
 import { apriLaPorta, statoFirewall, type StatoFirewall } from "./firewall";
 
@@ -257,7 +251,7 @@ function basi(): string[] {
   // Col tunnel spento, Funnel resta: e' l'unica strada da fuori che non
   // dipende da Cloudflare, e chi l'ha acceso l'ha acceso per quello.
   if (fuori.fase !== "acceso" || !fuori.indirizzo) {
-    return [...ilFissoDiNgrok(), ...fisso.davanti, ...elenco, ...fisso.infondo];
+    return [...fisso.davanti, ...elenco, ...fisso.infondo];
   }
 
   /**
@@ -291,14 +285,7 @@ function basi(): string[] {
    * ma solo dopo aver bussato agli altri.
    */
   const stabile = ilFisso();
-  return [
-    ...ilFissoDiNgrok(),
-    ...stabile.davanti,
-    ...ovunque,
-    fuori.indirizzo,
-    ...casa,
-    ...stabile.infondo,
-  ];
+  return [...stabile.davanti, ...ovunque, fuori.indirizzo, ...casa, ...stabile.infondo];
 }
 
 /**
@@ -360,22 +347,6 @@ const OGNI_QUANTO_GUARDO_FUNNEL = 3 * 60_000;
  *   una porta murata;
  * - **spento**: non c'e'.
  */
-/**
- * ⚠ **L'indirizzo di ngrok va davanti a tutto.** Dalla 1.1.3.
- *
- * Davanti anche al Funnel, e non e' una preferenza di gusto: e' l'unico
- * indirizzo stabile che il telefono di chi usa questa suite **raggiunge
- * davvero**. Il Funnel, provato dal suo browser il 7 settembre 2026, non si
- * apre in nessun modo — non e' rotto, e' irraggiungibile da quella rete.
- *
- * Chi invece il Funnel lo raggiunge non perde niente: resta nell'elenco subito
- * dopo, e il telefono prova e tiene quello che risponde.
- */
-function ilFissoDiNgrok(): string[] {
-  const n = statoNgrok();
-  return n.fase === "acceso" && n.indirizzo ? [n.indirizzo] : [];
-}
-
 function ilFisso(): { davanti: string[]; infondo: string[] } {
   if (!funnel?.indirizzo) return { davanti: [], infondo: [] };
   if (funnel.acceso) return { davanti: [funnel.indirizzo], infondo: [] };
@@ -1507,14 +1478,6 @@ export function riprendiAccessoRemoto(): void {
       // 127.0.0.1, e serve comunque la pagina di DaProdConnessione.
       await accendi();
       if (scelte.connessione && scelte.internet) await accendiInternet();
-      /*
-       * L'indirizzo fisso di ngrok si riaccende da solo, se e' stato acceso una
-       * volta: e' tutto il suo senso — un indirizzo che va riacceso a mano non
-       * e' un indirizzo che non cambia mai.
-       */
-      if (scelte.ngrokAcceso && scelte.ngrokToken) {
-        void accendiNgrok(portaReale || PORTA, scelte.ngrokToken, scelte.ngrokDominio ?? "");
-      }
       // Da qui in poi l'indirizzo che non scade si ricontrolla da solo, invece
       // di restare quello che sembrava al primo secondo. Vedi la funzione.
       vegliaSullIndirizzoStabile();
@@ -1870,9 +1833,6 @@ function indirizziPubblici(): StatoPannello["indirizzi"] {
    * (`basi()`, che lo aveva) con cosa risponde `/io` (questa, che non lo aveva).
    */
   const fisso = ilFisso();
-  for (const base of ilFissoDiNgrok()) {
-    elenco.push({ base, che: "da Internet, e non cambia mai", dove: "ovunque" });
-  }
   for (const base of fisso.davanti) {
     elenco.push({ base, che: "da Internet, e non cambia mai", dove: "ovunque" });
   }
@@ -2096,68 +2056,6 @@ export const accessoRemoto = {
   spegni: spegniEricorda,
   accendiInternet,
   spegniInternet,
-  /**
-   * ⚠ **Rimetti in riga i telefoni.** Nuovo nella 1.1.0.
-   *
-   * Chiesto il 7 settembre 2026: «un pulsante nella navbar dell'app desktop,
-   * accanto agli aggiornamenti, che se cliccato risolve questo eventuale
-   * problema». Il problema e' quello raccontato sette volte: dopo un
-   * aggiornamento il telefono non ritrova il computer.
-   *
-   * ⚠ **Non parla ai telefoni**, e va detto perche' e' la cosa che uno si
-   * aspetta: un telefono che non ci raggiunge non lo raggiungiamo nemmeno noi.
-   * Quello che fa e' mettere a posto **la nostra meta'**, subito invece che al
-   * prossimo giro di controllo:
-   *
-   * 1. richiede a Tailscale l'indirizzo che non scade — se il controllo
-   *    dell'avvio era caduto, e' qui che si rimedia senza aspettare tre minuti;
-   * 2. rifa' gli inviti gia' dati, perche' portino dentro quell'indirizzo;
-   * 3. sveglia i pannelli, cosi' il QR nuovo si vede subito.
-   *
-   * Il resto — la pagina che non si mette piu' in cache, e il telefono che
-   * ricarica da solo quando la suite cambia versione — succede senza premere
-   * niente. Vedi `pagina()` nel gateway e `apriSuite` nell'app.
-   */
-  /**
-   * Accende (o spegne) l'indirizzo fisso di ngrok, e se lo ricorda.
-   *
-   * Torna lo stato appena ottenuto, non una promessa: chi ha premuto vuole
-   * vedere l'indirizzo o il motivo per cui non c'e'.
-   */
-  async ngrok(dati: { acceso: boolean; token: string; dominio: string }) {
-    salvaNgrok(dati);
-    if (!dati.acceso) {
-      await spegniNgrok();
-    } else {
-      await accendiNgrok(portaReale || PORTA, dati.token, dati.dominio);
-    }
-    remoto.buttaInviti();
-    gateway?.aggiorna();
-    sveglia();
-    const s = statoNgrok();
-    return { fase: s.fase, indirizzo: s.indirizzo, motivo: s.motivo };
-  },
-
-  statoNgrok() {
-    const s = statoNgrok();
-    return { fase: s.fase, indirizzo: s.indirizzo, motivo: s.motivo };
-  },
-
-  async rimettiInRigaITelefoni(): Promise<{ indirizzo: string; detto: string }> {
-    funnel = await comeStaFunnel(portaReale || PORTA);
-    remoto.buttaInviti();
-    gateway?.aggiorna();
-    sveglia();
-    const indirizzo = funnel.acceso ? funnel.indirizzo : "";
-    return {
-      indirizzo,
-      detto: indirizzo
-        ? `A posto: i telefoni possono tornare da ${indirizzo}, che non cambia mai. ` +
-          "Se uno resta indietro, apri l'app dalla wifi di casa una volta sola."
-        : "L'indirizzo che non cambia mai non e' acceso: accendilo da «Da fuori casa» " +
-          "nelle impostazioni, se no ai telefoni restano solo indirizzi che scadono.",
-    };
-  },
   sbloccaLaPorta,
   stato: statoPannello,
   nuovoInvito,

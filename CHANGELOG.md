@@ -18,6 +18,63 @@ ancora lì.
 
 ---
 
+## 1.2.0 — Come si arriva al computer, detto una volta sola
+
+Col telefono attaccato al computer, provato per intero e **funziona**. Questa
+release toglie di mezzo tutto quello che avevamo aggiunto per tentativi, e
+lascia una cosa sola che si spiega in dieci righe.
+
+### Come funziona adesso
+
+Il computer si fa trovare in **tre** modi, e il telefono li prova tutti e tiene
+quello che risponde:
+
+1. **la rete di casa** (`192.168.…`), quando sei sul wifi: il salto più corto, e
+   non cambia mai;
+2. **il tunnel di Cloudflare**, quando sei fuori: funziona da qualunque rete;
+3. **l'indirizzo Tailscale**, se il tuo tailnet lo serve davvero — su questo
+   computer non lo fa (vedi 1.1.4), ma resta in elenco per chi ce l'ha buono.
+
+La novità che chiude la faccenda è nel numero 2: **il tunnel non muore più
+quando aggiorni**. Prima `cloudflared` era un figlio della suite e moriva con
+lei; adesso vive per conto suo, e all'avvio la suite lo ritrova invece di
+aprirne un altro. Quindi l'indirizzo da fuori resta lo stesso — e il telefono,
+che quell'indirizzo ce l'ha in tasca, non si accorge di niente.
+
+E il telefono impara gli indirizzi di oggi **ogni volta che riesce a parlare col
+computer** (basta una volta, di solito dalla wifi di casa).
+
+### Provato così, col telefono in mano
+
+- app aggiornata e aperta **sui dati mobili**: si collega, e in fondo alla pagina
+  compare la versione giusta;
+- **suite chiusa** sul computer: il tunnel resta vivo;
+- **suite riaperta**: nel registro si legge «riuso il tunnel di prima», stesso
+  indirizzo;
+- telefono riavviato **sui dati mobili**, senza toccare niente: «Il computer è
+  libero».
+
+### Cosa è stato tolto, e perché
+
+- **ngrok** e il tasto «Indirizzo fisso»: servivano a rimediare al Funnel che non
+  risponde, ma l'antivirus cancella ngrok appena scaricato e non è verificabile.
+  Con il tunnel che non cambia più, non servono. Via il file, le impostazioni, il
+  canale, la finestra.
+- **«Rimetti in riga i telefoni»**: era il gesto per quando un telefono restava
+  indietro. Adesso non resta più indietro. Via.
+
+Meno pulsanti, meno cose da spiegare, e una strada sola che funziona.
+
+### Una cosa che mancava davvero
+
+Il tasto **«Ho l'indirizzo nuovo»** stava solo nel dialogo che compare quando il
+telefono non ha nemmeno una copia della pagina — cioè quasi mai. Visto sul
+telefono vero: chi la copia ce l'ha vedeva la suite di ieri e quel tasto non lo
+trovava da nessuna parte. Adesso sta nel menu dell'app, accanto a «da dove passa
+adesso», che è il posto dove si guarda quando qualcosa non arriva.
+
+---
+
 ## 1.1.4 — Il tunnel non muore più quando aggiorni
 
 > «risolvi UNA VOLTA E PER TUTTE»

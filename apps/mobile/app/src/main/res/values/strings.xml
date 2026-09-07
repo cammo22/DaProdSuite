@@ -122,6 +122,7 @@
         suite (il tunnel), ed e' la causa di «ad ogni aggiornamento devo rifare
         l'account».
     -->
+    <string name="menu_indirizzo_nuovo">Indirizzo nuovo del computer</string>
     <string name="menu_da_dove">Da dove passa</string>
     <string name="da_dove_nessuno">Non sei collegato a nessun computer.</string>
     <string name="da_dove_ora">Adesso passa da qui:</string>

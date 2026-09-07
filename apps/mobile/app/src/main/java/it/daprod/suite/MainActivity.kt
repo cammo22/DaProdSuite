@@ -2257,6 +2257,20 @@ class MainActivity : AppCompatActivity() {
          * due tocchi — cosi' la quarta volta non si indovina, si guarda.
          */
         menu.menu.add(0, 5, 4, R.string.menu_da_dove)
+        /**
+         * ⚠ **«Ho l'indirizzo nuovo» sta nel menu**, dalla 1.1.5.
+         *
+         * Nella 1.1.1 l'avevo messo **solo** nel dialogo «non riesco a
+         * raggiungere», che compare quando non c'e' nemmeno una copia della
+         * pagina — cioe' quasi mai. Chi la copia ce l'ha vede la suite di ieri
+         * con scritto «il computer non risponde», e il tasto che gli
+         * servirebbe non c'e' da nessuna parte. Visto sul telefono vero, il
+         * 7 settembre 2026.
+         *
+         * Qui invece si trova sempre, accanto a «da dove passa adesso», che e'
+         * il posto dove uno guarda quando qualcosa non arriva.
+         */
+        menu.menu.add(0, 6, 5, R.string.menu_indirizzo_nuovo)
 
         menu.setOnMenuItemClickListener { voce ->
             when (voce.itemId) {
@@ -2273,6 +2287,8 @@ class MainActivity : AppCompatActivity() {
                 3 -> cercaAggiornamento(dilloSempre = true)
                 4 -> mostraIPermessi(false)
                 5 -> mostraDaDove()
+                6 -> chi?.let { chiediLIndirizzoNuovo(it) }
+                    ?: Toast.makeText(this, R.string.da_dove_nessuno, Toast.LENGTH_SHORT).show()
             }
             true
         }

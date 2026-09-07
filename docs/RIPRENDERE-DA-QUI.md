@@ -1,7 +1,26 @@
 # Riprendere da qui
 
 Documento di passaggio fra una sessione e l'altra. Aggiornato il **7 settembre
-2026**, con la **1.1.2** appena pubblicata.
+2026**, con la **1.2.0** appena pubblicata.
+
+> ⚠ **La lezione delle otto volte: il difetto era mio, la sonda era sua.**
+>
+> «Dopo l'aggiornamento l'app non si ricollega» e' stato detto **otto volte**, e
+> per sette ho curato la cosa sbagliata — perche' misuravo dal computer, dove
+> Tailscale falsa le misure in tutti e due i versi (falso positivo nella 1.0.10,
+> falso negativo nella 1.1.1, ritirata).
+>
+> Quello che ha chiuso la faccenda e' stato **attaccare il telefono al cavo**:
+> `adb` per bussare agli indirizzi da li', `am start` per aprire il browser,
+> `screencap` per vedere cosa mostrava davvero. In venti minuti: il Funnel apre
+> la 443 e poi chiude il TLS, il tunnel di Cloudflare risponde, l'app si collega.
+>
+> E la causa vera era piccola e nostra: `cloudflared` era un figlio della suite,
+> quindi moriva a ogni aggiornamento, e con lui l'unico indirizzo che il telefono
+> aveva in tasca. Adesso vive per conto suo e la suite lo ritrova.
+>
+> Le regole che restano: **il telefono e' l'unico banco di prova che conta**, e
+> una misura fatta dalla macchina sbagliata e' peggio di nessuna misura.
 
 > ⚠ **La lezione, sbagliata due volte di fila: la sonda deve stare dove sta chi
 > usa la strada.**

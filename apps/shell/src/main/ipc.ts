@@ -53,7 +53,6 @@ import { requisitiDiQuestaMacchina } from "./requisiti-macchina";
 import { rispostaDallaScheda } from "./esecuzione";
 import { LOGS_DIR, MODELS_DIR, OUTPUT_DIR } from "./paths";
 import { rivela } from "./rivela";
-import { accessoRemoto } from "./remoto";
 
 export function registerIpc(getHub: () => BrowserWindow | null): void {
   /* ---------------------------------------------------------------- suite */
@@ -144,18 +143,6 @@ export function registerIpc(getHub: () => BrowserWindow | null): void {
   ipcMain.handle(CHANNELS.vramSvuota, () => scaricaDallaVram());
 
   /* --------------------------------------------------------- aggiornamenti */
-
-  // Il gesto per quando un telefono e' rimasto indietro: vedi
-  // `rimettiInRigaITelefoni` in remoto.ts.
-  ipcMain.handle(CHANNELS.telefoniRimettiInRiga, () => accessoRemoto.rimettiInRigaITelefoni());
-
-  // L'indirizzo fisso via ngrok: le due chiavi e l'interruttore. Vedi ngrok.ts.
-  ipcMain.handle(
-    CHANNELS.ngrokImposta,
-    (_e, dati: { acceso: boolean; token: string; dominio: string }) =>
-      accessoRemoto.ngrok(dati),
-  );
-  ipcMain.handle(CHANNELS.ngrokStato, () => accessoRemoto.statoNgrok());
 
   ipcMain.handle(CHANNELS.updateState, () => updater.getState());
   ipcMain.handle(CHANNELS.updateCheck, () => updater.check());

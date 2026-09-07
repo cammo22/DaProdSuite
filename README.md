@@ -10,7 +10,7 @@ Un programma solo per fare musica, immagini, video, voci e parlare con un avatar
 Ogni app la installi quando ti serve e la disinstalli quando non ti serve più.
 Gira sul tuo computer: niente account, niente chiavi API, codice aperto.
 
-[![versione](https://img.shields.io/badge/versione-1.1.4-7c5cff)](https://github.com/cammo22/DaProdSuite/releases/latest)
+[![versione](https://img.shields.io/badge/versione-1.2.0-7c5cff)](https://github.com/cammo22/DaProdSuite/releases/latest)
 [![licenza](https://img.shields.io/badge/licenza-MIT-5cff9d)](LICENSE)
 [![piattaforma](https://img.shields.io/badge/Windows-x64-3ddbff)](#requisiti)
 [![sito](https://img.shields.io/badge/sito-cammo22.github.io-ffa63d)](https://cammo22.github.io/DaProdSuite/)
@@ -95,15 +95,16 @@ tutte lo stesso.
 
 ## A che punto siamo
 
-**Ultima pubblicata: 1.1.4 — «Il tunnel non muore più quando aggiorni».**
-L'indirizzo da fuori casa cambiava a ogni accensione della suite, ed è per questo
-che dopo ogni aggiornamento il telefono restava fuori. Ma cambiava perché
-cambiava il **processo**: adesso `cloudflared` parte staccato, non viene spento
-quando la suite si chiude, e al riavvio viene **riusato** — dopo tre controlli,
-perché un indirizzo di Cloudflare che non è più nostro risponde lo stesso.
-Aggiorni, e l'indirizzo resta identico. *(Le altre due strade, provate col
-telefono attaccato: Tailscale Funnel chiude la connessione TLS, e ngrok
-l'antivirus lo cancella appena scaricato.)*
+**Ultima pubblicata: 1.2.0 — «Come si arriva al computer, detto una volta
+sola».** Il computer si fa trovare in tre modi — la rete di casa, il tunnel di
+Cloudflare, l'indirizzo Tailscale se il tuo tailnet lo serve — e il telefono li
+prova tutti e tiene quello che risponde. La novità che chiude la storia del
+«dopo l'aggiornamento non si ricollega»: **il tunnel non muore più quando
+aggiorni**. Prima `cloudflared` era un figlio della suite e moriva con lei;
+adesso vive per conto suo e la suite lo ritrova, quindi l'indirizzo da fuori
+resta lo stesso. Provato col telefono attaccato: app sui dati mobili, suite
+chiusa e riaperta, stesso indirizzo, «Il computer è libero». Tolti ngrok e i due
+pulsanti che servivano a rimediare: non servono più.
 
 Quello che cambia a ogni giro sta in [CHANGELOG.md](CHANGELOG.md), il percorso
 completo in [docs/ROADMAP.md](docs/ROADMAP.md).

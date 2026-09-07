@@ -101,11 +101,6 @@ export function impostazioni(): Impostazioni {
         limitePersona: numeroSano(lette.limitePersona, PREDEFINITE.limitePersona),
         inPausa: lette.inPausa === true,
         contestoLlm: contestoSano(lette.contestoLlm),
-        // L'indirizzo fisso di ngrok: spento di suo, e le due chiavi restano
-        // vuote finche' qualcuno non le mette. Vedi `ngrok.ts`.
-        ngrokAcceso: lette.ngrokAcceso === true,
-        ngrokToken: typeof lette.ngrokToken === "string" ? lette.ngrokToken : "",
-        ngrokDominio: typeof lette.ngrokDominio === "string" ? lette.ngrokDominio : "",
       };
       return cache;
     } catch {
@@ -157,24 +152,6 @@ export function impostaConnessione(accesa: boolean): Impostazioni {
  */
 export function salvaIndirizzoStabile(acceso: boolean): Impostazioni {
   return salva({ indirizzoStabile: acceso });
-}
-
-/**
- * Le due chiavi di ngrok e l'interruttore, ricordati insieme.
- *
- * Insieme e non uno per volta perche' insieme si usano: un token senza dominio
- * da' un indirizzo nuovo a ogni accensione, che e' il difetto da cui veniamo.
- */
-export function salvaNgrok(dati: {
-  acceso: boolean;
-  token: string;
-  dominio: string;
-}): Impostazioni {
-  return salva({
-    ngrokAcceso: dati.acceso,
-    ngrokToken: dati.token.trim(),
-    ngrokDominio: dati.dominio.trim(),
-  });
 }
 
 /** Il tunnel verso Internet, ricordato allo stesso modo. */
