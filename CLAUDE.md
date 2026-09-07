@@ -34,6 +34,8 @@ insieme, si pubblica una volta.
 - Un issue si chiude quando la sua riga «come si prova» è stata **fatta**.
 - Ogni tanto si dice a che punto siamo, in percentuale, contando gli issue
   chiusi — non a occhio.
+- Se questa e' la tua prima sessione su questa release, il prompt completo — con
+  le trappole che sono gia' costate tempo — sta in **`docs/PROMPT-1.2.3.md`**.
 
 ⚠ **Il filo che tiene insieme quasi tutto: una cosa sola, uguale ovunque.** Il
 7 settembre 2026 tre difetti diversi su tre erano la stessa malattia — una cosa
