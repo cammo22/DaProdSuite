@@ -10,7 +10,7 @@ Un programma solo per fare musica, immagini, video, voci e parlare con un avatar
 Ogni app la installi quando ti serve e la disinstalli quando non ti serve più.
 Gira sul tuo computer: niente account, niente chiavi API, codice aperto.
 
-[![versione](https://img.shields.io/badge/versione-1.1.0-7c5cff)](https://github.com/cammo22/DaProdSuite/releases/latest)
+[![versione](https://img.shields.io/badge/versione-1.1.1-7c5cff)](https://github.com/cammo22/DaProdSuite/releases/latest)
 [![licenza](https://img.shields.io/badge/licenza-MIT-5cff9d)](LICENSE)
 [![piattaforma](https://img.shields.io/badge/Windows-x64-3ddbff)](#requisiti)
 [![sito](https://img.shields.io/badge/sito-cammo22.github.io-ffa63d)](https://cammo22.github.io/DaProdSuite/)
@@ -95,22 +95,20 @@ tutte lo stesso.
 
 ## A che punto siamo
 
-**Ultima pubblicata: 1.1.0 — «La pagina non si mette più in cache».** Dopo un
-aggiornamento il telefono mostrava la pagina di ieri, e disinstallando l'app
-tornava quella giusta: la differenza fra i due gesti è che la cache della WebView
-sta nei dati dell'app, e l'aggiornamento non la tocca. La causa stava in una cosa
-che non c'era scritta — la console usciva **senza `Cache-Control`**, e una
-risposta senza istruzioni chi la riceve la conserva come gli pare. Adesso esce
-con `no-store`; il telefono non usa più la cache per quella pagina, butta la
-vecchia alla prima apertura dopo un aggiornamento, e se è il computer ad essere
-cambiato se ne accorge da solo e ricarica pulito. Accanto agli aggiornamenti c'è
-anche un pulsante, **«Rimetti in riga i telefoni»**, per quando qualcosa resta
-indietro lo stesso.
+**Ultima pubblicata: 1.1.1 — «L'indirizzo che non cambia mai non rispondeva».**
+Dalla 1.0.7 la strada da fuori casa si reggeva su un indirizzo Tailscale Funnel
+che **non ha mai servito traffico**: il comando diceva «acceso», il certificato
+c'era, e da un telefono quell'indirizzo non si apriva. Non ce ne eravamo accorti
+perché la prova la facevamo dal computer, dove Tailscale risolve quel nome in
+casa e risponde senza uscire su Internet. Adesso «acceso» vuol dire «ha
+risposto»: si chiede l'IP a un DNS pubblico e si bussa lì, e gli indirizzi si
+mettono in fila per quello che fanno — davanti quelli che rispondono, in fondo
+quelli che promettono. E quando un telefono resta con tutti gli indirizzi morti,
+non serve più rifare l'account: c'è **«Ho l'indirizzo nuovo»**, si incolla quello
+di oggi e il profilo resta quello.
 
-Prima, nella 1.0.10, l'indirizzo che non scade si ricontrolla ogni tre minuti
-invece di essere una fotografia scattata all'avvio; e nella 1.0.9 i lavori
-chiesti dal telefono partono anche a scheda chiusa, con LLaDA che passa da 94 a
-33 secondi.
+Prima, nella 1.1.0, la console non si mette più in cache (la pagina usciva senza
+`Cache-Control`, e il telefono mostrava quella di ieri).
 
 Quello che cambia a ogni giro sta in [CHANGELOG.md](CHANGELOG.md), il percorso
 completo in [docs/ROADMAP.md](docs/ROADMAP.md).

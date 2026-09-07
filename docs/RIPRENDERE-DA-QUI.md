@@ -1,7 +1,25 @@
 # Riprendere da qui
 
 Documento di passaggio fra una sessione e l'altra. Aggiornato il **7 settembre
-2026**, con la **1.1.0** appena pubblicata.
+2026**, con la **1.1.1** appena pubblicata.
+
+> ⚠ **La lezione della 1.1.1: una misura fatta dalla macchina sbagliata non e'
+> una misura.**
+>
+> Nella 1.0.10 ho scritto «il computer risponde da Internet» dopo un `curl` da
+> quel computer. Era falso: li' c'e' Tailscale, che risolve `.ts.net` in casa —
+> il `curl` non usciva su Internet e tornava 200 lo stesso. Su quella misura
+> sbagliata ho costruito una release e una spiegazione, e il difetto vero e'
+> rimasto in piedi altre ventiquattro ore.
+>
+> La regola: **quando si prova una strada che serve a qualcun altro, la si prova
+> da dove sta lui**. Se non si puo', si toglie di mezzo quello che falsa — qui
+> bastava chiedere l'IP a un DNS pubblico invece che al resolver locale. E la
+> sonda vera l'aveva in mano lui da subito: il browser del telefono, due
+> indirizzi, dieci secondi.
+>
+> Vale anche per il codice, ed e' finita in `funnel.ts`: «acceso» non puo'
+> voler dire «il comando dice di si'», deve voler dire «ha risposto a qualcuno».
 
 > ⚠ **La lezione della 1.1.0: guarda anche gli header che NON hai scritto.**
 >

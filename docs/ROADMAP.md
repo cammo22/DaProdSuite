@@ -26,7 +26,7 @@ file si scrive quale delle due metà manca.
 
 ## A che punto siamo — 6 settembre 2026 (notte fonda)
 
-**Ultima pubblicata: 1.1.0.** Nove schede dentro la suite, un ambiente Python
+**Ultima pubblicata: 1.1.1.** Nove schede dentro la suite, un ambiente Python
 solo, e il giro che conta — chiedo dal telefono, il computer fa, il file torna —
 **provato da chi la usa**, sul suo PC e sul suo telefono.
 
@@ -126,6 +126,8 @@ fanno quello che ti ho chiesto».
 | **Il VAE che decodificava in RAM (1.0.5)** | 4 passi in 14 s e poi venti minuti di niente: il pacco lascia il VAE sul processore anche in modalita' `cuda`. Pesa 168 MB e adesso lo sposta il ponte, **solo lui**. **Misurato**: 512x512 in 99 s col caricamento dei 16 GB dentro |
 | **LLaDA provato per intero (1.0.5)** | col motore acceso, dai due nodi: `LLaDAImageTextToImage` 94 s a caldo, `LLaDAImageEdit` 116 s («fai diventare verde la mela», ed e' diventata verde). Il collo di bottiglia che resta e' il text encoder da 9,2 GB in RAM: su 8 GB di scheda non ci sale |
 | **Lo scarico di LLaDA (1.0.5)** | ⚠ la 1.0.4 l'aveva peggiorato: `sequential_cpu_offload` con questo modello non parte (accelerate ricrea i pesi su «meta», i tensori GGUF non si lasciano ricreare). La strada e' `cuda`, che qui vuol dire «solo i pesi non quantizzati in scheda, le matrici INT8 una per volta». **Provato**: 4 passi in 14 s, 1,5 GB su 8 |
+| **L'indirizzo fisso che non rispondeva (1.1.1)** | ⚠ ottava volta di «non si ricollega», e la causa vera: il Funnel non serviva traffico da Internet. La mia misura della 1.0.10 era viziata — su quel PC Tailscale risolve `.ts.net` in casa e il curl non usciva. Sonda rifatta come la fa un telefono (DNS pubblico + SNI): `false` sul fisso, `true` sul tunnel. Adesso «acceso» vuol dire «ha risposto», e gli indirizzi vanno in fila per quello che fanno |
+| **«Ho l'indirizzo nuovo» (1.1.1)** | quando tutti gli indirizzi salvati muoiono insieme, non serve piu' rifare l'account: si incolla quello di oggi e il profilo resta com'e', token compreso |
 | **La pagina servita senza `Cache-Control` (1.1.0)** | ⚠ trovato da lui: «se aggiorno l'app mostra vecchie versioni, se disinstallo e reinstallo esce quella giusta». La cache della WebView sta nei dati dell'app e l'aggiornamento non la tocca. Adesso `no-store` sulla pagina **e** sul JSON, `LOAD_NO_CACHE` nell'app, e la cache vecchia si butta alla prima apertura dopo un aggiornamento. **Header verificati sul gateway vero** |
 | **Il telefono ricarica quando il PC cambia versione (1.1.0)** | `/io` dice gia' con che versione sta parlando: se non e' quella con cui aveva caricato la pagina, l'app svuota la cache e ricarica. E' il disinstalla-e-reinstalla senza disinstallare niente |
 | **«Rimetti in riga i telefoni» (1.1.0)** | il pulsante chiesto, accanto agli aggiornamenti. ⚠ Non parla ai telefoni — non si puo' — ma rimette a posto la meta' del computer subito: ricontrolla l'indirizzo fisso e rifa' gli inviti |

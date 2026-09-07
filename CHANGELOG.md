@@ -18,6 +18,76 @@ ancora lì.
 
 ---
 
+## 1.1.1 — L'indirizzo che non cambia mai non rispondeva
+
+> «niente da fare, ancora non funziona e l'app telefono mi dice ancora 1.0.8»
+
+Ottava volta. E stavolta la causa è quella vera, trovata con due sonde
+indipendenti — e comincia con **un mio errore**.
+
+### ⚠ La misura sbagliata che ho fatto stanotte
+
+Nella 1.0.10 avevo scritto che il computer «risponde da Internet», e l'avevo
+verificato con un `curl` da qui. Quella misura non valeva niente: **su questo PC
+c'è Tailscale**, che il nome `daprodmain.tail56d4ae.ts.net` se lo risolve in
+casa. Il `curl` prendeva una scorciatoia interna e tornava 200 senza mai uscire
+su Internet.
+
+Rifatta come la fa un telefono — chiedendo l'IP a un DNS pubblico e bussando lì —
+la risposta è un'altra: **la connessione non si stabilisce nemmeno.** Il
+certificato Let's Encrypt c'è, `tailscale funnel status` dice «Available on the
+internet», e da fuori non risponde nessuno. Confermato dal telefono, che dallo
+stesso browser apre il tunnel Cloudflare e non apre quello.
+
+### Cosa vuol dire, per davvero
+
+Dalla 1.0.7 tutta la strada da fuori si regge su quell'indirizzo, e quell'
+indirizzo **non ha mai servito traffico**. La suite lo offriva ai telefoni per
+**primo**: chi era fuori casa bussava a una porta murata, e negli altri
+indirizzi aveva solo roba che scade — il tunnel, che cambia nome a ogni
+accensione della suite, e la rete di casa, che da fuori non esiste.
+
+Ecco perché «a ogni aggiornamento non si ricollega»: aggiornare vuol dire
+riavviare, riavviare vuol dire un tunnel con un altro nome, e l'unico indirizzo
+che doveva sopravvivere era finto.
+
+E il «1.0.8» sullo schermo non era la versione dell'app: era la versione del
+computer scritta nella **copia salvata**. Vederla vuol dire una cosa sola —
+quella pagina non arriva dal computer.
+
+### La correzione: «acceso» adesso vuol dire «risponde»
+
+Per quattro release «acceso» ha voluto dire *«il comando nomina la nostra
+porta»*, cioè com'è **configurato** il computer. Adesso c'è una prova vera,
+fatta come la farebbe un telefono: si chiede l'IP a un DNS pubblico — perché
+quello di casa mente — e si bussa a quell'IP dicendo chi si cerca.
+
+Provata sul campo mentre la scrivevo: `false` sull'indirizzo fisso, `true` sul
+tunnel Cloudflare, `true` su un sito qualunque.
+
+Da lì gli indirizzi si mettono in fila per quello che **fanno**, non per quello
+che promettono:
+
+- risponde da fuori → va per primo, ed è quello per cui esiste;
+- configurato ma muto → resta in elenco, **in fondo**, perché la prova la
+  facciamo da questa macchina e da qui ci si può sbagliare; ma davanti ci va
+  quello che sappiamo rispondere;
+- spento → non c'è.
+
+E il pannello smette di dire «acceso: questo indirizzo non cambia mai» quando
+non è vero: dice che da Internet non risponde e che va controllato nel tailnet.
+
+### Rientrare senza rifare l'account
+
+Quando tutti gli indirizzi salvati muoiono insieme, finora l'unica cura era
+reinstallare — la cosa che questa app passa il tempo a evitare. Adesso, nella
+schermata «non riesco a raggiungere», c'è un terzo tasto: **«Ho l'indirizzo
+nuovo»**. Si incolla quello di oggi, letto dalla schermata del computer, e il
+profilo resta quello: stesso token, stesse cose, cambia solo la strada. Da lì il
+telefono si riprende da solo tutti gli altri indirizzi di oggi.
+
+---
+
 ## 1.1.0 — La pagina non si mette più in cache
 
 > «continua a non funzionare, io sono sicuro che il problema sta nell'apk: se

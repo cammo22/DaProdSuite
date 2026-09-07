@@ -1425,6 +1425,47 @@ class MainActivity : AppCompatActivity() {
      * quindi ritrovi in `localStorage` il suo token. Senza, si sveglierebbe
      * ogni volta credendo di non essersi mai collegata.
      */
+    /**
+     * Chiede l'indirizzo di oggi e lo mette nel profilo che c'e' gia'.
+     *
+     * Non crea niente e non tocca il token: aggiunge una strada all'elenco di
+     * quel profilo e riprova. Se l'indirizzo e' quello giusto, da li' in poi il
+     * telefono si riprende anche gli altri indirizzi di oggi da solo (`/io`).
+     */
+    private fun chiediLIndirizzoNuovo(p: Profilo) {
+        val casella = android.widget.EditText(this).apply {
+            hint = getString(R.string.hint_indirizzo)
+            setSingleLine()
+            setText(p.base)
+        }
+        val cornice = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            val bordo = (24 * resources.displayMetrics.density).toInt()
+            setPadding(bordo, bordo / 2, bordo, 0)
+            addView(casella)
+        }
+        AlertDialog.Builder(this)
+            .setTitle("L'indirizzo di oggi")
+            .setMessage(
+                "Aprilo sul computer: sta nella schermata DaProdConnessione, sotto al codice. " +
+                    "Il tuo collegamento resta quello: cambia solo la strada per arrivarci.",
+            )
+            .setView(cornice)
+            .setPositiveButton("Prova") { _, _ ->
+                val scritto = casella.text.toString().trim().trimEnd('/')
+                if (scritto.isBlank()) return@setPositiveButton
+                val intero =
+                    if (scritto.startsWith("http://") || scritto.startsWith("https://")) scritto
+                    else "https://$scritto"
+                Profili.ricordaBasi(this, p.id, listOf(intero))
+                Store.ricordaBase(this, intero)
+                val aggiornato = Profili.tutti(this).firstOrNull { it.id == p.id } ?: p
+                entra(aggiornato)
+            }
+            .setNegativeButton("Lascia stare", null)
+            .show()
+    }
+
     private fun apriDallaCopia(p: Profilo) {
         val html = deposito?.paginaSalvata()
         if (html.isNullOrBlank()) {
@@ -1461,6 +1502,21 @@ class MainActivity : AppCompatActivity() {
                 .setTitle("Non riesco a raggiungere ${p.computer.ifBlank { "il computer" }}")
                 .setMessage(R.string.senza_copia)
                 .setPositiveButton("Riprova") { _, _ -> entra(p) }
+                /**
+                 * ⚠ **La terza strada: dammi l'indirizzo di oggi.** Dalla 1.1.1.
+                 *
+                 * Serve per il caso che si e' presentato davvero il 7 settembre
+                 * 2026: tutti gli indirizzi che il telefono ha in tasca sono
+                 * morti insieme — il tunnel cambia nome a ogni accensione della
+                 * suite, la rete di casa da fuori non esiste, e l'indirizzo che
+                 * doveva non cambiare mai da Internet non risponde.
+                 *
+                 * Da li' l'unica cura era **rifare l'account**, che e' la cosa
+                 * che questa app passa il tempo a evitare. Adesso basta l'
+                 * indirizzo di oggi, letto dalla schermata del computer: il
+                 * profilo resta quello, col suo token e le sue cose.
+                 */
+                .setNeutralButton("Ho l'indirizzo nuovo") { _, _ -> chiediLIndirizzoNuovo(p) }
                 .setNegativeButton("Va bene", null)
                 .show()
             return
