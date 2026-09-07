@@ -516,41 +516,56 @@ export const COPIONE_LETTORE = `
    * in «Com'e' stata fatta»: per una canzone titolo, testo, stile e durata; per
    * una foto il prompt.
    */
+  /**
+   * **Com'e' stata fatta**: le righe, disegnate in un posto solo.
+   *
+   * ⚠ **Erano due disegni diversi della stessa cosa.** In galleria un foglio
+   * che saliva sopra la foto, con righe «.info» e un «indietro» che non
+   * c'entrava con niente; nel lettore un riquadro dentro al palco, con righe
+   * «.rigaInfo», che si accende e si spegne con lo stesso tasto. Detto il 7
+   * settembre 2026:
+   *
+   * > «Quando clicco "come e' stata fatta" rimane la foto aperta e apre un menu
+   * > indietro. Questo sempre perche' abbiamo fatto le cose diverse su mille
+   * > cose. In realta' vorrei vederlo stesso come abbiamo fatto nel
+   * > visualizer, di vedere com'e' fatta la canzone.»
+   *
+   * Vince quello del visualizer, e adesso e' questa funzione: la chiamano tutti
+   * e due. «dove» e' il riquadro da riempire, «v» la cosa di cui si parla.
+   * I campi sono quelli veri della richiesta, gli stessi che manda il computer:
+   * per una canzone titolo, testo, stile e durata; per una foto il prompt.
+   */
+  function disegnaComeEStataFatta(dove, v) {
+    dove.innerHTML = "";
+    var fatta = (v && v.comeEStataFatta) || {};
+    var quante = 0;
+    for (var come in fatta) {
+      if (!Object.prototype.hasOwnProperty.call(fatta, come)) continue;
+      var riga = document.createElement("div");
+      riga.className = "rigaInfo";
+      var chiave = document.createElement("b");
+      chiave.textContent = come;
+      var valore = document.createElement("span");
+      valore.textContent = fatta[come];
+      riga.append(chiave, valore);
+      dove.append(riga);
+      quante++;
+    }
+    if (!quante) {
+      var niente = document.createElement("p");
+      niente.className = "nota";
+      niente.textContent = "Di questa non so com'e' stata fatta.";
+      dove.append(niente);
+    }
+    return quante;
+  }
+
   function disegnaLeInfo() {
     var scatola = $("palco-info");
     if (!scatola) return;
     scatola.hidden = !infoAperte || inCoda < 0;
     if (scatola.hidden) return;
-    var v = coda[inCoda];
-    scatola.innerHTML = "";
-    /**
-     * I campi sono quelli che il computer manda con la voce: la stessa mappa
-     * che la galleria mostra in «Com'è stata fatta». Un posto solo, non due
-     * elenchi che col tempo divergono.
-     */
-    var righe = [];
-    var fatta = v.comeEStataFatta || {};
-    for (var come in fatta) {
-      if (!Object.prototype.hasOwnProperty.call(fatta, come)) continue;
-      righe.push([come, fatta[come]]);
-    }
-    if (!righe.length) {
-      var niente = document.createElement("p");
-      niente.className = "nota";
-      niente.textContent = "Di questa non so com'e' stata fatta.";
-      scatola.append(niente);
-      return;
-    }
-    for (var i = 0; i < righe.length; i++) {
-      var riga = document.createElement("div");
-      riga.className = "rigaInfo";
-      var chiave = document.createElement("b");
-      chiave.textContent = righe[i][0];
-      var valore = document.createElement("span");
-      valore.textContent = righe[i][1];
-      riga.append(chiave, valore);
-      scatola.append(riga);
-    }
+    disegnaComeEStataFatta(scatola, coda[inCoda]);
   }
 
   /** Accende e spegne il pannello. E' tutto quello che fa il tasto. */

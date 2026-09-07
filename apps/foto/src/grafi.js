@@ -548,9 +548,22 @@ export const MODELLI = {
   },
 };
 
-/** Il modello con quell'id, o Anima se l'id non esiste più (menu vecchio). */
+/**
+ * **Quello che parte se non hai mai scelto niente.**
+ *
+ * ⚠ **È una copia, e la copia è voluta.** Il posto dove sta scritto per
+ * davvero è `PREDEFINITO_IMMAGINI` in `packages/azioni/src/catalogo.ts`, che
+ * è quello che leggono il telefono, la console e l'agente. Questa pagina non
+ * può importare un pacchetto Node, quindi il valore si ripete — e
+ * `apps/shell/scripts/prova-azioni.mjs` controlla che i due siano lo stesso.
+ *
+ * Fino alla 1.2.2 non erano lo stesso: di là partiva Klein 4B, di qua Anima.
+ */
+export const PREDEFINITO = "flux2-9b";
+
+/** Il modello con quell'id, o quello di serie se l'id non esiste più. */
 export function modello(id) {
-  return MODELLI[id] ?? MODELLI.anima;
+  return MODELLI[id] ?? MODELLI[PREDEFINITO];
 }
 
 export const grafoImmagine = (m, p) => m.immagine(m, p);

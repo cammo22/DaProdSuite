@@ -67,9 +67,36 @@ writeFileSync(join(cartella, "clip.mp4"), PIXEL);
 writeFileSync(join(cartella, "brano.mp3"), PIXEL);
 
 const voci = [
-  { id: "foto/quadro.png", nome: "un faro sulla scogliera al tramonto", tipo: "immagine", app: "foto", file: "quadro.png", mime: "image/png" },
-  { id: "cinema/clip.mp4", nome: "una barca che entra in porto", tipo: "video", app: "cinema", file: "clip.mp4", mime: "video/mp4" },
-  { id: "musica/brano.mp3", nome: "Ammore mio", tipo: "audio", app: "musica", file: "brano.mp3", mime: "audio/mpeg" },
+  {
+    id: "foto/quadro.png", nome: "un faro sulla scogliera al tramonto",
+    tipo: "immagine", app: "foto", file: "quadro.png", mime: "image/png",
+    fatta: {
+      "Il prompt": "un faro sulla scogliera al tramonto, luce calda, fotografia",
+      "Che forma": "1:1 - quadrato",
+      "Quanto grande": "1080p",
+      "Quante immagini": "2",
+      "Con che modello": "FLUX.2 Klein 9B",
+    },
+  },
+  {
+    id: "cinema/clip.mp4", nome: "una barca che entra in porto",
+    tipo: "video", app: "cinema", file: "clip.mp4", mime: "video/mp4",
+    fatta: {
+      "Il prompt": "una barca che entra in porto all'alba, ripresa dall'alto",
+      "Quanto dura": "5 secondi",
+      "Con che modello": "LTX 2.5",
+    },
+  },
+  {
+    id: "musica/brano.mp3", nome: "Ammore mio",
+    tipo: "audio", app: "musica", file: "brano.mp3", mime: "audio/mpeg",
+    fatta: {
+      "Il titolo": "Ammore mio",
+      "Che genere": "neapolitan neomelodic pop, melodic trap",
+      "Il testo": "Ammore mio, tu staje luntano\ne io t'aspetto cca'",
+      "Quanto dura": "60 secondi",
+    },
+  },
 ];
 
 const cuori = new Map();
@@ -106,6 +133,14 @@ const comeEsce = (v, chi) => ({
   tenuta: false,
   anteprima: v.tipo === "immagine",
   didascalia: v.nome,
+  /**
+   * Com'e' stata fatta: quello che era stato chiesto, campo per campo.
+   *
+   * Serve a guardare il riquadro che si apre col tasto «Com'e' stata fatta» —
+   * lo stesso in galleria e nel lettore dalla 1.2.3 — e a controllare che
+   * «salvalo come prompt» si porti dietro tutti i campi e non solo il primo.
+   */
+  comeEStataFatta: v.fatta,
 });
 
 const libreria = {
@@ -167,15 +202,31 @@ const libreria = {
 
 const stili = new Map();
 const fintiStili = {
-  miei: (chi) => {
+  miei: (chi, genere) => {
     if (!stili.has(chi)) {
       stili.set(chi, [
-        { id: "s1", nome: "Neomelodico trap", testo: "neapolitan neomelodic pop, melodic trap, autotune ballad", da: "partenza", quando: 1 },
-        { id: "s2", nome: "Nu disco notturno", testo: "nu disco, french house, disco funk", da: "partenza", quando: 2 },
-        { id: "s3", nome: "Il mio", testo: "italo disco, synthwave", da: "mio", quando: 3, condiviso: true },
+        { id: "s1", nome: "Neomelodico trap", testo: "neapolitan neomelodic pop, melodic trap, autotune ballad", tipo: "musica", da: "partenza", quando: 1 },
+        { id: "s2", nome: "Nu disco notturno", testo: "nu disco, french house, disco funk", tipo: "musica", da: "partenza", quando: 2 },
+        { id: "s3", nome: "Il mio", testo: "italo disco, synthwave", tipo: "musica", da: "mio", quando: 3, condiviso: true },
+        // Un prompt vero, con i campi del modulo dentro: e' quello che serve a
+        // guardare la riga «I tuoi prompt» in Produzione, e a controllare che
+        // ritrovandolo si riempia tutto il modulo e non la sola casella.
+        {
+          id: "s4",
+          nome: "Robot con la chitarra",
+          testo: "Un robot che suona una chitarra in un teatro in fiamme",
+          tipo: "immagine",
+          genere: "prompt",
+          campi: { quante: "2", modello: "flux2-9b" },
+          da: "mio",
+          quando: 5,
+        },
       ]);
     }
-    return stili.get(chi);
+    const tutti = stili.get(chi);
+    // Come quello vero: senza genere tornano stili e prompt insieme.
+    if (!genere) return tutti;
+    return tutti.filter((s) => (s.genere || "stile") === genere);
   },
   vetrina: () => [
     { id: "v1", nome: "Boom bap partenopeo", testo: "boom bap, italian hip hop", da: "mio", quando: 4, chi: "altro", chiNome: "Giulia" },
@@ -330,11 +381,6 @@ const gateway = new G.Gateway({
       }
       return null;
     },
-  },
-  preset: {
-    elenco: () => [{ id: "p1", app: "musica", nome: "il mio solito", testo: "nu disco", campi: {} }],
-    salva: (p) => ({ ...p, id: "p2", quando: Date.now() }),
-    elimina: () => true,
   },
   pannello: {
     /**

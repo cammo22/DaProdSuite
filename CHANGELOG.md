@@ -33,6 +33,43 @@ In più, salvando un prompt dalla Produzione si salva **tutto il modulo** e non
 solo la frase grande: ritrovandolo tornano anche quante immagini, che durata,
 che modello.
 
+### Creare un prompt fa le stesse domande da tutte le parti
+
+> «Quando premo su un nuovo prompt dice "come si chiama", "fotografia vera":
+> queste cose scritte sempre strane. Mettiamo "per cosa si tratta" — immagini,
+> musica, video — e poi ti esce più o meno la schermata che ci sta là. Non
+> facciamo mille cose che poi sono tutte diverse.»
+
+Le strade per salvare un prompt erano tre, e chiedevano tre cose diverse: dalla
+scheda Stili un foglio che il tipo non lo chiedeva proprio (lo prendeva dal
+filtro acceso) e suggeriva nomi da stile; dalla Produzione e dalla galleria una
+finestrella che chiedeva solo il nome.
+
+Adesso è **una schermata sola**, e le domande sono queste tre, in quest'ordine:
+per cosa è (immagini, video, musica), come lo chiami, cosa dice. Cambiando «per
+cosa» cambiano gli esempi e le spiegazioni: la schermata resta quella.
+
+### Il modello che parte è lo stesso dappertutto, ed è FLUX.2 Klein 9B
+
+Dal telefono partiva Klein 4B, sulla scheda del computer partiva Anima. La
+stessa suite, due modelli diversi a seconda di dove premevi.
+
+Adesso è uno solo, ed è **Klein 9B**: pesa 11,2 GB ed è più lento del 4B su una
+scheda da 8 — c'è scritto sotto al nome, dove si sceglie — ma è quello che
+capisce meglio le descrizioni lunghe. Quello che avevi scelto l'ultima volta
+resta quello che riparte; il 9B è per chi non ha ancora scelto niente.
+
+### «Com'è stata fatta» è la stessa cosa in galleria e nel lettore
+
+> «Quando clicco "come è stata fatta" rimane la foto aperta e apre un menu
+> indietro. In realtà vorrei vederlo stesso come abbiamo fatto nel visualizer.»
+
+In galleria saliva un foglio sopra la foto, con un «indietro» che non c'entrava
+niente. Adesso è come nel visualizer: un riquadro che si apre e si chiude con lo
+stesso tasto, senza portare via la foto, e il tasto resta acceso finché è
+aperto. Dentro c'è anche «salvalo come prompt», che è il momento in cui uno
+guarda com'è stata fatta una cosa e decide di rifarla.
+
 **Togliere il tunnel Cloudflare** per chi ha l'indirizzo fisso, e **togliere il
 codice** della schermata «cerca i computer di casa», che è irraggiungibile ma
 ancora lì.

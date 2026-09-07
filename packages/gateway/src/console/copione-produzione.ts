@@ -316,7 +316,7 @@ export const COPIONE_PRODUZIONE = `
     salva.className = "mini";
     salva.textContent = miei.length ? "+ salva questo" : "+ salva come prompt";
     salva.addEventListener("click", (function (tipo) {
-      return function () { void salvaComePrompt(tipo); };
+      return function () { salvaComePrompt(tipo); };
     })(quale));
     riga.append(salva);
 
@@ -379,18 +379,20 @@ export const COPIONE_PRODUZIONE = `
   }
 
   /**
-   * Salva quello che c'e' scritto adesso, con un nome.
+   * Mette da parte quello che c'e' scritto adesso.
    *
-   * Il nome lo si chiede con la finestrella del browser e non con un foglio, ed e'
-   * l'unico posto della console in cui succede: qui la domanda e' una parola
-   * sola, e un foglio che sale per una parola sola sarebbe piu' lento del gesto
-   * che deve rendere veloce.
+   * ⚠ **Non chiede piu' il nome con la finestrella del browser.** Fino alla
+   * 1.2.2 qui si apriva un «window.prompt» che chiedeva solo «come lo chiami?»
+   * e salvava la sola casella grande: tutto il resto del modulo — quante
+   * immagini, che durata, che modello — spariva. Nella scheda Stili la stessa
+   * cosa si faceva con un foglio che chiedeva altre parole, e dalla galleria in
+   * un terzo modo ancora.
    *
-   * **Si salva tutto il modulo.** Prima la casella grande finiva nel prompt e
-   * il resto si perdeva: ritrovandolo, durata e modello tornavano quelli di
-   * serie senza dire niente.
+   * Adesso e' **lo stesso foglio** di tutte e tre le strade (vedi
+   * «apriModificaStile» in copione-stili), che arriva gia' riempito con quello
+   * che c'e' nel modulo: si controlla, si da' un nome, si salva.
    */
-  async function salvaComePrompt(tipo) {
+  function salvaComePrompt(tipo) {
     var testo = "";
     var campi = {};
     for (var c of $("modulo").querySelectorAll("[data-campo]")) {
@@ -399,30 +401,22 @@ export const COPIONE_PRODUZIONE = `
       if (v) campi[c.dataset.campo] = v;
     }
     if (!testo) {
-      avvisaAzione("Scrivi prima cosa vuoi: e' quello che verrebbe salvato.", true);
+      avvisaAzione("Scrivi prima cosa vuoi: e\u0027 quello che verrebbe salvato.", true);
       return;
     }
-    var nome = window.prompt("Come lo chiami?", testo.slice(0, 40));
-    if (!nome) return;
-    try {
-      await chiama("/stili", {
-        method: "POST",
-        body: JSON.stringify({
-          nome: nome.trim(),
-          testo: testo,
-          tipo: tipo,
-          genere: "prompt",
-          campi: campi,
-        }),
-      });
-      await leggiStili();
-      // Il modulo si ridisegna perche' la riga dei prompt e' dentro di lui: senza,
-      // quello appena salvato comparirebbe solo cambiando scheda e tornando.
-      scegli(scelta);
-      avvisaAzione("Salvato. Lo ritrovi qui e nella scheda Stili.", false);
-    } catch (e) {
-      avvisaAzione(e.message, true);
-    }
+    apriModificaStile(null, {
+      tipo: tipo,
+      genere: "prompt",
+      testo: testo,
+      campi: campi,
+      dopo: function () {
+        // Il modulo si ridisegna perche' la riga dei prompt e' dentro di lui:
+        // senza, quello appena salvato comparirebbe solo cambiando scheda e
+        // tornando.
+        if (scelta) scegli(scelta);
+        avvisaAzione("Salvato. Lo ritrovi qui e nella scheda Stili.", false);
+      },
+    });
   }
 
   function scegli(a) {

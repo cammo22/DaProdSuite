@@ -484,82 +484,88 @@ export const COPIONE_GALLERIA = `
     }
   }
 
-  /**
-   * Com'e' stata fatta una cosa: i campi, e il tasto per tenerseli.
+  /*
+   * ⚠ **Qui c'era «apriLeInfo», che apriva un foglio sopra la foto.**
    *
-   * ⚠ **E' anche il posto dove i prompt diventano utili.** Chiesto il 5
-   * settembre 2026: «ci sono gli stili che sono solo una parte e i prompt che
-   * contengono tutto; come ora non vanno bene — i prompt devi prenderli da
-   * quelli che ho creato io, e nel caso di una canzone ci devono essere tutte
-   * le info, stessa cosa per immagini e video».
-   *
-   * Quindi «salvalo come prompt» qui dentro **non salva solo il testo
-   * principale**: salva tutto quello che si vede in questo riquadro, campo per
-   * campo. Ritrovandolo in Produzione si riempie il modulo intero — titolo,
-   * testo, stile, durata — e non una casella sola.
+   * Era l'altra meta' del difetto detto il 7 settembre 2026: «rimane la foto
+   * aperta e apre un menu indietro... in realta' vorrei vederlo stesso come
+   * abbiamo fatto nel visualizer». Adesso «Com'e' stata fatta» e' un riquadro
+   * dentro la lente, che si accende e si spegne con lo stesso tasto — vedi
+   * «giraLeInfoDellaLente» piu' sotto — e a disegnarlo e' la stessa funzione
+   * del lettore, «disegnaComeEStataFatta».
    */
-  function apriLeInfo(v) {
-    var carta = apriFoglio("Com'\u00e8 stata fatta");
 
-    var quale = document.createElement("p");
-    quale.className = "sotto";
-    quale.textContent = (v.didascalia || v.nome) + " \u00b7 " + dataDi(v.creato);
-    carta.append(quale);
-
-    for (var come in v.comeEStataFatta) {
-      if (!Object.prototype.hasOwnProperty.call(v.comeEStataFatta, come)) continue;
-      var riga = document.createElement("div");
-      riga.className = "info";
-      var etichetta = document.createElement("b");
-      etichetta.textContent = come;
-      var valore = document.createElement("div");
-      valore.className = "cosa";
-      valore.textContent = v.comeEStataFatta[come];
-      riga.append(etichetta, valore);
-      carta.append(riga);
+  /**
+   * Accende e spegne «Com'e' stata fatta» dentro la lente.
+   *
+   * ⚠ **E' il gesto del visualizer, portato in galleria.** Chiesto il 7
+   * settembre 2026: «vorrei vederlo stesso come abbiamo fatto nel visualizer,
+   * di vedere com'e' fatta la canzone». Lo stesso tasto apre e chiude, il tasto
+   * resta acceso mentre e' aperto, e la foto non si sposta di un pixel: prima
+   * saliva un foglio che copriva tutto e si chiudeva con un «indietro».
+   *
+   * Il riquadro va **sopra ai tasti**, come nel palco: quello che leggi sta
+   * vicino a quello che stai guardando, e i comandi restano dove li hai
+   * lasciati.
+   *
+   * Dentro c'e' anche «salvalo come prompt», che prima stava nel foglio: e' il
+   * momento in cui uno guarda com'e' stata fatta una cosa e decide di
+   * rifarla.
+   */
+  function giraLeInfoDellaLente(sotto, attrezzi, tasto, v) {
+    var gia = sotto.querySelector(".infoPalco");
+    if (gia) {
+      gia.remove();
+      var fila = sotto.querySelector(".filaPrompt");
+      if (fila) fila.remove();
+      tasto.classList.remove("acceso");
+      return;
     }
 
+    var riquadro = document.createElement("div");
+    riquadro.className = "infoPalco";
+    disegnaComeEStataFatta(riquadro, v);
+
     var fila = document.createElement("div");
-    fila.className = "fila";
+    fila.className = "fila filaPrompt";
     var tieni = document.createElement("button");
-    tieni.textContent = "\u270E Salvalo come prompt";
-    tieni.addEventListener("click", function () { void salvaComeProntoDaInfo(v, tieni); });
+    tieni.className = "mini";
+    tieni.textContent = "\\u270E Salvalo come prompt";
+    tieni.addEventListener("click", function () { salvaComeProntoDaInfo(v, tieni); });
     fila.append(tieni);
-    carta.append(fila);
+
+    sotto.insertBefore(riquadro, attrezzi);
+    sotto.insertBefore(fila, attrezzi);
+    tasto.classList.add("acceso");
   }
 
   /**
-   * Salva quello che si e' appena letto come **un prompt intero**.
+   * Mette da parte quello che si e' appena letto, come **un prompt intero**.
    *
    * Il testo del prompt e' il campo principale; tutto il resto — titolo, testo
    * cantato, stile, durata — finisce nei campi, che e' quello che rende un
    * prompt diverso da uno stile: ritrovandolo si riempie il modulo, non una
    * casella.
+   *
+   * ⚠ **Passa dallo stesso foglio delle altre due strade.** Fino alla 1.2.2
+   * qui si apriva la finestrella del browser con «come lo chiami?», nella
+   * scheda Stili un foglio che chiedeva altre parole, e dalla Produzione un
+   * terzo modo ancora. Adesso e' «apriModificaStile», per tutte e tre.
    */
-  async function salvaComeProntoDaInfo(v, tasto) {
+  function salvaComeProntoDaInfo(v, tasto) {
     var tipo = v.tipo === "audio" ? "musica" : v.tipo === "video" ? "video" : "immagine";
     var principale =
       v.comeEStataFatta["Il prompt"] || v.comeEStataFatta["Che genere"] || v.didascalia || v.nome;
-    var nome = window.prompt("Come lo chiami?", (v.didascalia || v.nome).slice(0, 40));
-    if (!nome) return;
-    tasto.disabled = true;
-    try {
-      await chiama("/stili", {
-        method: "POST",
-        body: JSON.stringify({
-          nome: nome.trim(),
-          testo: principale,
-          tipo: tipo,
-          genere: "prompt",
-          campi: v.comeEStataFatta,
-        }),
-      });
-      tasto.textContent = "\u2713 salvato fra i prompt";
-      try { await leggiStili(); } catch (e) { /* al giro dopo */ }
-    } catch (e) {
-      tasto.disabled = false;
-      avvisaDelMale(e);
-    }
+    apriModificaStile(null, {
+      tipo: tipo,
+      genere: "prompt",
+      testo: principale,
+      campi: v.comeEStataFatta,
+      dopo: function () {
+        tasto.textContent = "\u2713 salvato fra i prompt";
+        tasto.disabled = true;
+      },
+    });
   }
 
   /** L'indirizzo del file vero, e quello dell'anteprima. */
@@ -992,11 +998,21 @@ export const COPIONE_GALLERIA = `
      * intero, venti righe di prompt sono venti righe che coprono la foto. Chi
      * vuole sapere preme; chi guarda, guarda.
      */
+    /**
+     * ⚠ **Il riquadro sta dentro la lente, e non e' un foglio.**
+     *
+     * Fino alla 1.2.2 questo tasto apriva un foglio sopra la foto, con un
+     * «indietro» in cima: la foto restava aperta dietro, e per tornare a
+     * guardarla bisognava chiudere una cosa che sembrava un'altra schermata.
+     * Adesso e' come nel visualizer — il riquadro si accende e si spegne con
+     * lo stesso tasto, la foto non se ne va, e il tasto resta acceso finche'
+     * e' aperto.
+     */
     if (v.comeEStataFatta && Object.keys(v.comeEStataFatta).length) {
       var info = document.createElement("button");
       info.className = "mini";
       info.textContent = "\\u2139 Com'\\u00e8 stata fatta";
-      info.addEventListener("click", function () { apriLeInfo(v); });
+      info.addEventListener("click", function () { giraLeInfoDellaLente(sotto, attrezzi, info, v); });
       attrezzi.append(info);
     }
 

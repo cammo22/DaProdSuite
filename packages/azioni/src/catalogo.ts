@@ -47,16 +47,29 @@ const PROMPT_MAX = 2000;
  * Lasciare vuoto il campo vuol dire **quello che è scelto adesso sul PC**: chi
  * chiede da fuori non è tenuto a sapere che modelli ci sono.
  */
+/**
+ * **Il modello che parte per le immagini: FLUX.2 Klein 9B.**
+ *
+ * ⚠ **Sta scritto qui una volta sola, e c'è un motivo.** Fino alla 1.2.2 il
+ * predefinito era in due posti che non si parlavano: qui c'era `flux2-4b` (per
+ * il telefono e la console) e in `apps/foto/src/scelta-modello.js` la scheda
+ * partiva con **Anima**. Due schermate, due idee di cosa parte, e chi chiedeva
+ * la stessa cosa da due parti otteneva due immagini diverse senza sapere
+ * perché. Trovato guardando il codice il 7 settembre 2026.
+ *
+ * Il numero l'ha scelto Cammo lo stesso giorno: **9B**. Pesa 11,2 GB ed è più
+ * lento del 4B su una scheda da 8 — e lo dice, nella riga sotto al suo nome nel
+ * menu della scheda. In cambio è quello che capisce meglio le descrizioni
+ * lunghe, che è quello che si scrive davvero quando si chiede una foto.
+ *
+ * La scheda foto ne tiene una copia in `grafi.js` — è una pagina, non può
+ * importare un pacchetto Node — e `apps/shell/scripts/prova-azioni.mjs` le
+ * confronta a ogni giro: il giorno che divergono, la prova diventa rossa.
+ */
+export const PREDEFINITO_IMMAGINI = "flux2-9b";
+
 const MODELLI_FOTO = {
-  /**
-   * **FLUX.2 Klein 4B è quello che parte**, dalla 0.9.1.
-   *
-   * Chiesto il 5 settembre 2026: «rendiamo flux klein 4b default per le
-   * immagini, lo stesso per le copertine». Anima resta ed è più veloce; Klein
-   * 4B capisce descrizioni lunghe, che è quello che la gente scrive davvero
-   * quando chiede una foto da un telefono.
-   */
-  predefinito: "flux2-4b",
+  predefinito: PREDEFINITO_IMMAGINI,
   scelte: ["anima", "anima2", "flux2-4b", "flux2-9b", "llada"],
   /**
    * ⚠ **Solo i nomi.** Chiesto il 7 settembre 2026: «togli la scritta un
@@ -95,11 +108,13 @@ const MODELLI_FOTO = {
  *   `apps/foto/src/grafi.js` — e mostrarglielo per poi ignorarlo sarebbe il
  *   modo peggiore di sbagliare.
  *
- * Il predefinito e' FLUX.2 Klein 4B come per la generazione: e' quello che
- * sulla scheda da 8 GB fa il lavoro migliore senza far aspettare.
+ * Il predefinito e' lo stesso della generazione, e non per pigrizia: chi
+ * modifica una foto l'ha appena fatta con quel modello, e cambiarglielo sotto
+ * vuol dire un secondo modello caricato in scheda per niente. Uno solo, e sta
+ * in `PREDEFINITO_IMMAGINI`.
  */
 const MODELLI_MODIFICA = {
-  predefinito: "flux2-4b",
+  predefinito: PREDEFINITO_IMMAGINI,
   scelte: ["anima", "anima2", "flux2-4b", "flux2-9b", "llada"],
   // Solo i nomi, come per la generazione. Chi non sa usare la zona lo dice il
   // modulo quando lo scegli, che è il momento in cui serve saperlo: vedi
