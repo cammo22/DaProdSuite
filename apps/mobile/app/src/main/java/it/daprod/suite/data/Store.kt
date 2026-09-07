@@ -25,6 +25,8 @@ object Store {
     private const val PREFS = "daprod_suite"
     private const val KEY_BASE = "base"
     private const val KEY_AGG = "ultimo_controllo_aggiornamenti"
+    private const val KEY_VERSIONE = "versione_vista"
+    private const val KEY_VERSIONE_PC = "versione_suite_vista"
 
     private fun prefs(context: Context) =
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
@@ -50,6 +52,47 @@ object Store {
 
     fun ricordaBase(context: Context, base: String) {
         prefs(context).edit().putString(KEY_BASE, base.trim().trimEnd('/')).apply()
+    }
+
+    /**
+     * ⚠ **Con che versione dell'app si è aperta l'ultima volta.** Dalla 1.1.0.
+     *
+     * Serve a una cosa sola: sapere se questa è **la prima apertura dopo un
+     * aggiornamento**, e in quel caso buttare la cache della WebView.
+     *
+     * **Il difetto che cura**, parole sue: «se aggiorno l'app e non sono
+     * collegato al pc, l'app mostra vecchie versioni; se disinstallo e
+     * reinstallo esce quella giusta». La differenza fra i due gesti è tutta
+     * qui: la cache della WebView sta nei dati dell'app e **l'aggiornamento non
+     * la tocca**, la disinstallazione sì. Il computer adesso dice `no-store`
+     * (vedi `pagina()` nel gateway), ma quello vale per le risposte nuove: una
+     * pagina già in pancia da prima resta lì finché qualcuno non la butta.
+     *
+     * Zero vuol dire «non l'ho mai segnato»: è il caso di chi arriva da una
+     * versione che questo campo non lo scriveva, e per lui si pulisce lo stesso
+     * — è proprio il giro in cui serve.
+     */
+    fun versioneVistaUltimaVolta(context: Context): Long = prefs(context).getLong(KEY_VERSIONE, 0)
+
+    fun ricordaVersione(context: Context, codice: Long) {
+        prefs(context).edit().putLong(KEY_VERSIONE, codice).apply()
+    }
+
+    /**
+     * ⚠ **Con che versione della suite si è caricata la pagina l'ultima volta.**
+     * Dalla 1.1.0.
+     *
+     * La pagina della console **è** il programma: quando il computer si
+     * aggiorna, quella pagina cambia. Se il telefono se ne accorge da solo può
+     * ricaricarla pulita invece di far vedere quella di ieri — che è la stessa
+     * cosa che si aggiusta a mano disinstallando l'app, fatta senza disinstallare
+     * niente.
+     */
+    fun versioneSuiteVista(context: Context): String? =
+        prefs(context).getString(KEY_VERSIONE_PC, null)
+
+    fun ricordaVersioneSuite(context: Context, versione: String) {
+        prefs(context).edit().putString(KEY_VERSIONE_PC, versione).apply()
     }
 
     /** Quando si è guardato l'ultima volta se c'è una versione nuova dell'app. */

@@ -1,7 +1,25 @@
 # Riprendere da qui
 
 Documento di passaggio fra una sessione e l'altra. Aggiornato il **7 settembre
-2026**, con la **1.0.10** appena pubblicata.
+2026**, con la **1.1.0** appena pubblicata.
+
+> ⚠ **La lezione della 1.1.0: guarda anche gli header che NON hai scritto.**
+>
+> «Dopo l'update mostra vecchie versioni» l'ha diagnosticato lui, non io: «sono
+> sicuro che il problema sta nell'apk… se disinstallo e reinstallo esce quella
+> giusta». Quella frase e' la misura decisiva, perche' l'unica cosa che
+> distingue i due gesti e' **la cache**, che sta nei dati dell'app.
+>
+> E la causa non era in una riga sbagliata: era in una riga **che non c'era**.
+> La pagina usciva senza `Cache-Control`, senza `ETag`, senza `Last-Modified` —
+> e una risposta senza istruzioni chi la riceve la conserva come gli pare.
+> Cercando difetti si legge quello che il codice fa; qui bisognava accorgersi di
+> quello che **non diceva**. `curl -I` su una rotta serve piu' di mezz'ora di
+> lettura.
+>
+> Vale come regola per tutto quello che la suite serve: una risposta che e' un
+> programma (la console) o uno stato di adesso (gli indirizzi, la fila) esce con
+> `no-store`, e non si da' per scontato che il valore di serie sia giusto.
 
 > ⚠ **La lezione della 1.0.10: una verita' sul mondo di fuori non si mette in
 > memoria e basta.**

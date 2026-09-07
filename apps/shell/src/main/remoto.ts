@@ -2028,6 +2028,43 @@ export const accessoRemoto = {
   spegni: spegniEricorda,
   accendiInternet,
   spegniInternet,
+  /**
+   * ⚠ **Rimetti in riga i telefoni.** Nuovo nella 1.1.0.
+   *
+   * Chiesto il 7 settembre 2026: «un pulsante nella navbar dell'app desktop,
+   * accanto agli aggiornamenti, che se cliccato risolve questo eventuale
+   * problema». Il problema e' quello raccontato sette volte: dopo un
+   * aggiornamento il telefono non ritrova il computer.
+   *
+   * ⚠ **Non parla ai telefoni**, e va detto perche' e' la cosa che uno si
+   * aspetta: un telefono che non ci raggiunge non lo raggiungiamo nemmeno noi.
+   * Quello che fa e' mettere a posto **la nostra meta'**, subito invece che al
+   * prossimo giro di controllo:
+   *
+   * 1. richiede a Tailscale l'indirizzo che non scade — se il controllo
+   *    dell'avvio era caduto, e' qui che si rimedia senza aspettare tre minuti;
+   * 2. rifa' gli inviti gia' dati, perche' portino dentro quell'indirizzo;
+   * 3. sveglia i pannelli, cosi' il QR nuovo si vede subito.
+   *
+   * Il resto — la pagina che non si mette piu' in cache, e il telefono che
+   * ricarica da solo quando la suite cambia versione — succede senza premere
+   * niente. Vedi `pagina()` nel gateway e `apriSuite` nell'app.
+   */
+  async rimettiInRigaITelefoni(): Promise<{ indirizzo: string; detto: string }> {
+    funnel = await comeStaFunnel(portaReale || PORTA);
+    remoto.buttaInviti();
+    gateway?.aggiorna();
+    sveglia();
+    const indirizzo = funnel.acceso ? funnel.indirizzo : "";
+    return {
+      indirizzo,
+      detto: indirizzo
+        ? `A posto: i telefoni possono tornare da ${indirizzo}, che non cambia mai. ` +
+          "Se uno resta indietro, apri l'app dalla wifi di casa una volta sola."
+        : "L'indirizzo che non cambia mai non e' acceso: accendilo da «Da fuori casa» " +
+          "nelle impostazioni, se no ai telefoni restano solo indirizzi che scadono.",
+    };
+  },
   sbloccaLaPorta,
   stato: statoPannello,
   nuovoInvito,

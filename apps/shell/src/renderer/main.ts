@@ -26,6 +26,7 @@ const api = window.daprod;
 const griglia = document.getElementById("griglia") as HTMLElement;
 const statoAgg = document.getElementById("stato-agg") as HTMLElement;
 const btnAgg = document.getElementById("btn-agg") as HTMLButtonElement;
+const btnTelefoni = document.getElementById("btn-telefoni") as HTMLButtonElement;
 const spiaGpu = document.getElementById("spia-gpu") as HTMLElement;
 
 /** Pezzi delle schede, per poterli aggiornare senza ridisegnare tutto. */
@@ -369,6 +370,46 @@ function aggiornaBarraAggiornamenti(stato: UpdateState): void {
       break;
   }
 }
+
+/**
+ * ⚠ **«Rimetti in riga i telefoni».** Nuovo nella 1.1.0.
+ *
+ * Chiesto il 7 settembre 2026: «un pulsante nella navbar dell'app desktop,
+ * accanto agli aggiornamenti, che se cliccato risolve questo eventuale
+ * problema» — il telefono che dopo un aggiornamento non ritrova il computer.
+ *
+ * Sta **accanto agli aggiornamenti** e non nelle impostazioni perche' quello e'
+ * il posto dove uno guarda quando ha appena aggiornato e qualcosa non torna.
+ *
+ * Quello che fa sta nel main (`rimettiInRigaITelefoni`); qui c'e' solo il
+ * gesto, e la riga che dice com'e' andata al posto dello stato degli
+ * aggiornamenti — che in quel momento non e' la cosa che interessa. Torna da
+ * sola dopo qualche secondo.
+ */
+btnTelefoni.addEventListener("click", () => {
+  void (async () => {
+    btnTelefoni.disabled = true;
+    const prima = statoAgg.textContent;
+    statoAgg.textContent = "Guardo come si fa trovare questo computer…";
+    try {
+      const esito = await api.telefoni.rimettiInRiga();
+      statoAgg.className = "stato-agg" + (esito.indirizzo ? "" : " guasto");
+      statoAgg.textContent = esito.detto;
+    } catch (male) {
+      statoAgg.className = "stato-agg guasto";
+      statoAgg.textContent = `Non ci sono riuscito: ${String((male as Error)?.message ?? male)}`;
+    } finally {
+      btnTelefoni.disabled = false;
+      // Lo stato degli aggiornamenti torna al suo posto: questa riga e' un
+      // messaggio, non una schermata.
+      setTimeout(() => {
+        statoAgg.className = "stato-agg";
+        statoAgg.textContent = prima ?? "";
+        void api.update.state().then(aggiornaBarraAggiornamenti);
+      }, 12_000);
+    }
+  })();
+});
 
 function mostraBottone(testo: string, azione: () => Promise<void> | void): void {
   btnAgg.hidden = false;

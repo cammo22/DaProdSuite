@@ -26,7 +26,7 @@ file si scrive quale delle due metà manca.
 
 ## A che punto siamo — 6 settembre 2026 (notte fonda)
 
-**Ultima pubblicata: 1.0.10.** Nove schede dentro la suite, un ambiente Python
+**Ultima pubblicata: 1.1.0.** Nove schede dentro la suite, un ambiente Python
 solo, e il giro che conta — chiedo dal telefono, il computer fa, il file torna —
 **provato da chi la usa**, sul suo PC e sul suo telefono.
 
@@ -126,6 +126,9 @@ fanno quello che ti ho chiesto».
 | **Il VAE che decodificava in RAM (1.0.5)** | 4 passi in 14 s e poi venti minuti di niente: il pacco lascia il VAE sul processore anche in modalita' `cuda`. Pesa 168 MB e adesso lo sposta il ponte, **solo lui**. **Misurato**: 512x512 in 99 s col caricamento dei 16 GB dentro |
 | **LLaDA provato per intero (1.0.5)** | col motore acceso, dai due nodi: `LLaDAImageTextToImage` 94 s a caldo, `LLaDAImageEdit` 116 s («fai diventare verde la mela», ed e' diventata verde). Il collo di bottiglia che resta e' il text encoder da 9,2 GB in RAM: su 8 GB di scheda non ci sale |
 | **Lo scarico di LLaDA (1.0.5)** | ⚠ la 1.0.4 l'aveva peggiorato: `sequential_cpu_offload` con questo modello non parte (accelerate ricrea i pesi su «meta», i tensori GGUF non si lasciano ricreare). La strada e' `cuda`, che qui vuol dire «solo i pesi non quantizzati in scheda, le matrici INT8 una per volta». **Provato**: 4 passi in 14 s, 1,5 GB su 8 |
+| **La pagina servita senza `Cache-Control` (1.1.0)** | ⚠ trovato da lui: «se aggiorno l'app mostra vecchie versioni, se disinstallo e reinstallo esce quella giusta». La cache della WebView sta nei dati dell'app e l'aggiornamento non la tocca. Adesso `no-store` sulla pagina **e** sul JSON, `LOAD_NO_CACHE` nell'app, e la cache vecchia si butta alla prima apertura dopo un aggiornamento. **Header verificati sul gateway vero** |
+| **Il telefono ricarica quando il PC cambia versione (1.1.0)** | `/io` dice gia' con che versione sta parlando: se non e' quella con cui aveva caricato la pagina, l'app svuota la cache e ricarica. E' il disinstalla-e-reinstalla senza disinstallare niente |
+| **«Rimetti in riga i telefoni» (1.1.0)** | il pulsante chiesto, accanto agli aggiornamenti. ⚠ Non parla ai telefoni — non si puo' — ma rimette a posto la meta' del computer subito: ricontrolla l'indirizzo fisso e rifa' gli inviti |
 | **L'indirizzo fisso che spariva (1.0.10)** | ⚠ settima volta di «dopo l'update non si ricollega», e la prima misurata prima di toccare: PC raggiungibile, token buono, tutti e quattro gli indirizzi a 200. Il difetto era che `funnel` si riempiva **solo all'avvio**: un Tailscale non ancora pronto in quel secondo, e per tutta la sessione il QR e `/io` smettevano di nominare l'unico indirizzo che non scade. Adesso si ricontrolla ogni tre minuti |
 | **«Non fatto» a prescindere dal prompt (1.0.9)** | ⚠ il difetto che spariva guardandolo: le schede aspettavano che Genera fosse pronto **solo se il lavoro cambiava modello**, e il caso normale e' che non cambi. Il tasto veniva premuto mezzo secondo dopo l'apertura della finestra, ancora spento. Adesso `premiQuandoPuoi`, in tutte e quattro |
 | **Il tasto AI scavalcava la fila (1.0.9)** | `modello: await conChiParlo()` caricava 4,5 GB in scheda **prima** che il turno fosse preso: la domanda rispettava la coda, il caricamento no. Adesso il turno copre tutto |
