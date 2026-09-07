@@ -768,12 +768,36 @@ def _apri_la_strada_al_gguf() -> None:
         return
 
     motore = os.environ.get("DAPROD_MOTORE")
-    if not motore:
-        return
 
     # Prima la nostra, poi quella di ComfyUI: se un giorno il pacco arrivasse
     # per la strada normale, quella e' gia' buona e non c'e' niente da fare.
-    cartelle = [Path(motore).parent / "custom_nodes", Path(motore) / "custom_nodes"]
+    cartelle: list[Path] = []
+    if motore:
+        cartelle += [Path(motore).parent / "custom_nodes", Path(motore) / "custom_nodes"]
+
+    # ⚠ **E se la variabile non c'e', si guarda lo stesso.** Aggiunto nella
+    # 1.2.2. `DAPROD_MOTORE` la mette la suite quando accende il motore, e nel
+    # giro normale c'e' sempre. Ma un motore avviato a mano — per misurare
+    # qualcosa, per provare un nodo — non ce l'ha, e senza questa aggiunta il
+    # ponte si fermava **in silenzio**: nessuna riga nel registro, e poi LLaDA
+    # falliva con l'errore di un pacco di terzi che dice «installa
+    # ComfyUI-GGUF», che e' installato. Ci ho perso un giro il 7 settembre 2026.
+    #
+    # Le cartelle dei nodi le sa gia' ComfyUI, che le ha lette da
+    # `--extra-model-paths-config`: si chiedono a lui, che e' la fonte giusta.
+    try:
+        import folder_paths  # type: ignore
+
+        for percorso in folder_paths.get_folder_paths("custom_nodes"):
+            cartella = Path(percorso)
+            if cartella not in cartelle:
+                cartelle.append(cartella)
+    except Exception:
+        # Senza, restano le due di sopra: e' come si comportava prima.
+        pass
+
+    if not cartelle:
+        return
 
     for cartella in cartelle:
         if not cartella.is_dir():
@@ -938,6 +962,64 @@ def _porta_il_vae_in_scheda(pipe) -> None:
     logging.info("[daprod] LLaDA: VAE portato sulla scheda video (era in RAM)")
 
 
+def _llada_conta_i_passi(pipe) -> None:
+    """Fa dire a LLaDA a che punto e', passo per passo.
+
+    ⚠ **Il difetto che cura**, detto il 7 settembre 2026: «mentre e' in
+    lavorazione con LLaDA non si vede il progresso, solo con LLaDA — con gli
+    altri funziona». E non era un difetto nostro: e' che **LLaDA non lo
+    diceva**.
+
+    ComfyUI disegna la barra ascoltando i nodi che gli parlano
+    (``comfy.utils.ProgressBar``). Il pacco di LLaDA non usa quella: usa la
+    barra di diffusers, che scrive nel terminale e non la sente nessuno. Da
+    fuori il risultato e' una riga ferma davanti a una macchina che sta
+    lavorando benissimo — e con questo modello la riga resta ferma **quattro
+    minuti**, abbastanza per credere che sia piantata.
+
+    ⚠ **Si aggancia alla pipeline, non al nodo**, e la prima volta ho sbagliato
+    proprio qui. La porta e' ``callback_on_step_end``, che e' un parametro di
+    ``LLaDAImagePipeline.__call__``: il metodo del nodo ha una firma sua e
+    fissa, e passargliela solleva un ``TypeError`` — che il ramo di riserva
+    ingoiava, lasciando tutto com'era **senza dire niente**. Provato col motore
+    acceso: zero messaggi. La seconda volta, agganciata qui, arrivano.
+
+    Si tocca la **classe** e non l'oggetto perche' Python i metodi con il doppio
+    trattino basso li cerca sul tipo, non sull'istanza.
+
+    **Perche' qui e non nel loro file.** Stessa ragione di sempre: quel pacco si
+    riscarica da capo a ogni installazione, e una riga cambiata a mano sparirebbe
+    al primo aggiornamento. Vedi `_apri_la_strada_al_gguf`.
+    """
+    classe = type(pipe)
+    if getattr(classe, "_daprod_conta_i_passi", False):
+        return
+    originale = classe.__call__
+
+    def conta(self, *argomenti, **parole):
+        from comfy.utils import ProgressBar
+
+        passi = int(parole.get("num_inference_steps") or 0)
+        # Senza il numero dei passi non c'e' niente da riempire; e se qualcuno
+        # ha gia' messo la sua richiamata, la sua vince — non e' roba nostra.
+        if passi <= 0 or parole.get("callback_on_step_end") is not None:
+            return originale(self, *argomenti, **parole)
+
+        barra = ProgressBar(passi)
+
+        def a_ogni_passo(_pipe, indice, _tempo, roba):
+            # `indice` parte da zero: quello che e' **fatto** e' indice + 1.
+            barra.update_absolute(min(passi, indice + 1), passi)
+            return roba
+
+        parole["callback_on_step_end"] = a_ogni_passo
+        return originale(self, *argomenti, **parole)
+
+    classe.__call__ = conta
+    classe._daprod_conta_i_passi = True
+    logging.info("[daprod] LLaDA: adesso dice a che punto e', passo per passo")
+
+
 def _sistema_llada(dati=None):
     """Avvolge il caricatore di LLaDA, una volta sola, alla prima richiesta.
 
@@ -961,6 +1043,9 @@ def _sistema_llada(dati=None):
             try:
                 _porta_il_vae_in_scheda(esito[0])
                 _porta_i_pezzi_leggeri_in_scheda(esito[0])
+                # La pipeline esiste solo da qui in poi: e' il primo momento in
+                # cui si puo' agganciare il conteggio dei passi.
+                _llada_conta_i_passi(esito[0])
             except Exception as guasto:  # noqa: BLE001
                 # Una decodifica lenta e' meglio di una generazione che muore:
                 # se lo spostamento non riesce, si va avanti com'era.

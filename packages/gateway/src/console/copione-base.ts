@@ -352,6 +352,118 @@ export const COPIONE_BASE = `
     }
   }
 
+  /* ------------------------------------------------ tira per aggiornare */
+
+  /**
+   * ⚠ **Tira giu' e la pagina si aggiorna.** Nuovo nella 1.2.2.
+   *
+   * Chiesto il 7 settembre 2026, e non per la prima volta: «tutte le pagine
+   * dell'applicazione, se faccio lo swipe, tutte le altre applicazioni del
+   * mondo aggiornano — dovrebbe fare l'animazione del cerchio, e quando
+   * rilasci aggiorna la pagina. E non lo facciamo fare in automatico».
+   *
+   * Le due meta' della richiesta contano tutte e due:
+   *
+   * 1. **Il gesto c'e'**, ed e' quello che tutti conoscono. Non serve
+   *    spiegarlo: chi ha un telefono in mano ce l'ha nelle dita.
+   * 2. **Da solo non si aggiorna niente.** Fuori dalla wifi di casa, ogni
+   *    rilettura e' traffico e attesa; e quello che c'e' gia' sul telefono
+   *    resta buono anche a computer spento (e' tutto il senso di come e' fatta
+   *    l'app). Quindi si aggiorna **quando lo chiedi tu**.
+   *
+   * Sta qui dentro, in un posto solo, e non in ogni schermata: e' un gesto
+   * della pagina, non di una scheda. Aggiungerne una nuova domani vuol dire
+   * averlo gia'.
+   */
+  var TIRO_BASTA = 68;
+  var TIRO_MASSIMO = 110;
+
+  function montaIlTiro() {
+    var segno = document.createElement("div");
+    segno.className = "tiro";
+    segno.innerHTML = '<div class="cerchio"></div>';
+    document.body.append(segno);
+
+    var partenza = -1;
+    var quanto = 0;
+    var sto = false;
+
+    function mostra(px) {
+      segno.style.transform = "translate(-50%," + px + "px)";
+      segno.style.opacity = String(Math.min(1, px / TIRO_BASTA));
+      segno.querySelector(".cerchio").style.transform =
+        "rotate(" + (px / TIRO_MASSIMO) * 300 + "deg)";
+    }
+
+    function chiudi() {
+      segno.classList.remove("gira");
+      segno.style.transition = "transform .25s, opacity .25s";
+      mostra(0);
+      setTimeout(function () { segno.style.transition = ""; }, 260);
+    }
+
+    document.addEventListener("touchstart", function (ev) {
+      // Non si tira quando c'e' un foglio o una lente aperta sopra: li' il
+      // trascinamento verso il basso vuol dire «chiudimi», ed e' un altro
+      // gesto. Vedi «trascinaPerChiudere».
+      if (document.getElementById("foglio") || document.querySelector(".lente")) return;
+      if (sto || window.scrollY > 0 || ev.touches.length !== 1) { partenza = -1; return; }
+      partenza = ev.touches[0].clientY;
+      quanto = 0;
+    }, { passive: true });
+
+    document.addEventListener("touchmove", function (ev) {
+      if (partenza < 0 || sto) return;
+      var giu = ev.touches[0].clientY - partenza;
+      if (giu <= 0 || window.scrollY > 0) { partenza = -1; mostra(0); return; }
+      /*
+       * ⚠ **Si prende il gesto solo dopo un po'.** I primi pixel restano alla
+       * pagina: chi scorre in su non deve vedersi comparire un cerchio ogni
+       * volta che sfiora lo schermo vicino al bordo.
+       */
+      if (giu < 12) return;
+      // Frenato: piu' tiri, meno scende. E' quello che fanno tutte, e serve a
+      // far capire col dito che si sta arrivando in fondo alla corsa.
+      quanto = Math.min(TIRO_MASSIMO, 12 + (giu - 12) * 0.45);
+      mostra(quanto);
+      if (ev.cancelable) ev.preventDefault();
+    }, { passive: false });
+
+    function molla() {
+      if (partenza < 0 || sto) { partenza = -1; return; }
+      partenza = -1;
+      if (quanto < TIRO_BASTA) { chiudi(); return; }
+      sto = true;
+      segno.classList.add("gira");
+      mostra(TIRO_BASTA);
+      aggiornaLaPagina().then(function () {
+        sto = false;
+        chiudi();
+      });
+    }
+    document.addEventListener("touchend", molla, { passive: true });
+    document.addEventListener("touchcancel", molla, { passive: true });
+  }
+
+  /**
+   * Rilegge quello che serve **alla schermata che stai guardando**.
+   *
+   * Non tutto: rileggere la galleria mentre guardi la Fila sarebbe traffico
+   * per niente. Le due cose che valgono ovunque — chi sta girando e la fila —
+   * si rileggono sempre, il resto secondo dove sei.
+   */
+  async function aggiornaLaPagina() {
+    var lavori = [leggiMacchina(), leggiCoda(), leggiPannello()];
+    if (pagina === "galleria") lavori.push(leggiGalleria());
+    if (pagina === "daprod") lavori.push(leggiBacheca());
+    if (pagina === "stili") lavori.push(leggiStili());
+    if (pagina === "produzione") lavori.push(leggiModelli());
+    // Un giro che fallisce non deve lasciare il cerchio a girare per sempre:
+    // «allSettled», e chi ha sbagliato lo dice per conto suo.
+    try { await Promise.allSettled(lavori); } catch (e) { /* si vedra' */ }
+    avvisa("Aggiornato.", "bene");
+  }
+
   /* ---------------------------------------------------------- navigazione */
 
   function vaiA(quale) {
@@ -408,6 +520,31 @@ export const COPIONE_BASE = `
     sonoLaCasa = macchina.sonoLaCasa === true;
     disegnaPausa();
     disegnaStrisce();
+    // La fase sulla riga del proprio lavoro: si scrive qui, dove la notizia
+    // arriva, invece di far ridisegnare tutta la fila. Vedi «scriviLaFase».
+    scriviLaFase();
+  }
+
+  /**
+   * ⚠ **Fa una cosa al massimo ogni tot, e il resto lo lascia perdere.**
+   * Nuovo nella 1.2.2.
+   *
+   * Serve da quando il computer racconta **l'avanzamento** (1.2.1): prima una
+   * spinta arrivava a ogni cambiamento di stato — pochi al minuto — adesso ne
+   * arriva una a ogni punto percentuale. Ogni spinta faceva rileggere le
+   * richieste, il pannello, i regali e la rete: cinque richieste di rete per
+   * far muovere una barra di due pixel, ed e' la ragione per cui la Fila e'
+   * diventata «molto pesante» (7 settembre 2026).
+   *
+   * Quello che serve subito — chi sta girando e a che punto e' — resta a ogni
+   * spinta, perche' e' una risposta piccola. Il resto passa di qui.
+   */
+  var ultimaVolta = {};
+  function ogniTanto(nome, ms, fare) {
+    var adesso = Date.now();
+    if (ultimaVolta[nome] && adesso - ultimaVolta[nome] < ms) return;
+    ultimaVolta[nome] = adesso;
+    fare();
   }
 
   /**

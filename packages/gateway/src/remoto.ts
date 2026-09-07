@@ -41,6 +41,18 @@ export const SCADENZA_INVITO_MS = 5 * 60 * 1000;
  */
 const TENTATIVI_AL_MINUTO = 10;
 
+/**
+ * Quante righe di lavoro si tengono in elenco.
+ *
+ * Cento, che è il numero che ha detto lui — e regge: cento righe con dentro
+ * testo, opzioni e risultato sono qualche decina di kilobyte, che su una
+ * connessione di casa e su un telefono si leggono senza accorgersene.
+ *
+ * Non è quante ne fai: è quante ne **resti a vedere**. Il file di ognuna sta
+ * in galleria e non lo tocca nessuno. Vedi `spazzaLeVecchie`.
+ */
+const RICHIESTE_TENUTE = 100;
+
 export class Remoto {
   readonly risultatiDir: string;
   /** Dove finiscono i file mandati a mano a qualcuno. */
@@ -131,6 +143,51 @@ export class Remoto {
   }
 
   /** Svuota gli invii scaduti: chiamata a ogni giro, costa pochissimo. */
+  /**
+   * ⚠ **Ogni tanto le vecchie se ne vanno.** Nuovo nella 1.2.2.
+   *
+   * Detto il 7 settembre 2026: «la pagina fila è diventata molto pesante,
+   * secondo me dovremmo mettere che ogni cento lavori in automatico il
+   * programma fa la pulizia».
+   *
+   * L'archivio delle richieste non si è mai spazzato: una settimana di lavoro
+   * fa qualche centinaio di righe, ognuna con dentro il testo, le opzioni e il
+   * risultato — e quel pacchetto viaggia **intero** verso il telefono a ogni
+   * rilettura della Fila.
+   *
+   * **Cosa se ne va, e cosa non se ne va mai.** Se ne vanno solo le più vecchie
+   * fra quelle **finite**: pronte, non fatte, scadute, messe via. Quelle che
+   * aspettano o stanno lavorando restano sempre, anche fossero mille: buttare
+   * una richiesta viva vorrebbe dire far sparire un lavoro sotto gli occhi di
+   * chi lo sta aspettando, ed è l'unica cosa che non si può fare.
+   *
+   * ⚠ **Il file che è stato prodotto non si tocca.** Qui si butta la riga
+   * dell'elenco, non il risultato: quello sta in galleria e ci resta finché non
+   * lo butta una persona. Sono due cose diverse e vanno tenute diverse.
+   */
+  private spazzaLeVecchie(): void {
+    const dati = this.archivio.datiCorrenti;
+    if (dati.richieste.length <= RICHIESTE_TENUTE) return;
+
+    const viva = (r: Richiesta): boolean =>
+      r.stato === "in-attesa" || r.stato === "accettata" || r.stato === "in-lavoro";
+
+    const vive = dati.richieste.filter(viva);
+    const finite = dati.richieste.filter((r) => !viva(r)).sort((a, b) => a.quando - b.quando);
+
+    const daTogliere = Math.min(finite.length, dati.richieste.length - RICHIESTE_TENUTE);
+    if (daTogliere <= 0) return;
+
+    const buttate = new Set(finite.slice(0, daTogliere).map((r) => r.id));
+    // L'ordine di prima si tiene: la lista è ordinata per data da chi la legge,
+    // ma rimescolarla qui vorrebbe dire un elenco che cambia ordine da solo.
+    dati.richieste = dati.richieste.filter((r) => !buttate.has(r.id));
+    // Le notifiche di una richiesta che non c'è più non le può aprire nessuno:
+    // toccando il numero si finirebbe su una riga sparita.
+    dati.notifiche = dati.notifiche.filter((n) => !n.richiestaId || !buttate.has(n.richiestaId));
+    void vive;
+  }
+
   spazzaInviti(): void {
     const dati = this.archivio.datiCorrenti;
     if (dati.inviti.some((i) => i.scade <= Date.now())) {
@@ -598,6 +655,7 @@ export class Remoto {
       trattenuta: verdetto.trattenuta,
     };
     dati.richieste.push(richiesta);
+    this.spazzaLeVecchie();
     this.archivio.salva();
 
     /**
@@ -984,14 +1042,62 @@ export class Remoto {
     if (stato === "accettata") {
       for (const fn of this.accettatori) fn(richiesta);
     }
-    this.notifica({
-      dispositivoId: richiesta.daDispositivo,
-      richiestaId: richiesta.id,
-      titolo: stato === "pronta" ? "Il tuo lavoro è pronto" : "Stato cambiato",
-      corpo: stato === "pronta"
-        ? `${richiesta.app}: “${breve(richiesta.testo)}” è pronto.`
-        : `${richiesta.app}: ${stato}.`,
-    });
+    /**
+     * ⚠ **Quello che non si fa si dice, e si dice perché.** Rifatta nella 1.2.2.
+     *
+     * Prima qui c'era «Stato cambiato» con dentro `foto: scartata.` — cioè il
+     * nome interno dello stato, buttato addosso a chi aveva chiesto una foto.
+     * Detto il 7 settembre 2026: «anche se capita che un lavoro vada in esito
+     * "non fatto", notifichiamolo, perché non si capisce: uno non dovrebbe
+     * proprio andare a cliccare su finiti» per scoprire che la sua roba non
+     * c'è.
+     *
+     * Adesso ogni stato ha la sua frase, e quella che conta è la terza: dice
+     * **cosa è andato storto** — il motivo vero, quello che ha scritto chi ha
+     * detto di no o il motore che si è fermato — e dice **cosa fare**, che è
+     * rifarla. Il tasto per rifarla sta già sulla riga.
+     */
+    const notizia = (): { titolo: string; corpo: string } | null => {
+      const che = `“${breve(richiesta.testo)}”`;
+      if (stato === "pronta") {
+        return { titolo: "Il tuo lavoro è pronto", corpo: `${richiesta.app}: ${che} è pronto.` };
+      }
+      if (stato === "scartata") {
+        const perche = (richiesta.motivoScarto ?? "").trim();
+        return {
+          titolo: "Non si è fatto",
+          corpo: perche
+            ? `${che} non si è fatto: ${perche} Riprova fra poco con «rifallo».`
+            : `${che} non si è fatto. Riprova fra poco con «rifallo».`,
+        };
+      }
+      if (stato === "scaduta") {
+        return {
+          titolo: "Ha aspettato troppo",
+          corpo: `${che} è rimasto in fila troppo a lungo e si è annullato. Con «rifallo» riparte.`,
+        };
+      }
+      if (stato === "accettata") {
+        return { titolo: "Parte adesso", corpo: `${che} è stato accettato: va in fila.` };
+      }
+      /**
+       * «in-lavoro» e «archiviata» non si notificano, ed è voluto: la prima la
+       * vedi già scritta sulla riga mentre succede, la seconda l'hai fatta tu.
+       * Una notifica per ogni passaggio interno è il modo di far spegnere le
+       * notifiche a chi le riceve.
+       */
+      return null;
+    };
+
+    const detto = notizia();
+    if (detto) {
+      this.notifica({
+        dispositivoId: richiesta.daDispositivo,
+        richiestaId: richiesta.id,
+        titolo: detto.titolo,
+        corpo: detto.corpo,
+      });
+    }
     return null;
   }
 

@@ -62,12 +62,41 @@ export const COPIONE_LAVORI = `
     }
     disegnaFiltriLavori();
     diCosaAspetta(attesa);
+    scriviLaFase();
 
     $("bollo").hidden = attesa === 0;
     $("bollo").textContent = attesa;
     disegnaNumeri();
     disegnaStrisce();
     disegnaUltimi();
+  }
+
+  /**
+   * Scrive la fase sulla riga del lavoro che sta girando, e basta.
+   *
+   * ⚠ **Tocca il testo di una pillola, non ridisegna la lista.** Ed e' il
+   * punto: l'avanzamento arriva decine di volte per lavoro, e rileggere tutte
+   * le richieste a ogni passo e' quello che ha reso «molto pesante» la Fila
+   * (detto il 7 settembre 2026). Qui si cambiano due parole in un nodo che
+   * esiste gia'.
+   */
+  function scriviLaFase() {
+    var elenco = $("coda");
+    if (!elenco) return;
+    var chiGira = macchina && macchina.adesso ? macchina.adesso.richiesta : null;
+    var fase = macchina && macchina.adesso ? macchina.adesso.fase : "";
+    var quanto = macchina && macchina.adesso ? macchina.adesso.quanto : null;
+    var righe = elenco.querySelectorAll("li[data-richiesta]");
+    for (var i = 0; i < righe.length; i++) {
+      var p = righe[i].querySelector("[data-pillola]");
+      if (!p) continue;
+      if (righe[i].dataset.richiesta === chiGira && fase) {
+        p.textContent =
+          fase + (typeof quanto === "number" && quanto >= 0 ? " " + Math.round(quanto * 100) + "%" : "");
+      } else if (p.textContent !== p.dataset.base) {
+        p.textContent = p.dataset.base;
+      }
+    }
   }
 
   function disegnaFiltriLavori() {
@@ -88,6 +117,9 @@ export const COPIONE_LAVORI = `
 
   function rigaRichiesta(r) {
     var li = document.createElement("li");
+    // Serve a ritrovare **questa** riga quando arriva un avanzamento, senza
+    // ridisegnare tutta la lista: vedi «scriviLaFase».
+    li.dataset.richiesta = r.id;
 
     var corpo = document.createElement("div");
     corpo.className = "cresce";
@@ -118,6 +150,29 @@ export const COPIONE_LAVORI = `
     var stato = NOMI_STATO[r.stato] || ["", r.stato];
     var pillola = document.createElement("span");
     pillola.className = "pillola " + stato[0];
+    /**
+     * ⚠ **Sulla riga del proprio lavoro si legge cosa sta facendo il motore.**
+     * Nuovo nella 1.2.2.
+     *
+     * Nella 1.2.1 la fase («carico il modello», «disegno», «salvo») era stata
+     * messa in **due** posti: la scheda sul computer e la striscia «cosa sta
+     * girando adesso» in cima alla Fila. Non qui — cioe' non sulla riga che uno
+     * guarda davvero, che e' la **sua**. Detto il 7 settembre 2026, provando la
+     * 1.2.1 dal telefono: «non vedo il progresso», e guardava proprio questa.
+     *
+     * E' lo stesso difetto del tasto «usa le AI» qui sopra, in un'altra forma:
+     * una cosa messa in un posto invece che in tutti quelli dove serve.
+     *
+     * Si mostra **solo sul lavoro che sta girando adesso** — quello che la
+     * macchina ha in mano — perche' per gli altri la fase e' quella di prima e
+     * scriverla sarebbe una bugia. Con la percentuale se il motore la conta,
+     * senza se non la conta (LLaDA non la conta, ed e' il caso che ha fatto
+     * nascere tutto questo).
+     */
+    pillola.dataset.pillola = "1";
+    // Com'era scritto prima che il motore cominciasse: ci si torna quando il
+    // lavoro non e' piu' quello in corso.
+    pillola.dataset.base = stato[1];
     pillola.textContent = stato[1];
     li.append(pillola);
 
@@ -207,30 +262,17 @@ export const COPIONE_LAVORI = `
     subito.textContent = "\\u25B6 fallo cos\\u00ec com'\\u00e8";
     subito.addEventListener("click", function () { void decidi(r.id, "accettata"); });
 
-    var conAi = document.createElement("button");
-    conAi.className = "mini";
-    conAi.textContent = "\\u2728 usa l'AI, poi fallo";
-    if (aiMotivo) {
-      conAi.disabled = true;
-      conAi.title = aiMotivo;
-    }
-    conAi.addEventListener("click", async function () {
-      conAi.disabled = true;
-      var prima = conAi.textContent;
-      conAi.textContent = "sto scrivendo\\u2026";
-      avviso.textContent = "";
-      try {
-        await chiama("/richieste/" + encodeURIComponent(r.id) + "/migliora", {
-          method: "POST",
-          body: "{}",
-        });
-        await decidi(r.id, "accettata");
-      } catch (e) {
-        avviso.textContent = e.message;
-        conAi.disabled = false;
-        conAi.textContent = prima;
-      }
-    });
+    /**
+     * ⚠ **Qui c'era «usa l'AI, poi fallo», e non c'e' piu'.** Tolto nella 1.2.2.
+     *
+     * E' il secondo dei due posti in cui viveva quel tasto. Il primo era sotto
+     * la casella in Produzione, ed era stato tolto da li' — solo da li'. Per
+     * questo il 7 settembre 2026 il difetto risultava ancora aperto: «alla fine
+     * magari l'hai tolto solo per una schermata».
+     *
+     * Vale come promemoria oltre che come correzione: **una cosa si toglie da
+     * tutti i posti dove sta, o non e' tolta.**
+     */
 
     // Scrivila tu: la casella compare qui sotto, già piena di quello che aveva
     // scritto chi ha chiesto.
@@ -250,14 +292,11 @@ export const COPIONE_LAVORI = `
     var mandaCosi = document.createElement("button");
     mandaCosi.className = "mini";
     mandaCosi.textContent = "manda cos\\u00ec";
-    mandaCosi.addEventListener("click", function () { void mandaRiscritta(r, casella, false, avviso); });
+    mandaCosi.addEventListener("click", function () { void mandaRiscritta(r, casella, avviso); });
 
-    var mandaConAi = document.createElement("button");
-    mandaConAi.className = "mini";
-    mandaConAi.textContent = "\\u2728 usa l'AI e manda";
-    mandaConAi.addEventListener("click", function () { void mandaRiscritta(r, casella, true, avviso); });
-
-    filaMano.append(mandaCosi, mandaConAi);
+    // Anche qui: era la terza faccia dello stesso tasto. Resta solo «manda
+    // cosi'», che e' quello che si preme davvero.
+    filaMano.append(mandaCosi);
     aMano.addEventListener("click", function () {
       casella.hidden = !casella.hidden;
       filaMano.hidden = casella.hidden;
@@ -278,12 +317,12 @@ export const COPIONE_LAVORI = `
       void decidi(r.id, "scartata", perche.value.trim());
     });
 
-    menu.append(subito, conAi, aMano, casella, filaMano, perche, no, avviso);
+    menu.append(subito, aMano, casella, filaMano, perche, no, avviso);
     return menu;
   }
 
-  /** Salva quello che è stato riscritto a mano, poi manda (con o senza AI). */
-  async function mandaRiscritta(r, casella, conAi, avviso) {
+  /** Salva quello che è stato riscritto a mano, e poi manda. */
+  async function mandaRiscritta(r, casella, avviso) {
     var testo = casella.value.trim();
     if (!testo) { avviso.textContent = "Il testo non pu\\u00f2 restare vuoto."; return; }
     avviso.textContent = "un attimo\\u2026";
@@ -292,12 +331,6 @@ export const COPIONE_LAVORI = `
         method: "POST",
         body: JSON.stringify({ testo: testo }),
       });
-      if (conAi) {
-        await chiama("/richieste/" + encodeURIComponent(r.id) + "/migliora", {
-          method: "POST",
-          body: "{}",
-        });
-      }
       await decidi(r.id, "accettata");
     } catch (e) {
       avviso.textContent = e.message;
