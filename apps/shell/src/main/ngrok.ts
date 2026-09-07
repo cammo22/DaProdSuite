@@ -153,7 +153,25 @@ async function assicuraEseguibile(): Promise<void> {
 
   const dentro = join(dove, "ngrok.exe");
   if (!existsSync(dentro)) {
-    throw new Error("Nel pacco di ngrok non c'e' l'eseguibile: riprova piu' tardi.");
+    /**
+     * ⚠ **Il caso vero, visto il 7 settembre 2026: l'antivirus se l'e' preso.**
+     *
+     * Windows Defender segna `ngrok.exe` come `Trojan:Win32/Kepavll!rfn` e lo
+     * cancella appena estratto — un riconoscimento a naso, di quelli che
+     * colpiscono gli attrezzi per i tunnel perche' li usano anche i ladri. Il
+     * file arriva dal sito ufficiale di ngrok, ma **noi non possiamo
+     * verificarlo**: Defender blocca perfino la lettura della firma.
+     *
+     * Quindi qui non si insiste e non si consiglia nessuna eccezione: si dice
+     * cos'e' successo e si indica la strada che sul computer funziona gia'.
+     */
+    throw new Error(
+      "L'antivirus ha cancellato ngrok appena scaricato (Windows Defender lo segna " +
+        "come sospetto: capita agli attrezzi per i tunnel). Senza un'eccezione fatta " +
+        "da te non puo' partire — e non te la consiglio a scatola chiusa. " +
+        "In compenso il tunnel di Cloudflare, dalla 1.1.4, non cambia piu' indirizzo " +
+        "quando aggiorni la suite.",
+    );
   }
   await rename(dentro, ESEGUIBILE);
   await rm(zip, { force: true });
