@@ -1362,6 +1362,31 @@ class MainActivity : AppCompatActivity() {
             chi = attuale
         }
 
+        /**
+         * ⚠ **Se il computer si e' aggiornato, la pagina si ricarica pulita.**
+         * Dalla 1.1.0, e questa e' la parte che funziona **da sola**.
+         *
+         * **Il difetto, parole sue:** «se aggiorno l'app e non sono collegato
+         * al pc, l'app mostra vecchie versioni; se disinstallo e reinstallo
+         * esce quella giusta».
+         *
+         * La pagina della console **e'** il programma: quando la suite passa
+         * dalla 1.0.8 alla 1.0.10, quella pagina cambia. Il telefono lo puo'
+         * sapere gratis — `/io` gli dice gia' con che versione sta parlando — e
+         * se e' cambiata butta la cache e ricarica. E' lo stesso effetto del
+         * disinstalla-e-reinstalla, senza disinstallare niente e senza che
+         * nessuno prema niente.
+         *
+         * Si pulisce **la cache e basta**: il `localStorage` tiene il token
+         * della console, e buttarlo vorrebbe dire scollegare il telefono a ogni
+         * aggiornamento del computer.
+         */
+        val versionePc = chiEra?.versione?.takeIf { it.isNotBlank() }
+        if (versionePc != null && versionePc != Store.versioneSuiteVista(this@MainActivity)) {
+            binding.web.clearCache(true)
+            Store.ricordaVersioneSuite(this@MainActivity, versionePc)
+        }
+
         stiamoOffline = false
         binding.web.loadUrl(indirizzoDellaPagina(attuale))
         mostra(Dove.SUITE)
@@ -1653,6 +1678,53 @@ class MainActivity : AppCompatActivity() {
         // il gesto lo ha già fatto chi ha premuto play.
         w.settings.mediaPlaybackRequiresUserGesture = false
         w.settings.setSupportZoom(false)
+
+        /**
+         * ⚠ **La pagina si chiede al computer, non alla cache.** Dalla 1.1.0.
+         *
+         * **Il difetto, parole sue:** «se aggiorno l'app e non sono collegato
+         * al pc, l'app mostra vecchie versioni; se disinstallo e reinstallo
+         * esce quella giusta».
+         *
+         * Aveva ragione, e la causa erano due cose che si tenevano per mano. La
+         * prima stava sul computer: la pagina usciva **senza `Cache-Control`**,
+         * e una risposta senza istruzioni chi la riceve la conserva come gli
+         * pare (adesso dice `no-store`, vedi `pagina()` nel gateway). La
+         * seconda e' qui: `LOAD_DEFAULT` lascia alla WebView la scelta di
+         * riusare quello che ha, e quello che ha sta nei dati dell'app —
+         * **l'aggiornamento dell'APK non lo tocca**, la disinstallazione si'.
+         *
+         * `LOAD_NO_CACHE` chiude la questione dalla nostra parte: la pagina e'
+         * il programma, e il programma si prende sempre da chi lo serve. Non
+         * costa un secondo giro di rete quando il computer non c'e': in quel
+         * caso la pagina non arriva dalla rete, arriva dalla copia tenuta qui
+         * (vedi `apriDallaCopia`), che e' un'altra strada.
+         */
+        w.settings.cacheMode = android.webkit.WebSettings.LOAD_NO_CACHE
+
+        /**
+         * E la prima volta dopo un aggiornamento, quella vecchia si butta.
+         *
+         * `no-store` e `LOAD_NO_CACHE` valgono da adesso in avanti: una pagina
+         * gia' in pancia da prima resterebbe li'. Questo giro la toglie di
+         * mezzo una volta sola, quando il numero di versione dell'app cambia.
+         *
+         * ⚠ Si pulisce **la cache**, non i dati: il `localStorage` tiene il
+         * token della console, e buttarlo vorrebbe dire scollegare il telefono
+         * a ogni aggiornamento — cioe' rifare con le nostre mani il difetto che
+         * abbiamo passato una settimana a chiudere.
+         */
+        val versioneOra = try {
+            val info = packageManager.getPackageInfo(packageName, 0)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) info.longVersionCode
+            else @Suppress("DEPRECATION") info.versionCode.toLong()
+        } catch (_: Exception) {
+            0L
+        }
+        if (versioneOra != 0L && versioneOra != Store.versioneVistaUltimaVolta(this)) {
+            w.clearCache(true)
+            Store.ricordaVersione(this, versioneOra)
+        }
 
         /**
          * Il ponte verso l'app: **solo quello che una pagina non sa fare.**

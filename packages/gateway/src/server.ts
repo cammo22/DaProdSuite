@@ -2533,6 +2533,30 @@ export class Gateway {
     res.writeHead(200, {
       "Content-Type": "text/html; charset=utf-8",
       "Content-Length": Buffer.byteLength(html),
+      /**
+       * ⚠ **La pagina non si mette in cache. Mai.** Dalla 1.1.0.
+       *
+       * **Il difetto, visto da chi lo subiva:** «se aggiorno l'app e non sono
+       * collegato al pc, l'app mostra vecchie versioni; se disinstallo e
+       * reinstallo esce quella giusta». Ed era vero, e la ragione stava in
+       * quello che **non** c'era scritto qui: questa risposta usciva senza
+       * `Cache-Control`, senza `ETag` e senza `Last-Modified`.
+       *
+       * Una pagina senza istruzioni e' una pagina che chi la riceve conserva
+       * come gli pare. La WebView di Android la tiene nella sua cache, che sta
+       * nei dati dell'app e **sopravvive all'aggiornamento dell'APK** — mentre
+       * disinstallando si cancella. E' esattamente la differenza fra i due casi
+       * che ci ha raccontato: aggiorno e vedo la pagina di ieri, disinstallo e
+       * vedo quella di oggi.
+       *
+       * `no-store` vuol dire: non tenerla, richiedila. Costa mezzo megabyte a
+       * ogni apertura sulla rete di casa, e in cambio quello che si vede sullo
+       * schermo e' quello che il computer sta servendo adesso — che per una
+       * pagina che **e'** il programma non e' un dettaglio, e' tutto.
+       */
+      "Cache-Control": "no-store, no-cache, must-revalidate",
+      Pragma: "no-cache",
+      Expires: "0",
       // La console non carica niente da fuori: se un giorno qualcuno ce lo
       // mettesse, questa riga lo fermerebbe prima che arrivi in rete.
       // `media-src` è arrivato con la galleria: senza, i `<video>` e gli
@@ -2553,6 +2577,10 @@ export class Gateway {
     res.writeHead(codice, {
       "Content-Type": "application/json; charset=utf-8",
       "Content-Length": Buffer.byteLength(corpo),
+      // Come la pagina, e per la stessa ragione: qui dentro passano gli
+      // indirizzi di oggi e la fila di adesso. Una risposta di ieri riletta
+      // dalla cache e' peggio di nessuna risposta, perche' sembra vera.
+      "Cache-Control": "no-store, no-cache, must-revalidate",
       "X-Content-Type-Options": "nosniff",
     });
     res.end(corpo);

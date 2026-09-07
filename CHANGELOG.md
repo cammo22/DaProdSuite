@@ -18,6 +18,73 @@ ancora lì.
 
 ---
 
+## 1.1.0 — La pagina non si mette più in cache
+
+> «continua a non funzionare, io sono sicuro che il problema sta nell'apk: se
+> aggiorno l'app e non sono collegato al pc, l'app mostra vecchie versioni —
+> nello screen c'è scritto 1.0.8 ma io ho aggiornato alla 1.0.10. Se disinstallo
+> e reinstallo esce effettivamente la 1.0.10.»
+
+Aveva ragione lui, e la prova stava in una cosa che **non** c'era scritta.
+
+### ⚠ La pagina usciva senza dire come va conservata
+
+La console si serve con `Content-Type`, `Content-Length`, la CSP, il
+`Referrer-Policy`… e **nessun `Cache-Control`**. Niente `ETag`, niente
+`Last-Modified`. Misurato sul computer vero: quattro header, e nessuno dei
+quattro dice come tenere quella risposta.
+
+Una pagina senza istruzioni chi la riceve la conserva come gli pare. La WebView
+di Android la tiene nella sua cache, e quella cache sta **nei dati dell'app**:
+l'aggiornamento dell'APK non la tocca, la disinstallazione sì. È esattamente la
+differenza fra i due gesti che ci ha raccontato — aggiorno e vedo la pagina di
+ieri, disinstallo e vedo quella di oggi.
+
+E la pagina della console **è** il programma: mostrarne una vecchia non è un
+dettaglio estetico, è far girare la versione sbagliata.
+
+Adesso esce con `no-store`, e insieme a lei anche le risposte JSON — dentro
+quelle passano gli indirizzi di oggi e la fila di adesso, e una risposta di ieri
+riletta dalla cache è peggio di nessuna risposta, perché sembra vera.
+
+### E dall'altra parte, tre cose che non aspettano nessuno
+
+`no-store` vale da adesso in avanti: una pagina già in pancia resterebbe lì. Per
+quella, e perché non ricapiti:
+
+- **la WebView non usa più la cache** per la pagina della suite (`LOAD_NO_CACHE`);
+- **alla prima apertura dopo un aggiornamento dell'app**, la cache vecchia si
+  butta. Si pulisce la cache e basta: il `localStorage` tiene il token, e
+  buttarlo vorrebbe dire scollegare il telefono a ogni aggiornamento;
+- **se è il computer ad essere cambiato**, il telefono se ne accorge da solo:
+  `/io` gli dice già con che versione sta parlando, e se non è quella con cui
+  aveva caricato la pagina, ricarica pulito. È il disinstalla-e-reinstalla,
+  senza disinstallare niente e senza premere niente.
+
+### «Rimetti in riga i telefoni», accanto agli aggiornamenti
+
+> «riusciamo ad aggiungere un pulsante nella navbar dell'app desktop affianco
+> agli aggiornamenti che se cliccato risolve questo eventuale problema?»
+
+C'è. Sta accanto agli aggiornamenti perché è lì che si guarda quando si è appena
+aggiornato e qualcosa non torna.
+
+⚠ **Non parla ai telefoni**, e va detto: un telefono che non ci raggiunge non lo
+raggiungiamo nemmeno noi. Quello che fa è mettere a posto la nostra metà,
+**subito** invece che al prossimo giro di controllo: richiede a Tailscale
+l'indirizzo che non scade, rifà gli inviti già dati perché lo portino dentro, e
+risponde in una riga — o dice che quell'indirizzo non è acceso, che è l'unico
+caso in cui ai telefoni restano solo indirizzi che scadono.
+
+### Il numero: dopo la .9 viene la 1.1.0
+
+> «dopo il 9 devi fare 1.1.0, sarà questa la 1.1.0»
+
+Corretto anche quello: si conta a una cifra per posto — 1.0.8, 1.0.9, **1.1.0** —
+e la 1.0.10 di stanotte resta come un numero che non doveva esistere.
+
+---
+
 ## 1.0.10 — L'indirizzo che non scade si ricontrolla
 
 > «ancora una volta ho fatto l'update e non funziona più, l'app mobile non si

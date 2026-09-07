@@ -10,7 +10,7 @@ Un programma solo per fare musica, immagini, video, voci e parlare con un avatar
 Ogni app la installi quando ti serve e la disinstalli quando non ti serve più.
 Gira sul tuo computer: niente account, niente chiavi API, codice aperto.
 
-[![versione](https://img.shields.io/badge/versione-1.0.10-7c5cff)](https://github.com/cammo22/DaProdSuite/releases/latest)
+[![versione](https://img.shields.io/badge/versione-1.1.0-7c5cff)](https://github.com/cammo22/DaProdSuite/releases/latest)
 [![licenza](https://img.shields.io/badge/licenza-MIT-5cff9d)](LICENSE)
 [![piattaforma](https://img.shields.io/badge/Windows-x64-3ddbff)](#requisiti)
 [![sito](https://img.shields.io/badge/sito-cammo22.github.io-ffa63d)](https://cammo22.github.io/DaProdSuite/)
@@ -95,21 +95,22 @@ tutte lo stesso.
 
 ## A che punto siamo
 
-**Ultima pubblicata: 1.0.10 — «L'indirizzo che non scade si ricontrolla».**
-«Dopo l'update l'app del telefono non si ricollega» è stato detto sette volte.
-Stavolta i numeri hanno escluso subito le cause di prima — il computer
-rispondeva da Internet, il profilo del telefono era intero, e tutti e quattro
-gli indirizzi tornavano `200` bussando col suo token. Il difetto era che il
-computer chiedeva a Tailscale il proprio indirizzo fisso **una volta sola,
-all'avvio**: se quel controllo cadeva (Tailscale che ci mette due secondi in
-più), per tutta la sessione smetteva di nominarlo, e al telefono restavano solo
-indirizzi che scadono. Adesso si ricontrolla da solo ogni tre minuti. Un
-telefono rimasto indietro si rimette a posto con **una** connessione dalla wifi
-di casa.
+**Ultima pubblicata: 1.1.0 — «La pagina non si mette più in cache».** Dopo un
+aggiornamento il telefono mostrava la pagina di ieri, e disinstallando l'app
+tornava quella giusta: la differenza fra i due gesti è che la cache della WebView
+sta nei dati dell'app, e l'aggiornamento non la tocca. La causa stava in una cosa
+che non c'era scritta — la console usciva **senza `Cache-Control`**, e una
+risposta senza istruzioni chi la riceve la conserva come gli pare. Adesso esce
+con `no-store`; il telefono non usa più la cache per quella pagina, butta la
+vecchia alla prima apertura dopo un aggiornamento, e se è il computer ad essere
+cambiato se ne accorge da solo e ricarica pulito. Accanto agli aggiornamenti c'è
+anche un pulsante, **«Rimetti in riga i telefoni»**, per quando qualcosa resta
+indietro lo stesso.
 
-Prima, nella 1.0.9, i lavori chiesti dal telefono partono anche a scheda chiusa,
-il tasto «Usa l'AI» non scavalca più la fila, e LLaDA usa la scheda video (da 94
-a 33 secondi).
+Prima, nella 1.0.10, l'indirizzo che non scade si ricontrolla ogni tre minuti
+invece di essere una fotografia scattata all'avvio; e nella 1.0.9 i lavori
+chiesti dal telefono partono anche a scheda chiusa, con LLaDA che passa da 94 a
+33 secondi.
 
 Quello che cambia a ogni giro sta in [CHANGELOG.md](CHANGELOG.md), il percorso
 completo in [docs/ROADMAP.md](docs/ROADMAP.md).

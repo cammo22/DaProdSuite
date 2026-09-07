@@ -208,7 +208,7 @@ class GatewayClient(
      * l'app bussa ogni volta che si apre: costa niente e vale per tutti,
      * compresi i profili fatti due versioni fa.
      */
-    data class Chi(val basi: List<String>, val pcId: String)
+    data class Chi(val basi: List<String>, val pcId: String, val versione: String)
 
     /**
      * Chi risponde a questo indirizzo, **senza bisogno di essere riconosciuti**.
@@ -231,7 +231,9 @@ class GatewayClient(
             cliente.newCall(Request.Builder().url(a("/chi-sei")).get().build()).execute().use { res ->
                 if (!res.isSuccessful) return@withContext null
                 val corpo = JSONObject(res.body?.string().orEmpty())
-                Chi(emptyList(), corpo.optString("pcId"))
+                // «/chi-sei» risponde senza riconoscere nessuno: la versione della
+                // suite non la dice, e qui non serve.
+                Chi(emptyList(), corpo.optString("pcId"), "")
             }
         } catch (_: Exception) {
             null
@@ -247,7 +249,7 @@ class GatewayClient(
                 val arr = corpo.optJSONArray("basi")
                 val basi = if (arr == null) emptyList() else
                     (0 until arr.length()).mapNotNull { arr.optString(it).takeIf { s -> s.isNotBlank() } }
-                Chi(basi, corpo.optString("pcId"))
+                Chi(basi, corpo.optString("pcId"), corpo.optString("versione"))
             }
         } catch (_: Exception) {
             null

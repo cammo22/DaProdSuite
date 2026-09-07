@@ -716,6 +716,28 @@ export interface SuiteApi {
     connessione(accesa: boolean): Promise<Impostazioni>;
   };
 
+  /**
+   * ⚠ **Rimettere in riga i telefoni.** Nuovo nella 1.1.0.
+   *
+   * Chiesto il 7 settembre 2026: «riusciamo ad aggiungere un pulsante nella
+   * navbar dell'app desktop, accanto agli aggiornamenti, che se cliccato
+   * risolve questo eventuale problema?».
+   *
+   * Il problema e' quello raccontato sette volte: dopo un aggiornamento il
+   * telefono non ritrova il computer, o mostra la pagina di ieri. La parte
+   * automatica e' altrove — la pagina non si mette piu' in cache e il telefono
+   * ricarica da solo quando la suite cambia versione — e questo e' il gesto per
+   * quando qualcosa e' rimasto indietro lo stesso.
+   *
+   * Fa le tre cose che il computer puo' fare da solo: si ricorda **subito**
+   * qual e' l'indirizzo che non scade (invece di aspettare il prossimo giro di
+   * controllo), rifa' gli inviti gia' dati perche' portino dentro quello, e
+   * dice come e' andata in una riga.
+   */
+  telefoni: {
+    rimettiInRiga(): Promise<{ indirizzo: string; detto: string }>;
+  };
+
   gpu: {
     state(): Promise<GpuState>;
     onChanged(listener: (state: GpuState) => void): Unsubscribe;
@@ -996,6 +1018,7 @@ export const CHANNELS = {
   impostazioniVelocita: "impostazioni:velocita",
   impostazioniProfilo: "impostazioni:profilo",
   impostazioniConnessione: "impostazioni:connessione",
+  telefoniRimettiInRiga: "telefoni:rimetti-in-riga",
   impostazioniGuida: "impostazioni:guida-fatta",
 
   runtimeState: "runtime:state",

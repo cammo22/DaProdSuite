@@ -115,6 +115,10 @@ const api: SuiteApi = {
     scarica: (id: string) => ipcRenderer.invoke(CHANNELS.llmScarica, id),
   },
 
+  telefoni: {
+    rimettiInRiga: () => ipcRenderer.invoke(CHANNELS.telefoniRimettiInRiga),
+  },
+
   update: {
     state: () => ipcRenderer.invoke(CHANNELS.updateState),
     check: () => ipcRenderer.invoke(CHANNELS.updateCheck),
