@@ -246,11 +246,13 @@ function base(): string {
 function basi(): string[] {
   if (!gateway) return [];
   const elenco = indirizziBuoni(portaReale || PORTA);
-  const stabileSolo = funnel?.acceso && funnel.indirizzo ? [funnel.indirizzo] : [];
+  const fisso = ilFisso();
   const fuori = statoTunnel();
   // Col tunnel spento, Funnel resta: e' l'unica strada da fuori che non
   // dipende da Cloudflare, e chi l'ha acceso l'ha acceso per quello.
-  if (fuori.fase !== "acceso" || !fuori.indirizzo) return [...stabileSolo, ...elenco];
+  if (fuori.fase !== "acceso" || !fuori.indirizzo) {
+    return [...fisso.davanti, ...elenco, ...fisso.infondo];
+  }
 
   /**
    * **Il tunnel prima della rete di casa**, dalla 0.7.3.
@@ -282,8 +284,8 @@ function basi(): string[] {
    * l'indirizzo buono e' in fondo a una lista, il telefono lo trova lo stesso,
    * ma solo dopo aver bussato agli altri.
    */
-  const stabile = funnel?.acceso && funnel.indirizzo ? [funnel.indirizzo] : [];
-  return [...stabile, ...ovunque, fuori.indirizzo, ...casa];
+  const stabile = ilFisso();
+  return [...stabile.davanti, ...ovunque, fuori.indirizzo, ...casa, ...stabile.infondo];
 }
 
 /**
@@ -329,6 +331,28 @@ async function comeStaIndirizzoStabile(): Promise<StatoFunnel> {
 
 /** Ogni quanto si ricontrolla l'indirizzo che non cambia mai. */
 const OGNI_QUANTO_GUARDO_FUNNEL = 3 * 60_000;
+
+/**
+ * L'indirizzo fisso, e **dove va messo** nella fila.
+ *
+ * ⚠ Dalla 1.1.1 non e' piu' «c'e' o non c'e'», sono tre casi:
+ *
+ * - **risponde da fuori**: va per primo, ed e' quello per cui esiste — non
+ *   scade, e chi lo impara non lo perde piu';
+ * - **configurato ma da Internet non risponde**: resta in elenco, ma **in
+ *   fondo**. Non si butta perche' la prova la facciamo da questa macchina e da
+ *   qui si sbaglia (Tailscale risolve quel nome in casa, vedi
+ *   `rispondeDaInternet`), e un ingress puo' metterci qualche minuto. Ma davanti
+ *   ci va quello che sappiamo rispondere, se no il telefono bussa per primo a
+ *   una porta murata;
+ * - **spento**: non c'e'.
+ */
+function ilFisso(): { davanti: string[]; infondo: string[] } {
+  if (!funnel?.indirizzo) return { davanti: [], infondo: [] };
+  if (funnel.acceso) return { davanti: [funnel.indirizzo], infondo: [] };
+  if (funnel.configurato) return { davanti: [], infondo: [funnel.indirizzo] };
+  return { davanti: [], infondo: [] };
+}
 
 /**
  * ⚠ **L'indirizzo che non scade si ricontrolla, invece di crederci una volta.**
@@ -1808,18 +1832,22 @@ function indirizziPubblici(): StatoPannello["indirizzi"] {
    * Trovato il 7 settembre 2026 confrontando cosa finisce nel QR
    * (`basi()`, che lo aveva) con cosa risponde `/io` (questa, che non lo aveva).
    */
-  if (funnel?.acceso && funnel.indirizzo) {
-    elenco.push({
-      base: funnel.indirizzo,
-      che: "da Internet, e non cambia mai",
-      dove: "ovunque",
-    });
+  const fisso = ilFisso();
+  for (const base of fisso.davanti) {
+    elenco.push({ base, che: "da Internet, e non cambia mai", dove: "ovunque" });
   }
   elenco.push(...schede.filter((r) => r.dove === "ovunque").map(daScheda));
   if (fuori.fase === "acceso" && fuori.indirizzo) {
     elenco.push({ base: fuori.indirizzo, che: "da Internet, cifrato", dove: "ovunque" });
   }
   elenco.push(...schede.filter((r) => r.dove !== "ovunque").map(daScheda));
+  /*
+   * L'indirizzo fisso che **non ha risposto** alla prova sta qui, in fondo:
+   * il telefono lo prova per ultimo invece che per primo. Vedi `ilFisso`.
+   */
+  for (const base of fisso.infondo) {
+    elenco.push({ base, che: "da Internet, ma adesso non risponde", dove: "ovunque" });
+  }
   return elenco;
 }
 

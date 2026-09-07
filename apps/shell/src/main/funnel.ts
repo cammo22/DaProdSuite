@@ -81,8 +81,19 @@ export interface StatoFunnel {
   ceTailscale: boolean;
   /** Il nome pubblico della macchina, senza il punto finale. Vuoto se non c'e'. */
   nome: string;
-  /** Funnel e' acceso adesso su questa porta. */
+  /**
+   * Funnel e' acceso **e risponde da fuori**.
+   *
+   * ⚠ Dalla 1.1.1 le due cose sono una sola, e non e' un cavillo: per quattro
+   * release «acceso» ha voluto dire soltanto «il comando lo nomina», e il
+   * 7 settembre 2026 il comando diceva di si' mentre dal telefono
+   * quell'indirizzo non si apriva. Vedi `rispondeDaInternet`.
+   */
   acceso: boolean;
+  /** Il comando dice che c'e' la configurazione. Puo' essere vero con `acceso` falso. */
+  configurato?: boolean;
+  /** La prova fatta come la farebbe un telefono: ha risposto? */
+  rispondeDaFuori?: boolean;
   /** Il tailnet lo permette. Falso se mancano i due interruttori. */
   permesso: boolean;
   /** Cosa dire a chi guarda, in italiano. */
@@ -134,6 +145,70 @@ async function nomeDellaMacchina(): Promise<string> {
  * ⚠ **Non accende**, ed e' il punto: questa funzione la chiama l'avvio, e
  * l'avvio non deve prendere decisioni che mettono roba su Internet.
  */
+/**
+ * ⚠ **Risponde davvero da Internet?** Nuovo nella 1.1.1.
+ *
+ * **Il difetto che questa funzione esiste per non far ripetere.** Per quattro
+ * release «acceso» ha voluto dire *«il comando `tailscale funnel status` nomina
+ * la nostra porta»*. Sembra la stessa cosa e non lo e': quello dice com'e'
+ * **configurato** il computer, non che qualcuno da fuori riesca ad arrivarci.
+ *
+ * Il 7 settembre 2026 i due fatti erano diversi. Il comando diceva «Available
+ * on the internet», il certificato Let's Encrypt c'era, e dal telefono
+ * quell'indirizzo **non si apriva** — mentre il tunnel Cloudflare, dallo stesso
+ * telefono, rispondeva. La suite intanto lo offriva ai telefoni **per primo**:
+ * chi era fuori casa bussava a una porta murata e finiva sugli altri indirizzi,
+ * che scadono tutti.
+ *
+ * ⚠ **E dal computer non ci si accorge**, perche' Tailscale sulla macchina
+ * risolve `.ts.net` per conto suo: un `curl` da qui prende una scorciatoia
+ * interna e risponde 200 anche quando da fuori non risponde niente. Ci sono
+ * cascato io, e la misura sbagliata e' finita in una release.
+ *
+ * Quindi qui si fa la prova **come la farebbe un telefono**: si chiede l'IP a un
+ * DNS pubblico (Tailscale quel nome lo risolverebbe in casa) e si bussa a
+ * quell'IP dicendo chi si cerca. Se non risponde, l'indirizzo non e' morto per
+ * sempre — puo' essere l'ingress che deve ancora propagare — ma **non e' quello
+ * da dare per primo a chi sta fuori**.
+ */
+export async function rispondeDaInternet(nome: string): Promise<boolean> {
+  if (!nome) return false;
+  try {
+    const dns = await import("node:dns/promises");
+    const risolutore = new dns.Resolver();
+    // Un DNS che non e' quello di Tailscale: e' tutto il punto della prova.
+    risolutore.setServers(["1.1.1.1", "8.8.8.8"]);
+    const indirizzi = await risolutore.resolve4(nome);
+    if (!indirizzi.length) return false;
+
+    const https = await import("node:https");
+    return await new Promise<boolean>((risolvi) => {
+      const richiesta = https.request(
+        {
+          host: indirizzi[0],
+          port: 443,
+          path: "/chi-sei",
+          method: "GET",
+          // Il nome va detto due volte: nel TLS (servername) e nella richiesta
+          // (Host). Chi sta davanti smista guardando quelli, non l'IP.
+          servername: nome,
+          headers: { Host: nome },
+          timeout: 6_000,
+        },
+        (risposta) => {
+          risposta.resume();
+          risolvi((risposta.statusCode ?? 0) > 0);
+        },
+      );
+      richiesta.on("timeout", () => { richiesta.destroy(); risolvi(false); });
+      richiesta.on("error", () => risolvi(false));
+      richiesta.end();
+    });
+  } catch {
+    return false;
+  }
+}
+
 export async function comeStaFunnel(porta: number): Promise<StatoFunnel> {
   if (!dovEIlComando()) return SPENTO;
 
@@ -147,18 +222,37 @@ export async function comeStaFunnel(porta: number): Promise<StatoFunnel> {
   }
 
   const stato = await tailscale(["funnel", "status"]);
-  const acceso = stato.ok && stato.testo.includes(String(porta));
+  const configurato = stato.ok && stato.testo.includes(String(porta));
+
+  /**
+   * ⚠ **«Acceso» adesso vuol dire «risponde da fuori».**
+   *
+   * La configurazione non basta: vedi `rispondeDaInternet`. Se il comando dice
+   * di si' ma da Internet non risponde nessuno, lo si scrive — e chi mette in
+   * fila gli indirizzi lo mette **dopo** il tunnel invece che davanti.
+   */
+  const daFuori = configurato ? await rispondeDaInternet(nome) : false;
+  const acceso = configurato && daFuori;
+  if (configurato && !daFuori) {
+    annota(`Funnel configurato su ${nome} ma da Internet non risponde`);
+  }
 
   return {
     ceTailscale: true,
     nome,
     acceso,
+    configurato,
+    rispondeDaFuori: daFuori,
     // Se e' gia' acceso, e' per forza permesso. Se non lo e', non si sa finche'
     // non si prova: la capability non si legge in modo affidabile da qui.
     permesso: acceso,
     perche: acceso
       ? "Acceso: questo indirizzo non cambia mai."
-      : "Non ancora acceso.",
+      : configurato
+        ? "Acceso qui, ma da Internet non risponde: controlla che Funnel sia permesso " +
+          "nel tuo tailnet (console di Tailscale, la macchina daprodmain). Intanto i " +
+          "telefoni passano dal tunnel."
+        : "Non ancora acceso.",
     indirizzo: acceso ? `https://${nome}` : "",
   };
 }
