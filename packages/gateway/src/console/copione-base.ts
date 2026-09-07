@@ -378,7 +378,24 @@ export const COPIONE_BASE = `
   var TIRO_BASTA = 68;
   var TIRO_MASSIMO = 110;
 
+  /**
+   * ⚠ **Si monta una volta sola, e la guardia serve davvero.**
+   *
+   * «montaIlTiro» la chiama «entra», e «entra» puo' girare **due volte nella
+   * stessa pagina**: «scollega» non ricarica niente — riporta solo alla
+   * schermata d'ingresso — quindi chi esce e rientra col codice ci ripassa.
+   * Senza questa riga si ritrovava due cerchi appesi al body e **due giri di
+   * ascoltatori**: un tiro solo faceva partire due volte tutte le riletture, e
+   * uno dei due cerchi restava li' a mezza corsa.
+   *
+   * Trovato rileggendo il proprio codice, non usandolo: e' il tipo di difetto
+   * che si vede solo a chi esce e rientra, cioe' quasi mai — e poi capita.
+   */
+  var tiroMontato = false;
+
   function montaIlTiro() {
+    if (tiroMontato) return;
+    tiroMontato = true;
     var segno = document.createElement("div");
     segno.className = "tiro";
     segno.innerHTML = '<div class="cerchio"></div>';
@@ -436,10 +453,19 @@ export const COPIONE_BASE = `
       sto = true;
       segno.classList.add("gira");
       mostra(TIRO_BASTA);
-      aggiornaLaPagina().then(function () {
-        sto = false;
-        chiudi();
-      });
+      /**
+       * ⚠ **Il cerchio si ferma sempre, anche quando va male.**
+       *
+       * Senza il ramo dell'errore, una rilettura che rifiuta lasciava «sto» a
+       * vero: il cerchio girava per sempre e il gesto restava morto **per il
+       * resto della sessione**, con l'unico rimedio di chiudere l'app.
+       */
+      aggiornaLaPagina()
+        .catch(function () { /* il motivo l'ha gia' detto chi ha fallito */ })
+        .then(function () {
+          sto = false;
+          chiudi();
+        });
     }
     document.addEventListener("touchend", molla, { passive: true });
     document.addEventListener("touchcancel", molla, { passive: true });
@@ -458,10 +484,22 @@ export const COPIONE_BASE = `
     if (pagina === "daprod") lavori.push(leggiBacheca());
     if (pagina === "stili") lavori.push(leggiStili());
     if (pagina === "produzione") lavori.push(leggiModelli());
-    // Un giro che fallisce non deve lasciare il cerchio a girare per sempre:
-    // «allSettled», e chi ha sbagliato lo dice per conto suo.
-    try { await Promise.allSettled(lavori); } catch (e) { /* si vedra' */ }
-    avvisa("Aggiornato.", "bene");
+    /**
+     * ⚠ **«Aggiornato» si dice solo se e' vero.**
+     *
+     * «allSettled» non rifiuta mai, quindi prima si diceva «Aggiornato.» in
+     * verde anche quando **tutte** le riletture erano fallite: fuori casa, col
+     * computer spento, la pagina mostrava i dati di ieri e sopra la scritta che
+     * era andata bene. E' il momento in cui quella frase conta di piu', ed era
+     * quello in cui mentiva.
+     */
+    var esiti = await Promise.allSettled(lavori);
+    var riuscite = esiti.filter(function (x) { return x.status === "fulfilled"; }).length;
+    if (!riuscite) {
+      avvisa("Non sono riuscito ad aggiornare: quello che vedi e' l'ultima volta che c'era.", "male");
+      return;
+    }
+    avvisa(riuscite === esiti.length ? "Aggiornato." : "Aggiornato in parte.", "bene");
   }
 
   /* ---------------------------------------------------------- navigazione */
@@ -540,11 +578,34 @@ export const COPIONE_BASE = `
    * spinta, perche' e' una risposta piccola. Il resto passa di qui.
    */
   var ultimaVolta = {};
+  var inCodaDopo = {};
   function ogniTanto(nome, ms, fare) {
     var adesso = Date.now();
-    if (ultimaVolta[nome] && adesso - ultimaVolta[nome] < ms) return;
-    ultimaVolta[nome] = adesso;
-    fare();
+    var quando = ultimaVolta[nome] || 0;
+    if (adesso - quando >= ms) {
+      ultimaVolta[nome] = adesso;
+      fare();
+      return;
+    }
+    /**
+     * ⚠ **Quella che cade dentro la finestra si rimanda, non si butta.**
+     *
+     * Un freno senza coda finale scarta **l'ultima** notizia della raffica, che
+     * e' proprio quella che conta: se un lavoro finisce 1,4 secondi dopo la
+     * spinta precedente, la rilettura viene saltata e non ne arrivano altre —
+     * il lavoro e' finito. Risultato: la Fila resta a dire «ci sta lavorando»
+     * finche' non succede qualcos'altro, che e' esattamente il difetto che
+     * questo freno doveva curare, spostato di un passo piu' in la'.
+     *
+     * Una sola in attesa per nome: se ne arrivano venti, quella che parte alla
+     * fine e' comunque una rilettura sola con i dati di adesso.
+     */
+    if (inCodaDopo[nome]) return;
+    inCodaDopo[nome] = setTimeout(function () {
+      inCodaDopo[nome] = null;
+      ultimaVolta[nome] = Date.now();
+      fare();
+    }, ms - (adesso - quando));
   }
 
   /**

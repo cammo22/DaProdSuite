@@ -172,7 +172,6 @@ export class Remoto {
     const viva = (r: Richiesta): boolean =>
       r.stato === "in-attesa" || r.stato === "accettata" || r.stato === "in-lavoro";
 
-    const vive = dati.richieste.filter(viva);
     const finite = dati.richieste.filter((r) => !viva(r)).sort((a, b) => a.quando - b.quando);
 
     const daTogliere = Math.min(finite.length, dati.richieste.length - RICHIESTE_TENUTE);
@@ -185,7 +184,6 @@ export class Remoto {
     // Le notifiche di una richiesta che non c'è più non le può aprire nessuno:
     // toccando il numero si finirebbe su una riga sparita.
     dati.notifiche = dati.notifiche.filter((n) => !n.richiestaId || !buttate.has(n.richiestaId));
-    void vive;
   }
 
   spazzaInviti(): void {
