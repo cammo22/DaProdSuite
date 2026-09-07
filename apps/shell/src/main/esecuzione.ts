@@ -155,6 +155,15 @@ export interface Cablaggio {
   consegna(id: string, file: { nome: string; percorso: string; tipo: string; bytes: number }): void;
   /** Segna la richiesta scartata, col motivo. */
   fallita(id: string, motivo: string): void;
+  /**
+   * «E' cambiato qualcosa»: lo dice a chi guarda, senza cambiare uno stato.
+   *
+   * Serve all'avanzamento del motore, che non e' un passaggio di stato — la
+   * richiesta resta «in lavoro» dal primo passo all'ultimo — ma va spinto
+   * fuori lo stesso, o il telefono lo vedrebbe solo al prossimo giro di
+   * orologio.
+   */
+  cambiato(): void;
 }
 
 let cablaggio: Cablaggio | null = null;
@@ -179,6 +188,60 @@ let inCorsoDa = 0;
 let daFermare = "";
 
 /**
+ * ⚠ **A che punto e' il motore, e cosa sta facendo.** Nuovo nella 1.2.1.
+ *
+ * Lo racconta la scheda che sta generando (vedi `avanzamento` in
+ * contracts.ts), e da qui esce verso il pannello e il telefono insieme al
+ * resto di `filaInCorso`.
+ *
+ * Sono **due** cose e non una, ed e' tutto il punto della correzione: `quanto`
+ * puo' mancare — LLaDA e' un nodo solo che non conta i passi — mentre `fase`
+ * c'e' sempre, perche' si legge da quale nodo il motore ha in mano. Chi guarda
+ * da fuori aveva bisogno della seconda: «sta caricando il modello» e' una
+ * risposta, una barra ferma a zero no.
+ */
+let avanzamentoOra: number | null = null;
+let faseOra = "";
+
+/**
+ * Segna a che punto e' il motore. La chiama la scheda che genera.
+ *
+ * Non si controlla che ci sia un lavoro in corso: se non c'e', il valore resta
+ * li' e lo azzera il prossimo che parte. Chi genera a mano sulla scheda manda
+ * di qui la sua fase come tutti — costa niente, e il pannello del PC mostra
+ * cosa sta facendo la macchina anche quando la fila e' vuota.
+ */
+export function segnaAvanzamento(quanto: number | null, fase: string): void {
+  const prima = avanzamentoOra;
+  const primaFase = faseOra;
+  avanzamentoOra = quanto === null ? null : Math.max(0, Math.min(1, quanto));
+  faseOra = fase.slice(0, 80);
+
+  /**
+   * ⚠ **Non si spinge a ogni passo**, e non e' avarizia.
+   *
+   * Spingere vuol dire mandare lo stato intero a **tutti** quelli collegati, e
+   * un motore che conta i passi ne manda anche dieci al secondo: sarebbero
+   * dieci fotografie della fila al secondo su una connessione di casa, per far
+   * muovere una barra di due pixel.
+   *
+   * Si spinge quando cambia qualcosa che si **vede**: la fase (che e' una
+   * frase, e cambia poche volte per lavoro) o un punto percentuale.
+   */
+  const cambiataLaFase = faseOra !== primaFase;
+  const saltoVisibile =
+    (prima === null) !== (avanzamentoOra === null) ||
+    (prima !== null && avanzamentoOra !== null && Math.abs(avanzamentoOra - prima) >= 0.01);
+  if (cambiataLaFase || saltoVisibile) cablaggio?.cambiato();
+}
+
+/** Ricomincia da capo: lo fa chi mette in mano al motore un lavoro nuovo. */
+function azzeraAvanzamento(): void {
+  avanzamentoOra = null;
+  faseOra = "";
+}
+
+/**
  * Le schede aperte **dalla fila**, non da chi sta al computer.
  *
  * È la differenza che decide se a lavoro finito si chiudono: una scheda che ha
@@ -189,10 +252,26 @@ const aperteDaNoi = new Set<AppId>();
 
 /** Cosa sta facendo la fila adesso: lo mostra DaProdConnessione. */
 export const filaInCorso = ():
-  | { id: string; app: string; testo: string; numero?: number; da: number }
+  | {
+      id: string;
+      app: string;
+      testo: string;
+      numero?: number;
+      da: number;
+      quanto: number | null;
+      fase: string;
+    }
   | null =>
   inCorso
-    ? { id: inCorso.id, app: inCorso.app, testo: inCorso.testo, numero: inCorso.numero, da: inCorsoDa }
+    ? {
+        id: inCorso.id,
+        app: inCorso.app,
+        testo: inCorso.testo,
+        numero: inCorso.numero,
+        da: inCorsoDa,
+        quanto: avanzamentoOra,
+        fase: faseOra,
+      }
     : null;
 
 export const filaInAttesa = (): number => fila.length;
@@ -325,6 +404,9 @@ async function giraLaFila(): Promise<void> {
 
   inCorso = prossima;
   inCorsoDa = Date.now();
+  // Il lavoro e' un altro: quello che il motore raccontava del precedente non
+  // vale piu', e lasciarlo li' vorrebbe dire mostrare la barra di ieri.
+  azzeraAvanzamento();
   /**
    * **Prima il turno, poi il lavoro.**
    *
@@ -353,6 +435,7 @@ async function giraLaFila(): Promise<void> {
     turno.rilascia(biglietto);
     inCorso = null;
     inCorsoDa = 0;
+    azzeraAvanzamento();
     if (daFermare === prossima.id) daFermare = "";
     // La prossima parte adesso, non fra un giro di orologio.
     if (fila.length) void giraLaFila();
@@ -402,21 +485,36 @@ async function esegui(richiesta: DaEseguire): Promise<void> {
   const da = Date.now();
 
   /**
-   * ⚠ **Prima di aprire la scheda, si guarda se il motore c'e'.**
+   * ⚠ **Prima si apre la scheda, poi si guarda se il motore c'e'.**
    *
-   * Se non c'e', fallire adesso con una frase e' molto meglio che aprire una
-   * scheda che non potra' mandare niente e restare ad aspettare un file per
-   * tre quarti d'ora. Vedi `ilMotoreRisponde`.
+   * L'ordine era rovesciato, ed e' la causa di «molti lavori falliscono prima
+   * di partire; se poi apro io manualmente l'app allora funziona» — detto il 7
+   * settembre 2026, con in mano una fila di richieste tutte con scritto «Il
+   * motore delle immagini non risponde».
+   *
+   * Il motore **lo accende l'apertura della scheda** (`appManager.open` chiama
+   * `servizi.avvia`, che aspetta il suo `/health`). Chiedere se risponde
+   * *prima* di aprirla vuol dire chiederlo a un programma che non e' ancora
+   * stato avviato: a computer appena acceso, o dopo che la fila si e' svuotata
+   * e le schede aperte da noi si sono richiuse per liberare la scheda video
+   * (vedi `chiudiQuelloCheAbbiamoAperto`), la risposta e' sempre no. Aprendo la
+   * scheda a mano il difetto spariva perche' il motore era gia' acceso, ed e'
+   * esattamente cosi' che si e' visto.
+   *
+   * Adesso: si apre, e **poi** si aspetta il motore. La domanda resta — un
+   * lavoro che parte senza motore resterebbe ad aspettare un file per tre
+   * quarti d'ora — ma si fa dopo, e con pazienza, perche' ComfyUI ci mette
+   * decine di secondi ad alzarsi.
    */
-  if (VOGLIONO_IL_MOTORE.has(app) && !(await ilMotoreRisponde())) {
+  const finestra = await apriEAspetta(app);
+  if (!finestra) throw new Error(`Non riesco ad aprire DaProd${maiuscola(app)}.`);
+
+  if (VOGLIONO_IL_MOTORE.has(app) && !(await aspettaIlMotore())) {
     throw new Error(
-      "Il motore delle immagini non risponde. Apri la suite sul computer e " +
+      "Il motore delle immagini non si accende. Apri la suite sul computer e " +
         "guarda la scheda: se dice che manca qualcosa, c'e' il tasto per rimetterlo a posto.",
     );
   }
-
-  const finestra = await apriEAspetta(app);
-  if (!finestra) throw new Error(`Non riesco ad aprire DaProd${maiuscola(app)}.`);
 
   /**
    * **Se e' una copertina, il titolo entra nel prompt qui.**
@@ -759,6 +857,31 @@ async function ilMotoreRisponde(): Promise<boolean> {
   }
 }
 
+/**
+ * Quanto si sta dietro al motore mentre si alza, prima di dire che non c'e'.
+ *
+ * ComfyUI carica i suoi nodi custom all'avvio, e con LLaDA e i nodi GGUF in
+ * mezzo passa piu' di un minuto prima che risponda. Due minuti sono un tetto
+ * generoso: se allo scadere tace, tace davvero.
+ */
+const ATTESA_MOTORE_MS = 120_000;
+
+/**
+ * Aspetta che il motore risponda, dopo che si e' aperta la scheda che lo accende.
+ *
+ * Torna subito vero se e' gia' su — il caso normale, quando la fila ne fa due
+ * di fila — e altrimenti richiede ogni tre secondi finche' non scade.
+ */
+async function aspettaIlMotore(): Promise<boolean> {
+  const scaduta = Date.now() + ATTESA_MOTORE_MS;
+  for (;;) {
+    if (await ilMotoreRisponde()) return true;
+    if (Date.now() > scaduta) return false;
+    annota("il motore non risponde ancora: aspetto che finisca di accendersi");
+    await pausa(3000);
+  }
+}
+
 /** Le schede che per lavorare hanno bisogno del motore acceso. */
 const VOGLIONO_IL_MOTORE = new Set<string>(["foto", "musica", "cinema", "voce", "dream"]);
 
@@ -793,7 +916,7 @@ async function aspettaIFile(
 
     const nuovi = libreria
       .cerca({ app })
-      .filter((e) => e.creato > da && !visti.has(e.id))
+      .filter((e) => e.creato > da && !visti.has(e.id) && !eUnOriginale(e))
       .sort((a, b) => a.creato - b.creato);
 
     for (const candidato of nuovi) {
@@ -830,6 +953,24 @@ async function aspettaIFile(
     }
   }
   return presi;
+}
+
+/**
+ * ⚠ **La copia del «prima» non è un risultato**, e qui va saltata.
+ *
+ * Dalla 1.2.1 modificare una foto ne lascia due in galleria: quella nuova e
+ * quella di partenza, che finisce nella sottocartella `originali` (vedi
+ * `salvaOriginale` in libreria.ts). Le due nascono a un soffio l'una
+ * dall'altra, e questa funzione consegna **il primo file nuovo che vede**: senza
+ * questa riga, chi da un telefono chiede «fai diventare bianca la volpe»
+ * potrebbe riavere indietro la foto che ha mandato lui.
+ *
+ * L'ordine dei file basterebbe quasi sempre — il risultato lo scrive il motore
+ * prima — ma «quasi sempre» su una consegna è un difetto che si presenta un
+ * giorno a caso.
+ */
+function eUnOriginale(elemento: ElementoLibreria): boolean {
+  return elemento.id.includes("/originali/") || elemento.meta?.["eOriginaleDi"] !== undefined;
 }
 
 /**

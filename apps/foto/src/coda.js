@@ -22,7 +22,73 @@ let ordine = [];
 const lavoro = (id) => lavori.get(id);
 const inCorso = () => ordine.map(lavoro).find((l) => l && l.stato === "in-corso");
 
-export function aggiungiLavoro(id, descrizione, meta) {
+/**
+ * ⚠ **Cosa sta facendo il motore, letto dal nodo che ha in mano.**
+ * Nuovo nella 1.2.1.
+ *
+ * ComfyUI manda `progress` **solo dai nodi che contano i passi** — un
+ * campionatore lo fa cinquanta volte, e la barra si riempie. Ci sono nodi che
+ * non contano niente e durano minuti: caricare un modello da sei GB, o l'intero
+ * LLaDA-Image, che è un nodo solo che fa tutto dentro. Con quelli non arrivava
+ * nessun numero, e da fuori si vedeva una riga ferma.
+ *
+ * Quello che invece arriva **sempre** è `executing`, con l'id del nodo in
+ * lavorazione. L'id da solo non dice niente («2»), ma il grafo ce l'abbiamo —
+ * l'abbiamo scritto noi — quindi si guarda il suo `class_type` e si traduce.
+ *
+ * Le voci non sono una per nodo: sono i **mestieri**, cioè le poche cose che
+ * hanno senso da leggere in una riga di stato. Un nodo che non è in elenco dice
+ * la frase generica invece di dire il suo nome tecnico, che a chi guarda da un
+ * telefono non serve.
+ */
+const FASI = {
+  LLaDAImageLoader: "carico il modello",
+  UNETLoader: "carico il modello",
+  UnetLoaderGGUF: "carico il modello",
+  CheckpointLoaderSimple: "carico il modello",
+  CLIPLoader: "carico il modello",
+  CLIPLoaderGGUF: "carico il modello",
+  DualCLIPLoader: "carico il modello",
+  VAELoader: "carico il modello",
+  LoraLoaderModelOnly: "carico il modello",
+  CLIPTextEncode: "leggo la descrizione",
+  LoadImage: "preparo la foto",
+  LoadImageMask: "preparo la zona",
+  ImageScale: "preparo la foto",
+  VAEEncode: "preparo la foto",
+  VAEEncodeForInpaint: "preparo la zona",
+  SetLatentNoiseMask: "preparo la zona",
+  EmptyLatentImage: "preparo la tela",
+  KSampler: "disegno",
+  KSamplerAdvanced: "disegno",
+  SamplerCustomAdvanced: "disegno",
+  LLaDAImageTextToImage: "disegno",
+  LLaDAImageEdit: "disegno",
+  VAEDecode: "sviluppo l'immagine",
+  VAEDecodeTiled: "sviluppo l'immagine",
+  SaveImage: "salvo",
+};
+
+function fasePerNodo(grafo, nodo) {
+  const tipo = grafo && grafo[nodo] && grafo[nodo].class_type;
+  return FASI[tipo] || "ci sta lavorando";
+}
+
+/**
+ * Racconta alla suite a che punto è il motore.
+ *
+ * Serve a chi guarda da un'altra stanza: il pannello del PC e la fila
+ * sull'app del telefono. Qui dentro la barra ce l'abbiamo già sotto gli occhi.
+ * Se la suite non c'è — la scheda aperta in un browser, nelle prove — non
+ * succede niente.
+ */
+function raccontaAllaSuite(quanto, fase) {
+  const suite = window.daprodSuite;
+  if (!suite?.avanzamento) return;
+  void suite.avanzamento(quanto, fase).catch(() => {});
+}
+
+export function aggiungiLavoro(id, descrizione, meta, grafo, originale) {
   // I due orologi: `chiesto` parte quando hai premuto Genera e non si azzera mai
   // — coda compresa — mentre `inizio` è quando il motore ha preso in mano questo
   // lavoro.
@@ -30,8 +96,14 @@ export function aggiungiLavoro(id, descrizione, meta) {
     id,
     descrizione,
     meta,
+    // Il grafo serve a tradurre «sta eseguendo il nodo 2» in «sta disegnando»:
+    // vedi `fasePerNodo`.
+    grafo,
+    // La foto com'era prima, per i ritocchi. Vedi `tieniIlPrima`.
+    originale,
     stato: "in-attesa",
     avanzamento: 0,
+    fase: "",
     chiesto: Date.now(),
     inizio: null,
   });
@@ -96,7 +168,11 @@ export function disegnaSessione() {
 
 function sottotitolo(l) {
   const aspettato = fmtTime(Math.floor((Date.now() - l.chiesto) / 1000));
-  return l.stato === "in-corso" ? `in lavorazione &middot; ${aspettato}` : `in coda &middot; ${aspettato}`;
+  if (l.stato !== "in-corso") return `in coda &middot; ${aspettato}`;
+  // La fase al posto di «in lavorazione», quando c'è: con un modello che passa
+  // minuti a caricarsi, «carico il modello» è l'unica cosa che distingue una
+  // macchina che lavora da una piantata.
+  return `${escapeHtml(l.fase || "in lavorazione")} &middot; ${aspettato}`;
 }
 
 /**
@@ -141,9 +217,40 @@ export function messaggioDalMotore(msg) {
         // `|| Date.now()`: `execution_start` arriva anche quando il motore riprende
         // un lavoro, e riscriverlo azzerava il cronometro.
         l.inizio = l.inizio || Date.now();
+        l.fase = "ci sta lavorando";
+        raccontaAllaSuite(null, l.fase);
         disegnaSessione();
       }
       break;
+
+    /**
+     * ⚠ **Il nodo che il motore ha in mano adesso.** Nuovo nella 1.2.1.
+     *
+     * Arriva sempre, anche dai nodi che non contano i passi — ed è per questo
+     * che c'è: senza, LLaDA-Image non mandava niente dal principio alla fine e
+     * chi guardava da fuori vedeva una riga ferma. Vedi `FASI`.
+     *
+     * `node` a null vuol dire che il grafo è finito: la fase si azzera invece
+     * di restare a raccontare l'ultimo nodo per sempre.
+     */
+    case "executing": {
+      const suo = d.prompt_id ? l : inCorso();
+      if (!suo) break;
+      if (!d.node) { suo.fase = ""; raccontaAllaSuite(null, ""); break; }
+      suo.stato = "in-corso";
+      suo.inizio = suo.inizio || Date.now();
+      suo.fase = fasePerNodo(suo.grafo, d.node);
+      /**
+       * ⚠ **Il conteggio dei passi vale per il nodo che li conta, non per il
+       * grafo.** Cambiando nodo si riparte da capo: lasciare il 100% del
+       * campionatore mentre il VAE sviluppa direbbe che è finito quando non lo
+       * è. `null` significa «adesso non lo so», ed è la verità.
+       */
+      suo.avanzamento = 0;
+      raccontaAllaSuite(null, suo.fase);
+      disegnaSessione();
+      break;
+    }
 
     case "progress": {
       const suo = d.prompt_id ? l : inCorso();
@@ -151,6 +258,7 @@ export function messaggioDalMotore(msg) {
       suo.stato = "in-corso";
       suo.inizio = suo.inizio || Date.now();
       suo.avanzamento = d.value / d.max;
+      raccontaAllaSuite(suo.avanzamento, suo.fase || "disegno");
       disegnaSessione();
       break;
     }
@@ -161,11 +269,13 @@ export function messaggioDalMotore(msg) {
 
     case "execution_interrupted":
       if (l) togliLavoro(l.id);
+      raccontaAllaSuite(null, "");
       break;
 
     case "execution_error":
       annuncia("errore", `${d.exception_type || ""}: ${d.exception_message || "errore sconosciuto"}`);
       if (l) togliLavoro(l.id);
+      raccontaAllaSuite(null, "");
       break;
 
     case "status":
@@ -195,6 +305,11 @@ async function concludi(l) {
     }
   }
 
+  // La foto com'era prima, accanto a quella nuova. Vedi `tieniIlPrima`.
+  if (l.originale && prodotte.length) {
+    await tieniIlPrima(l, ponte.idLibreria(prodotte[0]));
+  }
+
   // Il ritocco finito torna sulla sua tela, non solo in galleria: si guarda
   // com'e' venuto e volendo ci si dipinge sopra un'altra volta, che e' il modo
   // in cui il ritocco si usa davvero. Prima finiva nella scheda Crea, dove chi
@@ -203,7 +318,56 @@ async function concludi(l) {
   if (l.meta?.ritocco && uscita) annuncia("ritocco-fatto", ponte.vista(uscita));
 
   togliLavoro(l.id);
+  raccontaAllaSuite(null, "");
   annuncia("galleria-cambiata");
+}
+
+/**
+ * ⚠ **Mette in galleria la foto com'era prima della modifica.**
+ * Nuova nella 1.2.1.
+ *
+ * Chiesto il 7 settembre 2026: «facciamo anche che quando si modifica una foto
+ * viene salvata anche l'originale, in modo da vedere il prima e il dopo — se
+ * poi la vogliamo pubblicare su DaProd si può decidere se caricare tutte e due
+ * le foto o solo quella modificata».
+ *
+ * **Dopo il risultato, non prima**, e non è un dettaglio d'ordine. Quando la
+ * modifica arriva da fuori — dal telefono — la suite sta guardando la cartella
+ * della scheda e prende il **primo** file nuovo che ci compare come risultato
+ * da consegnare (vedi `aspettaIFile` in esecuzione.ts). Salvare il «prima»
+ * mentre il motore lavora vorrebbe dire consegnare a chi aveva chiesto una
+ * modifica la foto che aveva mandato lui.
+ *
+ * I due file si sanno l'uno dell'altro: sul risultato resta scritto qual è il
+ * suo originale, sull'originale qual è la modifica. È quel legame che poi, in
+ * bacheca, lascia scegliere se pubblicarle tutte e due o solo la nuova.
+ *
+ * Se non si riesce a salvarlo non succede niente di grave e **non si dice**:
+ * la modifica è riuscita, il file c'è, e un errore su una copia in più
+ * sembrerebbe un errore sul lavoro.
+ */
+async function tieniIlPrima(l, risultatoId) {
+  const suite = window.daprodSuite;
+  if (!suite?.libreria?.originale) return;
+  try {
+    const titolo = `prima di: ${l.meta?.testo || l.descrizione}`;
+    const originaleId = await suite.libreria.originale(l.originale, {
+      titolo,
+      risultatoId,
+      meta: { eOriginaleDi: risultatoId, testo: titolo, modello: l.meta?.modello },
+    });
+    /**
+     * ⚠ **Tutti i parametri, non solo il campo nuovo.** `scriviMeta` **riscrive**
+     * il `.json`, non ci aggiunge dentro: mandare il solo `originale`
+     * cancellerebbe modello, seed e passi che questa stessa funzione ha appena
+     * scritto due righe sopra, e «com'è stata fatta» resterebbe vuoto.
+     */
+    if (originaleId) {
+      await ponte.scriviMeta(risultatoId, { ...l.meta, ts: Date.now(), originale: originaleId });
+    }
+  } catch {
+    // La modifica c'e' ed e' quella che conta: la copia del prima e' un di piu'.
+  }
 }
 
 /**

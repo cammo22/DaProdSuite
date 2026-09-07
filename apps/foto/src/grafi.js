@@ -447,18 +447,30 @@ export const MODELLI = {
     serveScheda: true,
   },
   /**
-   * ⚠ **LLaDA-Image-Turbo.** Nuovo nella 1.0.2.
+   * ⚠ **LLaDA-Image, quello pieno.** Nato Turbo nella 1.0.2, cambiato nella 1.2.1.
    *
-   * Chiesto il 6 settembre 2026: «e' uscito questo bel modellino, vorrei usare
-   * il 4step fp8». Il 4 passi c'e' — e' questo, il Turbo distillato. L'fp8no:
-   * l'unico impacchettamento che ComfyUI sa aprire e' un INT8, e l'fp8
-   * ufficiale e' in formato diffusers, che vorrebbe dire scriverci intorno un
-   * nodo da zero.
+   * Il 6 settembre 2026 era stato chiesto «e' uscito questo bel modellino,
+   * vorrei usare il 4step fp8», e c'era il Turbo: il distillato a 4 passi.
+   * Provato, il 7 settembre: «ho testato llada e non mi piace, togliamo llada 8
+   * step e usiamo quella originale 50 step». Quindi qui adesso c'e'
+   * `inclusionAI/LLaDA-Image` — lo stesso trasformatore **non distillato** —
+   * impacchettato per ComfyUI da RealRebelAI, come lo era il Turbo. (L'fp8 no,
+   * ne' prima ne' adesso: l'unico impacchettamento che ComfyUI sa aprire e' un
+   * INT8, e l'fp8 ufficiale e' in formato diffusers.)
+   *
+   * ⚠ **Cambiano i passi e cambia la guida**, e la seconda e' la parte che non
+   * si vede. Distillare non toglie soltanto dei passi: il Turbo lavorava a
+   * guidance 1, cioe' **senza guida** — ed e' il motivo per cui il negativo era
+   * spento, non lo leggeva nessuno. Il modello pieno lavora a 5, quindi la
+   * guida c'e' e il negativo torna a contare. I due numeri sono quelli del
+   * README di inclusionAI.
    *
    * ⚠ **E non entra negli 8 GB.** Gliel'ho detto prima di metterlo: 6,6 GB di
    * trasformatore, 9,2 di text encoder, quasi 16 da scaricare. La risposta e'
    * stata «mettilo lo stesso», quindi c'e' — con lo scarico in RAM, e con
-   * scritto qui e nel menu che e' il piu' lento di tutti.
+   * scritto qui e nel menu che e' il piu' lento di tutti. Adesso lo e' molto di
+   * piu': **dodici volte i passi**, su una scheda in cui i pesi vanno e vengono
+   * dalla RAM a ognuno.
    *
    * Perche' vale la pena averlo lo stesso: e' **l'unico della scheda che
    * modifica una foto seguendo un'istruzione**. Gli altri tre sanno ridipingere
@@ -467,16 +479,26 @@ export const MODELLI = {
    */
   llada: {
     id: "llada",
-    nome: "LLaDA-Image Turbo",
-    riga: "Sa modificare una foto a parole. \u26a0 Non ci sta nella scheda: passa dalla RAM, ed e' il piu' lento.",
-    dit: "LLaDA-Image-Turbo-INT8.safetensors",
-    txt: "LLaDA-Image-Turbo-text_encoder-Q4_K_M.gguf",
+    nome: "LLaDA-Image",
+    riga: "Sa modificare una foto a parole. \u26a0 50 passi e i pesi che passano dalla RAM: mettila in conto, e' lunga.",
+    dit: "LLaDA-Image-Base-INT8.safetensors",
+    txt: "LLaDA-Image-Base-text_encoder-Q4_K_M.gguf",
     vae: "LLaDa_VAE.safetensors",
-    catalogo: ["llada-turbo-int8", "llada-text-encoder", "llada-vae"],
-    // Distillato a 4 passi: di piu' non migliora, rallenta e basta.
-    step: { min: 2, max: 8, valore: 4 },
-    cfg: { min: 1, max: 4, valore: 1 },
-    usaNegativo: false,
+    catalogo: ["llada-base-int8", "llada-text-encoder", "llada-vae"],
+    /**
+     * 50 passi e guidance 5: sono i valori del modello pieno, quelli scritti
+     * nel README di inclusionAI. Il minimo resta basso apposta \u2014 chi vuole
+     * vedere in fretta se l'idea regge scende a 20 e poi rifa' \u2014 ma quello di
+     * serie e' il numero vero, non un compromesso messo qui di nascosto.
+     */
+    step: { min: 20, max: 60, valore: 50 },
+    cfg: { min: 1, max: 8, valore: 5 },
+    // A guidance 5 la guida c'e' davvero: quello che si scrive nel negativo
+    // cambia l'immagine. Tenerlo nascosto vorrebbe dire togliere un comando
+    // che adesso funziona.
+    usaNegativo: true,
+    notaNegativo:
+      "Fino alla 1.2.0 qui c'era il LLaDA ridotto, che il negativo non lo guardava. Questo si': lavora a CFG 5.",
     immagine: immagineLlada,
     // La sua modifica non e' un ritocco col pennello: vedi `senzaPennello`.
     ritocco: modificaLlada,

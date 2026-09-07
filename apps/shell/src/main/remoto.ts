@@ -642,6 +642,18 @@ const fornitoreLibreria: FornitoreLibreria = {
         quantiCommenti: libreria.commenti(e).length,
         tenuta: libreria.laTiene(e, filtro.chi),
         caricata: libreria.eCaricata(e),
+        /**
+         * ⚠ **Il prima e il dopo, legati.** Nuovi nella 1.2.1.
+         *
+         * Su una foto modificata `originale` è l'id di com'era; sulla copia del
+         * «prima», `eOriginaleDi` è l'id della modifica. Servono a due cose in
+         * galleria: mettere l'una accanto all'altra, e — quando si pubblica —
+         * chiedere se in bacheca ci vanno tutte e due o solo quella rifatta,
+         * che è la richiesta del 7 settembre 2026.
+         */
+        originale: typeof e.meta?.["originale"] === "string" ? (e.meta["originale"] as string) : undefined,
+        eOriginaleDi:
+          typeof e.meta?.["eOriginaleDi"] === "string" ? (e.meta["eOriginaleDi"] as string) : undefined,
         didascalia:
           typeof e.meta?.["testo"] === "string" ? (e.meta["testo"] as string) : undefined,
         // Se c'è un fotogramma o una copertina, la galleria lo sa **prima** di
@@ -717,12 +729,26 @@ const fornitoreLibreria: FornitoreLibreria = {
   },
 
   /**
-   * Buttare una cosa la può fare chi l'ha fatta — e il computer, che è quello
-   * che si ritrova il disco pieno.
+   * Buttare una cosa la può fare chi l'ha fatta, il computer — e chi decide.
+   *
+   * ⚠ **`decide(chi)` mancava, e da fuori si vedeva come un «403» secco.**
+   * Detto il 7 settembre 2026: «quando provo a buttare definitivamente un item
+   * dell'app mobile non funziona, dà errore 403; nelle precedenti versioni
+   * funzionava».
+   *
+   * E funzionava davvero, ma per un motivo che è sparito: fino al 5 settembre
+   * un admin dal telefono **vedeva solo le proprie cose**, quindi non gli
+   * capitava mai di provare a buttarne una di un altro. Poi è arrivata la pila
+   * «Di tutti» — «quando un utente diventa admin, l'admin dall'app può vedere
+   * le generazioni di tutti» — e da lì in poi in archivio finiscono anche le
+   * cose fatte **al computer**, il cui padrone è `questo-computer` e non un
+   * telefono. Buttarle era l'unico gesto rimasto indietro: archiviarle si
+   * poteva già (vedi `archivia` in libreria.ts, che `decide` ce l'ha).
    */
   elimina(id, chi) {
     const elemento = libreria.trova(id);
-    const suo = elemento && (libreria.padrone(elemento) === chi || chi === PADRONE_DI_CASA);
+    const suo =
+      elemento && (libreria.padrone(elemento) === chi || chi === PADRONE_DI_CASA || decide(chi));
     if (!elemento || !suo) return false;
     const fatto = libreria.elimina(id);
     if (fatto) sveglia();
@@ -948,6 +974,10 @@ const fornitoreMacchina: FornitoreMacchina = {
             numero: gira?.numero,
             richiesta: gira?.id,
             da: gira?.da || undefined,
+            // A che punto e' il motore. `quanto` puo' mancare, `fase` no: vedi
+            // il commento su `StatoMacchina.adesso` in gateway/types.ts.
+            quanto: gira ? gira.quanto : null,
+            fase: gira?.fase || undefined,
           }
         : null,
       fila: inFila,
@@ -1948,6 +1978,10 @@ let invitoVivo: InvitoVivo | undefined;
  */
 collegaEsecuzione({
   cartellaRisultati: remoto.risultatiDir,
+  cambiato() {
+    gateway?.aggiorna();
+    sveglia();
+  },
   inLavoro(id) {
     remoto.cambiaStato(id, adminDiCasa(), "in-lavoro");
     gateway?.aggiorna();

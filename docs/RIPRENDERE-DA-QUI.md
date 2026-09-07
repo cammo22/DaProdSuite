@@ -1,7 +1,30 @@
 # Riprendere da qui
 
 Documento di passaggio fra una sessione e l'altra. Aggiornato il **7 settembre
-2026**, con la **1.2.0** appena pubblicata.
+2026**, con la **1.2.1** appena pubblicata.
+
+> ⚠ **La lezione della 1.2.1: quando la strada si apre, si vede cosa c'e' in
+> fondo.**
+>
+> Le sei cose corrette qui non sono venute fuori leggendo il codice: sono venute
+> fuori perche' finalmente si poteva **usare** la suite dal telefono, e usarla e'
+> un'altra cosa da provarla. Cinque su sei erano difetti che «prima non
+> c'erano», e nessuno dei cinque era una regressione del codice che li conteneva:
+>
+> - il motore delle immagini si chiedeva **prima** di aprire la scheda che lo
+>   accende. Non e' mai stato giusto; si vedeva solo a computer appena acceso,
+>   cioe' mai, finche' non ci si e' collegati da fuori a freddo;
+> - `elimina` era l'unico permesso senza `decide`, e non dava fastidio finche'
+>   dal telefono si vedevano **solo le proprie cose**. Il difetto e' comparso
+>   quando e' cambiata la **vista**, non il permesso;
+> - la foto dalla galleria aveva una corsa che dalla fotocamera non si vedeva,
+>   perche' inquadrare e scattare porta via i secondi che servivano;
+> - la barra dell'avanzamento non diceva **cosa** stava succedendo, e finche' i
+>   modelli duravano un minuto bastava. Con LLaDA non basta piu'.
+>
+> La regola che ne resta: **un difetto che «prima non c'era» quasi mai e' una
+> riga cambiata.** Piu' spesso e' una condizione che prima non si verificava —
+> ed e' li' che conviene guardare per prima cosa, invece che nel `git log`.
 
 > ⚠ **La lezione delle otto volte: il difetto era mio, la sonda era sua.**
 >

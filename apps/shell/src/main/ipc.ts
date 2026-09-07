@@ -50,7 +50,7 @@ import { elencoLog, leggiLog } from "./log-lettura";
 import { avviaInPiu } from "./servizi";
 import { elencoVram, scaricaDallaVram } from "./vram";
 import { requisitiDiQuestaMacchina } from "./requisiti-macchina";
-import { rispostaDallaScheda } from "./esecuzione";
+import { rispostaDallaScheda, segnaAvanzamento } from "./esecuzione";
 import { LOGS_DIR, MODELS_DIR, OUTPUT_DIR } from "./paths";
 import { rivela } from "./rivela";
 
@@ -295,6 +295,27 @@ export function registerIpc(getHub: () => BrowserWindow | null): void {
 
   ipcMain.handle(CHANNELS.libreriaElimina, (_e, id: string) => libreria.elimina(id));
 
+  /**
+   * La foto com'era prima della modifica. Vedi `originale` in contracts.ts.
+   *
+   * L'app arriva dal preload e non dalla pagina: la copia va nella cartella
+   * della scheda che ha modificato, e quale sia non lo decide chi chiama.
+   */
+  ipcMain.handle(
+    CHANNELS.libreriaOriginale,
+    (
+      _e,
+      app: AppId,
+      dataUrl: string,
+      dati: { titolo?: string; risultatoId?: string; meta?: Record<string, unknown> },
+    ) =>
+      libreria.salvaOriginale(app, String(dataUrl ?? ""), {
+        titolo: String(dati?.titolo ?? "originale"),
+        risultatoId: String(dati?.risultatoId ?? ""),
+        meta: dati?.meta && typeof dati.meta === "object" ? dati.meta : {},
+      }),
+  );
+
   ipcMain.handle(
     CHANNELS.appInvia,
     (_e, destinazione: AppId, elementoId: string, intenzione: Intenzione) =>
@@ -368,6 +389,20 @@ export function registerIpc(getHub: () => BrowserWindow | null): void {
    */
   ipcMain.handle(CHANNELS.appRichiestaPartita, (_e, id: string, errore?: string) => {
     rispostaDallaScheda(String(id), typeof errore === "string" ? errore : undefined);
+  });
+
+  /**
+   * A che punto e' il motore, per chi guarda da fuori.
+   *
+   * Non torna niente e non aspetta niente: e' una notizia, e se il lavoro in
+   * corso nel frattempo e' finito la si butta. Vedi `avanzamento` in
+   * contracts.ts.
+   */
+  ipcMain.handle(CHANNELS.appAvanzamento, (_e, quanto: number | null, fase: string) => {
+    segnaAvanzamento(
+      typeof quanto === "number" && Number.isFinite(quanto) ? quanto : null,
+      typeof fase === "string" ? fase : "",
+    );
   });
 
   ipcMain.handle(CHANNELS.appApri, (_e, destinazione: AppId) => appManager.open(destinazione));

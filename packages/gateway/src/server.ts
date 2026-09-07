@@ -776,7 +776,10 @@ export class Gateway {
       if (preset && req.method === "DELETE") {
         if (!this.preset) return this.errore(res, 501, "Questa suite non tiene i preset.");
         const tolto = this.preset.elimina(preset[1] ?? "", dispositivo.id);
-        this.json(res, tolto ? 200 : 403, { ok: tolto });
+        // Come per la libreria: un no si dice a parole, o alla pagina arriva
+        // solo il numero. Vedi il commento su DELETE /libreria/:id.
+        if (!tolto) return this.errore(res, 403, "Questo preset non e' tuo, o non c'e' piu'.");
+        this.json(res, 200, { ok: true });
         return;
       }
 
@@ -1157,7 +1160,14 @@ export class Gateway {
           voluto,
           typeof dati.didascalia === "string" ? dati.didascalia.slice(0, 300) : undefined,
         );
-        this.json(res, fatto ? 200 : 403, { ok: fatto, pubblicato: voluto });
+        if (!fatto) {
+          return this.errore(
+            res,
+            403,
+            "In bacheca ci metti le tue: questa l'ha fatta qualcun altro.",
+          );
+        }
+        this.json(res, 200, { ok: true, pubblicato: voluto });
         this.aggiorna();
         return;
       }
@@ -1325,7 +1335,23 @@ export class Gateway {
       if (daButtare && req.method === "DELETE") {
         if (!this.libreria) return this.errore(res, 501, "Questa suite non ha la libreria.");
         const fatto = this.libreria.elimina(decodeURIComponent(daButtare[1] ?? ""), dispositivo.id);
-        this.json(res, fatto ? 200 : 403, { ok: fatto });
+        /**
+         * ⚠ **Un rifiuto si dice a parole**, e qui non si diceva.
+         *
+         * Un 403 con dentro `{ok:false}` e basta arriva alla pagina senza il
+         * campo `errore`, e la console mostra quello che le resta: «Errore
+         * 403». È esattamente quello che si è visto il 7 settembre 2026 — un
+         * numero, dove serviva una frase. Vale per qualunque rotta: se si
+         * risponde di no, il perché viaggia insieme al no.
+         */
+        if (!fatto) {
+          return this.errore(
+            res,
+            403,
+            "Questa non l'hai fatta tu, e non la puoi buttare. Chi sta al computer si'.",
+          );
+        }
+        this.json(res, 200, { ok: true });
         this.aggiorna();
         return;
       }

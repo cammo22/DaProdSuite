@@ -1250,8 +1250,35 @@ export const COPIONE_PRODUZIONE = `
 
     /* ------------------------------------------------ mettere la foto */
 
+    /**
+     * ⚠ **La foto in arrivo, finche' non e' arrivata.** Nuovo nella 1.2.1.
+     *
+     * Il difetto, detto il 7 settembre 2026: «in produzione foto se scatto la
+     * foto funziona, ma se carico dalla galleria dice che manca l'immagine; a
+     * volte va, a volte no».
+     *
+     * «A volte» era la firma di una corsa. Mettere una foto sono due tempi —
+     * disegnarla sulla tela, poi mandarla al computer — e la casellina che
+     * porta l'id si riempie **alla fine del secondo**. In mezzo la foto si
+     * vede, quindi sembra tutto pronto: chi tocca «Fai» in quel momento manda
+     * un modulo con la casella vuota, e il computer risponde l'unica cosa che
+     * puo' rispondere, cioe' che l'immagine manca.
+     *
+     * Dalla galleria capitava e dalla fotocamera no per una ragione banale: una
+     * foto della galleria e' gia' li' e compare subito, una appena scattata
+     * arriva dopo che si e' inquadrato, messo a fuoco e premuto — e in quei
+     * secondi il caricamento era gia' finito.
+     *
+     * La cura sono due righe qui e una in «primaDiMandare»: si tiene la
+     * promessa del caricamento, e prima di mandare la si aspetta.
+     */
+    var stoCaricando = null;
+
     async function metti(sorgente, comeSiChiama) {
       dice.textContent = "La preparo…";
+      // La foto di prima non vale piu' da adesso: se questa non arriva in
+      // fondo, mandare quella vecchia sarebbe peggio che non mandare niente.
+      valore.value = "";
       try {
         var im = await caricaImmagine(sorgente);
         var quantera = im.naturalWidth + "×" + im.naturalHeight;
@@ -1272,8 +1299,10 @@ export const COPIONE_PRODUZIONE = `
         mettiZona("tutta");
         guardaIlModello();
 
-        dice.textContent = "La carico…";
-        var id = await caricaSulComputer(await telaInBlob(telaFoto), "sorgente");
+        dice.textContent = "La carico… (aspetta un attimo prima di mandare)";
+        stoCaricando = caricaSulComputer(await telaInBlob(telaFoto), "sorgente");
+        var id = await stoCaricando;
+        stoCaricando = null;
         valore.value = id;
 
         var adesso = telaFoto.width + "×" + telaFoto.height;
@@ -1283,18 +1312,41 @@ export const COPIONE_PRODUZIONE = `
             ? " · " + adesso
             : " · era " + quantera + ", l'ho portata a " + adesso);
       } catch (e) {
-        dice.textContent = "";
+        stoCaricando = null;
+        valore.value = "";
+        /**
+         * ⚠ **Il motivo resta scritto, non passa.** Un avviso che se ne va da
+         * solo dopo cinque secondi e una foto che si vede lo stesso sulla tela
+         * sono, messi insieme, un modo di far credere che sia andata bene. Qui
+         * la riga sotto ai tasti dice cos'e' successo e resta li' finche' non
+         * si riprova.
+         */
+        dice.textContent = "Non ce l'ho fatta: " + (e.message || e) + " — riprova a sceglierla.";
         avvisa(e.message, "male");
       }
     }
 
-    /** Le due caselle dei file si comportano uguale: cambia solo chi le apre. */
+    /**
+     * Le due caselle dei file si comportano uguale: cambia solo chi le apre.
+     *
+     * ⚠ **Un indirizzo temporaneo, non un data-URL.** Cambiato nella 1.2.1
+     * insieme alla corsa qui sopra, ed e' l'altra meta' di «a volte va, a volte
+     * no». «readAsDataURL» trasforma il file in una stringa **un terzo piu'
+     * grande del file**, e una foto di un telefono moderno ne fa una da quindici
+     * milioni di caratteri: dentro una WebView, che ha la memoria che ha, quella
+     * stringa a volte non si alloca — e «onload» non arriva mai, senza un
+     * errore, senza niente. «createObjectURL» non copia niente: e' un indirizzo
+     * che punta al file dov'e' gia'.
+     */
     function daUnaCasella(casella, comeSiChiama) {
       var f = casella.files && casella.files[0];
       if (!f) return;
-      var lettore = new FileReader();
-      lettore.onload = function () { void metti(lettore.result, comeSiChiama || f.name); };
-      lettore.readAsDataURL(f);
+      var indirizzo = URL.createObjectURL(f);
+      // Si libera **dopo** che l'ha usata: revocarlo subito vorrebbe dire
+      // togliere il file da sotto i piedi a chi lo sta ancora disegnando.
+      void metti(indirizzo, comeSiChiama || f.name).then(function () {
+        URL.revokeObjectURL(indirizzo);
+      });
       casella.value = "";
     }
 
@@ -1381,6 +1433,27 @@ export const COPIONE_PRODUZIONE = `
      * maschera tutta bianca darebbe lo stesso risultato e costerebbe un
      * caricamento in piu' e un nodo in piu' da sbagliare.
      */
+    /**
+     * ⚠ **Prima di mandare si aspetta la foto**, se sta ancora salendo.
+     *
+     * E' la seconda meta' della cura a «dice che manca l'immagine»: chi tocca
+     * «Fai» mentre il caricamento e' a meta' non deve vedersi rispondere che
+     * non c'e' niente — deve aspettare due secondi e partire. Se il
+     * caricamento fallisce, l'errore esce **qui**, prima che la richiesta
+     * nasca, ed e' il posto giusto per dirlo.
+     */
+    primaDiMandare.push(async function () {
+      if (!stoCaricando) return;
+      try {
+        valore.value = await stoCaricando;
+      } catch (e) {
+        valore.value = "";
+        throw new Error("La foto non e' arrivata al computer: " + (e.message || e));
+      } finally {
+        stoCaricando = null;
+      }
+    });
+
     primaDiMandare.push(async function () {
       // Nel modulo, non per id: gli id qui li costruisce un pezzo di codice
       // («campo-» piu' il nome), e cercarne uno scritto a mano vuol dire avere
@@ -2055,10 +2128,43 @@ export const COPIONE_PRODUZIONE = `
         (macchina.adesso && macchina.adesso.da ? " \\u00b7 da " + daQuanto(macchina.adesso.da) : "");
     };
     scriviChi();
+    /**
+     * ⚠ **Cosa sta facendo, e quanto ne manca.** Nuovo nella 1.2.1.
+     *
+     * Il difetto, detto il 7 settembre 2026: «mentre e' in lavorazione con
+     * LLaDA non si vede il progresso nella fila sull'app mobile, solo con
+     * LLaDA — con gli altri funziona».
+     *
+     * Qui c'era una barra sola, che scorreva avanti e indietro per finta: non
+     * diceva **quanto**, e non diceva nemmeno **cosa**. Con un modello normale
+     * bastava — dura un minuto, e la si guarda — ma LLaDA passa dei minuti a
+     * caricare sedici GB prima di disegnare il primo pixel, e una barra che
+     * scorre per finta davanti a una cosa ferma e' peggio di niente: sembra
+     * rotta.
+     *
+     * Adesso sono due righe. Sotto, la barra: **piena a percentuale** quando il
+     * motore conta i passi, e che scorre come prima quando non li conta. Sopra,
+     * una frase con quello che il motore ha in mano adesso — «carico il
+     * modello», «disegno», «salvo» — che c'e' sempre, anche per LLaDA. Vedi
+     * «avanzamento» in ipc/contracts.ts per il perche' sono due cose e non una.
+     */
+    var faseRiga = document.createElement("div");
+    faseRiga.className = "chi";
+    var quanto = macchina.adesso.quanto;
+    var haQuanto = typeof quanto === "number" && quanto >= 0;
+    faseRiga.textContent =
+      (macchina.adesso.fase || "ci sta lavorando") +
+      (haQuanto ? " \\u00b7 " + Math.round(quanto * 100) + "%" : "");
+
     var barra = document.createElement("div");
-    barra.className = "barra";
-    barra.append(document.createElement("i"));
-    box.append(che, chi, barra);
+    barra.className = "barra" + (haQuanto ? " quanta" : "");
+    var dentro = document.createElement("i");
+    // Con la percentuale la barra si riempie da sinistra e resta ferma dov'e';
+    // senza, torna a essere quella che scorre. Le due cose non si mescolano:
+    // una barra che scorre **e** si riempie non si sa piu' cosa dice.
+    if (haQuanto) dentro.style.width = (quanto * 100).toFixed(1) + "%";
+    barra.append(dentro);
+    box.append(che, chi, faseRiga, barra);
 
     /**
      * **Fermalo.** Solo dal computer, e solo perche' costa.

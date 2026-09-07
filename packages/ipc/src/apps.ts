@@ -232,7 +232,10 @@ export const APPS: Record<AppId, AppDescriptor> = {
       "flux2-text-encoder",
       "flux2-vae",
       /**
-       * ⚠ **LLaDA-Image: quasi 16 GB, e non entra nella scheda.** Dalla 1.0.2.
+       * ⚠ **LLaDA-Image: quasi 16 GB, e non entra nella scheda.** Dalla 1.0.2,
+       * e dalla 1.2.1 e' il modello **pieno** al posto del Turbo distillato —
+       * «ho testato llada e non mi piace, togliamo llada 8 step e usiamo quella
+       * originale 50 step».
        *
        * Sta qui perche' e' un modello della scheda Foto come gli altri, e va
        * detto cosa costa: 6,6 GB di trasformatore, **9,2 di text encoder** —
@@ -242,7 +245,7 @@ export const APPS: Record<AppId, AppDescriptor> = {
        * Vale la pena averlo perche' e' l'unico che **modifica una foto
        * seguendo un'istruzione** invece di ridipingere una zona.
        */
-      "llada-turbo-int8",
+      "llada-base-int8",
       "llada-text-encoder",
       "llada-vae",
     ],

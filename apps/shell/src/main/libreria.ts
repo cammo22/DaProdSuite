@@ -66,6 +66,15 @@ const NOME_PULITO = /[^\p{L}\p{N} _.,()[\]&'-]+/gu;
 /** Una copertina più grande di così è un errore, non una copertina. */
 const COPERTINA_MAX_BYTE = 4_000_000;
 
+/**
+ * Quanto può pesare la copia della foto «prima della modifica».
+ *
+ * Dodici mega: la foto arriva già ridisegnata su misura del VAE — lato lungo
+ * entro 1536 — quindi un PNG di quella misura ci sta con abbondanza. È la rete
+ * di sicurezza sotto, non la misura che ci si aspetta.
+ */
+const ORIGINALE_MAX_BYTE = 12_000_000;
+
 /** Estensione -> tipo. Quello che non è qui dentro non entra in libreria. */
 const TIPI: Record<string, TipoElemento> = {
   ".mp3": "audio",
@@ -819,6 +828,71 @@ class Libreria extends EventEmitter {
 
     this.segnalaNovita();
     return this.elenco(true).find((e) => e.percorso === destinazione) ?? null;
+  }
+
+  /**
+   * ⚠ **La foto com'era prima della modifica.** Nuova nella 1.2.1.
+   *
+   * Chiesto il 7 settembre 2026: «facciamo anche che quando si modifica una
+   * foto viene salvata anche l'originale, in modo da vedere il prima e il
+   * dopo».
+   *
+   * **Non è un risultato**, ed è la ragione per cui ha una funzione sua invece
+   * di passare da `aggiungi`: nessun motore l'ha prodotta, ed è quella che chi
+   * ha modificato aveva già in mano. Finisce lo stesso in galleria — è tutto il
+   * punto, il prima si guarda accanto al dopo — ma in una sottocartella sua,
+   * `originali`, così chi apre la cartella con Esplora risorse capisce cosa
+   * sono quei file senza doverli aprire.
+   *
+   * Il legame sta nei due `.json`: qui dentro `eOriginaleDi`, e sul risultato
+   * `originale` (lo scrive chi chiama). Sono quelle due righe che poi, quando
+   * si pubblica in bacheca, lasciano scegliere se mandare tutte e due le foto o
+   * solo quella rifatta.
+   *
+   * Il padrone lo mette chi chiama passandolo nei `meta`: da fuori il `chi`
+   * arriva insieme al resto, e senza è del computer come qualunque cosa fatta
+   * standogli davanti.
+   */
+  salvaOriginale(
+    app: AppId,
+    dataUrl: string,
+    dati: { titolo: string; risultatoId: string; meta?: Record<string, unknown> },
+  ): string | null {
+    const virgola = dataUrl.indexOf(",");
+    const base64 = virgola >= 0 ? dataUrl.slice(virgola + 1) : dataUrl;
+    let bytes: Buffer;
+    try {
+      bytes = Buffer.from(base64, "base64");
+    } catch {
+      return null;
+    }
+    // Una foto già su misura del VAE sta in pochi mega. Oltre, non è la foto
+    // di partenza: è qualcos'altro, e non lo si scrive sul disco di nessuno.
+    if (!bytes.length || bytes.length > ORIGINALE_MAX_BYTE) return null;
+
+    const dove = join(this.cartella(app), "originali");
+    try {
+      mkdirSync(dove, { recursive: true });
+      const titolo = unaRiga(dati.titolo).slice(0, 70) || "originale";
+      let destinazione = join(dove, `${titolo}.png`);
+      for (let n = 2; existsSync(destinazione) && n < 200; n += 1) {
+        destinazione = join(dove, `${titolo.slice(0, 66)} (${n}).png`);
+      }
+      writeFileSync(destinazione, bytes);
+      writeFileSync(
+        senzaEstensione(destinazione) + ".json",
+        JSON.stringify(
+          { ...(dati.meta ?? {}), titolo, eOriginaleDi: dati.risultatoId },
+          null,
+          1,
+        ),
+        "utf8",
+      );
+      this.segnalaNovita();
+      return this.elenco(true).find((e) => e.percorso === destinazione)?.id ?? null;
+    } catch {
+      return null;
+    }
   }
 
   /**
