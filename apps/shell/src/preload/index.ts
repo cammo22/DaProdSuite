@@ -119,6 +119,11 @@ const api: SuiteApi = {
     rimettiInRiga: () => ipcRenderer.invoke(CHANNELS.telefoniRimettiInRiga),
   },
 
+  ngrok: {
+    imposta: (dati) => ipcRenderer.invoke(CHANNELS.ngrokImposta, dati),
+    stato: () => ipcRenderer.invoke(CHANNELS.ngrokStato),
+  },
+
   update: {
     state: () => ipcRenderer.invoke(CHANNELS.updateState),
     check: () => ipcRenderer.invoke(CHANNELS.updateCheck),

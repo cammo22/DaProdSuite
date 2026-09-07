@@ -10,7 +10,7 @@ Un programma solo per fare musica, immagini, video, voci e parlare con un avatar
 Ogni app la installi quando ti serve e la disinstalli quando non ti serve più.
 Gira sul tuo computer: niente account, niente chiavi API, codice aperto.
 
-[![versione](https://img.shields.io/badge/versione-1.1.2-7c5cff)](https://github.com/cammo22/DaProdSuite/releases/latest)
+[![versione](https://img.shields.io/badge/versione-1.1.3-7c5cff)](https://github.com/cammo22/DaProdSuite/releases/latest)
 [![licenza](https://img.shields.io/badge/licenza-MIT-5cff9d)](LICENSE)
 [![piattaforma](https://img.shields.io/badge/Windows-x64-3ddbff)](#requisiti)
 [![sito](https://img.shields.io/badge/sito-cammo22.github.io-ffa63d)](https://cammo22.github.io/DaProdSuite/)
@@ -95,15 +95,15 @@ tutte lo stesso.
 
 ## A che punto siamo
 
-**Ultima pubblicata: 1.1.2 — «Il Funnel funziona: ero io a provarlo dal posto
-sbagliato».** Ritira la correzione della 1.1.1: la prova che la suite faceva
-sull'indirizzo che non cambia mai **non può riuscire da quella macchina**, perché
-il client Tailscale prende in mano il traffico verso i propri nodi di ingresso.
-Verificato con una sonda esterna vera: quell'indirizzo risponde. La 1.1.1 lo
-mandava in fondo alla fila e scriveva nel pannello una cosa falsa. Adesso il
-computer dà le indicazioni e il viaggio lo verifica chi lo fa — il telefono, che
-prova gli indirizzi e tiene quello che risponde. Chi è rimasto fuori rientra con
-**«Ho l'indirizzo nuovo»**, incollandoci l'indirizzo Funnel: quello non scade.
+**Ultima pubblicata: 1.1.3 — «Un indirizzo fisso che il telefono raggiunge
+davvero».** L'indirizzo Tailscale Funnel, su cui si reggeva la strada da fuori
+casa dalla 1.0.7, da quel telefono **non si apre in nessun modo** — provato per
+nome, su un'altra porta e per IP nudo — mentre un indirizzo Cloudflare risponde.
+Non è rotto: è irraggiungibile da quella rete. Adesso c'è **ngrok**: stesso
+mestiere, altra infrastruttura, e il piano gratuito regala un dominio statico.
+Si accende dal pannello col tasto «Indirizzo fisso», si incollano token e dominio
+una volta sola, e da lì quell'indirizzo è il computer — anche dopo un
+aggiornamento.
 
 Quello che cambia a ogni giro sta in [CHANGELOG.md](CHANGELOG.md), il percorso
 completo in [docs/ROADMAP.md](docs/ROADMAP.md).
