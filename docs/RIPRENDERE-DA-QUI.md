@@ -1,7 +1,29 @@
 # Riprendere da qui
 
 Documento di passaggio fra una sessione e l'altra. Aggiornato il **7 settembre
-2026**, con la **1.1.1** appena pubblicata.
+2026**, con la **1.1.2** appena pubblicata.
+
+> ⚠ **La lezione, sbagliata due volte di fila: la sonda deve stare dove sta chi
+> usa la strada.**
+>
+> Nella 1.0.10 ho detto «risponde da Internet» misurando **dal PC**, dove
+> Tailscale risolve `.ts.net` in casa: falso positivo. Nella 1.1.1 ho corretto
+> mettendo una sonda che chiedeva l'IP a un DNS pubblico — sempre **dal PC**,
+> dove Tailscale prende in mano il traffico verso i propri nodi di ingresso:
+> falso negativo. Due misure opposte, lo stesso errore: **il posto**.
+>
+> La terza volta ho usato una sonda che non era ne' il computer ne' il telefono
+> di casa, e la risposta e' arrivata in due secondi: l'indirizzo funziona.
+>
+> Regole da qui:
+>
+> 1. quando si prova una strada per conto di qualcun altro, o la si prova da
+>    dove sta lui, o **non la si prova**: si dichiara quello che si sa (la
+>    configurazione) e si lascia verificare a chi fa il viaggio;
+> 2. una macchina con una VPN attiva **non e' un punto di misura neutro** per
+>    niente che riguardi quella VPN;
+> 3. prima di costruire una release su una misura, chiedersi: *questa misura,
+>    da questo posto, potrebbe mentire?*
 
 > ⚠ **La lezione della 1.1.1: una misura fatta dalla macchina sbagliata non e'
 > una misura.**

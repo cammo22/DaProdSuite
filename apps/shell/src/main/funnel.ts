@@ -90,10 +90,13 @@ export interface StatoFunnel {
    * quell'indirizzo non si apriva. Vedi `rispondeDaInternet`.
    */
   acceso: boolean;
-  /** Il comando dice che c'e' la configurazione. Puo' essere vero con `acceso` falso. */
+  /**
+   * Il comando dice che c'e' la configurazione.
+   *
+   * Dalla 1.1.2 vale quanto `acceso`: da questa macchina non si puo' sapere di
+   * piu' (vedi `rispondeDaInternet`), e chi verifica davvero e' il telefono.
+   */
   configurato?: boolean;
-  /** La prova fatta come la farebbe un telefono: ha risposto? */
-  rispondeDaFuori?: boolean;
   /** Il tailnet lo permette. Falso se mancano i due interruttori. */
   permesso: boolean;
   /** Cosa dire a chi guarda, in italiano. */
@@ -165,12 +168,22 @@ async function nomeDellaMacchina(): Promise<string> {
  * interna e risponde 200 anche quando da fuori non risponde niente. Ci sono
  * cascato io, e la misura sbagliata e' finita in una release.
  *
- * Quindi qui si fa la prova **come la farebbe un telefono**: si chiede l'IP a un
- * DNS pubblico (Tailscale quel nome lo risolverebbe in casa) e si bussa a
- * quell'IP dicendo chi si cerca. Se non risponde, l'indirizzo non e' morto per
- * sempre — puo' essere l'ingress che deve ancora propagare — ma **non e' quello
- * da dare per primo a chi sta fuori**.
+ * Qui si fa la prova come la farebbe un telefono: si chiede l'IP a un DNS
+ * pubblico (Tailscale quel nome lo risolverebbe in casa) e si bussa a quell'IP
+ * dicendo chi si cerca.
+ *
+ * ⚠⚠ **E NON VA USATA PER DECIDERE, da questa macchina.** Nella 1.1.1 lo
+ * faceva, e diceva sempre di no: su un computer con Tailscale acceso il
+ * traffico verso i nodi di ingresso del Funnel **lo prende il client**, e da
+ * qui non ci si arriva mai — anche quando dal resto del mondo ci si arriva.
+ * Verificato il 7 settembre 2026 con una sonda esterna vera: quell'indirizzo
+ * rispondeva, mentre questa funzione diceva di no.
+ *
+ * Resta qui perche' la lezione vale piu' del codice: **una strada che serve a
+ * qualcun altro non si prova da casa propria.** Chi verifica e' chi ci deve
+ * arrivare — il telefono, che prova gli indirizzi e tiene quello che risponde.
  */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 export async function rispondeDaInternet(nome: string): Promise<boolean> {
   if (!nome) return false;
   try {
@@ -231,28 +244,42 @@ export async function comeStaFunnel(porta: number): Promise<StatoFunnel> {
    * di si' ma da Internet non risponde nessuno, lo si scrive — e chi mette in
    * fila gli indirizzi lo mette **dopo** il tunnel invece che davanti.
    */
-  const daFuori = configurato ? await rispondeDaInternet(nome) : false;
-  const acceso = configurato && daFuori;
-  if (configurato && !daFuori) {
-    annota(`Funnel configurato su ${nome} ma da Internet non risponde`);
-  }
+  /**
+   * ⚠ **La prova da qui non vale, e la 1.1.1 l'ha imparato nel modo peggiore.**
+   *
+   * Nella 1.1.1 «acceso» era diventato `configurato && rispondeDaInternet(...)`,
+   * e la sonda diceva sempre di no: **su una macchina con Tailscale il traffico
+   * verso i nodi di ingresso del Funnel passa dal client**, che lo prende in
+   * mano — quindi da qui non si arriva mai, anche quando dal resto del mondo si
+   * arriva benissimo.
+   *
+   * Verificato il 7 settembre 2026 con una sonda che non era ne' questo
+   * computer ne' il telefono di chi lo usa: `https://<nome>.ts.net/chi-sei` ha
+   * risposto con il nome della macchina e la versione. Il Funnel **funziona**.
+   *
+   * Il risultato della 1.1.1 era quindi il contrario di quello che serviva:
+   * l'unico indirizzo che non scade finiva in fondo alla fila, e il pannello
+   * diceva a chi guardava una cosa falsa.
+   *
+   * Quindi si torna a fidarsi della configurazione, che e' l'unica cosa che da
+   * qui si puo' sapere davvero. **Chi verifica e' chi ci deve arrivare**: il
+   * telefono prova gli indirizzi e tiene quello che risponde — vedi
+   * `Indirizzi.cerca` nell'app. Ed e' giusto cosi': la prova la fa chi fa il
+   * viaggio, non chi da' le indicazioni.
+   */
+  const acceso = configurato;
 
   return {
     ceTailscale: true,
     nome,
     acceso,
     configurato,
-    rispondeDaFuori: daFuori,
     // Se e' gia' acceso, e' per forza permesso. Se non lo e', non si sa finche'
     // non si prova: la capability non si legge in modo affidabile da qui.
     permesso: acceso,
     perche: acceso
       ? "Acceso: questo indirizzo non cambia mai."
-      : configurato
-        ? "Acceso qui, ma da Internet non risponde: controlla che Funnel sia permesso " +
-          "nel tuo tailnet (console di Tailscale, la macchina daprodmain). Intanto i " +
-          "telefoni passano dal tunnel."
-        : "Non ancora acceso.",
+      : "Non ancora acceso.",
     indirizzo: acceso ? `https://${nome}` : "",
   };
 }
