@@ -12,6 +12,46 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ## Non ancora pubblicato
 
+### «Manda in coda», e vale anche per chi decide
+
+> «Sotto, dove "manda al computer", togliamolo il pulsante lascia stare, non ci
+> serve a niente in quel punto. Aggiungiamo un pulsante "manda in coda", cosi'
+> che magari non lo vuoi far fare subito, lo metti in coda e poi piu' tardi
+> decidi. Anche gli admin, se cliccano quel tasto, non mandano subito la
+> generazione prioritaria che hanno da admin.»
+
+In fondo alla produzione: **«Mandalo al computer»** e **«Manda in coda»**.
+«Lascia stare» se n'e' andato — il modulo si chiude toccando un'altra azione o
+cambiando scheda, e un tasto per **non** fare una cosa occupava il posto di uno
+che una cosa la fa.
+
+«Manda in coda» vale anche per chi decide: la richiesta nasce **in attesa** e
+aspetta un si', come quella di chiunque altro. Ed e' una rinuncia, non un
+permesso — va solo in quella direzione: chi la fila la deve fare non puo'
+saltarla dicendo il contrario.
+
+### «Quante immagini»: quattro pulsanti grandi
+
+> «Pure qui una cosa da telefono un poco piu' ordinata, perche' ci sta una barra
+> gigante: mettiamo quattro pulsanti — uno, due, tre, quattro — belli grandi.»
+
+Da 1 a 4 sono quattro pulsanti che si dividono la riga, alti come un tasto vero.
+La casella numerica sotto e' sparita: non c'era niente da scrivere che non fosse
+gia' un pulsante.
+
+Dove i pulsanti **non** coprono tutto — «quanti secondi», che ne ha cinque su
+duecento valori — la casella resta: chi ne vuole 137 li deve poter scrivere.
+
+### Le foto non si accodano piu'
+
+> «Le foto non si possono accodare, quindi si toglie: non si accoda, l'opzione
+> non e' visibile.»
+
+Fino alla 1.2.4 una foto messa in fila restava a schermo dieci secondi e poi
+passava. Adesso l'opzione non c'e' proprio — e si toglie **la voce**, non si
+spegne: un comando grigio che non si puo' premere e' un posto dove chiedere una
+cosa che non si puo' chiedere.
+
 ### Il tira-per-aggiornare non parte piu' da solo, e ha un freno
 
 > «L'aggiornamento con lo swipe viene triggerato spesso anche mentre abbiamo in

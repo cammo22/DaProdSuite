@@ -290,9 +290,15 @@ export const COPIONE_AVVIO = `
   $("collega").addEventListener("click", collega);
   $("codice").addEventListener("keydown", function (ev) { if (ev.key === "Enter") collega(); });
   $("nome").addEventListener("keydown", function (ev) { if (ev.key === "Enter") $("codice").focus(); });
-  $("manda").addEventListener("click", manda);
+  $("manda").addEventListener("click", function () { void manda(false); });
+  $("manda-in-coda").addEventListener("click", function () { void manda(true); });
   $("apri-stili").addEventListener("click", function () { vaiA("stili"); });
-  $("annulla").addEventListener("click", chiudiModulo);
+  /*
+   * ⚠ Qui c'era «annulla», cioe' «Lascia stare». Tolto il 9 settembre 2026: il
+   * modulo si chiude toccando un'altra azione, cambiando scheda o tornando
+   * indietro, e un tasto per **non** fare una cosa occupava il posto di uno che
+   * una cosa la fa — che adesso e' «Manda in coda».
+   */
   $("apri-impostazioni").addEventListener("click", apriImpostazioni);
   $("vedi-bussate").addEventListener("click", function () { void apriLaRete(); });
 

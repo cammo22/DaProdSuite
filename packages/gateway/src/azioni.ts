@@ -130,6 +130,17 @@ export async function eseguiAzione(
   dispositivo: Dispositivo,
   id: string,
   dati: Record<string, unknown>,
+  /**
+   * **«Mettila in fila e basta»**, anche per chi potrebbe partire subito.
+   *
+   * Chiesto il 7 settembre 2026: «anche gli admin, se cliccano quel tasto, non
+   * mandano subito la generazione prioritaria che hanno da admin, ma mandano
+   * proprio la classica richiesta in coda che mandano gli utenti normali».
+   *
+   * ⚠ Va in una direzione sola — vedi `creaRichiesta`: e' una rinuncia, non
+   * un permesso.
+   */
+  inCoda = false,
 ): Promise<EsitoAzione> {
   const azione = trovaAzione(id);
   if (!azione) {
@@ -200,6 +211,7 @@ export async function eseguiAzione(
           // deve poter ritrovare **quale** azione era, non solo l'app.
           opzioni: { ...opzioni },
           daDispositivo: dispositivo,
+          inCoda,
         }),
       );
     }

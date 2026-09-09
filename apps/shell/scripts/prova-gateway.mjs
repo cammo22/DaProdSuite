@@ -1033,6 +1033,57 @@ console.log("\n— un magazzino solo per i prompt —");
   dice("e le vecchie rotte dei preset non ci sono piu'", r.stato === 404, `→ ${r.stato}`);
 }
 
+/**
+ * «Manda in coda» vale anche per chi decide.
+ *
+ * ⚠ E' la meta' della richiesta che si perde piu' facilmente. Chiesto il 7
+ * settembre 2026: «anche gli admin, se cliccano quel tasto, non mandano subito
+ * la generazione prioritaria che hanno da admin, ma mandano proprio la classica
+ * richiesta in coda che mandano gli utenti normali».
+ *
+ * Una richiesta di un admin nasce **accettata**: parte da sola quando tocca a
+ * lei. Con «inCoda» nasce **in attesa**, e aspetta un si' come quella di
+ * chiunque altro. Il contrario non deve esistere: un ospite con «inCoda» a
+ * falso non deve poter saltare la fila, e quello si prova qui sotto.
+ */
+console.log("\n— manda in coda, anche da admin —");
+{
+  const normale = await chiama("/azioni/genera.immagine", {
+    metodo: "POST", token: tokenAdmin,
+    corpo: { prompt: "un faro senza coda" },
+  });
+  dice(
+    "da admin, di suo, nasce accettata",
+    normale.dati?.richiesta?.stato === "accettata",
+    `→ ${normale.dati?.richiesta?.stato}`,
+  );
+
+  const inCoda = await chiama("/azioni/genera.immagine?inCoda=1", {
+    metodo: "POST", token: tokenAdmin,
+    corpo: { prompt: "un faro in coda" },
+  });
+  dice(
+    "con inCoda=1 aspetta un si', anche da admin",
+    inCoda.dati?.richiesta?.stato === "in-attesa",
+    `→ ${inCoda.dati?.richiesta?.stato}`,
+  );
+  dice(
+    "e non si inventa un motivo per cui e' trattenuta",
+    !inCoda.dati?.richiesta?.trattenuta,
+    `→ ${inCoda.dati?.richiesta?.trattenuta}`,
+  );
+
+  const ospite = await chiama("/azioni/genera.immagine", {
+    metodo: "POST", token: tokenOspite,
+    corpo: { prompt: "un faro da ospite" },
+  });
+  dice(
+    "un ospite aspetta comunque",
+    ospite.dati?.richiesta?.stato === "in-attesa",
+    `→ ${ospite.dati?.richiesta?.stato}`,
+  );
+}
+
 console.log("\n— il biscotto di sessione —");
 let biscotto;
 {

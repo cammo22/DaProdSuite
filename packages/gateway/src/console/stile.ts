@@ -121,6 +121,23 @@ export const STILE = `  :root {
   }
 
   /**
+   * **I pulsanti grandi** di un campo numerico che sta tutto in quattro tasti.
+   *
+   * Chiesto il 7 settembre 2026 per «quante immagini»: «mettiamo quattro
+   * pulsanti — uno, due, tre, quattro — belli grandi». Su un telefono, quattro
+   * numeri sono quattro cose da toccare, e toccarle deve essere facile: si
+   * dividono la riga in parti uguali e sono alti come un tasto vero.
+   *
+   * Sono le stesse pastiglie di sempre, con una classe in piu': non una seconda
+   * famiglia di pulsanti.
+   */
+  .filtri.grandi { display: flex; gap: 8px; }
+  .filtri.grandi button {
+    flex: 1; min-height: 46px;
+    font-size: 16px; font-weight: 600;
+  }
+
+  /**
    * **L'interruttore**: acceso a destra, spento a sinistra.
    *
    * Chiesto il 9 settembre 2026: «facciamo i pulsanti on e off switch belli,

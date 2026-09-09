@@ -67,7 +67,17 @@ export const COPIONE_LETTORE = `
   /** Il tempo che tiene su un'immagine prima di passare alla prossima. */
   var orologioImmagine = null;
 
-  /** Quanto dura un'immagine in fila: dieci secondi, come chiesto. */
+  /**
+   * Quanto dura un'immagine in fila: dieci secondi.
+   *
+   * ⚠ **Dalla 1.2.5 in fila non ci vanno piu' immagini**, e questo pezzo
+   * resta per una ragione sola: una foto puo' ancora arrivarci da una fila
+   * fatta prima dell'aggiornamento, aperta e non ancora finita. Senza questo
+   * ramo il lettore si fermerebbe li' — un'immagine non finisce da sola, e la
+   * fila aspetterebbe una fine che non arriva mai.
+   *
+   * Il giorno che non esiste piu' una console aperta dalla 1.2.4, si butta.
+   */
   var DURATA_IMMAGINE = 10000;
 
   /** Vero quando il palco a schermo intero è aperto. */

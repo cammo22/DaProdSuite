@@ -9,7 +9,7 @@
  *   GET  /stato                                 →  StatoSuite (istantanea)
  *   GET  /stato/stream                          →  stato in streaming (SSE)
  *   GET  /azioni                                →  cosa si può chiedere, con gli schemi
- *   POST /azioni/:id           { campi… }        →  in fila, oppure la risposta
+ *   POST /azioni/:id           { campi… }        →  in fila, oppure la risposta (con ?inCoda=1 aspetta un si' anche se potrebbe partire)
  *   GET  /richieste                             → richieste visibili al dispositivo
  *   POST /richieste        { tipo, app, testo, opzioni? }   → crea (ospiti e admin)
  *   GET  /richieste/:id                         → dettaglio
@@ -512,12 +512,22 @@ export class Gateway {
       const daFare = percorso.match(/^\/azioni\/([^/]+)$/);
       if (daFare && req.method === "POST") {
         const id = decodeURIComponent(daFare[1] ?? "");
+        /**
+         * `?inCoda=1`: «mettila in fila, non farla partire adesso».
+         *
+         * ⚠ Nell'indirizzo e non nel corpo, ed e' voluto: dentro l'app del
+         * telefono, quando il computer non risponde, chi esaudisce questa POST
+         * e' l'app stessa — e Android non le fa leggere il corpo di una
+         * richiesta intercettata. Vedi `anchePerIndirizzo` nella console: i
+         * campi viaggiano gia' cosi' per la stessa ragione.
+         */
         const esito = await eseguiAzione(
           this.remoto,
           this.esecutore,
           dispositivo,
           id,
           (corpo ?? {}) as Record<string, unknown>,
+          url.searchParams.get("inCoda") === "1",
         );
         if (esito.esito === "errore") {
           this.errore(res, esito.codice, esito.errore);

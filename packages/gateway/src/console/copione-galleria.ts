@@ -264,13 +264,22 @@ export const COPIONE_GALLERIA = `
      * telefono.
      */
     /**
-     * **Mettila in fila.** Nuovo nella 1.0.0, e vale per brani, video e
-     * immagini: la fila del lettore li prende tutti e tre.
+     * **Mettila in fila.** Nuovo nella 1.0.0, e vale per brani e video.
      *
      * E' la meta' che mancava alla scelta della 0.9.4 — tolta la fila che si
      * formava da sola, non restava nessun modo di farsene una.
+     *
+     * ⚠ **Le immagini no, dalla 1.2.5.** Ci sono state fino alla 1.2.4: una
+     * foto in fila restava a schermo dieci secondi e poi passava. Deciso da
+     * Cammo il 7 settembre 2026, quando gli e' stato chiesto cosa dovesse fare
+     * una foto accodata: «le foto non si possono accodare, quindi si toglie,
+     * non si accoda, l'opzione non e' visibile».
+     *
+     * E si toglie **la voce**, non si spegne: un comando grigio che non si puo'
+     * premere e' un posto dove chiedere una cosa che non si puo' chiedere. Se
+     * non si fa, non c'e'.
      */
-    if (v.tipo === "audio" || v.tipo === "video" || v.tipo === "immagine") {
+    if (v.tipo === "audio" || v.tipo === "video") {
       voceFoglio(carta, "\u2261", "Mettila in fila", "la senti dopo quella di adesso", function () {
         chiudiFoglio();
         var posto = mettiInFila(v);
@@ -975,7 +984,9 @@ export const COPIONE_GALLERIA = `
      * 2026: «con anche la possibilita' di aggiungere contenuti in coda cosi'
      * posso ascoltare piu' canzoni una dietro l'altra».
      */
-    if (v.tipo === "audio" || v.tipo === "video" || v.tipo === "immagine") {
+    // Brani e video: le immagini non si accodano piu' — vedi il commento
+    // sull'altra «Mettila in fila», qui sopra.
+    if (v.tipo === "audio" || v.tipo === "video") {
       var inFila = document.createElement("button");
       inFila.className = "mini";
       inFila.textContent = "\\u2630 Mettila in fila";

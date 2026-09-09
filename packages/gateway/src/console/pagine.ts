@@ -257,9 +257,22 @@ export const PAGINE = `<header>
         <button class="piano largo" id="apri-stili">&#9776; Gestione stili e prompt</button>
       </div>
       <form id="modulo" hidden onsubmit="return false"></form>
+      <!--
+        ⚠ **«Lascia stare» se n'e' andato, e al posto suo c'e' «Manda in
+        coda».** Chiesto il 9 settembre 2026: «si toglie lascia stare e si
+        aggiunge manda in coda».
+
+        «Lascia stare» non serviva a niente in quel punto: il modulo si chiude
+        toccando un'altra azione, cambiando scheda o tornando indietro, e un
+        tasto per non fare una cosa e' un tasto che occupa il posto di uno che
+        una cosa la fa.
+
+        «Manda in coda» vale **anche per chi decide**: e' il punto della
+        richiesta. Vedi «manda» nel copione.
+      -->
       <div class="fila" id="fila-manda" hidden>
         <button id="manda">Mandalo al computer</button>
-        <button class="piano" id="annulla" type="button">Lascia stare</button>
+        <button class="piano" id="manda-in-coda" type="button">Manda in coda</button>
       </div>
       <div class="avviso" id="avviso-azione"></div>
     </div>
