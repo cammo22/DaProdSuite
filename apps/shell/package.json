@@ -14,6 +14,7 @@
   "dependencies": {
     "@daprod/azioni": "workspace:*",
     "@daprod/gateway": "workspace:*",
+    "@daprod/giochi": "workspace:*",
     "@daprod/ipc": "workspace:*",
     "@daprod/runtime": "workspace:*",
     "electron-updater": "^6.6.2",

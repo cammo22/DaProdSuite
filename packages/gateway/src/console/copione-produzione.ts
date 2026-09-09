@@ -87,6 +87,48 @@ export const COPIONE_PRODUZIONE = `
     for (var a of azioni.filter(function (x) { return x.coda && !(PRODUZIONI[x.id] || {}).dentroA; })) {
       casella.append(tastoneAzione(a));
     }
+    casella.append(tastoneGiochi());
+  }
+
+  /**
+   * **La sala giochi**, in fondo a «cosa vuoi fare».
+   *
+   * ⚠ **E' una tessera e non una sesta scheda in fondo.** Le schede sono
+   * cinque, e il 5 settembre 2026 erano state portate da sei a cinque apposta:
+   * «cinque su un telefono si leggono meglio di sei». La sala e' una cosa che
+   * si fa, non un posto dove si sta: sta con le altre cose che si fanno.
+   *
+   * Porta a una **pagina servita dallo stesso computer** — vedi
+   * «packages/giochi» — quindi funziona uguale dal telefono, dal browser e
+   * dentro DaProdConnessione, con la stessa persona e lo stesso ruolo. Chi
+   * comanda il computer comanda anche il banco: non c'e' una password del
+   * gioco.
+   *
+   * Il token viaggia nel frammento, come per la console: non finisce nei log e
+   * la pagina se lo mette da parte appena aperta.
+   */
+  function tastoneGiochi() {
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "tastone rosa";
+    var s = document.createElement("span");
+    s.className = "segno";
+    s.textContent = "\\u2685";
+    var n = document.createElement("span");
+    n.className = "nome";
+    n.textContent = "Sala giochi";
+    var p = document.createElement("small");
+    p.textContent = "gira la slot, monta un prompt, mandalo";
+    b.append(s, n, p);
+    b.addEventListener("click", function () {
+      var dove = "/giochi";
+      // Lo stesso giro del resto della console: se il token ce l'abbiamo, lo si
+      // passa nel frammento, che non viene mandato al server e non finisce nei
+      // registri.
+      if (token) dove += "#t=" + encodeURIComponent(token);
+      location.href = dove;
+    });
+    return b;
   }
 
   /**

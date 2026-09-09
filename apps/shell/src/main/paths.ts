@@ -33,6 +33,15 @@ export const CACHE_DIR = join(DATA_ROOT, "cache");
 /** Log dello shell e di ogni servizio Python. */
 export const LOGS_DIR = join(DATA_ROOT, "logs");
 
+/**
+ * La sala giochi: il portafoglio, la collezione, la fila delle combinazioni.
+ *
+ * ⚠ **Sta accanto a `remoto.json` e non dentro `state`**, e per la stessa
+ * ragione: e' l'unico posto dove vive quanto ha vinto la gente. Si scrive in
+ * modo atomico con la sua copia `.bak` — vedi `Deposito` in `@daprod/giochi`.
+ */
+export const GIOCHI_DIR = join(DATA_ROOT, "giochi");
+
 /** Impostazioni della suite. */
 export const SETTINGS_FILE = join(DATA_ROOT, "settings.json");
 

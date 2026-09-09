@@ -380,6 +380,14 @@ const gateway = new G.Gateway({
   }),
   libreria,
   stili: fintiStili,
+  /**
+   * La sala giochi, col suo banco vero su una cartella temporanea.
+   *
+   * Il gioco non ha niente di finto qui dentro: le regole, il portafoglio e il
+   * mazzo sono quelli veri di `@daprod/giochi`. L'unica cosa finta e' dove
+   * scrive — la stessa cartella usa e getta di tutto il resto del banco.
+   */
+  giochi: new (require(join(import.meta.dirname, "..", "..", "..", "packages", "giochi", "dist", "index.js")).Deposito)(join(radice, "giochi.json")),
   macchina: {
     stato: macchina.stato,
     pausa: macchina.pausa,

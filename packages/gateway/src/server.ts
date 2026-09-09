@@ -47,6 +47,7 @@
  *   POST /macchina/ferma                        → ferma quello che gira adesso (solo il PC)
  *   POST /macchina/accetta-tutte                → dà il sì a tutto quello che aspetta
  *   POST /richieste/:id/rifai  { testo? }        → rifallo, uguale o modificato
+ *   GET  /giochi                              → la sala giochi (una pagina, come la console)
  *   GET  /stili?genere=stile|prompt              → i tuoi stili e i tuoi prompt: un magazzino solo
  *   POST /stili   { id?, nome, testo, tipo }     → salvane uno, o cambialo
  *   DELETE /stili/:id                           → buttalo
@@ -88,6 +89,7 @@ import { copyFileSync, createReadStream, createWriteStream, mkdirSync, rmSync, s
 import { join, normalize } from "node:path";
 import { elencoAzioni, eseguiAzione, type Esecutore } from "./azioni";
 import { paginaConsole } from "./console";
+import { paginaGiochi, rispondi as rispondiAiGiochi, type Deposito as DepositoGiochi } from "@daprod/giochi";
 import { Remoto } from "./remoto";
 import type { Rete } from "./rete";
 import type {
@@ -148,6 +150,18 @@ export interface GatewayOpzioni {
   chiacchierata?: FornitoreChiacchierata;
   /** Chi tiene gli stili musicali di ogni persona. */
   stili?: FornitoreStili;
+  /**
+   * La sala giochi, se questa suite ce l'ha.
+   *
+   * ⚠ **Il gateway non sa niente del gioco**, e non deve: gli passa chi sta
+   * chiedendo, il metodo, il percorso e il corpo, e riporta indietro quello che
+   * il banco ha deciso. Le regole, il portafoglio e il mazzo stanno tutti in
+   * `@daprod/giochi` — vedi il suo `CONCETTI.md`.
+   *
+   * Facoltativo come tutti gli altri: senza, la sala risponde 501 invece di
+   * sparire, e chi la apre legge una frase invece di un numero.
+   */
+  giochi?: DepositoGiochi;
   /**
    * L'annunciatore sulla rete locale, se questa suite ce l'ha.
    *
@@ -228,6 +242,7 @@ export class Gateway {
   private macchina: FornitoreMacchina | undefined;
   private chiacchierata: FornitoreChiacchierata | undefined;
   private stili: FornitoreStili | undefined;
+  private giochi: DepositoGiochi | undefined;
   private rete: Rete | undefined;
 
   constructor(opzioni: GatewayOpzioni) {
@@ -242,6 +257,7 @@ export class Gateway {
     this.macchina = opzioni.macchina;
     this.chiacchierata = opzioni.chiacchierata;
     this.stili = opzioni.stili;
+    this.giochi = opzioni.giochi;
     this.rete = opzioni.rete;
     this.server = createServer((req, res) => {
       void this.maneggia(req, res);
@@ -301,6 +317,25 @@ export class Gateway {
         return;
       }
 
+      /* --------------------------------------------------- la sala giochi */
+
+      /**
+       * **DaProdGiochi**: una pagina servita da qui, come la console.
+       *
+       * ⚠ **Non e' un'app a se'**, ed e' voluto (CONCETTI.md § 15): cosi' e'
+       * la stessa identica cosa sul computer, sul telefono e nel browser. E chi
+       * gioca e' **un dispositivo accoppiato** — stesso id, stesso nome, stesso
+       * ruolo: l'admin del gioco e' l'admin della suite, niente password del
+       * gioco, e chi non comanda il computer non puo' diventare banco
+       * scrivendo qualcosa in una casella.
+       *
+       * Il gateway qui fa tre cose, e nessuna riguarda il gioco: dice chi sta
+       * chiedendo, passa la domanda, riporta la risposta.
+       */
+      if (percorso === "/giochi" && req.method === "GET") {
+        this.pagina(res, paginaGiochi("/giochi"));
+        return;
+      }
       /**
        * Il file di un regalo, letto **prima** di tutto il resto.
        *
@@ -373,6 +408,39 @@ export class Gateway {
       }
 
       const corpo = await leggiCorpo(req);
+
+      if (percorso.startsWith("/giochi/")) {
+        const chiGioca = this.chiE(req, url);
+        if (!chiGioca) return this.errore(res, 401, "Token mancante o non riconosciuto.");
+        if (!this.giochi) {
+          return this.errore(res, 501, "Questa suite non ha la sala giochi accesa.");
+        }
+        const esito = rispondiAiGiochi(
+          this.giochi,
+          { id: chiGioca.id, nome: chiGioca.nome, admin: chiGioca.ruolo === "admin" },
+          {
+            nomeDi: (id) =>
+              this.remoto.listaDispositivi().find((d) => d.id === id)?.nome ?? "qualcuno",
+            facciaDi: (id) => {
+              const d = this.remoto.listaDispositivi().find((x) => x.id === id);
+              return d ? indirizzoDellaFoto(d) : undefined;
+            },
+            indirizzoLibreria: (id) => "/libreria/file/" + encodeURIComponent(id),
+          },
+          req.method ?? "GET",
+          percorso.slice("/giochi".length),
+          (corpo ?? {}) as Record<string, unknown>,
+        );
+        this.json(res, esito.codice, esito.dati);
+        /**
+         * Una mossa che cambia il conto di qualcuno la sanno anche gli altri: la
+         * classifica e la fila delle combinazioni si aggiornano dove sono
+         * aperte, senza che nessuno ricarichi.
+         */
+        if (req.method !== "GET" && esito.codice < 400) this.aggiorna();
+        return;
+      }
+
 
       // L'accoppiamento è l'unica rotta senza token: è il momento in cui il
       // dispositivo non ha ancora una credenziale, e gliela si dà.
