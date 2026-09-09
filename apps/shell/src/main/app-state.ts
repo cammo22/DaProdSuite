@@ -13,6 +13,7 @@ import { mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node
 import { join } from "node:path";
 import type { AppId } from "@daprod/ipc";
 import { DATA_ROOT } from "./paths";
+import { siVedeDaQualcheParte } from "./finestre";
 
 function stateDir(appId: AppId): string {
   const dir = join(DATA_ROOT, "state", appId);
@@ -60,6 +61,18 @@ export interface WindowBounds {
  * Posizione e dimensione dell'ultima sessione, con i valori riportati entro
  * limiti sensati: un file scritto male non deve produrre una finestra alta zero
  * pixel o fuori da ogni schermo.
+ *
+ * ⚠ **Il pezzo sugli schermi mancava, e questa riga di commento lo prometteva
+ * da mesi.** Il 9 settembre 2026 Cammo ha staccato il secondo monitor e
+ * DaProdConnessione e' diventata irraggiungibile: la suite diceva «aperta», la
+ * barra la mostrava, e la finestra stava a coordinate che nessuno schermo
+ * copriva piu'. Adesso la posizione salvata si usa **solo se si vede ancora**;
+ * se no si buttano x e y, e senza quelle Electron mette la finestra al centro.
+ *
+ * Si buttano **solo x e y**: la dimensione che uno si era scelto resta, che e'
+ * mezza preferenza recuperata invece di zero. Il perche' per intero, e la
+ * ragione per cui non si azzera tutto a ogni avvio, stanno in
+ * `finestre.ts`.
  */
 export function readBounds(appId: AppId, fallback: WindowBounds): WindowBounds {
   const raw = readState(appId, "window");
@@ -69,11 +82,21 @@ export function readBounds(appId: AppId, fallback: WindowBounds): WindowBounds {
   const num = (v: unknown, predefinito: number) =>
     typeof v === "number" && Number.isFinite(v) ? Math.round(v) : predefinito;
 
+  const width = Math.max(360, num(b.width, fallback.width));
+  const height = Math.max(280, num(b.height, fallback.height));
+  const x = typeof b.x === "number" && Number.isFinite(b.x) ? Math.round(b.x) : undefined;
+  const y = typeof b.y === "number" && Number.isFinite(b.y) ? Math.round(b.y) : undefined;
+
+  // Una posizione a meta' (solo x, o solo y) non e' una posizione: si tratta
+  // come se non ci fosse.
+  const dovEra = x !== undefined && y !== undefined ? { x, y, width, height } : null;
+  const ciSiVede = dovEra ? siVedeDaQualcheParte(dovEra) : false;
+
   return {
-    x: typeof b.x === "number" && Number.isFinite(b.x) ? Math.round(b.x) : undefined,
-    y: typeof b.y === "number" && Number.isFinite(b.y) ? Math.round(b.y) : undefined,
-    width: Math.max(360, num(b.width, fallback.width)),
-    height: Math.max(280, num(b.height, fallback.height)),
+    x: ciSiVede ? x : undefined,
+    y: ciSiVede ? y : undefined,
+    width,
+    height,
     maximized: b.maximized === true,
   };
 }

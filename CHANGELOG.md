@@ -12,6 +12,31 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ## Non ancora pubblicato
 
+### Una finestra su uno schermo spento non si perde piu'
+
+> «Apro DaProdConnessione e dice aperto, ma la finestra e' irraggiungibile. La
+> vedo nella taskbar e non la posso portare in primo piano. Credo di aver
+> lasciato la finestra su uno schermo secondario che ora ho spento.»
+
+Era esattamente quello. Ogni scheda si ricorda dov'era, e quelle coordinate — il
+giorno che stacchi il secondo monitor — cadono in una parte di mondo che non
+esiste piu'. Windows tiene la finestra viva e te la mostra nella barra, ma non
+c'e' nessun pixel dove disegnarla.
+
+Adesso la posizione salvata si usa **solo se si vede ancora**: se lo schermo
+dov'era non c'e' piu', la finestra si apre al centro di quello che stai
+guardando. Vale al riavvio e vale a suite accesa, quando riapri una scheda che
+era gia' aperta.
+
+La posizione non si azzera a ogni avvio: chi lavora con due schermi accesi si
+mette una scheda di la' e una di qua, e quella disposizione resta. Si butta solo
+quella che non si puo' piu' raggiungere.
+
+E per il caso che resta — la finestra si vede, ma sta in un angolo scomodo — nel
+menu vicino all'orologio c'e' **«Rimetti le finestre al centro»**. Sta li' e non
+nelle impostazioni apposta: e' l'unico posto che si raggiunge anche quando la
+finestra che non riesci a toccare e' proprio quella che ti serve.
+
 **Togliere il tunnel Cloudflare** per chi ha l'indirizzo fisso, e **togliere il
 codice** della schermata «cerca i computer di casa», che è irraggiungibile ma
 ancora lì.

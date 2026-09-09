@@ -8,6 +8,7 @@
 
 import { EventEmitter } from "node:events";
 import type { BrowserWindow } from "electron";
+import { mostraDavvero } from "./finestre";
 import {
   APP_LIST,
   APPS,
@@ -411,7 +412,9 @@ class AppManager extends EventEmitter {
       invia();
     }
 
-    win.focus();
+    // Non basta il fuoco: se quella finestra era rimasta su uno schermo che
+    // adesso e' spento, la consegna arriverebbe a una finestra che non si vede.
+    mostraDavvero(win);
   }
 
   /** Un controllo per volta: due insieme aprirebbero torch due volte per niente. */

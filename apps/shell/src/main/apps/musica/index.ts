@@ -15,7 +15,7 @@ import { BrowserWindow, app, ipcMain, shell } from "electron";
 import { join } from "node:path";
 import { readBounds, writeState } from "../../app-state";
 import { gestisciSchema, serviInterfaccia, urlInterfaccia } from "../../file-scheme";
-import { registraConsole } from "../../finestre";
+import { mostraDavvero, registraConsole } from "../../finestre";
 import { iconaApp } from "../../paths";
 import { montaTerminale } from "../../terminale";
 import { indirizzo } from "../../servizi";
@@ -34,8 +34,9 @@ function cartellaUi(): string {
 
 export function apri(onClose: () => void): void {
   if (finestra && !finestra.isDestroyed()) {
-    if (finestra.isMinimized()) finestra.restore();
-    finestra.focus();
+    // Una riga sola, e sta in finestre.ts: sa anche riportare dentro una
+    // finestra rimasta su uno schermo che adesso e' spento.
+    mostraDavvero(finestra);
     return;
   }
 

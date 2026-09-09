@@ -19,6 +19,7 @@ import { ICONA_SUITE, ensureDataDirs } from "./paths";
 import { updater } from "./updater";
 import { gestisciSchema, registraSchema } from "./file-scheme";
 import { creaTray, distruggiTray } from "./tray";
+import { mostraDavvero, riportaTutteACasa } from "./finestre";
 import { sorvegliaProcessi } from "@daprod/runtime";
 import { registra, ripulisciAvanzi, uccidiTutti } from "./processi";
 import { turno } from "./turno";
@@ -146,12 +147,21 @@ async function start(): Promise<void> {
 
   creaTray({
     mostraHub: () => {
-      if (hub && !hub.isDestroyed()) {
-        if (hub.isMinimized()) hub.restore();
-        hub.focus();
-      } else {
-        createHub();
-      }
+      // Anche l'hub puo' restare su uno schermo staccato: «mostraDavvero» lo
+      // riporta dentro prima di dargli il fuoco. Vedi finestre.ts.
+      if (hub && !hub.isDestroyed()) mostraDavvero(hub);
+      else createHub();
+    },
+    /**
+     * «Rimetti le finestre al centro», nel menu dell'area di notifica.
+     *
+     * ⚠ Sta **li'** e non nelle impostazioni dell'hub apposta: e' la via
+     * d'uscita per quando la finestra che non riesci a toccare potrebbe essere
+     * proprio l'hub. L'icona vicino all'orologio si raggiunge sempre.
+     */
+    rimettiLeFinestre: () => {
+      const quante = riportaTutteACasa();
+      console.log(`[finestre] ${quante} rimesse al centro`);
     },
     apriApp: (id) => void appManager.open(id),
     appDisponibili: () =>
