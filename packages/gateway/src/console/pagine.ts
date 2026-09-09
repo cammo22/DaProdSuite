@@ -537,7 +537,6 @@ export const PAGINE = `<header>
 -->
 <div class="mixStili" id="mix-stili" hidden></div>
 
-<canvas id="sfondo-visual" aria-hidden="true"></canvas>
 
 <div class="barraLettore" id="barra-lettore" hidden>
   <button class="faccia" id="lettore-faccia" title="A schermo intero"></button>

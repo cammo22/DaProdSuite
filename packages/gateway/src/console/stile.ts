@@ -1308,37 +1308,32 @@ export const STILE = `  :root {
    * Sta in fondo al palco e non tocca niente: nessun evento del mouse arriva
    * qui, quindi i tasti sopra funzionano esattamente come prima.
    */
-  /**
-   * ⚠ **Il visualizer come atmosfera, dietro alla pagina.** Nuovo nella 0.9.4.
+  /*
+   * ⚠ **Il visualizer dietro alla pagina se n'e' andato.** Tolto il 9
+   * settembre 2026.
    *
-   * Chiesto il 6 settembre 2026: «usiamo le animazioni del visualizer sullo
-   * sfondo dell'app in tutte le schede, ma molto molto sfocato e trasparente,
-   * direi un 22 percento su 100».
+   * C'era dalla 0.9.4, chiesto cosi': «usiamo le animazioni del visualizer
+   * sullo sfondo dell'app in tutte le schede, ma molto molto sfocato e
+   * trasparente, direi un 22 percento su 100». Era bello, e costava piu' di
+   * tutto il resto della pagina messo insieme.
    *
-   * **E non e' un ritorno alla 0.9.0**, dove il visualizer era *solo* lo sfondo
-   * e a schermo intero si guardava una lista della spesa con le onde dietro.
-   * Qui sono due cose con due mestieri: nel palco il visualizer **e' il
-   * contenuto**, nitido e a fuoco; qui e' **atmosfera** — sfocato a venti
-   * pixel, al ventidue per cento, sotto a tutto.
+   * > «Togliamo il visualizer dallo sfondo, perche' mi sono reso conto che sul
+   * > tablet scatta molto. Su mobile le prestazioni sono bassissime, deve
+   * > essere super leggero e ottimizzato.»
    *
-   * Tre righe che contano piu' di quanto sembri:
-   * - «pointer-events: none», o meta' pagina smetterebbe di rispondere;
-   * - «z-index: -1» con il corpo trasparente sopra: e' l'unico modo perche'
-   *   stia **sotto** senza entrare nell'ordine di impilamento delle schede;
-   * - «will-change: opacity», perche' un blur a venti pixel ridipinto sessanta
-   *   volte al secondo senza un livello suo fa scattare lo scorrimento.
+   * **Cosa costava, in concreto.** Un «filter: blur(20px)» su un elemento
+   * grande quanto lo schermo e' un lavoro che la scheda video rifa' **a ogni
+   * fotogramma della pagina**, non solo quando il visualizer cambia: e su
+   * mobile la sfocatura gaussiana a venti pixel e' una delle cose piu' care che
+   * esistano. Sopra ci si aggiungeva la copia da un canvas all'altro sedici
+   * volte al secondo. Tutto questo per una macchia che si vedeva al ventidue
+   * per cento, dietro a schermate piene di riquadri opachi che la coprivano
+   * quasi tutta.
+   *
+   * Nel palco il visualizer resta, e li' e' **il contenuto**: nitido, a fuoco,
+   * ed e' quello che uno sta guardando. Vedi «.palcoLettore #visual».
    */
-  #sfondo-visual {
-    position: fixed; inset: 0; z-index: -1;
-    width: 100%; height: 100%;
-    opacity: .22; filter: blur(20px) saturate(130%);
-    /* Il blur mangia i bordi: si allarga un po' oltre lo schermo, o si
-       vedrebbe una cornice piu' chiara tutt'intorno. */
-    transform: scale(1.12);
-    pointer-events: none; will-change: opacity;
-    transition: opacity .8s ease;
-  }
-  #sfondo-visual[hidden] { display: block !important; opacity: 0; }
+
 
   .palcoLettore #visual {
     position: absolute; inset: 0; z-index: 0;

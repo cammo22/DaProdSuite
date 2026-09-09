@@ -12,6 +12,36 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ## Non ancora pubblicato
 
+### Il visualizer, molto piu' leggero — e si puo' spegnere
+
+> «Su mobile le prestazioni sono bassissime, deve essere super leggero e
+> ottimizzato.» E prima: «togliamo il visualizer dallo sfondo, perche' sul
+> tablet scatta molto».
+
+Quattro cose, e la prima da sola vale piu' delle altre tre:
+
+- **Via il visualizer da dietro alla pagina.** C'era dalla 0.9.4, sfocato al
+  ventidue per cento. Quella sfocatura la scheda video la rifaceva **a ogni
+  fotogramma della pagina**, anche con la pagina ferma — e una gaussiana a venti
+  pixel a schermo intero e' una delle cose piu' care che esistano su un
+  telefono. Sopra ci si aggiungeva una copia fra due tele sedici volte al
+  secondo. Tutto per una macchia che si vedeva a malapena, dietro a riquadri
+  opachi che la coprivano quasi tutta.
+- **Meta' dei pixel, su schermi stretti.** Uno shader a schermo intero costa
+  larghezza per altezza, ogni fotogramma, tre o quattro volte per giro. Su un
+  tablet erano **sedici milioni di pixel per giro**: adesso cinque milioni e
+  mezzo. Non si vede la differenza — quello che c'e' sopra sono macchie di luce
+  sfocate, niente che chieda un pixel preciso.
+- **Trenta fotogrammi al secondo invece di sessanta.** Le onde si muovono
+  uguale, il lavoro e' la meta', e su un telefono quella meta' e' batteria e
+  calore — che dopo due minuti fanno rallentare tutto da soli.
+- **E si puo' spegnere del tutto**, dal menu degli effetti dentro al lettore:
+  resta la copertina, la musica continua, e la scheda video si riposa. La scelta
+  resta scritta in quel telefono.
+
+L'easter egg adesso e' **solo le sirene nella barra**, che e' come era stato
+chiesto: era lui ad accendere il visualizer dietro alla pagina.
+
 ### Il telefono non propone piu' un aggiornamento che ha gia'
 
 > «L'app mobile mostra sempre aggiornamenti e fa reinstallare sempre la stessa
