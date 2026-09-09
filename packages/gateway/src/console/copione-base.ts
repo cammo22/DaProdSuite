@@ -24,6 +24,14 @@ export const COPIONE_BASE = `
   var ioNome = localStorage.getItem(CHIAVE_NOME) || "";
   /** L'id di questo dispositivo: serve a non offrire di cambiare permesso a sé stessi. */
   var ioId = "";
+  /**
+   * Il ruolo di chi sta guardando: «admin» o utente.
+   *
+   * Serve a due cose che si vedono, tutte e due della 1.2.4: la scheda in fondo
+   * che per chi non decide diventa «Notifiche», e cosa c'e' dentro. Vuoto vuol
+   * dire utente — la strada stretta, che e' quella giusta finche' non si sa.
+   */
+  var ioRuolo = "";
   var ioFoto = "";
   var ioMotto = "";
   var puoiDecidere = false;
@@ -590,6 +598,9 @@ export const COPIONE_BASE = `
     if (quale === "galleria") leggiGalleria();
     if (quale === "daprod") leggiBacheca();
     if (quale === "stili") leggiStili();
+    // Entrando nella scheda si guarda se e' arrivato qualcosa: e' il momento in
+    // cui uno se lo chiede.
+    if (quale === "riepilogo") void leggiNotifiche();
     /**
      * Uscendo dagli Stili il mix si azzera.
      *
@@ -980,4 +991,243 @@ export const COPIONE_BASE = `
   function nomeScheda(app) {
     return (SCHEDE[app] || {}).nome || app || "";
   }
+
+  /* ---------------------------------------------------------- le notifiche */
+
+  /**
+   * **Le notifiche**: il pannello dal proprio nome, e la scheda per chi non
+   * decide.
+   *
+   * Sono due richieste dello stesso giorno, e sono la stessa cosa vista da due
+   * parti — per questo il disegno delle righe sta in una funzione sola.
+   *
+   * > «Possiamo magari fare che cliccando sul nostro nome utente si apre una
+   * > schermata tipo a mezzo schermo dove ci sono queste notifiche, magari con
+   * > un pallino, e tu semplicemente puoi cliccare "visto" o fare swipe —
+   * > magari molto piu' rapido, da sinistra verso destra.»
+   *
+   * > «A livello utente normale questa tab "fila" secondo me non ci dovrebbe
+   * > nemmeno essere, dovrebbe essere tipo notifiche. Una sezione notifiche
+   * > anche per il social, dove puo' vedere se hai ricevuto dei like, se ci
+   * > sono nuovi contenuti, se le sue generazioni sono state fatte.»
+   *
+   * ⚠ **Chi decide vede la Fila, chi non decide vede le Notifiche.** Non e'
+   * un permesso in meno: e' che sono due domande diverse. Chi governa la
+   * macchina vuole sapere **cosa sta facendo il computer** e in che ordine; chi
+   * manda una richiesta vuole sapere **quando e' pronta la sua roba**. Dare a
+   * tutti e due la coda dei lavori vuol dire rispondere a uno solo.
+   */
+
+  /**
+   * **La scheda in fondo: «Fila» per chi decide, «Notifiche» per gli altri.**
+   *
+   * Chiesto il 7 settembre 2026: «a livello utente normale questa tab fila
+   * secondo me non ci dovrebbe nemmeno essere, dovrebbe essere tipo notifiche.
+   * Ridisegniamola per l'utente, per admin poi mettiamo sempre la possibilita'
+   * di gestire le notifiche».
+   *
+   * ⚠ **Non e' un permesso in meno: sono due domande diverse.** Chi governa
+   * la macchina vuole sapere cosa sta facendo il computer e in che ordine; chi
+   * manda una richiesta vuole sapere quando e' pronta la sua roba. La coda dei
+   * lavori risponde solo al primo, e mostrarla anche al secondo vuol dire dargli
+   * una schermata che non parla di lui.
+   */
+  function disegnaLaSchedaFila() {
+    var nome = $("scheda-fila-nome");
+    var segno = $("scheda-fila-segno");
+    if (nome) nome.textContent = decido() ? "Fila" : "Notifiche";
+    /**
+     * Le tre righe per la coda, il cerchio col punto per le notifiche.
+     *
+     * Segni geometrici come tutti gli altri della barra, non un'emoji: le
+     * cinque schede sono una riga sola e devono avere lo stesso peso. Una
+     * campanella a colori in mezzo a quattro simboli sottili si vede solo lei.
+     */
+    if (segno) segno.textContent = decido() ? "\\u2630" : "\\u2299";
+
+    /**
+     * Le due mezze schermate.
+     *
+     * A chi decide: «come siamo messi», i numeri della macchina, la coda con i
+     * suoi filtri e il tasto per fermare quello che sta girando.
+     * A tutti gli altri: le proprie notifiche, e basta.
+     *
+     * ⚠ **Anche «come siamo messi» sparisce**, non solo la lista. Quella
+     * scheda ha dentro «Ferma questa generazione»: lasciarla a chi non decide
+     * vorrebbe dire mostrargli un comando che non e' suo, sopra a una coda che
+     * non gli interessa.
+     */
+    var comeSiamo = $("blocco-come-siamo");
+    var fila = $("blocco-fila");
+    var notifiche = $("blocco-notifiche");
+    if (comeSiamo) comeSiamo.hidden = !decido();
+    if (fila) fila.hidden = !decido();
+    if (notifiche) notifiche.hidden = decido();
+    if (!decido()) disegnaLeNotifiche($("coda-notifiche"));
+  }
+
+  /** Le notifiche arrivate, come le manda il computer. */
+  var mieNotifiche = [];
+
+  async function leggiNotifiche() {
+    try {
+      var risposta = await chiama("/notifiche");
+      mieNotifiche = Array.isArray(risposta) ? risposta : (risposta && risposta.notifiche) || [];
+    } catch (e) {
+      // Computer spento: restano quelle di prima, che e' meglio di un elenco
+      // vuoto che sembra «non e' successo niente».
+    }
+    disegnaIlPallino();
+    if (pannelloNotificheAperto()) disegnaLeNotifiche($("notifiche-elenco"));
+    if (pagina === "riepilogo" && !decido()) disegnaLeNotifiche($("coda-notifiche"));
+  }
+
+  /** Chi decide sulla macchina. Senza ruolo si e' utenti: la strada stretta. */
+  function decido() { return ioRuolo === "admin"; }
+
+  /**
+   * Il pallino sul proprio nome: **c'e' qualcosa da guardare**.
+   *
+   * Un pallino e non un numero. Chiesto cosi' — «magari con un pallino» — ed e'
+   * anche la scelta giusta: il numero esatto delle notifiche non lo sta
+   * aspettando nessuno, e un «14» rosso addosso al proprio nome e' una cosa da
+   * togliersi di dosso, non da leggere.
+   */
+  function disegnaIlPallino() {
+    var pallino = $("pallino-notifiche");
+    if (!pallino) return;
+    pallino.hidden = mieNotifiche.length === 0;
+  }
+
+  function pannelloNotificheAperto() {
+    var p = $("pannello-notifiche");
+    return p && !p.hidden;
+  }
+
+  /**
+   * Una riga di notifica, con lo **swipe da sinistra a destra** per dire visto.
+   *
+   * ⚠ **Perche' anche il tasto, se c'e' lo swipe.** Perche' lo swipe non si
+   * vede: chi non sa che c'e' non lo scopre mai, e questa pagina la aprono
+   * anche dal computer, col mouse, dove non esiste proprio. Il tasto e' la
+   * strada che c'e' sempre; lo swipe e' la scorciatoia per chi la trova, ed e'
+   * quello che e' stato chiesto — «molto piu' rapido».
+   *
+   * Il gesto e' orizzontale, e va lasciato passare quando invece e' verticale:
+   * quaranta pixel di tolleranza, se no scorrere l'elenco segna letta la riga
+   * che si sta toccando.
+   */
+  function rigaNotifica(n, dove) {
+    var riga = document.createElement("li");
+    riga.className = "notifica";
+
+    var testo = document.createElement("div");
+    testo.className = "cresce";
+    var titolo = document.createElement("b");
+    titolo.textContent = n.titolo || "Il computer";
+    var corpo = document.createElement("small");
+    corpo.textContent = n.corpo || "";
+    testo.append(titolo, corpo);
+
+    var visto = document.createElement("button");
+    visto.className = "mini";
+    visto.textContent = "visto";
+    visto.addEventListener("click", function () { void segnaVistaLaNotifica(n, riga, dove); });
+
+    riga.append(testo, visto);
+
+    var partenza = 0;
+    var partenzaY = 0;
+    var trascino = false;
+    riga.addEventListener("touchstart", function (ev) {
+      partenza = ev.touches[0].clientX;
+      partenzaY = ev.touches[0].clientY;
+      trascino = true;
+      riga.style.transition = "none";
+    }, { passive: true });
+    riga.addEventListener("touchmove", function (ev) {
+      if (!trascino) return;
+      var dx = ev.touches[0].clientX - partenza;
+      var dy = Math.abs(ev.touches[0].clientY - partenzaY);
+      // Verticale: e' l'elenco che scorre, non questa riga.
+      if (dy > 40) { trascino = false; riga.style.transform = ""; return; }
+      // Solo verso destra: da destra a sinistra non vuol dire niente qui, e
+      // lasciarla andare di la' sembrerebbe che si possa buttare.
+      if (dx < 0) return;
+      riga.style.transform = "translateX(" + dx + "px)";
+      riga.style.opacity = String(Math.max(0.35, 1 - dx / 240));
+    }, { passive: true });
+    riga.addEventListener("touchend", function (ev) {
+      if (!trascino) return;
+      trascino = false;
+      riga.style.transition = "";
+      var dx = (ev.changedTouches[0] ? ev.changedTouches[0].clientX : partenza) - partenza;
+      if (dx > 90) { void segnaVistaLaNotifica(n, riga, dove); return; }
+      // Non e' bastato: torna al suo posto, cosi' si capisce che il gesto c'e'
+      // ma non e' arrivato in fondo.
+      riga.style.transform = "";
+      riga.style.opacity = "";
+    });
+
+    return riga;
+  }
+
+  async function segnaVistaLaNotifica(n, riga, dove) {
+    // Prima si toglie, poi si dice al computer: il gesto deve sembrare
+    // istantaneo, e se la rete e' giu' al giro dopo la notifica torna — che e'
+    // meglio di una riga che resta li' ferma dopo che l'hai spinta via.
+    riga.classList.add("via");
+    setTimeout(function () {
+      mieNotifiche = mieNotifiche.filter(function (x) { return x.id !== n.id; });
+      disegnaIlPallino();
+      if (dove) disegnaLeNotifiche(dove);
+    }, 180);
+    try {
+      await chiama("/notifiche/" + encodeURIComponent(n.id) + "/letta", { method: "POST" });
+    } catch (e) { /* al giro dopo */ }
+  }
+
+  /** Disegna l'elenco dentro «dove». Lo usano il pannello e la scheda. */
+  function disegnaLeNotifiche(dove) {
+    if (!dove) return;
+    dove.innerHTML = "";
+    if (!mieNotifiche.length) {
+      var niente = document.createElement("p");
+      niente.className = "vuoto";
+      niente.textContent = "Niente di nuovo. Quando una tua cosa e\\u0027 pronta, la trovi qui.";
+      dove.append(niente);
+      return;
+    }
+    for (var n of mieNotifiche) dove.append(rigaNotifica(n, dove));
+  }
+
+  /** Apre e chiude il pannello a mezzo schermo. */
+  function giraIlPannelloNotifiche() {
+    var p = $("pannello-notifiche");
+    if (!p) return;
+    if (!p.hidden) { chiudiIlPannelloNotifiche(); return; }
+    p.hidden = false;
+    /**
+     * Il momento di mezzo serve alla transizione: senza, il pannello
+     * comparirebbe gia' su invece di salire.
+     *
+     * ⚠ **Un timer e non «requestAnimationFrame»**, che sarebbe la scelta
+     * naturale. In una pagina che il sistema non sta disegnando — una scheda in
+     * secondo piano, una finestra nascosta — i fotogrammi non arrivano affatto:
+     * il pannello resterebbe fuori schermo, cioe' aperto e invisibile. I timer
+     * arrivano lo stesso, al massimo in ritardo, e il pannello si trova gia'
+     * salito quando qualcuno torna a guardare.
+     */
+    setTimeout(function () { p.classList.add("su"); }, 16);
+    disegnaLeNotifiche($("notifiche-elenco"));
+    void leggiNotifiche();
+  }
+
+  function chiudiIlPannelloNotifiche() {
+    var p = $("pannello-notifiche");
+    if (!p || p.hidden) return;
+    p.classList.remove("su");
+    setTimeout(function () { p.hidden = true; }, 220);
+  }
+
 `;

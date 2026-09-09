@@ -57,6 +57,45 @@ gia' qual era.
 Il tasto compare solo dove ha senso — sui lavori andati storti, non su «e'
 pronto» — e dice sempre com'e' andata, anche quando il computer non risponde.
 
+### Le notifiche: un pannello dal proprio nome, con lo swipe
+
+> «Cliccando sul nostro nome utente si apre una schermata tipo a mezzo schermo
+> dove ci sono queste notifiche, magari con un pallino, e tu semplicemente puoi
+> cliccare "visto" o fare swipe — magari molto piu' rapido, da sinistra verso
+> destra.»
+
+Toccando il proprio nome, in alto, sale un pannello a **mezzo schermo** con le
+notifiche. Mezzo schermo e non tutto: quello che stavi guardando resta li'
+sotto, e chiudendo sei ancora dov'eri.
+
+Un pallino sul nome quando c'e' qualcosa. Ogni riga si toglie **scorrendola
+verso destra**, o col tasto «visto» — lo swipe e' la scorciatoia per il dito
+veloce, il tasto e' la strada che c'e' sempre, anche col mouse.
+
+Il nome, prima, portava alla scheda DaProd: che pero' ha gia' il suo tasto in
+fondo. Era la seconda strada per lo stesso posto, e adesso porta a una cosa che
+non ne aveva nessuna.
+
+### Per chi non decide, la Fila diventa Notifiche
+
+> «A livello utente normale questa tab "fila" secondo me non ci dovrebbe nemmeno
+> essere, dovrebbe essere tipo notifiche. Una sezione notifiche anche per il
+> social, dove puo' vedere se hai ricevuto dei like, se ci sono nuovi contenuti,
+> se le sue generazioni sono state fatte.»
+
+Chi governa la macchina vede la **Fila**, com'era. Chi non decide vede
+**Notifiche**: le sue generazioni finite, i commenti sotto alle sue cose, quello
+che gli e' arrivato.
+
+Non e' un permesso in meno, sono due domande diverse. Chi sta al computer vuole
+sapere cosa sta facendo la macchina e in che ordine; chi manda una richiesta
+vuole sapere quando e' pronta la sua roba. La coda dei lavori risponde solo al
+primo — e a chi non decide mostrava anche «Ferma questa generazione», cioe' un
+comando che non e' suo.
+
+E' lo stesso elenco del pannello che si apre dal nome: stesse righe, stesso
+swipe.
+
 ### Quando la suite si aggiorna, si vede — e ci sono i coriandoli
 
 > «Facciamo che quando esce un aggiornamento esce un avviso con tipo gli effetti

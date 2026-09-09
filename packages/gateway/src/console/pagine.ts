@@ -33,9 +33,20 @@ export const PAGINE = `<header>
   -->
   <button class="marchio" id="marchio" title="DaProd Suite">DaProd<span>Suite</span></button>
   <div class="cresci"></div>
+  <!--
+    Il proprio nome. Toccandolo si aprono **le notifiche**, in un pannello a
+    mezzo schermo: chiesto il 7 settembre 2026, «cliccando sul nostro nome
+    utente si apre una schermata tipo a mezzo schermo dove ci sono queste
+    notifiche, magari con un pallino».
+
+    Fino alla 1.2.3 portava alla scheda DaProd, che pero' ha gia' il suo tasto
+    in fondo: era la seconda strada per lo stesso posto, e adesso porta a una
+    cosa che prima non aveva nessuna strada.
+  -->
   <button class="chi" id="chi" hidden>
     <span class="faccina" id="mia-faccina"></span>
     <span class="nome" id="mio-nome"></span>
+    <span class="pallino" id="pallino-notifiche" hidden></span>
   </button>
   <!--
     **L'ingranaggio, disegnato.** Chiesto il 6 settembre 2026: «fai meglio il
@@ -334,14 +345,21 @@ export const PAGINE = `<header>
     ancora ma sono strette, e i lavori vecchi si vanno a cercare.
   -->
   <section class="pagina" id="pag-riepilogo">
-    <div class="scheda">
+    <!--
+      ⚠ **Tutta questa scheda e' roba di chi decide.** «Come siamo messi»,
+      i numeri della macchina e la riga «Ferma questa generazione» rispondono
+      alla domanda «cosa sta facendo il computer» — che e' la domanda di chi
+      governa la fila, non di chi ha mandato una richiesta. Per gli altri sparisce
+      e al posto suo ci sono le loro notifiche: vedi «disegnaLaSchedaFila».
+    -->
+    <div class="scheda" id="blocco-come-siamo">
       <h2>Come siamo messi</h2>
       <p class="sotto" id="sotto-riepilogo">Cosa sta facendo il computer, adesso.</p>
       <div class="strisce" id="strisce"></div>
       <div id="dove-adesso"></div>
     </div>
 
-    <div class="scheda">
+    <div class="scheda" id="blocco-fila">
       <div class="filtri" id="filtri-lavori"></div>
       <!--
         La riga che dice perche' la fila non si muove: compare **solo** a chi
@@ -350,6 +368,21 @@ export const PAGINE = `<header>
       -->
       <p class="avviso" id="coda-avviso" hidden></p>
       <ul class="voci compatta" id="coda"></ul>
+    </div>
+
+    <!--
+      ⚠ **Per chi non decide, al posto della coda ci sono le sue
+      notifiche.** Chiesto il 7 settembre 2026: «una coda di lavori non e' una
+      cosa che un utente vuole guardare: vuole sapere quando e' pronta la sua
+      roba».
+
+      E' lo stesso elenco del pannello che si apre dal proprio nome — stesse
+      righe, stesso swipe — perche' e' la stessa cosa guardata da due parti.
+    -->
+    <div class="scheda" id="blocco-notifiche" hidden>
+      <h2>Le tue notifiche</h2>
+      <p class="sotto">Le tue generazioni finite, e quello che succede alle tue cose in DaProd.</p>
+      <ul class="voci" id="coda-notifiche"></ul>
     </div>
   </section>
 
@@ -692,10 +725,45 @@ export const PAGINE = `<header>
   <div class="effetti" id="palco-effetti-menu" hidden></div>
 </div>
 
+<!-- ========================== LE NOTIFICHE ============================
+  Un pannello a mezzo schermo, che sale dal basso quando si tocca il proprio
+  nome. Chiesto il 7 settembre 2026.
+
+  ⚠ **Mezzo schermo e non tutto**, ed e' la parte della richiesta che si
+  sarebbe persa piu' facilmente: si guardano le notifiche **senza uscire** da
+  quello che si stava facendo. La pagina sotto resta li', si vede, e chiudendo
+  il pannello si e' ancora dov'eri.
+
+  Ogni riga si toglie con lo swipe da sinistra a destra, o col tasto «visto» —
+  che e' la stessa cosa fatta in due modi, uno per il dito veloce e uno per chi
+  non sa che lo swipe c'e'. Vedi «rigaNotifica» nel copione.
+-->
+<div class="pannelloNotifiche" id="pannello-notifiche" hidden>
+  <div class="fondoScuro" id="notifiche-fondo"></div>
+  <div class="carta">
+    <div class="maniglia"></div>
+    <div class="fila">
+      <h2 class="cresce">Notifiche</h2>
+      <button class="mini" id="notifiche-chiudi">chiudi</button>
+    </div>
+    <p class="sotto">Scorri una riga verso destra per dire che l'hai vista.</p>
+    <ul class="voci" id="notifiche-elenco"></ul>
+  </div>
+</div>
+
 <nav class="fondo" id="fondo" hidden>
   <button data-pagina="casa" class="on"><span class="segno">&#9673;</span>Casa</button>
   <button data-pagina="produzione"><span class="segno">&#10010;</span>Produci</button>
-  <button data-pagina="riepilogo"><span class="segno">&#9776;</span>Fila<span class="bollo" id="bollo" hidden></span></button>
+  <!--
+    ⚠ **Questa scheda cambia nome secondo chi guarda**, dalla 1.2.4: «Fila»
+    per chi decide, «Notifiche» per tutti gli altri. Il nome e il segno li
+    scrive il copione — vedi «disegnaLaSchedaFila» — perche' qui non si sa
+    ancora chi sta guardando.
+
+    Chiesto il 7 settembre 2026: «a livello utente normale questa tab fila
+    secondo me non ci dovrebbe nemmeno essere, dovrebbe essere tipo notifiche».
+  -->
+  <button data-pagina="riepilogo" id="scheda-fila"><span class="segno" id="scheda-fila-segno">&#8857;</span><span id="scheda-fila-nome">Notifiche</span><span class="bollo" id="bollo" hidden></span></button>
   <button data-pagina="galleria"><span class="segno">&#9635;</span>Galleria</button>
   <button data-pagina="daprod"><span class="segno">&#9788;</span>DaProd</button>
 </nav>`;

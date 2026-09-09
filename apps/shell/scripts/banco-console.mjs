@@ -443,10 +443,24 @@ const gateway = new G.Gateway({
  * da se stessi. Prima questa riga faceva morire il banco all'avvio con un
  * errore che non diceva niente.
  */
+/**
+ * Con che ruolo si entra: admin di suo, `BANCO_RUOLO=ospite` per l'altro.
+ *
+ * Serve a guardare le due mezze suite che esistono dalla 1.2.4: chi decide vede
+ * la **Fila**, chi non decide vede le **Notifiche** al posto suo. E' una
+ * differenza che non si vede leggendo il codice — si vede aprendo le due
+ * schermate una accanto all'altra.
+ */
+const RUOLO = process.env.BANCO_RUOLO === "ospite" ? "ospite" : "admin";
 const gia = remoto.archivi.datiCorrenti.dispositivi.find((d) => d.nome === "chi prova");
 const esito = gia
   ? { dispositivo: gia, token: gia.token }
-  : remoto.accoppia(remoto.nuovoInvito("admin").codice, "chi prova");
+  : remoto.accoppia(remoto.nuovoInvito(RUOLO).codice, "chi prova");
+// La cartella dei dati puo' sopravvivere al riavvio: se il ruolo chiesto e'
+// cambiato, si cambia anche a chi c'era gia'.
+if (!("errore" in esito) && esito.dispositivo.ruolo !== RUOLO) {
+  esito.dispositivo.ruolo = RUOLO;
+}
 if ("errore" in esito) throw new Error(esito.errore);
 
 // Qualche richiesta finta, per riempire il Riepilogo e vedere i numeri.
@@ -467,6 +481,22 @@ for (const [testo, stato] of [
   if (stato === "pronta") r.risultato = { nome: "quadro.png", percorso: "quadro.png", tipo: "image/png", bytes: 68, quando: Date.now() };
   if (stato === "scartata") r.motivoScarto = "Fermato da chi sta al computer.";
 }
+/**
+ * Qualche notifica finta, per guardare il pannello che si apre dal proprio nome
+ * e la scheda che per chi non decide diventa «Notifiche».
+ *
+ * Sono le tre famiglie che passano il filtro sul telefono: una cosa pronta, una
+ * persona che ti scrive, un lavoro andato storto. La terza serve piu' delle
+ * altre — e' quella con il tasto «Rimanda».
+ */
+for (const [titolo, corpo] of [
+  ["Il computer", "La tua foto e' pronta: «un faro sulla scogliera al tramonto»"],
+  ["Giulia", "ha commentato la tua barca che entra in porto"],
+  ["Il computer", "«un tramonto sul golfo»: non fatto, la scheda video era occupata"],
+]) {
+  remoto.avvisaPersona(esito.dispositivo.id, titolo, corpo);
+}
+
 archivio.scriviAdesso();
 
 /**

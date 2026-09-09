@@ -183,8 +183,23 @@ export const COPIONE_AVVIO = `
       ioId = io.id || "";
       ioFoto = io.foto || "";
       ioMotto = io.motto || "";
+      // Da qui si sa se questa persona decide: cambia la scheda in fondo e cosa
+      // c'e' dentro. Vedi «disegnaLaSchedaFila».
+      ioRuolo = io.ruolo || "";
       localStorage.setItem(CHIAVE_NOME, ioNome);
     } catch (e) { /* si riprova al giro dopo */ }
+
+    /**
+     * La scheda in fondo si disegna **fuori dal try**, e non e' un dettaglio.
+     *
+     * ⚠ Se «/io» non risponde — computer spento, token vecchio — il ruolo
+     * resta vuoto, e vuoto vuol dire «non decido»: la strada stretta. Lasciando
+     * questa riga dentro al try, in quel caso non veniva chiamata affatto e la
+     * scheda restava quella scritta nel markup, cioe' «Fila»: a un utente
+     * comparivano i comandi per governare la macchina, per il solo fatto che il
+     * computer non aveva risposto. Ci sono cascato provandola.
+     */
+    disegnaLaSchedaFila();
 
     $("chi").hidden = false;
     disegnaMioProfilo();
@@ -203,6 +218,7 @@ export const COPIONE_AVVIO = `
     try { await leggiStili(); } catch (e) { /* offline: restano quelli di prima */ }
     disegnaFiltriDaprod();
     await guardaAi();
+    try { await leggiNotifiche(); } catch (e) { /* offline: restano quelle di prima */ }
     try { await leggiMacchina(); } catch (e) { /* offline */ }
     try { await leggiCoda(); } catch (e) { /* offline */ }
     try { await leggiRegali(); } catch (e) { /* offline */ }
@@ -398,7 +414,20 @@ export const COPIONE_AVVIO = `
   $("palco-barra").addEventListener("input", function () { stoTrascinando = true; });
   $("palco-barra").addEventListener("change", function () { stoTrascinando = false; vaiAlPunto(); });
   aggangiaIlTrascinamento($("palco"));
-  $("chi").addEventListener("click", function () { vaiA("daprod"); });
+  /**
+   * Il proprio nome apre **le notifiche**.
+   *
+   * ⚠ Fino alla 1.2.3 portava alla scheda DaProd, che pero' ha gia' il suo
+   * tasto in fondo: erano due strade per lo stesso posto, e le notifiche non ne
+   * avevano nessuna. Chiesto il 7 settembre 2026: «cliccando sul nostro nome
+   * utente si apre una schermata tipo a mezzo schermo dove ci sono queste
+   * notifiche».
+   */
+  $("chi").addEventListener("click", function () { giraIlPannelloNotifiche(); });
+  $("notifiche-chiudi").addEventListener("click", function () { chiudiIlPannelloNotifiche(); });
+  // Toccare fuori dal pannello lo chiude, come ci si aspetta da una cosa che
+  // sale dal basso.
+  $("notifiche-fondo").addEventListener("click", function () { chiudiIlPannelloNotifiche(); });
   $("apri-profilo").addEventListener("click", apriIlProfilo);
   $("comincia-chiacchiera").addEventListener("click", cominciaChiacchierata);
   $("chiudi-chiacchiera").addEventListener("click", chiudiLaChiacchierata);
