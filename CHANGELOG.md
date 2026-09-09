@@ -12,6 +12,16 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ## Non ancora pubblicato
 
+**Togliere il tunnel Cloudflare** per chi ha l'indirizzo fisso, e **togliere il
+codice** della schermata «cerca i computer di casa», che è irraggiungibile ma
+ancora lì.
+
+---
+
+## 1.2.4 — L'app come se l'aspetta chi la scarica
+
+Il **blocco 2** della 1.2.3, piu' il difetto della finestra che spariva.
+
 ### Sul telefono: niente piu' «Chi sei?» a ogni avvio
 
 > «Facciamo che si vede un piccolo caricamento invece che vedere "chi sei".
@@ -137,10 +147,6 @@ E per il caso che resta — la finestra si vede, ma sta in un angolo scomodo —
 menu vicino all'orologio c'e' **«Rimetti le finestre al centro»**. Sta li' e non
 nelle impostazioni apposta: e' l'unico posto che si raggiunge anche quando la
 finestra che non riesci a toccare e' proprio quella che ti serve.
-
-**Togliere il tunnel Cloudflare** per chi ha l'indirizzo fisso, e **togliere il
-codice** della schermata «cerca i computer di casa», che è irraggiungibile ma
-ancora lì.
 
 ---
 
