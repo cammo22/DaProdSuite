@@ -379,7 +379,19 @@ export const COPIONE_AVVIO = `
         if (dietro) dietro.style.opacity = "";
         if (!sogno) sogno = requestAnimationFrame(unSogno);
       }
-      avvisa("Va da solo. Ritoccalo sette volte per farlo smettere.", "bene");
+      /**
+       * ⚠ **La frase di quando si accende.** Chiesta il 7 settembre 2026:
+       * «facciamo che se uno lo clicca e riclicca, sa che a un certo punto
+       * quando lo toglie dice buonanotte, e trova un'altra frase quando lo
+       * attiva — tipo "complimenti, hai scoperto un segreto", sempre con
+       * l'effetto confetti magari».
+       *
+       * Le due frasi sono una coppia: «buonanotte» quando si spegne c'era gia',
+       * e da sola non diceva a nessuno che dall'altra parte c'era qualcosa da
+       * scoprire.
+       */
+      avvisa("Complimenti, hai scoperto un segreto. Ritoccalo sette volte per farlo smettere.", "bene");
+      coriandoli();
     } else {
       if (sogno) { cancelAnimationFrame(sogno); sogno = null; }
       if (!palcoAperto) {

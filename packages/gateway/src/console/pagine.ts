@@ -626,7 +626,7 @@ export const PAGINE = `<header>
     <button class="tondo" id="palco-chiudi" title="Chiudi">&#10005;</button>
   </div>
 
-  <div class="dentro" id="palco-dentro"></div>
+  <div class="dentro su" id="palco-dentro"></div>
 
   <!--
     **Com'e' stata fatta**, dentro il palco e non in un foglio.

@@ -22,7 +22,7 @@
  * token: si apre e si è già entrati.
  */
 
-import { mkdtempSync, mkdirSync, writeFileSync } from "node:fs";
+import { mkdtempSync, mkdirSync, writeFileSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createRequire } from "node:module";
@@ -64,7 +64,38 @@ const PIXEL = Buffer.from(
 );
 writeFileSync(join(cartella, "quadro.png"), PIXEL);
 writeFileSync(join(cartella, "clip.mp4"), PIXEL);
-writeFileSync(join(cartella, "brano.mp3"), PIXEL);
+/**
+ * ⚠ **Il brano finto e' un WAV vero, non un PNG rinominato.**
+ *
+ * Lo era: un pixel con l'estensione sbagliata. Il browser lo rifiutava, il
+ * lettore passava al prossimo e la fila finiva subito — quindi tutto quello che
+ * succede **mentre un brano suona** non si poteva guardare: il visualizer, la
+ * barra del tempo, le info che si alzano. Trovato provando il difetto #82.
+ *
+ * Un secondo di silenzio a 8 kHz mono: quarantaquattro byte di intestazione e
+ * ottomila di zeri. Nessuna libreria, e suona davvero.
+ */
+function wavSilenzioso(secondi) {
+  const frequenza = 8000;
+  const campioni = frequenza * secondi;
+  const testa = Buffer.alloc(44);
+  testa.write("RIFF", 0);
+  testa.writeUInt32LE(36 + campioni, 4);
+  testa.write("WAVEfmt ", 8);
+  testa.writeUInt32LE(16, 16);
+  testa.writeUInt16LE(1, 20);
+  testa.writeUInt16LE(1, 22);
+  testa.writeUInt32LE(frequenza, 24);
+  testa.writeUInt32LE(frequenza, 28);
+  testa.writeUInt16LE(1, 32);
+  testa.writeUInt16LE(8, 34);
+  testa.write("data", 36);
+  testa.writeUInt32LE(campioni, 40);
+  // 128 e' lo zero per un campione a 8 bit senza segno: silenzio, non un ronzio.
+  return Buffer.concat([testa, Buffer.alloc(campioni, 128)]);
+}
+
+writeFileSync(join(cartella, "brano.wav"), wavSilenzioso(30));
 
 const voci = [
   {
@@ -88,8 +119,8 @@ const voci = [
     },
   },
   {
-    id: "musica/brano.mp3", nome: "Ammore mio",
-    tipo: "audio", app: "musica", file: "brano.mp3", mime: "audio/mpeg",
+    id: "musica/brano.wav", nome: "Ammore mio",
+    tipo: "audio", app: "musica", file: "brano.wav", mime: "audio/wav",
     fatta: {
       "Il titolo": "Ammore mio",
       "Che genere": "neapolitan neomelodic pop, melodic trap",
@@ -151,7 +182,9 @@ const libreria = {
       .map((v) => comeEsce(v, chi)),
   file: (id) => {
     const v = voci.find((x) => x.id === id);
-    return v ? { percorso: join(cartella, v.file), nome: v.nome, mime: v.mime, bytes: 68 } : null;
+    // La misura vera del file: il brano adesso e' un WAV di ottomila byte, e
+    // dire 68 a chi lo scarica vuol dire consegnarne 68.
+    return v ? { percorso: join(cartella, v.file), nome: v.nome, mime: v.mime, bytes: statSync(join(cartella, v.file)).size } : null;
   },
   anteprima: async (id) => {
     const v = voci.find((x) => x.id === id);
