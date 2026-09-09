@@ -20,10 +20,11 @@
  * Senza argomento cerca dove sta oggi, cioe' nella wiki.
  *
  * ⚠ **Il numero che conta e' `prank`, non `pop`.** Nel dataset `pop` e' gia'
- * schiacciato da una scala logaritmica: usandolo, il 79% dei generi diventava
- * Leggendario e la parola smetteva di voler dire qualcosa. Il rank invece
- * distribuisce la rarita' su tutta la lista — l'abbiamo contato: 1.712 comuni,
- * 1.126 poco comuni, 1.265 rari, 1.037 epici, 1.151 leggendari.
+ * schiacciato da una scala logaritmica: usandolo, il 79% dei generi finiva in
+ * cima alla scala e la parola smetteva di voler dire qualcosa. Il rank invece
+ * distribuisce la rarita' su tutta la lista — contati: 2.641 Basic, 453 Grand,
+ * 380 Rare, 322 Arcane, 297 Heroic, 289 Unique, 336 Celestial, 332 Divine,
+ * 365 Epic, 397 Legendary, 479 Mythic.
  */
 
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
@@ -49,8 +50,13 @@ const righe = generi.map((g) => {
   // Chi non era nella lista del 2023 sta in fondo: non e' una punizione, e'
   // che non lo ascoltava nessuno abbastanza da finirci dentro.
   const rank = typeof g.prank === "number" ? g.prank : quanti;
+  // Il rank di **modernita'**: quanto quel genere suona di adesso invece che
+  // di allora. Serve al filtro delle epoche — vedi `pesoEra` in `regole.ts` —
+  // e senza di lui «anni 70» sarebbe solo un'etichetta su un pugno di generi
+  // invece che un peso su tutti.
+  const moderno = typeof g.mrank === "number" ? g.mrank : "";
   const esempio = String(g.ex ?? "").replace(/^e\.g\.\s*/, "");
-  return [g.g, g.fam ?? "altro", rank, g.decade ?? "", esempio]
+  return [g.g, g.fam ?? "altro", rank, g.decade ?? "", moderno, esempio]
     .map((c) => alSicuro(String(c)))
     .join("|");
 });
@@ -120,6 +126,14 @@ export interface Genere extends Pezzo {
   famiglia: string;
   /** \`70\`, \`80\`… vuoto se quel genere non e' di un decennio in particolare. */
   decennio: string;
+  /**
+   * Quanto suona di adesso, da 0 (modernissimo) a 1 (roba di allora).
+   *
+   * E' il rank di modernita' di Every Noise, riportato fra zero e uno. Il
+   * filtro delle epoche pesa **tutti** i generi con questo, non solo quelli
+   * che hanno un decennio scritto sopra — che sono pochi.
+   */
+  modernita: number;
   /** Un artista che lo fa. Vuoto se non ce n'era uno nel dataset. */
   esempio: string;
 }
@@ -127,7 +141,8 @@ export interface Genere extends Pezzo {
 export const GENERI: Genere[] = CRUDI.trim()
   .split("\\n")
   .map((riga) => {
-    const [nome = "", famiglia = "altro", rank = "0", decennio = "", esempio = ""] = riga.split("|");
+    const [nome = "", famiglia = "altro", rank = "0", decennio = "", moderno = "", esempio = ""] =
+      riga.split("|");
     return {
       id: "genere/" + chiocciola(nome),
       rullo: "genere",
@@ -139,6 +154,7 @@ export const GENERI: Genere[] = CRUDI.trim()
       quantoComune: 1 - Number(rank) / QUANTI,
       famiglia,
       decennio,
+      modernita: moderno ? Number(moderno) / QUANTI : 0.5,
       esempio,
     };
   });

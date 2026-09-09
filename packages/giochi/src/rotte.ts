@@ -19,6 +19,7 @@ import {
   butta,
   classifica,
   manda,
+  mandaDallaLibreria,
   NienteDaFare,
   prendi,
   serie,
@@ -27,9 +28,9 @@ import {
   tira,
 } from "./banco";
 import type { Deposito } from "./deposito";
-import { GRADI, lire, raritaDiPrezzo } from "./regole";
+import { EPOCHE, GRADI, gradoDiPrezzo, lire } from "./regole";
 import { rulliDi } from "./rulli";
-import type { Combinazione, Tavolo } from "./tipi";
+import type { Collezionabile, Era, Tavolo, TipoCollezionabile } from "./tipi";
 
 /** Chi sta chiedendo. Nella suite e' il dispositivo accoppiato. */
 export interface Chi {
@@ -49,6 +50,14 @@ export interface Contorno {
   nomeDi(id: string): string;
   /** La faccia, se chi ci ospita ne ha una. Serve solo alla classifica. */
   facciaDi?(id: string): string | undefined;
+  /**
+   * Dove si vede una cosa della libreria della suite: l'indirizzo del file.
+   *
+   * Il gioco non tiene file — tiene il numero di targa — e per mostrare una
+   * foto vinta deve chiedere a chi ospita dove sta. Senza, le figurine che non
+   * sono prompt si vedono solo come titolo.
+   */
+  indirizzoLibreria?(id: string): string | undefined;
 }
 
 export interface Risposta {
@@ -64,34 +73,49 @@ function tavoloDi(corpo: Record<string, unknown>): Tavolo {
   return corpo["tavolo"] === "immagini" ? "immagini" : "musica";
 }
 
+/** L'epoca chiesta, o tutte. Una scritta a caso vale come «sempre». */
+function eraDi(corpo: Record<string, unknown>): Era {
+  const detta = String(corpo["era"] ?? "sempre");
+  return (EPOCHE.find((e) => e.id === detta)?.id ?? "sempre") as Era;
+}
+
 function numero(cosa: unknown, seManca: number): number {
   const n = typeof cosa === "number" ? cosa : Number(cosa);
   return Number.isFinite(n) ? n : seManca;
 }
 
 /**
- * Una combinazione come la puo' vedere **questa** persona.
+ * Una figurina come la puo' vedere **questa** persona.
  *
  * Chi non ce l'ha in collezione vede il titolo, il prezzo e chi l'ha fatta, ma
- * **non il prompt**: se no non ci sarebbe niente da sbloccare, e l'album
- * sarebbe un elenco invece di una raccolta. L'admin vede tutto, perche' deve
- * poterle controllare.
+ * **non il prompt** e **non il file**: se no non ci sarebbe niente da
+ * sbloccare, e l'album sarebbe un elenco invece di una raccolta. Chi comanda
+ * vede tutto, perche' deve poterle controllare.
  */
-function vestita(c: Combinazione, contorno: Contorno, scoperta: boolean) {
+function vestita(c: Collezionabile, contorno: Contorno, scoperta: boolean) {
+  const grado = gradoDiPrezzo(c.prezzo ?? 0);
   return {
     id: c.id,
+    tipo: c.tipo,
     titolo: c.titolo,
-    prompt: scoperta ? c.prompt : "",
+    prompt: scoperta ? (c.prompt ?? "") : "",
+    /** Dove si guarda o si ascolta, per le figurine che non sono prompt. */
+    dove:
+      scoperta && c.libreria && contorno.indirizzoLibreria
+        ? (contorno.indirizzoLibreria(c.libreria.id) ?? "")
+        : "",
+    mime: c.libreria?.mime ?? "",
     scoperta,
     numero: c.numero ?? 0,
     prezzo: c.prezzo ?? 0,
-    rarita: raritaDiPrezzo(c.prezzo ?? 0),
+    grado,
     stato: c.stato,
     motivo: c.motivo ?? "",
     daChi: c.daChi,
     daNome: contorno.nomeDi(c.daChi),
     quando: c.quando,
-    tavolo: c.tavolo,
+    tavolo: c.tavolo ?? "",
+    era: c.era ?? "",
   };
 }
 
@@ -126,6 +150,7 @@ export function rispondi(
           prese: conto.prese,
           collezione: conto.collezione.length,
           colpoGrosso: conto.colpoGrosso,
+          migliorGrado: conto.migliorGrado ?? "",
         },
         // I numeri che si vedono: quanto costa una cosa, non come si pesca.
         costi: {
@@ -135,6 +160,7 @@ export function rispondi(
           perSerie: imp.perSerie,
         },
         gradi: GRADI,
+        epoche: EPOCHE,
         tavoli: [
           { id: "musica", nome: "Musica", rulli: rulliDi("musica") },
           { id: "immagini", nome: "Immagini", rulli: rulliDi("immagini") },
@@ -149,7 +175,7 @@ export function rispondi(
       const bloccati = Array.isArray(corpo["bloccati"])
         ? (corpo["bloccati"] as unknown[]).map((x) => (typeof x === "string" && x ? x : null))
         : [];
-      const giro = tira(deposito, chi.id, tavoloDi(corpo), bloccati, Math.random);
+      const giro = tira(deposito, chi.id, tavoloDi(corpo), eraDi(corpo), bloccati, Math.random);
       return OK({
         ...giro,
         saldoScritto: lire(giro.saldo),
@@ -161,14 +187,36 @@ export function rispondi(
 
     if (metodo === "POST" && percorso === "/manda") {
       const pezzi = Array.isArray(corpo["pezzi"]) ? (corpo["pezzi"] as string[]) : [];
-      const c = manda(deposito, chi.id, tavoloDi(corpo), pezzi);
+      const c = manda(deposito, chi.id, tavoloDi(corpo), eraDi(corpo), pezzi);
+      return OK(vestita(c, contorno, true));
+    }
+
+    /**
+     * Una cosa della suite mandata a controllare: una foto, un brano, un video.
+     *
+     * La porta lasciata aperta di proposito. Chi la usa e' chi ospita — la
+     * galleria della suite, con un tasto «mandala in sala giochi» — non la
+     * pagina della slot.
+     */
+    if (metodo === "POST" && percorso === "/manda-dalla-libreria") {
+      const c = mandaDallaLibreria(
+        deposito,
+        chi.id,
+        String(corpo["tipo"] ?? "immagine") as TipoCollezionabile,
+        String(corpo["titolo"] ?? ""),
+        {
+          id: String(corpo["idLibreria"] ?? ""),
+          mime: String(corpo["mime"] ?? ""),
+          comeEraFatta: corpo["comeEraFatta"] ? String(corpo["comeEraFatta"]) : undefined,
+        },
+      );
       return OK(vestita(c, contorno, true));
     }
 
     if (metodo === "GET" && percorso === "/mie") {
       const conto = deposito.conto(chi.id);
       const mandate = deposito
-        .combinazioni()
+        .collezionabili()
         .filter((c) => c.daChi === chi.id)
         .sort((a, b) => b.quando - a.quando)
         .map((c) => vestita(c, contorno, true));
@@ -197,7 +245,7 @@ export function rispondi(
         ...apertura,
         saldoScritto: lire(apertura.saldo),
         figurine: apertura.figurine.map((f) => ({
-          ...vestita(f.combinazione, contorno, true),
+          ...vestita(f.cosa, contorno, true),
           doppione: f.doppione,
           lire: f.lire,
         })),
@@ -217,7 +265,7 @@ export function rispondi(
       });
     }
 
-    /* ------------------------------------------------------ la fila dell'admin */
+    /* ------------------------------------------------------ la fila di chi comanda */
 
     if (percorso.startsWith("/fila") || percorso === "/prendi" || percorso === "/butta") {
       if (!chi.admin) return NO(403, "Questa parte e' di chi decide.");
@@ -225,12 +273,12 @@ export function rispondi(
 
     if (metodo === "GET" && percorso === "/fila") {
       const inAttesa = deposito
-        .combinazioni()
+        .collezionabili()
         .filter((c) => c.stato === "in-attesa")
         .sort((a, b) => a.quando - b.quando)
         .map((c) => vestita(c, contorno, true));
       const decise = deposito
-        .combinazioni()
+        .collezionabili()
         .filter((c) => c.stato !== "in-attesa")
         .sort((a, b) => (b.decisa ?? 0) - (a.decisa ?? 0))
         .slice(0, 30)

@@ -1,6 +1,6 @@
 /**
- * Il banco: tirare la leva, mandare una combinazione, aprire un pacchetto,
- * tenere il conto.
+ * Il banco: tirare la leva, mandare una cosa a controllare, aprire un
+ * pacchetto, tenere il conto.
  *
  * Sta in mezzo fra le regole (che non sanno chi gioca) e il deposito (che non
  * sa giocare). Qui dentro succedono le cose che contano: si controlla che uno
@@ -10,27 +10,37 @@
  * codice: e' la regola numero uno del gioco (CONCETTI.md § 3). La pagina chiede
  * «giro», il PC pesca e risponde cosa e' uscito. Il giorno che una di queste
  * funzioni finisse dentro la pagina, il primo che apre gli strumenti da
- * sviluppatore si regala il jackpot — e, peggio, si approva le combinazioni da
- * solo.
+ * sviluppatore si regala il Mythic — e, peggio, si approva le cose da solo.
  */
 
 import { Deposito } from "./deposito";
 import {
   fra,
+  gradoDiPrezzo,
   impronta as improntaDi,
   inGioco,
+  meglioDi,
   montaPrompt,
   pescaPesata,
   pescaPezzo,
-  QUANTO_ESCE,
-  raritaDiPrezzo,
+  scalino,
   valore,
   valuta,
   type Caso,
 } from "./regole";
 import { PEZZI_IMMAGINI, PEZZI_MUSICA_CORTI, rulliDi } from "./rulli";
-import { GENERI } from "./dati/generi";
-import type { Combinazione, Conto, Giro, Pezzo, PezzoInGioco, Tavolo } from "./tipi";
+import { GENERI, type Genere } from "./dati/generi";
+import type {
+  Collezionabile,
+  Conto,
+  DallaLibreria,
+  Era,
+  Giro,
+  Pezzo,
+  PezzoInGioco,
+  Tavolo,
+  TipoCollezionabile,
+} from "./tipi";
 
 /** Quando qualcosa non si puo' fare, si dice **perche'**, in italiano. */
 export class NienteDaFare extends Error {}
@@ -38,22 +48,50 @@ export class NienteDaFare extends Error {}
 /* ------------------------------------------------------------------ i mazzi */
 
 /**
+ * I generi, un'altra volta, sotto il rullo «incrocio».
+ *
+ * ⚠ **I dati non sono scritti due volte**: e' la stessa lista di `GENERI`,
+ * rimessa sotto un altro rullo. Incrociare due generi e' il gesto che fa uscire
+ * le cose buone — «indonesian indie pop» e' un genere, «indonesian indie pop
+ * incrociato con dark jazz» e' un'idea — e per farlo serve che il mazzo dei
+ * generi risponda a due caselle.
+ *
+ * Si prepara una volta sola, alla prima richiesta: sono 6.291 oggetti, e farlo
+ * a ogni giro vorrebbe dire rifarli dodici volte al secondo per niente.
+ */
+let incroci: Genere[] | null = null;
+function generiPerIncrocio(): Genere[] {
+  if (!incroci) {
+    incroci = GENERI.map((g) => ({ ...g, id: "incrocio/" + g.id.slice("genere/".length), rullo: "incrocio" }));
+  }
+  return incroci;
+}
+
+/**
  * Tutti i pezzi di un tavolo, prima dei prezzi.
  *
- * I `custom` dell'admin ci sono dentro: sono mazzo in piu' e girano come gli
- * altri. La roba da collezionare sono le **combinazioni**, non i pezzi, quindi
- * un pezzo aggiunto a mano non ha bisogno di un canale suo per uscire.
+ * I `custom` di chi comanda ci sono dentro: sono mazzo in piu' e girano come
+ * gli altri. La roba da collezionare sono i **collezionabili**, non i pezzi,
+ * quindi un pezzo aggiunto a mano non ha bisogno di un canale suo per uscire.
  */
-function pezziDi(deposito: Deposito, tavolo: Tavolo): Pezzo[] {
-  const suoi = tavolo === "musica" ? [...GENERI, ...PEZZI_MUSICA_CORTI] : PEZZI_IMMAGINI;
+function pezziDi(deposito: Deposito, tavolo: Tavolo, rullo: string): Pezzo[] {
   const rulli = new Set(rulliDi(tavolo).map((r) => r.id));
-  return [...suoi, ...deposito.custom().filter((p) => rulli.has(p.rullo))];
+  const suoi =
+    tavolo === "musica"
+      ? rullo === "genere"
+        ? GENERI
+        : rullo === "incrocio"
+          ? generiPerIncrocio()
+          : PEZZI_MUSICA_CORTI
+      : PEZZI_IMMAGINI;
+  const custom = deposito.custom().filter((p) => rulli.has(p.rullo));
+  return [...suoi, ...custom];
 }
 
 /** Il mazzo di un rullo, coi prezzi di adesso. */
 export function mazzo(deposito: Deposito, rullo: string, tavolo: Tavolo): PezzoInGioco[] {
   const prezzi = deposito.prezzi();
-  return pezziDi(deposito, tavolo)
+  return pezziDi(deposito, tavolo, rullo)
     .filter((p) => p.rullo === rullo)
     .map((p) => inGioco(p, prezzi));
 }
@@ -65,7 +103,9 @@ export function pezzoPerId(deposito: Deposito, id: string): PezzoInGioco | null 
     deposito.custom().find((p) => p.id === id) ??
     PEZZI_IMMAGINI.find((p) => p.id === id) ??
     PEZZI_MUSICA_CORTI.find((p) => p.id === id) ??
-    GENERI.find((p) => p.id === id);
+    (id.startsWith("incrocio/")
+      ? generiPerIncrocio().find((p) => p.id === id)
+      : GENERI.find((p) => p.id === id));
   return trovato ? inGioco(trovato, prezzi) : null;
 }
 
@@ -77,7 +117,8 @@ export function pezzoPerId(deposito: Deposito, id: string): PezzoInGioco | null 
  * `bloccati` e' lungo quanto i rulli: dove c'e' un id, quel rullo non gira e
  * resta com'era. Un giro costa uguale che si blocchi o no — e' il costo di
  * guardare lo schermo cambiare, non di quanti rulli si muovono. E' cosi' che si
- * monta una riga: si gira, si tiene quello che piace, si rigira il resto.
+ * monta una riga: si gira, si tiene quello che piace, si rigira il resto,
+ * finche' tutti e dodici non stanno bene insieme.
  *
  * ⚠ **Si paga prima e si incassa dopo.** In mezzo si pesca. Se qualcosa
  * andasse storto fra le due, il conto resterebbe scalato: e' l'unico ordine in
@@ -87,6 +128,7 @@ export function tira(
   deposito: Deposito,
   chi: string,
   tavolo: Tavolo,
+  era: Era,
   bloccati: (string | null)[],
   caso: Caso,
 ): Giro {
@@ -110,7 +152,7 @@ export function tira(
       pezzi.push(bloccato);
       continue;
     }
-    const pescato = pescaPezzo(mazzo(deposito, rulli[i]!.id, tavolo), caso);
+    const pescato = pescaPezzo(mazzo(deposito, rulli[i]!.id, tavolo), era, caso);
     if (!pescato) throw new NienteDaFare("Il rullo «" + rulli[i]!.nome + "» e' vuoto.");
     pezzi.push(pescato);
   }
@@ -118,18 +160,19 @@ export function tira(
   const vincite = valuta(pezzi, imp, deposito.formazioni(), caso);
   const pagato = vincite.reduce((s, v) => s + v.lire, 0);
   if (pagato > 0) deposito.muovi(chi, pagato);
-  const aggiornato = deposito.segnaGiro(chi, pagato);
+  const meglio = meglioDi(pezzi);
+  const aggiornato = deposito.segnaGiro(chi, pagato, meglio);
 
   return {
     tavolo,
+    era,
     pezzi,
     costo: imp.costoGiro,
     vincite,
     pagato,
+    meglio,
     valore: valore(pezzi),
     prompt: montaPrompt(pezzi),
-    // La figurina che ogni tanto cade girando: e' l'altra strada per
-    // sbloccarle, quella di chi gioca e basta invece di comprare pacchetti.
     regalo: regalaOgniTanto(deposito, chi, caso) ?? undefined,
     saldo: aggiornato.saldo,
     quando: Date.now(),
@@ -137,12 +180,12 @@ export function tira(
 }
 
 /**
- * Ogni tanto, girando, cade una combinazione del magazzino.
+ * Ogni tanto, girando, cade una figurina del magazzino.
  *
  * Solo fra quelle che uno **non ha gia'**: un regalo che e' un doppione non e'
  * un regalo, e' un messaggio che dice «hai gia' tutto» quando non e' vero.
  */
-function regalaOgniTanto(deposito: Deposito, chi: string, caso: Caso): Combinazione | null {
+function regalaOgniTanto(deposito: Deposito, chi: string, caso: Caso): Collezionabile | null {
   const imp = deposito.impostazioni();
   if (imp.unaOgniGiri <= 0) return null;
   if (caso() * imp.unaOgniGiri >= 1) return null;
@@ -151,17 +194,39 @@ function regalaOgniTanto(deposito: Deposito, chi: string, caso: Caso): Combinazi
   const nuove = deposito.magazzino().filter((c) => !conto.collezione.includes(c.id));
   if (nuove.length === 0) return null;
 
-  const presa = pescaPesata(nuove, nuove.map((c) => QUANTO_ESCE[raritaDiPrezzo(c.prezzo ?? 0)]), caso);
+  const presa = pescaPesata(
+    nuove,
+    nuove.map((c) => scalino(gradoDiPrezzo(c.prezzo ?? 0)).quantoEsce),
+    caso,
+  );
   if (!presa) return null;
   deposito.colleziona(chi, presa.id);
   return presa;
 }
 
-/* ------------------------------------------------- mandare una combinazione */
+/* --------------------------------------------------- mandare a controllare */
 
 /** Il titolo di una figurina: i nomi italiani dei pezzi, uno dietro l'altro. */
 function titoloDi(pezzi: PezzoInGioco[]): string {
   return pezzi.map((p) => p.nome).join(" · ");
+}
+
+function nuovoId(): string {
+  return "c_" + Date.now().toString(36) + Math.floor(Math.random() * 1e8).toString(36);
+}
+
+/**
+ * Quando una cosa c'e' gia', si dice subito e si dice cosa.
+ *
+ * Aspettare tre giorni per sentirsi rispondere «era gia' di un altro» e'
+ * peggio di un no immediato.
+ */
+function fermaSeGiaC(deposito: Deposito, impronta: string): void {
+  const gia = deposito.perImpronta(impronta);
+  if (!gia) return;
+  if (gia.stato === "presa") throw new NienteDaFare("Questa c'e' gia' nel magazzino.");
+  if (gia.stato === "in-attesa") throw new NienteDaFare("Questa e' gia' in attesa.");
+  throw new NienteDaFare("Questa era gia' stata guardata, e buttata.");
 }
 
 /**
@@ -171,15 +236,16 @@ function titoloDi(pezzi: PezzoInGioco[]): string {
  * righe di cui uno e' sicuro, e le cose strane — che sono quelle che servono —
  * non arriverebbero mai (CONCETTI.md § 8).
  *
- * Chi manda non aspetta: torna a giocare, e sapra' come e' finita quando
- * l'admin avra' guardato.
+ * Chi manda non aspetta: torna a giocare, e sapra' come e' finita quando chi
+ * comanda avra' guardato.
  */
 export function manda(
   deposito: Deposito,
   chi: string,
   tavolo: Tavolo,
+  era: Era,
   idPezzi: string[],
-): Combinazione {
+): Collezionabile {
   const rulli = rulliDi(tavolo);
   if (rulli.length === 0) throw new NienteDaFare("Questo tavolo non esiste.");
   if (idPezzi.length !== rulli.length) {
@@ -197,22 +263,17 @@ export function manda(
   }
 
   const impronta = improntaDi(pezzi.map((p) => p.id));
-  const gia = deposito.perImpronta(impronta);
-  if (gia) {
-    // Si dice subito e si dice cosa: aspettare tre giorni per sentirsi
-    // rispondere «era gia' di un altro» e' peggio di un no immediato.
-    if (gia.stato === "presa") throw new NienteDaFare("Questa combinazione c'e' gia' nel magazzino.");
-    if (gia.stato === "in-attesa") throw new NienteDaFare("Questa combinazione e' gia' in attesa.");
-    throw new NienteDaFare("Questa combinazione era gia' stata guardata, e buttata.");
-  }
+  fermaSeGiaC(deposito, impronta);
 
-  return deposito.aggiungiCombinazione({
-    id: "c_" + Date.now().toString(36) + Math.floor(Math.random() * 1e6).toString(36),
-    tavolo,
-    pezzi: pezzi.map((p) => p.id),
-    impronta,
-    prompt: montaPrompt(pezzi),
+  return deposito.aggiungi({
+    id: nuovoId(),
+    tipo: "prompt",
     titolo: titoloDi(pezzi),
+    impronta,
+    tavolo,
+    era,
+    pezzi: pezzi.map((p) => p.id),
+    prompt: montaPrompt(pezzi),
     daChi: chi,
     quando: Date.now(),
     stato: "in-attesa",
@@ -220,7 +281,46 @@ export function manda(
 }
 
 /**
- * L'admin la prende: le da' un prezzo e la mette in magazzino.
+ * Manda una **cosa della suite** a controllare: una foto, un brano, un video.
+ *
+ * ⚠ E' la porta lasciata aperta di proposito, chiesta il 9 settembre 2026:
+ * «predisponiamolo a ricevere tutti gli item dalla suite che possono essere
+ * potenzialmente nuovi item collezionabili». Il gioco non tiene file: tiene il
+ * numero di targa di una cosa che sta gia' nella libreria della suite, e quando
+ * serve mostrarla la chiede a chi ospita.
+ *
+ * Da qui in poi e' un collezionabile come gli altri: sta in fila, chi comanda
+ * le da' un prezzo o la butta, finisce nei pacchetti, i doppioni pagano.
+ */
+export function mandaDallaLibreria(
+  deposito: Deposito,
+  chi: string,
+  tipo: TipoCollezionabile,
+  titolo: string,
+  libreria: DallaLibreria,
+): Collezionabile {
+  if (tipo === "prompt") throw new NienteDaFare("Un prompt si manda dalla slot, non dalla libreria.");
+  if (!libreria.id) throw new NienteDaFare("Manca il numero di targa nella libreria.");
+
+  // L'impronta di una cosa della libreria e' il suo posto: la stessa foto non
+  // puo' entrare due volte, nemmeno se la manda un'altra persona.
+  const impronta = "libreria:" + libreria.id;
+  fermaSeGiaC(deposito, impronta);
+
+  return deposito.aggiungi({
+    id: nuovoId(),
+    tipo,
+    titolo: titolo.trim() || "Senza nome",
+    impronta,
+    libreria,
+    daChi: chi,
+    quando: Date.now(),
+    stato: "in-attesa",
+  });
+}
+
+/**
+ * Chi comanda la prende: le da' un prezzo e la mette in magazzino.
  *
  * Tre cose insieme, e vanno insieme:
  *
@@ -235,9 +335,9 @@ export function prendi(
   admin: string,
   id: string,
   prezzo: number,
-): Combinazione {
+): Collezionabile {
   const c = deposito.perId(id);
-  if (!c) throw new NienteDaFare("Questa combinazione non c'e'.");
+  if (!c) throw new NienteDaFare("Questa non c'e'.");
   if (c.stato !== "in-attesa") throw new NienteDaFare("Su questa e' gia' stato deciso.");
   const lire = Math.max(1, Math.round(prezzo));
 
@@ -255,10 +355,15 @@ export function prendi(
   return c;
 }
 
-/** L'admin la butta. Il motivo si scrive sempre: un no senza perche' non insegna niente. */
-export function butta(deposito: Deposito, admin: string, id: string, motivo: string): Combinazione {
+/** Chi comanda la butta. Il motivo si scrive sempre: un no senza perche' non insegna niente. */
+export function butta(
+  deposito: Deposito,
+  admin: string,
+  id: string,
+  motivo: string,
+): Collezionabile {
   const c = deposito.perId(id);
-  if (!c) throw new NienteDaFare("Questa combinazione non c'e'.");
+  if (!c) throw new NienteDaFare("Questa non c'e'.");
   if (c.stato !== "in-attesa") throw new NienteDaFare("Su questa e' gia' stato deciso.");
   c.stato = "buttata";
   c.motivo = motivo.trim() || "Non andava bene.";
@@ -276,15 +381,15 @@ export function serieChiuse(deposito: Deposito): number {
   return Math.floor(deposito.magazzino().length / perSerie);
 }
 
-/** Le combinazioni di una serie. La serie 1 sono i primi `perSerie` numeri. */
-export function serie(deposito: Deposito, numeroSerie: number): Combinazione[] {
+/** Le figurine di una serie. La serie 1 sono i primi `perSerie` numeri. */
+export function serie(deposito: Deposito, numeroSerie: number): Collezionabile[] {
   const perSerie = Math.max(1, deposito.impostazioni().perSerie);
   const da = (numeroSerie - 1) * perSerie;
   return deposito.magazzino().slice(da, da + perSerie);
 }
 
 export interface Figurina {
-  combinazione: Combinazione;
+  cosa: Collezionabile;
   /** Vero se ce l'aveva gia': allora invece della figurina si prendono le lire. */
   doppione: boolean;
   lire: number;
@@ -330,17 +435,17 @@ export function apriPacchetto(
   for (let i = 0; i < Math.max(1, imp.perPacchetto); i++) {
     const presa = pescaPesata(
       dentro,
-      dentro.map((c) => QUANTO_ESCE[raritaDiPrezzo(c.prezzo ?? 0)]),
+      dentro.map((c) => scalino(gradoDiPrezzo(c.prezzo ?? 0)).quantoEsce),
       caso,
     );
     if (!presa) break;
     const nuova = deposito.colleziona(chi, presa.id);
     if (nuova) {
-      figurine.push({ combinazione: presa, doppione: false, lire: 0 });
+      figurine.push({ cosa: presa, doppione: false, lire: 0 });
     } else {
       const lire = presa.prezzo ?? 1;
       vinto += lire;
-      figurine.push({ combinazione: presa, doppione: true, lire });
+      figurine.push({ cosa: presa, doppione: true, lire });
     }
   }
 
@@ -362,6 +467,7 @@ export interface RigaClassifica {
   mandate: number;
   collezione: number;
   colpoGrosso: number;
+  migliorGrado?: string;
   saldo: number;
   giri: number;
 }
@@ -369,9 +475,9 @@ export interface RigaClassifica {
 /**
  * La classifica di casa.
  *
- * Ordinata per **quante combinazioni gli hanno preso**, e poi per quante ne ha
- * in collezione. Non per il saldo: il saldo lo alza chi gioca di piu', e «chi
- * ha giocato di piu'» non e' una classifica, e' un contatore.
+ * Ordinata per **quante cose gli hanno preso**, e poi per quante ne ha in
+ * collezione. Non per il saldo: il saldo lo alza chi gioca di piu', e «chi ha
+ * giocato di piu'» non e' una classifica, e' un contatore.
  */
 export function classifica(deposito: Deposito): RigaClassifica[] {
   return deposito
@@ -382,6 +488,7 @@ export function classifica(deposito: Deposito): RigaClassifica[] {
       mandate: c.mandate,
       collezione: c.collezione.length,
       colpoGrosso: c.colpoGrosso,
+      migliorGrado: c.migliorGrado,
       saldo: c.saldo,
       giri: c.giri,
     }))
@@ -406,7 +513,7 @@ export function statoMagazzino(deposito: Deposito): {
   const perSerie = Math.max(1, imp.perSerie);
   return {
     prese,
-    inAttesa: deposito.combinazioni().filter((c) => c.stato === "in-attesa").length,
+    inAttesa: deposito.collezionabili().filter((c) => c.stato === "in-attesa").length,
     serieChiuse: Math.floor(prese / perSerie),
     allaProssimaSerie: perSerie - (prese % perSerie),
   };

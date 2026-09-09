@@ -4,10 +4,16 @@
  * ⚠ **Niente apici inversi qui dentro.** Questa stringa *e'* un apice inverso:
  * uno solo, in mezzo al codice, la chiuderebbe — e l'errore non punterebbe
  * nemmeno lontanamente al punto giusto. Le stringhe si attaccano col piu'.
- * E' la stessa regola della console della suite, per la stessa ragione.
+ * E' la stessa regola della console della suite, per la stessa ragione, e c'e'
+ * una guardia che la controlla: `scripts/niente-apici.mjs`.
  *
  * ⚠ **Qui non si pesca e non si paga.** Tutto quello che tocca i soldi succede
  * sul PC (CONCETTI.md § 3). Questa pagina chiede, riceve, e fa la scena.
+ *
+ * **La scena conta.** I rulli si fermano uno dopo l'altro invece che tutti
+ * insieme, il numero vinto vola via, lo schermo lampeggia del colore del grado
+ * e sulla roba grossa cadono i coriandoli. Non e' decorazione: e' la
+ * differenza fra premere un tasto e giocare.
  */
 
 export const COPIONE = `
@@ -16,12 +22,15 @@ export const COPIONE = `
   /** Chi siamo, cosa c'e' sui rulli adesso, e cosa abbiamo tenuto fermo. */
   var io = null;
   var tavolo = "musica";
+  var era = "sempre";
   var rulli = [];
   var pezzi = [];          // i pezzi usciti, uno per rullo
   var bloccati = [];       // gli id tenuti fermi, uno per rullo (o null)
   var inEuro = false;
   var girando = false;
-  var pagina = "slot";
+  var serieAperta = 0;
+  /** Il grado scelto per la cosa che si sta prendendo, in fila. */
+  var gradoScelto = {};
 
   /**
    * Il token, se chi ci ha aperti ce l'ha dato.
@@ -75,18 +84,10 @@ export const COPIONE = `
     return (quanto < 0 ? "-" : "") + "L. " + cifre;
   }
 
-  function coloreDi(rarita) {
-    for (var i = 0; i < (io && io.gradi ? io.gradi.length : 0); i++) {
-      if (io.gradi[i].id === rarita) return io.gradi[i].colore;
-    }
-    return "#9aa0b5";
-  }
-
-  function nomeGrado(rarita) {
-    for (var i = 0; i < (io && io.gradi ? io.gradi.length : 0); i++) {
-      if (io.gradi[i].id === rarita) return io.gradi[i].nome;
-    }
-    return "";
+  function scalinoDi(grado) {
+    var g = io && io.gradi ? io.gradi : [];
+    for (var i = 0; i < g.length; i++) if (g[i].id === grado) return g[i];
+    return { id: "basic", nome: "Basic", colore: "#9aa0b5", fuoco: 0 };
   }
 
   var orologioAvviso = null;
@@ -111,6 +112,57 @@ export const COPIONE = `
     return g + (g === 1 ? " giorno fa" : " giorni fa");
   }
 
+  /* --------------------------------------------------------- gli effetti */
+
+  /** Il numero che vola via quando si vince. */
+  function numeroVolante(testo, colore) {
+    var d = document.createElement("div");
+    d.className = "volante";
+    d.style.color = colore;
+    d.textContent = testo;
+    document.body.appendChild(d);
+    setTimeout(function () { d.remove(); }, 1600);
+  }
+
+  /** Il lampo ai bordi dello schermo, del colore del grado. */
+  function lampo(colore) {
+    var d = document.createElement("div");
+    d.className = "lampo";
+    d.style.setProperty("--g", colore);
+    document.body.appendChild(d);
+    setTimeout(function () { d.remove(); }, 1000);
+  }
+
+  /**
+   * I coriandoli.
+   *
+   * Sono quadratini veri nel documento, non un disegno su tela: sono pochi
+   * (sessanta) e durano due secondi, e cosi' non serve tenere acceso niente.
+   */
+  function coriandoli(quanti, colori) {
+    for (var i = 0; i < quanti; i++) {
+      var c = document.createElement("div");
+      c.className = "coriandolo";
+      c.style.left = Math.random() * 100 + "vw";
+      c.style.background = colori[Math.floor(Math.random() * colori.length)];
+      c.style.animationDuration = (1.6 + Math.random() * 1.6) + "s";
+      c.style.animationDelay = (Math.random() * 0.35) + "s";
+      document.body.appendChild(c);
+      (function (nodo) { setTimeout(function () { nodo.remove(); }, 3600); })(c);
+    }
+  }
+
+  function scuoti() {
+    var m = document.querySelector("main");
+    m.classList.remove("scossa");
+    // Il reflow serve: senza, togliere e rimettere la classe nello stesso
+    // giro non fa ripartire l'animazione, e la seconda vincita di fila non
+    // scuote niente.
+    void m.offsetWidth;
+    m.classList.add("scossa");
+    setTimeout(function () { m.classList.remove("scossa"); }, 600);
+  }
+
   /* ------------------------------------------------------------- i rulli */
 
   function rulliDelTavolo() {
@@ -130,20 +182,48 @@ export const COPIONE = `
     $("tavoli").innerHTML = dentro;
   }
 
+  function disegnaEpoche() {
+    var dentro = "";
+    for (var i = 0; i < io.epoche.length; i++) {
+      var e = io.epoche[i];
+      dentro += "<button data-epoca=\\"" + e.id + "\\" title=\\"" + sicuro(e.nome) + "\\"" +
+        (e.id === era ? " class=\\"scelto\\"" : "") + ">" + sicuro(e.segno) + "</button>";
+    }
+    $("epoche").innerHTML = dentro;
+    // Le epoche si vedono solo dove hanno senso: nel tavolo delle immagini un
+    // decennio non pesa niente, e un tasto che non fa niente e' peggio che non
+    // averlo.
+    $("epoche").hidden = tavolo !== "musica";
+  }
+
+  /** Il vestito della sala: i tre fondi e la luce dell'epoca scelta. */
+  function vestiLaSala() {
+    var e = null;
+    for (var i = 0; i < io.epoche.length; i++) if (io.epoche[i].id === era) e = io.epoche[i];
+    if (!e) return;
+    var r = document.documentElement.style;
+    r.setProperty("--e1", e.fondo[0]);
+    r.setProperty("--e2", e.fondo[1]);
+    r.setProperty("--e3", e.fondo[2]);
+    r.setProperty("--luce", e.luce);
+  }
+
   function disegnaRulli() {
     var dentro = "";
     for (var i = 0; i < rulli.length; i++) {
       var r = rulli[i];
       var p = pezzi[i];
-      var fermo = bloccati[i] ? " bloccato" : "";
-      dentro += "<div class=\\"rullo" + fermo + "\\" data-rullo=\\"" + i + "\\">";
+      var s = p ? scalinoDi(p.grado) : null;
+      var classi = "rullo" + (bloccati[i] ? " bloccato" : "") + (s ? " f" + s.fuoco : "");
+      dentro += "<div class=\\"" + classi + "\\" data-rullo=\\"" + i + "\\"" +
+        (s ? " style=\\"--g:" + s.colore + "\\"" : "") + ">";
       dentro += "<div class=\\"barra\\" style=\\"background:" +
-        (p ? coloreDi(p.rarita) : "#2e3340") + "\\"></div>";
+        (s ? s.colore : "#2e3340") + "\\"></div>";
       dentro += "<div class=\\"quale\\">" + sicuro(r.nome) + "</div>";
       dentro += "<div class=\\"nome\\">" + (p ? sicuro(p.nome) : "—") + "</div>";
       if (p && p.esempio) dentro += "<div class=\\"esempio\\">tipo " + sicuro(p.esempio) + "</div>";
-      if (p) dentro += "<div class=\\"prezzo\\" style=\\"color:" + coloreDi(p.rarita) + "\\">" +
-        soldi(p.prezzo) + "</div>";
+      if (p) dentro += "<div class=\\"prezzo\\" style=\\"color:" + s.colore + "\\">" +
+        soldi(p.prezzo) + " · " + sicuro(s.nome) + "</div>";
       dentro += "<div class=\\"fermo\\">fermo</div>";
       dentro += "</div>";
     }
@@ -156,9 +236,14 @@ export const COPIONE = `
       : "<span class=\\"vuoto\\">Tira la leva.</span>";
   }
 
-  function disegnaSaldo() {
+  function disegnaSaldo(saliti) {
     $("saldo").innerHTML = soldi(io.saldo) +
       " <small>&nbsp;giro " + soldi(io.costi.giro) + "</small>";
+    if (saliti) {
+      $("saldo").classList.remove("su");
+      void $("saldo").offsetWidth;
+      $("saldo").classList.add("su");
+    }
   }
 
   /* --------------------------------------------------------------- girare */
@@ -167,24 +252,22 @@ export const COPIONE = `
     if (girando) return;
     girando = true;
     $("gira").disabled = true;
+    $("esito").textContent = "";
+
     var caselle = document.querySelectorAll(".rullo");
     for (var i = 0; i < caselle.length; i++) {
+      caselle[i].classList.remove("arrivato");
       if (!bloccati[i]) caselle[i].classList.add("gira");
     }
 
-    chiedi("POST", "/gira", { tavolo: tavolo, bloccati: bloccati })
+    chiedi("POST", "/gira", { tavolo: tavolo, era: era, bloccati: bloccati })
       .then(function (giro) {
         pezzi = giro.pezzi;
+        var prima = io.saldo;
         io.saldo = giro.saldo;
-        disegnaSaldo();
-        // Il mezzo secondo non serve al PC: serve all'occhio. Senza, i rulli
-        // cambiano prima che uno abbia finito di premere.
-        setTimeout(function () {
-          disegnaRulli();
-          raccontaGiro(giro);
-          girando = false;
-          $("gira").disabled = false;
-        }, 420);
+        // I rulli si fermano **uno dopo l'altro**, non tutti insieme: e' la
+        // differenza fra una slot e una tabella che si aggiorna.
+        fermaUnoAllaVolta(giro, prima);
       })
       .catch(function (errore) {
         girando = false;
@@ -194,15 +277,61 @@ export const COPIONE = `
       });
   }
 
+  function fermaUnoAllaVolta(giro, saldoPrima) {
+    var quanti = rulli.length;
+    var passo = 90;
+    // Prima si ridisegna tutto (i pezzi nuovi sono gia' dentro), poi si toglie
+    // il giro a una casella per volta.
+    disegnaRulli();
+    var caselle = document.querySelectorAll(".rullo");
+    for (var i = 0; i < quanti; i++) caselle[i].classList.add("gira");
+
+    for (var j = 0; j < quanti; j++) {
+      (function (k) {
+        setTimeout(function () {
+          var c = document.querySelectorAll(".rullo")[k];
+          if (!c) return;
+          c.classList.remove("gira");
+          c.classList.add("arrivato");
+        }, 260 + k * passo);
+      })(j);
+    }
+
+    setTimeout(function () {
+      disegnaSaldo(giro.saldo > saldoPrima);
+      raccontaGiro(giro);
+      girando = false;
+      $("gira").disabled = false;
+    }, 300 + quanti * passo);
+  }
+
   function raccontaGiro(giro) {
     var e = $("esito");
+    var s = scalinoDi(giro.meglio);
+
     if (giro.pagato > 0) {
       var detti = giro.vincite.map(function (v) { return v.detto; }).join(" + ");
       e.className = "esito vinta";
+      e.style.color = s.colore;
       e.textContent = detti + " — " + soldi(giro.pagato);
+      numeroVolante("+" + soldi(giro.pagato), s.colore);
     } else {
       e.className = "esito persa";
+      e.style.color = "";
       e.textContent = "Vale " + soldi(giro.valore) + ". Tieni quello che ti piace e rigira.";
+    }
+
+    // Quanto si accende lo schermo lo decide la vincita piu' grossa, o il grado
+    // piu' alto uscito se non ha pagato niente.
+    var fuoco = s.fuoco;
+    for (var i = 0; i < giro.vincite.length; i++) {
+      if (giro.vincite[i].fuoco > fuoco) fuoco = giro.vincite[i].fuoco;
+    }
+    if (fuoco >= 1) lampo(s.colore);
+    if (fuoco >= 2) scuoti();
+    if (fuoco >= 3) {
+      coriandoli(70, [s.colore, "#ffd166", "#ffffff", io.epoche[0].luce]);
+      avviso(s.nome + "! " + (giro.pagato > 0 ? soldi(giro.pagato) : "guarda che roba"), "bene");
     }
     if (giro.regalo) {
       avviso("Ti e' caduta una figurina: " + giro.regalo.titolo, "bene");
@@ -215,6 +344,7 @@ export const COPIONE = `
     if (pezzi.length !== rulli.length) return;
     chiedi("POST", "/manda", {
       tavolo: tavolo,
+      era: era,
       pezzi: pezzi.map(function (p) { return p.id; }),
     })
       .then(function () {
@@ -224,17 +354,18 @@ export const COPIONE = `
       .catch(function (errore) { avviso(errore.message, "male"); });
   }
 
-  /* ----------------------------------------------------------------- mie */
+  /* ----------------------------------------------------------- le figurine */
 
   function figurinaHtml(c, opzioni) {
     var o = opzioni || {};
-    var colore = coloreDi(c.rarita);
-    var h = "<div class=\\"figurina" + (c.scoperta ? "" : " coperta") + "\\">";
+    var s = scalinoDi(c.grado);
+    var h = "<div class=\\"figurina f" + s.fuoco + (c.scoperta ? "" : " coperta") +
+      "\\" style=\\"--g:" + s.colore + "\\">";
     h += "<div class=\\"titolo\\">" + sicuro(c.titolo) + "</div>";
     h += "<div class=\\"sotto\\">";
     if (c.prezzo > 0) {
-      h += "<span class=\\"pastiglia\\" style=\\"color:" + colore + "\\">" +
-        sicuro(nomeGrado(c.rarita)) + " · " + soldi(c.prezzo) + "</span> ";
+      h += "<span class=\\"pastiglia\\" style=\\"color:" + s.colore + "\\">" +
+        sicuro(s.nome) + " · " + soldi(c.prezzo) + "</span> ";
     }
     if (c.numero > 0) h += "n. " + c.numero + " · ";
     h += "di " + sicuro(c.daNome) + " · " + quando(c.quando);
@@ -242,6 +373,14 @@ export const COPIONE = `
     if (c.stato === "buttata") h += " · buttata: " + sicuro(c.motivo);
     h += "</div>";
     if (c.scoperta && c.prompt) h += "<div class=\\"testo\\">" + sicuro(c.prompt) + "</div>";
+    // Le figurine che non sono prompt si guardano o si ascoltano: il file sta
+    // nella libreria della suite, qui c'e' solo il suo indirizzo.
+    if (c.scoperta && c.dove && c.mime.indexOf("image/") === 0) {
+      h += "<img src=\\"" + sicuro(c.dove) + "\\" alt=\\"\\">";
+    }
+    if (c.scoperta && c.dove && c.mime.indexOf("audio/") === 0) {
+      h += "<audio controls src=\\"" + sicuro(c.dove) + "\\"></audio>";
+    }
     if (o.tasti) h += o.tasti;
     h += "</div>";
     return h;
@@ -260,8 +399,6 @@ export const COPIONE = `
 
   /* --------------------------------------------------------------- album */
 
-  var serieAperta = 0;
-
   function caricaAlbum() {
     chiedi("GET", "/album").then(function (dati) {
       serieAperta = dati.serie;
@@ -269,7 +406,7 @@ export const COPIONE = `
       var testo = "";
       if (dati.chiuse === 0) {
         testo = "Nessuna serie chiusa. Ne servono ancora <b>" + m.allaProssimaSerie +
-          "</b> combinazioni prese perche' si possa comprare il primo pacchetto.";
+          "</b> cose prese perche' si possa comprare il primo pacchetto.";
         $("compra").disabled = true;
       } else {
         testo = "Serie <b>" + dati.serie + "</b> di " + dati.chiuse + " · " +
@@ -287,19 +424,32 @@ export const COPIONE = `
   }
 
   function compraPacchetto() {
+    $("compra").disabled = true;
     chiedi("POST", "/pacchetto", { serie: serieAperta }).then(function (a) {
       io.saldo = a.saldo;
-      disegnaSaldo();
-      var nuove = a.figurine.filter(function (f) { return !f.doppione; }).length;
+      disegnaSaldo(true);
+      var nuove = a.figurine.filter(function (f) { return !f.doppione; });
+      var meglio = "basic";
+      var alto = -1;
+      for (var i = 0; i < a.figurine.length; i++) {
+        var s = scalinoDi(a.figurine[i].grado);
+        if (s.fuoco > alto) { alto = s.fuoco; meglio = a.figurine[i].grado; }
+      }
+      var s2 = scalinoDi(meglio);
+      if (alto >= 2) lampo(s2.colore);
+      if (alto >= 3) { scuoti(); coriandoli(70, [s2.colore, "#ffd166", "#ffffff"]); }
       avviso(
-        nuove === 0
+        nuove.length === 0
           ? "Tutti doppioni: " + soldi(a.vinto) + " indietro."
-          : nuove + (nuove === 1 ? " figurina nuova" : " figurine nuove") +
+          : nuove.length + (nuove.length === 1 ? " figurina nuova" : " figurine nuove") +
             (a.vinto > 0 ? ", e " + soldi(a.vinto) + " dai doppioni" : ""),
         "bene",
       );
       caricaAlbum();
-    }).catch(function (e) { avviso(e.message, "male"); });
+    }).catch(function (e) {
+      $("compra").disabled = false;
+      avviso(e.message, "male");
+    });
   }
 
   /* ---------------------------------------------------------------- casa */
@@ -308,11 +458,15 @@ export const COPIONE = `
     chiedi("GET", "/classifica").then(function (dati) {
       $("classifica").innerHTML = dati.righe.length
         ? dati.righe.map(function (r) {
+            var s = r.migliorGrado ? scalinoDi(r.migliorGrado) : null;
             return "<tr" + (r.io ? " class=\\"io\\"" : "") + ">" +
               "<td>" + sicuro(r.nome) + "</td>" +
               "<td>" + r.prese + "</td>" +
               "<td>" + r.collezione + "</td>" +
-              "<td>" + soldi(r.colpoGrosso) + "</td>" +
+              "<td>" + (s
+                ? "<span class=\\"pastiglia\\" style=\\"color:" + s.colore + "\\">" +
+                  sicuro(s.nome) + "</span>"
+                : "—") + "</td>" +
               "<td>" + soldi(r.saldo) + "</td></tr>";
           }).join("")
         : "<tr><td colspan=\\"5\\" class=\\"niente\\">Non ha ancora giocato nessuno.</td></tr>";
@@ -320,6 +474,27 @@ export const COPIONE = `
   }
 
   /* ---------------------------------------------------------------- fila */
+
+  /**
+   * I tasti dei gradi, per dare un prezzo con un tocco solo.
+   *
+   * Scrivere «quanto vale in lire» ogni volta e' la strada per non decidere
+   * mai: undici tasti col nome del grado sono una decisione sola, e il prezzo
+   * lo mette il gioco al fondo di quel grado. Chi vuole un numero preciso ce
+   * l'ha lo stesso, nella casella accanto.
+   */
+  function tastiGradi(id) {
+    var h = "<div class=\\"gradi-scelta\\" data-gradi=\\"" + id + "\\">";
+    for (var i = 0; i < io.gradi.length; i++) {
+      var g = io.gradi[i];
+      var scelto = gradoScelto[id] === g.id;
+      h += "<button data-grado=\\"" + g.id + "\\" data-per=\\"" + id + "\\"" +
+        " style=\\"color:" + g.colore + (scelto ? "; background:" + g.colore : "") + "\\"" +
+        (scelto ? " class=\\"scelto\\"" : "") + ">" + sicuro(g.nome) + "</button>";
+    }
+    h += "</div>";
+    return h;
+  }
 
   function caricaFila() {
     if (!io.admin) return;
@@ -330,8 +505,9 @@ export const COPIONE = `
 
       $("fila-attesa").innerHTML = quante
         ? dati.inAttesa.map(function (c) {
-            var tasti = "<div class=\\"riga-tasti\\">" +
-              "<input type=\\"number\\" min=\\"1\\" placeholder=\\"quanto vale, in lire\\" " +
+            var tasti = tastiGradi(c.id) +
+              "<div class=\\"riga-tasti\\">" +
+              "<input type=\\"number\\" min=\\"1\\" placeholder=\\"o scrivi le lire\\" " +
               "data-prezzo=\\"" + c.id + "\\">" +
               "<button class=\\"btn oro\\" data-prendi=\\"" + c.id + "\\">Prendila</button>" +
               "<button class=\\"btn piano\\" data-butta=\\"" + c.id + "\\">Buttala</button>" +
@@ -346,12 +522,28 @@ export const COPIONE = `
     }).catch(function (e) { avviso(e.message, "male"); });
   }
 
-  function prendila(id) {
+  /** Il prezzo che si sta per dare: quello scritto, o il fondo del grado scelto. */
+  function prezzoPer(id) {
     var casella = document.querySelector("[data-prezzo=\\"" + id + "\\"]");
-    var prezzo = casella ? Number(casella.value) : 0;
-    if (!prezzo || prezzo < 1) { avviso("Scrivi quanto vale, prima.", "male"); return; }
+    var scritto = casella ? Number(casella.value) : 0;
+    if (scritto && scritto >= 1) return Math.round(scritto);
+    var g = gradoScelto[id];
+    if (!g) return 0;
+    for (var i = 0; i < io.gradi.length; i++) {
+      if (io.gradi[i].id === g) return Math.max(1, io.gradi[i].da);
+    }
+    return 0;
+  }
+
+  function prendila(id) {
+    var prezzo = prezzoPer(id);
+    if (!prezzo) { avviso("Scegli un grado, o scrivi quanto vale.", "male"); return; }
     chiedi("POST", "/prendi", { id: id, prezzo: prezzo }).then(function (c) {
-      avviso("Presa: e' la numero " + c.numero + " del magazzino.", "bene");
+      var s = scalinoDi(c.grado);
+      avviso("Presa: " + s.nome + ", numero " + c.numero + " del magazzino.", "bene");
+      if (s.fuoco >= 2) lampo(s.colore);
+      if (s.fuoco >= 3) coriandoli(60, [s.colore, "#ffd166", "#ffffff"]);
+      delete gradoScelto[id];
       caricaFila();
     }).catch(function (e) { avviso(e.message, "male"); });
   }
@@ -361,6 +553,7 @@ export const COPIONE = `
     if (motivo === null) return;
     chiedi("POST", "/butta", { id: id, motivo: motivo }).then(function () {
       avviso("Buttata.", "bene");
+      delete gradoScelto[id];
       caricaFila();
     }).catch(function (e) { avviso(e.message, "male"); });
   }
@@ -368,7 +561,6 @@ export const COPIONE = `
   /* ------------------------------------------------------------ navigare */
 
   function vaiA(dove) {
-    pagina = dove;
     var sezioni = document.querySelectorAll(".pagina");
     for (var i = 0; i < sezioni.length; i++) {
       sezioni[i].classList.toggle("viva", sezioni[i].id === "p-" + dove);
@@ -386,18 +578,26 @@ export const COPIONE = `
   /* ------------------------------------------------------------- i tasti */
 
   document.addEventListener("click", function (evento) {
-    var bersaglio = evento.target;
+    var b = evento.target;
+    var chiudi = function (che) { return b.closest ? b.closest(che) : null; };
 
-    var rullo = bersaglio.closest ? bersaglio.closest("[data-rullo]") : null;
+    var grado = chiudi("[data-grado]");
+    if (grado) {
+      gradoScelto[grado.getAttribute("data-per")] = grado.getAttribute("data-grado");
+      caricaFila();
+      return;
+    }
+
+    var rullo = chiudi("[data-rullo]");
     if (rullo) {
       var i = Number(rullo.getAttribute("data-rullo"));
-      if (!pezzi[i]) return;
+      if (!pezzi[i] || girando) return;
       bloccati[i] = bloccati[i] ? null : pezzi[i].id;
       disegnaRulli();
       return;
     }
 
-    var scelta = bersaglio.closest ? bersaglio.closest("[data-tavolo]") : null;
+    var scelta = chiudi("[data-tavolo]");
     if (scelta) {
       tavolo = scelta.getAttribute("data-tavolo");
       rulli = rulliDelTavolo();
@@ -405,16 +605,30 @@ export const COPIONE = `
       bloccati = [];
       $("esito").textContent = "";
       disegnaTavoli();
+      disegnaEpoche();
       disegnaRulli();
       return;
     }
 
-    var va = bersaglio.closest ? bersaglio.closest("[data-va]") : null;
+    var epoca = chiudi("[data-epoca]");
+    if (epoca) {
+      era = epoca.getAttribute("data-epoca");
+      // Cambiare epoca **sblocca i rulli**: quello che avevi tenuto fermo
+      // veniva da un altro mondo, e tenerlo sarebbe mescolare due epoche
+      // senza averlo chiesto.
+      bloccati = [];
+      disegnaEpoche();
+      vestiLaSala();
+      disegnaRulli();
+      return;
+    }
+
+    var va = chiudi("[data-va]");
     if (va) { vaiA(va.getAttribute("data-va")); return; }
 
-    var prendi = bersaglio.getAttribute && bersaglio.getAttribute("data-prendi");
+    var prendi = b.getAttribute && b.getAttribute("data-prendi");
     if (prendi) { prendila(prendi); return; }
-    var butta = bersaglio.getAttribute && bersaglio.getAttribute("data-butta");
+    var butta = b.getAttribute && b.getAttribute("data-butta");
     if (butta) { buttala(butta); return; }
   });
 
@@ -423,7 +637,7 @@ export const COPIONE = `
   $("compra").addEventListener("click", compraPacchetto);
   $("saldo").addEventListener("click", function () {
     inEuro = !inEuro;
-    disegnaSaldo();
+    disegnaSaldo(false);
     disegnaRulli();
   });
   $("copia").addEventListener("click", function () {
@@ -436,6 +650,11 @@ export const COPIONE = `
     bloccati = [];
     disegnaRulli();
   });
+  // La barra spaziatrice tira la leva: chi gioca sul computer non vuole
+  // spostare il mouse quaranta volte.
+  document.addEventListener("keydown", function (e) {
+    if (e.code === "Space" && e.target === document.body) { e.preventDefault(); gira(); }
+  });
 
   /* -------------------------------------------------------------- entrare */
 
@@ -445,8 +664,10 @@ export const COPIONE = `
     $("tasto-fila").hidden = !dati.admin;
     rulli = rulliDelTavolo();
     disegnaTavoli();
+    disegnaEpoche();
+    vestiLaSala();
     disegnaRulli();
-    disegnaSaldo();
+    disegnaSaldo(false);
     if (dati.admin) caricaFila();
   }).catch(function (errore) {
     document.querySelector("main").innerHTML =

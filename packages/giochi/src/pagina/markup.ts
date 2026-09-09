@@ -26,7 +26,13 @@ export const MARKUP = `<header>
 
   <!-- =============================================================== slot -->
   <section class="pagina viva" id="p-slot">
-    <div class="tavolo" id="tavoli"></div>
+    <div class="fila-scelte" id="tavoli"></div>
+    <!--
+      Le epoche. Non sono un filtro fra i tanti: cambiano **il colore di tutta
+      la sala** e pesano cosa esce dai rulli. Erano cosi' nella prima versione
+      di DaProdSlot, ed e' la cosa che la faceva sembrare un posto.
+    -->
+    <div class="fila-scelte epoche" id="epoche"></div>
 
     <div class="rulli" id="rulli"></div>
 

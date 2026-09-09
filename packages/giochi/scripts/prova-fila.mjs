@@ -30,7 +30,7 @@ import { conCartella, dado, prova, tirandoLeSomme, uguale, vero } from "./attrez
 function tavolino(file) {
   const d = new Deposito(file);
   d.muovi("pino", 1000000);
-  const giro = tira(d, "pino", "musica", [], Math.random);
+  const giro = tira(d, "pino", "musica", "sempre", [], Math.random);
   return { d, giro, pezzi: giro.pezzi.map((p) => p.id) };
 }
 
@@ -43,9 +43,9 @@ function tavolino(file) {
  * ragioni che coi pacchetti non c'entrano niente.
  */
 function riempi(d, quante, prezzo) {
-  const gia = d.combinazioni().length;
+  const gia = d.collezionabili().length;
   for (let i = 0; i < quante; i++) {
-    d.combinazioni().push({
+    d.collezionabili().push({
       id: "finta_" + (gia + i),
       tavolo: "musica",
       pezzi: ["genere/finto-" + (gia + i)],
@@ -67,7 +67,7 @@ prova("una combinazione mandata sta in attesa, e non costa niente", () =>
   conCartella((file) => {
     const t = tavolino(file);
     const prima = t.d.conto("pino").saldo;
-    const c = manda(t.d, "pino", "musica", t.pezzi);
+    const c = manda(t.d, "pino", "musica", "sempre", t.pezzi);
     uguale(c.stato, "in-attesa");
     uguale(c.daChi, "pino");
     uguale(t.d.conto("pino").saldo, prima, "mandare non deve costare");
@@ -80,18 +80,18 @@ prova("una combinazione mandata sta in attesa, e non costa niente", () =>
 prova("la stessa combinazione non entra due volte, e lo dice subito", () =>
   conCartella((file) => {
     const t = tavolino(file);
-    manda(t.d, "pino", "musica", t.pezzi);
+    manda(t.d, "pino", "musica", "sempre", t.pezzi);
     let detto = "";
     try {
       // Anche da un'altra persona: l'identita' sono i pezzi, non chi la manda.
-      manda(t.d, "gino", "musica", t.pezzi);
+      manda(t.d, "gino", "musica", "sempre", t.pezzi);
     } catch (errore) {
       detto = errore.message;
       vero(errore instanceof NienteDaFare);
     }
     vero(detto.length > 0, "doveva rifiutare");
     vero(detto.indexOf("gia") >= 0, "e doveva dire che c'e' gia', non un codice");
-    uguale(t.d.combinazioni().length, 1);
+    uguale(t.d.collezionabili().length, 1);
   }),
 );
 
@@ -104,7 +104,7 @@ prova("i pezzi fuori posto non passano", () =>
     storti[1] = primo;
     let fermato = true;
     try {
-      manda(t.d, "pino", "musica", storti);
+      manda(t.d, "pino", "musica", "sempre", storti);
       fermato = false;
     } catch (errore) {
       vero(errore instanceof NienteDaFare);
@@ -118,7 +118,7 @@ prova("mezza combinazione non e' una combinazione", () =>
     const t = tavolino(file);
     let fermato = true;
     try {
-      manda(t.d, "pino", "musica", t.pezzi.slice(0, 3));
+      manda(t.d, "pino", "musica", "sempre", t.pezzi.slice(0, 3));
       fermato = false;
     } catch (errore) {
       vero(errore instanceof NienteDaFare);
@@ -132,7 +132,7 @@ prova("mezza combinazione non e' una combinazione", () =>
 prova("prendere: paga chi l'ha mandata, e gliela mette in collezione", () =>
   conCartella((file) => {
     const t = tavolino(file);
-    const c = manda(t.d, "pino", "musica", t.pezzi);
+    const c = manda(t.d, "pino", "musica", "sempre", t.pezzi);
     const prima = t.d.conto("pino").saldo;
     const presa = prendi(t.d, "cammo", c.id, 300);
     uguale(presa.stato, "presa");
@@ -149,7 +149,7 @@ prova("prendere: paga chi l'ha mandata, e gliela mette in collezione", () =>
 prova("su una gia' decisa non si decide due volte", () =>
   conCartella((file) => {
     const t = tavolino(file);
-    const c = manda(t.d, "pino", "musica", t.pezzi);
+    const c = manda(t.d, "pino", "musica", "sempre", t.pezzi);
     prendi(t.d, "cammo", c.id, 100);
     let fermato = true;
     try {
@@ -166,7 +166,7 @@ prova("su una gia' decisa non si decide due volte", () =>
 prova("buttarla: il motivo c'e' sempre, anche se non lo scrivi", () =>
   conCartella((file) => {
     const t = tavolino(file);
-    const c = manda(t.d, "pino", "musica", t.pezzi);
+    const c = manda(t.d, "pino", "musica", "sempre", t.pezzi);
     const b = butta(t.d, "cammo", c.id, "   ");
     uguale(b.stato, "buttata");
     vero(b.motivo.length > 0, "un no senza perche' non insegna niente");
@@ -178,11 +178,11 @@ prova("buttarla: il motivo c'e' sempre, anche se non lo scrivi", () =>
 prova("una buttata non si puo' rimandare uguale", () =>
   conCartella((file) => {
     const t = tavolino(file);
-    const c = manda(t.d, "pino", "musica", t.pezzi);
+    const c = manda(t.d, "pino", "musica", "sempre", t.pezzi);
     butta(t.d, "cammo", c.id, "non mi piace");
     let fermato = true;
     try {
-      manda(t.d, "pino", "musica", t.pezzi);
+      manda(t.d, "pino", "musica", "sempre", t.pezzi);
       fermato = false;
     } catch (errore) {
       vero(errore instanceof NienteDaFare);
@@ -261,7 +261,7 @@ prova("girando ogni tanto cade una figurina, e mai un doppione", () =>
 
     const visti = new Set();
     for (let i = 0; i < 6; i++) {
-      const giro = tira(d, "pino", "musica", [], dado(0));
+      const giro = tira(d, "pino", "musica", "sempre", [], dado(0));
       if (giro.regalo) visti.add(giro.regalo.id);
     }
     uguale(visti.size, 2, "le due del magazzino, una volta ciascuna");

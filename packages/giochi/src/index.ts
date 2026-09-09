@@ -2,14 +2,15 @@
  * @daprod/giochi — la sala giochi della suite.
  *
  * Un pacchetto solo, e dentro ci sta tutto: le regole, i dati, il deposito, il
- * banco. Fuori di qui, il giorno che si unisce alla suite, restano poche righe
- * in tre file — vedi `CONCETTI.md` § 12.
+ * banco, le rotte e la pagina. Fuori di qui, il giorno che si unisce alla
+ * suite, restano poche righe in tre file — vedi `CONCETTI.md` § 14.
  *
  * Chi lo usa:
  *
  * - lo **shell**, che possiede il disco: costruisce il `Deposito` sulla
  *   cartella dati e passa il banco al gateway;
- * - il **gateway**, che serve la pagina e risponde alle chiamate;
+ * - il **gateway**, che serve `paginaGiochi()` e gira le chiamate a
+ *   `rispondi()`;
  * - le **prove**, che qui dentro trovano funzioni pure e un dado in mano.
  *
  * Quello che **non** esce da qui e' il mazzo: i pezzi non si mandano alla
@@ -25,6 +26,7 @@ export {
   butta,
   classifica,
   manda,
+  mandaDallaLibreria,
   mazzo,
   NienteDaFare,
   pezzoPerId,
@@ -38,21 +40,24 @@ export {
   type RigaClassifica,
 } from "./banco";
 export {
+  altezza,
   CAMBIO_EURO,
+  EPOCHE,
   euro,
   fra,
   GRADI,
-  grado,
+  gradoDiPrezzo,
   impronta,
   IMPOSTAZIONI_DI_PARTENZA,
   inGioco,
   lire,
+  meglioDi,
   montaPrompt,
   pescaPesata,
   pescaPezzo,
+  pesoEra,
   prezzoDiPartenza,
-  QUANTO_ESCE,
-  raritaDiPrezzo,
+  scalino,
   valore,
   valuta,
   type Caso,
@@ -67,19 +72,24 @@ export {
   rulliDi,
 } from "./rulli";
 export { GENERI, type Genere } from "./dati/generi";
+export { GRADI_ID } from "./tipi";
 export type {
-  Combinazione,
+  Collezionabile,
   Conto,
+  DallaLibreria,
   DatiGiochi,
+  Epoca,
+  Era,
   Formazione,
   Giro,
-  GradoRarita,
+  Grado,
   Impostazioni,
   Pezzo,
   PezzoInGioco,
-  Rarita,
   Rullo,
-  StatoCombinazione,
+  Scalino,
+  StatoCollezionabile,
   Tavolo,
+  TipoCollezionabile,
   Vincita,
 } from "./tipi";

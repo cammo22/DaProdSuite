@@ -7,26 +7,53 @@
  * Il documento che comanda su tutti e' `CONCETTI.md`, accanto a questo.
  */
 
-/* ------------------------------------------------------------------ rarita' */
+/* -------------------------------------------------------------------- gradi */
 
 /**
- * Quanto e' raro un pezzo. Cinque gradi, e non e' un'etichetta: si **ricava dal
- * prezzo** (vedi `raritaDiPrezzo`).
+ * Gli undici gradi, dal piu' comune al piu' raro.
  *
- * Il perche' e' che due verita' sulla stessa cosa divergono sempre: se la
- * rarita' fosse un campo scritto accanto al prezzo, il giorno che l'admin
- * abbassa il prezzo di un pezzo resterebbe «Leggendario» a 2 lire.
+ * ⚠ **L'ordine e' quello, e non e' quello che ti aspetti.** «Epic» sta dopo
+ * «Divine», e non e' una svista: e' la scala che ha scelto Cammo il 9 settembre
+ * 2026, e in un gioco la scala e' una decisione, non una deduzione. Chi la
+ * legge da fuori la impara giocando, come si impara ogni scala di ogni gioco.
+ *
+ * Non e' un'etichetta scritta a mano da nessuna parte: **si ricava dal prezzo**
+ * (vedi `gradoDiPrezzo`). Se fosse un campo accanto al prezzo, il giorno che
+ * l'admin abbassa il prezzo di un pezzo resterebbe «Mythic» a due lire.
  */
-export type Rarita = "comune" | "poco" | "raro" | "epico" | "leggendario";
+export const GRADI_ID = [
+  "basic",
+  "grand",
+  "rare",
+  "arcane",
+  "heroic",
+  "unique",
+  "celestial",
+  "divine",
+  "epic",
+  "legendary",
+  "mythic",
+] as const;
 
-export interface GradoRarita {
-  id: Rarita;
-  /** Come si legge sullo schermo. */
+export type Grado = (typeof GRADI_ID)[number];
+
+export interface Scalino {
+  id: Grado;
+  /** Come si legge sullo schermo. In inglese: sono i nomi che ha scelto Cammo. */
   nome: string;
   /** Da questo prezzo in su si e' di questo grado. */
   da: number;
-  /** Il colore, uguale ovunque compaia: rullo, collezione, classifica. */
+  /** Il colore, uguale ovunque compaia: rullo, collezione, classifica, album. */
   colore: string;
+  /**
+   * Quanto e' acceso: da 0 (spento, nessun effetto) a 3 (tutto lo schermo lo
+   * sa). La pagina ci attacca l'alone, il luccichio e i coriandoli.
+   */
+  fuoco: 0 | 1 | 2 | 3;
+  /** Quante volte su mille esce questo grado, quando si pesca. */
+  quantoEsce: number;
+  /** Quanto paga se esce almeno uno di questo grado, in lire. */
+  paga: number;
 }
 
 /* -------------------------------------------------------------------- pezzi */
@@ -42,11 +69,26 @@ export interface GradoRarita {
 export type Tavolo = "immagini" | "musica";
 
 /**
- * Un rullo: uno dei pezzi di cui e' fatto un prompt.
+ * L'epoca scelta: il filtro che cambia **cosa esce** e come e' vestita la sala.
  *
- * L'ordine con cui sono elencati in `rulli.ts` e' anche l'ordine con cui i
- * pezzi si incollano nel prompt finale — quindi non e' un dettaglio grafico.
+ * `sempre` vuol dire tutto, senza pesi d'epoca. Gli altri sono i decenni. Non
+ * e' un'etichetta appiccicata sopra ai generi — quelli con un decennio scritto
+ * sono pochi — e' un **peso** su tutti, che tiene conto di quanto quel genere
+ * suona di allora (vedi `pesoEra` in `regole.ts`).
  */
+export type Era = "sempre" | "70" | "80" | "90" | "00" | "10" | "20";
+
+export interface Epoca {
+  id: Era;
+  /** Quello che si legge sul tasto: due caratteri, o il segno dell'infinito. */
+  segno: string;
+  nome: string;
+  /** I tre colori del fondo, che cambiano tutta la sala quando la si sceglie. */
+  fondo: [string, string, string];
+  /** Il colore acceso di quell'epoca: bordi, scritte, luci. */
+  luce: string;
+}
+
 export type IdRullo = string;
 
 export interface Rullo {
@@ -81,32 +123,49 @@ export interface Pezzo {
    */
   quantoComune?: number;
   /**
-   * Scritto da chi comanda, e non esce dalla slot: si vince solo grattando.
-   * Vedi CONCETTI.md § 8.
+   * Quanto suona di adesso, da 0 (modernissimo) a 1 (roba di allora).
+   *
+   * Ce l'hanno i generi — arriva dal rank di modernita' di Every Noise — e i
+   * pezzi che parlano di tempo, come il rullo «Di quando». E' quello che il
+   * filtro delle epoche pesa: vedi `pesoEra` in `regole.ts`.
    */
+  modernita?: number;
+  /**
+   * Il decennio, quando quel pezzo ne ha uno preciso.
+   *
+   * ⚠ Serve a una cosa che si vede: scegliendo gli anni 80, nel rullo «Di
+   * quando» deve uscire spesso «Anni ottanta». Senza, la sala si vestiva da
+   * anni 80 e poi la casella diceva «Adesso» — due cose che si contraddicono
+   * nella stessa schermata.
+   */
+  decennio?: string;
+  /** Scritto da chi comanda e aggiunto al mazzo. Gira come tutti gli altri. */
   custom?: boolean;
 }
 
 /** Un pezzo con addosso il prezzo di adesso e il grado che ne viene. */
 export interface PezzoInGioco extends Pezzo {
   prezzo: number;
-  rarita: Rarita;
+  grado: Grado;
 }
 
 /* ------------------------------------------------------------------ il giro */
 
 /** Perche' un giro ha pagato: serve a scriverlo sullo schermo e nel registro. */
 export interface Vincita {
-  /** `l1`, `l3`, `l5`, `e4`, `jackpot`, `quasi`, `formazione:<id>`. */
+  /** `grado:<id>`, `tris:<id>`, `pieno`, `quasi`, `formazione:<id>`. */
   motivo: string;
-  /** Come si legge: «tre Leggendari». */
+  /** Come si legge: «un Mythic», «tre Divine insieme». */
   detto: string;
   lire: number;
+  /** Quanto deve accendersi lo schermo: 0 niente, 3 tutto. */
+  fuoco: 0 | 1 | 2 | 3;
 }
 
 /** Cosa e' successo tirando la leva. */
 export interface Giro {
   tavolo: Tavolo;
+  era: Era;
   /** Un pezzo per rullo, nell'ordine dei rulli. */
   pezzi: PezzoInGioco[];
   /** Quanto e' costato il giro. */
@@ -114,6 +173,8 @@ export interface Giro {
   /** Le vincite, gia' sommate in `pagato`. Vuoto vuol dire buca. */
   vincite: Vincita[];
   pagato: number;
+  /** Il grado piu' alto uscito: e' quello che decide la scena. */
+  meglio: Grado;
   /** La somma dei prezzi dei pezzi usciti: quanto «vale» quello che vedi. */
   valore: number;
   /** Il prompt gia' montato, pronto da copiare o da mandare a controllare. */
@@ -121,13 +182,106 @@ export interface Giro {
   /**
    * La figurina caduta girando, se ne e' caduta una.
    *
-   * E' l'altra strada per sbloccare le combinazioni del magazzino: quella di
-   * chi gioca e basta, senza comprare pacchetti.
+   * E' l'altra strada per sbloccare i pezzi del magazzino: quella di chi gioca
+   * e basta, senza comprare pacchetti.
    */
-  regalo?: Combinazione;
+  regalo?: Collezionabile;
   /** Il saldo dopo. */
   saldo: number;
   quando: number;
+}
+
+/* ------------------------------------------------------------ i collezionabili */
+
+/**
+ * Di che cosa e' fatta una figurina.
+ *
+ * ⚠ **Non solo prompt, e questo e' il punto.** Chiesto il 9 settembre 2026:
+ * «predisponiamolo a ricevere tutti gli item dalla suite che possono essere
+ * potenzialmente nuovi item collezionabili — magari una immagine, una canzone
+ * e' un collezionabile».
+ *
+ * Quindi il magazzino non e' «l'elenco dei prompt approvati»: e' **l'elenco
+ * delle cose che valgono qualcosa**, e un prompt e' solo la prima specie. Una
+ * foto venuta bene, un brano che gira, un video: se sta nella libreria della
+ * suite e a chi comanda piace, puo' diventare una figurina con un grado addosso
+ * e finire nei pacchetti.
+ *
+ * Il pezzo che cambia da specie a specie e' solo **come si guarda**: un prompt
+ * si legge, un'immagine si vede, un brano si ascolta. Tutto il resto — il
+ * prezzo, il grado, chi l'ha fatta, i doppioni che pagano — e' uguale.
+ */
+export type TipoCollezionabile = "prompt" | "immagine" | "brano" | "video" | "voce";
+
+/** Che fine ha fatto una cosa mandata a controllare. */
+export type StatoCollezionabile =
+  /** Arrivata, nessuno l'ha ancora guardata. */
+  | "in-attesa"
+  /** Chi comanda le ha dato un prezzo: da adesso sta nel magazzino. */
+  | "presa"
+  /** Non andava bene. Chi l'ha mandata lo sa, col motivo. */
+  | "buttata";
+
+/**
+ * Dove sta una cosa che non e' testo: nella libreria della suite.
+ *
+ * Il gioco **non tiene file**. Tiene il numero di targa di una cosa che sta
+ * gia' nella galleria, e quando serve mostrarla la chiede a chi ospita. Cosi'
+ * una foto non esiste in due copie, e cancellarla dalla galleria non lascia
+ * qui una figurina che punta al vuoto.
+ */
+export interface DallaLibreria {
+  /** L'id nella libreria della suite. */
+  id: string;
+  /** `image/png`, `audio/mpeg`… serve alla pagina per sapere come mostrarla. */
+  mime: string;
+  /** Il prompt con cui e' stata fatta, se si sa. Si legge, non si usa. */
+  comeEraFatta?: string;
+}
+
+/**
+ * Una cosa che vale qualcosa: mandata da qualcuno, guardata da chi comanda.
+ *
+ * ⚠ **L'identita' e' l'impronta, non le parole.** Per un prompt e' la fila dei
+ * pezzi: due combinazioni con gli stessi dodici pezzi sono la stessa cosa anche
+ * se le hanno mandate due persone. Per una foto e' il suo posto in libreria.
+ * Confrontare i testi non basterebbe — uno spazio in piu' e ne entrano due
+ * uguali.
+ */
+export interface Collezionabile {
+  id: string;
+  tipo: TipoCollezionabile;
+  /** Come si chiama la figurina: per un prompt, i nomi dei pezzi. */
+  titolo: string;
+  /** Chi e', a prescindere da come e' scritta. */
+  impronta: string;
+
+  /* --- solo per i prompt --- */
+  tavolo?: Tavolo;
+  era?: Era;
+  /** Gli id dei pezzi, nell'ordine dei rulli. */
+  pezzi?: string[];
+  /** Il prompt vero, quello che va al modello. */
+  prompt?: string;
+
+  /* --- solo per le cose che si guardano o si ascoltano --- */
+  libreria?: DallaLibreria;
+
+  daChi: string;
+  quando: number;
+  stato: StatoCollezionabile;
+  /**
+   * Il posto nel magazzino, dato quando viene presa. Non riparte mai da capo:
+   * la serie di appartenenza si conta da qui.
+   */
+  numero?: number;
+  /** Quanto vale, in lire. Lo scrive chi comanda quando la prende. */
+  prezzo?: number;
+  /** Chi ha deciso, e quando. */
+  daAdmin?: string;
+  decisa?: number;
+  /** Perche' e' stata buttata. Si dice sempre. */
+  motivo?: string;
 }
 
 /* ---------------------------------------------------------------- le persone */
@@ -147,7 +301,7 @@ export interface Conto {
   vinteTot: number;
   /** La vincita singola piu' grossa. E' quella di cui si vanta. */
   colpoGrosso: number;
-  /** Quante combinazioni ha mandato a controllare. */
+  /** Quante cose ha mandato a controllare. */
   mandate: number;
   /**
    * Quante gliene hanno **prese**. E' il numero che conta in classifica.
@@ -156,8 +310,10 @@ export interface Conto {
    * chi manda di piu' premierebbe chi tira la leva a caso.
    */
   prese: number;
-  /** Gli id delle combinazioni che ha sbloccato. */
+  /** Gli id delle figurine che ha sbloccato. */
   collezione: string[];
+  /** Il grado piu' alto che gli sia mai uscito: e' il suo trofeo. */
+  migliorGrado?: Grado;
   /** Prima volta e ultima volta, per sapere chi e' passato. */
   nato: number;
   ultimoGiro: number;
@@ -165,97 +321,43 @@ export interface Conto {
 
 /* ---------------------------------------------------------- i numeri del banco */
 
-/**
- * Tutti i numeri che decidono quanto costa e quanto paga, in un posto solo e
- * cambiabili da chi comanda.
- *
- * Sono i valori decisi da Cammo nella prima versione di DaProdSlot: si
- * cambiano, ma partono da li'.
- */
+/** Tutti i numeri che decidono quanto costa e quanto paga, in un posto solo. */
 export interface Impostazioni {
   /** Quanto costa tirare la leva. */
   costoGiro: number;
   /** Quanto costa un pacchetto della serie chiusa. */
   costoPacchetto: number;
-  /** Quante combinazioni ci sono dentro un pacchetto. */
+  /** Quante figurine ci sono dentro un pacchetto. */
   perPacchetto: number;
-  /** Quante combinazioni prese chiudono una serie. */
+  /** Quante cose prese chiudono una serie. */
   perSerie: number;
   /**
    * Ogni quanti giri, in media, ne cade una gratis.
    *
    * E' l'altra strada per sbloccarle, quella di chi gioca e basta: uno su
-   * questo numero regala una combinazione del magazzino. A zero non ne cade
-   * mai, e i pacchetti restano l'unica via.
+   * questo numero regala una figurina del magazzino. A zero non ne cade mai.
    */
   unaOgniGiri: number;
-  vincitaL1: number;
-  vincitaL3: number;
-  vincitaL5: number;
-  vincitaE4: number;
-  jackpotMin: number;
-  jackpotMax: number;
+  /**
+   * Quanto paga ogni grado quando ne esce almeno uno, in lire.
+   *
+   * ⚠ **Paga solo il grado piu' alto**, non tutti quelli usciti: se pagassero
+   * tutti, un Mythic incasserebbe anche il premio del Basic accanto, e i numeri
+   * smetterebbero di voler dire quello che dicono.
+   */
+  pagaPerGrado: Partial<Record<Grado, number>>;
+  /** Il premio in piu' quando tre caselle hanno lo stesso grado, da Rare in su. */
+  trisMoltiplicatore: number;
+  /** Schermo pieno: tutte le caselle da questo grado in su. */
+  pienoDa: Grado;
+  pienoMin: number;
+  pienoMax: number;
   /** Se non e' uscito niente, ogni tanto consola. */
   quasiPercentuale: number;
   quasiMin: number;
   quasiMax: number;
   /** Quanto trova in tasca chi gioca la prima volta. */
   regaloIniziale: number;
-  /** Quanto costa far produrre davvero, per tipo di lavoro. */
-  costoProduzione: Record<string, number>;
-}
-
-/* --------------------------------------------------- le combinazioni mandate */
-
-/**
- * Che fine ha fatto una combinazione mandata a controllare.
- *
- * Sono gli stessi tre stati della fila delle richieste del telefono, e non e'
- * una coincidenza: e' la stessa cosa — qualcuno chiede, chi comanda guarda e
- * decide. Chi ha mandato non aspetta: continua a giocare.
- */
-export type StatoCombinazione =
-  /** Arrivata, nessuno l'ha ancora guardata. */
-  | "in-attesa"
-  /** L'admin le ha dato un prezzo: da adesso sta nel magazzino. */
-  | "presa"
-  /** Non andava bene. Chi l'ha mandata lo sa, col motivo. */
-  | "buttata";
-
-/**
- * Un prompt montato da qualcuno e mandato a controllare.
- *
- * ⚠ **L'identita' sono i pezzi, non le parole.** Due combinazioni con gli
- * stessi sei pezzi sono la stessa combinazione anche se le hanno mandate due
- * persone diverse: la seconda si ferma subito. Confrontare i prompt scritti
- * non basterebbe — basterebbe uno spazio in piu' per farne entrare due uguali.
- */
-export interface Combinazione {
-  id: string;
-  tavolo: Tavolo;
-  /** Gli id dei pezzi, nell'ordine dei rulli. */
-  pezzi: string[];
-  /** I pezzi in ordine e attaccati: e' l'identita' della combinazione. */
-  impronta: string;
-  /** Il prompt vero, quello che va al modello. */
-  prompt: string;
-  /** Come si legge in italiano: i nomi dei pezzi. E' il titolo della figurina. */
-  titolo: string;
-  daChi: string;
-  quando: number;
-  stato: StatoCombinazione;
-  /**
-   * Il posto nel magazzino, dato quando viene presa. Non riparte mai da capo:
-   * la serie di appartenenza si conta da qui.
-   */
-  numero?: number;
-  /** Quanto vale, in lire. Lo scrive l'admin quando la prende. */
-  prezzo?: number;
-  /** Chi ha deciso, e quando. */
-  daAdmin?: string;
-  decisa?: number;
-  /** Perche' e' stata buttata. Si dice sempre. */
-  motivo?: string;
 }
 
 /** Una combinazione dichiarata dall'admin, che paga a parte. */
@@ -280,21 +382,21 @@ export interface DatiGiochi {
   versione: 1;
   conti: Conto[];
   /**
-   * Le combinazioni mandate: quelle in attesa, quelle prese e quelle buttate.
+   * Il magazzino e la fila insieme: le cose in attesa, quelle prese e quelle
+   * buttate.
    *
-   * Stanno tutte qui insieme, anche le buttate: senza, chi ha mandato una cosa
-   * non saprebbe mai che fine ha fatto, e la stessa combinazione rifiutata
-   * potrebbe tornare domani.
+   * Stanno tutte qui, anche le buttate: senza, chi ha mandato una cosa non
+   * saprebbe mai che fine ha fatto, e la stessa cosa rifiutata potrebbe tornare
+   * domani.
    */
-  combinazioni: Combinazione[];
+  collezionabili: Collezionabile[];
   /** L'ultimo posto dato nel magazzino. Non riparte mai da capo. */
   ultimoNumero: number;
   /**
    * Pezzi aggiunti ai rulli da chi comanda.
    *
    * Girano nella slot come tutti gli altri: non hanno niente di speciale, sono
-   * solo mazzo in piu'. La roba da collezionare sono le **combinazioni**, non i
-   * pezzi — vedi CONCETTI.md § 10.
+   * solo mazzo in piu'. La roba da collezionare sono i **collezionabili**.
    */
   custom: Pezzo[];
   /** I prezzi cambiati a mano: solo quelli, non tutto il listino. */

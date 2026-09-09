@@ -30,8 +30,8 @@
 
 import { copyFileSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
-import { IMPOSTAZIONI_DI_PARTENZA } from "./regole";
-import type { Combinazione, Conto, DatiGiochi, Formazione, Impostazioni, Pezzo } from "./tipi";
+import { altezza, IMPOSTAZIONI_DI_PARTENZA } from "./regole";
+import type { Collezionabile, Conto, DatiGiochi, Formazione, Grado, Impostazioni, Pezzo } from "./tipi";
 
 /**
  * Un deposito appena nato, tutto suo.
@@ -49,7 +49,7 @@ function vuoto(): DatiGiochi {
   return {
     versione: 1,
     conti: [],
-    combinazioni: [],
+    collezionabili: [],
     ultimoNumero: 0,
     custom: [],
     prezzi: {},
@@ -114,7 +114,7 @@ export class Deposito {
     return {
       versione: 1,
       conti: Array.isArray(lette.conti) ? lette.conti : [],
-      combinazioni: Array.isArray(lette.combinazioni) ? lette.combinazioni : [],
+      collezionabili: Array.isArray(lette.collezionabili) ? lette.collezionabili : [],
       ultimoNumero: typeof lette.ultimoNumero === "number" ? lette.ultimoNumero : 0,
       custom: Array.isArray(lette.custom) ? lette.custom : [],
       prezzi: typeof lette.prezzi === "object" && lette.prezzi !== null ? lette.prezzi : {},
@@ -229,8 +229,14 @@ export class Deposito {
     return conto;
   }
 
-  /** Segna un giro fatto, e quanto ha pagato. */
-  segnaGiro(chi: string, vinto: number): Conto {
+  /**
+   * Segna un giro fatto, quanto ha pagato, e il grado piu' alto uscito.
+   *
+   * Il grado si tiene perche' e' il trofeo: «a me e' uscito un Mythic» e' la
+   * cosa che uno dice, e senza scriverla resterebbe solo nella memoria di chi
+   * c'era.
+   */
+  segnaGiro(chi: string, vinto: number, meglio?: Grado): Conto {
     const conto = this.conto(chi);
     conto.giri += 1;
     conto.ultimoGiro = Date.now();
@@ -238,11 +244,14 @@ export class Deposito {
       conto.vinteTot += vinto;
       if (vinto > conto.colpoGrosso) conto.colpoGrosso = vinto;
     }
+    if (meglio && (!conto.migliorGrado || altezza(meglio) > altezza(conto.migliorGrado))) {
+      conto.migliorGrado = meglio;
+    }
     this.salva();
     return conto;
   }
 
-  /** Mette una combinazione in collezione. Torna falso se ce l'aveva gia'. */
+  /** Mette una figurina in collezione. Torna falso se ce l'aveva gia'. */
   colleziona(chi: string, idPezzo: string): boolean {
     const conto = this.conto(chi);
     if (conto.collezione.includes(idPezzo)) return false;
@@ -253,21 +262,21 @@ export class Deposito {
 
   /* --------------------------------------------------------- le combinazioni */
 
-  combinazioni(): Combinazione[] {
-    return this.dati.combinazioni;
+  collezionabili(): Collezionabile[] {
+    return this.dati.collezionabili;
   }
 
   /** Una combinazione per impronta: serve a non farne entrare due uguali. */
-  perImpronta(impronta: string): Combinazione | undefined {
-    return this.dati.combinazioni.find((c) => c.impronta === impronta);
+  perImpronta(impronta: string): Collezionabile | undefined {
+    return this.dati.collezionabili.find((c) => c.impronta === impronta);
   }
 
-  perId(id: string): Combinazione | undefined {
-    return this.dati.combinazioni.find((c) => c.id === id);
+  perId(id: string): Collezionabile | undefined {
+    return this.dati.collezionabili.find((c) => c.id === id);
   }
 
-  aggiungiCombinazione(c: Combinazione): Combinazione {
-    this.dati.combinazioni.push(c);
+  aggiungi(c: Collezionabile): Collezionabile {
+    this.dati.collezionabili.push(c);
     const conto = this.conto(c.daChi);
     conto.mandate += 1;
     this.salva();
@@ -280,8 +289,8 @@ export class Deposito {
    * E' il catalogo: quello che si sblocca giocando, quello che sta nei
    * pacchetti, quello che finisce nella suite.
    */
-  magazzino(): Combinazione[] {
-    return this.dati.combinazioni
+  magazzino(): Collezionabile[] {
+    return this.dati.collezionabili
       .filter((c) => c.stato === "presa")
       .sort((a, b) => (a.numero ?? 0) - (b.numero ?? 0));
   }
