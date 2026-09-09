@@ -187,8 +187,15 @@ export function rispondi(
 
     if (metodo === "POST" && percorso === "/manda") {
       const pezzi = Array.isArray(corpo["pezzi"]) ? (corpo["pezzi"] as string[]) : [];
-      const c = manda(deposito, chi.id, tavoloDi(corpo), eraDi(corpo), pezzi);
-      return OK(vestita(c, contorno, true));
+      const esito = manda(deposito, chi.id, tavoloDi(corpo), eraDi(corpo), pezzi);
+      return OK({
+        esito: esito.esito,
+        detto: esito.detto,
+        lire: esito.lire,
+        saldo: esito.saldo,
+        saldoScritto: lire(esito.saldo),
+        cosa: vestita(esito.cosa, contorno, true),
+      });
     }
 
     /**
@@ -199,7 +206,7 @@ export function rispondi(
      * pagina della slot.
      */
     if (metodo === "POST" && percorso === "/manda-dalla-libreria") {
-      const c = mandaDallaLibreria(
+      const c: Collezionabile = mandaDallaLibreria(
         deposito,
         chi.id,
         String(corpo["tipo"] ?? "immagine") as TipoCollezionabile,

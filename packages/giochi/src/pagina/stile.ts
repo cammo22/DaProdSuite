@@ -94,7 +94,12 @@ h2:first-child{margin-top:2px}
 .rullo .quale{font-size:10px; letter-spacing:.5px; text-transform:uppercase; color:var(--spento)}
 .rullo .nome{margin-top:5px; font-weight:700; line-height:1.22; overflow-wrap:anywhere;
   font-size:14px}
-.rullo .esempio{margin-top:4px; font-size:10.5px; color:var(--spento); line-height:1.3;
+/* Quello che va davvero al modello, sotto al nome italiano. Piccolo e
+   spento: si legge se lo cerchi, non ruba il posto al nome. */
+.rullo .inglese{margin-top:4px; font-size:10.5px; color:#7f899e; line-height:1.3;
+  font-style:italic; display:-webkit-box; -webkit-line-clamp:2;
+  -webkit-box-orient:vertical; overflow:hidden}
+.rullo .esempio{margin-top:3px; font-size:10.5px; color:var(--spento); line-height:1.3;
   display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden}
 .rullo .prezzo{position:absolute; left:9px; bottom:6px; font-size:11px; font-weight:700;
   font-variant-numeric:tabular-nums}
@@ -242,6 +247,26 @@ nav .pallino{display:inline-block; min-width:16px; padding:0 4px; margin-left:4p
   border-radius:999px; background:var(--rosso); color:#fff; font-size:10px;
   animation:batte 1.6s ease-in-out infinite}
 @keyframes batte{0%,100%{transform:scale(1)} 50%{transform:scale(1.16)}}
+
+/* --------------------------------------------------------- il pannellone */
+/* Tenendo premuto si apre questo: una cosa sola, scritta grossa. Serve a chi
+   ci vede poco e a chiunque debba leggere un prompt di dodici pezzi su un
+   telefono. La misura cresce con lo schermo (clamp), non e' fissa. */
+/* Coprente davvero: con un fondo semitrasparente si leggeva la pagina dietro,
+   e un pannello «per chi ci vede poco» attraverso cui si vede altro testo non
+   serve a niente. Visto a mano il 9 settembre 2026. */
+.grande{position:fixed; inset:0; z-index:70; display:flex; align-items:center;
+  justify-content:center; padding:24px; cursor:pointer;
+  background:#06070a; animation:apre .18s ease}
+@keyframes apre{from{opacity:0} to{opacity:1}}
+.grande .dentro{max-width:900px; text-align:center}
+.grande .su{font-size:clamp(13px,2.4vw,18px); letter-spacing:.6px;
+  text-transform:uppercase; color:var(--spento)}
+.grande .nomone{margin-top:10px; font-size:clamp(30px,8vw,72px); font-weight:800;
+  line-height:1.08; color:var(--g,var(--testo)); overflow-wrap:anywhere}
+.grande .testone{margin-top:20px; font-size:clamp(19px,3.6vw,34px); line-height:1.4;
+  color:var(--testo); overflow-wrap:anywhere; white-space:pre-wrap}
+.grande .chiudi{margin-top:26px; font-size:clamp(12px,2vw,15px); color:var(--spento)}
 
 /* ------------------------------------------------------------- l'avviso */
 .avviso{position:fixed; left:50%; bottom:78px; transform:translateX(-50%);

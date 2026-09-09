@@ -216,17 +216,96 @@ function nuovoId(): string {
 }
 
 /**
- * Quando una cosa c'e' gia', si dice subito e si dice cosa.
+ * Cosa e' successo mandando qualcosa.
  *
- * Aspettare tre giorni per sentirsi rispondere «era gia' di un altro» e'
- * peggio di un no immediato.
+ * Non e' sempre «l'ho mandata». Le combinazioni buone le trova piu' di una
+ * persona, e quello che succede quando ne esce una gia' vista e' la regola che
+ * Cammo ha scritto il 9 settembre 2026 — ed e' la piu' bella del gioco.
  */
-function fermaSeGiaC(deposito: Deposito, impronta: string): void {
-  const gia = deposito.perImpronta(impronta);
-  if (!gia) return;
-  if (gia.stato === "presa") throw new NienteDaFare("Questa c'e' gia' nel magazzino.");
-  if (gia.stato === "in-attesa") throw new NienteDaFare("Questa e' gia' in attesa.");
-  throw new NienteDaFare("Questa era gia' stata guardata, e buttata.");
+export interface EsitoInvio {
+  esito:
+    /** Nuova: e' in fila, chi comanda la guardera'. */
+    | "mandata"
+    /**
+     * **Riscoperta.** Qualcun altro l'aveva gia' trovata e chi comanda l'aveva
+     * gia' presa — ma tu non ce l'avevi, e ci sei arrivato per conto tuo.
+     * Prendi lo stesso premio del primo, e la figurina.
+     */
+    | "riscoperta"
+    /** Ce l'hai gia' tu: e' un buco nell'acqua, e costa due lire. */
+    | "gia-tua";
+  cosa: Collezionabile;
+  /** Le lire guadagnate (riscoperta) o perse (gia' tua). Con il segno. */
+  lire: number;
+  /** Il saldo dopo. */
+  saldo: number;
+  /** La frase da leggere, gia' scritta in italiano. */
+  detto: string;
+}
+
+/**
+ * Cosa fare quando la combinazione mandata c'e' gia'.
+ *
+ * ⚠ **Le combinazioni buone le trova piu' di una persona, e non e' un
+ * problema: e' il gioco.** Con dodici rulli e migliaia di pezzi, ritrovare per
+ * caso la stessa identica riga che ha trovato tuo fratello e' difficilissimo —
+ * quindi quando succede si festeggia, non si dice «gia' vista».
+ *
+ * Le tre strade, decise da Cammo il 9 settembre 2026:
+ *
+ * - **ce l'hai gia' tu** — l'hai scoperta tu, o l'hai sbloccata da un
+ *   pacchetto. Rimandarla e' un buco nell'acqua e costa due lire: e' l'unico
+ *   freno contro il mandare a raffica sempre la stessa;
+ * - **e' presa, e tu non ce l'hai** — complimenti: prendi **lo stesso premio in
+ *   lire** che ha preso chi l'ha scoperta, piu' la figurina in collezione;
+ * - **e' ancora in attesa, o e' stata buttata** — non c'e' niente da premiare
+ *   e niente da punire: nessuno ha ancora detto se vale. Si dice com'e' e
+ *   basta.
+ */
+function giaVista(
+  deposito: Deposito,
+  chi: string,
+  gia: Collezionabile,
+): EsitoInvio {
+  const conto = deposito.conto(chi);
+  const imp = deposito.impostazioni();
+
+  if (gia.stato === "in-attesa") {
+    throw new NienteDaFare(
+      gia.daChi === chi
+        ? "Questa l'hai gia' mandata: sta in fila, aspetta."
+        : "Qualcun altro l'ha appena mandata, e nessuno l'ha ancora guardata.",
+    );
+  }
+  if (gia.stato === "buttata") {
+    throw new NienteDaFare("Questa era gia' stata guardata, e buttata: " + (gia.motivo ?? ""));
+  }
+
+  // Da qui in giu' e' «presa», cioe' verificata da chi comanda.
+  if (conto.collezione.includes(gia.id)) {
+    const dopo = deposito.muovi(chi, -imp.penalitaDoppione);
+    return {
+      esito: "gia-tua",
+      cosa: gia,
+      lire: -imp.penalitaDoppione,
+      saldo: dopo.saldo,
+      detto: "Questa combinazione ce l'hai gia'. " + imp.penalitaDoppione + " lire di multa.",
+    };
+  }
+
+  const premio = gia.prezzo ?? 0;
+  deposito.muovi(chi, premio);
+  deposito.colleziona(chi, gia.id);
+  const dopo = deposito.conto(chi);
+  return {
+    esito: "riscoperta",
+    cosa: gia,
+    lire: premio,
+    saldo: dopo.saldo,
+    detto:
+      "Complimenti: ci sei arrivato anche tu. Questa l'aveva trovata " +
+      "qualcun altro ed e' gia' stata presa — prendi lo stesso premio, e la figurina.",
+  };
 }
 
 /**
@@ -245,7 +324,7 @@ export function manda(
   tavolo: Tavolo,
   era: Era,
   idPezzi: string[],
-): Collezionabile {
+): EsitoInvio {
   const rulli = rulliDi(tavolo);
   if (rulli.length === 0) throw new NienteDaFare("Questo tavolo non esiste.");
   if (idPezzi.length !== rulli.length) {
@@ -263,9 +342,10 @@ export function manda(
   }
 
   const impronta = improntaDi(pezzi.map((p) => p.id));
-  fermaSeGiaC(deposito, impronta);
+  const gia = deposito.perImpronta(impronta);
+  if (gia) return giaVista(deposito, chi, gia);
 
-  return deposito.aggiungi({
+  const nuova = deposito.aggiungi({
     id: nuovoId(),
     tipo: "prompt",
     titolo: titoloDi(pezzi),
@@ -278,6 +358,13 @@ export function manda(
     quando: Date.now(),
     stato: "in-attesa",
   });
+  return {
+    esito: "mandata",
+    cosa: nuova,
+    lire: 0,
+    saldo: deposito.conto(chi).saldo,
+    detto: "Mandata. Continua pure a giocare: ti diranno com'e' andata.",
+  };
 }
 
 /**
@@ -305,7 +392,14 @@ export function mandaDallaLibreria(
   // L'impronta di una cosa della libreria e' il suo posto: la stessa foto non
   // puo' entrare due volte, nemmeno se la manda un'altra persona.
   const impronta = "libreria:" + libreria.id;
-  fermaSeGiaC(deposito, impronta);
+  // Qui la regola della riscoperta non vale: due foto non si «riscoprono»,
+  // sono la stessa foto. Chi la rimanda si sente dire com'e' messa e basta.
+  const gia = deposito.perImpronta(impronta);
+  if (gia) {
+    if (gia.stato === "presa") throw new NienteDaFare("Questa c'e' gia' nel magazzino.");
+    if (gia.stato === "in-attesa") throw new NienteDaFare("Questa e' gia' in attesa.");
+    throw new NienteDaFare("Questa era gia' stata guardata, e buttata.");
+  }
 
   return deposito.aggiungi({
     id: nuovoId(),

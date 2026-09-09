@@ -36,6 +36,7 @@ export {
   statoMagazzino,
   tira,
   type AperturaPacchetto,
+  type EsitoInvio,
   type Figurina,
   type RigaClassifica,
 } from "./banco";

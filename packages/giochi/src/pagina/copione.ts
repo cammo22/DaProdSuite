@@ -27,10 +27,62 @@ export const COPIONE = `
   var pezzi = [];          // i pezzi usciti, uno per rullo
   var bloccati = [];       // gli id tenuti fermi, uno per rullo (o null)
   var inEuro = false;
-  var girando = false;
   var serieAperta = 0;
   /** Il grado scelto per la cosa che si sta prendendo, in fila. */
   var gradoScelto = {};
+
+  /**
+   * Quello che c'e' sui rulli, **tavolo per tavolo**, e tenuto da parte.
+   *
+   * ⚠ Chiesto il 9 settembre 2026: «se ho loccato dei prompt e cambio scheda me
+   * li salva comunque, in modo da poter mischiare e rendere davvero particolari
+   * i prompt nel tempo». Prima cambiare tavolo buttava tutto, e una riga montata
+   * in dieci giri se ne andava per un tocco sbagliato.
+   *
+   * Sta nel deposito del browser, quindi resta anche chiudendo la pagina: una
+   * combinazione buona si costruisce in piu' sere.
+   */
+  var tavoli = {};
+  var CHIAVE_TAVOLI = "daprod.giochi.tavoli";
+
+  function ricordaTavolo() {
+    tavoli[tavolo] = { pezzi: pezzi, bloccati: bloccati, era: era };
+    try { localStorage.setItem(CHIAVE_TAVOLI, JSON.stringify(tavoli)); } catch (e) {}
+  }
+
+  function riprendiTavolo() {
+    var t = tavoli[tavolo];
+    pezzi = t && t.pezzi ? t.pezzi : [];
+    bloccati = t && t.bloccati ? t.bloccati : [];
+    if (t && t.era) era = t.era;
+  }
+
+  (function riprendiDaPrima() {
+    try {
+      var scritto = localStorage.getItem(CHIAVE_TAVOLI);
+      if (scritto) tavoli = JSON.parse(scritto) || {};
+    } catch (e) { tavoli = {}; }
+  })();
+
+  /**
+   * Il giro in corso, e come si salta la scena.
+   *
+   * ⚠ Chiesto il 9 settembre 2026: «rendiamola skippabile — se premo gira gira,
+   * se ripremo gira salta l'animazione, in modo che la gente clicca super
+   * veloce». Quindi: primo tocco gira, secondo tocco **taglia corto** e mostra
+   * subito cos'e' uscito, terzo tocco rigira. Chi ha fretta non aspetta mai.
+   *
+   * Se il secondo tocco arriva **prima** che risponda il PC, si segna e basta:
+   * quando la risposta arriva si va dritti al risultato senza scena.
+   */
+  var girando = false;
+  var saltare = false;
+  var orologiGiro = [];
+
+  function pulisciOrologi() {
+    for (var i = 0; i < orologiGiro.length; i++) clearTimeout(orologiGiro[i]);
+    orologiGiro = [];
+  }
 
   /**
    * Il token, se chi ci ha aperti ce l'ha dato.
@@ -88,6 +140,98 @@ export const COPIONE = `
     var g = io && io.gradi ? io.gradi : [];
     for (var i = 0; i < g.length; i++) if (g[i].id === grado) return g[i];
     return { id: "basic", nome: "Basic", colore: "#9aa0b5", fuoco: 0 };
+  }
+
+  /**
+   * Il pannello grande: una cosa sola, scritta grossa.
+   *
+   * ⚠ Chiesto il 9 settembre 2026: «se teniamo premuto un prompt si apre
+   * grande, scritto tutto grande che si vede bene anche per cecati». Si apre
+   * **tenendo premuto** un rullo o la riga del prompt, e si chiude toccando
+   * qualunque punto.
+   *
+   * Non e' solo per chi ci vede poco: un prompt di dodici pezzi, letto in una
+   * casella larga tre centimetri, non lo legge nessuno.
+   */
+  function grande(titolo, sottotitolo, testo, colore) {
+    var vecchio = document.querySelector(".grande");
+    if (vecchio) vecchio.remove();
+    var d = document.createElement("div");
+    d.className = "grande";
+    if (colore) d.style.setProperty("--g", colore);
+    var h = "<div class=\\"dentro\\">";
+    if (titolo) h += "<div class=\\"su\\">" + sicuro(titolo) + "</div>";
+    if (sottotitolo) h += "<div class=\\"nomone\\">" + sicuro(sottotitolo) + "</div>";
+    if (testo) h += "<div class=\\"testone\\">" + sicuro(testo) + "</div>";
+    h += "<div class=\\"chiudi\\">tocca per chiudere</div></div>";
+    d.innerHTML = h;
+    d.addEventListener("click", function () { d.remove(); });
+    document.body.appendChild(d);
+  }
+
+  /**
+   * Tenere premuto: mezzo secondo, e si apre grande.
+   *
+   * Si aggancia una volta sola a tutto il documento e si guarda **cosa** si sta
+   * tenendo premuto: un rullo apre quel pezzo, la riga del prompt apre il
+   * prompt intero, una figurina apre la figurina. Un solo posto da cui parte
+   * l'ingrandimento, invece di tre che si comportano diverso.
+   */
+  var orologioPressione = null;
+  var premutoDa = null;
+
+  function iniziaPressione(evento) {
+    var b = evento.target;
+    if (!b || !b.closest) return;
+    premutoDa = b;
+    if (orologioPressione) clearTimeout(orologioPressione);
+    orologioPressione = setTimeout(function () {
+      orologioPressione = null;
+      apriGrandeDa(premutoDa);
+    }, 480);
+  }
+
+  function fermaPressione() {
+    if (orologioPressione) clearTimeout(orologioPressione);
+    orologioPressione = null;
+  }
+
+  function apriGrandeDa(nodo) {
+    if (!nodo || !nodo.closest) return;
+
+    var rullo = nodo.closest("[data-rullo]");
+    if (rullo) {
+      var p = pezzi[Number(rullo.getAttribute("data-rullo"))];
+      if (!p) return;
+      var s = scalinoDi(p.grado);
+      grande(
+        rulli[Number(rullo.getAttribute("data-rullo"))].nome,
+        p.nome,
+        p.testo + (p.esempio ? "\\n\\ntipo " + p.esempio : "") + "\\n\\n" +
+          s.nome + " · " + soldi(p.prezzo),
+        s.colore,
+      );
+      return;
+    }
+
+    if (nodo.closest("#prompt") && pezzi.length) {
+      grande(
+        "Il prompt intero",
+        pezzi.map(function (p) { return p.nome; }).join(" · "),
+        pezzi.map(function (p) { return p.testo; }).join(", "),
+        "",
+      );
+      return;
+    }
+
+    var fig = nodo.closest(".figurina");
+    if (fig) {
+      var titolo = fig.querySelector(".titolo");
+      var testo = fig.querySelector(".testo");
+      if (titolo) {
+        grande("Figurina", titolo.textContent, testo ? testo.textContent : "", "");
+      }
+    }
   }
 
   var orologioAvviso = null;
@@ -221,6 +365,12 @@ export const COPIONE = `
         (s ? s.colore : "#2e3340") + "\\"></div>";
       dentro += "<div class=\\"quale\\">" + sicuro(r.nome) + "</div>";
       dentro += "<div class=\\"nome\\">" + (p ? sicuro(p.nome) : "—") + "</div>";
+      // Sotto al nome italiano c'e' **quello che va davvero al modello**.
+      // Chiesto il 9 settembre 2026: si scrive in italiano, ma il prompt e'
+      // inglese, e uno deve poter vedere cosa sta mandando senza indovinare.
+      if (p && p.testo !== p.nome) {
+        dentro += "<div class=\\"inglese\\">" + sicuro(p.testo) + "</div>";
+      }
       if (p && p.esempio) dentro += "<div class=\\"esempio\\">tipo " + sicuro(p.esempio) + "</div>";
       if (p) dentro += "<div class=\\"prezzo\\" style=\\"color:" + s.colore + "\\">" +
         soldi(p.prezzo) + " · " + sicuro(s.nome) + "</div>";
@@ -249,9 +399,13 @@ export const COPIONE = `
   /* --------------------------------------------------------------- girare */
 
   function gira() {
-    if (girando) return;
+    // Secondo tocco mentre gira: si taglia corto. Non e' un errore, e' la
+    // fretta di chi gioca — e va assecondata.
+    if (girando) { saltare = true; pulisciOrologi(); if (giroPronto) concludi(); return; }
+
     girando = true;
-    $("gira").disabled = true;
+    saltare = false;
+    giroPronto = null;
     $("esito").textContent = "";
 
     var caselle = document.querySelectorAll(".rullo");
@@ -262,24 +416,31 @@ export const COPIONE = `
 
     chiedi("POST", "/gira", { tavolo: tavolo, era: era, bloccati: bloccati })
       .then(function (giro) {
+        saldoPrima = io.saldo;
         pezzi = giro.pezzi;
-        var prima = io.saldo;
         io.saldo = giro.saldo;
+        giroPronto = giro;
+        ricordaTavolo();
         // I rulli si fermano **uno dopo l'altro**, non tutti insieme: e' la
-        // differenza fra una slot e una tabella che si aggiorna.
-        fermaUnoAllaVolta(giro, prima);
+        // differenza fra una slot e una tabella che si aggiorna. A meno che
+        // qualcuno non abbia gia' ripremuto.
+        if (saltare) concludi();
+        else fermaUnoAllaVolta();
       })
       .catch(function (errore) {
         girando = false;
-        $("gira").disabled = false;
+        pulisciOrologi();
         disegnaRulli();
         avviso(errore.message, "male");
       });
   }
 
-  function fermaUnoAllaVolta(giro, saldoPrima) {
+  var giroPronto = null;
+  var saldoPrima = 0;
+
+  function fermaUnoAllaVolta() {
     var quanti = rulli.length;
-    var passo = 90;
+    var passo = 70;
     // Prima si ridisegna tutto (i pezzi nuovi sono gia' dentro), poi si toglie
     // il giro a una casella per volta.
     disegnaRulli();
@@ -288,21 +449,34 @@ export const COPIONE = `
 
     for (var j = 0; j < quanti; j++) {
       (function (k) {
-        setTimeout(function () {
+        orologiGiro.push(setTimeout(function () {
           var c = document.querySelectorAll(".rullo")[k];
           if (!c) return;
           c.classList.remove("gira");
           c.classList.add("arrivato");
-        }, 260 + k * passo);
+        }, 220 + k * passo));
       })(j);
     }
 
-    setTimeout(function () {
-      disegnaSaldo(giro.saldo > saldoPrima);
-      raccontaGiro(giro);
-      girando = false;
-      $("gira").disabled = false;
-    }, 300 + quanti * passo);
+    orologiGiro.push(setTimeout(concludi, 260 + quanti * passo));
+  }
+
+  /**
+   * La fine del giro: i rulli fermi, il saldo aggiornato, la scena raccontata.
+   *
+   * La chiamano tutte e due le strade — quella con l'animazione e quella di chi
+   * ha ripremuto per saltarla — cosi' non ci sono due modi di finire un giro,
+   * che sarebbe il modo piu' facile per farne divergere uno.
+   */
+  function concludi() {
+    if (!giroPronto) return;
+    var giro = giroPronto;
+    giroPronto = null;
+    pulisciOrologi();
+    disegnaRulli();
+    disegnaSaldo(giro.saldo > saldoPrima);
+    raccontaGiro(giro);
+    girando = false;
   }
 
   function raccontaGiro(giro) {
@@ -340,6 +514,16 @@ export const COPIONE = `
 
   /* -------------------------------------------------------------- mandare */
 
+  /**
+   * Manda la riga a controllare, e racconta cosa e' successo.
+   *
+   * Tre finali possibili, e sono tre scene diverse:
+   *
+   * - **mandata**: sta in fila, si continua a giocare;
+   * - **riscoperta**: ci sei arrivato anche tu a una che qualcun altro aveva
+   *   gia' trovato. Coriandoli, premio pieno e la figurina;
+   * - **gia' tua**: ce l'avevi gia'. Due lire di multa e nient'altro.
+   */
   function manda() {
     if (pezzi.length !== rulli.length) return;
     chiedi("POST", "/manda", {
@@ -347,8 +531,33 @@ export const COPIONE = `
       era: era,
       pezzi: pezzi.map(function (p) { return p.id; }),
     })
-      .then(function () {
-        avviso("Mandata. Continua pure a giocare: ti diranno com'e' andata.", "bene");
+      .then(function (r) {
+        io.saldo = r.saldo;
+        disegnaSaldo(r.lire > 0);
+
+        if (r.esito === "riscoperta") {
+          var s = scalinoDi(r.cosa.grado);
+          lampo(s.colore);
+          scuoti();
+          coriandoli(90, [s.colore, "#ffd166", "#ffffff"]);
+          numeroVolante("+" + soldi(r.lire), s.colore);
+          grande(
+            "Ci sei arrivato anche tu",
+            r.cosa.titolo,
+            r.detto + " Premio: " + soldi(r.lire) + ".",
+            s.colore,
+          );
+          io.conto.collezione += 1;
+          return;
+        }
+
+        if (r.esito === "gia-tua") {
+          numeroVolante(soldi(r.lire), "#ff5c6e");
+          avviso(r.detto, "male");
+          return;
+        }
+
+        avviso(r.detto, "bene");
         io.conto.mandate += 1;
       })
       .catch(function (errore) { avviso(errore.message, "male"); });
@@ -593,19 +802,23 @@ export const COPIONE = `
       var i = Number(rullo.getAttribute("data-rullo"));
       if (!pezzi[i] || girando) return;
       bloccati[i] = bloccati[i] ? null : pezzi[i].id;
+      ricordaTavolo();
       disegnaRulli();
       return;
     }
 
     var scelta = chiudi("[data-tavolo]");
     if (scelta) {
+      // Si mette da parte quello che c'era, e si riprende quello dell'altro
+      // tavolo: cambiare scheda non butta piu' niente.
+      ricordaTavolo();
       tavolo = scelta.getAttribute("data-tavolo");
       rulli = rulliDelTavolo();
-      pezzi = [];
-      bloccati = [];
+      riprendiTavolo();
       $("esito").textContent = "";
       disegnaTavoli();
       disegnaEpoche();
+      vestiLaSala();
       disegnaRulli();
       return;
     }
@@ -613,10 +826,16 @@ export const COPIONE = `
     var epoca = chiudi("[data-epoca]");
     if (epoca) {
       era = epoca.getAttribute("data-epoca");
-      // Cambiare epoca **sblocca i rulli**: quello che avevi tenuto fermo
-      // veniva da un altro mondo, e tenerlo sarebbe mescolare due epoche
-      // senza averlo chiesto.
-      bloccati = [];
+      /**
+       * ⚠ **Cambiare epoca non sblocca piu' niente**, e prima si'.
+       *
+       * La prima versione sbloccava tutto: «quel pezzo veniva da un altro
+       * mondo». Ma e' proprio quello il punto — chiesto il 9 settembre 2026:
+       * «in modo da poter mischiare e rendere davvero particolari i prompt nel
+       * tempo». Un genere degli anni 70 con una produzione di adesso e' una
+       * riga che nessuno scriverebbe, ed e' quella che serve.
+       */
+      ricordaTavolo();
       disegnaEpoche();
       vestiLaSala();
       disegnaRulli();
@@ -648,7 +867,23 @@ export const COPIONE = `
   });
   $("sblocca").addEventListener("click", function () {
     bloccati = [];
+    ricordaTavolo();
     disegnaRulli();
+  });
+
+  // Tenere premuto apre grande. Vale per il dito e per il mouse, e si annulla
+  // appena si stacca o si scorre: uno che scorre la pagina non voleva aprire
+  // niente.
+  document.addEventListener("pointerdown", iniziaPressione);
+  document.addEventListener("pointerup", fermaPressione);
+  document.addEventListener("pointercancel", fermaPressione);
+  document.addEventListener("scroll", fermaPressione, true);
+  // Sul telefono, tenendo premuto, il browser proporrebbe di copiare il testo:
+  // qui la pressione lunga ha gia' un mestiere suo.
+  document.addEventListener("contextmenu", function (e) {
+    if (e.target && e.target.closest && e.target.closest("[data-rullo], #prompt, .figurina")) {
+      e.preventDefault();
+    }
   });
   // La barra spaziatrice tira la leva: chi gioca sul computer non vuole
   // spostare il mouse quaranta volte.
@@ -663,6 +898,9 @@ export const COPIONE = `
     $("mio-nome").textContent = dati.nome + (dati.admin ? " · decidi tu" : "");
     $("tasto-fila").hidden = !dati.admin;
     rulli = rulliDelTavolo();
+    // Quello che c'era sui rulli l'ultima volta: i pezzi tenuti fermi si
+    // ritrovano dove li avevi lasciati, anche il giorno dopo.
+    riprendiTavolo();
     disegnaTavoli();
     disegnaEpoche();
     vestiLaSala();

@@ -358,6 +358,15 @@ export interface Impostazioni {
   quasiMax: number;
   /** Quanto trova in tasca chi gioca la prima volta. */
   regaloIniziale: number;
+  /**
+   * Quanto costa rimandare una cosa che **hai gia' tu**.
+   *
+   * Poche lire, ma non zero: e' l'unico freno contro il mandare a raffica la
+   * stessa riga sperando che qualcosa succeda. Chi la manda per la prima volta
+   * non paga niente (CONCETTI.md § 9); chi la rimanda sapendo di averla gia'
+   * paga questo.
+   */
+  penalitaDoppione: number;
 }
 
 /** Una combinazione dichiarata dall'admin, che paga a parte. */

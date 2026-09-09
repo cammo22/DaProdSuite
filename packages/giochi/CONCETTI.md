@@ -183,6 +183,27 @@ tris invece si somma, perche' e' un'altra cosa — non «che ti e' uscito», ma
 Le **formazioni** si sommano a parte: combinazioni dichiarate da chi comanda
 («questi tre pezzi insieme»), valide in qualsiasi ordine.
 
+### Come si sta davanti alla slot
+
+Quattro cose che sembrano dettagli e sono il motivo per cui uno ci resta.
+
+- **Si scrive in italiano, ma il prompt e' inglese.** Il nome sul rullo e' in
+  italiano perche' e' quello che leggi; sotto, piccolo, c'e' **quello che va
+  davvero al modello** — cosi' non devi indovinare cosa stai mandando. E le
+  frasi inglesi sono lunghe apposta: «a cat» e' un gatto qualunque, «a cat,
+  close on the face, whiskers catching the light» e' una foto.
+- **Tenere premuto apre grande.** Un rullo, la riga del prompt o una figurina:
+  mezzo secondo di dito e si apre a tutto schermo, scritto grosso. Serve a chi
+  ci vede poco e a chiunque debba leggere dodici pezzi su un telefono.
+- **L'animazione si salta.** Primo tocco gira, secondo tocco taglia corto e
+  mostra subito cos'e' uscito, terzo tocco rigira. Chi ha fretta non aspetta
+  mai la scena.
+- **Quello che hai bloccato non si perde.** Cambiando tavolo, cambiando epoca o
+  chiudendo la pagina, i pezzi tenuti fermi restano dove li hai lasciati — anche
+  il giorno dopo. Una combinazione buona si costruisce in piu' sere, e mischiare
+  un genere degli anni 70 con una produzione di adesso e' esattamente il tipo di
+  riga che nessuno scriverebbe da solo.
+
 ## 9. Mandare una cosa a controllare — il cuore di tutto
 
 Quando la riga piace, si manda. **Mandare non costa niente**: se costasse, la
@@ -200,11 +221,34 @@ Una combinazione mandata sta in **fila**, e ha tre vite possibili:
 | **presa** | l'admin le ha dato un prezzo: da adesso e' nel magazzino |
 | **buttata** | non andava bene. Chi l'ha mandata lo viene a sapere, col motivo |
 
-⚠ **Una combinazione uguale a una che c'e' gia' non entra due volte.** Si
-riconosce dai pezzi, non dalle parole: gli stessi dodici pezzi sono la stessa
-combinazione anche se arrivano da due persone diverse. La prima vale, la
-seconda si ferma subito e chi l'ha mandata lo sa subito — invece di aspettare
-tre giorni per sentirsi dire che era gia' di un altro.
+Una combinazione **si riconosce dai pezzi, non dalle parole**: gli stessi
+dodici pezzi sono la stessa combinazione anche se arrivano da due persone
+diverse. Confrontare i prompt scritti non basterebbe — uno spazio in piu' e ne
+entrerebbero due uguali.
+
+### Quando due persone trovano la stessa riga
+
+⚠ **E' la regola piu' bella del gioco, e va letta tutta.** Con dodici rulli e
+migliaia di pezzi, ritrovare per caso la stessa identica riga che ha trovato
+tuo fratello e' difficilissimo. Quindi quando succede **non** si dice «gia'
+vista»: dipende da chi sei.
+
+| Chi la manda | Cosa succede |
+|---|---|
+| e' **nuova** | va in fila. Non costa niente |
+| c'e' gia' ed e' **in attesa** | niente, e si dice: nessuno ha ancora detto se vale |
+| e' stata **buttata** | niente, e si dice perche' |
+| e' **presa**, e tu **ce l'hai gia'** | buco nell'acqua: **due lire di multa** |
+| e' **presa**, e tu **non ce l'avevi** | **complimenti**: prendi lo stesso premio in lire di chi l'ha scoperta, **piu' la figurina** |
+
+L'ultima riga e' il cuore: chi ci arriva per conto suo a una combinazione buona
+viene pagato come il primo, anche se il primo l'aveva trovata la settimana
+scorsa. Non conta chi e' arrivato prima — conta **esserci arrivato**. In
+classifica invece resta solo chi l'ha **scoperta**: quella e' la riga di chi
+l'ha inventata.
+
+E la penultima e' il freno: due lire, poche ma non zero, contro il rimandare a
+raffica sempre la stessa sperando che qualcosa succeda.
 
 ## 10. Chi comanda la prova, e decide
 

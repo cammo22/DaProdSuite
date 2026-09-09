@@ -282,6 +282,7 @@ export const IMPOSTAZIONI_DI_PARTENZA: Impostazioni = {
   quasiMin: 5,
   quasiMax: 15,
   regaloIniziale: 500,
+  penalitaDoppione: 2,
 };
 
 /* ------------------------------------------------------------------ vincite */
