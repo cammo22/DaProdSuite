@@ -57,6 +57,23 @@ gia' qual era.
 Il tasto compare solo dove ha senso — sui lavori andati storti, non su «e'
 pronto» — e dice sempre com'e' andata, anche quando il computer non risponde.
 
+### Quando la suite si aggiorna, si vede — e ci sono i coriandoli
+
+> «Facciamo che quando esce un aggiornamento esce un avviso con tipo gli effetti
+> confetti.»
+
+Aprendo la console dopo un aggiornamento compare «Aggiornata alla 1.2.4» e una
+manciata di coriandoli che cadono per tre secondi. Vale dal telefono, dalla
+console e da DaProdConnessione: e' la stessa pagina.
+
+Non serve nessuna rotta nuova: la versione arriva gia' con lo stato, e se e'
+diversa da quella dell'ultima volta vuol dire che la suite e' stata aggiornata
+da quando l'hai guardata. La prima volta in assoluto non si festeggia: chi apre
+la console per la prima volta non ha aggiornato niente, si e' solo collegato.
+
+I coriandoli stanno in una funzione sola, che servira' anche all'easter egg: due
+feste fatte in due modi diversi sarebbero due cose dove ce n'e' una.
+
 ### Una finestra su uno schermo spento non si perde piu'
 
 > «Apro DaProdConnessione e dice aperto, ma la finestra e' irraggiungibile. La

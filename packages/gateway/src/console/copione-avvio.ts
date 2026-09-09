@@ -19,7 +19,153 @@ export const COPIONE_AVVIO = `
       "DaProd Suite " + (s.versione || "") + " su " + (s.computer || "questo computer") +
       " \\u00b7 questa pagina la serve il computer, e i modelli girano l\\u00ec.";
     disegnaNumeri();
+    guardaSeSiEAggiornata(s.versione);
   }
+
+  /* ------------------------------------------------------- i coriandoli */
+
+  /**
+   * **I coriandoli**, in un posto solo.
+   *
+   * Chiesto il 7 settembre 2026: «facciamo che quando esce un aggiornamento
+   * esce un avviso con tipo gli effetti confetti». E l'easter egg ne vuole
+   * degli altri: due feste diverse fatte in due modi diversi sarebbero due
+   * cose dove ce n'e' una, e la seconda impara sempre meno della prima.
+   *
+   * Sono cento rettangolini che cadono e girano su sé stessi, disegnati su una
+   * tela che vive tre secondi e poi si toglie di mezzo. Niente librerie: e' una
+   * quarantina di righe, e una libreria per i coriandoli e' duecento KB che
+   * ogni telefono scarica per due secondi di festa.
+   *
+   * ⚠ **La tela non prende i tocchi.** Sta sopra a tutto per il tempo che
+   * dura, e senza «pointer-events: none» un tocco in quei tre secondi finirebbe
+   * su di lei invece che sul tasto sotto — cioe' l'app sembrerebbe bloccata
+   * proprio nel momento in cui vuole sembrare allegra.
+   */
+  function coriandoli(quanti) {
+    // Chi ha chiesto meno animazioni non vuole nemmeno questa: e' la stessa
+    // regola del filo del caricamento.
+    if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    var tela = document.createElement("canvas");
+    tela.className = "coriandoli";
+    document.body.append(tela);
+    var pennello = tela.getContext("2d");
+    if (!pennello) { tela.remove(); return; }
+
+    /**
+     * ⚠ **Le misure si prendono a ogni giro, e i coriandoli nascono solo
+     * quando ci sono.**
+     *
+     * Preso una volta sola, all'inizio, «innerWidth» puo' essere **zero**:
+     * questa funzione parte quando arriva lo stato del computer, che a volte e'
+     * prima che la pagina sia stata disegnata — su un telefono lento, o su una
+     * finestra ancora nascosta. Una tela larga zero non disegna niente e non da'
+     * nessun errore: i coriandoli «partono» e lo schermo resta vuoto. Ci sono
+     * cascato provandoli.
+     *
+     * Quindi: si gira lo stesso, e appena la pagina sa quanto e' larga si
+     * riempie di pezzi e si comincia. Se non lo sa mai, dopo tre secondi la
+     * tela se ne va da sola come farebbe comunque.
+     */
+    var largo = 0;
+    var alto = 0;
+    function misura() {
+      var l = window.innerWidth || document.documentElement.clientWidth || 0;
+      var a = window.innerHeight || document.documentElement.clientHeight || 0;
+      if (l === largo && a === alto) return;
+      largo = l;
+      alto = a;
+      tela.width = largo;
+      tela.height = alto;
+    }
+
+    var COLORI = ["#8b5cf6", "#35d0ff", "#f59e0b", "#ec4899", "#22c55e"];
+    var pezzi = [];
+    function riempi() {
+      var quantiNe = quanti || 110;
+      for (var i = 0; i < quantiNe; i++) {
+        pezzi.push({
+          x: Math.random() * largo,
+          // Partono tutti sopra il bordo, sparpagliati: se partissero dalla
+          // stessa riga si vedrebbe una tendina che scende, non dei coriandoli.
+          y: -20 - Math.random() * alto * 0.6,
+          largo: 6 + Math.random() * 6,
+          alto: 8 + Math.random() * 8,
+          giu: 2 + Math.random() * 3,
+          lato: -1 + Math.random() * 2,
+          gira: Math.random() * Math.PI,
+          quantoGira: -0.12 + Math.random() * 0.24,
+          colore: COLORI[Math.floor(Math.random() * COLORI.length)],
+        });
+      }
+    }
+
+    var nato = Date.now();
+    var DURA = 3200;
+
+    function unGiro() {
+      misura();
+      // Ancora niente misure: si aspetta il giro dopo invece di disegnare nel
+      // vuoto. (Su una pagina nascosta i giri non arrivano proprio, ed e'
+      // giusto cosi': la festa comincia quando qualcuno guarda.)
+      if (!largo || !alto) { requestAnimationFrame(unGiro); return; }
+      if (!pezzi.length) {
+        riempi();
+        // Il tempo comincia da quando si vedono davvero, se no i secondi
+        // passati ad aspettare la pagina se li mangia la festa. Ed e' per
+        // questo che la scadenza si guarda **dopo**: prima che i pezzi
+        // esistano non c'e' niente da far scadere.
+        nato = Date.now();
+      }
+      var passato = Date.now() - nato;
+      if (passato > DURA) { tela.remove(); return; }
+      // L'ultimo mezzo secondo sfuma: sparire di colpo si nota piu' della
+      // festa.
+      tela.style.opacity = passato > DURA - 600 ? String((DURA - passato) / 600) : "1";
+      pennello.clearRect(0, 0, largo, alto);
+      for (var p of pezzi) {
+        p.y += p.giu;
+        p.x += p.lato;
+        p.gira += p.quantoGira;
+        pennello.save();
+        pennello.translate(p.x, p.y);
+        pennello.rotate(p.gira);
+        pennello.fillStyle = p.colore;
+        pennello.fillRect(-p.largo / 2, -p.alto / 2, p.largo, p.alto);
+        pennello.restore();
+      }
+      requestAnimationFrame(unGiro);
+    }
+    requestAnimationFrame(unGiro);
+  }
+
+  /**
+   * **La suite si e' aggiornata**: si dice, e si festeggia.
+   *
+   * Chiesto il 7 settembre 2026: «quando esce un aggiornamento esce un avviso
+   * con tipo gli effetti confetti».
+   *
+   * ⚠ **Si guarda il numero, non si chiede a nessuno.** La versione arriva
+   * gia' con lo stato, a ogni apertura: se e' diversa da quella dell'ultima
+   * volta, la suite e' stata aggiornata da quando l'hai guardata. Non serve una
+   * rotta nuova, non serve che il computer si ricordi chi ha gia' visto cosa —
+   * e funziona uguale dal telefono, dalla console e da DaProdConnessione,
+   * perche' e' la stessa pagina.
+   *
+   * La prima volta in assoluto non si festeggia niente: chi apre la console per
+   * la prima volta non ha aggiornato nulla, si e' solo collegato.
+   */
+  function guardaSeSiEAggiornata(versione) {
+    if (!versione) return;
+    var prima = null;
+    try { prima = localStorage.getItem("daprod.versione.vista"); } catch (e) { return; }
+    try { localStorage.setItem("daprod.versione.vista", versione); } catch (e) { /* niente */ }
+    if (!prima || prima === versione) return;
+    avvisa("Aggiornata alla " + versione + ". Buon divertimento.", "bene");
+    coriandoli();
+  }
+
 
   /* ---------------------------------------------------------------- entra */
 

@@ -120,6 +120,19 @@ export const STILE = `  :root {
     .filo i { width: 100%; animation: none; opacity: .55; }
   }
 
+  /**
+   * **I coriandoli**: la tela della festa.
+   *
+   * Sta sopra a tutto per i tre secondi che dura, e non prende i tocchi: senza
+   * «pointer-events: none» un tocco in quei tre secondi finirebbe su di lei
+   * invece che sul tasto sotto, e l'app sembrerebbe bloccata proprio nel
+   * momento in cui vuole sembrare allegra.
+   */
+  .coriandoli {
+    position: fixed; inset: 0; z-index: 200;
+    pointer-events: none;
+  }
+
   /* Il marchio adesso e' un tasto (l'easter egg), ma non deve sembrarlo. */
   /* Alto come la pastiglia e l'ingranaggio: e' una riga sola di tre cose, e
      con il marchio a 24 e gli altri a 38 la riga sembrava scivolata. */
