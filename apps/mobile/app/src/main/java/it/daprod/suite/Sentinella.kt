@@ -116,9 +116,13 @@ class Sentinella : Service() {
 
                 // Prima le notifiche: sono la ragione per cui siamo svegli.
                 try {
-                    for ((id, testo) in cliente.notificheNonLette()) {
-                        Notifiche.mostra(this, persona.nome, testo)
-                        cliente.segnaNotificaLetta(id)
+                    for (n in cliente.notificheNonLette()) {
+                        // Il lavoro e la persona servono al tasto «Rimanda»
+                        // dentro la notifica: vedi Rimanda.kt. Qui contano piu'
+                        // che altrove — la sentinella lavora ad app chiusa, ed
+                        // e' li' che rifare una cosa senza aprire niente vale.
+                        Notifiche.mostra(this, persona.nome, n.testo, n.richiesta, persona.id)
+                        cliente.segnaNotificaLetta(n.id)
                     }
                 } catch (_: Exception) {
                     // Il computer non risponde adesso: al giro dopo.

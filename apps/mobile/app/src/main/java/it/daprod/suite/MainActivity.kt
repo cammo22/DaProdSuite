@@ -141,9 +141,19 @@ class MainActivity : AppCompatActivity() {
      * davanti dice di sì. Il codice resta ed è la strada di fuori casa, dove
      * nessun annuncio arriva.
      */
-    private enum class Dove { UTENTI, ENTRA, SCOPRI, SUITE }
+    /**
+     * Le schermate dell'app.
+     *
+     * ⚠ **AVVIO e' nuovo nella 1.2.4**, ed e' quella che si vede per prima:
+     * un piccolo caricamento mentre l'app decide dove andare. Prima si partiva
+     * da UTENTI, cioe' da «Chi sei?», e chi aveva gia' fatto il collegamento se
+     * la vedeva comparire e sparire a ogni accensione — una domanda fatta a chi
+     * aveva gia' risposto mesi fa. Detto il 7 settembre 2026: «chi sei esce solo
+     * all'inizio durante il setup e poi si apre l'app».
+     */
+    private enum class Dove { AVVIO, UTENTI, ENTRA, SCOPRI, SUITE }
 
-    private var dove = Dove.UTENTI
+    private var dove = Dove.AVVIO
 
     /** Il nome scritto nella schermata d'ingresso, tenuto da parte. */
     private var nomeInCorso = ""
@@ -450,6 +460,9 @@ class MainActivity : AppCompatActivity() {
      * Con più di una la scelta si fa, ed è il punto di tutto.
      */
     private fun riprendi() {
+        // Finche' non si sa dove andare, si vede il caricamento: era qui che
+        // compariva «Chi sei?» a chi aveva gia' risposto.
+        mostra(Dove.AVVIO)
         val salvato = Profili.attivo(this)
         val tutti = Profili.tutti(this)
         when {
@@ -462,6 +475,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        inPrimoPiano = true
         // Guarda l'app adesso: la sentinella non serve più, e la sua notifica
         // silenziosa nemmeno. Se serve, riparte chiudendo.
         Sentinella.aRiposo(this)
@@ -493,6 +507,7 @@ class MainActivity : AppCompatActivity() {
      */
     override fun onStop() {
         super.onStop()
+        inPrimoPiano = false
         // Con la musica accesa il processo è già tenuto vivo dal [Lettore], e
         // due notifiche in primo piano per lo stesso telefono sono una di
         // troppo: quella che conta, in quel momento, è quella della musica.
@@ -561,8 +576,15 @@ class MainActivity : AppCompatActivity() {
         binding.web.visibility = if (quale == Dove.SUITE) View.VISIBLE else View.GONE
         // Dentro la suite la barra sparisce: la pagina ha la sua testata, con il
         // nome, la faccia e la rotella. Due intestazioni sono una di troppo.
-        binding.barra.visibility = if (quale == Dove.SUITE) View.GONE else View.VISIBLE
-        if (quale != Dove.SUITE) binding.attesa.visibility = View.GONE
+        // All'accensione sparisce anche lei: non si sa ancora chi sei, e una
+        // barra che dice il nome dell'app sopra a una rotella e' una riga in
+        // piu' da guardare mentre non c'e' niente da guardare.
+        binding.barra.visibility =
+            if (quale == Dove.SUITE || quale == Dove.AVVIO) View.GONE else View.VISIBLE
+        // La rotella resta accesa mentre si decide dove andare, e mentre la
+        // suite carica. Nelle altre schermate c'e' qualcosa di vero da vedere.
+        if (quale != Dove.SUITE && quale != Dove.AVVIO) binding.attesa.visibility = View.GONE
+        if (quale == Dove.AVVIO) binding.attesa.visibility = View.VISIBLE
         // Cercare costa una porta UDP aperta e un pacchetto ogni due secondi:
         // fuori da quella schermata non serve a niente e si spegne.
         if (quale != Dove.SCOPRI) {
@@ -2704,9 +2726,11 @@ class MainActivity : AppCompatActivity() {
     private suspend fun controllaNotifiche() {
         val cl = client ?: return
         try {
-            for ((id, testo) in cl.notificheNonLette()) {
-                Notifiche.mostra(this, getString(R.string.app_name), testo)
-                cl.segnaNotificaLetta(id)
+            for (n in cl.notificheNonLette()) {
+                // Il lavoro e la persona servono al tasto «Rimanda» dentro la
+                // notifica: vedi Rimanda.kt.
+                Notifiche.mostra(this, getString(R.string.app_name), n.testo, n.richiesta, chi?.id ?: "")
+                cl.segnaNotificaLetta(n.id)
             }
             // Una notifica vuol quasi sempre dire «c'è una cosa nuova»: è il
             // momento buono per portarsela qui, mentre la linea c'è.
@@ -2807,7 +2831,41 @@ class MainActivity : AppCompatActivity() {
         (e as? GatewayException)?.message
             ?: "Non riesco a raggiungere il computer. È acceso, con la suite aperta?"
 
+    /**
+     * Vero mentre l'app e' quella che si sta guardando.
+     *
+     * Serve a [avvisa]: vedi il perche' li'.
+     */
+    private var inPrimoPiano = false
+
+    /**
+     * Un messaggio che sale dal basso, **e solo mentre stai guardando l'app**.
+     *
+     * ⚠ Chiesto il 7 settembre 2026:
+     *
+     * > «Quando e' in background manda troppe notifiche. Anche quando non si
+     * > connette, se e' in background manda le notifiche in basso — non quelle
+     * > nel centro notifiche, proprio dei pop-uppini sotto, sono diversi, e
+     * > vorrei toglierli perche' all'utente finale possono dare fastidio.»
+     *
+     * **Cosa succedeva.** Quasi tutti questi messaggi sono la risposta a un
+     * tasto premuto, e vanno benissimo. Ma qualcuno nasce da solo: l'app che si
+     * riaggancia al computer quando torna la linea («Collegato a…»), la coda
+     * di quello che avevi chiesto senza computer che riparte, un tentativo che
+     * fallisce. Quelli scattano quando scatta la rete, non quando premi tu — e
+     * se in quel momento stavi facendo altro, ti arriva un messaggio sopra
+     * l'app di un altro, per una cosa che non hai chiesto.
+     *
+     * **Perche' non si buttano e basta, e perche' non si mettono in coda.** Un
+     * messaggio che non hai chiesto e che riguarda una cosa gia' successa,
+     * mostrato mezz'ora dopo quando riapri l'app, e' rumore due volte. Quello
+     * che vale davvero — un lavoro pronto, una richiesta rifiutata — passa
+     * dalle notifiche vere, che restano nel centro notifiche e si guardano
+     * quando si vuole. Questo canale serve a rispondere a un gesto, e senza
+     * gesto non ha niente da dire.
+     */
     private fun avvisa(testo: String) {
+        if (!inPrimoPiano) return
         Toast.makeText(this, testo, Toast.LENGTH_LONG).show()
     }
 

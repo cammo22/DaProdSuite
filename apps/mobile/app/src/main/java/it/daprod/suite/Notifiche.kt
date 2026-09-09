@@ -126,10 +126,35 @@ object Notifiche {
         return false
     }
 
-    /** Mostra un avviso, **se vale la pena**. Torna vero se è partito. */
-    fun mostra(context: Context, titolo: String, corpo: String): Boolean {
+    /**
+     * Mostra un avviso, **se vale la pena**. Torna vero se è partito.
+     *
+     * `richiesta` e `profilo`, quando ci sono, dicono di quale lavoro si sta
+     * parlando: servono al tasto «Rimanda», che compare solo sulle notifiche di
+     * un lavoro andato storto. Vedi [Rimanda].
+     */
+    fun mostra(
+        context: Context,
+        titolo: String,
+        corpo: String,
+        richiesta: String = "",
+        profilo: String = "",
+    ): Boolean {
         if (!valeLaPena(titolo, corpo)) return false
-        return mostraComunque(context, titolo, corpo)
+        return mostraComunque(context, titolo, corpo, richiesta, profilo)
+    }
+
+    /**
+     * Questo avviso parla di un lavoro **non fatto**?
+     *
+     * Sono le stesse due frasi che [valeLaPena] lascia passare, e per la stessa
+     * ragione: il gateway le scrive in un posto solo. Qui pero' non servono a
+     * decidere se dirlo, ma se offrire il tasto per rifarlo — su «e' pronto» un
+     * «Rimanda» non avrebbe senso.
+     */
+    fun siPuoRimandare(titolo: String, corpo: String): Boolean {
+        val tutto = "$titolo $corpo".lowercase()
+        return tutto.contains("non è stata accettata") || tutto.contains("non fatto")
     }
 
     /**
@@ -139,7 +164,13 @@ object Notifiche {
      * offline che riparte: quello è un fatto che riguarda una richiesta *tua*,
      * scritta quando il computer non c'era, e che adesso è partita.
      */
-    fun mostraComunque(context: Context, titolo: String, corpo: String): Boolean {
+    fun mostraComunque(
+        context: Context,
+        titolo: String,
+        corpo: String,
+        richiesta: String = "",
+        profilo: String = "",
+    ): Boolean {
         if (Build.VERSION.SDK_INT >= 33 &&
             context.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) !=
             android.content.pm.PackageManager.PERMISSION_GRANTED
@@ -163,9 +194,44 @@ object Notifiche {
             // subito dopo aver letto «e' pronto». Vedi `apriLApp`.
             .setContentIntent(apriLApp(context))
             .setAutoCancel(true)
-            .build()
+
+        /**
+         * ⚠ **«Rimanda», solo dove ha senso.**
+         *
+         * Chiesto il 7 settembre 2026: «magari diciamo riprova tra poco e
+         * rimanda la richiesta». Compare solo sulle notifiche di un lavoro
+         * andato storto, e solo se sappiamo **quale** lavoro era: su «e'
+         * pronto» sarebbe un tasto che rifa' una cosa gia' fatta.
+         *
+         * L'id della notifica va dentro il messaggio: chi preme il tasto si
+         * aspetta che la notifica sparisca, e per farla sparire bisogna sapere
+         * qual e'.
+         */
+        val numero = System.currentTimeMillis().toInt()
+        if (richiesta.isNotBlank() && profilo.isNotBlank() && siPuoRimandare(titolo, corpo)) {
+            val intento = Intent(context, Rimanda::class.java).apply {
+                action = Rimanda.AZIONE
+                putExtra(Rimanda.EXTRA_RICHIESTA, richiesta)
+                putExtra(Rimanda.EXTRA_PROFILO, profilo)
+                putExtra(Rimanda.EXTRA_NOTIFICA, numero)
+                // Senza questo, due notifiche diverse si sovrascriverebbero gli
+                // extra a vicenda: il PendingIntent le considera «la stessa».
+                data = android.net.Uri.parse("daprod://rimanda/$richiesta")
+            }
+            notifica.addAction(
+                R.drawable.ic_notifica,
+                "Rimanda",
+                PendingIntent.getBroadcast(
+                    context,
+                    0,
+                    intento,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+                ),
+            )
+        }
+
         return try {
-            NotificationManagerCompat.from(context).notify(System.currentTimeMillis().toInt(), notifica)
+            NotificationManagerCompat.from(context).notify(numero, notifica.build())
             true
         } catch (_: SecurityException) {
             // Niente permesso: si riprova alla prossima.

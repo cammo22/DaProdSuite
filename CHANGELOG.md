@@ -12,6 +12,51 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ## Non ancora pubblicato
 
+### Sul telefono: niente piu' «Chi sei?» a ogni avvio
+
+> «Facciamo che si vede un piccolo caricamento invece che vedere "chi sei".
+> "Chi sei" esce solo all'inizio durante il setup e poi si apre l'app.»
+
+Non era una schermata che veniva scelta: era quella da cui l'app **partiva**,
+per il secondo o due in cui decide dove andare. Chi il collegamento l'aveva
+gia' fatto mesi fa si vedeva chiedere «Chi sei?» a ogni accensione, e poi la
+domanda spariva da sola.
+
+Adesso all'accensione c'e' un piccolo caricamento, e «Chi sei?» esce solo quando
+serve davvero: al primo avvio, o quando sullo stesso telefono ci sono piu'
+persone e nessuna e' quella di prima.
+
+### Sul telefono: niente messaggini quando non lo stai guardando
+
+> «Quando e' in background manda troppe notifiche. Anche quando non si connette,
+> se e' in background manda le notifiche in basso — proprio dei pop-uppini
+> sotto, e vorrei toglierli perche' all'utente finale possono dare fastidio.»
+
+Quasi tutti quei messaggi sono la risposta a un tasto premuto, e vanno bene. Ma
+qualcuno nasceva da solo: l'app che si riaggancia al computer quando torna la
+linea, la coda di quello che avevi chiesto senza computer che riparte, un
+tentativo che fallisce. Scattavano quando scattava la rete — e se in quel
+momento stavi usando un'altra app, ti arrivava un messaggio per una cosa che non
+avevi chiesto.
+
+Adesso escono **solo mentre stai guardando l'app**. Quello che vale davvero — un
+lavoro pronto, una richiesta rifiutata — passa dalle notifiche vere, che restano
+nel centro notifiche e si guardano quando si vuole.
+
+### Sul telefono: da una notifica andata storta si rimanda con un tocco
+
+> «Anche se capita che un prompt vada in esito "non fatto", notifichiamolo,
+> perche' magari diciamo "riprova tra poco" e rimanda la richiesta.»
+
+La notifica che dice cos'e' andato storto c'era gia'. Mancava la seconda meta':
+adesso ha un tasto **«Rimanda»**, e il tocco fa ripartire la richiesta senza
+aprire niente. Prima bisognava aprire l'app, andare nella Fila, trovare la riga
+e premere «rifallo»: quattro gesti per rifare una cosa che il telefono sapeva
+gia' qual era.
+
+Il tasto compare solo dove ha senso — sui lavori andati storti, non su «e'
+pronto» — e dice sempre com'e' andata, anche quando il computer non risponde.
+
 ### Una finestra su uno schermo spento non si perde piu'
 
 > «Apro DaProdConnessione e dice aperto, ma la finestra e' irraggiungibile. La
