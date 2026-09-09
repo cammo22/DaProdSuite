@@ -168,162 +168,26 @@ function ritoccoFlux(m, p) {
 
 /* ------------------------------------------------------------- LLaDA-Image */
 
-/**
- * ⚠ **LLaDA non e' fatto come gli altri due**, e conviene saperlo prima di
- * leggere i due grafi qui sotto.
+/*
+ * ⚠ **Qui c'erano i due grafi di LLaDA-Image. Tolti il 9 settembre 2026.**
  *
- * Anima e FLUX.2 sono montati a pezzi: un caricatore per il modello, uno per il
- * text encoder, uno per il VAE, un campionatore, un decodificatore. Si vede
- * tutto e si puo' mettere le mani in mezzo — e' cosi' che funziona il ritocco
- * col pennello, infilando una maschera nel latente.
+ * > «Si toglie LLaDA, addios. Casomai quando un giorno ComfyUI aggiorna bene ci
+ * > pensiamo.»
  *
- * LLaDA e' **una scatola**: un nodo carica tutto insieme e torna una
- * `LLADA_PIPELINE`, e un secondo nodo prende quella e sputa fuori un'immagine
- * gia' fatta. Niente latenti, niente VAEDecode, niente in mezzo.
+ * Vale la pena tenere il perche' tecnico, perche' e' la ragione per cui potrebbe
+ * tornare: LLaDA non era montato come gli altri due. Anima e FLUX.2 sono fatti a
+ * pezzi — un caricatore per il modello, uno per il testo, un campionatore — e la
+ * suite li sa guardare mentre lavorano. LLaDA era **una scatola**: un nodo
+ * caricava tutto e tornava un'immagine, senza dire niente in mezzo. Da li'
+ * venivano meta' dei suoi difetti, la barra di avanzamento compresa.
  *
- * Da qui discendono due cose che si vedono nell'interfaccia:
+ * E i suoi 16 GB non stavano nella scheda: andavano avanti e indietro dalla
+ * memoria a ogni passo, venti secondi a passo misurati. La 1.2.2 l'aveva portato
+ * da 50 passi a 12 — 4,2 minuti — e restava il piu' lento di un ordine di
+ * grandezza.
  *
- * 1. **Il pennello non c'e'.** Il nodo di modifica non ha un ingresso per la
- *    maschera, e non e' una dimenticanza: LLaDA modifica **seguendo
- *    l'istruzione**, guardando tutta la foto, non ridipingendo una zona. «fai
- *    diventare bianca la volpe» e' il suo modo; «rifai questo angolo» e' quello
- *    degli altri due. Vedi `senzaPennello` nel catalogo.
- * 2. **Le misure devono essere divisibili per 32** quando modifica (16 quando
- *    genera). Sopra ci pensa `misuraBuona`.
+ * I grafi stanno nella storia di git, sotto questo commit.
  */
-
-/** Il caricatore, uguale per generare e per modificare. */
-function caricaLlada(m) {
-  return {
-    "1": {
-      class_type: "LLaDAImageLoader",
-      inputs: {
-        diffusion_model: m.dit,
-        text_encoder: m.txt,
-        vae: m.vae,
-        dtype: "bfloat16",
-        /**
-         * ⚠ **`cuda`, ed e' il contrario di quello che sembra.**
-         *
-         * I pesi sono 6,6 GB di trasformatore piu' 9,2 di text encoder: su una
-         * scheda da 8 GB non ci stanno insieme nemmeno da lontano. `cuda`,
-         * qui, **non** vuol dire «carica tutto sulla scheda»: il pacco di nodi
-         * evita apposta il `pipe.to("cuda")` di diffusers e mette in scheda
-         * solo i parametri non quantizzati del trasformatore, lasciando le
-         * matrici INT8 in RAM e portandone su **una per volta** mentre lavora.
-         * E' scritto nel loro codice, ed e' quello che usano i due workflow di
-         * esempio del pacco.
-         *
-         * ⚠ **Le altre due strade sono state provate, e non vanno.**
-         *
-         * - `cpu` (com'era dalla 1.0.2 alla 1.0.3) vuol dire `pipe.to("cpu")`:
-         *   la scheda video non la tocca proprio, e i quattro passi li fa il
-         *   processore.
-         * - `sequential_cpu_offload` (la 1.0.4, per mezza giornata) e' quello
-         *   che il nome promette e con questo modello **non parte**: lo scarico
-         *   di accelerate manda i pesi sul dispositivo «meta» ricreandoli, e i
-         *   tensori GGUF del text encoder non si lasciano ricreare —
-         *   `TypeError: GGMLTensor.__new__() missing 2 required keyword-only
-         *   arguments`. Non e' aggiustabile da qui: e' fra accelerate e i nodi
-         *   GGUF di City96.
-         *
-         * Resta il piu' lento della scheda pur facendo solo 4 passi, e va detto
-         * invece che scoperto: le matrici che vanno e vengono dalla RAM si
-         * pagano a ogni passo.
-         */
-        offload: "cuda",
-        /**
-         * ⚠ **Obbligatorio, e senza non parte.** Trovato il 6 settembre 2026,
-         * provando a generare: «required input is missing: vae_tiling»,
-         * `LLaDAImageLoader`.
-         *
-         * Il nodo lo dichiara fra i `required` — un elenco di tre voci con
-         * scritto «di serie: On» accanto — e un valore di serie, in ComfyUI,
-         * vale per chi monta il grafo a mano nella pagina, non per chi lo manda
-         * scritto: li' quello che non arriva non esiste, e la richiesta si
-         * ferma prima di caricare qualunque cosa.
-         *
-         * `On` non e' solo il suo di serie: e' anche quello che serve qui.
-         * Decodificare a piastrelle vuol dire non tenere in memoria l'immagine
-         * intera in un colpo solo, ed e' l'ultimo passo — quello che su una
-         * scheda gia' piena e' il piu' facile da far scoppiare.
-         */
-        vae_tiling: "On",
-      },
-    },
-  };
-}
-
-function immagineLlada(m, p) {
-  return {
-    ...caricaLlada(m),
-    "2": {
-      class_type: "LLaDAImageTextToImage",
-      inputs: {
-        pipeline: ["1", 0],
-        prompt: p.prompt,
-        width: misuraBuona(p.larghezza, 16),
-        height: misuraBuona(p.altezza, 16),
-        steps: p.step,
-        guidance_scale: p.cfg,
-        seed: p.seed,
-        negative_prompt: p.negativo || "",
-      },
-    },
-    "3": {
-      class_type: "SaveImage",
-      inputs: { images: ["2", 0], filename_prefix: "immagini/daprod" },
-    },
-  };
-}
-
-/**
- * La modifica: si da' una foto e si dice **cosa cambiare**.
- *
- * Nessuna maschera, nessun `denoise`: quei due parametri qui non esistono
- * proprio. Se il grafo li ricevesse li butterebbe, ed e' meglio che
- * l'interfaccia non li faccia nemmeno vedere — vedi `senzaPennello`.
- */
-function modificaLlada(m, p) {
-  return {
-    ...caricaLlada(m),
-    "4": { class_type: "LoadImage", inputs: { image: p.immagine } },
-    "2": {
-      class_type: "LLaDAImageEdit",
-      inputs: {
-        pipeline: ["1", 0],
-        image: ["4", 0],
-        prompt: p.prompt,
-        // Modificando, il modello vuole misure divisibili per 32 e non per 16.
-        width: misuraBuona(p.larghezza, 32),
-        height: misuraBuona(p.altezza, 32),
-        steps: p.step,
-        guidance_scale: p.cfg,
-        seed: p.seed,
-        negative_prompt: p.negativo || "",
-      },
-    },
-    "3": {
-      class_type: "SaveImage",
-      inputs: { images: ["2", 0], filename_prefix: "immagini/modifica" },
-    },
-  };
-}
-
-/**
- * La misura buona piu' vicina, verso il basso.
- *
- * ⚠ **Verso il basso e non verso l'alto**, ed e' una scelta: arrotondando in su
- * si chiede al modello qualche pixel in piu' di quelli che gli si e' promesso,
- * e su una scheda gia' al limite quei pixel sono la differenza fra un'immagine
- * e un errore di memoria. Meglio otto pixel in meno.
- */
-function misuraBuona(quanti, passo) {
-  const n = Math.floor(Number(quanti) || 1024);
-  const giusta = Math.floor(n / passo) * passo;
-  return Math.max(passo, giusta);
-}
-
 /* ------------------------------------------------------------- il catalogo */
 
 /**
@@ -446,96 +310,25 @@ export const MODELLI = {
     catalogo: ["flux2-klein-4b-q5km", "flux2-4b-text-encoder", "flux2-vae"],
     serveScheda: true,
   },
-  /**
-   * ⚠ **LLaDA-Image, quello pieno.** Nato Turbo nella 1.0.2, cambiato nella 1.2.1.
+  /*
+   * ⚠ **Qui c'era LLaDA-Image, ed e' stato tolto il 9 settembre 2026.**
    *
-   * Il 6 settembre 2026 era stato chiesto «e' uscito questo bel modellino,
-   * vorrei usare il 4step fp8», e c'era il Turbo: il distillato a 4 passi.
-   * Provato, il 7 settembre: «ho testato llada e non mi piace, togliamo llada 8
-   * step e usiamo quella originale 50 step». Quindi qui adesso c'e'
-   * `inclusionAI/LLaDA-Image` — lo stesso trasformatore **non distillato** —
-   * impacchettato per ComfyUI da RealRebelAI, come lo era il Turbo. (L'fp8 no,
-   * ne' prima ne' adesso: l'unico impacchettamento che ComfyUI sa aprire e' un
-   * INT8, e l'fp8 ufficiale e' in formato diffusers.)
+   * > «Si toglie LLaDA, addios. Casomai quando un giorno ComfyUI aggiorna bene
+   * > ci pensiamo.»
    *
-   * ⚠ **Cambiano i passi e cambia la guida**, e la seconda e' la parte che non
-   * si vede. Distillare non toglie soltanto dei passi: il Turbo lavorava a
-   * guidance 1, cioe' **senza guida** — ed e' il motivo per cui il negativo era
-   * spento, non lo leggeva nessuno. Il modello pieno lavora a 5, quindi la
-   * guida c'e' e il negativo torna a contare. I due numeri sono quelli del
-   * README di inclusionAI.
+   * Era l'unico che sapeva **modificare a parole** invece di ridipingere una
+   * zona col pennello, e per questo era rimasto anche dopo che i suoi tempi
+   * erano diventati il difetto piu' vecchio della suite: 16 GB di pesi che non
+   * stanno in una scheda da 8, quindi avanti e indietro dalla memoria a ogni
+   * passo — venti secondi a passo, misurati. La 1.2.2 l'aveva portato da 50
+   * passi a 12 (4,2 minuti) e restava il piu' lento di un ordine di grandezza.
    *
-   * ⚠ **E non entra negli 8 GB.** Gliel'ho detto prima di metterlo: 6,6 GB di
-   * trasformatore, 9,2 di text encoder, quasi 16 da scaricare. La risposta e'
-   * stata «mettilo lo stesso», quindi c'e' — con lo scarico in RAM, e con
-   * scritto qui e nel menu che e' il piu' lento di tutti. Adesso lo e' molto di
-   * piu': **dodici volte i passi**, su una scheda in cui i pesi vanno e vengono
-   * dalla RAM a ognuno.
+   * Con lui se n'e' andato `senzaPennello`, che esisteva solo per dire che lui
+   * la maschera non la sapeva leggere.
    *
-   * Perche' vale la pena averlo lo stesso: e' **l'unico della scheda che
-   * modifica una foto seguendo un'istruzione**. Gli altri tre sanno ridipingere
-   * una zona che gli indichi col pennello, che e' una cosa diversa e a volte
-   * non e' quella che si vuole.
+   * Se un giorno ComfyUI gestisce meglio quel nodo, si rimette: i grafi stanno
+   * nella storia di git, e il perche' e' tutto qui sopra.
    */
-  llada: {
-    id: "llada",
-    nome: "LLaDA-Image",
-    riga: "Sa modificare una foto a parole. \u26a0 I pesi passano dalla RAM: circa 4 minuti a foto, il piu' lento della scheda.",
-    dit: "LLaDA-Image-Base-INT8.safetensors",
-    txt: "LLaDA-Image-Base-text_encoder-Q4_K_M.gguf",
-    vae: "LLaDa_VAE.safetensors",
-    catalogo: ["llada-base-int8", "llada-text-encoder", "llada-vae"],
-    /**
-     * \u26a0 **Dodici passi, non cinquanta \u2014 e il numero e' misurato.** Dalla 1.2.2.
-     *
-     * Il README di inclusionAI dice 50, e la 1.2.1 ci aveva creduto sulla
-     * parola. Provato: \u00abe' nella fase disegno da 15 minuti per una foto\u00bb. Il
-     * conto tornava. Misurato il 7 settembre 2026 su questa macchina
-     * (RTX 4060, 8 GB), 1024x1024, CFG 5, motore gia' caldo:
-     *
-     *     8 passi ->  ~2,8 min
-     *    12 passi ->   4,2 min   <- questo
-     *    16 passi ->   5,3 min
-     *    50 passi ->  ~17 min
-     *
-     * Piu' una cinquantina di secondi di caricamento, la prima volta. E'
-     * lineare, e si capisce perche': il costo sta tutto nei pesi che fanno
-     * avanti e indietro fra RAM e scheda. **Venti secondi per passo**, contro
-     * l'uno o due che ci metterebbe se ci stessero dentro. Il 4060 ha 8 GB, il
-     * trasformatore INT8 ne pesa 6,6, e a CFG 5 la pipeline lavora su **due**
-     * latenti per volta (vedi `do_classifier_free_guidance` nel loro
-     * `pipeline_llada_image.py`): non ci sta, e ogni passo si paga il viaggio.
-     *
-     * Il tetto era \u00abcinque minuti a foto, altrimenti si toglie\u00bb. Dodici passi
-     * ci stanno \u2014 **e l'immagine e' buona**: messe una accanto all'altra,
-     * quella a 12 e quella a 16 non si distinguono. Quindi resta, con il
-     * numero che regge la promessa invece di quello del foglietto.
-     *
-     * Il massimo e' 24 (otto minuti) e non 50: un cursore che arriva dove si
-     * aspetta un quarto d'ora e' un modo di far perdere un quarto d'ora.
-     */
-    step: { min: 8, max: 24, valore: 12 },
-    cfg: { min: 1, max: 8, valore: 5 },
-    // A guidance 5 la guida c'e' davvero: quello che si scrive nel negativo
-    // cambia l'immagine. Tenerlo nascosto vorrebbe dire togliere un comando
-    // che adesso funziona.
-    usaNegativo: true,
-    notaNegativo:
-      "Fino alla 1.2.0 qui c'era il LLaDA ridotto, che il negativo non lo guardava. Questo si': lavora a CFG 5.",
-    immagine: immagineLlada,
-    // La sua modifica non e' un ritocco col pennello: vedi `senzaPennello`.
-    ritocco: modificaLlada,
-    /**
-     * ⚠ **Niente pennello, e l'interfaccia lo deve sapere.**
-     *
-     * Il nodo `LLaDAImageEdit` non ha un ingresso per la maschera. Mostrare il
-     * pennello e poi ignorare quello che uno ha dipinto sarebbe la cosa
-     * peggiore: chi lo usa penserebbe di aver detto una cosa, e il modello
-     * cambierebbe tutta la foto senza che si capisca perche'.
-     */
-    senzaPennello: true,
-    serveScheda: true,
-  },
   "flux2-9b": {
     ...FLUX_COMUNE,
     id: "flux2-9b",

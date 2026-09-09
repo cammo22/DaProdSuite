@@ -56,58 +56,29 @@ export const NODI: Record<string, NodoCustom> = {
     licenza: "Apache-2.0",
   },
 
-  /**
-   * ⚠ **I nodi di LLaDA-Image.** Nuovo nella 1.0.2.
+  /*
+   * ⚠ **Qui c'era il nodo di LLaDA-Image. Tolto il 9 settembre 2026.**
    *
-   * LLaDA-Image e' un modello che genera **e modifica** immagini con lo stesso
-   * peso, e non parla ComfyUI: il codice ufficiale e' diffusers. Questo pacco
-   * e' l'unico ponte che esiste, ed e' quello che il modello impacchettato per
-   * ComfyUI si aspetta.
+   * > «Si toglie LLaDA, addios. Casomai quando un giorno ComfyUI aggiorna bene
+   * > ci pensiamo.»
    *
-   * ## Cosa c'e' da sapere prima di fidarsene
+   * Due cose vale la pena ricordarsele, perche' varrebbero ancora il giorno che
+   * si rimette:
    *
-   * Al 6 settembre 2026 questo repository ha **sei stelle**, l'ultimo carico e'
-   * di oggi, e **non dichiara una licenza**. Il modello a monte e' Apache-2.0 e
-   * su quello non c'e' problema; questi nodi no, e senza licenza vuol dire che
-   * non si possono ridistribuire. Non li ridistribuiamo — si scaricano dal loro
-   * repository, come ComfyUI stesso — ma va scritto, perche' il giorno che
-   * qualcuno impacchetta la suite deve saperlo.
-   *
-   * Ed e' il motivo per cui e' **fissato a un commit** e non segue il ramo: un
-   * pacco giovane che cambia tutti i giorni, lasciato libero di aggiornarsi,
-   * e' un modo per svegliarsi con la generazione rotta senza aver toccato
-   * niente.
-   *
-   * ## Perche' lo mettiamo lo stesso
-   *
-   * ## ⚠ Da solo non basta: vuole anche ComfyUI-GGUF
-   *
-   * Il text encoder di LLaDA e' un GGUF, e questi nodi non lo sanno leggere:
-   * si appoggiano al codice di City96, che e' il nodo qui sopra. Se non lo
-   * trovano, la generazione muore con *«ComfyUI-GGUF was not found»* — che
-   * dalla 1.0.4 e' successo con ComfyUI-GGUF **installato**, perche' lo
-   * cercavano dentro la cartella di ComfyUI e i nostri nodi stanno accanto al
-   * motore. La strada gliela apre `services/comfy/nodi/daprod_ponte`.
-   *
-   * Per questo i tre file di LLaDA in `manifest/models.json` chiedono tutti e
-   * due i nodi: chi installa LLaDA senza aver mai usato FLUX.2 deve ritrovarsi
-   * ugualmente con il GGUF sul disco.
-   *
-   * Chiesto il 6 settembre 2026, dopo avergli detto che non entra negli 8 GB:
-   * «mettilo lo stesso». Sa cosa costa — il text encoder da solo e' 9,2 GB e
-   * dovra' passare dalla RAM — e lo vuole. Il modello resta **una scelta in
-   * piu' nel menu**, mai il predefinito.
+   * 1. **Il pacco non dichiarava una licenza.** Il modello a monte e'
+   *    Apache-2.0 e su quello non c'era problema; i nodi no — e senza licenza
+   *    non si possono ridistribuire. Non li ridistribuivamo (si scaricavano dal
+   *    loro repository, come ComfyUI stesso), ed era il motivo per cui erano
+   *    **fissati a un commit**: un pacco con sei stelle che cambia tutti i
+   *    giorni, lasciato libero di aggiornarsi, e' un modo per svegliarsi con la
+   *    generazione rotta senza aver toccato niente.
+   * 2. **Da solo non bastava**: il text encoder era un GGUF e questi nodi non
+   *    lo sapevano leggere — si appoggiavano a ComfyUI-GGUF, che resta qui
+   *    sopra perche' lo usa FLUX.2. Da li' veniva l'errore «ComfyUI-GGUF was
+   *    not found» a GGUF installato, che si e' scoperto essere una questione di
+   *    **dove** lo cercavano: la strada gliela apre
+   *    `services/comfy/nodi/daprod_ponte`, e quel ponte resta.
    */
-  "llada-image": {
-    nome: "LLaDa-Image_ComfyUI",
-    repo: "RealRebelAI/LLaDa-Image_ComfyUI",
-    // 6 settembre 2026: il commit con cui i due workflow di esempio nel
-    // repository corrispondono ai nomi dei file su Hugging Face.
-    commit: "67bf73705eae7a15bb6f33371f404e649bf7ac06",
-    perche: "Fa girare LLaDA-Image, che genera e modifica immagini con lo stesso modello.",
-    // ⚠ Non e' una svista: il repository non ne dichiara nessuna. Vedi sopra.
-    licenza: "non dichiarata",
-  },
 };
 
 export interface InstallaNodoOptions {

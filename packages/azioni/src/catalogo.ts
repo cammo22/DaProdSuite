@@ -70,7 +70,7 @@ export const PREDEFINITO_IMMAGINI = "flux2-9b";
 
 const MODELLI_FOTO = {
   predefinito: PREDEFINITO_IMMAGINI,
-  scelte: ["anima", "anima2", "flux2-4b", "flux2-9b", "llada"],
+  scelte: ["anima", "anima2", "flux2-4b", "flux2-9b"],
   /**
    * ⚠ **Solo i nomi.** Chiesto il 7 settembre 2026: «togli la scritta un
    * minuto e mezzo da LLaDA-Image, lascia solo i nomi, anche con gli altri
@@ -86,7 +86,6 @@ const MODELLI_FOTO = {
     anima2: "Anima v2",
     "flux2-4b": "FLUX.2 Klein 4B",
     "flux2-9b": "FLUX.2 Klein 9B",
-    llada: "LLaDA-Image",
   },
 } as const;
 
@@ -101,12 +100,13 @@ const MODELLI_FOTO = {
  * Quello che cambia davvero e' **come** modificano, e sono due mestieri
  * diversi:
  *
- * - **Col pennello** (Anima, Anima v2, i due FLUX.2): si dipinge la zona e si
- *   rifa' solo quella. Il resto della foto resta identico, pixel per pixel.
- * - **A parole** (LLaDA): si dice cosa cambiare e il modello guarda tutta la
- *   foto. Il pennello non ce l'ha proprio — vedi `senzaPennello` in
- *   `apps/foto/src/grafi.js` — e mostrarglielo per poi ignorarlo sarebbe il
- *   modo peggiore di sbagliare.
+ * Si modifica **col pennello**: si dipinge la zona e si rifa' solo quella. Il
+ * resto della foto resta identico, pixel per pixel.
+ *
+ * ⚠ **Fino alla 1.2.4 c'era anche il modo «a parole»**, che era LLaDA: si
+ * diceva cosa cambiare e il modello guardava tutta la foto. LLaDA e' stato
+ * tolto (vedi #86), e con lui se n'e' andato quel modo — e `senzaZona`, che
+ * esisteva solo per dire che lui il pennello non ce l'aveva.
  *
  * Il predefinito e' lo stesso della generazione, e non per pigrizia: chi
  * modifica una foto l'ha appena fatta con quel modello, e cambiarglielo sotto
@@ -115,7 +115,7 @@ const MODELLI_FOTO = {
  */
 const MODELLI_MODIFICA = {
   predefinito: PREDEFINITO_IMMAGINI,
-  scelte: ["anima", "anima2", "flux2-4b", "flux2-9b", "llada"],
+  scelte: ["anima", "anima2", "flux2-4b", "flux2-9b"],
   // Solo i nomi, come per la generazione. Chi non sa usare la zona lo dice il
   // modulo quando lo scegli, che è il momento in cui serve saperlo: vedi
   // `senzaZona` qui sotto.
@@ -124,14 +124,7 @@ const MODELLI_MODIFICA = {
     anima2: "Anima v2",
     "flux2-4b": "FLUX.2 Klein 4B",
     "flux2-9b": "FLUX.2 Klein 9B",
-    llada: "LLaDA-Image",
   },
-  /**
-   * LLaDA e la zona dipinta non c'entrano niente l'uno con l'altra: il suo
-   * nodo non ha un ingresso per la maschera. Sceglierlo spegne la domanda
-   * sulla zona, invece di farla e poi buttare la risposta.
-   */
-  senzaZona: ["llada"],
 } as const;
 
 const MODELLI_CINEMA = {

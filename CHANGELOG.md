@@ -12,6 +12,26 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ## Non ancora pubblicato
 
+### Via LLaDA-Image
+
+> «Si toglie LLaDA, addios. Casomai quando un giorno ComfyUI aggiorna bene ci
+> pensiamo.»
+
+Non c'e' piu' nel menu dei modelli, ne' sul computer ne' dal telefono. Era
+l'unico che sapeva **modificare a parole** invece di ridipingere una zona col
+pennello, ed era rimasto anche dopo che i suoi tempi erano diventati il difetto
+piu' vecchio della suite: sedici GB che non stanno in una scheda da otto, quindi
+avanti e indietro dalla memoria a ogni passo — venti secondi a passo, misurati.
+La 1.2.2 l'aveva portato da cinquanta passi a dodici (4,2 minuti) e restava il
+piu' lento di un ordine di grandezza.
+
+**I pesi gia' scaricati non si cancellano.** Sono sedici GB che qualcuno ha
+aspettato: la suite smette di offrirli, non li butta. Chi aveva LLaDA scelto si
+ritrova sul modello di serie senza che niente si rompa.
+
+Il perche' tecnico resta scritto dov'erano i grafi: e' la ragione per cui
+potrebbe tornare, il giorno che ComfyUI gestisce meglio quel nodo.
+
 ### «Manda in coda», e vale anche per chi decide
 
 > «Sotto, dove "manda al computer", togliamolo il pulsante lascia stare, non ci

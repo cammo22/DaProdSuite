@@ -95,28 +95,18 @@ tutte lo stesso.
 
 ## A che punto siamo
 
-**Ultima pubblicata: 1.2.2 — «Quanto ci mette, e cosa sta facendo».** LLaDA-Image
-passa da 50 passi a 12: misurato col motore acceso, 50 passi su una scheda da
-8 GB sono 17 minuti a foto e 12 sono 4, con un'immagine che non si distingue.
-E adesso dice a che punto è, che prima era l'unico a non dirlo. La fase si legge
-sulla riga del proprio lavoro, la Fila si spazza da sola ogni cento righe e non
-pesa più, un lavoro che non si fa te lo dice con il motivo, e tutte le pagine si
-aggiornano tirando giù — ma solo quando lo chiedi tu.
+**Ultima pubblicata: 1.2.4 — «L'app come se l'aspetta chi la scarica».** Il
+blocco 2 della 1.2.3: niente piu' «Chi sei?» a ogni avvio, niente messaggini
+mentre non guardi l'app, le notifiche in un pannello dal proprio nome, e una
+finestra rimasta su uno schermo spento che non si perde piu'.
 
 Prima, la 1.2.1 — «Adesso che si arriva al computer, si guarda cosa c'è dentro»: Col tunnel che regge (1.2.0: il computer si fa trovare dalla rete
 di casa, dal tunnel di Cloudflare o da Tailscale, e il telefono tiene quello che
-risponde), questa release raccoglie quello che si è visto **usando** la suite da
-lì. I lavori non falliscono più prima di partire: il motore delle immagini lo
-accende l'apertura della scheda, e lo si chiedeva prima di aprirla. «Butta»
-funziona di nuovo per chi decide, e un rifiuto adesso si legge invece di essere
-un numero. Caricare una foto dalla galleria non dice più che l'immagine manca —
-erano una corsa e un problema di memoria, tutti e due tolti. Mentre il computer
-lavora, il telefono dice **cosa sta facendo** («carico il modello», «disegno»,
-«salvo») e non solo che sta facendo qualcosa: è quello che mancava con
-LLaDA-Image, che di passi non ne conta nessuno. LLaDA passa dalla versione
-ridotta a quella piena, più lenta e più brava. E modificare una foto adesso
-tiene anche **com'era prima**, da guardare accanto e da pubblicare insieme, se
-si vuole.
+risponde), quella release raccoglieva quello che si era visto **usando** la
+suite da li'. Il telefono, mentre il computer lavora, dice **cosa sta facendo**
+(«carico il modello», «disegno», «salvo») e non solo che sta facendo qualcosa. E
+modificare una foto tiene anche **com'era prima**, da guardare accanto e da
+pubblicare insieme, se si vuole.
 
 Quello che cambia a ogni giro sta in [CHANGELOG.md](CHANGELOG.md), il percorso
 completo in [docs/ROADMAP.md](docs/ROADMAP.md).
