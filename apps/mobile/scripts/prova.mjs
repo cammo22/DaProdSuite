@@ -26,6 +26,33 @@ const MOBILE = join(QUI, "..");
 
 console.log("\n— le prove del telefono —");
 
+/**
+ * La versione dell'APK **non si scrive a mano**.
+ *
+ * ⚠ Il difetto del 9 settembre 2026: «l'app mobile mostra sempre
+ * aggiornamenti e fa reinstallare sempre la stessa versione». Il numero era
+ * fermo alla 1.2.0 da tre release, quindi l'app si aggiornava, si riguardava
+ * dentro, leggeva ancora 1.2.0 e ricominciava.
+ *
+ * Questa prova non compila niente: guarda il file. E' il tipo di difetto che
+ * torna da solo, il giorno che qualcuno "mette a posto" quella riga scrivendoci
+ * un numero — e che non si vede finche' non hai un telefono in mano.
+ */
+{
+  const build = readFileSync(join(MOBILE, "app", "build.gradle.kts"), "utf8");
+  const aMano = /versionName\s*=\s*"/.test(build);
+  if (aMano) {
+    console.log(
+      "  NO   la versione dell'APK e' scritta a mano in build.gradle.kts:" +
+        " deve venire da package.json, se no l'app si aggiorna all'infinito",
+    );
+    process.exit(1);
+  }
+  const radice = JSON.parse(readFileSync(join(MOBILE, "..", "..", "package.json"), "utf8"));
+  console.log(`  ok   la versione dell'APK viene dalla suite (${radice.version})`);
+}
+
+
 const gradle = process.platform === "win32" ? "gradlew.bat" : "./gradlew";
 const giro = spawnSync(join(MOBILE, gradle), ["testDebugUnitTest", "-q"], {
   cwd: MOBILE,

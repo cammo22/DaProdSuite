@@ -12,6 +12,74 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ## Non ancora pubblicato
 
+### Il telefono non propone piu' un aggiornamento che ha gia'
+
+> «L'app mobile mostra sempre aggiornamenti e fa reinstallare sempre la stessa
+> versione, aggiustiamolo.»
+
+Il numero di versione dell'app era **scritto a mano** dentro al file di
+compilazione, ed era fermo alla 1.2.0 da tre release. L'APK si chiamava con la
+versione giusta — quel nome viene dal tag — ma dentro continuava a dire di
+essere la 1.2.0. Cosi': l'app si guardava dentro e leggeva 1.2.0, chiedeva a
+GitHub («l'ultima e' la 1.2.4»), si aggiornava, si riguardava dentro, leggeva
+ancora 1.2.0, e ricominciava. Un giro che non finiva mai, e ogni volta un APK
+scaricato per niente.
+
+Adesso quel numero **viene dalla suite** — lo stesso `package.json` da cui lo
+prende il programma sul computer — e non c'e' piu' niente da ricordarsi al
+momento di pubblicare. C'e' anche una prova che lo controlla, perche' e' il tipo
+di difetto che torna il giorno che qualcuno «mette a posto» quella riga
+scrivendoci un numero.
+
+### La barra in alto fa le sirene, e il marchio torna attaccato
+
+> «Quell'effetto che hai messo nell'easter egg mettilo solo nella navbar, molto
+> piu' accentuato — pero' fai tipo effetto sirene, colorato. In alto a sinistra
+> prima era piu' bello, che era tutto attaccato.»
+
+Con l'easter egg acceso, due luci si rincorrono nella barra in alto: una viola e
+una azzurra, sfasate — due luci di pari passo sono una luce sola larga il
+doppio. Stanno **dietro** al contenuto: davanti renderebbero illeggibili il nome
+e l'ingranaggio proprio mentre uno li vuole toccare.
+
+E «DaProdSuite» e' di nuovo attaccato. Non era mai stato scritto staccato: il
+marchio e' un tasto, e in un tasto flex il testo e la parte colorata diventano
+due pezzi che prendevano gli otto pixel di distanza degli altri tasti della
+barra.
+
+### L'easter egg dice qualcosa anche quando si accende
+
+> «Quando togliamo "ancora uno" dice buonanotte. Facciamo che trova un'altra
+> frase quando lo attiva — tipo "complimenti, hai scoperto un segreto", sempre
+> con l'effetto confetti.»
+
+«Complimenti, hai scoperto un segreto», con i coriandoli. Le due frasi sono una
+coppia: «buonanotte» da sola non diceva a nessuno che dall'altra parte c'era
+qualcosa da scoprire.
+
+### Sotto ai video non resta piu' un fotogramma fermo
+
+> «I video non funzionano con il visualizer: il video funziona pero' mostra
+> un'immagine ferma del visualizer.»
+
+Fermare il giro dei fotogrammi ferma **il disegno**, non cancella quello che
+c'e' gia' disegnato: la tela restava li', a schermo intero dietro al video, con
+l'ultimo fotogramma della canzone di prima. Adesso si nasconde e si svuota.
+
+### Il lettore: la copertina piu' in alto, le info piu' grandi, e «scarica»
+
+> «Alzare un po' l'icona della musica, che e' troppo centrale, in modo da vedere
+> meglio pure l'effetto dietro, e si alza ancora quando apriamo le info.
+> Rendiamo le info un po' piu' grandi, per poter aggiungere dei tasti per
+> copiare: magari mi voglio copiare il testo. Togliamo la stella "tieni"; metti
+> il pulsante download a destra, e ti scarica proprio il file.»
+
+Tutto quello che c'e' scritto li'. La copertina si alza di un gradino, e di un
+altro quando si aprono le info; ogni riga delle info ha il suo tasto per
+copiarsela; e in DaProd, al posto della stella «tieni» — un segnalibro che
+diceva male se stesso, accanto a un cuore — c'e' **scarica**, che tira giu' il
+file vero.
+
 ### Via LLaDA-Image
 
 > «Si toglie LLaDA, addios. Casomai quando un giorno ComfyUI aggiorna bene ci
