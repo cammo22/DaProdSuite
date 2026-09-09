@@ -1,0 +1,361 @@
+/**
+ * Le prove della fila: mandare una combinazione, prenderla, buttarla, e i
+ * pacchetti.
+ *
+ * E' il pezzo per cui esiste tutto il resto — uno gioca, monta una riga, la
+ * manda; l'admin la prova, le da' un prezzo e la tiene, o la butta. Vedi
+ * `CONCETTI.md` §§ 8, 9 e 10.
+ *
+ * Si fanno girare cosi':
+ *
+ *     pnpm --filter @daprod/giochi build
+ *     node packages/giochi/scripts/prova-fila.mjs
+ */
+
+import {
+  apriPacchetto,
+  butta,
+  classifica,
+  Deposito,
+  manda,
+  NienteDaFare,
+  prendi,
+  serieChiuse,
+  sommaDeiPezzi,
+  statoMagazzino,
+  tira,
+} from "../dist/index.js";
+import { conCartella, dado, prova, tirandoLeSomme, uguale, vero } from "./attrezzi.mjs";
+
+/** Un deposito con dentro uno che gioca ricco, e un giro gia' fatto. */
+function tavolino(file) {
+  const d = new Deposito(file);
+  d.muovi("pino", 1000000);
+  const giro = tira(d, "pino", "musica", "sempre", [], Math.random);
+  return { d, giro, pezzi: giro.pezzi.map((p) => p.id) };
+}
+
+/**
+ * Riempie il magazzino di combinazioni finte, gia' prese.
+ *
+ * Si scrivono dentro il deposito a mano invece di passare da `manda` e
+ * `prendi`: qui si sta provando **i pacchetti**, e far girare la slot cento
+ * volte per averne cento renderebbe la prova lenta e la farebbe cadere per
+ * ragioni che coi pacchetti non c'entrano niente.
+ */
+function riempi(d, quante, prezzo) {
+  const gia = d.collezionabili().length;
+  for (let i = 0; i < quante; i++) {
+    d.collezionabili().push({
+      id: "finta_" + (gia + i),
+      tavolo: "musica",
+      pezzi: ["genere/finto-" + (gia + i)],
+      impronta: "finta-" + (gia + i),
+      prompt: "prompt finto " + (gia + i),
+      titolo: "Finta " + (gia + i),
+      daChi: "pino",
+      quando: Date.now(),
+      stato: "presa",
+      numero: gia + i + 1,
+      prezzo: typeof prezzo === "number" ? prezzo : 10,
+    });
+  }
+}
+
+/* --------------------------------------------------------------- mandare */
+
+prova("una combinazione mandata sta in attesa, e non costa niente", () =>
+  conCartella((file) => {
+    const t = tavolino(file);
+    const prima = t.d.conto("pino").saldo;
+    const r = manda(t.d, "pino", "musica", "sempre", t.pezzi);
+    const c = r.cosa;
+    uguale(r.esito, "mandata");
+    uguale(r.lire, 0, "mandare non deve costare");
+    uguale(c.stato, "in-attesa");
+    uguale(c.daChi, "pino");
+    uguale(t.d.conto("pino").saldo, prima, "mandare non deve costare");
+    uguale(t.d.conto("pino").mandate, 1);
+    vero(c.titolo.length > 0, "la figurina ha un titolo: i nomi dei pezzi");
+    vero(c.prompt.length > 0, "e un prompt vero da dare al modello");
+  }),
+);
+
+prova("finche' e' in attesa nessuno la rimanda, e lo dice subito", () =>
+  conCartella((file) => {
+    const t = tavolino(file);
+    manda(t.d, "pino", "musica", "sempre", t.pezzi);
+    let detto = "";
+    try {
+      // Anche da un'altra persona: l'identita' sono i pezzi, non chi la manda.
+      manda(t.d, "gino", "musica", "sempre", t.pezzi);
+    } catch (errore) {
+      detto = errore.message;
+      vero(errore instanceof NienteDaFare);
+    }
+    vero(detto.length > 0, "doveva rifiutare: nessuno ha ancora detto se vale");
+    uguale(t.d.collezionabili().length, 1);
+  }),
+);
+
+prova("chi ci arriva dopo, a una gia' presa, viene premiato come il primo", () =>
+  conCartella((file) => {
+    const t = tavolino(file);
+    const primo = manda(t.d, "pino", "musica", "sempre", t.pezzi);
+    const presa = prendi(t.d, "cammo", primo.cosa.id, 300);
+
+    const prima = t.d.conto("gino").saldo;
+    const secondo = manda(t.d, "gino", "musica", "sempre", t.pezzi);
+    uguale(secondo.esito, "riscoperta");
+    uguale(secondo.lire, presa.prezzo, "lo stesso premio di chi l'ha scoperta");
+    uguale(t.d.conto("gino").saldo, prima + presa.prezzo);
+    vero(
+      t.d.conto("gino").collezione.indexOf(primo.cosa.id) >= 0,
+      "e la figurina va in collezione anche a lui",
+    );
+    uguale(t.d.collezionabili().length, 1, "ma nel magazzino resta una sola");
+    uguale(t.d.conto("gino").prese, 0, "non l'ha scoperta lui: in classifica non conta");
+  }),
+);
+
+prova("rimandare una che hai gia' e' un buco nell'acqua, e costa due lire", () =>
+  conCartella((file) => {
+    const t = tavolino(file);
+    const primo = manda(t.d, "pino", "musica", "sempre", t.pezzi);
+    prendi(t.d, "cammo", primo.cosa.id, 300);
+
+    const prima = t.d.conto("pino").saldo;
+    const ancora = manda(t.d, "pino", "musica", "sempre", t.pezzi);
+    uguale(ancora.esito, "gia-tua");
+    uguale(ancora.lire, -2);
+    uguale(t.d.conto("pino").saldo, prima - 2);
+    uguale(t.d.conto("pino").collezione.length, 1, "e non se la prende due volte");
+  }),
+);
+
+prova("il premio della riscoperta e' quello vero, non uno fisso", () =>
+  conCartella((file) => {
+    const t = tavolino(file);
+    const primo = manda(t.d, "pino", "musica", "sempre", t.pezzi);
+    const presa = prendi(t.d, "cammo", primo.cosa.id, 1234);
+    vero(presa.prezzo > 1234, "il bonus si somma ai pezzi, non li sostituisce");
+    const prima = t.d.conto("gino").saldo;
+    const secondo = manda(t.d, "gino", "musica", "sempre", t.pezzi);
+    uguale(secondo.lire, presa.prezzo);
+    uguale(t.d.conto("gino").saldo, prima + presa.prezzo);
+  }),
+);
+
+prova("i pezzi fuori posto non passano", () =>
+  conCartella((file) => {
+    const t = tavolino(file);
+    const storti = t.pezzi.slice();
+    const primo = storti[0];
+    storti[0] = storti[1];
+    storti[1] = primo;
+    let fermato = true;
+    try {
+      manda(t.d, "pino", "musica", "sempre", storti);
+      fermato = false;
+    } catch (errore) {
+      vero(errore instanceof NienteDaFare);
+    }
+    vero(fermato, "un genere nella casella della voce non e' una combinazione");
+  }),
+);
+
+prova("mezza combinazione non e' una combinazione", () =>
+  conCartella((file) => {
+    const t = tavolino(file);
+    let fermato = true;
+    try {
+      manda(t.d, "pino", "musica", "sempre", t.pezzi.slice(0, 3));
+      fermato = false;
+    } catch (errore) {
+      vero(errore instanceof NienteDaFare);
+    }
+    vero(fermato, "doveva rifiutare");
+  }),
+);
+
+/* ------------------------------------------------------ prendere e buttare */
+
+prova("prendere: paga chi l'ha mandata, e gliela mette in collezione", () =>
+  conCartella((file) => {
+    const t = tavolino(file);
+    const c = manda(t.d, "pino", "musica", "sempre", t.pezzi).cosa;
+    const prima = t.d.conto("pino").saldo;
+    // ⚠ Il terzo numero e' il **bonus**, non il prezzo: il prezzo e' la somma
+    // dei dodici pezzi piu' quello. Chiesto il 10 settembre 2026.
+    const base = sommaDeiPezzi(t.d, c);
+    vero(base > 0, "dodici pezzi qualcosa devono valere");
+    const presa = prendi(t.d, "cammo", c.id, 300);
+    uguale(presa.stato, "presa");
+    uguale(presa.prezzo, base + 300, "i pezzi piu' il bonus");
+    uguale(presa.numero, 1, "il primo posto in magazzino e' l'uno");
+    uguale(presa.daAdmin, "cammo");
+    uguale(t.d.conto("pino").saldo, prima + base + 300, "chi l'ha mandata viene pagato");
+    uguale(t.d.conto("pino").prese, 1);
+    vero(t.d.conto("pino").collezione.indexOf(c.id) >= 0, "chi l'ha inventata ce l'ha");
+    uguale(t.d.magazzino().length, 1);
+  }),
+);
+
+prova("su una gia' decisa non si decide due volte", () =>
+  conCartella((file) => {
+    const t = tavolino(file);
+    const c = manda(t.d, "pino", "musica", "sempre", t.pezzi).cosa;
+    prendi(t.d, "cammo", c.id, 100);
+    let fermato = true;
+    try {
+      prendi(t.d, "cammo", c.id, 5000);
+      fermato = false;
+    } catch (errore) {
+      vero(errore instanceof NienteDaFare);
+    }
+    vero(fermato, "non si puo' ripagare la stessa combinazione");
+    uguale(t.d.conto("pino").prese, 1, "e non si conta due volte");
+  }),
+);
+
+prova("buttarla: il motivo c'e' sempre, anche se non lo scrivi", () =>
+  conCartella((file) => {
+    const t = tavolino(file);
+    const c = manda(t.d, "pino", "musica", "sempre", t.pezzi).cosa;
+    const b = butta(t.d, "cammo", c.id, "   ");
+    uguale(b.stato, "buttata");
+    vero(b.motivo.length > 0, "un no senza perche' non insegna niente");
+    uguale(t.d.magazzino().length, 0);
+    uguale(t.d.conto("pino").prese, 0, "una buttata non si conta");
+  }),
+);
+
+prova("una buttata non si puo' rimandare uguale", () =>
+  conCartella((file) => {
+    const t = tavolino(file);
+    const c = manda(t.d, "pino", "musica", "sempre", t.pezzi).cosa;
+    butta(t.d, "cammo", c.id, "non mi piace");
+    let fermato = true;
+    try {
+      manda(t.d, "pino", "musica", "sempre", t.pezzi);
+      fermato = false;
+    } catch (errore) {
+      vero(errore instanceof NienteDaFare);
+    }
+    vero(fermato, "se no la stessa riga rifiutata torna ogni giorno");
+  }),
+);
+
+/* ------------------------------------------------------------ i pacchetti */
+
+prova("una serie si compra solo quando e' chiusa", () =>
+  conCartella((file) => {
+    const d = new Deposito(file);
+    d.cambiaImpostazioni({ perSerie: 10, perPacchetto: 3, costoPacchetto: 100 });
+    d.muovi("pino", 100000);
+    riempi(d, 9);
+    uguale(serieChiuse(d), 0, "nove su dieci non chiudono niente");
+    let fermato = true;
+    try {
+      apriPacchetto(d, "pino", 1, Math.random);
+      fermato = false;
+    } catch (errore) {
+      vero(errore instanceof NienteDaFare);
+    }
+    vero(fermato, "non si compra una serie aperta");
+
+    riempi(d, 1);
+    uguale(serieChiuse(d), 1, "col decimo la serie si chiude");
+  }),
+);
+
+prova("il pacchetto costa, da' le figurine, e i doppioni pagano", () =>
+  conCartella((file) => {
+    const d = new Deposito(file);
+    d.cambiaImpostazioni({ perSerie: 2, perPacchetto: 3, costoPacchetto: 100 });
+    d.muovi("pino", 100000);
+    riempi(d, 2, 40);
+    uguale(serieChiuse(d), 1);
+
+    const prima = d.conto("pino").saldo;
+    /**
+     * ⚠ **Col dado in mano, non a caso.** Prima questa prova girava con
+     * `Math.random`: due figurine e tre pescate, e una volta su quattro
+     * uscivano tutte e tre uguali — la prova diventava rossa senza che niente
+     * fosse rotto. Una prova che fallisce a caso e' peggio di una prova che
+     * manca: insegna a non fidarsi delle prove.
+     *
+     * Cosi' invece si sa cosa esce: prima, seconda, prima. Due diverse e un
+     * doppione, sempre.
+     */
+    const pacco = apriPacchetto(d, "pino", 1, dado(0.1, 0.9, 0.1));
+    uguale(pacco.figurine.length, 3);
+    uguale(pacco.costo, 100);
+    vero(pacco.figurine.some((f) => f.doppione), "tre pescate su due figurine: un doppione ci vuole");
+    vero(pacco.vinto > 0, "il doppione deve pagare invece di deludere");
+    uguale(pacco.saldo, prima - 100 + pacco.vinto);
+    uguale(d.conto("pino").collezione.length, 2, "le figurine diverse sono due");
+  }),
+);
+
+prova("senza lire non si comprano pacchetti", () =>
+  conCartella((file) => {
+    const d = new Deposito(file);
+    d.cambiaImpostazioni({ perSerie: 1, costoPacchetto: 500 });
+    riempi(d, 1);
+    d.muovi("spiantato", -99999);
+    let fermato = true;
+    try {
+      apriPacchetto(d, "spiantato", 1, Math.random);
+      fermato = false;
+    } catch (errore) {
+      vero(errore instanceof NienteDaFare);
+    }
+    vero(fermato, "doveva rifiutare");
+  }),
+);
+
+prova("girando ogni tanto cade una figurina, e mai un doppione", () =>
+  conCartella((file) => {
+    const d = new Deposito(file);
+    // «una ogni 1» col dado a zero: cade sempre, finche' ce n'e' una nuova.
+    d.cambiaImpostazioni({ unaOgniGiri: 1 });
+    d.muovi("pino", 100000);
+    riempi(d, 2, 10);
+
+    const visti = new Set();
+    for (let i = 0; i < 6; i++) {
+      const giro = tira(d, "pino", "musica", "sempre", [], dado(0));
+      if (giro.regalo) visti.add(giro.regalo.id);
+    }
+    uguale(visti.size, 2, "le due del magazzino, una volta ciascuna");
+    uguale(d.conto("pino").collezione.length, 2, "e nessun doppione regalato");
+  }),
+);
+
+prova("il magazzino sa dire a che punto sta", () =>
+  conCartella((file) => {
+    const d = new Deposito(file);
+    d.cambiaImpostazioni({ perSerie: 10 });
+    riempi(d, 12);
+    const stato = statoMagazzino(d);
+    uguale(stato.prese, 12);
+    uguale(stato.serieChiuse, 1);
+    uguale(stato.allaProssimaSerie, 8, "ne mancano otto alla seconda serie");
+  }),
+);
+
+/* ------------------------------------------------------------ classifica */
+
+prova("davanti sta chi si e' fatto prendere le combinazioni", () =>
+  conCartella((file) => {
+    const d = new Deposito(file);
+    d.muovi("riccone", 500000);
+    d.segnaGiro("riccone", 9000);
+    d.conto("artista").prese = 2;
+    const c = classifica(d);
+    uguale(c[0].chi, "artista", "due prese battono un colpo grosso e un conto pieno");
+  }),
+);
+
+process.exit(tirandoLeSomme("la fila e i pacchetti"));
