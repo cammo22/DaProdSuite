@@ -65,12 +65,31 @@ stesso motivo: e' l'unico posto dove vive quanto ha vinto la gente.
 (`L. 1.500`). Si possono leggere in euro con un interruttore, al cambio fisso
 storico **1 € = 1936,27 £**: e' solo come si legge, il conto e' sempre in lire.
 
+### Due numeri, e non si scambiano
+
+⚠ **Dalla slot non escono lire.** Deciso il 10 settembre 2026: girare **costa**
+lire e rende **punti esperienza**. E' il pezzo che tiene in piedi tutto il
+resto.
+
+| | Come si guadagna | A che serve |
+|---|---|---|
+| **Lire** | facendosi prendere una combinazione, riscoprendone una, e dai doppioni nei pacchetti | girare, comprare pacchetti, comprare nello shop |
+| **Esperienza** | girando, sempre: anche il giro peggiore da' un punto | salire di livello, e basta |
+
+Chi gioca e basta **sale di livello**. Chi crea, **si arricchisce**. Non c'e'
+modo di trasformare l'una nell'altra, ed e' voluto: se girando si guadagnasse,
+la slot sarebbe una macchinetta e le combinazioni un passatempo. Cosi' invece
+le lire per giocare finiscono, e per averne ancora bisogna inventare qualcosa
+che a chi comanda piaccia.
+
+I livelli: il secondo costa 500 punti, il terzo altri mille, il quarto altri
+millecinquecento. Ogni volta di piu'.
+
 ⚠ **Non ci sono soldi veri.** Non si compra niente pagando, e i «pacchetti da
-comprare» si comprano in lire di gioco. Le lire nascono girando, vincendo, e
-soprattutto **facendosi approvare le combinazioni**. Se un giorno questa cosa
-dovesse uscire di casa e toccare soldi veri, il discorso cambia e va rifatto da
-capo: un gioco con un portafoglio, delle rarita' e dei pacchetti e', per come e'
-fatto, una slot machine.
+comprare» si comprano in lire di gioco. Se un giorno questa cosa dovesse uscire
+di casa e toccare soldi veri, il discorso cambia e va rifatto da capo: un gioco
+con un portafoglio, delle rarita' e dei pacchetti e', per come e' fatto, una
+slot machine.
 
 ## 5. Il prompt e' fatto di dodici pezzi
 
@@ -127,8 +146,9 @@ Il peso vale anche sul rullo **«Di quando»**: con gli anni 80 scelti esce «An
 ottanta» otto volte su dieci. Prima no, e si vedeva: la sala si vestiva da anni
 80 e la casella diceva «Adesso».
 
-Cambiare epoca **sblocca i rulli**: quello che avevi tenuto fermo veniva da un
-altro mondo.
+Cambiare epoca **non sblocca niente**: quello che hai tenuto fermo resta fermo.
+Mischiare un genere degli anni 70 con una produzione di adesso e' esattamente
+il tipo di riga che nessuno scriverebbe da solo — vedi § 9.
 
 ## 7. Gli undici gradi
 
@@ -136,19 +156,19 @@ Ogni pezzo ha un **prezzo in lire**, e il prezzo dice il **grado**. Sono undici,
 in quest'ordine — e si', **Epic sta dopo Divine**: e' la scala scelta da Cammo,
 e in un gioco la scala e' una decisione, non una deduzione.
 
-| Grado | Da | Quanti generi | Quanto esce | Paga |
-|---|---|---|---|---|
-| Basic | 0 £ | 2.641 | 40% | — |
-| Grand | 5 £ | 453 | 22% | — |
-| Rare | 12 £ | 380 | 14% | 5 £ |
-| Arcane | 25 £ | 322 | 9% | 12 £ |
-| Heroic | 45 £ | 297 | 6% | 25 £ |
-| Unique | 75 £ | 289 | 4% | 50 £ |
-| Celestial | 120 £ | 336 | 2,4% | 100 £ |
-| Divine | 200 £ | 332 | 1,4% | 200 £ |
-| Epic | 320 £ | 365 | 0,8% | 400 £ |
-| Legendary | 520 £ | 397 | 0,3% | 800 £ |
-| Mythic | 850 £ | 479 | 0,1% | 2.000 £ |
+| Grado | Da | Quanti generi | Quanto esce | Punti | In vetrina |
+|---|---|---|---|---|---|
+| Basic | 0 £ | 2.641 | 40% | 1 | 50 £ |
+| Grand | 5 £ | 453 | 22% | 3 | 100 £ |
+| Rare | 12 £ | 380 | 14% | 8 | 240 £ |
+| Arcane | 25 £ | 322 | 9% | 18 | 500 £ |
+| Heroic | 45 £ | 297 | 6% | 35 | 900 £ |
+| Unique | 75 £ | 289 | 4% | 70 | 1.500 £ |
+| Celestial | 120 £ | 336 | 2,4% | 140 | 2.400 £ |
+| Divine | 200 £ | 332 | 1,4% | 280 | 4.000 £ |
+| Epic | 320 £ | 365 | 0,8% | 600 | 6.400 £ |
+| Legendary | 520 £ | 397 | 0,3% | 1.400 | 10.400 £ |
+| Mythic | 850 £ | 479 | 0,1% | 4.000 | 17.000 £ |
 
 Un Mythic ogni mille caselle: con dodici rulli, **uno ogni ottantatre giri**.
 
@@ -168,17 +188,20 @@ bordo, da Unique in su la sala si scuote, da Epic in su cadono i coriandoli.
 
 Costa. Se esce qualcosa di buono, paga:
 
-| Cosa esce | Paga |
+| Cosa esce | Punti |
 |---|---|
 | il grado piu' alto uscito | quello che dice la tabella sopra |
 | tre caselle o piu' dello stesso grado, da Rare in su | quel grado **×2**, in piu' |
-| **tutte e dodici** da Heroic in su | **schermo pieno, 1.000–1.500 £** |
-| niente | una quasi-vincita ogni tanto (5–15 £) |
+| **tutte e dodici** da Heroic in su | **schermo pieno, 3.000–5.000 punti** |
+| il meglio e' sotto Rare | ogni tanto una consolazione (1–4 punti) |
 
-Il premio del grado si paga **una volta sola**, per il piu' alto uscito: se
-pagassero tutti, un Mythic incasserebbe anche il premio del Basic accanto. Il
+I punti del grado si contano **una volta sola**, per il piu' alto uscito: se
+contassero tutti, un Mythic prenderebbe anche i punti del Basic accanto. Il
 tris invece si somma, perche' e' un'altra cosa — non «che ti e' uscito», ma
 «quante volte».
+
+**Il giro a mani vuote non esiste**: anche dodici Basic danno un punto. Con
+l'esperienza al posto delle lire, ogni giro deve far avanzare di qualcosa.
 
 Le **formazioni** si sommano a parte: combinazioni dichiarate da chi comanda
 («questi tre pezzi insieme»), valide in qualsiasi ordine.
@@ -259,8 +282,16 @@ scritto chi le ha mandate e quando. Per ognuna si puo':
   strada da cui passano le richieste del telefono. Il pezzo o l'immagine esce e
   si guarda. **Il costo lo paga il banco, non il giocatore**: e' l'admin che ha
   scelto di provarla;
-- **prenderla**, dandole un **prezzo in lire**. Da quel momento sta nel
-  magazzino, e vale quel prezzo per chi vorra' sbloccarla;
+- **prenderla**. ⚠ Il prezzo **non si scrive a mano**: e' la **somma dei dodici
+  pezzi** — che e' un numero vero, viene dalla rarita' di ognuno — piu' un
+  **bonus** che e' l'unica cosa che decide una persona. Il bonus dice quanto
+  quella riga vale *oltre* i pezzi di cui e' fatta, cioe' quanto e' bella
+  l'idea; puo' anche essere zero. Cosi' una combinazione di roba rara parte alta
+  anche quando chi comanda ha fretta, e una di roba comune ma geniale la si puo'
+  pagare bene lo stesso;
+- **attaccarci il contenuto**: l'immagine o il brano venuti fuori da quel
+  prompt. E' quello che la fa diventare una figurina che si guarda, ed e' la
+  copertina della sua scheda nello shop — senza, uno comprerebbe una parola;
 - **buttarla**, scrivendo perche'.
 
 **Chi l'ha mandata viene pagato.** Il prezzo che l'admin le da' finisce anche in
@@ -309,7 +340,31 @@ La porta si chiama `manda-dalla-libreria`, ed e' pensata per essere aperta da
 **un tasto nella galleria della suite** — «mandala in sala giochi» — non dalla
 pagina della slot.
 
-## 12. Dove finisce, nella suite
+## 12. Lo shop
+
+Le figurine prese si possono anche **mettere in vendita**. Ce le mette chi
+comanda, e decide due cose che sono tutte e due sue:
+
+- **che grado hanno nello shop.** Non e' quello della slot — li' lo dicono i
+  dati, qui lo sceglie una persona;
+- **quanto costano.** Il grado ne suggerisce uno (venti volte la sua soglia:
+  un Rare sta sulle 240 lire, un Mythic sulle diciassettemila), ma il numero
+  finale lo scrive chi vuole.
+
+⚠ **Nello shop si paga caro, ed e' voluto.** La stessa figurina cade anche da
+un pacchetto, se sei fortunato. Chi compra sta pagando **di non aspettare la
+fortuna**, e quello si paga. Con la slot che rende solo esperienza, quelle lire
+arrivano da una parte sola: inventando roba che a chi comanda piace.
+
+Lo stesso grado di vetrina dice anche **quanto raramente quella figurina cade
+da un pacchetto**: e' un numero solo per due cose, non due numeri che un giorno
+divergono.
+
+La scheda nello shop mostra il **contenuto allegato** — l'immagine o il brano
+venuti fuori da quel prompt — anche a chi non ce l'ha: uno deve poter guardare
+cosa sta comprando. Il prompt no: quello resta coperto finche' non e' tuo.
+
+## 13. Dove finisce, nella suite
 
 Una combinazione presa **non resta nel gioco**. Entra nel magazzino unico di
 prompt e stili della suite, quello del blocco 1 della 1.2.3, e da li' compare
@@ -318,7 +373,7 @@ come pastiglia in DaProdMusica e in DaProdFoto — con scritto chi l'ha fatta.
 E' il motivo per cui la sala giochi sta dentro la suite invece che in un file
 HTML sul desktop: quello che si vince qui, si usa di la'.
 
-## 13. La classifica di casa
+## 14. La classifica di casa
 
 Con le facce e i nomi di DaProd. I numeri che si guardano:
 
@@ -330,14 +385,14 @@ Con le facce e i nomi di DaProd. I numeri che si guardano:
 Non si ordina per saldo: il saldo lo alza chi gioca di piu', e «chi ha giocato
 di piu'» non e' una classifica, e' un contatore.
 
-## 14. Cosa non e'
+## 15. Cosa non e'
 
 - Non e' un gioco d'azzardo con soldi veri, e non deve diventarlo.
 - Non e' uno strumento di lavoro: per la roba seria ci sono le schede.
 - Non e' un'app a se': e' **una pagina servita dal gateway**, come la console.
   Cosi' e' la stessa identica cosa sul computer, sul telefono e nel browser.
 
-## 15. Le regole di questa cartella
+## 16. Le regole di questa cartella
 
 - **Un pacchetto solo**, `@daprod/giochi`, e dentro ci sta tutto: le regole, i
   dati, il deposito, la pagina, le rotte. Fuori di qui, il giorno che si unisce,
@@ -352,7 +407,7 @@ di piu'» non e' una classifica, e' un contatore.
   presa dalla rete. Una pagina che chiama fuori e' una pagina che non funziona
   quando la linea e' giu'.
 
-## 16. Quello che ancora non e' deciso
+## 17. Quello che ancora non e' deciso
 
 - **Cento e' il numero giusto per una serie?** Con poche persone che giocano,
   cento combinazioni prese ci mettono un po' ad arrivare, e finche' la serie non

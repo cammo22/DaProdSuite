@@ -60,17 +60,17 @@ export function fra(min: number, max: number, caso: Caso): number {
  * cresce.
  */
 export const GRADI: readonly Scalino[] = [
-  { id: "basic", nome: "Basic", da: 0, colore: "#9aa0b5", fuoco: 0, quantoEsce: 400, paga: 0 },
-  { id: "grand", nome: "Grand", da: 5, colore: "#7fd1a8", fuoco: 0, quantoEsce: 220, paga: 0 },
-  { id: "rare", nome: "Rare", da: 12, colore: "#5cc8ff", fuoco: 1, quantoEsce: 140, paga: 5 },
-  { id: "arcane", nome: "Arcane", da: 25, colore: "#b07cff", fuoco: 1, quantoEsce: 90, paga: 12 },
-  { id: "heroic", nome: "Heroic", da: 45, colore: "#ff9d5c", fuoco: 1, quantoEsce: 60, paga: 25 },
-  { id: "unique", nome: "Unique", da: 75, colore: "#ff6fb5", fuoco: 2, quantoEsce: 40, paga: 50 },
-  { id: "celestial", nome: "Celestial", da: 120, colore: "#6ee7f0", fuoco: 2, quantoEsce: 24, paga: 100 },
-  { id: "divine", nome: "Divine", da: 200, colore: "#ffe9a8", fuoco: 2, quantoEsce: 14, paga: 200 },
-  { id: "epic", nome: "Epic", da: 320, colore: "#e879f9", fuoco: 3, quantoEsce: 8, paga: 400 },
-  { id: "legendary", nome: "Legendary", da: 520, colore: "#ffd166", fuoco: 3, quantoEsce: 3, paga: 800 },
-  { id: "mythic", nome: "Mythic", da: 850, colore: "#ff4d6d", fuoco: 3, quantoEsce: 1, paga: 2000 },
+  { id: "basic", nome: "Basic", da: 0, colore: "#9aa0b5", fuoco: 0, quantoEsce: 400, punti: 1 },
+  { id: "grand", nome: "Grand", da: 5, colore: "#7fd1a8", fuoco: 0, quantoEsce: 220, punti: 3 },
+  { id: "rare", nome: "Rare", da: 12, colore: "#5cc8ff", fuoco: 1, quantoEsce: 140, punti: 8 },
+  { id: "arcane", nome: "Arcane", da: 25, colore: "#b07cff", fuoco: 1, quantoEsce: 90, punti: 18 },
+  { id: "heroic", nome: "Heroic", da: 45, colore: "#ff9d5c", fuoco: 1, quantoEsce: 60, punti: 35 },
+  { id: "unique", nome: "Unique", da: 75, colore: "#ff6fb5", fuoco: 2, quantoEsce: 40, punti: 70 },
+  { id: "celestial", nome: "Celestial", da: 120, colore: "#6ee7f0", fuoco: 2, quantoEsce: 24, punti: 140 },
+  { id: "divine", nome: "Divine", da: 200, colore: "#ffe9a8", fuoco: 2, quantoEsce: 14, punti: 280 },
+  { id: "epic", nome: "Epic", da: 320, colore: "#e879f9", fuoco: 3, quantoEsce: 8, punti: 600 },
+  { id: "legendary", nome: "Legendary", da: 520, colore: "#ffd166", fuoco: 3, quantoEsce: 3, punti: 1400 },
+  { id: "mythic", nome: "Mythic", da: 850, colore: "#ff4d6d", fuoco: 3, quantoEsce: 1, punti: 4000 },
 ];
 
 /** Dov'e' un grado nella scala: 0 e' Basic, 10 e' Mythic. */
@@ -271,16 +271,17 @@ export const IMPOSTAZIONI_DI_PARTENZA: Impostazioni = {
   perPacchetto: 5,
   perSerie: 100,
   unaOgniGiri: 40,
-  pagaPerGrado: Object.fromEntries(GRADI.map((g) => [g.id, g.paga])) as Partial<
+  puntiPerGrado: Object.fromEntries(GRADI.map((g) => [g.id, g.punti])) as Partial<
     Record<Grado, number>
   >,
   trisMoltiplicatore: 2,
   pienoDa: "heroic",
-  pienoMin: 1000,
-  pienoMax: 1500,
+  pienoMin: 3000,
+  pienoMax: 5000,
+  perIlLivello: 500,
   quasiPercentuale: 25,
-  quasiMin: 5,
-  quasiMax: 15,
+  quasiMin: 1,
+  quasiMax: 4,
   regaloIniziale: 500,
   penalitaDoppione: 2,
 };
@@ -295,12 +296,16 @@ export function meglioDi(pezzi: PezzoInGioco[]): Grado {
 }
 
 /**
- * Cosa ha pagato questo giro.
+ * Quanta esperienza ha dato questo giro.
+ *
+ * ⚠ **Punti, non lire.** Dalla slot non escono soldi (CONCETTI.md § 4): girare
+ * costa e fa salire di livello, le lire arrivano solo da chi comanda quando
+ * gli piace una combinazione.
  *
  * Tre cose, e si sommano solo quelle che hanno senso sommare:
  *
  * 1. **il grado piu' alto uscito**, una volta sola. Non tutti quelli usciti: se
- *    pagassero tutti, un Mythic incasserebbe anche il premio del Basic accanto;
+ *    contassero tutti, un Mythic prenderebbe anche i punti del Basic accanto;
  * 2. **il tris**, quando tre caselle o piu' hanno lo stesso grado da Rare in
  *    su. Quello si somma, perche' e' un'altra cosa: non «che ti e' uscito», ma
  *    «quante volte»;
@@ -310,6 +315,67 @@ export function meglioDi(pezzi: PezzoInGioco[]): Grado {
  * Le **formazioni** si sommano a parte: sono premi dichiarati da chi comanda e
  * valgono per conto loro, in qualunque ordine escano i pezzi.
  */
+/* ------------------------------------------------------------- i livelli */
+
+/**
+ * A che livello si e' con questa esperienza.
+ *
+ * Ogni livello costa **piu' del precedente**: il primo 500 punti, il secondo
+ * mille, il terzo millecinquecento. La somma fa `perIlLivello × n × (n-1) / 2`
+ * — cioe' il livello 5 arriva a 5.000 punti, il 10 a 22.500.
+ *
+ * Si conta con un giro invece che con una formula chiusa perche' cosi' si
+ * legge: chi apre questo file deve poter dire «ah, e' questo» senza risolvere
+ * un'equazione di secondo grado.
+ */
+export function livelloDi(esperienza: number, perIlLivello: number): number {
+  let livello = 1;
+  let soglia = perIlLivello;
+  let restante = Math.max(0, esperienza);
+  while (restante >= soglia) {
+    restante -= soglia;
+    livello += 1;
+    soglia += perIlLivello;
+  }
+  return livello;
+}
+
+/** Quanta esperienza manca al livello dopo, e quanta ne serviva in tutto. */
+export function versoIlProssimo(
+  esperienza: number,
+  perIlLivello: number,
+): { livello: number; dentro: number; serve: number } {
+  let livello = 1;
+  let soglia = perIlLivello;
+  let restante = Math.max(0, esperienza);
+  while (restante >= soglia) {
+    restante -= soglia;
+    livello += 1;
+    soglia += perIlLivello;
+  }
+  return { livello, dentro: restante, serve: soglia };
+}
+
+/**
+ * Quanto vale una combinazione quando chi comanda la prende.
+ *
+ * ⚠ **Non e' un numero scritto a mano.** Chiesto il 10 settembre 2026: «quando
+ * una combinazione viene data per buona da un admin allora assume il valore
+ * dei singoli item piu' un bonus dell'admin».
+ *
+ * Il valore di base e' la **somma dei dodici pezzi**, che e' un numero vero:
+ * viene dalla rarita' di ognuno, che viene dai dati. Il bonus e' l'unica cosa
+ * che decide una persona — quanto quella riga vale **oltre** i suoi pezzi,
+ * cioe' quanto e' bella l'idea.
+ *
+ * Cosi' due combinazioni fatte di roba rara partono alte anche se chi comanda
+ * ha fretta, e una fatta di roba comune ma geniale la si puo' comunque pagare
+ * bene. Il bonus puo' anche essere zero.
+ */
+export function valoreDaPrendere(sommaPezzi: number, bonus: number): number {
+  return Math.max(1, Math.round(Math.max(0, sommaPezzi) + Math.max(0, bonus)));
+}
+
 export function valuta(
   pezzi: PezzoInGioco[],
   imp: Impostazioni,
@@ -326,19 +392,19 @@ export function valuta(
     vincite.push({
       motivo: "pieno",
       detto: "SCHERMO PIENO — tutto da " + scalino(imp.pienoDa).nome + " in su",
-      lire: fra(imp.pienoMin, imp.pienoMax, caso),
+      punti: fra(imp.pienoMin, imp.pienoMax, caso),
       fuoco: 3,
     });
   }
 
   const meglio = meglioDi(pezzi);
-  const pagaMeglio = imp.pagaPerGrado[meglio] ?? 0;
-  if (pagaMeglio > 0) {
+  const puntiMeglio = imp.puntiPerGrado[meglio] ?? 0;
+  if (puntiMeglio > 0) {
     const quanti = pezzi.filter((p) => p.grado === meglio).length;
     vincite.push({
       motivo: "grado:" + meglio,
       detto: (quanti > 1 ? quanti + " " : "un ") + scalino(meglio).nome,
-      lire: pagaMeglio,
+      punti: puntiMeglio,
       fuoco: scalino(meglio).fuoco,
     });
   }
@@ -350,21 +416,33 @@ export function valuta(
     if (altezza(g.id) < sogliaTris) continue;
     const quanti = pezzi.filter((p) => p.grado === g.id).length;
     if (quanti < 3) continue;
-    const paga = (imp.pagaPerGrado[g.id] ?? 0) * imp.trisMoltiplicatore;
-    if (paga <= 0) continue;
+    const punti = (imp.puntiPerGrado[g.id] ?? 0) * imp.trisMoltiplicatore;
+    if (punti <= 0) continue;
     vincite.push({
       motivo: "tris:" + g.id,
       detto: quanti + " " + g.nome + " insieme",
-      lire: paga,
+      punti,
       fuoco: Math.min(3, g.fuoco + 1) as 0 | 1 | 2 | 3,
     });
   }
 
-  if (vincite.length === 0 && caso() * 100 < imp.quasiPercentuale) {
+  /**
+   * La consolazione, quando il giro e' andato male.
+   *
+   * ⚠ **Prima si accendeva solo se non era uscito niente, e da quando i punti
+   * hanno sostituito le lire quel «niente» non capita piu'**: anche un Basic
+   * da' un punto, quindi la riga era diventata codice morto. Trovato da una
+   * prova rossa il 10 settembre 2026.
+   *
+   * Adesso si accende quando **il meglio che e' uscito e' sotto Rare**, cioe'
+   * quando lo schermo e' grigio: qualche punto in piu' per non mandare via a
+   * mani vuote chi ha appena speso un giro.
+   */
+  if (altezza(meglio) < sogliaTris && caso() * 100 < imp.quasiPercentuale) {
     vincite.push({
       motivo: "quasi",
       detto: "c'eri quasi",
-      lire: fra(imp.quasiMin, imp.quasiMax, caso),
+      punti: fra(imp.quasiMin, imp.quasiMax, caso),
       fuoco: 0,
     });
   }
@@ -374,7 +452,7 @@ export function valuta(
   const usciti = new Set(pezzi.map((p) => p.id));
   for (const f of formazioni) {
     if (f.pezzi.length > 0 && f.pezzi.every((id) => usciti.has(id))) {
-      vincite.push({ motivo: "formazione:" + f.id, detto: f.nome, lire: f.premio, fuoco: 3 });
+      vincite.push({ motivo: "formazione:" + f.id, detto: f.nome, punti: f.premio, fuoco: 3 });
     }
   }
   return vincite;

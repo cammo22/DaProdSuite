@@ -194,6 +194,7 @@ export class Deposito {
     const nuovo: Conto = {
       chi,
       saldo: this.dati.impostazioni.regaloIniziale,
+      esperienza: 0,
       giri: 0,
       vinteTot: 0,
       colpoGrosso: 0,
@@ -230,19 +231,21 @@ export class Deposito {
   }
 
   /**
-   * Segna un giro fatto, quanto ha pagato, e il grado piu' alto uscito.
+   * Segna un giro fatto, quanta esperienza ha dato, e il grado piu' alto
+   * uscito.
    *
    * Il grado si tiene perche' e' il trofeo: «a me e' uscito un Mythic» e' la
    * cosa che uno dice, e senza scriverla resterebbe solo nella memoria di chi
    * c'era.
    */
-  segnaGiro(chi: string, vinto: number, meglio?: Grado): Conto {
+  segnaGiro(chi: string, punti: number, meglio?: Grado): Conto {
     const conto = this.conto(chi);
     conto.giri += 1;
     conto.ultimoGiro = Date.now();
-    if (vinto > 0) {
-      conto.vinteTot += vinto;
-      if (vinto > conto.colpoGrosso) conto.colpoGrosso = vinto;
+    if (punti > 0) {
+      conto.esperienza += punti;
+      conto.vinteTot += punti;
+      if (punti > conto.colpoGrosso) conto.colpoGrosso = punti;
     }
     if (meglio && (!conto.migliorGrado || altezza(meglio) > altezza(conto.migliorGrado))) {
       conto.migliorGrado = meglio;

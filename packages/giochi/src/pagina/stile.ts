@@ -81,29 +81,31 @@ h2:first-child{margin-top:2px}
 .epoche button{min-width:52px; font-variant-numeric:tabular-nums}
 
 /* -------------------------------------------------------------- i rulli */
-.rulli{display:grid; grid-template-columns:repeat(2,1fr); gap:7px}
-@media (min-width:460px){ .rulli{grid-template-columns:repeat(3,1fr)} }
-@media (min-width:760px){ .rulli{grid-template-columns:repeat(4,1fr)} }
-@media (min-width:1000px){ .rulli{grid-template-columns:repeat(6,1fr)} }
+/* Carte piu' grandi, chiesto il 10 settembre 2026: una colonna in meno a ogni
+   misura e piu' aria dentro. Su un telefono restano due per riga, ma alte —
+   dodici pezzi con nome, inglese ed esempio non ci stavano in tre centimetri. */
+.rulli{display:grid; grid-template-columns:repeat(2,1fr); gap:10px}
+@media (min-width:560px){ .rulli{grid-template-columns:repeat(3,1fr)} }
+@media (min-width:900px){ .rulli{grid-template-columns:repeat(4,1fr)} }
 
-.rullo{position:relative; min-height:112px; padding:9px 9px 24px; border-radius:13px;
+.rullo{position:relative; min-height:160px; padding:13px 13px 30px; border-radius:16px;
   background:linear-gradient(180deg,rgba(23,26,36,.92),rgba(18,20,28,.92));
   border:1px solid var(--riga); cursor:pointer; overflow:hidden;
   transition:transform .14s ease, border-color .2s ease, box-shadow .3s ease}
 .rullo:active{transform:scale(.97)}
-.rullo .quale{font-size:10px; letter-spacing:.5px; text-transform:uppercase; color:var(--spento)}
-.rullo .nome{margin-top:5px; font-weight:700; line-height:1.22; overflow-wrap:anywhere;
-  font-size:14px}
+.rullo .quale{font-size:11px; letter-spacing:.5px; text-transform:uppercase; color:var(--spento)}
+.rullo .nome{margin-top:7px; font-weight:700; line-height:1.2; overflow-wrap:anywhere;
+  font-size:18px}
 /* Quello che va davvero al modello, sotto al nome italiano. Piccolo e
    spento: si legge se lo cerchi, non ruba il posto al nome. */
-.rullo .inglese{margin-top:4px; font-size:10.5px; color:#7f899e; line-height:1.3;
-  font-style:italic; display:-webkit-box; -webkit-line-clamp:2;
+.rullo .inglese{margin-top:6px; font-size:11.5px; color:#7f899e; line-height:1.3;
+  font-style:italic; display:-webkit-box; -webkit-line-clamp:3;
   -webkit-box-orient:vertical; overflow:hidden}
-.rullo .esempio{margin-top:3px; font-size:10.5px; color:var(--spento); line-height:1.3;
+.rullo .esempio{margin-top:5px; font-size:11px; color:var(--spento); line-height:1.3;
   display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden}
-.rullo .prezzo{position:absolute; left:9px; bottom:6px; font-size:11px; font-weight:700;
+.rullo .prezzo{position:absolute; left:13px; bottom:9px; font-size:12px; font-weight:700;
   font-variant-numeric:tabular-nums}
-.rullo .fermo{position:absolute; right:8px; bottom:6px; font-size:10px; color:var(--oro);
+.rullo .fermo{position:absolute; right:12px; bottom:9px; font-size:11px; color:var(--oro);
   opacity:0; transition:opacity .15s ease}
 .rullo .barra{position:absolute; left:0; top:0; right:0; height:3px; background:var(--spento)}
 
@@ -220,6 +222,8 @@ h2:first-child{margin-top:2px}
 .pastiglia{display:inline-block; padding:2px 9px; border-radius:999px; font-size:11px;
   font-weight:700; border:1px solid currentColor}
 .riga-tasti{display:flex; gap:8px; margin-top:9px; flex-wrap:wrap}
+.conto{margin-top:8px; font-size:12px; color:var(--spento)}
+.conto b{color:var(--oro)}
 .riga-tasti input{flex:1; min-width:110px; padding:9px 10px; border-radius:10px;
   border:1px solid var(--riga); background:rgba(9,11,16,.8); color:var(--testo)}
 .gradi-scelta{display:flex; flex-wrap:wrap; gap:5px; margin-top:8px}
@@ -247,6 +251,61 @@ nav .pallino{display:inline-block; min-width:16px; padding:0 4px; margin-left:4p
   border-radius:999px; background:var(--rosso); color:#fff; font-size:10px;
   animation:batte 1.6s ease-in-out infinite}
 @keyframes batte{0%,100%{transform:scale(1)} 50%{transform:scale(1.16)}}
+
+/* ------------------------------------------------------------- il livello */
+.livello{display:flex; align-items:center; gap:7px; padding:5px 11px 5px 7px;
+  border-radius:999px; border:1px solid var(--riga); background:rgba(18,20,28,.8);
+  color:var(--testo); cursor:pointer}
+.livello .numero{display:grid; place-items:center; width:23px; height:23px; border-radius:50%;
+  background:var(--luce); color:#0b0d12; font-weight:800; font-size:12px;
+  transition:background 700ms ease}
+.livello .barra{display:block; width:52px; height:6px; border-radius:999px;
+  background:rgba(255,255,255,.1); overflow:hidden}
+.livello .barra .dentro{display:block; height:100%; width:0%; border-radius:999px;
+  background:var(--luce); transition:width .5s ease, background 700ms ease}
+.livello.su{animation:soldi-su .6s ease}
+
+/* --------------------------------------------------------------- lo shop */
+/* La forma e' quella del DigiPrint che ha passato Cammo il 10 settembre 2026:
+   griglia di schede, nastro in alto a sinistra, copertina grande, prezzo in
+   basso col tasto. Cambiati i colori, che li' erano di quel sito e qui sono
+   quelli del grado. */
+.vetrina-testa{display:flex; align-items:center; justify-content:space-between;
+  gap:14px; flex-wrap:wrap; margin-top:2px}
+.vetrina-testa h2{margin:0}
+.spiegone{margin:0 0 14px; color:var(--spento); font-size:13px; max-width:640px}
+
+.prodotti{display:grid; grid-template-columns:repeat(2,1fr); gap:12px}
+@media (min-width:700px){ .prodotti{grid-template-columns:repeat(3,1fr)} }
+@media (min-width:980px){ .prodotti{grid-template-columns:repeat(4,1fr)} }
+
+.prodotto{position:relative; border-radius:18px; overflow:hidden;
+  background:linear-gradient(180deg,rgba(23,26,36,.95),rgba(16,18,25,.95));
+  border:1px solid var(--riga); transition:transform .2s ease, box-shadow .3s ease,
+  border-color .2s ease}
+.prodotto:hover{transform:translateY(-4px); border-color:var(--g);
+  box-shadow:0 18px 46px color-mix(in srgb, var(--g) 22%, transparent)}
+.prodotto .nastro{position:absolute; top:10px; left:10px; z-index:3; padding:5px 9px;
+  border-radius:8px; font-size:10.5px; font-weight:800; text-transform:uppercase;
+  letter-spacing:.06em; background:var(--g); color:#12131a}
+.prodotto .mia{position:absolute; top:10px; right:10px; z-index:3; padding:5px 9px;
+  border-radius:8px; font-size:10.5px; font-weight:800; background:rgba(8,9,13,.8);
+  border:1px solid var(--g); color:var(--g)}
+.prodotto .copertina{height:150px; display:grid; place-items:center; font-size:46px;
+  position:relative; background:
+    radial-gradient(120% 100% at 30% 0%, color-mix(in srgb, var(--g) 45%, transparent), transparent 70%),
+    linear-gradient(160deg,#1d2130,#12141c)}
+.prodotto .copertina img{width:100%; height:100%; object-fit:cover; display:block}
+.prodotto .corpo{padding:13px}
+.prodotto h3{margin:0 0 5px; font-size:15px; line-height:1.25; overflow-wrap:anywhere}
+.prodotto .riga{font-size:11.5px; color:var(--spento)}
+.prodotto .fondo{display:flex; align-items:center; justify-content:space-between;
+  gap:9px; margin-top:13px}
+.prodotto .costa{font-size:18px; font-weight:800; color:var(--oro);
+  font-variant-numeric:tabular-nums; white-space:nowrap}
+.prodotto .prendi{border:0; padding:9px 12px; border-radius:10px; color:#12131a;
+  background:var(--g); font-weight:800; cursor:pointer}
+.prodotto .prendi:disabled{opacity:.45; cursor:default}
 
 /* --------------------------------------------------------- il pannellone */
 /* Tenendo premuto si apre questo: una cosa sola, scritta grossa. Serve a chi

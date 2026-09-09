@@ -17,6 +17,8 @@ import { Deposito } from "./deposito";
 import {
   fra,
   gradoDiPrezzo,
+  livelloDi,
+  valoreDaPrendere,
   impronta as improntaDi,
   inGioco,
   meglioDi,
@@ -35,6 +37,7 @@ import type {
   Conto,
   DallaLibreria,
   Era,
+  Grado,
   Giro,
   Pezzo,
   PezzoInGioco,
@@ -158,10 +161,11 @@ export function tira(
   }
 
   const vincite = valuta(pezzi, imp, deposito.formazioni(), caso);
-  const pagato = vincite.reduce((s, v) => s + v.lire, 0);
-  if (pagato > 0) deposito.muovi(chi, pagato);
+  const punti = vincite.reduce((s, v) => s + v.punti, 0);
   const meglio = meglioDi(pezzi);
-  const aggiornato = deposito.segnaGiro(chi, pagato, meglio);
+  const prima = livelloDi(conto.esperienza, imp.perIlLivello);
+  const aggiornato = deposito.segnaGiro(chi, punti, meglio);
+  const livello = livelloDi(aggiornato.esperienza, imp.perIlLivello);
 
   return {
     tavolo,
@@ -169,7 +173,10 @@ export function tira(
     pezzi,
     costo: imp.costoGiro,
     vincite,
-    pagato,
+    punti,
+    esperienza: aggiornato.esperienza,
+    livello,
+    salito: livello > prima,
     meglio,
     valore: valore(pezzi),
     prompt: montaPrompt(pezzi),
@@ -196,7 +203,7 @@ function regalaOgniTanto(deposito: Deposito, chi: string, caso: Caso): Collezion
 
   const presa = pescaPesata(
     nuove,
-    nuove.map((c) => scalino(gradoDiPrezzo(c.prezzo ?? 0)).quantoEsce),
+    nuove.map((c) => scalino(gradoDiFigurina(c)).quantoEsce),
     caso,
   );
   if (!presa) return null;
@@ -205,6 +212,19 @@ function regalaOgniTanto(deposito: Deposito, chi: string, caso: Caso): Collezion
 }
 
 /* --------------------------------------------------- mandare a controllare */
+
+/**
+ * Il grado di una figurina.
+ *
+ * ⚠ **Se sta in vetrina vale quello scelto da chi comanda**, non quello che
+ * verrebbe dal prezzo. Chiesto il 10 settembre 2026: «in base alla rarita' che
+ * sceglie sempre l'admin, e il grado di rarita' puo' essere trovato anche nei
+ * pacchetti se sei fortunato». Quindi e' lo stesso numero a dire due cose:
+ * quanto costa in vetrina e quanto raramente cade da un pacchetto.
+ */
+export function gradoDiFigurina(c: Collezionabile): Grado {
+  return c.inVetrina && c.gradoVetrina ? c.gradoVetrina : gradoDiPrezzo(c.prezzo ?? 0);
+}
 
 /** Il titolo di una figurina: i nomi italiani dei pezzi, uno dietro l'altro. */
 function titoloDi(pezzi: PezzoInGioco[]): string {
@@ -414,6 +434,24 @@ export function mandaDallaLibreria(
 }
 
 /**
+ * Quanto valgono, sommati, i pezzi di cui e' fatta una combinazione.
+ *
+ * E' il valore **di base** di una figurina: non lo decide nessuno, viene dalla
+ * rarita' dei dodici pezzi, che viene dai dati veri. Per le cose che non sono
+ * prompt — una foto, un brano — di pezzi non ce ne sono, e la somma e' zero:
+ * li' decide tutto il bonus di chi comanda.
+ */
+export function sommaDeiPezzi(deposito: Deposito, c: Collezionabile): number {
+  if (!c.pezzi || c.pezzi.length === 0) return 0;
+  let somma = 0;
+  for (const id of c.pezzi) {
+    const pezzo = pezzoPerId(deposito, id);
+    if (pezzo) somma += pezzo.prezzo;
+  }
+  return somma;
+}
+
+/**
  * Chi comanda la prende: le da' un prezzo e la mette in magazzino.
  *
  * Tre cose insieme, e vanno insieme:
@@ -428,12 +466,15 @@ export function prendi(
   deposito: Deposito,
   admin: string,
   id: string,
-  prezzo: number,
+  bonus: number,
+  allegato?: DallaLibreria,
 ): Collezionabile {
   const c = deposito.perId(id);
   if (!c) throw new NienteDaFare("Questa non c'e'.");
   if (c.stato !== "in-attesa") throw new NienteDaFare("Su questa e' gia' stato deciso.");
-  const lire = Math.max(1, Math.round(prezzo));
+
+  const lire = valoreDaPrendere(sommaDeiPezzi(deposito, c), bonus);
+  if (allegato && allegato.id) c.allegato = allegato;
 
   c.stato = "presa";
   c.prezzo = lire;
@@ -529,7 +570,7 @@ export function apriPacchetto(
   for (let i = 0; i < Math.max(1, imp.perPacchetto); i++) {
     const presa = pescaPesata(
       dentro,
-      dentro.map((c) => scalino(gradoDiPrezzo(c.prezzo ?? 0)).quantoEsce),
+      dentro.map((c) => scalino(gradoDiFigurina(c)).quantoEsce),
       caso,
     );
     if (!presa) break;
@@ -551,6 +592,98 @@ export function apriPacchetto(
     vinto,
     saldo: deposito.conto(chi).saldo,
   };
+}
+
+/* ---------------------------------------------------------------- lo shop */
+
+/**
+ * Quanto costa in vetrina una figurina di quel grado, se chi comanda non
+ * scrive un prezzo suo.
+ *
+ * ⚠ **Nello shop si paga caro, ed e' voluto.** Chiesto il 10 settembre 2026:
+ * «l'item nello shop costa molto, ma in base alla rarita' che sceglie sempre
+ * l'admin». Il senso e' che comprare non deve mai essere la strada comoda:
+ * quella stessa figurina cade anche da un pacchetto, se sei fortunato. Chi
+ * compra sta pagando **di non aspettare la fortuna**, e quello si paga.
+ *
+ * Venti volte la soglia del grado: un Rare in vetrina sta sulle 240 lire, un
+ * Mythic sulle diciassettemila. Con la slot che rende solo esperienza, quelle
+ * lire arrivano da una parte sola — inventando roba che a chi comanda piace.
+ */
+export function prezzoConsigliato(grado: Grado): number {
+  return Math.max(50, scalino(grado).da * 20);
+}
+
+/**
+ * Chi comanda mette una figurina in vetrina.
+ *
+ * Due cose insieme, e sono tutte e due sue: **che grado ha nello shop** e
+ * **quanto costa**. Il grado di vetrina non e' quello che ha nella slot — li'
+ * lo decidono i dati, qui lo decide una persona — ed e' quel grado a dire
+ * quanto raramente la stessa figurina cade da un pacchetto.
+ */
+export function mettiInVetrina(
+  deposito: Deposito,
+  id: string,
+  grado: Grado,
+  prezzo?: number,
+): Collezionabile {
+  const c = deposito.perId(id);
+  if (!c) throw new NienteDaFare("Questa non c'e'.");
+  if (c.stato !== "presa") {
+    throw new NienteDaFare("In vetrina ci va solo roba gia' presa: prima decidi se vale.");
+  }
+  c.inVetrina = true;
+  c.gradoVetrina = grado;
+  c.prezzoVetrina = Math.max(1, Math.round(prezzo && prezzo > 0 ? prezzo : prezzoConsigliato(grado)));
+  deposito.salva();
+  return c;
+}
+
+export function togliDallaVetrina(deposito: Deposito, id: string): Collezionabile {
+  const c = deposito.perId(id);
+  if (!c) throw new NienteDaFare("Questa non c'e'.");
+  c.inVetrina = false;
+  deposito.salva();
+  return c;
+}
+
+/** Quello che si puo' comprare adesso, dal piu' caro al piu' abbordabile. */
+export function vetrina(deposito: Deposito): Collezionabile[] {
+  return deposito
+    .collezionabili()
+    .filter((c) => c.inVetrina && c.stato === "presa")
+    .sort((a, b) => (b.prezzoVetrina ?? 0) - (a.prezzoVetrina ?? 0));
+}
+
+export interface Acquisto {
+  cosa: Collezionabile;
+  costo: number;
+  saldo: number;
+}
+
+/**
+ * Comprare una figurina dalla vetrina.
+ *
+ * Non c'e' fortuna di mezzo: paghi e ce l'hai. E' l'unica strada **sicura** per
+ * avere una cosa precisa, ed e' cara apposta — le altre due (il pacchetto e il
+ * regalo girando) costano meno e non promettono niente.
+ */
+export function compra(deposito: Deposito, chi: string, id: string): Acquisto {
+  const c = deposito.perId(id);
+  if (!c) throw new NienteDaFare("Questa non c'e'.");
+  if (!c.inVetrina || c.stato !== "presa") throw new NienteDaFare("Questa non e' in vendita.");
+
+  const conto = deposito.conto(chi);
+  if (conto.collezione.includes(c.id)) throw new NienteDaFare("Ce l'hai gia'.");
+
+  const costo = c.prezzoVetrina ?? prezzoConsigliato(c.gradoVetrina ?? "basic");
+  if (conto.saldo < costo) {
+    throw new NienteDaFare("Ti mancano " + (costo - conto.saldo) + " lire.");
+  }
+  deposito.muovi(chi, -costo);
+  deposito.colleziona(chi, c.id);
+  return { cosa: c, costo, saldo: deposito.conto(chi).saldo };
 }
 
 /* -------------------------------------------------------------- classifica */

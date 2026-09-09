@@ -17,6 +17,14 @@
 export const MARKUP = `<header>
   <div class="marchio">DaProd<span>Giochi</span></div>
   <div class="cresci"></div>
+  <!--
+    Il livello, con la barra che si riempie. E' quello che si guadagna girando:
+    dalla slot escono punti, non lire (CONCETTI.md § 4).
+  -->
+  <button class="livello" id="livello" title="Esperienza">
+    <span class="numero" id="livello-numero">1</span>
+    <span class="barra"><span class="dentro" id="livello-barra"></span></span>
+  </button>
   <div class="chi" id="mio-nome"></div>
   <!-- Il saldo si tocca: passa da lire a euro e torna. Il conto resta in lire. -->
   <button class="saldo" id="saldo" title="Tocca per vedere in euro">L. 0</button>
@@ -69,6 +77,19 @@ export const MARKUP = `<header>
     <div id="album-figurine"></div>
   </section>
 
+  <!-- =============================================================== shop -->
+  <section class="pagina" id="p-shop">
+    <div class="vetrina-testa">
+      <h2>Lo shop</h2>
+      <div class="fila-scelte" id="shop-tipi"></div>
+    </div>
+    <p class="spiegone">
+      Qui si compra senza fortuna di mezzo: paghi e ce l'hai. Costa caro apposta —
+      la stessa roba cade anche dai pacchetti, se sei fortunato.
+    </p>
+    <div class="prodotti" id="shop-roba"></div>
+  </section>
+
   <!-- ================================================================ casa -->
   <section class="pagina" id="p-casa">
     <h2>Chi sta davanti</h2>
@@ -94,6 +115,7 @@ export const MARKUP = `<header>
   <button class="viva" data-va="slot">Slot</button>
   <button data-va="mie">Mie</button>
   <button data-va="album">Album</button>
+  <button data-va="shop">Shop</button>
   <button data-va="casa">Casa</button>
   <button data-va="fila" id="tasto-fila" hidden>Fila<span class="pallino" id="quante-attesa" hidden></span></button>
 </nav>

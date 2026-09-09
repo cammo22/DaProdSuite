@@ -52,8 +52,15 @@ export interface Scalino {
   fuoco: 0 | 1 | 2 | 3;
   /** Quante volte su mille esce questo grado, quando si pesca. */
   quantoEsce: number;
-  /** Quanto paga se esce almeno uno di questo grado, in lire. */
-  paga: number;
+  /**
+   * Quanti **punti esperienza** da' se ne esce almeno uno.
+   *
+   * ⚠ Punti, non lire. Deciso il 10 settembre 2026: girare la slot **costa**
+   * lire e rende **esperienza**. Le lire si guadagnano in un modo solo —
+   * inventando combinazioni che a chi comanda piacciono. Chi gioca e basta
+   * sale di livello; chi crea, si arricchisce.
+   */
+  punti: number;
 }
 
 /* -------------------------------------------------------------------- pezzi */
@@ -157,7 +164,8 @@ export interface Vincita {
   motivo: string;
   /** Come si legge: «un Mythic», «tre Divine insieme». */
   detto: string;
-  lire: number;
+  /** I punti esperienza guadagnati. Dalla slot non escono lire. */
+  punti: number;
   /** Quanto deve accendersi lo schermo: 0 niente, 3 tutto. */
   fuoco: 0 | 1 | 2 | 3;
 }
@@ -170,9 +178,15 @@ export interface Giro {
   pezzi: PezzoInGioco[];
   /** Quanto e' costato il giro. */
   costo: number;
-  /** Le vincite, gia' sommate in `pagato`. Vuoto vuol dire buca. */
+  /** Le vincite, gia' sommate in `punti`. Vuoto vuol dire buca. */
   vincite: Vincita[];
-  pagato: number;
+  /** I punti esperienza presi con questo giro. */
+  punti: number;
+  /** L'esperienza totale dopo, e a che livello si e' arrivati. */
+  esperienza: number;
+  livello: number;
+  /** Vero se con questo giro si e' salito di livello. */
+  salito: boolean;
   /** Il grado piu' alto uscito: e' quello che decide la scena. */
   meglio: Grado;
   /** La somma dei prezzi dei pezzi usciti: quanto «vale» quello che vedi. */
@@ -235,6 +249,14 @@ export interface DallaLibreria {
   id: string;
   /** `image/png`, `audio/mpeg`… serve alla pagina per sapere come mostrarla. */
   mime: string;
+  /**
+   * L'indirizzo diretto, quando non c'e' una libreria a cui chiederlo.
+   *
+   * Nella suite si usa l'id e l'indirizzo lo da' chi ospita. Fuori dalla suite
+   * — mentre si prova — un indirizzo scritto a mano e' l'unico modo di
+   * attaccare davvero una copertina a una figurina.
+   */
+  url?: string;
   /** Il prompt con cui e' stata fatta, se si sa. Si legge, non si usa. */
   comeEraFatta?: string;
 }
@@ -267,6 +289,35 @@ export interface Collezionabile {
   /* --- solo per le cose che si guardano o si ascoltano --- */
   libreria?: DallaLibreria;
 
+  /**
+   * **Il contenuto allegato**: la cosa venuta fuori da quel prompt.
+   *
+   * ⚠ Chiesto il 10 settembre 2026: «quando gli admin accettano una
+   * combinazione e ci creano un contenuto allegato». Un prompt e' una riga di
+   * testo; con l'immagine o il brano che ne e' uscito attaccati sopra diventa
+   * una figurina che si guarda. E' anche la copertina della sua scheda nello
+   * shop — senza, uno comprerebbe una parola.
+   *
+   * Sta separato da `libreria` di proposito: quello e' «questa figurina **e'**
+   * una foto», questo e' «questa figurina e' un prompt, **e ha prodotto** una
+   * foto».
+   */
+  allegato?: DallaLibreria;
+
+  /* --- lo shop --- */
+
+  /**
+   * In vetrina: si puo' comprare in lire, senza aspettare la fortuna.
+   *
+   * Ce la mette chi comanda, e decide due cose: **che grado ha nello shop** e
+   * **quanto costa**. Non e' lo stesso grado che ha nella slot — nello shop
+   * chi comanda sceglie, ed e' quel grado a dire quanto raramente la stessa
+   * figurina cade da un pacchetto.
+   */
+  inVetrina?: boolean;
+  prezzoVetrina?: number;
+  gradoVetrina?: Grado;
+
   daChi: string;
   quando: number;
   stato: StatoCollezionabile;
@@ -296,6 +347,14 @@ export interface Conto {
   chi: string;
   /** Lire. Intero, mai negativo. */
   saldo: number;
+  /**
+   * I punti esperienza, che non si spendono mai: si accumulano e basta.
+   *
+   * Sono la misura di **quanto hai giocato**; il saldo e' la misura di quanto
+   * hai **creato**. Due numeri per due cose diverse, e nessuno dei due si puo'
+   * convertire nell'altro.
+   */
+  esperienza: number;
   giri: number;
   /** Quanto ha vinto in tutto: serve alla classifica, non al saldo. */
   vinteTot: number;
@@ -339,19 +398,21 @@ export interface Impostazioni {
    */
   unaOgniGiri: number;
   /**
-   * Quanto paga ogni grado quando ne esce almeno uno, in lire.
+   * Quanti punti esperienza da' ogni grado quando ne esce almeno uno.
    *
-   * ⚠ **Paga solo il grado piu' alto**, non tutti quelli usciti: se pagassero
-   * tutti, un Mythic incasserebbe anche il premio del Basic accanto, e i numeri
+   * ⚠ **Conta solo il grado piu' alto**, non tutti quelli usciti: se contassero
+   * tutti, un Mythic prenderebbe anche i punti del Basic accanto, e i numeri
    * smetterebbero di voler dire quello che dicono.
    */
-  pagaPerGrado: Partial<Record<Grado, number>>;
+  puntiPerGrado: Partial<Record<Grado, number>>;
   /** Il premio in piu' quando tre caselle hanno lo stesso grado, da Rare in su. */
   trisMoltiplicatore: number;
-  /** Schermo pieno: tutte le caselle da questo grado in su. */
+  /** Schermo pieno: tutte le caselle da questo grado in su. Paga in punti. */
   pienoDa: Grado;
   pienoMin: number;
   pienoMax: number;
+  /** Quanta esperienza serve per salire di livello, la prima volta. */
+  perIlLivello: number;
   /** Se non e' uscito niente, ogni tanto consola. */
   quasiPercentuale: number;
   quasiMin: number;

@@ -8,7 +8,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "prova": "node scripts/niente-apici.mjs --provami && node scripts/prova.mjs && node scripts/prova-fila.mjs",
+    "prova": "node scripts/niente-apici.mjs --provami && node scripts/prova.mjs && node scripts/prova-fila.mjs && node scripts/prova-shop.mjs",
     "a-mano": "node scripts/prova-a-mano.mjs"
   },
   "dependencies": {

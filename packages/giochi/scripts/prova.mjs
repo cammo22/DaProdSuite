@@ -28,6 +28,7 @@ import {
   gradoDiPrezzo,
   IMPOSTAZIONI_DI_PARTENZA,
   lire,
+  livelloDi,
   meglioDi,
   montaPrompt,
   NienteDaFare,
@@ -36,7 +37,9 @@ import {
   RULLI_IMMAGINI,
   RULLI_MUSICA,
   tira,
+  valoreDaPrendere,
   valuta,
+  versoIlProssimo,
 } from "../dist/index.js";
 import { cartellaFinta, dado, prova, tirandoLeSomme, uguale, vero } from "./attrezzi.mjs";
 
@@ -60,11 +63,40 @@ prova("quanto escono i gradi fa mille tondo", () => {
   uguale(somma, 1000, "se non fa mille, «uno su mille» non vuol dire niente");
 });
 
-prova("piu' e' raro, piu' paga", () => {
+prova("piu' e' raro, piu' esperienza da'", () => {
   for (let i = 1; i < GRADI.length; i++) {
-    vero(GRADI[i].paga >= GRADI[i - 1].paga, GRADI[i].id + " paga meno di quello sotto");
+    vero(GRADI[i].punti >= GRADI[i - 1].punti, GRADI[i].id + " da' meno punti di quello sotto");
   }
   uguale(GRADI[GRADI.length - 1].id, "mythic");
+});
+
+prova("dalla slot non escono lire: solo punti", () => {
+  const v = valuta(dodici("basic", "mythic"), IMPOSTAZIONI_DI_PARTENZA, [], dado(0.99));
+  vero(v.length > 0, "un Mythic qualcosa deve darlo");
+  for (const x of v) {
+    vero(typeof x.punti === "number" && x.punti > 0, "ogni vincita e' in punti");
+    uguale(x.lire, undefined, "e nessuna vincita porta lire");
+  }
+});
+
+prova("il livello sale, e ogni volta costa di piu'", () => {
+  uguale(livelloDi(0, 500), 1);
+  uguale(livelloDi(499, 500), 1);
+  uguale(livelloDi(500, 500), 2, "cinquecento punti fanno il secondo livello");
+  uguale(livelloDi(1499, 500), 2);
+  uguale(livelloDi(1500, 500), 3, "il terzo ne costa altri mille");
+  uguale(livelloDi(3000, 500), 4);
+  const dove = versoIlProssimo(1600, 500);
+  uguale(dove.livello, 3);
+  uguale(dove.dentro, 100);
+  uguale(dove.serve, 1500, "al quarto ne servono millecinquecento");
+});
+
+prova("il valore di una presa e' la somma dei pezzi piu' il bonus", () => {
+  uguale(valoreDaPrendere(240, 60), 300);
+  uguale(valoreDaPrendere(240, 0), 240, "il bonus puo' essere zero");
+  uguale(valoreDaPrendere(0, 0), 1, "e non si scende mai sotto la lira");
+  uguale(valoreDaPrendere(100, -50), 100, "un bonus negativo non toglie niente");
 });
 
 prova("il grado si legge dal prezzo, agli estremi giusti", () => {
@@ -153,7 +185,7 @@ prova("paga il grado piu' alto uscito, e una volta sola", () => {
   const gradi = v.filter((x) => x.motivo.startsWith("grado:"));
   uguale(gradi.length, 1, "un premio di grado, non tre");
   uguale(gradi[0].motivo, "grado:divine");
-  uguale(gradi[0].lire, IMPOSTAZIONI_DI_PARTENZA.pagaPerGrado.divine);
+  uguale(gradi[0].punti, IMPOSTAZIONI_DI_PARTENZA.puntiPerGrado.divine);
 });
 
 prova("il tris si somma al premio del grado", () => {
@@ -163,8 +195,8 @@ prova("il tris si somma al premio del grado", () => {
   vero(grado, "il premio del grado ci deve essere");
   vero(tris, "e il tris pure");
   uguale(
-    tris.lire,
-    IMPOSTAZIONI_DI_PARTENZA.pagaPerGrado.arcane * IMPOSTAZIONI_DI_PARTENZA.trisMoltiplicatore,
+    tris.punti,
+    IMPOSTAZIONI_DI_PARTENZA.puntiPerGrado.arcane * IMPOSTAZIONI_DI_PARTENZA.trisMoltiplicatore,
   );
 });
 
@@ -173,17 +205,22 @@ prova("due soli dello stesso grado non fanno tris", () => {
   uguale(v.filter((x) => x.motivo.startsWith("tris:")).length, 0);
 });
 
-prova("un tris di Basic non paga: il tris parte da Rare", () => {
+prova("un tris di Basic non fa tris: il tris parte da Rare", () => {
   const v = valuta(dodici("basic"), IMPOSTAZIONI_DI_PARTENZA, [], dado(0.99));
-  uguale(v.length, 0, "dodici Basic e il dado alto: niente");
+  uguale(v.filter((x) => x.motivo.startsWith("tris:")).length, 0);
+  // Un punto lo da' lo stesso: con l'esperienza al posto delle lire, ogni giro
+  // fa avanzare di qualcosa. Il giro a mani vuote non esiste piu'.
+  uguale(v.length, 1);
+  uguale(v[0].motivo, "grado:basic");
+  uguale(v[0].punti, 1);
 });
 
 prova("schermo pieno: tutte da Heroic in su", () => {
   const v = valuta(dodici("heroic"), IMPOSTAZIONI_DI_PARTENZA, [], dado(0));
   const pieno = v.find((x) => x.motivo === "pieno");
   vero(pieno, "doveva essere schermo pieno");
-  vero(pieno.lire >= IMPOSTAZIONI_DI_PARTENZA.pienoMin, "paga almeno il minimo");
-  vero(pieno.lire <= IMPOSTAZIONI_DI_PARTENZA.pienoMax, "e non sfonda il massimo");
+  vero(pieno.punti >= IMPOSTAZIONI_DI_PARTENZA.pienoMin, "da' almeno il minimo");
+  vero(pieno.punti <= IMPOSTAZIONI_DI_PARTENZA.pienoMax, "e non sfonda il massimo");
   uguale(pieno.fuoco, 3, "lo schermo si deve accendere tutto");
 });
 
@@ -192,20 +229,23 @@ prova("una casella sotto Heroic e lo schermo pieno non c'e'", () => {
   uguale(v.filter((x) => x.motivo === "pieno").length, 0);
 });
 
-prova("la quasi-vincita esce col dado basso e non con quello alto", () => {
-  const tutti = dodici("basic");
-  const esce = valuta(tutti, IMPOSTAZIONI_DI_PARTENZA, [], dado(0.1, 0.5));
-  uguale(esce.length, 1, "col 10% deve consolare");
-  uguale(esce[0].motivo, "quasi");
-  const niente = valuta(tutti, IMPOSTAZIONI_DI_PARTENZA, [], dado(0.9));
-  uguale(niente.length, 0, "col 90% non deve dare niente");
+prova("la consolazione esce sui giri grigi, e solo li'", () => {
+  const grigio = dodici("basic");
+  const esce = valuta(grigio, IMPOSTAZIONI_DI_PARTENZA, [], dado(0.1, 0.5));
+  vero(esce.some((x) => x.motivo === "quasi"), "col 10% deve consolare");
+  const niente = valuta(grigio, IMPOSTAZIONI_DI_PARTENZA, [], dado(0.9));
+  uguale(niente.filter((x) => x.motivo === "quasi").length, 0, "col 90% no");
+
+  // Su un giro che ha gia' dato qualcosa di buono non serve consolare nessuno.
+  const buono = valuta(dodici("basic", "divine"), IMPOSTAZIONI_DI_PARTENZA, [], dado(0.01));
+  uguale(buono.filter((x) => x.motivo === "quasi").length, 0, "con un Divine non si consola");
 });
 
 prova("una formazione paga in qualunque ordine, e si somma", () => {
   const pezzi = dodici("basic", "rare");
   const f = [{ id: "f1", nome: "La tripletta", pezzi: ["finto/5", "finto/0"], premio: 77 }];
   const v = valuta(pezzi, IMPOSTAZIONI_DI_PARTENZA, f, dado(0.99));
-  uguale(v.find((x) => x.motivo === "formazione:f1").lire, 77);
+  uguale(v.find((x) => x.motivo === "formazione:f1").punti, 77);
 });
 
 prova("il grado migliore di una manciata e' quello piu' in alto", () => {
@@ -229,7 +269,9 @@ prova("un giro costa, e il costo si vede nel saldo", () => {
     const prima = d.conto("tizio").saldo;
     const giro = tira(d, "tizio", "immagini", "sempre", [], Math.random);
     uguale(giro.costo, IMPOSTAZIONI_DI_PARTENZA.costoGiro);
-    uguale(giro.saldo, prima - giro.costo + giro.pagato);
+    uguale(giro.saldo, prima - giro.costo, "girare costa e basta: lire non ne rende");
+    vero(giro.punti >= 0, "e rende punti esperienza");
+    vero(giro.livello >= 1, "il livello parte da uno");
     uguale(giro.pezzi.length, 12, "un pezzo per rullo, e i rulli sono dodici");
     vero(giro.prompt.length > 0, "il prompt non puo' essere vuoto");
     vero(GRADI_ID.includes(giro.meglio), "il giro deve dire qual e' stato il grado migliore");

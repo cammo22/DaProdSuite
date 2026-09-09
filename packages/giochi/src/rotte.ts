@@ -18,6 +18,13 @@ import {
   apriPacchetto,
   butta,
   classifica,
+  compra,
+  gradoDiFigurina,
+  mettiInVetrina,
+  prezzoConsigliato,
+  sommaDeiPezzi,
+  togliDallaVetrina,
+  vetrina,
   manda,
   mandaDallaLibreria,
   NienteDaFare,
@@ -28,9 +35,9 @@ import {
   tira,
 } from "./banco";
 import type { Deposito } from "./deposito";
-import { EPOCHE, GRADI, gradoDiPrezzo, lire } from "./regole";
+import { EPOCHE, GRADI, lire, versoIlProssimo } from "./regole";
 import { rulliDi } from "./rulli";
-import type { Collezionabile, Era, Tavolo, TipoCollezionabile } from "./tipi";
+import type { Collezionabile, Era, Grado, Tavolo, TipoCollezionabile } from "./tipi";
 
 /** Chi sta chiedendo. Nella suite e' il dispositivo accoppiato. */
 export interface Chi {
@@ -93,18 +100,28 @@ function numero(cosa: unknown, seManca: number): number {
  * vede tutto, perche' deve poterle controllare.
  */
 function vestita(c: Collezionabile, contorno: Contorno, scoperta: boolean) {
-  const grado = gradoDiPrezzo(c.prezzo ?? 0);
+  const grado = gradoDiFigurina(c);
+  const dove = (l?: { id: string; url?: string }) =>
+    !l ? "" : (l.url ?? (contorno.indirizzoLibreria ? (contorno.indirizzoLibreria(l.id) ?? "") : ""));
   return {
     id: c.id,
     tipo: c.tipo,
     titolo: c.titolo,
     prompt: scoperta ? (c.prompt ?? "") : "",
     /** Dove si guarda o si ascolta, per le figurine che non sono prompt. */
-    dove:
-      scoperta && c.libreria && contorno.indirizzoLibreria
-        ? (contorno.indirizzoLibreria(c.libreria.id) ?? "")
-        : "",
+    dove: scoperta ? dove(c.libreria) : "",
     mime: c.libreria?.mime ?? "",
+    /**
+     * La copertina: la cosa venuta fuori da quel prompt.
+     *
+     * Si vede **anche da coperta**, ed e' voluto: nello shop uno deve poter
+     * guardare cosa sta comprando. Il prompt no — quello resta nascosto finche'
+     * non e' tuo.
+     */
+    allegato: dove(c.allegato),
+    allegatoMime: c.allegato?.mime ?? "",
+    inVetrina: c.inVetrina === true,
+    prezzoVetrina: c.prezzoVetrina ?? 0,
     scoperta,
     numero: c.numero ?? 0,
     prezzo: c.prezzo ?? 0,
@@ -151,6 +168,8 @@ export function rispondi(
           collezione: conto.collezione.length,
           colpoGrosso: conto.colpoGrosso,
           migliorGrado: conto.migliorGrado ?? "",
+          esperienza: conto.esperienza,
+          ...versoIlProssimo(conto.esperienza, imp.perIlLivello),
         },
         // I numeri che si vedono: quanto costa una cosa, non come si pesca.
         costi: {
@@ -158,8 +177,9 @@ export function rispondi(
           pacchetto: imp.costoPacchetto,
           perPacchetto: imp.perPacchetto,
           perSerie: imp.perSerie,
+          perIlLivello: imp.perIlLivello,
         },
-        gradi: GRADI,
+        gradi: GRADI.map((g) => ({ ...g, inVetrina: prezzoConsigliato(g.id) })),
         epoche: EPOCHE,
         tavoli: [
           { id: "musica", nome: "Musica", rulli: rulliDi("musica") },
@@ -259,6 +279,48 @@ export function rispondi(
       });
     }
 
+    /* ---------------------------------------------------------------- lo shop */
+
+    if (metodo === "GET" && percorso === "/vetrina") {
+      const conto = deposito.conto(chi.id);
+      return OK({
+        roba: vetrina(deposito).map((c) => ({
+          ...vestita(c, contorno, conto.collezione.includes(c.id) || chi.admin),
+          mia: conto.collezione.includes(c.id),
+          costo: c.prezzoVetrina ?? 0,
+        })),
+      });
+    }
+
+    if (metodo === "POST" && percorso === "/compra") {
+      const acquisto = compra(deposito, chi.id, String(corpo["id"] ?? ""));
+      return OK({
+        cosa: vestita(acquisto.cosa, contorno, true),
+        costo: acquisto.costo,
+        saldo: acquisto.saldo,
+        saldoScritto: lire(acquisto.saldo),
+      });
+    }
+
+    if (percorso === "/vetrina/metti" || percorso === "/vetrina/togli") {
+      if (!chi.admin) return NO(403, "La vetrina la decide chi comanda.");
+    }
+
+    if (metodo === "POST" && percorso === "/vetrina/metti") {
+      const c = mettiInVetrina(
+        deposito,
+        String(corpo["id"] ?? ""),
+        String(corpo["grado"] ?? "rare") as Grado,
+        numero(corpo["prezzo"], 0),
+      );
+      return OK(vestita(c, contorno, true));
+    }
+
+    if (metodo === "POST" && percorso === "/vetrina/togli") {
+      const c = togliDallaVetrina(deposito, String(corpo["id"] ?? ""));
+      return OK(vestita(c, contorno, true));
+    }
+
     /* ---------------------------------------------------------- la classifica */
 
     if (metodo === "GET" && percorso === "/classifica") {
@@ -283,7 +345,12 @@ export function rispondi(
         .collezionabili()
         .filter((c) => c.stato === "in-attesa")
         .sort((a, b) => a.quando - b.quando)
-        .map((c) => vestita(c, contorno, true));
+        .map((c) => ({
+          ...vestita(c, contorno, true),
+          // Il valore di base: la somma dei pezzi. Chi comanda ci aggiunge
+          // solo il bonus, cosi' non deve inventarsi un numero da zero.
+          base: sommaDeiPezzi(deposito, c),
+        }));
       const decise = deposito
         .collezionabili()
         .filter((c) => c.stato !== "in-attesa")
@@ -294,7 +361,20 @@ export function rispondi(
     }
 
     if (metodo === "POST" && percorso === "/prendi") {
-      const c = prendi(deposito, chi.id, String(corpo["id"] ?? ""), numero(corpo["prezzo"], 0));
+      const allegato = corpo["allegato"]
+        ? {
+            id: String(corpo["allegato"]),
+            mime: String(corpo["allegatoMime"] ?? "image/*"),
+            url: String(corpo["allegato"]),
+          }
+        : undefined;
+      const c = prendi(
+        deposito,
+        chi.id,
+        String(corpo["id"] ?? ""),
+        numero(corpo["bonus"], 0),
+        allegato,
+      );
       return OK(vestita(c, contorno, true));
     }
 

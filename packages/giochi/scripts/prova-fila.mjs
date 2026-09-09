@@ -21,6 +21,7 @@ import {
   NienteDaFare,
   prendi,
   serieChiuse,
+  sommaDeiPezzi,
   statoMagazzino,
   tira,
 } from "../dist/index.js";
@@ -101,13 +102,13 @@ prova("chi ci arriva dopo, a una gia' presa, viene premiato come il primo", () =
   conCartella((file) => {
     const t = tavolino(file);
     const primo = manda(t.d, "pino", "musica", "sempre", t.pezzi);
-    prendi(t.d, "cammo", primo.cosa.id, 300);
+    const presa = prendi(t.d, "cammo", primo.cosa.id, 300);
 
     const prima = t.d.conto("gino").saldo;
     const secondo = manda(t.d, "gino", "musica", "sempre", t.pezzi);
     uguale(secondo.esito, "riscoperta");
-    uguale(secondo.lire, 300, "lo stesso premio di chi l'ha scoperta");
-    uguale(t.d.conto("gino").saldo, prima + 300);
+    uguale(secondo.lire, presa.prezzo, "lo stesso premio di chi l'ha scoperta");
+    uguale(t.d.conto("gino").saldo, prima + presa.prezzo);
     vero(
       t.d.conto("gino").collezione.indexOf(primo.cosa.id) >= 0,
       "e la figurina va in collezione anche a lui",
@@ -136,11 +137,12 @@ prova("il premio della riscoperta e' quello vero, non uno fisso", () =>
   conCartella((file) => {
     const t = tavolino(file);
     const primo = manda(t.d, "pino", "musica", "sempre", t.pezzi);
-    prendi(t.d, "cammo", primo.cosa.id, 1234);
+    const presa = prendi(t.d, "cammo", primo.cosa.id, 1234);
+    vero(presa.prezzo > 1234, "il bonus si somma ai pezzi, non li sostituisce");
     const prima = t.d.conto("gino").saldo;
     const secondo = manda(t.d, "gino", "musica", "sempre", t.pezzi);
-    uguale(secondo.lire, 1234);
-    uguale(t.d.conto("gino").saldo, prima + 1234);
+    uguale(secondo.lire, presa.prezzo);
+    uguale(t.d.conto("gino").saldo, prima + presa.prezzo);
   }),
 );
 
@@ -183,12 +185,16 @@ prova("prendere: paga chi l'ha mandata, e gliela mette in collezione", () =>
     const t = tavolino(file);
     const c = manda(t.d, "pino", "musica", "sempre", t.pezzi).cosa;
     const prima = t.d.conto("pino").saldo;
+    // ⚠ Il terzo numero e' il **bonus**, non il prezzo: il prezzo e' la somma
+    // dei dodici pezzi piu' quello. Chiesto il 10 settembre 2026.
+    const base = sommaDeiPezzi(t.d, c);
+    vero(base > 0, "dodici pezzi qualcosa devono valere");
     const presa = prendi(t.d, "cammo", c.id, 300);
     uguale(presa.stato, "presa");
-    uguale(presa.prezzo, 300);
+    uguale(presa.prezzo, base + 300, "i pezzi piu' il bonus");
     uguale(presa.numero, 1, "il primo posto in magazzino e' l'uno");
     uguale(presa.daAdmin, "cammo");
-    uguale(t.d.conto("pino").saldo, prima + 300, "chi l'ha mandata viene pagato");
+    uguale(t.d.conto("pino").saldo, prima + base + 300, "chi l'ha mandata viene pagato");
     uguale(t.d.conto("pino").prese, 1);
     vero(t.d.conto("pino").collezione.indexOf(c.id) >= 0, "chi l'ha inventata ce l'ha");
     uguale(t.d.magazzino().length, 1);
@@ -272,8 +278,17 @@ prova("il pacchetto costa, da' le figurine, e i doppioni pagano", () =>
     uguale(serieChiuse(d), 1);
 
     const prima = d.conto("pino").saldo;
-    // Con due sole figurine e tre pescate, almeno un doppione ci deve essere.
-    const pacco = apriPacchetto(d, "pino", 1, Math.random);
+    /**
+     * ⚠ **Col dado in mano, non a caso.** Prima questa prova girava con
+     * `Math.random`: due figurine e tre pescate, e una volta su quattro
+     * uscivano tutte e tre uguali — la prova diventava rossa senza che niente
+     * fosse rotto. Una prova che fallisce a caso e' peggio di una prova che
+     * manca: insegna a non fidarsi delle prove.
+     *
+     * Cosi' invece si sa cosa esce: prima, seconda, prima. Due diverse e un
+     * doppione, sempre.
+     */
+    const pacco = apriPacchetto(d, "pino", 1, dado(0.1, 0.9, 0.1));
     uguale(pacco.figurine.length, 3);
     uguale(pacco.costo, 100);
     vero(pacco.figurine.some((f) => f.doppione), "tre pescate su due figurine: un doppione ci vuole");
