@@ -12,6 +12,65 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ## Non ancora pubblicato
 
+**Togliere il tunnel Cloudflare** per chi ha l'indirizzo fisso, e **togliere il
+codice** della schermata «cerca i computer di casa», che è irraggiungibile ma
+ancora lì.
+
+---
+
+## 1.2.5 — La sala giochi, e i collegamenti che si guardano
+
+Il blocco 3 e il blocco 4 della 1.2.3, piu' due cose nate strada facendo: la
+**sala giochi**, e una **dash** per capire cosa succede ai telefoni collegati.
+
+### DaProdGiochi: la sala giochi della suite
+
+Una slot machine con dodici rulli che monta un prompt. Si gira, si bloccano i
+pezzi che piacciono, si rigira il resto — e quando la riga piace tutta, si manda
+a controllare. Chi comanda il computer la prova, le da' un prezzo e la tiene, o
+la butta: quella tenuta entra nel programma, e da li' in poi la sbloccano gli
+altri giocando.
+
+Non e' un passatempo attaccato di lato: e' **il modo in cui la suite si riempie
+di prompt buoni**, e il passatempo e' quello che convince a scriverli. Chi gioca
+sale di livello, chi crea si arricchisce, e le due monete non si scambiano — se
+girando si guadagnasse, la slot sarebbe una macchinetta e le combinazioni un
+passatempo.
+
+I generi sono **veri**: 6.291 voci con la loro popolarita' e un artista
+d'esempio accanto, perche' «shoegaze» a chi non lo sa non dice niente e
+«shoegaze, tipo My Bloody Valentine» si'.
+
+⚠ **Chi gioca e' chi sei nella suite.** Niente registrazione, niente password
+del gioco: stesso nome, stessa faccia, stesso ruolo. L'admin del gioco e' l'admin
+del computer, e chi non comanda il computer non diventa banco scrivendo qualcosa
+in una casella. E' una pagina servita dal computer, come la console: la stessa
+identica cosa sul telefono, sul PC e nel browser.
+
+Si apre dalla tessera **Sala giochi**, in Casa.
+
+### Una dash per vedere come stanno i collegamenti
+
+> «Ci sono ancora problemi con gli update: 2 dispositivi di mia zia non
+> funzionano piu'. Facciamo nella suite una dash che mostra le connessioni,
+> se sono collegati, se tutto e' ok, e dei tasti per aggiustare.»
+
+Quel guaio e' rimasto senza risposta per due giorni, e il motivo e' che sul
+computer **non c'era niente da guardare**: si sapeva solo che quel telefono si
+era visto martedi.
+
+Adesso il computer segna, a ogni chiamata: da che strada arriva (casa, tunnel,
+tailscale), che versione dell'app ha addosso, e — la cosa che mancava del
+tutto — **quante volte sta bussando e gli si sta dicendo di no**. Un telefono
+che ha perso il collegamento riprova a ogni apertura, e prima quello non si
+vedeva da nessuna parte.
+
+Nelle impostazioni, per chi decide, c'e' **«Come stanno i collegamenti»**: una
+riga per persona che dice come va **e perche'**, con accanto il tasto che
+risolve quel caso — «rifai il collegamento» quando e' da rifare, «scollega»
+sempre. E i tasti stanno solo dove servono: tre tasti spenti accanto a «tutto a
+posto» sono tre modi di far dubitare chi guarda.
+
 ### Il visualizer, molto piu' leggero — e si puo' spegnere
 
 > «Su mobile le prestazioni sono bassissime, deve essere super leggero e
@@ -206,10 +265,6 @@ in poi e' quello, dovunque ci sia una cosa che sta accesa o spenta.
 
 Si capisce **anche senza il colore**: quello che dice tutto e' da che parte sta
 la pallina.
-
-**Togliere il tunnel Cloudflare** per chi ha l'indirizzo fisso, e **togliere il
-codice** della schermata «cerca i computer di casa», che è irraggiungibile ma
-ancora lì.
 
 ---
 
