@@ -87,6 +87,48 @@ export const COPIONE_PRODUZIONE = `
     for (var a of azioni.filter(function (x) { return x.coda && !(PRODUZIONI[x.id] || {}).dentroA; })) {
       casella.append(tastoneAzione(a));
     }
+    casella.append(tastoneGiochi());
+  }
+
+  /**
+   * **La sala giochi**, in fondo a «cosa vuoi fare».
+   *
+   * ⚠ **E' una tessera e non una sesta scheda in fondo.** Le schede sono
+   * cinque, e il 5 settembre 2026 erano state portate da sei a cinque apposta:
+   * «cinque su un telefono si leggono meglio di sei». La sala e' una cosa che
+   * si fa, non un posto dove si sta: sta con le altre cose che si fanno.
+   *
+   * Porta a una **pagina servita dallo stesso computer** — vedi
+   * «packages/giochi» — quindi funziona uguale dal telefono, dal browser e
+   * dentro DaProdConnessione, con la stessa persona e lo stesso ruolo. Chi
+   * comanda il computer comanda anche il banco: non c'e' una password del
+   * gioco.
+   *
+   * Il token viaggia nel frammento, come per la console: non finisce nei log e
+   * la pagina se lo mette da parte appena aperta.
+   */
+  function tastoneGiochi() {
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "tastone rosa";
+    var s = document.createElement("span");
+    s.className = "segno";
+    s.textContent = "\\u2685";
+    var n = document.createElement("span");
+    n.className = "nome";
+    n.textContent = "Sala giochi";
+    var p = document.createElement("small");
+    p.textContent = "gira la slot, monta un prompt, mandalo";
+    b.append(s, n, p);
+    b.addEventListener("click", function () {
+      var dove = "/giochi";
+      // Lo stesso giro del resto della console: se il token ce l'abbiamo, lo si
+      // passa nel frammento, che non viene mandato al server e non finisce nei
+      // registri.
+      if (token) dove += "#t=" + encodeURIComponent(token);
+      location.href = dove;
+    });
+    return b;
   }
 
   /**
@@ -517,6 +559,26 @@ export const COPIONE_PRODUZIONE = `
         // Le durate che si scelgono davvero, come pulsanti: «30, 60, 80, 120 e
         // 220 secondi». La casella resta, per chi ne vuole 137.
         if ((campo.valoriTipici || []).length) accanto = pastiglieDiNumero(campo, controllo);
+        /**
+         * ⚠ **Quando i pulsanti coprono tutto, la casella se ne va.**
+         *
+         * Chiesto il 7 settembre 2026: «pure qui una cosa da telefono un poco
+         * piu' ordinata, perche' ci sta una barra gigante: mettiamo quattro
+         * pulsanti — uno, due, tre, quattro — belli grandi».
+         *
+         * «Quante immagini» va da 1 a 4 e i pulsanti sono 1, 2, 3, 4: sotto ci
+         * restava una casella numerica larga tutta la riga in cui non c'era
+         * niente da scrivere che non fosse gia' un pulsante. Per «quanti
+         * secondi», dove i pulsanti sono cinque su duecento valori possibili, la
+         * casella serve e resta — chi ne vuole 137 li deve poter scrivere.
+         *
+         * Il campo non sparisce davvero: diventa nascosto, perche' e' sempre lui
+         * che tiene il valore e che «riempiCon» va a cercare.
+         */
+        if (accanto && numeroTuttoAPulsanti(campo)) {
+          controllo.type = "hidden";
+          accanto.classList.add("grandi");
+        }
       } else if ((campo.maxLunghezza || 0) > 200) {
         controllo = document.createElement("textarea");
         if (campo.esempio) controllo.placeholder = campo.esempio;
@@ -570,6 +632,14 @@ export const COPIONE_PRODUZIONE = `
     modulo.hidden = false;
     $("fila-manda").hidden = false;
     $("manda").textContent = a.coda ? "Mandalo al computer" : a.titolo;
+    /**
+     * «Manda in coda» si vede solo per le azioni che **hanno** una fila.
+     *
+     * «Fammi un piano» o «leggi la libreria» rispondono e basta: mettere in
+     * coda una cosa che non passa dalla fila sarebbe un tasto che promette una
+     * cosa che non esiste.
+     */
+    $("manda-in-coda").hidden = !a.coda;
     $("avviso-azione").textContent = "";
     $("avviso-azione").className = "avviso";
     modulo.scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -726,6 +796,25 @@ export const COPIONE_PRODUZIONE = `
   }
 
   /** I numeri che si scelgono davvero: 30, 60, 80, 120, 220 secondi. */
+  /**
+   * I pulsanti coprono **tutti** i valori possibili di questo campo?
+   *
+   * Se si', la casella non serve: non c'e' niente da scrivere che non sia gia'
+   * li'. Se no — «quanti secondi», che ha cinque pulsanti su duecento numeri —
+   * la casella e' l'unico modo di chiedere quello che non c'e'.
+   */
+  function numeroTuttoAPulsanti(campo) {
+    if (campo.min === undefined || campo.max === undefined) return false;
+    var quanti = campo.max - campo.min + 1;
+    if (quanti > 6) return false;
+    var tipici = campo.valoriTipici || [];
+    if (tipici.length !== quanti) return false;
+    for (var n = campo.min; n <= campo.max; n++) {
+      if (tipici.indexOf(n) < 0) return false;
+    }
+    return true;
+  }
+
   function pastiglieDiNumero(campo, casella) {
     var fila = document.createElement("div");
     fila.className = "filtri";
@@ -1467,7 +1556,17 @@ export const COPIONE_PRODUZIONE = `
     return q;
   }
 
-  async function manda() {
+  /**
+   * Manda quello che c'e' nel modulo.
+   *
+   * «inCoda» vero vuol dire «mettila in fila e basta», anche per chi
+   * potrebbe partire subito. Chiesto il 7 settembre 2026: «anche gli admin, se
+   * cliccano quel tasto, non mandano subito la generazione prioritaria che
+   * hanno da admin, ma mandano proprio la classica richiesta in coda che
+   * mandano gli utenti normali — cosi' che magari non lo vuoi far fare subito,
+   * lo metti in coda e poi piu' tardi decidi».
+   */
+  async function manda(inCoda) {
     if (!scelta) return;
     // Chi ha qualcosa da preparare lo prepara adesso: la maschera dipinta si
     // carica qui, non a ogni pennellata. Vedi «primaDiMandare».
@@ -1486,9 +1585,19 @@ export const COPIONE_PRODUZIONE = `
     var avviso = $("avviso-azione");
     avviso.className = "avviso";
     $("manda").disabled = true;
+    $("manda-in-coda").disabled = true;
     try {
+      /**
+       * ⚠ **«inCoda» va nell'indirizzo, non nel corpo.**
+       *
+       * Per la stessa ragione dei campi — vedi «anchePerIndirizzo»: dentro
+       * l'app, col computer spento, chi risponde a questa POST e' l'app stessa,
+       * e Android non le fa leggere il corpo di una richiesta intercettata.
+       */
+      var coda = anchePerIndirizzo(valori);
+      if (inCoda) coda += (coda ? "&" : "?") + "inCoda=1";
       var esito = await chiama(
-        "/azioni/" + encodeURIComponent(scelta.id) + anchePerIndirizzo(valori),
+        "/azioni/" + encodeURIComponent(scelta.id) + coda,
         { method: "POST", body: JSON.stringify(valori) },
       );
       if (esito.esito === "in-coda") {
@@ -1512,6 +1621,7 @@ export const COPIONE_PRODUZIONE = `
       avviso.className = "avviso male";
     } finally {
       $("manda").disabled = false;
+      $("manda-in-coda").disabled = false;
     }
   }
 

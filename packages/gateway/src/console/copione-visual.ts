@@ -125,7 +125,44 @@ export const COPIONE_VISUAL =
     /** Due passate di bloom e pixel ratio a 1,25: la qualita' «media» dell'app. */
     var BLOOM_GIRI = 2;
     var BLOOM_FORZA = 0.85;
-    var RATIO_MAX = 1.25;
+
+    /**
+     * ⚠ **Quanti pixel si disegnano davvero, e su un telefono sono meno.**
+     *
+     * Detto il 7 settembre 2026 — «sul tablet scatta molto quando utilizzo il
+     * visualizer, cerchiamo di aumentargli il frame rate» — e ripetuto il 9:
+     * «su mobile le prestazioni sono bassissime, deve essere super leggero».
+     *
+     * Il conto che conta: uno shader a schermo intero costa **larghezza per
+     * altezza** pixel, ogni fotogramma, e qui i fotogrammi sono tre o quattro
+     * (la scena, il bloom in due passate, la composizione). Su un tablet da
+     * 2560x1600 con ratio 1,25 sono **sedici milioni di pixel per giro**: e'
+     * quello, non gli effetti, a far scattare tutto.
+     *
+     * A 0,75 diventano cinque milioni e mezzo: **tre volte meno lavoro**. E non
+     * si vede, perche' quello che c'e' sopra sono macchie di luce sfocate —
+     * niente testo, nessun bordo netto, niente che chieda un pixel preciso.
+     *
+     * Il telefono si riconosce dalla larghezza dello schermo e non dallo user
+     * agent: gli user agent mentono, la larghezza no.
+     */
+    var RATIO_MAX = (window.innerWidth || 1024) < 900 ? 0.75 : 1.25;
+
+    /**
+     * ⚠ **Un tetto ai fotogrammi: trenta al secondo.**
+     *
+     * Un visualizer non e' un gioco: quello che si guarda sono onde che si
+     * muovono al ritmo della musica, e a trenta si muovono uguale. Sessanta
+     * vuol dire **il doppio del lavoro** per una differenza che su una macchia
+     * sfocata non esiste — e su un telefono quel doppio e' batteria e calore,
+     * che dopo due minuti fanno rallentare tutto da soli.
+     *
+     * Si salta il fotogramma **prima** di ogni conto, non dopo: saltare dopo
+     * aver disegnato non risparmierebbe niente.
+     */
+    var FPS_TETTO = 30;
+    var MINIMO_FRA_GIRI = 1 / FPS_TETTO;
+    var ultimoGiro = 0;
 
     /* ================================================== stato del motore */
 
@@ -883,6 +920,22 @@ export const COPIONE_VISUAL =
       if (!gl || !tela) return;
 
       var adesso = performance.now() / 1000;
+      /**
+       * ⚠ **Il tetto ai fotogrammi, e sta qui perche' qui non e' ancora
+       * stato fatto niente.**
+       *
+       * Chi chiama continua a passare a sessanta (e' il ritmo dello schermo):
+       * di quei sessanta se ne disegnano trenta, e gli altri tornano indietro
+       * senza aver toccato la scheda video. Un decimo di millisecondo prima ci
+       * si accorge, il resto e' guadagnato.
+       *
+       * La tolleranza di un millesimo serve perche' i fotogrammi non arrivano
+       * mai esatti: senza, un giro su due cadrebbe appena sotto il minimo e
+       * ne verrebbero fuori quindici invece di trenta.
+       */
+      if (ultimoGiro && adesso - ultimoGiro < MINIMO_FRA_GIRI - 0.001) return;
+      ultimoGiro = adesso;
+
       var dt = scorso ? Math.min(DELTA_MAX, adesso - scorso) : 1 / 60;
       scorso = adesso;
       passato += dt;
@@ -1028,19 +1081,20 @@ export const COPIONE_VISUAL =
      * «drawImage» da un canvas all'altro invece e' una copia sola, e a un
      * quarto della risoluzione: quello che si vede dopo il blur e' identico.
      */
-    function copiaSulloSfondo() {
-      var dietro = document.getElementById("sfondo-visual");
-      if (!dietro || !tela || !largo || !alto) return;
-      var q = dietro.getContext("2d");
-      if (!q) return;
-      var w = Math.max(2, largo >> 2);
-      var h = Math.max(2, alto >> 2);
-      if (dietro.width !== w || dietro.height !== h) { dietro.width = w; dietro.height = h; }
-      try { q.drawImage(tela, 0, 0, w, h); } catch (e) { /* la tela non e' pronta */ }
-    }
+    /*
+     * ⚠ **«copiaSulloSfondo» non esiste piu'.** Tolta il 9 settembre 2026
+     * insieme allo sfondo che serviva.
+     *
+     * Copiava la tela del palco in una seconda tela grande un quarto, sedici
+     * volte al secondo, per darle in pasto a un blur da venti pixel dietro alla
+     * pagina. Costava due volte: la copia, e la sfocatura che la scheda video
+     * rifaceva a ogni fotogramma **della pagina intera**, anche quando la
+     * pagina era ferma.
+     *
+     * Il perche' per intero sta in «stile.ts», dove c'era il suo sfondo.
+     */
 
     return {
-      copiaSulloSfondo: copiaSulloSfondo,
       segna: segna,
       elenco: elenco,
       accendi: accendi,

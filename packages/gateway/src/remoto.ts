@@ -510,11 +510,60 @@ export class Remoto {
    * adesso" dicono la stessa cosa a chi guarda il pannello, e non vale una
    * riscrittura del file per ogni battito del telefono.
    */
-  tocca(dispositivo: Dispositivo): void {
+  tocca(dispositivo: Dispositivo, come?: { strada?: string; versioneApp?: string }): void {
     const adesso = Date.now();
     const vecchio = dispositivo.ultimoAccesso;
     dispositivo.ultimoAccesso = adesso;
-    if (adesso - vecchio >= 30_000) this.archivio.salva();
+    /**
+     * ⚠ **Da dove e con che versione**, che e' quello che serve quando un
+     * telefono «non funziona piu'». Vedi `Dispositivo.ultimaStrada`.
+     *
+     * Si scrive solo se **cambia**: un telefono che chiama cento volte dalla
+     * stessa strada con la stessa versione non deve far riscrivere il file
+     * cento volte. Quando cambia invece si salva subito, perche' e' proprio il
+     * momento interessante — «da ieri passa dal tunnel invece che da casa» e'
+     * meta' della diagnosi.
+     */
+    let cambiato = false;
+    if (come?.strada && come.strada !== dispositivo.ultimaStrada) {
+      dispositivo.ultimaStrada = come.strada;
+      cambiato = true;
+    }
+    if (come?.versioneApp && come.versioneApp !== dispositivo.versioneApp) {
+      dispositivo.versioneApp = come.versioneApp;
+      cambiato = true;
+    }
+    // Ha parlato: quindi non e' respinto. Il conto dei no riparte da zero.
+    if (dispositivo.noDiFila) {
+      dispositivo.noDiFila = 0;
+      cambiato = true;
+    }
+    if (cambiato) this.archivio.salvaSubito();
+    else if (adesso - vecchio >= 30_000) this.archivio.salva();
+  }
+
+  /**
+   * **Qualcuno ha bussato con un token che non vale.**
+   *
+   * ⚠ E' il dato che mancava del tutto. Un telefono che ha perso il
+   * collegamento continua a provare — ogni apertura dell'app, ogni giro della
+   * sentinella — e dal computer non si vedeva niente: nessuna riga, nessun
+   * numero. «Non funziona piu'» restava una frase.
+   *
+   * Il token non si puo' ricondurre a un dispositivo (e' quello il problema),
+   * quindi si segna sul **piu' recente che aveva quel prefisso**: i token sono
+   * esadecimali da 64 caratteri, e i primi otto bastano a riconoscere un
+   * vecchio token dello stesso telefono senza tenerlo in giro per intero.
+   */
+  segnaUnNo(token: string): void {
+    if (!token || token.length < 8) return;
+    const inizio = token.slice(0, 8);
+    const dati = this.archivio.datiCorrenti;
+    const quale = dati.dispositivi.find((d) => d.token.slice(0, 8) === inizio);
+    if (!quale) return;
+    quale.noDiFila = (quale.noDiFila ?? 0) + 1;
+    quale.ultimoNo = Date.now();
+    this.archivio.salva();
   }
 
   /** Revoca un dispositivo: il token smette di funzionare all'istante. */
@@ -608,6 +657,22 @@ export class Remoto {
     testo: string;
     opzioni?: Record<string, string>;
     daDispositivo: Dispositivo;
+    /**
+     * **«Mettila in fila e basta», anche se chi chiede potrebbe passare
+     * subito.** Nuovo nella 1.2.5.
+     *
+     * Chiesto il 7 settembre 2026: «anche gli admin, se cliccano quel tasto,
+     * non mandano subito la generazione prioritaria che hanno da admin, ma
+     * mandano proprio la classica richiesta in coda che mandano gli utenti
+     * normali. Cosi' che magari non lo vuoi far fare subito, lo metti in coda e
+     * poi piu' tardi decidi».
+     *
+     * ⚠ **E' una rinuncia, non un permesso.** Va solo in una direzione: chi
+     * potrebbe partire subito puo' scegliere di aspettare, chi deve aspettare
+     * non puo' scegliere di partire. Per questo si guarda **dopo** le regole
+     * della macchina e non al posto loro — vedi `decidiSubito`.
+     */
+    inCoda?: boolean;
   }): Richiesta {
     const dati = this.archivio.datiCorrenti;
     /**
@@ -637,7 +702,16 @@ export class Remoto {
      * fila si è sgombrata, e nel frattempo chi l'ha chiesta legge perché.
      */
     const verdetto = this.decidiSubito(opzioni.daDispositivo);
-    const decide = verdetto.subito;
+    /**
+     * ⚠ **«Manda in coda» toglie, non aggiunge.**
+     *
+     * Se chi ha chiesto ha detto «mettila in fila», la richiesta aspetta un si'
+     * anche quando sarebbe partita da sola. Il contrario non esiste: nessun
+     * `inCoda: false` fa saltare la fila a chi la fila la deve fare, perche'
+     * questo campo arriva da fuori — e un permesso che arriva da fuori non e'
+     * un permesso.
+     */
+    const decide = verdetto.subito && !opzioni.inCoda;
     dati.ultimoNumero = (dati.ultimoNumero ?? 0) + 1;
     const richiesta: Richiesta = {
       id: nuovoId("r"),
@@ -650,7 +724,9 @@ export class Remoto {
       daNome: opzioni.daDispositivo.nome,
       stato: decide ? "accettata" : "in-attesa",
       quando: Date.now(),
-      trattenuta: verdetto.trattenuta,
+      // Chi ha scelto la fila lo ha scelto: non e' una cosa da spiegare come se
+      // gli fosse stata negata. La riga della trattenuta resta per i no veri.
+      trattenuta: opzioni.inCoda && verdetto.subito ? undefined : verdetto.trattenuta,
     };
     dati.richieste.push(richiesta);
     this.spazzaLeVecchie();

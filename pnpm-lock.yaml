@@ -20,6 +20,9 @@ importers:
       '@daprod/gateway':
         specifier: workspace:*
         version: link:../../packages/gateway
+      '@daprod/giochi':
+        specifier: workspace:*
+        version: link:../../packages/giochi
       '@daprod/ipc':
         specifier: workspace:*
         version: link:../../packages/ipc
@@ -98,6 +101,22 @@ importers:
         version: 5.9.3
 
   packages/gateway:
+    dependencies:
+      '@daprod/azioni':
+        specifier: workspace:*
+        version: link:../azioni
+      '@daprod/giochi':
+        specifier: workspace:*
+        version: link:../giochi
+    devDependencies:
+      '@types/node':
+        specifier: ^22.18.0
+        version: 22.20.1
+      typescript:
+        specifier: ~5.9.3
+        version: 5.9.3
+
+  packages/giochi:
     dependencies:
       '@daprod/azioni':
         specifier: workspace:*

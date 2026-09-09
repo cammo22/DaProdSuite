@@ -257,9 +257,22 @@ export const PAGINE = `<header>
         <button class="piano largo" id="apri-stili">&#9776; Gestione stili e prompt</button>
       </div>
       <form id="modulo" hidden onsubmit="return false"></form>
+      <!--
+        ⚠ **«Lascia stare» se n'e' andato, e al posto suo c'e' «Manda in
+        coda».** Chiesto il 9 settembre 2026: «si toglie lascia stare e si
+        aggiunge manda in coda».
+
+        «Lascia stare» non serviva a niente in quel punto: il modulo si chiude
+        toccando un'altra azione, cambiando scheda o tornando indietro, e un
+        tasto per non fare una cosa e' un tasto che occupa il posto di uno che
+        una cosa la fa.
+
+        «Manda in coda» vale **anche per chi decide**: e' il punto della
+        richiesta. Vedi «manda» nel copione.
+      -->
       <div class="fila" id="fila-manda" hidden>
         <button id="manda">Mandalo al computer</button>
-        <button class="piano" id="annulla" type="button">Lascia stare</button>
+        <button class="piano" id="manda-in-coda" type="button">Manda in coda</button>
       </div>
       <div class="avviso" id="avviso-azione"></div>
     </div>
@@ -524,7 +537,6 @@ export const PAGINE = `<header>
 -->
 <div class="mixStili" id="mix-stili" hidden></div>
 
-<canvas id="sfondo-visual" aria-hidden="true"></canvas>
 
 <div class="barraLettore" id="barra-lettore" hidden>
   <button class="faccia" id="lettore-faccia" title="A schermo intero"></button>
@@ -613,7 +625,7 @@ export const PAGINE = `<header>
     <button class="tondo" id="palco-chiudi" title="Chiudi">&#10005;</button>
   </div>
 
-  <div class="dentro" id="palco-dentro"></div>
+  <div class="dentro su" id="palco-dentro"></div>
 
   <!--
     **Com'e' stata fatta**, dentro il palco e non in un foglio.

@@ -18,6 +18,256 @@ ancora lì.
 
 ---
 
+## 1.2.5 — La sala giochi, e i collegamenti che si guardano
+
+Il blocco 3 e il blocco 4 della 1.2.3, piu' due cose nate strada facendo: la
+**sala giochi**, e una **dash** per capire cosa succede ai telefoni collegati.
+
+### DaProdGiochi: la sala giochi della suite
+
+Una slot machine con dodici rulli che monta un prompt. Si gira, si bloccano i
+pezzi che piacciono, si rigira il resto — e quando la riga piace tutta, si manda
+a controllare. Chi comanda il computer la prova, le da' un prezzo e la tiene, o
+la butta: quella tenuta entra nel programma, e da li' in poi la sbloccano gli
+altri giocando.
+
+Non e' un passatempo attaccato di lato: e' **il modo in cui la suite si riempie
+di prompt buoni**, e il passatempo e' quello che convince a scriverli. Chi gioca
+sale di livello, chi crea si arricchisce, e le due monete non si scambiano — se
+girando si guadagnasse, la slot sarebbe una macchinetta e le combinazioni un
+passatempo.
+
+I generi sono **veri**: 6.291 voci con la loro popolarita' e un artista
+d'esempio accanto, perche' «shoegaze» a chi non lo sa non dice niente e
+«shoegaze, tipo My Bloody Valentine» si'.
+
+⚠ **Chi gioca e' chi sei nella suite.** Niente registrazione, niente password
+del gioco: stesso nome, stessa faccia, stesso ruolo. L'admin del gioco e' l'admin
+del computer, e chi non comanda il computer non diventa banco scrivendo qualcosa
+in una casella. E' una pagina servita dal computer, come la console: la stessa
+identica cosa sul telefono, sul PC e nel browser.
+
+Si apre dalla tessera **Sala giochi**, in Casa.
+
+### Una dash per vedere come stanno i collegamenti
+
+> «Ci sono ancora problemi con gli update: 2 dispositivi di mia zia non
+> funzionano piu'. Facciamo nella suite una dash che mostra le connessioni,
+> se sono collegati, se tutto e' ok, e dei tasti per aggiustare.»
+
+Quel guaio e' rimasto senza risposta per due giorni, e il motivo e' che sul
+computer **non c'era niente da guardare**: si sapeva solo che quel telefono si
+era visto martedi.
+
+Adesso il computer segna, a ogni chiamata: da che strada arriva (casa, tunnel,
+tailscale), che versione dell'app ha addosso, e — la cosa che mancava del
+tutto — **quante volte sta bussando e gli si sta dicendo di no**. Un telefono
+che ha perso il collegamento riprova a ogni apertura, e prima quello non si
+vedeva da nessuna parte.
+
+Nelle impostazioni, per chi decide, c'e' **«Come stanno i collegamenti»**: una
+riga per persona che dice come va **e perche'**, con accanto il tasto che
+risolve quel caso — «rifai il collegamento» quando e' da rifare, «scollega»
+sempre. E i tasti stanno solo dove servono: tre tasti spenti accanto a «tutto a
+posto» sono tre modi di far dubitare chi guarda.
+
+### Il visualizer, molto piu' leggero — e si puo' spegnere
+
+> «Su mobile le prestazioni sono bassissime, deve essere super leggero e
+> ottimizzato.» E prima: «togliamo il visualizer dallo sfondo, perche' sul
+> tablet scatta molto».
+
+Quattro cose, e la prima da sola vale piu' delle altre tre:
+
+- **Via il visualizer da dietro alla pagina.** C'era dalla 0.9.4, sfocato al
+  ventidue per cento. Quella sfocatura la scheda video la rifaceva **a ogni
+  fotogramma della pagina**, anche con la pagina ferma — e una gaussiana a venti
+  pixel a schermo intero e' una delle cose piu' care che esistano su un
+  telefono. Sopra ci si aggiungeva una copia fra due tele sedici volte al
+  secondo. Tutto per una macchia che si vedeva a malapena, dietro a riquadri
+  opachi che la coprivano quasi tutta.
+- **Meta' dei pixel, su schermi stretti.** Uno shader a schermo intero costa
+  larghezza per altezza, ogni fotogramma, tre o quattro volte per giro. Su un
+  tablet erano **sedici milioni di pixel per giro**: adesso cinque milioni e
+  mezzo. Non si vede la differenza — quello che c'e' sopra sono macchie di luce
+  sfocate, niente che chieda un pixel preciso.
+- **Trenta fotogrammi al secondo invece di sessanta.** Le onde si muovono
+  uguale, il lavoro e' la meta', e su un telefono quella meta' e' batteria e
+  calore — che dopo due minuti fanno rallentare tutto da soli.
+- **E si puo' spegnere del tutto**, dal menu degli effetti dentro al lettore:
+  resta la copertina, la musica continua, e la scheda video si riposa. La scelta
+  resta scritta in quel telefono.
+
+L'easter egg adesso e' **solo le sirene nella barra**, che e' come era stato
+chiesto: era lui ad accendere il visualizer dietro alla pagina.
+
+### Il telefono non propone piu' un aggiornamento che ha gia'
+
+> «L'app mobile mostra sempre aggiornamenti e fa reinstallare sempre la stessa
+> versione, aggiustiamolo.»
+
+Il numero di versione dell'app era **scritto a mano** dentro al file di
+compilazione, ed era fermo alla 1.2.0 da tre release. L'APK si chiamava con la
+versione giusta — quel nome viene dal tag — ma dentro continuava a dire di
+essere la 1.2.0. Cosi': l'app si guardava dentro e leggeva 1.2.0, chiedeva a
+GitHub («l'ultima e' la 1.2.4»), si aggiornava, si riguardava dentro, leggeva
+ancora 1.2.0, e ricominciava. Un giro che non finiva mai, e ogni volta un APK
+scaricato per niente.
+
+Adesso quel numero **viene dalla suite** — lo stesso `package.json` da cui lo
+prende il programma sul computer — e non c'e' piu' niente da ricordarsi al
+momento di pubblicare. C'e' anche una prova che lo controlla, perche' e' il tipo
+di difetto che torna il giorno che qualcuno «mette a posto» quella riga
+scrivendoci un numero.
+
+### La barra in alto fa le sirene, e il marchio torna attaccato
+
+> «Quell'effetto che hai messo nell'easter egg mettilo solo nella navbar, molto
+> piu' accentuato — pero' fai tipo effetto sirene, colorato. In alto a sinistra
+> prima era piu' bello, che era tutto attaccato.»
+
+Con l'easter egg acceso, due luci si rincorrono nella barra in alto: una viola e
+una azzurra, sfasate — due luci di pari passo sono una luce sola larga il
+doppio. Stanno **dietro** al contenuto: davanti renderebbero illeggibili il nome
+e l'ingranaggio proprio mentre uno li vuole toccare.
+
+E «DaProdSuite» e' di nuovo attaccato. Non era mai stato scritto staccato: il
+marchio e' un tasto, e in un tasto flex il testo e la parte colorata diventano
+due pezzi che prendevano gli otto pixel di distanza degli altri tasti della
+barra.
+
+### L'easter egg dice qualcosa anche quando si accende
+
+> «Quando togliamo "ancora uno" dice buonanotte. Facciamo che trova un'altra
+> frase quando lo attiva — tipo "complimenti, hai scoperto un segreto", sempre
+> con l'effetto confetti.»
+
+«Complimenti, hai scoperto un segreto», con i coriandoli. Le due frasi sono una
+coppia: «buonanotte» da sola non diceva a nessuno che dall'altra parte c'era
+qualcosa da scoprire.
+
+### Sotto ai video non resta piu' un fotogramma fermo
+
+> «I video non funzionano con il visualizer: il video funziona pero' mostra
+> un'immagine ferma del visualizer.»
+
+Fermare il giro dei fotogrammi ferma **il disegno**, non cancella quello che
+c'e' gia' disegnato: la tela restava li', a schermo intero dietro al video, con
+l'ultimo fotogramma della canzone di prima. Adesso si nasconde e si svuota.
+
+### Il lettore: la copertina piu' in alto, le info piu' grandi, e «scarica»
+
+> «Alzare un po' l'icona della musica, che e' troppo centrale, in modo da vedere
+> meglio pure l'effetto dietro, e si alza ancora quando apriamo le info.
+> Rendiamo le info un po' piu' grandi, per poter aggiungere dei tasti per
+> copiare: magari mi voglio copiare il testo. Togliamo la stella "tieni"; metti
+> il pulsante download a destra, e ti scarica proprio il file.»
+
+Tutto quello che c'e' scritto li'. La copertina si alza di un gradino, e di un
+altro quando si aprono le info; ogni riga delle info ha il suo tasto per
+copiarsela; e in DaProd, al posto della stella «tieni» — un segnalibro che
+diceva male se stesso, accanto a un cuore — c'e' **scarica**, che tira giu' il
+file vero.
+
+### Via LLaDA-Image
+
+> «Si toglie LLaDA, addios. Casomai quando un giorno ComfyUI aggiorna bene ci
+> pensiamo.»
+
+Non c'e' piu' nel menu dei modelli, ne' sul computer ne' dal telefono. Era
+l'unico che sapeva **modificare a parole** invece di ridipingere una zona col
+pennello, ed era rimasto anche dopo che i suoi tempi erano diventati il difetto
+piu' vecchio della suite: sedici GB che non stanno in una scheda da otto, quindi
+avanti e indietro dalla memoria a ogni passo — venti secondi a passo, misurati.
+La 1.2.2 l'aveva portato da cinquanta passi a dodici (4,2 minuti) e restava il
+piu' lento di un ordine di grandezza.
+
+**I pesi gia' scaricati non si cancellano.** Sono sedici GB che qualcuno ha
+aspettato: la suite smette di offrirli, non li butta. Chi aveva LLaDA scelto si
+ritrova sul modello di serie senza che niente si rompa.
+
+Il perche' tecnico resta scritto dov'erano i grafi: e' la ragione per cui
+potrebbe tornare, il giorno che ComfyUI gestisce meglio quel nodo.
+
+### «Manda in coda», e vale anche per chi decide
+
+> «Sotto, dove "manda al computer", togliamolo il pulsante lascia stare, non ci
+> serve a niente in quel punto. Aggiungiamo un pulsante "manda in coda", cosi'
+> che magari non lo vuoi far fare subito, lo metti in coda e poi piu' tardi
+> decidi. Anche gli admin, se cliccano quel tasto, non mandano subito la
+> generazione prioritaria che hanno da admin.»
+
+In fondo alla produzione: **«Mandalo al computer»** e **«Manda in coda»**.
+«Lascia stare» se n'e' andato — il modulo si chiude toccando un'altra azione o
+cambiando scheda, e un tasto per **non** fare una cosa occupava il posto di uno
+che una cosa la fa.
+
+«Manda in coda» vale anche per chi decide: la richiesta nasce **in attesa** e
+aspetta un si', come quella di chiunque altro. Ed e' una rinuncia, non un
+permesso — va solo in quella direzione: chi la fila la deve fare non puo'
+saltarla dicendo il contrario.
+
+### «Quante immagini»: quattro pulsanti grandi
+
+> «Pure qui una cosa da telefono un poco piu' ordinata, perche' ci sta una barra
+> gigante: mettiamo quattro pulsanti — uno, due, tre, quattro — belli grandi.»
+
+Da 1 a 4 sono quattro pulsanti che si dividono la riga, alti come un tasto vero.
+La casella numerica sotto e' sparita: non c'era niente da scrivere che non fosse
+gia' un pulsante.
+
+Dove i pulsanti **non** coprono tutto — «quanti secondi», che ne ha cinque su
+duecento valori — la casella resta: chi ne vuole 137 li deve poter scrivere.
+
+### Le foto non si accodano piu'
+
+> «Le foto non si possono accodare, quindi si toglie: non si accoda, l'opzione
+> non e' visibile.»
+
+Fino alla 1.2.4 una foto messa in fila restava a schermo dieci secondi e poi
+passava. Adesso l'opzione non c'e' proprio — e si toglie **la voce**, non si
+spegne: un comando grigio che non si puo' premere e' un posto dove chiedere una
+cosa che non si puo' chiedere.
+
+### Il tira-per-aggiornare non parte piu' da solo, e ha un freno
+
+> «L'aggiornamento con lo swipe viene triggerato spesso anche mentre abbiamo in
+> primo piano altre cose. In ogni caso viene triggerato spesso: risolviamolo o
+> mettiamo dei timer tipo 15 sec si blocca, pure per una questione di banda.»
+
+Tre cose insieme:
+
+- **Sa cosa c'e' sopra.** Prima si fermava solo per il foglio e per la lente
+  della galleria: non sapeva del palco del lettore, del pannello delle notifiche,
+  del mix degli stili. Li' dentro un dito che scende e' il gesto **loro**, e
+  invece partiva un aggiornamento.
+- **Prende solo i gesti dritti.** Ventisei pixel invece di dodici, e il dito deve
+  andare piu' in giu' che di lato: l'inizio di uno swipe laterale non arma piu'
+  niente.
+- **Un freno di quindici secondi.** Ogni tiro sono quattro o cinque richieste al
+  computer, e da fuori casa passano dalla rete di chi ha il telefono in mano.
+  Se il tiro arriva prima, si dice a parole — «aggiornato da poco, riprova fra
+  otto secondi» — invece di non fare niente: un gesto che non risponde e'
+  indistinguibile da un gesto rotto, ed e' proprio quello che uno rifa'.
+
+### Le notifiche di DaProd si possono spegnere, con un interruttore
+
+> «Ci deve essere qualcosa per spegnere e riattivare, facciamo i pulsanti on e
+> off switch belli, anche in generale per l'interfaccia, cosi' e' piu' semplice.»
+
+Nelle impostazioni c'e' **«Avvisami delle cose di DaProd»**, con un interruttore
+vero: acceso a destra, spento a sinistra. Spegne i commenti e i mi piace sotto
+alle tue cose — non i tuoi lavori, che sono quelli che stai aspettando.
+
+L'interruttore e' un pezzo solo, fatto apposta accanto alle righe che c'erano
+gia': stesso riquadro, stesso segno a sinistra, stessa spiegazione sotto. Da qui
+in poi e' quello, dovunque ci sia una cosa che sta accesa o spenta.
+
+Si capisce **anche senza il colore**: quello che dice tutto e' da che parte sta
+la pallina.
+
+---
+
 ## 1.2.4 — L'app come se l'aspetta chi la scarica
 
 Il **blocco 2** della 1.2.3, piu' il difetto della finestra che spariva.

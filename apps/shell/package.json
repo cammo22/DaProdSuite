@@ -1,6 +1,6 @@
 {
   "name": "@daprod/shell",
-  "version": "1.2.4",
+  "version": "1.2.5",
   "private": true,
   "description": "Guscio della suite: hub, installazione, aggiornamenti, avvio delle app.",
   "main": "out/main/index.js",
@@ -14,6 +14,7 @@
   "dependencies": {
     "@daprod/azioni": "workspace:*",
     "@daprod/gateway": "workspace:*",
+    "@daprod/giochi": "workspace:*",
     "@daprod/ipc": "workspace:*",
     "@daprod/runtime": "workspace:*",
     "electron-updater": "^6.6.2",

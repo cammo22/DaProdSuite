@@ -3,6 +3,56 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
+/**
+ * ⚠ **La versione dell'app viene dalla suite, e non si scrive qui.**
+ *
+ * Il difetto del 9 settembre 2026: «l'app mobile mostra sempre aggiornamenti e
+ * fa reinstallare sempre la stessa versione».
+ *
+ * Il numero era scritto a mano qui dentro, ed era fermo alla 1.2.0 da tre
+ * release. L'APK che la CI pubblica **si chiama** con la versione giusta — quel
+ * nome viene dal tag — ma dentro continuava a dire di essere la 1.2.0. Cosi'
+ * l'app si guardava dentro, leggeva 1.2.0, chiedeva a GitHub («l'ultima e' la
+ * 1.2.4»), si aggiornava, e dopo l'aggiornamento leggeva di nuovo 1.2.0. Un
+ * giro che non finiva mai, e ogni volta un APK scaricato per niente.
+ *
+ * Adesso il numero sta **in un posto solo** — `package.json` della radice, lo
+ * stesso da cui lo prende la suite sul computer — e qui si legge. Non c'e'
+ * niente da ricordarsi al momento di pubblicare, che e' esattamente il tipo di
+ * cosa che nessuno si ricorda.
+ *
+ * Se il file non si legge (una cartella spostata, una build fuori dal
+ * monorepo), si ripiega su `0.0.0`: un numero che non e' mai piu' recente di
+ * niente, quindi l'app non proporra' aggiornamenti sbagliati — e chi guarda
+ * capisce subito che qualcosa non ha funzionato.
+ */
+val versioneDellaSuite: String = run {
+    val json = rootProject.file("../../package.json")
+    if (!json.exists()) return@run "0.0.0"
+    val trovato = Regex("\\\"version\\\"\\s*:\\s*\\\"([^\\\"]+)\\\"").find(json.readText())
+    trovato?.groupValues?.get(1) ?: "0.0.0"
+}
+
+/**
+ * Il numero che Android usa per sapere cosa e' piu' nuovo.
+ *
+ * Deve **salire sempre**, e deve essere un intero: «1.2.4» diventa 10204. Con
+ * questo conto la 1.2.0 vale 10200, cioe' molto piu' del 46 scritto a mano
+ * fino alla 1.2.4 — quindi nessun telefono si ritrova un aggiornamento
+ * rifiutato perche' il numero e' andato indietro.
+ *
+ * ⚠ Ogni pezzo sta in due cifre: fino alla 99. Il giorno che una release
+ * arriva a 1.2.100, questo conto va rifatto — e si accorgera' chi legge questa
+ * riga, non chi installa.
+ */
+fun codiceDi(versione: String): Int {
+    val pezzi = versione.split(".").map { it.filter(Char::isDigit).toIntOrNull() ?: 0 }
+    val grande = pezzi.getOrElse(0) { 0 }
+    val medio = pezzi.getOrElse(1) { 0 }
+    val piccolo = pezzi.getOrElse(2) { 0 }
+    return grande * 10000 + medio * 100 + piccolo
+}
+
 android {
     namespace = "it.daprod.suite"
     compileSdk = 34
@@ -41,8 +91,9 @@ android {
         targetSdk = 34
         // Segue la versione della suite: l'app e il gateway si tengono per mano,
         // e sapere che numero ha in mano il telefono serve quando qualcosa non torna.
-        versionCode = 46
-        versionName = "1.2.0"
+        // Il numero lo legge da `package.json`: vedi `versioneDellaSuite` in fondo.
+        versionCode = codiceDi(versioneDellaSuite)
+        versionName = versioneDellaSuite
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 

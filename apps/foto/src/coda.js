@@ -42,7 +42,6 @@ const inCorso = () => ordine.map(lavoro).find((l) => l && l.stato === "in-corso"
  * telefono non serve.
  */
 const FASI = {
-  LLaDAImageLoader: "carico il modello",
   UNETLoader: "carico il modello",
   UnetLoaderGGUF: "carico il modello",
   CheckpointLoaderSimple: "carico il modello",
@@ -62,8 +61,6 @@ const FASI = {
   KSampler: "disegno",
   KSamplerAdvanced: "disegno",
   SamplerCustomAdvanced: "disegno",
-  LLaDAImageTextToImage: "disegno",
-  LLaDAImageEdit: "disegno",
   VAEDecode: "sviluppo l'immagine",
   VAEDecodeTiled: "sviluppo l'immagine",
   SaveImage: "salvo",

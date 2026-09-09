@@ -64,10 +64,48 @@ export const COPIONE_LETTORE = `
   /** L'elemento che sta suonando: un audio o un video. */
   var suonante = null;
 
+  /**
+   * ⚠ **Il visualizer si puo' spegnere mentre ci sei dentro.**
+   *
+   * Chiesto il 7 settembre 2026 insieme all'ottimizzazione: «togliamo il
+   * visualizer dallo sfondo... e poterlo spegnere mentre ci sei dentro». E il 9:
+   * «su mobile le prestazioni sono bassissime».
+   *
+   * E' l'ultima difesa, quella che vale su un telefono vecchio dove anche il
+   * visualizer alleggerito pesa: si spegne, resta la copertina, e la musica
+   * continua. La scelta resta scritta nel telefono di chi la fa — un telefono
+   * lento e' lento anche domani.
+   */
+  var CHIAVE_VISUAL = "daprod.visual.acceso";
+
+  function visualAcceso() {
+    try { return localStorage.getItem(CHIAVE_VISUAL) !== "no"; } catch (e) { return true; }
+  }
+
+  function accendiOSpegniIlVisual(acceso) {
+    try { localStorage.setItem(CHIAVE_VISUAL, acceso ? "si" : "no"); } catch (e) { /* niente */ }
+    if (acceso) {
+      if (suonante && palcoAperto) avviaIlDisegno();
+    } else {
+      spegniIlVisualizer();
+    }
+    disegnaGliEffetti();
+  }
+
   /** Il tempo che tiene su un'immagine prima di passare alla prossima. */
   var orologioImmagine = null;
 
-  /** Quanto dura un'immagine in fila: dieci secondi, come chiesto. */
+  /**
+   * Quanto dura un'immagine in fila: dieci secondi.
+   *
+   * ⚠ **Dalla 1.2.5 in fila non ci vanno piu' immagini**, e questo pezzo
+   * resta per una ragione sola: una foto puo' ancora arrivarci da una fila
+   * fatta prima dell'aggiornamento, aperta e non ancora finita. Senza questo
+   * ramo il lettore si fermerebbe li' — un'immagine non finisce da sola, e la
+   * fila aspetterebbe una fine che non arriva mai.
+   *
+   * Il giorno che non esiste piu' una console aperta dalla 1.2.4, si butta.
+   */
   var DURATA_IMMAGINE = 10000;
 
   /** Vero quando il palco a schermo intero è aperto. */
@@ -535,6 +573,59 @@ export const COPIONE_LETTORE = `
    * I campi sono quelli veri della richiesta, gli stessi che manda il computer:
    * per una canzone titolo, testo, stile e durata; per una foto il prompt.
    */
+  /**
+   * Il tasto per copiarsi una riga.
+   *
+   * ⚠ Chiesto il 7 settembre 2026: «magari mi voglio copiare il testo.
+   * Mettere il pulsante con l'emoji del copia». Il testo di una canzone e' la
+   * cosa che si vuole portare via piu' spesso, e fino alla 1.2.4 l'unico modo
+   * era selezionarlo col dito su venti righe dentro un riquadro che scorre.
+   *
+   * **Dice che ha copiato**, e per due secondi: una copia riuscita non si vede
+   * da nessuna parte, e senza una risposta uno preme due volte.
+   *
+   * Due strade perche' «navigator.clipboard» vuole una pagina sicura, e la
+   * console dal telefono arriva su http quando si e' in casa: li' si passa dal
+   * vecchio «execCommand», che e' brutto e funziona.
+   */
+  function tastoCopia(testo) {
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "copia";
+    b.title = "Copia";
+    b.textContent = "\\u29C9";
+    b.addEventListener("click", function (ev) {
+      ev.stopPropagation();
+      var fatto = function () {
+        b.classList.add("fatto");
+        b.textContent = "\\u2713";
+        setTimeout(function () {
+          b.classList.remove("fatto");
+          b.textContent = "\\u29C9";
+        }, 2000);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(testo).then(fatto, function () { allaVecchia(testo, fatto); });
+      } else {
+        allaVecchia(testo, fatto);
+      }
+    });
+    return b;
+  }
+
+  function allaVecchia(testo, fatto) {
+    try {
+      var casella = document.createElement("textarea");
+      casella.value = testo;
+      casella.style.cssText = "position:fixed;top:-1000px;opacity:0";
+      document.body.append(casella);
+      casella.select();
+      document.execCommand("copy");
+      casella.remove();
+      fatto();
+    } catch (e) { /* niente da fare: almeno non si rompe */ }
+  }
+
   function disegnaComeEStataFatta(dove, v) {
     dove.innerHTML = "";
     var fatta = (v && v.comeEStataFatta) || {};
@@ -547,7 +638,7 @@ export const COPIONE_LETTORE = `
       chiave.textContent = come;
       var valore = document.createElement("span");
       valore.textContent = fatta[come];
-      riga.append(chiave, valore);
+      riga.append(chiave, valore, tastoCopia(fatta[come]));
       dove.append(riga);
       quante++;
     }
@@ -564,6 +655,10 @@ export const COPIONE_LETTORE = `
     var scatola = $("palco-info");
     if (!scatola) return;
     scatola.hidden = !infoAperte || inCoda < 0;
+    // La copertina si alza ancora quando le info sono aperte: se no se la
+    // mangiano. Vedi «.palcoLettore .dentro.su.piuSu» nello stile.
+    var dentro = document.getElementById("palco-dentro");
+    if (dentro) dentro.classList.toggle("piuSu", !scatola.hidden);
     if (scatola.hidden) return;
     disegnaComeEStataFatta(scatola, coda[inCoda]);
   }
@@ -770,6 +865,23 @@ export const COPIONE_LETTORE = `
    * una volta sola, e un elemento si collega una volta e una sola.
    */
   function accendiIlVisualizer(elemento) {
+    /**
+     * ⚠ **Prima di tutto: la tela torna in vista.**
+     *
+     * La nasconde «spegniIlVisualizer» quando parte un video (vedi li' il
+     * perche'). Rimetterla in vista dentro «avviaIlDisegno» non bastava per due
+     * ragioni, e le ho trovate tutte e due provando:
+     *
+     * 1. quella si chiama **solo a palco aperto**, e passando da un video a un
+     *    brano il disegno riparte piu' tardi;
+     * 2. stava **dopo** «Visual.collega», che su una pagina senza Web Audio
+     *    puo' alzare un'eccezione — e allora la riga non veniva eseguita
+     *    affatto, e il brano suonava sul nero.
+     *
+     * Far esistere una tela non dipende dal motore audio: e' la prima riga.
+     */
+    var tela = $("visual");
+    if (tela) tela.hidden = !visualAcceso();
     Visual.collega(elemento);
     // Un brano nuovo è un pezzo nuovo: il guadagno automatico, il conto dei
     // colpi e la stima del tempo ripartono, o il primo minuto sarebbe tarato
@@ -782,32 +894,34 @@ export const COPIONE_LETTORE = `
 
   /** Accende il giro dei fotogrammi, se il motore c'è. */
   function avviaIlDisegno() {
+    // Spento a mano: la copertina resta, la musica pure, e la scheda video no.
+    if (!visualAcceso()) return;
     var tela = $("visual");
     if (!tela) return;
+    // La rimette in vista: la spegne «spegniIlVisualizer» quando parte un
+    // video, e senza questa riga il brano dopo suonerebbe sul nero.
+    tela.hidden = false;
     if (!Visual.accendi(tela)) return;
-    var dietro = $("sfondo-visual");
-    if (dietro) dietro.style.opacity = "";
     disegnoVivo = requestAnimationFrame(unGiro);
   }
 
   /**
-   * Un fotogramma: il palco, e poi la copia sullo sfondo.
+   * Un fotogramma del palco.
    *
-   * ⚠ **Lo sfondo si aggiorna un fotogramma su tre.** Sedici volte al secondo
-   * sono piu' che sufficienti per una macchia sfocata al ventidue per cento, e
-   * la copia costa: farla sessanta volte al secondo su un telefono si sente
-   * mentre si scorre una galleria.
+   * ⚠ **Non c'e' piu' nessuna copia sullo sfondo.** Fino alla 1.2.4 questo
+   * giro copiava anche la tela in una seconda, dietro alla pagina, sedici volte
+   * al secondo. Tolto il 9 settembre 2026 insieme allo sfondo che serviva —
+   * vedi «stile.ts», dove c'era.
+   *
+   * E chi chiama continua a passare a sessanta: dei sessanta ne disegna trenta,
+   * e il tetto sta dentro «Visual.disegna». Vedi «FPS_TETTO».
    */
   function unGiro() {
     disegnoVivo = requestAnimationFrame(unGiro);
     var tela = $("visual");
     if (!tela || tela.hidden || !palcoAperto) return;
     Visual.disegna(suonante);
-    fotogramma++;
-    if (fotogramma % 3 === 0) Visual.copiaSulloSfondo();
   }
-
-  var fotogramma = 0;
 
   /**
    * **Il menu degli effetti.** Nuovo nella 0.9.4.
@@ -857,6 +971,39 @@ export const COPIONE_LETTORE = `
      * qui sotto, perche' uno stato che si riconosce solo dall'assenza di bordi
      * accesi non lo riconosce nessuno.
      */
+    /**
+     * ⚠ **In cima: l'interruttore che lo spegne del tutto.**
+     *
+     * Sta qui e non nelle impostazioni perche' questo e' il posto dove uno si
+     * trova quando pensa «e' bello ma scatta»: dentro il palco, col menu degli
+     * effetti gia' aperto. Le impostazioni sono due schermate piu' in la'.
+     *
+     * Spento, sotto non c'e' piu' niente da scegliere: un elenco di effetti
+     * sotto a un visualizer spento e' un elenco di cose che non succedono.
+     */
+    var acceso = visualAcceso();
+    var riga = document.createElement("button");
+    riga.type = "button";
+    riga.className = "voceFoglio conInterruttore";
+    var segno = document.createElement("span");
+    segno.className = "segno";
+    segno.textContent = "\u25C9";
+    var dice = document.createElement("span");
+    dice.className = "cresce";
+    dice.textContent = "Il visualizer";
+    var piccolo = document.createElement("small");
+    piccolo.textContent = acceso
+      ? "spegnilo se il telefono fatica: resta la copertina"
+      : "spento: resta la copertina, e il telefono respira";
+    dice.append(piccolo);
+    var leva = document.createElement("span");
+    leva.className = "interruttore" + (acceso ? " acceso" : "");
+    leva.innerHTML = "<i></i>";
+    riga.append(segno, dice, leva);
+    riga.addEventListener("click", function () { accendiOSpegniIlVisual(!visualAcceso()); });
+    menu.append(riga);
+    if (!acceso) return;
+
     var quanti = scelti.length;
     var come = document.createElement("div");
     come.className = "comeVa";
@@ -884,9 +1031,25 @@ export const COPIONE_LETTORE = `
 
   function spegniIlVisualizer() {
     if (disegnoVivo) { cancelAnimationFrame(disegnoVivo); disegnoVivo = null; }
-    // Lo sfondo vive con la musica: fermo il disegno, si dissolve invece di
-    // restare congelato su un fotogramma che non vuol dire piu' niente.
-    var dietro = $("sfondo-visual");
-    if (dietro) dietro.style.opacity = "0";
+    /**
+     * ⚠ **E la tela del palco si svuota**, che e' il difetto del 7 settembre
+     * 2026: «i video non funzionano con il visualizer: il video funziona pero'
+     * mostra un'immagine ferma del visualizer».
+     *
+     * Fermare il giro dei fotogrammi ferma il **disegno**, non cancella quello
+     * che c'e' gia' disegnato: la tela sta dietro al video, a schermo intero, e
+     * restava li' con l'ultimo fotogramma della canzone di prima. Un video con
+     * dietro una macchia ferma sembra una cosa rotta, e in effetti lo era.
+     *
+     * Si nasconde **e** si pulisce: nasconderla e basta lascerebbe i pixel
+     * pronti a ricomparire al primo brano, per un fotogramma, prima che il
+     * disegno nuovo li copra.
+     */
+    var tela = $("visual");
+    if (tela) {
+      tela.hidden = true;
+      var pennello = tela.getContext("2d");
+      if (pennello) pennello.clearRect(0, 0, tela.width, tela.height);
+    }
   }
 `;

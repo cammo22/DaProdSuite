@@ -121,6 +121,59 @@ export const STILE = `  :root {
   }
 
   /**
+   * **I pulsanti grandi** di un campo numerico che sta tutto in quattro tasti.
+   *
+   * Chiesto il 7 settembre 2026 per «quante immagini»: «mettiamo quattro
+   * pulsanti — uno, due, tre, quattro — belli grandi». Su un telefono, quattro
+   * numeri sono quattro cose da toccare, e toccarle deve essere facile: si
+   * dividono la riga in parti uguali e sono alti come un tasto vero.
+   *
+   * Sono le stesse pastiglie di sempre, con una classe in piu': non una seconda
+   * famiglia di pulsanti.
+   */
+  .filtri.grandi { display: flex; gap: 8px; }
+  .filtri.grandi button {
+    flex: 1; min-height: 46px;
+    font-size: 16px; font-weight: 600;
+  }
+
+  /**
+   * **L'interruttore**: acceso a destra, spento a sinistra.
+   *
+   * Chiesto il 9 settembre 2026: «facciamo i pulsanti on e off switch belli,
+   * anche in generale per l'interfaccia, così è più semplice». Da qui in poi è
+   * questo, dovunque ci sia una cosa che sta accesa o spenta — e non una
+   * pastiglia che cambia scritta, che è il modo in cui si finisce a leggere il
+   * testo per capire com'è messa.
+   *
+   * ⚠ **Si capisce anche senza il colore.** La pallina che sta a sinistra o a
+   * destra è la cosa che dice tutto: il verde e il grigio sono la conferma, non
+   * l'informazione. Chi non distingue i due colori vede lo stesso da che parte
+   * sta la pallina — e uno che guarda lo schermo al sole pure.
+   */
+  .interruttore {
+    flex: 0 0 auto;
+    width: 44px; height: 26px; border-radius: 999px;
+    background: var(--line2); border: 1px solid var(--line);
+    position: relative;
+    transition: background .18s ease, border-color .18s ease;
+  }
+  .interruttore i {
+    position: absolute; top: 2px; left: 2px;
+    width: 20px; height: 20px; border-radius: 50%;
+    background: var(--dim);
+    transition: transform .18s cubic-bezier(.2, .8, .3, 1), background .18s ease;
+  }
+  .interruttore.acceso { background: var(--accent); border-color: var(--accent); }
+  .interruttore.acceso i { transform: translateX(18px); background: #fff; }
+  /* La riga con l'interruttore è una voce del foglio come le altre: cambia solo
+     che a destra non c'è una freccia ma una cosa che sta su o giù. */
+  .voceFoglio.conInterruttore { cursor: pointer; }
+  @media (prefers-reduced-motion: reduce) {
+    .interruttore, .interruttore i { transition: none; }
+  }
+
+  /**
    * **Il pannello delle notifiche**, che sale dal basso a mezzo schermo.
    *
    * Chiesto il 7 settembre 2026: «una schermata tipo a mezzo schermo dove ci
@@ -211,9 +264,56 @@ export const STILE = `  :root {
     background: none; border: 0; padding: 0; color: var(--txt);
     min-height: var(--tasto-alto); display: inline-flex; align-items: center;
     cursor: pointer; user-select: none; -webkit-user-select: none;
+    /**
+     * ⚠ **«gap: 0», e sono le due parole attaccate.**
+     *
+     * Chiesto il 7 settembre 2026: «in alto a sinistra prima era piu' bello,
+     * che era tutto attaccato». Il markup e' sempre stato «DaProd<span>Suite
+     * </span>» — senza spazio — ma il tasto e' un flex, e in un flex il testo
+     * nudo e lo span diventano **due pezzi separati**: prendevano gli otto
+     * pixel di distanza dei tasti della barra, e il marchio si leggeva «DaProd
+     * Suite». Una spaziatura arrivata per eredita', non per scelta.
+     */
+    gap: 0;
   }
   .marchio span { color: var(--accent); }
   .marchio:active { transform: none; }
+  /**
+   * **Le sirene**: la barra in alto, quando l'easter egg e' acceso.
+   *
+   * Chiesto il 7 settembre 2026: «quell'effetto che hai messo nell'easter egg
+   * mettilo solo nella navbar, molto piu' accentuato — pero' fai tipo effetto
+   * sirene, colorato. Mi piace».
+   *
+   * Due luci che si rincorrono da un capo all'altro, sfasate: una viola e una
+   * azzurra, che sono i due colori della suite. Sfasate e non insieme, perche'
+   * due luci che vanno di pari passo sono una luce sola larga il doppio — e
+   * quello che fa «sirena» e' proprio il fatto che si inseguono.
+   *
+   * ⚠ **Sta dietro al contenuto, non sopra.** La barra ha dentro il nome
+   * della persona e l'ingranaggio: due luci che ci passano davanti li
+   * renderebbero illeggibili proprio mentre uno li vuole toccare. Quindi
+   * «::before» con «z-index: 0» e il resto sopra.
+   */
+  body.sognante header { position: sticky; overflow: hidden; }
+  body.sognante header::before {
+    content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none;
+    background:
+      radial-gradient(120px 60px at 0% 50%, #8b5cf6cc, transparent 70%),
+      radial-gradient(120px 60px at 100% 50%, #35d0ffcc, transparent 70%);
+    animation: sirene 2.4s ease-in-out infinite alternate;
+  }
+  body.sognante header > * { position: relative; z-index: 1; }
+  @keyframes sirene {
+    0% { transform: translateX(-18%); filter: saturate(1.2); }
+    100% { transform: translateX(18%); filter: saturate(1.8) brightness(1.15); }
+  }
+  /* Chi ha chiesto meno animazioni tiene i colori e non il movimento: si vede
+     lo stesso che c'e' qualcosa di acceso. */
+  @media (prefers-reduced-motion: reduce) {
+    body.sognante header::before { animation: none; }
+  }
+
   /* Il settimo tocco: un lampo, e poi si vede cosa succede. */
   @keyframes lampoMarchio {
     0% { filter: none; }
@@ -1105,9 +1205,32 @@ export const STILE = `  :root {
     text-transform: uppercase; letter-spacing: .5px; margin-bottom: 2px;
   }
   .infoPalco .rigaInfo span {
-    display: block; font-size: 12.5px; color: var(--txt); line-height: 1.45;
+    display: block; font-size: 13.5px; color: var(--txt); line-height: 1.5;
     white-space: pre-wrap; word-break: break-word;
   }
+  /**
+   * ⚠ **Il tasto per copiare, su ogni riga.**
+   *
+   * Chiesto il 7 settembre 2026: «rendiamo pure le info un po' piu' grandi, per
+   * poter aggiungere dei tasti per copiare. Magari mi voglio copiare il testo.
+   * Mettere il pulsante con l'emoji del copia».
+   *
+   * Sta in alto a destra della riga e non in fondo: le righe sono alte diverse
+   * — il testo di una canzone sono venti righe, «quanto dura» e' una parola — e
+   * un tasto in fondo finirebbe ogni volta in un posto diverso. In alto e'
+   * sempre dov'e' il titolo del campo, cioe' dove uno guarda per capire cosa
+   * sta per copiare.
+   */
+  .infoPalco .rigaInfo { position: relative; padding-right: 34px; }
+  .infoPalco .copia {
+    position: absolute; top: 0; right: 0;
+    width: 28px; height: 28px; padding: 0;
+    display: grid; place-items: center;
+    font-size: 13px; line-height: 1;
+    background: var(--panel2); border: 1px solid var(--line2); border-radius: 8px;
+    color: var(--dim);
+  }
+  .infoPalco .copia.fatto { color: var(--accent); border-color: var(--accent); }
   /* Il tasto acceso dice che il riquadro e' aperto: senza, il secondo tocco e'
      un tentativo invece che un gesto. Vale per il tondo del palco e per la
      pastiglia della lente. */
@@ -1185,37 +1308,32 @@ export const STILE = `  :root {
    * Sta in fondo al palco e non tocca niente: nessun evento del mouse arriva
    * qui, quindi i tasti sopra funzionano esattamente come prima.
    */
-  /**
-   * ⚠ **Il visualizer come atmosfera, dietro alla pagina.** Nuovo nella 0.9.4.
+  /*
+   * ⚠ **Il visualizer dietro alla pagina se n'e' andato.** Tolto il 9
+   * settembre 2026.
    *
-   * Chiesto il 6 settembre 2026: «usiamo le animazioni del visualizer sullo
-   * sfondo dell'app in tutte le schede, ma molto molto sfocato e trasparente,
-   * direi un 22 percento su 100».
+   * C'era dalla 0.9.4, chiesto cosi': «usiamo le animazioni del visualizer
+   * sullo sfondo dell'app in tutte le schede, ma molto molto sfocato e
+   * trasparente, direi un 22 percento su 100». Era bello, e costava piu' di
+   * tutto il resto della pagina messo insieme.
    *
-   * **E non e' un ritorno alla 0.9.0**, dove il visualizer era *solo* lo sfondo
-   * e a schermo intero si guardava una lista della spesa con le onde dietro.
-   * Qui sono due cose con due mestieri: nel palco il visualizer **e' il
-   * contenuto**, nitido e a fuoco; qui e' **atmosfera** — sfocato a venti
-   * pixel, al ventidue per cento, sotto a tutto.
+   * > «Togliamo il visualizer dallo sfondo, perche' mi sono reso conto che sul
+   * > tablet scatta molto. Su mobile le prestazioni sono bassissime, deve
+   * > essere super leggero e ottimizzato.»
    *
-   * Tre righe che contano piu' di quanto sembri:
-   * - «pointer-events: none», o meta' pagina smetterebbe di rispondere;
-   * - «z-index: -1» con il corpo trasparente sopra: e' l'unico modo perche'
-   *   stia **sotto** senza entrare nell'ordine di impilamento delle schede;
-   * - «will-change: opacity», perche' un blur a venti pixel ridipinto sessanta
-   *   volte al secondo senza un livello suo fa scattare lo scorrimento.
+   * **Cosa costava, in concreto.** Un «filter: blur(20px)» su un elemento
+   * grande quanto lo schermo e' un lavoro che la scheda video rifa' **a ogni
+   * fotogramma della pagina**, non solo quando il visualizer cambia: e su
+   * mobile la sfocatura gaussiana a venti pixel e' una delle cose piu' care che
+   * esistano. Sopra ci si aggiungeva la copia da un canvas all'altro sedici
+   * volte al secondo. Tutto questo per una macchia che si vedeva al ventidue
+   * per cento, dietro a schermate piene di riquadri opachi che la coprivano
+   * quasi tutta.
+   *
+   * Nel palco il visualizer resta, e li' e' **il contenuto**: nitido, a fuoco,
+   * ed e' quello che uno sta guardando. Vedi «.palcoLettore #visual».
    */
-  #sfondo-visual {
-    position: fixed; inset: 0; z-index: -1;
-    width: 100%; height: 100%;
-    opacity: .22; filter: blur(20px) saturate(130%);
-    /* Il blur mangia i bordi: si allarga un po' oltre lo schermo, o si
-       vedrebbe una cornice piu' chiara tutt'intorno. */
-    transform: scale(1.12);
-    pointer-events: none; will-change: opacity;
-    transition: opacity .8s ease;
-  }
-  #sfondo-visual[hidden] { display: block !important; opacity: 0; }
+
 
   .palcoLettore #visual {
     position: absolute; inset: 0; z-index: 0;
@@ -1375,10 +1493,27 @@ export const STILE = `  :root {
     display: block; color: var(--dim); font-size: 11.5px; cursor: pointer;
     text-decoration: underline dotted var(--line2); text-underline-offset: 3px;
   }
+  /**
+   * ⚠ **La copertina non sta al centro: sta un po' piu' su.**
+   *
+   * Chiesto il 7 settembre 2026: «magari solo alzare un po' l'icona della
+   * musica, che e' troppo centrale: la alziamo un poco in modo da vedere meglio
+   * pure l'effetto dietro, e poi si alza ulteriormente ancora un po' quando
+   * apriamo le info».
+   *
+   * Al centro esatto, la copertina copre proprio la parte del visualizer dove
+   * succedono le cose. Alzandola di un po' si vede quello che c'e' sotto, che
+   * e' la ragione per cui il visualizer sta li'.
+   *
+   * Due gradini, non uno: «su» normale, «su.piuSu» con le info aperte — che
+   * mangiano un terzo dello schermo e altrimenti se la mangerebbero.
+   */
   .palcoLettore .dentro {
     flex: 1; min-height: 0; display: grid; place-items: center; padding: 6px 12px;
-    transition: transform .12s linear, opacity .12s linear;
+    transition: transform .18s ease, opacity .12s linear;
   }
+  .palcoLettore .dentro.su { align-items: start; padding-top: 4vh; }
+  .palcoLettore .dentro.su.piuSu { padding-top: 0; transform: translateY(-6vh); }
   .palcoLettore .dentro img, .palcoLettore .dentro video {
     max-width: 100%; max-height: 100%; display: block;
     border-radius: 12px; object-fit: contain; background: #000;

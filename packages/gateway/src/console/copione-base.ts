@@ -459,6 +459,29 @@ export const COPIONE_BASE = `
    */
   var TIRO_BASTA = 68;
   var TIRO_MASSIMO = 110;
+  /**
+   * **Quanto deve scendere il dito prima che il gesto sia nostro.**
+   *
+   * ⚠ Erano dodici, ed erano pochi. Detto il 9 settembre 2026:
+   * «l'aggiornamento con lo swipe viene triggerato spesso anche mentre abbiamo
+   * in primo piano altre cose». Dodici pixel li fa qualunque tocco un po'
+   * storto, e in cima alla pagina — dove il gesto e' armato — bastavano a far
+   * comparire il cerchio a chi stava solo appoggiando il dito.
+   */
+  var TIRO_PRENDE = 26;
+  /**
+   * **Il freno: quindici secondi fra un aggiornamento e l'altro.**
+   *
+   * Chiesto cosi': «mettiamo dei timer tipo 15 sec si blocca, pure per una
+   * questione di banda per ottimizzare bene il tutto». Ogni tiro sono quattro o
+   * cinque richieste al computer, e da fuori casa passano tutte per la rete di
+   * chi sta col telefono in mano.
+   *
+   * Non e' un gesto che si spegne: e' un gesto che **risponde a parole**. Vedi
+   * «molla».
+   */
+  var TIRO_PAUSA = 15000;
+  var ultimoTiro = 0;
 
   /**
    * ⚠ **Si monta una volta sola, e la guardia serve davvero.**
@@ -484,6 +507,7 @@ export const COPIONE_BASE = `
     document.body.append(segno);
 
     var partenza = -1;
+    var partenzaX = 0;
     var quanto = 0;
     var sto = false;
 
@@ -501,13 +525,41 @@ export const COPIONE_BASE = `
       setTimeout(function () { segno.style.transition = ""; }, 260);
     }
 
+    /**
+     * **C'e' qualcosa aperto sopra la pagina?**
+     *
+     * ⚠ Prima questa domanda era mezza, e stava scritta in una riga sola:
+     * guardava il foglio e la lente, e non sapeva del palco del lettore, del
+     * pannello delle notifiche, del mix degli stili. Dentro quelle cose un dito
+     * che scende e' il gesto **loro** — il palco si abbassa, il pannello si
+     * chiude — e invece partiva un aggiornamento.
+     *
+     * Detto il 9 settembre 2026: «viene triggerato spesso anche mentre abbiamo
+     * in primo piano altre cose».
+     *
+     * Sta in una funzione perche' l'elenco crescera' ancora: il giorno che si
+     * aggiunge un pannello nuovo, si aggiunge una riga qui e lo sanno tutti.
+     */
+    function qualcosaSopra() {
+      if (document.getElementById("foglio")) return true;
+      if (document.querySelector(".lente")) return true;
+      // Il palco del lettore, a schermo intero: li' il trascinamento in giu' lo
+      // abbassa.
+      if (document.querySelector(".palcoLettore:not([hidden])")) return true;
+      // Il pannello delle notifiche, che sale dal basso.
+      var notifiche = document.getElementById("pannello-notifiche");
+      if (notifiche && !notifiche.hidden) return true;
+      // Il foglio del mix degli stili.
+      var mix = document.querySelector(".mixStili");
+      if (mix && !mix.hidden && mix.classList.contains("su")) return true;
+      return false;
+    }
+
     document.addEventListener("touchstart", function (ev) {
-      // Non si tira quando c'e' un foglio o una lente aperta sopra: li' il
-      // trascinamento verso il basso vuol dire «chiudimi», ed e' un altro
-      // gesto. Vedi «trascinaPerChiudere».
-      if (document.getElementById("foglio") || document.querySelector(".lente")) return;
+      if (qualcosaSopra()) { partenza = -1; return; }
       if (sto || window.scrollY > 0 || ev.touches.length !== 1) { partenza = -1; return; }
       partenza = ev.touches[0].clientY;
+      partenzaX = ev.touches[0].clientX;
       quanto = 0;
     }, { passive: true });
 
@@ -516,11 +568,18 @@ export const COPIONE_BASE = `
       var giu = ev.touches[0].clientY - partenza;
       if (giu <= 0 || window.scrollY > 0) { partenza = -1; mostra(0); return; }
       /*
-       * ⚠ **Si prende il gesto solo dopo un po'.** I primi pixel restano alla
-       * pagina: chi scorre in su non deve vedersi comparire un cerchio ogni
-       * volta che sfiora lo schermo vicino al bordo.
+       * ⚠ **Si prende il gesto solo dopo un po', e solo se e' dritto.**
+       *
+       * I primi pixel restano alla pagina: chi scorre in su non deve vedersi
+       * comparire un cerchio ogni volta che sfiora lo schermo vicino al bordo.
+       *
+       * E il dito deve andare **piu' in giu' che di lato**: senza questa
+       * riga, l'inizio di uno swipe laterale — su una riga delle notifiche,
+       * su una foto in galleria — armava il tiro se per caso scendeva un po'.
        */
-      if (giu < 12) return;
+      var lato = Math.abs(ev.touches[0].clientX - partenzaX);
+      if (lato > giu) { partenza = -1; mostra(0); return; }
+      if (giu < TIRO_PRENDE) return;
       // Frenato: piu' tiri, meno scende. E' quello che fanno tutte, e serve a
       // far capire col dito che si sta arrivando in fondo alla corsa.
       quanto = Math.min(TIRO_MASSIMO, 12 + (giu - 12) * 0.45);
@@ -532,6 +591,25 @@ export const COPIONE_BASE = `
       if (partenza < 0 || sto) { partenza = -1; return; }
       partenza = -1;
       if (quanto < TIRO_BASTA) { chiudi(); return; }
+      /**
+       * ⚠ **Il freno, e perche' parla.**
+       *
+       * Quindici secondi fra un aggiornamento e l'altro: ogni tiro sono quattro
+       * o cinque richieste, e da fuori casa passano dalla rete di chi ha il
+       * telefono in mano. Chiesto il 9 settembre 2026.
+       *
+       * Ma un gesto che non fa niente e' indistinguibile da un gesto rotto — e
+       * questo e' un gesto che uno rifa' apposta perche' pensa non abbia
+       * funzionato. Quindi si dice **perche'**, come per ogni altro no della
+       * suite.
+       */
+      var daQuando = Date.now() - ultimoTiro;
+      if (daQuando < TIRO_PAUSA) {
+        avvisa("Aggiornato da poco. Riprova fra " + Math.ceil((TIRO_PAUSA - daQuando) / 1000) + " secondi.");
+        chiudi();
+        return;
+      }
+      ultimoTiro = Date.now();
       sto = true;
       segno.classList.add("gira");
       mostra(TIRO_BASTA);
@@ -1066,8 +1144,47 @@ export const COPIONE_BASE = `
     if (!decido()) disegnaLeNotifiche($("coda-notifiche"));
   }
 
+  /**
+   * **Le notifiche di DaProd sono accese?** Di suo si'.
+   *
+   * Sta nel telefono di chi guarda e non sul computer: e' una preferenza di
+   * **questo** telefono. Vedi l'interruttore in «apriImpostazioni».
+   */
+  var CHIAVE_SOCIAL = "daprod.notifiche.social";
+
+  function notificheSocialAccese() {
+    try { return localStorage.getItem(CHIAVE_SOCIAL) !== "no"; } catch (e) { return true; }
+  }
+
+  function accendiLeNotificheSocial(acceso) {
+    try { localStorage.setItem(CHIAVE_SOCIAL, acceso ? "si" : "no"); } catch (e) { /* niente */ }
+    disegnaIlPallino();
+    if (pannelloNotificheAperto()) disegnaLeNotifiche($("notifiche-elenco"));
+    if (pagina === "riepilogo" && !decido()) disegnaLeNotifiche($("coda-notifiche"));
+  }
+
+  /**
+   * Questa notifica parla di DaProd — cioe' degli altri?
+   *
+   * ⚠ **Si guardano le parole, come fa il telefono in «Notifiche.valeLaPena».**
+   * Il gateway scrive quelle frasi in un posto solo e sono frasi, non codici: se
+   * un giorno cambiano, questo filtro **smette di nascondere** qualcosa — e
+   * quello si nota — invece di nascondere tutto, che non si nota finche' non
+   * manca una cosa che serviva.
+   */
+  function eDelSocial(n) {
+    var tutto = ((n && n.titolo) + " " + (n && n.corpo)).toLowerCase();
+    return tutto.indexOf("comment") >= 0 || tutto.indexOf("piace") >= 0;
+  }
+
   /** Le notifiche arrivate, come le manda il computer. */
   var mieNotifiche = [];
+
+  /** Quelle da far vedere: tutte, o tutte tranne quelle di DaProd. */
+  function notificheDaMostrare() {
+    if (notificheSocialAccese()) return mieNotifiche;
+    return mieNotifiche.filter(function (n) { return !eDelSocial(n); });
+  }
 
   async function leggiNotifiche() {
     try {
@@ -1096,7 +1213,9 @@ export const COPIONE_BASE = `
   function disegnaIlPallino() {
     var pallino = $("pallino-notifiche");
     if (!pallino) return;
-    pallino.hidden = mieNotifiche.length === 0;
+    // Quelle da mostrare, non tutte: col social spento, un pallino per una cosa
+    // che poi non si trova sarebbe peggio di nessun pallino.
+    pallino.hidden = notificheDaMostrare().length === 0;
   }
 
   function pannelloNotificheAperto() {
@@ -1191,14 +1310,15 @@ export const COPIONE_BASE = `
   function disegnaLeNotifiche(dove) {
     if (!dove) return;
     dove.innerHTML = "";
-    if (!mieNotifiche.length) {
+    var quali = notificheDaMostrare();
+    if (!quali.length) {
       var niente = document.createElement("p");
       niente.className = "vuoto";
       niente.textContent = "Niente di nuovo. Quando una tua cosa e\\u0027 pronta, la trovi qui.";
       dove.append(niente);
       return;
     }
-    for (var n of mieNotifiche) dove.append(rigaNotifica(n, dove));
+    for (var n of quali) dove.append(rigaNotifica(n, dove));
   }
 
   /** Apre e chiude il pannello a mezzo schermo. */

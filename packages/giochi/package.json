@@ -1,0 +1,21 @@
+{
+  "name": "@daprod/giochi",
+  "version": "0.1.0",
+  "private": true,
+  "description": "DaProdGiochi: la sala giochi della suite. Regole, dati, deposito e pagina, in un pacchetto solo.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "prova": "node scripts/niente-apici.mjs --provami && node scripts/prova.mjs && node scripts/prova-fila.mjs && node scripts/prova-shop.mjs",
+    "a-mano": "node scripts/prova-a-mano.mjs"
+  },
+  "dependencies": {
+    "@daprod/azioni": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.18.0",
+    "typescript": "~5.9.3"
+  }
+}

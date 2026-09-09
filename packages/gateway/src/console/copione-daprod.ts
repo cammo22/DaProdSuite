@@ -505,34 +505,36 @@ export const COPIONE_DAPROD = `
     piedi.append(cuore);
 
     /**
-     * «Tienila»: **non è una copia**.
+     * **Scarica**, al posto della stella «tieni».
      *
-     * La fa comparire fra le proprie cose, come un segnalibro. Il file resta di
-     * chi l'ha fatto, e se lui la toglie dalla bacheca sparisce anche da qui —
-     * era sua, ha cambiato idea, e un segnalibro non è un diritto acquisito.
+     * ⚠ Chiesto il 7 settembre 2026: «togliamo la stella tieni, non mi
+     * piace; piu' che altro metti il pulsante download a destra, dove hai fatto
+     * il cuore e commenta, tutto a destra: e ti scarica proprio il file — mp3
+     * per la canzone, l'immagine per l'immagine, il video per il video».
+     *
+     * «Tienila» era un segnalibro: faceva comparire la cosa fra le proprie
+     * senza copiarla, e spariva se chi l'aveva fatta la toglieva dalla bacheca.
+     * Un'idea onesta e una cosa che nessuno ha mai usato — e che spiegava male
+     * se stessa: una stella accanto a un cuore sono due modi di dire «mi
+     * piace», e uno dei due mente.
+     *
+     * Al posto suo c'e' la cosa che uno vuole davvero da una roba degli altri:
+     * portarsela via. Il file vero, quello che e' — e il tipo lo decide il
+     * computer, non questa riga.
      */
     if (!v.mia) {
-      var tieni = document.createElement("button");
-      tieni.className = "cuore" + (v.tenuta ? " mio" : "");
-      var segnalibro = document.createElement("span");
-      segnalibro.className = "simbolo";
-      segnalibro.textContent = v.tenuta ? "\\u2605" : "\\u2606";
-      var parola = document.createElement("span");
-      parola.textContent = v.tenuta ? "tenuta" : "tieni";
-      tieni.append(segnalibro, parola);
-      tieni.addEventListener("click", async function () {
-        try {
-          await chiama("/libreria/" + encodeURIComponent(v.id) + "/tengo", {
-            method: "POST",
-            body: JSON.stringify({ tengo: !v.tenuta }),
-          });
-          v.tenuta = !v.tenuta;
-          tieni.className = "cuore" + (v.tenuta ? " mio" : "");
-          segnalibro.textContent = v.tenuta ? "\\u2605" : "\\u2606";
-          parola.textContent = v.tenuta ? "tenuta" : "tieni";
-        } catch (e) { avvisaDelMale(e); }
+      var scarica = document.createElement("button");
+      scarica.className = "cuore";
+      var giu = document.createElement("span");
+      giu.className = "simbolo";
+      giu.textContent = "\\u2913";
+      var dice = document.createElement("span");
+      dice.textContent = "scarica";
+      scarica.append(giu, dice);
+      scarica.addEventListener("click", function () {
+        void tieniNelTelefono(v, scarica);
       });
-      piedi.append(tieni);
+      piedi.append(scarica);
     } else {
       var togli = document.createElement("button");
       togli.className = "cuore";

@@ -9,7 +9,7 @@
  *   GET  /stato                                 →  StatoSuite (istantanea)
  *   GET  /stato/stream                          →  stato in streaming (SSE)
  *   GET  /azioni                                →  cosa si può chiedere, con gli schemi
- *   POST /azioni/:id           { campi… }        →  in fila, oppure la risposta
+ *   POST /azioni/:id           { campi… }        →  in fila, oppure la risposta (con ?inCoda=1 aspetta un si' anche se potrebbe partire)
  *   GET  /richieste                             → richieste visibili al dispositivo
  *   POST /richieste        { tipo, app, testo, opzioni? }   → crea (ospiti e admin)
  *   GET  /richieste/:id                         → dettaglio
@@ -47,6 +47,8 @@
  *   POST /macchina/ferma                        → ferma quello che gira adesso (solo il PC)
  *   POST /macchina/accetta-tutte                → dà il sì a tutto quello che aspetta
  *   POST /richieste/:id/rifai  { testo? }        → rifallo, uguale o modificato
+ *   GET  /pannello/connessioni               → come stanno i collegamenti (solo admin)
+ *   GET  /giochi                              → la sala giochi (una pagina, come la console)
  *   GET  /stili?genere=stile|prompt              → i tuoi stili e i tuoi prompt: un magazzino solo
  *   POST /stili   { id?, nome, testo, tipo }     → salvane uno, o cambialo
  *   DELETE /stili/:id                           → buttalo
@@ -88,6 +90,7 @@ import { copyFileSync, createReadStream, createWriteStream, mkdirSync, rmSync, s
 import { join, normalize } from "node:path";
 import { elencoAzioni, eseguiAzione, type Esecutore } from "./azioni";
 import { paginaConsole } from "./console";
+import { paginaGiochi, rispondi as rispondiAiGiochi, type Deposito as DepositoGiochi } from "@daprod/giochi";
 import { Remoto } from "./remoto";
 import type { Rete } from "./rete";
 import type {
@@ -148,6 +151,18 @@ export interface GatewayOpzioni {
   chiacchierata?: FornitoreChiacchierata;
   /** Chi tiene gli stili musicali di ogni persona. */
   stili?: FornitoreStili;
+  /**
+   * La sala giochi, se questa suite ce l'ha.
+   *
+   * ⚠ **Il gateway non sa niente del gioco**, e non deve: gli passa chi sta
+   * chiedendo, il metodo, il percorso e il corpo, e riporta indietro quello che
+   * il banco ha deciso. Le regole, il portafoglio e il mazzo stanno tutti in
+   * `@daprod/giochi` — vedi il suo `CONCETTI.md`.
+   *
+   * Facoltativo come tutti gli altri: senza, la sala risponde 501 invece di
+   * sparire, e chi la apre legge una frase invece di un numero.
+   */
+  giochi?: DepositoGiochi;
   /**
    * L'annunciatore sulla rete locale, se questa suite ce l'ha.
    *
@@ -228,6 +243,7 @@ export class Gateway {
   private macchina: FornitoreMacchina | undefined;
   private chiacchierata: FornitoreChiacchierata | undefined;
   private stili: FornitoreStili | undefined;
+  private giochi: DepositoGiochi | undefined;
   private rete: Rete | undefined;
 
   constructor(opzioni: GatewayOpzioni) {
@@ -242,6 +258,7 @@ export class Gateway {
     this.macchina = opzioni.macchina;
     this.chiacchierata = opzioni.chiacchierata;
     this.stili = opzioni.stili;
+    this.giochi = opzioni.giochi;
     this.rete = opzioni.rete;
     this.server = createServer((req, res) => {
       void this.maneggia(req, res);
@@ -301,6 +318,25 @@ export class Gateway {
         return;
       }
 
+      /* --------------------------------------------------- la sala giochi */
+
+      /**
+       * **DaProdGiochi**: una pagina servita da qui, come la console.
+       *
+       * ⚠ **Non e' un'app a se'**, ed e' voluto (CONCETTI.md § 15): cosi' e'
+       * la stessa identica cosa sul computer, sul telefono e nel browser. E chi
+       * gioca e' **un dispositivo accoppiato** — stesso id, stesso nome, stesso
+       * ruolo: l'admin del gioco e' l'admin della suite, niente password del
+       * gioco, e chi non comanda il computer non puo' diventare banco
+       * scrivendo qualcosa in una casella.
+       *
+       * Il gateway qui fa tre cose, e nessuna riguarda il gioco: dice chi sta
+       * chiedendo, passa la domanda, riporta la risposta.
+       */
+      if (percorso === "/giochi" && req.method === "GET") {
+        this.pagina(res, paginaGiochi("/giochi"));
+        return;
+      }
       /**
        * Il file di un regalo, letto **prima** di tutto il resto.
        *
@@ -373,6 +409,39 @@ export class Gateway {
       }
 
       const corpo = await leggiCorpo(req);
+
+      if (percorso.startsWith("/giochi/")) {
+        const chiGioca = this.chiE(req, url);
+        if (!chiGioca) return this.errore(res, 401, "Token mancante o non riconosciuto.");
+        if (!this.giochi) {
+          return this.errore(res, 501, "Questa suite non ha la sala giochi accesa.");
+        }
+        const esito = rispondiAiGiochi(
+          this.giochi,
+          { id: chiGioca.id, nome: chiGioca.nome, admin: chiGioca.ruolo === "admin" },
+          {
+            nomeDi: (id) =>
+              this.remoto.listaDispositivi().find((d) => d.id === id)?.nome ?? "qualcuno",
+            facciaDi: (id) => {
+              const d = this.remoto.listaDispositivi().find((x) => x.id === id);
+              return d ? indirizzoDellaFoto(d) : undefined;
+            },
+            indirizzoLibreria: (id) => "/libreria/file/" + encodeURIComponent(id),
+          },
+          req.method ?? "GET",
+          percorso.slice("/giochi".length),
+          (corpo ?? {}) as Record<string, unknown>,
+        );
+        this.json(res, esito.codice, esito.dati);
+        /**
+         * Una mossa che cambia il conto di qualcuno la sanno anche gli altri: la
+         * classifica e la fila delle combinazioni si aggiornano dove sono
+         * aperte, senza che nessuno ricarichi.
+         */
+        if (req.method !== "GET" && esito.codice < 400) this.aggiorna();
+        return;
+      }
+
 
       // L'accoppiamento è l'unica rotta senza token: è il momento in cui il
       // dispositivo non ha ancora una credenziale, e gliela si dà.
@@ -471,10 +540,24 @@ export class Gateway {
 
       const dispositivo = this.chiE(req, url);
       if (!dispositivo) {
+        /**
+         * ⚠ **Un no si segna**, dalla 1.2.5.
+         *
+         * Il 9 settembre 2026: «2 dispositivi di mia zia non funzionano piu'».
+         * Un telefono che ha perso il collegamento continua a provare — ogni
+         * apertura, ogni giro della sentinella — e dal computer non si vedeva
+         * niente. Adesso il conto dei no finisce sulla riga di quel dispositivo
+         * nella dashboard delle connessioni, ed e' il numero che dice «sta
+         * bussando e gli sto dicendo di no».
+         */
+        this.remoto.segnaUnNo(this.tokenGrezzo(req, url));
         this.errore(res, 401, "Token mancante o non riconosciuto.");
         return;
       }
-      this.remoto.tocca(dispositivo);
+      this.remoto.tocca(dispositivo, {
+        strada: stradaDi(req),
+        versioneApp: primaRiga(req.headers["x-daprod-app"]),
+      });
 
       // Stato: istantanea e streaming. Le due rotte gemelle.
       if (percorso === "/stato" && req.method === "GET") {
@@ -512,12 +595,22 @@ export class Gateway {
       const daFare = percorso.match(/^\/azioni\/([^/]+)$/);
       if (daFare && req.method === "POST") {
         const id = decodeURIComponent(daFare[1] ?? "");
+        /**
+         * `?inCoda=1`: «mettila in fila, non farla partire adesso».
+         *
+         * ⚠ Nell'indirizzo e non nel corpo, ed e' voluto: dentro l'app del
+         * telefono, quando il computer non risponde, chi esaudisce questa POST
+         * e' l'app stessa — e Android non le fa leggere il corpo di una
+         * richiesta intercettata. Vedi `anchePerIndirizzo` nella console: i
+         * campi viaggiano gia' cosi' per la stessa ragione.
+         */
         const esito = await eseguiAzione(
           this.remoto,
           this.esecutore,
           dispositivo,
           id,
           (corpo ?? {}) as Record<string, unknown>,
+          url.searchParams.get("inCoda") === "1",
         );
         if (esito.esito === "errore") {
           this.errore(res, esito.codice, esito.errore);
@@ -1377,6 +1470,53 @@ export class Gateway {
         }
       }
 
+      /**
+       * **La dashboard delle connessioni.** Nuova nella 1.2.5.
+       *
+       * Chiesta il 9 settembre 2026: «facciamo nella suite una dash che mostra
+       * le connessioni, se sono collegati, se tutto e' ok, e dei tasti per
+       * aggiustare nel caso ci siano problemi che non devono capitare in
+       * futuro».
+       *
+       * ⚠ **Il punto e' la colonna «come va».** Il resto — nomi, ruoli,
+       * ultimo accesso — c'era gia' sparso fra il pannello e le impostazioni.
+       * Quello che mancava, e che ha lasciato «due dispositivi di mia zia non
+       * funzionano piu'» senza risposta per due giorni, e' il **giudizio**: sta
+       * bussando e gli dico di no? ha una versione vecchia? non si fa vivo da
+       * giorni? Sono tre domande a cui il computer sapeva rispondere e nessuno
+       * gli aveva mai chiesto.
+       *
+       * La legge solo chi decide: dice da dove si collegano le persone di casa.
+       */
+      if (percorso === "/pannello/connessioni" && req.method === "GET") {
+        if (dispositivo.ruolo !== "admin") {
+          return this.errore(res, 403, "Questo lo può vedere solo chi ha il permesso di decidere.");
+        }
+        const adesso = Date.now();
+        this.json(res, 200, {
+          adesso,
+          versioneSuite: this.versione,
+          dispositivi: this.remoto.listaDispositivi().map((d) => ({
+            id: d.id,
+            nome: d.nome,
+            ruolo: d.ruolo,
+            foto: indirizzoDellaFoto(d),
+            accoppiato: d.accoppiato,
+            ultimoAccesso: d.ultimoAccesso,
+            strada: d.ultimaStrada ?? "",
+            versioneApp: d.versioneApp ?? "",
+            noDiFila: d.noDiFila ?? 0,
+            ultimoNo: d.ultimoNo ?? 0,
+            // Il computer stesso non e' un telefono che si puo' scollegare: si
+            // dice, cosi' la pagina non gli mette accanto dei tasti che non
+            // hanno senso.
+            eIlComputer: d.id === "questo-computer",
+            ...comeVa(d, adesso, this.versione),
+          })),
+        });
+        return;
+      }
+
       if (percorso === "/pannello/qr-app" && req.method === "GET") {
         if (!this.pannello?.qrApp) return this.errore(res, 501, "Questa suite non sa disegnarlo.");
         if (dispositivo.ruolo !== "admin") {
@@ -1980,6 +2120,18 @@ export class Gateway {
    * rotta di sola lettura, e senza quell'eccezione la console web non avrebbe
    * lo stato vivo.
    */
+  /**
+   * Il token cosi' com'e' arrivato, valido o no.
+   *
+   * Serve solo a `segnaUnNo`: per capire **di chi** e' un token che non vale
+   * piu' bisogna guardarlo, e a quel punto `chiE` ha gia' detto di no.
+   */
+  private tokenGrezzo(req: IncomingMessage, url: URL): string {
+    const testa = req.headers.authorization ?? "";
+    if (testa.startsWith("Bearer ")) return testa.slice(7);
+    return url.searchParams.get("token") ?? "";
+  }
+
   private chiE(req: IncomingMessage, url: URL): Dispositivo | undefined {
     const testa = req.headers.authorization ?? "";
     let token = testa.startsWith("Bearer ") ? testa.slice(7) : "";
@@ -2612,6 +2764,88 @@ export class Gateway {
  * `mandaConPezzi`, dove un indirizzo con la versione dentro torna a valere un
  * giorno invece di essere richiesto a ogni faccia di ogni riquadro.
  */
+/**
+ * **Come va questo collegamento**, in una parola e una frase.
+ *
+ * ⚠ Il giudizio sta **qui e non nella pagina**, e non e' un dettaglio: la
+ * stessa domanda se la fanno la dashboard, il pannello e — il giorno che
+ * servira' — un avviso automatico. Se ognuno se la rispondesse per conto suo,
+ * tre schermate direbbero tre cose diverse dello stesso telefono.
+ *
+ * L'ordine dei controlli e' quello dell'urgenza: prima quello che **sta
+ * succedendo adesso** (mi bussa e gli dico di no), poi quello che e' rimasto
+ * indietro (una versione vecchia), poi il silenzio.
+ */
+function comeVa(
+  d: { ultimoAccesso: number; noDiFila?: number; versioneApp?: string; id: string },
+  adesso: number,
+  versioneSuite: string,
+): { come: "bene" | "guarda" | "male"; perche: string } {
+  const GIORNO = 24 * 60 * 60 * 1000;
+
+  if ((d.noDiFila ?? 0) >= 3) {
+    return {
+      come: "male",
+      perche:
+        "Sta provando a collegarsi e gli sto dicendo di no " +
+        (d.noDiFila ?? 0) +
+        " volte di fila. Il suo collegamento non vale piu': va rifatto.",
+    };
+  }
+
+  // Il computer non ha un'app addosso: le due domande dopo non lo riguardano.
+  if (d.id === "questo-computer") return { come: "bene", perche: "E' questo computer." };
+
+  if (d.versioneApp && d.versioneApp !== versioneSuite) {
+    return {
+      come: "guarda",
+      perche:
+        "Ha la " + d.versioneApp + " e il computer e' alla " + versioneSuite +
+        ". Funziona lo stesso, ma conviene aggiornarlo.",
+    };
+  }
+
+  const daQuanto = adesso - d.ultimoAccesso;
+  if (daQuanto > 7 * GIORNO) {
+    return { come: "guarda", perche: "Non si fa vivo da piu' di una settimana." };
+  }
+  if (!d.versioneApp) {
+    return {
+      come: "bene",
+      perche: "Si collega, ma non dice che versione ha: e' un'app prima della 1.2.5.",
+    };
+  }
+  return { come: "bene", perche: "Tutto a posto." };
+}
+
+/**
+ * **Da che strada e' arrivata questa chiamata.**
+ *
+ * ⚠ Non e' l'indirizzo IP, ed e' voluto: quello che serve a capire un
+ * guaio non e' «192.168.1.14», e' «da casa» oppure «dal tunnel». Un telefono
+ * che fino a ieri passava dalla wifi e oggi passa dal tunnel ha cambiato
+ * qualcosa — ed e' meta' della diagnosi quando qualcuno dice «non funziona
+ * piu'».
+ *
+ * Si guarda l'intestazione «Host», che dice a **quale nome** ha bussato:
+ * quello lo sceglie chi chiama, e quindi racconta la sua strada.
+ */
+function stradaDi(req: IncomingMessage): string {
+  const host = (primaRiga(req.headers.host) ?? "").toLowerCase();
+  if (!host) return "non lo so";
+  if (host.startsWith("127.0.0.1") || host.startsWith("localhost")) return "questo computer";
+  if (host.includes("trycloudflare.com")) return "tunnel";
+  if (host.includes("ts.net")) return "tailscale";
+  if (/^\d+\.\d+\.\d+\.\d+/.test(host)) return "casa";
+  return host.split(":")[0] ?? "non lo so";
+}
+
+/** Un'intestazione puo' arrivare doppia: si prende la prima e basta. */
+function primaRiga(v: string | string[] | undefined): string | undefined {
+  if (Array.isArray(v)) return v[0];
+  return v;
+}
+
 export function indirizzoDellaFoto(d: { id: string; foto?: string }): string | undefined {
   if (!d.foto) return undefined;
   const versione = createHash("sha1").update(d.foto).digest("hex").slice(0, 10);

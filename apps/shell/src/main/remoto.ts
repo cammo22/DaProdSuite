@@ -14,6 +14,8 @@
 
 import { app } from "electron";
 import { randomBytes } from "node:crypto";
+import { join } from "node:path";
+import { mkdirSync } from "node:fs";
 import * as QRCode from "qrcode";
 import {
   Archivio,
@@ -54,7 +56,8 @@ import type {
 import { appManager } from "./app-manager";
 import { PADRONE_DI_CASA, libreria } from "./libreria";
 import { aiDisponibile, migliora } from "./migliora";
-import { REMOTO_ARCHIVIO, REMOTO_DIR } from "./paths";
+import { GIOCHI_DIR, REMOTO_ARCHIVIO, REMOTO_DIR } from "./paths";
+import { Deposito as DepositoGiochi } from "@daprod/giochi";
 import { indirizziBuoni, ipLocale, reti } from "./reti";
 import {
   impostaAccettaDaSola,
@@ -1400,6 +1403,32 @@ remoto.suBussata((bussata) => {
 
 /* ------------------------------------------------------------ gateway */
 
+/**
+ * Il banco della sala giochi, costruito una volta sola.
+ *
+ * ⚠ **Il deposito tiene i dati in memoria e scrive quando cambiano**: due
+ * depositi sullo stesso file sarebbero due portafogli che si sovrascrivono a
+ * vicenda. Per questo si costruisce qui, una volta, e non a ogni accensione del
+ * gateway — che si spegne e si riaccende quando si tocca l'interruttore della
+ * connessione.
+ *
+ * Se non si riesce a costruirlo (disco pieno, cartella non scrivibile) la suite
+ * si apre lo stesso e la sala risponde «non e' accesa»: un gioco che non parte
+ * non e' un motivo per non poter generare una foto.
+ */
+let banco: DepositoGiochi | undefined;
+
+function bancoDeiGiochi(): DepositoGiochi | undefined {
+  if (banco) return banco;
+  try {
+    mkdirSync(GIOCHI_DIR, { recursive: true });
+    banco = new DepositoGiochi(join(GIOCHI_DIR, "giochi.json"));
+  } catch (errore) {
+    console.error("[giochi] non riesco ad aprire il banco", errore);
+  }
+  return banco;
+}
+
 async function accendi(): Promise<StatoAccesso> {
   if (gateway) return statoPannello();
   const nuovo = new Gateway({
@@ -1414,6 +1443,7 @@ async function accendi(): Promise<StatoAccesso> {
     macchina: fornitoreMacchina,
     chiacchierata: fornitoreChiacchierata,
     stili: fornitoreStili,
+    giochi: bancoDeiGiochi(),
     rete: annunciatore,
   });
   // Chi può arrivare: tutta la rete se la connessione è accesa, solo questo

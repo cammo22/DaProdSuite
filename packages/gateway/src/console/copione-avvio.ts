@@ -290,9 +290,15 @@ export const COPIONE_AVVIO = `
   $("collega").addEventListener("click", collega);
   $("codice").addEventListener("keydown", function (ev) { if (ev.key === "Enter") collega(); });
   $("nome").addEventListener("keydown", function (ev) { if (ev.key === "Enter") $("codice").focus(); });
-  $("manda").addEventListener("click", manda);
+  $("manda").addEventListener("click", function () { void manda(false); });
+  $("manda-in-coda").addEventListener("click", function () { void manda(true); });
   $("apri-stili").addEventListener("click", function () { vaiA("stili"); });
-  $("annulla").addEventListener("click", chiudiModulo);
+  /*
+   * ⚠ Qui c'era «annulla», cioe' «Lascia stare». Tolto il 9 settembre 2026: il
+   * modulo si chiude toccando un'altra azione, cambiando scheda o tornando
+   * indietro, e un tasto per **non** fare una cosa occupava il posto di uno che
+   * una cosa la fa — che adesso e' «Manda in coda».
+   */
   $("apri-impostazioni").addEventListener("click", apriImpostazioni);
   $("vedi-bussate").addEventListener("click", function () { void apriLaRete(); });
 
@@ -367,32 +373,37 @@ export const COPIONE_AVVIO = `
   function easterEgg() {
     var acceso = document.body.classList.toggle("sognante");
     if (acceso) {
-      var tela = $("visual");
-      if (tela && Visual.accendi(tela)) {
-        var dietro = $("sfondo-visual");
-        if (dietro) dietro.style.opacity = "";
-        if (!sogno) sogno = requestAnimationFrame(unSogno);
-      }
-      avvisa("Va da solo. Ritoccalo sette volte per farlo smettere.", "bene");
+      /**
+       * ⚠ **Adesso l'easter egg sono le sirene nella barra, e basta.**
+       *
+       * Fino alla 1.2.4 accendeva il visualizer **dietro a tutta la pagina**,
+       * sfocato al ventidue per cento. Due richieste dello stesso giorno lo
+       * hanno cambiato, e vanno nella stessa direzione:
+       *
+       * > «Quell'effetto mettilo **solo nella navbar**, molto piu' accentuato,
+       * > tipo effetto sirene.»
+       *
+       * > «Togliamo il visualizer dallo sfondo, perche' sul tablet scatta
+       * > molto. Su mobile le prestazioni sono bassissime.»
+       *
+       * Quindi la classe «sognante» adesso accende solo le luci nella barra —
+       * due gradienti che si rincorrono, che costano quanto niente — e il
+       * visualizer resta dov'e' il suo mestiere: nel palco, dove e' **il
+       * contenuto** e non l'atmosfera.
+       *
+       * Le due frasi sono una coppia: «buonanotte» quando si spegne c'era gia',
+       * e da sola non diceva a nessuno che dall'altra parte c'era qualcosa da
+       * scoprire. Chiesto il 7 settembre 2026: «trova un'altra frase quando lo
+       * attiva — tipo "complimenti, hai scoperto un segreto", sempre con
+       * l'effetto confetti».
+       */
+      avvisa("Complimenti, hai scoperto un segreto. Ritoccalo sette volte per farlo smettere.", "bene");
+      coriandoli();
     } else {
-      if (sogno) { cancelAnimationFrame(sogno); sogno = null; }
-      if (!palcoAperto) {
-        var d = $("sfondo-visual");
-        if (d) d.style.opacity = "0";
-      }
       avvisa("Buonanotte.");
     }
   }
 
-  var sogno = null;
-  function unSogno() {
-    sogno = requestAnimationFrame(unSogno);
-    // Senza niente che suona il motore disegna comunque: le feature scendono a
-    // zero e gli effetti si muovono piano, che e' esattamente quello che serve
-    // a uno sfondo.
-    Visual.disegna(suonante);
-    Visual.copiaSulloSfondo();
-  }
   /**
    * ⚠ **Le tre linee cambiano mestiere.** Chiesto il 5 settembre 2026: «il
    * tasto con le tre linee a destra durante la riproduzione DaProd non
