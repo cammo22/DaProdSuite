@@ -107,10 +107,12 @@ class SyncWorker(context: Context, params: WorkerParameters) : CoroutineWorker(c
             }
 
             try {
-                for ((id, testo) in client.notificheNonLette()) {
+                for (n in client.notificheNonLette()) {
                     // Con più persone il nome serve: «pronto» da chi, se no.
-                    Notifiche.mostra(ctx, persona.nome, testo)
-                    client.segnaNotificaLetta(id)
+                    // Il lavoro e la persona vanno passati: sono quello che
+                    // serve al tasto «Rimanda». Vedi Rimanda.kt.
+                    Notifiche.mostra(ctx, persona.nome, n.testo, n.richiesta, persona.id)
+                    client.segnaNotificaLetta(n.id)
                 }
             } catch (_: Exception) {
                 // PC spento o fuori rete: si riprova alla prossima finestra.

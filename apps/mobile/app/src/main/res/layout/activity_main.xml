@@ -93,10 +93,23 @@
         android:layout_weight="1">
 
         <!-- =============================== CHI SEI =============================== -->
+        <!--
+          ⚠ **Parte nascosto, e non e' un dettaglio.** Fino alla 1.2.3 questa
+          era la schermata che si vedeva all'accensione, per il secondo o due in
+          cui l'app decide dove andare: chi aveva gia' fatto il collegamento si
+          vedeva chiedere «Chi sei?» a ogni avvio, e poi la domanda spariva da
+          sola. Detto il 7 settembre 2026: «facciamo che si vede un piccolo
+          caricamento invece che vedere chi sei; chi sei esce solo all'inizio
+          durante il setup e poi si apre l'app».
+
+          Adesso si parte da `Dove.AVVIO`, che e' la rotella qui sotto, e questa
+          schermata si accende solo quando serve davvero.
+        -->
         <androidx.core.widget.NestedScrollView
             android:id="@+id/schermo_utenti"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:visibility="gone"
             android:paddingHorizontal="16dp">
 
             <LinearLayout
@@ -450,12 +463,20 @@
             android:layout_height="match_parent"
             android:visibility="gone" />
 
+        <!--
+          Il piccolo caricamento: quello dell'accensione e quello di quando si
+          apre la suite. Uno solo per tutti e due, perche' dicono la stessa cosa
+          — «un attimo, sto guardando» — e due rotelle diverse nella stessa app
+          sarebbero due cose dove ce n'e' una.
+
+          Parte **acceso**: e' la prima cosa che si vede aprendo l'app, al posto
+          di «Chi sei?».
+        -->
         <ProgressBar
             android:id="@+id/attesa"
             style="?android:attr/progressBarStyleLarge"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:visibility="gone" />
+            android:layout_gravity="center" />
     </FrameLayout>
 </LinearLayout>

@@ -29,7 +29,7 @@
 
 import { BrowserWindow, shell } from "electron";
 import { readBounds, writeState } from "../../app-state";
-import { registraConsole } from "../../finestre";
+import { mostraDavvero, registraConsole } from "../../finestre";
 import { iconaApp } from "../../paths";
 
 const PREDEFINITI = { width: 1100, height: 860, maximized: false };
@@ -59,8 +59,10 @@ export function collegaSorgente(fn: () => string): void {
 
 export function apri(onClose: () => void): void {
   if (finestra && !finestra.isDestroyed()) {
-    if (finestra.isMinimized()) finestra.restore();
-    finestra.focus();
+    // Una riga sola, e sta in finestre.ts: sa anche riportare dentro una
+    // finestra rimasta su uno schermo che adesso e' spento — che e' proprio
+    // quello che era successo a questa scheda il 9 settembre 2026.
+    mostraDavvero(finestra);
     // Riaperta a finestra già viva: si ricarica, perché la ragione per cui uno
     // ci torna è sapere **com'è messa adesso**.
     finestra.webContents.reload();

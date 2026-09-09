@@ -17,6 +17,8 @@ export interface AzioniTray {
   apriApp: (id: AppId) => void;
   /** Id delle app apribili adesso. */
   appDisponibili: () => AppId[];
+  /** Rimette tutte le finestre al centro dello schermo che si sta guardando. */
+  rimettiLeFinestre: () => void;
   esci: () => void;
 }
 
@@ -46,6 +48,18 @@ export function creaTray(azioni: AzioniTray): void {
               click: () => azioni.apriApp(id),
             }))
           : [{ label: "Nessuna app ancora installata", enabled: false }]),
+        { type: "separator" },
+        /**
+         * ⚠ **La via d'uscita per una finestra che non si prende.**
+         *
+         * Chiesto il 9 settembre 2026: «la vedo nella taskbar ma non la posso
+         * portare in primo piano». Di solito adesso non serve — la suite si
+         * accorge da sola di una finestra rimasta su uno schermo spento, vedi
+         * `finestre.ts` — ma resta il caso in cui si vede e sta scomoda. E
+         * questo menu si raggiunge anche quando la finestra che cerchi e'
+         * quella che non riesci a toccare.
+         */
+        { label: "Rimetti le finestre al centro", click: azioni.rimettiLeFinestre },
         { type: "separator" },
         { label: "Esci dalla suite", click: azioni.esci },
       ]),

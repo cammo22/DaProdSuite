@@ -18,6 +18,138 @@ ancora lì.
 
 ---
 
+## 1.2.4 — L'app come se l'aspetta chi la scarica
+
+Il **blocco 2** della 1.2.3, piu' il difetto della finestra che spariva.
+
+### Sul telefono: niente piu' «Chi sei?» a ogni avvio
+
+> «Facciamo che si vede un piccolo caricamento invece che vedere "chi sei".
+> "Chi sei" esce solo all'inizio durante il setup e poi si apre l'app.»
+
+Non era una schermata che veniva scelta: era quella da cui l'app **partiva**,
+per il secondo o due in cui decide dove andare. Chi il collegamento l'aveva
+gia' fatto mesi fa si vedeva chiedere «Chi sei?» a ogni accensione, e poi la
+domanda spariva da sola.
+
+Adesso all'accensione c'e' un piccolo caricamento, e «Chi sei?» esce solo quando
+serve davvero: al primo avvio, o quando sullo stesso telefono ci sono piu'
+persone e nessuna e' quella di prima.
+
+### Sul telefono: niente messaggini quando non lo stai guardando
+
+> «Quando e' in background manda troppe notifiche. Anche quando non si connette,
+> se e' in background manda le notifiche in basso — proprio dei pop-uppini
+> sotto, e vorrei toglierli perche' all'utente finale possono dare fastidio.»
+
+Quasi tutti quei messaggi sono la risposta a un tasto premuto, e vanno bene. Ma
+qualcuno nasceva da solo: l'app che si riaggancia al computer quando torna la
+linea, la coda di quello che avevi chiesto senza computer che riparte, un
+tentativo che fallisce. Scattavano quando scattava la rete — e se in quel
+momento stavi usando un'altra app, ti arrivava un messaggio per una cosa che non
+avevi chiesto.
+
+Adesso escono **solo mentre stai guardando l'app**. Quello che vale davvero — un
+lavoro pronto, una richiesta rifiutata — passa dalle notifiche vere, che restano
+nel centro notifiche e si guardano quando si vuole.
+
+### Sul telefono: da una notifica andata storta si rimanda con un tocco
+
+> «Anche se capita che un prompt vada in esito "non fatto", notifichiamolo,
+> perche' magari diciamo "riprova tra poco" e rimanda la richiesta.»
+
+La notifica che dice cos'e' andato storto c'era gia'. Mancava la seconda meta':
+adesso ha un tasto **«Rimanda»**, e il tocco fa ripartire la richiesta senza
+aprire niente. Prima bisognava aprire l'app, andare nella Fila, trovare la riga
+e premere «rifallo»: quattro gesti per rifare una cosa che il telefono sapeva
+gia' qual era.
+
+Il tasto compare solo dove ha senso — sui lavori andati storti, non su «e'
+pronto» — e dice sempre com'e' andata, anche quando il computer non risponde.
+
+### Le notifiche: un pannello dal proprio nome, con lo swipe
+
+> «Cliccando sul nostro nome utente si apre una schermata tipo a mezzo schermo
+> dove ci sono queste notifiche, magari con un pallino, e tu semplicemente puoi
+> cliccare "visto" o fare swipe — magari molto piu' rapido, da sinistra verso
+> destra.»
+
+Toccando il proprio nome, in alto, sale un pannello a **mezzo schermo** con le
+notifiche. Mezzo schermo e non tutto: quello che stavi guardando resta li'
+sotto, e chiudendo sei ancora dov'eri.
+
+Un pallino sul nome quando c'e' qualcosa. Ogni riga si toglie **scorrendola
+verso destra**, o col tasto «visto» — lo swipe e' la scorciatoia per il dito
+veloce, il tasto e' la strada che c'e' sempre, anche col mouse.
+
+Il nome, prima, portava alla scheda DaProd: che pero' ha gia' il suo tasto in
+fondo. Era la seconda strada per lo stesso posto, e adesso porta a una cosa che
+non ne aveva nessuna.
+
+### Per chi non decide, la Fila diventa Notifiche
+
+> «A livello utente normale questa tab "fila" secondo me non ci dovrebbe nemmeno
+> essere, dovrebbe essere tipo notifiche. Una sezione notifiche anche per il
+> social, dove puo' vedere se hai ricevuto dei like, se ci sono nuovi contenuti,
+> se le sue generazioni sono state fatte.»
+
+Chi governa la macchina vede la **Fila**, com'era. Chi non decide vede
+**Notifiche**: le sue generazioni finite, i commenti sotto alle sue cose, quello
+che gli e' arrivato.
+
+Non e' un permesso in meno, sono due domande diverse. Chi sta al computer vuole
+sapere cosa sta facendo la macchina e in che ordine; chi manda una richiesta
+vuole sapere quando e' pronta la sua roba. La coda dei lavori risponde solo al
+primo — e a chi non decide mostrava anche «Ferma questa generazione», cioe' un
+comando che non e' suo.
+
+E' lo stesso elenco del pannello che si apre dal nome: stesse righe, stesso
+swipe.
+
+### Quando la suite si aggiorna, si vede — e ci sono i coriandoli
+
+> «Facciamo che quando esce un aggiornamento esce un avviso con tipo gli effetti
+> confetti.»
+
+Aprendo la console dopo un aggiornamento compare «Aggiornata alla 1.2.4» e una
+manciata di coriandoli che cadono per tre secondi. Vale dal telefono, dalla
+console e da DaProdConnessione: e' la stessa pagina.
+
+Non serve nessuna rotta nuova: la versione arriva gia' con lo stato, e se e'
+diversa da quella dell'ultima volta vuol dire che la suite e' stata aggiornata
+da quando l'hai guardata. La prima volta in assoluto non si festeggia: chi apre
+la console per la prima volta non ha aggiornato niente, si e' solo collegato.
+
+I coriandoli stanno in una funzione sola, che servira' anche all'easter egg: due
+feste fatte in due modi diversi sarebbero due cose dove ce n'e' una.
+
+### Una finestra su uno schermo spento non si perde piu'
+
+> «Apro DaProdConnessione e dice aperto, ma la finestra e' irraggiungibile. La
+> vedo nella taskbar e non la posso portare in primo piano. Credo di aver
+> lasciato la finestra su uno schermo secondario che ora ho spento.»
+
+Era esattamente quello. Ogni scheda si ricorda dov'era, e quelle coordinate — il
+giorno che stacchi il secondo monitor — cadono in una parte di mondo che non
+esiste piu'. Windows tiene la finestra viva e te la mostra nella barra, ma non
+c'e' nessun pixel dove disegnarla.
+
+Adesso la posizione salvata si usa **solo se si vede ancora**: se lo schermo
+dov'era non c'e' piu', la finestra si apre al centro di quello che stai
+guardando. Vale al riavvio e vale a suite accesa, quando riapri una scheda che
+era gia' aperta.
+
+La posizione non si azzera a ogni avvio: chi lavora con due schermi accesi si
+mette una scheda di la' e una di qua, e quella disposizione resta. Si butta solo
+quella che non si puo' piu' raggiungere.
+
+E per il caso che resta — la finestra si vede, ma sta in un angolo scomodo — nel
+menu vicino all'orologio c'e' **«Rimetti le finestre al centro»**. Sta li' e non
+nelle impostazioni apposta: e' l'unico posto che si raggiunge anche quando la
+finestra che non riesci a toccare e' proprio quella che ti serve.
+
+---
+
 ## 1.2.3 — Un posto solo, e si vede quando carica
 
 Questa doveva uscire a lavoro finito, con tutti e quattro i blocchi dentro. Esce

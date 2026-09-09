@@ -120,6 +120,89 @@ export const STILE = `  :root {
     .filo i { width: 100%; animation: none; opacity: .55; }
   }
 
+  /**
+   * **Il pannello delle notifiche**, che sale dal basso a mezzo schermo.
+   *
+   * Chiesto il 7 settembre 2026: «una schermata tipo a mezzo schermo dove ci
+   * sono queste notifiche». Mezzo schermo e non tutto, ed è la parte che conta:
+   * quello che c'era sotto resta lì e si vede, e chiudendo si è ancora dov'eri.
+   *
+   * Il fondo scuro sopra la pagina serve a due cose: dice che il pannello è la
+   * cosa attiva, e dà un posto dove toccare per chiuderlo che non sia un tasto.
+   */
+  .pannelloNotifiche { position: fixed; inset: 0; z-index: 90; }
+  .pannelloNotifiche .fondoScuro {
+    position: absolute; inset: 0;
+    background: #04050ab0;
+    opacity: 0; transition: opacity .22s ease;
+  }
+  .pannelloNotifiche.su .fondoScuro { opacity: 1; }
+  .pannelloNotifiche .carta {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    max-height: 56vh; overflow-y: auto;
+    padding: 10px 16px calc(18px + env(safe-area-inset-bottom));
+    background: var(--panel); border-top: 1px solid var(--line2);
+    border-radius: 18px 18px 0 0;
+    /* Fuori schermo finché non sale: la transizione è quella che dice «arrivo
+       da sotto», e senza si vedrebbe comparire di colpo a metà pagina. */
+    transform: translateY(100%);
+    transition: transform .22s cubic-bezier(.2, .8, .3, 1);
+  }
+  .pannelloNotifiche.su .carta { transform: translateY(0); }
+  .pannelloNotifiche .maniglia {
+    width: 42px; height: 4px; border-radius: 2px;
+    background: var(--line2); margin: 2px auto 10px;
+  }
+  .pannelloNotifiche h2 { margin: 0; font-size: 16px; }
+
+  /**
+   * Una riga di notifica.
+   *
+   * ⚠ **«touch-action: pan-y»**: dice al browser che su questa riga il dito che
+   * va in orizzontale è roba nostra e quello verticale è dell'elenco. Senza,
+   * lo swipe da sinistra a destra fa scorrere la pagina mentre la riga prova a
+   * spostarsi, e non funziona bene nessuno dei due.
+   */
+  .notifica {
+    display: flex; align-items: center; gap: 10px;
+    padding: 11px 12px; margin-bottom: 8px;
+    background: var(--panel2); border: 1px solid var(--line2); border-radius: 12px;
+    touch-action: pan-y;
+    transition: transform .18s ease, opacity .18s ease;
+  }
+  .notifica b { display: block; font-size: 13.5px; }
+  .notifica small { color: var(--dim); font-size: 12px; display: block; overflow-wrap: anywhere; }
+  /* Se n'è andata: scivola fuori a destra, che è il verso in cui l'hai spinta. */
+  .notifica.via { transform: translateX(120%); opacity: 0; }
+
+  /**
+   * Il pallino sul proprio nome: c'è qualcosa da guardare.
+   *
+   * Un pallino e non un numero, come è stato chiesto — e come è giusto: il
+   * numero esatto delle notifiche non lo sta aspettando nessuno, e un «14»
+   * rosso addosso al proprio nome è una cosa da togliersi di dosso.
+   */
+  .chi { position: relative; }
+  .chi .pallino {
+    position: absolute; top: 4px; right: 4px;
+    width: 9px; height: 9px; border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 0 2px var(--panel);
+  }
+
+  /**
+   * **I coriandoli**: la tela della festa.
+   *
+   * Sta sopra a tutto per i tre secondi che dura, e non prende i tocchi: senza
+   * «pointer-events: none» un tocco in quei tre secondi finirebbe su di lei
+   * invece che sul tasto sotto, e l'app sembrerebbe bloccata proprio nel
+   * momento in cui vuole sembrare allegra.
+   */
+  .coriandoli {
+    position: fixed; inset: 0; z-index: 200;
+    pointer-events: none;
+  }
+
   /* Il marchio adesso e' un tasto (l'easter egg), ma non deve sembrarlo. */
   /* Alto come la pastiglia e l'ingranaggio: e' una riga sola di tre cose, e
      con il marchio a 24 e gli altri a 38 la riga sembrava scivolata. */

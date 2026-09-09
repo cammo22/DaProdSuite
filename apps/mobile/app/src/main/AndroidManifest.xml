@@ -90,6 +90,22 @@
             android:exported="false"
             android:foregroundServiceType="mediaPlayback" />
 
+        <!--
+          Il tasto «Rimanda» dentro la notifica di un lavoro andato storto.
+
+          `exported="false"`: lo chiama solo la nostra notifica, e un receiver
+          che rifa' richieste al computer non e' una cosa da lasciare aperta
+          alle altre app del telefono.
+        -->
+        <receiver
+            android:name=".Rimanda"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="it.daprod.suite.RIMANDA" />
+                <data android:scheme="daprod" />
+            </intent-filter>
+        </receiver>
+
         <!-- Lo scanner del QR: un'activity della libreria zxing. -->
         <activity
             android:name="com.journeyapps.barcodescanner.CaptureActivity"

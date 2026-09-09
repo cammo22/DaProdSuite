@@ -17,7 +17,7 @@ import { basename, join } from "node:path";
 import { readBounds, writeState, readState } from "../../app-state";
 import { findFfmpeg, transcodeToWav } from "./ffmpeg";
 import { codificaUrl, gestisciSchema } from "../../file-scheme";
-import { registraConsole } from "../../finestre";
+import { mostraDavvero, registraConsole } from "../../finestre";
 import { iconaApp } from "../../paths";
 import { montaTerminale } from "../../terminale";
 import { rivela } from "../../rivela";
@@ -46,8 +46,9 @@ function paginaUi(): string {
 
 export function apri(onClose: () => void): void {
   if (finestra && !finestra.isDestroyed()) {
-    if (finestra.isMinimized()) finestra.restore();
-    finestra.focus();
+    // Una riga sola, e sta in finestre.ts: sa anche riportare dentro una
+    // finestra rimasta su uno schermo che adesso e' spento.
+    mostraDavvero(finestra);
     return;
   }
 

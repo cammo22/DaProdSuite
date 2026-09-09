@@ -323,7 +323,21 @@ class GatewayClient(
     data class Attesa(val quante: Int, val riga: String)
 
     /** Le novità che il PC ci ha lasciato: id e testo da mostrare. */
-    suspend fun notificheNonLette(): List<Pair<String, String>> = withContext(Dispatchers.IO) {
+    /**
+     * Una notifica arrivata dal computer.
+     *
+     * ⚠ **`richiesta` non e' decorazione.** E' l'id del lavoro di cui la
+     * notifica parla, e serve a rimandarlo con un tocco quando e' andato
+     * storto: senza, dalla notifica si puo' solo aprire l'app e andarselo a
+     * cercare nella Fila. Chiesto il 7 settembre 2026: «magari diciamo riprova
+     * tra poco e rimanda la richiesta».
+     *
+     * Puo' essere vuoto: le notifiche che non parlano di un lavoro — un
+     * pensiero che ti hanno mandato, un commento — non ce l'hanno.
+     */
+    data class NotificaDelPc(val id: String, val testo: String, val richiesta: String)
+
+    suspend fun notificheNonLette(): List<NotificaDelPc> = withContext(Dispatchers.IO) {
         val req = conToken().url(a("/notifiche")).build()
         condiviso.newCall(req).execute().use { res ->
             val testo = res.body?.string().orEmpty()
@@ -331,8 +345,31 @@ class GatewayClient(
             val arr = JSONArray(testo)
             (0 until arr.length()).map { i ->
                 val o = arr.getJSONObject(i)
-                o.getString("id") to "${o.optString("titolo", "Lavoro")}: ${o.optString("corpo", "")}"
+                NotificaDelPc(
+                    o.getString("id"),
+                    "${o.optString("titolo", "Lavoro")}: ${o.optString("corpo", "")}",
+                    o.optString("richiestaId", ""),
+                )
             }
+        }
+    }
+
+    /**
+     * Rimanda una richiesta andata storta: ne nasce una nuova, col suo numero.
+     *
+     * La rotta c'era gia' dalla 0.7.x — la usa il tasto «rifallo» sulla riga
+     * della Fila — e da qui la usa anche il tasto dentro la notifica. Un modo
+     * solo di rifare una cosa, non due.
+     */
+    suspend fun rimandaRichiesta(id: String): Boolean = withContext(Dispatchers.IO) {
+        val req = conToken()
+            .url(a("/richieste/${pezzoSicuro(id)}/rifai"))
+            .post("{}".toRequestBody(JSON))
+            .build()
+        try {
+            condiviso.newCall(req).execute().use { it.isSuccessful }
+        } catch (_: Exception) {
+            false
         }
     }
 
