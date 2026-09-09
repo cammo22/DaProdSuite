@@ -351,6 +351,58 @@ export const COPIONE_IMPOSTAZIONI = `
     return b;
   }
 
+  /**
+   * **Un interruttore**: una riga come le altre, con l'acceso/spento a destra.
+   *
+   * Chiesto il 9 settembre 2026: «ci deve essere qualcosa per spegnere e
+   * riattivare, facciamo i pulsanti on e off switch belli, anche in generale
+   * per l'interfaccia, cosi' e' piu' semplice».
+   *
+   * ⚠ **E' la gemella di «voceFoglio», scritta apposta accanto a lei.**
+   * Stesso riquadro, stesso segno a sinistra, stessa spiegazione piccola sotto:
+   * cambia solo che a destra, invece di aprire qualcosa, c'e' una cosa che sta
+   * su o giu'. Se fosse un altro riquadro con altre misure, nello stesso foglio
+   * si vedrebbero due famiglie di righe — ed e' esattamente il difetto da cui
+   * nasce tutta questa release.
+   *
+   * «leggi()» dice com'e' adesso, «cambia(acceso)» lo mette. Chi chiama non deve
+   * ridisegnare niente: l'interruttore si aggiorna da solo.
+   */
+  function interruttoreFoglio(carta, segno, testo, spiegazione, leggi, cambia) {
+    var b = document.createElement("button");
+    b.className = "voceFoglio conInterruttore";
+    var s = document.createElement("span");
+    s.className = "segno";
+    s.textContent = segno;
+    var d = document.createElement("span");
+    d.className = "cresce";
+    d.textContent = testo;
+    if (spiegazione) {
+      var piccolo = document.createElement("small");
+      piccolo.textContent = spiegazione;
+      d.append(piccolo);
+    }
+    var leva = document.createElement("span");
+    leva.className = "interruttore";
+    leva.innerHTML = '<i></i>';
+
+    function ridisegna() {
+      var acceso = !!leggi();
+      leva.classList.toggle("acceso", acceso);
+      // Chi legge con le dita deve sapere anche lui com'e' messa.
+      b.setAttribute("aria-pressed", acceso ? "true" : "false");
+    }
+    ridisegna();
+
+    b.append(s, d, leva);
+    b.addEventListener("click", function () {
+      cambia(!leggi());
+      ridisegna();
+    });
+    carta.append(b);
+    return b;
+  }
+
   /* -------------------------------------------------- le impostazioni */
 
   function apriImpostazioni() {
@@ -544,6 +596,34 @@ export const COPIONE_IMPOSTAZIONI = `
         function () { void apriIlQrDellApp(); },
       );
     }
+
+    /**
+     * **Le notifiche di DaProd si possono spegnere.**
+     *
+     * Chiesto il 7 settembre 2026 («le notifiche si possono spegnere, e quelle
+     * del social in particolare») e ripreso il 9 con la forma: un interruttore.
+     *
+     * ⚠ **Spegne quelle del social, non tutte.** Un lavoro tuo che finisce,
+     * o che va storto, e' una cosa che hai chiesto tu e che stai aspettando:
+     * quella arriva comunque. Qui si spengono i commenti e i mi piace sotto alle
+     * tue cose — che sono belli da sapere, ma non sono una cosa che aspetti.
+     *
+     * La scelta sta nel telefono di chi la fa («localStorage») e non sul
+     * computer, ed e' voluto: e' una preferenza di **questo** telefono, non
+     * della persona. Chi ha il tablet sul comodino puo' volerle spente li' e
+     * accese sul telefono.
+     */
+    interruttoreFoglio(
+      carta,
+      "\\u263C",
+      "Avvisami delle cose di DaProd",
+      "commenti e mi piace sotto alle tue cose",
+      function () { return notificheSocialAccese(); },
+      function (acceso) {
+        accendiLeNotificheSocial(acceso);
+        avvisa(acceso ? "Te lo dico." : "Non te lo dico piu\u0027.");
+      },
+    );
 
     if (window.DaProdApp && window.DaProdApp.aggiorna) {
       voceFoglio(carta, "\\u2913", "Aggiorna l'app", "guarda se c'\\u00e8 una versione nuova", function () {

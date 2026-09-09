@@ -121,6 +121,42 @@ export const STILE = `  :root {
   }
 
   /**
+   * **L'interruttore**: acceso a destra, spento a sinistra.
+   *
+   * Chiesto il 9 settembre 2026: «facciamo i pulsanti on e off switch belli,
+   * anche in generale per l'interfaccia, così è più semplice». Da qui in poi è
+   * questo, dovunque ci sia una cosa che sta accesa o spenta — e non una
+   * pastiglia che cambia scritta, che è il modo in cui si finisce a leggere il
+   * testo per capire com'è messa.
+   *
+   * ⚠ **Si capisce anche senza il colore.** La pallina che sta a sinistra o a
+   * destra è la cosa che dice tutto: il verde e il grigio sono la conferma, non
+   * l'informazione. Chi non distingue i due colori vede lo stesso da che parte
+   * sta la pallina — e uno che guarda lo schermo al sole pure.
+   */
+  .interruttore {
+    flex: 0 0 auto;
+    width: 44px; height: 26px; border-radius: 999px;
+    background: var(--line2); border: 1px solid var(--line);
+    position: relative;
+    transition: background .18s ease, border-color .18s ease;
+  }
+  .interruttore i {
+    position: absolute; top: 2px; left: 2px;
+    width: 20px; height: 20px; border-radius: 50%;
+    background: var(--dim);
+    transition: transform .18s cubic-bezier(.2, .8, .3, 1), background .18s ease;
+  }
+  .interruttore.acceso { background: var(--accent); border-color: var(--accent); }
+  .interruttore.acceso i { transform: translateX(18px); background: #fff; }
+  /* La riga con l'interruttore è una voce del foglio come le altre: cambia solo
+     che a destra non c'è una freccia ma una cosa che sta su o giù. */
+  .voceFoglio.conInterruttore { cursor: pointer; }
+  @media (prefers-reduced-motion: reduce) {
+    .interruttore, .interruttore i { transition: none; }
+  }
+
+  /**
    * **Il pannello delle notifiche**, che sale dal basso a mezzo schermo.
    *
    * Chiesto il 7 settembre 2026: «una schermata tipo a mezzo schermo dove ci

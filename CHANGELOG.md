@@ -12,6 +12,43 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ## Non ancora pubblicato
 
+### Il tira-per-aggiornare non parte piu' da solo, e ha un freno
+
+> «L'aggiornamento con lo swipe viene triggerato spesso anche mentre abbiamo in
+> primo piano altre cose. In ogni caso viene triggerato spesso: risolviamolo o
+> mettiamo dei timer tipo 15 sec si blocca, pure per una questione di banda.»
+
+Tre cose insieme:
+
+- **Sa cosa c'e' sopra.** Prima si fermava solo per il foglio e per la lente
+  della galleria: non sapeva del palco del lettore, del pannello delle notifiche,
+  del mix degli stili. Li' dentro un dito che scende e' il gesto **loro**, e
+  invece partiva un aggiornamento.
+- **Prende solo i gesti dritti.** Ventisei pixel invece di dodici, e il dito deve
+  andare piu' in giu' che di lato: l'inizio di uno swipe laterale non arma piu'
+  niente.
+- **Un freno di quindici secondi.** Ogni tiro sono quattro o cinque richieste al
+  computer, e da fuori casa passano dalla rete di chi ha il telefono in mano.
+  Se il tiro arriva prima, si dice a parole — «aggiornato da poco, riprova fra
+  otto secondi» — invece di non fare niente: un gesto che non risponde e'
+  indistinguibile da un gesto rotto, ed e' proprio quello che uno rifa'.
+
+### Le notifiche di DaProd si possono spegnere, con un interruttore
+
+> «Ci deve essere qualcosa per spegnere e riattivare, facciamo i pulsanti on e
+> off switch belli, anche in generale per l'interfaccia, cosi' e' piu' semplice.»
+
+Nelle impostazioni c'e' **«Avvisami delle cose di DaProd»**, con un interruttore
+vero: acceso a destra, spento a sinistra. Spegne i commenti e i mi piace sotto
+alle tue cose — non i tuoi lavori, che sono quelli che stai aspettando.
+
+L'interruttore e' un pezzo solo, fatto apposta accanto alle righe che c'erano
+gia': stesso riquadro, stesso segno a sinistra, stessa spiegazione sotto. Da qui
+in poi e' quello, dovunque ci sia una cosa che sta accesa o spenta.
+
+Si capisce **anche senza il colore**: quello che dice tutto e' da che parte sta
+la pallina.
+
 **Togliere il tunnel Cloudflare** per chi ha l'indirizzo fisso, e **togliere il
 codice** della schermata «cerca i computer di casa», che è irraggiungibile ma
 ancora lì.
