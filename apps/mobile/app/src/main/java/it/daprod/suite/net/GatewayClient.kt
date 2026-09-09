@@ -426,8 +426,26 @@ class GatewayClient(
         }
     }
 
+    /**
+     * Le intestazioni di ogni chiamata: il token, e **che versione siamo**.
+     *
+     * ⚠ `X-DaProd-App` e' nuova nella 1.2.5, e serve a una cosa sola: il 9
+     * settembre 2026 «2 dispositivi di mia zia non funzionano piu'», e sul
+     * computer non c'era **niente** da guardare per capire perche'. Non si
+     * sapeva nemmeno che versione dell'app avessero addosso.
+     *
+     * Adesso ogni chiamata lo dice, e la dashboard delle connessioni lo mostra
+     * accanto al nome. Un telefono fermo a una versione vecchia si vede in un
+     * colpo d'occhio, e non c'e' piu' bisogno di chiedere a qualcuno di andare
+     * nelle impostazioni a leggere un numero.
+     *
+     * Non e' un dato di nessuno: e' un numero di versione, e va solo al proprio
+     * computer.
+     */
     private fun conToken(): Request.Builder =
-        Request.Builder().header("Authorization", "Bearer $token")
+        Request.Builder()
+            .header("Authorization", "Bearer $token")
+            .header("X-DaProd-App", versioneApp)
 
     /** L'esito di un'azione: in fila sul PC, oppure una risposta subito. */
     sealed interface Esito {
@@ -436,6 +454,17 @@ class GatewayClient(
     }
 
     companion object {
+        /**
+         * La versione di questa app, presa da `BuildConfig`.
+         *
+         * ⚠ Da `BuildConfig` e non da una costante scritta qui: e' lo stesso
+         * numero che finisce dentro l'APK, e dalla 1.2.5 quel numero viene dal
+         * `package.json` della suite. Vedi `build.gradle.kts` — e #93, che era
+         * l'aggiornamento che si riproponeva all'infinito perche' quel numero
+         * era scritto a mano.
+         */
+        private val versioneApp: String = it.daprod.suite.BuildConfig.VERSION_NAME
+
         private val JSON = "application/json; charset=utf-8".toMediaType()
 
         /** Un client solo per tutta l'app: il pool di connessioni si riusa. */

@@ -28,6 +28,26 @@ export interface Dispositivo {
   /** Ultima volta che ha parlato col gateway. */
   ultimoAccesso: number;
   /**
+   * ⚠ **Come si e' fatto vivo l'ultima volta.** Nuovo nella 1.2.5.
+   *
+   * Il 9 settembre 2026: «ci sono ancora problemi con gli update, 2 dispositivi
+   * di mia zia non funzionano piu'». Il difetto vero non si e' potuto guardare
+   * perche' **non c'era niente da guardare**: sul computer si sapeva solo che
+   * quel telefono si era visto l'ultima volta martedi. Da dove chiamasse, con
+   * che versione dell'app, se stava provando e veniva respinto — niente.
+   *
+   * Adesso queste tre cose si segnano a ogni chiamata autorizzata, e le mostra
+   * la dashboard delle connessioni.
+   */
+  /** L'indirizzo da cui e' arrivata l'ultima chiamata: «casa», «tunnel», «tailscale». */
+  ultimaStrada?: string;
+  /** Che versione dell'app aveva addosso l'ultima volta. */
+  versioneApp?: string;
+  /** Quante volte di fila e' stato respinto con un token che non vale. */
+  noDiFila?: number;
+  /** Quando e' stato respinto l'ultima volta. */
+  ultimoNo?: number;
+  /**
    * La foto del profilo: il nome del file, dentro la cartella degli invii.
    *
    * Dalla 0.7.6, con DaProd. Un nome senza faccia, in una bacheca, è una riga

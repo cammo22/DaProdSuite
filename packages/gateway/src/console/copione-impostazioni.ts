@@ -439,6 +439,18 @@ export const COPIONE_IMPOSTAZIONI = `
      * ricaricare, cambiare persona, aggiornare l'app, andarsene.
      */
     if (puoiDecidere) {
+      /**
+       * ⚠ **La dash dei collegamenti**, chiesta il 9 settembre 2026:
+       * «facciamo nella suite una dash che mostra le connessioni, se sono
+       * collegati, se tutto e' ok, e dei tasti per aggiustare».
+       *
+       * Sta qui accanto a «Le persone» perche' e' la stessa famiglia — chi c'e'
+       * e come sta — e la vede solo chi decide, come tutta questa parte del
+       * foglio.
+       */
+      voceFoglio(carta, "\\u2713", "Come stanno i collegamenti", "chi c\\u2019\\u00e8, come va, e cosa fare", function () {
+        void apriLeConnessioni();
+      });
       voceFoglio(carta, "\\u2609", "Come siamo messi", frasaConnessione(), function () {
         apriComeSiamoMessi();
       });
@@ -1420,4 +1432,178 @@ export const COPIONE_IMPOSTAZIONI = `
       if (document.getElementById("foglio")) apriComeSiamoMessi();
     } catch (e) { avvisaDelMale(e); }
   }
+
+  /* ------------------------------------------------ la dash dei collegamenti */
+
+  /**
+   * **Come stanno i collegamenti**: una riga per persona, e cosa fare.
+   *
+   * Chiesta il 9 settembre 2026: «facciamo nella suite una dash che mostra le
+   * connessioni, se sono collegati, se tutto e' ok, e dei tasti per aggiustare
+   * nel caso ci siano problemi che non devono capitare in futuro».
+   *
+   * ⚠ **Quello che mancava non erano i nomi: era il giudizio.** Nel pannello
+   * c'erano gia' l'elenco e l'ultimo accesso, e non sono bastati a capire
+   * perche' due telefoni «non funzionavano piu'». Qui ogni riga dice **come va
+   * e perche'**, in una frase, e accanto ha il tasto che risolve quel caso li'.
+   *
+   * Le tre risposte sono: bussa e gli dico di no (il collegamento va rifatto),
+   * ha una versione vecchia (aggiornalo), non si fa vivo da un pezzo.
+   *
+   * Il giudizio lo dà **il computer**, non questa pagina: vedi «comeVa» nel
+   * gateway. Se se lo rispondesse anche la pagina, il giorno che cambia la
+   * regola cambierebbe in un posto solo.
+   */
+  async function apriLeConnessioni() {
+    var carta = apriFoglio("Come stanno i collegamenti");
+
+    var attesa = document.createElement("p");
+    attesa.className = "nota";
+    attesa.textContent = "Guardo…";
+    carta.append(attesa);
+
+    var dati;
+    try {
+      dati = await chiama("/pannello/connessioni");
+    } catch (e) {
+      attesa.className = "avviso male";
+      attesa.textContent = e.message;
+      return;
+    }
+    attesa.remove();
+
+    var quanti = (dati.dispositivi || []).length;
+    var male = (dati.dispositivi || []).filter(function (d) { return d.come === "male"; }).length;
+    var guarda = (dati.dispositivi || []).filter(function (d) { return d.come === "guarda"; }).length;
+
+    var riassunto = document.createElement("p");
+    riassunto.className = "sotto";
+    riassunto.textContent =
+      male ? male + (male === 1 ? " collegamento da rifare" : " collegamenti da rifare") + ", su " + quanti + "."
+      : guarda ? "Tutti collegati, ma " + guarda + " " + (guarda === 1 ? "vuole" : "vogliono") + " un'occhiata."
+      : "Tutti a posto, tutti e " + quanti + ".";
+    carta.append(riassunto);
+
+    for (var d of dati.dispositivi || []) carta.append(rigaConnessione(d, dati));
+  }
+
+  /** Una riga della dash: chi e', come va, e cosa si puo' fare. */
+  function rigaConnessione(d, dati) {
+    var box = document.createElement("div");
+    box.className = "bussa";
+
+    var dentro = document.createElement("div");
+    dentro.className = "cresce";
+
+    var titolo = document.createElement("b");
+    titolo.textContent = d.nome + (d.ruolo === "admin" ? " · decide" : "");
+    dentro.append(titolo);
+
+    /**
+     * Il pallino del semaforo, e la frase accanto.
+     *
+     * Il colore da solo non basta: chi non distingue il verde dal rosso legge
+     * la frase, che dice la stessa cosa per intero. E' la stessa regola
+     * dell'interruttore.
+     */
+    var come = document.createElement("small");
+    come.textContent =
+      (d.come === "male" ? "✕ " : d.come === "guarda" ? "⚠ " : "✓ ") + d.perche;
+    come.className = d.come === "male" ? "male" : d.come === "guarda" ? "giallo" : "bene";
+    dentro.append(come);
+
+    var dettagli = document.createElement("small");
+    var pezzi = [];
+    if (d.eIlComputer) pezzi.push("il computer");
+    else {
+      pezzi.push(d.ultimoAccesso ? "visto " + quandoBreve(d.ultimoAccesso, dati.adesso) : "mai visto");
+      if (d.strada) pezzi.push("da " + d.strada);
+      pezzi.push(d.versioneApp ? "app " + d.versioneApp : "app prima della 1.2.5");
+    }
+    dettagli.textContent = pezzi.join(" · ");
+    dentro.append(dettagli);
+
+    box.append(dentro);
+
+    /**
+     * ⚠ **I tasti stanno solo dove servono.**
+     *
+     * Su una riga verde non c'e' niente da aggiustare, e tre tasti spenti
+     * accanto a «tutto a posto» sono tre modi di far dubitare chi guarda. Il
+     * computer non si scollega da se' e non si rifa' il collegamento con se
+     * stesso: la sua riga non ha tasti.
+     */
+    if (!d.eIlComputer) {
+      var tasti = document.createElement("div");
+      tasti.className = "fila";
+
+      if (d.come === "male") {
+        var rifai = document.createElement("button");
+        rifai.className = "mini acceso";
+        rifai.textContent = "↻ Rifai il collegamento";
+        rifai.title = "Fa un codice nuovo da scrivere su quel telefono";
+        rifai.addEventListener("click", function () { void rifaiIlCollegamento(d, rifai); });
+        tasti.append(rifai);
+      }
+
+      var scollega = document.createElement("button");
+      scollega.className = "mini male";
+      scollega.textContent = "✕ Scollega";
+      scollega.addEventListener("click", function () { void scollegaDavvero(d, box); });
+      tasti.append(scollega);
+
+      box.append(tasti);
+    }
+
+    return box;
+  }
+
+  /**
+   * «Rifai il collegamento»: un codice nuovo, per quella persona.
+   *
+   * ⚠ **Non si tocca il vecchio.** Chi ha perso il collegamento e' gia' fuori:
+   * revocarlo prima non aggiusta niente e, se il codice nuovo non arriva mai a
+   * destinazione, toglie anche la possibilita' di riprovare. Il vecchio se ne
+   * va da solo quando quel telefono si riaccoppia con lo stesso nome — vedi
+   * «accoppia» nel gateway.
+   */
+  async function rifaiIlCollegamento(d, tasto) {
+    tasto.disabled = true;
+    tasto.textContent = "faccio il codice…";
+    try {
+      var invito = await chiama("/pannello/invito", {
+        method: "POST",
+        body: JSON.stringify({ ruolo: d.ruolo === "admin" ? "admin" : "ospite", quante: 1 }),
+      });
+      tasto.textContent = "✓ codice: " + (invito.codice || "");
+      tasto.classList.remove("acceso");
+      avvisa("Scrivi questo codice sul telefono di " + d.nome + ": " + (invito.codice || ""), "bene");
+    } catch (e) {
+      tasto.disabled = false;
+      tasto.textContent = "↻ Rifai il collegamento";
+      avvisaDelMale(e);
+    }
+  }
+
+  async function scollegaDavvero(d, riga) {
+    if (!confirm("Scollegare " + d.nome + "? Per rientrare gli servirà un codice nuovo.")) return;
+    try {
+      await chiama("/dispositivi/" + encodeURIComponent(d.id), { method: "DELETE" });
+      riga.remove();
+      avvisa(d.nome + " e' scollegato.");
+    } catch (e) { avvisaDelMale(e); }
+  }
+
+  /** «3 giorni fa», «2 ore fa», «adesso»: quanto basta a farsi un'idea. */
+  function quandoBreve(quando, adesso) {
+    var d = Math.max(0, (adesso || Date.now()) - quando);
+    var min = Math.floor(d / 60000);
+    if (min < 2) return "adesso";
+    if (min < 60) return min + " min fa";
+    var ore = Math.floor(min / 60);
+    if (ore < 24) return ore + (ore === 1 ? " ora fa" : " ore fa");
+    var giorni = Math.floor(ore / 24);
+    return giorni + (giorni === 1 ? " giorno fa" : " giorni fa");
+  }
+
 `;

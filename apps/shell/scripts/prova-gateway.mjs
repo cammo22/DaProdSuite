@@ -1084,6 +1084,51 @@ console.log("\n— manda in coda, anche da admin —");
   );
 }
 
+/**
+ * La dash dei collegamenti: chi c'e', come va, e perche'.
+ *
+ * ⚠ Chiesta il 9 settembre 2026 dopo «2 dispositivi di mia zia non
+ * funzionano piu'» — un guaio rimasto senza risposta per due giorni perche' sul
+ * computer **non c'era niente da guardare**. Quello che si prova qui non e'
+ * l'elenco (c'era gia'): e' il **giudizio**, cioe' la riga che dice se quel
+ * telefono sta bussando e viene respinto.
+ */
+console.log("\n— come stanno i collegamenti —");
+{
+  const negato = await chiama("/pannello/connessioni", { token: tokenOspite });
+  dice("la vede solo chi decide", negato.stato === 403, `→ ${negato.stato}`);
+
+  const r = await chiama("/pannello/connessioni", { token: tokenAdmin });
+  dice("chi decide la vede", r.stato === 200, `→ ${r.stato}`);
+  const chi = (r.dati?.dispositivi || []).find((d) => d.id !== "questo-computer");
+  dice("dice come va", Boolean(chi?.come), `→ ${JSON.stringify(chi)}`);
+  dice("e dice anche perche'", (chi?.perche || "").length > 5);
+}
+{
+  /**
+   * ⚠ **Tre no di fila e il collegamento e' da rifare.**
+   *
+   * L'ospite bussa con un token che ha lo stesso inizio del suo ma non vale
+   * piu' — e' quello che succede a un telefono che ha perso il collegamento e
+   * continua a riprovare a ogni apertura. Il conto finisce sulla sua riga.
+   */
+  const suo = tokenOspite;
+  const finto = suo.slice(0, 8) + "0".repeat(56);
+  for (let i = 0; i < 3; i++) await chiama("/io", { token: finto });
+
+  const r = await chiama("/pannello/connessioni", { token: tokenAdmin });
+  const chi = (r.dati?.dispositivi || []).find((d) => d.token !== undefined || d.noDiFila >= 3);
+  dice("i no si contano", Boolean(chi), `→ ${JSON.stringify((r.dati?.dispositivi || []).map((d) => [d.nome, d.noDiFila]))}`);
+  dice("e la riga diventa rossa", chi?.come === "male", `→ ${chi?.come} ${chi?.perche}`);
+}
+{
+  // E chi torna a parlare bene riparte da zero: il conto e' «di fila».
+  await chiama("/io", { token: tokenOspite });
+  const r = await chiama("/pannello/connessioni", { token: tokenAdmin });
+  const chi = (r.dati?.dispositivi || []).find((d) => d.nome === "telefono di prova" || d.noDiFila === 0);
+  dice("chi torna a parlare riparte da zero", (chi?.noDiFila ?? 0) === 0);
+}
+
 console.log("\n— il biscotto di sessione —");
 let biscotto;
 {
