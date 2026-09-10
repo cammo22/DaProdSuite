@@ -126,16 +126,36 @@ function leggiRicordo(): TunnelRicordato | null {
     if (!existsSync(RICORDO)) return null;
     const dati = JSON.parse(readFileSync(RICORDO, "utf8")) as Partial<TunnelRicordato>;
     if (!dati.indirizzo || !dati.pid || !dati.porta) return null;
-    // Un ricordo scritto prima della 1.3.1 non ha la data: quel tunnel c'era
-    // gia', e va bene cosi' — si sa che e' vecchio, non si sa di quanto.
+    /**
+     * ⚠ **Un ricordo scritto prima della 1.3.1 non ha la data**, e la data si
+     * ricava lo stesso: questo file **si scrive solo quando il tunnel nasce**,
+     * quindi la sua data di modifica *e'* quel momento.
+     *
+     * Verificato il 10 settembre 2026 su questo computer: il file diceva le
+     * 20:38:45 del 9, e nel registro del tunnel quel nome compare alle 18:38:45
+     * UTC. Lo stesso istante.
+     *
+     * Vale la pena farlo invece di dire «non lo so»: senza, chi aggiorna alla
+     * 1.3.1 non vedrebbe niente di utile finche' il tunnel non riparte — cioe'
+     * proprio finche' non succede il guaio.
+     */
     return {
       indirizzo: dati.indirizzo,
       pid: dati.pid,
       porta: dati.porta,
-      nato: dati.nato ?? 0,
+      nato: dati.nato ?? quandoEStatoScritto(),
     };
   } catch {
     return null;
+  }
+}
+
+/** Quando e' stato scritto il ricordo: e' il momento in cui il tunnel e' nato. */
+function quandoEStatoScritto(): number {
+  try {
+    return Math.round(statSync(RICORDO).mtimeMs);
+  } catch {
+    return 0;
   }
 }
 
