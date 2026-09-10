@@ -106,6 +106,19 @@ interface TunnelRicordato {
   indirizzo: string;
   pid: number;
   porta: number;
+  /**
+   * ⚠ **Da quando si chiama cosi'.** Dalla 1.3.1.
+   *
+   * Sta nel ricordo e non in memoria perche' deve **sopravvivere alla suite**:
+   * il tunnel resta in piedi mentre lei si aggiorna e riparte, e allora il suo
+   * indirizzo ha l'eta' che aveva, non l'eta' della finestra che si e' appena
+   * aperta.
+   *
+   * Serve alla dash dei collegamenti: chi si e' portato a casa gli indirizzi
+   * prima di questo momento, da fuori casa non ci ritrova. Vedi `comeVa` nel
+   * gateway.
+   */
+  nato: number;
 }
 
 function leggiRicordo(): TunnelRicordato | null {
@@ -113,9 +126,36 @@ function leggiRicordo(): TunnelRicordato | null {
     if (!existsSync(RICORDO)) return null;
     const dati = JSON.parse(readFileSync(RICORDO, "utf8")) as Partial<TunnelRicordato>;
     if (!dati.indirizzo || !dati.pid || !dati.porta) return null;
-    return { indirizzo: dati.indirizzo, pid: dati.pid, porta: dati.porta };
+    /**
+     * ⚠ **Un ricordo scritto prima della 1.3.1 non ha la data**, e la data si
+     * ricava lo stesso: questo file **si scrive solo quando il tunnel nasce**,
+     * quindi la sua data di modifica *e'* quel momento.
+     *
+     * Verificato il 10 settembre 2026 su questo computer: il file diceva le
+     * 20:38:45 del 9, e nel registro del tunnel quel nome compare alle 18:38:45
+     * UTC. Lo stesso istante.
+     *
+     * Vale la pena farlo invece di dire «non lo so»: senza, chi aggiorna alla
+     * 1.3.1 non vedrebbe niente di utile finche' il tunnel non riparte — cioe'
+     * proprio finche' non succede il guaio.
+     */
+    return {
+      indirizzo: dati.indirizzo,
+      pid: dati.pid,
+      porta: dati.porta,
+      nato: dati.nato ?? quandoEStatoScritto(),
+    };
   } catch {
     return null;
+  }
+}
+
+/** Quando e' stato scritto il ricordo: e' il momento in cui il tunnel e' nato. */
+function quandoEStatoScritto(): number {
+  try {
+    return Math.round(statSync(RICORDO).mtimeMs);
+  } catch {
+    return 0;
   }
 }
 
@@ -174,6 +214,13 @@ export interface StatoTunnel {
   fase: FaseTunnel;
   /** L'indirizzo pubblico completo, con `https://`. Vuoto se non c'è. */
   indirizzo: string;
+  /**
+   * Da quando si chiama così. Zero se non si sa, niente se non è acceso.
+   *
+   * Un nome di `trycloudflare.com` è una fotografia con la data sopra: questa
+   * è la data. Vedi `TunnelRicordato.nato`.
+   */
+  da?: number;
   /** Cosa è andato storto, detto a chi guarda il pannello. */
   motivo?: string;
   /** Quanto è arrivato dello scaricamento, da 0 a 1. Solo durante `scarico`. */
@@ -312,7 +359,7 @@ export async function accendiTunnel(porta: number, rialzo = false): Promise<Stat
       vogliamoAcceso = true;
       portaUltima = porta;
       cadute = 0;
-      cambia({ fase: "acceso", indirizzo: buono.indirizzo, motivo: undefined });
+      cambia({ fase: "acceso", indirizzo: buono.indirizzo, motivo: undefined, da: buono.nato });
       return statoTunnel();
     }
     /*
@@ -339,6 +386,7 @@ export async function accendiTunnel(porta: number, rialzo = false): Promise<Stat
       fase: "guasto",
       indirizzo: "",
       quota: undefined,
+      da: undefined,
       motivo: err instanceof Error ? err.message : String(err),
     });
     cadute += 1;
@@ -346,7 +394,7 @@ export async function accendiTunnel(porta: number, rialzo = false): Promise<Stat
     return statoTunnel();
   }
 
-  cambia({ fase: "accendo", indirizzo: "", quota: undefined, motivo: undefined });
+  cambia({ fase: "accendo", indirizzo: "", quota: undefined, motivo: undefined, da: undefined });
 
   return new Promise<StatoTunnel>((risolvi) => {
     const figlio = spawn(
@@ -418,10 +466,11 @@ export async function accendiTunnel(porta: number, rialzo = false): Promise<Stat
       deciso = true;
       clearTimeout(scadenza);
       cadute = 0;
-      cambia({ fase: "acceso", indirizzo: trovato[0], motivo: undefined });
+      const nato = Date.now();
+      cambia({ fase: "acceso", indirizzo: trovato[0], motivo: undefined, da: nato });
       // Si segna adesso: e' quello che al prossimo avvio evita un indirizzo nuovo.
       if (figlio.pid) {
-        void scriviRicordo({ indirizzo: trovato[0], pid: figlio.pid, porta });
+        void scriviRicordo({ indirizzo: trovato[0], pid: figlio.pid, porta, nato });
       }
       risolvi(statoTunnel());
     };
@@ -433,7 +482,7 @@ export async function accendiTunnel(porta: number, rialzo = false): Promise<Stat
       if (deciso) return;
       deciso = true;
       clearTimeout(scadenza);
-      cambia({ fase: "guasto", indirizzo: "", motivo: err.message });
+      cambia({ fase: "guasto", indirizzo: "", motivo: err.message, da: undefined });
       processo = null;
       cadute += 1;
       programmaRisveglio();
@@ -451,6 +500,7 @@ export async function accendiTunnel(porta: number, rialzo = false): Promise<Stat
         cambia({
           fase: "guasto",
           indirizzo: "",
+          da: undefined,
           motivo: `Il tunnel si è chiuso (codice ${codice ?? "?"}). Lo sto riaprendo.`,
         });
         programmaRisveglio();
@@ -460,6 +510,7 @@ export async function accendiTunnel(porta: number, rialzo = false): Promise<Stat
       cambia({
         fase: "guasto",
         indirizzo: "",
+        da: undefined,
         motivo: `cloudflared è uscito subito (codice ${codice ?? "?"}).`,
       });
       programmaRisveglio();
@@ -494,5 +545,5 @@ export async function spegniTunnel(perRiaccendere = false): Promise<void> {
     // suo per il tunnel vero, e quello sopravviveva al padre.
     if (figlio.exitCode === null && figlio.pid) uccidiAlbero(figlio.pid);
   }
-  if (stato.fase !== "spento") cambia({ fase: "spento", indirizzo: "", quota: undefined });
+  if (stato.fase !== "spento") cambia({ fase: "spento", indirizzo: "", quota: undefined, da: undefined });
 }

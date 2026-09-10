@@ -2,6 +2,7 @@ package it.daprod.suite
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -1455,10 +1456,27 @@ class MainActivity : AppCompatActivity() {
      * telefono si riprende anche gli altri indirizzi di oggi da solo (`/io`).
      */
     private fun chiediLIndirizzoNuovo(p: Profilo) {
+        /**
+         * ⚠ **Se l'indirizzo e' gia' negli appunti, si trova gia' scritto.**
+         * Dalla 1.3.1.
+         *
+         * Chi arriva qui, nove volte su dieci, ci arriva **perche' gli hanno
+         * appena mandato un messaggio** con dentro l'indirizzo di oggi: dalla
+         * 1.3.1 il computer quel messaggio lo prepara da se' (vedi «Copia il
+         * messaggio» nella dash dei collegamenti). Copiarlo, uscire da WhatsApp,
+         * aprire l'app, trovare la voce nel menu e **incollarlo a mano** era un
+         * gesto in piu' proprio nel momento peggiore: fuori casa, con l'app che
+         * non trova niente.
+         *
+         * Si guarda solo il testo, non si manda da nessuna parte, e la casella
+         * resta modificabile: se quello che c'e' negli appunti non c'entra
+         * niente, si cancella e si scrive.
+         */
+        val dagliAppunti = indirizzoNegliAppunti()
         val casella = android.widget.EditText(this).apply {
             hint = getString(R.string.hint_indirizzo)
             setSingleLine()
-            setText(p.base)
+            setText(dagliAppunti ?: p.base)
         }
         val cornice = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -1469,8 +1487,13 @@ class MainActivity : AppCompatActivity() {
         AlertDialog.Builder(this)
             .setTitle("L'indirizzo di oggi")
             .setMessage(
-                "Aprilo sul computer: sta nella schermata DaProdConnessione, sotto al codice. " +
-                    "Il tuo collegamento resta quello: cambia solo la strada per arrivarci.",
+                if (dagliAppunti != null) {
+                    "L'ho preso da quello che hai copiato. Se e' quello giusto tocca Prova. " +
+                        "Il tuo collegamento resta quello: cambia solo la strada per arrivarci."
+                } else {
+                    "Aprilo sul computer: sta nella schermata DaProdConnessione, sotto al codice. " +
+                        "Il tuo collegamento resta quello: cambia solo la strada per arrivarci."
+                },
             )
             .setView(cornice)
             .setPositiveButton("Prova") { _, _ ->
@@ -1486,6 +1509,32 @@ class MainActivity : AppCompatActivity() {
             }
             .setNegativeButton("Lascia stare", null)
             .show()
+    }
+
+    /**
+     * L'indirizzo dentro quello che si e' appena copiato, se c'e' n'e' uno.
+     *
+     * Si prende **il primo** che somiglia a un indirizzo, e si ripulisce la
+     * coda: in un messaggio scritto da una persona un indirizzo finisce spesso
+     * attaccato a un punto o a una virgola, e «...com.» non risponde.
+     *
+     * Torna niente quando gli appunti sono vuoti, sono un'altra cosa, o Android
+     * non li lascia leggere: in tutti e tre i casi la casella si comporta come
+     * si e' sempre comportata.
+     */
+    private fun indirizzoNegliAppunti(): String? {
+        return try {
+            val appunti =
+                getSystemService(Context.CLIPBOARD_SERVICE) as? android.content.ClipboardManager
+                    ?: return null
+            val clip = appunti.primaryClip ?: return null
+            if (clip.itemCount <= 0) return null
+            val testo = clip.getItemAt(0)?.coerceToText(this)?.toString() ?: return null
+            val trovato = Regex("""https?://[^\s"'<>]+""").find(testo)?.value ?: return null
+            trovato.trimEnd('/', '.', ',', ';', ')')
+        } catch (_: Exception) {
+            null
+        }
     }
 
     private fun apriDallaCopia(p: Profilo) {

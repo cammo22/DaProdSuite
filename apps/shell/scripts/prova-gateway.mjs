@@ -263,6 +263,16 @@ const fintaChiacchierata = {
 };
 
 let eseguite = [];
+/**
+ * La strada da fuori, che nelle prove si accende e si spegne a mano.
+ *
+ * Serve alla prova di «chi, da fuori, non ci ritrova»: quel giudizio nasce dal
+ * confronto fra **da quando il tunnel si chiama cosi'** e quando un telefono si
+ * e' portato a casa gli indirizzi, e senza poter muovere il primo non si puo'
+ * provare niente.
+ */
+let tunnelFinto = { fase: "spento", indirizzo: "" };
+let indirizziFinti = [{ base: "http://192.168.1.8:8790", che: "la rete di casa", dove: "casa" }];
 const gateway = new G.Gateway({
   remoto,
   versione: "0.5.0",
@@ -290,8 +300,8 @@ const gateway = new G.Gateway({
     stato: (d) => ({
       computer: "PC-DI-PROVA",
       versione: "0.7.0",
-      indirizzi: [{ base: "http://192.168.1.8:8790", che: "la rete di casa", dove: "casa" }],
-      tunnel: { fase: "spento", indirizzo: "" },
+      indirizzi: indirizziFinti,
+      tunnel: tunnelFinto,
       firewall: { aperta: true, incerto: false },
       dispositivi: remoto.listaDispositivi().map(({ token, ...resto }) => resto),
       puoiDecidere: d.ruolo === "admin",
@@ -1634,6 +1644,65 @@ console.log("\n— i computer si sentono fra loro —");
   dice("e sa come si chiama", lui?.nome === "PC-CHE-SI-ANNUNCIA");
   dice("e dove bussargli", (lui?.basi || []).length > 0);
   annuncio.spegni();
+}
+
+/**
+ * ⚠ **Chi, da fuori casa, adesso non ci ritrova.** Dalla 1.3.1.
+ *
+ * E' il difetto raccontato sette volte, guardato **prima** che qualcuno lo
+ * scopra da fuori. Da questa casa si esce da un tunnel gratuito, che prende un
+ * nome nuovo ogni volta che riparte: chi si e' portato a casa gli indirizzi
+ * prima di quel momento ha in tasca un nome morto e non lo sa.
+ *
+ * Quattro cose da tenere ferme, e la terza e la quarta contano quanto le prime
+ * due — perche' un avviso che compare quando non deve si smette di guardare:
+ *
+ * 1. col tunnel spento non si parla di indirizzi che scadono;
+ * 2. chi ha imparato prima dell'ultimo cambio di nome viene segnato;
+ * 3. gli basta bussare a `/io` una volta per tornare a posto;
+ * 4. se c'e' anche **una** strada da fuori che non scade, non si segna nessuno.
+ */
+console.log("\n— chi, da fuori, non ci ritrova —");
+{
+  {
+    const r = await chiama("/pannello/connessioni", { token: tokenAdmin });
+    dice("col tunnel spento non si parla di strade che scadono", r.dati?.daFuori === null);
+    const chiunque = (r.dati?.dispositivi || [])[0];
+    dice("e nessuno ha un giudizio su questo", chiunque?.haLIndirizzoDiOggi === null);
+  }
+
+  const nato = Date.now();
+  tunnelFinto = { fase: "acceso", indirizzo: "https://finto.trycloudflare.com", da: nato };
+
+  let chiSono;
+  {
+    const r = await chiama("/pannello/connessioni", { token: tokenAdmin });
+    dice("col tunnel acceso si dice qual e' la strada da fuori", r.dati?.daFuori?.indirizzo === "https://finto.trycloudflare.com");
+    dice("e da quando si chiama cosi'", r.dati?.daFuori?.da === nato);
+    chiSono = (r.dati?.dispositivi || []).find((d) => d.nome === "portatile");
+    dice("chi ha imparato prima e' segnato", chiSono?.haLIndirizzoDiOggi === false);
+    dice("e gli si dice perche'", chiSono?.come === "guarda" && /non mi ritrova/.test(chiSono?.perche || ""), "→ " + (chiSono?.perche || ""));
+  }
+
+  {
+    // Bussare a `/io` e' il gesto con cui un telefono si porta a casa gli
+    // indirizzi di adesso: da li' in poi la risposta cambia.
+    const io = await chiama("/io", { token: tokenAdmin });
+    dice("bussando a /io si prendono gli indirizzi di adesso", io.stato === 200);
+    const r = await chiama("/pannello/connessioni", { token: tokenAdmin });
+    const dopo = (r.dati?.dispositivi || []).find((d) => d.nome === "portatile");
+    dice("e da li' non e' piu' segnato", dopo?.haLIndirizzoDiOggi === true);
+  }
+
+  {
+    // Una strada da fuori che non scade: l'avviso non ha piu' ragione di esserci.
+    indirizziFinti = [
+      { base: "https://casa.tailnet.ts.net", che: "da Internet, e non cambia mai", dove: "ovunque" },
+      { base: "http://192.168.1.8:8790", che: "la rete di casa", dove: "casa" },
+    ];
+    const r = await chiama("/pannello/connessioni", { token: tokenAdmin });
+    dice("con un indirizzo che non scade non si segna nessuno", r.dati?.daFuori === null);
+  }
 }
 
 await gateway.chiudi();

@@ -43,6 +43,20 @@ export interface Dispositivo {
   ultimaStrada?: string;
   /** Che versione dell'app aveva addosso l'ultima volta. */
   versioneApp?: string;
+  /**
+   * ⚠ **Quando si e' portato a casa gli indirizzi di oggi.** Nuovo nella 1.3.1.
+   *
+   * `/io` risponde anche con tutte le strade per arrivare a questo computer, e
+   * il telefono se le scrive (vedi `ricordaBasi` nell'app). Quello che mancava
+   * era saperlo **da questa parte**: senza, il computer non poteva rispondere
+   * alla domanda che conta — «se adesso esce di casa, mi ritrova?».
+   *
+   * Serve perche' la strada da fuori e' una sola ed e' un tunnel gratuito, che
+   * prende un nome nuovo ogni volta che riparte. Chi ha imparato gli indirizzi
+   * **prima** di quel momento ha in tasca un nome morto, e non lo scoprira'
+   * finche' non prova — da fuori, cioe' quando non puo' piu' rimediare.
+   */
+  imparatoIl?: number;
   /** Quante volte di fila e' stato respinto con un token che non vale. */
   noDiFila?: number;
   /** Quando e' stato respinto l'ultima volta. */
@@ -648,8 +662,14 @@ export interface StatoPannello {
   versione: string;
   /** Gli indirizzi su cui questo PC si fa trovare, dal più promettente. */
   indirizzi: IndirizzoPubblico[];
-  /** Com'è messa la strada da Internet. */
-  tunnel: { fase: string; indirizzo: string; motivo?: string; quota?: number };
+  /**
+   * Com'è messa la strada da Internet.
+   *
+   * `da` è **da quando si chiama così**: il nome di un tunnel gratuito cambia
+   * ogni volta che riparte, e sapere da quando c'è è l'unico modo di dire chi
+   * ce l'ha in tasca e chi no. Manca finché il tunnel non è acceso.
+   */
+  tunnel: { fase: string; indirizzo: string; motivo?: string; quota?: number; da?: number };
   /** Windows lascia entrare sulla porta? `incerto` quando non si è riusciti a guardare. */
   firewall: { aperta: boolean; incerto: boolean };
   /** Chi è collegato adesso. */

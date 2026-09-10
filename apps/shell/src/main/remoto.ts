@@ -1925,6 +1925,9 @@ const fornitorePannello: FornitorePannello = {
         indirizzo: fuori.indirizzo,
         motivo: fuori.motivo,
         quota: fuori.quota,
+        // Da quando si chiama cosi': con questo la dash dei collegamenti sa
+        // dire chi, uscendo di casa adesso, non ci ritroverebbe.
+        da: fuori.da,
       },
       firewall: muroDiWindows,
       dispositivi: remoto

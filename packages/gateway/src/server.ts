@@ -1039,6 +1039,15 @@ export class Gateway {
          * cerchio: basta che il telefono arrivi **una volta** — dalla wifi di
          * casa, di solito — e si porta a casa il tunnel nuovo da solo.
          */
+        /**
+         * ⚠ **Si segna che li ha presi.** Dalla 1.3.1.
+         *
+         * Questa e' l'unica riga di codice in cui il computer sa che quel
+         * telefono ha in mano gli indirizzi di **adesso**. Senza, alla domanda
+         * «se esce di casa mi ritrova?» si poteva solo tirare a indovinare — ed
+         * e' la domanda a cui serviva rispondere. Vedi `haImparatoGliIndirizzi`.
+         */
+        this.remoto.haImparatoGliIndirizzi(dispositivo);
         this.json(res, 200, {
           id: dispositivo.id,
           nome: dispositivo.nome,
@@ -1600,9 +1609,33 @@ export class Gateway {
           return this.errore(res, 403, "Questo lo può vedere solo chi ha il permesso di decidere.");
         }
         const adesso = Date.now();
+        /**
+         * ⚠ **La strada da fuori, e da quando si chiama cosi'.** Dalla 1.3.1.
+         *
+         * Serve a rispondere alla domanda che due giorni di «non funziona
+         * piu'» hanno lasciato in piedi: **chi, adesso, uscendo di casa non ci
+         * ritrova.** La risposta e' un confronto fra due momenti — da quando il
+         * tunnel si chiama cosi', e quando quel telefono si e' portato a casa
+         * gli indirizzi (vedi `imparatoIl`).
+         *
+         * Vale **solo se il tunnel e' l'unica strada da fuori**: se c'e' anche
+         * un indirizzo che non scade — Tailscale, o uno fisso — chi ha in tasca
+         * quello ci arriva lo stesso, e l'avviso sarebbe una bugia.
+         */
+        const quadro = this.pannello?.stato(dispositivo);
+        const scadente =
+          quadro?.tunnel.fase === "acceso" ? quadro.tunnel.indirizzo : "";
+        const cheNonScade = (quadro?.indirizzi ?? []).some(
+          (i) => i.dove === "ovunque" && i.base !== scadente,
+        );
+        const daFuori =
+          scadente && !cheNonScade
+            ? { indirizzo: scadente, da: quadro?.tunnel.da ?? 0 }
+            : null;
         this.json(res, 200, {
           adesso,
           versioneSuite: this.versione,
+          daFuori,
           dispositivi: this.remoto.listaDispositivi().map((d) => ({
             id: d.id,
             nome: d.nome,
@@ -1618,7 +1651,13 @@ export class Gateway {
             // dice, cosi' la pagina non gli mette accanto dei tasti che non
             // hanno senso.
             eIlComputer: d.id === "questo-computer",
-            ...comeVa(d, adesso, this.versione),
+            // Quando l'ha imparato: la pagina lo dice in chiaro sulla riga.
+            imparatoIl: d.imparatoIl ?? 0,
+            // Vero, falso, oppure niente quando non si sa. Il tasto «mandagli
+            // l'indirizzo» sta solo dove la risposta e' no.
+            haLIndirizzoDiOggi:
+              d.id === "questo-computer" ? null : haLIndirizzoDiOggi(d, daFuori),
+            ...comeVa(d, adesso, this.versione, daFuori),
           })),
         });
         return;
@@ -2883,10 +2922,41 @@ export class Gateway {
  * succedendo adesso** (mi bussa e gli dico di no), poi quello che e' rimasto
  * indietro (una versione vecchia), poi il silenzio.
  */
+/**
+ * **Ce l'ha in tasca, l'indirizzo con cui adesso si entra da fuori?**
+ *
+ * Tre risposte, e la terza conta quanto le altre due:
+ * - `true`: si e' portato a casa gli indirizzi dopo l'ultimo cambio di nome;
+ * - `false`: prima, quindi da fuori casa adesso non ci ritrova;
+ * - `null`: **non si sa**, e succede in due casi onesti — da fuori si entra da
+ *   un indirizzo che non scade (allora la domanda non si pone), oppure quel
+ *   telefono non ha mai detto quando ha imparato, che e' com'era prima della
+ *   1.3.1.
+ *
+ * ⚠ Sta qui, in una funzione sola, perche' la stessa risposta serve al
+ * giudizio (`comeVa`) e alla riga della dash: due posti che la calcolano da se'
+ * sono due posti che un giorno diranno cose diverse.
+ */
+function haLIndirizzoDiOggi(
+  d: { imparatoIl?: number },
+  daFuori?: { da: number } | null,
+): boolean | null {
+  if (!daFuori?.da) return null;
+  if (!d.imparatoIl) return null;
+  return d.imparatoIl >= daFuori.da;
+}
+
 function comeVa(
-  d: { ultimoAccesso: number; noDiFila?: number; versioneApp?: string; id: string },
+  d: {
+    ultimoAccesso: number;
+    noDiFila?: number;
+    versioneApp?: string;
+    id: string;
+    imparatoIl?: number;
+  },
   adesso: number,
   versioneSuite: string,
+  daFuori?: { indirizzo: string; da: number } | null,
 ): { come: "bene" | "guarda" | "male"; perche: string } {
   const GIORNO = 24 * 60 * 60 * 1000;
 
@@ -2902,6 +2972,32 @@ function comeVa(
 
   // Il computer non ha un'app addosso: le due domande dopo non lo riguardano.
   if (d.id === "questo-computer") return { come: "bene", perche: "E' questo computer." };
+
+  /**
+   * ⚠ **«Da fuori casa, adesso, non ti ritrova.»** Nuovo nella 1.3.1.
+   *
+   * E' il difetto raccontato sette volte, guardato finalmente **prima** che
+   * qualcuno se ne accorga da fuori. Da qui si esce con una sola strada — il
+   * tunnel gratuito — e quel nome cambia ogni volta che riparte: chi si e'
+   * portato a casa gli indirizzi prima di quel momento ha in tasca un nome
+   * morto, e lo scoprira' quando e' fuori, cioe' quando non puo' rimediare.
+   *
+   * Il computer lo sa **adesso**, e lo dice adesso, quando rimediare costa un
+   * messaggio.
+   *
+   * Chi non ha mai detto quando ha imparato — un'app precedente alla 1.3.1 —
+   * resta fuori da questo giudizio: il dato non c'e', e inventarselo vorrebbe
+   * dire segnare in rosso cinque righe su cinque il giorno dell'aggiornamento.
+   * Basta che apra l'app una volta e il dato c'e'.
+   */
+  if (haLIndirizzoDiOggi(d, daFuori) === false) {
+    return {
+      come: "guarda",
+      perche:
+        "Ha in tasca l'indirizzo da fuori di prima: se adesso esce di casa, non mi ritrova. " +
+        "Mandagli quello di adesso, oppure basta che apra l'app una volta qui in casa.",
+    };
+  }
 
   if (d.versioneApp && d.versioneApp !== versioneSuite) {
     return {

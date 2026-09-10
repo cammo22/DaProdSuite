@@ -270,6 +270,9 @@ export class Remoto {
       token: nuovoToken(),
       accoppiato: Date.now(),
       ultimoAccesso: Date.now(),
+      // Gli indirizzi di oggi glieli ha appena dati il QR: parte sapendo dove
+      // siamo. Vedi `imparatoIl`.
+      imparatoIl: Date.now(),
     };
     dati.dispositivi.push(dispositivo);
     /**
@@ -435,6 +438,8 @@ export class Remoto {
       token: nuovoToken(),
       accoppiato: Date.now(),
       ultimoAccesso: Date.now(),
+      // Ha bussato adesso: sa dove siamo. Vedi `imparatoIl`.
+      imparatoIl: Date.now(),
     };
     archivio.dispositivi.push(dispositivo);
     b.stato = "accettata";
@@ -540,6 +545,26 @@ export class Remoto {
     }
     if (cambiato) this.archivio.salvaSubito();
     else if (adesso - vecchio >= 30_000) this.archivio.salva();
+  }
+
+  /**
+   * **Si e' portato a casa gli indirizzi di oggi.** Dalla 1.3.1.
+   *
+   * La chiama `/io`, che e' l'unica risposta in cui il computer dice **da dove
+   * lo si raggiunge adesso** — e il telefono se li scrive tutti.
+   *
+   * ⚠ Serve a una domanda sola, ed e' quella che mancava: **se questa persona
+   * adesso esce di casa, mi ritrova?** Da fuori si passa dal tunnel gratuito,
+   * che prende un nome nuovo ogni volta che riparte: chi ha imparato prima di
+   * quel momento ha in tasca un nome morto e non lo sa. Vedi `comeVa` nel
+   * server, che confronta questo con da quando il tunnel si chiama cosi'.
+   *
+   * Si salva differito: `/io` la chiama ogni apertura dell'app, e mezzo minuto
+   * di ritardo su questo dato non cambia niente a chi guarda.
+   */
+  haImparatoGliIndirizzi(dispositivo: Dispositivo): void {
+    dispositivo.imparatoIl = Date.now();
+    this.archivio.salva();
   }
 
   /**

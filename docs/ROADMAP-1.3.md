@@ -43,6 +43,7 @@ Contando, ci sta poco spazio in mezzo:
 |---|---|
 | ~~1.2.8~~ | la sala giochi che si guarda |
 | ~~1.3.0~~ | i soldi su una scala sola, e le anteprime che si aprono |
+| ~~1.3.1~~ | chi resta fuori casa si vede prima, e rientra con un messaggio |
 
 ⚠ **La 1.3.0 è uscita prima che il traguardo chiudesse**, perché l'ha chiesta
 lui il 10 settembre 2026: «aggiusta tutto e facciamo la 1.3.0». Quindi il nome
