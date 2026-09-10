@@ -9,7 +9,7 @@ export const $ = (id) => document.getElementById(id);
 
 export const el = {};
 for (const chiave of [
-  "titolo", "caption", "lyrics", "duration", "steps", "cfg", "cfg_scale", "top_k",
+  "titolo", "caption", "lyrics", "duration", "steps", "cfg", "cfg_scale",
   "seed_text", "seed_audio", "format", "batch", "tiled", "tile", "instrumental",
   "qualita", "rigaQualita", "mancaQualita",
   "bpm", "bpmVal", "tonalita", "tempo", "lingue", "notaLingua",

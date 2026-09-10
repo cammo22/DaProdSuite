@@ -95,7 +95,6 @@ export const salvaCopia = (id) => suite.libreria.salva(id);
 export const eliminaElemento = (id) => suite.libreria.elimina(id);
 export const suLibreriaCambiata = (azione) => suite.libreria.onCambiata(azione);
 export const suConsegna = (azione) => suite.onConsegna(azione);
-export const mandaA = (app, id, intenzione) => suite.invia(app, id, intenzione);
 
 /* ----------------------------------------------------------------- modelli */
 

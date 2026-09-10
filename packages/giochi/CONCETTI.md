@@ -98,17 +98,18 @@ numero scritto a mano, e due parole di accompagnamento che si scrivono sempre.
 ⚠ **I tasti dei regali sono euro, contati in lire**: 2, 5, 10, 20, 50, 100,
 200 e 500 euro, cioe' da 3.873 a 968.135 lire.
 
-⚠ **Dal 10 settembre 2026 sono anche i tasti del bonus**, e la moneta e' una
-sola. Prima erano due scale — qui gli euro, li' lire piccole da 2 a 500 — e
-si chiamavano tutte e due «lire»: il numero accanto a una figurina non si
-poteva confrontare con quello di un regalo, e in questo gioco il portafoglio e'
-uno. Parole sue: «i prezzi ora sono da 1 lira a 500, metti gli stessi tagli che
-hai messo per le ricariche».
+⚠ **La moneta e' una sola, e sono gli euro.** Prima del 10 settembre 2026 ce
+n'erano due che si chiamavano tutte e due «lire» — gli euro dei regali e le lire
+piccole del bonus — e il numero accanto a una figurina non si poteva confrontare
+con quello di un regalo, mentre in questo gioco il portafoglio e' uno. Parole
+sue: «i prezzi ora sono da 1 lira a 500, metti gli stessi tagli che hai messo per
+le ricariche».
 
-A muoversi e' stata **la scala dei gradi**, che e' salita al milione (§ 7):
-cosi' i tagli grossi fanno dentro alla scala quello che prima facevano i
-piccoli — si sale di grado un colpo alla volta, e nessun singolo tasto la
-sfonda.
+⚠ **I tasti del bonus sono euro piccoli**, dall'11 settembre: dieci centesimi,
+venticinque, cinquanta, un euro, due, **tre**. Il tetto di una cosa presa e' tre
+euro (§ 7), e con quel tetto sette degli otto tasti dei regali lo sfonderebbero
+al primo colpo — sarebbero sette tasti che fanno tutti la stessa cosa, cioe'
+«massimo». Stessa moneta, taglio diverso: l'ultimo tasto **e'** il tetto.
 
 I tasti si **sommano**: si batte come su una cassa, 100 + 20 + 20. C'e' «azzera»
 per tornare indietro, e un tetto a cinque volte il tasto piu' grosso — non e' un
@@ -127,6 +128,31 @@ per una cosa che non passa dalla fila. Non e' un bonifico fra conti — non si
 toglie a nessuno, paga il banco — e **non conta in classifica**: quella la fa
 `prese`, cioe' quante cose ti hanno preso. Uno con mille lire regalate e zero
 prese non e' uno che crea, e i due numeri non si devono confondere.
+
+### Lo scarico: chi comanda azzera un portafoglio
+
+Chiesto l'11 settembre 2026: «un admin puo' anche azzerare il portafoglio degli
+altri, caso mai problemi: fai un bel tastino per resettare il portafoglio».
+
+Sta nella riga di ogni persona, dentro «Manda lire», sotto ai tasti che danno:
+e' la stessa decisione girata al contrario e si prende guardando lo stesso
+numero, cioe' quanto ha in tasca. Compare **solo se c'e' qualcosa da svuotare**.
+
+⚠ **Azzera vuol dire azzera.** Non si scrive quanto togliere: un tanto in meno
+sarebbe una multa, che e' un'altra cosa e non c'e'. Il perche' si scrive sempre,
+come per un regalo, e chi lo riceve lo legge appena apre la sala — un
+portafoglio che si svuota da solo si legge come un guasto.
+
+⚠ **La collezione, i livelli e le cose prese non si toccano.** Le figurine sono
+quello che uno ha inventato e non sono soldi; `prese` e l'esperienza dicono cosa
+ha fatto, e non era sbagliato. Azzerare il portafoglio non e' cancellare la
+persona.
+
+Perche' esiste: **la scala e' cambiata tre volte in due giorni** (§ 7). Chi ha
+giocato con quella sbagliata ha in tasca centinaia di euro che non avrebbe
+dovuto avere, e ricalcolarli non si puo' — quei soldi sono stati spesi, sommati,
+mescolati con i regali. Quando i numeri di un portafoglio non vogliono piu' dire
+niente, l'unica cosa onesta e' ripartire da zero.
 
 ⚠ **Non ci sono soldi veri.** Non si compra niente pagando, e i «pacchetti da
 comprare» si comprano in lire di gioco. Se un giorno questa cosa dovesse uscire
@@ -227,44 +253,67 @@ Ogni pezzo ha un **prezzo in lire**, e il prezzo dice il **grado**. Sono dodici,
 in quest'ordine — e si', **Epic sta dopo Divine**: e' la scala scelta da Cammo,
 e in un gioco la scala e' una decisione, non una deduzione.
 
-| Grado | Da | Quanto esce | Punti | Fuoco |
-|---|---|---|---|---|
-| Basic | 0 £ | 40% | 1 | 0 |
-| Grand | 70.000 £ | 22% | 3 | 0 |
-| Rare | 160.000 £ | 14% | 8 | 1 |
-| Arcane | 330.000 £ | 9% | 18 | 1 |
-| Heroic | 600.000 £ | 6% | 35 | 1 |
-| **Unique** | **1.000.000 £** | 4% | 70 | 2 |
-| Celestial | 1.600.000 £ | 2,4% | 140 | 3 |
-| Divine | 2.700.000 £ | 1,4% | 280 | 3 |
-| Epic | 4.300.000 £ | 0,8% | 600 | 4 |
-| Legendary | 7.000.000 £ | 0,3% | 1.400 | 4 |
-| Mythic | 11.000.000 £ | 0,1% | 4.000 | 5 |
-| **Ethernal** | 19.000.000 £ | 0,03% | 12.000 | 5 |
+| Grado | Da | In euro | Quanto esce | Punti | Fuoco |
+|---|---|---|---|---|---|
+| Basic | 0 £ | — | 40% | 1 | 0 |
+| Grand | 250 £ | 0,13 € | 22% | 3 | 0 |
+| Rare | 600 £ | 0,31 € | 14% | 8 | 1 |
+| Arcane | 1.200 £ | 0,62 € | 9% | 18 | 1 |
+| Heroic | 2.200 £ | 1,14 € | 6% | 35 | 1 |
+| **Unique** | **3.600 £** | **1,86 €** | 4% | 70 | 2 |
+| Celestial | 5.809 £ | **3,00 €** | 2,4% | 140 | 3 |
+| Divine | 9.700 £ | 5,01 € | 1,4% | 280 | 3 |
+| Epic | 15.500 £ | 8,01 € | 0,8% | 600 | 4 |
+| Legendary | 25.000 £ | 12,91 € | 0,3% | 1.400 | 4 |
+| Mythic | 40.000 £ | 20,66 € | 0,1% | 4.000 | 5 |
+| **Ethernal** | 68.000 £ | 35,12 € | 0,03% | 12.000 | 5 |
 
-In vetrina costano **venti volte la soglia**: un Rare sta sui tre milioni e
-duecentomila, un Mythic sui duecentoventi.
+In vetrina costano **venti volte la soglia**: un Rare sta sulle dodicimila, un
+Unique — il massimo che si possa mettere in vendita — sulle settantaduemila.
 
-### ⚠ La scala e' salita il 10 settembre 2026
+### ⚠ Il tetto: tre euro, dall'11 settembre 2026
 
-Detto cosi': «aggiorna anche i gradi, da 1 milione di lire sono unique». Prima
-andava da 0 a 1.400 lire.
+Detto cosi': «i premi della slot non vanno bene, danno troppe lire. **Fino al
+livello unique valgono massimo l'equivalente di 3 euro.** Le combinazioni sono
+quelle che possono avere valore, quindi aggiustiamo in modo da stabilizzare i
+prezzi».
 
-**Le proporzioni non sono cambiate**: ogni gradino vale circa una volta e mezzo
-quello sotto, esattamente come prima. E' cambiata **l'unita'**, non il disegno —
-i gradi si sono spostati nel mondo dove i soldi di questo gioco vivevano gia',
-quello dei regali (§ 4).
+Il giorno prima la scala era salita **al milione**, per stare nella stessa moneta
+dei regali. Quella meta' era giusta e resta: la moneta e' una sola. Sbagliata era
+l'**altezza**. Con Unique che partiva da un milione, prendere una combinazione
+voleva dire pagarla cinquecento euro: nel giro di una serata chi gioca aveva in
+tasca piu' lire di quante ne servissero per comprare tutto, e un portafoglio che
+non si svuota piu' spegne il gioco (§ 4).
 
-⚠ **Sono saliti anche i prezzi dei pezzi sui rulli**, e non era una scelta: i
-gradi si leggono dal prezzo, quindi con le soglie al milione e i pezzi fra 1 e
-1.401 lire **tutti i dodici rulli sarebbero diventati Basic**. Un pezzo va
-adesso da 1.000 a diciannove milioni, con la stessa curva e la stessa
-distribuzione sui 6.291 generi veri.
+Adesso il muro e' scritto: **Unique finisce a tre euro**, cioe' dove comincia
+Celestial. E' l'ultima lira del grado piu' alto che una persona possa assegnare
+oggi (`TETTO_FIGURINE`), quindi non e' un numero a parte da tenere allineato: il
+giorno che si apre Celestial, il tetto sale da solo.
 
-⚠ **Quello che era gia' scritto sul disco e' stato portato su**, tenendo il
-grado: una figurina Unique di ieri e' una figurina Unique oggi. Si converte
-leggendo, una volta sola — il file dice che forma ha (`versione: 2`), se no a
-ogni apertura i prezzi si moltiplicherebbero di nuovo.
+**Le proporzioni non sono cambiate mai**: ogni gradino vale circa una volta e
+mezzo quello sotto. In due giorni e' cambiata tre volte l'altezza e mai il
+disegno.
+
+⚠ **Sono scesi anche i prezzi dei pezzi sui rulli**, e non era una scelta: i
+gradi si leggono dal prezzo, quindi con le soglie a tre euro e i pezzi fra mille
+e diciannove milioni **tutti i dodici rulli sarebbero diventati Ethernal** — lo
+stesso guaio del giorno prima, girato dall'altra parte. Un pezzo va adesso da 60
+a 68.060 lire, con la stessa curva e la stessa distribuzione sui 6.291 generi
+veri.
+
+⚠ **Un pezzo sul rullo puo' valere piu' del tetto di una figurina.** Un Mythic
+sta sui quarantamila, venti euro: sopra i tre euro di una cosa presa. Non e' una
+contraddizione, sono due mestieri: il prezzo di un pezzo dice **quanto e' raro**
+(e da li' il colore sul rullo), il prezzo di una figurina dice **quanto ti
+pagano**. Fra i due c'e' la media (§ 10).
+
+⚠ **Quello che era gia' scritto sul disco si converte tenendo il grado**: una
+figurina Unique di ieri e' una figurina Unique oggi, e vale tre euro invece di
+cinquecento. Chi stava sopra al tetto ci si appoggia — il distintivo diceva
+«Unique» gia' da ieri, adesso lo dice anche il numero. **Anche i portafogli
+scendono con la scala**, se no chi ha giocato ieri si sveglia con mille volte i
+soldi di tutti. Si converte leggendo, una volta sola: il file dice con che metro
+e' stato scritto (`versione`), e di metri vecchi ce ne sono due.
 
 Un Mythic ogni mille caselle: con dodici rulli, **uno ogni ottantatre giri**. Un
 **Ethernal** ogni tremilatrecento: uno ogni duecentosettanta giri.
@@ -430,13 +479,26 @@ scritto chi le ha mandate e quando. Per ognuna si puo':
   strada da cui passano le richieste del telefono. Il pezzo o l'immagine esce e
   si guarda. **Il costo lo paga il banco, non il giocatore**: e' l'admin che ha
   scelto di provarla;
-- **prenderla**. ⚠ Il prezzo **non si scrive a mano**: e' la **somma dei dodici
-  pezzi** — che e' un numero vero, viene dalla rarita' di ognuno — piu' un
+- **prenderla**. ⚠ Il prezzo **non si scrive a mano**: e' quanto valgono i suoi
+  pezzi **in media** — un numero vero, viene dalla rarita' di ognuno — piu' un
   **bonus** che e' l'unica cosa che decide una persona. Il bonus dice quanto
   quella riga vale *oltre* i pezzi di cui e' fatta, cioe' quanto e' bella
   l'idea; puo' anche essere zero. Cosi' una combinazione di roba rara parte alta
   anche quando chi comanda ha fretta, e una di roba comune ma geniale la si puo'
-  pagare bene lo stesso;
+  pagare bene lo stesso.
+
+  ⚠ **La media e non la somma**, dall'11 settembre 2026, e i motivi sono due. Il
+  primo: dodici pezzi valgono in media 1.600 lire l'uno, e sommati fanno dieci
+  euro — con il tetto a tre, *ogni* combinazione avrebbe pagato il massimo, e una
+  scala dove tutti prendono il voto piu' alto non e' una scala. Il secondo e'
+  peggiore: da quando si manda solo quello che si e' bloccato (§ 5), una riga puo'
+  avere tre pezzi o dodici, e con la somma bloccarne dodici a caso pagava quattro
+  volte tre pezzi scelti. Cioe' il contrario esatto di quello per cui si manda
+  solo il bloccato. **Quanti sono non e' un merito; cosa sono si'.**
+
+  ⚠ **E sopra c'e' il tetto** (§ 7): finche' i gradi si fermano a Unique, una
+  cosa presa non vale piu' di tre euro. Il bonus serve ad arrivarci, non a
+  sfondarlo;
 - **attaccarci il contenuto**: le immagini o i brani venuti fuori da quel
   prompt. ⚠ **Sono piu' d'uno dal 10 settembre 2026**, vedi qui sotto. E' quello che la fa diventare una figurina che si guarda, ed e' la
   copertina della sua scheda nello shop — senza, uno comprerebbe una parola.
@@ -453,12 +515,11 @@ Il bonus si batte su otto tasti e si sommano: piu' li premi, piu' sale. Davanti
 a otto numeri conosciuti si decide in un secondo; davanti a una casella vuota ci
 si mette a pensare quanto vale un'idea, e finisce che non si decide.
 
-⚠ **Sono gli stessi tagli dei regali** (§ 4), dal 10 settembre 2026: da 3.873 a
-968.135 lire. Fino a quel giorno erano lire piccole — da 2 a 500 — perche' la
-scala dei gradi finiva a 1.400 e un taglio da 3.873 l'avrebbe sfondata in una
-pressione sola. Adesso e' la scala che e' salita al milione, e i tagli grossi ci
-lavorano dentro un colpo alla volta: il piu' grosso da solo non arriva a
-Unique, e a ogni gradino ci si arriva battendo.
+⚠ **Sono euro come i regali** (§ 4), ma **tagliati piccoli**: 0,10 · 0,25 · 0,50
+· 1 · 2 · 3. Con il tetto a tre euro, sette degli otto tasti dei regali lo
+sfonderebbero al primo colpo — sarebbero sette tasti che si chiamano tutti
+«massimo». Cosi' invece a ogni gradino ci si arriva battendo, e l'ultimo tasto
+**e'** il tetto. Il muro non lo tengono i tasti: lo tiene il PC quando prende.
 
 Il grado che ne viene si legge **mentre** si preme, accanto al totale. E si puo'
 fare la strada contraria: si tocca il grado, e il bonus si mette da solo al
@@ -616,9 +677,11 @@ comanda, e decide due cose che sono tutte e due sue:
 
 - **che grado hanno nello shop.** Non e' quello della slot — li' lo dicono i
   dati, qui lo sceglie una persona;
-- **quanto costano.** Il grado ne suggerisce uno (venti volte la sua soglia:
-  un Rare sta sulle 240 lire, un Mythic sulle diciassettemila), ma il numero
-  finale lo scrive chi vuole.
+- **quanto costano.** Il grado ne suggerisce uno (venti volte la sua soglia — un
+  Unique sulle settantaduemila, cioe' trentasette euro: si', **piu' del tetto di
+  tre euro**, perche' comprare non deve essere la strada comoda. La stessa
+  figurina cade da un pacchetto, se sei fortunato; chi compra paga di non
+  aspettare la fortuna), ma il numero finale lo scrive chi vuole.
 
 ⚠ **Nello shop si paga caro, ed e' voluto.** La stessa figurina cade anche da
 un pacchetto, se sei fortunato. Chi compra sta pagando **di non aspettare la
@@ -733,15 +796,15 @@ di piu'» non e' una classifica, e' un contatore.
 
 ## 17. Quello che ancora non e' deciso
 
-- ⚠ **Le due economie sono lontane tredicimila volte, e va guardato.** Dal 10
-  settembre 2026 un Unique vale un milione di lire, ma **un giro costa ancora
-  10 lire** e il regalo di benvenuto e' 500. Vuol dire che una sola
-  combinazione presa paga **centocinquantamila giri**: chi si fa prendere una
-  cosa non finisce piu' le lire, e la frase del § 4 — «le lire per giocare
-  finiscono, e per averne ancora bisogna inventare qualcosa» — smette di essere
-  vera. Il pacchetto e' gia' salito (se no i doppioni stampavano soldi); il
-  costo del giro no, perche' quello l'ha scelto lui: «il tasto piu' piccolo,
-  due euro, sono trecentottantasette giri». Va deciso insieme, non a occhio.
+- ⚠ **Il costo del giro, adesso che il tetto e' tre euro.** Dall'11 settembre
+  2026 una cosa presa vale al massimo 5.808 lire, un giro costa **10 lire** e il
+  regalo di benvenuto e' 500. Vuol dire che una combinazione presa al massimo
+  paga **cinquecentottanta giri**, ed e' un numero che sta in piedi: si gioca una
+  serata e finiscono. Prima del tetto ne pagava centocinquantamila, e la frase
+  del § 4 — «le lire per giocare finiscono» — non era piu' vera; adesso lo e' di
+  nuovo. Quello che resta da guardare e' l'altro capo: **il regalo di benvenuto**
+  sono cinquanta giri, e per un pacchetto (5.000) servono dieci combinazioni
+  buone o un regalo. Se all'inizio sembra troppo stretto si alza — e' una riga.
 
 - ⚠ **L'inventario: le caselle, le combinazioni, o tutte e due?** E' la domanda
   del § 13-bis, ed e' la piu' grossa aperta adesso: la prima strada e' un pezzo
@@ -753,8 +816,9 @@ di piu'» non e' una classifica, e' un contatore.
 - **Cento e' il numero giusto per una serie?** Con poche persone che giocano,
   cento combinazioni prese ci mettono un po' ad arrivare, e finche' la serie non
   si chiude non c'e' niente da comprare. Si puo' partire a cinquanta e alzarlo.
-- **Quanto vale una combinazione presa**, come ordine di grandezza. Adesso il
-  prezzo lo scrive l'admin a mano ogni volta; se salta fuori che sono quasi
-  sempre gli stessi tre numeri, si mettono tre bottoni.
+- **Quando aprire Celestial** (§ 7). Il tetto delle figurine e il tetto in lire
+  sono la stessa decisione: il giorno che il magazzino e' abbastanza pieno da
+  meritare un settimo grado, il muro dei tre euro si sposta da solo a cinque. Si
+  fa quando ci sono i dati, non quando viene in mente.
 - **Il secondo tavolo**, quello delle immagini: c'e' gia' il mazzo, ma i
   minigiochi per le immagini Cammo li ha in testa e non sono ancora scritti qui.

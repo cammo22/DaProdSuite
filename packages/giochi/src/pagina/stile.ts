@@ -355,6 +355,16 @@ h2:first-child{margin-top:2px}
 .btn.oro{flex:1; background:linear-gradient(180deg,#3a3115,#241f0d); border-color:#5a4a1c;
   color:var(--oro)}
 .btn.piano{background:transparent; color:var(--spento)}
+/**
+ * ⚠ **Il tasto che svuota un portafoglio si vede che e' quello.**
+ *
+ * Rosso spento, non rosso acceso: sta in un pannello dove tutti gli altri tasti
+ * danno, e questo toglie. Se fosse grigio come «azzera il taglio» — che sta due
+ * righe sopra e fa una cosa innocua — si premerebbe per sbaglio; se fosse rosso
+ * pieno sembrerebbe il tasto principale della scheda, che non e'.
+ */
+.btn.brutto{background:transparent; border-color:#5c2530; color:#ff8d9c}
+.btn.brutto:not(:disabled):hover{background:#2a1116}
 
 /* --------------------------------------------------------- il risultato */
 .esito{min-height:24px; margin:8px 0 2px; font-weight:700; font-size:15px}

@@ -28,6 +28,41 @@ import type {
 } from "./tipi";
 import { GRADI_ID } from "./tipi";
 
+/* ------------------------------------------------------------------- lire */
+
+/**
+ * 1 € in lire: il cambio fisso del 2001, quello vero.
+ *
+ * ⚠ **Sta in cima e non in fondo perche' la scala dei gradi lo usa.** Dall'11
+ * settembre 2026 il tetto delle figurine e' scritto in euro — tre — e le lire
+ * si ricavano da qui. Un `const` piu' in basso non si potrebbe leggere da
+ * `GRADI`: i moduli si valutano in ordine, e sarebbe un errore all'avvio.
+ */
+export const CAMBIO_EURO = 1936.27;
+
+/**
+ * ⚠ **Quanto vale al massimo una cosa presa, oggi: tre euro.**
+ *
+ * Parole sue, l'11 settembre 2026: «i premi della slot non vanno bene, danno
+ * troppe lire. Fino al livello unique valgono massimo l'equivalente di 3 euro.
+ * Le combinazioni sono quelle che possono avere valore».
+ *
+ * Il numero e' in **euro** e non in lire perche' e' cosi' che l'ha detto, e
+ * perche' e' l'unica unita' che in questo gioco vuol dire qualcosa fuori dal
+ * gioco: i tasti dei regali sono euro, il saldo si legge in euro con un tocco.
+ * Tre euro sono `TETTO_LIRE` lire, e da quel numero scende tutto il resto —
+ * dove finisce Unique, quanto vale una combinazione, quanto costa un pacchetto.
+ *
+ * ⚠ **Va insieme a `TETTO_FIGURINE`**, che dice fin dove arrivano i gradi. Il
+ * giorno che si apre Celestial il tetto in lire si sposta da solo (vedi
+ * `tettoDelValore`): sono due facce della stessa decisione, e la seconda non si
+ * aggiorna a mano.
+ */
+export const TETTO_EURO = 3;
+
+/** I tre euro del tetto, in lire: 5.809. */
+export const TETTO_LIRE = Math.round(TETTO_EURO * CAMBIO_EURO);
+
 /* ------------------------------------------------------------------ il caso */
 
 /** Un dado. Torna un numero da 0 (compreso) a 1 (escluso), come `Math.random`. */
@@ -66,40 +101,50 @@ export function fra(min: number, max: number, caso: Caso): number {
  * cresce.
  */
 /**
- * ⚠ **La scala e' cambiata il 10 settembre 2026: Unique parte da un milione.**
+ * ⚠ **La scala e' scesa l'11 settembre 2026: Unique finisce a tre euro.**
  *
- * Parole sue: «i prezzi ora sono da 1 lira a 500, metti gli stessi tagli che
- * hai messo per le ricariche… e aggiorna anche i gradi: da 1 milione di lire
- * sono unique».
+ * Parole sue: «i premi della slot non vanno bene, danno troppe lire. Fino al
+ * livello unique valgono massimo l'equivalente di 3 euro. Le combinazioni sono
+ * quelle che possono avere valore, quindi aggiustiamo in modo da stabilizzare i
+ * prezzi».
  *
- * Prima la scala andava da 0 a 1.400 lire, e i tasti del bonus erano lire
- * piccole (2, 5, 10… 500). Il problema era che **in questo gioco i soldi hanno
- * gia' una scala**, ed e' quella dei regali: euro contati in lire, dove il
- * taglio piu' piccolo e' 3.873. Con due scale, il bonus e i regali parlavano
- * di due monete diverse che si chiamavano tutte e due «lire», e il numero
- * accanto a una figurina non si poteva confrontare con niente.
+ * Il giorno prima la scala era salita **al milione**, per far stare i gradi
+ * nella stessa moneta dei regali (euro contati in lire). Quella meta' era
+ * giusta e resta: la moneta e' una sola. Sbagliata era l'**altezza**. Con
+ * Unique che partiva da un milione, prendere una combinazione voleva dire
+ * pagarla centinaia di euro: nel giro di una serata chi gioca aveva in tasca
+ * piu' lire di quante ne servissero per comprare tutto, e un portafoglio che
+ * non si svuota piu' spegne il gioco (§ 4).
  *
- * Adesso e' una sola: **i tasti del bonus sono quelli dei regali** (vedi
- * `TAGLI_BONUS` in `banco.ts`) e le soglie stanno nello stesso mondo. Le
- * proporzioni fra un grado e l'altro sono rimaste **identiche** — ogni gradino
- * vale circa una volta e mezzo quello sotto — perche' quella e' la forma della
- * scala e non c'era niente da aggiustare: e' cambiata l'unita', non il disegno.
+ * Adesso il tetto e' scritto: **`TETTO_LIRE`**, cioe' tre euro, ed e' dove
+ * finisce Unique — il grado piu' alto che una cosa presa possa avere oggi
+ * (`TETTO_FIGURINE`). Celestial parte esattamente da li'.
  *
- * ⚠ **Quello che sta sul disco viene portato su di qui**, non lasciato indietro:
- * vedi `rimettiInRiga` nel deposito. Una figurina Unique di ieri resta Unique.
+ * **Le proporzioni sono le stesse di sempre**: ogni gradino vale circa una
+ * volta e mezzo quello sotto. E' cambiata l'altezza tre volte in due giorni e
+ * il disegno mai — e' la forma della scala, e non c'era niente da aggiustare.
+ *
+ * ⚠ **Quello che sta sul disco si converte tenendo il grado**, non lasciato
+ * indietro e non moltiplicato a caso: vedi `rimettiIPrezzi` nel deposito. Una
+ * figurina Unique di ieri resta Unique, e vale tre euro invece di cinquecento.
  */
 export const GRADI: readonly Scalino[] = [
   { id: "basic", nome: "Basic", da: 0, colore: "#9aa0b5", fuoco: 0, quantoEsce: 3997, punti: 1 },
-  { id: "grand", nome: "Grand", da: 70000, colore: "#7fd1a8", fuoco: 0, quantoEsce: 2200, punti: 3 },
-  { id: "rare", nome: "Rare", da: 160000, colore: "#5cc8ff", fuoco: 1, quantoEsce: 1400, punti: 8 },
-  { id: "arcane", nome: "Arcane", da: 330000, colore: "#b07cff", fuoco: 1, quantoEsce: 900, punti: 18 },
-  { id: "heroic", nome: "Heroic", da: 600000, colore: "#ff9d5c", fuoco: 1, quantoEsce: 600, punti: 35 },
-  { id: "unique", nome: "Unique", da: 1000000, colore: "#ff6fb5", fuoco: 2, quantoEsce: 400, punti: 70 },
-  { id: "celestial", nome: "Celestial", da: 1600000, colore: "#6ee7f0", fuoco: 3, quantoEsce: 240, punti: 140 },
-  { id: "divine", nome: "Divine", da: 2700000, colore: "#ffe9a8", fuoco: 3, quantoEsce: 140, punti: 280 },
-  { id: "epic", nome: "Epic", da: 4300000, colore: "#e879f9", fuoco: 4, quantoEsce: 80, punti: 600 },
-  { id: "legendary", nome: "Legendary", da: 7000000, colore: "#ffd166", fuoco: 4, quantoEsce: 30, punti: 1400 },
-  { id: "mythic", nome: "Mythic", da: 11000000, colore: "#ff4d6d", fuoco: 5, quantoEsce: 10, punti: 4000 },
+  { id: "grand", nome: "Grand", da: 250, colore: "#7fd1a8", fuoco: 0, quantoEsce: 2200, punti: 3 },
+  { id: "rare", nome: "Rare", da: 600, colore: "#5cc8ff", fuoco: 1, quantoEsce: 1400, punti: 8 },
+  { id: "arcane", nome: "Arcane", da: 1200, colore: "#b07cff", fuoco: 1, quantoEsce: 900, punti: 18 },
+  { id: "heroic", nome: "Heroic", da: 2200, colore: "#ff9d5c", fuoco: 1, quantoEsce: 600, punti: 35 },
+  { id: "unique", nome: "Unique", da: 3600, colore: "#ff6fb5", fuoco: 2, quantoEsce: 400, punti: 70 },
+  /**
+   * ⚠ **Celestial parte dal tetto**, e non e' un numero scelto a occhio: e' il
+   * confine dei tre euro. Sotto ci sta tutto quello che una persona puo'
+   * assegnare oggi; sopra c'e' il magazzino di domani.
+   */
+  { id: "celestial", nome: "Celestial", da: TETTO_LIRE, colore: "#6ee7f0", fuoco: 3, quantoEsce: 240, punti: 140 },
+  { id: "divine", nome: "Divine", da: 9700, colore: "#ffe9a8", fuoco: 3, quantoEsce: 140, punti: 280 },
+  { id: "epic", nome: "Epic", da: 15500, colore: "#e879f9", fuoco: 4, quantoEsce: 80, punti: 600 },
+  { id: "legendary", nome: "Legendary", da: 25000, colore: "#ffd166", fuoco: 4, quantoEsce: 30, punti: 1400 },
+  { id: "mythic", nome: "Mythic", da: 40000, colore: "#ff4d6d", fuoco: 5, quantoEsce: 10, punti: 4000 },
   /**
    * ⚠ **Ethernal**: il gradino sopra a tutto, dal 10 settembre 2026.
    *
@@ -108,7 +153,7 @@ export const GRADI: readonly Scalino[] = [
    * assomigliare a nessuno. Il bianco che vira all'azzurro e' l'unica cosa che
    * su un fondo scuro non e' un colore fra gli altri — e' luce.
    */
-  { id: "ethernal", nome: "Ethernal", da: 19000000, colore: "#eaf6ff", fuoco: 5, quantoEsce: 3, punti: 12000 },
+  { id: "ethernal", nome: "Ethernal", da: 68000, colore: "#eaf6ff", fuoco: 5, quantoEsce: 3, punti: 12000 },
 ];
 
 /**
@@ -136,6 +181,27 @@ export function sottoIlTetto(grado: Grado): Grado {
 }
 
 /**
+ * ⚠ **Quante lire, al massimo, puo' valere una cosa presa: 5.808.**
+ *
+ * Cioe' l'ultima lira dentro al grado piu' alto che si possa assegnare oggi —
+ * Unique — che finisce dove comincia Celestial, cioe' a tre euro.
+ *
+ * ⚠ **Non e' un numero scritto a mano da nessuna parte, e non deve esserlo.**
+ * Si ricava da `TETTO_FIGURINE`: il giorno che si apre Celestial, il tetto in
+ * lire sale da solo alla fine di Celestial. Un numero scritto due volte — «fin
+ * dove arrivano i gradi» qui e «fin dove arrivano le lire» la' — il primo
+ * giorno dice la stessa cosa e il secondo no, ed e' il difetto che questo
+ * progetto si e' scritto in cima al CLAUDE.md.
+ *
+ * Se un giorno il tetto fosse l'ultimo grado, sopra non c'e' niente a cui
+ * fermarsi: allora non c'e' tetto, e si dice cosi'.
+ */
+export function tettoDelValore(): number {
+  const sopra = GRADI[altezza(TETTO_FIGURINE) + 1];
+  return sopra ? sopra.da - 1 : Number.POSITIVE_INFINITY;
+}
+
+/**
  * ⚠ **Le soglie di prima del 10 settembre 2026**, tenute per una cosa sola:
  * rileggere i file scritti allora. Vedi `rimettiInRiga` nel deposito.
  *
@@ -144,6 +210,18 @@ export function sottoIlTetto(grado: Grado): Grado {
  */
 export const SOGLIE_DI_PRIMA: readonly number[] =
   [0, 5, 12, 25, 45, 75, 120, 200, 320, 520, 850, 1400];
+
+/**
+ * ⚠ **Le soglie del 10 settembre 2026**, quelle salite al milione. Tenute per
+ * la stessa unica ragione delle altre: rileggere i file scritti quel giorno.
+ *
+ * La scala e' cambiata due volte in due giorni — 0..1.400, poi 0..19 milioni,
+ * poi 0..68.000 — e ogni fotografia resta com'era. Una fotografia non si
+ * ritocca: se si «aggiornasse» questa riga, i file di ieri si riaprirebbero con
+ * i prezzi moltiplicati per mille.
+ */
+export const SOGLIE_DEL_MILIONE: readonly number[] =
+  [0, 70000, 160000, 330000, 600000, 1000000, 1600000, 2700000, 4300000, 7000000, 11000000, 19000000];
 
 /** Dov'e' un grado nella scala: 0 e' Basic, 11 e' Ethernal. */
 export function altezza(grado: Grado): number {
@@ -178,19 +256,27 @@ export function gradoDiPrezzo(prezzo: number): Grado {
 export function prezzoDiPartenza(quantoComune: number | undefined): number {
   const q = Math.min(1, Math.max(0, quantoComune ?? 0.5));
   /**
-   * ⚠ **Cresciuti insieme alla scala**, il 10 settembre 2026.
+   * ⚠ **Scesi insieme alla scala**, l'11 settembre 2026: da 60 lire a 68.060.
    *
-   * La curva e' quella di prima — `(1 - comune)` elevato a sette, e la
-   * distribuzione sui 6.291 generi veri e' la stessa — moltiplicata per mille,
-   * cioe' tanto quanto e' cresciuta la scala dei gradi.
+   * La curva e' sempre quella — `(1 - comune)` elevato a sette — e la
+   * **distribuzione non si muove**: 40% Basic, 7% Mythic, il resto spalmato in
+   * mezzo, contati sui 6.291 generi veri, esattamente come con le soglie al
+   * milione e come con quelle a 1.400. Cambia il metro, non il mazzo.
    *
-   * ⚠ **Doveva crescere anche questa, non era una scelta.** I gradi si leggono
-   * dal prezzo: se le soglie salgono al milione e i pezzi restano fra 1 e
-   * 1.401 lire, **tutti i dodici rulli diventano Basic**, e la slot smette di
-   * avere colori. Sono due numeri che devono stare nello stesso mondo, ed e'
-   * proprio la ragione per cui il mondo e' uno solo adesso.
+   * ⚠ **Doveva scendere anche questa, non era una scelta.** I gradi si leggono
+   * dal prezzo: se le soglie scendono a tre euro e i pezzi restano fra mille e
+   * diciannove milioni, **tutti i dodici rulli diventano Ethernal** e la slot
+   * smette di avere colori — lo stesso difetto del giorno prima, girato
+   * dall'altra parte. Sono due numeri che devono stare nello stesso mondo.
+   *
+   * ⚠ **Un pezzo raro puo' valere piu' del tetto di una figurina, e va bene.**
+   * Un Mythic sul rullo sta sui quarantamila, cioe' venti euro: sopra i tre euro
+   * di una cosa presa. Non e' una contraddizione perche' sono due mestieri
+   * diversi — il prezzo di un pezzo dice **quanto e' raro** (e da li' il colore
+   * sul rullo), il prezzo di una figurina dice **quanto ti pagano**. Quello che
+   * fa da ponte fra i due e' la media, vedi `valoreDeiPezzi`.
    */
-  return Math.max(1000, Math.round(1000 + 19_000_000 * Math.pow(1 - q, 7)));
+  return Math.max(60, Math.round(60 + 68_000 * Math.pow(1 - q, 7)));
 }
 
 /** Il pezzo con addosso il prezzo di adesso: quello dell'admin, o il suo. */
@@ -353,17 +439,20 @@ export const IMPOSTAZIONI_DI_PARTENZA: Impostazioni = {
    * comprare. Se succede, si scende a cinquanta — e' una riga.
    */
   /**
-   * ⚠ **Salito con la scala il 10 settembre 2026, e non era facoltativo.**
+   * ⚠ **Sceso con la scala l'11 settembre 2026, e non era facoltativo.**
    *
    * Un pacchetto si scambia con delle figurine, e **i doppioni pagano il loro
-   * prezzo** (§ 11): con le figurine passate ai milioni e il pacchetto rimasto
-   * a 250 lire, un solo doppione ne ripagava quattromila. Cioe' una macchina
-   * per stampare soldi, aperta a chiunque avesse 250 lire in tasca.
+   * prezzo** (§ 11): il conto da far tornare e' quello — cinque figurine
+   * pescate, se le hai gia' tutte, ti ridanno la loro somma. Con figurine che
+   * valgono fino a 5.808 lire e cinque per pacchetto, un pacchetto pagato meno
+   * di cinquemila e' una macchina per stampare soldi, aperta a chiunque abbia
+   * finito l'album.
    *
-   * E' lo stesso rapporto di prima — un pacchetto costa all'incirca quanto vale
-   * una figurina buona — riportato sulla scala di adesso.
+   * Cinquemila lire — due euro e mezzo — e' poco sotto una figurina Unique
+   * intera: il rapporto di sempre, un pacchetto costa all'incirca quanto vale
+   * una cosa buona, riportato sulla scala di adesso.
    */
-  costoPacchetto: 3_300_000,
+  costoPacchetto: 5_000,
   perPacchetto: 5,
   perSerie: 100,
   unaOgniGiri: 40,
@@ -453,23 +542,57 @@ export function versoIlProssimo(
 }
 
 /**
+ * Il valore di base di una combinazione: **quanto valgono i suoi pezzi, in
+ * media**.
+ *
+ * ⚠ **Era la somma, ed e' diventata la media l'11 settembre 2026.** Parole sue:
+ * «i premi della slot danno troppe lire… le combinazioni sono quelle che possono
+ * avere valore, quindi aggiustiamo in modo da stabilizzare i prezzi».
+ *
+ * La somma aveva due difetti, e il secondo e' peggiore del primo:
+ *
+ * 1. **non ci stava nel tetto.** Dodici pezzi valgono in media 1.600 lire
+ *    l'uno: sommati fanno diciannovemila, cioe' dieci euro. Con il tetto a tre
+ *    euro *ogni* combinazione avrebbe pagato il massimo, e una scala dove tutti
+ *    prendono il voto piu' alto non e' una scala;
+ * 2. **pagava la quantita' invece dell'idea.** Da quando si manda solo quello
+ *    che si e' bloccato (§ 5), una riga puo' avere tre pezzi o dodici: con la
+ *    somma, bloccarne dodici a caso pagava quattro volte tre pezzi scelti. Cioe'
+ *    il contrario esatto di quello per cui si manda solo il bloccato.
+ *
+ * Con la media una combinazione vale **quanto vale la roba che c'e' dentro**, e
+ * tre pezzi rari valgono come dodici pezzi rari. Quanti sono non e' un merito;
+ * cosa sono si'.
+ */
+export function valoreDeiPezzi(prezzi: number[]): number {
+  if (prezzi.length === 0) return 0;
+  return Math.round(prezzi.reduce((s, p) => s + Math.max(0, p), 0) / prezzi.length);
+}
+
+/**
  * Quanto vale una combinazione quando chi comanda la prende.
  *
  * ⚠ **Non e' un numero scritto a mano.** Chiesto il 10 settembre 2026: «quando
  * una combinazione viene data per buona da un admin allora assume il valore
  * dei singoli item piu' un bonus dell'admin».
  *
- * Il valore di base e' la **somma dei dodici pezzi**, che e' un numero vero:
+ * Il valore di base viene dai pezzi (`valoreDeiPezzi`), che e' un numero vero:
  * viene dalla rarita' di ognuno, che viene dai dati. Il bonus e' l'unica cosa
  * che decide una persona — quanto quella riga vale **oltre** i suoi pezzi,
  * cioe' quanto e' bella l'idea.
  *
- * Cosi' due combinazioni fatte di roba rara partono alte anche se chi comanda
- * ha fretta, e una fatta di roba comune ma geniale la si puo' comunque pagare
+ * Cosi' una combinazione fatta di roba rara parte alta anche se chi comanda ha
+ * fretta, e una fatta di roba comune ma geniale la si puo' comunque pagare
  * bene. Il bonus puo' anche essere zero.
+ *
+ * ⚠ **E sopra c'e' il tetto** (`tettoDelValore`), dall'11 settembre 2026. Il
+ * bonus serve a **arrivarci**, non a sfondarlo: finche' i gradi si fermano a
+ * Unique, una cosa presa non vale piu' di tre euro, e questa e' l'unica riga
+ * che lo fa rispettare — ci passano il prezzo di una figurina e nient'altro.
  */
-export function valoreDaPrendere(sommaPezzi: number, bonus: number): number {
-  return Math.max(1, Math.round(Math.max(0, sommaPezzi) + Math.max(0, bonus)));
+export function valoreDaPrendere(base: number, bonus: number): number {
+  const tutto = Math.max(0, base) + Math.max(0, bonus);
+  return Math.max(1, Math.min(tettoDelValore(), Math.round(tutto)));
 }
 
 export function valuta(
@@ -555,9 +678,18 @@ export function valuta(
   return vincite;
 }
 
-/** Quanto vale quello che si vede: la somma dei pezzi usciti. */
+/**
+ * Quanto vale quello che si vede sui rulli.
+ *
+ * ⚠ **E' lo stesso numero che pagherebbe se la prendessero**, senza bonus — non
+ * un conto a parte. Sotto i rulli c'e' scritto «Vale L. tot», e se quel numero
+ * fosse la somma dei pezzi mentre il premio e' la media, la riga davanti agli
+ * occhi direbbe dieci euro e in tasca ne arriverebbe uno. Un numero mostrato che
+ * non e' quello che ti danno e' una bugia scritta sullo schermo.
+ */
 export function valore(pezzi: PezzoInGioco[]): number {
-  return pezzi.reduce((s, p) => s + p.prezzo, 0);
+  if (pezzi.length === 0) return 0;
+  return valoreDaPrendere(valoreDeiPezzi(pezzi.map((p) => p.prezzo)), 0);
 }
 
 /**
@@ -588,10 +720,7 @@ export function montaPrompt(pezzi: PezzoInGioco[]): string {
     .join(", ");
 }
 
-/* ------------------------------------------------------------------- lire */
-
-/** 1 € in lire: il cambio fisso del 2001, quello vero. */
-export const CAMBIO_EURO = 1936.27;
+/* ------------------------------------------------- come si scrivono le lire */
 
 /** `1500` diventa `L. 1.500`. Il punto delle migliaia, come si scrive qui. */
 export function lire(quanto: number): string {

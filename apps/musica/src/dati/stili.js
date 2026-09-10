@@ -7,7 +7,8 @@
  * restringe il modello e fa uscire sempre la stessa cosa. Si affinano lavorando
  * sui sottogeneri (`melodic trap`, `italo disco`), non aggiungendo prosa.
  *
- * Le tre descrizioni in fondo seguono invece lo schema ufficiale di MiniMax, per
+ * Le tre descrizioni in fondo seguono invece lo schema a tre blocchi (nato dalla
+ * documentazione di MiniMax Music 3, e rimasto quando il modello è uscito), per
  * quando serve un risultato preciso invece che variabile.
  */
 
@@ -48,8 +49,8 @@ Arrangement: primary distorted rhythm guitars and lead guitar hooks, secondary H
 Vocal Details: no lead vocals, occasional wordless female humming far back in the mix, heavily filtered.
 Arrangement: primary dusty Rhodes chords and jazz guitar samples, secondary muted trumpet; relaxed swung groove, soft upright bass, brushed lo-fi drums with dusty snare, rain and vinyl crackle textures, narrow warm stereo field.`
 };
-// Solo i tag di sezione documentati per MiniMax Music 3: qualsiasi altro [tag] viene solo
-// minuscolizzato e passato come testo (normalize_lyrics in comfy/ldm/minimax_music/prompt.py).
+// Solo i tag di sezione che i modelli musicali riconoscono davvero: qualsiasi altro
+// [tag] viene minuscolizzato e passato come testo, cioè cantato.
 export const TAGS = ["[Intro]","[Verse]","[Pre-Chorus]","[Chorus]","[Post-Chorus]",
               "[Bridge]","[Instrumental]","[Solo]","[Outro]"];
 export const DEMO_LYRICS = `[Verse]

@@ -119,8 +119,8 @@ function disegna() {
  * Cosa manca del modello scelto qui.
  *
  * È lo stesso riquadro della scheda Crea (`packages/ui/scaricamento.js`), con
- * un contenitore suo: se scegli H3 per il film e non ce l'hai, il conto dei GB
- * lo devi vedere **qui**, non tornando in un'altra scheda a indovinare.
+ * un contenitore suo: se il modello del film non ce l'hai, il conto dei GB lo
+ * devi vedere **qui**, non tornando in un'altra scheda a indovinare.
  */
 async function controlla() {
   const m = modelloStoria();

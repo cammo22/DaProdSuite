@@ -20,6 +20,7 @@ import {
   gradoDiPrezzo,
   livelloDi,
   valoreDaPrendere,
+  valoreDeiPezzi,
   impronta as improntaDi,
   inGioco,
   meglioDi,
@@ -28,6 +29,7 @@ import {
   pescaPezzo,
   scalino,
   sottoIlTetto,
+  TETTO_EURO,
   valore,
   valuta,
   type Caso,
@@ -484,14 +486,6 @@ export function mandaDallaLibreria(
 }
 
 /**
- * Quanto valgono, sommati, i pezzi di cui e' fatta una combinazione.
- *
- * E' il valore **di base** di una figurina: non lo decide nessuno, viene dalla
- * rarita' dei dodici pezzi, che viene dai dati veri. Per le cose che non sono
- * prompt — una foto, un brano — di pezzi non ce ne sono, e la somma e' zero:
- * li' decide tutto il bonus di chi comanda.
- */
-/**
  * ⚠ **Quante volte si puo' far generare la stessa combinazione: quattro.**
  *
  * Chiesto il 10 settembre 2026: «puo' rigenerare e viene generato un secondo
@@ -519,14 +513,25 @@ export const MAX_PROVE = 4;
  */
 export const MAX_ALLEGATI = 8;
 
-export function sommaDeiPezzi(deposito: Deposito, c: Collezionabile): number {
+/**
+ * Il valore **di base** di una figurina: quanto valgono i pezzi di cui e' fatta.
+ *
+ * Non lo decide nessuno — viene dalla rarita' di ognuno, che viene dai dati
+ * veri. Per le cose che non sono prompt — una foto, un brano — di pezzi non ce
+ * ne sono, e la base e' zero: li' decide tutto il bonus di chi comanda.
+ *
+ * ⚠ **Era la somma e dall'11 settembre 2026 e' la media** (vedi
+ * `valoreDeiPezzi`): tre pezzi scelti valgono come dodici pezzi scelti, e il
+ * numero sta dentro al tetto dei tre euro.
+ */
+export function valoreDiBase(deposito: Deposito, c: Collezionabile): number {
   if (!c.pezzi || c.pezzi.length === 0) return 0;
-  let somma = 0;
+  const prezzi: number[] = [];
   for (const id of c.pezzi) {
     const pezzo = pezzoPerId(deposito, id);
-    if (pezzo) somma += pezzo.prezzo;
+    if (pezzo) prezzi.push(pezzo.prezzo);
   }
-  return somma;
+  return valoreDeiPezzi(prezzi);
 }
 
 /**
@@ -552,7 +557,7 @@ export function prendi(
   if (!c) throw new NienteDaFare("Questa non c'e'.");
   if (c.stato !== "in-attesa") throw new NienteDaFare("Su questa e' gia' stato deciso.");
 
-  const lire = valoreDaPrendere(sommaDeiPezzi(deposito, c), bonus);
+  const lire = valoreDaPrendere(valoreDiBase(deposito, c), bonus);
   /**
    * ⚠ **Quello che chi comanda ha scelto di tenere**, e non e' per forza uno.
    *
@@ -599,9 +604,10 @@ export function prendi(
  * euro. Premendo l'interruttore, sui tasti si leggono 2, 5, 10... tondi.
  *
  * ⚠ **Sono grossi rispetto al resto del gioco**, e va saputo: un giro costa
- * 10 lire, un Mythic ne vale 850. Il tasto piu' piccolo — due euro — sono
- * trecentottantasette giri. E' una decisione di chi comanda, non un difetto:
- * chi regala sta facendo entrare qualcuno, non pareggiando un conto.
+ * 10 lire, e la cosa piu' preziosa che si possa avere ne vale 5.808. Il tasto
+ * piu' piccolo — due euro — sono trecentottantasette giri, cioe' due terzi di
+ * un Unique. E' una decisione di chi comanda, non un difetto: chi regala sta
+ * facendo entrare qualcuno, non pareggiando un conto.
  *
  * Otto numeri conosciuti si scelgono in un secondo; davanti a una casella vuota
  * ci si mette a pensare quanto vale un'idea, e finisce che non si decide. E si
@@ -613,29 +619,31 @@ export const TAGLI = [2, 5, 10, 20, 50, 100, 200, 500].map((e) => Math.round(e *
 /**
  * I tagli del **bonus**, quando chi comanda prende una combinazione.
  *
- * ⚠ **Sono gli stessi dei regali, e dal 10 settembre 2026 non e' un errore.**
- * Parole sue: «i prezzi ora sono da 1 lira a 500, metti gli stessi tagli che
- * hai messo per le ricariche».
+ * ⚠ **Sono euro come i regali, ma tagliati piccoli**: dieci centesimi, venticinque,
+ * cinquanta, un euro, due, tre. Dall'11 settembre 2026.
  *
- * Fino a quel giorno erano due scale diverse — qui lire piccole (2, 5, 10…
- * 500), la' euro contati in lire (3.873… 968.135) — e la ragione scritta era
- * buona: il bonus decide **che grado avra' la figurina**, e con la scala dei
- * gradi che finiva a 1.400 lire una sola pressione da 3.873 avrebbe sfondato
- * Ethernal, lasciando un tasto solo che si chiamava «massimo».
+ * La storia di questi otto tasti e' la storia della scala, e vale raccontarla
+ * perche' e' l'unica cosa che spiega il numero:
  *
- * Il difetto vero pero' non erano i tasti: erano **due monete che si
- * chiamavano tutte e due lire**. Il numero accanto a una figurina non si
- * poteva confrontare con quello di un regalo, e nel gioco c'e' un portafoglio
- * solo. La cosa che e' stata cambiata e' l'altra meta': la scala dei gradi e'
- * salita al milione (vedi `GRADI`), e adesso i tagli grossi ci lavorano
- * dentro un colpo alla volta come facevano prima quelli piccoli — 3.873 e'
- * poco, 968.135 e' quasi un Unique.
+ * - fino al 10 settembre erano **lire piccole** (2, 5, 10… 500), un'altra moneta
+ *   con lo stesso nome. Il numero accanto a una figurina non si poteva
+ *   confrontare con quello di un regalo, e nel gioco il portafoglio e' uno;
+ * - il 10 settembre sono diventati **gli stessi dei regali** — «metti gli stessi
+ *   tagli che hai messo per le ricariche» — e per farli stare nella scala la
+ *   scala e' salita al milione;
+ * - l'11 settembre il tetto e' scivolato a **tre euro**, e con quel tetto sette
+ *   degli otto tasti dei regali lo sfondano al primo colpo: sarebbero sette
+ *   tasti che fanno tutti la stessa cosa, cioe' «massimo».
  *
- * ⚠ **Una scala sola vuol dire una riga sola.** `TAGLI` e' quella, e questa la
- * indica: il giorno che si cambia un taglio non ci sono due posti da tenere
- * allineati a mano.
+ * Quindi la moneta resta quella — **euro contati in lire**, l'unica che questo
+ * gioco conosce — e cambia solo il taglio: sei tasti che stanno dentro ai tre
+ * euro, e l'ultimo e' esattamente il tetto. Si battono e si sommano come prima
+ * (`TAGLI` per i regali, § 4), e la somma non passa mai il tetto perche' e'
+ * `valoreDaPrendere` a tenerlo — non i tasti.
  */
-export const TAGLI_BONUS = TAGLI;
+export const TAGLI_BONUS = [0.1, 0.25, 0.5, 1, 2, TETTO_EURO].map((e) =>
+  Math.round(e * CAMBIO_EURO),
+);
 
 /**
  * Chi comanda manda lire a qualcuno.
@@ -647,8 +655,8 @@ export const TAGLI_BONUS = TAGLI;
  * una regola del banco.
  *
  * Non si toglie niente a nessuno: non e' un bonifico fra due conti, e' il
- * banco che paga. Togliere lire e' un'altra cosa e non c'e' — se serve, si
- * scrive quando serve, con il suo perche'.
+ * banco che paga. Togliere lire e' un'altra cosa, ed e' `azzeraPortafoglio` —
+ * che non toglie un tanto, azzera.
  */
 export function regala(
   deposito: Deposito,
@@ -686,6 +694,67 @@ export function regala(
   conto.ultimoRegalo = regalo;
   deposito.salva();
   return { conto, regalo };
+}
+
+/**
+ * Chi comanda **azzera il portafoglio** di qualcuno.
+ *
+ * ⚠ Chiesto l'11 settembre 2026: «un admin puo' anche azzerare il portafoglio
+ * degli altri, caso mai problemi: fai un bel tastino per resettare il
+ * portafoglio».
+ *
+ * Fino a oggi in questo file c'era scritto il contrario — «togliere lire e'
+ * un'altra cosa e non c'e'; se serve, si scrive quando serve, con il suo
+ * perche'» — e adesso serve, ed e' questo: **la scala e' cambiata tre volte in
+ * due giorni**. Chi ha giocato con quella sbagliata ha in tasca centinaia di
+ * euro che non avrebbe dovuto avere, e non esiste un modo di ricalcolarli — quei
+ * soldi sono stati spesi, sommati, mescolati con i regali. L'unica cosa onesta,
+ * quando i numeri di un portafoglio non vogliono piu' dire niente, e' ripartire
+ * da zero.
+ *
+ * Tre cose, e sono le stesse del regalo, al contrario:
+ *
+ * 1. **il saldo va a zero**, non «giu' di tanto». Un azzeramento a meta' e' una
+ *    multa, ed e' un'altra faccenda;
+ * 2. **si scrive perche'**, e chi lo riceve lo legge appena apre la sala. Un
+ *    portafoglio che si svuota senza spiegazioni e' un guasto, non una
+ *    decisione;
+ * 3. **resta scritto chi l'ha fatto.** E' il potere piu' grosso che ci sia in
+ *    questo gioco: non passa in silenzio.
+ *
+ * ⚠ **La collezione non si tocca.** Le figurine sono quello che uno ha
+ * inventato, e non sono soldi: azzerare il portafoglio non e' cancellare la
+ * persona. Anche `prese`, `esperienza` e il livello restano — quelli dicono cosa
+ * ha fatto, e non era sbagliato.
+ */
+export function azzeraPortafoglio(
+  deposito: Deposito,
+  admin: string,
+  chi: string,
+  perche: string,
+): { conto: Conto; togliere: number } {
+  if (!chi) throw new NienteDaFare("A chi?");
+  const prima = deposito.conto(chi);
+  if (prima.saldo <= 0) throw new NienteDaFare("Il portafoglio e' gia' vuoto.");
+
+  const togliere = prima.saldo;
+  const conto = deposito.muovi(chi, -togliere);
+  conto.ultimoRegalo = {
+    quanto: -togliere,
+    quando: Date.now(),
+    perche: perche.trim() || "Si ricomincia da zero.",
+    daAdmin: admin,
+  };
+  /**
+   * ⚠ **Anche il totale dei regali torna a zero**, e non e' un dettaglio: quel
+   * numero vuol dire «quanto ti e' stato dato», e dopo un azzeramento la
+   * risposta e' niente. Lasciarlo su vorrebbe dire un conto che dice di avere
+   * ricevuto mille lire e un portafoglio vuoto, cioe' due numeri che si
+   * smentiscono nella stessa schermata.
+   */
+  conto.regali = 0;
+  deposito.salva();
+  return { conto, togliere };
 }
 
 /** Chi comanda la butta. Il motivo si scrive sempre: un no senza perche' non insegna niente. */
@@ -804,15 +873,25 @@ export function apriPacchetto(
  * quella stessa figurina cade anche da un pacchetto, se sei fortunato. Chi
  * compra sta pagando **di non aspettare la fortuna**, e quello si paga.
  *
- * Venti volte la soglia del grado: un Rare in vetrina sta sulle 240 lire, un
- * Mythic sulle diciassettemila. Con la slot che rende solo esperienza, quelle
- * lire arrivano da una parte sola — inventando roba che a chi comanda piace.
+ * Venti volte la soglia del grado: un Rare in vetrina sta sulle dodicimila, un
+ * Unique — il massimo che si possa mettere in vendita oggi — sulle
+ * settantaduemila, cioe' trentasette euro. Con la slot che rende solo
+ * esperienza, quelle lire arrivano da una parte sola: inventando roba che a chi
+ * comanda piace, o ricevendone in regalo.
+ *
+ * ⚠ **Si', costa piu' del tetto di tre euro.** Una figurina Unique ti paga tre
+ * euro quando la inventi e ne costa trentasette quando la vuoi comprare, ed e'
+ * lo stesso rapporto — venti volte la soglia — che c'era su tutte le scale che
+ * questo gioco ha avuto. Comprare non e' la strada comoda: quella stessa
+ * figurina cade da un pacchetto, se sei fortunato. Chi compra paga **di non
+ * aspettare la fortuna**.
  */
 export function prezzoConsigliato(grado: Grado): number {
-  // ⚠ Il pavimento e' salito con la scala (10 settembre 2026): cinquanta lire
-  // erano qualcosa quando un Mythic ne valeva 850, e non sono niente adesso che
-  // ne vale undici milioni. Venti volte la soglia resta la regola.
-  return Math.max(50_000, scalino(grado).da * 20);
+  // ⚠ Il pavimento scende e sale con la scala: cinquanta lire erano qualcosa
+  // quando un Mythic ne valeva 850, non erano niente quando ne valeva undici
+  // milioni, e adesso che il tetto e' 5.808 il pavimento e' 250. Venti volte la
+  // soglia resta la regola.
+  return Math.max(250, scalino(grado).da * 20);
 }
 
 /**

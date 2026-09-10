@@ -10,6 +10,139 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ---
 
+## 1.3.2 — Fuori due modelli, e i premi tornano piccoli
+
+L'ultima prima del formattone: si riparte da un computer pulito, e questa è la
+versione che ci si installa sopra.
+
+> «Devo formattare il computer e reinstallare il programma così da cominciare
+> davvero, vorrei fare questa release pulita prima di poter ricominciare.»
+
+### Fuori MiniMax H3 e MiniMax Music 3 — **58 GB in meno**
+
+> «Togliamo i modelli minimax h3 e minimax musica, che sono modelli che al
+> momento non mi piacciono, e alleggeriamo molto.»
+
+Erano i due modelli più grossi del catalogo, e uno dei due non entrava nemmeno
+nella scheda video: il text encoder di H3 da solo pesa **25 GB** e su 8 GB di
+scheda lavorava a pezzi passando dalla RAM.
+
+| Cosa | Dove stava | Quanto |
+|---|---|---|
+| **MiniMax H3** | Cinema, secondo modello | 41,6 GB |
+| **MiniMax Music 3** | Musica, voce «migliore» | 16,6 GB fra i suoi tre pesi e l'encoder a 8 bit |
+
+Resta **LTX 2.5** per i video e **ACE-Step 1.5** per la musica, in due taglie.
+Chi aveva scelto MiniMax si ritrova sul modello che parte senza fare niente.
+
+**Cosa non c'è più, oltre ai pesi.** H3 era l'unico che prendeva dei
+**riferimenti** — fino a nove immagini, tre video e tre audio da dare in pasto,
+ognuno con la sua etichetta da chiamare nel prompt (`<Picture 1>`, `<Video 1>`).
+Con lui sono usciti i riquadri dei riferimenti in «Crea», il tasto
+«riferimento» nella galleria di Cinema e il tasto «a Cinema» nella galleria di
+Voce: LTX prende due **immagini**, il primo e l'ultimo fotogramma, e un tasto
+che risponde sempre «non ci sta» è peggio di un tasto che manca.
+
+Nella Storia i riferimenti restano, e servono a una cosa sola: **farli guardare
+al modello che scrive le scene**. Nel video non entravano nemmeno prima, con LTX.
+
+Il Top-K negli avanzati di Musica è sparito: era il decoder di MiniMax, e senza
+quel modello non si sarebbe più acceso.
+
+**I file sul disco.** La suite non li scarica più e non li chiede più, ma quelli
+già scaricati restano dove sono: si cancellano a mano dentro
+`%LOCALAPPDATA%\DaProdSuite\models`. L'elenco preciso, cartella per cartella,
+sta in cima a `manifest/models.json`.
+
+### I premi della slot davano troppe lire: **fino a Unique si arriva a tre euro**
+
+> «I premi della slot non vanno bene, danno troppe lire. Fino al livello unique
+> valgono massimo l'equivalente di 3 euro. Le combinazioni sono quelle che
+> possono avere valore, quindi aggiustiamo in modo da stabilizzare i prezzi.»
+
+Ieri la scala era salita **al milione**, per far stare i gradi nella stessa
+moneta dei regali. Quella metà era giusta e resta: la moneta è una sola. Era
+sbagliata l'**altezza**. Con Unique che partiva da un milione, prendere una
+combinazione voleva dire pagarla cinquecento euro — e nel giro di una serata chi
+gioca aveva in tasca più lire di quante ne servissero per comprare tutto. Un
+portafoglio che non si svuota più spegne il gioco.
+
+Adesso il muro è scritto: **Unique finisce a tre euro**, 5.808 lire, cioè dove
+comincia Celestial. Non è un numero a parte: è l'ultima lira del grado più alto
+che si possa assegnare oggi, quindi il giorno che si apre Celestial sale da solo.
+
+| Grado | Prima | Adesso |
+|---|---|---|
+| Grand | 70.000 £ | 250 £ |
+| Rare | 160.000 £ | 600 £ |
+| Heroic | 600.000 £ | 2.200 £ |
+| **Unique** | **1.000.000 £** | **3.600 £** — e finisce a 5.808, tre euro |
+| Mythic (solo sui rulli) | 11.000.000 £ | 40.000 £ |
+
+Le proporzioni non sono cambiate: ogni gradino vale circa una volta e mezzo
+quello sotto, come su tutte le scale che questo gioco ha avuto. È cambiata
+l'altezza, non il disegno.
+
+**Una combinazione vale la media dei suoi pezzi, non la somma.** Sono due
+difetti in uno. Dodici pezzi valgono in media 1.600 lire l'uno: sommati fanno
+dieci euro, quindi con il tetto a tre *ogni* combinazione avrebbe pagato il
+massimo — e una scala dove tutti prendono il voto più alto non è una scala. Il
+secondo è peggiore: da quando si manda **solo quello che si è bloccato**, una
+riga può avere tre pezzi o dodici, e con la somma bloccarne dodici a caso pagava
+quattro volte tre pezzi scelti. Cioè il contrario di quello per cui si manda
+solo il bloccato. Adesso **quanti sono non è un merito; cosa sono sì**.
+
+**I tasti del bonus diventano euro piccoli**: 0,10 · 0,25 · 0,50 · 1 · 2 · 3.
+Con il tetto a tre euro, sette degli otto tasti dei regali lo sfonderebbero al
+primo colpo — sarebbero sette tasti che si chiamano tutti «massimo». Stessa
+moneta, taglio diverso, e l'ultimo tasto **è** il tetto. I tasti dei regali non
+cambiano: quelli sono da 2 a 500 euro e servono a far entrare qualcuno.
+
+Un pacchetto costa **5.000 lire** invece di tre milioni e trecentomila, e non è
+un numero a caso: cinque figurine pescate, se le hai già tutte, ti ridanno la
+loro somma — sotto i cinquemila un pacchetto sarebbe una macchina per stampare
+soldi.
+
+**Quello che c'è già sul disco si converte tenendo il grado.** Una figurina
+Unique di ieri è una figurina Unique oggi, e vale tre euro invece di
+cinquecento; chi stava sopra al tetto ci si appoggia. **Anche i portafogli
+scendono con la scala**, se no chi ha giocato ieri si sveglia con mille volte i
+soldi di tutti.
+
+### Un admin può azzerare il portafoglio di qualcuno
+
+> «Un admin può anche azzerare il portafoglio degli altri, caso mai problemi:
+> fai un bel tastino per resettare il portafoglio.»
+
+Sta dentro «Manda lire», nella riga di ogni persona, sotto ai tasti che danno —
+ed è la stessa decisione girata al contrario, che si prende guardando lo stesso
+numero. Compare solo se c'è qualcosa da svuotare.
+
+**Azzera vuol dire azzera**: non si scrive quanto togliere, perché un tanto in
+meno sarebbe una multa e quella è un'altra cosa. Il perché si scrive sempre, come
+per un regalo, e chi lo riceve lo legge appena apre la sala giochi — un
+portafoglio che si svuota da solo si legge come un guasto.
+
+**La collezione, i livelli e le cose prese non si toccano.** Le figurine sono
+quello che uno ha inventato e non sono soldi.
+
+Serve perché la scala è cambiata tre volte in due giorni: chi ha giocato con
+quella sbagliata ha in tasca centinaia di euro che non avrebbe dovuto avere, e
+ricalcolarli non si può — sono stati spesi, sommati, mescolati con i regali.
+Quando i numeri di un portafoglio non vogliono più dire niente, l'unica cosa
+onesta è ripartire da zero.
+
+### E una cosa scritta al rovescio da sempre
+
+Battito, tonalità e ritmo sono le caselle di **ACE-Step**, e le riceve davvero.
+In tre posti — la scheda Musica, le richieste da fuori e il catalogo delle
+azioni — c'era scritto il contrario: «valgono per MiniMax Music 3, ACE-Step non
+ha queste caselle». Era falso da quando è stato scritto (di MiniMax era il
+Top-K), e nessuno se n'era accorto perché toglieva un comando invece di
+aggiungerne uno sbagliato. Corretto.
+
+---
+
 ## 1.3.1 — Chi resta fuori si vede prima
 
 > «Ho ancora problemi di connessione, forse erano vecchi account che con gli

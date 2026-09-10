@@ -4,34 +4,31 @@
  * Solo nodi **core** di ComfyUI: nessun custom node, nessun grafo salvato su
  * file da tenere allineato all'interfaccia. Come in DaProdFoto e DaProdMusica.
  *
- * **I due modelli sono LTX 2.5 e MiniMax H3**, ed è la roadmap (§ 0.7.0) che li
- * aveva scelti. Fanno due cose diverse, e la scheda è costruita intorno a questa
- * differenza invece che sopra un menu che finge che siano intercambiabili:
+ * **Il modello è LTX 2.5**, ed è uno dei due che la roadmap aveva scelto
+ * (§ 0.7.0). Parte dal testo, e se vuoi dal **primo** e dall'**ultimo**
+ * fotogramma; esce un video col suono già dentro.
  *
- * | | Da cosa parte | Cosa esce |
- * |---|---|---|
- * | **LTX 2.5** | testo, e se vuoi il **primo** e l'**ultimo** fotogramma | video col suono dentro |
- * | **MiniMax H3** | testo, e se vuoi **immagini, video e audio di riferimento** | video col suono dentro |
+ * ⚠ **MiniMax H3 è stato tolto l'11 settembre 2026**, e con lui i riferimenti
+ * veri (immagini, video e audio dati in pasto al modello). Parole sue: «togliamo
+ * i modelli minimax h3 e minimax musica, che sono modelli che al momento non mi
+ * piacciono, e alleggeriamo molto».
  *
- * I riferimenti di H3 sono **facoltativi**, come i due fotogrammi di LTX: senza
- * niente, `MiniMaxH3ReferenceToVideo` genera dal solo testo. Fino alla 0.4.2
- * l'app lo impediva per far risparmiare tempo a chi non ne aveva bisogno, ed
- * era una scelta fatta al posto di chi la suite la usa.
+ * Non era un modello rotto: erano **41,6 GB**, di cui 25 di solo text encoder
+ * (Qwen3-VL 32B), che su una scheda da 8 GB lavorano a pezzi passando dalla RAM.
+ * Quello che dava in cambio — i riferimenti — è la cosa che rende H3 diverso, e
+ * il giorno che torna torna tutto insieme: il modello, il grafo `ref2va` e i
+ * riquadri dei riferimenti. Sta scritto nel changelog della 1.3.2.
  *
- * LTX è quello che parte: è distillato — otto passi — e pesa la metà.
+ * ⚠ **Con un modello solo, il menu dei modelli resta.** Non è una svista: il
+ * posto dove si scelgono i passi e la durata è quello, e sono numeri di questo
+ * modello. Il giorno che ne arriva un altro si aggiunge una riga a `MODELLI` e
+ * il resto della scheda non se ne accorge — che è esattamente il motivo per cui
+ * la tabella dei modelli esiste invece di essere sparsa nel codice.
  *
- * **La versione di H3 è la ref2va e non la fl2va.** Sono due rifiniture diverse
- * dello stesso modello e non due quantizzazioni: la fl2va prende primo e ultimo
- * fotogramma, la ref2va prende i riferimenti. Primo e ultimo fotogramma li fa
- * già LTX, con metà del peso; i riferimenti — una faccia, un posto, un video da
- * cui copiare il movimento, una voce — li sa fare solo H3, e sono la ragione per
- * cui H3 sta in questa scheda. Costa quanto l'altra (11,8 GB invece di 12,5), e
- * chi aveva scaricato la fl2va può cancellarla.
- *
- * I grafi qui sotto sono verificati sui nodi del motore installato
- * (`comfy_extras/nodes_lt.py`, `nodes_lt_audio.py`, `nodes_minimax_h3.py` di
- * ComfyUI 0.33.1) e ricalcati sul flusso ufficiale di Lightricks
- * (`ComfyUI-LTXVideo`, `example_workflows/2.5/...Single_Stage_Distilled`).
+ * Il grafo qui sotto è verificato sui nodi del motore installato
+ * (`comfy_extras/nodes_lt.py`, `nodes_lt_audio.py` di ComfyUI 0.33.1) e
+ * ricalcato sul flusso ufficiale di Lightricks (`ComfyUI-LTXVideo`,
+ * `example_workflows/2.5/...Single_Stage_Distilled`).
  */
 
 /** Ventiquattro al secondo per tutti e due, ed è il ritmo con cui sono nati. */
@@ -46,11 +43,11 @@ export const FPS = 24;
  * — perché è la stessa scelta, e non c'è motivo di farla in due modi diversi in
  * due schede della stessa suite.
  *
- * **Perché tutte multiple di 32.** I due modelli comprimono lo spazio a blocchi
- * (16 px per H3, 32 per LTX) e una misura che non torna la arrotondano loro, in
- * silenzio, spostando l'inquadratura. 1280x720 non è multiplo di 32 — 720 diviso
- * 32 fa 22,5 — e infatti il 720 qui sotto è 1280x704. Per questo il pulsante
- * dice «720» e la riga accanto dice la verità.
+ * **Perché tutte multiple di 32.** Il modello comprime lo spazio a blocchi di 32
+ * px, e una misura che non torna la arrotonda lui, in silenzio, spostando
+ * l'inquadratura. 1280x720 non è multiplo di 32 — 720 diviso 32 fa 22,5 — e
+ * infatti il 720 qui sotto è 1280x704. Per questo il pulsante dice «720» e la
+ * riga accanto dice la verità.
  *
  * **Il tempo cresce con i pixel**, e su una scheda da 8 GB cresce in fretta: il
  * 480 è quello che parte, e non per modestia.
@@ -73,10 +70,9 @@ export const MISURE = {
 /**
  * Il negativo, in inglese.
  *
- * Tutti e due i modelli lavorano a CFG 1 — LTX è distillato, H3 ha il LoRA turbo
- * sopra — e a CFG 1 il negativo il modello non lo guarda proprio. Resta
- * collegato perché costa niente e perché il giorno che si alza il CFG per
- * provare, c'è già.
+ * LTX lavora a CFG 1 perché è distillato, e a CFG 1 il negativo il modello non
+ * lo guarda proprio. Resta collegato perché costa niente e perché il giorno che
+ * si alza il CFG per provare, c'è già.
  */
 export const NEGATIVO =
   "worst quality, blurry, jittery, distorted faces, extra limbs, watermark, subtitles, " +
@@ -141,9 +137,11 @@ const LTX = {
   /**
    * Un modo solo: il distillato è già il modo veloce.
    *
-   * I due pulsanti li ha H3, che è l'unico dei due ad avere davvero due
-   * strade — con il LoRA turbo e senza. Qui il pulsante c'è lo stesso, uno,
-   * e serve a non far sembrare che manchi qualcosa quando si cambia modello.
+   * ⚠ **Il pulsante c'è comunque, ed è uno.** `modi` è una lista perché un
+   * modello può avere due strade — con il LoRA turbo e senza, come le aveva
+   * MiniMax H3 finché c'era. Qui la strada è una, e tenere la lista vuol dire
+   * che il giorno che ne arriva un'altra non si cambia l'interfaccia: si
+   * aggiunge una riga qui.
    */
   modi: [
     {
@@ -170,8 +168,6 @@ const LTX = {
    * Sopra i dieci secondi conviene stare a 720p.
    */
   durata: { min: 2, max: 20, valore: 5 },
-  /** Cosa gli si può dare in pasto, oltre al testo. Decide mezza interfaccia. */
-  ingressi: "fotogrammi",
   catalogo: ["ltx25-dit", "ltx25-text-encoder", "ltx25-vae", "ltx25-audio-vae"],
 };
 
@@ -196,102 +192,12 @@ const SIGMAS = "1.0, 0.99375, 0.9875, 0.98125, 0.975, 0.909375, 0.725, 0.421875,
  */
 const COMPRESSIONE = 18;
 
-/* ------------------------------------------------------------- MiniMax H3 */
-
-/**
- * MiniMax H3, la versione **Ref2VA**: riferimenti verso video e audio.
- *
- * È quella che serve qui. `MiniMaxH3ReferenceToVideo` prende fino a nove
- * immagini, tre video (ognuno con la sua colonna sonora) e tre audio — **tutti
- * facoltativi**, e senza nessuno genera dal solo testo — e li
- * presenta al modello con delle etichette — `<Picture 1>`, `<Video 1>`,
- * `<Audio 1>` — che si possono **nominare nel prompt**. È così che si dice «la
- * donna di `<Picture 1>` cammina nella stanza di `<Picture 2>`»: senza le
- * etichette il modello riceve tre immagini e nessuna istruzione su cosa prendere
- * da quale.
- *
- * **Il LoRA turbo non è un extra.** Senza, H3 vuole venti passi; con, ne bastano
- * quattro. Su questa scheda è la differenza fra una clip in minuti e una clip in
- * mezz'ora, quindi sta nel catalogo di base e si scarica insieme al modello. È
- * quello della variante ref2v, non quello della fl2v: sono due LoRA diversi per
- * due rifiniture diverse.
- *
- * **Il text encoder resta il pezzo grosso**: Qwen3-VL 32B in int8, 25,3 GB, e su
- * 8 GB di VRAM lavora a pezzi passando per la RAM. È il motivo per cui H3 non è
- * il modello che parte.
- */
-const H3 = {
-  famiglia: "h3",
-  dit: "minimax_h3_ref2va_pruned_w4a8_mixed.safetensors",
-  txt: "qwen3vl_32b_minimax_h3_int8_convrot.safetensors",
-  vae: "minimax_h3_video_vae_int8_convrot.safetensors",
-  vaeAudio: "minimax_h3_audio_vae_fp32.safetensors",
-  grafo: grafoH3,
-  /** La lunghezza deve essere `17k+5`, e il modello è stato visto fra 124 e 362. */
-  griglia: 17,
-  base: 5,
-  /**
-   * I due modi di generare con H3, e i due pulsanti che li scelgono.
-   *
-   * Fino alla 0.4.5 c'era solo il turbo a quattro passi, ed era **il modo
-   * sbagliato di partire**: quattro passi su questo modello si vedono, e si
-   * vedono soprattutto nel movimento — scie, sfarfallio, oggetti che si
-   * rimpastano fra un fotogramma e l'altro. Chi apriva l'app per la prima
-   * volta giudicava H3 da quello.
-   *
-   * Adesso si parte da **venti passi senza LoRA**, che è come il modello è
-   * stato addestrato, e il turbo è un pulsante accanto — per quando serve una
-   * prova in fretta e non il risultato buono.
-   *
-   * ⚠ **Perché il turbo di H3 non è come quello di altri modelli.** Il LoRA
-   * ufficiale per la variante *ref2v* — quella che usiamo — è fermo alla
-   * **v0.1**, mentre la variante *fl2v* ha già la v1.0 e la v1.1. Non è una
-   * questione di trovare il file giusto: per ref2v un file migliore, oggi,
-   * non esiste. Quello che si può fare è usarlo com'è stato addestrato —
-   * `euler` + `simple`, forza 1,0, gli scarti di rumore 12/3 di
-   * `MiniMaxH3SigmaShift`, che il grafo fa già — e lasciare arrivare fino a
-   * otto passi, perché da sei in su si vede la differenza.
-   */
-  modi: [
-    {
-      id: "piena",
-      nome: "20 passi",
-      riga: "come il modello è stato addestrato. Lento, ma il movimento tiene.",
-      passi: { min: 12, max: 40, valore: 20 },
-      lora: null,
-    },
-    {
-      id: "turbo",
-      nome: "4 passi",
-      riga: "cinque volte più veloce, con il LoRA turbo. Per provare un'idea, non per il video buono.",
-      passi: { min: 4, max: 8, valore: 4 },
-      lora: "minimax_h3_ref2v_turbo_4step_v0.1_comfyui_bf16.safetensors",
-      /** Il LoRA è addestrato a 768p: sopra, il movimento si sfalda. */
-      altezzaIdeale: 768,
-    },
-  ],
-  cfg: 1,
-  /** Cinque secondi sono 125 fotogrammi: sotto, H3 non è stato addestrato. */
-  durata: { min: 5, max: 15, valore: 5 },
-  ingressi: "riferimenti",
-  /** I due scarti di rumore di `MiniMaxH3SigmaShift`, dai suoi valori di serie. */
-  shiftVideo: 12,
-  shiftAudio: 3,
-  catalogo: ["h3-ref-dit", "h3-text-encoder", "h3-vae", "h3-audio-vae", "h3-lora-ref-turbo"],
-};
-
 export const MODELLI = {
   ltx25: {
     ...LTX,
     id: "ltx25",
     nome: "LTX 2.5 22B distillato",
     riga: "23,2 GB. Otto passi, video e suono insieme. Da testo, o da un primo e un ultimo fotogramma.",
-  },
-  h3: {
-    ...H3,
-    id: "h3",
-    nome: "MiniMax H3 (riferimenti)",
-    riga: "41,6 GB, di cui 25 di solo text encoder. Prende immagini, video e audio come riferimento — o solo il testo. Nativo a 1344x768.",
   },
 };
 
@@ -461,162 +367,22 @@ function grafoLtx(m, p) {
   return grafo;
 }
 
-/* ---------------------------------------------------------------------------
- * MiniMax H3: da immagini, video e audio di riferimento.
- * ------------------------------------------------------------------------- */
-
-/**
- * Una clip con MiniMax H3, con i suoi riferimenti.
- *
- * Molto più corto del precedente, e non perché sia un modello più semplice: è
- * che H3 si porta dentro quasi tutto. `MiniMaxH3ReferenceToVideo` prende il
- * testo e i riferimenti e restituisce **il conditioning e il latente insieme**,
- * già nella forma giusta (video e audio annidati); la lunghezza la arrotonda
- * lui; la scala del rumore la sistema `MiniMaxH3SigmaShift`, e allora basta il
- * campionatore di serie.
- *
- * **Gli ingressi dei riferimenti si chiamano `ref_image_0`, `ref_video_0`...** e
- * si contano da zero: il nodo li dichiara come una famiglia che cresce
- * (`Autogrow`, con prefisso), e nel grafo che si manda al motore ognuno è un
- * ingresso vero con il suo nome. Le etichette che si scrivono nel prompt invece
- * partono da uno — `<Picture 1>` è `ref_image_0` — ed è il motivo per cui
- * l'etichetta la scrive l'app accanto a ogni riquadro, invece di lasciarla
- * contare a mano.
- *
- * **La colonna sonora di un video di riferimento** va in `ref_video_audio_N` con
- * lo **stesso numero** del video: è così che il nodo sa che quel suono
- * appartiene a quel video e non è un audio a sé.
- *
- * Il negativo è il conditioning positivo azzerato, come nel grafo di MiniMax
- * Music 3 in DaProdMusica: a CFG 1 non viene guardato, e questo evita di far
- * girare il text encoder da 32B una seconda volta per una frase che il modello
- * ignorerà.
- */
-function grafoH3(m, p) {
-  const lunghezza = fotogrammi(p.secondi, m);
-
-  const grafo = {
-    "1": { class_type: "CLIPLoader", inputs: { clip_name: m.txt, type: "minimax", device: "default" } },
-    "7": { class_type: "VAELoader", inputs: { vae_name: m.vae } },
-    "14": { class_type: "VAELoader", inputs: { vae_name: m.vaeAudio } },
-    "4": { class_type: "UNETLoader", inputs: { unet_name: m.dit, weight_dtype: "default" } },
-  };
-
-  // Il LoRA turbo solo se il modo lo vuole. A venti passi non va montato:
-  // non è "un po' meno turbo", è una scala di rumore diversa da quella su cui
-  // il modello è stato addestrato, e il risultato è peggio di tutti e due.
-  //
-  // Forza 1,0, che è quella con cui è stato distillato: la si tocca per
-  // guarire un difetto preciso (sotto l'1 contro la grana troppo secca, sopra
-  // contro le scie), non per gusto, e allora è meglio che non sia una manopola.
-  let sorgente = ["4", 0];
-  if (p.lora) {
-    grafo["22"] = {
-      class_type: "LoraLoaderModelOnly",
-      inputs: { model: ["4", 0], lora_name: p.lora, strength_model: 1 },
-    };
-    sorgente = ["22", 0];
-  }
-
-  // Gli scarti di rumore, e sono il pezzo che fa funzionare i quattro passi.
-  // H3 denoisa video e audio **insieme ma su due orologi diversi** (12 e 3):
-  // con un orologio solo l'audio viene sovra-campionato e a quattro passi
-  // esce sporco. `MiniMaxH3SigmaShift` installa `ModelSamplingAV`, che è il
-  // supporto nativo arrivato in ComfyUI ad agosto — prima ci voleva un nodo
-  // custom. Con quello a posto basta il campionatore di serie.
-  grafo["10"] = {
-    class_type: "MiniMaxH3SigmaShift",
-    inputs: { model: sorgente, shift_video: m.shiftVideo, shift_audio: m.shiftAudio },
-  };
-
-  const riferimenti = {};
-  let nodo = 50;
-
-  // Le immagini: `<Picture 1>` è la prima.
-  (p.immagini ?? []).forEach((file, i) => {
-    const id = String(nodo++);
-    grafo[id] = { class_type: "LoadImage", inputs: { image: file } };
-    riferimenti[`ref_image_${i}`] = [id, 0];
-  });
-
-  // I video: `LoadVideo` legge il file, `GetVideoComponents` ne tira fuori i
-  // fotogrammi (uscita 0) e la colonna sonora (uscita 1). Il suono si manda solo
-  // se è stato chiesto: da un video muto uscirebbe un ingresso audio vuoto.
-  (p.video ?? []).forEach((clip, i) => {
-    const carica = String(nodo++);
-    const pezzi = String(nodo++);
-    grafo[carica] = { class_type: "LoadVideo", inputs: { file: clip.file } };
-    grafo[pezzi] = { class_type: "GetVideoComponents", inputs: { video: [carica, 0] } };
-    riferimenti[`ref_video_${i}`] = [pezzi, 0];
-    if (clip.conAudio) riferimenti[`ref_video_audio_${i}`] = [pezzi, 1];
-  });
-
-  // Gli audio da soli: una voce, un ambiente, un pezzo di musica.
-  (p.audio ?? []).forEach((file, i) => {
-    const id = String(nodo++);
-    grafo[id] = { class_type: "LoadAudio", inputs: { audio: file } };
-    riferimenti[`ref_audio_${i}`] = [id, 0];
-  });
-
-  grafo["2"] = {
-    class_type: "MiniMaxH3ReferenceToVideo",
-    inputs: {
-      clip: ["1", 0],
-      vae: ["7", 0],
-      audio_vae: ["14", 0],
-      prompt: p.prompt,
-      width: p.larghezza,
-      height: p.altezza,
-      length: lunghezza,
-      ref_image_size: p.fedelta ? "max" : "match",
-      ...riferimenti,
-    },
-  };
-
-  Object.assign(grafo, {
-    "3": { class_type: "ConditioningZeroOut", inputs: { conditioning: ["2", 0] } },
-    "6": {
-      class_type: "KSampler",
-      inputs: {
-        model: ["10", 0], positive: ["2", 0], negative: ["3", 0], latent_image: ["2", 1],
-        seed: p.seed, steps: p.passi, cfg: m.cfg,
-        sampler_name: "euler", scheduler: "simple", denoise: 1,
-      },
-    },
-    // Lo stesso nodo di LTX, e la sua descrizione lo dice: separa il latente
-    // unito di **qualunque** modello audio-video, H3 compreso.
-    "25": { class_type: "LTXVSeparateAVLatent", inputs: { av_latent: ["6", 0] } },
-    // `VAEDecode` e non la versione a blocchi: questo VAE i blocchi se li fa da
-    // solo (256 px nello spazio, diciassette fotogrammi per volta nel tempo), e
-    // tagliarlo una seconda volta da fuori vorrebbe dire solo cuciture in più.
-    "8": { class_type: "VAEDecode", inputs: { samples: ["25", 0], vae: ["7", 0] } },
-    "21": { class_type: "VAEDecodeAudio", inputs: { samples: ["25", 1], vae: ["14", 0] } },
-    "9": { class_type: "CreateVideo", inputs: { images: ["8", 0], fps: FPS, audio: ["21", 0] } },
-    "12": {
-      class_type: "SaveVideo",
-      inputs: { video: ["9", 0], filename_prefix: doveSalvare(p), format: "mp4", codec: "h264" },
-    },
-  });
-
-  return grafo;
-}
-
 /**
  * Dove sta il lavoro di una clip, nodo per nodo.
  *
  * Come `FASI` in DaProdMusica, e per la stessa ragione: senza, la barra sta
  * ferma per minuti e poi salta alla fine.
  *
- * **La numerazione è la stessa per tutti e due i grafi**, e non per pigrizia: 1
- * il modello di testo, 2 la lettura del prompt, 4 il modello video, 6 la parte
- * lunga, 8 i fotogrammi, 12 il file. Chi aggiungerà un terzo modello domani
- * tenga lo stesso ordine, e questa tabella funzionerà senza sapere che esiste.
+ * ⚠ **La numerazione è una convenzione, non un caso**: 1 il modello di testo, 2
+ * la lettura del prompt, 4 il modello video, 6 la parte lunga, 8 i fotogrammi,
+ * 12 il file. Chi aggiungerà un secondo modello domani tenga lo stesso ordine, e
+ * questa tabella funzionerà senza sapere che esiste — è così che ha funzionato
+ * per MiniMax H3 finché c'era.
  */
 export const FASI = {
   "1": { label: "carico il modello di testo", da: 0, a: 0.04 },
   "2": { label: "leggo quello che hai scritto", da: 0.04, a: 0.07 },
   "4": { label: "carico il modello video", da: 0.07, a: 0.1 },
-  "22": { label: "aggiungo il turbo", da: 0.1, a: 0.11 },
   "5": { label: "preparo i fotogrammi", da: 0.1, a: 0.11 },
   "15": { label: "preparo la traccia audio", da: 0.11, a: 0.12 },
   "32": { label: "leggo il primo fotogramma", da: 0.11, a: 0.12 },

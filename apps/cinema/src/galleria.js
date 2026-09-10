@@ -10,14 +10,20 @@
  * una scheda dove una clip sono minuti di scheda video, perdere di vista quello
  * che si è già fatto è il modo più veloce per rifarlo.
  *
- * **Il tasto che conta è «riferimento».** Un video generato qui è esattamente
- * quello che MiniMax H3 vuole in pasto — un movimento di camera da copiare, una
- * voce, un ambiente — e prima bisognava salvarlo, cercarlo sul disco e
- * ricaricarlo dal riquadro. Adesso torna dentro con un clic.
+ * ⚠ **Qui c'era il tasto «riferimento»**, che rimandava un video generato dentro
+ * a «Crea»: un movimento di camera da copiare, un ambiente, una voce. Era la
+ * cosa che sapeva fare MiniMax H3, ed è uscito insieme al modello l'11 settembre
+ * 2026. Senza H3 un video non è più qualcosa che si possa dare in pasto — LTX
+ * prende due **immagini**, il primo e l'ultimo fotogramma — e un tasto che
+ * risponde sempre «non ci sta» è peggio di un tasto che manca.
+ *
+ * Resta la strada da **un'altra app**: un'immagine fatta in DaProdFoto e mandata
+ * qui diventa il primo fotogramma senza passare da «salva, cerca, ricarica».
+ * Vedi `usaComeFotogramma`.
  */
 
 import { el, escapeHtml, mostraErrore, mostraScheda } from "./dom.js";
-import { aggiungiRiferimento } from "./riferimenti.js";
+import { aggiungiFotogramma } from "./riferimenti.js";
 import { faiLaCopertina } from "./copertina.js";
 import * as ponte from "./ponte.js";
 
@@ -117,7 +123,6 @@ function scheda(v) {
     <div class="nm">${escapeHtml(String(meta.prompt || v.nome))}</div>
     <div class="sub">${escapeHtml(descrivi(v))}</div>
     <div class="acts">
-      <button data-riferimento="${escapeHtml(v.id)}" title="usalo come riferimento in Crea">riferimento</button>
       <button data-salva="${escapeHtml(v.id)}">salva</button>
       <button data-mostra="${escapeHtml(v.id)}">cartella</button>
       <button class="del" data-elimina="${escapeHtml(v.id)}">elimina</button>
@@ -140,10 +145,6 @@ function collega() {
       const trovato = trova(v.dataset.lente);
       if (trovato) mostraLente(trovato);
     };
-  });
-
-  el.galleria.querySelectorAll("[data-riferimento]").forEach((b) => {
-    b.onclick = () => void portaInCrea(b);
   });
 
   /**
@@ -196,58 +197,32 @@ function collega() {
 /* ------------------------------------------------- da qui dentro a «Crea» */
 
 /**
- * Il video torna dentro come riferimento di MiniMax H3.
+ * Un elemento della libreria messo fra i fotogrammi di partenza.
+ *
+ * Serve a quello che **arriva da un'altra app**: un'immagine fatta in DaProdFoto
+ * e mandata qui diventa il primo fotogramma del prossimo video.
  *
  * I riquadri di `riferimenti.js` tengono dei `File` del browser, non dei
  * percorsi: è quello che serve per l'anteprima e per il caricamento nel motore.
  * Quindi il file si rilegge davvero — `fetch` su `daprod://`, che la CSP di
  * questa pagina permette — e diventa un `File` come se l'avessi scelto dal disco.
- * Un video da 20 MB sono un paio di secondi, e il tasto lo dice.
- */
-async function portaInCrea(bottone) {
-  const v = trova(bottone.dataset.riferimento);
-  if (!v) return;
-
-  const prima = bottone.textContent;
-  bottone.disabled = true;
-  bottone.textContent = "carico…";
-  try {
-    const problema = await usaComeRiferimento(v);
-    bottone.textContent = prima;
-    mostraScheda("crea");
-    if (problema) mostraErrore(problema);
-  } catch (e) {
-    bottone.textContent = prima;
-    dilloSulTasto(bottone, "non riesco");
-    console.error(e);
-  } finally {
-    bottone.disabled = false;
-  }
-}
-
-/**
- * Un elemento della libreria messo fra i riferimenti.
- *
- * Vale per quello che c'è qui in galleria e per quello che **arriva da
- * un'altra app**: una voce fatta in DaProdVoce e mandata qui è la stessa cosa
- * di un video preso da questa scheda — un file che entra fra i riferimenti.
  *
  * Torna una frase se non poteva entrare, o niente se è entrato.
  */
-export async function usaComeRiferimento(elemento) {
+export async function usaComeFotogramma(elemento) {
   const risposta = await fetch(elemento.url);
   if (!risposta.ok) throw new Error(`il file non si legge (${risposta.status})`);
   const blob = await risposta.blob();
   const file = new File([blob], nomeVero(elemento), { type: blob.type || tipoDa(elemento) });
-  return aggiungiRiferimento(file);
+  return aggiungiFotogramma(file);
 }
 
 /**
  * Il nome del file, non il titolo.
  *
  * `elemento.nome` è il titolo scritto nei metadati, e un titolo non ha
- * l'estensione: `LoadVideo` e `LoadAudio` guardano proprio quella per sapere che
- * cosa stanno aprendo. Il nome vero sta in fondo al percorso.
+ * l'estensione: `LoadImage` guarda proprio quella per sapere cosa sta aprendo. Il
+ * nome vero sta in fondo al percorso.
  */
 function nomeVero(elemento) {
   return String(elemento.percorso || elemento.id).split(/[\\/]/).pop() || elemento.nome;
@@ -257,8 +232,7 @@ function nomeVero(elemento) {
  * Che tipo è, quando il blob non lo dice.
  *
  * `daprod://` risponde con il tipo giusto quasi sempre, ma «quasi» non basta:
- * senza tipo, `riferimenti.js` non saprebbe in quale dei tre gruppi mettere il
- * file e lo scarterebbe in silenzio.
+ * senza tipo, `riferimenti.js` non saprebbe se è un'immagine e la scarterebbe.
  */
 function tipoDa(elemento) {
   if (elemento.tipo === "audio") return "audio/wav";
@@ -303,14 +277,14 @@ export function collegaGalleria() {
   /**
    * Quello che un'altra app manda qui.
    *
-   * Non si apre soltanto la galleria: **il file entra fra i riferimenti**, che è
-   * quello che si voleva fare mandandolo. Una voce fatta in DaProdVoce diventa
-   * `<Audio 1>` di MiniMax H3 senza passare da «salva, cerca, ricarica».
+   * Non si apre soltanto la galleria: **il file entra fra i fotogrammi**, che è
+   * quello che si voleva fare mandandolo. Un'immagine fatta in DaProdFoto diventa
+   * il primo fotogramma senza passare da «salva, cerca, ricarica».
    */
   ponte.suConsegna(async (consegna) => {
     mostraScheda("crea");
     try {
-      const problema = await usaComeRiferimento(consegna.elemento);
+      const problema = await usaComeFotogramma(consegna.elemento);
       if (problema) mostraErrore(problema);
     } catch (e) {
       mostraErrore(`Non sono riuscito a prendere "${consegna.elemento.nome}": ${e.message || e}`);

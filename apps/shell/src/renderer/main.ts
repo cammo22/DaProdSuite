@@ -1534,15 +1534,18 @@ const memSvuota = document.getElementById("memoria-svuota") as HTMLButtonElement
 /**
  * I nomi interni del motore, detti in italiano.
  *
- * `MiniMaxMusic3TEModel` è giusto e non serve a niente: chi guarda vuole sapere
- * che quei 5,5 GB sono il modello che legge il testo di una canzone. Un nome
- * che non conosciamo si mostra com'è — meglio un nome tecnico che una riga che
- * sparisce.
+ * `Anima` è giusto e non dice niente: chi guarda vuole sapere che quei 5,6 GB
+ * sono il modello che fa le immagini. Un nome che non conosciamo si mostra
+ * com'è — meglio un nome tecnico che una riga che sparisce.
+ *
+ * ⚠ **Qui c'erano i tre di MiniMax Music 3**, tolti l'11 settembre 2026 insieme
+ * al modello. Al loro posto non ci sono quelli di ACE-Step, e non è pigrizia: i
+ * nomi di questa tabella si leggono **dal motore accesso**, guardando cosa
+ * dichiara mentre lavora, non si indovinano dal nome del file. Il giorno che si
+ * apre DaProdMusica col pannello della memoria davanti, quei nomi si leggono e
+ * si scrivono qui. Fino a quel giorno si mostrano come sono.
  */
 const NOMI_VRAM: Record<string, string> = {
-  MiniMaxMusic3TEModel: "Il testo delle canzoni",
-  MiniMaxMusic3: "La musica",
-  MiniMaxMusic3DAV: "L'audio finale (VAE)",
   Anima: "Le immagini (Anima)",
   WanVAE: "Le immagini, ultimo passo (VAE)",
   Flux2: "Le immagini (FLUX.2 Klein)",

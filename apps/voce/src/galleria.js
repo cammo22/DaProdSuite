@@ -6,9 +6,13 @@
  * che stanno nella stessa cartella, sotto `voci/` — qui non compaiono: sono roba
  * che entra, non che esce, e hanno una scheda tutta loro.
  *
- * Il tasto che fa la differenza è **«a Cinema»**: una voce fatta qui è
- * esattamente quello che MiniMax H3 vuole come riferimento audio, e ci arriva
- * senza passare da salva-cerca-ricarica.
+ * ⚠ **Qui c'era il tasto «a Cinema»**, e non c'è più dall'11 settembre 2026.
+ * Mandava una voce fatta qui dentro a DaProdCinema come riferimento audio, che è
+ * una cosa che sapeva fare **MiniMax H3** — tolto quel modello, LTX 2.5 non ha
+ * ingressi audio, e il tasto avrebbe risposto sempre «non ci sta».
+ *
+ * Un tasto che non fa niente è peggio di un tasto che manca: torna il giorno che
+ * torna H3, insieme a lui.
  */
 
 import { el, escapeHtml, mostraScheda } from "./dom.js";
@@ -54,7 +58,6 @@ function riga(d) {
       <div class="tsub">${escapeHtml(descrivi(d))}</div>
       <audio src="${escapeHtml(d.url)}" controls preload="none"></audio>
       <div class="acts">
-        <button data-cinema="${escapeHtml(d.id)}" title="usala come riferimento audio in DaProdCinema">a Cinema</button>
         <button data-salva="${escapeHtml(d.id)}">salva</button>
         <button data-cartella="${escapeHtml(d.id)}">cartella</button>
         <button class="del" data-elimina="${escapeHtml(d.id)}">elimina</button>
@@ -71,17 +74,6 @@ function dilloSulTasto(bottone, testo) {
 }
 
 function collega() {
-  el.galleria.querySelectorAll("[data-cinema]").forEach((b) => {
-    b.onclick = async () => {
-      try {
-        await ponte.mandaA("cinema", b.dataset.cinema, "usaComeRiferimento");
-        dilloSulTasto(b, "mandata");
-      } catch {
-        dilloSulTasto(b, "non riesco");
-      }
-    };
-  });
-
   el.galleria.querySelectorAll("[data-cartella]").forEach((b) => {
     b.onclick = async () => {
       if (await ponte.mostraNellaCartella(b.dataset.cartella)) return;

@@ -475,6 +475,14 @@ export interface Conto {
 }
 
 /** Un regalo di chi comanda: quanto, quando, e perche'. */
+/**
+ * Chi comanda ha messo mano al saldo di qualcuno, e glielo dice.
+ *
+ * ⚠ **`quanto` puo' essere negativo**, dall'11 settembre 2026: e' un
+ * portafoglio azzerato, e le lire che sono andate via sono quelle che c'erano.
+ * Un tipo a parte per il togliere non serve — quello che deve arrivare a chi
+ * legge e' sempre la stessa cosa: quanto e' cambiato il saldo, e perche'.
+ */
 export interface Regalo {
   quanto: number;
   quando: number;
@@ -558,16 +566,20 @@ export interface DatiGiochi {
   /**
    * La forma del file.
    *
-   * - `1`: fino al 10 settembre 2026;
-   * - `2`: da quando la scala dei soldi e' salita — i gradi partono da un
-   *   milione per l'Unique, e i prezzi scritti col metro di prima vengono
-   *   portati su leggendo (vedi `rimettiIPrezzi` nel deposito).
+   * - `1`: fino al 10 settembre 2026. La scala andava da 0 a 1.400 lire;
+   * - `2`: il 10 settembre, quando la scala e' salita al milione per stare nella
+   *   stessa moneta dei regali;
+   * - `3`: dall'11 settembre, quando il tetto e' scivolato a **tre euro** —
+   *   perche' pagare centinaia di euro una combinazione riempiva i portafogli in
+   *   una serata. I prezzi e i saldi scritti con un metro di prima si portano su
+   *   quello di adesso leggendo (`rimettiIPrezzi` e `rimettiIlSaldo` nel
+   *   deposito), tenendo il grado.
    *
    * ⚠ **Il numero serve a non convertire due volte.** Senza, ogni apertura
-   * moltiplicherebbe di nuovo i prezzi e in una settimana una figurina Basic
-   * varrebbe come il Colosseo.
+   * rifarebbe il conto e in una settimana una figurina Basic varrebbe come il
+   * Colosseo — o due lire, che e' lo stesso guaio al contrario.
    */
-  versione: 1 | 2;
+  versione: 1 | 2 | 3;
   conti: Conto[];
   /**
    * Il magazzino e la fila insieme: le cose in attesa, quelle prese e quelle

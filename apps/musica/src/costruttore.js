@@ -1,8 +1,11 @@
 /**
  * Il costruttore di stili.
  *
- * Un modulo a campi che assembla la descrizione nello schema a tre blocchi di
- * MiniMax mentre lo compili. Le proposte sono più di duecento: quelle a scelta
+ * Un modulo a campi che assembla la descrizione nello **schema a tre blocchi**
+ * mentre lo compili — metadati globali, voce, arrangiamento. Lo schema viene dalla
+ * documentazione di MiniMax Music 3 (il modello è uscito dalla suite l'11
+ * settembre 2026, lo schema è rimasto): è una descrizione a virgole, che è la
+ * grammatica che capiscono tutti i modelli musicali. Le proposte sono più di duecento: quelle a scelta
  * multipla si sommano, le altre si sostituiscono, e in ogni caso il campo vince
  * — si può sempre scrivere di proprio.
  *
@@ -64,7 +67,7 @@ function disegnaCampi() {
   el.builderFields.querySelectorAll("input").forEach((i) => i.addEventListener("input", aggiornaAnteprima));
 }
 
-/** I campi diventano i tre blocchi dello schema MiniMax. */
+/** I campi diventano i tre blocchi dello schema. */
 export function componiDescrizione() {
   const unisci = (a) => a.filter(Boolean).join(", ");
 

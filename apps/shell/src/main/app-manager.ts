@@ -270,8 +270,8 @@ class AppManager extends EventEmitter {
     try {
       // Il motore prima della finestra: aprirla mentre i pesi si caricano
       // vorrebbe dire mostrare un'interfaccia che a ogni clic risponde "motore
-      // offline". `avvia` torna solo quando /health dice di sì, e per MiniMax
-      // Music 3 può essere più di un minuto.
+      // offline". `avvia` torna solo quando /health dice di sì, e per un motore
+      // che carica pesi grossi può essere più di un minuto.
       await servizi.avvia(id, (motivo) => {
         this.morto(id, motivo);
         FINESTRE[id]?.chiudi();

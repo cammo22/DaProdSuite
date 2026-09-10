@@ -88,8 +88,8 @@ prova("in vetrina ci va solo roba gia' presa", () =>
 prova("il grado della vetrina lo sceglie chi comanda, e vale anche nei pacchetti", () =>
   conCartella((file) => {
     const d = new Deposito(file);
-    // Sulla scala di adesso 160.000 lire sono un Rare: da 160.000 a 329.999.
-    const c = figurinaPresa(d, "uno", 160_000);
+    // Sulla scala di adesso 600 lire sono un Rare: da 600 a 1.199.
+    const c = figurinaPresa(d, "uno", 600);
     uguale(gradoDiFigurina(c), "rare", "senza vetrina il grado viene dal prezzo");
 
     mettiInVetrina(d, "uno", "heroic");
@@ -110,8 +110,10 @@ prova("il grado della vetrina lo sceglie chi comanda, e vale anche nei pacchetti
 prova("le figurine non passano Unique, ne' col prezzo ne' col grado scelto", () =>
   conCartella((file) => {
     const d = new Deposito(file);
-    // Dodici milioni sarebbero un Mythic, sulla scala di adesso.
-    const cara = figurinaPresa(d, "cara", 12_000_000);
+    // Quarantacinquemila sarebbero un Mythic, sulla scala di adesso — e nessuna
+    // figurina puo' arrivarci, perche' `valoreDaPrendere` taglia al tetto. Qui
+    // si scrive a mano per provare la seconda rete, quella che legge.
+    const cara = figurinaPresa(d, "cara", 45_000);
     uguale(gradoDiFigurina(cara), "unique", "un prezzo da Mythic si ferma a Unique");
 
     const c = mettiInVetrina(d, "cara", "ethernal");

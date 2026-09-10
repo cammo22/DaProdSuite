@@ -145,11 +145,11 @@ export function vista(file) {
  * Mette un file dentro al motore, e torna il nome con cui il grafo lo ritrova.
  *
  * `/upload/image` si chiama così per ragioni storiche ma accetta qualunque file
- * e lo scrive nella cartella `input`: è da lì che `LoadImage`, `LoadVideo` e
- * `LoadAudio` pescano, e i riferimenti di MiniMax H3 sono tutte e tre le cose.
+ * e lo scrive nella cartella `input`: è da lì che `LoadImage` pesca il primo e
+ * l'ultimo fotogramma.
  *
  * Il nome torna con la sottocartella davanti (`daprodcinema/xyz.png`), e va
- * bene: quei tre nodi hanno un `validate_inputs` loro che controlla se il file
+ * bene: quel nodo ha un `validate_inputs` suo che controlla se il file
  * **esiste**, invece del controllo di serie che pretende un nome preso da un
  * elenco. Senza quello, un file appena caricato in una sottocartella verrebbe
  * rifiutato con «Value not in list».

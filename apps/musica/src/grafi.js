@@ -7,29 +7,25 @@
  */
 
 import { COVER_NEG, ESTETICHE, MOTIVI } from "./dati/estetiche.js";
-import { LINGUE } from "./dati/ace.js";
 
 /**
- * Con che cosa si fa il brano: due famiglie di modelli, tre voci nel menu.
+ * Con che cosa si fa il brano: **ACE-Step 1.5**, in due taglie.
  *
- * Fino alla 0.3.4 questo menu si chiamava «qualità» e sceglieva soltanto fra i
- * due formati del DiT di MiniMax. Adesso sceglie il **modello**, perché accanto
- * a MiniMax Music 3 c'è ACE-Step 1.5, che è un altro modo di fare la stessa
- * cosa e non una versione più fine dello stesso.
+ * ⚠ **MiniMax Music 3 è stato tolto l'11 settembre 2026.** Parole sue: «togliamo
+ * i modelli minimax h3 e minimax musica, che sono modelli che al momento non mi
+ * piacciono, e alleggeriamo molto».
  *
- * **Il MiniMax a 4 bit non c'è più.** Era la voce «leggera», il DiT W4A8 da 1,8
- * GB, ed è stata tolta nella 0.4.1: 700 MB risparmiati su uno scaricamento da
- * sette GB e mezzo, in cambio della parte che si sente — il DiT è quello che
- * trasforma i token in suono. Chi l'aveva scelta si ritrova sull'int8 senza
- * fare niente, e il file vecchio si può cancellare dalla cartella dei modelli.
+ * Era la voce «migliore» del menu: trenta passi contro gli otto di ACE, otto GB
+ * fra DiT, text encoder e VAE, e l'unico pezzo della suite rimasto a **4 bit** —
+ * il suo text encoder da 7B lavora da solo in VRAM e la versione a 8 bit pesa
+ * 8,6 GB, che su una scheda da 8 non ci sta. Era anche l'unico senza casella
+ * della lingua: gliela si diceva in fondo alla descrizione, in inglese, e
+ * «aiutava, ma non era un interruttore».
  *
- * **MiniMax Music 3.** Il text encoder non è scegliibile e non è una
- * dimenticanza: è il modello da 7B che genera i token audio uno per uno, lavora
- * da solo in VRAM, e la versione a 8 bit consigliata da WanGP pesa 8,6 GB — su
- * una scheda da 8 non ci sta. Resta a 4 bit finché non cambia la scheda, ed è
- * l'unico pezzo a 4 bit rimasto. Il DiT invece sta in 2,5 GB anche a 8 bit.
+ * Il giorno che torna, tornano insieme il modello, il suo grafo e quella riga
+ * sulla lingua. Sta scritto nel changelog della 1.3.2.
  *
- * **ACE-Step 1.5.** Otto passi invece di trenta. I nodi sono nativi di ComfyUI —
+ * **ACE-Step 1.5.** Otto passi. I nodi sono nativi di ComfyUI —
  * `TextEncodeAceStepAudio1.5`, `EmptyAceStep1.5LatentAudio` — quindi non c'è
  * niente da installare nel motore, solo pesi da scaricare. Vuole **due** text
  * encoder insieme (`DualCLIPLoader`, tipo `ace`): il piccolo per i tag, il
@@ -42,34 +38,14 @@ import { LINGUE } from "./dati/ace.js";
  * per brano è un'altra cosa. Per questo il Turbo normale è quello che parte, e
  * l'XL è una scelta che si fa sapendo cosa costa.
  */
-const MINIMAX = {
-  famiglia: "minimax",
-  txt: "minimax_music3_qwen2-7B_pruned_w4a8.safetensors",
-  vae: "minimax_music3_dav.safetensors",
-  grafo: grafoMiniMax,
-  /** Quali comandi degli avanzati vogliono dire qualcosa per questa famiglia. */
-  campi: ["steps", "cfg", "cfg_scale", "top_k", "tiled"],
-  passi: { min: 10, max: 60, valore: 30 },
-  /**
-   * La lingua qui non è un'impostazione: è una frase dentro la descrizione.
-   *
-   * `MiniMaxMusic3TextEncode` ha due caselle di testo, la descrizione e il
-   * testo cantato, e nient'altro. Quindi la lingua si dice dove il modello
-   * legge: in fondo alla descrizione, in inglese come tutto il resto.
-   */
-  lingua: "descrizione",
-  comuni: ["minimax-music3-text-encoder", "minimax-music3-vae"],
-};
-
 const ACE = {
   famiglia: "ace",
   txt1: "qwen_0.6b_ace15.safetensors",
   txt2: "qwen_4b_ace15.safetensors",
   vae: "ace_1.5_vae.safetensors",
   grafo: grafoAce,
+  /** Quali comandi degli avanzati vogliono dire qualcosa per questa famiglia. */
   campi: ["steps", "cfg", "cfg_scale", "bpm", "tonalita", "tempo", "tiled"],
-  /** Qui invece la lingua è una casella vera del nodo, con l'elenco chiuso. */
-  lingua: "impostazione",
   /**
    * **Otto passi**, e non è un risparmio: è come è fatto.
    *
@@ -87,10 +63,12 @@ const ACE = {
 /**
  * L'ordine è quello del menu, e il primo è quello che parte.
  *
- * ACE-Step Turbo davanti a MiniMax dalla 0.4.1, ed è una cosa che si è decisa
- * ascoltando: otto passi contro trenta, e sulle parole si capisce meglio. Chi
- * ha già scelto a mano tiene la sua scelta — questo cambia solo il primo brano
- * di chi non ha ancora scelto niente.
+ * ACE-Step Turbo era passato davanti a MiniMax nella 0.4.1, e la scelta si era
+ * fatta ascoltando: otto passi contro trenta, e sulle parole si capisce meglio.
+ * L'11 settembre 2026 MiniMax è uscito del tutto, e chi l'aveva scelto a mano si
+ * ritrova sul Turbo senza fare niente — `modello()` qui sotto risponde con quello
+ * che parte quando l'id salvato non esiste più, ed è proprio per giorni come
+ * questo che quella riga è scritta così.
  */
 export const MODELLI = {
   "ace-turbo": {
@@ -108,14 +86,6 @@ export const MODELLI = {
     riga: "Il grande: 10 GB. Sulla tua scheda gira in offload, quindi più lento.",
     dit: "acestep_v1.5_xl_turbo_bf16.safetensors",
     catalogo: ["acestep15-xl-turbo", ...ACE.comuni],
-  },
-  migliore: {
-    ...MINIMAX,
-    id: "migliore",
-    nome: "MiniMax Music 3 (int8)",
-    riga: "8 GB in tutto e trenta passi: è il più lento dei tre, e l'unico senza casella della lingua.",
-    dit: "minimax_music3_dit_int8_convrot.safetensors",
-    catalogo: ["minimax-music3-dit-int8", ...MINIMAX.comuni],
   },
 };
 
@@ -222,98 +192,32 @@ const SALVATAGGI = {
 /**
  * Il brano, col modello scelto nel menu.
  *
- * **La numerazione dei nodi è la stessa per tutti e due i grafi**, e non per
- * pigrizia: `FASI` qui sotto traduce «sta lavorando il nodo 2» in «compongo la
- * struttura», e la barra di DaProdMusica legge quella tabella. Numerare uguale
- * vuol dire che la barra funziona con ACE-Step senza sapere che ACE-Step esiste.
- * Chi aggiunge un terzo modello domani tenga lo stesso ordine: 1 il caricamento
- * del testo, 2 la parte lunga, 4 il modello musicale, 6 il campionatore, 7-8 il
- * suono, 9 il file.
+ * ⚠ **La numerazione dei nodi è una convenzione**, e non pigrizia: `FASI` qui
+ * sotto traduce «sta lavorando il nodo 2» in «compongo la struttura», e la barra
+ * di DaProdMusica legge quella tabella. Numerare uguale vuol dire che la barra
+ * funziona con un modello nuovo senza sapere che esiste — è così che ha
+ * funzionato con MiniMax Music 3 finché c'era. Chi ne aggiunge un altro domani
+ * tenga lo stesso ordine: 1 il caricamento del testo, 2 la parte lunga, 4 il
+ * modello musicale, 6 il campionatore, 7-8 il suono, 9 il file.
  */
 export const grafoBrano = (m, p) => m.grafo(m, p);
 
 /**
- * La descrizione dello stile, con la lingua dentro quando serve.
- *
- * ACE-Step la lingua ce l'ha come casella sua e questa funzione non tocca
- * niente. MiniMax Music 3 no: i suoi ingressi di testo sono due, la descrizione
- * e il testo cantato, e quindi la lingua si dice nella descrizione — in inglese,
- * come tutto quello che ci sta dentro.
- *
- * `clearly enunciated lyrics` sta lì apposta: è il difetto per cui questa riga
- * esiste, cioè parole cantate che si capiscono a metà. Non è una garanzia — è
- * un modello che indovina, non un interruttore — ma è l'unico posto in cui
- * questa richiesta gli arriva.
- *
- * Se la descrizione **dice già** la lingua (uno che scrive «neapolitan
- * neomelodic» sa cosa sta chiedendo) non si aggiunge niente: due volte la stessa
- * cosa in un prompt corto la fa pesare il doppio.
- */
-export function descrizione(m, p) {
-  const testo = (p.caption || "").trim();
-  if (m.lingua !== "descrizione" || !p.lyrics) return testo;
-
-  const lingua = LINGUE.find((l) => l.id === p.lingua);
-  if (!lingua?.inglese) return testo;
-  if (new RegExp(lingua.inglese, "i").test(testo)) return testo;
-
-  return `${testo}, sung in ${lingua.inglese}, clearly enunciated lyrics`;
-}
-
-/**
- * MiniMax Music 3.
- *
- * I nodi 1-2-5 dipendono solo dai parametri di struttura: se non cambiano,
- * ComfyUI li riprende dalla cache e salta la generazione autoregressiva, che è
- * la parte lenta. È il motivo per cui "solo nuova resa" costa 17 secondi invece
- * di 107 — basta cambiare il seed dell'audio e lasciare fermo quello del testo.
- */
-function grafoMiniMax(m, p) {
-  return {
-    "1": { class_type: "CLIPLoader", inputs: { clip_name: m.txt, type: "minimax" } },
-    "2": {
-      class_type: "MiniMaxMusic3TextEncode",
-      inputs: {
-        clip: ["1", 0], caption: descrizione(m, p), lyrics: p.lyrics,
-        seed: p.seed_text, max_duration: p.duration, cfg_scale: p.cfg_scale, top_k: p.top_k,
-      },
-    },
-    "3": { class_type: "ConditioningZeroOut", inputs: { conditioning: ["2", 0] } },
-    "4": { class_type: "UNETLoader", inputs: { unet_name: m.dit, weight_dtype: "default" } },
-    "5": { class_type: "EmptyMiniMaxMusic3LatentAudio", inputs: { seconds: ["2", 1], batch_size: 1 } },
-    "6": {
-      class_type: "KSampler",
-      inputs: {
-        model: ["4", 0], positive: ["2", 0], negative: ["3", 0], latent_image: ["5", 0],
-        seed: p.seed_audio, steps: p.steps, cfg: p.cfg,
-        sampler_name: "euler", scheduler: "simple", denoise: 1,
-      },
-    },
-    "7": { class_type: "VAELoader", inputs: { vae_name: m.vae } },
-    "8": p.tiled
-      ? { class_type: "VAEDecodeAudioTiled", inputs: { samples: ["6", 0], vae: ["7", 0], tile_size: p.tile, overlap: 64 } }
-      : { class_type: "VAEDecodeAudio", inputs: { samples: ["6", 0], vae: ["7", 0] } },
-    "9": SALVATAGGI[p.format],
-  };
-}
-
-/**
  * ACE-Step 1.5.
  *
- * Stesso disegno del grafo di MiniMax, con tre differenze che contano:
+ * Tre cose vanno sapute, e sono quelle che si sbagliano:
  *
  * 1. **Due encoder e non uno.** `DualCLIPLoader` di tipo `ace` carica il piccolo
  *    e il grande insieme: il modello è stato addestrato con tutti e due, e
  *    passargliene uno solo non dà un errore — dà una canzone che non c'entra.
- * 2. **`generate_audio_codes` acceso.** È la parte lunga, l'equivalente della
- *    fase autoregressiva di MiniMax, ed è per questo che sta sul nodo 2: la
- *    barra la conta come «compongo la struttura» esattamente come l'altra.
+ * 2. **`generate_audio_codes` acceso.** È la parte lunga, e per questo sta sul
+ *    nodo 2: la barra la conta come «compongo la struttura».
  * 3. **`ModelSamplingAuraFlow` fra modello e campionatore.** Sposta la scala del
  *    rumore dove questo modello se l'aspetta. Non è una raffinatezza: senza,
  *    quello che esce è un ronzio.
  *
- * La durata la decide il modulo, come per MiniMax, ma qui va detta due volte —
- * al testo e al latente — perché sono due nodi che non si parlano.
+ * La durata la decide il modulo, e qui va detta due volte — al testo e al
+ * latente — perché sono due nodi che non si parlano.
  */
 function grafoAce(m, p) {
   return {

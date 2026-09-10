@@ -2,11 +2,13 @@
  * Con che cosa si genera: il menu dei modelli, e cosa fare se non ce l'hai.
  *
  * **Sta in cima, fuori da tutto il resto**, come in DaProdFoto e in
- * DaProdMusica. Non è una preferenza fra le altre: è la scelta che decide cosa
- * si può dare in pasto al modello (due fotogrammi o dei riferimenti), quanto può
- * durare la clip e quanti passi ci vogliono. Metterla in mezzo ai parametri
- * vorrebbe dire far scoprire a metà pagina che i riquadri di sopra sono
- * cambiati.
+ * DaProdMusica. Non è una preferenza fra le altre: è la scelta che decide quanto
+ * può durare la clip e quanti passi ci vogliono.
+ *
+ * ⚠ **Da qui si sceglie un modello solo**, dall'11 settembre 2026: MiniMax H3 è
+ * uscito e resta LTX 2.5. Il menu non è stato tolto, e non è una dimenticanza —
+ * è il posto dove si scaricano i file che mancano e dove si legge quanto pesa
+ * quello che si sta usando, e quelle due cose servono anche con un modello solo.
  *
  * Quello che manca lo dice la suite, non questa pagina: `catalogo` sono gli id
  * di `manifest/models.json`, e `daprodSuite.modelli` risponde cosa c'è sul disco
@@ -16,7 +18,6 @@
 
 import { el, escapeHtml } from "./dom.js";
 import { MODELLI, modello } from "./grafi.js";
-import { ingressiPer } from "./riferimenti.js";
 // Il riquadro «manca, ecco i GB» con dentro la barra: nato in DaProdFoto, e
 // dalla 0.4.1 è un pezzo di `packages/ui` che vale per tutte le app.
 import { collegaScaricamento } from "/comune/scaricamento.js";
@@ -92,18 +93,16 @@ function scegli(id) {
   localStorage.setItem(RICORDO, corrente.id);
   el.rigaModello.textContent = corrente.riga;
   applicaPreferenze(corrente);
-  // I riquadri di sopra cambiano del tutto: due fotogrammi con LTX, tre file di
-  // riferimenti con H3. Non è lo stesso pannello con un campo in più.
-  ingressiPer(corrente);
   void controlla();
 }
 
 /**
  * I cursori si spostano sul punto di lavoro del modello.
  *
- * Otto passi su LTX e quattro su H3 non sono lo stesso numero regolato
- * diversamente: sono due modelli fatti in modo diverso, e lasciare il cursore
- * dov'era vuol dire generare male con il modello appena scelto.
+ * Due modelli diversi non regolano lo stesso cursore in modo diverso: sono fatti
+ * in modo diverso, e lasciare il cursore dov'era vuol dire generare male con
+ * quello appena scelto. Vale anche adesso che il modello è uno: le preferenze si
+ * ricordano per modello, e il punto di lavoro è suo.
  *
  * **Un cursore che può stare solo dov'è non è un cursore.** LTX è distillato su
  * una scala di rumore scritta a mano (vedi `SIGMAS` in `grafi.js`) e i passi
@@ -113,10 +112,10 @@ function scegli(id) {
 /**
  * I pulsanti dei modi, e cosa cambia scegliendone uno.
  *
- * Sono due su H3 — venti passi come è stato addestrato, o quattro col LoRA
- * turbo — e uno solo su LTX, che è già distillato. Sono pulsanti e non un menu
- * per la stessa ragione di formato e risoluzione: sono due scelte in tutto, e
- * in un menu costavano due clic per vederne una.
+ * Su LTX è uno solo, perché è già distillato. Ce n'erano due su MiniMax H3 —
+ * venti passi come era stato addestrato, o quattro col LoRA turbo — ed è per
+ * quello che sono pulsanti e non un menu: sono poche scelte in tutto, e in un
+ * menu costavano due clic per vederne una.
  *
  * Quello che cambia non è solo un numero: **con il turbo il grafo monta un LoRA
  * in più**, e senza no. Per questo il modo viaggia fino al grafo (`p.lora`) e

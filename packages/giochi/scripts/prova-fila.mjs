@@ -14,6 +14,7 @@
 
 import {
   apriPacchetto,
+  azzeraPortafoglio,
   butta,
   classifica,
   Deposito,
@@ -28,7 +29,8 @@ import {
   TAGLI,
   serieChiuse,
   rispondi,
-  sommaDeiPezzi,
+  tettoDelValore,
+  valoreDiBase,
   statoMagazzino,
   tira,
 } from "../dist/index.js";
@@ -256,7 +258,7 @@ prova("prendere: paga chi l'ha mandata, e gliela mette in collezione", () =>
     const prima = t.d.conto("pino").saldo;
     // ⚠ Il terzo numero e' il **bonus**, non il prezzo: il prezzo e' la somma
     // dei dodici pezzi piu' quello. Chiesto il 10 settembre 2026.
-    const base = sommaDeiPezzi(t.d, c);
+    const base = valoreDiBase(t.d, c);
     vero(base > 0, "dodici pezzi qualcosa devono valere");
     const presa = prendi(t.d, "cammo", c.id, 300);
     uguale(presa.stato, "presa");
@@ -541,9 +543,21 @@ prova("i prezzi di ieri si riaprono con lo stesso grado di ieri", () =>
   conCartella((file) => {
     // Le soglie di prima, una per grado, e una a meta' di un gradino.
     const prima = [0, 5, 12, 25, 45, 75, 120, 200, 320, 520, 850, 1400, 60];
+    /**
+     * ⚠ **Fino a Unique il grado si tiene; da Celestial in su si appoggia al
+     * tetto**, e non e' una perdita: e' la regola dell'11 settembre 2026 che
+     * vale anche per quello che c'era gia'.
+     *
+     * Prima di quel giorno il prezzo di una cosa presa era la **somma** dei
+     * dodici pezzi e non aveva tetto, quindi sul disco ci sono figurine da
+     * trenta Unique. Il grado sullo schermo era **gia'** tagliato a Unique
+     * (`gradoDiFigurina` e `sottoIlTetto`): quello che cambia adesso e' che il
+     * numero dice la stessa cosa del distintivo, invece di dirne un'altra e
+     * continuare a pagare.
+     */
     const attesi = [
       "basic", "grand", "rare", "arcane", "heroic", "unique",
-      "celestial", "divine", "epic", "legendary", "mythic", "ethernal",
+      "unique", "unique", "unique", "unique", "unique", "unique",
       "heroic",
     ];
     fileVecchio(file, prima);
@@ -557,9 +571,52 @@ prova("i prezzi di ieri si riaprono con lo stesso grado di ieri", () =>
       );
     });
     // Un Unique di ieri vale esattamente la soglia di oggi, non un pelo sotto.
-    uguale(d.perId("c5").prezzo, 1_000_000, "75 lire di ieri fanno un milione tondo");
-    // E i prezzi che chi comanda aveva scritto sui pezzi salgono con loro.
+    uguale(d.perId("c5").prezzo, 3600, "75 lire di ieri fanno la soglia dell'Unique tonda");
+    // E chi stava sopra al tetto ci si appoggia, tutti allo stesso numero.
+    uguale(d.perId("c11").prezzo, tettoDelValore(), "l'Ethernal di ieri vale il tetto di oggi");
+    // I prezzi che chi comanda aveva scritto sui pezzi dei rulli si muovono con
+    // loro — e quelli **non** hanno tetto: un pezzo raro puo' valere di piu'.
     uguale(gradoDiPrezzo(d.prezzi()["genere/dub"]), "mythic", "anche i pezzi a mano");
+  }),
+);
+
+/**
+ * ⚠ **E anche i file del metro di mezzo**, quelli scritti il 10 settembre 2026
+ * con la scala al milione.
+ *
+ * Di metri vecchi ce ne sono **due**, e la cosa che si sbaglia e' proprio
+ * questa: convertire i file di due giorni fa e dimenticare quelli di ieri, che
+ * sono gli unici che esistono davvero sul computer di casa. Un Unique del metro
+ * di mezzo — un milione tondo — deve tornare a essere un Unique.
+ */
+prova("anche i prezzi al milione tornano sulla scala di adesso", () =>
+  conCartella((file) => {
+    writeFileSync(
+      file,
+      JSON.stringify({
+        versione: 2,
+        conti: [{ chi: "pino", saldo: 1_000_000, esperienza: 0, giri: 0, vinteTot: 0,
+          colpoGrosso: 0, mandate: 0, prese: 0, collezione: [], nato: 1, ultimoGiro: 0 }],
+        prezzi: { "genere/dub": 11_000_000 },
+        collezionabili: [
+          { id: "c0", tipo: "prompt", titolo: "di ieri", impronta: "i0", daChi: "pino",
+            quando: 1, stato: "presa", prezzo: 1_000_000 },
+          { id: "c1", tipo: "prompt", titolo: "sfondata", impronta: "i1", daChi: "pino",
+            quando: 1, stato: "presa", prezzo: 30_000_000 },
+        ],
+      }),
+      "utf8",
+    );
+    const d = new Deposito(file);
+    uguale(d.perId("c0").prezzo, 3600, "un milione di ieri e' la soglia dell'Unique di oggi");
+    uguale(gradoDiPrezzo(d.perId("c1").prezzo), "unique", "e chi sfondava si appoggia al tetto");
+    uguale(gradoDiPrezzo(d.prezzi()["genere/dub"]), "mythic", "un pezzo Mythic resta Mythic");
+    /**
+     * ⚠ **Il portafoglio scende con i prezzi**, se no chi ha giocato ieri si
+     * sveglia con mille volte i soldi di tutti — cioe' con l'album comprato
+     * prima di colazione, e niente piu' da fare.
+     */
+    uguale(d.conto("pino").saldo, 3600, "e il saldo scende con la stessa scala");
   }),
 );
 
@@ -567,11 +624,11 @@ prova("un file gia' convertito non si converte due volte", () =>
   conCartella((file) => {
     fileVecchio(file, [75]);
     const primo = new Deposito(file);
-    uguale(primo.perId("c0").prezzo, 1_000_000);
+    uguale(primo.perId("c0").prezzo, 3600);
     primo.scriviOra();
     // Riaperto: il numero di versione dice che e' gia' a posto.
     const secondo = new Deposito(file);
-    uguale(secondo.perId("c0").prezzo, 1_000_000, "riaprirlo non lo rimoltiplica");
+    uguale(secondo.perId("c0").prezzo, 3600, "riaprirlo non lo riconverte");
   }),
 );
 
@@ -758,6 +815,70 @@ prova("i tagli si sommano fino al tetto, e oltre no", () =>
       caduta = e;
     }
     vero(caduta instanceof NienteDaFare, "sopra il tetto si ferma");
+  }),
+);
+
+/* ------------------------------------------------- azzerare un portafoglio */
+
+/**
+ * ⚠ **Il tasto che azzera.** Chiesto l'11 settembre 2026: «un admin puo' anche
+ * azzerare il portafoglio degli altri, caso mai problemi».
+ *
+ * Le cose che devono valere, e sono tre: **va a zero** (non giu' di tanto), **la
+ * collezione non si tocca** (le figurine sono quello che uno ha inventato, non
+ * sono soldi) e **chi lo riceve lo viene a sapere**, come per i regali.
+ */
+prova("chi comanda azzera un portafoglio, e la collezione resta", () =>
+  conCartella((file) => {
+    const d = new Deposito(file);
+    regala(d, "capo", "pino", 10_000, "tieni");
+    d.colleziona("pino", "una-figurina");
+    const conto = d.conto("pino");
+    conto.prese = 3;
+    conto.esperienza = 4200;
+
+    const fatto = azzeraPortafoglio(d, "capo", "pino", "la scala era sbagliata");
+    uguale(d.conto("pino").saldo, 0, "il portafoglio va a zero");
+    uguale(fatto.togliere, 10_500, "e si sa quanto e' andato via: saldo iniziale compreso");
+    uguale(d.conto("pino").regali, 0, "anche «quanto ti e' stato dato» torna a niente");
+    uguale(d.conto("pino").collezione.length, 1, "le figurine non sono soldi: restano");
+    uguale(d.conto("pino").prese, 3, "e nemmeno quello che ha fatto si cancella");
+    uguale(d.conto("pino").esperienza, 4200, "il livello e' suo");
+    uguale(fatto.conto.ultimoRegalo.quanto, -10_500, "chi lo riceve lo legge, col segno meno");
+    uguale(fatto.conto.ultimoRegalo.perche, "la scala era sbagliata");
+    uguale(fatto.conto.ultimoRegalo.daAdmin, "capo", "e resta scritto chi l'ha fatto");
+  }),
+);
+
+prova("un portafoglio gia' vuoto non si azzera due volte", () =>
+  conCartella((file) => {
+    const d = new Deposito(file);
+    azzeraPortafoglio(d, "capo", "pino", "");
+    let caduta = null;
+    try {
+      azzeraPortafoglio(d, "capo", "pino", "");
+    } catch (e) {
+      caduta = e;
+    }
+    vero(caduta instanceof NienteDaFare, "un tasto che non fa niente lo deve dire");
+  }),
+);
+
+prova("azzerare e' roba di chi comanda, e passa dalla rotta", () =>
+  conCartella((file) => {
+    const d = new Deposito(file);
+    const contorno = { nomeDi: (x) => x };
+    regala(d, "capo", "pino", 5_000, "tieni");
+
+    const no = rispondi(d, { id: "pino", nome: "Pino", admin: false }, contorno,
+      "POST", "/azzera", { chi: "capo" });
+    uguale(no.codice, 403, "chi non comanda non azzera i portafogli degli altri");
+
+    const si = rispondi(d, { id: "capo", nome: "Capo", admin: true }, contorno,
+      "POST", "/azzera", { chi: "pino", perche: "si riparte" });
+    uguale(si.codice, 200);
+    uguale(si.dati.saldo, 0);
+    uguale(d.conto("pino").saldo, 0, "e sul disco e' vero");
   }),
 );
 

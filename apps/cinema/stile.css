@@ -213,20 +213,19 @@ input:disabled,textarea:disabled,select:disabled{opacity:.45; cursor:not-allowed
 .phases .a{color:var(--accent)} .phases .b{color:var(--accent2)}
 .phases span.off{opacity:.4}
 
-/* ---------------------------------------- da dove parte / i riferimenti ---- */
-/* I riquadri in cui si mettono i fotogrammi di LTX o i riferimenti di H3.
-   Sono la stessa cosa disegnata due volte — un posto vuoto da riempire e un
-   posto pieno da svuotare — perché è la stessa cosa: un file che entra. */
+/* ----------------------------------------------------- da dove parte ---- */
+/* I due riquadri del primo e dell'ultimo fotogramma: un posto vuoto da
+   riempire e un posto pieno da svuotare, che è la stessa cosa disegnata due
+   volte perché è la stessa cosa — un file che entra.
+
+   ⚠ Qui c'erano anche le tre griglie dei riferimenti di MiniMax H3 (nove
+   immagini, tre video, tre audio, ognuno con la sua etichetta): sono uscite
+   l'11 settembre 2026 insieme al modello. */
 #ingressi.sopra{outline:2px dashed var(--accent); outline-offset:6px; border-radius:12px}
 
-.gruppo-rif{margin-top:14px}
-.gruppo-rif h3{font-size:13px; font-weight:650; margin:0 0 8px; display:flex; gap:8px;
-  align-items:baseline; flex-wrap:wrap}
-.gruppo-rif h3 span{font-size:11.5px; color:var(--dim); font-weight:400}
-
-.slots{display:grid; grid-template-columns:repeat(auto-fill,minmax(168px,1fr)); gap:9px}
-/* I due fotogrammi di LTX non sono una griglia che cresce: sono due, e vanno
+/* I due fotogrammi non sono una griglia che cresce: sono due, e vanno
    affiancati grandi uguali finché ci stanno. */
+.slots{display:grid; grid-template-columns:repeat(auto-fill,minmax(168px,1fr)); gap:9px}
 .slots.due{grid-template-columns:repeat(auto-fit,minmax(190px,1fr))}
 
 .slot{position:relative; border:1px solid var(--line); border-radius:12px; background:#0b0d13;
@@ -240,29 +239,20 @@ input:disabled,textarea:disabled,select:disabled{opacity:.45; cursor:not-allowed
 .slot.vuoto .piu{font-size:22px; line-height:1; color:var(--accent2)}
 
 .slot .vista{height:104px; background:#07080c; display:flex; align-items:center; justify-content:center}
-.slot .vista img,.slot .vista video{width:100%; height:100%; object-fit:cover; display:block}
-.slot .vista .nota{font-size:30px; color:var(--accent2)}
+.slot .vista img{width:100%; height:100%; object-fit:cover; display:block}
 .slot .dettagli{padding:8px 9px}
 .slot .nome{font-size:11.5px; color:var(--dim); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
 
-/* L'etichetta è un pulsante perché fa qualcosa: cliccarla la scrive nel
-   prompt dove hai il cursore. Un'etichetta da ricopiare a mano sarebbe il modo
-   piu' sicuro di sbagliare il numero. */
-.slot .tag{display:inline-block; margin-bottom:3px; padding:2px 8px; border-radius:7px;
-  border:1px solid #4a2a6b; background:#1b1030; color:#e7d3ff; cursor:pointer;
-  font:inherit; font-size:11.5px; font-weight:650; font-family:ui-monospace,Consolas,monospace}
-.slot .tag:hover{border-color:var(--accent); background:#2a1748}
-.slot .tag.fisso{cursor:default; border-color:var(--line); background:#12151d; color:var(--dim);
-  font-family:inherit; font-weight:600}
+/* Dice quale dei due è: «Primo fotogramma», «Ultimo fotogramma». */
+.slot .tag.fisso{display:inline-block; margin-bottom:3px; padding:2px 8px; border-radius:7px;
+  cursor:default; border:1px solid var(--line); background:#12151d; color:var(--dim);
+  font:inherit; font-size:11.5px; font-weight:600}
 
 .slot .via{position:absolute; top:6px; right:6px; width:24px; height:24px; border-radius:7px;
   border:0; background:rgba(6,7,11,.72); color:#fff; cursor:pointer; font-size:12px; line-height:1;
   opacity:0; transition:.15s}
 .slot:hover .via{opacity:1}
 .slot .via:hover{background:var(--err)}
-
-.mini-switch{margin-top:5px; font-size:11.5px; gap:6px}
-.mini-switch b{color:#e7d3ff; font-family:ui-monospace,Consolas,monospace}
 
 /* ------------------------------------------------------------ i risultati ---- */
 /* Un video finito si guarda dove lo si è chiesto. Con i comandi del lettore,

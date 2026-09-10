@@ -3,6 +3,16 @@
 Dove siamo, dove si va, e — la parte che conta di più — **cosa è stato provato
 davvero e cosa no**.
 
+> ⚠ **MiniMax H3 e MiniMax Music 3 sono usciti dalla suite nella 1.3.2**, l'11
+> settembre 2026: «togliamo i modelli minimax h3 e minimax musica, che sono
+> modelli che al momento non mi piacciono, e alleggeriamo molto». Fra i due erano
+> **58 GB** di catalogo, di cui 25 di solo text encoder di H3.
+>
+> Quello che c'e' scritto qui sotto su quei due modelli resta perche' e' il
+> **registro di quando c'erano**, e serve il giorno che uno dei due torna: il
+> lavoro sui pesi, i nodi, le lunghezze e i due orologi del rumore e' tutto vero.
+> Non e' pero' quello che la suite fa adesso — vale il codice.
+
 Le versioni salgono **solo quando si pubblica** (vedi
 [COME-SI-LAVORA.md](COME-SI-LAVORA.md) § 2). Quello che resta sul PC e non viene
 pubblicato non consuma un numero.

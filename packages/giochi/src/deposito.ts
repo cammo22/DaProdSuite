@@ -30,7 +30,14 @@
 
 import { copyFileSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
-import { altezza, GRADI, IMPOSTAZIONI_DI_PARTENZA, SOGLIE_DI_PRIMA } from "./regole";
+import {
+  altezza,
+  GRADI,
+  IMPOSTAZIONI_DI_PARTENZA,
+  SOGLIE_DEL_MILIONE,
+  SOGLIE_DI_PRIMA,
+  tettoDelValore,
+} from "./regole";
 import type { Collezionabile, Conto, DatiGiochi, Formazione, Grado, Impostazioni, Pezzo } from "./tipi";
 
 /**
@@ -47,7 +54,7 @@ import type { Collezionabile, Conto, DatiGiochi, Formazione, Grado, Impostazioni
  */
 function vuoto(): DatiGiochi {
   return {
-    versione: 2,
+    versione: 3,
     conti: [],
     collezionabili: [],
     ultimoNumero: 0,
@@ -114,26 +121,36 @@ export class Deposito {
     /**
      * ⚠ **Un file col metro di prima si converte qui, una volta sola.**
      *
-     * Il 10 settembre 2026 la scala dei soldi e' salita: un Unique parte da un
-     * milione invece che da 75 lire. I prezzi gia' scritti sul disco sono col
-     * metro vecchio, e senza questa riga una figurina Unique si riaprirebbe
-     * Basic — cioe' il lavoro fatto da chi gioca cambierebbe valore da solo,
-     * di notte, senza che nessuno l'abbia deciso.
+     * La scala dei soldi e' cambiata due volte in due giorni: il 10 settembre
+     * 2026 e' salita al milione, l'11 e' scesa a tre euro. I prezzi scritti sul
+     * disco sono col metro del giorno in cui si e' giocato, e senza questa riga
+     * una figurina Unique si riaprirebbe Basic (o Ethernal) — cioe' il lavoro
+     * fatto da chi gioca cambierebbe valore da solo, di notte, senza che nessuno
+     * l'abbia deciso.
+     *
+     * ⚠ **Il numero di versione dice con che metro e' stato scritto**, ed e'
+     * l'unica cosa che lo dice: senza, a ogni apertura i prezzi si
+     * riconvertirebbero da capo.
      */
-    const vecchia = (lette.versione ?? 1) < 2;
+    const versione = lette.versione ?? 1;
+    const metroVecchio = versione < 2 ? SOGLIE_DI_PRIMA : versione < 3 ? SOGLIE_DEL_MILIONE : null;
     const collezionabili = Array.isArray(lette.collezionabili)
-      ? lette.collezionabili.map(rimettiInRiga).map((c) => (vecchia ? rimettiIPrezzi(c) : c))
+      ? lette.collezionabili
+          .map(rimettiInRiga)
+          .map((c) => (metroVecchio ? rimettiIPrezzi(c, metroVecchio) : c))
       : [];
     const prezzi =
       typeof lette.prezzi === "object" && lette.prezzi !== null ? { ...lette.prezzi } : {};
-    if (vecchia) {
+    if (metroVecchio) {
       // Anche i prezzi che chi comanda aveva scritto a mano sui pezzi dei
-      // rulli: stanno sulla stessa scala, e salgono insieme a lei.
-      for (const id of Object.keys(prezzi)) prezzi[id] = colMetroNuovo(prezzi[id] ?? 0);
+      // rulli: stanno sulla stessa scala, e si muovono insieme a lei.
+      for (const id of Object.keys(prezzi)) prezzi[id] = colMetroNuovo(prezzi[id] ?? 0, metroVecchio);
     }
     return {
-      versione: 2,
-      conti: Array.isArray(lette.conti) ? lette.conti : [],
+      versione: 3,
+      conti: Array.isArray(lette.conti)
+        ? (metroVecchio ? lette.conti.map((c) => rimettiIlSaldo(c, metroVecchio)) : lette.conti)
+        : [],
       collezionabili,
       ultimoNumero: typeof lette.ultimoNumero === "number" ? lette.ultimoNumero : 0,
       custom: Array.isArray(lette.custom) ? lette.custom : [],
@@ -394,22 +411,26 @@ function rimettiInRiga(c: Collezionabile): Collezionabile {
 }
 
 /**
- * Un prezzo scritto col metro di prima, riportato su quello di adesso.
+ * Un prezzo scritto con un metro di prima, riportato su quello di adesso.
  *
  * ⚠ **Si converte tenendo il grado**, non moltiplicando per un numero. Con una
  * moltiplicazione secca i confini non tornano — 75 lire erano *esattamente* un
  * Unique, e per qualunque fattore intero finiscono un pelo sopra o un pelo
- * sotto il milione — e una figurina cambierebbe grado nel passaggio. Qui
+ * sotto la soglia nuova — e una figurina cambierebbe grado nel passaggio. Qui
  * invece si guarda **in che gradino stava** e la si rimette nello stesso
  * gradino nuovo, alla stessa altezza dentro il gradino.
  *
  * Sopra all'ultimo scalino non c'e' un tetto a cui rapportarsi, e li' si tiene
  * la proporzione fra le due soglie di Ethernal.
+ *
+ * ⚠ **Il metro vecchio arriva da fuori**, e non e' pignoleria: di metri vecchi
+ * ce ne sono due (quello a 1.400 e quello al milione) e domani potrebbero
+ * essere tre. Chi legge il file sa con quale e' stato scritto — il numero di
+ * versione — e questa funzione non deve indovinarlo.
  */
-function colMetroNuovo(vecchio: number): number {
+function colMetroNuovo(vecchio: number, giu: readonly number[]): number {
   if (!(vecchio > 0)) return 0;
   const su = GRADI.map((g) => g.da);
-  const giu = SOGLIE_DI_PRIMA;
   for (let i = giu.length - 1; i >= 0; i--) {
     if (vecchio < giu[i]!) continue;
     const bassoV = giu[i]!;
@@ -427,8 +448,47 @@ function colMetroNuovo(vecchio: number): number {
 }
 
 /** I prezzi di una figurina, portati sul metro di adesso. */
-function rimettiIPrezzi(c: Collezionabile): Collezionabile {
-  if (typeof c.prezzo === "number") c.prezzo = colMetroNuovo(c.prezzo);
-  if (typeof c.prezzoVetrina === "number") c.prezzoVetrina = colMetroNuovo(c.prezzoVetrina);
+function rimettiIPrezzi(c: Collezionabile, giu: readonly number[]): Collezionabile {
+  /**
+   * ⚠ **Anche il tetto vale per quello che c'era gia'.**
+   *
+   * Fino al 10 settembre 2026 il prezzo di una cosa presa era la **somma** dei
+   * dodici pezzi e non aveva tetto: sul disco ci sono figurine che valgono
+   * quanto trenta Unique. Convertirle e lasciarle li' vorrebbe dire che la
+   * regola dei tre euro vale per quelle di domani e non per quelle di ieri, e
+   * intanto quelle di ieri continuano a pagare — sulla riscoperta e sui
+   * doppioni, che leggono `prezzo` cosi' com'e' scritto.
+   */
+  if (typeof c.prezzo === "number") {
+    c.prezzo = Math.min(tettoDelValore(), colMetroNuovo(c.prezzo, giu));
+  }
+  // ⚠ Il prezzo in vetrina **non** si taglia al tetto: quello e' venti volte la
+  // soglia di un grado (vedi `prezzoConsigliato`), e sta sopra i tre euro
+  // apposta. Comprare non deve essere la strada comoda.
+  if (typeof c.prezzoVetrina === "number") c.prezzoVetrina = colMetroNuovo(c.prezzoVetrina, giu);
+  return c;
+}
+
+/**
+ * Il portafoglio di una persona, portato sul metro di adesso.
+ *
+ * ⚠ **Si converte con lo stesso metro dei prezzi, e non e' un'aggiunta**: e' la
+ * stessa moneta. Un saldo lasciato al metro vecchio mentre i prezzi scendono e'
+ * uno che si sveglia con mille volte i soldi di ieri — cioe' con l'album intero
+ * comprato prima di colazione, e niente piu' da fare.
+ *
+ * Non basta a rimettere tutto a posto, e si sapeva: chi ha giocato con la scala
+ * sbagliata ha speso e incassato numeri che non tornano piu'. Per quello c'e'
+ * il tasto che azzera (`azzeraPortafoglio`), che e' una decisione di chi comanda
+ * e non un conto automatico.
+ */
+function rimettiIlSaldo(c: Conto, giu: readonly number[]): Conto {
+  if (typeof c.saldo === "number") c.saldo = colMetroNuovo(c.saldo, giu);
+  if (typeof c.regali === "number") c.regali = colMetroNuovo(c.regali, giu);
+  if (c.ultimoRegalo && typeof c.ultimoRegalo.quanto === "number") {
+    const quanto = c.ultimoRegalo.quanto;
+    const segno = quanto < 0 ? -1 : 1;
+    c.ultimoRegalo.quanto = segno * colMetroNuovo(Math.abs(quanto), giu);
+  }
   return c;
 }

@@ -61,7 +61,6 @@ import {
 import {
   collegaRiferimentiStoria,
   contaRiferimenti,
-  riferimentiPerIlGrafo,
   riferimentiPerIlModello,
 } from "./storia-riferimenti.js";
 import * as ponte from "./ponte.js";
@@ -544,7 +543,6 @@ async function generaStoria() {
   const m = modelloStoria();
   const misura = misuraStoria();
   const modo = modoStoria();
-  const rif = riferimentiPerIlGrafo(m);
 
   // La scheda si sgombra una volta, all'inizio: dentro il giro il motore ha
   // sempre qualcosa in mano e `faiSpazio` non toccherebbe niente comunque.
@@ -577,10 +575,6 @@ async function generaStoria() {
             negativo: NEGATIVO,
             seed: Math.floor(Math.random() * 2 ** 31),
             lora: modo.lora,
-            // Solo H3 ha questi ingressi: con LTX `riferimentiPerIlGrafo`
-            // risponde vuoto e il grafo non li collega nemmeno.
-            immagini: rif.immagini,
-            audio: rif.audio,
           }),
         );
         s.file = await aspetta(id, i);
@@ -829,14 +823,20 @@ export async function collegaStoria() {
   raccontaConto();
 }
 
-/** La riga che dice a cosa servono i riferimenti **con il modello scelto adesso**. */
+/**
+ * La riga che dice a cosa servono i riferimenti.
+ *
+ * ⚠ **Servono a una cosa sola, dall'11 settembre 2026**: farli guardare al
+ * modello che scrive le scene. Prima erano due — quello, e finire dentro ogni
+ * clip come `ref_image_N` di MiniMax H3 — e la riga cambiava a seconda del
+ * modello scelto. Tolto H3, nel video non entrano più, e la riga dice una cosa
+ * sola invece di due.
+ */
 function raccontaRiferimenti() {
   const { immagini, audio } = contaRiferimenti();
-  const m = modelloStoria();
   if (!immagini && !audio) {
     el.storiaRifRiga.textContent =
-      "Chi scrive le scene li guarda, se il modello di LM Studio sa vedere. " +
-      "Con MiniMax H3 finiscono anche dentro ogni inquadratura.";
+      "Chi scrive le scene li guarda, se il modello di LM Studio sa vedere.";
     return;
   }
   const quanti = [
@@ -847,9 +847,7 @@ function raccontaRiferimenti() {
     .join(" e ");
 
   el.storiaRifRiga.textContent =
-    m.ingressi === "riferimenti"
-      ? `${quanti}: li guarda chi scrive le scene, e H3 li usa dentro ogni inquadratura.`
-      : `${quanti}: li guarda chi scrive le scene. Nel video non entrano — LTX 2.5 non ha ingressi per i riferimenti, ce li ha MiniMax H3.`;
+    `${quanti}: li guarda chi scrive le scene. Nel video non entrano — LTX 2.5 non ha ingressi per i riferimenti.`;
 }
 
 /**

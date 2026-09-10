@@ -27,9 +27,11 @@
  * - `id` è il valore che vuole `TextEncodeAceStepAudio1.5`, lettera per lettera:
  *   quel nodo accetta un elenco chiuso e rifiuta tutto il resto.
  * - `nome` è l'italiano che si legge sulla pastiglia.
- * - `inglese` è quello che finisce **nella descrizione dello stile** quando il
- *   modello è MiniMax Music 3, che di casella «lingua» non ne ha: il suo unico
- *   ingresso di testo è la descrizione, quindi è lì che la lingua va detta.
+ * - `inglese` è il nome della lingua in inglese, da mettere **dentro la
+ *   descrizione dello stile**. ⚠ Serviva a MiniMax Music 3, che di casella
+ *   «lingua» non ne aveva, ed è uscito l'11 settembre 2026. Resta scritto perché
+ *   è il nome giusto di una lingua in inglese e non costa niente tenerlo: chi
+ *   rimette un modello senza casella della lingua lo trova già qui.
  */
 export const LINGUE = [
   { id: "it", nome: "Italiano", inglese: "Italian" },

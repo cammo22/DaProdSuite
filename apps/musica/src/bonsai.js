@@ -6,7 +6,7 @@
  * tutto** parte da una frase su di cosa deve parlare e riempie ogni campo:
  * titolo, stile, testo con i tag di sezione, e la descrizione della copertina.
  *
- * Perché serve: MiniMax Music 3 vuole un testo con `[Verse]` e `[Chorus]` al
+ * Perché serve: un modello musicale vuole un testo con `[verse]` e `[chorus]` al
  * posto giusto e uno stile scritto in inglese con parole che riconosce. Sono due
  * mestieri diversi da "avere un'idea per una canzone", ed è esattamente il tipo
  * di lavoro che un modello che scrive fa meglio e più in fretta di chiunque.
