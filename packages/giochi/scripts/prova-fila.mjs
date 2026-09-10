@@ -18,16 +18,20 @@ import {
   classifica,
   Deposito,
   manda,
+  MAX_ALLEGATI,
+  MAX_PROVE,
   NienteDaFare,
   prendi,
   CAMBIO_EURO,
   regala,
   TAGLI,
   serieChiuse,
+  rispondi,
   sommaDeiPezzi,
   statoMagazzino,
   tira,
 } from "../dist/index.js";
+import { writeFileSync } from "node:fs";
 import { conCartella, dado, prova, tirandoLeSomme, uguale, vero } from "./attrezzi.mjs";
 
 /** Un deposito con dentro uno che gioca ricco, e un giro gia' fatto. */
@@ -265,6 +269,54 @@ prova("prendere: paga chi l'ha mandata, e gliela mette in collezione", () =>
   }),
 );
 
+/**
+ * ⚠ **Gli allegati sono piu' d'uno**, dal 10 settembre 2026: «alla fine puo'
+ * selezionare uno o piu' elementi generati da includere nel pacchetto; lascia
+ * comunque la possibilita' di allegare ulteriori max 4 file dalla suite».
+ *
+ * Si prova che ci arrivino tutti **nell'ordine dato** — il primo e' la faccia
+ * della scheda nello shop — e che oltre il tetto non ne entrino.
+ */
+prova("si attaccano piu' cose, e la prima resta la prima", () =>
+  conCartella((file) => {
+    const t = tavolino(file);
+    const c = manda(t.d, "pino", "musica", "sempre", t.pezzi).cosa;
+    const presa = prendi(t.d, "cammo", c.id, 10, [
+      { id: "a", mime: "image/png", url: "/uno.png" },
+      { id: "b", mime: "image/png", url: "/due.png" },
+      { id: "c", mime: "audio/mpeg", url: "/tre.mp3" },
+    ]);
+    uguale(presa.allegati.length, 3, "ci sono tutte e tre");
+    uguale(presa.allegati[0].url, "/uno.png", "la prima e' la faccia della scheda");
+    uguale(presa.allegati[2].mime, "audio/mpeg", "e ognuna si porta il suo tipo");
+  }),
+);
+
+prova("oltre otto allegati non se ne attaccano", () =>
+  conCartella((file) => {
+    const t = tavolino(file);
+    const c = manda(t.d, "pino", "musica", "sempre", t.pezzi).cosa;
+    const troppe = [];
+    for (let i = 0; i < 12; i++) troppe.push({ id: "x" + i, mime: "image/png", url: "/x" + i + ".png" });
+    const presa = prendi(t.d, "cammo", c.id, 10, troppe);
+    uguale(presa.allegati.length, MAX_ALLEGATI, "il tetto e' otto: quattro nate e quattro scelte");
+    uguale(presa.allegati[0].url, "/x0.png", "e si tengono le prime, non le ultime");
+  }),
+);
+
+prova("una copertina senza niente da coprire non si attacca", () =>
+  conCartella((file) => {
+    const t = tavolino(file);
+    const c = manda(t.d, "pino", "musica", "sempre", t.pezzi).cosa;
+    const presa = prendi(t.d, "cammo", c.id, 10, [], {
+      id: "cop",
+      mime: "image/png",
+      url: "/cop.png",
+    });
+    vero(!presa.copertina, "una figurina non promette una canzone che non c'e'");
+  }),
+);
+
 prova("su una gia' decisa non si decide due volte", () =>
   conCartella((file) => {
     const t = tavolino(file);
@@ -311,6 +363,147 @@ prova("una buttata non si puo' rimandare uguale", () =>
 );
 
 /* ------------------------------------------------------------ i pacchetti */
+
+/* ------------------------------------------------- provarla, fino a quattro */
+
+/**
+ * ⚠ **Il giro completo del tasto «provala», dalla porta.**
+ *
+ * Queste passano da `rispondi()` e non dal banco, ed e' voluto: il tetto delle
+ * quattro prove e il tornare indietro dei file stanno nelle **rotte**, e una
+ * prova che chiama il banco non li tocca nemmeno.
+ *
+ * Il contorno e' finto e fa due cose sole: dice di si' quando gli si chiede di
+ * generare, e sa dire cosa e' uscito da una richiesta. E' esattamente quello
+ * che fa il gateway con la libreria vera.
+ */
+function contornoFinto(prodotti) {
+  const partite = [];
+  return {
+    partite,
+    nomeDi: (id) => id,
+    genera: () => {
+      const id = "r" + (partite.length + 1);
+      partite.push(id);
+      return { id };
+    },
+    fruttiDi: (richiesta) => prodotti[richiesta] ?? [],
+  };
+}
+
+const CAMMO = { id: "cammo", nome: "Cammo", admin: true };
+
+prova("provarla parte, e si puo' rifare fino a quattro volte", () =>
+  conCartella((file) => {
+    const t = tavolino(file);
+    const c = manda(t.d, "pino", "musica", "sempre", t.pezzi).cosa;
+    const contorno = contornoFinto({});
+
+    for (let i = 1; i <= MAX_PROVE; i++) {
+      const r = rispondi(t.d, CAMMO, contorno, "POST", "/prova", { id: c.id });
+      uguale(r.codice, 200, "la numero " + i + " deve partire");
+      uguale(r.dati.quante, i, "e il conto sale");
+    }
+    uguale(contorno.partite.length, MAX_PROVE, "quattro generazioni vere, non una");
+
+    const quinta = rispondi(t.d, CAMMO, contorno, "POST", "/prova", { id: c.id });
+    uguale(quinta.codice, 409, "la quinta no");
+    vero(String(quinta.dati.errore).indexOf("scegli fra quelle") > 0, "e dice perche'");
+    uguale(contorno.partite.length, MAX_PROVE, "e non ne fa partire un'altra");
+  }),
+);
+
+prova("quello che e' uscito torna sulla card, senza aprire la galleria", () =>
+  conCartella((file) => {
+    const t = tavolino(file);
+    const c = manda(t.d, "pino", "musica", "sempre", t.pezzi).cosa;
+    // La prima e' pronta, la seconda e' ancora in forno.
+    const contorno = contornoFinto({
+      r1: [{ id: "f1", titolo: "la clip", mime: "audio/mpeg", url: "/libreria/file/f1" }],
+    });
+    rispondi(t.d, CAMMO, contorno, "POST", "/prova", { id: c.id });
+    rispondi(t.d, CAMMO, contorno, "POST", "/prova", { id: c.id });
+
+    const fila = rispondi(t.d, CAMMO, contorno, "GET", "/fila", {});
+    uguale(fila.codice, 200);
+    const mia = fila.dati.inAttesa[0];
+    uguale(mia.prove.length, 2, "due tentativi");
+    uguale(mia.prove[0].usciti.length, 1, "il primo ha prodotto");
+    uguale(mia.prove[0].usciti[0].url, "/libreria/file/f1", "e si sa dove si sente");
+    uguale(mia.prove[1].usciti.length, 0, "il secondo e' ancora in forno");
+  }),
+);
+
+prova("senza niente che sappia generare, lo dice invece di fingere", () =>
+  conCartella((file) => {
+    const t = tavolino(file);
+    const c = manda(t.d, "pino", "musica", "sempre", t.pezzi).cosa;
+    const spoglio = { nomeDi: (id) => id };
+    const r = rispondi(t.d, CAMMO, spoglio, "POST", "/prova", { id: c.id });
+    uguale(r.codice, 501, "una sala giochi senza suite attorno non genera");
+  }),
+);
+
+prova("dalla porta si attaccano piu' cose in una volta", () =>
+  conCartella((file) => {
+    const t = tavolino(file);
+    const c = manda(t.d, "pino", "musica", "sempre", t.pezzi).cosa;
+    const contorno = contornoFinto({});
+    const r = rispondi(t.d, CAMMO, contorno, "POST", "/prendi", {
+      id: c.id,
+      bonus: 20,
+      allegati: [
+        { id: "f1", url: "/uno.png", mime: "image/png" },
+        { id: "f2", url: "/due.png", mime: "image/png" },
+      ],
+    });
+    uguale(r.codice, 200);
+    uguale(r.dati.allegati.length, 2, "arrivano tutte e due");
+    uguale(r.dati.allegati[0].url, "/uno.png");
+  }),
+);
+
+/**
+ * ⚠ **Un file scritto da ieri si apre lo stesso.**
+ *
+ * `allegato` e `provata` erano singoli fino al 10 settembre 2026. Chi giocava
+ * da prima ha quella forma sul disco, e la conversione si fa **leggendo** —
+ * vedi `rimettiInRiga` nel deposito. Se questa prova cade, a qualcuno sparisce
+ * la copertina di una figurina che aveva gia'.
+ */
+prova("un file della versione di ieri si rilegge nella forma di adesso", () =>
+  conCartella((file) => {
+    writeFileSync(
+      file,
+      JSON.stringify({
+        versione: 1,
+        conti: [],
+        collezionabili: [
+          {
+            id: "vecchia",
+            tipo: "prompt",
+            titolo: "una di ieri",
+            impronta: "x",
+            daChi: "pino",
+            quando: 1,
+            stato: "presa",
+            prezzo: 50,
+            allegato: { id: "f1", mime: "image/png", url: "/vecchia.png" },
+            provata: { richiesta: "r9", quando: 2 },
+          },
+        ],
+      }),
+      "utf8",
+    );
+    const d = new Deposito(file);
+    const c = d.perId("vecchia");
+    uguale(c.allegati.length, 1, "l'allegato singolo diventa un elenco di uno");
+    uguale(c.allegati[0].url, "/vecchia.png", "e punta dove puntava");
+    uguale(c.prove.length, 1, "e la prova singola pure");
+    uguale(c.prove[0].richiesta, "r9");
+    vero(c.allegato === undefined, "il campo vecchio se ne va: uno solo dice la verita'");
+  }),
+);
 
 prova("una serie si compra solo quando e' chiusa", () =>
   conCartella((file) => {

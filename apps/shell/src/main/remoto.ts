@@ -599,6 +599,17 @@ const fornitoreLibreria: FornitoreLibreria = {
         // quello di `dove` — qui si dice solo di chi.
         if (filtro.di && libreria.padrone(e) !== filtro.di) return false;
 
+        /**
+         * **Quelle nate da una richiesta sola.** Serve alla sala giochi: chi
+         * comanda fa generare una combinazione e vuole vedere cosa ne è uscito
+         * senza aprire la galleria.
+         *
+         * Il legame è già scritto: quando un lavoro finisce, `esecuzione.ts`
+         * mette `richiesta` nei metadati del file. Qui si legge quello, e non
+         * serve tenere da nessun'altra parte l'elenco di cosa ha prodotto cosa.
+         */
+        if (filtro.richiesta && e.meta?.["richiesta"] !== filtro.richiesta) return false;
+
         // Messe da parte: quelle di altri che hai tenuto, e che loro tengono
         // in bacheca. Le tue non ci vanno: sono gia' fra le tue.
         if (salvati) return libreria.laTiene(e, filtro.chi) && libreria.inBacheca(e);

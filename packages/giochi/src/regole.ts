@@ -88,6 +88,30 @@ export const GRADI: readonly Scalino[] = [
   { id: "ethernal", nome: "Ethernal", da: 1400, colore: "#eaf6ff", fuoco: 5, quantoEsce: 3, punti: 12000 },
 ];
 
+/**
+ * ⚠ **Fin dove arrivano le figurine, per adesso: Unique.**
+ *
+ * Chiesto il 10 settembre 2026: «tutti quelli che ci sono fino ad ora
+ * mettiamoli da basic a unique; da celestial a ethernal ci penseremo noi nel
+ * tempo, man mano che abbiamo dati a disposizione».
+ *
+ * Il motivo e' che **la rarita' e' un rapporto**. Con dieci cose prese in
+ * tutto, chiamarne una Mythic non vuol dire niente: non c'e' niente sotto che
+ * la faccia sembrare rara. I sei gradi in cima restano dichiarati e non si
+ * assegnano — si aprono quando il magazzino e' abbastanza pieno da meritarli.
+ *
+ * ⚠ **Vale per le figurine, non per i rulli.** I dodici gradi dei pezzi che
+ * girano nella slot restano tutti e dodici, Ethernal compreso: quella e' la
+ * rarita' dei pezzi, e la decidono i dati. Questo e' il grado che **una
+ * persona** da' a una cosa presa, ed e' un'altra faccenda.
+ */
+export const TETTO_FIGURINE: Grado = "unique";
+
+/** Il grado, tenuto sotto al tetto delle figurine. Vedi `TETTO_FIGURINE`. */
+export function sottoIlTetto(grado: Grado): Grado {
+  return altezza(grado) > altezza(TETTO_FIGURINE) ? TETTO_FIGURINE : grado;
+}
+
 /** Dov'e' un grado nella scala: 0 e' Basic, 11 e' Ethernal. */
 export function altezza(grado: Grado): number {
   return GRADI_ID.indexOf(grado);

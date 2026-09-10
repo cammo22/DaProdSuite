@@ -24,18 +24,19 @@ refuso è uno spreco; correggere il tunnel senza averla letta è peggio.
 
 ## Su cosa si sta lavorando adesso
 
-**1.2.3**, e la regola è una: **niente release finché non è tutto risolto e
-provato.** Non ci sono pubblicazioni intermedie — si accumula sul ramo, si prova
-insieme, si pubblica una volta.
+**1.3**, e si pubblica **a blocchi finiti**: quando una cosa sta in piedi da
+sola esce, senza aspettare la fine. La regola della 1.2.3 — «niente release
+finché non è tutto» — è durata un giorno e si è visto che così è meglio: Cammo
+prova la sera stessa, e metà del lavoro nasce da lì.
 
-- Il piano: **`docs/ROADMAP-1.2.3.md`** (da qui in poi ogni release ha la sua).
-- Il lavoro: gli **issue GitHub** sotto il traguardo `1.2.3`, in quattro blocchi.
-  `gh issue list --milestone 1.2.3` è il posto dove guardare, non questa pagina.
+- Il piano: **`docs/ROADMAP-1.3.md`** — quattro blocchi, in che ordine e perché.
+- Il lavoro: gli **issue GitHub** sotto il traguardo `1.3`.
+  `gh issue list --milestone 1.3` è il posto dove guardare, non questa pagina.
 - Un issue si chiude quando la sua riga «come si prova» è stata **fatta**.
 - Ogni tanto si dice a che punto siamo, in percentuale, contando gli issue
-  chiusi — non a occhio.
-- Se questa e' la tua prima sessione su questa release, il prompt completo — con
-  le trappole che sono gia' costate tempo — sta in **`docs/PROMPT-1.2.3.md`**.
+  chiusi — non a occhio. E **i link degli issue si mandano**: li legge dal
+  telefono, e un `#98` scritto così non si clicca da nessuna parte.
+- Il numero della release sale di `0.0.1`. Non si sceglie: si conta.
 
 ⚠ **Il filo che tiene insieme quasi tutto: una cosa sola, uguale ovunque.** Il
 7 settembre 2026 tre difetti diversi su tre erano la stessa malattia — una cosa

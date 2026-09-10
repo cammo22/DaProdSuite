@@ -154,6 +154,17 @@ casella **di questo tavolo**, e due pezzi non possono venire dalla stessa. Se
 tre pezzi siano pochi lo decide chi comanda quando la guarda — non tocca al
 banco.
 
+⚠ **Mandata la combinazione, la sala riparte.** Chiesto il 10 settembre 2026:
+«quando si invia una combinazione gli elementi bloccati vengono inviati e la
+slot refreshata, si ricomincia la partita». I blocchi si tolgono tutti e i
+rulli tornano puliti. Prima restava tutto com'era, e chi aveva appena mandato
+si ritrovava davanti la riga appena mandata: per ricominciare doveva sbloccare
+dodici rulli uno per uno.
+
+**Non si tira la leva da soli**, pero'. Un giro costa lire e mandare deve
+restare gratis (§ 9): far partire un giro qui vorrebbe dire che mandare costa
+dieci lire senza che nessuno l'abbia deciso.
+
 **Musica** — genere · incrociato con · voce · come canta · davanti · e anche ·
 che aria · andatura · di quando · com'e' preso · com'e' fatto · la firma
 
@@ -225,6 +236,27 @@ e in un gioco la scala e' una decisione, non una deduzione.
 
 Un Mythic ogni mille caselle: con dodici rulli, **uno ogni ottantatre giri**. Un
 **Ethernal** ogni tremilatrecento: uno ogni duecentosettanta giri.
+
+### ⚠ Le figurine, per adesso, arrivano a Unique
+
+Deciso il 10 settembre 2026: «tutti quelli che ci sono fino ad ora mettiamoli
+da basic a unique; da celestial a ethernal ci penseremo noi nel tempo, man mano
+che abbiamo dati a disposizione».
+
+La tabella qui sopra resta intera e vale per **i pezzi sui rulli**: quella e' la
+rarita' dei pezzi, e la dicono i dati. Il grado che una **persona** da' a una
+cosa presa — il bonus quando la prende, il grado in vetrina — si ferma a
+**Unique**, il sesto.
+
+Il motivo e' che la rarita' e' **un rapporto**. Con dieci figurine in tutto,
+chiamarne una Mythic non vuol dire niente: non c'e' niente sotto che la faccia
+sembrare rara, e si sarebbe bruciata la parola prima di avere il gioco. I sei
+gradi in cima si aprono quando il magazzino e' abbastanza pieno da meritarli.
+
+Sta scritto in un posto solo — `TETTO_FIGURINE` in `regole.ts` — e da li'
+passano la figurina che si guarda, quella che cade da un pacchetto, quella che
+si regala girando e i tasti con cui si sceglie. Il giorno che si alza, si alza
+dappertutto.
 
 ⚠ **Ethernal si scrive con la «h»** perche' cosi' l'ha scritto Cammo il 10
 settembre 2026, e i nomi dei gradi sono suoi.
@@ -307,6 +339,9 @@ Quattro cose che sembrano dettagli e sono il motivo per cui uno ci resta.
   il giorno dopo. Una combinazione buona si costruisce in piu' sere, e mischiare
   un genere degli anni 70 con una produzione di adesso e' esattamente il tipo di
   riga che nessuno scriverebbe da solo.
+  ⚠ **L'unica cosa che azzera i blocchi e' mandare** (§ 5): li' la riga se n'e'
+  andata, e tenerla ancora ferma davanti vorrebbe dire ricominciare da una cosa
+  che non e' piu' tua da decidere.
 
 ## 9. Mandare una cosa a controllare — il cuore di tutto
 
@@ -370,8 +405,8 @@ scritto chi le ha mandate e quando. Per ognuna si puo':
   l'idea; puo' anche essere zero. Cosi' una combinazione di roba rara parte alta
   anche quando chi comanda ha fretta, e una di roba comune ma geniale la si puo'
   pagare bene lo stesso;
-- **attaccarci il contenuto**: l'immagine o il brano venuti fuori da quel
-  prompt. E' quello che la fa diventare una figurina che si guarda, ed e' la
+- **attaccarci il contenuto**: le immagini o i brani venuti fuori da quel
+  prompt. ⚠ **Sono piu' d'uno dal 10 settembre 2026**, vedi qui sotto. E' quello che la fa diventare una figurina che si guarda, ed e' la
   copertina della sua scheda nello shop — senza, uno comprerebbe una parola.
   ⚠ **Si sceglie dalla galleria della suite, toccandola.** Prima si scriveva
   a mano l'indirizzo del file in una casella: quattro gesti in due finestre,
@@ -407,7 +442,47 @@ e i tetti.
 
 ⚠ **Il costo lo paga il banco, non chi ha mandato.** E' l'admin che ha scelto
 di provarla. Se si scalasse a chi la manda, mandare costerebbe — e mandare deve
-essere gratis (§ 9). Parte una volta sola: la seconda il tasto e' spento.
+essere gratis (§ 9).
+
+### Quattro tentativi, e tornano qui da soli
+
+Chiesto il 10 settembre 2026:
+
+> «Quando un admin manda a generare un contenuto, quando pronto lo deve vedere
+> gia' allegato alla card in modo da controllarlo. Puo' rigenerare e viene
+> generato un secondo file, max 4 file, e alla fine puo' selezionare uno o piu'
+> elementi generati da includere nel pacchetto.»
+
+Tre cose, e ognuna toglie di mezzo un giro a vuoto.
+
+**Uno: torna da sola.** Quando la generazione e' pronta, il file compare **sulla
+card**. Prima l'avviso diceva «la trovi in galleria», e per guardarla bisognava
+aprire la galleria, cercarla, tornare in fila e riattaccarla a mano: due
+finestre per vedere una cosa nata da quel tasto.
+
+⚠ **Il gioco non tiene un registro di cosa ha prodotto cosa.** Tiene la targa
+della richiesta; quale file ne sia nato lo sa la libreria della suite, che nei
+metadati di ogni file scrive da che richiesta viene. Tenerne qui una copia
+vorrebbe dire un secondo elenco da riallineare ogni volta che si cancella una
+foto.
+
+**Due: si rigenera, fino a quattro volte.** Prima partiva una volta sola e poi
+il tasto restava spento per sempre. Il motivo era buono dentro il singolo giro —
+una generazione ci mette minuti, e ripremere metterebbe in coda tre lavori
+uguali — ma «una volta sola per sempre» e' un'altra cosa: un modello sbaglia, e
+giudicare un prompt dal suo primo scatto e' un altro modo di tirare a
+indovinare. Quattro e' quello che ci sta in fila su un telefono, e sono
+abbastanza per capire se un prompt tiene o se e' stato un colpo di fortuna.
+
+**Tre: si sceglie cosa tenere.** Delle quattro se ne spunta **una o piu'
+d'una**, e finiscono tutte attaccate alla figurina. Non e' «l'ultima vince»: il
+senso di generare quattro volte e' poterle confrontare.
+
+E oltre a quelle, **fino a quattro cose scelte a mano** dalla galleria della
+suite — «magari da quei prompt nascono cose particolari». Otto in tutto: quattro
+nate dal prompt e quattro scelte col dito. La **prima** e' la faccia della
+scheda nello shop, e le generate stanno davanti, perche' sono quelle che la
+figurina promette di essere.
 
 ### Le buttate stanno in un mazzo loro
 
@@ -436,6 +511,40 @@ figurine. La serie chiusa e' quella che si compra: un **pacchetto** costa lire e
 dentro ci sono **cinque figurine a caso di quella serie**, pescate con le stesse
 frequenze dei gradi (una Mythic esce una volta su mille). I doppioni non
 deludono: pagano il loro prezzo in lire.
+
+### ⚠ Il pacchetto lo chiude una persona, non il contatore
+
+Deciso il 10 settembre 2026: «ogni prompt accettato finisce in questo pacchetto;
+arrivato a 100, un admin puo' creare il pacchetto».
+
+A cento la serie e' **pronta**, non chiusa: chi comanda vede «cento dentro» e
+preme *crea il pacchetto*. Fino a quel momento non si compra.
+
+Chiudere una serie e' l'atto con cui si dice «questa raccolta e' finita, si
+vende», ed e' una decisione — come dare un prezzo a una combinazione. Le
+decisioni qui le prende una persona. E ci sta che a novantotto arrivi qualcosa
+che deve entrare per forza in quella serie: con la chiusura automatica non
+c'era modo di aspettarlo.
+
+### ⚠ Le tre strade per avere una figurina, e sono diverse apposta
+
+Il 10 settembre 2026 si e' aggiunta la terza, e le tre insieme sono l'impianto:
+
+| Strada | Cosa costa | Cosa da' |
+|---|---|---|
+| **inventarla** | il tempo di montarla, e che a chi comanda piaccia | quella li', piu' le lire |
+| **la slot dei pacchetti** | lire, tante volte | una a caso, molto di rado |
+| **il negozio** | tante lire in una volta | **esattamente quella che vuoi** |
+
+Se due si somigliano, una mangia l'altra. La fortuna deve costare **tempo**, la
+certezza deve costare **lire**, e inventare deve restare la sola che paga
+invece di far pagare.
+
+**La slot dei pacchetti** e' una seconda macchina, e non si monta niente: si
+tira, e molto raramente cade un item di un pacchetto gia' chiuso. Non si sceglie
+da quale — il mazzo e' uno solo, fatto di tutte le serie chiuse — e dentro si
+pesca con le frequenze dei gradi. «Tutti insieme, tutti random», come e' stato
+chiesto.
 
 Si sbloccano anche **giocando**: ogni tanto un giro fortunato ne regala una.
 
@@ -484,6 +593,25 @@ un pacchetto, se sei fortunato. Chi compra sta pagando **di non aspettare la
 fortuna**, e quello si paga. Con la slot che rende solo esperienza, quelle lire
 arrivano da una parte sola: inventando roba che a chi comanda piace.
 
+### ⚠ Nel negozio ci vanno anche i pacchetti interi
+
+Deciso il 10 settembre 2026: «i pacchetti finiscono anche nello shop, dove a un
+prezzo molto piu' alto possono essere comprati item a piacimento».
+
+Quindi due cose in vendita, non una:
+
+- le **figurine in vetrina**, messe li' una a una da chi comanda;
+- i **pacchetti chiusi**, e dentro a un pacchetto si compra **l'item che si
+  vuole** — si sceglie, non si pesca — a un prezzo molto piu' alto.
+
+E' la faccia opposta della slot dei pacchetti, e le due si tengono in piedi a
+vicenda: li' spendi poco e speri, qui spendi tanto e sei sicuro.
+
+⚠ **Quanto piu' alto e' ancora da decidere**, e non e' un dettaglio: se un item
+scelto costa piu' di quanto si guadagna inventandone tre, nessuno lo compra e la
+funzione non esiste. Il numero si sceglie guardando quanto rende una
+combinazione presa, non a occhio.
+
 Lo stesso grado di vetrina dice anche **quanto raramente quella figurina cade
 da un pacchetto**: e' un numero solo per due cose, non due numeri che un giorno
 divergono.
@@ -500,6 +628,42 @@ come pastiglia in DaProdMusica e in DaProdFoto — con scritto chi l'ha fatta.
 
 E' il motivo per cui la sala giochi sta dentro la suite invece che in un file
 HTML sul desktop: quello che si vince qui, si usa di la'.
+
+## 13-bis. L'inventario: quello che c'e' da avere
+
+Chiesto il 10 settembre 2026:
+
+> «Gli utenti devono avere un inventario da riempire con obbiettivi, man mano,
+> che dovrebbe comprendere tutte le combinazioni possibili in questo gioco. Per
+> il momento l'obbiettivo e' creare tutte le combinazioni possibili, e gli
+> utenti le devono creare e collezionare tutte.»
+
+L'inventario non e' l'elenco di quello che hai: e' **l'elenco di quello che c'e'
+da avere, con i buchi in mezzo**. E' tutta li' la differenza fra una cartella e
+un album di figurine — i buchi sono quello che fa continuare.
+
+E il gioco cresce: man mano che la gente inventa, sui rulli si aggiungono parole
+nuove, cosi' l'inventario non si finisce mai davvero.
+
+### ⚠ «Tutte le combinazioni possibili» non e' un numero
+
+Va detto perche' e' la trappola di questa idea: con dodici rulli e 6.291 generi
+solo sul primo, le combinazioni possibili sono piu' dei granelli di sabbia. Un
+inventario che le contenga tutte non si puo' costruire e nemmeno mostrare.
+
+Le letture che funzionano sono due, e sono **due giochi diversi**:
+
+- **le caselle** — si collezionano i *pezzi*: tutti i generi, tutte le voci,
+  tutte le andature. Tanti ma **finiti**, si contano, e un pezzo si prende la
+  prima volta che ti esce girando. E' quello che rende ogni giro una speranza
+  anche quando non paga;
+- **le combinazioni prese** — si collezionano le cose che chi comanda ha
+  accettato. Finite per definizione — sono quelle che esistono — e crescono man
+  mano che la gente inventa. E' quello che l'album fa gia' oggi.
+
+Probabilmente si fanno tutte e due, come due schede: le caselle sono quello che
+raccogli **giocando**, le combinazioni quello che raccogli **inventando e
+comprando**. Ma la scelta non e' ancora stata fatta — vedi § 17.
 
 ## 14. La classifica di casa
 
@@ -537,6 +701,13 @@ di piu'» non e' una classifica, e' un contatore.
 
 ## 17. Quello che ancora non e' deciso
 
+- ⚠ **L'inventario: le caselle, le combinazioni, o tutte e due?** E' la domanda
+  del § 13-bis, ed e' la piu' grossa aperta adesso: la prima strada e' un pezzo
+  di lavoro suo e cambia cosa vuol dire girare.
+- **Quanto costa un item scelto nel negozio** (§ 12): il moltiplicatore si
+  sceglie guardando quanto rende una combinazione presa.
+- **La slot dei pacchetti costa lire come l'altra, o ha un suo prezzo?** E rende
+  esperienza anche lei?
 - **Cento e' il numero giusto per una serie?** Con poche persone che giocano,
   cento combinazioni prese ci mettono un po' ad arrivare, e finche' la serie non
   si chiude non c'e' niente da comprare. Si puo' partire a cinquanta e alzarlo.

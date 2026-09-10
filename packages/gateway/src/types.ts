@@ -514,6 +514,22 @@ export interface FornitoreLibreria {
      * di `dove`: qui si dice solo **di chi**.
      */
     di?: string;
+    /**
+     * Le cose nate da **una richiesta sola**, dal suo numero di targa.
+     *
+     * ⚠ Serve alla sala giochi, e nasce il 10 settembre 2026: «quando un admin
+     * manda a generare un contenuto, quando pronto lo deve vedere gia'
+     * allegato alla card». Il gioco tiene l'id della richiesta che ha fatto
+     * partire, e per mostrare cosa ne è uscito deve poterlo chiedere.
+     *
+     * Non è un registro nuovo: quando un lavoro finisce, la libreria scrive
+     * già nei metadati del file da quale richiesta è nato (`extra.richiesta`
+     * in `esecuzione.ts`). Qui si legge quello.
+     *
+     * ⚠ **Non è un permesso.** Chi può vedere cosa lo dice `dove` come sempre:
+     * questo è un filtro fra le cose che si potevano già vedere.
+     */
+    richiesta?: string;
   }): VoceLibreria[];
   /**
    * Il file di una voce: percorso sul disco e come si chiama. Null se non c'è
