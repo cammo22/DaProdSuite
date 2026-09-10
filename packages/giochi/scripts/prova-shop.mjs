@@ -88,8 +88,8 @@ prova("in vetrina ci va solo roba gia' presa", () =>
 prova("il grado della vetrina lo sceglie chi comanda, e vale anche nei pacchetti", () =>
   conCartella((file) => {
     const d = new Deposito(file);
-    // Nella slot dodici lire sono un Rare: da 12 a 24.
-    const c = figurinaPresa(d, "uno", 12);
+    // Sulla scala di adesso 160.000 lire sono un Rare: da 160.000 a 329.999.
+    const c = figurinaPresa(d, "uno", 160_000);
     uguale(gradoDiFigurina(c), "rare", "senza vetrina il grado viene dal prezzo");
 
     mettiInVetrina(d, "uno", "heroic");
@@ -110,8 +110,8 @@ prova("il grado della vetrina lo sceglie chi comanda, e vale anche nei pacchetti
 prova("le figurine non passano Unique, ne' col prezzo ne' col grado scelto", () =>
   conCartella((file) => {
     const d = new Deposito(file);
-    // Novecento lire nella scala dei pezzi sarebbero un Mythic.
-    const cara = figurinaPresa(d, "cara", 900);
+    // Dodici milioni sarebbero un Mythic, sulla scala di adesso.
+    const cara = figurinaPresa(d, "cara", 12_000_000);
     uguale(gradoDiFigurina(cara), "unique", "un prezzo da Mythic si ferma a Unique");
 
     const c = mettiInVetrina(d, "cara", "ethernal");
@@ -128,7 +128,7 @@ prova("le figurine non passano Unique, ne' col prezzo ne' col grado scelto", () 
 prova("sotto al tetto non cambia niente: il grado scelto resta quello", () =>
   conCartella((file) => {
     const d = new Deposito(file);
-    figurinaPresa(d, "uno", 12);
+    figurinaPresa(d, "uno", 160_000);
     const c = mettiInVetrina(d, "uno", "grand");
     uguale(c.gradoVetrina, "grand", "un grado basso non lo tocca nessuno");
   }),
@@ -137,7 +137,7 @@ prova("sotto al tetto non cambia niente: il grado scelto resta quello", () =>
 prova("un prezzo scritto a mano batte quello consigliato", () =>
   conCartella((file) => {
     const d = new Deposito(file);
-    figurinaPresa(d, "uno", 100);
+    figurinaPresa(d, "uno", 160_000);
     const c = mettiInVetrina(d, "uno", "rare", 7777);
     uguale(c.prezzoVetrina, 7777);
   }),

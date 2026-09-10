@@ -96,11 +96,19 @@ mano a una persona sola: **chi comanda le manda a chi vuole**. Otto tasti, o un
 numero scritto a mano, e due parole di accompagnamento che si scrivono sempre.
 
 ⚠ **I tasti dei regali sono euro, contati in lire**: 2, 5, 10, 20, 50, 100,
-200 e 500 euro, cioe' da 3.873 a 968.135 lire. Sono grossi rispetto al resto —
-un giro costa 10 lire — e va saputo: chi regala sta facendo entrare qualcuno,
-non pareggiando un conto. **I tasti del bonus sono un'altra scala**, in lire
-piccole (§ 10): quelli devono far salire di grado un colpo alla volta, e la
-scala dei gradi arriva a 1.400.
+200 e 500 euro, cioe' da 3.873 a 968.135 lire.
+
+⚠ **Dal 10 settembre 2026 sono anche i tasti del bonus**, e la moneta e' una
+sola. Prima erano due scale — qui gli euro, li' lire piccole da 2 a 500 — e
+si chiamavano tutte e due «lire»: il numero accanto a una figurina non si
+poteva confrontare con quello di un regalo, e in questo gioco il portafoglio e'
+uno. Parole sue: «i prezzi ora sono da 1 lira a 500, metti gli stessi tagli che
+hai messo per le ricariche».
+
+A muoversi e' stata **la scala dei gradi**, che e' salita al milione (§ 7):
+cosi' i tagli grossi fanno dentro alla scala quello che prima facevano i
+piccoli — si sale di grado un colpo alla volta, e nessun singolo tasto la
+sfonda.
 
 I tasti si **sommano**: si batte come su una cassa, 100 + 20 + 20. C'e' «azzera»
 per tornare indietro, e un tetto a cinque volte il tasto piu' grosso — non e' un
@@ -219,20 +227,44 @@ Ogni pezzo ha un **prezzo in lire**, e il prezzo dice il **grado**. Sono dodici,
 in quest'ordine — e si', **Epic sta dopo Divine**: e' la scala scelta da Cammo,
 e in un gioco la scala e' una decisione, non una deduzione.
 
-| Grado | Da | Quanto esce | Punti | Fuoco | In vetrina |
-|---|---|---|---|---|---|
-| Basic | 0 £ | 40% | 1 | 0 | 50 £ |
-| Grand | 5 £ | 22% | 3 | 0 | 100 £ |
-| Rare | 12 £ | 14% | 8 | 1 | 240 £ |
-| Arcane | 25 £ | 9% | 18 | 1 | 500 £ |
-| Heroic | 45 £ | 6% | 35 | 1 | 900 £ |
-| Unique | 75 £ | 4% | 70 | 2 | 1.500 £ |
-| Celestial | 120 £ | 2,4% | 140 | 3 | 2.400 £ |
-| Divine | 200 £ | 1,4% | 280 | 3 | 4.000 £ |
-| Epic | 320 £ | 0,8% | 600 | 4 | 6.400 £ |
-| Legendary | 520 £ | 0,3% | 1.400 | 4 | 10.400 £ |
-| Mythic | 850 £ | 0,1% | 4.000 | 5 | 17.000 £ |
-| **Ethernal** | 1.400 £ | 0,03% | 12.000 | 5 | 28.000 £ |
+| Grado | Da | Quanto esce | Punti | Fuoco |
+|---|---|---|---|---|
+| Basic | 0 £ | 40% | 1 | 0 |
+| Grand | 70.000 £ | 22% | 3 | 0 |
+| Rare | 160.000 £ | 14% | 8 | 1 |
+| Arcane | 330.000 £ | 9% | 18 | 1 |
+| Heroic | 600.000 £ | 6% | 35 | 1 |
+| **Unique** | **1.000.000 £** | 4% | 70 | 2 |
+| Celestial | 1.600.000 £ | 2,4% | 140 | 3 |
+| Divine | 2.700.000 £ | 1,4% | 280 | 3 |
+| Epic | 4.300.000 £ | 0,8% | 600 | 4 |
+| Legendary | 7.000.000 £ | 0,3% | 1.400 | 4 |
+| Mythic | 11.000.000 £ | 0,1% | 4.000 | 5 |
+| **Ethernal** | 19.000.000 £ | 0,03% | 12.000 | 5 |
+
+In vetrina costano **venti volte la soglia**: un Rare sta sui tre milioni e
+duecentomila, un Mythic sui duecentoventi.
+
+### ⚠ La scala e' salita il 10 settembre 2026
+
+Detto cosi': «aggiorna anche i gradi, da 1 milione di lire sono unique». Prima
+andava da 0 a 1.400 lire.
+
+**Le proporzioni non sono cambiate**: ogni gradino vale circa una volta e mezzo
+quello sotto, esattamente come prima. E' cambiata **l'unita'**, non il disegno —
+i gradi si sono spostati nel mondo dove i soldi di questo gioco vivevano gia',
+quello dei regali (§ 4).
+
+⚠ **Sono saliti anche i prezzi dei pezzi sui rulli**, e non era una scelta: i
+gradi si leggono dal prezzo, quindi con le soglie al milione e i pezzi fra 1 e
+1.401 lire **tutti i dodici rulli sarebbero diventati Basic**. Un pezzo va
+adesso da 1.000 a diciannove milioni, con la stessa curva e la stessa
+distribuzione sui 6.291 generi veri.
+
+⚠ **Quello che era gia' scritto sul disco e' stato portato su**, tenendo il
+grado: una figurina Unique di ieri e' una figurina Unique oggi. Si converte
+leggendo, una volta sola — il file dice che forma ha (`versione: 2`), se no a
+ogni apertura i prezzi si moltiplicherebbero di nuovo.
 
 Un Mythic ogni mille caselle: con dodici rulli, **uno ogni ottantatre giri**. Un
 **Ethernal** ogni tremilatrecento: uno ogni duecentosettanta giri.
@@ -417,16 +449,16 @@ scritto chi le ha mandate e quando. Per ognuna si puo':
   fotogrammi dei video li fa lei — si prende da sola; se no, si sceglie a mano;
 - **buttarla**, scrivendo perche'.
 
-Il bonus si batte su otto tasti — 2, 5, 10, 20, 50, 100, 200, 500 **lire** — e
-si sommano: piu' li premi, piu' sale. Davanti a otto numeri conosciuti si decide
-in un secondo; davanti a una casella vuota ci si mette a pensare quanto vale
-un'idea, e finisce che non si decide.
+Il bonus si batte su otto tasti e si sommano: piu' li premi, piu' sale. Davanti
+a otto numeri conosciuti si decide in un secondo; davanti a una casella vuota ci
+si mette a pensare quanto vale un'idea, e finisce che non si decide.
 
-⚠ **Non sono i tagli dei regali**, che sono euro (§ 4). Qui servono lire
-piccole perche' e' il bonus a decidere **che grado avra' la figurina**, e la
-scala dei gradi finisce a 1.400: col taglio piu' piccolo dei regali — 3.873 —
-una sola pressione sfonderebbe Ethernal e gli undici gradini sotto non si
-potrebbero scegliere.
+⚠ **Sono gli stessi tagli dei regali** (§ 4), dal 10 settembre 2026: da 3.873 a
+968.135 lire. Fino a quel giorno erano lire piccole — da 2 a 500 — perche' la
+scala dei gradi finiva a 1.400 e un taglio da 3.873 l'avrebbe sfondata in una
+pressione sola. Adesso e' la scala che e' salita al milione, e i tagli grossi ci
+lavorano dentro un colpo alla volta: il piu' grosso da solo non arriva a
+Unique, e a ogni gradino ci si arriva battendo.
 
 Il grado che ne viene si legge **mentre** si preme, accanto al totale. E si puo'
 fare la strada contraria: si tocca il grado, e il bonus si mette da solo al
@@ -700,6 +732,16 @@ di piu'» non e' una classifica, e' un contatore.
   quando la linea e' giu'.
 
 ## 17. Quello che ancora non e' deciso
+
+- ⚠ **Le due economie sono lontane tredicimila volte, e va guardato.** Dal 10
+  settembre 2026 un Unique vale un milione di lire, ma **un giro costa ancora
+  10 lire** e il regalo di benvenuto e' 500. Vuol dire che una sola
+  combinazione presa paga **centocinquantamila giri**: chi si fa prendere una
+  cosa non finisce piu' le lire, e la frase del § 4 — «le lire per giocare
+  finiscono, e per averne ancora bisogna inventare qualcosa» — smette di essere
+  vera. Il pacchetto e' gia' salito (se no i doppioni stampavano soldi); il
+  costo del giro no, perche' quello l'ha scelto lui: «il tasto piu' piccolo,
+  due euro, sono trecentottantasette giri». Va deciso insieme, non a occhio.
 
 - ⚠ **L'inventario: le caselle, le combinazioni, o tutte e due?** E' la domanda
   del § 13-bis, ed e' la piu' grossa aperta adesso: la prima strada e' un pezzo

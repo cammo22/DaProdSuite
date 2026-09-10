@@ -555,7 +555,19 @@ export interface Formazione {
  * senza indovinare.
  */
 export interface DatiGiochi {
-  versione: 1;
+  /**
+   * La forma del file.
+   *
+   * - `1`: fino al 10 settembre 2026;
+   * - `2`: da quando la scala dei soldi e' salita — i gradi partono da un
+   *   milione per l'Unique, e i prezzi scritti col metro di prima vengono
+   *   portati su leggendo (vedi `rimettiIPrezzi` nel deposito).
+   *
+   * ⚠ **Il numero serve a non convertire due volte.** Senza, ogni apertura
+   * moltiplicherebbe di nuovo i prezzi e in una settimana una figurina Basic
+   * varrebbe come il Colosseo.
+   */
+  versione: 1 | 2;
   conti: Conto[];
   /**
    * Il magazzino e la fila insieme: le cose in attesa, quelle prese e quelle
