@@ -17,7 +17,21 @@ import { COPIONE } from "./copione";
 import { MARKUP } from "./markup";
 import { STILE } from "./stile";
 
-export function paginaGiochi(radice: string = "/giochi"): string {
+/**
+ * ⚠ **`sessione` e' la strada per far vedere le immagini.**
+ *
+ * La pagina si presenta con un token nell'intestazione, e va bene per tutto
+ * quello che chiede col JavaScript. Ma un tag «img» non sa mettere
+ * un'intestazione: una foto della libreria attaccata a una figurina tornava
+ * «401» e restava un riquadro rotto. Visto il 10 settembre 2026, provando il
+ * pannello per attaccare le immagini.
+ *
+ * Chi ospita puo' dire qui a che indirizzo si chiede un biscotto valido per le
+ * sole letture: la pagina ce lo chiede appena si apre, e da li' in poi le
+ * immagini si caricano da sole. Senza, la pagina funziona lo stesso — solo che
+ * le figurine restano scritte.
+ */
+export function paginaGiochi(radice: string = "/giochi", sessione: string = ""): string {
   const pulita = radice.replace(/\/+$/, "");
   return (
     `<!doctype html>
@@ -43,6 +57,9 @@ export function paginaGiochi(radice: string = "/giochi"): string {
   "use strict";
   var RADICE = ` +
     JSON.stringify(pulita) +
+    `;
+  var SESSIONE = ` +
+    JSON.stringify(sessione) +
     `;
 ` +
     COPIONE +

@@ -53,6 +53,14 @@ jobs:
       - name: Crea l'installer
         run: pnpm run dist
 
+      # ⚠ La 1.2.5 e' uscita senza @daprod/giochi dentro: da fuori si vedeva
+      # DaProdConnessione che non si apriva, perche' un require che fallisce
+      # porta giu' tutto il modulo. Le prove verdi non se ne accorgono — girano
+      # sul sorgente, dove node_modules c'e' tutto. Questa guarda dentro il
+      # pacchetto finito, ed e' l'unico posto dove quel guaio si vede.
+      - name: Controlla che nell'installer ci sia tutto
+        run: node apps/shell/scripts/prova-installer.mjs
+
       # Il caricamento lo facciamo noi, un file alla volta e alla fine.
       # electron-builder sa pubblicare da solo quando vede un tag, ma crea la
       # Release *mentre* sta caricando: al primo tag vero i 95 MB dell'installer

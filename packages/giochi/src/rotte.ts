@@ -17,6 +17,8 @@
 import {
   apriPacchetto,
   butta,
+  regala,
+  TAGLI,
   classifica,
   compra,
   gradoDiFigurina,
@@ -65,6 +67,42 @@ export interface Contorno {
    * sono prompt si vedono solo come titolo.
    */
   indirizzoLibreria?(id: string): string | undefined;
+  /**
+   * Le ultime cose prodotte dalla suite, per attaccarne una a una figurina.
+   *
+   * ⚠ Chiesto il 10 settembre 2026: «lincare facilmente, non come ora,
+   * l'immagine dalla suite». Prima chi comanda doveva **scrivere a mano**
+   * l'indirizzo del file in una casella di testo: vuol dire aprire la galleria,
+   * trovare la foto, copiarne l'indirizzo e incollarlo — quattro gesti in due
+   * finestre, ogni volta. Con questo la pagina fa vedere le ultime sessanta e
+   * se ne sceglie una col dito.
+   *
+   * Torna niente se chi ospita non ha una libreria.
+   */
+  elencoLibreria?(chi: string, quante: number): VoceLibreria[];
+  /**
+   * Chi c'e' in casa: tutte le persone della suite, non solo chi ha gia'
+   * giocato.
+   *
+   * ⚠ Senza questo, «manda lire» mostrava solo chi aveva **gia' aperto la
+   * sala giochi almeno una volta** — i conti nascono all'apertura. Cioe':
+   * proprio la persona a cui vuoi mandare due lire per farla entrare non
+   * comparirebbe nell'elenco. Il conto si apre da solo quando le lire arrivano.
+   */
+  gente?(): { id: string; nome: string; admin?: boolean }[];
+}
+
+/** Una cosa della libreria della suite, come la vede la sala giochi. */
+export interface VoceLibreria {
+  id: string;
+  /** Come si chiama, per chi legge. */
+  titolo: string;
+  mime: string;
+  /** Dove si guarda per intero. */
+  url: string;
+  /** Il francobollo, se ce l'ha: per i video e i brani non e' l'url. */
+  anteprima?: string;
+  quando?: number;
 }
 
 export interface Risposta {
@@ -186,6 +224,15 @@ export function rispondi(
           { id: "immagini", nome: "Immagini", rulli: rulliDi("immagini") },
         ],
         magazzino: statoMagazzino(deposito),
+        /**
+         * L'ultimo regalo, se ce n'e' uno.
+         *
+         * Lo manda sempre; e' la pagina che si ricorda se l'ha gia' fatto
+         * vedere. Tenere qui un «visto/non visto» vorrebbe dire una scrittura
+         * su disco a ogni apertura, per una cosa che riguarda uno schermo.
+         */
+        regalo: deposito.conto(chi.id).ultimoRegalo ?? null,
+        tagli: TAGLI,
       });
     }
 
@@ -242,16 +289,29 @@ export function rispondi(
 
     if (metodo === "GET" && percorso === "/mie") {
       const conto = deposito.conto(chi.id);
-      const mandate = deposito
+      const mie = deposito
         .collezionabili()
         .filter((c) => c.daChi === chi.id)
-        .sort((a, b) => b.quando - a.quando)
-        .map((c) => vestita(c, contorno, true));
+        .sort((a, b) => b.quando - a.quando);
+      /**
+       * ⚠ **Le buttate stanno in un mazzo loro.**
+       *
+       * Chiesto il 10 settembre 2026: «i prompt buttati devono essere messi in
+       * una categoria a parte e scomparire, e l'utente lo vede come perdente».
+       *
+       * Prima stavano in fila con le altre, e una riga grigia in mezzo a quelle
+       * prese e' la cosa che si guarda per prima: la pagina delle proprie cose
+       * diventava l'elenco dei propri no. Adesso il mazzo che si apre e' quello
+       * che sta andando bene; i biglietti perdenti stanno sotto, chiusi, e chi
+       * vuole leggere il perche' li apre.
+       */
+      const mandate = mie.filter((c) => c.stato !== "buttata").map((c) => vestita(c, contorno, true));
+      const perdenti = mie.filter((c) => c.stato === "buttata").map((c) => vestita(c, contorno, true));
       const collezione = deposito
         .magazzino()
         .filter((c) => conto.collezione.includes(c.id))
         .map((c) => vestita(c, contorno, true));
-      return OK({ mandate, collezione });
+      return OK({ mandate, perdenti, collezione });
     }
 
     /* ------------------------------------------------------------- l'album */
@@ -336,8 +396,78 @@ export function rispondi(
 
     /* ------------------------------------------------------ la fila di chi comanda */
 
-    if (percorso.startsWith("/fila") || percorso === "/prendi" || percorso === "/butta") {
+    if (
+      percorso.startsWith("/fila") ||
+      percorso === "/prendi" ||
+      percorso === "/butta" ||
+      percorso === "/gente" ||
+      percorso === "/regala" ||
+      percorso === "/libreria"
+    ) {
       if (!chi.admin) return NO(403, "Questa parte e' di chi decide.");
+    }
+
+    /**
+     * Chi c'e', per mandargli le lire.
+     *
+     * Non e' la classifica: quella e' ordinata per merito e serve a chi gioca.
+     * Questa e' un elenco di persone in ordine alfabetico, con quanto hanno in
+     * tasca — che e' l'unica cosa che serve sapere prima di regalare.
+     */
+    if (metodo === "GET" && percorso === "/gente") {
+      // Tutti quelli di casa, piu' quelli che hanno un conto e non risultano
+      // piu' in casa: uno che si scollega il telefono non sparisce dai libri.
+      const id = new Set<string>();
+      for (const p of contorno.gente ? contorno.gente() : []) id.add(p.id);
+      for (const c of deposito.conti()) id.add(c.chi);
+      const gente = [...id]
+        .filter((x) => x && x !== chi.id)
+        .map((x) => {
+          const c = deposito.conti().find((y) => y.chi === x);
+          return {
+            chi: x,
+            nome: contorno.nomeDi(x),
+            faccia: contorno.facciaDi ? contorno.facciaDi(x) : undefined,
+            saldo: c?.saldo ?? 0,
+            saldoScritto: lire(c?.saldo ?? 0),
+            regali: c?.regali ?? 0,
+            prese: c?.prese ?? 0,
+            /** Non ha mai aperto la sala giochi: il conto si apre da solo. */
+            mai: !c,
+          };
+        })
+        .sort((a, b) => a.nome.localeCompare(b.nome));
+      return OK({ gente, tagli: TAGLI });
+    }
+
+    if (metodo === "POST" && percorso === "/regala") {
+      const fatto = regala(
+        deposito,
+        chi.id,
+        String(corpo["chi"] ?? ""),
+        numero(corpo["quanto"], 0),
+        String(corpo["perche"] ?? ""),
+      );
+      return OK({
+        chi: fatto.conto.chi,
+        nome: contorno.nomeDi(fatto.conto.chi),
+        saldo: fatto.conto.saldo,
+        saldoScritto: lire(fatto.conto.saldo),
+        regalo: fatto.regalo,
+      });
+    }
+
+    /**
+     * Cosa c'e' nella libreria della suite, per attaccarlo a una figurina.
+     *
+     * ⚠ **Il gioco non sa dove stanno i file**, e non deve saperlo: chiede
+     * a chi lo ospita (vedi `Contorno`). Fuori dalla suite — nel banco di prova
+     * — chi ospita non ha una libreria, e questa rotta risponde che non c'e'
+     * niente. Non e' un guasto: e' una sala giochi senza galleria attaccata.
+     */
+    if (metodo === "GET" && percorso === "/libreria") {
+      if (!contorno.elencoLibreria) return OK({ voci: [] });
+      return OK({ voci: contorno.elencoLibreria(chi.id, 60) });
     }
 
     if (metodo === "GET" && percorso === "/fila") {
@@ -351,13 +481,30 @@ export function rispondi(
           // solo il bonus, cosi' non deve inventarsi un numero da zero.
           base: sommaDeiPezzi(deposito, c),
         }));
+      /**
+       * ⚠ **Prese e buttate sono due mazzi, non uno.**
+       *
+       * Chiesto il 10 settembre 2026: «i prompt buttati devono essere messi in
+       * una categoria a parte e scomparire». Stavano insieme, ordinate per
+       * data, e sulle prese si decide la vetrina: cercare quella da mettere in
+       * vendita in mezzo a dieci scartate e' lavoro inutile fatto ogni volta.
+       *
+       * Le buttate restano — servono a non far tornare domani la stessa riga —
+       * ma stanno in fondo, in un cassetto chiuso.
+       */
       const decise = deposito
         .collezionabili()
-        .filter((c) => c.stato !== "in-attesa")
+        .filter((c) => c.stato === "presa")
         .sort((a, b) => (b.decisa ?? 0) - (a.decisa ?? 0))
         .slice(0, 30)
         .map((c) => vestita(c, contorno, true));
-      return OK({ inAttesa, decise, magazzino: statoMagazzino(deposito) });
+      const buttate = deposito
+        .collezionabili()
+        .filter((c) => c.stato === "buttata")
+        .sort((a, b) => (b.decisa ?? 0) - (a.decisa ?? 0))
+        .slice(0, 40)
+        .map((c) => vestita(c, contorno, true));
+      return OK({ inAttesa, decise, buttate, magazzino: statoMagazzino(deposito) });
     }
 
     if (metodo === "POST" && percorso === "/prendi") {

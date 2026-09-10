@@ -35,6 +35,7 @@ import { GENERI, type Genere } from "./dati/generi";
 import type {
   Collezionabile,
   Conto,
+  Regalo,
   DallaLibreria,
   Era,
   Grado,
@@ -347,19 +348,58 @@ export function manda(
 ): EsitoInvio {
   const rulli = rulliDi(tavolo);
   if (rulli.length === 0) throw new NienteDaFare("Questo tavolo non esiste.");
-  if (idPezzi.length !== rulli.length) {
-    throw new NienteDaFare("La combinazione non e' completa: mancano dei pezzi.");
+
+  /**
+   * ⚠ **Si manda quello che si e' bloccato, e basta quello.** Cambiato il 10
+   * settembre 2026:
+   *
+   * > «Le combinazioni, cioe' i prompt inviati quando si preme manda a
+   * > controllare, deve inviare solo quelli bloccati e basta, anche se sono solo
+   * > 3, solo quelli bloccati.»
+   *
+   * Prima ne voleva **dodici**, tutti e dodici, e il resto era quello che era
+   * uscito a caso all'ultimo giro. Cioe': in ogni combinazione mandata c'era
+   * dentro roba che non aveva scelto nessuno, e chi comanda si ritrovava a
+   * giudicare mezza idea di qualcuno e mezza pescata dal mazzo.
+   *
+   * Bloccare un rullo e' **il gesto con cui si dice «questo si'»**. Mandare
+   * solo quelli vuol dire mandare la propria idea, anche se e' fatta di tre
+   * pezzi — e tre pezzi scelti valgono piu' di dodici mezzi scelti.
+   *
+   * Restano due regole, e sono le stesse di prima: ogni pezzo deve venire da
+   * una casella **di questo tavolo**, e due pezzi non possono venire dalla
+   * stessa. Il resto lo decide chi comanda quando la guarda: non tocca al banco
+   * dire che tre pezzi sono pochi.
+   */
+  if (idPezzi.length === 0) {
+    throw new NienteDaFare("Blocca almeno un rullo: si manda quello che hai tenuto.");
   }
 
   const pezzi: PezzoInGioco[] = [];
-  for (let i = 0; i < rulli.length; i++) {
-    const pezzo = pezzoPerId(deposito, idPezzi[i] ?? "");
+  const visti = new Set<string>();
+  for (const id of idPezzi) {
+    const pezzo = pezzoPerId(deposito, id ?? "");
     if (!pezzo) throw new NienteDaFare("Un pezzo di questa combinazione non esiste.");
-    if (pezzo.rullo !== rulli[i]!.id) {
-      throw new NienteDaFare("Il pezzo «" + pezzo.nome + "» non e' di quella casella.");
+    const suo = rulli.find((r) => r.id === pezzo.rullo);
+    if (!suo) {
+      throw new NienteDaFare("Il pezzo «" + pezzo.nome + "» non e' di questo tavolo.");
     }
+    if (visti.has(pezzo.rullo)) {
+      throw new NienteDaFare("Due pezzi dalla stessa casella: «" + pezzo.nome + "».");
+    }
+    visti.add(pezzo.rullo);
     pezzi.push(pezzo);
   }
+
+  /**
+   * ⚠ **L'ordine e' quello dei rulli, non quello in cui sono arrivati.**
+   *
+   * L'impronta di una combinazione si fa dagli id in fila (vedi `improntaDi`):
+   * se l'ordine dipendesse da come li manda la pagina, la stessa identica
+   * combinazione mandata da due persone diverse risulterebbe due combinazioni
+   * diverse — e la riscoperta, che e' meta' del gioco, non scatterebbe mai.
+   */
+  pezzi.sort((a, b) => rulli.findIndex((r) => r.id === a.rullo) - rulli.findIndex((r) => r.id === b.rullo));
 
   const impronta = improntaDi(pezzi.map((p) => p.id));
   const gia = deposito.perImpronta(impronta);
@@ -488,6 +528,60 @@ export function prendi(
   deposito.colleziona(c.daChi, c.id);
   deposito.salva();
   return c;
+}
+
+/* ------------------------------------------------------------- i regali */
+
+/**
+ * I tagli dei tasti con cui chi comanda manda lire.
+ *
+ * ⚠ Chiesto il 10 settembre 2026: «l'admin deve poter inviare lire agli
+ * utenti... devono essere pulsanti da 2 a 500, oppure personalizzato».
+ *
+ * Sono i tagli delle banconote vere, e non e' un vezzo: uno che deve scegliere
+ * fra otto numeri conosciuti decide in un secondo, uno davanti a una casella
+ * vuota si mette a pensare quanto vale un'idea — e finisce che non manda
+ * niente. La casella per il numero preciso resta, accanto.
+ */
+export const TAGLI = [2, 5, 10, 20, 50, 100, 200, 500];
+
+/**
+ * Chi comanda manda lire a qualcuno.
+ *
+ * ⚠ **Le lire non si creano dal nulla in nessun altro punto del gioco.**
+ * Girando si prendono punti, non lire (CONCETTI.md § 4); le lire arrivano solo
+ * quando a chi comanda piace una cosa che hai mandato. Questo e' il secondo
+ * rubinetto, e sta in mano a una persona sola: un regalo e' una decisione, non
+ * una regola del banco.
+ *
+ * Non si toglie niente a nessuno: non e' un bonifico fra due conti, e' il
+ * banco che paga. Togliere lire e' un'altra cosa e non c'e' — se serve, si
+ * scrive quando serve, con il suo perche'.
+ */
+export function regala(
+  deposito: Deposito,
+  admin: string,
+  chi: string,
+  quanto: number,
+  perche: string,
+): { conto: Conto; regalo: Regalo } {
+  if (!chi) throw new NienteDaFare("A chi?");
+  if (chi === admin) throw new NienteDaFare("Non ha senso regalarsi le lire da solo.");
+  const lire = Math.round(quanto);
+  if (!Number.isFinite(lire) || lire < 1) throw new NienteDaFare("Quanto? Da una lira in su.");
+  if (lire > 100000) throw new NienteDaFare("Troppe: al massimo centomila per volta.");
+
+  const regalo: Regalo = {
+    quanto: lire,
+    quando: Date.now(),
+    perche: perche.trim() || "Cosi', perche' si.",
+    daAdmin: admin,
+  };
+  const conto = deposito.muovi(chi, lire);
+  conto.regali = (conto.regali ?? 0) + lire;
+  conto.ultimoRegalo = regalo;
+  deposito.salva();
+  return { conto, regalo };
 }
 
 /** Chi comanda la butta. Il motivo si scrive sempre: un no senza perche' non insegna niente. */

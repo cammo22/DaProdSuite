@@ -63,6 +63,18 @@ export const MARKUP = `<header>
   <section class="pagina" id="p-mie">
     <h2>Quelle che hai mandato</h2>
     <div id="mie-mandate"></div>
+    <!--
+      ⚠ I biglietti perdenti stanno in un cassetto chiuso.
+
+      Chiesto il 10 settembre 2026: «i prompt buttati devono essere messi in una
+      categoria a parte e scomparire, e l'utente lo vede come perdente». Prima
+      stavano in fila con le altre: aprire la propria pagina voleva dire leggere
+      per primi i propri no. Il perche' c'e' e si legge — aprendo il cassetto.
+    -->
+    <details class="cassetto" id="cassetto-perdenti" hidden>
+      <summary>I biglietti perdenti <span class="quanti" id="quanti-perdenti"></span></summary>
+      <div id="mie-perdenti"></div>
+    </details>
     <h2>La tua collezione</h2>
     <div id="mie-collezione"></div>
   </section>
@@ -105,11 +117,44 @@ export const MARKUP = `<header>
   <section class="pagina" id="p-fila">
     <h2>Da controllare</h2>
     <div id="fila-attesa"></div>
-    <h2>Gia' decise</h2>
+    <h2>Quelle prese</h2>
     <div id="fila-decise"></div>
+    <details class="cassetto" id="cassetto-buttate" hidden>
+      <summary>Buttate <span class="quanti" id="quanti-buttate"></span></summary>
+      <div id="fila-buttate"></div>
+    </details>
+
+    <!--
+      ⚠ **Mandare lire a qualcuno.** Chiesto il 10 settembre 2026: «l'admin
+      deve poter inviare lire agli utenti... pulsanti da 2 a 500, oppure
+      personalizzato».
+
+      E' l'unico rubinetto oltre alle combinazioni prese: girando escono punti,
+      non lire. Sta qui e non nella classifica perche' e' una cosa che fa chi
+      decide, e le cose che fa chi decide stanno tutte nella stessa scheda.
+    -->
+    <h2>Manda lire</h2>
+    <div id="gente"></div>
   </section>
 
 </main>
+
+<!--
+  ⚠ **La galleria della suite, per attaccare una cosa a una figurina.**
+
+  Chiesto il 10 settembre 2026: «lincare facilmente, non come ora, l'immagine
+  dalla suite». Prima si scriveva a mano l'indirizzo del file in una casella.
+  Qui si guarda e si tocca.
+
+  Sta fuori da <main> perche' copre tutto: e' un pannello, non una pagina.
+-->
+<div class="foglio" id="libreria" hidden>
+  <div class="foglio-testa">
+    <b>Attacca una cosa della suite</b>
+    <button class="btn piano" id="libreria-chiudi">Chiudi</button>
+  </div>
+  <div class="griglia-libreria" id="libreria-roba"></div>
+</div>
 
 <nav>
   <button class="viva" data-va="slot">Slot</button>
