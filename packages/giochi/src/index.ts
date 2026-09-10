@@ -43,6 +43,7 @@ export {
   prezzoConsigliato,
   regala,
   TAGLI,
+  TAGLI_BONUS,
   serie,
   serieChiuse,
   sommaDeiPezzi,

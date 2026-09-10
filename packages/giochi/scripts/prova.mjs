@@ -45,8 +45,8 @@ import { cartellaFinta, dado, prova, tirandoLeSomme, uguale, vero } from "./attr
 
 /* ------------------------------------------------------------ i gradi */
 
-prova("gli undici gradi sono in ordine e non si sovrappongono", () => {
-  uguale(GRADI.length, 11);
+prova("i dodici gradi sono in ordine e non si sovrappongono", () => {
+  uguale(GRADI.length, 12);
   uguale(
     GRADI.map((g) => g.id),
     [...GRADI_ID],
@@ -58,16 +58,18 @@ prova("gli undici gradi sono in ordine e non si sovrappongono", () => {
   }
 });
 
-prova("quanto escono i gradi fa mille tondo", () => {
+prova("quanto escono i gradi fa diecimila tondo", () => {
+  // Era mille fino al 10 settembre 2026: si e' passati a diecimila per far
+  // entrare Ethernal sotto Mythic senza rendere Mythic piu' comune.
   const somma = GRADI.reduce((s, g) => s + g.quantoEsce, 0);
-  uguale(somma, 1000, "se non fa mille, «uno su mille» non vuol dire niente");
+  uguale(somma, 10000, "se non fa diecimila, «tre su diecimila» non vuol dire niente");
 });
 
 prova("piu' e' raro, piu' esperienza da'", () => {
   for (let i = 1; i < GRADI.length; i++) {
     vero(GRADI[i].punti >= GRADI[i - 1].punti, GRADI[i].id + " da' meno punti di quello sotto");
   }
-  uguale(GRADI[GRADI.length - 1].id, "mythic");
+  uguale(GRADI[GRADI.length - 1].id, "ethernal");
 });
 
 prova("dalla slot non escono lire: solo punti", () => {
@@ -117,7 +119,8 @@ prova("il grado si legge dal prezzo, agli estremi giusti", () => {
   uguale(gradoDiPrezzo(320), "epic");
   uguale(gradoDiPrezzo(520), "legendary");
   uguale(gradoDiPrezzo(850), "mythic");
-  uguale(gradoDiPrezzo(999999), "mythic");
+  uguale(gradoDiPrezzo(1400), "ethernal");
+  uguale(gradoDiPrezzo(999999), "ethernal");
 });
 
 prova("il prezzo scende quando la roba e' piu' comune", () => {
@@ -221,7 +224,7 @@ prova("schermo pieno: tutte da Heroic in su", () => {
   vero(pieno, "doveva essere schermo pieno");
   vero(pieno.punti >= IMPOSTAZIONI_DI_PARTENZA.pienoMin, "da' almeno il minimo");
   vero(pieno.punti <= IMPOSTAZIONI_DI_PARTENZA.pienoMax, "e non sfonda il massimo");
-  uguale(pieno.fuoco, 3, "lo schermo si deve accendere tutto");
+  uguale(pieno.fuoco, 5, "lo schermo si deve accendere tutto, e cinque e' il massimo");
 });
 
 prova("una casella sotto Heroic e lo schermo pieno non c'e'", () => {
@@ -251,7 +254,8 @@ prova("una formazione paga in qualunque ordine, e si somma", () => {
 prova("il grado migliore di una manciata e' quello piu' in alto", () => {
   uguale(meglioDi(finti(["basic", "mythic", "rare"])), "mythic");
   uguale(meglioDi(finti(["basic", "basic"])), "basic");
-  vero(altezza("mythic") > altezza("legendary"), "Mythic sta sopra a tutti");
+  vero(altezza("mythic") > altezza("legendary"), "Mythic sta sopra a Legendary");
+  vero(altezza("ethernal") > altezza("mythic"), "Ethernal sta sopra a tutti");
   vero(altezza("epic") > altezza("divine"), "e Epic sopra a Divine, come ha deciso Cammo");
 });
 

@@ -19,6 +19,7 @@ import {
   butta,
   regala,
   TAGLI,
+  TAGLI_BONUS,
   classifica,
   compra,
   gradoDiFigurina,
@@ -90,6 +91,22 @@ export interface Contorno {
    * comparirebbe nell'elenco. Il conto si apre da solo quando le lire arrivano.
    */
   gente?(): { id: string; nome: string; admin?: boolean }[];
+  /**
+   * Fa partire una generazione con questo prompt, per la stessa strada da cui
+   * passano le richieste del telefono.
+   *
+   * ⚠ **Il gioco non sa niente di modelli.** Dice solo «questo e' un prompt
+   * di musica» oppure «di immagini», e chi ospita sa cosa vuol dire: sessanta
+   * secondi strumentali con ACE-Step Turbo, o un 4:3 con FLUX.2 9B. Se un
+   * giorno cambia il modello buono, cambia li' — non in dodici posti.
+   *
+   * Torna niente se chi ospita non sa generare (il banco di prova, per esempio).
+   */
+  genera?(
+    chi: string,
+    tavolo: "immagini" | "musica",
+    cosa: { prompt: string; titolo: string },
+  ): { id: string; dove?: string } | null;
 }
 
 /** Una cosa della libreria della suite, come la vede la sala giochi. */
@@ -158,6 +175,10 @@ function vestita(c: Collezionabile, contorno: Contorno, scoperta: boolean) {
      */
     allegato: dove(c.allegato),
     allegatoMime: c.allegato?.mime ?? "",
+    /** La copertina di un allegato che non si guarda: un brano, un video. */
+    copertina: dove(c.copertina),
+    /** Vero se chi comanda l'ha gia' mandata a generare: non si rifa'. */
+    provata: c.provata ? c.provata.quando : 0,
     inVetrina: c.inVetrina === true,
     prezzoVetrina: c.prezzoVetrina ?? 0,
     scoperta,
@@ -233,6 +254,7 @@ export function rispondi(
          */
         regalo: deposito.conto(chi.id).ultimoRegalo ?? null,
         tagli: TAGLI,
+        tagliBonus: TAGLI_BONUS,
       });
     }
 
@@ -402,6 +424,7 @@ export function rispondi(
       percorso === "/butta" ||
       percorso === "/gente" ||
       percorso === "/regala" ||
+      percorso === "/prova" ||
       percorso === "/libreria"
     ) {
       if (!chi.admin) return NO(403, "Questa parte e' di chi decide.");
@@ -508,21 +531,56 @@ export function rispondi(
     }
 
     if (metodo === "POST" && percorso === "/prendi") {
-      const allegato = corpo["allegato"]
-        ? {
-            id: String(corpo["allegato"]),
-            mime: String(corpo["allegatoMime"] ?? "image/*"),
-            url: String(corpo["allegato"]),
-          }
-        : undefined;
+      const daLi = (quale: string, seManca: string) =>
+        corpo[quale]
+          ? {
+              id: String(corpo[quale]),
+              mime: String(corpo[quale + "Mime"] ?? seManca),
+              url: String(corpo[quale]),
+            }
+          : undefined;
       const c = prendi(
         deposito,
         chi.id,
         String(corpo["id"] ?? ""),
         numero(corpo["bonus"], 0),
-        allegato,
+        daLi("allegato", "image/*"),
+        daLi("copertina", "image/*"),
       );
       return OK(vestita(c, contorno, true));
+    }
+
+    /**
+     * ⚠ **Provala davvero**: parte una generazione con quel prompt.
+     *
+     * Chiesto il 10 settembre 2026: «quando arriva un prompt da controllare
+     * agli admin ci vogliono dei pulsanti per mandare quel prompt a generare;
+     * nel caso di un prompt musicale genera una clip di 60 secondi con ace step
+     * turbo strumentale, nel caso dell'immagine genera l'immagine 4:3 con flux
+     * 9b».
+     *
+     * Era gia' scritto in CONCETTI.md § 10 come la cosa che l'admin puo' fare, e
+     * non c'era: si giudicava una riga di testo inglese a occhio. Adesso parte
+     * **per la stessa strada delle richieste del telefono** — chi ospita la
+     * mette in coda — e quando e' pronta si trova in galleria, da attaccare.
+     *
+     * ⚠ **Il costo lo paga il banco, non chi ha mandato.** E' l'admin che ha
+     * scelto di provarla: se la togliesse dal saldo di chi la manda, mandare
+     * costerebbe, e mandare deve essere gratis (CONCETTI.md § 9).
+     */
+    if (metodo === "POST" && percorso === "/prova") {
+      if (!contorno.genera) return NO(501, "Qui non c'e' niente che sappia generare.");
+      const c = deposito.perId(String(corpo["id"] ?? ""));
+      if (!c) return NO(404, "Questa non c'e'.");
+      if (!c.prompt) return NO(409, "Questa non e' un prompt: non c'e' niente da generare.");
+      const dove = contorno.genera(chi.id, c.tavolo === "immagini" ? "immagini" : "musica", {
+        prompt: c.prompt,
+        titolo: c.titolo,
+      });
+      if (!dove) return NO(501, "Non e' partita: qui non si genera.");
+      c.provata = { richiesta: dove.id, quando: Date.now() };
+      deposito.salva();
+      return OK({ id: c.id, richiesta: dove.id, dove: dove.dove ?? "" });
     }
 
     if (metodo === "POST" && percorso === "/butta") {

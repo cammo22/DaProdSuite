@@ -20,6 +20,7 @@ import {
   manda,
   NienteDaFare,
   prendi,
+  CAMBIO_EURO,
   regala,
   TAGLI,
   serieChiuse,
@@ -444,26 +445,57 @@ prova("un regalo senza due parole dentro ne ha comunque", () =>
   }),
 );
 
-prova("non si regalano zero lire, ne' un milione, ne' a se stessi", () =>
+prova("non si regalano zero lire, ne' dieci milioni in un colpo", () =>
   conCartella((file) => {
     const d = new Deposito(file);
-    for (const [chi, quanto] of [["pino", 0], ["pino", -50], ["pino", 999999], ["capo", 10]]) {
+    for (const quanto of [0, -50, 9999999]) {
       let caduta = null;
       try {
-        regala(d, "capo", chi, quanto, "");
+        regala(d, "capo", "pino", quanto, "");
       } catch (e) {
         caduta = e;
       }
-      vero(caduta instanceof NienteDaFare, "rifiutato: " + chi + " " + quanto);
+      vero(caduta instanceof NienteDaFare, "rifiutato: " + quanto);
     }
     uguale(d.conto("pino").saldo, d.impostazioni().regaloIniziale, "e il saldo non si e' mosso");
   }),
 );
 
-prova("i tagli sono quelli delle banconote, da 2 a 500", () => {
-  uguale(TAGLI[0], 2);
-  uguale(TAGLI[TAGLI.length - 1], 500);
+prova("a se stessi si puo'", () =>
+  conCartella((file) => {
+    // Il divieto c'era e l'ha tolto Cammo il 10 settembre 2026: «da android non
+    // posso mandare lire a me stesso». Chi comanda il banco puo' gia' cambiare
+    // tutti i numeri del gioco: il divieto non impediva niente.
+    const d = new Deposito(file);
+    const prima = d.conto("capo").saldo;
+    regala(d, "capo", "capo", 100, "me le merito");
+    uguale(d.conto("capo").saldo, prima + 100);
+  }),
+);
+
+prova("i tagli sono euro, contati in lire", () => {
+  // Chiesto cosi' il 10 settembre 2026: «dovevano essere l'equivalente in lire
+  // della cifra che ti ho detto», cioe' da 2 a 500 euro.
+  uguale(TAGLI.length, 8);
+  uguale(TAGLI[0], Math.round(2 * CAMBIO_EURO), "il primo tasto e' due euro");
+  uguale(TAGLI[TAGLI.length - 1], Math.round(500 * CAMBIO_EURO), "l'ultimo e' cinquecento");
   vero(TAGLI.every((t) => Number.isInteger(t) && t > 0), "tutti numeri interi");
+  for (let i = 1; i < TAGLI.length; i++) vero(TAGLI[i] > TAGLI[i - 1], "e vanno in salita");
 });
+
+prova("i tagli si sommano fino al tetto, e oltre no", () =>
+  conCartella((file) => {
+    const d = new Deposito(file);
+    // Cinque volte il tasto piu' grosso e' il tetto: si batte sui tasti come su
+    // una cassa, ma venti pressioni per sbaglio non passano.
+    let caduta = null;
+    try {
+      regala(d, "capo", "pino", TAGLI[TAGLI.length - 1] * 6, "ops");
+    } catch (e) {
+      caduta = e;
+    }
+    vero(caduta instanceof NienteDaFare, "sopra il tetto si ferma");
+  }),
+);
 
 process.exit(tirandoLeSomme("la fila e i pacchetti"));

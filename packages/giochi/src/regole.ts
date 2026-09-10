@@ -48,9 +48,15 @@ export function fra(min: number, max: number, caso: Caso): number {
  * stavano in cinque posti diversi, e cambiare la scala voleva dire ricordarsi
  * di cinque file. Il giorno che si aggiunge un grado si aggiunge una riga.
  *
- * **`quantoEsce` e' su mille**, e sono mille di preciso: 400 + 220 + 140 + 90 +
- * 60 + 40 + 24 + 14 + 8 + 3 + 1. Un Mythic ogni mille caselle — con dodici
- * rulli, uno ogni ottantatre giri circa.
+ * **`quantoEsce` e' su diecimila**, e sono diecimila di preciso. Era su mille
+ * fino al 10 settembre 2026: si e' passati a diecimila per far entrare
+ * **Ethernal** sotto Mythic senza spostare nessun altro. Con i millesimi il
+ * gradino piu' basso era gia' occupato — Mythic valeva 1 — e l'unico modo di
+ * mettere qualcosa di piu' raro era rendere Mythic piu' comune, cioe' cambiare
+ * una scala per aggiungerci una riga.
+ *
+ * Un Mythic ogni mille caselle (dodici rulli: un giro su ottantatre); un
+ * Ethernal ogni tremilatrecento (un giro su duecentosettanta).
  *
  * ⚠ **`quantoEsce` non si ricava dai prezzi**, e non e' una svista. Se si
  * pescasse a caso fra tutti i pezzi, la rarita' dipenderebbe da **quanti** ce
@@ -60,20 +66,29 @@ export function fra(min: number, max: number, caso: Caso): number {
  * cresce.
  */
 export const GRADI: readonly Scalino[] = [
-  { id: "basic", nome: "Basic", da: 0, colore: "#9aa0b5", fuoco: 0, quantoEsce: 400, punti: 1 },
-  { id: "grand", nome: "Grand", da: 5, colore: "#7fd1a8", fuoco: 0, quantoEsce: 220, punti: 3 },
-  { id: "rare", nome: "Rare", da: 12, colore: "#5cc8ff", fuoco: 1, quantoEsce: 140, punti: 8 },
-  { id: "arcane", nome: "Arcane", da: 25, colore: "#b07cff", fuoco: 1, quantoEsce: 90, punti: 18 },
-  { id: "heroic", nome: "Heroic", da: 45, colore: "#ff9d5c", fuoco: 1, quantoEsce: 60, punti: 35 },
-  { id: "unique", nome: "Unique", da: 75, colore: "#ff6fb5", fuoco: 2, quantoEsce: 40, punti: 70 },
-  { id: "celestial", nome: "Celestial", da: 120, colore: "#6ee7f0", fuoco: 2, quantoEsce: 24, punti: 140 },
-  { id: "divine", nome: "Divine", da: 200, colore: "#ffe9a8", fuoco: 2, quantoEsce: 14, punti: 280 },
-  { id: "epic", nome: "Epic", da: 320, colore: "#e879f9", fuoco: 3, quantoEsce: 8, punti: 600 },
-  { id: "legendary", nome: "Legendary", da: 520, colore: "#ffd166", fuoco: 3, quantoEsce: 3, punti: 1400 },
-  { id: "mythic", nome: "Mythic", da: 850, colore: "#ff4d6d", fuoco: 3, quantoEsce: 1, punti: 4000 },
+  { id: "basic", nome: "Basic", da: 0, colore: "#9aa0b5", fuoco: 0, quantoEsce: 3997, punti: 1 },
+  { id: "grand", nome: "Grand", da: 5, colore: "#7fd1a8", fuoco: 0, quantoEsce: 2200, punti: 3 },
+  { id: "rare", nome: "Rare", da: 12, colore: "#5cc8ff", fuoco: 1, quantoEsce: 1400, punti: 8 },
+  { id: "arcane", nome: "Arcane", da: 25, colore: "#b07cff", fuoco: 1, quantoEsce: 900, punti: 18 },
+  { id: "heroic", nome: "Heroic", da: 45, colore: "#ff9d5c", fuoco: 1, quantoEsce: 600, punti: 35 },
+  { id: "unique", nome: "Unique", da: 75, colore: "#ff6fb5", fuoco: 2, quantoEsce: 400, punti: 70 },
+  { id: "celestial", nome: "Celestial", da: 120, colore: "#6ee7f0", fuoco: 3, quantoEsce: 240, punti: 140 },
+  { id: "divine", nome: "Divine", da: 200, colore: "#ffe9a8", fuoco: 3, quantoEsce: 140, punti: 280 },
+  { id: "epic", nome: "Epic", da: 320, colore: "#e879f9", fuoco: 4, quantoEsce: 80, punti: 600 },
+  { id: "legendary", nome: "Legendary", da: 520, colore: "#ffd166", fuoco: 4, quantoEsce: 30, punti: 1400 },
+  { id: "mythic", nome: "Mythic", da: 850, colore: "#ff4d6d", fuoco: 5, quantoEsce: 10, punti: 4000 },
+  /**
+   * ⚠ **Ethernal**: il gradino sopra a tutto, dal 10 settembre 2026.
+   *
+   * Il bianco non e' pigrizia: undici gradi avevano gia' undici colori, e il
+   * dodicesimo doveva essere **riconoscibile in un colpo d'occhio** senza
+   * assomigliare a nessuno. Il bianco che vira all'azzurro e' l'unica cosa che
+   * su un fondo scuro non e' un colore fra gli altri — e' luce.
+   */
+  { id: "ethernal", nome: "Ethernal", da: 1400, colore: "#eaf6ff", fuoco: 5, quantoEsce: 3, punti: 12000 },
 ];
 
-/** Dov'e' un grado nella scala: 0 e' Basic, 10 e' Mythic. */
+/** Dov'e' un grado nella scala: 0 e' Basic, 11 e' Ethernal. */
 export function altezza(grado: Grado): number {
   return GRADI_ID.indexOf(grado);
 }
@@ -393,7 +408,8 @@ export function valuta(
       motivo: "pieno",
       detto: "SCHERMO PIENO — tutto da " + scalino(imp.pienoDa).nome + " in su",
       punti: fra(imp.pienoMin, imp.pienoMax, caso),
-      fuoco: 3,
+      // La cosa piu' grossa che puo' capitare: si accende tutto, al massimo.
+      fuoco: 5,
     });
   }
 
@@ -422,7 +438,7 @@ export function valuta(
       motivo: "tris:" + g.id,
       detto: quanti + " " + g.nome + " insieme",
       punti,
-      fuoco: Math.min(3, g.fuoco + 1) as 0 | 1 | 2 | 3,
+      fuoco: Math.min(5, g.fuoco + 1) as 0 | 1 | 2 | 3 | 4 | 5,
     });
   }
 
@@ -452,7 +468,7 @@ export function valuta(
   const usciti = new Set(pezzi.map((p) => p.id));
   for (const f of formazioni) {
     if (f.pezzi.length > 0 && f.pezzi.every((id) => usciti.has(id))) {
-      vincite.push({ motivo: "formazione:" + f.id, detto: f.nome, punti: f.premio, fuoco: 3 });
+      vincite.push({ motivo: "formazione:" + f.id, detto: f.nome, punti: f.premio, fuoco: 4 });
     }
   }
   return vincite;

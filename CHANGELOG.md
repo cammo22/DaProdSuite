@@ -18,6 +18,109 @@ ancora lì.
 
 ---
 
+## 1.2.7 — Ethernal, e chi comanda puo' fare il suo mestiere
+
+Tutto sulla sala giochi, e nasce da una serata passata a provarla davvero.
+
+### Dal PC non si poteva ne' mandare lire ne' buttare niente
+
+> «Non mi fa mandare da admin le lire agli altri dalla suite su PC, e quando
+> clicchi manda esce un popup bruttissimo senza grafica, ma funziona.»
+
+Due facce della stessa riga. La pagina chiedeva le due parole di accompagnamento
+con il **«prompt» del browser**, e dentro la suite sul PC quella cosa **non
+esiste**: Electron l'ha tolta, chiamarla solleva un errore, e da fuori sembra che
+il tasto non faccia niente. Toccava anche «buttala»: dal computer non si poteva
+nemmeno buttare una combinazione. Sul telefono invece si apriva il riquadro
+grigio del sistema, che funziona e si vede che non e' la pagina.
+
+Adesso e' un pannello della sala giochi: c'e' dappertutto, ed e' vestito come il
+resto. E sopra all'elenco della gente c'e' **un cerca**, perche' ogni persona si
+porta dietro otto tasti e a dieci persone quella scheda e' lunga tre schermate.
+
+**E a se stessi si puo' mandare le lire**: il divieto c'era e l'ha tolto Cammo.
+Chi comanda il banco puo' gia' cambiare tutti i numeri del gioco da una schermata
+sola — il divieto non impediva niente, faceva solo la figura di impedirlo.
+
+### I tasti delle lire: si sommano, e sono due scale
+
+> «I pulsanti delle lire facciamo che si usano che piu' li premi piu' sale il
+> valore... e decidiamo anche il grado che avra' questo collezionabile.»
+
+Si batte sui tasti come su una cassa: 100 + 20 + 20. C'e' «azzera» per tornare
+indietro.
+
+E sono **due scale diverse**, perche' fanno due mestieri diversi:
+
+- i **regali** sono euro contati in lire — 2, 5, 10, 20, 50, 100, 200, 500 euro —
+  come chiesto: «dovevano essere l'equivalente in lire della cifra che ti ho
+  detto». Con l'interruttore del saldo si leggono tondi;
+- il **bonus** e' in lire piccole, da 2 a 500. Deve essere cosi': il bonus decide
+  **che grado avra' la figurina**, e la scala dei gradi finisce a 1.400 lire. Col
+  taglio piu' piccolo dei regali — 3.873 — una sola pressione sfonderebbe
+  Ethernal e gli undici gradini sotto non si potrebbero scegliere.
+
+Il grado che ne viene si legge **mentre** si preme, accanto al totale. E si puo'
+fare la strada contraria: si tocca il grado, e il bonus ci arriva da solo.
+
+### Ethernal, e la scena che cresce col grado
+
+> «Oltre a mythic mettiamo il grado ethernal, e facciamo i gradi da celestial in
+> su molto piu' potenti come gradi e anteprime, molto piu' articolate.»
+
+**Ethernal** e' il dodicesimo grado, sopra a Mythic: da 1.400 lire in su, tre
+volte su diecimila caselle — uno ogni duecentosettanta giri. Bianco che vira
+all'azzurro, perche' undici colori c'erano gia' e il dodicesimo doveva essere
+riconoscibile senza assomigliare a nessuno.
+
+E il difetto vero era che i cinque gradi piu' alti facevano **la stessa identica
+scena**: chi tirava un Mythic vedeva quello che aveva gia' visto con un Epic. In
+un gioco di rarita' la scena **e'** il premio. Adesso sono cinque gradini:
+
+| | |
+|---|---|
+| Rare, Arcane, Heroic | il bordo si accende, e lo schermo lampeggia |
+| Unique | e la sala si scuote |
+| Celestial, Divine | e cadono i coriandoli |
+| Epic, Legendary | e partono i raggi dietro alla sala, la carta si alza |
+| Mythic, Ethernal | **si ferma tutto**: il nome grande sullo schermo |
+
+Il cinque e' l'unica cosa in tutto il gioco che interrompe. Un premio che passa
+mentre stai gia' guardando altrove non e' un premio.
+
+### Provare una combinazione davvero, prima di darle un prezzo
+
+> «Quando arriva un prompt da controllare agli admin ci vogliono dei pulsanti per
+> mandare quel prompt a generare: nel caso di un prompt musicale genera una clip
+> di 60 secondi con ace step turbo strumentale, nel caso dell'immagine genera
+> l'immagine 4:3 con flux 9b.»
+
+C'e' un tasto su ogni combinazione in fila. Parte per la stessa strada delle
+richieste del telefono, quindi rispetta la coda e i tetti, e quando e' pronta la
+si trova in galleria — da attaccare alla figurina con un tocco.
+
+⚠ **Lo paga il banco, non chi ha mandato**: e' l'admin che ha scelto di
+provarla, e mandare deve restare gratis.
+
+### Un brano si porta dietro la sua copertina
+
+> «Quando un prompt e' preso, facciamo che se si carica una canzone viene
+> caricata anche l'immagine della canzone.»
+
+Un brano attaccato a una figurina e' un rettangolo con un tasto play: in un album
+di cento non lo riconosce nessuno, e nello shop uno comprerebbe un triangolino.
+Adesso, se la libreria della suite ha gia' la copertina — le fa lei, come i
+fotogrammi dei video — se la prende da sola; se no, si sceglie a mano.
+
+### E quelle prese si possono chiudere
+
+> «Mettiamo anche quelle prese che le possiamo nascondere, cosi' quando saranno
+> tante non daranno fastidio.»
+
+Come le buttate: un cassetto, chiuso, col numero scritto sopra.
+
+---
+
 ## 1.2.6 — La sala giochi si sistema
 
 Sei cose sulla sala giochi, tutte nate guardandola sul telefono.

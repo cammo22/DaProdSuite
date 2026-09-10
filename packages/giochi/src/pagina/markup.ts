@@ -117,8 +117,10 @@ export const MARKUP = `<header>
   <section class="pagina" id="p-fila">
     <h2>Da controllare</h2>
     <div id="fila-attesa"></div>
-    <h2>Quelle prese</h2>
-    <div id="fila-decise"></div>
+    <details class="cassetto" id="cassetto-prese" hidden>
+      <summary>Quelle prese <span class="quanti" id="quante-prese"></span></summary>
+      <div id="fila-decise"></div>
+    </details>
     <details class="cassetto" id="cassetto-buttate" hidden>
       <summary>Buttate <span class="quanti" id="quanti-buttate"></span></summary>
       <div id="fila-buttate"></div>
@@ -134,6 +136,7 @@ export const MARKUP = `<header>
       decide, e le cose che fa chi decide stanno tutte nella stessa scheda.
     -->
     <h2>Manda lire</h2>
+    <input class="cerca" id="cerca-gente" type="search" placeholder="cerca una persona">
     <div id="gente"></div>
   </section>
 

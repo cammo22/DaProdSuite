@@ -33,6 +33,16 @@ export const GRADI_ID = [
   "epic",
   "legendary",
   "mythic",
+  /**
+   * ⚠ **Ethernal**, aggiunto il 10 settembre 2026: «oltre a mythic mettiamo
+   * il grado ethernal».
+   *
+   * Si scrive cosi' — con la «h» — perche' cosi' l'ha scritto Cammo, e i nomi
+   * dei gradi sono suoi. Esce **tre volte su diecimila** caselle: con dodici
+   * rulli, una volta ogni duecentosettanta giri circa. Deve essere una cosa che
+   * si racconta, non una che capita.
+   */
+  "ethernal",
 ] as const;
 
 export type Grado = (typeof GRADI_ID)[number];
@@ -46,10 +56,27 @@ export interface Scalino {
   /** Il colore, uguale ovunque compaia: rullo, collezione, classifica, album. */
   colore: string;
   /**
-   * Quanto e' acceso: da 0 (spento, nessun effetto) a 3 (tutto lo schermo lo
-   * sa). La pagina ci attacca l'alone, il luccichio e i coriandoli.
+   * Quanto e' acceso: da 0 (spento, nessun effetto) a 5.
+   *
+   * ⚠ **Da tre si e' passati a cinque il 10 settembre 2026**, chiesto cosi':
+   * «facciamo i gradi da celestial in su molto piu' potenti, come gradi e come
+   * anteprime, molto piu' articolate».
+   *
+   * Il difetto era che i cinque gradi piu' alti — da Epic a Mythic — facevano
+   * **la stessa identica scena**: erano tutti «fuoco 3». Uno che tirava un
+   * Mythic vedeva quello che aveva gia' visto con un Epic, e in un gioco di
+   * rarita' la scena **e'** il premio. Adesso:
+   *
+   * | fuoco | chi | cosa si vede |
+   * |---|---|---|
+   * | 0 | Basic, Grand | niente |
+   * | 1 | Rare, Arcane, Heroic | il bordo colorato |
+   * | 2 | Unique | alone |
+   * | 3 | Celestial, Divine | alone che respira e luccichio |
+   * | 4 | Epic, Legendary | raggi dietro, la carta si alza, coriandoli |
+   * | 5 | Mythic, Ethernal | tutto lo schermo, a lungo |
    */
-  fuoco: 0 | 1 | 2 | 3;
+  fuoco: 0 | 1 | 2 | 3 | 4 | 5;
   /** Quante volte su mille esce questo grado, quando si pesca. */
   quantoEsce: number;
   /**
@@ -166,8 +193,8 @@ export interface Vincita {
   detto: string;
   /** I punti esperienza guadagnati. Dalla slot non escono lire. */
   punti: number;
-  /** Quanto deve accendersi lo schermo: 0 niente, 3 tutto. */
-  fuoco: 0 | 1 | 2 | 3;
+  /** Quanto deve accendersi lo schermo: 0 niente, 5 tutto. */
+  fuoco: 0 | 1 | 2 | 3 | 4 | 5;
 }
 
 /** Cosa e' successo tirando la leva. */
@@ -303,6 +330,31 @@ export interface Collezionabile {
    * foto».
    */
   allegato?: DallaLibreria;
+
+  /**
+   * **La copertina dell'allegato**, quando l'allegato non si guarda.
+   *
+   * ⚠ Chiesto il 10 settembre 2026: «quando un prompt e' preso, facciamo che
+   * se si carica una canzone viene caricata anche l'immagine della canzone».
+   *
+   * Un brano attaccato a una figurina e' un rettangolo con un tasto play: in un
+   * album di cento figurine non lo riconosce nessuno, e nello shop uno
+   * comprerebbe un triangolino. La copertina e' quello che si vede; il brano e'
+   * quello che si sente.
+   *
+   * Sta separata da `allegato` e non dentro, perche' non tutti gli allegati ne
+   * hanno bisogno: un'immagine e' gia' la sua copertina.
+   */
+  copertina?: DallaLibreria;
+
+  /**
+   * La richiesta di generazione partita da chi comanda per provare questa
+   * combinazione, se ne e' partita una.
+   *
+   * Serve a una cosa sola: non farla partire due volte perche' la prima ci mette
+   * dieci minuti e nel frattempo non si vede niente.
+   */
+  provata?: { richiesta: string; quando: number };
 
   /* --- lo shop --- */
 

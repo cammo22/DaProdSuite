@@ -15,6 +15,7 @@
 
 import { Deposito } from "./deposito";
 import {
+  CAMBIO_EURO,
   fra,
   gradoDiPrezzo,
   livelloDi,
@@ -508,6 +509,7 @@ export function prendi(
   id: string,
   bonus: number,
   allegato?: DallaLibreria,
+  copertina?: DallaLibreria,
 ): Collezionabile {
   const c = deposito.perId(id);
   if (!c) throw new NienteDaFare("Questa non c'e'.");
@@ -515,6 +517,9 @@ export function prendi(
 
   const lire = valoreDaPrendere(sommaDeiPezzi(deposito, c), bonus);
   if (allegato && allegato.id) c.allegato = allegato;
+  // La copertina si tiene solo se c'e' qualcosa da coprire: una copertina
+  // attaccata al niente e' una figurina che promette una canzone che non c'e'.
+  if (copertina && copertina.id && c.allegato) c.copertina = copertina;
 
   c.stato = "presa";
   c.prezzo = lire;
@@ -535,15 +540,46 @@ export function prendi(
 /**
  * I tagli dei tasti con cui chi comanda manda lire.
  *
- * ⚠ Chiesto il 10 settembre 2026: «l'admin deve poter inviare lire agli
- * utenti... devono essere pulsanti da 2 a 500, oppure personalizzato».
+ * ⚠ **Sono euro, contati in lire.** Chiesto il 10 settembre 2026: «pulsanti
+ * da 2 euro a 500 euro», e alla domanda se erano tagli o euro veri la risposta
+ * e' stata: «dovevano essere l'equivalente in lire della cifra che ti ho
+ * detto».
  *
- * Sono i tagli delle banconote vere, e non e' un vezzo: uno che deve scegliere
- * fra otto numeri conosciuti decide in un secondo, uno davanti a una casella
- * vuota si mette a pensare quanto vale un'idea — e finisce che non manda
- * niente. La casella per il numero preciso resta, accanto.
+ * Quindi il tasto «2 euro» vale 3.873 lire, al cambio fisso di
+ * `CAMBIO_EURO` — lo stesso con cui l'interruttore del saldo legge tutto in
+ * euro. Premendo l'interruttore, sui tasti si leggono 2, 5, 10... tondi.
+ *
+ * ⚠ **Sono grossi rispetto al resto del gioco**, e va saputo: un giro costa
+ * 10 lire, un Mythic ne vale 850. Il tasto piu' piccolo — due euro — sono
+ * trecentottantasette giri. E' una decisione di chi comanda, non un difetto:
+ * chi regala sta facendo entrare qualcuno, non pareggiando un conto.
+ *
+ * Otto numeri conosciuti si scelgono in un secondo; davanti a una casella vuota
+ * ci si mette a pensare quanto vale un'idea, e finisce che non si decide. E si
+ * **sommano**: premere due volte «10» fa venti (chiesto il 10 settembre: «piu'
+ * li premi piu' sale il valore»).
  */
-export const TAGLI = [2, 5, 10, 20, 50, 100, 200, 500];
+export const TAGLI = [2, 5, 10, 20, 50, 100, 200, 500].map((e) => Math.round(e * CAMBIO_EURO));
+
+/**
+ * I tagli del **bonus**, quando chi comanda prende una combinazione.
+ *
+ * ⚠ **Sono lire, e sono piccoli: non sono quelli dei regali.** Due scale
+ * diverse perche' fanno due mestieri diversi, e mescolarle rompe l'unica cosa
+ * che il bonus deve fare.
+ *
+ * Il bonus decide **che grado avra' la figurina**: la scala dei gradi va da 0 a
+ * 1.400 lire (vedi `GRADI`), quindi qui si lavora fra le unita' e le centinaia.
+ * Col taglio dei regali — 3.873 lire il piu' piccolo — una sola pressione
+ * sfonderebbe Ethernal e tutti gli undici gradini sotto non si potrebbero
+ * scegliere: ci sarebbe un tasto solo, e si chiamerebbe «massimo».
+ *
+ * Cosi' invece si batte come su una cassa e si sale di grado un colpo alla
+ * volta: 100 fa Celestial, +100 fa Divine, +120 fa Epic. E' esattamente quello
+ * che e' stato chiesto il 10 settembre 2026: «piu' li premi piu' sale il
+ * valore... e decidiamo anche il grado che avra' questo collezionabile».
+ */
+export const TAGLI_BONUS = [2, 5, 10, 20, 50, 100, 200, 500];
 
 /**
  * Chi comanda manda lire a qualcuno.
@@ -566,10 +602,22 @@ export function regala(
   perche: string,
 ): { conto: Conto; regalo: Regalo } {
   if (!chi) throw new NienteDaFare("A chi?");
-  if (chi === admin) throw new NienteDaFare("Non ha senso regalarsi le lire da solo.");
+  /**
+   * ⚠ **A se stessi si puo'.** Il divieto c'era, e l'ha tolto Cammo il 10
+   * settembre 2026: «da android non posso mandare lire a me stesso».
+   *
+   * Sembrava una furbizia da chiudere, e non lo e': chi comanda il banco puo'
+   * gia' cambiare tutti i numeri del gioco da una schermata: il divieto non
+   * impediva niente, faceva solo la figura di impedirlo. E chi comanda gioca
+   * anche lui — e' il primo che monta le combinazioni per far vedere come si
+   * fa. Resta scritto chi ha mandato cosa a chi, che e' l'unica cosa che serve.
+   */
   const lire = Math.round(quanto);
   if (!Number.isFinite(lire) || lire < 1) throw new NienteDaFare("Quanto? Da una lira in su.");
-  if (lire > 100000) throw new NienteDaFare("Troppe: al massimo centomila per volta.");
+  // Cinque milioni: piu' o meno duemilacinquecento euro, cinque volte il tasto
+  // piu' grosso. Non e' un permesso, e' una rete contro il tasto premuto venti
+  // volte per sbaglio.
+  if (lire > 5000000) throw new NienteDaFare("Troppe in una volta sola.");
 
   const regalo: Regalo = {
     quanto: lire,

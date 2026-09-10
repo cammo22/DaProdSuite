@@ -65,7 +65,7 @@ header{position:sticky; top:0; z-index:30; display:flex; align-items:center; gap
 
 /* ------------------------------------------------------------- la pancia */
 /**
- * @ATT **La slot sta in una schermata, e non si scorre.**
+ * ⚠ **La slot sta in una schermata, e non si scorre.**
  *
  * Chiesto il 10 settembre 2026, con lo screenshot davanti: «fai molto piu'
  * piccoli per telefono, sono troppo grandi; trova un modo originale per far
@@ -121,7 +121,7 @@ h2:first-child{margin-top:2px}
 
 /* -------------------------------------------------------------- i rulli */
 /**
- * @ATT **Dodici pezzi, una schermata, nessuno scorrimento.**
+ * ⚠ **Dodici pezzi, una schermata, nessuno scorrimento.**
  *
  * Chiesto il 10 settembre 2026: «molto piu' piccoli per telefono, sono troppo
  * grandi... una sola bella pagina intera». Prima erano due colonne di carte
@@ -182,7 +182,7 @@ h2:first-child{margin-top:2px}
 /**
  * Quello che va davvero al modello, e l'esempio.
  *
- * @ATT **Su una carta stretta spariscono**, e non e' una perdita: in tre
+ * ⚠ **Su una carta stretta spariscono**, e non e' una perdita: in tre
  * colonne su un telefono ci starebbero due parole tagliate a meta', che e'
  * peggio di niente. Il nome in italiano e il grado restano sempre — sono quello
  * che serve a decidere se bloccare il rullo. Il resto si legge nel prompt qui
@@ -249,16 +249,76 @@ h2:first-child{margin-top:2px}
 .rullo.bloccato::before{content:""; position:absolute; inset:0; pointer-events:none;
   background:linear-gradient(180deg, rgba(255,209,102,.16), rgba(255,209,102,.04));
   animation:none}
-.rullo.bloccato::after{content:""; position:absolute;
+/* La puntina e' un nodo vero: vedi «disegnaRulli» nel copione, e il perche'. */
+.rullo .puntina{position:absolute; z-index:3;
   right:clamp(4px,2.6cqi,9px); top:clamp(4px,2.6cqi,9px);
   width:clamp(10px,6cqi,16px); height:clamp(10px,6cqi,16px);
   border-radius:50%; background:var(--oro);
   border:2px solid rgba(11,13,18,.75);
-  box-shadow:0 0 12px var(--oro); animation:puntina 1.8s ease-in-out infinite}
+  box-shadow:0 0 12px var(--oro); opacity:0; transform:scale(.4);
+  transition:opacity .15s ease, transform .15s ease}
+.rullo.bloccato .puntina{opacity:1; transform:none;
+  animation:puntina 1.8s ease-in-out infinite}
 @keyframes puntina{0%,100%{opacity:.7; transform:scale(.94)} 50%{opacity:1; transform:none}}
 
+/**
+ * ⚠ **Fuoco 4 e 5**: Epic e Legendary, poi Mythic ed Ethernal.
+ *
+ * Chiesto il 10 settembre 2026: «facciamo i gradi da celestial in su molto piu'
+ * potenti, come gradi e come anteprime, molto piu' articolate». Prima i cinque
+ * gradi piu' alti erano tutti «fuoco 3» e facevano la stessa scena: in un gioco
+ * di rarita' la scena **e'** il premio, e uno che tira un Mythic non deve
+ * vedere quello che ha gia' visto con un Epic.
+ *
+ * Ognuno aggiunge a quello sotto: il quattro respira piu' forte e si alza dalla
+ * griglia, il cinque ha un anello che gira attorno e non sta mai fermo.
+ */
+.rullo.f4{border-color:var(--g); transform:translateY(-2px);
+  box-shadow:0 0 34px color-mix(in srgb, var(--g) 65%, transparent),
+             0 8px 22px rgba(0,0,0,.5),
+             inset 0 0 30px color-mix(in srgb, var(--g) 18%, transparent);
+  animation:respira 1.8s ease-in-out infinite}
+.rullo.f5{border-color:#fff; transform:translateY(-3px) scale(1.015);
+  box-shadow:0 0 46px color-mix(in srgb, var(--g) 85%, transparent),
+             0 0 90px color-mix(in srgb, var(--g) 45%, transparent),
+             inset 0 0 34px color-mix(in srgb, var(--g) 26%, transparent);
+  animation:respira 1.3s ease-in-out infinite}
+/**
+ * L'anello che gira: solo sul cinque, e solo uno per carta.
+ *
+ * Sfocato e tenuto basso apposta. La prima versione era un ventaglio netto e ci
+ * si perdeva dentro il nome del pezzo — che e' l'unica cosa che serve a decidere
+ * se bloccarlo. Una carta che luccica e non si legge e' una carta rotta, anche
+ * se e' un Mythic. Sfocato resta un raggio di luce che passa, e sotto si legge.
+ */
+.rullo.f5::after{content:""; position:absolute; inset:-30%; pointer-events:none; z-index:-1;
+  opacity:.32; filter:blur(9px);
+  background:conic-gradient(from 0deg, transparent 0 72%,
+    color-mix(in srgb, var(--g) 65%, transparent) 82%, transparent 90% 100%);
+  animation:gira 3.2s linear infinite}
+@keyframes gira{to{transform:rotate(360deg)}}
+
 /* Il luccichio che passa sopra alla roba grossa. */
-.rullo.f3::before{content:""; position:absolute; inset:0; pointer-events:none;
+/**
+ * ⚠ **Il luccichio passa SOTTO alle scritte, non sopra.**
+ *
+ * Con lo z-index sopra, la banda di luce attraversava il nome del pezzo e per
+ * mezzo secondo non si leggeva piu' niente. Su una carta che uno sta guardando
+ * per decidere se tenerla, e' esattamente il momento sbagliato. Visto il 10
+ * settembre 2026 sui gradi nuovi.
+ *
+ * ⚠ **Si abbassa il luccichio, non si alza il testo.** Il primo tentativo
+ * era «position:relative; z-index:1» su tutti i figli della carta, e ha rotto
+ * il disegno: la barretta del grado e la scritta «fermo» sono in
+ * «position:absolute», e quella riga gliela ribaltava — tornavano nel flusso,
+ * la barretta tagliava il nome a meta' e «fermo» si prendeva una riga sua.
+ *
+ * Uno «z-index» negativo fa la stessa cosa senza toccare nessun figlio: un
+ * pseudo-elemento negativo si disegna **sopra allo sfondo della carta e sotto
+ * al suo contenuto**, che e' esattamente dove deve stare un riflesso.
+ */
+.rullo.f3::before, .rullo.f4::before, .rullo.f5::before{content:""; position:absolute; inset:0;
+  pointer-events:none; z-index:-1;
   background:linear-gradient(115deg, transparent 35%,
     color-mix(in srgb, var(--g) 45%, transparent) 50%, transparent 65%);
   transform:translateX(-120%); animation:luccica 3.4s ease-in-out infinite}
@@ -336,6 +396,15 @@ h2:first-child{margin-top:2px}
 .figurina.f2{border-color:color-mix(in srgb, var(--g) 60%, var(--riga))}
 .figurina.f3{border-color:var(--g);
   box-shadow:0 0 22px color-mix(in srgb, var(--g) 28%, transparent)}
+.figurina.f4{border-color:var(--g);
+  box-shadow:0 0 30px color-mix(in srgb, var(--g) 45%, transparent),
+             inset 0 0 24px color-mix(in srgb, var(--g) 10%, transparent)}
+/* Il cinque ha il bordo bianco e l'alone del suo colore: da lontano si vede
+   che quella scheda non e' come le altre, che e' tutto il punto. */
+.figurina.f5{border-color:#fff;
+  box-shadow:0 0 40px color-mix(in srgb, var(--g) 70%, transparent),
+             0 0 80px color-mix(in srgb, var(--g) 30%, transparent),
+             inset 0 0 28px color-mix(in srgb, var(--g) 14%, transparent)}
 .figurina .titolo{font-weight:700; overflow-wrap:anywhere}
 .figurina .sotto{margin-top:5px; font-size:12px; color:var(--spento)}
 .figurina .testo{margin-top:7px; font-size:12.5px; color:#cfd4e4; overflow-wrap:anywhere}
@@ -538,6 +607,50 @@ nav .pallino{display:inline-block; min-width:16px; padding:0 4px; margin-left:4p
   aspect-ratio:1; font-size:11px; color:var(--spento)}
 .griglia-libreria .voce small{padding:6px 7px; font-size:11px; color:var(--spento);
   text-align:left; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+
+/**
+ * ⚠ **I raggi dietro alla sala**, dall'Epic in su.
+ *
+ * Un disegno solo — un ventaglio a spicchi che gira — e non venti nodi: quello
+ * che deve succedere e' che la sala **cambi**, non che il telefono si scaldi.
+ * Sta dietro a tutto («z-index» basso) e non si puo' toccare.
+ */
+.raggi{position:fixed; inset:-50%; z-index:1; pointer-events:none; opacity:.55;
+  background:repeating-conic-gradient(from 0deg,
+    color-mix(in srgb, var(--g) 55%, transparent) 0deg 6deg, transparent 6deg 18deg);
+  animation:giraRaggi 9s linear infinite, entraRaggi .5s ease;
+  transition:opacity .5s ease}
+.raggi.via{opacity:0}
+@keyframes giraRaggi{to{transform:rotate(360deg)}}
+@keyframes entraRaggi{from{opacity:0} to{opacity:.55}}
+
+/**
+ * Il pannello che chiede una cosa. Sostituisce «prompt» del browser, che
+ * dentro la suite sul PC non esiste e sul telefono e' il riquadro grigio del
+ * sistema — vedi «chiediQualcosa» nel copione.
+ */
+.chiede{position:fixed; inset:0; z-index:60; display:flex; align-items:center;
+  justify-content:center; padding:18px; background:rgba(4,5,8,.72);
+  backdrop-filter:blur(4px); animation:entra .18s ease}
+.chiede .dentro{width:100%; max-width:440px; padding:18px; border-radius:16px;
+  background:#141821; border:1px solid var(--riga); box-shadow:0 24px 60px rgba(0,0,0,.6);
+  display:flex; flex-direction:column; gap:9px}
+.chiede small{color:var(--spento); font-size:12.5px; line-height:1.35}
+.chiede input, .chiede textarea{width:100%; padding:11px 12px; border-radius:11px;
+  border:1px solid var(--riga); background:rgba(9,11,16,.8); color:var(--testo);
+  font:inherit; font-size:15px; resize:vertical}
+
+/* Il cerca fra la gente: una riga, larga quanto la scheda. */
+.cerca{width:100%; margin:2px 0 10px; padding:11px 13px; border-radius:12px;
+  border:1px solid var(--riga); background:rgba(9,11,16,.8); color:var(--testo);
+  font:inherit; font-size:14px}
+
+/* Senza copertina: si dice, invece di lasciare un buco. */
+.attaccata .senzafaccia{display:flex; align-items:center; justify-content:center;
+  width:64px; height:64px; border-radius:9px; border:1px dashed var(--riga);
+  font-size:10px; color:var(--spento); text-align:center; padding:4px}
+.attaccata small{flex:1; min-width:0; color:var(--spento); font-size:12px;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
 
 /* ------------------------------------------------------------- l'avviso */
 .avviso{position:fixed; left:50%; bottom:78px; transform:translateX(-50%);
