@@ -22,6 +22,14 @@ files:
   - "!node_modules/@daprod/gateway"
   - node_modules/@daprod/gateway/dist/**
   - node_modules/@daprod/gateway/package.json
+  # ⚠ @daprod/giochi lo richiede il gateway (la sala giochi e' una pagina che
+  # serve lui). Dimenticato alla 1.2.5, e il risultato non e' stato «il gioco
+  # non c'e'»: e' stato **il gateway che non si carica**, perche' un require che
+  # fallisce porta giu' tutto il modulo. Da fuori si vedeva DaProdConnessione
+  # che non si apriva. C'e' una prova apposta: prova-installer.mjs.
+  - "!node_modules/@daprod/giochi"
+  - node_modules/@daprod/giochi/dist/**
+  - node_modules/@daprod/giochi/package.json
 
 # Manifest, requirements e servizi Python non entrano nell'asar: devono restare
 # file veri su disco perché uv e il processo Python li leggano ed eseguano.

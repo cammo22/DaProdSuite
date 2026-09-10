@@ -376,6 +376,33 @@ export interface Conto {
   /** Prima volta e ultima volta, per sapere chi e' passato. */
   nato: number;
   ultimoGiro: number;
+
+  /**
+   * Quante lire gli ha regalato chi comanda, in tutto.
+   *
+   * ⚠ Sta fuori dal saldo apposta. Il saldo dice quanto hai **adesso**;
+   * questo dice quanto ti e' stato **dato**, e i due numeri raccontano cose
+   * diverse: uno con mille lire regalate e zero prese non e' uno che crea, e
+   * la classifica non deve confonderli.
+   */
+  regali?: number;
+  /**
+   * L'ultimo regalo arrivato: serve alla pagina per dirlo a chi lo riceve.
+   *
+   * Un bonifico che non avvisa nessuno e' un numero che cambia da solo nel
+   * saldo — e chi lo vede pensa a un errore, non a un regalo.
+   */
+  ultimoRegalo?: Regalo;
+}
+
+/** Un regalo di chi comanda: quanto, quando, e perche'. */
+export interface Regalo {
+  quanto: number;
+  quando: number;
+  /** Due parole di chi lo manda. Si scrive sempre: un regalo muto e' un guasto. */
+  perche: string;
+  /** Chi l'ha mandato. */
+  daAdmin: string;
 }
 
 /* ---------------------------------------------------------- i numeri del banco */

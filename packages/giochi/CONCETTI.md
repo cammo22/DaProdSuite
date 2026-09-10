@@ -85,6 +85,23 @@ che a chi comanda piaccia.
 I livelli: il secondo costa 500 punti, il terzo altri mille, il quarto altri
 millecinquecento. Ogni volta di piu'.
 
+### Il secondo rubinetto: chi comanda regala
+
+Dal 10 settembre 2026 c'e' una seconda strada per cui arrivano lire, e sta in
+mano a una persona sola: **chi comanda le manda a chi vuole**. Tagli da 2 a 500
+— quelli delle banconote — o un numero scritto a mano, e due parole di
+accompagnamento che si scrivono sempre.
+
+⚠ **Un regalo si dice a chi lo riceve.** Senza, il saldo cambierebbe da solo
+fra un'apertura e l'altra, e un numero che cambia da solo si legge come un
+guasto. Chi lo riceve trova un pannello aperto con dentro quanto e perche'.
+
+Serve a due cose: far entrare qualcuno che non ha ancora niente, e ringraziare
+per una cosa che non passa dalla fila. Non e' un bonifico fra conti — non si
+toglie a nessuno, paga il banco — e **non conta in classifica**: quella la fa
+`prese`, cioe' quante cose ti hanno preso. Uno con mille lire regalate e zero
+prese non e' uno che crea, e i due numeri non si devono confondere.
+
 ⚠ **Non ci sono soldi veri.** Non si compra niente pagando, e i «pacchetti da
 comprare» si comprano in lire di gioco. Se un giorno questa cosa dovesse uscire
 di casa e toccare soldi veri, il discorso cambia e va rifatto da capo: un gioco
@@ -101,6 +118,23 @@ un'idea dentro.
 Un giro riempie tutti i rulli; **si blocca quello che piace e si rigira il
 resto** (il blocco e' un clic sul rullo). Si va avanti cosi' finche' la riga
 non piace tutta.
+
+⚠ **Si manda solo quello che si e' bloccato**, e basta quello. Deciso il 10
+settembre 2026:
+
+> «Le combinazioni, cioe' i prompt inviati quando si preme manda a controllare,
+> deve inviare solo quelli bloccati e basta, anche se sono solo 3, solo quelli
+> bloccati.»
+
+Fino a quel giorno ne partivano dodici, e i pezzi non bloccati erano roba uscita
+a caso all'ultimo giro: chi comanda si ritrovava a giudicare mezza idea di
+qualcuno e mezza pescata dal mazzo. Bloccare un rullo e' **il gesto con cui si
+dice «questo si'»**, e tre pezzi scelti valgono piu' di dodici mezzi scelti.
+
+Restano due sole regole, e non le decide il giocatore: ogni pezzo viene da una
+casella **di questo tavolo**, e due pezzi non possono venire dalla stessa. Se
+tre pezzi siano pochi lo decide chi comanda quando la guarda — non tocca al
+banco.
 
 **Musica** — genere · incrociato con · voce · come canta · davanti · e anche ·
 che aria · andatura · di quando · com'e' preso · com'e' fatto · la firma
@@ -291,8 +325,28 @@ scritto chi le ha mandate e quando. Per ognuna si puo':
   pagare bene lo stesso;
 - **attaccarci il contenuto**: l'immagine o il brano venuti fuori da quel
   prompt. E' quello che la fa diventare una figurina che si guarda, ed e' la
-  copertina della sua scheda nello shop — senza, uno comprerebbe una parola;
+  copertina della sua scheda nello shop — senza, uno comprerebbe una parola.
+  ⚠ **Si sceglie dalla galleria della suite, toccandola.** Prima si scriveva
+  a mano l'indirizzo del file in una casella: quattro gesti in due finestre,
+  ogni volta, e chi ha fretta non li fa;
 - **buttarla**, scrivendo perche'.
+
+Il bonus si sceglie con gli **stessi tagli dei regali**, da 2 a 500. Davanti a
+otto numeri conosciuti si decide in un secondo; davanti a una casella vuota ci
+si mette a pensare quanto vale un'idea, e finisce che non si decide.
+
+### Le buttate stanno in un mazzo loro
+
+⚠ Deciso il 10 settembre 2026: **una combinazione buttata sparisce dalla
+fila** e finisce in un cassetto chiuso, sia per chi comanda sia per chi l'ha
+mandata. A chi l'ha mandata si mostra per quello che e': un **biglietto
+perdente**, grigio e timbrato, col perche' scritto sotto.
+
+Non si cancella — serve a non far tornare domani la stessa riga, e un no senza
+perche' non insegna niente — ma non sta piu' in mezzo alle altre. Sulle prese si
+decide la vetrina, e cercare quella da mettere in vendita in mezzo a dieci
+scartate e' lavoro inutile fatto ogni volta; e per chi gioca, aprire la propria
+pagina non deve voler dire leggere per primi i propri no.
 
 **Chi l'ha mandata viene pagato.** Il prezzo che l'admin le da' finisce anche in
 tasca sua, una volta sola, quando viene presa. E' il motivo per cui uno si

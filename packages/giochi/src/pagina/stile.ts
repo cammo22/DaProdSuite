@@ -48,7 +48,10 @@ header{position:sticky; top:0; z-index:30; display:flex; align-items:center; gap
 .marchio{font-weight:700; letter-spacing:.2px}
 .marchio span{color:var(--luce); transition:color 700ms ease}
 .cresci{flex:1}
-.chi{color:var(--spento); font-size:13px}
+/* ⚠ Su una riga sola: «Cammo · decidi tu» andava a capo quattro volte su un
+   telefono stretto e spingeva giu' mezza testata. Se non ci sta, si taglia. */
+.chi{color:var(--spento); font-size:13px; white-space:nowrap; overflow:hidden;
+  text-overflow:ellipsis; min-width:0; flex:0 1 auto}
 .saldo{display:flex; align-items:center; gap:8px; padding:6px 12px; border-radius:999px;
   background:linear-gradient(180deg,#1d1a10,#151209); border:1px solid #3a3115;
   color:var(--oro); font-variant-numeric:tabular-nums; font-weight:700; cursor:pointer;
@@ -61,9 +64,45 @@ header{position:sticky; top:0; z-index:30; display:flex; align-items:center; gap
 }
 
 /* ------------------------------------------------------------- la pancia */
-main{padding:12px 14px 96px; max-width:1000px; margin:0 auto}
+/**
+ * @ATT **La slot sta in una schermata, e non si scorre.**
+ *
+ * Chiesto il 10 settembre 2026, con lo screenshot davanti: «fai molto piu'
+ * piccoli per telefono, sono troppo grandi; trova un modo originale per far
+ * entrare tutto bene sullo schermo piccolo e tablet ad alte risoluzioni, una
+ * sola bella pagina intera».
+ *
+ * Il difetto si vedeva: dodici rulli in due colonne alti centosessanta pixel
+ * fanno seicento pixel di roba sotto al bordo. Si vedevano otto pezzi su
+ * dodici, e per guardare la riga intera — che e' **la cosa che si sta
+ * montando** — bisognava scorrere avanti e indietro.
+ *
+ * La pancia adesso e' alta quanto lo schermo meno la testata e le schede
+ * («dvh» e non «vh»: su un telefono la barra dell'indirizzo entra e esce, e
+ * «vh» conta come se non ci fosse mai). Le pagine che sono elenchi scorrono
+ * dentro; la slot no: si prende l'altezza e la divide.
+ */
+main{--sopra:52px; --sotto:calc(56px + env(safe-area-inset-bottom));
+  height:calc(100dvh - var(--sopra) - var(--sotto));
+  padding:10px 12px; max-width:1400px; margin:0 auto; overflow-y:auto}
 .pagina{display:none}
 .pagina.viva{display:block; animation:entra .22s ease}
+/* La slot e' l'unica che non scorre: e' un pannello, non un elenco. */
+#p-slot.viva{display:flex; flex-direction:column; gap:8px; height:100%; overflow:hidden}
+#p-slot > h2, #p-slot > .prompt, #p-slot > .riga-tasti{flex:0 0 auto}
+/**
+ * ⚠ **Il prompt che stai montando: due righe, e si apre toccandolo.**
+ *
+ * E' la cosa piu' lunga della pagina — dodici pezzi di testo inglese — e per
+ * intero si mangiava meta' schermo, spingendo i rulli fuori. Due righe bastano
+ * a riconoscerlo; per leggerlo tutto si tocca, e allora si prende lo spazio che
+ * gli serve (e quello e' il momento in cui la pagina puo' scorrere).
+ */
+#p-slot .prompt{max-height:3.2em; overflow:hidden; position:relative; cursor:pointer}
+#p-slot .prompt.aperto{max-height:40vh; overflow:auto}
+#p-slot .prompt:not(.aperto)::after{content:""; position:absolute; left:0; right:0;
+  bottom:0; height:1.4em; background:linear-gradient(180deg,transparent,rgba(18,20,28,.96))}
+#p-slot > h2{margin:2px 0 4px}
 @keyframes entra{from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none}}
 h2{margin:20px 0 9px; font-size:14px; letter-spacing:.4px; text-transform:uppercase;
   color:var(--spento)}
@@ -81,41 +120,92 @@ h2:first-child{margin-top:2px}
 .epoche button{min-width:52px; font-variant-numeric:tabular-nums}
 
 /* -------------------------------------------------------------- i rulli */
-/* Carte piu' grandi, chiesto il 10 settembre 2026: una colonna in meno a ogni
-   misura e piu' aria dentro. Su un telefono restano due per riga, ma alte —
-   dodici pezzi con nome, inglese ed esempio non ci stavano in tre centimetri. */
-.rulli{display:grid; grid-template-columns:repeat(2,1fr); gap:10px}
-@media (min-width:560px){ .rulli{grid-template-columns:repeat(3,1fr)} }
-@media (min-width:900px){ .rulli{grid-template-columns:repeat(4,1fr)} }
+/**
+ * @ATT **Dodici pezzi, una schermata, nessuno scorrimento.**
+ *
+ * Chiesto il 10 settembre 2026: «molto piu' piccoli per telefono, sono troppo
+ * grandi... una sola bella pagina intera». Prima erano due colonne di carte
+ * alte centosessanta pixel: se ne vedevano otto su dodici.
+ *
+ * Il conto e' sempre dodici, e cambia **come si dispongono**: tre colonne per
+ * quattro righe su un telefono, quattro per tre su un tablet, sei per due su
+ * uno schermo largo. Le righe si dividono in parti uguali l'altezza che
+ * avanza, quindi la griglia riempie lo spazio e non ne chiede mai di piu'.
+ *
+ * ## Il pezzo originale: le carte misurano il testo su se stesse
+ *
+ * Il problema di far stare la stessa cosa su un telefono da cinque pollici e
+ * su un tablet 4K non e' la griglia: e' il **testo**. Diciotto pixel sono
+ * enormi in una cella da un centimetro e ridicoli in una da otto.
+ *
+ * Qui ogni carta e' un **contenitore** («container-type: inline-size») e il
+ * testo dentro si misura in «cqi» — percentuali della **larghezza della sua
+ * carta**, non dello schermo. Cosi' la stessa regola vale dappertutto: la
+ * carta si prende lo spazio che c'e', e il testo cresce o si stringe con lei.
+ * Niente scaglioni, niente tre misure scritte a mano che sbagliano sempre su
+ * qualche schermo.
+ *
+ * Il «clamp()» mette i due paletti: sotto una certa misura non si legge, sopra
+ * diventa un cartellone.
+ */
+.rulli{display:grid; grid-template-columns:repeat(3,1fr); gap:6px;
+  flex:1 1 auto; min-height:0; grid-auto-rows:1fr}
+@media (min-width:620px){ .rulli{grid-template-columns:repeat(4,1fr); gap:8px} }
+@media (min-width:1000px){ .rulli{grid-template-columns:repeat(6,1fr); gap:10px} }
 
-.rullo{position:relative; min-height:160px; padding:13px 13px 30px; border-radius:16px;
+/**
+ * ⚠ **La carta e' una colonna, e niente ci sta sopra in assoluto.**
+ *
+ * Il prezzo e il «fermo» stavano incollati in fondo con «position:absolute»:
+ * andava bene finche' le carte erano alte centosessanta pixel, e a
+ * quarantacinque il nome ci finiva sopra — «soulful house» e «L. 1 - Grand»
+ * stampati uno sull'altro. Visto in una schermata, il 10 settembre 2026.
+ *
+ * Adesso e' una colonna vera: sopra la domanda, in mezzo il nome che si prende
+ * lo spazio che avanza, in fondo la riga del prezzo. Niente si sovrappone
+ * perche' niente e' fuori dal flusso, a qualunque altezza.
+ */
+.rullo{position:relative; container-type:inline-size; min-height:0;
+  display:flex; flex-direction:column; gap:clamp(1px,1cqi,4px);
+  padding:clamp(5px,3.5cqi,13px);
+  border-radius:clamp(10px,4cqi,16px); overflow:hidden;
   background:linear-gradient(180deg,rgba(23,26,36,.92),rgba(18,20,28,.92));
-  border:1px solid var(--riga); cursor:pointer; overflow:hidden;
+  border:1px solid var(--riga); cursor:pointer;
   transition:transform .14s ease, border-color .2s ease, box-shadow .3s ease}
 .rullo:active{transform:scale(.97)}
-.rullo .quale{font-size:11px; letter-spacing:.5px; text-transform:uppercase; color:var(--spento)}
-.rullo .nome{margin-top:7px; font-weight:700; line-height:1.2; overflow-wrap:anywhere;
-  font-size:18px}
-/* Quello che va davvero al modello, sotto al nome italiano. Piccolo e
-   spento: si legge se lo cerchi, non ruba il posto al nome. */
-.rullo .inglese{margin-top:6px; font-size:11.5px; color:#7f899e; line-height:1.3;
-  font-style:italic; display:-webkit-box; -webkit-line-clamp:3;
-  -webkit-box-orient:vertical; overflow:hidden}
-.rullo .esempio{margin-top:5px; font-size:11px; color:var(--spento); line-height:1.3;
+.rullo .quale{font-size:clamp(7.5px,3.4cqi,11px); letter-spacing:.4px;
+  text-transform:uppercase; color:var(--spento); line-height:1.1;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.rullo .nome{margin:0; font-weight:700; line-height:1.15; flex:1 1 auto; min-height:0;
+  overflow-wrap:anywhere; font-size:clamp(10px,6cqi,20px);
   display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden}
-.rullo .prezzo{position:absolute; left:13px; bottom:9px; font-size:12px; font-weight:700;
-  font-variant-numeric:tabular-nums}
-.rullo .fermo{position:absolute; right:12px; bottom:9px; font-size:11px; color:var(--oro);
+/**
+ * Quello che va davvero al modello, e l'esempio.
+ *
+ * @ATT **Su una carta stretta spariscono**, e non e' una perdita: in tre
+ * colonne su un telefono ci starebbero due parole tagliate a meta', che e'
+ * peggio di niente. Il nome in italiano e il grado restano sempre — sono quello
+ * che serve a decidere se bloccare il rullo. Il resto si legge nel prompt qui
+ * sotto, che c'e' sempre, e toccando la carta.
+ */
+.rullo .inglese{margin-top:clamp(2px,1.6cqi,6px); font-size:clamp(8px,3.6cqi,11.5px);
+  color:#7f899e; line-height:1.25; font-style:italic;
+  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden}
+.rullo .esempio{margin-top:clamp(2px,1.4cqi,5px); font-size:clamp(7.5px,3.4cqi,11px);
+  color:var(--spento); line-height:1.25;
+  display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; overflow:hidden}
+@container (max-width: 150px){
+  .rullo .inglese, .rullo .esempio{display:none}
+}
+/* L'ultima riga: il prezzo a sinistra, «fermo» a destra. In fondo davvero,
+   cioe' spinta li' dal nome che sta in mezzo — non incollata. */
+.rullo .prezzo{margin-top:auto; font-size:clamp(7.5px,3.4cqi,12px); font-weight:700;
+  font-variant-numeric:tabular-nums; line-height:1.1;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.rullo .fermo{position:absolute; right:clamp(4px,3cqi,12px); bottom:clamp(3px,2.2cqi,9px);
+  font-size:clamp(7px,3.2cqi,11px); color:var(--oro);
   opacity:0; transition:opacity .15s ease}
-.rullo .barra{position:absolute; left:0; top:0; right:0; height:3px; background:var(--spento)}
-
-/* Bloccato: bordo d'oro e una puntina che pulsa piano. */
-.rullo.bloccato{border-color:var(--oro); box-shadow:inset 0 0 0 1px rgba(255,209,102,.4)}
-.rullo.bloccato .fermo{opacity:1}
-.rullo.bloccato::after{content:""; position:absolute; right:7px; top:7px; width:7px; height:7px;
-  border-radius:50%; background:var(--oro); box-shadow:0 0 10px var(--oro);
-  animation:puntina 1.8s ease-in-out infinite}
-@keyframes puntina{0%,100%{opacity:.55} 50%{opacity:1}}
+.rullo .barra{position:absolute; left:0; top:0; right:0; height:2px; background:var(--spento)}
 
 /* Quanto si accende un rullo, secondo il grado. Il colore arriva da fuori,
    dentro --g: qui c'e' solo quanto forte lo si accende. */
@@ -131,6 +221,42 @@ h2:first-child{margin-top:2px}
   50%{box-shadow:0 0 38px color-mix(in srgb, var(--g) 75%, transparent),
                 inset 0 0 30px color-mix(in srgb, var(--g) 20%, transparent)}
 }
+/**
+ * ⚠ **Bloccato: un anello d'oro attorno, e il pallino grosso.**
+ *
+ * Detto il 10 settembre 2026: «quando blocchiamo, oltre al pallino giallo
+ * magari piu' grande, facciamo anche attorno, che si capisce poco che e'
+ * bloccato».
+ *
+ * Il difetto non era la delicatezza: era che **non si vedeva proprio**. Il
+ * bloccato tingeva d'oro il bordo, ma le regole del grado — che stanno qui
+ * sopra e hanno la stessa forza — ridipingono lo stesso bordo, e vincono
+ * perche' vengono dopo. Su qualunque pezzo da Rare in su restava solo un
+ * puntino da sette pixel.
+ *
+ * Adesso e' un «outline»: e' un'altra proprieta', quindi non se la contende
+ * con nessuno, e sta **dentro** la carta cosi' non sposta la griglia di un
+ * pixel. Con l'anello ci sono il velo d'oro sopra a tutto e il pallino grosso.
+ * Tre segni per la stessa cosa: uno solo lo si perde.
+ *
+ * Sta dopo le regole dei gradi apposta. Se lo si sposta piu' su, torna il
+ * difetto identico.
+ */
+.rullo.bloccato{outline:clamp(2px,1.4cqi,4px) solid var(--oro); outline-offset:-2px;
+  box-shadow:0 0 0 1px rgba(255,209,102,.35), 0 0 18px rgba(255,209,102,.35)}
+.rullo.bloccato .fermo{opacity:1; font-weight:700}
+/* Il velo: dice «questo l'ho tenuto io» anche con la coda dell'occhio. */
+.rullo.bloccato::before{content:""; position:absolute; inset:0; pointer-events:none;
+  background:linear-gradient(180deg, rgba(255,209,102,.16), rgba(255,209,102,.04));
+  animation:none}
+.rullo.bloccato::after{content:""; position:absolute;
+  right:clamp(4px,2.6cqi,9px); top:clamp(4px,2.6cqi,9px);
+  width:clamp(10px,6cqi,16px); height:clamp(10px,6cqi,16px);
+  border-radius:50%; background:var(--oro);
+  border:2px solid rgba(11,13,18,.75);
+  box-shadow:0 0 12px var(--oro); animation:puntina 1.8s ease-in-out infinite}
+@keyframes puntina{0%,100%{opacity:.7; transform:scale(.94)} 50%{opacity:1; transform:none}}
+
 /* Il luccichio che passa sopra alla roba grossa. */
 .rullo.f3::before{content:""; position:absolute; inset:0; pointer-events:none;
   background:linear-gradient(115deg, transparent 35%,
@@ -219,6 +345,38 @@ h2:first-child{margin-top:2px}
 .figurina.nuova{animation:apparsa .5s cubic-bezier(.2,1.5,.4,1)}
 @keyframes apparsa{0%{transform:scale(.9); opacity:0} 100%{transform:none; opacity:1}}
 
+/**
+ * ⚠ **Il biglietto perdente.**
+ *
+ * Chiesto il 10 settembre 2026: «i prompt buttati... l'utente lo vede come
+ * perdente». Non e' una figurina piu' spenta: e' un'altra cosa, e si vede in
+ * un colpo d'occhio — grigia, sbarrata di traverso, col timbro sopra. Il
+ * perche' resta scritto sotto: un no che non spiega non insegna niente.
+ */
+.figurina.perdente{opacity:.72; border-style:dashed; border-color:#4a3038;
+  background:repeating-linear-gradient(135deg,
+    rgba(18,20,28,.9) 0 12px, rgba(30,20,24,.9) 12px 24px)}
+.figurina.perdente .titolo, .figurina.perdente .testo{color:#8d8794}
+.figurina.perdente .timbro{position:absolute; right:-34px; top:13px;
+  transform:rotate(28deg); padding:3px 40px; font-size:11px; font-weight:800;
+  letter-spacing:2px; text-transform:uppercase; color:#ff8fa3;
+  border-top:1px solid #7a3345; border-bottom:1px solid #7a3345;
+  background:rgba(90,20,35,.35)}
+
+/* Un cassetto chiuso: quello che c'e' ma non si deve guardare per primo. */
+.cassetto{margin:14px 0; border:1px solid var(--riga); border-radius:12px;
+  background:rgba(14,16,22,.6)}
+.cassetto summary{padding:11px 13px; cursor:pointer; color:var(--spento);
+  font-size:13px; font-weight:600; list-style:none}
+.cassetto summary::-webkit-details-marker{display:none}
+.cassetto summary::before{content:"+ "; color:var(--oro)}
+.cassetto[open] summary::before{content:"- "}
+.cassetto .quanti{margin-left:6px; color:var(--oro)}
+.cassetto > div{padding:0 11px 11px}
+
+/* Il tasto per copiare un prompt: piccolo, sotto al testo. */
+.figurina .copia-uno{margin-top:8px; padding:7px 12px; font-size:12px}
+
 .pastiglia{display:inline-block; padding:2px 9px; border-radius:999px; font-size:11px;
   font-weight:700; border:1px solid currentColor}
 .riga-tasti{display:flex; gap:8px; margin-top:9px; flex-wrap:wrap}
@@ -230,6 +388,33 @@ h2:first-child{margin-top:2px}
 .gradi-scelta button{padding:5px 10px; border-radius:999px; font-size:11.5px; font-weight:700;
   border:1px solid currentColor; background:transparent; cursor:pointer}
 .gradi-scelta button.scelto{color:#0b0d12!important}
+
+/**
+ * ⚠ **I tagli.** Chiesto il 10 settembre 2026: «pulsanti da 2 a 500, oppure
+ * personalizzato». Sono larghi da toccare col pollice e stanno su due righe su
+ * un telefono: otto tasti in fila su uno schermo stretto diventano otto
+ * francobolli, e si sbaglia sempre quello accanto.
+ */
+.tagli{display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin-top:9px}
+@media (min-width:560px){ .tagli{grid-template-columns:repeat(8,1fr)} }
+.tagli button{padding:10px 4px; border-radius:10px; font-size:12.5px; font-weight:700;
+  border:1px solid var(--riga); background:rgba(9,11,16,.7); color:var(--testo);
+  cursor:pointer; font-variant-numeric:tabular-nums;
+  transition:transform .1s ease, border-color .15s ease}
+.tagli button:active{transform:translateY(1px)}
+.tagli button.scelto{border-color:var(--oro); color:#0b0d12;
+  background:linear-gradient(180deg,#ffe1a0,#e5b64f)}
+
+/* Una persona a cui mandare lire. */
+.persona{padding:11px 12px; border-radius:13px; border:1px solid var(--riga);
+  background:rgba(18,20,28,.85); margin-bottom:8px}
+.persona .testa{display:flex; align-items:baseline; gap:8px; flex-wrap:wrap}
+.persona .testa small{color:var(--spento); font-size:12px}
+
+/* Quello che si e' scelto di attaccare, prima di prenderla. */
+.attaccata{display:flex; align-items:center; gap:9px; margin-top:9px}
+.attaccata img{width:64px; height:64px; object-fit:cover; border-radius:9px;
+  border:1px solid var(--riga)}
 
 table{width:100%; border-collapse:collapse; font-size:13.5px}
 th{text-align:left; font-weight:600; color:var(--spento); font-size:11.5px;
@@ -326,6 +511,33 @@ nav .pallino{display:inline-block; min-width:16px; padding:0 4px; margin-left:4p
 .grande .testone{margin-top:20px; font-size:clamp(19px,3.6vw,34px); line-height:1.4;
   color:var(--testo); overflow-wrap:anywhere; white-space:pre-wrap}
 .grande .chiudi{margin-top:26px; font-size:clamp(12px,2vw,15px); color:var(--spento)}
+
+/**
+ * ⚠ **La galleria da cui si sceglie cosa attaccare.**
+ *
+ * Chiesto il 10 settembre 2026: «lincare facilmente, non come ora, l'immagine
+ * dalla suite». Copre tutto perche' e' una cosa sola da fare: si guarda, si
+ * tocca, si torna indietro. I riquadri sono quadrati e ritagliati — una
+ * griglia di foto con proporzioni diverse non si scorre con l'occhio.
+ */
+.foglio{position:fixed; inset:0; z-index:45; display:flex; flex-direction:column;
+  background:rgba(8,9,13,.97); backdrop-filter:blur(6px)}
+.foglio-testa{display:flex; align-items:center; gap:10px; padding:12px 14px;
+  border-bottom:1px solid var(--riga)}
+.foglio-testa b{flex:1}
+/* «align-content:start» perche' con tre foto sole le righe si spartivano tutta
+   l'altezza del foglio e ne uscivano tre colonne lunghe un metro. */
+.griglia-libreria{flex:1; overflow-y:auto; display:grid; gap:8px; padding:12px 14px 28px;
+  grid-template-columns:repeat(auto-fill, minmax(96px, 1fr)); align-content:start}
+.griglia-libreria .voce{padding:0; border:1px solid var(--riga); border-radius:11px;
+  background:rgba(18,20,28,.85); color:var(--testo); cursor:pointer; overflow:hidden;
+  display:flex; flex-direction:column}
+.griglia-libreria .voce:active{transform:scale(.97)}
+.griglia-libreria .voce img{width:100%; aspect-ratio:1; object-fit:cover; display:block}
+.griglia-libreria .voce .senza{display:flex; align-items:center; justify-content:center;
+  aspect-ratio:1; font-size:11px; color:var(--spento)}
+.griglia-libreria .voce small{padding:6px 7px; font-size:11px; color:var(--spento);
+  text-align:left; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
 
 /* ------------------------------------------------------------- l'avviso */
 .avviso{position:fixed; left:50%; bottom:78px; transform:translateX(-50%);

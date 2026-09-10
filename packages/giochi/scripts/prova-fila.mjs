@@ -20,6 +20,8 @@ import {
   manda,
   NienteDaFare,
   prendi,
+  regala,
+  TAGLI,
   serieChiuse,
   sommaDeiPezzi,
   statoMagazzino,
@@ -78,6 +80,77 @@ prova("una combinazione mandata sta in attesa, e non costa niente", () =>
     uguale(t.d.conto("pino").mandate, 1);
     vero(c.titolo.length > 0, "la figurina ha un titolo: i nomi dei pezzi");
     vero(c.prompt.length > 0, "e un prompt vero da dare al modello");
+  }),
+);
+
+/**
+ * ⚠ **Si manda quello che si e' bloccato, e basta quello.** Cambiato il 10
+ * settembre 2026: «deve inviare solo quelli bloccati e basta, anche se sono
+ * solo 3».
+ *
+ * Prima la combinazione doveva essere completa — dodici pezzi — e gli altri
+ * nove erano roba uscita a caso all'ultimo giro. Chi comanda si ritrovava a
+ * giudicare mezza idea di qualcuno e mezza pescata dal mazzo.
+ */
+prova("si puo' mandare anche solo qualche pezzo, se sono quelli bloccati", () =>
+  conCartella((file) => {
+    const t = tavolino(file);
+    const tre = t.pezzi.slice(0, 3);
+    const r = manda(t.d, "pino", "musica", "sempre", tre);
+    uguale(r.esito, "mandata");
+    uguale(r.cosa.pezzi.length, 3, "ne partono tre, non dodici");
+    vero(r.cosa.prompt.length > 0, "e il prompt e' fatto con quei tre");
+  }),
+);
+
+prova("senza niente bloccato non si manda", () =>
+  conCartella((file) => {
+    const t = tavolino(file);
+    let detto = "";
+    try {
+      manda(t.d, "pino", "musica", "sempre", []);
+    } catch (errore) {
+      detto = errore.message;
+      vero(errore instanceof NienteDaFare);
+    }
+    vero(detto.length > 0, "doveva dire di bloccare qualcosa");
+  }),
+);
+
+prova("due pezzi dalla stessa casella non si mandano", () =>
+  conCartella((file) => {
+    const t = tavolino(file);
+    let detto = "";
+    try {
+      manda(t.d, "pino", "musica", "sempre", [t.pezzi[0], t.pezzi[0]]);
+    } catch (errore) {
+      detto = errore.message;
+    }
+    vero(detto.length > 0, "sono lo stesso rullo due volte");
+  }),
+);
+
+/**
+ * ⚠ **L'ordine in cui arrivano non conta.**
+ *
+ * L'impronta si fa dagli id in fila, e se dipendesse da come li manda la pagina
+ * la stessa identica combinazione mandata da due persone sarebbe due
+ * combinazioni diverse — e la riscoperta, che e' meta' del gioco, non
+ * scatterebbe mai.
+ */
+prova("mandati in un altro ordine sono la stessa combinazione", () =>
+  conCartella((file) => {
+    const t = tavolino(file);
+    const tre = t.pezzi.slice(0, 3);
+    manda(t.d, "pino", "musica", "sempre", tre);
+    let detto = "";
+    try {
+      manda(t.d, "gino", "musica", "sempre", [tre[2], tre[0], tre[1]]);
+    } catch (errore) {
+      detto = errore.message;
+    }
+    vero(detto.length > 0, "e' la stessa: non se ne fanno due");
+    uguale(t.d.collezionabili().length, 1);
   }),
 );
 
@@ -146,37 +219,27 @@ prova("il premio della riscoperta e' quello vero, non uno fisso", () =>
   }),
 );
 
-prova("i pezzi fuori posto non passano", () =>
-  conCartella((file) => {
-    const t = tavolino(file);
-    const storti = t.pezzi.slice();
-    const primo = storti[0];
-    storti[0] = storti[1];
-    storti[1] = primo;
-    let fermato = true;
-    try {
-      manda(t.d, "pino", "musica", "sempre", storti);
-      fermato = false;
-    } catch (errore) {
-      vero(errore instanceof NienteDaFare);
-    }
-    vero(fermato, "un genere nella casella della voce non e' una combinazione");
-  }),
-);
-
-prova("mezza combinazione non e' una combinazione", () =>
-  conCartella((file) => {
-    const t = tavolino(file);
-    let fermato = true;
-    try {
-      manda(t.d, "pino", "musica", "sempre", t.pezzi.slice(0, 3));
-      fermato = false;
-    } catch (errore) {
-      vero(errore instanceof NienteDaFare);
-    }
-    vero(fermato, "doveva rifiutare");
-  }),
-);
+/*
+ * ⚠ **Qui c'erano due prove della regola vecchia, e sono cadute apposta il
+ * 10 settembre 2026.**
+ *
+ * Dicevano che una combinazione doveva essere **completa** — dodici pezzi, uno
+ * per casella, in ordine — e che mezza non valeva. Adesso si manda quello che
+ * si e' bloccato, anche tre pezzi: vedi «manda» nel banco, e le prove nuove piu'
+ * su.
+ *
+ * Le due cose che controllavano restano controllate, ma dette bene:
+ *
+ * - «un genere nella casella della voce» non e' piu' un caso possibile: un
+ *   pezzo **ha** il suo rullo addosso e finisce dov'e' suo, non dove lo mette
+ *   chi chiama. Quello che resta da vietare e' **due pezzi dalla stessa
+ *   casella**, e ha la sua prova.
+ * - «mezza combinazione» adesso e' esattamente quello che si vuole mandare.
+ *   Quello che non si puo' mandare e' **niente**, e ha la sua prova.
+ *
+ * Una prova che cade quando cambia una regola ha fatto il suo mestiere: se
+ * fossero rimaste verdi, vorrebbe dire che non guardavano niente.
+ */
 
 /* ------------------------------------------------------ prendere e buttare */
 
@@ -357,5 +420,50 @@ prova("davanti sta chi si e' fatto prendere le combinazioni", () =>
     uguale(c[0].chi, "artista", "due prese battono un colpo grosso e un conto pieno");
   }),
 );
+
+/* --------------------------------------------------------------- i regali */
+
+prova("chi comanda manda lire, e chi le riceve lo viene a sapere", () =>
+  conCartella((file) => {
+    const d = new Deposito(file);
+    const prima = d.conto("pino").saldo;
+    const fatto = regala(d, "capo", "pino", 100, "Bella quella riga");
+    uguale(d.conto("pino").saldo, prima + 100);
+    uguale(d.conto("pino").regali, 100, "e si tiene il conto di quanto gli e' stato dato");
+    uguale(fatto.regalo.perche, "Bella quella riga");
+    uguale(fatto.regalo.daAdmin, "capo");
+    vero(fatto.regalo.quando > 0, "col suo quando: e' quello che dice se e' nuovo");
+  }),
+);
+
+prova("un regalo senza due parole dentro ne ha comunque", () =>
+  conCartella((file) => {
+    const d = new Deposito(file);
+    const fatto = regala(d, "capo", "pino", 5, "   ");
+    vero(fatto.regalo.perche.length > 0, "un regalo muto si legge come un guasto");
+  }),
+);
+
+prova("non si regalano zero lire, ne' un milione, ne' a se stessi", () =>
+  conCartella((file) => {
+    const d = new Deposito(file);
+    for (const [chi, quanto] of [["pino", 0], ["pino", -50], ["pino", 999999], ["capo", 10]]) {
+      let caduta = null;
+      try {
+        regala(d, "capo", chi, quanto, "");
+      } catch (e) {
+        caduta = e;
+      }
+      vero(caduta instanceof NienteDaFare, "rifiutato: " + chi + " " + quanto);
+    }
+    uguale(d.conto("pino").saldo, d.impostazioni().regaloIniziale, "e il saldo non si e' mosso");
+  }),
+);
+
+prova("i tagli sono quelli delle banconote, da 2 a 500", () => {
+  uguale(TAGLI[0], 2);
+  uguale(TAGLI[TAGLI.length - 1], 500);
+  vero(TAGLI.every((t) => Number.isInteger(t) && t > 0), "tutti numeri interi");
+});
 
 process.exit(tirandoLeSomme("la fila e i pacchetti"));

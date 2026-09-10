@@ -136,6 +136,46 @@ export const COPIONE = `
     return (quanto < 0 ? "-" : "") + "L. " + cifre;
   }
 
+  /**
+   * ⚠ **Copiare, e funzionare anche sul telefono di casa.**
+   *
+   * Chiesto il 10 settembre 2026: «copiare i prompt in inglese con un click».
+   * C'era gia' un tasto, e sul telefono non copiava niente: la suite si serve
+   * in chiaro sulla rete di casa, e in una pagina che non e' «https»
+   * «navigator.clipboard» **non esiste**. Il tasto rispondeva «Copiato» e non
+   * era vero, che e' peggio di un tasto che manca.
+   *
+   * Qui si prova la strada buona, e se non c'e' si torna a quella vecchia: una
+   * casella nascosta, si seleziona, «execCommand». Brutta e sorpassata, ma su
+   * una pagina in chiaro e' l'unica che copia davvero.
+   */
+  function copiaTesto(testo) {
+    if (!testo) return;
+    var fatto = function () { avviso("Copiato.", "bene"); };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(testo).then(fatto, function () { allaVecchia(testo, fatto); });
+      return;
+    }
+    allaVecchia(testo, fatto);
+  }
+
+  function allaVecchia(testo, fatto) {
+    try {
+      var c = document.createElement("textarea");
+      c.value = testo;
+      c.setAttribute("readonly", "");
+      c.style.position = "fixed";
+      c.style.top = "-1000px";
+      document.body.appendChild(c);
+      c.select();
+      c.setSelectionRange(0, testo.length);
+      var andata = document.execCommand("copy");
+      document.body.removeChild(c);
+      if (andata) { fatto(); return; }
+    } catch (e) {}
+    avviso("Non riesco a copiare da qui: tieni premuto sul testo.", "male");
+  }
+
   function scalinoDi(grado) {
     var g = io && io.gradi ? io.gradi : [];
     for (var i = 0; i < g.length; i++) if (g[i].id === grado) return g[i];
@@ -379,11 +419,24 @@ export const COPIONE = `
     }
     $("rulli").innerHTML = dentro;
 
-    var completa = pezzi.length === rulli.length && pezzi.length > 0;
-    $("manda").disabled = !completa;
-    $("prompt").innerHTML = completa
-      ? sicuro(pezzi.map(function (p) { return p.testo; }).join(", "))
-      : "<span class=\\"vuoto\\">Tira la leva.</span>";
+    /**
+     * ⚠ **Il tasto «manda» si accende quando c'e' qualcosa di bloccato**, non
+     * quando i rulli sono pieni. Cambiato il 10 settembre 2026 insieme alla
+     * regola: si manda quello che si e' tenuto.
+     *
+     * E il prompt qui sotto mostra **quello che si manderebbe**: prima faceva
+     * vedere tutti e dodici i pezzi, cioe' una cosa diversa da quella che
+     * partiva. Una riga che promette una cosa e ne manda un'altra e' il modo
+     * piu' semplice di far mandare a qualcuno una roba che non voleva.
+     */
+    var scelti = quelliBloccati();
+    $("manda").disabled = scelti.length === 0;
+    var daMandare = pezzi.filter(function (p, i) { return p && bloccati[i]; });
+    $("prompt").innerHTML = daMandare.length
+      ? sicuro(daMandare.map(function (p) { return p.testo; }).join(", "))
+      : pezzi.length
+        ? "<span class=\\"vuoto\\">Blocca i rulli che ti piacciono: si manda quello.</span>"
+        : "<span class=\\"vuoto\\">Tira la leva.</span>";
   }
 
   function disegnaSaldo(saliti) {
@@ -522,6 +575,21 @@ export const COPIONE = `
     }
   }
 
+  /**
+   * Gli id dei rulli tenuti fermi, in ordine di rullo.
+   *
+   * «bloccati» ha un posto per rullo, con dentro l'id o niente: qui si tolgono
+   * i buchi. L'ordine resta quello dei rulli — e conta, perche' e' quello che
+   * fa l'impronta di una combinazione.
+   */
+  function quelliBloccati() {
+    var fuori = [];
+    for (var i = 0; i < bloccati.length; i++) {
+      if (bloccati[i]) fuori.push(bloccati[i]);
+    }
+    return fuori;
+  }
+
   /* -------------------------------------------------------------- mandare */
 
   /**
@@ -535,11 +603,21 @@ export const COPIONE = `
    * - **gia' tua**: ce l'avevi gia'. Due lire di multa e nient'altro.
    */
   function manda() {
-    if (pezzi.length !== rulli.length) return;
+    /**
+     * ⚠ **Si mandano i rulli bloccati, e basta quelli.** Chiesto il 10
+     * settembre 2026: «deve inviare solo quelli bloccati e basta, anche se sono
+     * solo 3».
+     *
+     * Bloccare un rullo e' il gesto con cui si dice «questo si'». Quello che non
+     * e' bloccato e' roba uscita all'ultimo giro, e mandarla vorrebbe dire far
+     * giudicare a chi comanda mezza idea tua e mezza pescata dal mazzo.
+     */
+    var scelti = quelliBloccati();
+    if (!scelti.length) return;
     chiedi("POST", "/manda", {
       tavolo: tavolo,
       era: era,
-      pezzi: pezzi.map(function (p) { return p.id; }),
+      pezzi: scelti,
     })
       .then(function (r) {
         io.saldo = r.saldo;
@@ -578,8 +656,12 @@ export const COPIONE = `
   function figurinaHtml(c, opzioni) {
     var o = opzioni || {};
     var s = scalinoDi(c.grado);
+    // Una buttata non e' una figurina piu' spenta: e' un biglietto perdente, e
+    // si vede subito che lo e'. Vedi «.figurina.perdente» nello stile.
     var h = "<div class=\\"figurina f" + s.fuoco + (c.scoperta ? "" : " coperta") +
+      (c.stato === "buttata" ? " perdente" : "") +
       "\\" style=\\"--g:" + s.colore + "\\">";
+    if (c.stato === "buttata") h += "<div class=\\"timbro\\">perdente</div>";
     h += "<div class=\\"titolo\\">" + sicuro(c.titolo) + "</div>";
     h += "<div class=\\"sotto\\">";
     if (c.prezzo > 0) {
@@ -591,7 +673,29 @@ export const COPIONE = `
     if (c.stato === "in-attesa") h += " · in attesa";
     if (c.stato === "buttata") h += " · buttata: " + sicuro(c.motivo);
     h += "</div>";
-    if (c.scoperta && c.prompt) h += "<div class=\\"testo\\">" + sicuro(c.prompt) + "</div>";
+    if (c.scoperta && c.prompt) {
+      h += "<div class=\\"testo\\">" + sicuro(c.prompt) + "</div>";
+      /**
+       * Il tasto per copiare **questo** prompt.
+       *
+       * Il testo viaggia nell'attributo e non in una tabella a parte: la
+       * figurina e' una stringa di HTML rifatta a ogni giro, e una tabella di
+       * appoggio sarebbe una seconda copia da tenere allineata a mano.
+       */
+      h += "<button class=\\"btn piano copia-uno\\" data-copia=\\"" +
+        sicuro(c.prompt) + "\\">Copia in inglese</button>";
+    }
+    /**
+     * ⚠ **La cosa venuta fuori da quel prompt**, se chi comanda ce l'ha
+     * attaccata. Si vede **anche da coperta**, ed e' voluto: nello shop uno
+     * deve poter guardare cosa sta comprando. Il prompt no, quello resta
+     * nascosto finche' non e' tuo.
+     */
+    if (c.allegato && String(c.allegatoMime || "").indexOf("audio/") === 0) {
+      h += "<audio controls src=\\"" + sicuro(c.allegato) + "\\"></audio>";
+    } else if (c.allegato) {
+      h += "<img src=\\"" + sicuro(c.allegato) + "\\" alt=\\"\\" loading=\\"lazy\\">";
+    }
     // Le figurine che non sono prompt si guardano o si ascoltano: il file sta
     // nella libreria della suite, qui c'e' solo il suo indirizzo.
     if (c.scoperta && c.dove && c.mime.indexOf("image/") === 0) {
@@ -610,6 +714,11 @@ export const COPIONE = `
       $("mie-mandate").innerHTML = dati.mandate.length
         ? dati.mandate.map(function (c) { return figurinaHtml(c); }).join("")
         : "<div class=\\"niente\\">Non hai ancora mandato niente. Monta una riga e mandala.</div>";
+      // I perdenti: il cassetto compare solo se dentro c'e' qualcosa.
+      var persi = dati.perdenti || [];
+      $("cassetto-perdenti").hidden = persi.length === 0;
+      $("quanti-perdenti").textContent = persi.length ? String(persi.length) : "";
+      $("mie-perdenti").innerHTML = persi.map(function (c) { return figurinaHtml(c); }).join("");
       $("mie-collezione").innerHTML = dati.collezione.length
         ? dati.collezione.map(function (c) { return figurinaHtml(c); }).join("")
         : "<div class=\\"niente\\">La collezione e' vuota. Si riempie giocando o coi pacchetti.</div>";
@@ -829,6 +938,66 @@ export const COPIONE = `
     return h;
   }
 
+  /**
+   * ⚠ **I tagli: si sceglie quanto con un tocco, non scrivendo un numero.**
+   *
+   * Chiesto il 10 settembre 2026: «il bonus in lire devono essere pulsanti da 2
+   * a 500, oppure personalizzato». Sono i tagli delle banconote, e non e' un
+   * vezzo: davanti a otto numeri conosciuti si decide in un secondo, davanti a
+   * una casella vuota ci si mette a pensare quanto vale un'idea — e finisce che
+   * non si decide. La casella per il numero preciso resta accanto.
+   *
+   * «quale» dice a cosa serve la fila: «bonus» in fila, «regalo» per la gente.
+   * L'attributo «data-taglio» e' lo stesso, cosi' il tasto e' uno solo.
+   */
+  function tastiTaglio(quale, id) {
+    var tagli = (io && io.tagli) || [2, 5, 10, 20, 50, 100, 200, 500];
+    var h = "<div class=\\"tagli\\" data-tagli=\\"" + quale + ":" + id + "\\">";
+    for (var i = 0; i < tagli.length; i++) {
+      h += "<button data-taglio=\\"" + tagli[i] + "\\" data-quale=\\"" + quale +
+        "\\" data-per=\\"" + id + "\\">" + soldi(tagli[i]) + "</button>";
+    }
+    h += "</div>";
+    return h;
+  }
+
+  /** Quello che si sta per dare: il taglio toccato, o il numero scritto. */
+  function quantoScelto(quale, id) {
+    var casella = document.querySelector("[data-" + quale + "=\\"" + id + "\\"]");
+    var scritto = casella && casella.value ? Math.round(Number(casella.value)) : 0;
+    if (scritto > 0) return scritto;
+    return tagliScelti[quale + ":" + id] || 0;
+  }
+
+  /** Il taglio toccato, per ogni casella. Si azzera appena si e' deciso. */
+  var tagliScelti = {};
+
+  function segnaTaglio(quale, id, quanto) {
+    var chiave = quale + ":" + id;
+    // Toccare due volte lo stesso taglio lo toglie: si sbaglia tasto, e senza
+    // questo l'unico modo di tornare indietro sarebbe ricaricare.
+    tagliScelti[chiave] = tagliScelti[chiave] === quanto ? 0 : quanto;
+    var casella = document.querySelector("[data-" + quale + "=\\"" + id + "\\"]");
+    if (casella) casella.value = "";
+    var fila = document.querySelector("[data-tagli=\\"" + chiave + "\\"]");
+    if (fila) {
+      var t = fila.querySelectorAll("button");
+      for (var i = 0; i < t.length; i++) {
+        t[i].classList.toggle("scelto",
+          Number(t[i].getAttribute("data-taglio")) === tagliScelti[chiave]);
+      }
+    }
+    aggiornaTotale(id);
+  }
+
+  /** Il totale sotto una riga della fila: i pezzi piu' il bonus scelto. */
+  function aggiornaTotale(id) {
+    var totale = document.querySelector("[data-totale=\\"" + id + "\\"]");
+    if (!totale) return;
+    var base = Number(totale.getAttribute("data-base")) || 0;
+    totale.textContent = soldi(base + quantoScelto("bonus", id));
+  }
+
   function caricaFila() {
     if (!io.admin) return;
     chiedi("GET", "/fila").then(function (dati) {
@@ -841,15 +1010,24 @@ export const COPIONE = `
             // Il valore di base e' la somma dei dodici pezzi, e arriva dal
             // PC. Chi comanda aggiunge solo il **bonus**: quanto vale l'idea
             // oltre ai pezzi di cui e' fatta.
+            var scelta = attaccati[c.id];
             var tasti =
               "<div class=\\"conto\\">I pezzi valgono <b>" + soldi(c.base) + "</b>" +
-              " · con il bonus fa <b data-totale=\\"" + c.id + "\\">" + soldi(c.base) + "</b></div>" +
+              " · con il bonus fa <b data-totale=\\"" + c.id + "\\" data-base=\\"" +
+              c.base + "\\">" + soldi(c.base + quantoScelto("bonus", c.id)) + "</b></div>" +
+              tastiTaglio("bonus", c.id) +
               "<div class=\\"riga-tasti\\">" +
-              "<input type=\\"number\\" min=\\"0\\" placeholder=\\"bonus in lire\\" " +
-              "data-bonus=\\"" + c.id + "\\" data-base=\\"" + c.base + "\\">" +
-              "<input type=\\"text\\" placeholder=\\"indirizzo del contenuto (facoltativo)\\" " +
-              "data-allegato=\\"" + c.id + "\\">" +
+              "<input type=\\"number\\" min=\\"0\\" placeholder=\\"o scrivi quanto\\" " +
+              "data-bonus=\\"" + c.id + "\\">" +
+              // Attaccare la cosa venuta fuori da quel prompt: si guarda la
+              // galleria e si tocca, non si copia un indirizzo a mano.
+              "<button class=\\"btn piano\\" data-attacca=\\"" + c.id + "\\">" +
+              (scelta ? "Attaccata: " + sicuro(scelta.titolo) : "Attacca dalla suite") +
+              "</button>" +
               "</div>" +
+              (scelta ? "<div class=\\"attaccata\\"><img src=\\"" +
+                sicuro(scelta.anteprima || scelta.url) + "\\" alt=\\"\\">" +
+                "<button class=\\"btn piano\\" data-stacca=\\"" + c.id + "\\">Togli</button></div>" : "") +
               "<div class=\\"riga-tasti\\">" +
               "<button class=\\"btn oro\\" data-prendi=\\"" + c.id + "\\">Prendila</button>" +
               "<button class=\\"btn piano\\" data-butta=\\"" + c.id + "\\">Buttala</button>" +
@@ -878,7 +1056,93 @@ export const COPIONE = `
             return figurinaHtml(c, { tasti: tasti });
           }).join("")
         : "<div class=\\"niente\\">Ancora niente.</div>";
+
+      // Le buttate: in un cassetto chiuso, che compare solo se ce n'e'.
+      var persi = dati.buttate || [];
+      $("cassetto-buttate").hidden = persi.length === 0;
+      $("quanti-buttate").textContent = persi.length ? String(persi.length) : "";
+      $("fila-buttate").innerHTML = persi.map(function (c) { return figurinaHtml(c); }).join("");
     }).catch(function (e) { avviso(e.message, "male"); });
+    caricaGente();
+  }
+
+  /* ------------------------------------------------------------- i regali */
+
+  /**
+   * @ATT **Chi c'e', e quanto gli mando.**
+   *
+   * Chiesto il 10 settembre 2026: «l'admin deve poter inviare lire agli utenti».
+   * E' l'unico rubinetto delle lire oltre alle combinazioni prese — girando la
+   * slot escono punti, non lire — quindi sta in mano a una persona sola e ha un
+   * perche' scritto accanto: un saldo che cambia da solo sembra un guasto.
+   */
+  function caricaGente() {
+    if (!io.admin) return;
+    chiedi("GET", "/gente").then(function (dati) {
+      $("gente").innerHTML = dati.gente.length
+        ? dati.gente.map(function (g) {
+            return "<div class=\\"persona\\">" +
+              "<div class=\\"testa\\"><b>" + sicuro(g.nome) + "</b>" +
+              "<small>" + (g.mai ? "non ha mai aperto la sala giochi"
+                : "ha " + soldi(g.saldo) +
+                  (g.regali ? " · regalate " + soldi(g.regali) : "")) + "</small></div>" +
+              tastiTaglio("regalo", g.chi) +
+              "<div class=\\"riga-tasti\\">" +
+              "<input type=\\"number\\" min=\\"1\\" placeholder=\\"o scrivi quanto\\" " +
+              "data-regalo=\\"" + sicuro(g.chi) + "\\">" +
+              "<button class=\\"btn oro\\" data-manda-lire=\\"" + sicuro(g.chi) +
+              "\\">Manda</button></div></div>";
+          }).join("")
+        : "<div class=\\"niente\\">Non c'e' ancora nessun altro che gioca.</div>";
+    }).catch(function (e) { avviso(e.message, "male"); });
+  }
+
+  function mandaLire(chi) {
+    var quanto = quantoScelto("regalo", chi);
+    if (quanto < 1) { avviso("Quanto? Tocca un taglio, o scrivilo.", "male"); return; }
+    var perche = prompt("Due parole a chi le riceve:", "Bravo.");
+    if (perche === null) return;
+    chiedi("POST", "/regala", { chi: chi, quanto: quanto, perche: perche })
+      .then(function (r) {
+        tagliScelti["regalo:" + chi] = 0;
+        avviso(soldi(quanto) + " a " + r.nome + ". Adesso ha " + soldi(r.saldo) + ".", "bene");
+        coriandoli(24, ["#ffd166", "#ffffff"]);
+        caricaGente();
+      }).catch(function (e) { avviso(e.message, "male"); });
+  }
+
+  /* --------------------------------------------------- attaccare dalla suite */
+
+  /** Quello che si e' scelto di attaccare, per ogni cosa in fila. */
+  var attaccati = {};
+  /** A chi sta attaccando quello che si tocca nella galleria. */
+  var attaccaA = "";
+
+  function apriLibreria(id) {
+    attaccaA = id;
+    $("libreria").hidden = false;
+    $("libreria-roba").innerHTML = "<div class=\\"niente\\">Guardo…</div>";
+    chiedi("GET", "/libreria").then(function (dati) {
+      $("libreria-roba").innerHTML = dati.voci.length
+        ? dati.voci.map(function (v) {
+            var foto = v.anteprima || (v.mime.indexOf("image/") === 0 ? v.url : "");
+            return "<button class=\\"voce\\" data-voce=\\"" + sicuro(v.id) + "\\" " +
+              "data-url=\\"" + sicuro(v.url) + "\\" data-mime=\\"" + sicuro(v.mime) + "\\" " +
+              "data-titolo=\\"" + sicuro(v.titolo) + "\\" data-anteprima=\\"" + sicuro(foto) + "\\">" +
+              (foto ? "<img src=\\"" + sicuro(foto) + "\\" alt=\\"\\" loading=\\"lazy\\">"
+                    : "<span class=\\"senza\\">" + sicuro(v.mime) + "</span>") +
+              "<small>" + sicuro(v.titolo) + "</small></button>";
+          }).join("")
+        : "<div class=\\"niente\\">Qui non c'e' niente da attaccare. " +
+          "La galleria della suite e' vuota, o questa sala giochi gira per conto suo.</div>";
+    }).catch(function (e) {
+      $("libreria-roba").innerHTML = "<div class=\\"niente\\">" + sicuro(e.message) + "</div>";
+    });
+  }
+
+  function chiudiLibreria() {
+    $("libreria").hidden = true;
+    attaccaA = "";
   }
 
   /** Il prezzo che si sta per dare: quello scritto, o il fondo del grado scelto. */
@@ -895,15 +1159,15 @@ export const COPIONE = `
   }
 
   function prendila(id) {
-    var casella = document.querySelector("[data-bonus=\\"" + id + "\\"]");
-    var allegato = document.querySelector("[data-allegato=\\"" + id + "\\"]");
-    var bonus = casella ? Number(casella.value) || 0 : 0;
+    var scelta = attaccati[id];
     chiedi("POST", "/prendi", {
       id: id,
-      bonus: bonus,
-      allegato: allegato && allegato.value ? allegato.value.trim() : "",
-      allegatoMime: "image/*",
+      bonus: quantoScelto("bonus", id),
+      allegato: scelta ? scelta.url : "",
+      allegatoMime: scelta ? scelta.mime : "image/*",
     }).then(function (c) {
+      tagliScelti["bonus:" + id] = 0;
+      delete attaccati[id];
       var s = scalinoDi(c.grado);
       avviso("Presa: " + s.nome + ", numero " + c.numero + " del magazzino.", "bene");
       if (s.fuoco >= 2) lampo(s.colore);
@@ -1042,6 +1306,40 @@ export const COPIONE = `
     if (prendi) { prendila(prendi); return; }
     var butta = b.getAttribute && b.getAttribute("data-butta");
     if (butta) { buttala(butta); return; }
+
+    // Copiare un prompt: il testo viaggia sull'attributo del tasto.
+    var copia = chiudi("[data-copia]");
+    if (copia) { copiaTesto(copia.getAttribute("data-copia")); return; }
+
+    // I tagli: bonus in fila, o regalo a qualcuno. Stesso tasto, due mestieri.
+    var taglio = chiudi("[data-taglio]");
+    if (taglio) {
+      segnaTaglio(taglio.getAttribute("data-quale"), taglio.getAttribute("data-per"),
+        Number(taglio.getAttribute("data-taglio")));
+      return;
+    }
+    var lire = b.getAttribute && b.getAttribute("data-manda-lire");
+    if (lire) { mandaLire(lire); return; }
+
+    var attacca = b.getAttribute && b.getAttribute("data-attacca");
+    if (attacca) { apriLibreria(attacca); return; }
+    var stacca = b.getAttribute && b.getAttribute("data-stacca");
+    if (stacca) { delete attaccati[stacca]; caricaFila(); return; }
+
+    // Una cosa scelta nella galleria: si tiene da parte e si chiude il foglio.
+    var voce = chiudi("[data-voce]");
+    if (voce && attaccaA) {
+      attaccati[attaccaA] = {
+        id: voce.getAttribute("data-voce"),
+        url: voce.getAttribute("data-url"),
+        mime: voce.getAttribute("data-mime"),
+        titolo: voce.getAttribute("data-titolo"),
+        anteprima: voce.getAttribute("data-anteprima"),
+      };
+      chiudiLibreria();
+      caricaFila();
+      return;
+    }
   });
 
   // Il totale sotto la fila si aggiorna mentre si scrive il bonus: chi decide
@@ -1050,10 +1348,15 @@ export const COPIONE = `
     var b = e.target;
     var id = b.getAttribute && b.getAttribute("data-bonus");
     if (!id) return;
-    var totale = document.querySelector("[data-totale=\\"" + id + "\\"]");
-    if (!totale) return;
-    var base = Number(b.getAttribute("data-base")) || 0;
-    totale.textContent = soldi(base + (Number(b.value) || 0));
+    // Scrivere un numero vince sul taglio toccato: l'ultima cosa che si fa e'
+    // quella che vale, se no si sceglie 50 e ne parte 100 senza capire perche'.
+    if (b.value) tagliScelti["bonus:" + id] = 0;
+    var fila = document.querySelector("[data-tagli=\\"bonus:" + id + "\\"]");
+    if (fila && b.value) {
+      var t = fila.querySelectorAll("button");
+      for (var i = 0; i < t.length; i++) t[i].classList.remove("scelto");
+    }
+    aggiornaTotale(id);
   });
 
   $("gira").addEventListener("click", gira);
@@ -1065,11 +1368,19 @@ export const COPIONE = `
     disegnaRulli();
   });
   $("copia").addEventListener("click", function () {
-    var testo = pezzi.map(function (p) { return p.testo; }).join(", ");
-    if (!testo) return;
-    if (navigator.clipboard) navigator.clipboard.writeText(testo);
-    avviso("Copiato.", "bene");
+    /**
+     * ⚠ **Si copia quello che si vede**, cioe' i rulli bloccati.
+     *
+     * Prima copiava tutti e dodici i pezzi mentre sotto ne erano scritti tre:
+     * il tasto sta sotto quella riga li', e un tasto che copia una cosa diversa
+     * da quella che gli sta sopra e' un tasto che mente. Se non c'e' niente di
+     * bloccato si copia quello che e' uscito: e' quello che si sta guardando.
+     */
+    var daMandare = pezzi.filter(function (p, i) { return p && bloccati[i]; });
+    var quali = daMandare.length ? daMandare : pezzi;
+    copiaTesto(quali.map(function (p) { return p.testo; }).join(", "));
   });
+  $("libreria-chiudi").addEventListener("click", chiudiLibreria);
   $("sblocca").addEventListener("click", function () {
     bloccati = [];
     ricordaTavolo();
@@ -1098,6 +1409,40 @@ export const COPIONE = `
 
   /* -------------------------------------------------------------- entrare */
 
+  /**
+   * ⚠ **Un regalo si dice a chi lo riceve.**
+   *
+   * Chi comanda manda lire; senza questo, al giocatore il saldo cambierebbe da
+   * solo fra un'apertura e l'altra — e un numero che cambia da solo si legge
+   * come un guasto, non come un regalo. Il «gia' visto» sta nel browser e non
+   * sul PC: riguarda uno schermo, non il conto.
+   */
+  function forseIlRegalo(regalo) {
+    if (!regalo || !regalo.quanto) return;
+    var chiave = "daprod.giochi.regalo";
+    try {
+      if (localStorage.getItem(chiave) === String(regalo.quando)) return;
+      localStorage.setItem(chiave, String(regalo.quando));
+    } catch (e) {}
+    grande("Ti hanno mandato " + soldi(regalo.quanto), "dalla cassa",
+      regalo.perche, "#ffd166");
+    coriandoli(60, ["#ffd166", "#ffffff", "#7fd1a8"]);
+  }
+
+  /**
+   * ⚠ **Il biscotto, se chi ospita ne da' uno.**
+   *
+   * Serve solo alle immagini: un tag «img» non sa mettere l'intestazione col
+   * token, e senza questo le foto attaccate alle figurine restano riquadri
+   * rotti. Si chiede una volta e si tira dritto: se non risponde, la pagina
+   * funziona uguale.
+   */
+  if (SESSIONE) {
+    var opzioni = { method: "POST", headers: {} };
+    if (token) opzioni.headers["Authorization"] = "Bearer " + token;
+    try { fetch(SESSIONE, opzioni).catch(function () {}); } catch (e) {}
+  }
+
   chiedi("GET", "/io").then(function (dati) {
     io = dati;
     $("mio-nome").textContent = dati.nome + (dati.admin ? " · decidi tu" : "");
@@ -1113,6 +1458,7 @@ export const COPIONE = `
     disegnaSaldo(false);
     disegnaLivello(dati.conto.esperienza, false);
     if (dati.admin) caricaFila();
+    forseIlRegalo(dati.regalo);
   }).catch(function (errore) {
     document.querySelector("main").innerHTML =
       "<div class=\\"niente\\">" + sicuro(errore.message) + "</div>";

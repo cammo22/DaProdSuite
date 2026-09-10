@@ -18,6 +18,120 @@ ancora lì.
 
 ---
 
+## 1.2.6 — La sala giochi si sistema
+
+Sei cose sulla sala giochi, tutte nate guardandola sul telefono.
+
+### Dodici rulli in una schermata
+
+> «Fai molto piu' piccoli per telefono, sono troppo grandi; trova un modo
+> originale per far entrare tutto bene sullo schermo piccolo e tablet ad alte
+> risoluzioni, una sola bella pagina intera.»
+
+Erano due colonne di carte alte centosessanta pixel: se ne vedevano **otto su
+dodici**, e per guardare la riga che si stava montando bisognava scorrere avanti
+e indietro.
+
+Adesso il conto e' sempre dodici e cambia come si dispongono: tre colonne per
+quattro righe su un telefono, quattro per tre su un tablet, sei per due su uno
+schermo largo. La griglia si prende l'altezza che avanza e non ne chiede mai di
+piu'.
+
+Il pezzo che lo tiene in piedi e' che **ogni carta misura il testo su se
+stessa**: la scritta non e' grande «tot pixel», e' grande una percentuale della
+carta che la contiene. Cosi' la stessa identica regola vale su un telefono da
+cinque pollici e su un tablet 4K — la carta si prende lo spazio che c'e', il
+testo cresce o si stringe con lei. Sulle carte piu' strette la riga in inglese e
+l'esempio spariscono: due parole tagliate a meta' sono peggio di niente.
+
+### Si manda quello che hai bloccato, e basta quello
+
+> «Le combinazioni, cioe' i prompt inviati quando si preme manda a controllare,
+> deve inviare solo quelli bloccati e basta, anche se sono solo 3.»
+
+Prima ne voleva **dodici**, e il resto era quello che era uscito a caso
+all'ultimo giro: in ogni combinazione mandata c'era dentro roba che non aveva
+scelto nessuno. Bloccare un rullo e' il gesto con cui si dice «questo si'»: tre
+pezzi scelti valgono piu' di dodici mezzi scelti.
+
+Il tasto «manda» adesso si accende appena c'e' qualcosa di bloccato, e la riga
+del prompt qui sotto fa vedere **quello che partirebbe** — prima ne mostrava
+dodici e ne mandava dodici, ma non erano i tuoi.
+
+### Bloccato si vede
+
+> «Quando blocchiamo, oltre al pallino giallo magari piu' grande, facciamo anche
+> attorno, che si capisce poco che e' bloccato.»
+
+Non era delicatezza, era un difetto: il bloccato tingeva d'oro il bordo, ma il
+colore del grado ridipinge lo stesso bordo e vinceva. Su qualunque pezzo da Rare
+in su restava solo un puntino da sette pixel. Adesso c'e' **un anello d'oro
+attorno alla carta**, un velo sopra e il pallino grosso — tre segni per la stessa
+cosa, perche' uno solo lo si perde.
+
+### Chi comanda puo' mandare lire
+
+> «L'admin deve poter inviare lire agli utenti... pulsanti da 2 a 500, oppure
+> personalizzato.»
+
+Nella scheda **Fila** c'e' l'elenco di chi c'e' in casa — tutti, anche chi non ha
+mai aperto la sala giochi — e per ognuno gli otto tagli delle banconote, da 2 a
+500, o un numero scritto a mano. Due parole di accompagnamento si scrivono
+sempre: chi le riceve trova un pannello che dice quanto e perche'. Un saldo che
+cambia da solo si legge come un guasto, non come un regalo.
+
+Gli stessi tagli valgono per il **bonus** quando si prende una combinazione:
+davanti a otto numeri conosciuti si decide in un secondo, davanti a una casella
+vuota ci si mette a pensare quanto vale un'idea.
+
+### L'immagine si attacca guardandola
+
+> «Lincare facilmente, non come ora, l'immagine dalla suite.»
+
+Per attaccare a una combinazione la foto che ne e' venuta fuori bisognava aprire
+la galleria, trovarla, copiarne l'indirizzo e incollarlo in una casella di testo:
+quattro gesti in due finestre, ogni volta. Adesso si apre **la galleria della
+suite dentro il gioco**, si tocca quello che si vuole, e si vede subito
+attaccato.
+
+⚠ Nel farlo e' saltato fuori che le immagini nelle figurine **non si erano mai
+viste**: un tag «img» non sa mettere il token nell'intestazione e tornava un 401.
+Adesso la pagina si fa dare un biscotto di sola lettura appena si apre, come fa
+gia' la console.
+
+### I prompt buttati diventano biglietti perdenti
+
+> «I prompt buttati devono essere messi in una categoria a parte e scomparire, e
+> l'utente lo vede come perdente.»
+
+Una combinazione buttata sparisce dalla fila e finisce in un cassetto chiuso, sia
+per chi comanda sia per chi l'ha mandata. A chi l'ha mandata si mostra per quello
+che e': un **biglietto perdente**, grigio e timbrato di traverso, col perche'
+scritto sotto. Il perche' resta — un no che non spiega non insegna niente — ma
+non sta piu' in mezzo alle altre: aprire la propria pagina non deve voler dire
+leggere per primi i propri no.
+
+### E i prompt si copiano davvero
+
+C'era un tasto «Copia» e sul telefono **non copiava niente**: la suite si serve in
+chiaro sulla rete di casa, e in una pagina che non e' «https» il modo moderno di
+copiare non esiste. Il tasto rispondeva «Copiato» e non era vero. Adesso c'e' la
+strada vecchia dietro, e un tasto **«Copia in inglese»** sotto a ogni prompt,
+ovunque compaia.
+
+### Una guardia perche' la 1.2.5 non si ripeta
+
+Nella 1.2.5 `@daprod/giochi` non e' finito dentro l'installer, e il risultato non
+e' stato «la sala giochi non c'e'»: e' stato **il gateway che non si carica**,
+perche' un require che fallisce porta giu' tutto il modulo. Da fuori si vedeva
+DaProdConnessione che diceva «aperto» e non si apriva.
+
+Adesso, dopo aver costruito l'installer, si guarda **dentro il pacchetto finito**
+se c'e' tutto quello che serve ad accendersi. Se manca qualcosa la pubblicazione
+si ferma li'.
+
+---
+
 ## 1.2.5 — La sala giochi, e i collegamenti che si guardano
 
 Il blocco 3 e il blocco 4 della 1.2.3, piu' due cose nate strada facendo: la

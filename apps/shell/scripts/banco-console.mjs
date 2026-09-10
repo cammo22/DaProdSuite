@@ -504,6 +504,22 @@ if (!("errore" in esito) && esito.dispositivo.ruolo !== RUOLO) {
 }
 if ("errore" in esito) throw new Error(esito.errore);
 
+/**
+ * ⚠ **Un secondo telefono, che non e' quello da cui si guarda.**
+ *
+ * Aggiunto il 10 settembre 2026, provando «manda lire»: con un dispositivo solo
+ * l'elenco della gente e' sempre vuoto — te stesso non ti compare — e la dash
+ * dei collegamenti ha una riga sola, che e' il computer. Due cose che si vedono
+ * solo se in casa c'e' qualcun altro, e in casa di Cammo c'e' sempre.
+ *
+ * Si chiama «la zia» apposta: e' il caso vero da cui sono nate tutte e due.
+ */
+for (const chi of ["la zia", "il nipote"]) {
+  if (!remoto.archivi.datiCorrenti.dispositivi.some((d) => d.nome === chi)) {
+    remoto.accoppia(remoto.nuovoInvito("ospite").codice, chi);
+  }
+}
+
 // Qualche richiesta finta, per riempire il Riepilogo e vedere i numeri.
 for (const [testo, stato] of [
   ["un faro sulla scogliera al tramonto", "pronta"],

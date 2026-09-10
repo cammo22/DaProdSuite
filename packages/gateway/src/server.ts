@@ -334,7 +334,7 @@ export class Gateway {
        * chiedendo, passa la domanda, riporta la risposta.
        */
       if (percorso === "/giochi" && req.method === "GET") {
-        this.pagina(res, paginaGiochi("/giochi"));
+        this.pagina(res, paginaGiochi("/giochi", "/sessione"));
         return;
       }
       /**
@@ -427,6 +427,38 @@ export class Gateway {
               return d ? indirizzoDellaFoto(d) : undefined;
             },
             indirizzoLibreria: (id) => "/libreria/file/" + encodeURIComponent(id),
+            /**
+             * ⚠ **Le cose della suite, per attaccarle a una figurina.**
+             *
+             * Chiesto il 10 settembre 2026: «lincare facilmente, non come
+             * ora, l'immagine dalla suite». Prima chi decide doveva copiare
+             * a mano l'indirizzo di un file dalla galleria e incollarlo in
+             * una casella di testo.
+             *
+             * Chiede `tutte` perche' qui ci arriva solo chi comanda — la
+             * rotta `/giochi/libreria` lo controlla prima — e chi comanda
+             * vede tutta la galleria (vedi `dove` in `FornitoreLibreria`).
+             * La copertina di un prompt puo' benissimo essere una foto
+             * fatta da qualcun altro.
+             */
+            gente: () =>
+              this.remoto.listaDispositivi().map((d) => ({
+                id: d.id,
+                nome: d.nome,
+                admin: d.ruolo === "admin",
+              })),
+            elencoLibreria: (_chi, quante) =>
+              (this.libreria?.elenco({ chi: chiGioca.id, dove: "tutte", quanti: quante }) ?? [])
+                .map((v) => ({
+                  id: v.id,
+                  titolo: v.nome,
+                  mime: v.mime,
+                  url: "/libreria/file/" + encodeURIComponent(v.id),
+                  anteprima: v.anteprima
+                    ? "/libreria/anteprima/" + encodeURIComponent(v.id)
+                    : undefined,
+                  quando: v.creato,
+                })),
           },
           req.method ?? "GET",
           percorso.slice("/giochi".length),

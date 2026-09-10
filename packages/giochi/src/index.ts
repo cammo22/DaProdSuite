@@ -20,7 +20,13 @@
 
 export { Deposito } from "./deposito";
 export { paginaGiochi } from "./pagina";
-export { rispondi, type Chi, type Contorno, type Risposta } from "./rotte";
+export {
+  rispondi,
+  type Chi,
+  type Contorno,
+  type Risposta,
+  type VoceLibreria,
+} from "./rotte";
 export {
   apriPacchetto,
   butta,
@@ -35,6 +41,8 @@ export {
   mettiInVetrina,
   prendi,
   prezzoConsigliato,
+  regala,
+  TAGLI,
   serie,
   serieChiuse,
   sommaDeiPezzi,
