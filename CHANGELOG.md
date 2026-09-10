@@ -10,6 +10,63 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ---
 
+## 1.3.1 — Chi resta fuori si vede prima
+
+> «Ho ancora problemi di connessione, forse erano vecchi account che con gli
+> aggiornamenti non funzionavano bene. Il mio account cammo funziona sempre
+> anche online, i vecchi no.»
+
+I vecchi account non erano rotti. Guardando il computer, la storia era un'altra
+— ed è sempre la stessa di sette volte fa.
+
+Da questa casa si esce **da una strada sola**: il tunnel gratuito di Cloudflare.
+Quel nome cambia ogni volta che il tunnel riparte, e il nome nuovo nasce
+**quando il vecchio è già morto**. Chi in quel momento è fuori casa ha in tasca
+solo indirizzi che non rispondono più, e non ha modo di sapere quello di stasera
+finché non torna sotto la wifi di casa.
+
+Ecco perché un telefono «funziona sempre» e un altro no: il primo passa da casa
+tutti i giorni e impara l'indirizzo nuovo da solo. Gli altri lo scoprono da
+fuori, cioè quando non possono più rimediare.
+
+### Il computer dice chi sta per restare fuori
+
+Nella dash dei collegamenti — DaProdConnessione, Impostazioni, «Come stanno i
+collegamenti» — adesso in cima c'è **da dove si entra da fuori, e da quando si
+chiama così**. E ogni persona che si è portata a casa gli indirizzi prima di
+quel momento ha la sua riga gialla: «se adesso esce di casa, non mi ritrova».
+
+Non è una previsione: il computer si segna il momento esatto in cui ogni
+telefono gli chiede dove si trova, e lo confronta con l'ultimo cambio di nome.
+Chi è a posto resta verde.
+
+⚠ L'avviso compare **solo quando la strada da fuori è una che scade**. Con un
+indirizzo che non cambia mai — Tailscale, o uno fisso — la domanda non si pone,
+e infatti la riga non compare.
+
+### E lo si rimette dentro senza farlo tornare a casa
+
+L'app sapeva già rimettersi a posto da sola: menu, «Indirizzo nuovo del
+computer», si scrive l'indirizzo di oggi e si rientra col proprio collegamento,
+senza rifare niente. Il guaio era **dove stava scritto** quell'indirizzo: sullo
+schermo del computer, cioè esattamente nel posto dove chi è fuori non può
+guardare.
+
+Adesso accanto a chi è rimasto indietro c'è **«Copia il messaggio»**: prepara il
+testo con l'indirizzo di stasera, pronto da mandare su WhatsApp. Chi lo riceve
+apre l'app e trova la casella **già compilata** con quello che ha appena
+copiato: tocca «Prova» ed è dentro.
+
+### Quello che ancora non è chiuso, detto chiaro
+
+Finché da fuori si passa da un indirizzo che scade, il buco resta: questa
+versione cura il rientro, non la causa. Chiuderla per sempre vuole un indirizzo
+che non cambia mai — un dominio proprio su Cloudflare, oppure una porta aperta
+sul router con un nome DDNS. Su questa linea si può fare: l'IP pubblico sta sul
+router, senza CGNAT in mezzo.
+
+---
+
 ## 1.3.0 — I soldi su una scala sola
 
 Tre cose, e la seconda tocca tutto il gioco.

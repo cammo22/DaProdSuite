@@ -1484,7 +1484,95 @@ export const COPIONE_IMPOSTAZIONI = `
       : "Tutti a posto, tutti e " + quanti + ".";
     carta.append(riassunto);
 
+    if (dati.daFuori) carta.append(rigaStradaDaFuori(dati));
+
     for (var d of dati.dispositivi || []) carta.append(rigaConnessione(d, dati));
+  }
+
+  /**
+   * **Da fuori casa si entra da qui, e da quando.** Dalla 1.3.1.
+   *
+   * ⚠ Compare solo quando la strada da fuori e' **una che scade**: il tunnel
+   * gratuito, che prende un nome nuovo ogni volta che riparte. Con un
+   * indirizzo che non cambia mai questa riga non ha niente da dire, e infatti
+   * il computer non la manda nemmeno (vedi «daFuori» nel gateway).
+   *
+   * Dice due cose e basta: qual e' l'indirizzo di adesso, e da quando si chiama
+   * cosi'. La seconda e' quella che serve davvero, perche' chi si e' portato a
+   * casa gli indirizzi prima di quel momento, da fuori, non ci ritrova.
+   */
+  function rigaStradaDaFuori(dati) {
+    var box = document.createElement("div");
+    box.className = "bussa";
+
+    var dentro = document.createElement("div");
+    dentro.className = "cresce";
+
+    var titolo = document.createElement("b");
+    titolo.textContent = "Da fuori casa si entra da qui";
+    dentro.append(titolo);
+
+    var ind = document.createElement("small");
+    ind.textContent = dati.daFuori.indirizzo;
+    dentro.append(ind);
+
+    var quando = document.createElement("small");
+    quando.className = "sotto";
+    quando.textContent = dati.daFuori.da
+      ? "Cambiato " + quandoBreve(dati.daFuori.da, dati.adesso) +
+        ". Cambia ogni volta che riparte, e chi non l'ha ancora imparato da fuori non ci arriva."
+      : "Non si sa da quando si chiama cosi'.";
+    dentro.append(quando);
+
+    box.append(dentro);
+    box.append(tastoMandaLIndirizzo(dati, null));
+    return box;
+  }
+
+  /**
+   * **Il messaggio da mandare a chi e' rimasto fuori.** Dalla 1.3.1.
+   *
+   * ⚠ Chiude il giro che prima finiva contro un muro. L'app sa gia' rimettersi
+   * a posto con l'indirizzo di oggi — menu, «Indirizzo nuovo del computer» — ma
+   * quell'indirizzo stava scritto **sullo schermo del computer**, cioe'
+   * esattamente nel posto dove chi e' fuori non puo' guardare. Adesso si copia
+   * di qui e si manda su WhatsApp: chi lo riceve incolla e rientra, senza
+   * rifare niente e senza tornare a casa.
+   *
+   * Copiare vuole una pagina sicura, e in casa la console arriva su http: si
+   * passa da «allaVecchia», la stessa strada del tasto copia del lettore.
+   */
+  function tastoMandaLIndirizzo(dati, d) {
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "mini acceso";
+    b.textContent = "✉ Copia il messaggio";
+    b.title = "Il testo con l'indirizzo di adesso, da mandargli";
+    b.addEventListener("click", function () {
+      var testo = messaggioDellIndirizzo(dati, d);
+      var fatto = function () {
+        b.textContent = "✓ copiato";
+        setTimeout(function () { b.textContent = "✉ Copia il messaggio"; }, 2000);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(testo).then(fatto, function () { allaVecchia(testo, fatto); });
+      } else {
+        allaVecchia(testo, fatto);
+      }
+    });
+    return b;
+  }
+
+  /** Come e' scritto il messaggio: dove siamo, e cosa deve fare chi lo riceve. */
+  function messaggioDellIndirizzo(dati, d) {
+    return (
+      (d && d.nome ? "Ciao " + d.nome + ", il" : "Il") +
+      " computer di casa adesso si trova qui:\\n" +
+      dati.daFuori.indirizzo +
+      "\\n\\nSul telefono apri DaProd Suite, menu in alto a destra, " +
+      "«Indirizzo nuovo del computer»: incolla questo indirizzo e sei dentro. " +
+      "Il tuo collegamento resta quello di prima, cambia solo la strada per arrivarci."
+    );
   }
 
   /** Una riga della dash: chi e', come va, e cosa si puo' fare. */
@@ -1536,6 +1624,15 @@ export const COPIONE_IMPOSTAZIONI = `
     if (!d.eIlComputer) {
       var tasti = document.createElement("div");
       tasti.className = "fila";
+
+      /**
+       * ⚠ **Il tasto sta dove serve**: solo su chi ha in tasca l'indirizzo di
+       * prima. Il computer lo dice con «haLIndirizzoDiOggi», e «false» vuol
+       * dire una cosa sola: da fuori casa, adesso, non ci ritrova.
+       */
+      if (d.haLIndirizzoDiOggi === false && dati.daFuori) {
+        tasti.append(tastoMandaLIndirizzo(dati, d));
+      }
 
       if (d.come === "male") {
         var rifai = document.createElement("button");
