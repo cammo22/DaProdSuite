@@ -27,7 +27,27 @@ Quindi: **quando un blocco sta in piedi da solo, si pubblica.** Non prima —
 mezza funzione pubblicata è tempo perso per tutti e due — e non si aspetta la
 fine.
 
-Il numero sale di `0.0.1` a ogni release. Non si sceglie: si conta.
+Il numero sale di `0.0.1` a ogni release, e dopo la `.9` viene il numero di
+mezzo. Non si sceglie: si conta.
+
+### ⚠ Quale release chiude questo traguardo
+
+Il traguardo si chiama **1.3**, e non è un nome a caso: è **il numero che uscirà
+quando l'ultimo issue è chiuso**. Chiesto il 10 settembre 2026, quando la
+domanda è arrivata così: «non sto capendo, vedo lavori-1.3 ma la versione
+rilasciata è la 1.2.8?».
+
+Contando, ci sta poco spazio in mezzo:
+
+| Release | Cosa ci va |
+|---|---|
+| ~~1.2.8~~ | la sala giochi che si guarda — **uscita** |
+| **1.2.9** | le cose rotte e le sparse: [#92](https://github.com/cammo22/DaProdSuite/issues/92), [#80](https://github.com/cammo22/DaProdSuite/issues/80), [#103](https://github.com/cammo22/DaProdSuite/issues/103) |
+| **1.3.0** | il blocco degli stili e quello dell'album: chiude il traguardo |
+
+Se il lavoro non ci sta in due, **si ribattezza il traguardo** — non si inventa
+un numero. Una scatola che promette un numero che non esce fa perdere mezz'ora
+a chi la guarda un mese dopo.
 
 ---
 
