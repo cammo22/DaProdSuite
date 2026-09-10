@@ -222,6 +222,49 @@ export const COPIONE = `
   }
 
   /**
+   * ⚠ **Guardare una cosa a tutto schermo**: una foto, o un brano.
+   *
+   * Chiesto il 10 settembre 2026: «posso vedere le anteprime degli item? Se ci
+   * clicco, quelli generati dalla slot me li fa selezionare ma non li posso
+   * aprire grandi».
+   *
+   * Il difetto era che il pannello grande sapeva mostrare **solo parole** — era
+   * nato per i prompt — e le anteprime sulla card sono riquadri da centodieci
+   * pixel. Su un telefono si vede che c'e' un'immagine e non si vede **cosa
+   * c'e' dentro**, e chi comanda deve decidere se quella generazione vale il
+   * prezzo di una figurina.
+   *
+   * Il tocco apre; il tasto «tienila» resta il tasto che sceglie. Sono due
+   * gesti diversi su due bersagli diversi, e non si pestano i piedi.
+   */
+  function grandeCosa(indirizzo, mime, titolo) {
+    if (!indirizzo) return;
+    var vecchio = document.querySelector(".grande");
+    if (vecchio) vecchio.remove();
+    var d = document.createElement("div");
+    d.className = "grande guarda";
+    var dentro = "<div class=\\"dentro\\">";
+    if (String(mime || "").indexOf("audio/") === 0) {
+      dentro += "<audio controls autoplay src=\\"" + sicuro(indirizzo) + "\\"></audio>";
+    } else if (String(mime || "").indexOf("video/") === 0) {
+      dentro += "<video controls src=\\"" + sicuro(indirizzo) + "\\"></video>";
+    } else {
+      dentro += "<img src=\\"" + sicuro(indirizzo) + "\\" alt=\\"\\">";
+    }
+    if (titolo) dentro += "<div class=\\"su\\">" + sicuro(titolo) + "</div>";
+    dentro += "<div class=\\"chiudi\\">tocca fuori per chiudere</div></div>";
+    d.innerHTML = dentro;
+    /**
+     * ⚠ Si chiude toccando **fuori**, non dovunque. Il pannello di prima si
+     * chiudeva a qualunque tocco e li' andava bene: dentro c'erano parole. Qui
+     * dentro c'e' un tasto play, e un pannello che si chiude quando provi a
+     * far partire il brano che sei venuto ad ascoltare e' un dispetto.
+     */
+    d.addEventListener("click", function (e) { if (e.target === d) d.remove(); });
+    document.body.appendChild(d);
+  }
+
+  /**
    * Tenere premuto: mezzo secondo, e si apre grande.
    *
    * Si aggancia una volta sola a tutto il documento e si guarda **cosa** si sta
@@ -291,6 +334,17 @@ export const COPIONE = `
         pezzi.map(function (p) { return p.nome; }).join(" · "),
         pezzi.map(function (p) { return p.testo; }).join(", "),
         "",
+      );
+      return;
+    }
+
+    // Un'anteprima: si apre la cosa, non le parole che le stanno intorno.
+    var anteprima = nodo.closest("[data-guarda]");
+    if (anteprima) {
+      grandeCosa(
+        anteprima.getAttribute("data-guarda"),
+        anteprima.getAttribute("data-guarda-mime"),
+        anteprima.getAttribute("data-guarda-nome"),
       );
       return;
     }
@@ -943,16 +997,21 @@ export const COPIONE = `
      * stessa cosa. Tenere premuto apre grande, come sempre.
      */
     var attaccate = (c.allegati || []).filter(function (a) { return a && a.url; });
+    var guardala = function (x) {
+      return " data-guarda=\\"" + sicuro(x.url) + "\\" data-guarda-mime=\\"" +
+        sicuro(x.mime) + "\\"";
+    };
     if (attaccate.length === 1) {
       var sola = attaccate[0];
       h += String(sola.mime || "").indexOf("audio/") === 0
         ? "<audio controls src=\\"" + sicuro(sola.url) + "\\"></audio>"
-        : "<img src=\\"" + sicuro(sola.url) + "\\" alt=\\"\\" loading=\\"lazy\\">";
+        : "<img" + guardala(sola) + " src=\\"" + sicuro(sola.url) +
+          "\\" alt=\\"\\" loading=\\"lazy\\">";
     } else if (attaccate.length > 1) {
       h += "<div class=\\"nate\\">";
       for (var q = 0; q < attaccate.length; q++) {
         var att = attaccate[q];
-        h += "<div class=\\"nata\\">";
+        h += "<div class=\\"nata\\"" + guardala(att) + ">";
         h += String(att.mime || "").indexOf("audio/") === 0
           ? "<audio controls src=\\"" + sicuro(att.url) + "\\"></audio>"
           : "<img src=\\"" + sicuro(att.url) + "\\" alt=\\"\\" loading=\\"lazy\\">";
@@ -1437,7 +1496,9 @@ export const COPIONE = `
         var tenuta = tenute[c.id] && tenute[c.id][v.url];
         var suona = String(v.mime || "").indexOf("audio/") === 0;
         var faccia = v.anteprima || (String(v.mime || "").indexOf("image/") === 0 ? v.url : "");
-        h += "<div class=\\"nata" + (tenuta ? " tenuta" : "") + "\\">";
+        h += "<div class=\\"nata" + (tenuta ? " tenuta" : "") + "\\"" +
+          " data-guarda=\\"" + sicuro(v.url) + "\\" data-guarda-mime=\\"" + sicuro(v.mime) +
+          "\\" data-guarda-nome=\\"" + sicuro(v.titolo || "") + "\\">";
         if (faccia) h += "<img src=\\"" + sicuro(faccia) + "\\" alt=\\"\\" loading=\\"lazy\\">";
         else if (!suona) h += "<span class=\\"senza\\">" + sicuro(v.mime || "un file") + "</span>";
         if (suona) h += "<audio controls src=\\"" + sicuro(v.url) + "\\"></audio>";
@@ -1522,7 +1583,9 @@ export const COPIONE = `
         var a = scelte[i];
         var faccia = (i === 0 && cop) ? (cop.anteprima || cop.url)
           : (a.anteprima || (String(a.mime || "").indexOf("image/") === 0 ? a.url : ""));
-        h += "<div class=\\"nata tenuta\\">" +
+        h += "<div class=\\"nata tenuta\\"" +
+          " data-guarda=\\"" + sicuro(a.url) + "\\" data-guarda-mime=\\"" + sicuro(a.mime) +
+          "\\" data-guarda-nome=\\"" + sicuro(a.titolo || "") + "\\">" +
           (faccia ? "<img src=\\"" + sicuro(faccia) + "\\" alt=\\"\\" loading=\\"lazy\\">"
                   : "<span class=\\"senza\\">senza copertina</span>") +
           "<small>" + sicuro(a.titolo) + "</small>" +
@@ -2077,6 +2140,24 @@ export const COPIONE = `
      * Si ridisegna solo il riquadro delle prove, per lo stesso motivo per cui
      * lo fa l'attesa: nella card accanto c'e' un bonus scritto a mano.
      */
+    /**
+     * ⚠ **Il tocco sull'anteprima la apre grande.** Sta **prima** di tutto il
+     * resto dei tasti della card e dopo il tasto «tienila», che si prende il
+     * suo clic da solo: chi tocca la figura vuole guardarla, chi tocca il tasto
+     * vuole tenerla.
+     */
+    var daGuardare = chiudi("[data-guarda]");
+    // ⚠ Non sui tasti, e non sul lettore: chi preme play vuole sentire, non
+    // aprire un pannello sopra al tasto che ha appena premuto.
+    if (daGuardare && !chiudi("button, audio, video")) {
+      grandeCosa(
+        daGuardare.getAttribute("data-guarda"),
+        daGuardare.getAttribute("data-guarda-mime"),
+        daGuardare.getAttribute("data-guarda-nome"),
+      );
+      return;
+    }
+
     var nata = b.getAttribute && b.getAttribute("data-nata");
     if (nata) {
       var indirizzo = b.getAttribute("data-url");

@@ -17,6 +17,7 @@ import {
   butta,
   classifica,
   Deposito,
+  gradoDiPrezzo,
   manda,
   MAX_ALLEGATI,
   MAX_PROVE,
@@ -502,6 +503,75 @@ prova("un file della versione di ieri si rilegge nella forma di adesso", () =>
     uguale(c.prove.length, 1, "e la prova singola pure");
     uguale(c.prove[0].richiesta, "r9");
     vero(c.allegato === undefined, "il campo vecchio se ne va: uno solo dice la verita'");
+  }),
+);
+
+/**
+ * ⚠ **La scala e' salita, e quello che sta sul disco deve salire con lei.**
+ *
+ * Il 10 settembre 2026 un Unique e' passato da 75 lire a un milione. I prezzi
+ * gia' scritti sono col metro di prima: senza la conversione, la figurina
+ * Unique di qualcuno si riaprirebbe **Basic** — cioe' il lavoro di chi gioca
+ * cambierebbe valore di notte, senza che nessuno l'abbia deciso. E' la prova
+ * che tiene, di tutta questa faccenda.
+ */
+function fileVecchio(file, prezzi) {
+  writeFileSync(
+    file,
+    JSON.stringify({
+      versione: 1,
+      conti: [],
+      prezzi: { "genere/dub": 850 },
+      collezionabili: prezzi.map((p, i) => ({
+        id: "c" + i,
+        tipo: "prompt",
+        titolo: "una di ieri",
+        impronta: "imp" + i,
+        daChi: "pino",
+        quando: 1,
+        stato: "presa",
+        prezzo: p,
+      })),
+    }),
+    "utf8",
+  );
+}
+
+prova("i prezzi di ieri si riaprono con lo stesso grado di ieri", () =>
+  conCartella((file) => {
+    // Le soglie di prima, una per grado, e una a meta' di un gradino.
+    const prima = [0, 5, 12, 25, 45, 75, 120, 200, 320, 520, 850, 1400, 60];
+    const attesi = [
+      "basic", "grand", "rare", "arcane", "heroic", "unique",
+      "celestial", "divine", "epic", "legendary", "mythic", "ethernal",
+      "heroic",
+    ];
+    fileVecchio(file, prima);
+    const d = new Deposito(file);
+    prima.forEach((_, i) => {
+      const c = d.perId("c" + i);
+      uguale(
+        gradoDiPrezzo(c.prezzo),
+        attesi[i],
+        "il numero " + i + " doveva restare " + attesi[i],
+      );
+    });
+    // Un Unique di ieri vale esattamente la soglia di oggi, non un pelo sotto.
+    uguale(d.perId("c5").prezzo, 1_000_000, "75 lire di ieri fanno un milione tondo");
+    // E i prezzi che chi comanda aveva scritto sui pezzi salgono con loro.
+    uguale(gradoDiPrezzo(d.prezzi()["genere/dub"]), "mythic", "anche i pezzi a mano");
+  }),
+);
+
+prova("un file gia' convertito non si converte due volte", () =>
+  conCartella((file) => {
+    fileVecchio(file, [75]);
+    const primo = new Deposito(file);
+    uguale(primo.perId("c0").prezzo, 1_000_000);
+    primo.scriviOra();
+    // Riaperto: il numero di versione dice che e' gia' a posto.
+    const secondo = new Deposito(file);
+    uguale(secondo.perId("c0").prezzo, 1_000_000, "riaprirlo non lo rimoltiplica");
   }),
 );
 

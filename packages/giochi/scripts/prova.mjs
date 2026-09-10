@@ -36,6 +36,7 @@ import {
   prezzoDiPartenza,
   RULLI_IMMAGINI,
   RULLI_MUSICA,
+  TAGLI_BONUS,
   tira,
   valoreDaPrendere,
   valuta,
@@ -101,33 +102,74 @@ prova("il valore di una presa e' la somma dei pezzi piu' il bonus", () => {
   uguale(valoreDaPrendere(100, -50), 100, "un bonus negativo non toglie niente");
 });
 
+/**
+ * ⚠ **La scala e' salita il 10 settembre 2026**: «aggiorna anche i gradi, da 1
+ * milione di lire sono unique». I confini si provano uno per uno, sopra e
+ * sotto, perche' e' esattamente li' che una figurina cambia nome.
+ */
 prova("il grado si legge dal prezzo, agli estremi giusti", () => {
   uguale(gradoDiPrezzo(0), "basic");
-  uguale(gradoDiPrezzo(4), "basic");
-  uguale(gradoDiPrezzo(5), "grand");
-  uguale(gradoDiPrezzo(11), "grand");
-  uguale(gradoDiPrezzo(12), "rare");
-  uguale(gradoDiPrezzo(24), "rare");
-  uguale(gradoDiPrezzo(25), "arcane");
-  uguale(gradoDiPrezzo(44), "arcane");
-  uguale(gradoDiPrezzo(45), "heroic");
-  uguale(gradoDiPrezzo(74), "heroic");
-  uguale(gradoDiPrezzo(75), "unique");
-  uguale(gradoDiPrezzo(120), "celestial");
-  uguale(gradoDiPrezzo(199), "celestial");
-  uguale(gradoDiPrezzo(200), "divine");
-  uguale(gradoDiPrezzo(320), "epic");
-  uguale(gradoDiPrezzo(520), "legendary");
-  uguale(gradoDiPrezzo(850), "mythic");
-  uguale(gradoDiPrezzo(1400), "ethernal");
-  uguale(gradoDiPrezzo(999999), "ethernal");
+  uguale(gradoDiPrezzo(69_999), "basic");
+  uguale(gradoDiPrezzo(70_000), "grand");
+  uguale(gradoDiPrezzo(159_999), "grand");
+  uguale(gradoDiPrezzo(160_000), "rare");
+  uguale(gradoDiPrezzo(329_999), "rare");
+  uguale(gradoDiPrezzo(330_000), "arcane");
+  uguale(gradoDiPrezzo(599_999), "arcane");
+  uguale(gradoDiPrezzo(600_000), "heroic");
+  uguale(gradoDiPrezzo(999_999), "heroic");
+  // Il numero che ha detto lui, ed e' quello che regge tutta la scala.
+  uguale(gradoDiPrezzo(1_000_000), "unique");
+  uguale(gradoDiPrezzo(1_600_000), "celestial");
+  uguale(gradoDiPrezzo(2_699_999), "celestial");
+  uguale(gradoDiPrezzo(2_700_000), "divine");
+  uguale(gradoDiPrezzo(4_300_000), "epic");
+  uguale(gradoDiPrezzo(7_000_000), "legendary");
+  uguale(gradoDiPrezzo(11_000_000), "mythic");
+  uguale(gradoDiPrezzo(19_000_000), "ethernal");
+  uguale(gradoDiPrezzo(999_999_999), "ethernal");
+});
+
+/**
+ * ⚠ **Una sola pressione non deve sfondare la scala.**
+ *
+ * E' la ragione per cui prima i tagli del bonus erano piccoli. Adesso sono
+ * quelli dei regali, e la scala e' salita apposta per reggerli: il taglio piu'
+ * grosso deve stare **sotto** all'Unique, se no chi comanda non puo' scegliere
+ * i gradini bassi e ci sarebbe un tasto solo, che si chiama «massimo».
+ */
+prova("i tagli del bonus stanno dentro la scala, un colpo alla volta", () => {
+  uguale(TAGLI_BONUS.length, 8, "otto tasti, come i regali");
+  uguale(gradoDiPrezzo(TAGLI_BONUS[0]), "basic", "il piu' piccolo non sposta niente");
+  vero(
+    TAGLI_BONUS[TAGLI_BONUS.length - 1] < 1_000_000,
+    "nemmeno il piu' grosso arriva da solo a Unique",
+  );
+  /**
+   * E si arriva **su ogni gradino** battendo i tasti, che e' l'unica cosa che
+   * i tagli devono garantire: se un grado non fosse raggiungibile con nessuna
+   * somma, quel grado non si potrebbe piu' dare a mano.
+   */
+  const somme = new Set([0]);
+  for (let giro = 0; giro < 5; giro++) {
+    for (const gia of [...somme]) for (const t of TAGLI_BONUS) somme.add(gia + t);
+  }
+  for (const g of ["basic", "grand", "rare", "arcane", "heroic", "unique"]) {
+    vero([...somme].some((x) => gradoDiPrezzo(x) === g), "a " + g + " non ci si arriva battendo");
+  }
 });
 
 prova("il prezzo scende quando la roba e' piu' comune", () => {
   vero(prezzoDiPartenza(0) > prezzoDiPartenza(0.5), "raro deve costare piu' di medio");
   vero(prezzoDiPartenza(0.5) > prezzoDiPartenza(1), "medio deve costare piu' di comunissimo");
   vero(prezzoDiPartenza(1) >= 1, "non si scende sotto la lira");
-  vero(prezzoDiPartenza(0) >= 850, "il piu' raro di tutti deve poter essere Mythic");
+  /**
+   * ⚠ Il pezzo piu' raro del mazzo deve poter essere Mythic **sulla scala di
+   * adesso**. Se questa cade, vuol dire che le soglie sono salite e i prezzi
+   * dei pezzi no: sono due numeri che stanno nello stesso mondo, e il giorno
+   * che si separano tutti i dodici rulli diventano grigi.
+   */
+  vero(prezzoDiPartenza(0) >= 11_000_000, "il piu' raro di tutti deve poter essere Mythic");
   uguale(prezzoDiPartenza(undefined), prezzoDiPartenza(0.5), "senza dato si sta in mezzo");
 });
 

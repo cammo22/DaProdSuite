@@ -10,6 +10,75 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ---
 
+## 1.3.0 — I soldi su una scala sola
+
+Tre cose, e la seconda tocca tutto il gioco.
+
+### Le anteprime si aprono grandi
+
+> «Posso vedere le anteprime degli item? Se ci clicco, quelli generati dalla
+> slot me li fa selezionare ma non li posso aprire grandi.»
+
+Il pannello grande era nato per i prompt e sapeva mostrare **solo parole**. Le
+anteprime sulla card sono riquadri da centodieci pixel: su un telefono si vede
+che c'è un'immagine e non si vede **cosa c'è dentro** — e da lì bisogna decidere
+se quella generazione vale il prezzo di una figurina.
+
+Adesso si toccano e si aprono a tutto schermo, senza essere tagliate. Il tasto
+«tienila» resta quello che sceglie: due gesti diversi su due bersagli diversi.
+Vale anche per quelle attaccate alla figurina e per i brani, che si aprono col
+lettore — e il pannello non si chiude più se tocchi play.
+
+### Il bonus usa gli stessi tagli dei regali
+
+> «I prezzi ora sono da 1 lira a 500: metti gli stessi tagli che hai messo per
+> le ricariche.»
+
+Da 3.873 a 968.135, gli stessi otto. Prima erano due scale — qui lire piccole,
+là euro contati in lire — e si chiamavano tutte e due «lire»: il numero accanto
+a una figurina non si poteva confrontare con quello di un regalo, e in questo
+gioco il portafoglio è uno solo.
+
+### E quindi la scala dei gradi è salita al milione
+
+> «Aggiorna anche i gradi: da 1 milione di lire sono unique.»
+
+| Grado | Prima | Adesso |
+|---|---|---|
+| Grand | 5 £ | 70.000 £ |
+| Rare | 12 £ | 160.000 £ |
+| Heroic | 45 £ | 600.000 £ |
+| **Unique** | 75 £ | **1.000.000 £** |
+| Mythic | 850 £ | 11.000.000 £ |
+| Ethernal | 1.400 £ | 19.000.000 £ |
+
+**Le proporzioni non sono cambiate**: ogni gradino vale una volta e mezzo quello
+sotto, come prima. È cambiata l'unità, non il disegno.
+
+Sono saliti insieme a lei **i prezzi dei pezzi sui rulli**, e non era una scelta:
+i gradi si leggono dal prezzo, quindi con le soglie al milione e i pezzi fra 1 e
+1.401 lire tutti i dodici rulli sarebbero diventati grigi.
+
+⚠ **Quello che avevi già non cambia grado.** I prezzi scritti sul disco vengono
+portati sulla scala nuova quando si legge, tenendo il gradino: una figurina
+Unique di ieri è Unique oggi. Si converte una volta sola — il file dice che forma
+ha, se no a ogni apertura i prezzi si moltiplicherebbero di nuovo.
+
+⚠ **È salito anche il prezzo di un pacchetto**, da 250 lire a 3.300.000. Non era
+facoltativo: i doppioni pagano il loro prezzo, e con le figurine ai milioni un
+solo doppione ne ripagava quattromila. Era una macchina per stampare soldi.
+
+### Una cosa da guardare insieme
+
+Il giro costa **ancora 10 lire**, e il regalo di benvenuto è 500. Con un Unique a
+un milione, una sola combinazione presa paga **centocinquantamila giri**: a chi
+si fa prendere una cosa le lire non finiscono più. Il costo del giro non l'ho
+toccato perché quello l'hai scelto tu — «due euro sono trecentottantasette giri»
+— ma le due economie adesso sono lontane tredicimila volte, ed è scritto fra le
+cose da decidere in `CONCETTI.md` § 17.
+
+---
+
 ## 1.2.8 — La sala giochi si guarda, e le prove tornano a casa
 
 Tutto dentro la sala giochi, e nasce da un'altra serata passata a provarla.

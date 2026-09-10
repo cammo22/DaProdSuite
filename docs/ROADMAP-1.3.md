@@ -39,15 +39,19 @@ rilasciata è la 1.2.8?».
 
 Contando, ci sta poco spazio in mezzo:
 
-| Release | Cosa ci va |
+| Release | Cosa c'è andato |
 |---|---|
-| ~~1.2.8~~ | la sala giochi che si guarda — **uscita** |
-| **1.2.9** | le cose rotte e le sparse: [#92](https://github.com/cammo22/DaProdSuite/issues/92), [#80](https://github.com/cammo22/DaProdSuite/issues/80), [#103](https://github.com/cammo22/DaProdSuite/issues/103) |
-| **1.3.0** | il blocco degli stili e quello dell'album: chiude il traguardo |
+| ~~1.2.8~~ | la sala giochi che si guarda |
+| ~~1.3.0~~ | i soldi su una scala sola, e le anteprime che si aprono |
 
-Se il lavoro non ci sta in due, **si ribattezza il traguardo** — non si inventa
-un numero. Una scatola che promette un numero che non esce fa perdere mezz'ora
-a chi la guarda un mese dopo.
+⚠ **La 1.3.0 è uscita prima che il traguardo chiudesse**, perché l'ha chiesta
+lui il 10 settembre 2026: «aggiusta tutto e facciamo la 1.3.0». Quindi il nome
+del traguardo è **speso**: quello che resta uscirà come 1.3.1, 1.3.2 e così via,
+e questa scatola non promette più un numero.
+
+Resta la regola, per la prossima: **il traguardo si chiama come la release che
+lo chiude**, e se il lavoro non ci sta si ribattezza il traguardo — non si
+inventa un numero.
 
 ---
 

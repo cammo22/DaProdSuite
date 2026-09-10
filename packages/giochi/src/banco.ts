@@ -613,22 +613,29 @@ export const TAGLI = [2, 5, 10, 20, 50, 100, 200, 500].map((e) => Math.round(e *
 /**
  * I tagli del **bonus**, quando chi comanda prende una combinazione.
  *
- * ⚠ **Sono lire, e sono piccoli: non sono quelli dei regali.** Due scale
- * diverse perche' fanno due mestieri diversi, e mescolarle rompe l'unica cosa
- * che il bonus deve fare.
+ * ⚠ **Sono gli stessi dei regali, e dal 10 settembre 2026 non e' un errore.**
+ * Parole sue: «i prezzi ora sono da 1 lira a 500, metti gli stessi tagli che
+ * hai messo per le ricariche».
  *
- * Il bonus decide **che grado avra' la figurina**: la scala dei gradi va da 0 a
- * 1.400 lire (vedi `GRADI`), quindi qui si lavora fra le unita' e le centinaia.
- * Col taglio dei regali — 3.873 lire il piu' piccolo — una sola pressione
- * sfonderebbe Ethernal e tutti gli undici gradini sotto non si potrebbero
- * scegliere: ci sarebbe un tasto solo, e si chiamerebbe «massimo».
+ * Fino a quel giorno erano due scale diverse — qui lire piccole (2, 5, 10…
+ * 500), la' euro contati in lire (3.873… 968.135) — e la ragione scritta era
+ * buona: il bonus decide **che grado avra' la figurina**, e con la scala dei
+ * gradi che finiva a 1.400 lire una sola pressione da 3.873 avrebbe sfondato
+ * Ethernal, lasciando un tasto solo che si chiamava «massimo».
  *
- * Cosi' invece si batte come su una cassa e si sale di grado un colpo alla
- * volta: 100 fa Celestial, +100 fa Divine, +120 fa Epic. E' esattamente quello
- * che e' stato chiesto il 10 settembre 2026: «piu' li premi piu' sale il
- * valore... e decidiamo anche il grado che avra' questo collezionabile».
+ * Il difetto vero pero' non erano i tasti: erano **due monete che si
+ * chiamavano tutte e due lire**. Il numero accanto a una figurina non si
+ * poteva confrontare con quello di un regalo, e nel gioco c'e' un portafoglio
+ * solo. La cosa che e' stata cambiata e' l'altra meta': la scala dei gradi e'
+ * salita al milione (vedi `GRADI`), e adesso i tagli grossi ci lavorano
+ * dentro un colpo alla volta come facevano prima quelli piccoli — 3.873 e'
+ * poco, 968.135 e' quasi un Unique.
+ *
+ * ⚠ **Una scala sola vuol dire una riga sola.** `TAGLI` e' quella, e questa la
+ * indica: il giorno che si cambia un taglio non ci sono due posti da tenere
+ * allineati a mano.
  */
-export const TAGLI_BONUS = [2, 5, 10, 20, 50, 100, 200, 500];
+export const TAGLI_BONUS = TAGLI;
 
 /**
  * Chi comanda manda lire a qualcuno.
@@ -802,7 +809,10 @@ export function apriPacchetto(
  * lire arrivano da una parte sola — inventando roba che a chi comanda piace.
  */
 export function prezzoConsigliato(grado: Grado): number {
-  return Math.max(50, scalino(grado).da * 20);
+  // ⚠ Il pavimento e' salito con la scala (10 settembre 2026): cinquanta lire
+  // erano qualcosa quando un Mythic ne valeva 850, e non sono niente adesso che
+  // ne vale undici milioni. Venti volte la soglia resta la regola.
+  return Math.max(50_000, scalino(grado).da * 20);
 }
 
 /**

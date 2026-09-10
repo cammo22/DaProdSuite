@@ -718,6 +718,25 @@ nav .pallino{display:inline-block; min-width:16px; padding:0 4px; margin-left:4p
 .grande .chiudi{margin-top:26px; font-size:clamp(12px,2vw,15px); color:var(--spento)}
 
 /**
+ * ⚠ **Il pannello grande quando dentro c'e' una cosa, non delle parole.**
+ *
+ * Chiesto il 10 settembre 2026: «le anteprime, se ci clicco me le fa
+ * selezionare ma non le posso aprire grandi». Il pannello era nato per i
+ * prompt e sapeva mostrare solo testo.
+ *
+ * L'immagine si prende tutto lo schermo **senza essere tagliata**
+ * («contain», non «cover»): qui non si sta facendo una griglia bella, si sta
+ * guardando se quella generazione vale il prezzo di una figurina, e una foto
+ * ritagliata per stare in un quadrato e' proprio quello che non serve.
+ */
+.grande.guarda .dentro{max-width:min(96vw,1200px); width:100%}
+.grande.guarda img, .grande.guarda video{display:block; margin:0 auto;
+  max-width:100%; max-height:78vh; object-fit:contain; border-radius:12px}
+.grande.guarda audio{width:min(92vw,520px)}
+.grande.guarda .su{margin-top:14px}
+.grande.guarda .chiudi{margin-top:14px}
+
+/**
  * ⚠ **La galleria da cui si sceglie cosa attaccare.**
  *
  * Chiesto il 10 settembre 2026: «lincare facilmente, non come ora, l'immagine

@@ -30,7 +30,7 @@
 
 import { copyFileSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
-import { altezza, IMPOSTAZIONI_DI_PARTENZA } from "./regole";
+import { altezza, GRADI, IMPOSTAZIONI_DI_PARTENZA, SOGLIE_DI_PRIMA } from "./regole";
 import type { Collezionabile, Conto, DatiGiochi, Formazione, Grado, Impostazioni, Pezzo } from "./tipi";
 
 /**
@@ -47,7 +47,7 @@ import type { Collezionabile, Conto, DatiGiochi, Formazione, Grado, Impostazioni
  */
 function vuoto(): DatiGiochi {
   return {
-    versione: 1,
+    versione: 2,
     conti: [],
     collezionabili: [],
     ultimoNumero: 0,
@@ -111,15 +111,33 @@ export class Deposito {
   private leggi(dove: string): DatiGiochi {
     const lette = JSON.parse(readFileSync(dove, "utf8")) as Partial<DatiGiochi>;
     if (typeof lette !== "object" || lette === null) throw new Error("non e' un oggetto");
+    /**
+     * ⚠ **Un file col metro di prima si converte qui, una volta sola.**
+     *
+     * Il 10 settembre 2026 la scala dei soldi e' salita: un Unique parte da un
+     * milione invece che da 75 lire. I prezzi gia' scritti sul disco sono col
+     * metro vecchio, e senza questa riga una figurina Unique si riaprirebbe
+     * Basic — cioe' il lavoro fatto da chi gioca cambierebbe valore da solo,
+     * di notte, senza che nessuno l'abbia deciso.
+     */
+    const vecchia = (lette.versione ?? 1) < 2;
+    const collezionabili = Array.isArray(lette.collezionabili)
+      ? lette.collezionabili.map(rimettiInRiga).map((c) => (vecchia ? rimettiIPrezzi(c) : c))
+      : [];
+    const prezzi =
+      typeof lette.prezzi === "object" && lette.prezzi !== null ? { ...lette.prezzi } : {};
+    if (vecchia) {
+      // Anche i prezzi che chi comanda aveva scritto a mano sui pezzi dei
+      // rulli: stanno sulla stessa scala, e salgono insieme a lei.
+      for (const id of Object.keys(prezzi)) prezzi[id] = colMetroNuovo(prezzi[id] ?? 0);
+    }
     return {
-      versione: 1,
+      versione: 2,
       conti: Array.isArray(lette.conti) ? lette.conti : [],
-      collezionabili: Array.isArray(lette.collezionabili)
-        ? lette.collezionabili.map(rimettiInRiga)
-        : [],
+      collezionabili,
       ultimoNumero: typeof lette.ultimoNumero === "number" ? lette.ultimoNumero : 0,
       custom: Array.isArray(lette.custom) ? lette.custom : [],
-      prezzi: typeof lette.prezzi === "object" && lette.prezzi !== null ? lette.prezzi : {},
+      prezzi,
       formazioni: Array.isArray(lette.formazioni) ? lette.formazioni : [],
       impostazioni: { ...IMPOSTAZIONI_DI_PARTENZA, ...(lette.impostazioni ?? {}) },
     };
@@ -372,5 +390,45 @@ function rimettiInRiga(c: Collezionabile): Collezionabile {
   if (vecchio.provata && !c.prove) c.prove = [vecchio.provata];
   delete vecchio.allegato;
   delete vecchio.provata;
+  return c;
+}
+
+/**
+ * Un prezzo scritto col metro di prima, riportato su quello di adesso.
+ *
+ * ⚠ **Si converte tenendo il grado**, non moltiplicando per un numero. Con una
+ * moltiplicazione secca i confini non tornano — 75 lire erano *esattamente* un
+ * Unique, e per qualunque fattore intero finiscono un pelo sopra o un pelo
+ * sotto il milione — e una figurina cambierebbe grado nel passaggio. Qui
+ * invece si guarda **in che gradino stava** e la si rimette nello stesso
+ * gradino nuovo, alla stessa altezza dentro il gradino.
+ *
+ * Sopra all'ultimo scalino non c'e' un tetto a cui rapportarsi, e li' si tiene
+ * la proporzione fra le due soglie di Ethernal.
+ */
+function colMetroNuovo(vecchio: number): number {
+  if (!(vecchio > 0)) return 0;
+  const su = GRADI.map((g) => g.da);
+  const giu = SOGLIE_DI_PRIMA;
+  for (let i = giu.length - 1; i >= 0; i--) {
+    if (vecchio < giu[i]!) continue;
+    const bassoV = giu[i]!;
+    const bassoN = su[i]!;
+    const altoV = giu[i + 1];
+    const altoN = su[i + 1];
+    if (altoV === undefined || altoN === undefined) {
+      // L'ultimo gradino non ha un sopra: si tiene il rapporto fra le soglie.
+      return Math.round(vecchio * (bassoN / (bassoV || 1)));
+    }
+    const dentro = (vecchio - bassoV) / (altoV - bassoV);
+    return Math.round(bassoN + dentro * (altoN - bassoN));
+  }
+  return 0;
+}
+
+/** I prezzi di una figurina, portati sul metro di adesso. */
+function rimettiIPrezzi(c: Collezionabile): Collezionabile {
+  if (typeof c.prezzo === "number") c.prezzo = colMetroNuovo(c.prezzo);
+  if (typeof c.prezzoVetrina === "number") c.prezzoVetrina = colMetroNuovo(c.prezzoVetrina);
   return c;
 }

@@ -37,7 +37,7 @@ prova la sera stessa, e metà del lavoro nasce da lì.
   chiusi — non a occhio. E **i link degli issue si mandano**: li legge dal
   telefono, e un `#98` scritto così non si clicca da nessuna parte.
 - Il numero della release sale di `0.0.1`, e dopo la `.9` viene il numero di
-  mezzo: 1.2.8, 1.2.9, **1.3.0**. Non si sceglie: si conta.
+  mezzo: 1.2.8, 1.2.9, **1.3.0**, 1.3.1. Non si sceglie: si conta.
 - ⚠ **Il traguardo si chiama come la release che lo chiude.** «1.3» non è
   un'etichetta a caso: è il numero che uscirà quando l'ultimo issue è chiuso.
   Contando, ci stanno **due release** prima di arrivarci — la 1.2.9 e poi la

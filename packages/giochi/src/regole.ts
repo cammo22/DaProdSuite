@@ -65,18 +65,41 @@ export function fra(min: number, max: number, caso: Caso): number {
  * Cosi' invece la frequenza e' una scelta, e resta quella anche quando il mazzo
  * cresce.
  */
+/**
+ * ⚠ **La scala e' cambiata il 10 settembre 2026: Unique parte da un milione.**
+ *
+ * Parole sue: «i prezzi ora sono da 1 lira a 500, metti gli stessi tagli che
+ * hai messo per le ricariche… e aggiorna anche i gradi: da 1 milione di lire
+ * sono unique».
+ *
+ * Prima la scala andava da 0 a 1.400 lire, e i tasti del bonus erano lire
+ * piccole (2, 5, 10… 500). Il problema era che **in questo gioco i soldi hanno
+ * gia' una scala**, ed e' quella dei regali: euro contati in lire, dove il
+ * taglio piu' piccolo e' 3.873. Con due scale, il bonus e i regali parlavano
+ * di due monete diverse che si chiamavano tutte e due «lire», e il numero
+ * accanto a una figurina non si poteva confrontare con niente.
+ *
+ * Adesso e' una sola: **i tasti del bonus sono quelli dei regali** (vedi
+ * `TAGLI_BONUS` in `banco.ts`) e le soglie stanno nello stesso mondo. Le
+ * proporzioni fra un grado e l'altro sono rimaste **identiche** — ogni gradino
+ * vale circa una volta e mezzo quello sotto — perche' quella e' la forma della
+ * scala e non c'era niente da aggiustare: e' cambiata l'unita', non il disegno.
+ *
+ * ⚠ **Quello che sta sul disco viene portato su di qui**, non lasciato indietro:
+ * vedi `rimettiInRiga` nel deposito. Una figurina Unique di ieri resta Unique.
+ */
 export const GRADI: readonly Scalino[] = [
   { id: "basic", nome: "Basic", da: 0, colore: "#9aa0b5", fuoco: 0, quantoEsce: 3997, punti: 1 },
-  { id: "grand", nome: "Grand", da: 5, colore: "#7fd1a8", fuoco: 0, quantoEsce: 2200, punti: 3 },
-  { id: "rare", nome: "Rare", da: 12, colore: "#5cc8ff", fuoco: 1, quantoEsce: 1400, punti: 8 },
-  { id: "arcane", nome: "Arcane", da: 25, colore: "#b07cff", fuoco: 1, quantoEsce: 900, punti: 18 },
-  { id: "heroic", nome: "Heroic", da: 45, colore: "#ff9d5c", fuoco: 1, quantoEsce: 600, punti: 35 },
-  { id: "unique", nome: "Unique", da: 75, colore: "#ff6fb5", fuoco: 2, quantoEsce: 400, punti: 70 },
-  { id: "celestial", nome: "Celestial", da: 120, colore: "#6ee7f0", fuoco: 3, quantoEsce: 240, punti: 140 },
-  { id: "divine", nome: "Divine", da: 200, colore: "#ffe9a8", fuoco: 3, quantoEsce: 140, punti: 280 },
-  { id: "epic", nome: "Epic", da: 320, colore: "#e879f9", fuoco: 4, quantoEsce: 80, punti: 600 },
-  { id: "legendary", nome: "Legendary", da: 520, colore: "#ffd166", fuoco: 4, quantoEsce: 30, punti: 1400 },
-  { id: "mythic", nome: "Mythic", da: 850, colore: "#ff4d6d", fuoco: 5, quantoEsce: 10, punti: 4000 },
+  { id: "grand", nome: "Grand", da: 70000, colore: "#7fd1a8", fuoco: 0, quantoEsce: 2200, punti: 3 },
+  { id: "rare", nome: "Rare", da: 160000, colore: "#5cc8ff", fuoco: 1, quantoEsce: 1400, punti: 8 },
+  { id: "arcane", nome: "Arcane", da: 330000, colore: "#b07cff", fuoco: 1, quantoEsce: 900, punti: 18 },
+  { id: "heroic", nome: "Heroic", da: 600000, colore: "#ff9d5c", fuoco: 1, quantoEsce: 600, punti: 35 },
+  { id: "unique", nome: "Unique", da: 1000000, colore: "#ff6fb5", fuoco: 2, quantoEsce: 400, punti: 70 },
+  { id: "celestial", nome: "Celestial", da: 1600000, colore: "#6ee7f0", fuoco: 3, quantoEsce: 240, punti: 140 },
+  { id: "divine", nome: "Divine", da: 2700000, colore: "#ffe9a8", fuoco: 3, quantoEsce: 140, punti: 280 },
+  { id: "epic", nome: "Epic", da: 4300000, colore: "#e879f9", fuoco: 4, quantoEsce: 80, punti: 600 },
+  { id: "legendary", nome: "Legendary", da: 7000000, colore: "#ffd166", fuoco: 4, quantoEsce: 30, punti: 1400 },
+  { id: "mythic", nome: "Mythic", da: 11000000, colore: "#ff4d6d", fuoco: 5, quantoEsce: 10, punti: 4000 },
   /**
    * ⚠ **Ethernal**: il gradino sopra a tutto, dal 10 settembre 2026.
    *
@@ -85,7 +108,7 @@ export const GRADI: readonly Scalino[] = [
    * assomigliare a nessuno. Il bianco che vira all'azzurro e' l'unica cosa che
    * su un fondo scuro non e' un colore fra gli altri — e' luce.
    */
-  { id: "ethernal", nome: "Ethernal", da: 1400, colore: "#eaf6ff", fuoco: 5, quantoEsce: 3, punti: 12000 },
+  { id: "ethernal", nome: "Ethernal", da: 19000000, colore: "#eaf6ff", fuoco: 5, quantoEsce: 3, punti: 12000 },
 ];
 
 /**
@@ -111,6 +134,16 @@ export const TETTO_FIGURINE: Grado = "unique";
 export function sottoIlTetto(grado: Grado): Grado {
   return altezza(grado) > altezza(TETTO_FIGURINE) ? TETTO_FIGURINE : grado;
 }
+
+/**
+ * ⚠ **Le soglie di prima del 10 settembre 2026**, tenute per una cosa sola:
+ * rileggere i file scritti allora. Vedi `rimettiInRiga` nel deposito.
+ *
+ * Non si usano per niente altro e non vanno aggiornate: sono una fotografia di
+ * com'era la scala, e una fotografia non si ritocca.
+ */
+export const SOGLIE_DI_PRIMA: readonly number[] =
+  [0, 5, 12, 25, 45, 75, 120, 200, 320, 520, 850, 1400];
 
 /** Dov'e' un grado nella scala: 0 e' Basic, 11 e' Ethernal. */
 export function altezza(grado: Grado): number {
@@ -144,7 +177,20 @@ export function gradoDiPrezzo(prezzo: number): Grado {
  */
 export function prezzoDiPartenza(quantoComune: number | undefined): number {
   const q = Math.min(1, Math.max(0, quantoComune ?? 0.5));
-  return Math.max(1, Math.round(1 + 1400 * Math.pow(1 - q, 7)));
+  /**
+   * ⚠ **Cresciuti insieme alla scala**, il 10 settembre 2026.
+   *
+   * La curva e' quella di prima — `(1 - comune)` elevato a sette, e la
+   * distribuzione sui 6.291 generi veri e' la stessa — moltiplicata per mille,
+   * cioe' tanto quanto e' cresciuta la scala dei gradi.
+   *
+   * ⚠ **Doveva crescere anche questa, non era una scelta.** I gradi si leggono
+   * dal prezzo: se le soglie salgono al milione e i pezzi restano fra 1 e
+   * 1.401 lire, **tutti i dodici rulli diventano Basic**, e la slot smette di
+   * avere colori. Sono due numeri che devono stare nello stesso mondo, ed e'
+   * proprio la ragione per cui il mondo e' uno solo adesso.
+   */
+  return Math.max(1000, Math.round(1000 + 19_000_000 * Math.pow(1 - q, 7)));
 }
 
 /** Il pezzo con addosso il prezzo di adesso: quello dell'admin, o il suo. */
@@ -306,7 +352,18 @@ export const IMPOSTAZIONI_DI_PARTENZA: Impostazioni = {
    * mettono ad arrivare, e finche' la serie non si chiude non c'e' niente da
    * comprare. Se succede, si scende a cinquanta — e' una riga.
    */
-  costoPacchetto: 250,
+  /**
+   * ⚠ **Salito con la scala il 10 settembre 2026, e non era facoltativo.**
+   *
+   * Un pacchetto si scambia con delle figurine, e **i doppioni pagano il loro
+   * prezzo** (§ 11): con le figurine passate ai milioni e il pacchetto rimasto
+   * a 250 lire, un solo doppione ne ripagava quattromila. Cioe' una macchina
+   * per stampare soldi, aperta a chiunque avesse 250 lire in tasca.
+   *
+   * E' lo stesso rapporto di prima — un pacchetto costa all'incirca quanto vale
+   * una figurina buona — riportato sulla scala di adesso.
+   */
+  costoPacchetto: 3_300_000,
   perPacchetto: 5,
   perSerie: 100,
   unaOgniGiri: 40,
