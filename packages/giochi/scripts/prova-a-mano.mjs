@@ -48,9 +48,73 @@ function chiSei(req) {
   return { id: nome, nome: nome.charAt(0).toUpperCase() + nome.slice(1), admin: nome === "cammo" };
 }
 
+/**
+ * ⚠ **Un motore finto, per poter provare a mano il giro delle generate.**
+ *
+ * Nella suite «provala» fa partire una generazione vera con ACE-Step o FLUX, e
+ * quando e' pronta la libreria dice cosa ne e' uscito. Qui non c'e' ne' l'una
+ * ne' l'altra, e senza qualcosa al loro posto il pezzo piu' nuovo della fila —
+ * quattro tentativi che tornano sulla card e si spuntano — **non si puo'
+ * guardare** se non accendendo tutta la suite col motore dietro.
+ *
+ * Quindi: si finge, e si finge anche il tempo. Sei secondi di forno, perche' e'
+ * li' che si vede se la card dice «sto generando» e se si aggiorna da sola
+ * senza far perdere il bonus scritto a mano nella casella accanto.
+ *
+ * I quadrati colorati sono immagini vere fatte qui, non prese da fuori: la
+ * pagina non chiama la rete nemmeno per provare.
+ */
+const FORNO_MS = 6000;
+const inForno = new Map();
+let quanteFatte = 0;
+
+function quadratoFinto(n, larga = 320, alta = 240) {
+  const colori = ["#5cc8ff", "#ff6fb5", "#ffd166", "#7fd1a8"];
+  const c = colori[n % colori.length];
+  const svg =
+    "<svg xmlns='http://www.w3.org/2000/svg' width='" + larga + "' height='" + alta + "'>" +
+    "<rect width='" + larga + "' height='" + alta + "' fill='" + c + "'/>" +
+    "<text x='" + larga / 2 + "' y='" + (alta / 2 + 24) +
+    "' font-size='72' text-anchor='middle' fill='#101218'>" + n + "</text>" +
+    "</svg>";
+  return "data:image/svg+xml;utf8," + encodeURIComponent(svg);
+}
+
 /** I nomi degli altri: nella suite li sa il gateway, qui sono gli id stessi. */
 const contorno = {
   nomeDi: (id) => (id ? id.charAt(0).toUpperCase() + id.slice(1) : "qualcuno"),
+  genera: (_chi, tavolo) => {
+    quanteFatte += 1;
+    const id = "finta-" + quanteFatte;
+    inForno.set(id, { pronta: Date.now() + FORNO_MS, numero: quanteFatte, tavolo });
+    return { id };
+  },
+  /**
+   * Una galleria finta, per poter guardare il foglio «attacca dalla suite».
+   * Nella suite la da' il gateway; qui sono sei quadrati con proporzioni
+   * diverse, che e' proprio il caso che quel foglio deve reggere.
+   */
+  elencoLibreria: () => {
+    const misure = [[320, 180], [180, 320], [400, 400], [512, 288], [240, 360], [640, 200]];
+    return misure.map((m, i) => ({
+      id: "lib" + i,
+      titolo: "roba della suite " + (i + 1),
+      mime: "image/svg+xml",
+      url: quadratoFinto(i + 1, m[0], m[1]),
+    }));
+  },
+  fruttiDi: (richiesta) => {
+    const cosa = inForno.get(richiesta);
+    if (!cosa || Date.now() < cosa.pronta) return [];
+    return [
+      {
+        id: richiesta,
+        titolo: "prova numero " + cosa.numero,
+        mime: cosa.tavolo === "immagini" ? "image/svg+xml" : "image/svg+xml",
+        url: quadratoFinto(cosa.numero),
+      },
+    ];
+  },
 };
 
 function leggiCorpo(req) {

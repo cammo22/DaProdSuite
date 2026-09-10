@@ -52,11 +52,18 @@ header{position:sticky; top:0; z-index:30; display:flex; align-items:center; gap
    telefono stretto e spingeva giu' mezza testata. Se non ci sta, si taglia. */
 .chi{color:var(--spento); font-size:13px; white-space:nowrap; overflow:hidden;
   text-overflow:ellipsis; min-width:0; flex:0 1 auto}
-.saldo{display:flex; align-items:center; gap:8px; padding:6px 12px; border-radius:999px;
+/* ⚠ Il saldo su una riga. Su un telefono stretto «L. 495 giro L. 10» andava a
+   capo in tre righe e la testata diventava alta il doppio: il numero e' la cosa
+   piu' guardata della pagina e non deve mai essere una colonna. */
+.saldo{white-space:nowrap;
+  display:flex; align-items:center; gap:8px; padding:6px 12px; border-radius:999px;
   background:linear-gradient(180deg,#1d1a10,#151209); border:1px solid #3a3115;
   color:var(--oro); font-variant-numeric:tabular-nums; font-weight:700; cursor:pointer;
   transition:transform .18s ease}
 .saldo small{color:var(--spento); font-weight:500}
+/* Sotto ai quattrocento pixel quanto costa un giro si legge sulla slot: qui
+   sta il saldo, e basta. */
+@media (max-width:400px){ .saldo small{display:none} }
 .saldo.su{animation:soldi-su .55s ease}
 @keyframes soldi-su{
   0%{transform:scale(1)} 30%{transform:scale(1.18); box-shadow:0 0 22px rgba(255,209,102,.55)}
@@ -389,6 +396,30 @@ h2:first-child{margin-top:2px}
   100%{transform:translateY(105vh) rotate(720deg); opacity:.15}
 }
 
+/**
+ * ⚠ **Tenere premuto apre grande, e basta quello.**
+ *
+ * Chiesto il 10 settembre 2026: «quando da mobile tengo premuto per zoommare
+ * la card mi triggera il copia che seleziona il testo, evitiamo».
+ *
+ * Sul telefono mezzo secondo di dito e' **due gesti in uno**: il nostro, che
+ * apre la carta grande, e quello del sistema, che seleziona il testo e tira su
+ * le maniglie blu col fumetto «Copia». Partivano tutti e due, e quello che non
+ * volevi restava li' anche dopo.
+ *
+ * Il menu del tasto destro era gia' spento da un po' (il «contextmenu» nel
+ * copione), ma la selezione col dito e' un'altra strada e non passa di li':
+ * si spegne con questa, ed e' l'unica che la spegne davvero.
+ *
+ * ⚠ **Il testo non diventa irraggiungibile**: il tasto «copia in inglese» sta
+ * sotto a ogni prompt, e prende tutta la riga invece del pezzo che ti riesce
+ * di selezionare con un dito su uno schermo da sei pollici.
+ */
+.rullo, .prompt, .figurina{
+  -webkit-touch-callout:none; -webkit-user-select:none; user-select:none}
+/* La casella dove si scrive resta una casella: li' si seleziona come sempre. */
+.figurina input, .figurina textarea{-webkit-user-select:text; user-select:text}
+
 /* ------------------------------------------------------------ le schede */
 .figurina{position:relative; padding:11px 12px; border-radius:13px;
   background:rgba(18,20,28,.85); border:1px solid var(--riga); margin-bottom:8px;
@@ -405,8 +436,72 @@ h2:first-child{margin-top:2px}
   box-shadow:0 0 40px color-mix(in srgb, var(--g) 70%, transparent),
              0 0 80px color-mix(in srgb, var(--g) 30%, transparent),
              inset 0 0 28px color-mix(in srgb, var(--g) 14%, transparent)}
-.figurina .titolo{font-weight:700; overflow-wrap:anywhere}
-.figurina .sotto{margin-top:5px; font-size:12px; color:var(--spento)}
+/**
+ * ⚠ **La testa della carta: il grado, e si vede da un metro.**
+ *
+ * Chiesto il 10 settembre 2026: «il colore del grado piu' evidente, scritte
+ * piu' grandi senza esagerare, ottimizza ulteriormente la schermata».
+ *
+ * La pastiglia e' **piena** del colore del grado con la scritta scura sopra,
+ * non testo colorato su fondo scuro: i dodici colori sono tutti chiari — dal
+ * grigio del Basic al bianco azzurrato dell'Ethernal — e su nero un testo
+ * colorato di dodici pixel si legge, ma non si **riconosce**. Pieno si',
+ * anche di sguincio e senza leggere.
+ *
+ * «Senza esagerare» e' una misura, e vale la pena scriverla: il titolo passa
+ * da 15 a 16 pixel e la pastiglia sta a 12,5 in grassetto. Quello che fa la
+ * differenza non e' la dimensione, e' aver tolto le altre quattro cose che
+ * stavano sulla stessa riga con la stessa importanza.
+ */
+.figurina .testa{display:flex; flex-wrap:wrap; align-items:center; gap:6px;
+  margin-bottom:6px}
+/**
+ * ⚠ La pastiglia del grado sta qui e **non** dentro «.figurina», perche' lo
+ * stesso grado si legge anche in classifica: due regole diverse per la stessa
+ * cosa sono due cose che un giorno divergono.
+ */
+.grado{display:inline-block; background:var(--g); color:#0b0d12; font-weight:800;
+  font-size:12.5px; letter-spacing:.3px; padding:3px 10px; border-radius:999px;
+  line-height:1.35; white-space:nowrap;
+  box-shadow:0 0 14px color-mix(in srgb, var(--g) 35%, transparent)}
+.figurina .quanto{font-weight:700; font-size:13px; color:#e7eaf3}
+.figurina .enne{font-size:11.5px; color:var(--spento)}
+.figurina .stato{font-size:11px; color:var(--spento); border:1px solid var(--riga);
+  padding:2px 8px; border-radius:999px; margin-left:auto}
+.figurina .titolo{font-weight:700; font-size:16px; line-height:1.28;
+  overflow-wrap:anywhere}
+.figurina .sotto{margin-top:4px; font-size:12px; color:var(--spento)}
+/**
+ * ⚠ **L'esito, detto in una riga.** Chiesto il 10 settembre 2026: «in Mie un
+ * utente normale vede solo l'esito». Sta sopra al titolo perche' e' la
+ * domanda per cui si apre quella pagina — non «cosa avevo scritto», ma
+ * «l'hanno presa».
+ */
+.figurina .esito{margin:2px 0 6px; font-size:13.5px; color:var(--spento)}
+.figurina .esito b{color:var(--oro)}
+.figurina .esito.bene{color:#7fd1a8}
+.figurina .esito.male{color:#ff8d9c}
+
+/**
+ * ⚠ **I tre numeri di chi gioca**, in cima alla propria pagina.
+ *
+ * In fila e non in colonna: sono tre cose piccole che si leggono insieme —
+ * «quanto ho guadagnato, quante me ne hanno prese, quante buttate» — e in
+ * colonna diventerebbero mezza schermata prima di arrivare alle carte.
+ */
+.conta-mie{display:flex; gap:8px; margin:12px 0 4px; flex-wrap:wrap}
+.conta-mie .pezzo{flex:1 1 84px; padding:9px 11px; border-radius:12px;
+  background:rgba(14,16,22,.7); border:1px solid var(--riga);
+  display:flex; flex-direction:column; gap:2px}
+.conta-mie .pezzo b{font-size:17px; font-variant-numeric:tabular-nums}
+.conta-mie .pezzo small{font-size:11px; color:var(--spento)}
+.conta-mie .oro b{color:var(--oro)}
+.conta-mie .bene b{color:#7fd1a8}
+.conta-mie .male b{color:#ff8d9c}
+
+/* Il perche' di un no: su una riga sua, che e' quello che si e' venuti a leggere. */
+.figurina .perche{margin-top:6px; font-size:12.5px; color:#c8bfcb;
+  border-left:2px solid #4a3038; padding-left:8px; overflow-wrap:anywhere}
 .figurina .testo{margin-top:7px; font-size:12.5px; color:#cfd4e4; overflow-wrap:anywhere}
 .figurina.coperta{opacity:.55; border-style:dashed}
 .figurina img{margin-top:8px; border-radius:9px; max-height:220px; display:block}
@@ -426,6 +521,8 @@ h2:first-child{margin-top:2px}
   background:repeating-linear-gradient(135deg,
     rgba(18,20,28,.9) 0 12px, rgba(30,20,24,.9) 12px 24px)}
 .figurina.perdente .titolo, .figurina.perdente .testo{color:#8d8794}
+/* Su un biglietto perdente il grado non e' un premio: si spegne come il resto. */
+.figurina.perdente .grado{background:#4a3038; color:#c4b8c0; box-shadow:none}
 .figurina.perdente .timbro{position:absolute; right:-34px; top:13px;
   transform:rotate(28deg); padding:3px 40px; font-size:11px; font-weight:800;
   letter-spacing:2px; text-transform:uppercase; color:#ff8fa3;
@@ -442,6 +539,8 @@ h2:first-child{margin-top:2px}
 .cassetto[open] summary::before{content:"- "}
 .cassetto .quanti{margin-left:6px; color:var(--oro)}
 .cassetto > div{padding:0 11px 11px}
+/* La casella del cerca sta dentro al cassetto della gente: si allinea al resto. */
+.cassetto > input.cerca{width:calc(100% - 22px); margin:0 11px 9px}
 
 /* Il tasto per copiare un prompt: piccolo, sotto al testo. */
 .figurina .copia-uno{margin-top:8px; padding:7px 12px; font-size:12px}
@@ -484,6 +583,43 @@ h2:first-child{margin-top:2px}
 .attaccata{display:flex; align-items:center; gap:9px; margin-top:9px}
 .attaccata img{width:64px; height:64px; object-fit:cover; border-radius:9px;
   border:1px solid var(--riga)}
+
+/**
+ * ⚠ **Le cose nate dal prompt, una accanto all'altra.**
+ *
+ * Chiesto il 10 settembre 2026: «puo' rigenerare, max 4 file, e alla fine puo'
+ * selezionare uno o piu' elementi generati da includere nel pacchetto».
+ *
+ * **In fila e non incolonnate**, ed e' il punto di tutto: il senso di generare
+ * quattro volte e' poterle **confrontare**, e due immagini una sotto l'altra a
+ * uno schermo di distanza non si confrontano. Quattro da centoventi pixel ci
+ * stanno su un telefono, e a quella misura si capisce gia' quale tiene.
+ *
+ * La cornice accesa dice quale si tiene: e' l'unica cosa che si deve leggere
+ * senza avvicinarsi.
+ */
+.prove{margin-top:9px}
+.nate{display:flex; gap:8px; margin-top:9px; overflow-x:auto;
+  padding-bottom:4px; scrollbar-width:thin}
+.nata{flex:0 0 auto; width:124px; display:flex; flex-direction:column; gap:6px;
+  padding:6px; border-radius:11px; background:rgba(9,11,16,.6);
+  border:1px solid var(--riga); transition:border-color .18s ease}
+.nata img{width:110px; height:110px; object-fit:cover; border-radius:8px;
+  display:block}
+.nata audio{width:110px}
+.nata .senza{display:flex; align-items:center; justify-content:center;
+  width:110px; height:110px; border-radius:8px; border:1px dashed var(--riga);
+  font-size:10px; color:var(--spento); text-align:center; padding:4px}
+.nata small{color:var(--spento); font-size:11px; white-space:nowrap;
+  overflow:hidden; text-overflow:ellipsis}
+.nata .tienila{padding:6px 8px; font-size:11.5px; width:100%}
+.nata.tenuta{border-color:var(--oro);
+  box-shadow:0 0 16px color-mix(in srgb, var(--oro) 26%, transparent)}
+.nata.tenuta .tienila{background:var(--oro); color:#141414; font-weight:700}
+
+/* «Sto generando»: una riga che respira, per dire che non e' bloccato. */
+.conto.attesa{color:var(--oro); animation:respira 1.8s ease-in-out infinite}
+@keyframes respira{0%,100%{opacity:.55} 50%{opacity:1}}
 
 table{width:100%; border-collapse:collapse; font-size:13.5px}
 th{text-align:left; font-weight:600; color:var(--spento); font-size:11.5px;
@@ -597,14 +733,36 @@ nav .pallino{display:inline-block; min-width:16px; padding:0 4px; margin-left:4p
 /* «align-content:start» perche' con tre foto sole le righe si spartivano tutta
    l'altezza del foglio e ne uscivano tre colonne lunghe un metro. */
 .griglia-libreria{flex:1; overflow-y:auto; display:grid; gap:8px; padding:12px 14px 28px;
-  grid-template-columns:repeat(auto-fill, minmax(96px, 1fr)); align-content:start}
+  grid-template-columns:repeat(auto-fill, minmax(112px, 1fr));
+  align-content:start; align-items:start}
 .griglia-libreria .voce{padding:0; border:1px solid var(--riga); border-radius:11px;
   background:rgba(18,20,28,.85); color:var(--testo); cursor:pointer; overflow:hidden;
   display:flex; flex-direction:column}
 .griglia-libreria .voce:active{transform:scale(.97)}
-.griglia-libreria .voce img{width:100%; aspect-ratio:1; object-fit:cover; display:block}
-.griglia-libreria .voce .senza{display:flex; align-items:center; justify-content:center;
-  aspect-ratio:1; font-size:11px; color:var(--spento)}
+/**
+ * ⚠ **L'anteprima non si lascia schiacciare.** Visto dentro la suite sul
+ * telefono il 10 settembre 2026: «le anteprime dei contenuti sono troppo
+ * sottili» — erano strisce alte cinquanta pixel, e di una foto si vedeva una
+ * fetta orizzontale in mezzo. Da li' non si riconosce niente, e questa
+ * schermata serve a una cosa sola: riconoscere.
+ *
+ * Il difetto era che l'altezza veniva solo da «aspect-ratio», e l'immagine sta
+ * dentro una colonna flex: se la casella e' piu' bassa del contenuto, un
+ * elemento flex **si stringe** e l'aspect-ratio non lo difende. Adesso ci sono
+ * tutte e tre le cose che servono:
+ *
+ * - «flex:0 0 auto», cosi' non si stringe;
+ * - «min-height», che e' il pavimento sotto cui non si scende comunque;
+ * - «aspect-ratio», che da' la proporzione quando c'e' spazio.
+ *
+ * E i riquadri partono da centododici pixel invece che da novantasei: su un
+ * telefono vuol dire tre colonne larghe invece di quattro strette.
+ */
+.griglia-libreria .voce img,
+.griglia-libreria .voce .senza{width:100%; flex:0 0 auto; display:block;
+  aspect-ratio:4/3; min-height:96px; object-fit:cover}
+.griglia-libreria .voce .senza{display:flex; align-items:center;
+  justify-content:center; font-size:11px; color:var(--spento); text-align:center}
 .griglia-libreria .voce small{padding:6px 7px; font-size:11px; color:var(--spento);
   text-align:left; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
 

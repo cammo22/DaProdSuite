@@ -491,6 +491,37 @@ export class Gateway {
                 nome: d.nome,
                 admin: d.ruolo === "admin",
               })),
+            /**
+             * ⚠ **Cosa e' uscito da una prova**, per farlo vedere sulla card.
+             *
+             * Chiesto il 10 settembre 2026: «quando un admin manda a generare
+             * un contenuto, quando pronto lo deve vedere gia' allegato alla
+             * card in modo da controllarlo». Prima la pagina diceva «la trovi
+             * in galleria» e finiva li'.
+             *
+             * Chiede `tutte` per lo stesso motivo di `elencoLibreria`: qui ci
+             * arriva solo chi comanda, e chi comanda vede tutta la galleria.
+             * Finche' il lavoro non e' finito non c'e' niente da tornare, e
+             * va bene: la pagina richiede fra poco.
+             */
+            fruttiDi: (richiesta) =>
+              (
+                this.libreria?.elenco({
+                  chi: chiGioca.id,
+                  dove: "tutte",
+                  richiesta,
+                  quanti: 8,
+                }) ?? []
+              ).map((v) => ({
+                id: v.id,
+                titolo: v.nome,
+                mime: v.mime,
+                url: "/libreria/file/" + encodeURIComponent(v.id),
+                anteprima: v.anteprima
+                  ? "/libreria/anteprima/" + encodeURIComponent(v.id)
+                  : undefined,
+                quando: v.creato,
+              })),
             elencoLibreria: (_chi, quante) =>
               (this.libreria?.elenco({ chi: chiGioca.id, dove: "tutte", quanti: quante }) ?? [])
                 .map((v) => ({

@@ -10,11 +10,113 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ---
 
-## Non ancora pubblicato
+## 1.2.8 — La sala giochi si guarda, e le prove tornano a casa
 
-**Togliere il tunnel Cloudflare** per chi ha l'indirizzo fisso, e **togliere il
-codice** della schermata «cerca i computer di casa», che è irraggiungibile ma
-ancora lì.
+Tutto dentro la sala giochi, e nasce da un'altra serata passata a provarla.
+
+### Mandata una combinazione, la slot riparte
+
+> «Quando si invia una combinazione, gli elementi bloccati vengono inviati e la
+> slot refreshata, si ricomincia la partita.»
+
+Prima si mandava e i rulli restavano **identici**: chi aveva appena mandato si
+ritrovava davanti la riga appena mandata, e per ricominciare doveva sbloccare
+dodici rulli uno per uno. Adesso i blocchi si tolgono tutti e il tavolo torna
+pulito.
+
+**La leva non si tira da sola**, però. Un giro costa lire e mandare deve restare
+gratis: far partire un giro qui vorrebbe dire che mandare costa dieci lire senza
+che nessuno l'abbia deciso.
+
+### Quello che fai generare torna sulla card — e sono quattro
+
+> «Quando un admin manda a generare un contenuto, quando pronto lo deve vedere
+> già allegato alla card in modo da controllarlo. Può rigenerare, max 4 file, e
+> alla fine può selezionare uno o più elementi generati da includere nel
+> pacchetto.»
+
+Tre cose che si tengono insieme.
+
+**Torna da sola.** Quando la generazione è pronta il file compare sulla card, e
+si guarda o si ascolta lì. Prima l'avviso diceva «la trovi in galleria»: per
+vederla bisognava aprire la galleria, cercarla, tornare in fila e riattaccarla a
+mano — due finestre per guardare una cosa nata da quel tasto.
+
+Il pezzo che lo rende possibile c'era già e non lo sapeva nessuno: quando un
+lavoro finisce, la libreria scrive nei dati del file **da quale richiesta è
+nato**. Quindi «cosa è uscito da questa prova» è una domanda a cui la suite
+sapeva già rispondere. Nessun elenco nuovo da tenere allineato.
+
+**Si rigenera, fino a quattro volte.** Prima partiva una volta sola e poi il
+tasto restava spento per sempre. Un modello sbaglia, e giudicare un prompt dal
+suo primo scatto è un altro modo di tirare a indovinare. Mentre è in forno la
+card lo dice, così non si preme tre volte credendo che non abbia funzionato.
+
+**Si sceglie cosa tenere.** Delle quattro se ne spunta una o più d'una. Non è
+«l'ultima vince»: il senso di generare quattro volte è poterle confrontare, e
+infatti stanno in fila una accanto all'altra, non incolonnate.
+
+E oltre a quelle, **fino a quattro cose scelte a mano** dalla galleria — «magari
+da quei prompt nascono cose particolari». Otto in tutto.
+
+### Per adesso le figurine arrivano a Unique
+
+> «Tutti quelli che ci sono fino ad ora mettiamoli da basic a unique; da
+> celestial a ethernal ci penseremo noi nel tempo, man mano che abbiamo dati.»
+
+I dodici gradi restano tutti sui **rulli** — lì la rarità la dicono i dati. Il
+grado che una **persona** dà a una cosa presa si ferma al sesto.
+
+La rarità è un rapporto: con dieci figurine in tutto, chiamarne una Mythic non
+vuol dire niente, e si sarebbe bruciata la parola prima di avere il gioco.
+
+### Tenere premuto non fa più partire il «copia»
+
+> «Quando da mobile tengo premuto per zoommare la card mi triggera il copia che
+> seleziona il testo. Evitiamo, facciamolo meglio.»
+
+Mezzo secondo di dito era **due gesti in uno**: il nostro, che apre la carta
+grande, e quello del telefono, che tira su le maniglie blu col fumetto «Copia».
+Adesso sulle carte il testo non si seleziona col dito. E se il dito si sposta
+non si apre niente: stava scorrendo.
+
+### Il grado si vede, e le schermate si stringono
+
+> «Il colore del grado più evidente, scritte più grandi senza esagerare,
+> ottimizza ulteriormente la schermata.»
+
+Il grado era una scrittina di dodici pixel in fila con il numero, il nome, la
+data e lo stato: cinque cose della stessa misura, e in un gioco di rarità quella
+che conta era la meno visibile delle cinque. Adesso è una pastiglia **piena** del
+suo colore, in cima, da sola col prezzo. Uguale in classifica: una sola pastiglia
+per tutto il gioco.
+
+E su una combinazione che nessuno ha ancora guardato **il grado non si scrive**:
+veniva dal prezzo, e il prezzo non ce l'ha ancora, quindi si leggeva «Basic» su
+tutto quello appena mandato.
+
+### Le anteprime della galleria erano strisce
+
+> «Quando clicco su l'aggiunta di un elemento la schermata è bella, ma le
+> anteprime dei contenuti sono troppo sottili.»
+
+Erano alte cinquanta pixel: di ogni foto si vedeva una fetta orizzontale presa in
+mezzo, e da lì non si riconosce niente — che è l'unica cosa per cui quella
+schermata esiste. Adesso sono riquadri 4:3, e più larghi.
+
+### La tua pagina dice come sta andando
+
+In **Mie**, tre numeri in cima: quanto hai guadagnato, quante te ne hanno prese,
+quante buttate. E su ogni carta la prima riga dice com'è andata — «Presa, ti
+hanno pagato L. 340», «Buttata», «Nessuno l'ha ancora guardata».
+
+⚠ Il guadagno **non è il saldo**: il saldo è quello che ti resta dopo aver
+girato, il guadagno è quanto ti hanno pagato per le cose che ti hanno preso.
+
+E la pagina non è più un rotolo: le mandate e la collezione sono due cassetti
+richiudibili. Nella Fila, anche «Manda lire» è diventato un cassetto — con dieci
+persone quella parte era lunga tre schermate sotto a quello per cui la scheda si
+apre.
 
 ---
 

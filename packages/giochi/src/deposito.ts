@@ -114,7 +114,9 @@ export class Deposito {
     return {
       versione: 1,
       conti: Array.isArray(lette.conti) ? lette.conti : [],
-      collezionabili: Array.isArray(lette.collezionabili) ? lette.collezionabili : [],
+      collezionabili: Array.isArray(lette.collezionabili)
+        ? lette.collezionabili.map(rimettiInRiga)
+        : [],
       ultimoNumero: typeof lette.ultimoNumero === "number" ? lette.ultimoNumero : 0,
       custom: Array.isArray(lette.custom) ? lette.custom : [],
       prezzi: typeof lette.prezzi === "object" && lette.prezzi !== null ? lette.prezzi : {},
@@ -342,4 +344,33 @@ export class Deposito {
     this.salva();
     return this.dati.impostazioni;
   }
+}
+
+/**
+ * Un collezionabile scritto da una versione di prima, rimesso nella forma di
+ * adesso.
+ *
+ * ⚠ **Due campi sono diventati elenchi il 10 settembre 2026**, e chi gioca da
+ * ieri ha sul disco la forma vecchia:
+ *
+ * - `allegato` (uno) e' diventato `allegati` (fino a otto), perche' chi comanda
+ *   puo' far generare quattro volte e sceglierne piu' d'una;
+ * - `provata` (una) e' diventata `prove` (fino a quattro), per lo stesso
+ *   motivo.
+ *
+ * Si converte **leggendo**, non con un giro di aggiornamento a parte: cosi' il
+ * resto del codice conosce una forma sola. Il campo vecchio si toglie, se no
+ * fra un mese ci sono due posti che dicono qual e' l'allegato e uno dei due e'
+ * indietro.
+ */
+function rimettiInRiga(c: Collezionabile): Collezionabile {
+  const vecchio = c as Collezionabile & {
+    allegato?: { id: string; mime: string; url?: string };
+    provata?: { richiesta: string; quando: number };
+  };
+  if (vecchio.allegato && !c.allegati) c.allegati = [vecchio.allegato];
+  if (vecchio.provata && !c.prove) c.prove = [vecchio.provata];
+  delete vecchio.allegato;
+  delete vecchio.provata;
+  return c;
 }

@@ -88,13 +88,49 @@ prova("in vetrina ci va solo roba gia' presa", () =>
 prova("il grado della vetrina lo sceglie chi comanda, e vale anche nei pacchetti", () =>
   conCartella((file) => {
     const d = new Deposito(file);
-    // Nella slot cento lire sono un Unique: da 75 a 119.
-    const c = figurinaPresa(d, "uno", 100);
-    uguale(gradoDiFigurina(c), "unique", "senza vetrina il grado viene dal prezzo");
+    // Nella slot dodici lire sono un Rare: da 12 a 24.
+    const c = figurinaPresa(d, "uno", 12);
+    uguale(gradoDiFigurina(c), "rare", "senza vetrina il grado viene dal prezzo");
 
-    mettiInVetrina(d, "uno", "mythic");
-    uguale(gradoDiFigurina(c), "mythic", "in vetrina comanda il grado scelto");
-    uguale(c.prezzoVetrina, prezzoConsigliato("mythic"), "e il prezzo lo suggerisce il grado");
+    mettiInVetrina(d, "uno", "heroic");
+    uguale(gradoDiFigurina(c), "heroic", "in vetrina comanda il grado scelto");
+    uguale(c.prezzoVetrina, prezzoConsigliato("heroic"), "e il prezzo lo suggerisce il grado");
+  }),
+);
+
+/**
+ * ⚠ **Il tetto delle figurine: Unique, e non si sfonda da nessuna strada.**
+ *
+ * Chiesto il 10 settembre 2026: «tutti quelli che ci sono fino ad ora
+ * mettiamoli da basic a unique; da celestial a ethernal ci penseremo noi nel
+ * tempo». Le strade per sfondarlo erano due — un prezzo alto, e un grado di
+ * vetrina scelto a mano — e si provano tutte e due, perche' bastava che ne
+ * restasse aperta una perche' il tetto non ci fosse.
+ */
+prova("le figurine non passano Unique, ne' col prezzo ne' col grado scelto", () =>
+  conCartella((file) => {
+    const d = new Deposito(file);
+    // Novecento lire nella scala dei pezzi sarebbero un Mythic.
+    const cara = figurinaPresa(d, "cara", 900);
+    uguale(gradoDiFigurina(cara), "unique", "un prezzo da Mythic si ferma a Unique");
+
+    const c = mettiInVetrina(d, "cara", "ethernal");
+    uguale(c.gradoVetrina, "unique", "e il grado scelto si ferma li' gia' sul disco");
+    uguale(gradoDiFigurina(c), "unique", "quindi si legge Unique dappertutto");
+    uguale(
+      c.prezzoVetrina,
+      prezzoConsigliato("unique"),
+      "e il prezzo consigliato e' quello del grado vero, non di quello chiesto",
+    );
+  }),
+);
+
+prova("sotto al tetto non cambia niente: il grado scelto resta quello", () =>
+  conCartella((file) => {
+    const d = new Deposito(file);
+    figurinaPresa(d, "uno", 12);
+    const c = mettiInVetrina(d, "uno", "grand");
+    uguale(c.gradoVetrina, "grand", "un grado basso non lo tocca nessuno");
   }),
 );
 

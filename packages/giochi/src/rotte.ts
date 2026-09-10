@@ -23,6 +23,8 @@ import {
   classifica,
   compra,
   gradoDiFigurina,
+  MAX_ALLEGATI,
+  MAX_PROVE,
   mettiInVetrina,
   prezzoConsigliato,
   sommaDeiPezzi,
@@ -38,7 +40,7 @@ import {
   tira,
 } from "./banco";
 import type { Deposito } from "./deposito";
-import { EPOCHE, GRADI, lire, versoIlProssimo } from "./regole";
+import { EPOCHE, GRADI, TETTO_FIGURINE, lire, versoIlProssimo } from "./regole";
 import { rulliDi } from "./rulli";
 import type { Collezionabile, Era, Grado, Tavolo, TipoCollezionabile } from "./tipi";
 
@@ -107,6 +109,25 @@ export interface Contorno {
     tavolo: "immagini" | "musica",
     cosa: { prompt: string; titolo: string },
   ): { id: string; dove?: string } | null;
+  /**
+   * **Cosa e' uscito da una generazione**, quando e' pronta.
+   *
+   * ⚠ Chiesto il 10 settembre 2026: «quando un admin manda a generare un
+   * contenuto, quando pronto lo deve vedere gia' allegato alla card in modo da
+   * controllarlo». Prima `genera` faceva partire il lavoro e finiva li': la
+   * pagina diceva «la trovi in galleria», e chi comanda doveva aprire la
+   * galleria, cercarla, tornare qui e riattaccarla a mano. Due finestre per
+   * guardare una cosa nata da questo tasto.
+   *
+   * ⚠ **Non serve un registro nuovo.** Quando una generazione finisce, la
+   * libreria della suite scrive nei metadati del file da quale richiesta e'
+   * nato: «cosa e' uscito da questa prova» e' una domanda a cui sa gia'
+   * rispondere. Il gioco tiene il numero di targa della richiesta e chiede.
+   *
+   * Torna vuoto finche' non e' pronta, e vuoto per sempre se chi ospita non ha
+   * una libreria (il banco di prova).
+   */
+  fruttiDi?(richiesta: string): VoceLibreria[];
 }
 
 /** Una cosa della libreria della suite, come la vede la sala giochi. */
@@ -167,18 +188,35 @@ function vestita(c: Collezionabile, contorno: Contorno, scoperta: boolean) {
     dove: scoperta ? dove(c.libreria) : "",
     mime: c.libreria?.mime ?? "",
     /**
-     * La copertina: la cosa venuta fuori da quel prompt.
+     * Le cose venute fuori da quel prompt, quelle che chi comanda ha tenuto.
      *
-     * Si vede **anche da coperta**, ed e' voluto: nello shop uno deve poter
+     * Si vedono **anche da coperta**, ed e' voluto: nello shop uno deve poter
      * guardare cosa sta comprando. Il prompt no — quello resta nascosto finche'
      * non e' tuo.
+     *
+     * La prima e' la copertina della scheda; le altre stanno dietro.
      */
-    allegato: dove(c.allegato),
-    allegatoMime: c.allegato?.mime ?? "",
+    allegati: (c.allegati ?? []).map((a) => ({ url: dove(a), mime: a.mime })),
     /** La copertina di un allegato che non si guarda: un brano, un video. */
     copertina: dove(c.copertina),
-    /** Vero se chi comanda l'ha gia' mandata a generare: non si rifa'. */
-    provata: c.provata ? c.provata.quando : 0,
+    /**
+     * Quante volte e' gia' stata mandata a generare, e cosa ne e' uscito.
+     *
+     * Il conto serve alla pagina per sapere se il tasto «rigenera» e' ancora
+     * vivo (`MAX_PROVE`); i frutti sono i file gia' pronti, che si guardano
+     * sulla card senza aprire la galleria.
+     */
+    prove: (c.prove ?? []).map((p) => ({
+      richiesta: p.richiesta,
+      quando: p.quando,
+      usciti: (contorno.fruttiDi ? contorno.fruttiDi(p.richiesta) : []).map((v) => ({
+        id: v.id,
+        titolo: v.titolo,
+        mime: v.mime,
+        url: v.url,
+        anteprima: v.anteprima ?? "",
+      })),
+    })),
     inVetrina: c.inVetrina === true,
     prezzoVetrina: c.prezzoVetrina ?? 0,
     scoperta,
@@ -239,6 +277,16 @@ export function rispondi(
           perIlLivello: imp.perIlLivello,
         },
         gradi: GRADI.map((g) => ({ ...g, inVetrina: prezzoConsigliato(g.id) })),
+        /**
+         * ⚠ **Fin dove si puo' scegliere, oggi.** Vedi `TETTO_FIGURINE`.
+         *
+         * I gradi restano tutti e dodici — servono ai rulli, e la pagina li
+         * legge da `gradi` per sapere di che colore e' un pezzo. Questo dice
+         * un'altra cosa: fin dove arrivano i **tasti** con cui una persona
+         * assegna un grado a una cosa presa. Due elenchi diversi sarebbero due
+         * verita' da tenere allineate a mano.
+         */
+        tettoFigurine: TETTO_FIGURINE,
         epoche: EPOCHE,
         tavoli: [
           { id: "musica", nome: "Musica", rulli: rulliDi("musica") },
@@ -255,6 +303,14 @@ export function rispondi(
         regalo: deposito.conto(chi.id).ultimoRegalo ?? null,
         tagli: TAGLI,
         tagliBonus: TAGLI_BONUS,
+        /**
+         * I due tetti della card: quante volte si puo' far generare, e quante
+         * cose si possono attaccare in tutto. Li dice il PC perche' e' il PC
+         * che li fa rispettare — la pagina li usa solo per spegnere un tasto
+         * al momento giusto invece di far premere e poi dire di no.
+         */
+        maxProve: MAX_PROVE,
+        maxAllegati: MAX_ALLEGATI,
       });
     }
 
@@ -333,7 +389,29 @@ export function rispondi(
         .magazzino()
         .filter((c) => conto.collezione.includes(c.id))
         .map((c) => vestita(c, contorno, true));
-      return OK({ mandate, perdenti, collezione });
+      /**
+       * ⚠ **I tre numeri di chi gioca.** Chiesti il 10 settembre 2026: «un
+       * counter con il totale dell'utente: il guadagno, e quanti prompt sono
+       * stati accettati e quanti sono stati perdenti».
+       *
+       * Il conto lo fa il PC e non la pagina, ed e' la solita regola: dove ci
+       * sono soldi di mezzo somma chi tiene i soldi. Una pagina che si somma
+       * da sola quanto ha guadagnato e' una pagina a cui si puo' far dire un
+       * altro numero.
+       *
+       * ⚠ Il **guadagno** e' quello che hanno pagato per le cose prese, ed e'
+       * un'altra cosa da `esperienza` (che si prende girando) e da `saldo`
+       * (che e' quello che resta dopo aver speso). Sono tre numeri diversi e
+       * non se ne puo' usare uno al posto di un altro.
+       */
+      const prese = mie.filter((c) => c.stato === "presa");
+      const conta = {
+        guadagno: prese.reduce((somma, c) => somma + (c.prezzo ?? 0), 0),
+        accettate: prese.length,
+        perdenti: perdenti.length,
+        inAttesa: mie.filter((c) => c.stato === "in-attesa").length,
+      };
+      return OK({ mandate, perdenti, collezione, conta });
     }
 
     /* ------------------------------------------------------------- l'album */
@@ -539,12 +617,28 @@ export function rispondi(
               url: String(corpo[quale]),
             }
           : undefined;
+      /**
+       * ⚠ **Gli allegati arrivano come elenco**: uno o piu' d'uno, chiesto il
+       * 10 settembre 2026. Ognuno porta il suo indirizzo e il suo tipo, perche'
+       * fra i quattro generati e i quattro scelti a mano ci puo' stare un brano
+       * accanto a un'immagine, e la pagina deve sapere quale si guarda e quale
+       * si ascolta.
+       */
+      const elenco = Array.isArray(corpo["allegati"]) ? (corpo["allegati"] as unknown[]) : [];
+      const allegati = elenco
+        .map((x) => (typeof x === "object" && x !== null ? (x as Record<string, unknown>) : null))
+        .filter((x): x is Record<string, unknown> => x !== null && Boolean(x["url"]))
+        .map((x) => ({
+          id: String(x["id"] ?? x["url"]),
+          mime: String(x["mime"] ?? "image/*"),
+          url: String(x["url"]),
+        }));
       const c = prendi(
         deposito,
         chi.id,
         String(corpo["id"] ?? ""),
         numero(corpo["bonus"], 0),
-        daLi("allegato", "image/*"),
+        allegati,
         daLi("copertina", "image/*"),
       );
       return OK(vestita(c, contorno, true));
@@ -567,20 +661,30 @@ export function rispondi(
      * ⚠ **Il costo lo paga il banco, non chi ha mandato.** E' l'admin che ha
      * scelto di provarla: se la togliesse dal saldo di chi la manda, mandare
      * costerebbe, e mandare deve essere gratis (CONCETTI.md § 9).
+     *
+     * ⚠ **Si puo' rifare, fino a quattro volte** (`MAX_PROVE`). Chiesto il 10
+     * settembre 2026: «puo' rigenerare e viene generato un secondo file, max 4
+     * file». Prima partiva una volta sola e poi il tasto restava spento per
+     * sempre: un modello sbaglia, e giudicare un prompt dal suo primo scatto
+     * e' un altro modo di tirare a indovinare.
      */
     if (metodo === "POST" && percorso === "/prova") {
       if (!contorno.genera) return NO(501, "Qui non c'e' niente che sappia generare.");
       const c = deposito.perId(String(corpo["id"] ?? ""));
       if (!c) return NO(404, "Questa non c'e'.");
       if (!c.prompt) return NO(409, "Questa non e' un prompt: non c'e' niente da generare.");
+      const fatte = c.prove ?? [];
+      if (fatte.length >= MAX_PROVE) {
+        return NO(409, "L'hai gia' fatta generare " + MAX_PROVE + " volte: scegli fra quelle.");
+      }
       const dove = contorno.genera(chi.id, c.tavolo === "immagini" ? "immagini" : "musica", {
         prompt: c.prompt,
         titolo: c.titolo,
       });
       if (!dove) return NO(501, "Non e' partita: qui non si genera.");
-      c.provata = { richiesta: dove.id, quando: Date.now() };
+      c.prove = fatte.concat([{ richiesta: dove.id, quando: Date.now() }]);
       deposito.salva();
-      return OK({ id: c.id, richiesta: dove.id, dove: dove.dove ?? "" });
+      return OK({ id: c.id, richiesta: dove.id, dove: dove.dove ?? "", quante: c.prove.length });
     }
 
     if (metodo === "POST" && percorso === "/butta") {

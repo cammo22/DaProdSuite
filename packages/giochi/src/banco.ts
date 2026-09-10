@@ -27,6 +27,7 @@ import {
   pescaPesata,
   pescaPezzo,
   scalino,
+  sottoIlTetto,
   valore,
   valuta,
   type Caso,
@@ -225,7 +226,15 @@ function regalaOgniTanto(deposito: Deposito, chi: string, caso: Caso): Collezion
  * quanto costa in vetrina e quanto raramente cade da un pacchetto.
  */
 export function gradoDiFigurina(c: Collezionabile): Grado {
-  return c.inVetrina && c.gradoVetrina ? c.gradoVetrina : gradoDiPrezzo(c.prezzo ?? 0);
+  /**
+   * ⚠ **Sotto al tetto**, e qui e' l'unico posto dove serve dirlo.
+   *
+   * Da questa riga passano tutti: la figurina che si guarda, quella che cade
+   * da un pacchetto, quella che si regala girando, quella in vetrina. Tenere
+   * il tetto qui vuol dire che il giorno che si apre Celestial si cambia
+   * `TETTO_FIGURINE` e si e' aperto dappertutto.
+   */
+  return sottoIlTetto(c.inVetrina && c.gradoVetrina ? c.gradoVetrina : gradoDiPrezzo(c.prezzo ?? 0));
 }
 
 /** Il titolo di una figurina: i nomi italiani dei pezzi, uno dietro l'altro. */
@@ -482,6 +491,34 @@ export function mandaDallaLibreria(
  * prompt — una foto, un brano — di pezzi non ce ne sono, e la somma e' zero:
  * li' decide tutto il bonus di chi comanda.
  */
+/**
+ * ⚠ **Quante volte si puo' far generare la stessa combinazione: quattro.**
+ *
+ * Chiesto il 10 settembre 2026: «puo' rigenerare e viene generato un secondo
+ * file, max 4 file». Il tetto c'e' perche' ogni giro e' una generazione vera
+ * che occupa il computer e sta in coda davanti a chi aspetta: senza un limite,
+ * un dito rimasto premuto riempie la fila di dieci prove della stessa riga.
+ *
+ * Quattro e' anche quello che ci sta sulla card senza doverla scorrere, e
+ * quattro immagini una accanto all'altra sono abbastanza per capire se un
+ * prompt tiene o e' stato un colpo di fortuna.
+ */
+export const MAX_PROVE = 4;
+
+/**
+ * ⚠ **Quante cose si possono attaccare a una figurina: otto.**
+ *
+ * Quattro nate dal prompt (`MAX_PROVE`) piu' quattro scelte a mano dalla
+ * galleria della suite, chieste cosi' il 10 settembre 2026: «lascia comunque
+ * la possibilita' di allegare oltre a quelle 4 generate ulteriori max 4 file
+ * dalla suite, magari da quei prompt nascono cose particolari».
+ *
+ * Sono due strade diverse e fa il totale una sola: al banco non interessa da
+ * dove viene un file, interessa quanti ne regge una carta prima di diventare
+ * un elenco.
+ */
+export const MAX_ALLEGATI = 8;
+
 export function sommaDeiPezzi(deposito: Deposito, c: Collezionabile): number {
   if (!c.pezzi || c.pezzi.length === 0) return 0;
   let somma = 0;
@@ -508,7 +545,7 @@ export function prendi(
   admin: string,
   id: string,
   bonus: number,
-  allegato?: DallaLibreria,
+  allegati?: DallaLibreria[],
   copertina?: DallaLibreria,
 ): Collezionabile {
   const c = deposito.perId(id);
@@ -516,10 +553,22 @@ export function prendi(
   if (c.stato !== "in-attesa") throw new NienteDaFare("Su questa e' gia' stato deciso.");
 
   const lire = valoreDaPrendere(sommaDeiPezzi(deposito, c), bonus);
-  if (allegato && allegato.id) c.allegato = allegato;
+  /**
+   * ⚠ **Quello che chi comanda ha scelto di tenere**, e non e' per forza uno.
+   *
+   * Chiesto il 10 settembre 2026: «alla fine puo' selezionare uno o piu'
+   * elementi generati da includere nel pacchetto». Il primo e' quello che si
+   * vede nello shop — la copertina della scheda — e gli altri stanno dietro.
+   *
+   * Il tetto e' `MAX_ALLEGATI`: quattro nate dal prompt piu' quattro scelte a
+   * mano dalla galleria. Non e' un numero tondo per caso, sono le due strade
+   * per cui una cosa puo' finire attaccata qui.
+   */
+  const tenuti = (allegati ?? []).filter((a) => a && a.id).slice(0, MAX_ALLEGATI);
+  if (tenuti.length > 0) c.allegati = tenuti;
   // La copertina si tiene solo se c'e' qualcosa da coprire: una copertina
   // attaccata al niente e' una figurina che promette una canzone che non c'e'.
-  if (copertina && copertina.id && c.allegato) c.copertina = copertina;
+  if (copertina && copertina.id && c.allegati && c.allegati.length > 0) c.copertina = copertina;
 
   c.stato = "presa";
   c.prezzo = lire;
@@ -775,9 +824,16 @@ export function mettiInVetrina(
   if (c.stato !== "presa") {
     throw new NienteDaFare("In vetrina ci va solo roba gia' presa: prima decidi se vale.");
   }
+  /**
+   * ⚠ Il grado si tiene **sotto al tetto** gia' qui, non solo quando si legge:
+   * un `gradoVetrina: "mythic"` scritto sul disco sarebbe un numero che dice
+   * una cosa mentre lo schermo ne dice un'altra, e il giorno che il tetto si
+   * alza tornerebbe fuori da solo senza che nessuno l'abbia deciso.
+   */
+  const suo = sottoIlTetto(grado);
   c.inVetrina = true;
-  c.gradoVetrina = grado;
-  c.prezzoVetrina = Math.max(1, Math.round(prezzo && prezzo > 0 ? prezzo : prezzoConsigliato(grado)));
+  c.gradoVetrina = suo;
+  c.prezzoVetrina = Math.max(1, Math.round(prezzo && prezzo > 0 ? prezzo : prezzoConsigliato(suo)));
   deposito.salva();
   return c;
 }

@@ -207,6 +207,18 @@ export const COPIONE = `
     d.innerHTML = h;
     d.addEventListener("click", function () { d.remove(); });
     document.body.appendChild(d);
+    /**
+     * ⚠ **Via quello che il telefono avesse gia' selezionato.**
+     *
+     * La selezione col dito e' spenta nello stile, ma resta il caso di chi ce
+     * l'aveva gia' addosso da prima — un doppio tocco andato storto, una
+     * casella lasciata a meta'. Aprire il pannello grande sopra a delle
+     * maniglie blu vuol dire trovarsele li' sotto quando si chiude.
+     */
+    try {
+      var sel = window.getSelection && window.getSelection();
+      if (sel && sel.removeAllRanges) sel.removeAllRanges();
+    } catch (e) {}
   }
 
   /**
@@ -219,16 +231,35 @@ export const COPIONE = `
    */
   var orologioPressione = null;
   var premutoDa = null;
+  /** Da dove e' partito il dito: serve a capire se sta scorrendo. */
+  var partitoDa = null;
 
   function iniziaPressione(evento) {
     var b = evento.target;
     if (!b || !b.closest) return;
     premutoDa = b;
+    partitoDa = { x: evento.clientX || 0, y: evento.clientY || 0 };
     if (orologioPressione) clearTimeout(orologioPressione);
     orologioPressione = setTimeout(function () {
       orologioPressione = null;
       apriGrandeDa(premutoDa);
     }, 480);
+  }
+
+  /**
+   * ⚠ **Se il dito si sposta, stava scorrendo.**
+   *
+   * Lo «scroll» da solo non basta e si vede sul telefono: chi appoggia il dito
+   * su una carta e trascina per scorrere una lista lunga tiene premuto per piu'
+   * di mezzo secondo **prima** che la pagina cominci a muoversi davvero, e nel
+   * frattempo gli si spalancava il pannello grande in faccia. Dodici pixel: piu'
+   * di un dito che trema, meno di un dito che scorre.
+   */
+  function forseSiSposta(evento) {
+    if (!orologioPressione || !partitoDa) return;
+    var dx = (evento.clientX || 0) - partitoDa.x;
+    var dy = (evento.clientY || 0) - partitoDa.y;
+    if (dx * dx + dy * dy > 144) fermaPressione();
   }
 
   function fermaPressione() {
@@ -728,6 +759,27 @@ export const COPIONE = `
     return fuori;
   }
 
+  /**
+   * ⚠ **Mandata la combinazione, la sala riparte.**
+   *
+   * Chiesto il 10 settembre 2026: «quando si invia una combinazione gli
+   * elementi bloccati vengono inviati e la slot refreshata, si ricomincia la
+   * partita». Prima i rulli restavano identici: chi aveva appena mandato si
+   * ritrovava davanti la riga appena mandata, e per ricominciare doveva
+   * sbloccare dodici rulli uno per uno.
+   *
+   * ⚠ **Non si tira la leva da soli**, e non e' una dimenticanza. Un giro
+   * costa lire e mandare deve restare gratis (CONCETTI.md § 9): far partire un
+   * giro qui vorrebbe dire che mandare costa dieci lire senza che nessuno
+   * l'abbia deciso. Si azzera e si aspetta il dito.
+   */
+  function ripartiDaCapo() {
+    bloccati = [];
+    pezzi = [];
+    ricordaTavolo();
+    disegnaRulli();
+  }
+
   /* -------------------------------------------------------------- mandare */
 
   /**
@@ -774,17 +826,20 @@ export const COPIONE = `
             s.colore,
           );
           io.conto.collezione += 1;
+          ripartiDaCapo();
           return;
         }
 
         if (r.esito === "gia-tua") {
           numeroVolante(soldi(r.lire), "#ff5c6e");
           avviso(r.detto, "male");
+          ripartiDaCapo();
           return;
         }
 
         avviso(r.detto, "bene");
         io.conto.mandate += 1;
+        ripartiDaCapo();
       })
       .catch(function (errore) { avviso(errore.message, "male"); });
   }
@@ -800,17 +855,67 @@ export const COPIONE = `
       (c.stato === "buttata" ? " perdente" : "") +
       "\\" style=\\"--g:" + s.colore + "\\">";
     if (c.stato === "buttata") h += "<div class=\\"timbro\\">perdente</div>";
+    /**
+     * ⚠ **Il grado si vede prima del titolo, e si vede da lontano.**
+     *
+     * Chiesto il 10 settembre 2026: «il colore del grado piu' evidente, scritte
+     * piu' grandi senza esagerare, ottimizza ulteriormente la schermata».
+     *
+     * Prima il grado era una scrittina colorata dentro una riga grigia, in fila
+     * con il numero, il nome di chi l'aveva mandata, la data e lo stato: cinque
+     * cose della stessa misura, e quella che conta in un gioco di rarita' era
+     * la meno visibile delle cinque. Adesso e' una pastiglia **piena** del suo
+     * colore, in cima, da sola con il prezzo.
+     *
+     * E la riga sotto si e' alleggerita: il grado e il prezzo sono saliti, lo
+     * stato e' diventato un'etichetta accanto al grado, e li' resta solo chi
+     * l'ha fatta e quando. Una carta che stava in uno schermo e mezzo adesso ci
+     * sta in uno.
+     */
+    h += "<div class=\\"testa\\">";
+    /**
+     * ⚠ **Su una che nessuno ha ancora guardato il grado non si scrive.**
+     *
+     * Il grado viene dal prezzo, e una in attesa il prezzo non ce l'ha: si
+     * leggeva «Basic» su ogni cosa appena mandata, che non vuol dire «e'
+     * scarsa» ma cosi' si legge. Un numero che non c'e' ancora si lascia
+     * vuoto, non si mette a zero.
+     */
+    if (c.stato !== "in-attesa") {
+      h += "<span class=\\"grado\\">" + sicuro(s.nome) + "</span>";
+    }
+    if (c.prezzo > 0) h += "<span class=\\"quanto\\">" + soldi(c.prezzo) + "</span>";
+    if (c.numero > 0) h += "<span class=\\"enne\\">n. " + c.numero + "</span>";
+    if (c.stato === "in-attesa") h += "<span class=\\"stato\\">in attesa</span>";
+    h += "</div>";
+    /**
+     * ⚠ **Chi gioca viene qui a sapere com'e' andata.** Chiesto il 10
+     * settembre 2026: «in Mie un utente normale vede solo l'esito».
+     *
+     * Una riga sola, in cima, detta come si direbbe a voce. Il resto della
+     * carta — i pezzi, il prompt, quello che ne e' uscito — sta sotto per chi
+     * lo vuole rileggere, ma la domanda per cui si apre questa pagina e' una:
+     * l'hanno presa o no.
+     */
+    if (o.esito) {
+      if (c.stato === "presa") {
+        h += "<div class=\\"esito bene\\">Presa. Ti hanno pagato <b>" + soldi(c.prezzo) +
+          "</b></div>";
+      } else if (c.stato === "buttata") {
+        h += "<div class=\\"esito male\\">Buttata</div>";
+      } else {
+        h += "<div class=\\"esito\\">Nessuno l'ha ancora guardata</div>";
+      }
+    }
     h += "<div class=\\"titolo\\">" + sicuro(c.titolo) + "</div>";
     h += "<div class=\\"sotto\\">";
-    if (c.prezzo > 0) {
-      h += "<span class=\\"pastiglia\\" style=\\"color:" + s.colore + "\\">" +
-        sicuro(s.nome) + " · " + soldi(c.prezzo) + "</span> ";
-    }
-    if (c.numero > 0) h += "n. " + c.numero + " · ";
     h += "di " + sicuro(c.daNome) + " · " + quando(c.quando);
-    if (c.stato === "in-attesa") h += " · in attesa";
-    if (c.stato === "buttata") h += " · buttata: " + sicuro(c.motivo);
+    // Il perche' di un no si legge tutto, e non incolonnato con la data: e'
+    // l'unica cosa che chi l'ha mandata e' venuto a leggere.
     h += "</div>";
+    if (c.stato === "buttata" && c.motivo) {
+      h += "<div class=\\"perche\\">" + sicuro(c.motivo) + "</div>";
+    }
     if (c.scoperta && c.prompt) {
       h += "<div class=\\"testo\\">" + sicuro(c.prompt) + "</div>";
       /**
@@ -829,10 +934,31 @@ export const COPIONE = `
      * deve poter guardare cosa sta comprando. Il prompt no, quello resta
      * nascosto finche' non e' tuo.
      */
-    if (c.allegato && String(c.allegatoMime || "").indexOf("audio/") === 0) {
-      h += "<audio controls src=\\"" + sicuro(c.allegato) + "\\"></audio>";
-    } else if (c.allegato) {
-      h += "<img src=\\"" + sicuro(c.allegato) + "\\" alt=\\"\\" loading=\\"lazy\\">";
+    /**
+     * ⚠ **Una sola si guarda grande, piu' d'una si guardano in fila.**
+     *
+     * Una figurina con quattro immagini incolonnate e' lunga quattro schermate,
+     * e in un album se ne guardano venti. In fila si vedono tutte insieme, che
+     * e' anche il modo in cui si guardano davvero: sono quattro tentativi della
+     * stessa cosa. Tenere premuto apre grande, come sempre.
+     */
+    var attaccate = (c.allegati || []).filter(function (a) { return a && a.url; });
+    if (attaccate.length === 1) {
+      var sola = attaccate[0];
+      h += String(sola.mime || "").indexOf("audio/") === 0
+        ? "<audio controls src=\\"" + sicuro(sola.url) + "\\"></audio>"
+        : "<img src=\\"" + sicuro(sola.url) + "\\" alt=\\"\\" loading=\\"lazy\\">";
+    } else if (attaccate.length > 1) {
+      h += "<div class=\\"nate\\">";
+      for (var q = 0; q < attaccate.length; q++) {
+        var att = attaccate[q];
+        h += "<div class=\\"nata\\">";
+        h += String(att.mime || "").indexOf("audio/") === 0
+          ? "<audio controls src=\\"" + sicuro(att.url) + "\\"></audio>"
+          : "<img src=\\"" + sicuro(att.url) + "\\" alt=\\"\\" loading=\\"lazy\\">";
+        h += "</div>";
+      }
+      h += "</div>";
     }
     // Le figurine che non sono prompt si guardano o si ascoltano: il file sta
     // nella libreria della suite, qui c'e' solo il suo indirizzo.
@@ -847,16 +973,46 @@ export const COPIONE = `
     return h;
   }
 
+  /**
+   * ⚠ **Come sta andando a te**, in tre numeri e in cima alla pagina.
+   *
+   * Chiesto il 10 settembre 2026. Prima non c'era da nessuna parte: la
+   * classifica dice come stai **rispetto agli altri**, e per sapere quanto
+   * avevi guadagnato dovevi contare le carte a mano.
+   *
+   * Il guadagno non e' il saldo: il saldo e' quello che ti resta dopo aver
+   * girato, questo e' quanto ti hanno pagato per le cose che ti hanno preso.
+   * Sono due numeri diversi e vanno letti diversi.
+   */
+  function contaMieHtml(c) {
+    var q = c || { guadagno: 0, accettate: 0, perdenti: 0, inAttesa: 0 };
+    var pezzo = function (quanto, cosa, classe) {
+      return "<div class=\\"pezzo " + classe + "\\"><b>" + quanto + "</b><small>" +
+        cosa + "</small></div>";
+    };
+    return pezzo(soldi(q.guadagno), "guadagnate", "oro") +
+      pezzo(String(q.accettate), q.accettate === 1 ? "presa" : "prese", "bene") +
+      pezzo(String(q.perdenti), q.perdenti === 1 ? "perdente" : "perdenti", "male") +
+      (q.inAttesa ? pezzo(String(q.inAttesa), "in attesa", "") : "");
+  }
+
   function caricaMie() {
     chiedi("GET", "/mie").then(function (dati) {
+      $("conta-mie").innerHTML = contaMieHtml(dati.conta);
+
+      $("quante-mandate").textContent = dati.mandate.length ? String(dati.mandate.length) : "";
       $("mie-mandate").innerHTML = dati.mandate.length
-        ? dati.mandate.map(function (c) { return figurinaHtml(c); }).join("")
+        ? dati.mandate.map(function (c) { return figurinaHtml(c, { esito: true }); }).join("")
         : "<div class=\\"niente\\">Non hai ancora mandato niente. Monta una riga e mandala.</div>";
       // I perdenti: il cassetto compare solo se dentro c'e' qualcosa.
       var persi = dati.perdenti || [];
       $("cassetto-perdenti").hidden = persi.length === 0;
       $("quanti-perdenti").textContent = persi.length ? String(persi.length) : "";
-      $("mie-perdenti").innerHTML = persi.map(function (c) { return figurinaHtml(c); }).join("");
+      $("mie-perdenti").innerHTML = persi.map(function (c) {
+        return figurinaHtml(c, { esito: true });
+      }).join("");
+      $("quante-collezione").textContent = dati.collezione.length
+        ? String(dati.collezione.length) : "";
       $("mie-collezione").innerHTML = dati.collezione.length
         ? dati.collezione.map(function (c) { return figurinaHtml(c); }).join("")
         : "<div class=\\"niente\\">La collezione e' vuota. Si riempie giocando o coi pacchetti.</div>";
@@ -949,10 +1105,17 @@ export const COPIONE = `
     h += "<span class=\\"nastro\\">" + sicuro(s.nome) + "</span>";
     if (c.mia) h += "<span class=\\"mia\\">ce l'hai</span>";
     h += "<div class=\\"copertina\\">";
-    // La copertina si vede **anche se non e' tua**: uno deve poter guardare
-    // cosa sta comprando. Il prompt no, quello resta coperto finche' non paghi.
-    h += c.allegato
-      ? "<img src=\\"" + sicuro(c.allegato) + "\\" alt=\\"\\">"
+    /**
+     * La copertina si vede **anche se non e' tua**: uno deve poter guardare
+     * cosa sta comprando. Il prompt no, quello resta coperto finche' non paghi.
+     *
+     * ⚠ Da quando gli allegati possono essere piu' d'uno, qui si guarda **il
+     * primo**: una scheda di negozio ha una faccia sola. Il resto si vede
+     * quando la figurina e' tua.
+     */
+    var faccia = (c.allegati && c.allegati.length) ? c.allegati[0] : null;
+    h += faccia && faccia.url
+      ? "<img src=\\"" + sicuro(c.copertina || faccia.url) + "\\" alt=\\"\\">"
       : faccinaDi(c.tipo);
     h += "</div><div class=\\"corpo\\">";
     h += "<h3>" + sicuro(c.titolo) + "</h3>";
@@ -1043,8 +1206,10 @@ export const COPIONE = `
               "<td>" + sicuro(r.nome) + "</td>" +
               "<td>" + r.prese + "</td>" +
               "<td>" + r.collezione + "</td>" +
+              // La stessa pastiglia della carta: il grado si riconosce dal
+              // colore pieno, qui come li'.
               "<td>" + (s
-                ? "<span class=\\"pastiglia\\" style=\\"color:" + s.colore + "\\">" +
+                ? "<span class=\\"grado\\" style=\\"--g:" + s.colore + "\\">" +
                   sicuro(s.nome) + "</span>"
                 : "—") + "</td>" +
               "<td>" + soldi(r.saldo) + "</td></tr>";
@@ -1063,11 +1228,31 @@ export const COPIONE = `
    * lo mette il gioco al fondo di quel grado. Chi vuole un numero preciso ce
    * l'ha lo stesso, nella casella accanto.
    */
+  /**
+   * ⚠ **I tasti si fermano al tetto.** Chiesto il 10 settembre 2026: «tutti
+   * quelli che ci sono fino ad ora mettiamoli da basic a unique; da celestial
+   * a ethernal ci penseremo noi nel tempo».
+   *
+   * L'elenco dei gradi resta intero — serve ai rulli, che li usano tutti e
+   * dodici — e qui si taglia solo **fin dove si puo' scegliere**. Il tetto lo
+   * dice il PC («tettoFigurine»), non questa pagina: la scala e' una regola del
+   * gioco, e le regole non stanno in due posti.
+   */
+  function finDoveSiSceglie() {
+    var tetto = io && io.tettoFigurine ? io.tettoFigurine : "";
+    if (!tetto) return io.gradi;
+    for (var i = 0; i < io.gradi.length; i++) {
+      if (io.gradi[i].id === tetto) return io.gradi.slice(0, i + 1);
+    }
+    return io.gradi;
+  }
+
   function tastiGradi(id, uso) {
     var quale = uso || "prezzo";
+    var scelta = finDoveSiSceglie();
     var h = "<div class=\\"gradi-scelta\\" data-gradi=\\"" + id + "\\">";
-    for (var i = 0; i < io.gradi.length; i++) {
-      var g = io.gradi[i];
+    for (var i = 0; i < scelta.length; i++) {
+      var g = scelta[i];
       var scelto = gradoScelto[id] === g.id;
       h += "<button data-grado=\\"" + g.id + "\\" data-per=\\"" + id + "\\"" +
         " data-uso=\\"" + quale + "\\"" +
@@ -1188,8 +1373,17 @@ export const COPIONE = `
   }
 
   /** Il grado che viene da un prezzo. La stessa scala del PC, letta al contrario. */
+  /**
+   * Il grado che viene da un prezzo — **tenuto sotto al tetto**.
+   *
+   * Il taglio serve qui e non solo sui tasti: il bonus si puo' anche scrivere
+   * a mano in una casella, e senza questo un numero grosso scritto a dito
+   * avrebbe fatto leggere «Celestial» accanto a una figurina che poi il PC
+   * salva come Unique. Due schermate che dicono due cose e' sempre la stessa
+   * malattia: la stessa regola scritta in due posti.
+   */
   function gradoDiPrezzo(prezzo) {
-    var g = io && io.gradi ? io.gradi : [];
+    var g = finDoveSiSceglie();
     var trovato = g.length ? g[0] : { id: "basic", nome: "Basic", colore: "#9aa0b5" };
     for (var i = 0; i < g.length; i++) if (prezzo >= g[i].da) trovato = g[i];
     return trovato;
@@ -1208,52 +1402,134 @@ export const COPIONE = `
   }
 
   /**
-   * I tasti per **provarla davvero**: parte una generazione con quel prompt.
+   * **Provala davvero**: la generazione parte, e quello che ne esce torna qui.
    *
    * ⚠ Chiesto il 10 settembre 2026: «quando arriva un prompt da controllare
-   * agli admin ci vogliono dei pulsanti per mandare quel prompt a generare».
-   * Prima si giudicava una riga di testo inglese a occhio, e dare un prezzo a
-   * una cosa che non hai visto ne' sentito e' tirare a indovinare.
+   * agli admin ci vogliono dei pulsanti per mandare quel prompt a generare», e
+   * poi, la sera stessa: «quando pronto lo deve vedere gia' allegato alla card
+   * in modo da controllarlo; puo' rigenerare, max 4 file, e alla fine puo'
+   * selezionare uno o piu' elementi generati da includere nel pacchetto».
+   *
+   * Prima il tasto partiva **una volta sola** e finiva li': l'avviso diceva
+   * «la trovi in galleria», e per guardarla bisognava aprire la galleria,
+   * cercarla, tornare qui e riattaccarla a mano. Due finestre per vedere una
+   * cosa nata da questo tasto.
    *
    * Con che modelli lo decide il computer, non questa pagina: sessanta secondi
-   * strumentali per la musica, un 4:3 per le immagini. Qui si dice solo che si
-   * vuole vedere.
+   * strumentali per la musica, un 4:3 per le immagini.
    */
-  function provaHtml(c) {
+  function proveHtml(c) {
     var musica = c.tavolo !== "immagini";
-    var gia = c.provata > 0;
-    return "<div class=\\"riga-tasti\\">" +
-      "<button class=\\"btn piano\\" data-prova=\\"" + c.id + "\\"" + (gia ? " disabled" : "") + ">" +
-      (gia ? "Gia' mandata a generare" :
-        musica ? "Sentila (clip di 60 secondi)" : "Guardala (immagine 4:3)") +
+    var prove = c.prove || [];
+    var nate = [];
+    var inCorso = 0;
+    for (var i = 0; i < prove.length; i++) {
+      var u = prove[i].usciti || [];
+      if (u.length) { for (var k = 0; k < u.length; k++) nate.push(u[k]); }
+      else inCorso += 1;
+    }
+
+    var h = "";
+    if (nate.length) {
+      h += "<div class=\\"nate\\">";
+      for (var n = 0; n < nate.length; n++) {
+        var v = nate[n];
+        var tenuta = tenute[c.id] && tenute[c.id][v.url];
+        var suona = String(v.mime || "").indexOf("audio/") === 0;
+        var faccia = v.anteprima || (String(v.mime || "").indexOf("image/") === 0 ? v.url : "");
+        h += "<div class=\\"nata" + (tenuta ? " tenuta" : "") + "\\">";
+        if (faccia) h += "<img src=\\"" + sicuro(faccia) + "\\" alt=\\"\\" loading=\\"lazy\\">";
+        else if (!suona) h += "<span class=\\"senza\\">" + sicuro(v.mime || "un file") + "</span>";
+        if (suona) h += "<audio controls src=\\"" + sicuro(v.url) + "\\"></audio>";
+        h += "<button class=\\"btn piano tienila\\" data-nata=\\"" + c.id + "\\"" +
+          " data-url=\\"" + sicuro(v.url) + "\\" data-mime=\\"" + sicuro(v.mime) + "\\"" +
+          " data-vid=\\"" + sicuro(v.id) + "\\">" +
+          (tenuta ? "la tieni" : "tienila") + "</button>";
+        h += "</div>";
+      }
+      h += "</div>";
+    }
+
+    /**
+     * ⚠ **«Sto generando» va detto**, e non e' un dettaglio.
+     *
+     * Una clip di sessanta secondi ci mette minuti. Senza questa riga la card
+     * resta identica a com'era prima di premere, e la reazione naturale e'
+     * premere di nuovo: si finisce con tre generazioni uguali in coda davanti a
+     * chi sta aspettando davvero.
+     */
+    if (inCorso) {
+      h += "<div class=\\"conto attesa\\">Sto generando" +
+        (inCorso > 1 ? " (" + inCorso + " in corso)" : "…") +
+        " · appena e' pronta compare qui</div>";
+    }
+
+    var quante = prove.length;
+    var tetto = io && io.maxProve ? io.maxProve : 4;
+    var pieno = quante >= tetto;
+    h += "<div class=\\"riga-tasti\\">" +
+      "<button class=\\"btn piano\\" data-prova=\\"" + c.id + "\\"" + (pieno ? " disabled" : "") + ">" +
+      (pieno ? "Gia' provata " + tetto + " volte: scegli fra quelle"
+        : quante === 0
+          ? (musica ? "Sentila (clip di 60 secondi)" : "Guardala (immagine 4:3)")
+          : "Fanne un'altra (" + (quante + 1) + " di " + tetto + ")") +
       "</button></div>";
+    return h;
   }
 
-  /** Cosa si sta per attaccare: il file, e la copertina se serve. */
-  function attaccoHtml(c) {
-    var a = attaccati[c.id];
+  /**
+   * Cosa si attacca **a mano**, dalla galleria della suite: fino a quattro.
+   *
+   * ⚠ Chiesto il 10 settembre 2026: «lascia comunque la possibilita' di
+   * allegare, oltre a quelle 4 generate, ulteriori max 4 file dalla suite —
+   * magari da quei prompt nascono cose particolari».
+   *
+   * E' l'altra strada, e sta accanto a quella delle generate: quattro nate da
+   * questo prompt (il tasto «provala») e quattro scelte con il dito. Prima era una
+   * sola, e sceglierne un'altra buttava via la prima.
+   */
+  function attaccoHtml(idCosa) {
+    var c = { id: idCosa };
+    var scelte = attaccati[c.id] || [];
     var cop = copertine[c.id];
+    var tetto = 4;
+    var pieno = scelte.length >= tetto;
     var h = "<div class=\\"riga-tasti\\">" +
-      "<button class=\\"btn piano\\" data-attacca=\\"" + c.id + "\\">" +
-      (a ? "Cambia: " + sicuro(a.titolo) : "Attacca dalla suite") + "</button>";
+      "<button class=\\"btn piano\\" data-attacca=\\"" + c.id + "\\"" +
+      (pieno ? " disabled" : "") + ">" +
+      (pieno ? "Quattro dalla suite, e' il massimo"
+        : scelte.length
+          ? "Attaccane un'altra (" + (scelte.length + 1) + " di " + tetto + ")"
+          : "Attacca dalla suite") + "</button>";
     /**
      * ⚠ **Un brano si vede solo se ha una copertina.** Chiesto il 10
      * settembre 2026: «se si carica una canzone viene caricata anche l'immagine
      * della canzone». Se la libreria ne ha gia' una si prende da sola; se no,
      * questo tasto serve a sceglierne una a mano.
+     *
+     * Vale per la **prima**: e' quella che si vede nello shop, e le altre
+     * stanno dietro alla sua faccia.
      */
-    if (a && String(a.mime || "").indexOf("image/") !== 0) {
+    var prima = scelte[0];
+    if (prima && String(prima.mime || "").indexOf("image/") !== 0) {
       h += "<button class=\\"btn piano\\" data-copertina=\\"" + c.id + "\\">" +
         (cop ? "Cambia copertina" : "Metti una copertina") + "</button>";
     }
     h += "</div>";
-    if (a) {
-      var faccia = cop ? (cop.anteprima || cop.url) : (a.anteprima || (String(a.mime || "").indexOf("image/") === 0 ? a.url : ""));
-      h += "<div class=\\"attaccata\\">" +
-        (faccia ? "<img src=\\"" + sicuro(faccia) + "\\" alt=\\"\\">"
-                : "<span class=\\"senzafaccia\\">senza copertina</span>") +
-        "<small>" + sicuro(a.titolo) + "</small>" +
-        "<button class=\\"btn piano\\" data-stacca=\\"" + c.id + "\\">Togli</button></div>";
+    if (scelte.length) {
+      h += "<div class=\\"nate\\">";
+      for (var i = 0; i < scelte.length; i++) {
+        var a = scelte[i];
+        var faccia = (i === 0 && cop) ? (cop.anteprima || cop.url)
+          : (a.anteprima || (String(a.mime || "").indexOf("image/") === 0 ? a.url : ""));
+        h += "<div class=\\"nata tenuta\\">" +
+          (faccia ? "<img src=\\"" + sicuro(faccia) + "\\" alt=\\"\\" loading=\\"lazy\\">"
+                  : "<span class=\\"senza\\">senza copertina</span>") +
+          "<small>" + sicuro(a.titolo) + "</small>" +
+          "<button class=\\"btn piano tienila\\" data-stacca=\\"" + c.id + "\\"" +
+          " data-url=\\"" + sicuro(a.url) + "\\">Togli</button></div>";
+      }
+      h += "</div>";
     }
     return h;
   }
@@ -1262,13 +1538,76 @@ export const COPIONE = `
     tasto.disabled = true;
     tasto.textContent = "la mando…";
     chiedi("POST", "/prova", { id: id }).then(function () {
-      avviso("Mandata a generare. Quando e' pronta la trovi in galleria.", "bene");
-      caricaFila();
+      // Non si dice piu' «la trovi in galleria»: torna qui da sola, ed e' il
+      // punto di tutta la faccenda.
+      avviso("E' in coda. Appena e' pronta compare qui sotto.", "bene");
+      // ⚠ Solo il riquadro delle prove, non tutta la card: accanto c'e' un
+      // bonus scritto a mano, e rifare la card lo cancellerebbe. Vale qui come
+      // nell'attesa — e' lo stesso gesto, fatto una volta subito.
+      riguardaLeProve();
     }).catch(function (e) {
       tasto.disabled = false;
       avviso(e.message, "male");
-      caricaFila();
+      riguardaLeProve();
     });
+  }
+
+  /**
+   * ⚠ **Aspettare che sia pronta, senza rifare la schermata.**
+   *
+   * Una generazione ci mette minuti e nessuno viene ad avvisare questa pagina:
+   * si richiede la fila ogni tanto finche' c'e' qualcosa in forno.
+   *
+   * Si aggiorna **solo il riquadro delle prove**, non tutta la card, e il
+   * motivo e' concreto: chi comanda intanto sta scrivendo un bonus a mano in
+   * una casella, e ridisegnare la card glielo cancellerebbe sotto le dita.
+   * Un aggiornamento che ti fa perdere quello che stavi facendo e' peggio di
+   * un tasto «aggiorna».
+   */
+  var attesaFrutti = null;
+
+  /**
+   * Ridisegna **solo** il riquadro degli attacchi di una cosa in fila.
+   *
+   * Non serve chiedere niente al PC: quello che si e' scelto di attaccare vive
+   * qui dentro finche' non si preme «prendila». Un giro di rete per ridisegnare
+   * una cosa che sai gia' e' un giro di rete sprecato.
+   */
+  function riguardaGliAttacchi(id) {
+    var dove = document.querySelector("[data-attacchi=\\"" + id + "\\"]");
+    if (dove) dove.innerHTML = attaccoHtml(id);
+  }
+
+  /** Ridisegna **solo** i riquadri delle prove, e rimette la sveglia. */
+  function riguardaLeProve() {
+    chiedi("GET", "/fila").then(function (dati) {
+      for (var i = 0; i < dati.inAttesa.length; i++) {
+        var c = dati.inAttesa[i];
+        var dove = document.querySelector("[data-prove=\\"" + c.id + "\\"]");
+        if (dove) dove.innerHTML = proveHtml(c);
+      }
+      forseRiguarda(dati.inAttesa);
+    }).catch(function () { /* la rete va e viene: si riprova al giro dopo */ });
+  }
+
+  function forseRiguarda(inAttesa) {
+    if (attesaFrutti) { clearTimeout(attesaFrutti); attesaFrutti = null; }
+    var qualcosaInForno = false;
+    for (var i = 0; i < inAttesa.length; i++) {
+      var prove = inAttesa[i].prove || [];
+      for (var k = 0; k < prove.length; k++) {
+        if (!prove[k].usciti || !prove[k].usciti.length) qualcosaInForno = true;
+      }
+    }
+    if (!qualcosaInForno) return;
+    attesaFrutti = setTimeout(function () {
+      attesaFrutti = null;
+      // Se intanto si e' cambiata scheda non si chiede niente: la fila e' di
+      // chi comanda, e chi comanda adesso sta guardando altro.
+      var fila = $("p-fila");
+      if (!fila || !fila.classList.contains("viva")) return;
+      riguardaLeProve();
+    }, 8000);
   }
 
   function caricaFila() {
@@ -1287,9 +1626,15 @@ export const COPIONE = `
             var g = gradoDiPrezzo(quanto);
             var tasti =
               // Provarla davvero prima di darle un prezzo: parte una
-              // generazione coi modelli decisi per quel mestiere.
-              provaHtml(c) +
-              attaccoHtml(c) +
+              // generazione coi modelli decisi per quel mestiere. Il riquadro
+              // ha la sua targa perche' si aggiorna da solo quando la
+              // generazione e' pronta, senza rifare tutta la card.
+              "<div class=\\"prove\\" data-prove=\\"" + c.id + "\\">" + proveHtml(c) + "</div>" +
+              // Anche gli attacchi hanno la loro targa, per lo stesso motivo:
+              // togliere una cosa attaccata non deve cancellare il bonus che
+              // si sta scrivendo nella casella qui sotto.
+              "<div class=\\"attacchi\\" data-attacchi=\\"" + c.id + "\\">" +
+              attaccoHtml(c.id) + "</div>" +
               "<div class=\\"conto\\">I pezzi valgono <b>" + soldi(c.base) + "</b>" +
               " · col bonus fa <b data-totale=\\"" + c.id + "\\" data-base=\\"" +
               c.base + "\\">" + soldi(quanto) + "</b>" +
@@ -1310,6 +1655,9 @@ export const COPIONE = `
             return figurinaHtml(c, { tasti: tasti });
           }).join("")
         : "<div class=\\"niente\\">Niente da controllare. Buon segno o cattivo, dipende.</div>";
+
+      // Se c'e' qualcosa in forno, si torna a guardare fra un po'.
+      forseRiguarda(dati.inAttesa);
 
       // Le prese: tante, e non c'e' niente da decidere finche' non le si mette
       // in vetrina. Un cassetto, come le buttate. Chiesto il 10 settembre 2026:
@@ -1365,6 +1713,9 @@ export const COPIONE = `
     if (!io.admin) return;
     chiedi("GET", "/gente").then(function (dati) {
       gente = dati.gente || [];
+      // Quanti sono, sul cassetto chiuso: si sa se aprirlo prima di aprirlo.
+      var quanti = $("quanta-gente");
+      if (quanti) quanti.textContent = gente.length ? String(gente.length) : "";
       disegnaGente();
     }).catch(function (e) { avviso(e.message, "male"); });
   }
@@ -1430,8 +1781,24 @@ export const COPIONE = `
 
   /* --------------------------------------------------- attaccare dalla suite */
 
-  /** Quello che si e' scelto di attaccare, per ogni cosa in fila. */
+  /**
+   * Quello che si e' scelto di attaccare **dalla galleria**, per ogni cosa in
+   * fila: un elenco, fino a quattro. Era uno solo fino al 10 settembre 2026.
+   */
   var attaccati = {};
+  /**
+   * Quali delle cose **generate** si tengono, per ogni cosa in fila.
+   *
+   * ⚠ Chiesto il 10 settembre 2026: «alla fine puo' selezionare uno o piu'
+   * elementi generati da includere nel pacchetto». Sta qui e non nel PC perche'
+   * e' una scelta a meta': finche' non si preme «prendila» non e' successo
+   * niente, e una spunta tolta non deve essere un giro di rete.
+   *
+   * Dentro, per ogni combinazione, gli indirizzi tenuti, ognuno con il suo tipo.
+   * Un oggetto e non una lista perche' la domanda che si fa mille volte
+   * disegnando e' «questa e' tenuta?», non «quante sono».
+   */
+  var tenute = {};
   /** Le copertine scelte a mano, per quelle in fila. */
   var copertine = {};
   /** A chi sta attaccando quello che si tocca nella galleria, e come. */
@@ -1479,19 +1846,39 @@ export const COPIONE = `
     return 0;
   }
 
+  /**
+   * ⚠ **Cosa finisce attaccato alla figurina**: le generate che si sono
+   * tenute, e dietro quelle scelte a mano dalla galleria.
+   *
+   * L'ordine conta: la **prima** e' la copertina della scheda nello shop. Le
+   * generate vanno davanti perche' sono quelle nate da quel prompt — e' la
+   * cosa che la figurina promette di essere.
+   */
+  function daAttaccare(id) {
+    var generate = [];
+    var quali = tenute[id] || {};
+    for (var url in quali) if (Object.prototype.hasOwnProperty.call(quali, url)) {
+      generate.push(quali[url]);
+    }
+    var aMano = (attaccati[id] || []).map(function (a) {
+      return { id: a.id, url: a.url, mime: a.mime };
+    });
+    var tetto = io && io.maxAllegati ? io.maxAllegati : 8;
+    return generate.concat(aMano).slice(0, tetto);
+  }
+
   function prendila(id) {
-    var scelta = attaccati[id];
     var cop = copertine[id];
     chiedi("POST", "/prendi", {
       id: id,
       bonus: quantoScelto("bonus", id),
-      allegato: scelta ? scelta.url : "",
-      allegatoMime: scelta ? scelta.mime : "image/*",
+      allegati: daAttaccare(id),
       copertina: cop ? cop.url : "",
       copertinaMime: "image/*",
     }).then(function (c) {
       tagliScelti["bonus:" + id] = 0;
       delete attaccati[id];
+      delete tenute[id];
       delete copertine[id];
       var s = scalinoDi(c.grado);
       avviso("Presa: " + s.nome + ", numero " + c.numero + " del magazzino.", "bene");
@@ -1665,8 +2052,49 @@ export const COPIONE = `
     if (attacca) { apriLibreria(attacca, "allegato"); return; }
     var copertina = b.getAttribute && b.getAttribute("data-copertina");
     if (copertina) { apriLibreria(copertina, "copertina"); return; }
+    /**
+     * ⚠ Togliere **quella**, non tutte. Da quando se ne possono attaccare
+     * quattro, un tasto «togli» che svuota l'elenco intero e' un tasto che fa
+     * una cosa diversa da quella scritta sopra.
+     */
     var stacca = b.getAttribute && b.getAttribute("data-stacca");
-    if (stacca) { delete attaccati[stacca]; delete copertine[stacca]; caricaFila(); return; }
+    if (stacca) {
+      var quale = b.getAttribute("data-url");
+      var restano = (attaccati[stacca] || []).filter(function (a) { return a.url !== quale; });
+      if (restano.length) attaccati[stacca] = restano;
+      else { delete attaccati[stacca]; delete copertine[stacca]; }
+      riguardaGliAttacchi(stacca);
+      return;
+    }
+
+    /**
+     * ⚠ **Tenere una delle cose generate**, o smettere di tenerla.
+     *
+     * Chiesto il 10 settembre 2026: «alla fine puo' selezionare uno o piu'
+     * elementi generati da includere nel pacchetto». E' una spunta, non una
+     * scelta secca: quattro tentativi si guardano insieme e se ne tengono due.
+     *
+     * Si ridisegna solo il riquadro delle prove, per lo stesso motivo per cui
+     * lo fa l'attesa: nella card accanto c'e' un bonus scritto a mano.
+     */
+    var nata = b.getAttribute && b.getAttribute("data-nata");
+    if (nata) {
+      var indirizzo = b.getAttribute("data-url");
+      if (!tenute[nata]) tenute[nata] = {};
+      if (tenute[nata][indirizzo]) delete tenute[nata][indirizzo];
+      else {
+        tenute[nata][indirizzo] = {
+          id: b.getAttribute("data-vid") || indirizzo,
+          url: indirizzo,
+          mime: b.getAttribute("data-mime") || "image/*",
+        };
+      }
+      b.classList.toggle("acceso");
+      b.textContent = tenute[nata][indirizzo] ? "la tieni" : "tienila";
+      var carta = b.closest ? b.closest(".nata") : null;
+      if (carta) carta.classList.toggle("tenuta", Boolean(tenute[nata][indirizzo]));
+      return;
+    }
 
     var azzera = b.getAttribute && b.getAttribute("data-azzera");
     if (azzera) {
@@ -1688,7 +2116,11 @@ export const COPIONE = `
       };
       if (attaccaCome === "copertina") copertine[attaccaA] = scelta;
       else {
-        attaccati[attaccaA] = scelta;
+        // Si accoda: la prima resta la prima, ed e' quella che si vede nello
+        // shop. Due volte la stessa non si attacca due volte.
+        var gia = attaccati[attaccaA] || [];
+        if (!gia.some(function (x) { return x.url === scelta.url; })) gia = gia.concat([scelta]);
+        attaccati[attaccaA] = gia.slice(0, 4);
         /**
          * ⚠ **Se la libreria ha gia' la copertina di quel brano, si prende.**
          *
@@ -1698,13 +2130,15 @@ export const COPIONE = `
          * che si vede in galleria. Chiederle a mano una seconda volta sarebbe
          * far rifare a Cammo un lavoro gia' fatto dal computer.
          */
-        if (String(scelta.mime || "").indexOf("image/") !== 0 && scelta.anteprima) {
+        if (attaccati[attaccaA][0] === scelta &&
+            String(scelta.mime || "").indexOf("image/") !== 0 && scelta.anteprima) {
           copertine[attaccaA] = { id: scelta.id, url: scelta.anteprima, mime: "image/*",
             titolo: scelta.titolo, anteprima: scelta.anteprima };
         }
       }
+      var quale = attaccaA;
       chiudiLibreria();
-      caricaFila();
+      riguardaGliAttacchi(quale);
       return;
     }
   });
@@ -1758,6 +2192,7 @@ export const COPIONE = `
   // appena si stacca o si scorre: uno che scorre la pagina non voleva aprire
   // niente.
   document.addEventListener("pointerdown", iniziaPressione);
+  document.addEventListener("pointermove", forseSiSposta);
   document.addEventListener("pointerup", fermaPressione);
   document.addEventListener("pointercancel", fermaPressione);
   document.addEventListener("scroll", fermaPressione, true);

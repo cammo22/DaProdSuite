@@ -61,8 +61,33 @@ export const MARKUP = `<header>
 
   <!-- ================================================================ mie -->
   <section class="pagina" id="p-mie">
-    <h2>Quelle che hai mandato</h2>
-    <div id="mie-mandate"></div>
+    <!--
+      ⚠ **Il conto della persona, in cima e in tre numeri.** Chiesto il 10
+      settembre 2026: «un counter con il totale dell'utente: il guadagno, e
+      quanti prompt sono stati accettati e quanti sono stati perdenti».
+
+      Sono i tre numeri che dicono come sta andando a chi gioca, e prima non
+      c'erano da nessuna parte: la classifica dice come stai **rispetto agli
+      altri**, questo dice come stai. Il guadagno e' quello vero — le lire che
+      sono arrivate perche' a chi comanda e' piaciuto qualcosa.
+    -->
+    <div class="conta-mie" id="conta-mie"></div>
+
+    <!--
+      ⚠ **Due cassetti, e sono chiusi.** Chiesto il 10 settembre 2026: «anche
+      qui 2 tab collassabili».
+
+      La pagina «Mie» prima era un rotolo: le mandate una sotto l'altra, poi il
+      cassetto dei perdenti, poi tutta la collezione. Con venti figurine
+      diventava lunga da scorrere per arrivare in fondo, e la prima cosa che si
+      apre questa pagina per sapere e' **come e' andata** — non per rileggere
+      tutto quello che si e' mandato.
+    -->
+    <details class="cassetto" id="cassetto-mandate" open>
+      <summary>Quelle che hai mandato <span class="quanti" id="quante-mandate"></span></summary>
+      <div id="mie-mandate"></div>
+    </details>
+
     <!--
       ⚠ I biglietti perdenti stanno in un cassetto chiuso.
 
@@ -75,8 +100,11 @@ export const MARKUP = `<header>
       <summary>I biglietti perdenti <span class="quanti" id="quanti-perdenti"></span></summary>
       <div id="mie-perdenti"></div>
     </details>
-    <h2>La tua collezione</h2>
-    <div id="mie-collezione"></div>
+
+    <details class="cassetto" id="cassetto-collezione" open>
+      <summary>La tua collezione <span class="quanti" id="quante-collezione"></span></summary>
+      <div id="mie-collezione"></div>
+    </details>
   </section>
 
   <!-- ============================================================== album -->
@@ -135,9 +163,22 @@ export const MARKUP = `<header>
       non lire. Sta qui e non nella classifica perche' e' una cosa che fa chi
       decide, e le cose che fa chi decide stanno tutte nella stessa scheda.
     -->
-    <h2>Manda lire</h2>
-    <input class="cerca" id="cerca-gente" type="search" placeholder="cerca una persona">
-    <div id="gente"></div>
+    <!--
+      ⚠ **Anche questo e' un cassetto**, chiesto il 10 settembre 2026:
+      «mettiamo il cerca persone e utenti anche quello collassabile come gli
+      altri».
+
+      Il motivo e' lo stesso delle prese e delle buttate: ogni persona si porta
+      dietro otto tasti e una casella, e a dieci persone questa parte e' lunga
+      tre schermate **sotto** a quello per cui si e' aperta la scheda, cioe' le
+      combinazioni da controllare. Mandare lire e' una cosa che si fa ogni
+      tanto; controllare la fila e' quella che si fa sempre.
+    -->
+    <details class="cassetto" id="cassetto-gente">
+      <summary>Manda lire <span class="quanti" id="quanta-gente"></span></summary>
+      <input class="cerca" id="cerca-gente" type="search" placeholder="cerca una persona">
+      <div id="gente"></div>
+    </details>
   </section>
 
 </main>

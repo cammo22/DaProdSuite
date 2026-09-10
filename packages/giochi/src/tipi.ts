@@ -317,19 +317,29 @@ export interface Collezionabile {
   libreria?: DallaLibreria;
 
   /**
-   * **Il contenuto allegato**: la cosa venuta fuori da quel prompt.
+   * **I contenuti allegati**: le cose venute fuori da quel prompt.
    *
    * ⚠ Chiesto il 10 settembre 2026: «quando gli admin accettano una
    * combinazione e ci creano un contenuto allegato». Un prompt e' una riga di
    * testo; con l'immagine o il brano che ne e' uscito attaccati sopra diventa
-   * una figurina che si guarda. E' anche la copertina della sua scheda nello
-   * shop — senza, uno comprerebbe una parola.
+   * una figurina che si guarda. Il primo e' anche la copertina della sua
+   * scheda nello shop — senza, uno comprerebbe una parola.
+   *
+   * ⚠ **Sono piu' d'uno dal 10 settembre 2026**, chiesto cosi': «puo'
+   * rigenerare, max 4 file, e alla fine puo' selezionare uno o piu' elementi
+   * generati da includere nel pacchetto; lascia comunque la possibilita' di
+   * allegare oltre a quelle 4 generate ulteriori max 4 file dalla suite».
+   *
+   * Prima era uno solo, e voleva dire che rigenerare buttava via il tentativo
+   * di prima: la seconda immagine sostituiva la prima, e chi comanda doveva
+   * scegliere **al volo** senza poterle vedere una accanto all'altra. Il senso
+   * di generare quattro volte e' proprio poter confrontare.
    *
    * Sta separato da `libreria` di proposito: quello e' «questa figurina **e'**
-   * una foto», questo e' «questa figurina e' un prompt, **e ha prodotto** una
-   * foto».
+   * una foto», questo e' «questa figurina e' un prompt, **e ha prodotto**
+   * queste foto».
    */
-  allegato?: DallaLibreria;
+  allegati?: DallaLibreria[];
 
   /**
    * **La copertina dell'allegato**, quando l'allegato non si guarda.
@@ -342,19 +352,36 @@ export interface Collezionabile {
    * comprerebbe un triangolino. La copertina e' quello che si vede; il brano e'
    * quello che si sente.
    *
-   * Sta separata da `allegato` e non dentro, perche' non tutti gli allegati ne
-   * hanno bisogno: un'immagine e' gia' la sua copertina.
+   * Sta separata da `allegati` e non dentro, perche' non tutti gli allegati ne
+   * hanno bisogno: un'immagine e' gia' la sua copertina. Vale per il **primo**
+   * allegato, che e' quello che si vede nello shop.
    */
   copertina?: DallaLibreria;
 
   /**
-   * La richiesta di generazione partita da chi comanda per provare questa
-   * combinazione, se ne e' partita una.
+   * Le generazioni fatte partire da chi comanda per provare questa
+   * combinazione. **Al massimo quattro.**
    *
-   * Serve a una cosa sola: non farla partire due volte perche' la prima ci mette
-   * dieci minuti e nel frattempo non si vede niente.
+   * ⚠ Chiesto il 10 settembre 2026: «quando un admin manda a generare un
+   * contenuto, quando pronto lo deve vedere gia' allegato alla card in modo da
+   * controllarlo; puo' rigenerare e viene generato un secondo file, max 4
+   * file».
+   *
+   * Prima era una sola — `provata` — e il tasto si spegneva dopo il primo giro.
+   * Il motivo era buono e resta valido dentro il singolo giro: una generazione
+   * ci mette minuti, e nel frattempo non si vede niente, quindi ripremere
+   * significherebbe metterne in coda tre uguali senza accorgersene. Ma «una
+   * volta sola per sempre» era un'altra cosa: un modello sbaglia, e giudicare
+   * un prompt dal suo primo tentativo e' come giudicare una foto dal primo
+   * scatto.
+   *
+   * ⚠ **Qui non ci sono file**, ci sono numeri di targa di richieste. Cosa e'
+   * uscito da ognuna lo sa la libreria della suite, che nei metadati di ogni
+   * file scrive da quale richiesta e' nato (vedi `extra.richiesta` in
+   * `esecuzione.ts`). Tenerne qui una copia vorrebbe dire un secondo elenco da
+   * riallineare ogni volta che qualcuno cancella una foto.
    */
-  provata?: { richiesta: string; quando: number };
+  prove?: { richiesta: string; quando: number }[];
 
   /* --- lo shop --- */
 
