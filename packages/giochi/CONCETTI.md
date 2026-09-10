@@ -76,6 +76,10 @@ resto.
 | **Lire** | facendosi prendere una combinazione, riscoprendone una, e dai doppioni nei pacchetti | girare, comprare pacchetti, comprare nello shop |
 | **Esperienza** | girando, sempre: anche il giro peggiore da' un punto | salire di livello, e basta |
 
+I gradi sono **dodici**, da Basic a **Ethernal** — quello in cima, aggiunto il
+10 settembre 2026, esce tre volte su diecimila caselle. E la scena cresce con il
+grado: da Celestial in su non e' piu' la stessa. Vedi § 7.
+
 Chi gioca e basta **sale di livello**. Chi crea, **si arricchisce**. Non c'e'
 modo di trasformare l'una nell'altra, ed e' voluto: se girando si guadagnasse,
 la slot sarebbe una macchinetta e le combinazioni un passatempo. Cosi' invece
@@ -88,9 +92,23 @@ millecinquecento. Ogni volta di piu'.
 ### Il secondo rubinetto: chi comanda regala
 
 Dal 10 settembre 2026 c'e' una seconda strada per cui arrivano lire, e sta in
-mano a una persona sola: **chi comanda le manda a chi vuole**. Tagli da 2 a 500
-— quelli delle banconote — o un numero scritto a mano, e due parole di
-accompagnamento che si scrivono sempre.
+mano a una persona sola: **chi comanda le manda a chi vuole**. Otto tasti, o un
+numero scritto a mano, e due parole di accompagnamento che si scrivono sempre.
+
+⚠ **I tasti dei regali sono euro, contati in lire**: 2, 5, 10, 20, 50, 100,
+200 e 500 euro, cioe' da 3.873 a 968.135 lire. Sono grossi rispetto al resto —
+un giro costa 10 lire — e va saputo: chi regala sta facendo entrare qualcuno,
+non pareggiando un conto. **I tasti del bonus sono un'altra scala**, in lire
+piccole (§ 10): quelli devono far salire di grado un colpo alla volta, e la
+scala dei gradi arriva a 1.400.
+
+I tasti si **sommano**: si batte come su una cassa, 100 + 20 + 20. C'e' «azzera»
+per tornare indietro, e un tetto a cinque volte il tasto piu' grosso — non e' un
+permesso, e' una rete contro il dito rimasto premuto.
+
+**A se stessi si puo'.** Il divieto c'era e l'ha tolto Cammo: chi comanda il
+banco puo' gia' cambiare tutti i numeri del gioco da una schermata sola, quindi
+il divieto non impediva niente — faceva solo la figura di impedirlo.
 
 ⚠ **Un regalo si dice a chi lo riceve.** Senza, il saldo cambierebbe da solo
 fra un'apertura e l'altra, e un numero che cambia da solo si legge come un
@@ -184,27 +202,38 @@ Cambiare epoca **non sblocca niente**: quello che hai tenuto fermo resta fermo.
 Mischiare un genere degli anni 70 con una produzione di adesso e' esattamente
 il tipo di riga che nessuno scriverebbe da solo — vedi § 9.
 
-## 7. Gli undici gradi
+## 7. I dodici gradi
 
-Ogni pezzo ha un **prezzo in lire**, e il prezzo dice il **grado**. Sono undici,
+Ogni pezzo ha un **prezzo in lire**, e il prezzo dice il **grado**. Sono dodici,
 in quest'ordine — e si', **Epic sta dopo Divine**: e' la scala scelta da Cammo,
 e in un gioco la scala e' una decisione, non una deduzione.
 
-| Grado | Da | Quanti generi | Quanto esce | Punti | In vetrina |
+| Grado | Da | Quanto esce | Punti | Fuoco | In vetrina |
 |---|---|---|---|---|---|
-| Basic | 0 £ | 2.641 | 40% | 1 | 50 £ |
-| Grand | 5 £ | 453 | 22% | 3 | 100 £ |
-| Rare | 12 £ | 380 | 14% | 8 | 240 £ |
-| Arcane | 25 £ | 322 | 9% | 18 | 500 £ |
-| Heroic | 45 £ | 297 | 6% | 35 | 900 £ |
-| Unique | 75 £ | 289 | 4% | 70 | 1.500 £ |
-| Celestial | 120 £ | 336 | 2,4% | 140 | 2.400 £ |
-| Divine | 200 £ | 332 | 1,4% | 280 | 4.000 £ |
-| Epic | 320 £ | 365 | 0,8% | 600 | 6.400 £ |
-| Legendary | 520 £ | 397 | 0,3% | 1.400 | 10.400 £ |
-| Mythic | 850 £ | 479 | 0,1% | 4.000 | 17.000 £ |
+| Basic | 0 £ | 40% | 1 | 0 | 50 £ |
+| Grand | 5 £ | 22% | 3 | 0 | 100 £ |
+| Rare | 12 £ | 14% | 8 | 1 | 240 £ |
+| Arcane | 25 £ | 9% | 18 | 1 | 500 £ |
+| Heroic | 45 £ | 6% | 35 | 1 | 900 £ |
+| Unique | 75 £ | 4% | 70 | 2 | 1.500 £ |
+| Celestial | 120 £ | 2,4% | 140 | 3 | 2.400 £ |
+| Divine | 200 £ | 1,4% | 280 | 3 | 4.000 £ |
+| Epic | 320 £ | 0,8% | 600 | 4 | 6.400 £ |
+| Legendary | 520 £ | 0,3% | 1.400 | 4 | 10.400 £ |
+| Mythic | 850 £ | 0,1% | 4.000 | 5 | 17.000 £ |
+| **Ethernal** | 1.400 £ | 0,03% | 12.000 | 5 | 28.000 £ |
 
-Un Mythic ogni mille caselle: con dodici rulli, **uno ogni ottantatre giri**.
+Un Mythic ogni mille caselle: con dodici rulli, **uno ogni ottantatre giri**. Un
+**Ethernal** ogni tremilatrecento: uno ogni duecentosettanta giri.
+
+⚠ **Ethernal si scrive con la «h»** perche' cosi' l'ha scritto Cammo il 10
+settembre 2026, e i nomi dei gradi sono suoi.
+
+⚠ **Le frequenze sono su diecimila, non su mille.** Erano su mille fino al 10
+settembre: si e' cambiato per far entrare Ethernal sotto Mythic senza spostare
+nessun altro. Con i millesimi il gradino piu' basso era gia' occupato — Mythic
+valeva 1 — e l'unico modo di mettere qualcosa di piu' raro sarebbe stato rendere
+Mythic piu' comune, cioe' cambiare una scala per aggiungerci una riga.
 
 Il grado non si scrive da nessuna parte: **si ricava dal prezzo**. Se fosse un
 campo scritto accanto, il giorno che si abbassa il prezzo di un pezzo
@@ -215,8 +244,26 @@ grado e poi il pezzo dentro il grado: se si pescasse piatto, il giorno che si
 aggiungono trenta pezzi comuni i Mythic diventerebbero il doppio piu' rari
 senza che nessuno l'abbia deciso.
 
-**Dal grado si vede quanto si accende lo schermo**: da Rare in su lampeggia il
-bordo, da Unique in su la sala si scuote, da Epic in su cadono i coriandoli.
+### Il fuoco: quanto si accende lo schermo
+
+Chiesto il 10 settembre 2026: «facciamo i gradi da celestial in su molto piu'
+potenti, come gradi e come anteprime, molto piu' articolate». Prima i cinque
+gradi piu' alti facevano **la stessa identica scena** — erano tutti «fuoco 3» —
+e in un gioco di rarita' **la scena e' il premio**: chi tirava un Mythic vedeva
+quello che aveva gia' visto con un Epic.
+
+| Fuoco | Chi | Cosa si vede |
+|---|---|---|
+| 0 | Basic, Grand | niente |
+| 1 | Rare, Arcane, Heroic | il bordo si accende, e lo schermo lampeggia |
+| 2 | Unique | e la sala si scuote |
+| 3 | Celestial, Divine | e cadono i coriandoli, col nome del grado detto forte |
+| 4 | Epic, Legendary | e partono i raggi dietro alla sala, la carta si alza |
+| 5 | Mythic, Ethernal | **si ferma tutto**: il nome grande sullo schermo, e si tocca per chiudere |
+
+Il cinque e' l'unica cosa in tutto il gioco che **interrompe**. Un premio che
+passa mentre stai gia' guardando altrove non e' un premio — e capita una volta
+su mille caselle.
 
 ## 8. Il giro
 
@@ -328,12 +375,39 @@ scritto chi le ha mandate e quando. Per ognuna si puo':
   copertina della sua scheda nello shop — senza, uno comprerebbe una parola.
   ⚠ **Si sceglie dalla galleria della suite, toccandola.** Prima si scriveva
   a mano l'indirizzo del file in una casella: quattro gesti in due finestre,
-  ogni volta, e chi ha fretta non li fa;
+  ogni volta, e chi ha fretta non li fa.
+  ⚠ **E se e' un brano, si attacca anche la sua copertina.** Un brano e' un
+  rettangolo con un tasto play: in un album di cento figurine non lo riconosce
+  nessuno. Se la libreria della suite ce l'ha gia' — le copertine dei brani e i
+  fotogrammi dei video li fa lei — si prende da sola; se no, si sceglie a mano;
 - **buttarla**, scrivendo perche'.
 
-Il bonus si sceglie con gli **stessi tagli dei regali**, da 2 a 500. Davanti a
-otto numeri conosciuti si decide in un secondo; davanti a una casella vuota ci
-si mette a pensare quanto vale un'idea, e finisce che non si decide.
+Il bonus si batte su otto tasti — 2, 5, 10, 20, 50, 100, 200, 500 **lire** — e
+si sommano: piu' li premi, piu' sale. Davanti a otto numeri conosciuti si decide
+in un secondo; davanti a una casella vuota ci si mette a pensare quanto vale
+un'idea, e finisce che non si decide.
+
+⚠ **Non sono i tagli dei regali**, che sono euro (§ 4). Qui servono lire
+piccole perche' e' il bonus a decidere **che grado avra' la figurina**, e la
+scala dei gradi finisce a 1.400: col taglio piu' piccolo dei regali — 3.873 —
+una sola pressione sfonderebbe Ethernal e gli undici gradini sotto non si
+potrebbero scegliere.
+
+Il grado che ne viene si legge **mentre** si preme, accanto al totale. E si puo'
+fare la strada contraria: si tocca il grado, e il bonus si mette da solo al
+minimo che ci arriva.
+
+### Provarla davvero, prima di darle un prezzo
+
+Su ogni combinazione in fila c'e' un tasto che **la fa generare**. Con che cosa
+lo decide il computer, non il gioco: una clip di sessanta secondi strumentale
+con ACE-Step Turbo per la musica, un'immagine 4:3 con FLUX.2 9B per le immagini.
+Parte per la stessa strada delle richieste del telefono, quindi rispetta la coda
+e i tetti.
+
+⚠ **Il costo lo paga il banco, non chi ha mandato.** E' l'admin che ha scelto
+di provarla. Se si scalasse a chi la manda, mandare costerebbe — e mandare deve
+essere gratis (§ 9). Parte una volta sola: la seconda il tasto e' spento.
 
 ### Le buttate stanno in un mazzo loro
 

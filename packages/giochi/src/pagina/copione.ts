@@ -275,6 +275,80 @@ export const COPIONE = `
   }
 
   var orologioAvviso = null;
+  /**
+   * ⚠ **Chiedere una cosa, senza il «prompt» del browser.**
+   *
+   * Il difetto, detto il 10 settembre 2026: «non mi fa mandare da admin le lire
+   * agli altri dalla suite su pc, e quando clicchi manda esce un popup
+   * bruttissimo senza grafica, ma funziona».
+   *
+   * Sono due facce della stessa riga. La pagina usava «window.prompt», e:
+   *
+   * - **dentro la suite sul PC non esiste.** Electron l'ha tolto: chiamarlo
+   *   solleva un errore, il resto della funzione non gira, e da fuori sembra
+   *   che il tasto non faccia niente. Toccava anche «buttala»: dal computer non
+   *   si poteva nemmeno buttare una combinazione;
+   * - **sul telefono e' il riquadro grigio del sistema**, che non e' la pagina
+   *   e si vede che non lo e'.
+   *
+   * Questo e' un pannello della pagina, quindi c'e' dappertutto ed e' vestito
+   * come il resto. Torna una promessa: il testo scritto, oppure niente se si
+   * chiude.
+   */
+  function chiediQualcosa(titolo, spiega, opzioni) {
+    var o = opzioni || {};
+    return new Promise(function (finito) {
+      var vecchio = document.querySelector(".chiede");
+      if (vecchio) vecchio.remove();
+
+      var fondo = document.createElement("div");
+      fondo.className = "chiede";
+      var carta = document.createElement("div");
+      carta.className = "dentro";
+
+      var h = document.createElement("b");
+      h.textContent = titolo;
+      carta.append(h);
+      if (spiega) {
+        var p = document.createElement("small");
+        p.textContent = spiega;
+        carta.append(p);
+      }
+
+      var casella = document.createElement(o.righe ? "textarea" : "input");
+      if (!o.righe) casella.type = o.tipo || "text";
+      if (o.righe) casella.rows = o.righe;
+      casella.value = o.valore || "";
+      if (o.suggerimento) casella.placeholder = o.suggerimento;
+      carta.append(casella);
+
+      var fila = document.createElement("div");
+      fila.className = "riga-tasti";
+      var no = document.createElement("button");
+      no.className = "btn piano";
+      no.textContent = "Lascia stare";
+      var si = document.createElement("button");
+      si.className = "btn oro";
+      si.textContent = o.tastoSi || "Vai";
+      fila.append(no, si);
+      carta.append(fila);
+      fondo.append(carta);
+      document.body.appendChild(fondo);
+
+      var chiudi = function (cosa) { fondo.remove(); finito(cosa); };
+      no.addEventListener("click", function () { chiudi(null); });
+      si.addEventListener("click", function () { chiudi(casella.value); });
+      fondo.addEventListener("click", function (e) { if (e.target === fondo) chiudi(null); });
+      casella.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" && !o.righe) { e.preventDefault(); chiudi(casella.value); }
+        if (e.key === "Escape") chiudi(null);
+      });
+      // Il fuoco dopo un giro: su un telefono aprire la tastiera subito e'
+      // quello che ci si aspetta, e sul computer si scrive senza toccare.
+      setTimeout(function () { try { casella.focus(); casella.select(); } catch (e) {} }, 40);
+    });
+  }
+
   function avviso(testo, come) {
     var vecchio = document.querySelector(".avviso");
     if (vecchio) vecchio.remove();
@@ -334,6 +408,24 @@ export const COPIONE = `
       document.body.appendChild(c);
       (function (nodo) { setTimeout(function () { nodo.remove(); }, 3600); })(c);
     }
+  }
+
+  /**
+   * I raggi che girano dietro alla slot: la roba grossa, dall'Epic in su.
+   *
+   * Un disegno solo con il fondo a spicchi che ruota — non venti nodi — perche'
+   * quello che deve succedere e' che la sala **cambi**, non che il telefono si
+   * scaldi. Si toglie da solo.
+   */
+  function raggi(colore, quanto) {
+    var d = document.createElement("div");
+    d.className = "raggi";
+    d.style.setProperty("--g", colore);
+    document.body.appendChild(d);
+    setTimeout(function () {
+      d.classList.add("via");
+      setTimeout(function () { d.remove(); }, 500);
+    }, quanto);
   }
 
   function scuoti() {
@@ -415,6 +507,18 @@ export const COPIONE = `
       if (p) dentro += "<div class=\\"prezzo\\" style=\\"color:" + s.colore + "\\">" +
         soldi(p.prezzo) + " · " + sicuro(s.nome) + "</div>";
       dentro += "<div class=\\"fermo\\">fermo</div>";
+      /**
+       * ⚠ **La puntina d'oro e' un nodo vero, non un «::after».**
+       *
+       * Era un «::after» sulla carta, e dal 10 settembre 2026 anche i gradi
+       * piu' alti ne hanno uno — l'anello che gira. Due regole sullo stesso
+       * pseudo-elemento non convivono: vinceva l'ultima, e su un Mythic
+       * bloccato **la puntina spariva**. Cioe' proprio sulla carta che uno
+       * tiene di sicuro.
+       *
+       * Un nodo vero non se lo contende nessuno.
+       */
+      dentro += "<div class=\\"puntina\\"></div>";
       dentro += "</div>";
     }
     $("rulli").innerHTML = dentro;
@@ -564,11 +668,45 @@ export const COPIONE = `
     for (var i = 0; i < giro.vincite.length; i++) {
       if (giro.vincite[i].fuoco > fuoco) fuoco = giro.vincite[i].fuoco;
     }
+    /**
+     * ⚠ **La scena cresce con il grado, e da Celestial in su e' un'altra
+     * cosa.**
+     *
+     * Chiesto il 10 settembre 2026: «facciamo i gradi da celestial in su molto
+     * piu' potenti, come gradi e come anteprime, molto piu' articolate». Il
+     * difetto era che i cinque gradi piu' alti facevano **la stessa identica
+     * scena** — tutti «fuoco 3» — e in un gioco di rarita' la scena e' il
+     * premio: chi tirava un Mythic vedeva quello che aveva gia' visto con un
+     * Epic.
+     *
+     * Cinque gradini, e ognuno aggiunge, non sostituisce:
+     */
     if (fuoco >= 1) lampo(s.colore);
     if (fuoco >= 2) scuoti();
     if (fuoco >= 3) {
+      // Celestial e Divine: coriandoli e il nome del grado detto forte.
       coriandoli(70, [s.colore, "#ffd166", "#ffffff", io.epoche[0].luce]);
       avviso(s.nome + "! " + (giro.punti > 0 ? giro.punti + " punti" : "guarda che roba"), "bene");
+    }
+    if (fuoco >= 4) {
+      // Epic e Legendary: i raggi dietro, e la sala si tinge del suo colore.
+      raggi(s.colore, fuoco >= 5 ? 2600 : 1600);
+      coriandoli(90, [s.colore, "#ffffff"]);
+    }
+    if (fuoco >= 5) {
+      /**
+       * Mythic ed Ethernal: si ferma tutto e si legge il nome grande.
+       *
+       * ⚠ E' l'unica cosa in tutto il gioco che **interrompe**: si tocca per
+       * chiudere. Un premio che passa mentre stai gia' guardando altrove non e'
+       * un premio — e questa roba capita una volta su mille caselle.
+       */
+      grande(s.nome, "e' uscito", giro.pezzi
+        .filter(function (p) { return p.grado === giro.meglio; })
+        .map(function (p) { return p.nome; }).join(" · "), s.colore);
+      coriandoli(160, [s.colore, "#ffd166", "#ffffff", io.epoche[0].luce]);
+      setTimeout(function () { coriandoli(120, [s.colore, "#ffffff"]); }, 700);
+      scuoti();
     }
     if (giro.regalo) {
       avviso("Ti e' caduta una figurina: " + giro.regalo.titolo, "bene");
@@ -925,12 +1063,14 @@ export const COPIONE = `
    * lo mette il gioco al fondo di quel grado. Chi vuole un numero preciso ce
    * l'ha lo stesso, nella casella accanto.
    */
-  function tastiGradi(id) {
+  function tastiGradi(id, uso) {
+    var quale = uso || "prezzo";
     var h = "<div class=\\"gradi-scelta\\" data-gradi=\\"" + id + "\\">";
     for (var i = 0; i < io.gradi.length; i++) {
       var g = io.gradi[i];
       var scelto = gradoScelto[id] === g.id;
       h += "<button data-grado=\\"" + g.id + "\\" data-per=\\"" + id + "\\"" +
+        " data-uso=\\"" + quale + "\\"" +
         " style=\\"color:" + g.colore + (scelto ? "; background:" + g.colore : "") + "\\"" +
         (scelto ? " class=\\"scelto\\"" : "") + ">" + sicuro(g.nome) + "</button>";
     }
@@ -951,7 +1091,16 @@ export const COPIONE = `
    * L'attributo «data-taglio» e' lo stesso, cosi' il tasto e' uno solo.
    */
   function tastiTaglio(quale, id) {
-    var tagli = (io && io.tagli) || [2, 5, 10, 20, 50, 100, 200, 500];
+    /**
+     * ⚠ **Due scale, e non e' una svista.** I regali sono euro contati in
+     * lire (il piu' piccolo e' 3.873); il bonus e' in lire piccole, perche' e'
+     * quello che decide il grado e la scala dei gradi arriva a 1.400. Con i
+     * tagli dei regali sul bonus ci sarebbe un tasto solo, e vorrebbe dire
+     * «massimo». Vedi TAGLI e TAGLI_BONUS nel banco.
+     */
+    var tagli = (quale === "bonus"
+      ? (io && io.tagliBonus)
+      : (io && io.tagli)) || [2, 5, 10, 20, 50, 100, 200, 500];
     var h = "<div class=\\"tagli\\" data-tagli=\\"" + quale + ":" + id + "\\">";
     for (var i = 0; i < tagli.length; i++) {
       h += "<button data-taglio=\\"" + tagli[i] + "\\" data-quale=\\"" + quale +
@@ -961,7 +1110,7 @@ export const COPIONE = `
     return h;
   }
 
-  /** Quello che si sta per dare: il taglio toccato, o il numero scritto. */
+  /** Quello che si sta per dare: quanto si e' fatto salire, o il numero scritto. */
   function quantoScelto(quale, id) {
     var casella = document.querySelector("[data-" + quale + "=\\"" + id + "\\"]");
     var scritto = casella && casella.value ? Math.round(Number(casella.value)) : 0;
@@ -969,33 +1118,157 @@ export const COPIONE = `
     return tagliScelti[quale + ":" + id] || 0;
   }
 
-  /** Il taglio toccato, per ogni casella. Si azzera appena si e' deciso. */
+  /** Quanto si e' messo insieme, per ogni casella. Si azzera appena si e' deciso. */
   var tagliScelti = {};
 
+  /**
+   * @ATT **I tagli si sommano: piu' li premi, piu' sale.**
+   *
+   * Chiesto il 10 settembre 2026: «i pulsanti delle lire facciamo che si usano
+   * che piu' li premi piu' sale il valore, cosi' premo piu' volte le
+   * combinazioni e faccio il lavoro».
+   *
+   * Prima uno escludeva l'altro: per dare centocinquanta euro bisognava
+   * scriverlo a mano, cioe' tornare esattamente alla casella vuota che i tasti
+   * dovevano togliere di mezzo. Adesso si batte sui tasti come su una cassa: 100
+   * + 20 + 20 + 10. Per tornare indietro c'e' «azzera».
+   */
   function segnaTaglio(quale, id, quanto) {
     var chiave = quale + ":" + id;
-    // Toccare due volte lo stesso taglio lo toglie: si sbaglia tasto, e senza
-    // questo l'unico modo di tornare indietro sarebbe ricaricare.
-    tagliScelti[chiave] = tagliScelti[chiave] === quanto ? 0 : quanto;
+    tagliScelti[chiave] = (tagliScelti[chiave] || 0) + quanto;
     var casella = document.querySelector("[data-" + quale + "=\\"" + id + "\\"]");
     if (casella) casella.value = "";
-    var fila = document.querySelector("[data-tagli=\\"" + chiave + "\\"]");
-    if (fila) {
-      var t = fila.querySelectorAll("button");
-      for (var i = 0; i < t.length; i++) {
-        t[i].classList.toggle("scelto",
-          Number(t[i].getAttribute("data-taglio")) === tagliScelti[chiave]);
-      }
-    }
-    aggiornaTotale(id);
+    mostraQuanto(quale, id);
   }
 
-  /** Il totale sotto una riga della fila: i pezzi piu' il bonus scelto. */
+  function azzeraTaglio(quale, id) {
+    tagliScelti[quale + ":" + id] = 0;
+    var casella = document.querySelector("[data-" + quale + "=\\"" + id + "\\"]");
+    if (casella) casella.value = "";
+    mostraQuanto(quale, id);
+  }
+
+  /** Scrive dove si vede quanto si e' messo insieme finora. */
+  function mostraQuanto(quale, id) {
+    var quanto = quantoScelto(quale, id);
+    var conto = document.querySelector("[data-conta=\\"" + quale + ":" + id + "\\"]");
+    if (conto) conto.textContent = quanto ? soldi(quanto) : "niente";
+    if (quale === "bonus") aggiornaTotale(id);
+  }
+
+  /**
+   * Il totale sotto una riga della fila: i pezzi piu' il bonus messo insieme.
+   *
+   * @ATT **E accanto il grado che ne viene.** Chiesto il 10 settembre 2026:
+   * «decidiamo anche il grado che avra' questo collezionabile». Il grado non e'
+   * un campo a parte — si legge dal prezzo (vedi «gradoDiPrezzo» sul PC) — e
+   * scriverlo qui vuol dire che si vede **mentre** si preme, non dopo. I tasti
+   * dei gradi accanto fanno la strada contraria: scelgo il grado, e il bonus si
+   * mette da solo al minimo che ci arriva.
+   */
   function aggiornaTotale(id) {
     var totale = document.querySelector("[data-totale=\\"" + id + "\\"]");
     if (!totale) return;
     var base = Number(totale.getAttribute("data-base")) || 0;
-    totale.textContent = soldi(base + quantoScelto("bonus", id));
+    var quanto = base + quantoScelto("bonus", id);
+    totale.textContent = soldi(quanto);
+    var g = gradoDiPrezzo(quanto);
+    var eti = document.querySelector("[data-gradofa=\\"" + id + "\\"]");
+    if (eti) {
+      eti.textContent = g.nome;
+      eti.style.color = g.colore;
+    }
+    var fila = document.querySelector("[data-gradi=\\"" + id + "\\"]");
+    if (fila) {
+      var t = fila.querySelectorAll("button");
+      for (var i = 0; i < t.length; i++) {
+        t[i].classList.toggle("scelto", t[i].getAttribute("data-grado") === g.id);
+      }
+    }
+  }
+
+  /** Il grado che viene da un prezzo. La stessa scala del PC, letta al contrario. */
+  function gradoDiPrezzo(prezzo) {
+    var g = io && io.gradi ? io.gradi : [];
+    var trovato = g.length ? g[0] : { id: "basic", nome: "Basic", colore: "#9aa0b5" };
+    for (var i = 0; i < g.length; i++) if (prezzo >= g[i].da) trovato = g[i];
+    return trovato;
+  }
+
+  /** Sceglie il grado: il bonus si mette al minimo che ci arriva. */
+  function puntaAlGrado(id, grado) {
+    var totale = document.querySelector("[data-totale=\\"" + id + "\\"]");
+    var base = totale ? Number(totale.getAttribute("data-base")) || 0 : 0;
+    var g = io.gradi.filter(function (x) { return x.id === grado; })[0];
+    if (!g) return;
+    tagliScelti["bonus:" + id] = Math.max(0, g.da - base);
+    var casella = document.querySelector("[data-bonus=\\"" + id + "\\"]");
+    if (casella) casella.value = "";
+    mostraQuanto("bonus", id);
+  }
+
+  /**
+   * I tasti per **provarla davvero**: parte una generazione con quel prompt.
+   *
+   * ⚠ Chiesto il 10 settembre 2026: «quando arriva un prompt da controllare
+   * agli admin ci vogliono dei pulsanti per mandare quel prompt a generare».
+   * Prima si giudicava una riga di testo inglese a occhio, e dare un prezzo a
+   * una cosa che non hai visto ne' sentito e' tirare a indovinare.
+   *
+   * Con che modelli lo decide il computer, non questa pagina: sessanta secondi
+   * strumentali per la musica, un 4:3 per le immagini. Qui si dice solo che si
+   * vuole vedere.
+   */
+  function provaHtml(c) {
+    var musica = c.tavolo !== "immagini";
+    var gia = c.provata > 0;
+    return "<div class=\\"riga-tasti\\">" +
+      "<button class=\\"btn piano\\" data-prova=\\"" + c.id + "\\"" + (gia ? " disabled" : "") + ">" +
+      (gia ? "Gia' mandata a generare" :
+        musica ? "Sentila (clip di 60 secondi)" : "Guardala (immagine 4:3)") +
+      "</button></div>";
+  }
+
+  /** Cosa si sta per attaccare: il file, e la copertina se serve. */
+  function attaccoHtml(c) {
+    var a = attaccati[c.id];
+    var cop = copertine[c.id];
+    var h = "<div class=\\"riga-tasti\\">" +
+      "<button class=\\"btn piano\\" data-attacca=\\"" + c.id + "\\">" +
+      (a ? "Cambia: " + sicuro(a.titolo) : "Attacca dalla suite") + "</button>";
+    /**
+     * ⚠ **Un brano si vede solo se ha una copertina.** Chiesto il 10
+     * settembre 2026: «se si carica una canzone viene caricata anche l'immagine
+     * della canzone». Se la libreria ne ha gia' una si prende da sola; se no,
+     * questo tasto serve a sceglierne una a mano.
+     */
+    if (a && String(a.mime || "").indexOf("image/") !== 0) {
+      h += "<button class=\\"btn piano\\" data-copertina=\\"" + c.id + "\\">" +
+        (cop ? "Cambia copertina" : "Metti una copertina") + "</button>";
+    }
+    h += "</div>";
+    if (a) {
+      var faccia = cop ? (cop.anteprima || cop.url) : (a.anteprima || (String(a.mime || "").indexOf("image/") === 0 ? a.url : ""));
+      h += "<div class=\\"attaccata\\">" +
+        (faccia ? "<img src=\\"" + sicuro(faccia) + "\\" alt=\\"\\">"
+                : "<span class=\\"senzafaccia\\">senza copertina</span>") +
+        "<small>" + sicuro(a.titolo) + "</small>" +
+        "<button class=\\"btn piano\\" data-stacca=\\"" + c.id + "\\">Togli</button></div>";
+    }
+    return h;
+  }
+
+  function provala(id, tasto) {
+    tasto.disabled = true;
+    tasto.textContent = "la mando…";
+    chiedi("POST", "/prova", { id: id }).then(function () {
+      avviso("Mandata a generare. Quando e' pronta la trovi in galleria.", "bene");
+      caricaFila();
+    }).catch(function (e) {
+      tasto.disabled = false;
+      avviso(e.message, "male");
+      caricaFila();
+    });
   }
 
   function caricaFila() {
@@ -1010,24 +1283,26 @@ export const COPIONE = `
             // Il valore di base e' la somma dei dodici pezzi, e arriva dal
             // PC. Chi comanda aggiunge solo il **bonus**: quanto vale l'idea
             // oltre ai pezzi di cui e' fatta.
-            var scelta = attaccati[c.id];
+            var quanto = c.base + quantoScelto("bonus", c.id);
+            var g = gradoDiPrezzo(quanto);
             var tasti =
+              // Provarla davvero prima di darle un prezzo: parte una
+              // generazione coi modelli decisi per quel mestiere.
+              provaHtml(c) +
+              attaccoHtml(c) +
               "<div class=\\"conto\\">I pezzi valgono <b>" + soldi(c.base) + "</b>" +
-              " · con il bonus fa <b data-totale=\\"" + c.id + "\\" data-base=\\"" +
-              c.base + "\\">" + soldi(c.base + quantoScelto("bonus", c.id)) + "</b></div>" +
+              " · col bonus fa <b data-totale=\\"" + c.id + "\\" data-base=\\"" +
+              c.base + "\\">" + soldi(quanto) + "</b>" +
+              " · sara' <b data-gradofa=\\"" + c.id + "\\" style=\\"color:" + g.colore +
+              "\\">" + sicuro(g.nome) + "</b></div>" +
               tastiTaglio("bonus", c.id) +
               "<div class=\\"riga-tasti\\">" +
               "<input type=\\"number\\" min=\\"0\\" placeholder=\\"o scrivi quanto\\" " +
               "data-bonus=\\"" + c.id + "\\">" +
-              // Attaccare la cosa venuta fuori da quel prompt: si guarda la
-              // galleria e si tocca, non si copia un indirizzo a mano.
-              "<button class=\\"btn piano\\" data-attacca=\\"" + c.id + "\\">" +
-              (scelta ? "Attaccata: " + sicuro(scelta.titolo) : "Attacca dalla suite") +
-              "</button>" +
+              "<button class=\\"btn piano\\" data-azzera=\\"bonus:" + c.id + "\\">Azzera</button>" +
               "</div>" +
-              (scelta ? "<div class=\\"attaccata\\"><img src=\\"" +
-                sicuro(scelta.anteprima || scelta.url) + "\\" alt=\\"\\">" +
-                "<button class=\\"btn piano\\" data-stacca=\\"" + c.id + "\\">Togli</button></div>" : "") +
+              // La strada contraria: scelgo il grado, il bonus ci arriva da se'.
+              tastiGradi(c.id, "prezzo") +
               "<div class=\\"riga-tasti\\">" +
               "<button class=\\"btn oro\\" data-prendi=\\"" + c.id + "\\">Prendila</button>" +
               "<button class=\\"btn piano\\" data-butta=\\"" + c.id + "\\">Buttala</button>" +
@@ -1036,6 +1311,12 @@ export const COPIONE = `
           }).join("")
         : "<div class=\\"niente\\">Niente da controllare. Buon segno o cattivo, dipende.</div>";
 
+      // Le prese: tante, e non c'e' niente da decidere finche' non le si mette
+      // in vetrina. Un cassetto, come le buttate. Chiesto il 10 settembre 2026:
+      // «mettiamo anche quelle prese che le possiamo nascondere, cosi' quando
+      // saranno tante non daranno fastidio».
+      $("cassetto-prese").hidden = dati.decise.length === 0;
+      $("quante-prese").textContent = dati.decise.length ? String(dati.decise.length) : "";
       $("fila-decise").innerHTML = dati.decise.length
         ? dati.decise.map(function (c) {
             if (c.stato !== "presa") return figurinaHtml(c);
@@ -1047,7 +1328,7 @@ export const COPIONE = `
                 soldi(c.prezzoVetrina) + "</span>" +
                 "<button class=\\"btn piano\\" data-svetrina=\\"" + c.id +
                 "\\">Togli dalla vetrina</button></div>"
-              : tastiGradi(c.id) +
+              : tastiGradi(c.id, "vetrina") +
                 "<div class=\\"riga-tasti\\">" +
                 "<input type=\\"number\\" min=\\"1\\" placeholder=\\"prezzo, o lascia stare\\" " +
                 "data-vprezzo=\\"" + c.id + "\\">" +
@@ -1069,57 +1350,97 @@ export const COPIONE = `
   /* ------------------------------------------------------------- i regali */
 
   /**
-   * @ATT **Chi c'e', e quanto gli mando.**
+   * ⚠ **Chi c'e', e quanto gli mando.**
    *
    * Chiesto il 10 settembre 2026: «l'admin deve poter inviare lire agli utenti».
    * E' l'unico rubinetto delle lire oltre alle combinazioni prese — girando la
    * slot escono punti, non lire — quindi sta in mano a una persona sola e ha un
    * perche' scritto accanto: un saldo che cambia da solo sembra un guasto.
    */
+  /** Tutta la gente, come e' arrivata. Il cerca lavora su questa. */
+  var gente = [];
+  var cercaGente = "";
+
   function caricaGente() {
     if (!io.admin) return;
     chiedi("GET", "/gente").then(function (dati) {
-      $("gente").innerHTML = dati.gente.length
-        ? dati.gente.map(function (g) {
-            return "<div class=\\"persona\\">" +
-              "<div class=\\"testa\\"><b>" + sicuro(g.nome) + "</b>" +
-              "<small>" + (g.mai ? "non ha mai aperto la sala giochi"
-                : "ha " + soldi(g.saldo) +
-                  (g.regali ? " · regalate " + soldi(g.regali) : "")) + "</small></div>" +
-              tastiTaglio("regalo", g.chi) +
-              "<div class=\\"riga-tasti\\">" +
-              "<input type=\\"number\\" min=\\"1\\" placeholder=\\"o scrivi quanto\\" " +
-              "data-regalo=\\"" + sicuro(g.chi) + "\\">" +
-              "<button class=\\"btn oro\\" data-manda-lire=\\"" + sicuro(g.chi) +
-              "\\">Manda</button></div></div>";
-          }).join("")
-        : "<div class=\\"niente\\">Non c'e' ancora nessun altro che gioca.</div>";
+      gente = dati.gente || [];
+      disegnaGente();
     }).catch(function (e) { avviso(e.message, "male"); });
+  }
+
+  /**
+   * ⚠ **Il cerca.** Chiesto il 10 settembre 2026 insieme al pannello: «va
+   * aggiustato il valore e aggiunto un cerca».
+   *
+   * In casa ci sono poche persone adesso, ma ognuna si porta dietro otto tasti
+   * e una casella: a dieci persone quella scheda e' lunga tre schermate, e
+   * trovare la zia vuol dire scorrere. Si filtra qui e non sul PC — sono
+   * pochissimi nomi, gia' arrivati, e un giro di rete per ogni lettera scritta
+   * sarebbe uno spreco.
+   */
+  function disegnaGente() {
+    var cerca = cercaGente.trim().toLowerCase();
+    var quali = cerca
+      ? gente.filter(function (g) { return g.nome.toLowerCase().indexOf(cerca) >= 0; })
+      : gente;
+    $("gente").innerHTML = quali.length
+      ? quali.map(function (g) {
+          var messe = quantoScelto("regalo", g.chi);
+          return "<div class=\\"persona\\">" +
+            "<div class=\\"testa\\"><b>" + sicuro(g.nome) + "</b>" +
+            "<small>" + (g.io ? "sei tu · " : "") +
+            (g.mai ? "non ha mai aperto la sala giochi"
+              : "ha " + soldi(g.saldo) +
+                (g.regali ? " · regalate " + soldi(g.regali) : "")) + "</small></div>" +
+            tastiTaglio("regalo", g.chi) +
+            "<div class=\\"riga-tasti\\">" +
+            "<span class=\\"conto\\">stai mandando <b data-conta=\\"regalo:" + sicuro(g.chi) +
+            "\\">" + (messe ? soldi(messe) : "niente") + "</b></span>" +
+            "<button class=\\"btn piano\\" data-azzera=\\"regalo:" + sicuro(g.chi) +
+            "\\">Azzera</button></div>" +
+            "<div class=\\"riga-tasti\\">" +
+            "<input type=\\"number\\" min=\\"1\\" placeholder=\\"o scrivi quanto\\" " +
+            "data-regalo=\\"" + sicuro(g.chi) + "\\">" +
+            "<button class=\\"btn oro\\" data-manda-lire=\\"" + sicuro(g.chi) +
+            "\\">Manda</button></div></div>";
+        }).join("")
+      : "<div class=\\"niente\\">" +
+        (cerca ? "Nessuno si chiama cosi'." : "Non c'e' ancora nessuno.") + "</div>";
   }
 
   function mandaLire(chi) {
     var quanto = quantoScelto("regalo", chi);
-    if (quanto < 1) { avviso("Quanto? Tocca un taglio, o scrivilo.", "male"); return; }
-    var perche = prompt("Due parole a chi le riceve:", "Bravo.");
-    if (perche === null) return;
-    chiedi("POST", "/regala", { chi: chi, quanto: quanto, perche: perche })
-      .then(function (r) {
-        tagliScelti["regalo:" + chi] = 0;
-        avviso(soldi(quanto) + " a " + r.nome + ". Adesso ha " + soldi(r.saldo) + ".", "bene");
-        coriandoli(24, ["#ffd166", "#ffffff"]);
-        caricaGente();
-      }).catch(function (e) { avviso(e.message, "male"); });
+    if (quanto < 1) { avviso("Quanto? Batti sui tagli, o scrivilo.", "male"); return; }
+    var nome = "";
+    for (var i = 0; i < gente.length; i++) if (gente[i].chi === chi) nome = gente[i].nome;
+    chiediQualcosa("Mandi " + soldi(quanto) + " a " + nome,
+      "Due parole a chi le riceve: le legge appena apre la sala giochi.",
+      { valore: "Bravo.", tastoSi: "Manda" }).then(function (perche) {
+        if (perche === null) return;
+        chiedi("POST", "/regala", { chi: chi, quanto: quanto, perche: perche })
+          .then(function (r) {
+            tagliScelti["regalo:" + chi] = 0;
+            avviso(soldi(quanto) + " a " + r.nome + ". Adesso ha " + soldi(r.saldo) + ".", "bene");
+            coriandoli(40, ["#ffd166", "#ffffff"]);
+            caricaGente();
+          }).catch(function (e) { avviso(e.message, "male"); });
+      });
   }
 
   /* --------------------------------------------------- attaccare dalla suite */
 
   /** Quello che si e' scelto di attaccare, per ogni cosa in fila. */
   var attaccati = {};
-  /** A chi sta attaccando quello che si tocca nella galleria. */
+  /** Le copertine scelte a mano, per quelle in fila. */
+  var copertine = {};
+  /** A chi sta attaccando quello che si tocca nella galleria, e come. */
   var attaccaA = "";
+  var attaccaCome = "allegato";
 
-  function apriLibreria(id) {
+  function apriLibreria(id, come) {
     attaccaA = id;
+    attaccaCome = come || "allegato";
     $("libreria").hidden = false;
     $("libreria-roba").innerHTML = "<div class=\\"niente\\">Guardo…</div>";
     chiedi("GET", "/libreria").then(function (dati) {
@@ -1160,14 +1481,18 @@ export const COPIONE = `
 
   function prendila(id) {
     var scelta = attaccati[id];
+    var cop = copertine[id];
     chiedi("POST", "/prendi", {
       id: id,
       bonus: quantoScelto("bonus", id),
       allegato: scelta ? scelta.url : "",
       allegatoMime: scelta ? scelta.mime : "image/*",
+      copertina: cop ? cop.url : "",
+      copertinaMime: "image/*",
     }).then(function (c) {
       tagliScelti["bonus:" + id] = 0;
       delete attaccati[id];
+      delete copertine[id];
       var s = scalinoDi(c.grado);
       avviso("Presa: " + s.nome + ", numero " + c.numero + " del magazzino.", "bene");
       if (s.fuoco >= 2) lampo(s.colore);
@@ -1200,13 +1525,21 @@ export const COPIONE = `
   }
 
   function buttala(id) {
-    var motivo = prompt("Perche' non va bene?");
-    if (motivo === null) return;
-    chiedi("POST", "/butta", { id: id, motivo: motivo }).then(function () {
-      avviso("Buttata.", "bene");
-      delete gradoScelto[id];
-      caricaFila();
-    }).catch(function (e) { avviso(e.message, "male"); });
+    /**
+     * ⚠ Il motivo si chiede col pannello della pagina, non con «prompt».
+     * Dentro la suite sul PC «prompt» non esiste — Electron l'ha tolto — e
+     * questo tasto, da li', non buttava niente e non diceva perche'.
+     */
+    chiediQualcosa("Perche' non va bene?",
+      "Lo legge chi l'ha mandata: e' l'unica cosa che gli insegna qualcosa.",
+      { righe: 3, suggerimento: "due parole", tastoSi: "Buttala" }).then(function (motivo) {
+        if (motivo === null) return;
+        chiedi("POST", "/butta", { id: id, motivo: motivo }).then(function () {
+          avviso("Buttata.", "bene");
+          delete gradoScelto[id];
+          caricaFila();
+        }).catch(function (e) { avviso(e.message, "male"); });
+      });
   }
 
   /* ------------------------------------------------------------ navigare */
@@ -1235,7 +1568,14 @@ export const COPIONE = `
 
     var grado = chiudi("[data-grado]");
     if (grado) {
-      gradoScelto[grado.getAttribute("data-per")] = grado.getAttribute("data-grado");
+      var perChi = grado.getAttribute("data-per");
+      // Due mestieri, stesso tasto: in fila punta a un prezzo, sulle prese
+      // sceglie il grado che avra' nello shop.
+      if (grado.getAttribute("data-uso") === "prezzo") {
+        puntaAlGrado(perChi, grado.getAttribute("data-grado"));
+        return;
+      }
+      gradoScelto[perChi] = grado.getAttribute("data-grado");
       caricaFila();
       return;
     }
@@ -1322,20 +1662,47 @@ export const COPIONE = `
     if (lire) { mandaLire(lire); return; }
 
     var attacca = b.getAttribute && b.getAttribute("data-attacca");
-    if (attacca) { apriLibreria(attacca); return; }
+    if (attacca) { apriLibreria(attacca, "allegato"); return; }
+    var copertina = b.getAttribute && b.getAttribute("data-copertina");
+    if (copertina) { apriLibreria(copertina, "copertina"); return; }
     var stacca = b.getAttribute && b.getAttribute("data-stacca");
-    if (stacca) { delete attaccati[stacca]; caricaFila(); return; }
+    if (stacca) { delete attaccati[stacca]; delete copertine[stacca]; caricaFila(); return; }
+
+    var azzera = b.getAttribute && b.getAttribute("data-azzera");
+    if (azzera) {
+      azzeraTaglio(azzera.split(":")[0], azzera.slice(azzera.indexOf(":") + 1));
+      return;
+    }
+    var prova = b.getAttribute && b.getAttribute("data-prova");
+    if (prova) { provala(prova, b); return; }
 
     // Una cosa scelta nella galleria: si tiene da parte e si chiude il foglio.
     var voce = chiudi("[data-voce]");
     if (voce && attaccaA) {
-      attaccati[attaccaA] = {
+      var scelta = {
         id: voce.getAttribute("data-voce"),
         url: voce.getAttribute("data-url"),
         mime: voce.getAttribute("data-mime"),
         titolo: voce.getAttribute("data-titolo"),
         anteprima: voce.getAttribute("data-anteprima"),
       };
+      if (attaccaCome === "copertina") copertine[attaccaA] = scelta;
+      else {
+        attaccati[attaccaA] = scelta;
+        /**
+         * ⚠ **Se la libreria ha gia' la copertina di quel brano, si prende.**
+         *
+         * Chiesto il 10 settembre 2026: «se si carica una canzone viene
+         * caricata anche l'immagine della canzone». La suite le fa gia', le
+         * copertine dei brani e i fotogrammi dei video — sono la stessa cosa
+         * che si vede in galleria. Chiederle a mano una seconda volta sarebbe
+         * far rifare a Cammo un lavoro gia' fatto dal computer.
+         */
+        if (String(scelta.mime || "").indexOf("image/") !== 0 && scelta.anteprima) {
+          copertine[attaccaA] = { id: scelta.id, url: scelta.anteprima, mime: "image/*",
+            titolo: scelta.titolo, anteprima: scelta.anteprima };
+        }
+      }
       chiudiLibreria();
       caricaFila();
       return;
@@ -1346,17 +1713,17 @@ export const COPIONE = `
   // deve vedere il numero finale prima di premere, non dopo.
   document.addEventListener("input", function (e) {
     var b = e.target;
-    var id = b.getAttribute && b.getAttribute("data-bonus");
-    if (!id) return;
-    // Scrivere un numero vince sul taglio toccato: l'ultima cosa che si fa e'
-    // quella che vale, se no si sceglie 50 e ne parte 100 senza capire perche'.
-    if (b.value) tagliScelti["bonus:" + id] = 0;
-    var fila = document.querySelector("[data-tagli=\\"bonus:" + id + "\\"]");
-    if (fila && b.value) {
-      var t = fila.querySelectorAll("button");
-      for (var i = 0; i < t.length; i++) t[i].classList.remove("scelto");
+    if (b.id === "cerca-gente") { cercaGente = b.value; disegnaGente(); return; }
+    for (var quale of ["bonus", "regalo"]) {
+      var id = b.getAttribute && b.getAttribute("data-" + quale);
+      if (!id) continue;
+      // Scrivere un numero vince su quello messo insieme coi tasti: l'ultima
+      // cosa che si fa e' quella che vale, se no si batte 50 e ne parte 100
+      // senza capire perche'.
+      if (b.value) tagliScelti[quale + ":" + id] = 0;
+      mostraQuanto(quale, id);
+      return;
     }
-    aggiornaTotale(id);
   });
 
   $("gira").addEventListener("click", gira);

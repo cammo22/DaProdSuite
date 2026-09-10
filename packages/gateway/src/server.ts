@@ -441,6 +441,50 @@ export class Gateway {
              * La copertina di un prompt puo' benissimo essere una foto
              * fatta da qualcun altro.
              */
+            /**
+             * ⚠ **Provare una combinazione davvero**, con i modelli decisi
+             * per quel mestiere.
+             *
+             * Chiesto il 10 settembre 2026: «nel caso di un prompt musicale
+             * genera una clip di 60 secondi con ace step turbo strumentale, nel
+             * caso dell'immagine genera l'immagine 4:3 con flux 9b».
+             *
+             * Strumentale vuol dire **testo vuoto**: e' cosi' che si chiede uno
+             * strumentale a `genera.brano`, non con una spunta. E la richiesta
+             * passa da `creaRichiesta` come tutte le altre, quindi rispetta la
+             * coda e i tetti: provare una combinazione non salta la fila di chi
+             * sta aspettando.
+             *
+             * I nomi dei modelli stanno qui e non nel gioco: il gioco sa che e'
+             * musica o immagini, chi ospita sa con cosa si fa.
+             */
+            genera: (_chi, tavolo, cosa) => {
+              const richiesta = this.remoto.creaRichiesta(
+                tavolo === "immagini"
+                  ? {
+                      tipo: "genera.immagine",
+                      app: "foto",
+                      testo: cosa.prompt,
+                      opzioni: { forma: "4:3", modello: "flux2-9b", quante: "1" },
+                      daDispositivo: chiGioca,
+                    }
+                  : {
+                      tipo: "genera.brano",
+                      app: "musica",
+                      testo: cosa.prompt,
+                      opzioni: {
+                        titolo: cosa.titolo.slice(0, 80),
+                        descrizione: cosa.prompt,
+                        // Vuoto vuol dire strumentale: vedi «testo» in genera.brano.
+                        testo: "",
+                        secondi: "60",
+                        modello: "ace-turbo",
+                      },
+                      daDispositivo: chiGioca,
+                    },
+              );
+              return { id: richiesta.id };
+            },
             gente: () =>
               this.remoto.listaDispositivi().map((d) => ({
                 id: d.id,
