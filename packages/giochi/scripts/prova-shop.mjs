@@ -14,15 +14,20 @@
 
 import {
   compra,
+  creaPacchetto,
   Deposito,
   GRADI,
   gradoDiFigurina,
   mettiInVetrina,
   NienteDaFare,
+  PACCHETTI_DI_PAVIMENTO,
   prezzoConsigliato,
+  prezzoDaPacchetto,
+  prezzoNelloShop,
   TETTO_FIGURINE,
   togliDallaVetrina,
   vetrina,
+  VOLTE_LA_VETRINA,
 } from "../dist/index.js";
 import { conCartella, prova, tirandoLeSomme, uguale, vero } from "./attrezzi.mjs";
 
@@ -237,6 +242,64 @@ prova("quello che non e' in vetrina non si compra", () =>
       vero(errore instanceof NienteDaFare);
     }
     vero(fermato, "sta in magazzino, ma non e' in vendita");
+  }),
+);
+
+/* ------------------------------------------------- dai pacchetti, a scelta */
+
+/**
+ * ⚠ **Dentro a un pacchetto chiuso si compra quella che si vuole, e si paga
+ * caro.** Deciso l'11 settembre 2026 (#109): «tipo quelle macchinette col
+ * braccio robotico, dove non si vince quasi mai». Il pacchetto e' la fortuna
+ * che costa poco; qui e' la certezza.
+ */
+prova("dentro a un pacchetto chiuso si compra quella che vuoi", () =>
+  conCartella((file) => {
+    const d = new Deposito(file);
+    figurinaPresa(d, "uno", 100); // Basic
+    figurinaPresa(d, "due", 3600); // Unique
+    creaPacchetto(d, "capo");
+    d.muovi("gino", 1_000_000);
+    const pacchetto = d.impostazioni().costoPacchetto;
+
+    uguale(prezzoNelloShop(d, d.perId("uno")), PACCHETTI_DI_PAVIMENTO * pacchetto,
+      "un Basic costa dieci pacchetti");
+    uguale(prezzoNelloShop(d, d.perId("due")), VOLTE_LA_VETRINA * prezzoConsigliato("unique"),
+      "un Unique il doppio della vetrina");
+
+    const prima = d.conto("gino").saldo;
+    const a = compra(d, "gino", "due");
+    uguale(a.costo, prezzoNelloShop(d, d.perId("due")), "si paga il cartellino, non un altro numero");
+    uguale(a.saldo, prima - a.costo);
+    vero(d.conto("gino").collezione.indexOf("due") >= 0, "e adesso e' sua");
+  }),
+);
+
+prova("scegliere costa sempre piu' che pescare", () => {
+  for (const g of GRADI) {
+    const scelta = prezzoDaPacchetto(g.id, 5000);
+    vero(scelta >= PACCHETTI_DI_PAVIMENTO * 5000, g.id + " costa meno di dieci pacchetti");
+    vero(scelta >= prezzoConsigliato(g.id), g.id + " costa meno della vetrina");
+  }
+  // ⚠ La cima si guarda: e' li' che la scala ha sbagliato tre volte.
+  uguale(prezzoDaPacchetto("ethernal", 5000), 2_720_000, "un Ethernal scelto: 1.405 euro");
+});
+
+prova("la vetrina vince sul pacchetto: il prezzo scritto da chi comanda resta quello", () =>
+  conCartella((file) => {
+    const d = new Deposito(file);
+    figurinaPresa(d, "uno", 100);
+    creaPacchetto(d, "capo");
+    mettiInVetrina(d, "uno", "rare", 7777);
+    uguale(prezzoNelloShop(d, d.perId("uno")), 7777);
+  }),
+);
+
+prova("fuori dai pacchetti e fuori dalla vetrina non ha prezzo", () =>
+  conCartella((file) => {
+    const d = new Deposito(file);
+    figurinaPresa(d, "uno", 100);
+    uguale(prezzoNelloShop(d, d.perId("uno")), null, "sta in magazzino, e aspetta il prossimo pacchetto");
   }),
 );
 

@@ -1,14 +1,15 @@
 /**
  * L'ossatura della pagina, senza un dato dentro.
  *
- * Sei schede in fondo, e la settima si vede solo a chi decide:
+ * Sette schede in fondo, e l'ottava si vede solo a chi decide:
  *
  * | scheda | a che domanda risponde |
  * |---|---|
  * | Slot | voglio montare un prompt |
  * | Fortuna | voglio tirare e basta *(la macchinetta delle figurine)* |
- * | Mie | che fine hanno fatto le mie |
- * | Album | cosa c'e' da collezionare, e cosa mi manca |
+ * | Mie | che fine hanno fatto quelle che ho mandato |
+ * | Pacchetti | cosa c'e' in giro, e comprarne uno *(era «Album»)* |
+ * | Inventario | cosa ho, cosa mi manca, a che punto sono |
  * | Shop | voglio comprarne una precisa |
  * | Casa | chi sta davanti |
  * | Fila | cosa devo controllare *(solo admin)* |
@@ -69,12 +70,12 @@ export const MARKUP = `<header>
 
   <!-- ========================================================= macchinetta -->
   <!--
-    ⚠ **La seconda slot: sei rulli, due file da tre.**
+    ⚠ **La seconda slot: tre file da tre.**
 
-    Chiesta il 12 settembre 2026: «aggiungiamo la slot dove ci saranno 6 rulli,
-    3 per fila, che funziona come una slot classica». Sui rulli ci vanno **le
-    immagini dei pacchetti**, e basta quelle: tre in fila pagano poco, sei
-    uguali pagano il colpo grosso e la figurina diventa tua.
+    Chiesta il 12 settembre 2026 con due file, e la terza l'11: «aggiungiamo
+    un'altra riga, sempre stesso funzionamento». Sui rulli ci vanno **le
+    immagini dei pacchetti**, e basta quelle: una fila completa paga poco, tutto
+    lo schermo uguale paga il colpo grosso e la figurina diventa tua.
 
     Si accende col primo pacchetto chiuso. Finche' non ce n'e' nessuno, qui c'e'
     scritto perche' e' spenta — non un rullo grigio che non fa niente.
@@ -120,7 +121,13 @@ export const MARKUP = `<header>
       apre questa pagina per sapere e' **come e' andata** — non per rileggere
       tutto quello che si e' mandato.
     -->
-    <details class="cassetto" id="cassetto-mandate" open>
+    <!--
+      ⚠ **E adesso lo sono davvero.** Il commento qui sopra lo diceva gia', e
+      il cassetto partiva aperto lo stesso. L'11 settembre 2026: «in Mie
+      facciamo di default le schede collassate chiuse». Chi apre la pagina vede
+      i tre numeri, e sotto i cassetti con quante cose ci sono dentro.
+    -->
+    <details class="cassetto" id="cassetto-mandate">
       <summary>Quelle che hai mandato <span class="quanti" id="quante-mandate"></span></summary>
       <div id="mie-mandate"></div>
     </details>
@@ -138,33 +145,69 @@ export const MARKUP = `<header>
       <div id="mie-perdenti"></div>
     </details>
 
-    <details class="cassetto" id="cassetto-collezione" open>
-      <summary>La tua collezione <span class="quanti" id="quante-collezione"></span></summary>
-      <div id="mie-collezione"></div>
+    <!--
+      ⚠ **La collezione non sta piu' qui: sta nell'Inventario**, dall'11
+      settembre 2026. Qui c'e' quello che hai **mandato** tu; quello che hai
+      **preso** — inventandolo, comprandolo, tirando — sta in una scheda sua,
+      con i buchi di quello che manca. Un posto solo, non due.
+    -->
+  </section>
+
+  <!-- ========================================================== pacchetti -->
+  <!--
+    ⚠ **Era «Album», e dall'11 settembre 2026 si chiama «Pacchetti».** Parole
+    sue: «cambiamo album in Pacchetti, e mettiamo anche li' un menu a tendina per
+    nascondere gli elementi a schermo; se clicco su un pack mi mostra il
+    pacchetto».
+
+    Tre cose, dall'alto: le bustine, una per pacchetto, con quante ne hai; il
+    pacchetto aperto, quando se ne tocca una; e in fondo la tendina con quello
+    che non sta ancora in nessun pacchetto — e' li' che chi comanda lo chiude.
+    Prima c'era tutto sullo schermo insieme, coperto, una figurina sotto
+    l'altra.
+  -->
+  <section class="pagina" id="p-pacchetti">
+    <h2>I pacchetti</h2>
+    <div id="pacchetti-stato"></div>
+    <div class="pacchi" id="pacchetti-elenco"></div>
+    <div id="pacchetto-aperto" hidden></div>
+    <details class="cassetto" id="cassetto-fuori">
+      <summary>Non ancora in un pacchetto <span class="quanti" id="quante-fuori"></span></summary>
+      <div>
+        <!--
+          ⚠ **Chiudere un pacchetto lo fa chi comanda, quando vuole.** Chiesto il
+          12 settembre 2026: «facciamo che un admin puo' creare un pacchetto
+          quando vuole anche con meno di 100 creazioni». Sta qui dentro perche'
+          quello che ci finisce e' esattamente quello che c'e' in questa tendina.
+        -->
+        <div class="riga-tasti" id="riga-crea" hidden>
+          <button class="btn oro" id="crea-pacchetto"></button>
+        </div>
+        <div id="pacchetti-fuori"></div>
+      </div>
     </details>
   </section>
 
-  <!-- ============================================================== album -->
-  <section class="pagina" id="p-album">
-    <h2>L'album</h2>
-    <div id="album-stato"></div>
-    <!--
-      Quale pacchetto si sta guardando. Da quando li chiude una persona quando
-      vuole, «serie 3» non e' piu' «dalla 201 alla 300»: ognuno ha un nome e
-      quante ce ne stanno dentro, e si sceglie col dito.
-    -->
-    <div class="fila-scelte" id="album-pacchetti"></div>
-    <div class="riga-tasti">
-      <button class="btn oro" id="compra">Compra un pacchetto</button>
-      <!--
-        ⚠ **Chiudere un pacchetto lo fa chi comanda, quando vuole.** Chiesto il
-        12 settembre 2026: «facciamo che un admin puo' creare un pacchetto
-        quando vuole anche con meno di 100 creazioni». Il tasto lo vede solo
-        l'admin, e dice sempre quante cose ci finirebbero dentro.
-      -->
-      <button class="btn piano" id="crea-pacchetto" hidden></button>
-    </div>
-    <div id="album-figurine"></div>
+  <!-- ========================================================== inventario -->
+  <!--
+    ⚠ **L'inventario: quello che c'e' da avere, con i buchi.** Deciso l'11
+    settembre 2026: «manca un inventario dove vedere tutti i collezionabili
+    nascosti, e quando si sbloccano compaiono... molto importante l'inventario
+    per ogni utente e i progressi, voglio una bella page dedicata».
+
+    In cima quanto ne hai, in percentuale. Sotto i gradi, gli obiettivi, e un
+    pacchetto per riga con le sue caselle: quelle piene si guardano, quelle
+    vuote dicono il numero e il grado e basta. Qui sta anche «la tua
+    collezione», che prima stava in fondo a Mie.
+  -->
+  <section class="pagina" id="p-inventario">
+    <div class="inv-testa" id="inv-testa"></div>
+    <div class="inv-gradi" id="inv-gradi"></div>
+    <details class="cassetto" id="cassetto-obiettivi">
+      <summary>Obiettivi <span class="quanti" id="quanti-obiettivi"></span></summary>
+      <div id="inv-obiettivi"></div>
+    </details>
+    <div id="inv-pacchetti"></div>
   </section>
 
   <!-- =============================================================== shop -->
@@ -173,19 +216,33 @@ export const MARKUP = `<header>
       <h2>Lo shop</h2>
       <div class="fila-scelte" id="shop-tipi"></div>
     </div>
+    <!--
+      ⚠ **Due banchi: la vetrina e i pacchetti.** Dall'11 settembre 2026 si
+      compra anche dentro ai pacchetti chiusi, figurina per figurina, e si paga
+      caro: «tipo quelle macchinette col braccio robotico, dove non si vince
+      quasi mai». Il pacchetto e' la fortuna che costa poco; qui e' la certezza,
+      e costa almeno quanto dieci pacchetti.
+    -->
     <p class="spiegone">
-      Qui si compra senza fortuna di mezzo: paghi e ce l'hai. Costa caro apposta —
-      la stessa roba cade anche dai pacchetti, se sei fortunato.
+      Qui si compra senza fortuna di mezzo: scegli, paghi e ce l'hai. Costa caro
+      apposta — con quello che costa una figurina scelta compri dieci pacchetti,
+      e dentro magari c'e'.
     </p>
-    <div class="prodotti" id="shop-roba"></div>
+    <div id="shop-roba"></div>
   </section>
 
   <!-- ================================================================ casa -->
   <section class="pagina" id="p-casa">
     <h2>Chi sta davanti</h2>
+    <!--
+      ⚠ **Quattro colonne: il «Colpo» se n'e' andato.** Chiesto l'11 settembre
+      2026: «togliamo la statistica colpo». Sotto quel titolo, fra l'altro, c'era
+      il grado migliore uscito: due nomi per un numero solo. Il dato resta nel
+      conto di ognuno; qui non si guarda piu'.
+    -->
     <table>
       <thead>
-        <tr><th>Chi</th><th>Prese</th><th>Album</th><th>Colpo</th><th>In tasca</th></tr>
+        <tr><th>Chi</th><th>Prese</th><th>Figurine</th><th>In tasca</th></tr>
       </thead>
       <tbody id="classifica"></tbody>
     </table>
@@ -268,11 +325,19 @@ export const MARKUP = `<header>
   <div class="griglia-libreria" id="libreria-roba"></div>
 </div>
 
+<!--
+  ⚠ **Otto tasti, e la barra scorre.** Con l'Inventario, dall'11 settembre
+  2026, le schede sono sette per chi gioca e otto per chi comanda: su un
+  telefono stretto non ci stanno tutte, e schiacciarle vorrebbe dire scritte da
+  otto pixel. Se non ci stanno, la barra scorre di lato; se ci stanno, si
+  allargano come prima.
+-->
 <nav>
   <button class="viva" data-va="slot">Slot</button>
   <button data-va="fortuna">Fortuna</button>
   <button data-va="mie">Mie</button>
-  <button data-va="album">Album</button>
+  <button data-va="pacchetti">Pacchetti</button>
+  <button data-va="inventario">Inventario</button>
   <button data-va="shop">Shop</button>
   <button data-va="casa">Casa</button>
   <button data-va="fila" id="tasto-fila" hidden>Fila<span class="pallino" id="quante-attesa" hidden></span></button>

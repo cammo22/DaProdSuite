@@ -10,6 +10,91 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ---
 
+## 1.3.4 — Tre file, e un inventario tutto tuo
+
+Sala giochi, ancora. La macchinetta cresce di una fila, arriva la pagina che
+dice a che punto sei, e l'album diventa una fila di bustine da strappare.
+
+### La macchinetta ha tre file
+
+> «La slot Fortuna aggiungiamo un'altra riga, sempre stesso funzionamento: si
+> vince quando o una riga è completa o quando tutto lo schermo ha la stessa
+> immagine, in quel caso si sblocca pure l'immagine.»
+
+Nove caselle invece di sei. Una fila completa paga come prima, e se ne escono
+due o tre si sommano. Il colpo grosso adesso è **tutto lo schermo uguale**: paga
+il superbonus, e la figurina diventa tua.
+
+Quanto spesso si vince non è cambiato: una fila dodici giri su cento, il pieno
+uno su duemila. Con nove caselle pescate a caso si sarebbe vinto di più senza
+che nessuno l'avesse deciso.
+
+### L'inventario
+
+> «Manca un inventario dove vedere tutti i collezionabili nascosti, e quando si
+> sbloccano compaiono. Molto importante l'inventario per ogni utente e i
+> progressi: voglio una bella page dedicata.»
+
+Una scheda nuova, **Inventario**. In cima un anello con la percentuale, e quante
+ne hai su quante. Sotto i gradi, gli obiettivi — completare un pacchetto, il
+primo di ogni grado, dieci figurine — e un pacchetto per riga con le sue
+caselle.
+
+Quelle che hai si guardano, e toccandole si aprono intere, col tasto per copiare
+il prompt. Quelle che mancano sono caselle vuote: il numero e il grado si vedono,
+il resto no. Quelle arrivate dall'ultima volta si accendono.
+
+Qui è finita anche **la tua collezione**, che prima stava in fondo a Mie.
+
+### «Album» diventa «Pacchetti», e si strappa col dito
+
+> «Cambiamo album in Pacchetti... se clicco su un pack mi mostra il pacchetto:
+> se sono admin lo mostra completo, se sono utente mostra solo gli item
+> sbloccati.»
+
+Ogni pacchetto è una bustina, con la barra di quante ne hai. Si tocca e si apre:
+chi gioca trova le sue, chi comanda le vede tutte. In fondo c'è una tendina con
+le cose prese che non stanno ancora in nessun pacchetto, ed è lì che chi comanda
+chiude il prossimo.
+
+> «Vorrei un pack figurine che si apre: magari fai uno slide con il dito, tipo
+> per tagliare e aprire il pacchetto, e poi si vede cosa esce.»
+
+Compri un pacchetto e la busta si apre a tutto schermo. Passi il dito sulla riga
+tratteggiata, lei si strappa, e le figurine escono coperte: le giri toccandole,
+e la scena cresce col grado. Chi ha fretta ha «aprila e basta».
+
+### Nello shop ci sono i pacchetti, a scelta
+
+> «Nello shop i prezzi sono molto più alti: i pacchetti costano poco, ma la
+> possibilità di trovare quell'item è molto bassa, tipo quelle macchinette col
+> braccio robotico dove non si vince quasi mai.»
+
+Oltre alla vetrina, nello shop adesso ci sono i pacchetti chiusi, e dentro si
+sceglie la figurina che si vuole. Costa **il doppio della vetrina, e mai meno di
+dieci pacchetti**: con la stessa cifra compri cinquanta figurine a caso, oppure
+quella.
+
+| Grado | Scelta da un pacchetto |
+|---|---|
+| da Basic ad Arcane | 50.000 lire |
+| Unique | 144.000 |
+| Mythic | 1.600.000 |
+| Ethernal | 2.720.000 |
+
+### E poi
+
+- **Mie parte coi cassetti chiusi.** In cima i tre numeri, sotto i cassetti con
+  quante cose ci sono dentro.
+- **In Casa non c'è più il «Colpo».** Sotto quel titolo c'era il grado migliore
+  uscito: due nomi per una cosa sola.
+- **La galleria «attacca dalla suite» non si accavalla più.** Con tante foto le
+  righe si schiacciavano per starci tutte, e le immagini finivano una sopra
+  l'altra; coi brani non si vedeva perché sono pochi. Adesso una riga è alta
+  quanto quello che ha dentro, e il foglio scorre.
+- **Le prove della macchinetta fanno fallire la prova intera**, quando cadono.
+  Prima lo scrivevano a schermo e basta.
+
 ## 1.3.3 — La macchinetta, e i gradi arrivano in cima
 
 Sala giochi. Una slot nuova fatta con le figurine dei pacchetti, i gradi che

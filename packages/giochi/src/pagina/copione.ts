@@ -27,7 +27,6 @@ export const COPIONE = `
   var pezzi = [];          // i pezzi usciti, uno per rullo
   var bloccati = [];       // gli id tenuti fermi, uno per rullo (o null)
   var inEuro = false;
-  var serieAperta = 0;
   /** Il grado scelto per la cosa che si sta prendendo, in fila. */
   var gradoScelto = {};
 
@@ -1143,12 +1142,18 @@ export const COPIONE = `
       $("mie-perdenti").innerHTML = persi.map(function (c) {
         return figurinaHtml(c, { esito: true });
       }).join("");
-      $("quante-collezione").textContent = dati.collezione.length
-        ? String(dati.collezione.length) : "";
-      $("mie-collezione").innerHTML = dati.collezione.length
-        ? dati.collezione.map(function (c) { return figurinaHtml(c); }).join("")
-        : "<div class=\\"niente\\">La collezione e' vuota. Si riempie giocando o coi pacchetti.</div>";
     }).catch(function (e) { avviso(e.message, "male"); });
+  }
+
+  /**
+   * ⚠ **Si entra in «Mie» coi cassetti chiusi, ogni volta.** Chiesto l'11
+   * settembre 2026: «facciamo di default le schede collassate chiuse». Un
+   * cassetto aperto ieri e rimasto aperto oggi rifa' la pagina-rotolo che si
+   * voleva togliere: in cima i tre numeri, e il resto si apre se serve.
+   */
+  function chiudiICassettiDiMie() {
+    var cassetti = document.querySelectorAll("#p-mie details.cassetto");
+    for (var i = 0; i < cassetti.length; i++) cassetti[i].open = false;
   }
 
   /* ------------------------------------------------------------ il livello */
@@ -1218,16 +1223,39 @@ export const COPIONE = `
     $("shop-tipi").innerHTML = dentro;
   }
 
+  /**
+   * ⚠ **Due banchi: la vetrina, e i pacchetti a scelta.** Dall'11 settembre
+   * 2026 (#109) dentro ai pacchetti chiusi si compra quella che si vuole, e si
+   * paga caro. Un pacchetto per cassetto, e il primo aperto: con cento
+   * figurine per pacchetto, tutti aperti vorrebbe dire scorrere dieci
+   * schermate per arrivare al secondo.
+   */
   function caricaShop() {
     disegnaTipiShop();
     chiedi("GET", "/vetrina").then(function (dati) {
-      var roba = dati.roba.filter(function (c) {
-        return shopTipo === "tutto" || c.tipo === shopTipo;
-      });
-      $("shop-roba").innerHTML = roba.length
-        ? roba.map(function (c) { return prodottoHtml(c); }).join("")
-        : "<div class=\\"niente\\">In vetrina non c'e' ancora niente. " +
-          "Ce la mette chi comanda, dalla Fila.</div>";
+      var delTipo = function (c) { return shopTipo === "tutto" || c.tipo === shopTipo; };
+      var schede = function (roba) {
+        return "<div class=\\"prodotti\\">" +
+          roba.map(function (c) { return prodottoHtml(c); }).join("") + "</div>";
+      };
+      var h = "";
+      var inVetrina = dati.roba.filter(delTipo);
+      if (inVetrina.length) h += "<h3 class=\\"sezione\\">In vetrina</h3>" + schede(inVetrina);
+      var pacchi = dati.pacchetti || [];
+      var primo = true;
+      for (var i = 0; i < pacchi.length; i++) {
+        var roba = pacchi[i].roba.filter(delTipo);
+        if (!roba.length) continue;
+        if (primo) h += "<h3 class=\\"sezione\\">Dai pacchetti, a scelta</h3>";
+        h += "<details class=\\"cassetto\\"" + (primo ? " open" : "") + "><summary>" +
+          sicuro(pacchi[i].nome || ("Pacchetto " + pacchi[i].numero)) +
+          " <span class=\\"quanti\\">" + roba.length + "</span></summary>" +
+          "<div>" + schede(roba) + "</div></details>";
+        primo = false;
+      }
+      $("shop-roba").innerHTML = h ||
+        "<div class=\\"niente\\">Qui non c'e' ancora niente da comprare: arriva quando chi " +
+        "comanda mette qualcosa in vetrina, o chiude il primo pacchetto.</div>";
     }).catch(function (e) { avviso(e.message, "male"); });
   }
 
@@ -1241,13 +1269,13 @@ export const COPIONE = `
      * La copertina si vede **anche se non e' tua**: uno deve poter guardare
      * cosa sta comprando. Il prompt no, quello resta coperto finche' non paghi.
      *
-     * ⚠ Da quando gli allegati possono essere piu' d'uno, qui si guarda **il
-     * primo**: una scheda di negozio ha una faccia sola. Il resto si vede
-     * quando la figurina e' tua.
+     * ⚠ Da quando gli allegati possono essere piu' d'uno, qui si guarda **la
+     * faccia**: una scheda di negozio ne ha una sola, e la sceglie il PC con la
+     * stessa regola della macchinetta (vedi «vestita» nelle rotte). Il resto si
+     * vede quando la figurina e' tua.
      */
-    var faccia = (c.allegati && c.allegati.length) ? c.allegati[0] : null;
-    h += faccia && faccia.url
-      ? "<img src=\\"" + sicuro(c.copertina || faccia.url) + "\\" alt=\\"\\">"
+    h += c.faccia
+      ? "<img src=\\"" + sicuro(c.faccia) + "\\" alt=\\"\\" loading=\\"lazy\\">"
       : faccinaDi(c.tipo);
     h += "</div><div class=\\"corpo\\">";
     h += "<h3>" + sicuro(c.titolo) + "</h3>";
@@ -1281,68 +1309,143 @@ export const COPIONE = `
     }).catch(function (e) { avviso(e.message, "male"); });
   }
 
-  /* --------------------------------------------------------------- album */
+  /* ----------------------------------------------------------- pacchetti */
 
-  /** I pacchetti chiusi, come tasti: si sceglie quale guardare. */
-  function disegnaPacchetti(quali) {
-    var h = "";
-    for (var i = 0; i < quali.length; i++) {
-      var p = quali[i];
-      h += "<button data-pacchetto=\\"" + p.numero + "\\"" +
-        (p.numero === serieAperta ? " class=\\"scelto\\"" : "") + ">" +
-        sicuro(p.nome || ("Serie " + p.numero)) + " · " + p.quante + "</button>";
+  /**
+   * ⚠ **Era l'album, e dall'11 settembre 2026 e' «Pacchetti».** Parole sue:
+   * «se clicco su un pack mi mostra il pacchetto: se sono admin lo mostra
+   * completo, se sono utente mostra solo gli item sbloccati».
+   *
+   * Prima era una fila di tasti col nome dei pacchetti e sotto tutte le
+   * figurine, coperte, una sotto l'altra. Adesso sono bustine: si tocca e si
+   * apre, e dentro chi gioca trova le sue. Quelle che mancano stanno
+   * nell'Inventario, che e' il posto fatto per guardare i buchi.
+   */
+  /** Il pacchetto aperto, o zero se si stanno guardando le bustine. */
+  var pacchettoAperto = 0;
+  /** Gli ultimi pacchetti arrivati: servono al nome sulla busta da strappare. */
+  var ultimiPacchetti = [];
+
+  function nomeDelPacchetto(numero) {
+    for (var i = 0; i < ultimiPacchetti.length; i++) {
+      var p = ultimiPacchetti[i];
+      if (p.numero === numero) return p.nome || ("Pacchetto " + p.numero);
     }
-    $("album-pacchetti").innerHTML = h;
+    return "Pacchetto " + numero;
   }
 
-  function caricaAlbum() {
-    chiedi("GET", "/album").then(function (dati) {
-      serieAperta = dati.serie;
-      var m = dati.magazzino;
-      var testo = "";
-      if (dati.chiuse === 0) {
-        /**
-         * ⚠ **Cento non e' piu' una porta chiusa.** Dal 12 settembre 2026 chi
-         * comanda chiude un pacchetto quando vuole, anche con meno dentro:
-         * quindi qui si dice quante ne mancano per averne uno **pieno**, non
-         * quante ne servono per poterlo fare.
-         */
-        testo = "Nessun pacchetto ancora. Ce ne sono <b>" + m.fuori +
-          "</b> in attesa di entrarci" +
-          (m.allaProssimaSerie > 0
-            ? ", e ne mancano " + m.allaProssimaSerie + " per farne uno pieno."
-            : ".");
-        $("compra").disabled = true;
-      } else {
-        var quale = (dati.pacchetti || []).filter(function (p) {
-          return p.numero === dati.serie;
-        })[0];
-        testo = "<b>" + sicuro((quale && quale.nome) || ("Serie " + dati.serie)) + "</b> · " +
-          (quale ? quale.quante + " figurine dentro · " : "") +
-          "un pacchetto costa " + soldi(io.costi.pacchetto) + " e ne pesca " +
-          io.costi.perPacchetto + ".";
-        $("compra").disabled = false;
-      }
-      testo += "<br><span style=\\"color:var(--spento)\\">In magazzino: " + m.prese +
-        " · in attesa: " + m.inAttesa + " · pacchetti: " + dati.chiuse + "</span>";
-      $("album-stato").innerHTML = "<div class=\\"figurina\\">" + testo + "</div>";
-      disegnaPacchetti(dati.pacchetti || []);
+  /**
+   * La bustina: la stessa nell'elenco, nel pacchetto aperto e in quella che si
+   * strappa. Una bustina che cambia faccia da una schermata all'altra non si
+   * riconosce.
+   */
+  function bustinaHtml(nome, sotto) {
+    return "<div class=\\"bustina\\"><span class=\\"riflesso\\"></span>" +
+      "<span class=\\"marchio-b\\">DaProd Giochi</span>" +
+      "<b>" + sicuro(nome) + "</b>" + (sotto ? "<small>" + sicuro(sotto) + "</small>" : "") +
+      "</div>";
+  }
 
-      // Il tasto di chi comanda: dice sempre quante cose ci finirebbero dentro,
-      // e si spegne quando non c'e' niente da impacchettare.
-      var tasto = $("crea-pacchetto");
-      tasto.hidden = !io.admin;
-      if (io.admin) {
-        tasto.disabled = !m.siPuoChiudere;
-        tasto.textContent = m.siPuoChiudere
-          ? "Chiudi un pacchetto con queste " + m.fuori
-          : "Niente da impacchettare";
-      }
+  function paccoHtml(p) {
+    var pieno = p.quante > 0 && p.tue === p.quante;
+    var quanto = p.quante ? Math.round(p.tue * 100 / p.quante) : 0;
+    return "<div class=\\"pacco" + (pieno ? " completo" : "") + "\\" data-apri-pacco=\\"" +
+      p.numero + "\\">" +
+      bustinaHtml(p.nome || ("Pacchetto " + p.numero),
+        p.quante + (p.quante === 1 ? " figurina" : " figurine")) +
+      "<div class=\\"barretta\\"><span style=\\"width:" + quanto + "%\\"></span></div>" +
+      "<div class=\\"quante\\">ne hai <b>" + p.tue + "</b> su " + p.quante + "</div>" +
+      "<button class=\\"btn oro\\" data-compra-pacco=\\"" + p.numero + "\\">Compra · " +
+      soldi(io.costi.pacchetto) + "</button></div>";
+  }
 
-      $("album-figurine").innerHTML = dati.figurine.length
-        ? dati.figurine.map(function (c) { return figurinaHtml(c); }).join("")
-        : "<div class=\\"niente\\">Ancora niente in questo pacchetto.</div>";
-    }).catch(function (e) { avviso(e.message, "male"); });
+  function caricaPacchetti() {
+    chiedi("GET", pacchettoAperto ? "/album/" + pacchettoAperto : "/album")
+      .then(disegnaIPacchetti)
+      .catch(function (e) {
+        // Un pacchetto che non c'e' piu': si torna alle bustine, non si resta
+        // davanti a un errore.
+        if (pacchettoAperto) { pacchettoAperto = 0; caricaPacchetti(); return; }
+        avviso(e.message, "male");
+      });
+  }
+
+  function disegnaIPacchetti(dati) {
+    ultimiPacchetti = dati.pacchetti || [];
+    var m = dati.magazzino;
+    /**
+     * ⚠ **Cento non e' una porta chiusa.** Dal 12 settembre 2026 chi comanda
+     * chiude un pacchetto quando vuole, anche con meno dentro: qui si dice
+     * quante ne mancano per averne uno **pieno**, non quante ne servono.
+     */
+    $("pacchetti-stato").innerHTML = dati.chiuse === 0
+      ? "<div class=\\"niente\\">Nessun pacchetto ancora. " +
+        (m.fuori
+          ? "Ce ne sono <b>" + m.fuori + "</b> pronte a entrarci" +
+            (m.allaProssimaSerie > 0
+              ? ", e ne mancano " + m.allaProssimaSerie + " per farne uno pieno."
+              : ".") +
+            (io.admin ? " Lo chiudi dalla tendina qui sotto." : "")
+          : "Si riempie con le combinazioni che vengono prese.") + "</div>"
+      : "<p class=\\"spiegone\\">Un pacchetto costa " + soldi(io.costi.pacchetto) +
+        " e dentro ne pesca " + io.costi.perPacchetto + " a caso. Tocca una bustina per " +
+        "vedere cosa c'e' dentro.</p>";
+    $("pacchetti-stato").hidden = Boolean(pacchettoAperto);
+    $("pacchetti-elenco").hidden = Boolean(pacchettoAperto);
+    $("pacchetti-elenco").innerHTML = ultimiPacchetti.map(paccoHtml).join("");
+
+    var aperto = $("pacchetto-aperto");
+    aperto.hidden = !pacchettoAperto;
+    aperto.innerHTML = pacchettoAperto ? pacchettoApertoHtml(dati) : "";
+
+    // La tendina: quello che finisce nel prossimo pacchetto.
+    var fuori = dati.fuori || [];
+    var altre = dati.fuoriAltre || 0;
+    var totale = fuori.length + altre;
+    $("cassetto-fuori").hidden = totale === 0;
+    $("quante-fuori").textContent = totale ? String(totale) : "";
+    $("pacchetti-fuori").innerHTML =
+      fuori.map(function (c) { return figurinaHtml(c); }).join("") +
+      (altre
+        ? "<div class=\\"conto\\">" + (fuori.length ? "E altre " : "Ce ne sono ") + altre +
+          (altre === 1 ? " di qualcun altro" : " di altri") +
+          ": le vedrai quando chi comanda chiude il pacchetto.</div>"
+        : "");
+    // Il tasto di chi comanda: dice sempre quante cose ci finirebbero dentro.
+    $("riga-crea").hidden = !io.admin;
+    if (io.admin) {
+      $("crea-pacchetto").disabled = !m.siPuoChiudere;
+      $("crea-pacchetto").textContent = m.siPuoChiudere
+        ? "Chiudi un pacchetto con queste " + m.fuori
+        : "Niente da impacchettare";
+    }
+  }
+
+  function pacchettoApertoHtml(dati) {
+    var p = null;
+    for (var i = 0; i < ultimiPacchetti.length; i++) {
+      if (ultimiPacchetti[i].numero === dati.serie) p = ultimiPacchetti[i];
+    }
+    var nome = p ? (p.nome || ("Pacchetto " + p.numero)) : ("Pacchetto " + dati.serie);
+    var quante = p ? p.quante : dati.figurine.length;
+    var h = "<div class=\\"riga-tasti\\"><button class=\\"btn piano\\" data-torna-pacchi>" +
+      "← Tutti i pacchetti</button></div>";
+    h += "<div class=\\"aperto-testa\\">" + bustinaHtml(nome, quante + " dentro") +
+      "<div class=\\"dice\\"><b>" + sicuro(nome) + "</b>" +
+      (io.admin
+        ? "Le vedi tutte perche' comandi tu. Chi gioca vede solo quelle che ha."
+        : "Ne hai " + dati.figurine.length + " su " + quante + "." +
+          (dati.nascoste
+            ? " Le altre " + dati.nascoste + " stanno nell'Inventario, come caselle da riempire."
+            : "")) +
+      "</div></div>";
+    h += "<div class=\\"riga-tasti\\"><button class=\\"btn oro\\" data-compra-pacco=\\"" +
+      dati.serie + "\\">Compra un pacchetto · " + soldi(io.costi.pacchetto) + "</button></div>";
+    h += dati.figurine.length
+      ? dati.figurine.map(function (c) { return figurinaHtml(c); }).join("")
+      : "<div class=\\"niente\\">Di questo pacchetto non ne hai ancora nessuna. " +
+        "Comprane uno e strappalo.</div>";
+    return h;
   }
 
   /**
@@ -1364,8 +1467,8 @@ export const COPIONE = `
           coriandoli(60, ["#ffd166", "#7fd1a8", "#ffffff"]);
           avviso("Pacchetto " + esito.pacchetto.numero + " chiuso, con dentro " +
             esito.pacchetto.quante + ".", "bene");
-          serieAperta = esito.pacchetto.numero;
-          caricaAlbum();
+          pacchettoAperto = 0;
+          caricaPacchetti();
           // ⚠ La macchinetta vive dei pacchetti: uno nuovo vuol dire rulli
           // nuovi, e si aggiorna da sola senza che nessuno ricarichi.
           caricaMacchinetta();
@@ -1373,53 +1476,349 @@ export const COPIONE = `
       });
   }
 
-  function compraPacchetto() {
-    $("compra").disabled = true;
-    chiedi("POST", "/pacchetto", { serie: serieAperta }).then(function (a) {
+  function compraPacco(numero, tasto) {
+    if (tasto) tasto.disabled = true;
+    chiedi("POST", "/pacchetto", { serie: numero }).then(function (a) {
       io.saldo = a.saldo;
       disegnaSaldo(true);
-      var nuove = a.figurine.filter(function (f) { return !f.doppione; });
-      var meglio = "basic";
-      var alto = -1;
-      for (var i = 0; i < a.figurine.length; i++) {
-        var s = scalinoDi(a.figurine[i].grado);
-        if (s.fuoco > alto) { alto = s.fuoco; meglio = a.figurine[i].grado; }
-      }
-      var s2 = scalinoDi(meglio);
-      if (alto >= 2) lampo(s2.colore);
-      if (alto >= 3) { scuoti(); coriandoli(70, [s2.colore, "#ffd166", "#ffffff"]); }
-      avviso(
-        nuove.length === 0
-          ? "Tutti doppioni: " + soldi(a.vinto) + " indietro."
-          : nuove.length + (nuove.length === 1 ? " figurina nuova" : " figurine nuove") +
-            (a.vinto > 0 ? ", e " + soldi(a.vinto) + " dai doppioni" : ""),
-        "bene",
-      );
-      caricaAlbum();
+      apriLaBusta(a, nomeDelPacchetto(numero));
     }).catch(function (e) {
-      $("compra").disabled = false;
+      if (tasto) tasto.disabled = false;
       avviso(e.message, "male");
     });
+  }
+
+  /**
+   * ⚠ **La busta si strappa col dito.** Chiesto l'11 settembre 2026: «manca
+   * un'animazione che fa vedere cosa esce: vorrei un pack figurine che si apre,
+   * magari fai uno slide con il dito, tipo per tagliare e aprire il pacchetto, e
+   * poi si vede cosa esce».
+   *
+   * Prima si comprava e compariva una scritta — «2 figurine nuove» — e le
+   * figurine non si vedevano uscire da nessuna parte.
+   *
+   * ⚠ **Cosa c'e' dentro e' gia' deciso**: il PC ha pescato nel momento in cui
+   * si e' pagato (CONCETTI.md § 3). Strappare e girare le carte e' la scena, e
+   * la scena non puo' cambiare niente — se no chiudere la pagina a meta' strappo
+   * sarebbe un modo di non pagare un doppione.
+   *
+   * ⚠ **C'e' anche «aprila e basta»**: chi non ci riesce col dito, chi ha
+   * fretta, chi gioca col mouse e non ha voglia. Il gesto e' il bello, non un
+   * esame.
+   */
+  function apriLaBusta(a, nome) {
+    var vecchia = document.querySelector(".apertura");
+    if (vecchia) vecchia.remove();
+    var fondo = document.createElement("div");
+    fondo.className = "apertura";
+    fondo.innerHTML =
+      "<div class=\\"busta\\">" +
+        "<div class=\\"lembo\\"><span class=\\"taglio\\"></span>" +
+        "<span class=\\"forbici\\">\u2702\uFE0F</span></div>" +
+        bustinaHtml(nome, a.figurine.length + " figurine") +
+      "</div>" +
+      "<div class=\\"dice\\">Passa il dito sulla <b>riga tratteggiata</b>, da una parte " +
+        "all'altra.</div>" +
+      "<div class=\\"carte\\" hidden></div>" +
+      "<div class=\\"riga-tasti\\"><button class=\\"btn piano\\" data-busta=\\"apri\\">" +
+        "Aprila e basta</button></div>";
+    document.body.appendChild(fondo);
+
+    var busta = fondo.querySelector(".busta");
+    var taglio = fondo.querySelector(".taglio");
+    var dice = fondo.querySelector(".dice");
+    var carte = fondo.querySelector(".carte");
+    var tasti = fondo.querySelector(".riga-tasti");
+    var partito = null;
+    var strappata = false;
+    var girate = 0;
+
+    function strappa() {
+      if (strappata) return;
+      strappata = true;
+      busta.classList.add("strappata");
+      try { if (navigator.vibrate) navigator.vibrate(35); } catch (e) {}
+      dice.textContent = "";
+      tasti.innerHTML = "";
+      setTimeout(mostraLeCarte, 650);
+    }
+
+    /**
+     * Il taglio: si parte dalla testa della busta e si trascina di lato. Il
+     * rosso segue il dito, e a sette decimi della larghezza si strappa — tutta
+     * la larghezza su un telefono vuol dire partire dal bordo dello schermo, e
+     * li' c'e' il gesto del sistema che torna indietro.
+     */
+    busta.addEventListener("pointerdown", function (e) {
+      if (strappata) return;
+      var r = busta.getBoundingClientRect();
+      if (e.clientY - r.top > r.height * 0.4) {
+        dice.innerHTML = "Piu' in alto: il dito va sulla <b>riga tratteggiata</b>.";
+        return;
+      }
+      partito = { x: e.clientX, largo: r.width };
+      busta.classList.add("tagliando");
+      try { busta.setPointerCapture(e.pointerId); } catch (er) {}
+    });
+    busta.addEventListener("pointermove", function (e) {
+      if (!partito || strappata) return;
+      var dx = e.clientX - partito.x;
+      var fatto = Math.min(1, Math.abs(dx) / (partito.largo * 0.7));
+      taglio.classList.toggle("da-destra", dx < 0);
+      taglio.style.width = Math.round(fatto * 100) + "%";
+      if (fatto >= 1) strappa();
+    });
+    var lascia = function () {
+      if (strappata || !partito) return;
+      partito = null;
+      busta.classList.remove("tagliando");
+      taglio.style.width = "0%";
+    };
+    busta.addEventListener("pointerup", lascia);
+    busta.addEventListener("pointercancel", lascia);
+
+    function mostraLeCarte() {
+      busta.remove();
+      carte.hidden = false;
+      var h = "";
+      for (var i = 0; i < a.figurine.length; i++) {
+        var f = a.figurine[i];
+        var s = scalinoDi(f.grado);
+        h += "<div class=\\"carta\\" data-carta=\\"" + i + "\\" style=\\"--g:" + s.colore +
+          "; animation-delay:" + (i * 110) + "ms\\"><div class=\\"gira\\">" +
+          "<div class=\\"retro\\">?</div>" +
+          "<div class=\\"fronte\\">" + fronteDellaCarta(f, s) + "</div></div></div>";
+      }
+      carte.innerHTML = h;
+      dice.innerHTML = "Toccale per girarle.";
+      tasti.innerHTML = "<button class=\\"btn piano\\" data-busta=\\"tutte\\">Girale tutte</button>";
+    }
+
+    function giraLaCarta(nodo) {
+      if (!nodo || nodo.classList.contains("girata")) return;
+      nodo.classList.add("girata");
+      var f = a.figurine[Number(nodo.getAttribute("data-carta"))];
+      var s = scalinoDi(f.grado);
+      // La scena cresce col grado, come dappertutto (CONCETTI.md § 7): il
+      // cinque e' l'unica cosa che ferma tutto, anche qui.
+      if (s.fuoco >= 1) lampo(s.colore);
+      if (s.fuoco >= 2) {
+        carte.classList.remove("scossa");
+        void carte.offsetWidth;
+        carte.classList.add("scossa");
+      }
+      if (s.fuoco >= 3) coriandoli(70, [s.colore, "#ffd166", "#ffffff"]);
+      if (s.fuoco >= 4) coriandoli(90, [s.colore, "#ffffff"]);
+      if (s.fuoco >= 5) grande(s.nome, "e' uscito", f.titolo, s.colore);
+      girate += 1;
+      if (girate === a.figurine.length) finito();
+    }
+
+    function finito() {
+      var nuove = a.figurine.filter(function (f) { return !f.doppione; }).length;
+      dice.innerHTML = nuove === 0
+        ? "Tutti doppioni: <b>" + soldi(a.vinto) + "</b> indietro."
+        : "<b>" + nuove + (nuove === 1 ? " nuova" : " nuove") + "</b>" +
+          (a.vinto > 0 ? ", e " + soldi(a.vinto) + " dai doppioni." : ".") +
+          " Le trovi nell'Inventario.";
+      tasti.innerHTML = "<button class=\\"btn oro\\" data-busta=\\"fatto\\">Fatto</button>";
+    }
+
+    fondo.addEventListener("click", function (e) {
+      var t = e.target;
+      var cosa = t && t.closest ? t.closest("[data-busta], [data-carta]") : null;
+      if (!cosa) return;
+      e.stopPropagation();
+      if (cosa.hasAttribute("data-carta")) { giraLaCarta(cosa); return; }
+      var che = cosa.getAttribute("data-busta");
+      if (che === "apri") { strappa(); return; }
+      if (che === "tutte") {
+        var coperte = carte.querySelectorAll(".carta:not(.girata)");
+        for (var k = 0; k < coperte.length; k++) {
+          (function (n, dopo) { setTimeout(function () { giraLaCarta(n); }, dopo); })(coperte[k], k * 180);
+        }
+        return;
+      }
+      if (che === "fatto") {
+        fondo.remove();
+        caricaPacchetti();
+      }
+    });
+  }
+
+  /** Il davanti di una carta appena uscita: la faccia, il grado, chi l'ha fatta. */
+  function fronteDellaCarta(f, s) {
+    return "<div class=\\"faccia\\">" +
+      (f.faccia ? "<img src=\\"" + sicuro(f.faccia) + "\\" alt=\\"\\">" : faccinaDi(f.tipo)) +
+      "</div><div class=\\"sotto\\"><span class=\\"grado\\">" + sicuro(s.nome) + "</span>" +
+      "<div class=\\"titolo\\">" + sicuro(f.titolo) + "</div>" +
+      firmaHtml(f.daNome, "") +
+      (f.doppione
+        ? "<div class=\\"doppia\\">doppione \u00b7 +" + soldi(f.lire) + "</div>"
+        : "<div class=\\"nuova\\">nuova!</div>") +
+      "</div>";
+  }
+
+  /* ----------------------------------------------------------- inventario */
+
+  /**
+   * ⚠ **L'inventario: quello che c'e' da avere, con i buchi.** Deciso l'11
+   * settembre 2026: «manca un inventario dove vedere tutti i collezionabili
+   * nascosti, e quando si sbloccano compaiono... voglio una bella page
+   * dedicata».
+   *
+   * ⚠ **«Quando si sbloccano compaiono»**: quelle arrivate dall'ultima volta
+   * che si e' aperta la pagina si accendono. Cosa si e' gia' visto sta nel
+   * browser e non sul PC: riguarda uno schermo, non il conto — la stessa
+   * regola del regalo gia' mostrato. La prima volta non si accende niente, se
+   * no si accenderebbe tutto.
+   */
+  /** Le figurine piene dell'inventario, per aprirle toccandole. */
+  var invCose = {};
+
+  function casellaInvHtml(k, viste, primaVolta) {
+    var s = scalinoDi(k.grado);
+    if (!k.cosa) {
+      return "<div class=\\"cas buco\\" style=\\"--g:" + s.colore + "\\" title=\\"" +
+        sicuro(s.nome) + "\\"><span class=\\"n\\">" + (k.numero || "") + "</span>" +
+        "<span class=\\"q\\">?</span></div>";
+    }
+    var c = k.cosa;
+    invCose[c.id] = c;
+    var appena = !primaVolta && !viste[c.id];
+    return "<div class=\\"cas f" + s.fuoco + (appena ? " appena" : "") + "\\" style=\\"--g:" +
+      s.colore + "\\" data-inv=\\"" + sicuro(c.id) + "\\">" +
+      (c.faccia ? "<img src=\\"" + sicuro(c.faccia) + "\\" alt=\\"\\" loading=\\"lazy\\">"
+                : "<span class=\\"icona\\">" + faccinaDi(c.tipo) + "</span>") +
+      "<span class=\\"n\\">" + (c.numero || "") + "</span>" +
+      "<span class=\\"t\\">" + sicuro(c.titolo) + "</span></div>";
+  }
+
+  function caricaInventario() {
+    chiedi("GET", "/inventario").then(function (d) {
+      var chiave = "daprod.giochi.viste." + (io && io.chi ? io.chi : "");
+      var viste = null;
+      try { viste = JSON.parse(localStorage.getItem(chiave) || "null"); } catch (e) { viste = null; }
+      var primaVolta = !viste;
+      viste = viste || {};
+      invCose = {};
+
+      var pct = d.di ? Math.round(d.hai * 100 / d.di) : 0;
+      $("inv-testa").innerHTML =
+        "<div class=\\"anello\\" style=\\"--p:" + pct + "\\"><b>" + pct + "%</b></div>" +
+        "<div class=\\"dice\\"><b>" + d.hai + " su " + d.di + "</b><small>" +
+        (d.di === 0
+          ? "L'inventario si apre col primo pacchetto: dentro ci sono tutte le figurine " +
+            "che si possono avere."
+          : d.hai === d.di
+            ? "Le hai tutte, per ora. Al prossimo pacchetto ce ne sono di nuove."
+            : "Le figurine dei pacchetti. Quelle che ti mancano sono le caselle vuote: " +
+              "il numero e il grado si vedono, il resto no.") +
+        "</small></div>";
+
+      $("inv-gradi").innerHTML = (d.gradi || []).map(function (g) {
+        var s = scalinoDi(g.id);
+        return "<span class=\\"g" + (g.hai === g.di ? " pieno" : "") + "\\" style=\\"--g:" +
+          s.colore + "\\"><i></i>" + sicuro(s.nome) + " " + g.hai + "/" + g.di + "</span>";
+      }).join("");
+
+      // Gli obiettivi: prima quelli da fare, poi quelli fatti. Si apre il
+      // cassetto per sapere cosa manca, non per rileggere i trofei.
+      var ob = d.obiettivi || [];
+      var fatti = ob.filter(function (o) { return o.fatto; });
+      var daFare = ob.filter(function (o) { return !o.fatto; });
+      $("cassetto-obiettivi").hidden = ob.length === 0;
+      $("quanti-obiettivi").textContent = ob.length ? fatti.length + " su " + ob.length : "";
+      $("inv-obiettivi").innerHTML = daFare.concat(fatti).map(function (o) {
+        var q = o.di ? Math.round(o.quanto * 100 / o.di) : 0;
+        return "<div class=\\"obiettivo" + (o.fatto ? " fatto" : "") + "\\">" +
+          "<span class=\\"spunta\\">" + (o.fatto ? "\u2713" : "") + "</span>" +
+          "<div class=\\"cosa\\">" + sicuro(o.detto) +
+          (o.fatto || o.di <= 1
+            ? ""
+            : "<div class=\\"barretta\\"><span style=\\"width:" + q + "%\\"></span></div>") +
+          "</div><span class=\\"quanto\\">" + o.quanto + "/" + o.di + "</span></div>";
+      }).join("");
+
+      var h = "";
+      var pacchi = d.pacchetti || [];
+      for (var i = 0; i < pacchi.length; i++) {
+        var p = pacchi[i];
+        var pq = p.di ? Math.round(p.hai * 100 / p.di) : 0;
+        h += "<div class=\\"inv-pacco" + (p.di && p.hai === p.di ? " completo" : "") + "\\">" +
+          "<div class=\\"testa\\"><b>" + sicuro(p.nome || ("Pacchetto " + p.numero)) + "</b>" +
+          "<small>" + p.hai + " su " + p.di + "</small></div>" +
+          "<div class=\\"barretta\\"><span style=\\"width:" + pq + "%\\"></span></div>" +
+          "<div class=\\"caselle-inv\\">" +
+          p.caselle.map(function (k) { return casellaInvHtml(k, viste, primaVolta); }).join("") +
+          "</div></div>";
+      }
+      var fuori = d.fuori || [];
+      if (fuori.length) {
+        h += "<div class=\\"inv-pacco\\"><div class=\\"testa\\"><b>Fuori dai pacchetti</b>" +
+          "<small>" + fuori.length + "</small></div>" +
+          "<div class=\\"conto\\">Tue, prese prima che entrassero in un pacchetto.</div>" +
+          "<div class=\\"caselle-inv\\">" +
+          fuori.map(function (c) {
+            return casellaInvHtml({ numero: c.numero, grado: c.grado, cosa: c }, viste, primaVolta);
+          }).join("") + "</div></div>";
+      }
+      $("inv-pacchetti").innerHTML = h;
+
+      // Da adesso queste sono viste: la prossima volta si accendono solo le nuove.
+      var ora = {};
+      for (var id in invCose) if (Object.prototype.hasOwnProperty.call(invCose, id)) ora[id] = 1;
+      try { localStorage.setItem(chiave, JSON.stringify(ora)); } catch (e) {}
+    }).catch(function (e) { avviso(e.message, "male"); });
+  }
+
+  /**
+   * Una figurina dell'inventario, aperta intera: col prompt e il tasto per
+   * copiarlo. E' la carta di sempre («figurinaHtml»), dentro a un pannello: la
+   * collezione stava in Mie con quel tasto, e spostarla qui non doveva
+   * farglielo perdere.
+   */
+  function mostraFigurina(c) {
+    var vecchio = document.querySelector(".chiede");
+    if (vecchio) vecchio.remove();
+    var fondo = document.createElement("div");
+    fondo.className = "chiede";
+    fondo.innerHTML = "<div class=\\"dentro\\">" + figurinaHtml(c) +
+      "<div class=\\"riga-tasti\\"><button class=\\"btn piano\\" data-chiudi-figurina>" +
+      "Chiudi</button></div></div>";
+    fondo.addEventListener("click", function (e) {
+      var t = e.target;
+      if (t === fondo || (t && t.closest && t.closest("[data-chiudi-figurina]"))) fondo.remove();
+    });
+    document.body.appendChild(fondo);
   }
 
   /* -------------------------------------------------------- la macchinetta */
 
   /**
-   * ⚠ **La seconda slot: sei rulli, due file da tre.**
+   * ⚠ **La seconda slot: tre file da tre.**
    *
-   * Chiesta il 12 settembre 2026: «aggiungiamo la slot dove ci saranno 6 rulli,
-   * 3 per fila, che funziona come una slot classica. Girandola puoi inserire se
-   * giocare a 50 lire, 100 lire o 200 lire, e se si riescono a mettere in fila
-   * gli item si vince».
+   * Chiesta il 12 settembre 2026 con due file, e il giorno dopo: «aggiungiamo
+   * un'altra riga, sempre stesso funzionamento: si vince quando o una riga e'
+   * completa o quando tutto lo schermo ha la stessa immagine».
    *
    * Qui non si decide niente: si punta, si chiede al PC, e si fa la scena. Le
-   * sei caselle arrivano gia' decise (vedi macchinetta.ts), e questa pagina
-   * le scopre una alla volta — che e' tutta la differenza fra guardare una
-   * slot e leggere un risultato.
+   * caselle arrivano gia' decise (vedi macchinetta.ts), e questa pagina le
+   * scopre una alla volta — che e' tutta la differenza fra guardare una slot e
+   * leggere un risultato. Anche **quante** sono lo dice il PC.
    */
 
   /** Il mazzo, per far scorrere qualcosa mentre gira. Cosa esce lo dice il PC. */
   var simboli = [];
+  /** La forma della macchina, come la manda il PC. Tre per tre finche' non risponde. */
+  var forma = { file: 3, perFila: 3 };
+  function quanteCaselle() { return forma.file * forma.perFila; }
+  /** Tante figurine a caso quante sono le caselle: la vetrina ferma, e il giro. */
+  function tutteACaso() {
+    var fuori = [];
+    for (var i = 0; i < quanteCaselle(); i++) fuori.push(unSimboloACaso());
+    return fuori;
+  }
   var puntata = 0;
   var macchinaGira = false;
   var orologiMacchina = [];
@@ -1450,7 +1849,7 @@ export const COPIONE = `
 
   function disegnaCaselle(quali, classe) {
     var h = "";
-    for (var i = 0; i < 6; i++) h += casellaHtml(quali[i], classe);
+    for (var i = 0; i < quanteCaselle(); i++) h += casellaHtml(quali[i], classe);
     $("macchina-rulli").innerHTML = h;
   }
 
@@ -1466,8 +1865,8 @@ export const COPIONE = `
         (quali[i] === puntata ? " class=\\"scelto\\"" : "") + ">" + soldi(quali[i]) + "</button>";
     }
     $("puntate").innerHTML = h;
-    $("macchina-conto").innerHTML = "Tre in fila pagano poco. <b>Sei uguali</b> pagano il " +
-      "colpo grosso, e quella figurina diventa tua.";
+    $("macchina-conto").innerHTML = "Una fila di tre uguali paga poco, e le file si sommano. " +
+      "<b>Tutto lo schermo uguale</b> paga il colpo grosso, e quella figurina diventa tua.";
   }
 
   /** La tabellina dei premi: quanto paga ogni grado. La dice il PC, non questa pagina. */
@@ -1476,7 +1875,7 @@ export const COPIONE = `
     for (var i = 0; i < premi.length; i++) {
       var g = premi[i];
       h += "<div class=\\"riga\\"><b style=\\"color:" + g.colore + "\\">" + sicuro(g.nome) + "</b>" +
-        "<span>fila &times;" + g.fila + "</span><span>sei &times;" + g.pieno + "</span></div>";
+        "<span>fila &times;" + g.fila + "</span><span>tutto &times;" + g.pieno + "</span></div>";
     }
     h += "</div>";
     $("macchina-premi").innerHTML = h;
@@ -1485,6 +1884,7 @@ export const COPIONE = `
   function caricaMacchinetta() {
     chiedi("GET", "/macchinetta").then(function (dati) {
       simboli = dati.simboli || [];
+      if (dati.file && dati.perFila) forma = { file: dati.file, perFila: dati.perFila };
       $("macchina").hidden = !dati.accesa;
       $("macchina-spenta").hidden = dati.accesa;
       $("cassetto-premi").hidden = !dati.accesa;
@@ -1501,12 +1901,9 @@ export const COPIONE = `
       io.puntate = dati.puntate;
       disegnaPuntate();
       disegnaPremi(dati.premi || []);
-      // A macchina ferma le caselle mostrano sei figurine a caso: una vetrina
+      // A macchina ferma le caselle mostrano figurine a caso: una vetrina
       // spenta non fa venire voglia di tirare.
-      disegnaCaselle([
-        unSimboloACaso(), unSimboloACaso(), unSimboloACaso(),
-        unSimboloACaso(), unSimboloACaso(), unSimboloACaso(),
-      ], "");
+      disegnaCaselle(tutteACaso(), "");
       $("macchina-esito").textContent = "";
     }).catch(function (e) { avviso(e.message, "male"); });
   }
@@ -1531,41 +1928,43 @@ export const COPIONE = `
     // Mentre si aspetta il PC le caselle scorrono: qualcosa deve muoversi
     // subito, se no il primo tocco sembra non aver fatto niente.
     var mescola = setInterval(function () {
-      disegnaCaselle([
-        unSimboloACaso(), unSimboloACaso(), unSimboloACaso(),
-        unSimboloACaso(), unSimboloACaso(), unSimboloACaso(),
-      ], "gira");
+      disegnaCaselle(tutteACaso(), "gira");
     }, 90);
 
     chiedi("POST", "/macchinetta", { puntata: puntata }).then(function (esito) {
       io.saldo = esito.saldo;
       disegnaSaldo(false);
+      var quante = esito.caselle.length;
+      var ultima = quante - 1;
       // Quali caselle hanno fatto la fila: servono ad accenderle alla fine.
       var vincenti = {};
       for (var f = 0; f < esito.file.length; f++) {
-        var da = esito.file[f].riga * 3;
-        vincenti[da] = true; vincenti[da + 1] = true; vincenti[da + 2] = true;
+        var da = esito.file[f].riga * forma.perFila;
+        for (var p = 0; p < forma.perFila; p++) vincenti[da + p] = true;
       }
 
-      var scoperte = [null, null, null, null, null, null];
+      var scoperte = [];
       var fermaUna = function (i) {
         scoperte[i] = esito.caselle[i];
         var h = "";
-        for (var k = 0; k < 6; k++) {
+        for (var k = 0; k < quante; k++) {
           h += scoperte[k]
-            ? casellaHtml(scoperte[k], vincenti[k] && i === 5 ? "vince" : "")
+            ? casellaHtml(scoperte[k], vincenti[k] && i === ultima ? "vince" : "")
             : casellaHtml(unSimboloACaso(), "gira");
         }
         $("macchina-rulli").innerHTML = h;
       };
 
-      for (var i = 0; i < 6; i++) {
+      // ⚠ Con nove caselle il passo si accorcia: a duecentossessanta
+      // millisecondi l'una il giro durava due secondi e mezzo, e chi tira
+      // cento volte in una sera li sente tutti.
+      for (var i = 0; i < quante; i++) {
         (function (quale) {
           orologiMacchina.push(setTimeout(function () {
             if (quale === 0) clearInterval(mescola);
             fermaUna(quale);
-            if (quale === 5) raccontaLaMacchinetta(esito);
-          }, 420 + quale * 260));
+            if (quale === ultima) raccontaLaMacchinetta(esito);
+          }, 380 + quale * 190));
         })(i);
       }
     }).catch(function (e) {
@@ -1589,7 +1988,7 @@ export const COPIONE = `
       scuoti();
       coriandoli(90, [s.colore, "#ffd166", "#ffffff"]);
       numeroVolante("+" + soldi(esito.vinto), "#ffd166");
-      $("macchina-esito").innerHTML = "SEI UGUALI · " + soldi(esito.vinto) +
+      $("macchina-esito").innerHTML = "TUTTO UGUALE · " + soldi(esito.vinto) +
         (esito.sbloccata
           ? " · <b>" + sicuro(esito.sbloccata.titolo) + "</b> e' tua"
           : " · ce l'avevi gia': pagata in lire");
@@ -1612,8 +2011,9 @@ export const COPIONE = `
       var s2 = scalinoDi(meglio.simbolo.grado);
       lampo(s2.colore);
       numeroVolante("+" + soldi(esito.vinto), s2.colore);
+      var dette = ["", "UNA FILA", "DUE FILE", "TRE FILE"];
       $("macchina-esito").innerHTML =
-        (esito.file.length > 1 ? "DUE FILE" : "TRE IN FILA") + " · " + soldi(esito.vinto) +
+        (dette[esito.file.length] || esito.file.length + " FILE") + " · " + soldi(esito.vinto) +
         " · " + sicuro(meglio.simbolo.titolo) +
         " <span style=\\"color:var(--spento)\\">di " + sicuro(meglio.simbolo.daNome) + "</span>";
       return;
@@ -1629,20 +2029,13 @@ export const COPIONE = `
     chiedi("GET", "/classifica").then(function (dati) {
       $("classifica").innerHTML = dati.righe.length
         ? dati.righe.map(function (r) {
-            var s = r.migliorGrado ? scalinoDi(r.migliorGrado) : null;
             return "<tr" + (r.io ? " class=\\"io\\"" : "") + ">" +
               "<td>" + sicuro(r.nome) + "</td>" +
               "<td>" + r.prese + "</td>" +
               "<td>" + r.collezione + "</td>" +
-              // La stessa pastiglia della carta: il grado si riconosce dal
-              // colore pieno, qui come li'.
-              "<td>" + (s
-                ? "<span class=\\"grado\\" style=\\"--g:" + s.colore + "\\">" +
-                  sicuro(s.nome) + "</span>"
-                : "—") + "</td>" +
               "<td>" + soldi(r.saldo) + "</td></tr>";
           }).join("")
-        : "<tr><td colspan=\\"5\\" class=\\"niente\\">Non ha ancora giocato nessuno.</td></tr>";
+        : "<tr><td colspan=\\"4\\" class=\\"niente\\">Non ha ancora giocato nessuno.</td></tr>";
     }).catch(function (e) { avviso(e.message, "male"); });
   }
 
@@ -2530,11 +2923,13 @@ export const COPIONE = `
     for (var j = 0; j < tasti.length; j++) {
       tasti[j].classList.toggle("viva", tasti[j].getAttribute("data-va") === dove);
     }
-    if (dove === "mie") caricaMie();
+    if (dove === "mie") { chiudiICassettiDiMie(); caricaMie(); }
     // ⚠ Si richiede ogni volta che si entra: il mazzo e' fatto dai pacchetti
     // chiusi, e nel frattempo chi comanda puo' averne chiuso uno.
     if (dove === "fortuna") caricaMacchinetta();
-    if (dove === "album") caricaAlbum();
+    // Si entra dalle bustine, non dall'ultimo pacchetto aperto ieri.
+    if (dove === "pacchetti") { pacchettoAperto = 0; caricaPacchetti(); }
+    if (dove === "inventario") caricaInventario();
     if (dove === "shop") caricaShop();
     if (dove === "casa") caricaClassifica();
     if (dove === "fila") caricaFila();
@@ -2641,26 +3036,26 @@ export const COPIONE = `
       return;
     }
 
-    // Quale pacchetto si guarda nell'album.
-    var pacco = chiudi("[data-pacchetto]");
+    // I pacchetti: comprarne uno (il tasto sulla bustina viene prima della
+    // bustina, che e' li' intorno), aprirne uno, tornare alle bustine.
+    var compraPacchetto = chiudi("[data-compra-pacco]");
+    if (compraPacchetto) {
+      compraPacco(Number(compraPacchetto.getAttribute("data-compra-pacco")), compraPacchetto);
+      return;
+    }
+    var pacco = chiudi("[data-apri-pacco]");
     if (pacco) {
-      serieAperta = Number(pacco.getAttribute("data-pacchetto"));
-      // ⚠ Il numero sta nell'indirizzo: una GET col corpo il browser non la
-      // manda proprio, e finche' ci stava non arrivava mai.
-      chiedi("GET", "/album/" + serieAperta).then(function (dati) {
-        serieAperta = dati.serie;
-        disegnaPacchetti(dati.pacchetti || []);
-        var quale = (dati.pacchetti || []).filter(function (p) {
-          return p.numero === dati.serie;
-        })[0];
-        $("album-stato").innerHTML = "<div class=\\"figurina\\"><b>" +
-          sicuro((quale && quale.nome) || ("Serie " + dati.serie)) + "</b> \u00b7 " +
-          (quale ? quale.quante + " figurine dentro \u00b7 " : "") +
-          "un pacchetto costa " + soldi(io.costi.pacchetto) + "</div>";
-        $("album-figurine").innerHTML = dati.figurine.length
-          ? dati.figurine.map(function (c) { return figurinaHtml(c); }).join("")
-          : "<div class=\\"niente\\">Ancora niente in questo pacchetto.</div>";
-      }).catch(function (e) { avviso(e.message, "male"); });
+      pacchettoAperto = Number(pacco.getAttribute("data-apri-pacco"));
+      caricaPacchetti();
+      return;
+    }
+    if (chiudi("[data-torna-pacchi]")) { pacchettoAperto = 0; caricaPacchetti(); return; }
+
+    // Una casella piena dell'inventario: si apre la figurina intera.
+    var casellaInv = chiudi("[data-inv]");
+    if (casellaInv) {
+      var cosaInv = invCose[casellaInv.getAttribute("data-inv")];
+      if (cosaInv) mostraFigurina(cosaInv);
       return;
     }
 
@@ -2822,7 +3217,6 @@ export const COPIONE = `
   $("gira").addEventListener("click", gira);
   $("manda").addEventListener("click", manda);
   $("tira").addEventListener("click", tiraLaMacchinetta);
-  $("compra").addEventListener("click", compraPacchetto);
   $("crea-pacchetto").addEventListener("click", creaIlPacchetto);
   $("saldo").addEventListener("click", function () {
     inEuro = !inEuro;
@@ -2860,7 +3254,8 @@ export const COPIONE = `
   // Sul telefono, tenendo premuto, il browser proporrebbe di copiare il testo:
   // qui la pressione lunga ha gia' un mestiere suo.
   document.addEventListener("contextmenu", function (e) {
-    if (e.target && e.target.closest && e.target.closest("[data-rullo], #prompt, .figurina")) {
+    if (e.target && e.target.closest &&
+        e.target.closest("[data-rullo], #prompt, .figurina, .busta, .carta, .cas")) {
       e.preventDefault();
     }
   });

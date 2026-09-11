@@ -13,12 +13,15 @@
  */
 
 import {
+  CASELLE,
   creaPacchetto,
   Deposito,
   facciaDi,
+  FILE,
   giraLaMacchinetta,
   mazzoMacchinetta,
   NienteDaFare,
+  PER_FILA,
   percheSpenta,
   PUNTATE,
   quantoPagaIlPieno,
@@ -152,7 +155,7 @@ prova("si gioca a cinquanta, cento o duecento, e non a quello che si vuole", () 
     const esito = giraLaMacchinetta(d, "pino", 50, dado(0.99));
     uguale(esito.vinto, 0, "col dado alto non esce niente");
     uguale(esito.saldo, prima - 50, "e la puntata se n'e' andata");
-    uguale(esito.caselle.length, 6, "sei caselle, sempre");
+    uguale(esito.caselle.length, CASELLE, "nove caselle, sempre");
   }),
 );
 
@@ -191,15 +194,16 @@ prova("le caselle dicono quello che dice il conto, sempre", () =>
 
     for (let i = 0; i < 400; i++) {
       const e = giraLaMacchinetta(d, "pino", 50, Math.random);
-      const sopra = e.caselle[0].id === e.caselle[1].id && e.caselle[1].id === e.caselle[2].id;
-      const sotto = e.caselle[3].id === e.caselle[4].id && e.caselle[4].id === e.caselle[5].id;
-      const tutte = sopra && sotto && e.caselle[0].id === e.caselle[3].id;
+      const righe = Array.from({ length: FILE }, (_, r) =>
+        e.caselle.slice(r * PER_FILA, (r + 1) * PER_FILA));
+      const piene = righe.map((f) => f.every((c) => c.id === f[0].id));
+      const tutte = e.caselle.every((c) => c.id === e.caselle[0].id);
 
-      uguale(e.pieno, tutte, "«pieno» deve voler dire sei caselle uguali");
+      uguale(e.pieno, tutte, "«pieno» deve voler dire tutto lo schermo uguale");
       // ⚠ Col pieno le file non si pagano a parte: sarebbe pagare due volte la
       // stessa cosa. Paga il superbonus, che vale gia' molto di piu'.
-      const attese = tutte ? 0 : (sopra ? 1 : 0) + (sotto ? 1 : 0);
-      uguale(e.file.length, attese, "le file pagate sono quelle che si vedono");
+      const attese = tutte ? [] : piene.map((p, r) => (p ? r : -1)).filter((r) => r >= 0);
+      uguale(e.file.map((f) => f.riga), attese, "le file pagate sono proprio quelle che si vedono");
       if (!e.pieno && !e.file.length) uguale(e.vinto, 0, "senza file non si paga niente");
     }
   }),
@@ -230,7 +234,8 @@ prova("una fila paga in volte la puntata, secondo il grado", () =>
      * file: si vince una fila sola.
      */
     const dentroUnaFila =
-      (QUANTO_ESCE.sei + QUANTO_ESCE.dueFile + QUANTO_ESCE.unaFila / 2) / 10_000;
+      (QUANTO_ESCE.pieno + QUANTO_ESCE.treFile + QUANTO_ESCE.dueFile + QUANTO_ESCE.unaFila / 2) /
+      10_000;
     const prima = d.conto("pino").saldo;
     const e = giraLaMacchinetta(d, "pino", 100, dado(dentroUnaFila, 0.1, 0.5, 0.9, 0.3));
     uguale(e.file.length, 1, "una fila, non due");
@@ -249,7 +254,7 @@ prova("una fila paga in volte la puntata, secondo il grado", () =>
  * premio e' la figurina, ed e' la terza strada per averne una (CONCETTI.md
  * § 11).
  */
-prova("sei uguali pagano il colpo grosso e sbloccano la figurina", () =>
+prova("tutto lo schermo uguale paga il colpo grosso e sblocca la figurina", () =>
   conCartella((file) => {
     const d = new Deposito(file);
     conUnPacchetto(d, 5, 600);
@@ -259,7 +264,8 @@ prova("sei uguali pagano il colpo grosso e sbloccano la figurina", () =>
     const prima = d.conto("pino").saldo;
     const e = giraLaMacchinetta(d, "pino", 200, pieno);
     uguale(e.pieno, true, "il dado basso e' il colpo grosso");
-    for (let i = 1; i < 6; i++) uguale(e.caselle[i].id, e.caselle[0].id, "tutte uguali");
+    uguale(e.caselle.length, CASELLE, "tutte e nove");
+    for (let i = 1; i < CASELLE; i++) uguale(e.caselle[i].id, e.caselle[0].id, "tutte uguali");
     vero(e.sbloccata !== null, "la figurina deve diventare tua");
     uguale(e.sbloccata.id, e.caselle[0].id);
     uguale(d.conto("pino").collezione.indexOf(e.sbloccata.id) >= 0, true, "ed e' in collezione");
@@ -294,13 +300,49 @@ prova("sei uguali pagano il colpo grosso e sbloccano la figurina", () =>
  * scritta: tredici giri su cento pagano qualcosa, e il pieno uno su duemila.
  */
 prova("si vince di rado, e il pieno quasi mai", () => {
-  const suDiecimila = QUANTO_ESCE.sei + QUANTO_ESCE.dueFile + QUANTO_ESCE.unaFila;
+  const suDiecimila =
+    QUANTO_ESCE.pieno + QUANTO_ESCE.treFile + QUANTO_ESCE.dueFile + QUANTO_ESCE.unaFila;
   vero(suDiecimila < 2000, "piu' di un giro su cinque che paga non e' una slot");
   vero(suDiecimila > 500, "e un giro che non paga mai si smette di tirare");
-  vero(QUANTO_ESCE.sei <= 10, "il pieno deve essere una cosa che si racconta");
-  vero(QUANTO_ESCE.sei < QUANTO_ESCE.dueFile, "e piu' raro delle due file");
+  vero(QUANTO_ESCE.pieno <= 10, "il pieno deve essere una cosa che si racconta");
+  vero(QUANTO_ESCE.pieno < QUANTO_ESCE.treFile, "e piu' raro delle tre file");
+  vero(QUANTO_ESCE.treFile < QUANTO_ESCE.dueFile, "che sono piu' rare di due");
   vero(QUANTO_ESCE.dueFile < QUANTO_ESCE.unaFila, "che sono piu' rare di una fila sola");
 });
+
+/**
+ * ⚠ **Tre file da tre**, dall'11 settembre 2026: «la slot Fortuna aggiungiamo
+ * un'altra riga, sempre stesso funzionamento».
+ */
+prova("la macchina ha tre file da tre", () => {
+  uguale([FILE, PER_FILA, CASELLE], [3, 3, 9]);
+});
+
+/**
+ * ⚠ **Tre file vinte non sono lo schermo pieno**, nemmeno con due figurine
+ * sole nel mazzo.
+ *
+ * E' il caso in cui un arrotondamento regalerebbe il colpo grosso: se la terza
+ * fila pescasse la stessa figurina delle altre due, le nove caselle sarebbero
+ * uguali, e una fetta da uno su mille pagherebbe come quella da uno su duemila
+ * — con la figurina in regalo.
+ */
+prova("tre file pagano la somma, e non diventano mai il pieno", () =>
+  conCartella((file) => {
+    const d = new Deposito(file);
+    conUnPacchetto(d, 2, 600);
+    // Dentro alla fetta delle tre file; il resto del dado a un decimo, che con
+    // due figurine dello stesso grado pesca sempre la prima.
+    const dentroTreFile = (QUANTO_ESCE.pieno + QUANTO_ESCE.treFile / 2) / 10_000;
+    for (let i = 0; i < 20; i++) {
+      const e = giraLaMacchinetta(d, "pino", 100, dado(dentroTreFile, 0.1));
+      uguale(e.file.length, 3, "tre file");
+      uguale(e.pieno, false, "ma non il pieno");
+      vero(e.caselle.some((c) => c.id !== e.caselle[0].id), "sullo schermo ce n'e' una diversa");
+      uguale(e.vinto, e.file.reduce((s, f) => s + f.lire, 0), "e paga la somma delle file");
+    }
+  }),
+);
 
 /**
  * ⚠ **La macchinetta e' un rubinetto che porta via, non che da'.**
@@ -321,4 +363,7 @@ prova("tirando tanto si perde: la fortuna costa", () =>
   }),
 );
 
-tirandoLeSomme("la macchinetta");
+// ⚠ Col numero di uscita, come le altre prove. Fino all'11 settembre 2026 qui
+// mancava: una prova della macchinetta che cadeva lo scriveva a schermo, e
+// «pnpm run prova» restava verde lo stesso.
+process.exit(tirandoLeSomme("la macchinetta"));

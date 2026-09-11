@@ -14,6 +14,17 @@
  * > superbonus in lire sempre contenuto, e in piu' l'immagine viene sbloccata e
  * > aggiunta nell'inventario.»
  *
+ * ⚠ **Tre file da tre, dall'11 settembre 2026.** Il giorno dopo averla vista:
+ *
+ * > «La slot Fortuna aggiungiamo un'altra riga, sempre stesso funzionamento: si
+ * > vince quando o una riga e' completa o quando tutto lo schermo ha la stessa
+ * > immagine, in quel caso si sblocca pure l'immagine.»
+ *
+ * Quindi nove caselle. Una fila completa paga come prima, piu' file si sommano,
+ * e il colpo grosso adesso e' **tutto lo schermo** uguale, non sei caselle.
+ * Quanto spesso succede non e' cambiato: e' scritto in `QUANTO_ESCE`, non viene
+ * dal numero di caselle.
+ *
  * ⚠ **Non e' l'altra slot con meno rulli.** Sono due macchine con due mestieri
  * (CONCETTI.md § 11): davanti a `DaProdSlot` si **monta** una cosa — dodici
  * rulli, si blocca, si manda a controllare, e paga esperienza. Qui non si monta
@@ -43,6 +54,15 @@ import type { Collezionabile, DallaLibreria, Grado } from "./tipi";
 export const PUNTATE = [50, 100, 200] as const;
 
 /**
+ * La forma della macchina: tre file da tre. La pagina la legge da qui — il PC
+ * le manda insieme al mazzo — cosi' il giorno che si aggiunge una fila non ci
+ * sono due nove da cambiare.
+ */
+export const FILE = 3;
+export const PER_FILA = 3;
+export const CASELLE = FILE * PER_FILA;
+
+/**
  * ⚠ **Quanto spesso si vince, su diecimila giri.** E' una scelta, non un conto.
  *
  * Sarebbe venuto da se' pescando sei simboli a caso e guardando cosa esce — ed
@@ -55,11 +75,18 @@ export const PUNTATE = [50, 100, 200] as const;
  *
  * «Le possibilita' di vincere sono basse»: tredici giri su cento pagano
  * qualcosa, e quasi sempre poco.
+ *
+ * ⚠ **Con la terza fila le fette sono rimaste quelle**, piu' una sottile per le
+ * tre file insieme. Nove caselle pescate a caso avrebbero fatto vincere piu'
+ * spesso — tre possibilita' di fila invece di due — e la macchina avrebbe
+ * cambiato mestiere senza che nessuno l'avesse deciso.
  */
 export const QUANTO_ESCE = {
-  /** Tutte e sei uguali: una volta ogni duemila giri. E' il colpo della vita. */
-  sei: 5,
-  /** Tutte e due le file, con due figurine diverse: poco piu' di una su cento. */
+  /** Tutto lo schermo uguale: una volta ogni duemila giri. E' il colpo della vita. */
+  pieno: 5,
+  /** Tutte e tre le file, con figurine non tutte uguali: uno ogni mille. */
+  treFile: 10,
+  /** Due file su tre: poco piu' di una su cento. */
   dueFile: 120,
   /** Una fila sola: dodici su cento. E' quello che tiene in piedi la serata. */
   unaFila: 1200,
@@ -181,9 +208,9 @@ export function perche(deposito: Deposito, quanti: number): string {
   return "";
 }
 
-/** Una fila vinta: quale delle due, con che figurina, e quanto paga. */
+/** Una fila vinta: quale delle tre, con che figurina, e quanto paga. */
 export interface FilaVinta {
-  /** 0 e' quella sopra, 1 quella sotto. */
+  /** 0 e' quella in alto, 2 quella in basso. */
   riga: number;
   simbolo: SimboloMacchinetta;
   lire: number;
@@ -191,10 +218,10 @@ export interface FilaVinta {
 
 export interface EsitoMacchinetta {
   puntata: number;
-  /** Le sei caselle, in ordine: le prime tre sono la fila di sopra. */
+  /** Le nove caselle, in ordine: tre per fila, dall'alto. */
   caselle: SimboloMacchinetta[];
   file: FilaVinta[];
-  /** Vero quando tutte e sei sono la stessa: il colpo grosso. */
+  /** Vero quando tutto lo schermo e' la stessa figurina: il colpo grosso. */
   pieno: boolean;
   /** Quante lire sono entrate in tutto, premi e doppione compresi. */
   vinto: number;
@@ -235,6 +262,15 @@ function trePerdenti(quali: SimboloMacchinetta[], caso: Caso): SimboloMacchinett
   return tre;
 }
 
+/** Quante file vincono, secondo il dado: le fette di `QUANTO_ESCE`, dalla piu' rara. */
+function fileDelDado(dado: number): number {
+  let soglia = QUANTO_ESCE.pieno;
+  if (dado <= (soglia += QUANTO_ESCE.treFile)) return 3;
+  if (dado <= (soglia += QUANTO_ESCE.dueFile)) return 2;
+  if (dado <= (soglia += QUANTO_ESCE.unaFila)) return 1;
+  return 0;
+}
+
 /**
  * Un giro di macchinetta.
  *
@@ -264,33 +300,39 @@ export function gira(
   /* ---------------------------------------------- cosa deve succedere, e poi */
 
   const dado = fra(1, SU, caso);
-  const pieno = dado <= QUANTO_ESCE.sei;
-  const dueFile = !pieno && dado <= QUANTO_ESCE.sei + QUANTO_ESCE.dueFile;
-  const unaFila = !pieno && !dueFile && dado <= QUANTO_ESCE.sei + QUANTO_ESCE.dueFile + QUANTO_ESCE.unaFila;
+  const pieno = dado <= QUANTO_ESCE.pieno;
+  const quanteFile = pieno ? 0 : fileDelDado(dado);
 
-  let caselle: SimboloMacchinetta[];
+  let caselle: SimboloMacchinetta[] = [];
   const file: FilaVinta[] = [];
 
   if (pieno) {
     const uno = unaACaso(quali, caso);
-    caselle = [uno, uno, uno, uno, uno, uno];
-  } else if (dueFile) {
-    const sopra = unaACaso(quali, caso);
-    // Diversa da quella sopra: se fosse la stessa sarebbero sei uguali, cioe'
-    // il colpo grosso regalato da un arrotondamento.
-    const sotto = unaACaso(quali, caso, sopra);
-    caselle = [sopra, sopra, sopra, sotto, sotto, sotto];
-    file.push({ riga: 0, simbolo: sopra, lire: puntata * quantoPagaUnaFila(sopra.grado) });
-    file.push({ riga: 1, simbolo: sotto, lire: puntata * quantoPagaUnaFila(sotto.grado) });
-  } else if (unaFila) {
-    const quale = fra(0, 1, caso);
-    const vince = unaACaso(quali, caso);
-    const perde = trePerdenti(quali, caso);
-    const tris = [vince, vince, vince];
-    caselle = quale === 0 ? tris.concat(perde) : perde.concat(tris);
-    file.push({ riga: quale, simbolo: vince, lire: puntata * quantoPagaUnaFila(vince.grado) });
+    caselle = Array.from({ length: CASELLE }, () => uno);
   } else {
-    caselle = trePerdenti(quali, caso).concat(trePerdenti(quali, caso));
+    // Quali file vincono: si mescolano le tre e si prendono le prime.
+    const ordine = [0, 1, 2];
+    for (let i = ordine.length - 1; i > 0; i--) {
+      const j = fra(0, i, caso);
+      [ordine[i], ordine[j]] = [ordine[j]!, ordine[i]!];
+    }
+    const vincono = new Set(ordine.slice(0, quanteFile));
+    const vinti: SimboloMacchinetta[] = [];
+    for (let riga = 0; riga < FILE; riga++) {
+      if (!vincono.has(riga)) {
+        caselle = caselle.concat(trePerdenti(quali, caso));
+        continue;
+      }
+      // ⚠ Con tre file vinte, l'ultima non puo' essere uguale alle altre due:
+      // sarebbe lo schermo pieno, cioe' il colpo grosso regalato da un
+      // arrotondamento. Con una fila perdente in mezzo il rischio non c'e'.
+      const tutteUguali =
+        vinti.length === FILE - 1 && vinti.every((s) => s.id === vinti[0]!.id);
+      const s = unaACaso(quali, caso, tutteUguali ? vinti[0] : undefined);
+      vinti.push(s);
+      caselle = caselle.concat([s, s, s]);
+      file.push({ riga, simbolo: s, lire: puntata * quantoPagaUnaFila(s.grado) });
+    }
   }
 
   /* ------------------------------------------------------- quanto si porta a casa */

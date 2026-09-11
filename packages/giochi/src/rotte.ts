@@ -24,7 +24,9 @@ import {
   TAGLI_BONUS,
   classifica,
   compra,
+  fuoriDaiPacchetti,
   gradoDiFigurina,
+  prezzoNelloShop,
   MAX_ALLEGATI,
   MAX_PROVE,
   mettiInVetrina,
@@ -42,9 +44,13 @@ import {
   tira,
 } from "./banco";
 import type { Deposito } from "./deposito";
+import { inventario } from "./inventario";
 import {
+  facciaDi,
+  FILE,
   gira as giraLaMacchinetta,
   mazzoMacchinetta,
+  PER_FILA,
   perche as percheSpenta,
   PUNTATE,
   quantoPagaIlPieno,
@@ -198,7 +204,20 @@ function vestita(c: Collezionabile, contorno: Contorno, scoperta: boolean) {
   const grado = gradoDiFigurina(c);
   const dove = (l?: { id: string; url?: string }) =>
     !l ? "" : (l.url ?? (contorno.indirizzoLibreria ? (contorno.indirizzoLibreria(l.id) ?? "") : ""));
+  const faccia = facciaDi(c);
   return {
+    /**
+     * ⚠ **La faccia: l'immagine con cui una figurina si riconosce.** La regola
+     * e' quella della macchinetta (`facciaDi`): il primo allegato che e' una
+     * foto, se no la copertina, se no il file stesso. Da quando le figurine si
+     * guardano anche nell'Inventario e nella busta che si strappa (11
+     * settembre 2026), la dice il PC una volta sola invece di rifarla la pagina
+     * in tre posti.
+     *
+     * Il file stesso si mostra solo a chi ce l'ha: e' la stessa regola di
+     * `dove`, qui sotto. Una foto che **e'** la figurina non si regala guardandola.
+     */
+    faccia: faccia && (scoperta || faccia !== c.libreria) ? dove(faccia) : "",
     id: c.id,
     tipo: c.tipo,
     titolo: c.titolo,
@@ -418,7 +437,6 @@ export function rispondi(
     }
 
     if (metodo === "GET" && percorso === "/mie") {
-      const conto = deposito.conto(chi.id);
       const mie = deposito
         .collezionabili()
         .filter((c) => c.daChi === chi.id)
@@ -437,10 +455,9 @@ export function rispondi(
        */
       const mandate = mie.filter((c) => c.stato !== "buttata").map((c) => vestita(c, contorno, true));
       const perdenti = mie.filter((c) => c.stato === "buttata").map((c) => vestita(c, contorno, true));
-      const collezione = deposito
-        .magazzino()
-        .filter((c) => conto.collezione.includes(c.id))
-        .map((c) => vestita(c, contorno, true));
+      // ⚠ La collezione non passa piu' di qui: sta in `/inventario`, con i
+      // buchi di quello che manca (11 settembre 2026). Due posti che mostrano
+      // la stessa collezione sono due posti che un giorno ne mostrano due.
       /**
        * ⚠ **I tre numeri di chi gioca.** Chiesti il 10 settembre 2026: «un
        * counter con il totale dell'utente: il guadagno, e quanti prompt sono
@@ -463,7 +480,7 @@ export function rispondi(
         perdenti: perdenti.length,
         inAttesa: mie.filter((c) => c.stato === "in-attesa").length,
       };
-      return OK({ mandate, perdenti, collezione, conta });
+      return OK({ mandate, perdenti, conta });
     }
 
     /* ------------------------------------------------------------- l'album */
@@ -479,34 +496,85 @@ export function rispondi(
      */
     if (metodo === "GET" && (percorso === "/album" || percorso.startsWith("/album/"))) {
       const conto = deposito.conto(chi.id);
-      const chiuse = serieChiuse(deposito);
-      const chiesto = percorso.startsWith("/album/")
-        ? Number(percorso.slice("/album/".length))
-        : numero(corpo["serie"], chiuse || 1);
-      const quale = Math.max(
-        1,
-        Math.min(chiuse || 1, Number.isFinite(chiesto) ? chiesto : chiuse || 1),
-      );
-      const dentro = serie(deposito, quale).map((c) =>
-        vestita(c, contorno, conto.collezione.includes(c.id) || chi.admin),
-      );
-      return OK({
-        serie: quale,
-        chiuse,
+      const imp = deposito.impostazioni();
+      const tua = (c: Collezionabile) => conto.collezione.includes(c.id);
+      const fuori = fuoriDaiPacchetti(deposito);
+      const elenco = {
+        chiuse: serieChiuse(deposito),
+        costo: imp.costoPacchetto,
+        perPacchetto: imp.perPacchetto,
         /**
          * ⚠ **I pacchetti hanno un nome e un numero di figurine**, dal 12
          * settembre 2026: da quando li chiude una persona quando vuole, «serie
          * 3» non vuol dire piu' «dalla 201 alla 300» e quanto e' grossa non si
-         * ricava dal numero.
+         * ricava dal numero. E dall'11 dicono anche **quante ne hai**: e' la
+         * barra sulla bustina.
          */
-        pacchetti: deposito.pacchetti().map((p) => ({
-          numero: p.numero,
-          nome: p.nome ?? "",
-          quante: p.dentro.length,
-          quando: p.quando,
-        })),
-        figurine: dentro,
+        pacchetti: deposito.pacchetti().map((p) => {
+          const dentro = serie(deposito, p.numero);
+          return {
+            numero: p.numero,
+            nome: p.nome ?? "",
+            quante: dentro.length,
+            tue: dentro.filter(tua).length,
+            quando: p.quando,
+          };
+        }),
+        /**
+         * ⚠ **La tendina: le cose prese che non stanno ancora in un pacchetto.**
+         * Chiesto l'11 settembre 2026: «nel menu mostriamo solo gli elementi che
+         * non fanno parte di un pack». Sono quelle che finiscono nel prossimo, e
+         * vale la stessa regola del pacchetto aperto: chi comanda le vede tutte,
+         * chi gioca vede le sue e sa quante altre ne arrivano.
+         */
+        fuori: fuori.filter((c) => chi.admin || tua(c)).map((c) => vestita(c, contorno, true)),
+        fuoriAltre: chi.admin ? 0 : fuori.filter((c) => !tua(c)).length,
         magazzino: statoMagazzino(deposito),
+      };
+      if (percorso === "/album") return OK(elenco);
+
+      /**
+       * ⚠ **Un pacchetto aperto: chi comanda lo vede intero, chi gioca vede le
+       * sue.** Chiesto l'11 settembre 2026: «se clicco su un pack mi mostra il
+       * pacchetto: se sono admin lo mostra completo, se sono utente mostra solo
+       * gli item sbloccati».
+       *
+       * Quelle che non hai non arrivano proprio, nemmeno coperte: stanno
+       * nell'Inventario come buchi, che e' il posto fatto per guardare quello
+       * che manca. Qui arriva solo quante sono.
+       *
+       * ⚠ Il numero sta nell'indirizzo, `GET /album/3`: una GET col corpo il
+       * browser non la manda nemmeno, e finche' ci stava non arrivava mai.
+       */
+      const quale = Number(percorso.slice("/album/".length));
+      if (!deposito.pacchetti().some((p) => p.numero === quale)) {
+        return NO(404, "Questo pacchetto non c'e'.");
+      }
+      const dentro = serie(deposito, quale);
+      const figurine = dentro.filter((c) => chi.admin || tua(c)).map((c) => vestita(c, contorno, true));
+      return OK({ ...elenco, serie: quale, figurine, nascoste: dentro.length - figurine.length });
+    }
+
+    /**
+     * ⚠ **L'inventario di chi chiede: tutto quello che c'e' da avere, con i
+     * buchi.** Deciso l'11 settembre 2026, vedi `inventario.ts`.
+     *
+     * Una casella piena porta la figurina vestita; un buco porta il numero e il
+     * grado, e basta. Il titolo di una che non hai non esce da qui.
+     */
+    if (metodo === "GET" && percorso === "/inventario") {
+      const inv = inventario(deposito, chi.id);
+      return OK({
+        ...inv,
+        pacchetti: inv.pacchetti.map((p) => ({
+          ...p,
+          caselle: p.caselle.map((k) => ({
+            numero: k.numero,
+            grado: k.grado,
+            cosa: k.cosa ? vestita(k.cosa, contorno, true) : null,
+          })),
+        })),
+        fuori: inv.fuori.map((c) => vestita(c, contorno, true)),
       });
     }
 
@@ -570,6 +638,14 @@ export function rispondi(
         pacchetti: serieChiuse(deposito),
         puntate: PUNTATE,
         /**
+         * La forma della macchina: tre file da tre, dall'11 settembre 2026.
+         * La dice il PC perche' e' il PC che riempie le caselle: una pagina che
+         * disegna sei caselle mentre ne arrivano nove mostra una slot che non
+         * e' quella su cui si sta giocando.
+         */
+        file: FILE,
+        perFila: PER_FILA,
+        /**
          * Quanto paga ogni grado, in volte la puntata. Lo dice il PC perche' e'
          * il PC che paga: la pagina lo scrive sulla tabellina dei premi, e due
          * tabelline che divergono sono una macchinetta che mente.
@@ -605,12 +681,32 @@ export function rispondi(
 
     if (metodo === "GET" && percorso === "/vetrina") {
       const conto = deposito.conto(chi.id);
+      const tua = (c: Collezionabile) => conto.collezione.includes(c.id);
+      // Il cartellino lo scrive la stessa funzione che poi fa pagare: un prezzo
+      // letto in un posto e incassato da un altro e' un prezzo che un giorno
+      // non torna.
+      const inVendita = (c: Collezionabile) => ({
+        ...vestita(c, contorno, tua(c) || chi.admin),
+        mia: tua(c),
+        costo: prezzoNelloShop(deposito, c) ?? 0,
+      });
       return OK({
-        roba: vetrina(deposito).map((c) => ({
-          ...vestita(c, contorno, conto.collezione.includes(c.id) || chi.admin),
-          mia: conto.collezione.includes(c.id),
-          costo: c.prezzoVetrina ?? 0,
-        })),
+        roba: vetrina(deposito).map(inVendita),
+        /**
+         * ⚠ **E i pacchetti chiusi, figurina per figurina.** Deciso l'11
+         * settembre 2026 (#109): «nello shop i prezzi sono molto piu' alti; i
+         * pacchetti costano poco ma la possibilita' di trovare quell'item e'
+         * molto bassa». Si sceglie quella che si vuole, e si paga caro —
+         * `prezzoDaPacchetto` nel banco.
+         */
+        pacchetti: deposito
+          .pacchetti()
+          .map((p) => ({
+            numero: p.numero,
+            nome: p.nome ?? "",
+            roba: serie(deposito, p.numero).map(inVendita),
+          }))
+          .filter((p) => p.roba.length > 0),
       });
     }
 

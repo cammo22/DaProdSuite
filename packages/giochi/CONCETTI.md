@@ -694,8 +694,34 @@ chiesto. Com'e' fatta sta qui sotto, al § 11-bis.
 Si sbloccano anche **giocando**: ogni tanto un giro fortunato ne regala una.
 
 Una combinazione sbloccata e' **tua**: sta nella tua collezione, la vedi intera,
-la puoi copiare e la puoi mandare a produrre. Una non sbloccata si vede coperta,
-col solo prezzo — cosi' si sa cosa si sta cercando.
+la puoi copiare e la puoi mandare a produrre.
+
+⚠ **Una che non hai, dall'11 settembre 2026, si vede in un posto solo per
+volta, e in modo diverso:**
+
+| Dove | Cosa si vede di una che non hai |
+|---|---|
+| nel pacchetto aperto | **niente**: chi gioca trova solo le sue, e sa quante altre ci sono |
+| nell'Inventario | un **buco**, col numero e il grado: si sa cosa si sta cercando, non cos'e' |
+| nello shop | la **faccia** e il prezzo: uno deve guardare cosa compra, il prompt no |
+
+Chi comanda vede tutto dappertutto: le deve poter controllare.
+
+### ⚠ La scheda si chiama «Pacchetti», e un pacchetto si strappa
+
+Fino all'11 settembre 2026 si chiamava «Album» e mostrava tutte le figurine di
+un pacchetto, coperte, una sotto l'altra. Parole sue: «cambiamo album in
+Pacchetti, e mettiamo anche li' un menu a tendina per nascondere gli elementi a
+schermo». Adesso ogni pacchetto e' una **bustina** con la barra di quante ne
+hai: si tocca e si apre. In fondo c'e' la tendina con le cose prese che non
+stanno ancora in nessun pacchetto — quelle che finiscono nel prossimo — ed e'
+li' che chi comanda lo chiude.
+
+E un pacchetto comprato **si strappa col dito**: «magari fai uno slide con il
+dito, tipo per tagliare e aprire il pacchetto, e poi si vede cosa esce». La busta
+si apre a tutto schermo, si passa il dito sulla riga tratteggiata, e le figurine
+escono coperte e si girano una alla volta. Cosa c'e' dentro l'ha gia' deciso il
+PC quando si e' pagato (§ 3): la scena non cambia niente.
 
 ### Non solo prompt: **tutto** quello che la suite fa puo' diventare una figurina
 
@@ -722,10 +748,10 @@ La porta si chiama `manda-dalla-libreria`, ed e' pensata per essere aperta da
 **un tasto nella galleria della suite** — «mandala in sala giochi» — non dalla
 pagina della slot.
 
-## 11-bis. La macchinetta: sei rulli, due file da tre
+## 11-bis. La macchinetta: tre file da tre
 
-Chiesta il 12 settembre 2026, ed e' **la slot dei pacchetti** del paragrafo qui
-sopra, fatta:
+Chiesta il 12 settembre 2026 con due file, ed e' **la slot dei pacchetti** del
+paragrafo qui sopra, fatta:
 
 > «Aggiungiamo la slot dove ci saranno 6 rulli, 3 per fila, che funziona come una
 > slot classica. Girandola puoi inserire se giocare a 50 lire, 100 lire o 200
@@ -737,6 +763,13 @@ sopra, fatta:
 > far uscire 6 immagini totali tutte uguali allora vince un superbonus in lire
 > sempre contenuto e in piu' l'immagine viene sbloccata e aggiunta
 > nell'inventario.»
+
+⚠ **La terza fila, l'11 settembre 2026**: «aggiungiamo un'altra riga, sempre
+stesso funzionamento: si vince quando o una riga e' completa o quando tutto lo
+schermo ha la stessa immagine, in quel caso si sblocca pure l'immagine». Quindi
+nove caselle: una fila completa paga come prima, piu' file si sommano, e il
+colpo grosso e' **tutto lo schermo** uguale. Quanto spesso si vince non si e'
+mosso — vedi qui sotto — perche' non viene dal numero di caselle.
 
 ⚠ **Non e' l'altra slot con meno rulli: sono due mestieri.** Davanti a
 `DaProdSlot` si **monta** una cosa — dodici rulli, si blocca, si manda a
@@ -765,9 +798,14 @@ quattro volte chi punta cinquanta — e rischia quattro volte tanto.
 
 | Cosa esce | Quanto | Quanto spesso |
 |---|---|---|
-| tre in fila | la puntata **×2** (Basic) fino a **×13** (Ethernal) | 12 giri su 100 |
-| tutte e due le file | i due premi sommati | poco piu' di 1 su 100 |
-| **sei uguali** | la puntata **×40** fino a **×150**, e **la figurina e' tua** | 1 giro su 2.000 |
+| una fila | la puntata **×2** (Basic) fino a **×13** (Ethernal) | 12 giri su 100 |
+| due file | i due premi sommati | poco piu' di 1 su 100 |
+| tre file, non tutte uguali | i tre premi sommati | 1 giro su 1.000 |
+| **tutto lo schermo uguale** | la puntata **×40** fino a **×150**, e **la figurina e' tua** | 1 giro su 2.000 |
+
+⚠ **Tre file vinte non sono mai lo schermo pieno.** Se la terza pescasse la
+stessa figurina delle altre due, le nove caselle sarebbero uguali: il colpo
+grosso regalato da un arrotondamento. La terza, in quel caso, e' diversa.
 
 ⚠ **Quanto spesso si vince e' una scelta, non un conto** — la stessa regola dei
 gradi sui rulli (§ 7). Se si pescassero sei simboli a caso e si guardasse cosa
@@ -826,10 +864,28 @@ Quindi due cose in vendita, non una:
 E' la faccia opposta della slot dei pacchetti, e le due si tengono in piedi a
 vicenda: li' spendi poco e speri, qui spendi tanto e sei sicuro.
 
-⚠ **Quanto piu' alto e' ancora da decidere**, e non e' un dettaglio: se un item
-scelto costa piu' di quanto si guadagna inventandone tre, nessuno lo compra e la
-funzione non esiste. Il numero si sceglie guardando quanto rende una
-combinazione presa, non a occhio.
+⚠ **Quanto piu' alto, deciso l'11 settembre 2026**: «nello shop i prezzi sono
+molto piu' alti. I pacchetti costano poco, ma la possibilita' di trovare
+quell'item e' molto bassa, tipo quelle macchinette col braccio robotico dove non
+si vince quasi mai».
+
+La regola in una riga: **il doppio della vetrina, e mai meno di dieci
+pacchetti.** Con la stessa cifra compri cinquanta figurine a caso, oppure quella.
+
+| Grado | In vetrina | Scelta da un pacchetto |
+|---|---|---|
+| da Basic ad Arcane | da 250 a 24.000 £ | **50.000 £** |
+| Unique | 72.000 £ | 144.000 £ |
+| Mythic | 800.000 £ | 1.600.000 £ |
+| Ethernal | 1.360.000 £ | **2.720.000 £** (1.405 €) |
+
+La cima e' guardata: un Ethernal scelto di fatto non si compra, ed e' giusto — e'
+la figurina che deve cadere, non comparire in tasca. I due numeri stanno in
+`VOLTE_LA_VETRINA` e `PACCHETTI_DI_PAVIMENTO`, nel banco.
+
+⚠ **Se una figurina e' anche in vetrina, vale il prezzo della vetrina**: e' la
+decisione di una persona, e batte la regola. Il cartellino e la cassa leggono lo
+stesso numero, da una funzione sola (`prezzoNelloShop`).
 
 Lo stesso grado di vetrina dice anche **quanto raramente quella figurina cade
 da un pacchetto**: e' un numero solo per due cose, non due numeri che un giorno
@@ -900,18 +956,43 @@ Le letture che funzionano sono due, e sono **due giochi diversi**:
   accettato. Finite per definizione — sono quelle che esistono — e crescono man
   mano che la gente inventa. E' quello che l'album fa gia' oggi.
 
-Probabilmente si fanno tutte e due, come due schede: le caselle sono quello che
-raccogli **giocando**, le combinazioni quello che raccogli **inventando e
-comprando**. Ma la scelta non e' ancora stata fatta — vedi § 17.
+### ⚠ Deciso l'11 settembre 2026: le combinazioni prese
+
+> «Manca un inventario dove vedere tutti i collezionabili nascosti, e quando si
+> sbloccano compaiono. Molto importante l'inventario per ogni utente e i
+> progressi: voglio una bella page dedicata.»
+
+Quindi la seconda lettura, e in una scheda sua: **Inventario**. Dentro ci sono
+tutte le figurine dei pacchetti chiusi. Quelle che hai si guardano e si aprono
+intere; quelle che mancano sono **buchi**, col numero e il grado — che ti manca
+un Mythic lo devi sapere, cosa sia no. Quelle arrivate dall'ultima volta si
+accendono.
+
+Sopra, i progressi: quante ne hai su quante, in percentuale, per grado e per
+pacchetto. E gli **obiettivi**, che non li scrive nessuno: vengono dai pacchetti
+— completarne uno, il primo di ogni grado, dieci figurine, cinquanta. Una lista
+scritta a mano il giorno che si chiude un pacchetto nuovo non lo sa.
+
+⚠ **Contano solo le figurine dei pacchetti chiusi.** Quelle prese e non ancora
+impacchettate non sono buchi: non si possono avere da nessuna parte, e un buco
+che non si puo' riempire fa smettere di giocare. Se una e' gia' tua — l'hai
+inventata, o riscoperta — si vede a parte, «fuori dai pacchetti».
+
+La collezione che stava in fondo a Mie adesso sta qui: un posto solo, non due.
+
+Le **caselle dei pezzi** — la prima lettura — restano un'idea per dopo.
 
 ## 14. La classifica di casa
 
 Con le facce e i nomi di DaProd. I numeri che si guardano:
 
 - **quante combinazioni gli hanno preso** — e' quella che conta;
-- quante ne ha in collezione;
-- il colpo piu' grosso (una vincita sola);
+- quante figurine ha;
 - quanto ha in tasca.
+
+⚠ **Il «Colpo» se n'e' andato l'11 settembre 2026**: «togliamo la statistica
+colpo». Sotto quel titolo c'era il grado migliore uscito, cioe' due nomi per un
+numero solo, e non decide piu' nemmeno i pari merito. Resta scritto nel conto.
 
 Non si ordina per saldo: il saldo lo alza chi gioca di piu', e «chi ha giocato
 di piu'» non e' una classifica, e' un contatore.
@@ -950,11 +1031,6 @@ di piu'» non e' una classifica, e' un contatore.
   sono cinquanta giri, e per un pacchetto (5.000) servono dieci combinazioni
   buone o un regalo. Se all'inizio sembra troppo stretto si alza — e' una riga.
 
-- ⚠ **L'inventario: le caselle, le combinazioni, o tutte e due?** E' la domanda
-  del § 13-bis, ed e' la piu' grossa aperta adesso: la prima strada e' un pezzo
-  di lavoro suo e cambia cosa vuol dire girare.
-- **Quanto costa un item scelto nel negozio** (§ 12): il moltiplicatore si
-  sceglie guardando quanto rende una combinazione presa.
 - **La slot dei pacchetti costa lire come l'altra, o ha un suo prezzo?** E rende
   esperienza anche lei?
 - **Cento e' il numero giusto per una serie?** Con poche persone che giocano,

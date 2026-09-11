@@ -26,6 +26,7 @@ import { createServer } from "node:http";
 import { mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { deflateSync } from "node:zlib";
 import { Deposito, paginaGiochi, rispondi } from "../dist/index.js";
 
 const QUI = dirname(fileURLToPath(import.meta.url));
@@ -114,6 +115,79 @@ function quadratoFinto(n, larga = 320, alta = 240) {
   return "data:image/svg+xml;utf8," + encodeURIComponent(svg);
 }
 
+/**
+ * ⚠ **Una foto vera, grande come quelle della galleria.**
+ *
+ * Detto l'11 settembre 2026: «in attacca una cosa dalla suite le immagini sono
+ * sempre una sopra l'altra». Qui non si vedeva, e il motivo e' il solito: il
+ * banco aveva solo quadrati SVG da trecento pixel con la misura scritta sopra,
+ * mentre nella galleria vera una foto e' un PNG da mille e passa, e il suo
+ * francobollo **e' la foto stessa**. Un banco di prova che non sa produrre la
+ * cosa che si rompe non e' un banco di prova.
+ *
+ * Il PNG si fa qui a mano — righe di pixel, zlib, e il CRC di ogni pezzo —
+ * perche' il banco non scarica niente e non si porta dietro librerie.
+ */
+const TABELLA_CRC = (() => {
+  const t = new Uint32Array(256);
+  for (let n = 0; n < 256; n++) {
+    let c = n;
+    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+    t[n] = c >>> 0;
+  }
+  return t;
+})();
+
+function crc32(dati) {
+  let c = 0xffffffff;
+  for (const b of dati) c = TABELLA_CRC[(c ^ b) & 0xff] ^ (c >>> 8);
+  return (c ^ 0xffffffff) >>> 0;
+}
+
+function pezzoPng(tipo, dati) {
+  const lunga = Buffer.alloc(4);
+  lunga.writeUInt32BE(dati.length);
+  const dentro = Buffer.concat([Buffer.from(tipo, "ascii"), dati]);
+  const crc = Buffer.alloc(4);
+  crc.writeUInt32BE(crc32(dentro));
+  return Buffer.concat([lunga, dentro, crc]);
+}
+
+const fotoFatte = new Map();
+function fotoFinta(n, larga, alta) {
+  const chiave = n + "-" + larga + "x" + alta;
+  if (fotoFatte.has(chiave)) return fotoFatte.get(chiave);
+  const colori = [[92, 200, 255], [255, 111, 181], [255, 209, 102], [127, 209, 168]];
+  const [r, g, b] = colori[n % colori.length];
+  const righe = [];
+  for (let y = 0; y < alta; y++) {
+    // Il primo byte di ogni riga e' il filtro: zero, cioe' nessuno.
+    const riga = Buffer.alloc(1 + larga * 3);
+    // Strisce larghe, cosi' si vede se la foto e' tagliata o schiacciata.
+    const f = Math.floor(y / 96) % 2 === 0 ? 1 : 0.62;
+    for (let x = 0; x < larga; x++) {
+      const o = 1 + x * 3;
+      riga[o] = r * f;
+      riga[o + 1] = g * f;
+      riga[o + 2] = b * f;
+    }
+    righe.push(riga);
+  }
+  const testa = Buffer.alloc(13);
+  testa.writeUInt32BE(larga, 0);
+  testa.writeUInt32BE(alta, 4);
+  testa[8] = 8; // otto bit per canale
+  testa[9] = 2; // rosso, verde, blu
+  const png = Buffer.concat([
+    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+    pezzoPng("IHDR", testa),
+    pezzoPng("IDAT", deflateSync(Buffer.concat(righe))),
+    pezzoPng("IEND", Buffer.alloc(0)),
+  ]);
+  fotoFatte.set(chiave, png);
+  return png;
+}
+
 /** I nomi degli altri: nella suite li sa il gateway, qui sono gli id stessi. */
 const contorno = {
   nomeDi: (id) => (id ? id.charAt(0).toUpperCase() + id.slice(1) : "qualcuno"),
@@ -142,6 +216,19 @@ const contorno = {
       mime: "image/svg+xml",
       url: quadratoFinto(i + 1, m[0], m[1]),
     }));
+    // Le foto come arrivano dalla galleria vera: PNG grandi, e il francobollo
+    // e' la foto stessa (vedi «/libreria/anteprima» nel gateway).
+    const grandi = [[1024, 1024], [1536, 1024], [1024, 1536], [2048, 1152]];
+    grandi.forEach((m, i) => {
+      const dove = "/finta/foto/" + (i + 1) + "-" + m[0] + "x" + m[1] + ".png";
+      voci.push({
+        id: "foto" + i,
+        titolo: "foto vera " + (i + 1) + " (" + m[0] + "×" + m[1] + ")",
+        mime: "image/png",
+        url: dove,
+        anteprima: dove,
+      });
+    });
     for (let i = 0; i < 3; i++) {
       voci.push({
         id: "brano" + i,
@@ -225,6 +312,14 @@ const server = createServer(async (req, res) => {
   if (percorso === "/" || percorso === "/giochi") {
     res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
     res.end(paginaGiochi("/giochi"));
+    return;
+  }
+
+  const foto = percorso.match(/^\/finta\/foto\/(\d+)-(\d+)x(\d+)\.png$/);
+  if (foto) {
+    const png = fotoFinta(Number(foto[1]), Math.min(4096, Number(foto[2])), Math.min(4096, Number(foto[3])));
+    res.writeHead(200, { "content-type": "image/png", "cache-control": "max-age=3600" });
+    res.end(png);
     return;
   }
 
