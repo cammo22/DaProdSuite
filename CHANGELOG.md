@@ -10,6 +10,33 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ---
 
+## 1.3.9 — Le foto si scaricano una volta sola
+
+> «Carica le foto una alla volta e con connessioni lente si deve aspettare che
+> carica tutte le foto. Facciamo che le scarica e una volta scaricate vengono
+> salvate sulla memoria del telefono.»
+
+Il computer le foto le mandava già con scritto sopra «tienila per un giorno». Era
+il telefono a non tenerle: dalla 1.1.0 l'app dice alla pagina di **non usare mai
+la cache**, e quella regola — giusta per la pagina, che è il programma e si deve
+prendere sempre aggiornata — valeva anche per le foto, che invece non cambiano
+mai. Così ogni apertura dell'inventario le riscaricava tutte.
+
+- **Le foto ora stanno sul telefono.** La prima volta si scaricano, poi le
+  risponde il telefono senza toccare la rete. Vale per l'inventario, i
+  pacchetti, il negozio e la galleria.
+- **Si vedono anche a computer spento.** Erano l'ultima cosa che mancava alla
+  suite offline: la pagina c'era, i dati c'erano, le foto no.
+- **Non si aspetta più di scorrere.** Appena una schermata è disegnata, le altre
+  foto si continuano a scaricare in sottofondo, tre alla volta.
+- **Il magazzino tiene 400 MB** e quando è pieno butta le più vecchie, non tutto.
+  Il nome con cui le tiene è quello del file, non l'indirizzo: quando il tunnel
+  cambia nome, le foto restano buone.
+- La pagina invece si chiede sempre al computer, come prima: quella regola della
+  1.1.0 resta intatta.
+
+---
+
 ## 1.3.8 — Ogni figurina con la sua faccia, e il secondo tiro che si vede
 
 > «Si continuano a non vedere certe immagini: c'è un motivo, tipo perché non

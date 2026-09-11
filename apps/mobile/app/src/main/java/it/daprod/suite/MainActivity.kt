@@ -42,14 +42,20 @@ import it.daprod.suite.net.GatewayClient
 import it.daprod.suite.net.GatewayException
 import it.daprod.suite.net.EsitoBussata
 import it.daprod.suite.net.Indirizzi
+import it.daprod.suite.net.Magazzino
 import it.daprod.suite.net.Scoperta
 import it.daprod.suite.net.ServitoreOffline
+import okhttp3.OkHttpClient
+import okhttp3.Request
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import java.io.ByteArrayInputStream
 import java.io.File
+import java.io.FileInputStream
 import java.util.UUID
+import java.util.concurrent.TimeUnit
 
 /**
  * L'app, che è un vetro sul PC — **anche quando il PC non c'è.**
@@ -109,6 +115,25 @@ class MainActivity : AppCompatActivity() {
     /** Lo specchio del computer per la persona di adesso. */
     private var deposito: Deposito? = null
     private var servitore: ServitoreOffline? = null
+
+    /**
+     * ⚠ **Il magazzino delle foto**, dal 12 settembre 2026: «carica le foto una
+     * alla volta e con connessioni lente si deve aspettare; facciamo che le
+     * scarica e una volta scaricate vengono salvate sulla memoria del telefono».
+     * Come funziona sta scritto in [Magazzino]; qui c'e' solo dove tenerlo.
+     */
+    private val magazzino by lazy { Magazzino(File(filesDir, "magazzino")) }
+
+    /**
+     * La linea per le foto, a parte da quella della pagina: poche foto grosse,
+     * e nessuna fretta di rispondere. Vive quanto l'app.
+     */
+    private val reteFoto by lazy {
+        OkHttpClient.Builder()
+            .connectTimeout(10, TimeUnit.SECONDS)
+            .readTimeout(30, TimeUnit.SECONDS)
+            .build()
+    }
 
     /**
      * Se in questo momento stiamo rispondendo noi al posto del computer.
@@ -2146,6 +2171,8 @@ class MainActivity : AppCompatActivity() {
                 view: WebView?,
                 request: WebResourceRequest?,
             ): WebResourceResponse? {
+                // Le facce passano dal magazzino, online e offline: vedi «dalMagazzino».
+                dalMagazzino(request)?.let { return it }
                 if (!stiamoOffline || request == null) return null
                 val nostro = (chi?.basi.orEmpty() + listOfNotNull(chi?.base))
                     .map { it.trimEnd('/') }
@@ -2219,6 +2246,84 @@ class MainActivity : AppCompatActivity() {
      * `binding.web` continua a puntare a qualcosa di vivo e tutto il resto del
      * file non si accorge di niente.
      */
+    /**
+     * ⚠ **Una foto chiesta dalla pagina: dal telefono se c'e', se no una volta
+     * sola.**
+     *
+     * Chiesto il 12 settembre 2026: «carica le foto una alla volta e con
+     * connessioni lente si deve aspettare che carica tutte le foto; facciamo che
+     * le scarica e una volta scaricate vengono salvate sulla memoria del
+     * telefono».
+     *
+     * Prima ogni apertura dell'inventario le riscaricava tutte, perche' la
+     * WebView gira con `LOAD_NO_CACHE` — regola giusta per la pagina, che e' il
+     * programma, e sbagliata per le foto, che non cambiano mai. Adesso:
+     *
+     * 1. se la foto e' nel magazzino risponde il telefono, e la rete non si
+     *    tocca: vale anche a computer spento;
+     * 2. se non c'e', la scarica l'app **una volta sola** e se la tiene.
+     *
+     * ⚠ **La scarica l'app, non la pagina**, e quindi col token nell'header: un
+     * `<img>` si porta dietro il biscotto di sessione, questa richiesta no.
+     *
+     * Gira sul filo della WebView, non su quello dello schermo: aspettare la
+     * rete qui e' quello che si deve fare, ed e' quello che facevano gia' le
+     * richieste che sostituisce.
+     */
+    private fun dalMagazzino(richiesta: WebResourceRequest?): WebResourceResponse? {
+        if (richiesta == null || !richiesta.method.equals("GET", true)) return null
+        // Una richiesta a pezzi non passa da qui: vedi «siTiene» in Magazzino.
+        if (richiesta.requestHeaders["Range"] != null) return null
+        val percorso = richiesta.url.path ?: return null
+        if (!Magazzino.siTiene(percorso, richiesta.requestHeaders["Accept"])) return null
+        val persona = chi ?: return null
+        val indirizzo = richiesta.url.toString()
+        val nostro = (persona.basi + persona.base)
+            .map { it.trimEnd('/') }
+            .any { it.isNotBlank() && indirizzo.startsWith(it) }
+        if (!nostro) return null
+
+        val chiave = Magazzino.chiaveDi(percorso, richiesta.url.query)
+        magazzino.ce(chiave)?.let { roba ->
+            return try {
+                rispostaPerLaPagina(roba.tipo, FileInputStream(roba.file))
+            } catch (_: Exception) {
+                null
+            }
+        }
+        if (stiamoOffline) return null
+
+        return try {
+            val chiamata = Request.Builder()
+                .url(indirizzo)
+                .header("Authorization", "Bearer ${persona.token}")
+                .build()
+            reteFoto.newCall(chiamata).execute().use { res ->
+                if (!res.isSuccessful) return null
+                val tipo = res.header("Content-Type") ?: "application/octet-stream"
+                val byte = res.body?.bytes() ?: return null
+                magazzino.metti(chiave, tipo, byte)
+                rispostaPerLaPagina(tipo, ByteArrayInputStream(byte))
+            }
+        } catch (_: Exception) {
+            // Rete andata: si lascia provare alla WebView, che sa gia' cosa fare.
+            null
+        }
+    }
+
+    /** Una risposta per la pagina, col tipo pulito dal suo contorno. */
+    private fun rispostaPerLaPagina(
+        tipo: String,
+        dentro: java.io.InputStream,
+    ): WebResourceResponse = WebResourceResponse(
+        tipo.substringBefore(";").trim(),
+        null,
+        200,
+        "OK",
+        mapOf("Cache-Control" to "private, max-age=86400"),
+        dentro,
+    )
+
     private fun rinasciLaWebView() {
         val vecchia = binding.web
         val padre = vecchia.parent as? ViewGroup ?: return

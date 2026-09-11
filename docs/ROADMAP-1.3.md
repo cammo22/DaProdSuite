@@ -51,6 +51,7 @@ Contando, ci sta poco spazio in mezzo:
 | ~~1.3.6~~ | il tunnel non si butta per un inciampo, e il suo registro non si perde |
 | ~~1.3.7~~ | il computer lascia un cartello, e l'app rientra da sola da fuori casa |
 | ~~1.3.8~~ | ogni figurina con la sua faccia per tutti, e il secondo tiro che si vede |
+| ~~1.3.9~~ | le foto si scaricano una volta sola e restano sul telefono |
 
 ⚠ **La 1.3.0 è uscita prima che il traguardo chiudesse**, perché l'ha chiesta
 lui il 10 settembre 2026: «aggiusta tutto e facciamo la 1.3.0». Quindi il nome
