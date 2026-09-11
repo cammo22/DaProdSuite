@@ -36,6 +36,7 @@ import {
   type Caso,
 } from "./regole";
 import { PEZZI_IMMAGINI, PEZZI_MUSICA_CORTI, rulliDi } from "./rulli";
+import { CASA, unaCopiaInPiu, type CopiaDellaCasa } from "./casa";
 import { GENERI, type Genere } from "./dati/generi";
 import type {
   Collezionabile,
@@ -874,7 +875,10 @@ export function creaPacchetto(deposito: Deposito, admin: string, nome?: string):
 }
 
 export interface Figurina {
-  cosa: Collezionabile;
+  /** Una figurina vera, del pacchetto. */
+  cosa?: Collezionabile;
+  /** Oppure una della casa: la copia in piu', e se e' cresciuta (vedi `casa.ts`). */
+  casa?: CopiaDellaCasa;
   /** Vero se ce l'aveva gia': allora invece della figurina si prendono le lire. */
   doppione: boolean;
   lire: number;
@@ -915,15 +919,32 @@ export function apriPacchetto(
   }
   deposito.muovi(chi, -imp.costoPacchetto);
 
+  /**
+   * ⚠ **Nel mucchio ci sono anche le cinquanta della casa**, dall'11 settembre
+   * 2026: «mettiamo un 50 item fake in modo da farli uscire». Pesano come un
+   * Basic, quindi escono quasi sempre — ed e' voluto: le figurine vere restano
+   * quelle rare. Prima quelle del pacchetto, poi la casa: l'ordine non cambia
+   * cosa esce, ma permette alle prove di sapere dove sta chi.
+   */
+  const mucchio: ({ cosa: Collezionabile } | { casa: string })[] = [
+    ...dentro.map((c) => ({ cosa: c })),
+    ...CASA.map((f) => ({ casa: f.id })),
+  ];
+  const pesi = mucchio.map((m) =>
+    "cosa" in m ? scalino(gradoDiFigurina(m.cosa)).quantoEsce : scalino("basic").quantoEsce,
+  );
+
   const figurine: Figurina[] = [];
   let vinto = 0;
   for (let i = 0; i < Math.max(1, imp.perPacchetto); i++) {
-    const presa = pescaPesata(
-      dentro,
-      dentro.map((c) => scalino(gradoDiFigurina(c)).quantoEsce),
-      caso,
-    );
-    if (!presa) break;
+    const pescata = pescaPesata(mucchio, pesi, caso);
+    if (!pescata) break;
+    if ("casa" in pescata) {
+      // Una copia in piu' non paga: fa crescere (`casa.ts`).
+      figurine.push({ casa: unaCopiaInPiu(deposito, chi, pescata.casa), doppione: false, lire: 0 });
+      continue;
+    }
+    const presa = pescata.cosa;
     const nuova = deposito.colleziona(chi, presa.id);
     if (nuova) {
       figurine.push({ cosa: presa, doppione: false, lire: 0 });

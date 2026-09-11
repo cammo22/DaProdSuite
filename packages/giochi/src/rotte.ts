@@ -45,16 +45,22 @@ import {
 } from "./banco";
 import type { Deposito } from "./deposito";
 import { inventario } from "./inventario";
+import type { CopiaDellaCasa } from "./casa";
 import {
+  DUE_FILE_VALGONO,
   facciaDi,
   FILE,
-  gira as giraLaMacchinetta,
   mazzoMacchinetta,
   PER_FILA,
   perche as percheSpenta,
   PUNTATE,
   quantoPagaIlPieno,
   quantoPagaUnaFila,
+  rigira as rigiraLaMacchinetta,
+  suonoDi,
+  tira as tiraLaMacchinetta,
+  TUTTO_UGUALE_VALE,
+  type Sbloccata,
   type SimboloMacchinetta,
 } from "./macchinetta";
 import {
@@ -95,6 +101,14 @@ export interface Contorno {
    * sono prompt si vedono solo come titolo.
    */
   indirizzoLibreria?(id: string): string | undefined;
+  /**
+   * **La copertina di un brano o di un video della libreria.** La suite le fa
+   * da se' (le copertine dei brani, il fotogramma dei video), e una figurina
+   * con attaccato solo un brano la usa come faccia. Nel file vero, l'11
+   * settembre 2026, un brano su due non aveva la copertina attaccata: c'era
+   * gia', bastava chiederla. Se poi non c'e', la pagina disegna la sua.
+   */
+  anteprimaLibreria?(id: string): string | undefined;
   /**
    * Le ultime cose prodotte dalla suite, per attaccarne una a una figurina.
    *
@@ -192,6 +206,60 @@ function numero(cosa: unknown, seManca: number): number {
   return Number.isFinite(n) ? n : seManca;
 }
 
+/** Dove si guarda una cosa della libreria: l'indirizzo scritto, o quello che dice chi ospita. */
+function indirizzoDi(l: { id: string; url?: string } | undefined, contorno: Contorno): string {
+  if (!l) return "";
+  return l.url ?? (contorno.indirizzoLibreria ? (contorno.indirizzoLibreria(l.id) ?? "") : "");
+}
+
+/**
+ * ⚠ **La faccia di una figurina, per questa persona.** La regola e' quella della
+ * macchinetta (`facciaDi`): una foto se c'e'. Se no, per un brano, la copertina
+ * che la libreria gli ha gia' fatto (`suonoDi`). Se no niente, e la pagina ne
+ * disegna una: dall'11 settembre 2026 non c'e' piu' una figurina senza faccia.
+ *
+ * Quando la foto o il brano **sono** la figurina, si mostrano solo a chi ce l'ha:
+ * guardarla vorrebbe dire averla.
+ */
+function indirizzoDellaFaccia(c: Collezionabile, scoperta: boolean, contorno: Contorno): string {
+  const f = facciaDi(c);
+  if (f) return scoperta || f !== c.libreria ? indirizzoDi(f, contorno) : "";
+  const s = suonoDi(c);
+  if (s && contorno.anteprimaLibreria && (scoperta || s !== c.libreria)) {
+    return contorno.anteprimaLibreria(s.id) ?? "";
+  }
+  return "";
+}
+
+/**
+ * Una figurina della casa, vestita per la pagina: la stessa forma di una vera,
+ * con in piu' il segno, la tinta e le copie. La faccia la disegna la pagina.
+ */
+function vestitaCasa(copia: CopiaDellaCasa) {
+  return {
+    id: copia.figurina.id,
+    tipo: "casa",
+    titolo: copia.figurina.nome,
+    grado: copia.grado,
+    numero: copia.figurina.numero,
+    scoperta: true,
+    prompt: "",
+    faccia: "",
+    allegati: [],
+    daChi: "",
+    daNome: "la casa",
+    casa: {
+      numero: copia.figurina.numero,
+      segno: copia.figurina.segno,
+      tinta: copia.figurina.tinta,
+      copie: copia.copie,
+      prima: copia.prima,
+      cresciuta: copia.cresciuta,
+      prossimo: copia.prossimo,
+    },
+  };
+}
+
 /**
  * Una figurina come la puo' vedere **questa** persona.
  *
@@ -204,7 +272,6 @@ function vestita(c: Collezionabile, contorno: Contorno, scoperta: boolean) {
   const grado = gradoDiFigurina(c);
   const dove = (l?: { id: string; url?: string }) =>
     !l ? "" : (l.url ?? (contorno.indirizzoLibreria ? (contorno.indirizzoLibreria(l.id) ?? "") : ""));
-  const faccia = facciaDi(c);
   return {
     /**
      * ⚠ **La faccia: l'immagine con cui una figurina si riconosce.** La regola
@@ -217,7 +284,7 @@ function vestita(c: Collezionabile, contorno: Contorno, scoperta: boolean) {
      * Il file stesso si mostra solo a chi ce l'ha: e' la stessa regola di
      * `dove`, qui sotto. Una foto che **e'** la figurina non si regala guardandola.
      */
-    faccia: faccia && (scoperta || faccia !== c.libreria) ? dove(faccia) : "",
+    faccia: indirizzoDellaFaccia(c, scoperta, contorno),
     id: c.id,
     tipo: c.tipo,
     titolo: c.titolo,
@@ -286,11 +353,27 @@ function vestiIlSimbolo(s: SimboloMacchinetta, contorno: Contorno) {
     titolo: s.titolo,
     grado: s.grado,
     prezzo: s.prezzo,
+    tipo: s.tipo,
+    tavolo: s.tavolo,
+    casa: s.casa ?? null,
     daChi: s.daChi,
-    daNome: contorno.nomeDi(s.daChi),
-    faccia:
-      s.faccia.url ??
-      (contorno.indirizzoLibreria ? (contorno.indirizzoLibreria(s.faccia.id) ?? "") : ""),
+    daNome: s.casa ? "la casa" : contorno.nomeDi(s.daChi),
+    // Una foto, o la copertina di un brano; se no niente, e la pagina disegna.
+    faccia: s.faccia
+      ? indirizzoDi(s.faccia, contorno)
+      : s.suono && contorno.anteprimaLibreria
+        ? (contorno.anteprimaLibreria(s.suono.id) ?? "")
+        : "",
+  };
+}
+
+/** Una figurina sbloccata dalle tre file, come la vede la pagina. */
+function vestitaSbloccata(s: Sbloccata, contorno: Contorno) {
+  return {
+    simbolo: vestiIlSimbolo(s.simbolo, contorno),
+    nuova: s.nuova,
+    lire: s.lire,
+    copia: s.copia ? { ...vestitaCasa(s.copia).casa, grado: s.copia.grado } : null,
   };
 }
 
@@ -604,11 +687,11 @@ export function rispondi(
       return OK({
         ...apertura,
         saldoScritto: lire(apertura.saldo),
-        figurine: apertura.figurine.map((f) => ({
-          ...vestita(f.cosa, contorno, true),
-          doppione: f.doppione,
-          lire: f.lire,
-        })),
+        figurine: apertura.figurine.map((f) =>
+          f.casa
+            ? { ...vestitaCasa(f.casa), doppione: false, lire: 0 }
+            : { ...vestita(f.cosa!, contorno, true), doppione: f.doppione, lire: f.lire },
+        ),
       });
     }
 
@@ -630,9 +713,25 @@ export function rispondi(
      * decide il PC**, non l'elenco. Averlo non aiuta a vincere.
      */
     if (metodo === "GET" && percorso === "/macchinetta") {
-      const quali = mazzoMacchinetta(deposito);
+      const quali = mazzoMacchinetta(deposito, chi.id);
       const spenta = percheSpenta(deposito, quali.length);
+      const aperto = deposito.conto(chi.id).giroAperto;
+      const perId = new Map(quali.map((s) => [s.id, s] as const));
       return OK({
+        /**
+         * ⚠ **Il giro a meta', se c'e'.** Un giro sono due tiri, e fra l'uno e
+         * l'altro la pagina si puo' chiudere: al ritorno lo schermo si ritrova
+         * com'era, pronto per il secondo tiro, gia' pagato.
+         */
+        aperto: aperto
+          ? {
+              puntata: aperto.puntata,
+              caselle: aperto.caselle.map((id) => {
+                const s = perId.get(id);
+                return s ? vestiIlSimbolo(s, contorno) : null;
+              }),
+            }
+          : null,
         accesa: !spenta,
         perche: spenta,
         pacchetti: serieChiuse(deposito),
@@ -657,12 +756,32 @@ export function rispondi(
           fila: quantoPagaUnaFila(g.id),
           pieno: quantoPagaIlPieno(g.id),
         })),
+        dueFile: DUE_FILE_VALGONO,
+        tuttoUguale: TUTTO_UGUALE_VALE,
         simboli: quali.map((x) => vestiIlSimbolo(x, contorno)),
       });
     }
 
+    /**
+     * ⚠ **Il primo tiro**: si paga, e lo schermo si riempie. Non paga niente.
+     * Dall'11 settembre 2026 un giro sono due tiri (vedi `macchinetta.ts`).
+     */
     if (metodo === "POST" && percorso === "/macchinetta") {
-      const esito = giraLaMacchinetta(deposito, chi.id, numero(corpo["puntata"], 0), Math.random);
+      const primo = tiraLaMacchinetta(deposito, chi.id, numero(corpo["puntata"], 0), Math.random);
+      return OK({
+        puntata: primo.puntata,
+        caselle: primo.caselle.map((x) => vestiIlSimbolo(x, contorno)),
+        saldo: primo.saldo,
+        saldoScritto: lire(primo.saldo),
+      });
+    }
+
+    /** ⚠ **Il secondo tiro**: le tenute restano, le altre cambiano, e si decide. */
+    if (metodo === "POST" && percorso === "/macchinetta/rigira") {
+      const tenute = Array.isArray(corpo["tenute"])
+        ? (corpo["tenute"] as unknown[]).map((x) => numero(x, -1))
+        : [];
+      const esito = rigiraLaMacchinetta(deposito, chi.id, tenute, Math.random);
       return OK({
         ...esito,
         caselle: esito.caselle.map((x) => vestiIlSimbolo(x, contorno)),
@@ -671,7 +790,7 @@ export function rispondi(
           lire: f.lire,
           simbolo: vestiIlSimbolo(f.simbolo, contorno),
         })),
-        sbloccata: esito.sbloccata ? vestiIlSimbolo(esito.sbloccata, contorno) : null,
+        sbloccate: esito.sbloccate.map((s) => vestitaSbloccata(s, contorno)),
         vintoScritto: lire(esito.vinto),
         saldoScritto: lire(esito.saldo),
       });

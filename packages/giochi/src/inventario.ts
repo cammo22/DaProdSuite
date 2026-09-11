@@ -29,6 +29,7 @@
 
 import type { Deposito } from "./deposito";
 import { gradoDiFigurina } from "./banco";
+import { CASA, copiePerIlProssimo, gradoDelleCopie } from "./casa";
 import { altezza, GRADI } from "./regole";
 import type { Collezionabile, Grado } from "./tipi";
 
@@ -65,6 +66,23 @@ export interface Inventario {
   gradi: { id: Grado; hai: number; di: number }[];
   /** Tue, ma in nessun pacchetto: le hai trovate prima che ci entrassero. */
   fuori: Collezionabile[];
+  /**
+   * Le cinquanta della casa (`casa.ts`): quante ne hai, e ognuna col suo grado
+   * e quanto manca al prossimo. Una senza copie e' un buco col numero.
+   */
+  casa: {
+    hai: number;
+    di: number;
+    figurine: {
+      numero: number;
+      nome: string;
+      segno: string;
+      tinta: number;
+      copie: number;
+      grado: Grado | null;
+      prossimo: number | null;
+    }[];
+  };
   obiettivi: Obiettivo[];
 }
 
@@ -130,5 +148,36 @@ export function inventario(deposito: Deposito, chi: string): Inventario {
   }
   if (pacchetti.length > 1) obiettivo("tutto", "Tutto l'inventario", hai, tutte.length);
 
-  return { hai, di: tutte.length, pacchetti, gradi, fuori, obiettivi };
+  const copie = deposito.conto(chi).copie ?? {};
+  const figurineCasa = CASA.map((f) => {
+    const n = copie[f.id] ?? 0;
+    return {
+      numero: f.numero,
+      nome: f.nome,
+      segno: f.segno,
+      tinta: f.tinta,
+      copie: n,
+      grado: gradoDelleCopie(n),
+      prossimo: copiePerIlProssimo(n),
+    };
+  });
+  const haiCasa = figurineCasa.filter((f) => f.copie > 0).length;
+  // La casa entra negli obiettivi solo quando c'e' un pacchetto: prima non si
+  // puo' averne nessuna, e un obiettivo irraggiungibile e' un obiettivo finto.
+  if (pacchetti.length > 0) {
+    obiettivo("casa-prima", "La prima figurina della casa", haiCasa, 1);
+    obiettivo("casa-tutte", "Tutte e cinquanta della casa", haiCasa, CASA.length);
+    const piuAlta = Math.max(0, ...figurineCasa.map((f) => (f.grado ? altezza(f.grado) : -1)));
+    obiettivo("casa-rare", "Una della casa arriva a Rare", piuAlta >= altezza("rare") ? 1 : 0, 1);
+  }
+
+  return {
+    hai,
+    di: tutte.length,
+    pacchetti,
+    gradi,
+    fuori,
+    casa: { hai: haiCasa, di: CASA.length, figurine: figurineCasa },
+    obiettivi,
+  };
 }

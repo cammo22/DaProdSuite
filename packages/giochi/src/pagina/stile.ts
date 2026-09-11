@@ -1217,6 +1217,50 @@ nav .pallino{display:inline-block; min-width:16px; padding:0 4px; margin-left:4p
 @keyframes appena{0%{transform:scale(.8); filter:brightness(2)} 60%{transform:scale(1.07)}
   100%{transform:none; filter:none}}
 
+/* ------------------------------------------------------------- le facce */
+/**
+ * ⚠ **La faccia: il disegno sotto, la foto sopra se c'e'.** Dall'11 settembre
+ * 2026 ogni figurina ne ha una (vedi «facciaHtml» nel copione). Riempie il suo
+ * riquadro qualunque sia — una casella della macchinetta, una dell'inventario,
+ * una carta, una scheda del negozio — e se la foto non arriva resta il disegno.
+ */
+.faccia-d{position:absolute; inset:0; display:block; overflow:hidden}
+.faccia-d > svg, .faccia-d > img{position:absolute; inset:0; width:100%; height:100%;
+  object-fit:cover; display:block}
+.carta .faccia{position:relative}
+/* Sulla macchinetta le caselle sono quadrate e il disegno e' fatto per una
+   carta, piu' alta: il nome in fondo finiva tagliato a meta'. Li' basta il
+   segno; il nome si legge nella carta e nell'inventario. */
+.casella .disegno .nome{display:none}
+.casella.gira .faccia-d{animation:scorre .2s linear infinite}
+.casella.gira .faccia-d > img{animation:none}
+/**
+ * ⚠ **Tenuta, fra i due tiri**: lo stesso anello d'oro dei rulli bloccati della
+ * prima slot. Due segni diversi per «questa la tengo» sarebbero due cose da
+ * imparare.
+ */
+.casella{cursor:pointer}
+.casella.tenuta{outline:3px solid var(--oro); outline-offset:-3px;
+  box-shadow:0 0 18px rgba(255,209,102,.45)}
+.casella .ferma{position:absolute; top:4px; right:4px; z-index:2; padding:1px 6px;
+  border-radius:999px; background:var(--oro); color:#141414; font-size:9px; font-weight:800;
+  text-transform:uppercase; letter-spacing:.3px}
+.casella .chi{z-index:1}
+.premi .nota{font-size:12px; color:var(--spento); margin-top:6px; line-height:1.4}
+/* Un brano nell'inventario: si vede che si ascolta, prima di toccarlo. */
+.cas .suona{position:absolute; right:5px; top:4px; z-index:2; width:22px; height:22px;
+  border-radius:50%; display:grid; place-items:center; background:rgba(0,0,0,.62);
+  color:#fff; font-size:10px}
+.cas .n, .cas .t{z-index:2}
+.cas .copie{position:absolute; right:5px; top:3px; z-index:2; font-size:10.5px;
+  font-weight:800; color:#fff; text-shadow:0 1px 3px #000}
+.cas .verso{position:absolute; left:6px; right:6px; bottom:5px; height:4px; z-index:2;
+  border-radius:999px; background:rgba(0,0,0,.55); overflow:hidden}
+.cas .verso span{display:block; height:100%; background:var(--g)}
+.grande.guarda .copertona{width:min(70vw, 340px); max-height:none; aspect-ratio:1;
+  object-fit:cover; margin-bottom:16px}
+.apertura .dice::first-letter{text-transform:uppercase}
+
 /* Chi non vuole roba che si muove non la vede: il gioco resta lo stesso. */
 @media (prefers-reduced-motion: reduce){
   *{animation-duration:.01ms!important; animation-iteration-count:1!important;

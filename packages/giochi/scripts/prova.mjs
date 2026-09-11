@@ -609,6 +609,48 @@ prova("le impostazioni nuove arrivano anche a chi giocava da prima", () => {
   }
 });
 
+/**
+ * ⚠ **Il prezzo del pacchetto e le carte per pacchetto vengono dal codice**, per
+ * un file scritto prima della versione 4.
+ *
+ * Visto nel file vero l'11 settembre 2026: il pacchetto costava 250 lire mentre
+ * il codice diceva cinquemila da un giorno. Il file si era tenuto i numeri del
+ * giorno in cui era nato, e dalla pagina nessuno li puo' cambiare: non erano una
+ * scelta, erano vecchi. Il resto di quello che c'e' scritto resta — la prova qui
+ * sopra lo tiene fermo.
+ */
+prova("un file vecchio prende il prezzo del pacchetto e le nove carte dal codice", () => {
+  const dove = cartellaFinta();
+  const file = join(dove, "giochi.json");
+  try {
+    writeFileSync(
+      file,
+      JSON.stringify({
+        versione: 3,
+        conti: [],
+        impostazioni: { costoGiro: 3, costoPacchetto: 250, perPacchetto: 5, puntiPerGrado: { basic: 1 } },
+      }),
+      "utf8",
+    );
+    const d = new Deposito(file);
+    uguale(d.impostazioni().costoPacchetto, IMPOSTAZIONI_DI_PARTENZA.costoPacchetto, "il prezzo del codice");
+    uguale(d.impostazioni().perPacchetto, 9, "nove carte");
+    uguale(d.impostazioni().costoGiro, 3, "il resto resta com'era");
+    uguale(
+      d.impostazioni().puntiPerGrado.ethernal,
+      IMPOSTAZIONI_DI_PARTENZA.puntiPerGrado.ethernal,
+      "e i punti di Ethernal, che nel file mancavano",
+    );
+
+    // Riscritto e riaperto: e' gia' della versione 4, e non si tocca piu'.
+    d.cambiaImpostazioni({ costoPacchetto: 777 });
+    d.scriviOra();
+    uguale(new Deposito(file).impostazioni().costoPacchetto, 777, "una volta sola");
+  } finally {
+    rmSync(dove, { recursive: true, force: true });
+  }
+});
+
 /* --------------------------------------------------------------- parole */
 
 prova("le lire si scrivono all'italiana", () => {

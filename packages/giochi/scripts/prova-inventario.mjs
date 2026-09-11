@@ -15,13 +15,38 @@
  */
 
 import {
+  apriPacchetto,
+  CASA,
   classifica,
+  COPIE_PER_GRADO,
+  copiePerIlProssimo,
   creaPacchetto,
   Deposito,
+  gradoDelleCopie,
   inventario,
+  paginaGiochi,
   prezzoNelloShop,
   rispondi,
+  unaCopiaInPiu,
 } from "../dist/index.js";
+import vm from "node:vm";
+import { dado } from "./attrezzi.mjs";
+
+/**
+ * ⚠ **Il copione della pagina si deve compilare.** L'11 settembre 2026 sera la
+ * 1.3.5 aveva tutte le prove verdi e la pagina morta al caricamento — «Invalid
+ * or unexpected token» — perche' nessuna prova leggeva il copione come lo legge
+ * il browser: e' una stringa dentro TypeScript, e per TypeScript una stringa va
+ * sempre bene. Qui la si mette insieme come la serve il gateway e la si fa
+ * compilare a Node: una pagina che non parte non esce piu' verde.
+ */
+prova("il copione della pagina si compila", () => {
+  const html = paginaGiochi("/giochi");
+  const inizio = html.indexOf("<script>") + "<script>".length;
+  const fine = html.lastIndexOf("</script>");
+  vero(inizio > 8 && fine > inizio, "la pagina ha il suo copione");
+  new vm.Script(html.slice(inizio, fine), { filename: "copione.js" });
+});
 import { conCartella, prova, tirandoLeSomme, uguale, vero } from "./attrezzi.mjs";
 
 /** Una figurina presa, col suo prompt segreto e, se si vuole, una faccia. */
@@ -229,6 +254,106 @@ prova("in Casa il colpo non c'e' piu'", () =>
     const righe = classifica(d);
     uguale(righe.length, 1);
     uguale("colpoGrosso" in righe[0], false, "chiesto l'11 settembre 2026: «togliamo la statistica colpo»");
+  }),
+);
+
+/* ------------------------------------------------------- le figurine della casa */
+
+/**
+ * ⚠ **Cinquanta, e crescono con le copie.** Chieste l'11 settembre 2026: «quegli
+ * item fake piu' ne collezioniamo piu' si evolvono, partono da basic fino a
+ * ethernal». La prima copia e' Basic, la cinquantesima Ethernal.
+ */
+prova("le figurine della casa sono cinquanta, e crescono da Basic a Ethernal", () => {
+  uguale(CASA.length, 50);
+  uguale(new Set(CASA.map((f) => f.id)).size, 50, "cinquanta diverse");
+  uguale(gradoDelleCopie(0), null, "zero copie: non ce l'hai");
+  uguale(gradoDelleCopie(1), "basic", "la prima copia e' Basic");
+  uguale(gradoDelleCopie(2), "grand");
+  uguale(gradoDelleCopie(49), "mythic");
+  uguale(gradoDelleCopie(50), "ethernal", "la cinquantesima e' Ethernal");
+  uguale(copiePerIlProssimo(50), null, "in cima non c'e' un prossimo");
+  for (let i = 1; i < COPIE_PER_GRADO.length; i++) {
+    vero(COPIE_PER_GRADO[i] > COPIE_PER_GRADO[i - 1], "ogni gradino costa piu' copie del prima");
+  }
+});
+
+prova("una copia in piu' fa crescere, e la carta lo sa", () =>
+  conCartella((file) => {
+    const d = new Deposito(file);
+    const prima = unaCopiaInPiu(d, "gino", "casa-07");
+    uguale([prima.copie, prima.grado, prima.prima, prima.cresciuta], [1, "basic", null, true],
+      "la prima copia la fa nascere");
+    const seconda = unaCopiaInPiu(d, "gino", "casa-07");
+    uguale([seconda.grado, seconda.prima, seconda.cresciuta], ["grand", "basic", true]);
+    unaCopiaInPiu(d, "gino", "casa-07");
+    const quarta = unaCopiaInPiu(d, "gino", "casa-07");
+    uguale([quarta.copie, quarta.grado, quarta.cresciuta], [4, "rare", false],
+      "la quarta resta Rare: la prossima e' alla quinta");
+    uguale(quarta.prossimo, 5);
+  }),
+);
+
+/**
+ * ⚠ **Escono dai pacchetti, e non pagano lire: crescono.** Nove carte, e col
+ * dado nella fetta della casa escono tutte della casa.
+ */
+prova("dai pacchetti escono le figurine della casa, e non pagano lire", () =>
+  conCartella((file) => {
+    const d = new Deposito(file);
+    presa(d, "a", 100);
+    creaPacchetto(d, "capo");
+    d.muovi("gino", 1_000_000);
+    uguale(d.impostazioni().perPacchetto, 9, "nove carte per pacchetto");
+    // Il mucchio e' la figurina vera e poi le cinquanta: il dado a meta' cade
+    // sempre nella casa, sulla stessa.
+    const pacco = apriPacchetto(d, "gino", 1, dado(0.5));
+    uguale(pacco.figurine.length, 9);
+    vero(pacco.figurine.every((f) => f.casa), "tutte della casa");
+    uguale(pacco.vinto, 0, "una copia in piu' non paga lire");
+    const id = pacco.figurine[0].casa.figurina.id;
+    uguale(d.conto("gino").copie[id], 9, "nove copie della stessa");
+    uguale(pacco.figurine[8].casa.grado, "heroic", "e alla nona e' gia' Heroic");
+  }),
+);
+
+prova("nell'inventario la casa ha la sua sezione, coi buchi", () =>
+  conCartella((file) => {
+    const d = new Deposito(file);
+    presa(d, "a", 100);
+    creaPacchetto(d, "capo");
+    unaCopiaInPiu(d, "gino", "casa-03");
+    unaCopiaInPiu(d, "gino", "casa-03");
+    const inv = inventario(d, "gino");
+    uguale([inv.casa.hai, inv.casa.di], [1, 50]);
+    const tre = inv.casa.figurine.find((f) => f.numero === 3);
+    uguale([tre.copie, tre.grado, tre.prossimo], [2, "grand", 3]);
+    uguale(inv.casa.figurine.find((f) => f.numero === 4).grado, null, "una senza copie e' un buco");
+    const per = Object.fromEntries(inv.obiettivi.map((o) => [o.id, o]));
+    vero(per["casa-prima"] && per["casa-prima"].fatto, "la prima della casa");
+    vero(per["casa-tutte"] && !per["casa-tutte"].fatto, "tutte e cinquanta, ancora no");
+  }),
+);
+
+/**
+ * ⚠ **Un brano senza copertina attaccata prende quella della libreria.** Nel
+ * file vero, l'11 settembre 2026, uno dei due brani non l'aveva: c'era gia'
+ * nella galleria della suite, bastava chiederla.
+ */
+prova("un brano senza copertina prende quella che la libreria gli ha gia' fatto", () =>
+  conCartella((file) => {
+    const d = new Deposito(file);
+    const c = presa(d, "canzone", 600, false);
+    c.allegati = [{ id: "lib-canzone", mime: "audio/mpeg", url: "/libreria/file/lib-canzone" }];
+    creaPacchetto(d, "capo");
+    d.colleziona("gino", "canzone");
+    const conCopertine = {
+      nomeDi: (id) => id,
+      anteprimaLibreria: (id) => "/libreria/anteprima/" + id,
+    };
+    const r = rispondi(d, gino, conCopertine, "GET", "/inventario", {});
+    const casella = r.dati.pacchetti[0].caselle[0];
+    uguale(casella.cosa.faccia, "/libreria/anteprima/lib-canzone");
   }),
 );
 

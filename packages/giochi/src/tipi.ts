@@ -472,6 +472,21 @@ export interface Conto {
    * saldo — e chi lo vede pensa a un errore, non a un regalo.
    */
   ultimoRegalo?: Regalo;
+  /**
+   * Quante copie ha di ogni figurina della casa (vedi `casa.ts`).
+   *
+   * ⚠ Sono un numero e non una lista di id, perche' li' **la copia e' il
+   * gioco**: la stessa figurina che torna cresce di grado. Una lista di id
+   * uguali direbbe la stessa cosa in cinquanta righe.
+   */
+  copie?: Record<string, number>;
+  /**
+   * Il giro della macchinetta a meta': pagato, tirato una volta, in attesa del
+   * secondo tiro. Dall'11 settembre 2026 un giro sono due tiri, e fra l'uno e
+   * l'altro la pagina si puo' chiudere: al ritorno lo schermo si ritrova com'era,
+   * e il secondo tiro non si paga di nuovo.
+   */
+  giroAperto?: { puntata: number; caselle: string[]; quando: number };
 }
 
 /** Un regalo di chi comanda: quanto, quando, e perche'. */
@@ -578,8 +593,14 @@ export interface DatiGiochi {
    * ⚠ **Il numero serve a non convertire due volte.** Senza, ogni apertura
    * rifarebbe il conto e in una settimana una figurina Basic varrebbe come il
    * Colosseo — o due lire, che e' lo stesso guaio al contrario.
+   *
+   * - `4`: dall'11 settembre 2026 sera. Le impostazioni scritte da un file piu'
+   *   vecchio si tenevano i numeri del giorno in cui il file era nato — il
+   *   pacchetto a 250 lire invece di cinquemila — e il prezzo del pacchetto e le
+   *   carte per pacchetto adesso vengono dal codice, una volta sola (vedi
+   *   `impostazioniDiAdesso` nel deposito).
    */
-  versione: 1 | 2 | 3;
+  versione: 1 | 2 | 3 | 4;
   conti: Conto[];
   /**
    * Il magazzino e la fila insieme: le cose in attesa, quelle prese e quelle

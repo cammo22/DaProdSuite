@@ -428,6 +428,9 @@ export class Gateway {
               return d ? indirizzoDellaFoto(d) : undefined;
             },
             indirizzoLibreria: (id) => "/libreria/file/" + encodeURIComponent(id),
+            // La copertina che la libreria ha gia' fatto a un brano o a un
+            // video. Se non c'e' risponde 404, e la pagina disegna la sua.
+            anteprimaLibreria: (id) => "/libreria/anteprima/" + encodeURIComponent(id),
             /**
              * ⚠ **Le cose della suite, per attaccarle a una figurina.**
              *
