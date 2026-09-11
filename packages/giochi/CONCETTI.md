@@ -105,11 +105,13 @@ con quello di un regalo, mentre in questo gioco il portafoglio e' uno. Parole
 sue: «i prezzi ora sono da 1 lira a 500, metti gli stessi tagli che hai messo per
 le ricariche».
 
-⚠ **I tasti del bonus sono euro piccoli**, dall'11 settembre: dieci centesimi,
-venticinque, cinquanta, un euro, due, **tre**. Il tetto di una cosa presa e' tre
-euro (§ 7), e con quel tetto sette degli otto tasti dei regali lo sfonderebbero
-al primo colpo — sarebbero sette tasti che fanno tutti la stessa cosa, cioe'
-«massimo». Stessa moneta, taglio diverso: l'ultimo tasto **e'** il tetto.
+⚠ **I tasti del bonus hanno un taglio loro**, dall'11 settembre. Sotto ai tre
+euro sono piccoli — dieci centesimi, venticinque, cinquanta, un euro, due, tre —
+perche' li' si decide di centesimi ed e' li' che finisce quasi tutto; con gli
+otto tasti dei regali sette su otto avrebbero voluto dire «massimo» al primo
+colpo. Dal 12 settembre, da quando le figurine arrivano a Ethernal (§ 7), sopra
+ce ne stanno altri quattro: cinque euro, dieci, venti, e l'ultimo **e'** la
+soglia del grado piu' alto. Stessa moneta, tagli diversi.
 
 I tasti si **sommano**: si batte come su una cassa, 100 + 20 + 20. C'e' «azzera»
 per tornare indietro, e un tetto a cinque volte il tasto piu' grosso — non e' un
@@ -271,7 +273,7 @@ e in un gioco la scala e' una decisione, non una deduzione.
 In vetrina costano **venti volte la soglia**: un Rare sta sulle dodicimila, un
 Unique — il massimo che si possa mettere in vendita — sulle settantaduemila.
 
-### ⚠ Il tetto: tre euro, dall'11 settembre 2026
+### ⚠ I tre euro, dall'11 settembre 2026 — e dove sono finiti
 
 Detto cosi': «i premi della slot non vanno bene, danno troppe lire. **Fino al
 livello unique valgono massimo l'equivalente di 3 euro.** Le combinazioni sono
@@ -286,9 +288,14 @@ tasca piu' lire di quante ne servissero per comprare tutto, e un portafoglio che
 non si svuota piu' spegne il gioco (§ 4).
 
 Adesso il muro e' scritto: **Unique finisce a tre euro**, cioe' dove comincia
-Celestial. E' l'ultima lira del grado piu' alto che una persona possa assegnare
-oggi (`TETTO_FIGURINE`), quindi non e' un numero a parte da tenere allineato: il
-giorno che si apre Celestial, il tetto sale da solo.
+Celestial.
+
+⚠ **Il giorno dopo Celestial si e' aperto davvero, e il tetto e' salito da
+solo** — fino in cima, perche' i gradi sono arrivati a Ethernal (vedi qui
+sotto). E' esattamente quello che questa riga prometteva: il tetto non e' mai
+stato un numero a parte da tenere allineato, e infatti non c'e' stato niente da
+allineare. Quello che resta dei tre euro e' il confine fra Unique e Celestial,
+che e' sempre stato il loro mestiere vero.
 
 **Le proporzioni non sono cambiate mai**: ogni gradino vale circa una volta e
 mezzo quello sotto. In due giorni e' cambiata tre volte l'altezza e mai il
@@ -318,26 +325,38 @@ e' stato scritto (`versione`), e di metri vecchi ce ne sono due.
 Un Mythic ogni mille caselle: con dodici rulli, **uno ogni ottantatre giri**. Un
 **Ethernal** ogni tremilatrecento: uno ogni duecentosettanta giri.
 
-### ⚠ Le figurine, per adesso, arrivano a Unique
+### ⚠ Le figurine arrivano fino a Ethernal, dal 12 settembre 2026
 
-Deciso il 10 settembre 2026: «tutti quelli che ci sono fino ad ora mettiamoli
-da basic a unique; da celestial a ethernal ci penseremo noi nel tempo, man mano
-che abbiamo dati a disposizione».
+Detto cosi': «nella sala giochi gli item ricevuti possono arrivare fino al
+grado ethernal».
 
-La tabella qui sopra resta intera e vale per **i pezzi sui rulli**: quella e' la
-rarita' dei pezzi, e la dicono i dati. Il grado che una **persona** da' a una
-cosa presa — il bonus quando la prende, il grado in vetrina — si ferma a
-**Unique**, il sesto.
+Per due giorni si erano fermate a **Unique**, il sesto, e il motivo era buono:
+la rarita' e' **un rapporto**, e con dieci figurine in tutto chiamarne una
+Mythic non vuol dire niente — non c'e' niente sotto che la faccia sembrare rara,
+e si brucia la parola prima di avere il gioco. Adesso il magazzino comincia a
+riempirsi, e i sei gradi in cima si aprono.
 
-Il motivo e' che la rarita' e' **un rapporto**. Con dieci figurine in tutto,
-chiamarne una Mythic non vuol dire niente: non c'e' niente sotto che la faccia
-sembrare rara, e si sarebbe bruciata la parola prima di avere il gioco. I sei
-gradi in cima si aprono quando il magazzino e' abbastanza pieno da meritarli.
+Resta il mestiere di chi comanda **non regalarli**: un Ethernal che si da' a
+tutti e' un Basic con un nome piu' lungo. E la scala adesso e' una sola per i
+pezzi sui rulli e per le cose prese — un elenco, una verita'.
 
 Sta scritto in un posto solo — `TETTO_FIGURINE` in `regole.ts` — e da li'
 passano la figurina che si guarda, quella che cade da un pacchetto, quella che
-si regala girando e i tasti con cui si sceglie. Il giorno che si alza, si alza
-dappertutto.
+si regala girando, i tasti con cui si sceglie il grado e i tagli del bonus. Il
+giorno che si rimette un muro piu' basso, scende dappertutto.
+
+⚠ **Sopra all'ultimo grado non c'e' niente a cui fermarsi, quindi non c'e' piu'
+un tetto in lire.** `tettoDelValore()` risponde infinito, ed era il ramo scritto
+apposta per questo giorno. Il muro dei **tre euro** resta dov'e' — e' il punto
+dove finisce Unique e comincia Celestial — solo che non e' piu' la cima.
+
+⚠ **E i tasti del bonus ci arrivano.** Con l'ultimo tasto da tre euro, per dare
+un Ethernal bisognava batterlo **dodici volte**: un tasto che si preme dodici
+volte e' una casella vuota con piu' passaggi. Adesso sotto ai tre euro ci sono i
+sei piccoli di prima — li' si decide di centesimi, ed e' li' che finisce quasi
+tutto — e sopra ce ne stanno quattro grossi, l'ultimo dei quali **e'** la soglia
+del grado piu' alto. La strada piu' corta resta un'altra e c'era gia': si tocca
+il grado, e il bonus ci si mette da solo al minimo che ci arriva.
 
 ⚠ **Ethernal si scrive con la «h»** perche' cosi' l'ha scritto Cammo il 10
 settembre 2026, e i nomi dei gradi sono suoi.
@@ -505,10 +524,29 @@ scritto chi le ha mandate e quando. Per ognuna si puo':
   ⚠ **Si sceglie dalla galleria della suite, toccandola.** Prima si scriveva
   a mano l'indirizzo del file in una casella: quattro gesti in due finestre,
   ogni volta, e chi ha fretta non li fa.
+  ⚠ **E la galleria e' divisa per mucchi**, dal 12 settembre 2026: «ancora non
+  sono divise bene quando voglio aggiungere dalla suite». Erano sessanta
+  quadratini in ordine di data — foto, brani e video mescolati — e per trovare
+  la canzone appena generata bisognava riconoscerne la copertina in mezzo a
+  quaranta immagini, che e' impossibile perche' **le copertine dei brani sono
+  immagini**. Adesso si sceglie prima che cosa si cerca — immagini, brani,
+  video, altro — e c'e' un cerca per nome. Cercando una **copertina** si aprono
+  direttamente le immagini: far scegliere un mp3 come copertina di un brano e'
+  un modo di sbagliare che non deve esistere.
   ⚠ **E se e' un brano, si attacca anche la sua copertina.** Un brano e' un
   rettangolo con un tasto play: in un album di cento figurine non lo riconosce
   nessuno. Se la libreria della suite ce l'ha gia' — le copertine dei brani e i
   fotogrammi dei video li fa lei — si prende da sola; se no, si sceglie a mano;
+  ⚠ **e un brano si deve poter sentire.** Detto il 12 settembre 2026: «le
+  canzoni non si sentono». Non erano rotte e il file era giusto: il lettore
+  stava dentro una casella da **centodieci pixel**, nella striscia che scorre di
+  fianco, e sotto ai duecento pixel il browser del telefono taglia via meta' dei
+  comandi — il tasto play finiva **fuori** dalla casella. C'era, e non si poteva
+  premere. Adesso un brano non e' un quadratino come gli altri: e' una riga
+  larga quanto la carta, con la copertina a sinistra e il lettore a destra, ed e'
+  la stessa in tutti i posti dove un brano compare — le prove, gli attacchi, la
+  figurina. Una canzone che si sente di qua e non di la' e' la solita cosa fatta
+  in due posti;
 - **buttarla**, scrivendo perche'.
 
 Il bonus si batte su otto tasti e si sommano: piu' li premi, piu' sale. Davanti
@@ -599,25 +637,39 @@ e rende il gioco una cosa che si fa in due.
 
 Le cose prese finiscono nel **magazzino**, in ordine di arrivo.
 
-**Ogni cento** che entrano, si chiude una **serie** — un album, come le
-figurine. La serie chiusa e' quella che si compra: un **pacchetto** costa lire e
-dentro ci sono **cinque figurine a caso di quella serie**, pescate con le stesse
-frequenze dei gradi (una Mythic esce una volta su mille). I doppioni non
-deludono: pagano il loro prezzo in lire.
+Quando chi comanda decide che una raccolta e' finita, la chiude in un
+**pacchetto** — un album, come le figurine. Cento e' la misura che si consiglia,
+non una porta: vedi qui sotto. Il pacchetto chiuso e' quello che si compra:
+costa lire e dentro ci sono **cinque figurine a caso di quel pacchetto**,
+pescate con le stesse frequenze dei gradi (una Mythic esce una volta su mille).
+I doppioni non deludono: pagano il loro prezzo in lire.
 
-### ⚠ Il pacchetto lo chiude una persona, non il contatore
+### ⚠ Il pacchetto lo chiude una persona, quando vuole
 
 Deciso il 10 settembre 2026: «ogni prompt accettato finisce in questo pacchetto;
-arrivato a 100, un admin puo' creare il pacchetto».
+arrivato a 100, un admin puo' creare il pacchetto». E il 12: «facciamo che un
+admin puo' creare un pacchetto quando vuole, anche con meno di 100 creazioni».
 
-A cento la serie e' **pronta**, non chiusa: chi comanda vede «cento dentro» e
-preme *crea il pacchetto*. Fino a quel momento non si compra.
+Chiudere una raccolta e' l'atto con cui si dice «questa e' finita, si vende», ed
+e' una decisione — come dare un prezzo a una combinazione. Le decisioni qui le
+prende una persona, e adesso **anche il quando**: cento non e' piu' una porta,
+e' un suggerimento scritto accanto al tasto («ne mancano dodici per farne uno
+pieno»). Ci sta che una raccolta sia finita a quaranta — le cose di Natale, i
+primi cento giorni — e ci sta che a novantotto arrivi qualcosa che deve entrare
+per forza in quella li'.
 
-Chiudere una serie e' l'atto con cui si dice «questa raccolta e' finita, si
-vende», ed e' una decisione — come dare un prezzo a una combinazione. Le
-decisioni qui le prende una persona. E ci sta che a novantotto arrivi qualcosa
-che deve entrare per forza in quella serie: con la chiusura automatica non
-c'era modo di aspettarlo.
+⚠ **Da quel giorno un pacchetto e' una riga scritta, non un conto.** Prima «le
+serie chiuse» erano `magazzino / 100` e «cosa c'e' nella serie 2» era «dalla
+centouno alla duecento»: con un pacchetto da quaranta tutti i confini di quelli
+dopo si sarebbero spostati, e la figurina numero 41 sarebbe passata da una serie
+all'altra da sola, dopo che qualcuno l'aveva gia' comprata. Adesso dentro un
+pacchetto ci stanno gli id di quel giorno, e restano quelli per sempre: quello
+che arriva dopo aspetta il prossimo.
+
+Un pacchetto puo' avere un **nome** — «le cose di Natale» si ricorda, «serie 3»
+no — e i file scritti prima del 12 settembre ritrovano i loro pacchetti leggendo,
+una volta sola, esattamente com'erano: i primi cento nel primo, i secondi cento
+nel secondo, quelle che avanzano ancora fuori.
 
 ### ⚠ Le tre strade per avere una figurina, e sono diverse apposta
 
@@ -635,9 +687,9 @@ invece di far pagare.
 
 **La slot dei pacchetti** e' una seconda macchina, e non si monta niente: si
 tira, e molto raramente cade un item di un pacchetto gia' chiuso. Non si sceglie
-da quale — il mazzo e' uno solo, fatto di tutte le serie chiuse — e dentro si
+da quale — il mazzo e' uno solo, fatto di tutti i pacchetti chiusi — e dentro si
 pesca con le frequenze dei gradi. «Tutti insieme, tutti random», come e' stato
-chiesto.
+chiesto. Com'e' fatta sta qui sotto, al § 11-bis.
 
 Si sbloccano anche **giocando**: ogni tanto un giro fortunato ne regala una.
 
@@ -669,6 +721,78 @@ figurina che punta al vuoto.
 La porta si chiama `manda-dalla-libreria`, ed e' pensata per essere aperta da
 **un tasto nella galleria della suite** — «mandala in sala giochi» — non dalla
 pagina della slot.
+
+## 11-bis. La macchinetta: sei rulli, due file da tre
+
+Chiesta il 12 settembre 2026, ed e' **la slot dei pacchetti** del paragrafo qui
+sopra, fatta:
+
+> «Aggiungiamo la slot dove ci saranno 6 rulli, 3 per fila, che funziona come una
+> slot classica. Girandola puoi inserire se giocare a 50 lire, 100 lire o 200
+> lire, e se si riescono a mettere in fila gli item si vince. Questa slot per
+> funzionare deve esserci almeno 1 pacchetto disponibile, e ad ogni pacchetto si
+> aggiorna automaticamente. Le possibilita' di vincere sono basse e deve usare
+> solo le immagini dei pacchetti: quando quelle immagini formano una fila da 3
+> allora si vince un premio in lire leggero, mentre se invece l'utente riesce a
+> far uscire 6 immagini totali tutte uguali allora vince un superbonus in lire
+> sempre contenuto e in piu' l'immagine viene sbloccata e aggiunta
+> nell'inventario.»
+
+⚠ **Non e' l'altra slot con meno rulli: sono due mestieri.** Davanti a
+`DaProdSlot` si **monta** una cosa — dodici rulli, si blocca, si manda a
+controllare, e paga esperienza. Qui non si monta niente: si punta, si tira, e
+ogni tanto cade una figurina. Sono due schede in fondo, non un interruttore
+dentro la stessa schermata.
+
+**Cosa gira sui rulli.** Le figurine dei pacchetti chiusi che hanno
+un'**immagine** da mostrare: il primo allegato che e' una foto, se no la
+copertina (che e' proprio la faccia che la suite fa ai brani e ai video), se no
+il file stesso quando la figurina **e'** un'immagine della galleria. Un prompt
+senza niente attaccato non gira: su un rullo una riga di testo non si riconosce.
+
+**Il mazzo non e' scritto da nessuna parte: si conta a ogni giro.** Cosi' «a ogni
+pacchetto si aggiorna automaticamente» non e' una cosa da ricordarsi di fare, e'
+come e' fatta. E le figurine **fuori** dai pacchetti non girano: se girassero, la
+macchinetta regalerebbe roba che non si puo' ancora comprare da nessuna parte, e
+il pacchetto non varrebbe piu' niente.
+
+**Quanto si punta.** Cinquanta, cento, duecento lire. Lire piccole e non euro
+contati in lire: un giro deve costare **poco**, perche' il punto e' tirare tante
+volte. Il premio si conta in volte la puntata, quindi chi punta duecento vince
+quattro volte chi punta cinquanta — e rischia quattro volte tanto.
+
+**Cosa paga.**
+
+| Cosa esce | Quanto | Quanto spesso |
+|---|---|---|
+| tre in fila | la puntata **×2** (Basic) fino a **×13** (Ethernal) | 12 giri su 100 |
+| tutte e due le file | i due premi sommati | poco piu' di 1 su 100 |
+| **sei uguali** | la puntata **×40** fino a **×150**, e **la figurina e' tua** | 1 giro su 2.000 |
+
+⚠ **Quanto spesso si vince e' una scelta, non un conto** — la stessa regola dei
+gradi sui rulli (§ 7). Se si pescassero sei simboli a caso e si guardasse cosa
+esce, con cento figurine nel mazzo tre uguali in fila capiterebbero una volta su
+diecimila e con dieci una volta su cento: la macchina cambierebbe mestiere da
+sola ogni volta che chi comanda chiude un pacchetto. Quindi **prima si decide
+cosa deve succedere, poi si riempiono le caselle** — e un giro che non paga non
+deve mettere per caso tre figurine uguali, se no lo schermo dice una cosa e il
+conto un'altra.
+
+⚠ **Col pieno la figurina entra in collezione, ed e' quello il premio.** Le lire
+sono il contorno, e restano contenute apposta: duecento lire su una figurina Rare
+fanno quattro euro. E' la terza strada per avere una figurina (§ 11), quella in
+cui la fortuna costa **tempo**. Il doppione paga il suo prezzo in lire, come nei
+pacchetti: una cosa che avevi gia' e che non ti da' niente e' la cosa che fa
+smettere di giocare.
+
+⚠ **Si accende col primo pacchetto, e finche' non c'e' lo dice.** Un tasto che si
+preme e risponde «non si puo'» e' un tasto che non doveva essere premibile: al
+posto dei rulli c'e' scritto perche' e' spenta.
+
+⚠ **Porta via piu' di quanto da', ed e' voluto.** Se rendesse, in una serata
+sparirebbe il motivo di inventare combinazioni — che e' l'unica cosa che questo
+gioco paga davvero. La fortuna costa tempo, la certezza costa lire, inventare
+resta la sola strada che paga invece di far pagare.
 
 ## 12. Lo shop
 
@@ -714,6 +838,26 @@ divergono.
 La scheda nello shop mostra il **contenuto allegato** — l'immagine o il brano
 venuti fuori da quel prompt — anche a chi non ce l'ha: uno deve poter guardare
 cosa sta comprando. Il prompt no: quello resta coperto finche' non e' tuo.
+
+### ⚠ Chi l'ha inventata c'e' scritto sempre, e si vede
+
+Chiesto il 12 settembre 2026: «evidenziamo meglio il nome di chi ha creato quella
+combinazione, anche quando poi saranno sbloccabili nei pacchetti o acquistabili
+nel negozio ci deve essere scritto chi lo ha creato inizialmente».
+
+Il nome c'era gia', ed era il difetto: stava in una riga grigia insieme alla
+data, della stessa misura di tutto il resto. Cioe' l'unica cosa che dice **di
+chi e' il merito** era la piu' facile da saltare. Adesso e' una pastiglia dorata
+con l'iniziale dentro, ed e' **la stessa identica** in tutti i posti dove una
+figurina si vede: la fila di chi controlla, l'album, il pacchetto che si apre, la
+scheda del negozio, e le caselle della macchinetta. Una firma che cambia faccia
+da una schermata all'altra non si riconosce.
+
+⚠ **Non cambia mai, nemmeno quando la figurina passa di mano.** Chi la compra ce
+l'ha in collezione, ma inventata non l'ha lui: il nome resta quello di prima, e in
+classifica il punto resta suo. E' la stessa regola di § 9 — «non conta chi e'
+arrivato prima, conta esserci arrivato», ma **scoperta** resta di uno solo — ed e'
+il motivo per cui a qualcuno conviene inventarne un'altra.
 
 ## 13. Dove finisce, nella suite
 

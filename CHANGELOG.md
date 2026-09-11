@@ -10,6 +10,128 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ---
 
+## 1.3.3 — La macchinetta, e i gradi arrivano in cima
+
+Sala giochi. Una slot nuova fatta con le figurine dei pacchetti, i gradi che
+smettono di fermarsi a metà scala, e tre cose che davano fastidio ogni giorno.
+
+### La macchinetta: sei rulli, due file da tre
+
+> «Aggiungiamo la slot dove ci saranno 6 rulli, 3 per fila, che funziona come
+> una slot classica. Girandola puoi inserire se giocare a 50 lire, 100 lire o 200
+> lire, e se si riescono a mettere in fila gli item si vince.»
+
+È una scheda nuova in fondo — **Fortuna** — e non si monta niente: si punta, si
+tira, e ogni tanto cade una figurina. Sui rulli ci vanno **le immagini dei
+pacchetti**, solo quelle, e il mazzo si rifà da sé a ogni pacchetto chiuso.
+
+| Cosa esce | Quanto paga | Quanto spesso |
+|---|---|---|
+| tre in fila | da 2 a 13 volte la puntata, secondo il grado | 12 giri su 100 |
+| tutte e due le file | i due premi sommati | poco più di 1 su 100 |
+| **sei uguali** | da 40 a 150 volte, **e la figurina diventa tua** | 1 giro su 2.000 |
+
+Il premio vero è l'ultimo: sei immagini uguali sbloccano quella figurina e te la
+mettono in collezione. Le lire restano piccole apposta — se la macchinetta
+rendesse, sparirebbe il motivo di inventare combinazioni, che è l'unica cosa che
+questo gioco paga davvero. Un doppione paga il suo prezzo in lire, come nei
+pacchetti.
+
+**Si accende col primo pacchetto.** Finché non ce n'è nessuno, al posto dei rulli
+c'è scritto perché: un tasto che si preme e risponde «non si può» è un tasto che
+non doveva essere premibile.
+
+### I gradi delle figurine arrivano fino a Ethernal
+
+> «Nella sala giochi gli item ricevuti possono arrivare fino al grado ethernal.»
+
+Per due giorni una cosa presa si fermava a **Unique**, cioè a tre euro: la
+rarità è un rapporto, e con dieci figurine in tutto chiamarne una Mythic non
+vuol dire niente. Adesso il magazzino comincia a riempirsi e i sei gradi in cima
+si aprono — Celestial, Divine, Epic, Legendary, Mythic, Ethernal.
+
+**E i tasti del bonus ci arrivano.** Con l'ultimo tasto da tre euro, per dare un
+Ethernal bisognava batterlo dodici volte. Sotto i tre euro restano i sei piccoli
+di prima; sopra ce ne sono quattro grossi, e l'ultimo è esattamente la soglia del
+grado più alto. La strada corta resta quella di sempre: si tocca il grado, e il
+bonus ci si mette da solo.
+
+⚠ **Quello che è già sul disco sale con la scala, tenendo il grado**: un Mythic
+di ieri — che finora si leggeva «Unique» perché il tetto lo tagliava — torna a
+essere un Mythic.
+
+### Un pacchetto si chiude quando vuoi, anche con meno di cento dentro
+
+> «Facciamo che un admin può creare un pacchetto quando vuole anche con meno di
+> 100 creazioni.»
+
+Cento non è più una porta: è un suggerimento scritto accanto al tasto («ne
+mancano dodici per farne uno pieno»). Nell'Album c'è **Chiudi un pacchetto con
+queste N**, e gli si può dare un nome — «le cose di Natale» si ricorda, «serie 3»
+no.
+
+Un pacchetto chiuso adesso è una riga scritta e non un conto: dentro ci stanno
+le figurine di quel giorno, e restano quelle. Prima le serie erano il magazzino
+diviso per cento, e chiuderne una da quaranta avrebbe spostato i confini di tutte
+quelle dopo — con la figurina numero 41 che cambiava album da sola dopo che
+qualcuno l'aveva già comprata. I pacchetti che c'erano prima si ritrovano tali e
+quali.
+
+### Le canzoni adesso si sentono
+
+> «Le canzoni non si sentono.»
+
+Non erano rotte e il file era giusto: il lettore stava dentro una casella da
+**centodieci pixel**, nella striscia che scorre di fianco, e sotto ai duecento
+pixel il browser del telefono taglia via metà dei comandi — il tasto play
+finiva fuori dalla casella. C'era, e non si poteva premere.
+
+Adesso un brano è una riga larga quanto la carta, con la copertina a sinistra e
+il lettore a destra, e vale in tutti i posti dove un brano compare: le clip
+appena generate, quelle attaccate a mano, la figurina nell'album e nel negozio.
+
+### C'è scritto chi l'ha inventata, e si vede
+
+> «Evidenziamo meglio il nome di chi ha creato quella combinazione, anche quando
+> poi saranno sbloccabili nei pacchetti o acquistabili nel negozio ci deve essere
+> scritto chi lo ha creato inizialmente.»
+
+Il nome c'era già, ed era il difetto: stava in una riga grigia insieme alla data,
+della stessa misura di tutto il resto. Adesso è una pastiglia dorata con
+l'iniziale dentro, **uguale dappertutto**: la fila di chi controlla, l'album, il
+pacchetto che si apre, la scheda del negozio, e perfino le caselle della
+macchinetta. E non cambia quando la figurina passa di mano: chi la compra ce
+l'ha in collezione, ma inventata non l'ha lui.
+
+### La galleria «attacca dalla suite» è divisa
+
+> «Ancora non sono divise bene quando voglio aggiungere dalla suite.»
+
+Erano sessanta quadratini in ordine di data, foto e brani e video mescolati: per
+trovare la canzone appena generata bisognava riconoscerne la copertina in mezzo a
+quaranta immagini — e le copertine dei brani **sono** immagini. Adesso si sceglie
+prima cosa si cerca (immagini, brani, video, altro), c'è un cerca per nome, e i
+mucchi hanno il loro titoletto. Cercando una copertina si aprono direttamente le
+immagini.
+
+### DaProd: chi comanda può togliere un post
+
+> «In DaProd abbiamo messo la possibilità di condividere i prompt ma non di
+> cancellarli dalla DaProd: facciamo che un admin può rimuovere i post dalla
+> DaProd.»
+
+Un admin adesso vede **togli da DaProd** anche sulle cose degli altri — sulle
+foto e i brani in bacheca, e sugli stili e i prompt della riga «Da provare», che
+prima poteva togliere solo chi ce li aveva messi (da un'altra schermata, e
+infatti non li toglieva nessuno).
+
+**Toglie dalla bacheca, non cancella niente.** Il file resta di chi l'ha fatto,
+lo stile resta nella sua cartella, e chi ce l'ha messo può rimetterlo. Chi
+l'aveva già preso non perde niente: prendere fa una copia.
+
+⚠ **Mettere in vetrina resta di chi l'ha scritto**, anche per un admin: curare
+la bacheca vuol dire poter fare pulizia, non pubblicare la roba degli altri.
+
 ## 1.3.2 — Fuori due modelli, e i premi tornano piccoli
 
 L'ultima prima del formattone: si riparte da un computer pulito, e questa è la

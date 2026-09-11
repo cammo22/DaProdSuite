@@ -603,4 +603,44 @@ export interface DatiGiochi {
   prezzi: Record<string, number>;
   formazioni: Formazione[];
   impostazioni: Impostazioni;
+  /**
+   * ⚠ **I pacchetti chiusi, uno per uno.**
+   *
+   * Fino all'11 settembre 2026 non c'erano: le serie si contavano dividendo il
+   * magazzino per cento, e «quali figurine ci sono nella serie 2» voleva dire
+   * «dalla centouno alla duecento». Un conto, non una decisione.
+   *
+   * Il 12 settembre e' stato chiesto che **un admin possa creare un pacchetto
+   * quando vuole, anche con meno di cento creazioni**, e con la divisione non
+   * si poteva: un pacchetto da quaranta avrebbe spostato tutti i confini di
+   * quelli dopo, e la figurina numero 41 sarebbe passata dalla serie 1 alla 2
+   * da sola. Adesso un pacchetto **e' una riga scritta**: dentro ci stanno gli
+   * id di quel giorno, e restano quelli per sempre.
+   */
+  pacchetti: Pacchetto[];
+}
+
+/**
+ * Un pacchetto chiuso: una raccolta finita, che si compra e si apre.
+ *
+ * ⚠ **Lo chiude una persona, non il contatore** (CONCETTI.md § 11). A cento la
+ * serie e' *pronta*, e chi comanda preme «crea il pacchetto» — o lo preme
+ * prima, se quella raccolta li' e' finita cosi'.
+ */
+export interface Pacchetto {
+  id: string;
+  /** Che numero ha: 1 e' il primo chiuso. Non riparte mai da capo. */
+  numero: number;
+  /**
+   * Come si chiama, se chi comanda gli ha dato un nome. Se no e' «Serie n».
+   *
+   * Un pacchetto fatto apposta — «le cose di Natale», «i primi cento» — si
+   * riconosce dal nome, e un elenco di numeri non si ricorda.
+   */
+  nome?: string;
+  /** Gli id delle figurine che ci stanno dentro. Non cambiano mai piu'. */
+  dentro: string[];
+  quando: number;
+  /** Chi l'ha chiuso. */
+  daAdmin: string;
 }

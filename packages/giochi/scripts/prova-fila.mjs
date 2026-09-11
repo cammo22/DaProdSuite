@@ -17,7 +17,9 @@ import {
   azzeraPortafoglio,
   butta,
   classifica,
+  creaPacchetto,
   Deposito,
+  fuoriDaiPacchetti,
   gradoDiPrezzo,
   manda,
   MAX_ALLEGATI,
@@ -27,6 +29,7 @@ import {
   CAMBIO_EURO,
   regala,
   TAGLI,
+  serie,
   serieChiuse,
   rispondi,
   tettoDelValore,
@@ -34,7 +37,7 @@ import {
   statoMagazzino,
   tira,
 } from "../dist/index.js";
-import { writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { conCartella, dado, prova, tirandoLeSomme, uguale, vero } from "./attrezzi.mjs";
 
 /** Un deposito con dentro uno che gioca ricco, e un giro gia' fatto. */
@@ -544,20 +547,18 @@ prova("i prezzi di ieri si riaprono con lo stesso grado di ieri", () =>
     // Le soglie di prima, una per grado, e una a meta' di un gradino.
     const prima = [0, 5, 12, 25, 45, 75, 120, 200, 320, 520, 850, 1400, 60];
     /**
-     * ⚠ **Fino a Unique il grado si tiene; da Celestial in su si appoggia al
-     * tetto**, e non e' una perdita: e' la regola dell'11 settembre 2026 che
-     * vale anche per quello che c'era gia'.
+     * ⚠ **Ogni grado di ieri torna lo stesso grado di oggi, tutti e dodici.**
      *
-     * Prima di quel giorno il prezzo di una cosa presa era la **somma** dei
-     * dodici pezzi e non aveva tetto, quindi sul disco ci sono figurine da
-     * trenta Unique. Il grado sullo schermo era **gia'** tagliato a Unique
-     * (`gradoDiFigurina` e `sottoIlTetto`): quello che cambia adesso e' che il
-     * numero dice la stessa cosa del distintivo, invece di dirne un'altra e
-     * continuare a pagare.
+     * L'11 settembre 2026 i sei di sopra si appoggiavano al tetto — allora le
+     * figurine si fermavano a Unique — e dal 12 il tetto e' l'ultimo grado
+     * (`TETTO_FIGURINE`): un Mythic di ieri si riapre Mythic. E' quello che si
+     * e' sempre voluto da questa conversione, ed e' il motivo per cui e' scritta
+     * **tenendo il grado** invece di moltiplicare per un numero: cambiando il
+     * tetto non c'e' stato niente da riscrivere qui dentro.
      */
     const attesi = [
       "basic", "grand", "rare", "arcane", "heroic", "unique",
-      "unique", "unique", "unique", "unique", "unique", "unique",
+      "celestial", "divine", "epic", "legendary", "mythic", "ethernal",
       "heroic",
     ];
     fileVecchio(file, prima);
@@ -572,8 +573,12 @@ prova("i prezzi di ieri si riaprono con lo stesso grado di ieri", () =>
     });
     // Un Unique di ieri vale esattamente la soglia di oggi, non un pelo sotto.
     uguale(d.perId("c5").prezzo, 3600, "75 lire di ieri fanno la soglia dell'Unique tonda");
-    // E chi stava sopra al tetto ci si appoggia, tutti allo stesso numero.
-    uguale(d.perId("c11").prezzo, tettoDelValore(), "l'Ethernal di ieri vale il tetto di oggi");
+    // L'ultimo gradino non ha un sopra: si tiene il rapporto fra le due soglie.
+    uguale(
+      gradoDiPrezzo(d.perId("c11").prezzo),
+      "ethernal",
+      "l'Ethernal di ieri e' un Ethernal di oggi",
+    );
     // I prezzi che chi comanda aveva scritto sui pezzi dei rulli si muovono con
     // loro — e quelli **non** hanno tetto: un pezzo raro puo' valere di piu'.
     uguale(gradoDiPrezzo(d.prezzi()["genere/dub"]), "mythic", "anche i pezzi a mano");
@@ -609,7 +614,11 @@ prova("anche i prezzi al milione tornano sulla scala di adesso", () =>
     );
     const d = new Deposito(file);
     uguale(d.perId("c0").prezzo, 3600, "un milione di ieri e' la soglia dell'Unique di oggi");
-    uguale(gradoDiPrezzo(d.perId("c1").prezzo), "unique", "e chi sfondava si appoggia al tetto");
+    uguale(
+      gradoDiPrezzo(d.perId("c1").prezzo),
+      "ethernal",
+      "e chi stava in cima resta in cima: dal 12 settembre 2026 i gradi ci arrivano",
+    );
     uguale(gradoDiPrezzo(d.prezzi()["genere/dub"]), "mythic", "un pezzo Mythic resta Mythic");
     /**
      * ⚠ **Il portafoglio scende con i prezzi**, se no chi ha giocato ieri si
@@ -632,13 +641,25 @@ prova("un file gia' convertito non si converte due volte", () =>
   }),
 );
 
-prova("una serie si compra solo quando e' chiusa", () =>
+/**
+ * ⚠ **Un pacchetto lo chiude una persona, non il contatore.**
+ *
+ * Chiesto il 12 settembre 2026: «facciamo che un admin puo' creare un pacchetto
+ * quando vuole anche con meno di 100 creazioni». Il documento dei concetti lo
+ * diceva gia' dal 10 (§ 11) e il codice faceva il contrario: le serie erano il
+ * magazzino diviso per cento, e chiuderle voleva dire aspettare.
+ *
+ * Le due cose che questa prova tiene ferme: finche' nessuno chiude, **non si
+ * compra niente**; e quando qualcuno chiude, dentro ci va tutto quello che era
+ * rimasto fuori, anche se sono tre.
+ */
+prova("un pacchetto si compra solo dopo che qualcuno l'ha chiuso", () =>
   conCartella((file) => {
     const d = new Deposito(file);
     d.cambiaImpostazioni({ perSerie: 10, perPacchetto: 3, costoPacchetto: 100 });
     d.muovi("pino", 100000);
     riempi(d, 9);
-    uguale(serieChiuse(d), 0, "nove su dieci non chiudono niente");
+    uguale(serieChiuse(d), 0, "nove cose prese non chiudono niente da sole");
     let fermato = true;
     try {
       apriPacchetto(d, "pino", 1, Math.random);
@@ -646,10 +667,57 @@ prova("una serie si compra solo quando e' chiusa", () =>
     } catch (errore) {
       vero(errore instanceof NienteDaFare);
     }
-    vero(fermato, "non si compra una serie aperta");
+    vero(fermato, "non si compra un pacchetto che non c'e'");
 
-    riempi(d, 1);
-    uguale(serieChiuse(d), 1, "col decimo la serie si chiude");
+    // Nove su dieci: col contatore non bastavano, con una persona bastano.
+    const p = creaPacchetto(d, "capo", "I primi nove");
+    uguale(serieChiuse(d), 1, "chi comanda chiude quando vuole");
+    uguale(p.dentro.length, 9, "dentro ci va tutto quello che era rimasto fuori");
+    uguale(p.nome, "I primi nove", "e il nome, se gliene ha dato uno");
+    uguale(serie(d, 1).length, 9, "e sono quelle, per sempre");
+
+    // ⚠ Quello che arriva dopo non entra in un pacchetto gia' chiuso: se no
+    // chi l'ha comprato si ritroverebbe dentro roba che non c'era.
+    riempi(d, 3);
+    uguale(serie(d, 1).length, 9, "un pacchetto chiuso non si allarga piu'");
+    uguale(fuoriDaiPacchetti(d).length, 3, "le nuove aspettano il prossimo");
+
+    let vuoto = true;
+    creaPacchetto(d, "capo");
+    try {
+      creaPacchetto(d, "capo");
+      vuoto = false;
+    } catch (errore) {
+      vero(errore instanceof NienteDaFare);
+    }
+    vero(vuoto, "un pacchetto vuoto non si chiude");
+    uguale(serie(d, 2).length, 3, "il secondo ne ha tre, e va bene cosi'");
+  }),
+);
+
+/**
+ * ⚠ **I pacchetti di un file di ieri si ricostruiscono leggendo.**
+ *
+ * Prima del 12 settembre 2026 non erano scritti da nessuna parte: «le serie
+ * chiuse» erano `magazzino / 100`. Senza questa conversione, chi aveva gia' due
+ * serie chiuse riaprirebbe il gioco con **zero** pacchetti — l'album svuotato, e
+ * le figurine gia' comprate dentro a niente.
+ */
+prova("un file di ieri ritrova i suoi pacchetti", () =>
+  conCartella((file) => {
+    const d = new Deposito(file);
+    d.cambiaImpostazioni({ perSerie: 2 });
+    riempi(d, 5);
+    // Si toglie l'elenco dei pacchetti dal file: e' il file di ieri.
+    d.scriviOra();
+    const scritto = JSON.parse(readFileSync(file, "utf8"));
+    delete scritto.pacchetti;
+    writeFileSync(file, JSON.stringify(scritto), "utf8");
+
+    const riletto = new Deposito(file);
+    uguale(serieChiuse(riletto), 2, "cinque cose prese e due per serie facevano due serie");
+    uguale(serie(riletto, 1).length, 2, "e dentro ci stanno le stesse di prima");
+    uguale(fuoriDaiPacchetti(riletto).length, 1, "la quinta era fuori, e resta fuori");
   }),
 );
 
@@ -659,6 +727,7 @@ prova("il pacchetto costa, da' le figurine, e i doppioni pagano", () =>
     d.cambiaImpostazioni({ perSerie: 2, perPacchetto: 3, costoPacchetto: 100 });
     d.muovi("pino", 100000);
     riempi(d, 2, 40);
+    creaPacchetto(d, "capo");
     uguale(serieChiuse(d), 1);
 
     const prima = d.conto("pino").saldo;
@@ -687,6 +756,7 @@ prova("senza lire non si comprano pacchetti", () =>
     const d = new Deposito(file);
     d.cambiaImpostazioni({ perSerie: 1, costoPacchetto: 500 });
     riempi(d, 1);
+    creaPacchetto(d, "capo");
     d.muovi("spiantato", -99999);
     let fermato = true;
     try {
@@ -722,10 +792,19 @@ prova("il magazzino sa dire a che punto sta", () =>
     const d = new Deposito(file);
     d.cambiaImpostazioni({ perSerie: 10 });
     riempi(d, 12);
-    const stato = statoMagazzino(d);
-    uguale(stato.prese, 12);
-    uguale(stato.serieChiuse, 1);
-    uguale(stato.allaProssimaSerie, 8, "ne mancano otto alla seconda serie");
+    const prima = statoMagazzino(d);
+    uguale(prima.prese, 12);
+    uguale(prima.serieChiuse, 0, "finche' non li chiude nessuno, pacchetti zero");
+    uguale(prima.fuori, 12, "e dodici stanno aspettando");
+    uguale(prima.allaProssimaSerie, 0, "di piene ce n'e' gia' una: non ne mancano");
+    vero(prima.siPuoChiudere, "con dodici fuori il tasto e' vivo");
+
+    creaPacchetto(d, "capo");
+    const dopo = statoMagazzino(d);
+    uguale(dopo.serieChiuse, 1);
+    uguale(dopo.fuori, 0, "sono entrate tutte");
+    uguale(dopo.allaProssimaSerie, 10, "e per il prossimo pieno ne servono dieci");
+    vero(!dopo.siPuoChiudere, "senza niente fuori non c'e' niente da chiudere");
   }),
 );
 

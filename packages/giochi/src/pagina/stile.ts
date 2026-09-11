@@ -616,7 +616,8 @@ h2:first-child{margin-top:2px}
   border:1px solid var(--riga); transition:border-color .18s ease}
 .nata img{width:110px; height:110px; object-fit:cover; border-radius:8px;
   display:block}
-.nata audio{width:110px}
+/* ⚠ Un brano non sta piu' qui dentro: vedi «.brano». Centodieci pixel di
+   lettore sono un tasto play che non si preme (12 settembre 2026). */
 .nata .senza{display:flex; align-items:center; justify-content:center;
   width:110px; height:110px; border-radius:8px; border:1px dashed var(--riga);
   font-size:10px; color:var(--spento); text-align:center; padding:4px}
@@ -764,6 +765,24 @@ nav .pallino{display:inline-block; min-width:16px; padding:0 4px; margin-left:4p
 .griglia-libreria{flex:1; overflow-y:auto; display:grid; gap:8px; padding:12px 14px 28px;
   grid-template-columns:repeat(auto-fill, minmax(112px, 1fr));
   align-content:start; align-items:start}
+/**
+ * ⚠ **I titoletti dentro la griglia: «Immagini», «Brani», «Video».**
+ *
+ * Chiesto il 12 settembre 2026: «ancora non sono divise bene quando voglio
+ * aggiungere dalla suite». Prendono tutta la riga — se no finiscono in una
+ * colonna come fossero una foto — e restano appiccicati in cima mentre si
+ * scorre, cosi' si sa sempre in che mucchio si sta guardando.
+ */
+.griglia-libreria .gruppo{grid-column:1 / -1; position:sticky; top:-12px;
+  z-index:2; margin:6px 0 -2px; padding:7px 2px; font-size:11px; font-weight:800;
+  letter-spacing:1px; text-transform:uppercase; color:var(--spento);
+  background:rgba(8,9,13,.97)}
+.griglia-libreria .gruppo:first-child{margin-top:0}
+.griglia-libreria .gruppo em{font-style:normal; color:var(--riga2, #4a4f63);
+  font-weight:600; letter-spacing:0; text-transform:none; margin-left:6px}
+/* I tasti che scelgono il mucchio, e il cerca: fermi in cima, non scorrono. */
+.foglio > .fila-scelte{margin:10px 14px 6px; flex:0 0 auto}
+.foglio > .cerca{margin:0 14px 8px; width:calc(100% - 28px); flex:0 0 auto}
 .griglia-libreria .voce{padding:0; border:1px solid var(--riga); border-radius:11px;
   background:rgba(18,20,28,.85); color:var(--testo); cursor:pointer; overflow:hidden;
   display:flex; flex-direction:column}
@@ -848,6 +867,127 @@ nav .pallino{display:inline-block; min-width:16px; padding:0 4px; margin-left:4p
   to{opacity:1; transform:translateX(-50%)}}
 .avviso.male{border-color:#5c2530; color:#ffd7dc}
 .avviso.bene{border-color:#2b6b49; color:#d8ffe9}
+
+/* --------------------------------------------------------- la macchinetta */
+
+/**
+ * ⚠ **La seconda slot: sei caselle, due file da tre.**
+ *
+ * Chiesta il 12 settembre 2026. La griglia e' **sempre tre per riga**, su ogni
+ * schermo: e' la forma della macchina, non un impaginato che si adatta. Quattro
+ * per riga vorrebbe dire che «la fila» non e' piu' una fila, e la regola del
+ * gioco si legge guardando lo schermo.
+ */
+.vetrina-macchina{display:grid; grid-template-columns:repeat(3,1fr); gap:7px;
+  padding:10px; border-radius:16px; border:1px solid var(--riga);
+  background:linear-gradient(180deg, rgba(10,12,18,.9), rgba(16,10,22,.9));
+  box-shadow:inset 0 0 40px rgba(0,0,0,.6)}
+.casella{position:relative; aspect-ratio:1; border-radius:12px; overflow:hidden;
+  border:1px solid var(--riga); background:rgba(6,7,11,.9);
+  display:flex; align-items:center; justify-content:center}
+.casella img{width:100%; height:100%; object-fit:cover; display:block}
+/* Il nome di chi l'ha inventata, sulla casella: vedi «.firma». */
+.casella .chi{position:absolute; left:0; right:0; bottom:0; padding:3px 6px;
+  font-size:9.5px; font-weight:700; letter-spacing:.2px; color:#fff;
+  background:linear-gradient(180deg, transparent, rgba(0,0,0,.82));
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-align:center}
+/* Mentre gira: le figure scorrono e non si distinguono, come su un rullo vero. */
+.casella.gira img{animation:scorre .28s linear infinite}
+@keyframes scorre{0%{transform:translateY(-6%) scale(1.08)}
+  100%{transform:translateY(6%) scale(1.08)}}
+.casella.gira .chi{opacity:0}
+/* La casella che ha fatto la fila: accesa del colore del suo grado. */
+.casella.vince{border-color:var(--g); box-shadow:0 0 0 2px var(--g),
+  0 0 22px color-mix(in srgb, var(--g) 55%, transparent); z-index:1}
+.casella.vince::after{content:""; position:absolute; inset:0;
+  background:color-mix(in srgb, var(--g) 16%, transparent)}
+/* Sei uguali: si accende tutta la vetrina, non le singole caselle. */
+.vetrina-macchina.pieno{border-color:var(--oro);
+  box-shadow:0 0 0 2px var(--oro), 0 0 60px rgba(255,209,102,.45);
+  animation:respira 1.2s ease-in-out 3}
+
+/**
+ * ⚠ **Le puntate sono tre tasti grossi, non un menu a tendina.**
+ *
+ * Cinquanta, cento, duecento: si sceglie col pollice senza guardare, e quello
+ * scelto resta acceso. Un menu vorrebbe dire due gesti per cambiare puntata, e
+ * la puntata si cambia in continuazione — e' meta' del gioco.
+ */
+.puntate{display:flex; gap:8px; margin:10px 0 2px}
+.puntate button{flex:1; padding:12px 6px; border-radius:12px;
+  border:1px solid var(--riga); background:rgba(18,20,28,.85); color:var(--testo);
+  font:inherit; font-weight:700; font-size:14px; cursor:pointer;
+  font-variant-numeric:tabular-nums}
+.puntate button.scelto{border-color:var(--oro); background:var(--oro); color:#141414}
+
+/* La tabellina dei premi: un grado per riga, col suo colore. */
+.premi{display:grid; gap:4px; padding:4px 11px 12px}
+.premi .riga{display:grid; grid-template-columns:1fr auto auto; gap:10px;
+  align-items:center; font-size:12.5px; font-variant-numeric:tabular-nums}
+.premi .riga b{font-weight:700}
+.premi .riga span{color:var(--spento)}
+
+/**
+ * ⚠ **La firma: chi ha inventato quella cosa.**
+ *
+ * Chiesto il 12 settembre 2026: «evidenziamo meglio il nome di chi ha creato
+ * quella combinazione, anche quando poi saranno sbloccabili nei pacchetti o
+ * acquistabili nel negozio ci deve essere scritto chi lo ha creato
+ * inizialmente».
+ *
+ * Prima era «di Tizio · tre ore fa», grigio, in fila con la data, della stessa
+ * misura di tutto il resto: cioe' l'unica cosa che dice **di chi e' il
+ * merito** era la piu' facile da saltare. Adesso e' una pastiglia con la
+ * faccia dentro, e resta la stessa in tutti e quattro i posti dove una
+ * figurina si vede — la fila, l'album, il pacchetto che si apre, il negozio.
+ * Una firma che cambia faccia da una schermata all'altra non si riconosce.
+ */
+.firma{display:inline-flex; align-items:center; gap:6px; margin-top:5px;
+  padding:4px 10px 4px 5px; border-radius:999px; max-width:100%;
+  background:rgba(255,209,102,.13); border:1px solid rgba(255,209,102,.3)}
+.firma .tondo{display:grid; place-items:center; width:19px; height:19px;
+  border-radius:50%; background:var(--oro); color:#141414;
+  font-size:10px; font-weight:800; flex:0 0 auto}
+.firma .nome{font-size:12.5px; font-weight:700; color:var(--oro);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.firma .che{font-size:11px; color:var(--spento); flex:0 0 auto}
+
+/**
+ * ⚠ **Il lettore di un brano, e perche' ce n'e' uno.**
+ *
+ * Il difetto, detto il 12 settembre 2026: «le canzoni non si sentono». Non
+ * erano rotte: il lettore stava dentro una casella da **centodieci pixel**,
+ * in una striscia che scorre di fianco. Sotto ai duecento pixel il browser del
+ * telefono butta via meta' dei comandi e il tasto play finisce fuori dalla
+ * casella — c'era, ma non si poteva premere.
+ *
+ * Adesso un brano non e' un quadratino come gli altri: e' una riga larga
+ * quanto la carta, con la copertina a sinistra e il lettore a destra, largo
+ * abbastanza da avere i suoi comandi. Vale dappertutto — le prove, gli
+ * attacchi, la figurina — perche' e' sempre lo stesso mestiere.
+ */
+.brano{display:flex; align-items:center; gap:10px; margin-top:8px; padding:8px;
+  border-radius:12px; border:1px solid var(--riga); background:rgba(9,11,16,.6)}
+.brano .copertina{width:54px; height:54px; border-radius:9px; object-fit:cover;
+  flex:0 0 auto; display:block}
+.brano .senza{display:grid; place-items:center; width:54px; height:54px;
+  border-radius:9px; border:1px dashed var(--riga); flex:0 0 auto;
+  font-size:19px; color:var(--spento)}
+.brano .dentro{flex:1; min-width:0; display:flex; flex-direction:column; gap:5px}
+.brano .come{font-size:12px; color:var(--spento); white-space:nowrap;
+  overflow:hidden; text-overflow:ellipsis}
+/* ⚠ Larghezza piena e mai sotto: e' tutto il punto di questo riquadro. */
+.brano audio{width:100%; min-width:0; height:34px; display:block}
+/* Dentro la striscia delle prove una riga-brano occupa il posto di due caselle. */
+.nate .brano{flex:0 0 auto; width:min(260px, 74vw); margin-top:0}
+/**
+ * ⚠ **La casella che contiene un brano si allarga.** Senza questa riga il
+ * lettore resta chiuso dentro i centoventiquattro pixel di «.nata», che e'
+ * esattamente il difetto del 12 settembre 2026: il tasto play c'e' e non si
+ * puo' premere.
+ */
+.nata.suona{width:min(292px, 80vw)}
+.nata.suona .brano{width:100%; border:0; background:transparent; padding:0}
 
 /* Chi non vuole roba che si muove non la vede: il gioco resta lo stesso. */
 @media (prefers-reduced-motion: reduce){

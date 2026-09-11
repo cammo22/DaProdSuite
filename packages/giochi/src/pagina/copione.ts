@@ -900,6 +900,70 @@ export const COPIONE = `
 
   /* ----------------------------------------------------------- le figurine */
 
+  /**
+   * ⚠ **Un brano si ascolta, e per ascoltarlo ci vuole spazio.**
+   *
+   * Il difetto, detto il 12 settembre 2026: «le canzoni non si sentono». Non
+   * erano rotte e il file era giusto: il lettore stava in una casella da
+   * centodieci pixel, dentro la striscia che scorre di fianco. Sotto ai
+   * duecento pixel il browser del telefono taglia via meta' dei comandi — il
+   * tasto play finiva **fuori** dalla casella. C'era, e non si poteva premere.
+   *
+   * Quindi un brano non e' un quadratino: e' una riga larga, con la copertina
+   * a sinistra e il lettore a destra. Una funzione sola, usata nei tre posti
+   * dove un brano compare — le prove, gli attacchi, la figurina — perche' una
+   * canzone che si sente di qua e non di la' e' la solita cosa fatta in due
+   * posti.
+   *
+   * ⚠ **«preload=metadata» e non «auto»**: quattro clip da sessanta secondi in
+   * una card vorrebbero dire quattro scaricamenti prima che qualcuno prema
+   * play. Cosi' arriva solo la durata, e il resto quando si suona.
+   */
+  function branoHtml(url, titolo, copertina) {
+    var h = "<div class=\\"brano\\">";
+    h += copertina
+      ? "<img class=\\"copertina\\" src=\\"" + sicuro(copertina) + "\\" alt=\\"\\" loading=\\"lazy\\">"
+      : "<span class=\\"senza\\">\u266B</span>";
+    h += "<div class=\\"dentro\\">";
+    if (titolo) h += "<div class=\\"come\\">" + sicuro(titolo) + "</div>";
+    h += "<audio controls preload=\\"metadata\\" src=\\"" + sicuro(url) + "\\"></audio>";
+    h += "</div></div>";
+    return h;
+  }
+
+  /** Vero se quel tipo di file si ascolta invece di guardarsi. */
+  function siAscolta(mime) {
+    return String(mime || "").indexOf("audio/") === 0;
+  }
+
+  /**
+   * ⚠ **La firma: chi ha inventato quella cosa.**
+   *
+   * Chiesto il 12 settembre 2026: «evidenziamo meglio il nome di chi ha creato
+   * quella combinazione, anche quando poi saranno sbloccabili nei pacchetti o
+   * acquistabili nel negozio ci deve essere scritto chi lo ha creato
+   * inizialmente».
+   *
+   * Prima chi l'aveva fatta stava in una riga grigia insieme alla data, della
+   * stessa misura di tutto il resto: l'unica cosa che dice **di chi e' il
+   * merito** era la piu' facile da saltare. Adesso e' una pastiglia dorata con
+   * l'iniziale dentro, ed e' la stessa identica in tutti i posti dove una
+   * figurina si vede — la fila, l'album, il pacchetto che si apre, il negozio,
+   * i rulli della macchinetta. Una firma che cambia faccia da una schermata
+   * all'altra non si riconosce.
+   *
+   * ⚠ **Non cambia mai, nemmeno quando la figurina passa di mano.** Chi la
+   * compra nello shop ce l'ha in collezione, ma inventata non l'ha lui: il
+   * nome resta quello di prima, e in classifica il punto resta suo.
+   */
+  function firmaHtml(nome, che) {
+    var chi = String(nome || "qualcuno");
+    return "<div class=\\"firma\\" title=\\"L'ha inventata " + sicuro(chi) + "\\">" +
+      "<span class=\\"tondo\\">" + sicuro(chi.slice(0, 1).toUpperCase()) + "</span>" +
+      "<span class=\\"nome\\">" + sicuro(chi) + "</span>" +
+      "<span class=\\"che\\">" + sicuro(che || "l'ha inventata") + "</span></div>";
+  }
+
   function figurinaHtml(c, opzioni) {
     var o = opzioni || {};
     var s = scalinoDi(c.grado);
@@ -962,11 +1026,16 @@ export const COPIONE = `
       }
     }
     h += "<div class=\\"titolo\\">" + sicuro(c.titolo) + "</div>";
-    h += "<div class=\\"sotto\\">";
-    h += "di " + sicuro(c.daNome) + " · " + quando(c.quando);
-    // Il perche' di un no si legge tutto, e non incolonnato con la data: e'
-    // l'unica cosa che chi l'ha mandata e' venuto a leggere.
-    h += "</div>";
+    /**
+     * ⚠ **La firma sta qui, e non piu' in fila con la data.**
+     *
+     * Prima era «di Tizio · tre ore fa»: due cose diverse, grigie, della
+     * stessa misura, e quella che conta — chi l'ha inventata — si perdeva.
+     * Adesso il nome ha la sua pastiglia e la data resta sotto, piccola, dove
+     * deve stare. Vedi «firmaHtml».
+     */
+    h += firmaHtml(c.daNome, c.stato === "presa" ? "l'ha inventata" : "l'ha mandata");
+    h += "<div class=\\"sotto\\">" + quando(c.quando) + "</div>";
     if (c.stato === "buttata" && c.motivo) {
       h += "<div class=\\"perche\\">" + sicuro(c.motivo) + "</div>";
     }
@@ -1003,18 +1072,22 @@ export const COPIONE = `
     };
     if (attaccate.length === 1) {
       var sola = attaccate[0];
-      h += String(sola.mime || "").indexOf("audio/") === 0
-        ? "<audio controls src=\\"" + sicuro(sola.url) + "\\"></audio>"
+      // ⚠ Un brano prende la riga larga col lettore vero: dentro un quadratino
+      // il tasto play non si preme (vedi «branoHtml», 12 settembre 2026).
+      h += siAscolta(sola.mime)
+        ? branoHtml(sola.url, c.titolo, c.copertina)
         : "<img" + guardala(sola) + " src=\\"" + sicuro(sola.url) +
           "\\" alt=\\"\\" loading=\\"lazy\\">";
     } else if (attaccate.length > 1) {
       h += "<div class=\\"nate\\">";
       for (var q = 0; q < attaccate.length; q++) {
         var att = attaccate[q];
+        if (siAscolta(att.mime)) {
+          h += branoHtml(att.url, "", q === 0 ? c.copertina : "");
+          continue;
+        }
         h += "<div class=\\"nata\\"" + guardala(att) + ">";
-        h += String(att.mime || "").indexOf("audio/") === 0
-          ? "<audio controls src=\\"" + sicuro(att.url) + "\\"></audio>"
-          : "<img src=\\"" + sicuro(att.url) + "\\" alt=\\"\\" loading=\\"lazy\\">";
+        h += "<img src=\\"" + sicuro(att.url) + "\\" alt=\\"\\" loading=\\"lazy\\">";
         h += "</div>";
       }
       h += "</div>";
@@ -1024,8 +1097,8 @@ export const COPIONE = `
     if (c.scoperta && c.dove && c.mime.indexOf("image/") === 0) {
       h += "<img src=\\"" + sicuro(c.dove) + "\\" alt=\\"\\">";
     }
-    if (c.scoperta && c.dove && c.mime.indexOf("audio/") === 0) {
-      h += "<audio controls src=\\"" + sicuro(c.dove) + "\\"></audio>";
+    if (c.scoperta && c.dove && siAscolta(c.mime)) {
+      h += branoHtml(c.dove, c.titolo, c.copertina);
     }
     if (o.tasti) h += o.tasti;
     h += "</div>";
@@ -1178,8 +1251,17 @@ export const COPIONE = `
       : faccinaDi(c.tipo);
     h += "</div><div class=\\"corpo\\">";
     h += "<h3>" + sicuro(c.titolo) + "</h3>";
-    h += "<div class=\\"riga\\">di " + sicuro(c.daNome) +
-      (c.numero > 0 ? " · n. " + c.numero : "") + "</div>";
+    /**
+     * ⚠ **Anche qui c'e' scritto chi l'ha inventata.** Chiesto il 12 settembre
+     * 2026: «anche quando poi saranno sbloccabili nei pacchetti o acquistabili
+     * nel negozio ci deve essere scritto chi lo ha creato inizialmente».
+     *
+     * Non e' una gentilezza: e' l'unica cosa che questo gioco paga davvero.
+     * Uno compra una figurina, la usa nella suite, e resta scritto di chi era
+     * l'idea — ed e' il motivo per cui a qualcuno conviene inventarne un'altra.
+     */
+    h += firmaHtml(c.daNome, "l'ha inventata");
+    if (c.numero > 0) h += "<div class=\\"riga\\">n. " + c.numero + "</div>";
     h += "<div class=\\"fondo\\"><span class=\\"costa\\">" + soldi(c.costo) + "</span>";
     h += "<button class=\\"prendi\\" data-compra=\\"" + c.id + "\\"" +
       (c.mia ? " disabled" : "") + ">" + (c.mia ? "TUA" : "COMPRA") + "</button>";
@@ -1201,28 +1283,94 @@ export const COPIONE = `
 
   /* --------------------------------------------------------------- album */
 
+  /** I pacchetti chiusi, come tasti: si sceglie quale guardare. */
+  function disegnaPacchetti(quali) {
+    var h = "";
+    for (var i = 0; i < quali.length; i++) {
+      var p = quali[i];
+      h += "<button data-pacchetto=\\"" + p.numero + "\\"" +
+        (p.numero === serieAperta ? " class=\\"scelto\\"" : "") + ">" +
+        sicuro(p.nome || ("Serie " + p.numero)) + " · " + p.quante + "</button>";
+    }
+    $("album-pacchetti").innerHTML = h;
+  }
+
   function caricaAlbum() {
     chiedi("GET", "/album").then(function (dati) {
       serieAperta = dati.serie;
       var m = dati.magazzino;
       var testo = "";
       if (dati.chiuse === 0) {
-        testo = "Nessuna serie chiusa. Ne servono ancora <b>" + m.allaProssimaSerie +
-          "</b> cose prese perche' si possa comprare il primo pacchetto.";
+        /**
+         * ⚠ **Cento non e' piu' una porta chiusa.** Dal 12 settembre 2026 chi
+         * comanda chiude un pacchetto quando vuole, anche con meno dentro:
+         * quindi qui si dice quante ne mancano per averne uno **pieno**, non
+         * quante ne servono per poterlo fare.
+         */
+        testo = "Nessun pacchetto ancora. Ce ne sono <b>" + m.fuori +
+          "</b> in attesa di entrarci" +
+          (m.allaProssimaSerie > 0
+            ? ", e ne mancano " + m.allaProssimaSerie + " per farne uno pieno."
+            : ".");
         $("compra").disabled = true;
       } else {
-        testo = "Serie <b>" + dati.serie + "</b> di " + dati.chiuse + " · " +
-          "un pacchetto costa " + soldi(io.costi.pacchetto) + " e contiene " +
-          io.costi.perPacchetto + " figurine.";
+        var quale = (dati.pacchetti || []).filter(function (p) {
+          return p.numero === dati.serie;
+        })[0];
+        testo = "<b>" + sicuro((quale && quale.nome) || ("Serie " + dati.serie)) + "</b> · " +
+          (quale ? quale.quante + " figurine dentro · " : "") +
+          "un pacchetto costa " + soldi(io.costi.pacchetto) + " e ne pesca " +
+          io.costi.perPacchetto + ".";
         $("compra").disabled = false;
       }
       testo += "<br><span style=\\"color:var(--spento)\\">In magazzino: " + m.prese +
-        " · in attesa: " + m.inAttesa + "</span>";
+        " · in attesa: " + m.inAttesa + " · pacchetti: " + dati.chiuse + "</span>";
       $("album-stato").innerHTML = "<div class=\\"figurina\\">" + testo + "</div>";
+      disegnaPacchetti(dati.pacchetti || []);
+
+      // Il tasto di chi comanda: dice sempre quante cose ci finirebbero dentro,
+      // e si spegne quando non c'e' niente da impacchettare.
+      var tasto = $("crea-pacchetto");
+      tasto.hidden = !io.admin;
+      if (io.admin) {
+        tasto.disabled = !m.siPuoChiudere;
+        tasto.textContent = m.siPuoChiudere
+          ? "Chiudi un pacchetto con queste " + m.fuori
+          : "Niente da impacchettare";
+      }
+
       $("album-figurine").innerHTML = dati.figurine.length
         ? dati.figurine.map(function (c) { return figurinaHtml(c); }).join("")
-        : "<div class=\\"niente\\">Ancora niente in questa serie.</div>";
+        : "<div class=\\"niente\\">Ancora niente in questo pacchetto.</div>";
     }).catch(function (e) { avviso(e.message, "male"); });
+  }
+
+  /**
+   * ⚠ **Chi comanda chiude un pacchetto, quando vuole.**
+   *
+   * Chiesto il 12 settembre 2026: «facciamo che un admin puo' creare un
+   * pacchetto quando vuole anche con meno di 100 creazioni». Dentro ci va tutto
+   * quello che e' rimasto fuori — non si sceglie a mano quali, se no una cosa
+   * presa potrebbe non stare in nessuna raccolta e non comprarsi da nessuna
+   * parte. Il nome si puo' dare: «le cose di Natale» si ricorda, «serie 3» no.
+   */
+  function creaIlPacchetto() {
+    chiediQualcosa("Come si chiama questo pacchetto?",
+      "Lascia vuoto e si chiamera' col suo numero. Dentro ci va tutto quello " +
+      "che e' stato preso dopo l'ultimo pacchetto.",
+      { suggerimento: "un nome, o niente", tastoSi: "Chiudilo" }).then(function (nome) {
+        if (nome === null) return;
+        chiedi("POST", "/pacchetto/crea", { nome: nome }).then(function (esito) {
+          coriandoli(60, ["#ffd166", "#7fd1a8", "#ffffff"]);
+          avviso("Pacchetto " + esito.pacchetto.numero + " chiuso, con dentro " +
+            esito.pacchetto.quante + ".", "bene");
+          serieAperta = esito.pacchetto.numero;
+          caricaAlbum();
+          // ⚠ La macchinetta vive dei pacchetti: uno nuovo vuol dire rulli
+          // nuovi, e si aggiorna da sola senza che nessuno ricarichi.
+          caricaMacchinetta();
+        }).catch(function (e) { avviso(e.message, "male"); });
+      });
   }
 
   function compraPacchetto() {
@@ -1252,6 +1400,227 @@ export const COPIONE = `
       $("compra").disabled = false;
       avviso(e.message, "male");
     });
+  }
+
+  /* -------------------------------------------------------- la macchinetta */
+
+  /**
+   * ⚠ **La seconda slot: sei rulli, due file da tre.**
+   *
+   * Chiesta il 12 settembre 2026: «aggiungiamo la slot dove ci saranno 6 rulli,
+   * 3 per fila, che funziona come una slot classica. Girandola puoi inserire se
+   * giocare a 50 lire, 100 lire o 200 lire, e se si riescono a mettere in fila
+   * gli item si vince».
+   *
+   * Qui non si decide niente: si punta, si chiede al PC, e si fa la scena. Le
+   * sei caselle arrivano gia' decise (vedi macchinetta.ts), e questa pagina
+   * le scopre una alla volta — che e' tutta la differenza fra guardare una
+   * slot e leggere un risultato.
+   */
+
+  /** Il mazzo, per far scorrere qualcosa mentre gira. Cosa esce lo dice il PC. */
+  var simboli = [];
+  var puntata = 0;
+  var macchinaGira = false;
+  var orologiMacchina = [];
+  /** L'ultima puntata scelta resta fra una sera e l'altra. */
+  var CHIAVE_PUNTATA = "daprod.giochi.puntata";
+
+  function fermaOrologiMacchina() {
+    for (var i = 0; i < orologiMacchina.length; i++) clearTimeout(orologiMacchina[i]);
+    orologiMacchina = [];
+  }
+
+  /** Una casella: la faccia di una figurina, col nome di chi l'ha inventata. */
+  function casellaHtml(sim, classe) {
+    var s = sim ? scalinoDi(sim.grado) : { colore: "#2a2f3d" };
+    var h = "<div class=\\"casella " + (classe || "") + "\\" style=\\"--g:" + s.colore + "\\">";
+    if (sim && sim.faccia) {
+      h += "<img src=\\"" + sicuro(sim.faccia) + "\\" alt=\\"\\" loading=\\"lazy\\">";
+      /**
+       * ⚠ **Il nome di chi l'ha inventata sta sulla casella.** Chiesto il 12
+       * settembre 2026 insieme al resto: una figurina che gira su un rullo e'
+       * una figurina come le altre, e chi l'ha fatta si legge anche li'.
+       */
+      if (sim.daNome) h += "<span class=\\"chi\\">" + sicuro(sim.daNome) + "</span>";
+    }
+    h += "</div>";
+    return h;
+  }
+
+  function disegnaCaselle(quali, classe) {
+    var h = "";
+    for (var i = 0; i < 6; i++) h += casellaHtml(quali[i], classe);
+    $("macchina-rulli").innerHTML = h;
+  }
+
+  function unSimboloACaso() {
+    return simboli.length ? simboli[Math.floor(Math.random() * simboli.length)] : null;
+  }
+
+  function disegnaPuntate() {
+    var quali = (io && io.puntate) || [50, 100, 200];
+    var h = "";
+    for (var i = 0; i < quali.length; i++) {
+      h += "<button data-puntata=\\"" + quali[i] + "\\"" +
+        (quali[i] === puntata ? " class=\\"scelto\\"" : "") + ">" + soldi(quali[i]) + "</button>";
+    }
+    $("puntate").innerHTML = h;
+    $("macchina-conto").innerHTML = "Tre in fila pagano poco. <b>Sei uguali</b> pagano il " +
+      "colpo grosso, e quella figurina diventa tua.";
+  }
+
+  /** La tabellina dei premi: quanto paga ogni grado. La dice il PC, non questa pagina. */
+  function disegnaPremi(premi) {
+    var h = "<div class=\\"premi\\">";
+    for (var i = 0; i < premi.length; i++) {
+      var g = premi[i];
+      h += "<div class=\\"riga\\"><b style=\\"color:" + g.colore + "\\">" + sicuro(g.nome) + "</b>" +
+        "<span>fila &times;" + g.fila + "</span><span>sei &times;" + g.pieno + "</span></div>";
+    }
+    h += "</div>";
+    $("macchina-premi").innerHTML = h;
+  }
+
+  function caricaMacchinetta() {
+    chiedi("GET", "/macchinetta").then(function (dati) {
+      simboli = dati.simboli || [];
+      $("macchina").hidden = !dati.accesa;
+      $("macchina-spenta").hidden = dati.accesa;
+      $("cassetto-premi").hidden = !dati.accesa;
+      if (!dati.accesa) {
+        $("macchina-spenta").textContent = dati.perche;
+        return;
+      }
+      // La puntata di ieri, se e' ancora una di quelle buone.
+      if (!puntata) {
+        var vecchia = 0;
+        try { vecchia = Number(localStorage.getItem(CHIAVE_PUNTATA)) || 0; } catch (e) {}
+        puntata = dati.puntate.indexOf(vecchia) >= 0 ? vecchia : dati.puntate[0];
+      }
+      io.puntate = dati.puntate;
+      disegnaPuntate();
+      disegnaPremi(dati.premi || []);
+      // A macchina ferma le caselle mostrano sei figurine a caso: una vetrina
+      // spenta non fa venire voglia di tirare.
+      disegnaCaselle([
+        unSimboloACaso(), unSimboloACaso(), unSimboloACaso(),
+        unSimboloACaso(), unSimboloACaso(), unSimboloACaso(),
+      ], "");
+      $("macchina-esito").textContent = "";
+    }).catch(function (e) { avviso(e.message, "male"); });
+  }
+
+  /**
+   * Tira.
+   *
+   * ⚠ **Le caselle si fermano una dopo l'altra**, da sinistra a destra come su
+   * una macchina vera: se si fermassero tutte insieme non ci sarebbe il
+   * momento in cui le prime due sono uguali e si aspetta la terza — che e'
+   * l'unica cosa per cui si gioca a una slot.
+   */
+  function tiraLaMacchinetta() {
+    if (macchinaGira) return;
+    if (!simboli.length) return;
+    macchinaGira = true;
+    $("tira").disabled = true;
+    $("macchina-esito").textContent = "";
+    $("macchina-rulli").classList.remove("pieno");
+    fermaOrologiMacchina();
+
+    // Mentre si aspetta il PC le caselle scorrono: qualcosa deve muoversi
+    // subito, se no il primo tocco sembra non aver fatto niente.
+    var mescola = setInterval(function () {
+      disegnaCaselle([
+        unSimboloACaso(), unSimboloACaso(), unSimboloACaso(),
+        unSimboloACaso(), unSimboloACaso(), unSimboloACaso(),
+      ], "gira");
+    }, 90);
+
+    chiedi("POST", "/macchinetta", { puntata: puntata }).then(function (esito) {
+      io.saldo = esito.saldo;
+      disegnaSaldo(false);
+      // Quali caselle hanno fatto la fila: servono ad accenderle alla fine.
+      var vincenti = {};
+      for (var f = 0; f < esito.file.length; f++) {
+        var da = esito.file[f].riga * 3;
+        vincenti[da] = true; vincenti[da + 1] = true; vincenti[da + 2] = true;
+      }
+
+      var scoperte = [null, null, null, null, null, null];
+      var fermaUna = function (i) {
+        scoperte[i] = esito.caselle[i];
+        var h = "";
+        for (var k = 0; k < 6; k++) {
+          h += scoperte[k]
+            ? casellaHtml(scoperte[k], vincenti[k] && i === 5 ? "vince" : "")
+            : casellaHtml(unSimboloACaso(), "gira");
+        }
+        $("macchina-rulli").innerHTML = h;
+      };
+
+      for (var i = 0; i < 6; i++) {
+        (function (quale) {
+          orologiMacchina.push(setTimeout(function () {
+            if (quale === 0) clearInterval(mescola);
+            fermaUna(quale);
+            if (quale === 5) raccontaLaMacchinetta(esito);
+          }, 420 + quale * 260));
+        })(i);
+      }
+    }).catch(function (e) {
+      clearInterval(mescola);
+      macchinaGira = false;
+      $("tira").disabled = false;
+      caricaMacchinetta();
+      avviso(e.message, "male");
+    });
+  }
+
+  /** Cos'e' successo, detto come si direbbe a voce. E la scena che ci va dietro. */
+  function raccontaLaMacchinetta(esito) {
+    macchinaGira = false;
+    $("tira").disabled = false;
+
+    if (esito.pieno) {
+      var s = scalinoDi(esito.caselle[0].grado);
+      $("macchina-rulli").classList.add("pieno");
+      lampo(s.colore);
+      scuoti();
+      coriandoli(90, [s.colore, "#ffd166", "#ffffff"]);
+      numeroVolante("+" + soldi(esito.vinto), "#ffd166");
+      $("macchina-esito").innerHTML = "SEI UGUALI · " + soldi(esito.vinto) +
+        (esito.sbloccata
+          ? " · <b>" + sicuro(esito.sbloccata.titolo) + "</b> e' tua"
+          : " · ce l'avevi gia': pagata in lire");
+      if (esito.sbloccata) {
+        grande(
+          "Sbloccata",
+          esito.sbloccata.titolo + " · l'ha inventata " + esito.sbloccata.daNome,
+          "E' nella tua collezione.",
+          s.colore,
+        );
+      }
+      return;
+    }
+
+    if (esito.file.length) {
+      var meglio = esito.file[0];
+      for (var i = 1; i < esito.file.length; i++) {
+        if (esito.file[i].lire > meglio.lire) meglio = esito.file[i];
+      }
+      var s2 = scalinoDi(meglio.simbolo.grado);
+      lampo(s2.colore);
+      numeroVolante("+" + soldi(esito.vinto), s2.colore);
+      $("macchina-esito").innerHTML =
+        (esito.file.length > 1 ? "DUE FILE" : "TRE IN FILA") + " · " + soldi(esito.vinto) +
+        " · " + sicuro(meglio.simbolo.titolo) +
+        " <span style=\\"color:var(--spento)\\">di " + sicuro(meglio.simbolo.daNome) + "</span>";
+      return;
+    }
+
+    $("macchina-esito").innerHTML =
+      "<span style=\\"color:var(--spento)\\">Niente. Ritira.</span>";
   }
 
   /* ---------------------------------------------------------------- casa */
@@ -1494,14 +1863,21 @@ export const COPIONE = `
       for (var n = 0; n < nate.length; n++) {
         var v = nate[n];
         var tenuta = tenute[c.id] && tenute[c.id][v.url];
-        var suona = String(v.mime || "").indexOf("audio/") === 0;
+        var suona = siAscolta(v.mime);
         var faccia = v.anteprima || (String(v.mime || "").indexOf("image/") === 0 ? v.url : "");
-        h += "<div class=\\"nata" + (tenuta ? " tenuta" : "") + "\\"" +
+        h += "<div class=\\"nata" + (tenuta ? " tenuta" : "") + (suona ? " suona" : "") + "\\"" +
           " data-guarda=\\"" + sicuro(v.url) + "\\" data-guarda-mime=\\"" + sicuro(v.mime) +
           "\\" data-guarda-nome=\\"" + sicuro(v.titolo || "") + "\\">";
-        if (faccia) h += "<img src=\\"" + sicuro(faccia) + "\\" alt=\\"\\" loading=\\"lazy\\">";
-        else if (!suona) h += "<span class=\\"senza\\">" + sicuro(v.mime || "un file") + "</span>";
-        if (suona) h += "<audio controls src=\\"" + sicuro(v.url) + "\\"></audio>";
+        /**
+         * ⚠ **Una clip appena nata si deve poter sentire.** Detto il 12
+         * settembre 2026: «le canzoni non si sentono». Qui il lettore stava
+         * schiacciato a centodieci pixel — meta' comandi tagliati, il tasto
+         * play fuori dalla casella. Adesso e' la riga larga di «branoHtml», e
+         * la copertina che la libreria ha gia' fatto le sta accanto.
+         */
+        if (suona) h += branoHtml(v.url, v.titolo || "", faccia);
+        else if (faccia) h += "<img src=\\"" + sicuro(faccia) + "\\" alt=\\"\\" loading=\\"lazy\\">";
+        else h += "<span class=\\"senza\\">" + sicuro(v.mime || "un file") + "</span>";
         h += "<button class=\\"btn piano tienila\\" data-nata=\\"" + c.id + "\\"" +
           " data-url=\\"" + sicuro(v.url) + "\\" data-mime=\\"" + sicuro(v.mime) + "\\"" +
           " data-vid=\\"" + sicuro(v.id) + "\\">" +
@@ -1583,12 +1959,17 @@ export const COPIONE = `
         var a = scelte[i];
         var faccia = (i === 0 && cop) ? (cop.anteprima || cop.url)
           : (a.anteprima || (String(a.mime || "").indexOf("image/") === 0 ? a.url : ""));
-        h += "<div class=\\"nata tenuta\\"" +
+        var ascolta = siAscolta(a.mime);
+        h += "<div class=\\"nata tenuta" + (ascolta ? " suona" : "") + "\\"" +
           " data-guarda=\\"" + sicuro(a.url) + "\\" data-guarda-mime=\\"" + sicuro(a.mime) +
           "\\" data-guarda-nome=\\"" + sicuro(a.titolo || "") + "\\">" +
-          (faccia ? "<img src=\\"" + sicuro(faccia) + "\\" alt=\\"\\" loading=\\"lazy\\">"
-                  : "<span class=\\"senza\\">senza copertina</span>") +
-          "<small>" + sicuro(a.titolo) + "</small>" +
+          // Anche qui: un brano attaccato a mano si prova ascoltandolo, non
+          // guardando la sua copertina in un quadratino.
+          (ascolta
+            ? branoHtml(a.url, a.titolo || "", faccia)
+            : (faccia ? "<img src=\\"" + sicuro(faccia) + "\\" alt=\\"\\" loading=\\"lazy\\">"
+                      : "<span class=\\"senza\\">senza copertina</span>") +
+              "<small>" + sicuro(a.titolo) + "</small>") +
           "<button class=\\"btn piano tienila\\" data-stacca=\\"" + c.id + "\\"" +
           " data-url=\\"" + sicuro(a.url) + "\\">Togli</button></div>";
       }
@@ -1914,25 +2295,125 @@ export const COPIONE = `
   var attaccaA = "";
   var attaccaCome = "allegato";
 
+  /**
+   * ⚠ **La galleria divisa per che cosa sono.**
+   *
+   * Chiesto il 12 settembre 2026: «ancora non sono divise bene quando voglio
+   * aggiungere dalla suite».
+   *
+   * Erano sessanta quadratini in ordine di data, foto e brani e video
+   * mescolati: per trovare la canzone appena generata bisognava riconoscerne la
+   * copertina in mezzo a quaranta immagini, e le copertine dei brani **sono**
+   * immagini. Adesso i mucchi sono quattro, si sceglie quale prima, e dentro
+   * ogni mucchio c'e' un titoletto che resta appiccicato in cima.
+   *
+   * ⚠ **Il tipo si legge dal mime, non da un campo.** La libreria della suite
+   * manda «audio/mpeg» o «image/png»: la prima parola dice gia' tutto, e un
+   * secondo campo «tipo» accanto sarebbe la stessa cosa scritta in due posti.
+   */
+  var MUCCHI = [
+    { id: "tutto", nome: "TUTTO", che: null },
+    { id: "image", nome: "IMMAGINI", che: "image/" },
+    { id: "audio", nome: "BRANI", che: "audio/" },
+    { id: "video", nome: "VIDEO", che: "video/" },
+    { id: "altro", nome: "ALTRO", che: "altro" },
+  ];
+  /** Il mucchio aperto e le parole cercate: restano fra un'apertura e l'altra. */
+  var mucchio = "tutto";
+  var cercaLibreria = "";
+  /** Quello che c'e' in galleria, come e' arrivato. I filtri lavorano su questa. */
+  var inLibreria = [];
+
+  function mucchioDi(v) {
+    var m = String(v.mime || "");
+    if (m.indexOf("image/") === 0) return "image";
+    if (m.indexOf("audio/") === 0) return "audio";
+    if (m.indexOf("video/") === 0) return "video";
+    return "altro";
+  }
+
+  function disegnaMucchi() {
+    var dentro = "";
+    for (var i = 0; i < MUCCHI.length; i++) {
+      var m = MUCCHI[i];
+      // ⚠ Un mucchio vuoto non si mostra: un tasto che apre il niente e' un
+      // tasto che si impara a non premere. «Tutto» c'e' sempre.
+      var quanti = m.id === "tutto"
+        ? inLibreria.length
+        : inLibreria.filter(function (v) { return mucchioDi(v) === m.id; }).length;
+      if (!quanti && m.id !== "tutto") continue;
+      dentro += "<button data-mucchio=\\"" + m.id + "\\"" +
+        (m.id === mucchio ? " class=\\"scelto\\"" : "") + ">" +
+        sicuro(m.nome) + " " + quanti + "</button>";
+    }
+    $("libreria-tipi").innerHTML = dentro;
+  }
+
+  function voceHtml(v) {
+    var foto = v.anteprima || (String(v.mime || "").indexOf("image/") === 0 ? v.url : "");
+    return "<button class=\\"voce\\" data-voce=\\"" + sicuro(v.id) + "\\" " +
+      "data-url=\\"" + sicuro(v.url) + "\\" data-mime=\\"" + sicuro(v.mime) + "\\" " +
+      "data-titolo=\\"" + sicuro(v.titolo) + "\\" data-anteprima=\\"" + sicuro(foto) + "\\">" +
+      (foto ? "<img src=\\"" + sicuro(foto) + "\\" alt=\\"\\" loading=\\"lazy\\">"
+            : "<span class=\\"senza\\">" + sicuro(v.mime) + "</span>") +
+      "<small>" + sicuro(v.titolo) + "</small></button>";
+  }
+
+  function disegnaLibreria() {
+    disegnaMucchi();
+    var cerca = cercaLibreria.trim().toLowerCase();
+    var quali = inLibreria.filter(function (v) {
+      if (mucchio !== "tutto" && mucchioDi(v) !== mucchio) return false;
+      if (!cerca) return true;
+      return String(v.titolo || "").toLowerCase().indexOf(cerca) >= 0;
+    });
+
+    if (!quali.length) {
+      $("libreria-roba").innerHTML = "<div class=\\"niente\\">" +
+        (inLibreria.length
+          ? "Niente che corrisponda. Prova un altro mucchio."
+          : "Qui non c'e' niente da attaccare. La galleria della suite e' vuota, " +
+            "o questa sala giochi gira per conto suo.") + "</div>";
+      return;
+    }
+
+    // Guardando «tutto» i titoletti dividono i mucchi; dentro a un mucchio solo
+    // sarebbero un titolo sopra a se stesso.
+    var h = "";
+    if (mucchio === "tutto") {
+      for (var i = 1; i < MUCCHI.length; i++) {
+        var m = MUCCHI[i];
+        var dentro = quali.filter(function (v) { return mucchioDi(v) === m.id; });
+        if (!dentro.length) continue;
+        h += "<div class=\\"gruppo\\">" + sicuro(m.nome) +
+          "<em>" + dentro.length + "</em></div>";
+        h += dentro.map(voceHtml).join("");
+      }
+    } else {
+      h = quali.map(voceHtml).join("");
+    }
+    $("libreria-roba").innerHTML = h;
+  }
+
   function apriLibreria(id, come) {
     attaccaA = id;
     attaccaCome = come || "allegato";
     $("libreria").hidden = false;
+    /**
+     * ⚠ **Cercando una copertina si guardano solo le immagini.** Il tasto
+     * «metti una copertina» serve a una cosa sola, e far scegliere un mp3 come
+     * copertina di un brano e' un modo di sbagliare che non deve esistere.
+     */
+    if (attaccaCome === "copertina") mucchio = "image";
+    cercaLibreria = "";
+    $("libreria-cerca").value = "";
     $("libreria-roba").innerHTML = "<div class=\\"niente\\">Guardo…</div>";
     chiedi("GET", "/libreria").then(function (dati) {
-      $("libreria-roba").innerHTML = dati.voci.length
-        ? dati.voci.map(function (v) {
-            var foto = v.anteprima || (v.mime.indexOf("image/") === 0 ? v.url : "");
-            return "<button class=\\"voce\\" data-voce=\\"" + sicuro(v.id) + "\\" " +
-              "data-url=\\"" + sicuro(v.url) + "\\" data-mime=\\"" + sicuro(v.mime) + "\\" " +
-              "data-titolo=\\"" + sicuro(v.titolo) + "\\" data-anteprima=\\"" + sicuro(foto) + "\\">" +
-              (foto ? "<img src=\\"" + sicuro(foto) + "\\" alt=\\"\\" loading=\\"lazy\\">"
-                    : "<span class=\\"senza\\">" + sicuro(v.mime) + "</span>") +
-              "<small>" + sicuro(v.titolo) + "</small></button>";
-          }).join("")
-        : "<div class=\\"niente\\">Qui non c'e' niente da attaccare. " +
-          "La galleria della suite e' vuota, o questa sala giochi gira per conto suo.</div>";
+      inLibreria = dati.voci || [];
+      disegnaLibreria();
     }).catch(function (e) {
+      inLibreria = [];
+      $("libreria-tipi").innerHTML = "";
       $("libreria-roba").innerHTML = "<div class=\\"niente\\">" + sicuro(e.message) + "</div>";
     });
   }
@@ -2050,6 +2531,9 @@ export const COPIONE = `
       tasti[j].classList.toggle("viva", tasti[j].getAttribute("data-va") === dove);
     }
     if (dove === "mie") caricaMie();
+    // ⚠ Si richiede ogni volta che si entra: il mazzo e' fatto dai pacchetti
+    // chiusi, e nel frattempo chi comanda puo' averne chiuso uno.
+    if (dove === "fortuna") caricaMacchinetta();
     if (dove === "album") caricaAlbum();
     if (dove === "shop") caricaShop();
     if (dove === "casa") caricaClassifica();
@@ -2148,6 +2632,38 @@ export const COPIONE = `
     if (copia) { copiaTesto(copia.getAttribute("data-copia")); return; }
 
     // I tagli: bonus in fila, o regalo a qualcuno. Stesso tasto, due mestieri.
+    // Quanto si punta alla macchinetta: resta scelto anche domani.
+    var quanto = chiudi("[data-puntata]");
+    if (quanto) {
+      puntata = Number(quanto.getAttribute("data-puntata"));
+      try { localStorage.setItem(CHIAVE_PUNTATA, String(puntata)); } catch (e) {}
+      disegnaPuntate();
+      return;
+    }
+
+    // Quale pacchetto si guarda nell'album.
+    var pacco = chiudi("[data-pacchetto]");
+    if (pacco) {
+      serieAperta = Number(pacco.getAttribute("data-pacchetto"));
+      // ⚠ Il numero sta nell'indirizzo: una GET col corpo il browser non la
+      // manda proprio, e finche' ci stava non arrivava mai.
+      chiedi("GET", "/album/" + serieAperta).then(function (dati) {
+        serieAperta = dati.serie;
+        disegnaPacchetti(dati.pacchetti || []);
+        var quale = (dati.pacchetti || []).filter(function (p) {
+          return p.numero === dati.serie;
+        })[0];
+        $("album-stato").innerHTML = "<div class=\\"figurina\\"><b>" +
+          sicuro((quale && quale.nome) || ("Serie " + dati.serie)) + "</b> \u00b7 " +
+          (quale ? quale.quante + " figurine dentro \u00b7 " : "") +
+          "un pacchetto costa " + soldi(io.costi.pacchetto) + "</div>";
+        $("album-figurine").innerHTML = dati.figurine.length
+          ? dati.figurine.map(function (c) { return figurinaHtml(c); }).join("")
+          : "<div class=\\"niente\\">Ancora niente in questo pacchetto.</div>";
+      }).catch(function (e) { avviso(e.message, "male"); });
+      return;
+    }
+
     var taglio = chiudi("[data-taglio]");
     if (taglio) {
       segnaTaglio(taglio.getAttribute("data-quale"), taglio.getAttribute("data-per"),
@@ -2238,6 +2754,14 @@ export const COPIONE = `
     var prova = b.getAttribute && b.getAttribute("data-prova");
     if (prova) { provala(prova, b); return; }
 
+    // Il mucchio della galleria: immagini, brani, video, altro.
+    var scegliMucchio = chiudi("[data-mucchio]");
+    if (scegliMucchio) {
+      mucchio = scegliMucchio.getAttribute("data-mucchio");
+      disegnaLibreria();
+      return;
+    }
+
     // Una cosa scelta nella galleria: si tiene da parte e si chiude il foglio.
     var voce = chiudi("[data-voce]");
     if (voce && attaccaA) {
@@ -2282,6 +2806,7 @@ export const COPIONE = `
   document.addEventListener("input", function (e) {
     var b = e.target;
     if (b.id === "cerca-gente") { cercaGente = b.value; disegnaGente(); return; }
+    if (b.id === "libreria-cerca") { cercaLibreria = b.value; disegnaLibreria(); return; }
     for (var quale of ["bonus", "regalo"]) {
       var id = b.getAttribute && b.getAttribute("data-" + quale);
       if (!id) continue;
@@ -2296,7 +2821,9 @@ export const COPIONE = `
 
   $("gira").addEventListener("click", gira);
   $("manda").addEventListener("click", manda);
+  $("tira").addEventListener("click", tiraLaMacchinetta);
   $("compra").addEventListener("click", compraPacchetto);
+  $("crea-pacchetto").addEventListener("click", creaIlPacchetto);
   $("saldo").addEventListener("click", function () {
     inEuro = !inEuro;
     disegnaSaldo(false);
@@ -2406,6 +2933,9 @@ export const COPIONE = `
     disegnaSaldo(false);
     disegnaLivello(dati.conto.esperienza, false);
     if (dati.admin) caricaFila();
+    // La macchinetta si prepara subito: se non c'e' nessun pacchetto lo dice
+    // aprendo la scheda, senza far premere un tasto per sentirsi dire di no.
+    caricaMacchinetta();
     forseIlRegalo(dati.regalo);
   }).catch(function (errore) {
     document.querySelector("main").innerHTML =

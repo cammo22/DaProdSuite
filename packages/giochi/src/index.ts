@@ -33,6 +33,8 @@ export {
   butta,
   classifica,
   compra,
+  creaPacchetto,
+  fuoriDaiPacchetti,
   gradoDiFigurina,
   manda,
   mandaDallaLibreria,
@@ -60,6 +62,24 @@ export {
   type Figurina,
   type RigaClassifica,
 } from "./banco";
+/**
+ * La macchinetta: la seconda slot, quella fatta con le immagini dei pacchetti.
+ * Vedi `macchinetta.ts`, e CONCETTI.md § 11-bis.
+ */
+export {
+  facciaDi,
+  gira as giraLaMacchinetta,
+  mazzoMacchinetta,
+  MINIMO_PER_ACCENDERSI,
+  perche as percheSpenta,
+  PUNTATE,
+  quantoPagaIlPieno,
+  quantoPagaUnaFila,
+  QUANTO_ESCE,
+  type EsitoMacchinetta,
+  type FilaVinta,
+  type SimboloMacchinetta,
+} from "./macchinetta";
 export {
   altezza,
   CAMBIO_EURO,
@@ -114,6 +134,7 @@ export type {
   Giro,
   Grado,
   Impostazioni,
+  Pacchetto,
   Pezzo,
   PezzoInGioco,
   Rullo,

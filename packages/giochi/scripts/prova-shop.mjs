@@ -20,6 +20,7 @@ import {
   mettiInVetrina,
   NienteDaFare,
   prezzoConsigliato,
+  TETTO_FIGURINE,
   togliDallaVetrina,
   vetrina,
 } from "../dist/index.js";
@@ -99,29 +100,34 @@ prova("il grado della vetrina lo sceglie chi comanda, e vale anche nei pacchetti
 );
 
 /**
- * ⚠ **Il tetto delle figurine: Unique, e non si sfonda da nessuna strada.**
+ * ⚠ **Le figurine si fermano al tetto, dovunque sia, e da nessuna strada lo
+ * sfondano.**
  *
- * Chiesto il 10 settembre 2026: «tutti quelli che ci sono fino ad ora
- * mettiamoli da basic a unique; da celestial a ethernal ci penseremo noi nel
- * tempo». Le strade per sfondarlo erano due — un prezzo alto, e un grado di
- * vetrina scelto a mano — e si provano tutte e due, perche' bastava che ne
- * restasse aperta una perche' il tetto non ci fosse.
+ * Le strade sono due — un prezzo alto e un grado di vetrina scelto a mano — e
+ * si provano tutte e due: bastava che ne restasse aperta una perche' il tetto
+ * non ci fosse.
+ *
+ * Fino all'11 settembre 2026 il tetto era Unique e questa prova diceva
+ * «Unique» scritto a mano. Dal 12 e' Ethernal, cioe' l'ultimo grado: non c'e'
+ * piu' niente da tagliare. La prova non guarda il nome di oggi — guarda la
+ * regola: qualunque sia `TETTO_FIGURINE`, ne' il prezzo ne' il grado scelto da
+ * chi comanda vanno oltre. Il giorno che si rimette un muro piu' basso, questa
+ * riga se ne accorge senza doverla riscrivere.
  */
-prova("le figurine non passano Unique, ne' col prezzo ne' col grado scelto", () =>
+prova("le figurine non passano il tetto, ne' col prezzo ne' col grado scelto", () =>
   conCartella((file) => {
     const d = new Deposito(file);
-    // Quarantacinquemila sarebbero un Mythic, sulla scala di adesso — e nessuna
-    // figurina puo' arrivarci, perche' `valoreDaPrendere` taglia al tetto. Qui
-    // si scrive a mano per provare la seconda rete, quella che legge.
-    const cara = figurinaPresa(d, "cara", 45_000);
-    uguale(gradoDiFigurina(cara), "unique", "un prezzo da Mythic si ferma a Unique");
+    // Un prezzo scritto a mano sopra alla scala: serve a provare la seconda
+    // rete, quella che **legge** — `valoreDaPrendere` taglia gia' in entrata.
+    const cara = figurinaPresa(d, "cara", 900_000);
+    uguale(gradoDiFigurina(cara), TETTO_FIGURINE, "un prezzo fuori scala si ferma al tetto");
 
     const c = mettiInVetrina(d, "cara", "ethernal");
-    uguale(c.gradoVetrina, "unique", "e il grado scelto si ferma li' gia' sul disco");
-    uguale(gradoDiFigurina(c), "unique", "quindi si legge Unique dappertutto");
+    uguale(c.gradoVetrina, TETTO_FIGURINE, "e il grado scelto si ferma li' gia' sul disco");
+    uguale(gradoDiFigurina(c), TETTO_FIGURINE, "quindi si legge lo stesso dappertutto");
     uguale(
       c.prezzoVetrina,
-      prezzoConsigliato("unique"),
+      prezzoConsigliato(TETTO_FIGURINE),
       "e il prezzo consigliato e' quello del grado vero, non di quello chiesto",
     );
   }),
