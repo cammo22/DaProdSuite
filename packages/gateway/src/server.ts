@@ -52,7 +52,8 @@
  *   GET  /stili?genere=stile|prompt              → i tuoi stili e i tuoi prompt: un magazzino solo
  *   POST /stili   { id?, nome, testo, tipo }     → salvane uno, o cambialo
  *   DELETE /stili/:id                           → buttalo
- *   POST /stili/:id/condividi { condiviso }      → mettilo in vetrina, o toglilo
+ *   POST /stili/:id/condividi { condiviso, chi? } → mettilo in vetrina, o toglilo
+ *                                                 (`chi`: solo un admin, e solo per togliere)
  *   GET  /stili/vetrina                         → quelli che gli altri hanno messo in mostra
  *   POST /stili/vetrina/prendi { nome, testo, daNome } → copialo fra i tuoi
  *   GET  /modelli                               → i modelli con cui si può parlare
@@ -2194,9 +2195,40 @@ export class Gateway {
       const inVetrina = percorso.match(/^\/stili\/([^/]+)\/condividi$/);
       if (inVetrina && req.method === "POST") {
         if (!this.stili) return this.errore(res, 501, "Questa suite non tiene gli stili.");
-        const voluto = ((corpo ?? {}) as { condiviso?: boolean }).condiviso !== false;
+        const dati = (corpo ?? {}) as { condiviso?: boolean; chi?: string };
+        const voluto = dati.condiviso !== false;
+        /**
+         * ⚠ **Chi comanda toglie da DaProd anche la roba degli altri.**
+         *
+         * Chiesto il 12 settembre 2026: «in DaProd abbiamo messo la possibilità
+         * di condividere i prompt ma non di cancellarli; facciamo che un admin
+         * può rimuovere i post dalla DaProd».
+         *
+         * Mancava solo di qua. Le cose della galleria in bacheca un admin le
+         * poteva già togliere — `pubblica` guarda `decide(chi)` dal 6 settembre
+         * — mentre uno stile o un prompt condiviso restava lì per sempre:
+         * l'unico che poteva toglierlo era chi l'aveva messo, e se non c'è più
+         * o non se ne ricorda nessuno lo toglie.
+         *
+         * ⚠ **`chi` lo accetta solo da un admin, e solo per togliere.** Uno
+         * stile sta nella cartella della persona che l'ha fatto, quindi per
+         * arrivarci serve sapere di chi è: senza il controllo qui sopra,
+         * chiunque potrebbe smettere di condividere — o peggio, **mettere in
+         * vetrina** — la roba di chiunque altro. Mettercela non è mai un gesto
+         * di chi cura la bacheca: è una decisione di chi l'ha scritta.
+         */
+        const daUnAltro = typeof dati.chi === "string" && dati.chi && dati.chi !== dispositivo.id;
+        if (daUnAltro && (dispositivo.ruolo !== "admin" || voluto)) {
+          return this.errore(
+            res,
+            403,
+            voluto
+              ? "In vetrina ce lo mette chi l'ha scritto."
+              : "Togliere dalla vetrina la roba degli altri lo fa chi comanda.",
+          );
+        }
         const fatto = this.stili.condividi(
-          dispositivo.id,
+          daUnAltro ? String(dati.chi) : dispositivo.id,
           decodeURIComponent(inVetrina[1] ?? ""),
           voluto,
         );

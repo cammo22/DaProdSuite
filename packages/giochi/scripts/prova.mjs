@@ -21,6 +21,7 @@ import { readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import {
   altezza,
+  CAMBIO_EURO,
   Deposito,
   EPOCHE,
   GRADI,
@@ -36,8 +37,10 @@ import {
   prezzoDiPartenza,
   RULLI_IMMAGINI,
   RULLI_MUSICA,
+  scalino,
   TAGLI_BONUS,
   tettoDelValore,
+  TETTO_EURO,
   TETTO_FIGURINE,
   TETTO_LIRE,
   tira,
@@ -132,23 +135,40 @@ prova("il grado si legge dal prezzo, agli estremi giusti", () => {
 });
 
 /**
- * ⚠ **Il tetto: fino a Unique, tre euro e non una lira di piu'.**
+ * ⚠ **Il tetto e' l'ultima lira dentro `TETTO_FIGURINE`, qualunque sia.**
  *
- * Chiesto l'11 settembre 2026: «fino al livello unique valgono massimo
- * l'equivalente di 3 euro». Il tetto non e' un numero scritto: e' l'ultima lira
- * dentro `TETTO_FIGURINE`, e questa prova e' l'unica cosa che tiene insieme le
- * due meta' — se un giorno si aprisse Celestial senza spostare il tetto, o si
- * spostasse il tetto senza aprire il grado, qui si vede.
+ * L'11 settembre 2026 il tetto era Unique — «fino al livello unique valgono
+ * massimo l'equivalente di 3 euro» — e il 12 e' salito a Ethernal, che e'
+ * l'ultimo grado: sopra non c'e' niente a cui fermarsi, quindi **non c'e'
+ * tetto**. La prova non guarda il numero di oggi, guarda la regola: qualunque
+ * sia il grado piu' alto che si puo' dare, il valore ci sta dentro e non lo
+ * passa. Cosi' vale prima e dopo, e il giorno che si rimette un muro si vede
+ * subito se le due meta' sono d'accordo.
  */
 prova("il valore di una cosa presa non passa il tetto", () => {
-  uguale(tettoDelValore(), TETTO_LIRE - 1, "il tetto e' l'ultima lira sotto i tre euro");
-  uguale(gradoDiPrezzo(tettoDelValore()), TETTO_FIGURINE, "e sta dentro al grado piu' alto che si da'");
-  uguale(valoreDaPrendere(3000, 900_000), tettoDelValore(), "un bonus enorme si fermа al tetto");
-  uguale(valoreDaPrendere(tettoDelValore(), 0), tettoDelValore(), "e al tetto ci si arriva");
-  vero(
-    Number.isFinite(tettoDelValore()),
-    "finche' i gradi si fermano sotto a Ethernal, un tetto ci deve essere",
-  );
+  const sopra = GRADI[altezza(TETTO_FIGURINE) + 1];
+  if (sopra) {
+    uguale(tettoDelValore(), sopra.da - 1, "il tetto e' l'ultima lira sotto al grado dopo");
+    uguale(
+      gradoDiPrezzo(tettoDelValore()),
+      TETTO_FIGURINE,
+      "e sta dentro al grado piu' alto che si da'",
+    );
+    uguale(valoreDaPrendere(3000, 900_000), tettoDelValore(), "un bonus enorme si ferma al tetto");
+    uguale(valoreDaPrendere(tettoDelValore(), 0), tettoDelValore(), "e al tetto ci si arriva");
+  } else {
+    vero(
+      tettoDelValore() === Number.POSITIVE_INFINITY,
+      "col tetto sull'ultimo grado non c'e' niente sopra a cui fermarsi",
+    );
+    uguale(
+      gradoDiPrezzo(valoreDaPrendere(3000, 900_000)),
+      TETTO_FIGURINE,
+      "e un bonus enorme resta comunque dentro al grado piu' alto",
+    );
+  }
+  uguale(TETTO_LIRE, Math.round(TETTO_EURO * CAMBIO_EURO), "i tre euro restano dove sono");
+  uguale(gradoDiPrezzo(TETTO_LIRE), "celestial", "e sono il punto dove comincia Celestial");
 });
 
 /**
@@ -174,16 +194,19 @@ prova("una combinazione vale quanto la roba che ha dentro, non quanta ne ha", ()
 });
 
 /**
- * ⚠ **Una sola pressione non deve sfondare la scala.**
+ * ⚠ **Una sola pressione non deve sfondare la scala, e ogni grado si deve
+ * poter raggiungere battendo.**
  *
- * E' la ragione per cui i tagli del bonus sono euro **piccoli** e non gli otto
- * dei regali: con il tetto a tre euro, sette degli otto tasti dei regali lo
- * sfondano al primo colpo, e sarebbero sette tasti che fanno tutti «massimo».
+ * E' la ragione per cui i tagli del bonus non sono gli otto dei regali: con il
+ * tetto a tre euro sette di quegli otto lo sfondavano al primo colpo, e
+ * sarebbero stati sette tasti che fanno tutti «massimo». Dal 12 settembre 2026
+ * i gradi arrivano a Ethernal e i tasti pure — se no per dare trentacinque euro
+ * bisognava battere dodici volte quello da tre.
  *
- * Le due cose che devono valere sempre: il piu' grosso arriva **esattamente** al
- * tetto e non oltre, e a ogni gradino che si puo' assegnare ci si arriva
- * battendo. Se un grado non fosse raggiungibile con nessuna somma, quel grado
- * non si potrebbe piu' dare a mano.
+ * Le due cose che devono valere sempre: il piu' grosso arriva **esattamente**
+ * alla soglia del grado piu' alto e non oltre, e a ogni gradino che si puo'
+ * assegnare ci si arriva battendo. Se un grado non fosse raggiungibile con
+ * nessuna somma, quel grado non si potrebbe piu' dare a mano.
  */
 prova("i tagli del bonus stanno dentro la scala, un colpo alla volta", () => {
   vero(TAGLI_BONUS.length >= 4, "meno di quattro tasti non e' una cassa, e' un interruttore");
@@ -193,8 +216,13 @@ prova("i tagli del bonus stanno dentro la scala, un colpo alla volta", () => {
   }
   uguale(
     TAGLI_BONUS[TAGLI_BONUS.length - 1],
-    TETTO_LIRE,
-    "il piu' grosso e' il tetto in persona: tre euro",
+    scalino(TETTO_FIGURINE).da,
+    "il piu' grosso e' la soglia del grado piu' alto, in lire esatte",
+  );
+  uguale(
+    gradoDiPrezzo(TAGLI_BONUS[TAGLI_BONUS.length - 1]),
+    TETTO_FIGURINE,
+    "e un colpo solo su una base a zero ci arriva davvero",
   );
   const somme = new Set([0]);
   for (let giro = 0; giro < 5; giro++) {

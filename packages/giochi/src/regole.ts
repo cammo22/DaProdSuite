@@ -117,8 +117,12 @@ export function fra(min: number, max: number, caso: Caso): number {
  * non si svuota piu' spegne il gioco (§ 4).
  *
  * Adesso il tetto e' scritto: **`TETTO_LIRE`**, cioe' tre euro, ed e' dove
- * finisce Unique — il grado piu' alto che una cosa presa possa avere oggi
- * (`TETTO_FIGURINE`). Celestial parte esattamente da li'.
+ * finisce Unique. Celestial parte esattamente da li'.
+ *
+ * ⚠ **Dal 12 settembre 2026 non e' piu' il tetto delle figurine**, che sono
+ * salite fino a Ethernal (`TETTO_FIGURINE`). Resta il posto dove finisce
+ * Unique, ed e' l'unica cosa che ha sempre voluto dire: i tre euro sono un
+ * gradino della scala, non la sua cima.
  *
  * **Le proporzioni sono le stesse di sempre**: ogni gradino vale circa una
  * volta e mezzo quello sotto. E' cambiata l'altezza tre volte in due giorni e
@@ -157,23 +161,30 @@ export const GRADI: readonly Scalino[] = [
 ];
 
 /**
- * ⚠ **Fin dove arrivano le figurine, per adesso: Unique.**
+ * ⚠ **Fin dove arrivano le figurine: Ethernal, cioe' fino in cima.**
  *
- * Chiesto il 10 settembre 2026: «tutti quelli che ci sono fino ad ora
- * mettiamoli da basic a unique; da celestial a ethernal ci penseremo noi nel
- * tempo, man mano che abbiamo dati a disposizione».
+ * Chiesto il 12 settembre 2026: «nella sala giochi gli item ricevuti possono
+ * arrivare fino al grado ethernal».
  *
- * Il motivo e' che **la rarita' e' un rapporto**. Con dieci cose prese in
- * tutto, chiamarne una Mythic non vuol dire niente: non c'e' niente sotto che
- * la faccia sembrare rara. I sei gradi in cima restano dichiarati e non si
- * assegnano — si aprono quando il magazzino e' abbastanza pieno da meritarli.
+ * Il 10 settembre si erano fermate a Unique, e il motivo era buono: **la
+ * rarita' e' un rapporto**, e con dieci cose prese in tutto chiamarne una
+ * Mythic non vuol dire niente. Adesso il magazzino comincia a riempirsi, e chi
+ * comanda vuole i sei gradi di sopra per le cose che se li meritano. Resta il
+ * suo mestiere non regalarli: un Ethernal che si da' a tutti e' un Basic con
+ * un nome piu' lungo.
  *
- * ⚠ **Vale per le figurine, non per i rulli.** I dodici gradi dei pezzi che
- * girano nella slot restano tutti e dodici, Ethernal compreso: quella e' la
- * rarita' dei pezzi, e la decidono i dati. Questo e' il grado che **una
- * persona** da' a una cosa presa, ed e' un'altra faccenda.
+ * ⚠ **Alzando questo si alza tutto quello che ci sta sotto**, e non c'e'
+ * niente da aggiornare a mano: i tasti dei gradi in fila, il tetto in lire
+ * (`tettoDelValore`, che sopra all'ultimo grado dice «non c'e' tetto»), il
+ * grado che si legge mentre si preme il bonus, quello che cade da un
+ * pacchetto. E' il motivo per cui e' scritto qui e in nessun altro posto.
+ *
+ * ⚠ **Vale per le figurine e per i rulli insieme, adesso.** Fino a ieri erano
+ * due scale — i pezzi arrivavano a Ethernal, le cose prese no — e la seconda
+ * era un taglio sulla prima. Il taglio non c'e' piu': `sottoIlTetto` resta
+ * perche' il giorno che si rimette un muro sta gia' dove serve.
  */
-export const TETTO_FIGURINE: Grado = "unique";
+export const TETTO_FIGURINE: Grado = "ethernal";
 
 /** Il grado, tenuto sotto al tetto delle figurine. Vedi `TETTO_FIGURINE`. */
 export function sottoIlTetto(grado: Grado): Grado {
@@ -181,10 +192,13 @@ export function sottoIlTetto(grado: Grado): Grado {
 }
 
 /**
- * ⚠ **Quante lire, al massimo, puo' valere una cosa presa: 5.808.**
+ * ⚠ **Quante lire, al massimo, puo' valere una cosa presa.**
  *
- * Cioe' l'ultima lira dentro al grado piu' alto che si possa assegnare oggi —
- * Unique — che finisce dove comincia Celestial, cioe' a tre euro.
+ * Cioe' l'ultima lira dentro al grado piu' alto che si possa assegnare oggi.
+ * Dal 12 settembre 2026 quel grado e' **Ethernal**, che e' l'ultimo: sopra non
+ * c'e' niente a cui fermarsi, quindi **non c'e' tetto** e questa funzione
+ * risponde infinito. Non e' una svista ed e' il ramo che stava gia' scritto
+ * qui sotto: era pensato per questo giorno.
  *
  * ⚠ **Non e' un numero scritto a mano da nessuna parte, e non deve esserlo.**
  * Si ricava da `TETTO_FIGURINE`: il giorno che si apre Celestial, il tetto in
@@ -585,10 +599,10 @@ export function valoreDeiPezzi(prezzi: number[]): number {
  * fretta, e una fatta di roba comune ma geniale la si puo' comunque pagare
  * bene. Il bonus puo' anche essere zero.
  *
- * ⚠ **E sopra c'e' il tetto** (`tettoDelValore`), dall'11 settembre 2026. Il
- * bonus serve a **arrivarci**, non a sfondarlo: finche' i gradi si fermano a
- * Unique, una cosa presa non vale piu' di tre euro, e questa e' l'unica riga
- * che lo fa rispettare — ci passano il prezzo di una figurina e nient'altro.
+ * ⚠ **E sopra c'e' il tetto** (`tettoDelValore`), quando ce n'e' uno. Questa e'
+ * l'unica riga che lo fa rispettare — ci passano il prezzo di una figurina e
+ * nient'altro — e resta qui anche adesso che i gradi arrivano fino in cima e il
+ * tetto e' infinito: il giorno che si rimette un muro, e' gia' al suo posto.
  */
 export function valoreDaPrendere(base: number, bonus: number): number {
   const tutto = Math.max(0, base) + Math.max(0, bonus);

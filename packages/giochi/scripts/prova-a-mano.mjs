@@ -68,6 +68,40 @@ const FORNO_MS = 6000;
 const inForno = new Map();
 let quanteFatte = 0;
 
+/**
+ * Due secondi di silenzio, in un WAV fatto qui.
+ *
+ * Serve a una cosa sola: avere un **lettore vero** davanti quando si guarda
+ * una card. Non si sente niente ed e' giusto cosi' — quello che si controlla
+ * e' che il tasto play ci sia, che ci si arrivi col dito e che la barra si
+ * muova. Non si scarica niente da fuori: il banco di prova non chiama la rete.
+ */
+let silenzio = "";
+function silenzioFinto() {
+  if (silenzio) return silenzio;
+  const secondi = 2;
+  const frequenza = 8000;
+  const campioni = secondi * frequenza;
+  const testa = Buffer.alloc(44);
+  testa.write("RIFF", 0);
+  testa.writeUInt32LE(36 + campioni, 4);
+  testa.write("WAVE", 8);
+  testa.write("fmt ", 12);
+  testa.writeUInt32LE(16, 16);
+  testa.writeUInt16LE(1, 20);   // PCM
+  testa.writeUInt16LE(1, 22);   // mono
+  testa.writeUInt32LE(frequenza, 24);
+  testa.writeUInt32LE(frequenza, 28);
+  testa.writeUInt16LE(1, 32);
+  testa.writeUInt16LE(8, 34);   // otto bit
+  testa.write("data", 36);
+  testa.writeUInt32LE(campioni, 40);
+  // A otto bit il silenzio e' 128, non zero: zero sarebbe il fondo scala.
+  const corpo = Buffer.alloc(campioni, 128);
+  silenzio = "data:audio/wav;base64," + Buffer.concat([testa, corpo]).toString("base64");
+  return silenzio;
+}
+
 function quadratoFinto(n, larga = 320, alta = 240) {
   const colori = ["#5cc8ff", "#ff6fb5", "#ffd166", "#7fd1a8"];
   const c = colori[n % colori.length];
@@ -91,26 +125,73 @@ const contorno = {
   },
   /**
    * Una galleria finta, per poter guardare il foglio «attacca dalla suite».
-   * Nella suite la da' il gateway; qui sono sei quadrati con proporzioni
-   * diverse, che e' proprio il caso che quel foglio deve reggere.
+   *
+   * Nella suite la da' il gateway. Qui dentro ci sono le tre specie che quel
+   * foglio deve tenere divise — immagini, brani, video — e non piu' solo
+   * quadrati: dal 12 settembre 2026 la galleria si divide per mucchi, e un
+   * banco di prova fatto di sole immagini non fa vedere l'unica cosa nuova.
+   *
+   * Le proporzioni restano sbilenche apposta: e' il caso che quel foglio
+   * sbagliava prima, e continua a doverlo reggere.
    */
   elencoLibreria: () => {
     const misure = [[320, 180], [180, 320], [400, 400], [512, 288], [240, 360], [640, 200]];
-    return misure.map((m, i) => ({
+    const voci = misure.map((m, i) => ({
       id: "lib" + i,
       titolo: "roba della suite " + (i + 1),
       mime: "image/svg+xml",
       url: quadratoFinto(i + 1, m[0], m[1]),
     }));
+    for (let i = 0; i < 3; i++) {
+      voci.push({
+        id: "brano" + i,
+        titolo: "una canzone " + (i + 1),
+        mime: "audio/wav",
+        url: silenzioFinto(),
+        // La copertina, come la fa la suite: senza, un brano in galleria e' un
+        // rettangolo grigio uguale agli altri due.
+        anteprima: quadratoFinto(i + 1, 300, 300),
+      });
+    }
+    voci.push({
+      id: "video0",
+      titolo: "un video",
+      mime: "video/mp4",
+      url: "",
+      anteprima: quadratoFinto(4, 320, 180),
+    });
+    return voci;
   },
   fruttiDi: (richiesta) => {
     const cosa = inForno.get(richiesta);
     if (!cosa || Date.now() < cosa.pronta) return [];
+    /**
+     * ⚠ **Da un prompt di musica esce un brano, non un quadrato.**
+     *
+     * Fino all'11 settembre 2026 questo banco tornava un'immagine anche per la
+     * musica, e si vede perche' era comodo: un quadrato colorato si fa in una
+     * riga. Il prezzo l'ha pagato il 12, quando Cammo ha detto «le canzoni non
+     * si sentono»: il lettore schiacciato dentro una casella da centodieci
+     * pixel non si poteva provare qui, perche' qui un lettore non compariva
+     * mai. Un banco di prova che non sa produrre la cosa che si rompe non e'
+     * un banco di prova.
+     */
+    if (cosa.tavolo !== "immagini") {
+      return [
+        {
+          id: richiesta,
+          titolo: "prova numero " + cosa.numero,
+          mime: "audio/wav",
+          url: silenzioFinto(),
+          anteprima: quadratoFinto(cosa.numero, 300, 300),
+        },
+      ];
+    }
     return [
       {
         id: richiesta,
         titolo: "prova numero " + cosa.numero,
-        mime: cosa.tavolo === "immagini" ? "image/svg+xml" : "image/svg+xml",
+        mime: "image/svg+xml",
         url: quadratoFinto(cosa.numero),
       },
     ];

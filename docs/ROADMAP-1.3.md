@@ -44,6 +44,8 @@ Contando, ci sta poco spazio in mezzo:
 | ~~1.2.8~~ | la sala giochi che si guarda |
 | ~~1.3.0~~ | i soldi su una scala sola, e le anteprime che si aprono |
 | ~~1.3.1~~ | chi resta fuori casa si vede prima, e rientra con un messaggio |
+| ~~1.3.2~~ | fuori due modelli, e i premi della slot tornano piccoli |
+| ~~1.3.3~~ | la macchinetta delle figurine, e i gradi arrivano in cima |
 
 ⚠ **La 1.3.0 è uscita prima che il traguardo chiudesse**, perché l'ha chiesta
 lui il 10 settembre 2026: «aggiusta tutto e facciamo la 1.3.0». Quindi il nome
@@ -68,6 +70,7 @@ perché toccano tutte la stessa pagina.
 | [#98](https://github.com/cammo22/DaProdSuite/issues/98) | mandata una combinazione, la slot riparte | è il gesto più frequente del gioco, e finisce male |
 | [#99](https://github.com/cammo22/DaProdSuite/issues/99) | le generate si vedono sulla card, fino a quattro | è quello che rende «prendere» una decisione invece di un'ipotesi |
 | [#100](https://github.com/cammo22/DaProdSuite/issues/100) | per adesso le figurine vanno da Basic a Unique | i gradi alti non si possono spendere adesso: non c'è niente sotto |
+| | ⚠ **e il 12 settembre 2026 è tornato indietro**: «gli item ricevuti possono arrivare fino al grado ethernal» | il magazzino ha cominciato a riempirsi, e quel «per adesso» era scritto per questo giorno (1.3.3) |
 | [#101](https://github.com/cammo22/DaProdSuite/issues/101) | tenere premuto non deve selezionare il testo | sul telefono il gesto principale ne fa partire due |
 | [#102](https://github.com/cammo22/DaProdSuite/issues/102) | il grado si deve vedere, e la schermata si stringe | in un gioco di rarità il grado è la cosa che si guarda |
 

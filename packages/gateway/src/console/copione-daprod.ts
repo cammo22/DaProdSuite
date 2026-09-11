@@ -150,8 +150,57 @@ export const COPIONE_DAPROD = `
     })(s, prendi));
 
     fila.append(usa, prendi);
+
+    /**
+     * ⚠ **Togliere uno stile o un prompt da DaProd.**
+     *
+     * Chiesto il 12 settembre 2026: «abbiamo messo la possibilità di
+     * condividere i prompt ma non di cancellarli dalla DaProd; facciamo che un
+     * admin può rimuovere i post dalla DaProd».
+     *
+     * Fin qui l'unico che poteva toglierlo era chi l'aveva messo, e da un'altra
+     * schermata — la scheda Stili, tenendo premuto. Quindi in pratica quella
+     * riga non la toglieva nessuno: chi la guarda in DaProd non è chi l'ha
+     * scritta.
+     *
+     * ⚠ **Toglie dalla vetrina, non cancella lo stile.** Resta nella cartella
+     * di chi l'ha fatto, e chi l'ha fatto può rimetterlo: è l'unica cosa che
+     * un admin deve poter fare da qui. Chi l'ha già preso non perde niente —
+     * prendere fa una **copia** (vedi la rotta «stili/vetrina/prendi»).
+     */
+    if (s.chi === ioId || decido()) {
+      var toglilo = document.createElement("button");
+      toglilo.className = "mini";
+      toglilo.textContent = "\u00d7 Togli da DaProd";
+      toglilo.addEventListener("click", (function (uno, tasto) {
+        return function () { void togliDaDaProd(uno, tasto); };
+      })(s, toglilo));
+      fila.append(toglilo);
+    }
+
     box.append(nome, che, parole, fila);
     return box;
+  }
+
+  /** Lo toglie dalla vetrina e ridisegna la riga. Il file resta dov'era. */
+  async function togliDaDaProd(s, tasto) {
+    var mio = s.chi === ioId;
+    if (!mio && !confirm("Tolgo \u00ab" + s.nome + "\u00bb da DaProd? Resta di chi l'ha scritto.")) {
+      return;
+    }
+    tasto.disabled = true;
+    try {
+      await chiama("/stili/" + encodeURIComponent(s.id) + "/condividi", {
+        method: "POST",
+        // ⚠ «chi» serve perché uno stile sta nella cartella di chi l'ha fatto:
+        // il computer lo accetta solo da un admin, e solo per togliere.
+        body: JSON.stringify(mio ? { condiviso: false } : { condiviso: false, chi: s.chi }),
+      });
+      await disegnaDaProvare();
+    } catch (e) {
+      tasto.disabled = false;
+      avvisaDelMale(e);
+    }
   }
 
   /**
@@ -535,11 +584,33 @@ export const COPIONE_DAPROD = `
         void tieniNelTelefono(v, scarica);
       });
       piedi.append(scarica);
-    } else {
+    }
+
+    /**
+     * ⚠ **Togliere un post dalla bacheca: la propria sempre, quella degli
+     * altri se comandi.**
+     *
+     * Chiesto il 12 settembre 2026: «in DaProd abbiamo messo la possibilità di
+     * condividere i prompt ma non di cancellarli; facciamo che un admin può
+     * rimuovere i post dalla DaProd».
+     *
+     * Il permesso c'era già dal 6 settembre — «un admin può condividere i
+     * contenuti anche degli altri», e chi decide cura la bacheca di casa —
+     * ma il tasto no: si vedeva solo sulle proprie. Cioè chi è l'unico che può
+     * fare pulizia era l'unico a cui non veniva chiesto.
+     *
+     * ⚠ **Toglie dalla bacheca, non cancella il file.** Resta di chi l'ha
+     * fatto, resta in galleria, e chi l'ha messo può rimetterlo: è l'unica cosa
+     * che un admin deve poter fare da qui, e l'unica che non fa danni.
+     */
+    if (v.mia || decido()) {
       var togli = document.createElement("button");
       togli.className = "cuore";
-      togli.textContent = "togli dalla bacheca";
+      togli.textContent = v.mia ? "togli dalla bacheca" : "togli da DaProd";
       togli.addEventListener("click", async function () {
+        if (!v.mia && !confirm("Tolgo questo post dalla bacheca? Il file resta di chi l'ha fatto.")) {
+          return;
+        }
         try {
           await chiama("/libreria/" + encodeURIComponent(v.id) + "/pubblica", {
             method: "POST",

@@ -1,15 +1,23 @@
 /**
  * L'ossatura della pagina, senza un dato dentro.
  *
- * Cinque schede in fondo, e l'ultima si vede solo a chi decide:
+ * Sei schede in fondo, e la settima si vede solo a chi decide:
  *
  * | scheda | a che domanda risponde |
  * |---|---|
- * | Slot | voglio giocare |
+ * | Slot | voglio montare un prompt |
+ * | Fortuna | voglio tirare e basta *(la macchinetta delle figurine)* |
  * | Mie | che fine hanno fatto le mie |
  * | Album | cosa c'e' da collezionare, e cosa mi manca |
+ * | Shop | voglio comprarne una precisa |
  * | Casa | chi sta davanti |
  * | Fila | cosa devo controllare *(solo admin)* |
+ *
+ * ⚠ **Le due slot sono due schede, non due modi della stessa.** Davanti a
+ * «Slot» si **monta** una cosa: dodici rulli, si blocca, si manda a
+ * controllare. Davanti a «Fortuna» non si monta niente: si punta e si tira, e
+ * ogni tanto cade una figurina. Metterle insieme voleva dire una schermata che
+ * cambia mestiere a seconda di un interruttore.
  *
  * I dati non stanno qui: li mette il copione. Questa e' la stanza vuota.
  */
@@ -57,6 +65,35 @@ export const MARKUP = `<header>
       <button class="btn piano" id="copia">Copia</button>
       <button class="btn piano" id="sblocca">Sblocca tutti</button>
     </div>
+  </section>
+
+  <!-- ========================================================= macchinetta -->
+  <!--
+    ⚠ **La seconda slot: sei rulli, due file da tre.**
+
+    Chiesta il 12 settembre 2026: «aggiungiamo la slot dove ci saranno 6 rulli,
+    3 per fila, che funziona come una slot classica». Sui rulli ci vanno **le
+    immagini dei pacchetti**, e basta quelle: tre in fila pagano poco, sei
+    uguali pagano il colpo grosso e la figurina diventa tua.
+
+    Si accende col primo pacchetto chiuso. Finche' non ce n'e' nessuno, qui c'e'
+    scritto perche' e' spenta — non un rullo grigio che non fa niente.
+  -->
+  <section class="pagina" id="p-fortuna">
+    <div class="macchina" id="macchina">
+      <div class="vetrina-macchina" id="macchina-rulli"></div>
+      <div class="esito" id="macchina-esito"></div>
+      <div class="puntate" id="puntate"></div>
+      <div class="leva">
+        <button class="btn grosso" id="tira">Tira</button>
+      </div>
+      <div class="conto" id="macchina-conto"></div>
+    </div>
+    <div class="niente" id="macchina-spenta" hidden></div>
+    <details class="cassetto" id="cassetto-premi">
+      <summary>Quanto paga</summary>
+      <div id="macchina-premi"></div>
+    </details>
   </section>
 
   <!-- ================================================================ mie -->
@@ -111,8 +148,21 @@ export const MARKUP = `<header>
   <section class="pagina" id="p-album">
     <h2>L'album</h2>
     <div id="album-stato"></div>
+    <!--
+      Quale pacchetto si sta guardando. Da quando li chiude una persona quando
+      vuole, «serie 3» non e' piu' «dalla 201 alla 300»: ognuno ha un nome e
+      quante ce ne stanno dentro, e si sceglie col dito.
+    -->
+    <div class="fila-scelte" id="album-pacchetti"></div>
     <div class="riga-tasti">
       <button class="btn oro" id="compra">Compra un pacchetto</button>
+      <!--
+        ⚠ **Chiudere un pacchetto lo fa chi comanda, quando vuole.** Chiesto il
+        12 settembre 2026: «facciamo che un admin puo' creare un pacchetto
+        quando vuole anche con meno di 100 creazioni». Il tasto lo vede solo
+        l'admin, e dice sempre quante cose ci finirebbero dentro.
+      -->
+      <button class="btn piano" id="crea-pacchetto" hidden></button>
     </div>
     <div id="album-figurine"></div>
   </section>
@@ -204,11 +254,23 @@ export const MARKUP = `<header>
     <b>Attacca una cosa della suite</b>
     <button class="btn piano" id="libreria-chiudi">Chiudi</button>
   </div>
+  <!--
+    ⚠ **Divisa per che cosa sono.** Chiesto il 12 settembre 2026: «ancora non
+    sono divise bene quando voglio aggiungere dalla suite».
+
+    Erano sessanta quadratini in tre colonne, in ordine di data, foto e brani e
+    video mescolati: per trovare la canzone appena generata bisognava
+    riconoscerne la copertina in mezzo a quaranta immagini. Adesso si sceglie
+    prima **che cosa** si sta cercando, e dentro si scorre poco.
+  -->
+  <div class="fila-scelte" id="libreria-tipi"></div>
+  <input class="cerca" id="libreria-cerca" type="search" placeholder="cerca per nome">
   <div class="griglia-libreria" id="libreria-roba"></div>
 </div>
 
 <nav>
   <button class="viva" data-va="slot">Slot</button>
+  <button data-va="fortuna">Fortuna</button>
   <button data-va="mie">Mie</button>
   <button data-va="album">Album</button>
   <button data-va="shop">Shop</button>

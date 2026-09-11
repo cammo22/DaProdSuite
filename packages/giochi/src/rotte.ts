@@ -18,6 +18,7 @@ import {
   apriPacchetto,
   azzeraPortafoglio,
   butta,
+  creaPacchetto,
   regala,
   TAGLI,
   TAGLI_BONUS,
@@ -41,6 +42,15 @@ import {
   tira,
 } from "./banco";
 import type { Deposito } from "./deposito";
+import {
+  gira as giraLaMacchinetta,
+  mazzoMacchinetta,
+  perche as percheSpenta,
+  PUNTATE,
+  quantoPagaIlPieno,
+  quantoPagaUnaFila,
+  type SimboloMacchinetta,
+} from "./macchinetta";
 import {
   EPOCHE,
   GRADI,
@@ -243,6 +253,29 @@ function vestita(c: Collezionabile, contorno: Contorno, scoperta: boolean) {
 }
 
 /**
+ * Una casella della macchinetta, come la vede la pagina.
+ *
+ * ⚠ **Col nome di chi l'ha inventata attaccato.** Chiesto il 12 settembre
+ * 2026: «evidenziamo meglio il nome di chi ha creato quella combinazione, anche
+ * quando poi saranno sbloccabili nei pacchetti o acquistabili nel negozio ci
+ * deve essere scritto chi lo ha creato inizialmente». Una figurina che gira su
+ * un rullo e' una figurina come le altre: chi l'ha fatta si legge anche li'.
+ */
+function vestiIlSimbolo(s: SimboloMacchinetta, contorno: Contorno) {
+  return {
+    id: s.id,
+    titolo: s.titolo,
+    grado: s.grado,
+    prezzo: s.prezzo,
+    daChi: s.daChi,
+    daNome: contorno.nomeDi(s.daChi),
+    faccia:
+      s.faccia.url ??
+      (contorno.indirizzoLibreria ? (contorno.indirizzoLibreria(s.faccia.id) ?? "") : ""),
+  };
+}
+
+/**
  * Risponde a una richiesta della sala giochi.
  *
  * `percorso` e' senza il pezzo davanti: chi ospita ha gia' tolto `/giochi`.
@@ -435,14 +468,67 @@ export function rispondi(
 
     /* ------------------------------------------------------------- l'album */
 
-    if (metodo === "GET" && percorso === "/album") {
+    /**
+     * L'album, e **quale pacchetto si sta guardando sta nell'indirizzo**.
+     *
+     * ⚠ `GET /album/3`, non un corpo JSON: una richiesta GET con un corpo il
+     * browser non la manda nemmeno — `fetch` la rifiuta prima di partire — e
+     * infatti finche' il numero stava nel corpo non e' mai arrivato. Se ne e'
+     * accorto il 12 settembre 2026 il tasto che sceglie il pacchetto: prima non
+     * c'era nessun tasto, e la serie era sempre l'ultima.
+     */
+    if (metodo === "GET" && (percorso === "/album" || percorso.startsWith("/album/"))) {
       const conto = deposito.conto(chi.id);
       const chiuse = serieChiuse(deposito);
-      const quale = Math.max(1, Math.min(chiuse || 1, numero(corpo["serie"], chiuse || 1)));
+      const chiesto = percorso.startsWith("/album/")
+        ? Number(percorso.slice("/album/".length))
+        : numero(corpo["serie"], chiuse || 1);
+      const quale = Math.max(
+        1,
+        Math.min(chiuse || 1, Number.isFinite(chiesto) ? chiesto : chiuse || 1),
+      );
       const dentro = serie(deposito, quale).map((c) =>
         vestita(c, contorno, conto.collezione.includes(c.id) || chi.admin),
       );
-      return OK({ serie: quale, chiuse, figurine: dentro, magazzino: statoMagazzino(deposito) });
+      return OK({
+        serie: quale,
+        chiuse,
+        /**
+         * ⚠ **I pacchetti hanno un nome e un numero di figurine**, dal 12
+         * settembre 2026: da quando li chiude una persona quando vuole, «serie
+         * 3» non vuol dire piu' «dalla 201 alla 300» e quanto e' grossa non si
+         * ricava dal numero.
+         */
+        pacchetti: deposito.pacchetti().map((p) => ({
+          numero: p.numero,
+          nome: p.nome ?? "",
+          quante: p.dentro.length,
+          quando: p.quando,
+        })),
+        figurine: dentro,
+        magazzino: statoMagazzino(deposito),
+      });
+    }
+
+    /**
+     * ⚠ **Chi comanda chiude un pacchetto, quando vuole.**
+     *
+     * Chiesto il 12 settembre 2026: «facciamo che un admin puo' creare un
+     * pacchetto quando vuole anche con meno di 100 creazioni».
+     *
+     * Prima non c'era nessuna rotta perche' non c'era niente da chiudere: le
+     * serie erano il magazzino diviso per cento, e chiuderle voleva dire
+     * aspettare. Il documento dei concetti (§ 11) diceva gia' che «il pacchetto
+     * lo chiude una persona, non il contatore», e il codice diceva il
+     * contrario: adesso dicono la stessa cosa, e a decidere e' la persona.
+     */
+    if (metodo === "POST" && percorso === "/pacchetto/crea") {
+      if (!chi.admin) return NO(403, "I pacchetti li chiude chi comanda.");
+      const p = creaPacchetto(deposito, chi.id, String(corpo["nome"] ?? ""));
+      return OK({
+        pacchetto: { numero: p.numero, nome: p.nome ?? "", quante: p.dentro.length },
+        magazzino: statoMagazzino(deposito),
+      });
     }
 
     if (metodo === "POST" && percorso === "/pacchetto") {
@@ -455,6 +541,63 @@ export function rispondi(
           doppione: f.doppione,
           lire: f.lire,
         })),
+      });
+    }
+
+    /* ------------------------------------------------------- la macchinetta */
+
+    /**
+     * ⚠ **La seconda slot: quella fatta con le immagini dei pacchetti.**
+     *
+     * Chiesta il 12 settembre 2026, sei rulli in due file da tre. Vedi
+     * `macchinetta.ts`, che e' dove sta il mestiere: qui si veste e basta.
+     *
+     * ⚠ **Il mazzo si manda alla pagina, e qui l'eccezione e' voluta.** La
+     * regola di questo file e' che i pezzi non escono — la pagina chiede un
+     * giro e riceve cosa e' uscito, non da cosa si sarebbe potuto pescare
+     * (CONCETTI.md § 3). Qui pero' i rulli **devono girare davanti agli occhi**
+     * prima di fermarsi, e per far scorrere delle figure bisogna avere delle
+     * figure. Non e' un buco: quello che si manda e' l'album dei pacchetti
+     * chiusi, che chiunque puo' gia' guardare in «Album» — e **cosa esce lo
+     * decide il PC**, non l'elenco. Averlo non aiuta a vincere.
+     */
+    if (metodo === "GET" && percorso === "/macchinetta") {
+      const quali = mazzoMacchinetta(deposito);
+      const spenta = percheSpenta(deposito, quali.length);
+      return OK({
+        accesa: !spenta,
+        perche: spenta,
+        pacchetti: serieChiuse(deposito),
+        puntate: PUNTATE,
+        /**
+         * Quanto paga ogni grado, in volte la puntata. Lo dice il PC perche' e'
+         * il PC che paga: la pagina lo scrive sulla tabellina dei premi, e due
+         * tabelline che divergono sono una macchinetta che mente.
+         */
+        premi: GRADI.map((g) => ({
+          id: g.id,
+          nome: g.nome,
+          colore: g.colore,
+          fila: quantoPagaUnaFila(g.id),
+          pieno: quantoPagaIlPieno(g.id),
+        })),
+        simboli: quali.map((x) => vestiIlSimbolo(x, contorno)),
+      });
+    }
+
+    if (metodo === "POST" && percorso === "/macchinetta") {
+      const esito = giraLaMacchinetta(deposito, chi.id, numero(corpo["puntata"], 0), Math.random);
+      return OK({
+        ...esito,
+        caselle: esito.caselle.map((x) => vestiIlSimbolo(x, contorno)),
+        file: esito.file.map((f) => ({
+          riga: f.riga,
+          lire: f.lire,
+          simbolo: vestiIlSimbolo(f.simbolo, contorno),
+        })),
+        sbloccata: esito.sbloccata ? vestiIlSimbolo(esito.sbloccata, contorno) : null,
+        vintoScritto: lire(esito.vinto),
+        saldoScritto: lire(esito.saldo),
       });
     }
 

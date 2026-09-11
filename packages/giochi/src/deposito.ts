@@ -38,7 +38,16 @@ import {
   SOGLIE_DI_PRIMA,
   tettoDelValore,
 } from "./regole";
-import type { Collezionabile, Conto, DatiGiochi, Formazione, Grado, Impostazioni, Pezzo } from "./tipi";
+import type {
+  Collezionabile,
+  Conto,
+  DatiGiochi,
+  Formazione,
+  Grado,
+  Impostazioni,
+  Pacchetto,
+  Pezzo,
+} from "./tipi";
 
 /**
  * Un deposito appena nato, tutto suo.
@@ -62,6 +71,7 @@ function vuoto(): DatiGiochi {
     prezzi: {},
     formazioni: [],
     impostazioni: { ...IMPOSTAZIONI_DI_PARTENZA },
+    pacchetti: [],
   };
 }
 
@@ -157,6 +167,26 @@ export class Deposito {
       prezzi,
       formazioni: Array.isArray(lette.formazioni) ? lette.formazioni : [],
       impostazioni: { ...IMPOSTAZIONI_DI_PARTENZA, ...(lette.impostazioni ?? {}) },
+      pacchetti: Array.isArray(lette.pacchetti)
+        ? lette.pacchetti
+        : /**
+           * ⚠ **I pacchetti di un file scritto prima del 12 settembre 2026 si
+           * ricostruiscono leggendo**, e una volta sola.
+           *
+           * Allora le serie non erano scritte da nessuna parte: erano il
+           * magazzino diviso per cento. Senza questa riga, chi ha gia' due
+           * serie chiuse riaprirebbe il gioco con **zero** pacchetti — cioe'
+           * l'album svuotato e le figurine gia' comprate che non stanno piu' in
+           * nessuna raccolta.
+           *
+           * Si ricostruisce esattamente com'era: i primi cento nel primo, i
+           * secondi cento nel secondo, quelle che avanzano ancora fuori. Da qui
+           * in poi i confini sono scritti e non si muovono piu'.
+           */
+          comEranoPrima(
+            collezionabili,
+            Math.max(1, (lette.impostazioni?.perSerie ?? IMPOSTAZIONI_DI_PARTENZA.perSerie)),
+          ),
     };
   }
 
@@ -216,6 +246,27 @@ export class Deposito {
 
   formazioni(): Formazione[] {
     return this.dati.formazioni;
+  }
+
+  /** I pacchetti chiusi, in ordine di chiusura. */
+  pacchetti(): Pacchetto[] {
+    return this.dati.pacchetti;
+  }
+
+  /** Scrive un pacchetto nuovo. Il numero lo da' questa riga, e non torna indietro. */
+  chiudiPacchetto(daAdmin: string, dentro: string[], nome?: string): Pacchetto {
+    const numero = this.dati.pacchetti.reduce((piu, p) => Math.max(piu, p.numero), 0) + 1;
+    const p: Pacchetto = {
+      id: "p_" + Date.now().toString(36) + numero,
+      numero,
+      dentro,
+      quando: Date.now(),
+      daAdmin,
+    };
+    if (nome) p.nome = nome;
+    this.dati.pacchetti.push(p);
+    this.salva();
+    return p;
   }
 
   /**
@@ -379,6 +430,37 @@ export class Deposito {
     this.salva();
     return this.dati.impostazioni;
   }
+}
+
+/**
+ * I pacchetti di un file scritto prima che i pacchetti esistessero.
+ *
+ * ⚠ **Fotografa quello che il conto diceva allora, e poi non si tocca piu'.**
+ * Fino all'11 settembre 2026 «le serie chiuse» erano `magazzino / 100`, e
+ * «cosa c'e' nella serie 2» era «dalla 101 alla 200». Qui si scrive quella
+ * stessa divisione una volta sola, cosi' chi ha gia' comprato un pacchetto
+ * ritrova le stesse figurine dentro alla stessa raccolta.
+ *
+ * Quelle che avanzano — meno di cento — restano fuori, com'erano: una serie non
+ * chiusa non si comprava neanche prima.
+ */
+function comEranoPrima(collezionabili: Collezionabile[], perSerie: number): Pacchetto[] {
+  const magazzino = collezionabili
+    .filter((c) => c.stato === "presa")
+    .sort((a, b) => (a.numero ?? 0) - (b.numero ?? 0));
+  const fuori: Pacchetto[] = [];
+  for (let i = 0; i + perSerie <= magazzino.length; i += perSerie) {
+    const numero = fuori.length + 1;
+    fuori.push({
+      id: "p" + numero,
+      numero,
+      dentro: magazzino.slice(i, i + perSerie).map((c) => c.id),
+      quando: magazzino[i + perSerie - 1]?.decisa ?? Date.now(),
+      // Nessuno l'ha chiuso davvero: l'aveva chiuso il contatore.
+      daAdmin: "",
+    });
+  }
+  return fuori;
 }
 
 /**

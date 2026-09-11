@@ -30,6 +30,7 @@ import {
   scalino,
   sottoIlTetto,
   TETTO_EURO,
+  TETTO_FIGURINE,
   valore,
   valuta,
   type Caso,
@@ -44,6 +45,7 @@ import type {
   Era,
   Grado,
   Giro,
+  Pacchetto,
   Pezzo,
   PezzoInGioco,
   Tavolo,
@@ -636,14 +638,41 @@ export const TAGLI = [2, 5, 10, 20, 50, 100, 200, 500].map((e) => Math.round(e *
  *   tasti che fanno tutti la stessa cosa, cioe' «massimo».
  *
  * Quindi la moneta resta quella — **euro contati in lire**, l'unica che questo
- * gioco conosce — e cambia solo il taglio: sei tasti che stanno dentro ai tre
- * euro, e l'ultimo e' esattamente il tetto. Si battono e si sommano come prima
- * (`TAGLI` per i regali, § 4), e la somma non passa mai il tetto perche' e'
- * `valoreDaPrendere` a tenerlo — non i tasti.
+ * gioco conosce — e cambia solo il taglio. Si battono e si sommano come prima
+ * (`TAGLI` per i regali, § 4).
+ *
+ * ⚠ **E dal 12 settembre 2026 i tasti arrivano fino in cima**, perche' i gradi
+ * ci arrivano: da quando una cosa presa puo' essere Ethernal (`TETTO_FIGURINE`)
+ * servono trentacinque euro per assegnarlo, e con l'ultimo tasto da tre
+ * bisognava batterlo **dodici volte**. Un tasto che si preme dodici volte e'
+ * una casella vuota con piu' passaggi.
+ *
+ * I sei piccoli restano tali e quali — sotto i tre euro si decide di
+ * centesimi, ed e' li' che finisce quasi tutto — e sopra ne stanno quattro
+ * grossi: cinque, dieci, venti, e l'ultimo e' la soglia del grado piu' alto,
+ * cioe' il colpo unico per dire «questa vale tutto». La strada piu' corta resta
+ * un'altra e c'e' gia': **si tocca il grado** e il bonus ci si mette da solo al
+ * minimo che ci arriva.
  */
-export const TAGLI_BONUS = [0.1, 0.25, 0.5, 1, 2, TETTO_EURO].map((e) =>
-  Math.round(e * CAMBIO_EURO),
-);
+export const TAGLI_BONUS = [0.1, 0.25, 0.5, 1, 2, TETTO_EURO, 5, 10, 20]
+  .map((e) => Math.round(e * CAMBIO_EURO))
+  /**
+   * ⚠ **L'ultimo tasto e' la soglia del grado piu' alto, in lire esatte.**
+   *
+   * Non passa per gli euro come gli altri, e non e' una svista: 68.000 lire
+   * sono 35,12 euro, e riportandole indietro arrotondate si perderebbero
+   * duecento lire — cioe' il tasto «massimo» non arriverebbe al massimo per
+   * pochissimo, che e' il modo peggiore di sbagliare un numero. Qui il tasto
+   * **e'** la soglia: premuto su una base a zero, il grado piu' alto ci sta
+   * dentro esattamente.
+   */
+  .concat([scalino(TETTO_FIGURINE).da])
+  // Col tetto in basso gli ultimi tasti sarebbero tutti «massimo», cioe' tre
+  // tasti che fanno la stessa cosa: si tengono quelli sotto alla cima, piu' la
+  // cima. In ordine, senza doppioni, e mai sopra al tetto.
+  .filter((lire) => lire <= scalino(TETTO_FIGURINE).da)
+  .filter((lire, i, tutti) => tutti.indexOf(lire) === i)
+  .sort((a, b) => a - b);
 
 /**
  * Chi comanda manda lire a qualcuno.
@@ -777,17 +806,71 @@ export function butta(
 
 /* ------------------------------------------------------------- i pacchetti */
 
-/** Quante serie sono chiuse: solo quelle si possono comprare. */
+/** Quanti pacchetti sono chiusi: solo quelli si possono comprare. */
 export function serieChiuse(deposito: Deposito): number {
-  const perSerie = Math.max(1, deposito.impostazioni().perSerie);
-  return Math.floor(deposito.magazzino().length / perSerie);
+  return deposito.pacchetti().length;
 }
 
-/** Le figurine di una serie. La serie 1 sono i primi `perSerie` numeri. */
+/**
+ * Le figurine di un pacchetto chiuso.
+ *
+ * ⚠ **Sono quelle scritte dentro, non un intervallo di numeri.** Fino all'11
+ * settembre 2026 si tagliava il magazzino a fette da cento; dal 12 il
+ * pacchetto porta i suoi id addosso, perche' un pacchetto da quaranta non deve
+ * spostare i confini di quelli chiusi prima.
+ *
+ * Una figurina che intanto e' sparita dal magazzino semplicemente non c'e':
+ * meglio un pacchetto con dentro una cosa in meno che un buco che manda tutto
+ * all'aria quando si apre.
+ */
 export function serie(deposito: Deposito, numeroSerie: number): Collezionabile[] {
-  const perSerie = Math.max(1, deposito.impostazioni().perSerie);
-  const da = (numeroSerie - 1) * perSerie;
-  return deposito.magazzino().slice(da, da + perSerie);
+  const quale = deposito.pacchetti().find((p) => p.numero === numeroSerie);
+  if (!quale) return [];
+  const magazzino = deposito.magazzino();
+  return quale.dentro
+    .map((id) => magazzino.find((c) => c.id === id))
+    .filter((c): c is Collezionabile => Boolean(c));
+}
+
+/**
+ * ⚠ **Le cose prese che non stanno ancora in nessun pacchetto.**
+ *
+ * E' la serie che si sta riempiendo: quello che finisce dentro al prossimo che
+ * si chiude. Sta qui e non nella pagina perche' e' il PC a sapere cosa c'e'
+ * nel magazzino, e perche' e' esattamente la lista che `creaPacchetto` scrive.
+ */
+export function fuoriDaiPacchetti(deposito: Deposito): Collezionabile[] {
+  const dentro = new Set<string>();
+  for (const p of deposito.pacchetti()) for (const id of p.dentro) dentro.add(id);
+  return deposito.magazzino().filter((c) => !dentro.has(c.id));
+}
+
+/**
+ * ⚠ **Chi comanda chiude un pacchetto, quando vuole.**
+ *
+ * Chiesto il 12 settembre 2026: «facciamo che un admin puo' creare un
+ * pacchetto quando vuole, anche con meno di 100 creazioni».
+ *
+ * Cento resta il numero che si vede scritto — «ne mancano dodici» — ma non e'
+ * piu' una porta chiusa: e' un suggerimento. Chiudere una raccolta e' una
+ * decisione, come dare un prezzo a una combinazione, e le decisioni qui le
+ * prende una persona (CONCETTI.md § 11).
+ *
+ * Dentro ci va **tutto quello che e' rimasto fuori**, in ordine di magazzino.
+ * Non si sceglie a mano quali: un pacchetto e' «le cose prese da quando ho
+ * chiuso l'ultimo», e potersi tenere fuori una figurina vorrebbe dire una cosa
+ * presa che non sta in nessuna raccolta e non si compra da nessuna parte.
+ */
+export function creaPacchetto(deposito: Deposito, admin: string, nome?: string): Pacchetto {
+  const dentro = fuoriDaiPacchetti(deposito);
+  if (dentro.length === 0) {
+    throw new NienteDaFare("Non c'e' niente da metterci dentro: prendi qualcosa, prima.");
+  }
+  return deposito.chiudiPacchetto(
+    admin,
+    dentro.map((c) => c.id),
+    (nome ?? "").trim().slice(0, 60) || undefined,
+  );
 }
 
 export interface Figurina {
@@ -820,11 +903,11 @@ export function apriPacchetto(
   caso: Caso,
 ): AperturaPacchetto {
   const imp = deposito.impostazioni();
-  if (numeroSerie < 1 || numeroSerie > serieChiuse(deposito)) {
-    throw new NienteDaFare("Quella serie non e' ancora chiusa: non si puo' comprare.");
+  if (!deposito.pacchetti().some((p) => p.numero === numeroSerie)) {
+    throw new NienteDaFare("Quel pacchetto non e' ancora chiuso: non si puo' comprare.");
   }
   const dentro = serie(deposito, numeroSerie);
-  if (dentro.length === 0) throw new NienteDaFare("Quella serie e' vuota.");
+  if (dentro.length === 0) throw new NienteDaFare("Quel pacchetto e' vuoto.");
 
   const conto = deposito.conto(chi);
   if (conto.saldo < imp.costoPacchetto) {
@@ -1015,21 +1098,36 @@ export function classifica(deposito: Deposito): RigaClassifica[] {
     );
 }
 
-/** Quanto e' pieno il magazzino, e a che punto sta la serie che si sta riempiendo. */
+/** Quanto e' pieno il magazzino, e a che punto sta la raccolta che si sta riempiendo. */
 export function statoMagazzino(deposito: Deposito): {
   prese: number;
   inAttesa: number;
   serieChiuse: number;
   allaProssimaSerie: number;
+  /** Quante cose prese non stanno ancora in nessun pacchetto. */
+  fuori: number;
+  /** Vero se c'e' qualcosa da metterci dentro: il tasto «crea» vive di questo. */
+  siPuoChiudere: boolean;
 } {
   const imp = deposito.impostazioni();
   const prese = deposito.magazzino().length;
   const perSerie = Math.max(1, imp.perSerie);
+  const fuori = fuoriDaiPacchetti(deposito).length;
   return {
     prese,
     inAttesa: deposito.collezionabili().filter((c) => c.stato === "in-attesa").length,
-    serieChiuse: Math.floor(prese / perSerie),
-    allaProssimaSerie: perSerie - (prese % perSerie),
+    serieChiuse: deposito.pacchetti().length,
+    /**
+     * ⚠ **Quante ne mancano ai cento, e adesso e' un suggerimento.**
+     *
+     * Fino all'11 settembre 2026 era una porta: a meno di cento non si
+     * chiudeva. Dal 12 chi comanda chiude quando vuole, quindi questo numero
+     * dice solo «ne mancano tot per averne una piena». Sotto zero non va: a
+     * centoventi dentro non ne mancano meno di zero, ne mancano zero.
+     */
+    allaProssimaSerie: Math.max(0, perSerie - fuori),
+    fuori,
+    siPuoChiudere: fuori > 0,
   };
 }
 
