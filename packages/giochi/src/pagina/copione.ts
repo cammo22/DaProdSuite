@@ -1385,6 +1385,7 @@ export const COPIONE = `
       $("shop-roba").innerHTML = h ||
         "<div class=\\"niente\\">Qui non c'e' ancora niente da comprare: arriva quando chi " +
         "comanda mette qualcosa in vetrina, o chiude il primo pacchetto.</div>";
+      portaAvantiLeFoto();
     }).catch(function (e) { avviso(e.message, "male"); });
   }
 
@@ -1524,6 +1525,7 @@ export const COPIONE = `
     var aperto = $("pacchetto-aperto");
     aperto.hidden = !pacchettoAperto;
     aperto.innerHTML = pacchettoAperto ? pacchettoApertoHtml(dati) : "";
+    portaAvantiLeFoto();
 
     // La tendina: quello che finisce nel prossimo pacchetto.
     var fuori = dati.fuori || [];
@@ -1719,6 +1721,7 @@ export const COPIONE = `
           "<div class=\\"fronte\\">" + fronteDellaCarta(f, s) + "</div></div></div>";
       }
       carte.innerHTML = h;
+      portaAvantiLeFoto();
       dice.innerHTML = "Toccale per girarle.";
       tasti.innerHTML = "<button class=\\"btn piano\\" data-busta=\\"tutte\\">Girale tutte</button>";
     }
@@ -1877,6 +1880,52 @@ export const COPIONE = `
     return uscitoDi(c, eFoto);
   }
 
+  /**
+   * ⚠ **Le foto si portano avanti da sole.** Chiesto il 12 settembre 2026:
+   * «carica le foto una alla volta e con connessioni lente si deve aspettare
+   * che carica tutte le foto».
+   *
+   * Le caselle hanno «loading=lazy», e per lo schermo e' giusto: non si
+   * scaricano cento foto per vederne sei. Ma vuol dire che scorrendo si aspetta
+   * ogni volta. Qui, appena la schermata e' disegnata, le altre si continuano a
+   * chiedere **in sottofondo**, tre alla volta, cosi' quando ci arrivi ci sono
+   * gia'. Sul telefono finiscono anche nel magazzino dell'app, e il giro dopo
+   * non passano nemmeno dalla rete: vedi «Magazzino.kt» nell'app.
+   *
+   * Si chiedono con «fetch», non con «new Image()»: qui servono i byte, non una
+   * foto aperta in memoria. Cento immagini decodificate sono il modo piu' rapido
+   * di far uccidere la pagina dal telefono.
+   */
+  var portate = {};
+  var portoAdesso = 0;
+  var inCoda = [];
+
+  function portaAvantiLeFoto() {
+    var tutte = document.querySelectorAll(".faccia-d img");
+    for (var i = 0; i < tutte.length; i++) {
+      var dove = tutte[i].getAttribute("src");
+      if (!dove || portate[dove]) continue;
+      portate[dove] = 1;
+      inCoda.push(dove);
+    }
+    tiraLaCodaDelleFoto();
+  }
+
+  function tiraLaCodaDelleFoto() {
+    while (portoAdesso < 3 && inCoda.length) {
+      portoAdesso += 1;
+      var finita = function () {
+        portoAdesso -= 1;
+        tiraLaCodaDelleFoto();
+      };
+      try {
+        fetch(inCoda.shift(), { credentials: "same-origin" }).then(finita, finita);
+      } catch (e) {
+        finita();
+      }
+    }
+  }
+
   function casellaInvHtml(k, viste, primaVolta) {
     var s = scalinoDi(k.grado);
     if (!k.cosa) {
@@ -2017,6 +2066,7 @@ export const COPIONE = `
           }).join("") + "</div></div>";
       }
       $("inv-pacchetti").innerHTML = h;
+      portaAvantiLeFoto();
 
       // Da adesso queste sono viste: la prossima volta si accendono solo le
       // nuove, e quelle della casa che sono cresciute.
