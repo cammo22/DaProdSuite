@@ -641,12 +641,15 @@ tr.io td{background:rgba(255,209,102,.07)}
 .niente{padding:22px 12px; text-align:center; color:var(--spento)}
 
 /* ---------------------------------------------------------- le linguette */
+/* ⚠ Otto tasti non ci stanno su un telefono stretto: la barra scorre di lato
+   invece di schiacciarli (11 settembre 2026, vedi il markup). */
 nav{position:fixed; left:0; right:0; bottom:0; z-index:30; display:flex;
   background:rgba(8,9,13,.94); backdrop-filter:blur(10px); border-top:1px solid var(--riga);
-  padding-bottom:env(safe-area-inset-bottom)}
-nav button{flex:1; padding:11px 4px 13px; border:0; background:transparent;
+  padding-bottom:env(safe-area-inset-bottom); overflow-x:auto; scrollbar-width:none}
+nav::-webkit-scrollbar{display:none}
+nav button{flex:1 0 auto; padding:11px 10px 13px; border:0; background:transparent;
   color:var(--spento); font-size:11.5px; font-weight:600; cursor:pointer;
-  transition:color .2s ease}
+  white-space:nowrap; transition:color .2s ease}
 nav button.viva{color:var(--luce)}
 nav .pallino{display:inline-block; min-width:16px; padding:0 4px; margin-left:4px;
   border-radius:999px; background:var(--rosso); color:#fff; font-size:10px;
@@ -762,9 +765,25 @@ nav .pallino{display:inline-block; min-width:16px; padding:0 4px; margin-left:4p
 .foglio-testa b{flex:1}
 /* «align-content:start» perche' con tre foto sole le righe si spartivano tutta
    l'altezza del foglio e ne uscivano tre colonne lunghe un metro. */
+/**
+ * ⚠ **E una riga e' alta quanto quello che ha dentro, sempre.** Detto l'11
+ * settembre 2026: «le immagini sono sempre una sopra l'altra, anche in Tutto;
+ * solo in Brani e' come me l'aspetto».
+ *
+ * Il difetto era il contrario di quello qui sopra. Il foglio e' alto quanto lo
+ * schermo, e le caselle hanno «overflow:hidden» per gli angoli tondi: per il
+ * browser una casella cosi' si puo' stringere **fino a zero**. Con sessanta foto
+ * le righe si schiacciavano per starci tutte — ottantadue pixel per caselle da
+ * centoventi — e le caselle, rimaste alte uguale, finivano una sopra l'altra.
+ * Coi brani non si vedeva perche' sono tre, e ci stanno. Nel banco di prova
+ * nemmeno, finche' c'erano sei quadrati: ci stavano anche loro.
+ *
+ * «max-content» dice che una riga non si stringe mai sotto al suo contenuto:
+ * se non ci sta, il foglio scorre, che e' quello che deve fare.
+ */
 .griglia-libreria{flex:1; overflow-y:auto; display:grid; gap:8px; padding:12px 14px 28px;
   grid-template-columns:repeat(auto-fill, minmax(112px, 1fr));
-  align-content:start; align-items:start}
+  grid-auto-rows:max-content; align-content:start; align-items:start}
 /**
  * ⚠ **I titoletti dentro la griglia: «Immagini», «Brani», «Video».**
  *
@@ -842,6 +861,10 @@ nav .pallino{display:inline-block; min-width:16px; padding:0 4px; margin-left:4p
   background:#141821; border:1px solid var(--riga); box-shadow:0 24px 60px rgba(0,0,0,.6);
   display:flex; flex-direction:column; gap:9px}
 .chiede small{color:var(--spento); font-size:12.5px; line-height:1.35}
+/* Una figurina dell'inventario aperta dentro al pannello: se e' lunga, scorre
+   dentro, e il tasto «chiudi» resta raggiungibile. */
+.chiede .dentro{max-height:88vh; overflow-y:auto}
+.chiede .dentro .figurina{margin-bottom:0}
 .chiede input, .chiede textarea{width:100%; padding:11px 12px; border-radius:11px;
   border:1px solid var(--riga); background:rgba(9,11,16,.8); color:var(--testo);
   font:inherit; font-size:15px; resize:vertical}
@@ -871,13 +894,18 @@ nav .pallino{display:inline-block; min-width:16px; padding:0 4px; margin-left:4p
 /* --------------------------------------------------------- la macchinetta */
 
 /**
- * ⚠ **La seconda slot: sei caselle, due file da tre.**
+ * ⚠ **La seconda slot: nove caselle, tre file da tre.**
  *
- * Chiesta il 12 settembre 2026. La griglia e' **sempre tre per riga**, su ogni
- * schermo: e' la forma della macchina, non un impaginato che si adatta. Quattro
- * per riga vorrebbe dire che «la fila» non e' piu' una fila, e la regola del
- * gioco si legge guardando lo schermo.
+ * Chiesta il 12 settembre 2026 con due file, la terza l'11. La griglia e'
+ * **sempre tre per riga**, su ogni schermo: e' la forma della macchina, non un
+ * impaginato che si adatta. Quattro per riga vorrebbe dire che «la fila» non
+ * e' piu' una fila, e la regola del gioco si legge guardando lo schermo.
+ *
+ * ⚠ **Larga al massimo come un telefono.** Le caselle sono quadrate, e su un
+ * computer tre colonne a tutta pagina fanno caselle da quattrocento pixel: tre
+ * file erano un metro e mezzo di macchina da scorrere.
  */
+.macchina{max-width:520px; margin:0 auto}
 .vetrina-macchina{display:grid; grid-template-columns:repeat(3,1fr); gap:7px;
   padding:10px; border-radius:16px; border:1px solid var(--riga);
   background:linear-gradient(180deg, rgba(10,12,18,.9), rgba(16,10,22,.9));
@@ -988,6 +1016,206 @@ nav .pallino{display:inline-block; min-width:16px; padding:0 4px; margin-left:4p
  */
 .nata.suona{width:min(292px, 80vw)}
 .nata.suona .brano{width:100%; border:0; background:transparent; padding:0}
+
+/* ------------------------------------------------------------ i pacchetti */
+/**
+ * ⚠ **Un pacchetto e' una bustina, non un tasto.** Dall'11 settembre 2026, con
+ * «Album» che diventa «Pacchetti»: si tocca la bustina e si apre, e sotto c'e'
+ * la barra di quante ne hai. La stagnola e il bordo seghettato sono quelli
+ * delle figurine vere — la stessa bustina che poi si strappa col dito.
+ */
+.pacchi{display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:12px;
+  margin-top:6px}
+.pacco{position:relative; padding:10px; border-radius:16px; border:1px solid var(--riga);
+  background:rgba(18,20,28,.85); display:flex; flex-direction:column; gap:8px;
+  cursor:pointer; transition:transform .15s ease, border-color .2s ease}
+.pacco:active{transform:scale(.98)}
+.pacco.completo{border-color:var(--oro); box-shadow:0 0 18px rgba(255,209,102,.25)}
+.pacco .quante{font-size:12px; color:var(--spento)}
+.pacco .quante b{color:var(--testo)}
+.pacco .btn{padding:9px 10px; font-size:13px}
+.bustina{position:relative; aspect-ratio:3/4; border-radius:6px; overflow:hidden;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
+  padding:14px 8px; text-align:center; color:#191307;
+  background:linear-gradient(135deg,#ffe29a 0%,#f6b73c 30%,#fff1c1 48%,#e39b2d 70%,#ffd66e 100%);
+  box-shadow:inset 0 0 0 2px rgba(255,255,255,.35), 0 8px 22px rgba(0,0,0,.45)}
+/* Il bordo seghettato, sopra e sotto: e' quello che dice «bustina» da lontano. */
+.bustina::before, .bustina::after{content:""; position:absolute; left:0; right:0; height:8px;
+  background:repeating-linear-gradient(90deg, rgba(0,0,0,.28) 0 4px, transparent 4px 8px)}
+.bustina::before{top:0}
+.bustina::after{bottom:0}
+.bustina .marchio-b{font-size:9.5px; font-weight:800; letter-spacing:1.5px;
+  text-transform:uppercase; opacity:.65}
+.bustina b{font-size:15px; line-height:1.15; overflow-wrap:anywhere}
+.bustina small{font-size:11px; font-weight:700; opacity:.7}
+/* Il luccichio della stagnola che passa ogni tanto: la stessa banda dei rulli. */
+.bustina .riflesso{position:absolute; inset:0; pointer-events:none;
+  background:linear-gradient(115deg, transparent 35%, rgba(255,255,255,.55) 50%, transparent 65%);
+  transform:translateX(-120%); animation:luccica 4.2s ease-in-out infinite}
+.barretta{height:6px; border-radius:999px; background:rgba(255,255,255,.08); overflow:hidden}
+.barretta span{display:block; height:100%; border-radius:999px;
+  background:linear-gradient(90deg,#7fd1a8,var(--oro))}
+.aperto-testa{display:flex; gap:12px; align-items:center; margin:4px 0 10px}
+.aperto-testa .bustina{width:84px; flex:0 0 auto; padding:10px 4px}
+.aperto-testa .bustina b{font-size:12px}
+.aperto-testa .dice{flex:1; min-width:0; font-size:13px; color:var(--spento)}
+.aperto-testa .dice b{display:block; color:var(--testo); font-size:16px; margin-bottom:3px}
+
+/* ------------------------------------------------- aprire un pacchetto */
+/**
+ * ⚠ **Il pacchetto si apre col dito.** Chiesto l'11 settembre 2026: «vorrei un
+ * pack figurine che si apre, magari fai uno slide con il dito, tipo per
+ * tagliare e aprire il pacchetto, e poi si vede cosa esce».
+ *
+ * Tre tempi: la bustina che galleggia, la riga tratteggiata da tagliare — il
+ * rosso dice fin dove e' arrivato il dito — e le carte che escono coperte e si
+ * girano toccandole. Sta sotto ai coriandoli e al lampo («z-index» 48): la
+ * scena del grado si vede sopra alla carta che l'ha fatta partire.
+ *
+ * ⚠ «touch-action:none» sulla bustina e basta: e' l'unico posto dove il dito
+ * che scorre deve tagliare invece di scorrere la pagina.
+ */
+.apertura{position:fixed; inset:0; z-index:48; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; gap:16px; overflow-y:auto;
+  padding:20px 16px calc(20px + env(safe-area-inset-bottom));
+  background:radial-gradient(90% 60% at 50% 30%, rgba(60,40,90,.6), rgba(4,5,8,.97) 72%);
+  animation:apre .2s ease}
+.apertura .busta{position:relative; width:min(62vw, 250px); aspect-ratio:3/4;
+  touch-action:none; -webkit-user-select:none; user-select:none; cursor:grab;
+  animation:galleggia 3s ease-in-out infinite}
+@keyframes galleggia{0%,100%{transform:translateY(0) rotate(-1.5deg)}
+  50%{transform:translateY(-8px) rotate(1.5deg)}}
+.apertura .busta .bustina{position:absolute; inset:0; aspect-ratio:auto; padding-top:32%}
+.apertura .busta .bustina b{font-size:19px}
+/* Il lembo: la striscia sopra alla riga tratteggiata, quella che si strappa. */
+.apertura .lembo{position:absolute; left:0; right:0; top:0; height:22%; z-index:2;
+  border-radius:6px 6px 0 0;
+  background:linear-gradient(135deg,#fff1c1,#f6b73c 60%,#ffd66e);
+  border-bottom:2px dashed rgba(20,20,20,.6)}
+.apertura .lembo::before{content:""; position:absolute; left:0; right:0; top:0; height:8px;
+  background:repeating-linear-gradient(90deg, rgba(0,0,0,.28) 0 4px, transparent 4px 8px)}
+.apertura .taglio{position:absolute; bottom:-3px; left:0; height:4px; width:0%;
+  border-radius:2px; background:linear-gradient(90deg,#fff,#ff5c6e); box-shadow:0 0 12px #ff5c6e}
+.apertura .taglio.da-destra{left:auto; right:0; background:linear-gradient(270deg,#fff,#ff5c6e)}
+.apertura .forbici{position:absolute; bottom:-16px; left:-4px; font-size:22px;
+  animation:forbici 1.6s ease-in-out infinite; pointer-events:none}
+@keyframes forbici{0%,100%{transform:translateX(0)} 50%{transform:translateX(18px)}}
+.apertura .busta.tagliando .forbici{display:none}
+.apertura .busta.strappata{animation:none; cursor:default}
+.apertura .busta.strappata .lembo{animation:vialembo .55s cubic-bezier(.3,.7,.4,1) forwards}
+@keyframes vialembo{to{transform:translate(45%, -150%) rotate(28deg); opacity:0}}
+.apertura .busta.strappata .bustina{animation:giubusta .55s .18s ease-in forwards}
+@keyframes giubusta{to{transform:translateY(35%) scale(.88); opacity:0}}
+.apertura .dice{color:#d8dbea; font-size:14px; text-align:center; max-width:330px}
+.apertura .dice b{color:var(--oro)}
+.apertura .riga-tasti{justify-content:center}
+/* Le carte: escono coperte, e si girano toccandole. */
+.carte{display:grid; grid-template-columns:repeat(auto-fit, minmax(98px, 1fr)); gap:10px;
+  width:min(100%, 560px)}
+.carta{perspective:900px; aspect-ratio:3/4.3; cursor:pointer;
+  animation:escono .45s cubic-bezier(.2,1.4,.4,1) both}
+@keyframes escono{from{transform:translateY(70px) scale(.6); opacity:0} to{transform:none; opacity:1}}
+.carta .gira{position:relative; width:100%; height:100%; transform-style:preserve-3d;
+  transition:transform .55s cubic-bezier(.3,1.3,.5,1)}
+.carta.girata .gira{transform:rotateY(180deg)}
+.carta .retro, .carta .fronte{position:absolute; inset:0; border-radius:12px; overflow:hidden;
+  backface-visibility:hidden; -webkit-backface-visibility:hidden}
+.carta .retro{display:grid; place-items:center; font-size:30px; font-weight:800;
+  color:rgba(30,20,5,.55); border:2px solid #fff3cf;
+  background:repeating-linear-gradient(45deg,#f6b73c 0 10px,#ffd66e 10px 20px)}
+.carta .fronte{transform:rotateY(180deg); display:flex; flex-direction:column;
+  background:#12141c; border:2px solid var(--g);
+  box-shadow:0 0 22px color-mix(in srgb, var(--g) 45%, transparent)}
+.carta .faccia{flex:1 1 auto; min-height:0; display:grid; place-items:center; font-size:30px;
+  background:radial-gradient(100% 80% at 50% 0%, color-mix(in srgb, var(--g) 35%, transparent), transparent 70%)}
+.carta .faccia img{width:100%; height:100%; object-fit:cover; display:block}
+.carta .sotto{padding:6px 7px 7px; display:flex; flex-direction:column; gap:3px}
+.carta .grado{font-size:10px; padding:2px 7px; align-self:flex-start}
+.carta .titolo{font-size:11.5px; font-weight:700; line-height:1.2;
+  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden}
+.carta .nuova{font-size:10.5px; font-weight:800; color:#7fd1a8}
+.carta .doppia{font-size:10.5px; color:var(--spento)}
+.carte.scossa{animation:scuoti .5s cubic-bezier(.36,.07,.19,.97)}
+/* La firma anche sulla carta, ma in piccolo: e' la stessa pastiglia, ristretta. */
+.carta .firma{margin-top:1px; padding:2px 7px 2px 3px; gap:4px}
+.carta .firma .tondo{width:14px; height:14px; font-size:8px}
+.carta .firma .nome{font-size:10px}
+.carta .firma .che{display:none}
+
+/* ------------------------------------------------------ lo shop, a sezioni */
+.sezione{margin:18px 0 10px; font-size:13px; letter-spacing:.4px; text-transform:uppercase;
+  color:var(--spento)}
+.sezione:first-child{margin-top:4px}
+#shop-roba .cassetto .prodotti{margin-top:2px}
+
+/* ------------------------------------------------------------ l'inventario */
+/**
+ * ⚠ **Una pagina fatta per guardarsi**, chiesto l'11 settembre 2026: «voglio
+ * una bella page dedicata». In cima l'anello di quanto ne hai, sotto i gradi
+ * come pastiglie, gli obiettivi, e un pacchetto per riga con le sue caselle.
+ *
+ * Le caselle piene hanno il bordo del loro grado; quelle vuote sono tratteggiate
+ * e sbiadite dello stesso colore, col numero sopra — che ti manca un Mythic
+ * lo devi vedere, cosa sia no.
+ */
+.inv-testa{display:flex; align-items:center; gap:16px; padding:14px; margin:6px 0 10px;
+  border-radius:18px; border:1px solid var(--riga);
+  background:radial-gradient(120% 120% at 0% 0%, rgba(255,209,102,.13), transparent 60%),
+    rgba(14,16,22,.8)}
+.anello{--p:0; flex:0 0 auto; width:92px; height:92px; border-radius:50%;
+  display:grid; place-items:center;
+  background:conic-gradient(var(--oro) calc(var(--p) * 1%), rgba(255,255,255,.08) 0)}
+.anello b{display:grid; place-items:center; width:74px; height:74px; border-radius:50%;
+  background:#0d0f15; font-size:22px; font-variant-numeric:tabular-nums}
+.inv-testa .dice{min-width:0}
+.inv-testa .dice b{font-size:18px}
+.inv-testa .dice small{display:block; color:var(--spento); font-size:12.5px; margin-top:3px;
+  line-height:1.35}
+.inv-gradi{display:flex; flex-wrap:wrap; gap:6px; margin-bottom:4px}
+.inv-gradi .g{display:inline-flex; align-items:center; gap:6px; padding:4px 10px 4px 6px;
+  border-radius:999px; font-size:12px; font-variant-numeric:tabular-nums;
+  border:1px solid color-mix(in srgb, var(--g) 55%, var(--riga))}
+.inv-gradi .g i{width:10px; height:10px; border-radius:50%; background:var(--g)}
+.inv-gradi .g.pieno{background:color-mix(in srgb, var(--g) 22%, transparent)}
+.obiettivo{display:flex; align-items:center; gap:10px; padding:9px 2px;
+  border-top:1px solid var(--riga)}
+.obiettivo:first-child{border-top:0}
+.obiettivo .spunta{width:22px; height:22px; border-radius:50%; flex:0 0 auto;
+  display:grid; place-items:center; border:1px solid var(--riga); font-size:12px;
+  color:var(--spento)}
+.obiettivo.fatto .spunta{background:#1f6f4a; border-color:#37a06d; color:#fff}
+.obiettivo .cosa{flex:1; min-width:0; font-size:13.5px}
+.obiettivo.fatto .cosa{color:var(--spento)}
+.obiettivo .cosa .barretta{height:4px; margin-top:5px}
+.obiettivo .quanto{font-size:12px; color:var(--spento); font-variant-numeric:tabular-nums}
+.inv-pacco{margin:18px 0}
+.inv-pacco .testa{display:flex; align-items:baseline; gap:8px; margin-bottom:7px}
+.inv-pacco .testa b{flex:1; min-width:0; font-size:15px; overflow-wrap:anywhere}
+.inv-pacco .testa small{color:var(--spento); font-variant-numeric:tabular-nums}
+.inv-pacco.completo .testa b::after{content:" ✓"; color:var(--oro)}
+.caselle-inv{display:grid; grid-template-columns:repeat(auto-fill, minmax(72px, 1fr));
+  gap:7px; margin-top:9px}
+.cas{position:relative; aspect-ratio:3/4; border-radius:10px; overflow:hidden;
+  border:2px solid var(--g); background:#0f1117; display:grid; place-items:center;
+  cursor:pointer}
+.cas img{width:100%; height:100%; object-fit:cover; display:block}
+.cas .icona{font-size:24px}
+.cas .n{position:absolute; left:5px; top:3px; font-size:9.5px; font-weight:800; color:#fff;
+  text-shadow:0 1px 3px #000}
+.cas .t{position:absolute; left:0; right:0; bottom:0; padding:12px 4px 4px; font-size:9.5px;
+  font-weight:700; text-align:center; white-space:nowrap; overflow:hidden;
+  text-overflow:ellipsis; background:linear-gradient(180deg,transparent,rgba(0,0,0,.85))}
+.cas.f3, .cas.f4, .cas.f5{box-shadow:0 0 16px color-mix(in srgb, var(--g) 55%, transparent)}
+.cas.buco{cursor:default; border:2px dashed color-mix(in srgb, var(--g) 45%, transparent);
+  background:repeating-linear-gradient(135deg, rgba(255,255,255,.03) 0 6px, transparent 6px 12px),
+    #0b0c11}
+.cas.buco .q{font-size:22px; font-weight:800; color:color-mix(in srgb, var(--g) 50%, #2a2d38)}
+.cas.buco .n{color:var(--spento); text-shadow:none}
+/* Appena sbloccata dall'ultima volta: si accende, cosi' si vede cosa e' cambiato. */
+.cas.appena{animation:appena 1.1s ease 2;
+  box-shadow:0 0 0 2px var(--g), 0 0 24px var(--g)}
+@keyframes appena{0%{transform:scale(.8); filter:brightness(2)} 60%{transform:scale(1.07)}
+  100%{transform:none; filter:none}}
 
 /* Chi non vuole roba che si muove non la vede: il gioco resta lo stesso. */
 @media (prefers-reduced-motion: reduce){

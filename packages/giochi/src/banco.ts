@@ -977,6 +977,68 @@ export function prezzoConsigliato(grado: Grado): number {
   return Math.max(250, scalino(grado).da * 20);
 }
 
+/* ------------------------------------------------ lo shop, dai pacchetti */
+
+/**
+ * ⚠ **Una figurina scelta da un pacchetto: il doppio della vetrina, e mai meno
+ * di dieci pacchetti.**
+ *
+ * Deciso l'11 settembre 2026 (#109), parole sue: «nello shop i prezzi sono molto
+ * piu' alti. I pacchetti costano poco, ma la possibilita' di trovare quell'item
+ * e' molto bassa, tipo quelle macchinette col braccio robotico dove non si
+ * vince quasi mai».
+ *
+ * Due numeri, e ognuno ha il suo perche':
+ *
+ * - **il doppio della vetrina**, cioe' quaranta volte la soglia del grado. La
+ *   vetrina e' una figurina che chi comanda ha scelto di vendere; qui la sceglie
+ *   chi compra, in mezzo a tutto quello che c'e'. Scegliere costa di piu';
+ * - **mai meno di dieci pacchetti.** Senza il pavimento un Basic costerebbe
+ *   cinquecento lire, e un pacchetto intero — cinque figurine — ne costa
+ *   cinquemila: scegliere sarebbe costato meno che pescare, cioe' il contrario
+ *   del braccio robotico. Con dieci pacchetti la frase si legge da sola: con la
+ *   stessa cifra compri cinquanta figurine a caso, oppure quella.
+ *
+ * ⚠ **La cima va guardata.** Un Ethernal scelto costa 2.720.000 lire, cioe'
+ * 1.405 euro: di fatto non si compra, ed e' giusto cosi' — e' la figurina che
+ * deve cadere, non comparire in tasca. Se e' troppo, si cambia uno dei due
+ * numeri qui sotto.
+ */
+export const VOLTE_LA_VETRINA = 2;
+export const PACCHETTI_DI_PAVIMENTO = 10;
+
+export function prezzoDaPacchetto(grado: Grado, costoPacchetto: number): number {
+  return Math.max(
+    PACCHETTI_DI_PAVIMENTO * Math.max(0, costoPacchetto),
+    VOLTE_LA_VETRINA * prezzoConsigliato(grado),
+  );
+}
+
+/** Il pacchetto chiuso dove sta questa figurina, se sta in uno. */
+export function pacchettoDi(deposito: Deposito, id: string): Pacchetto | undefined {
+  return deposito.pacchetti().find((p) => p.dentro.includes(id));
+}
+
+/**
+ * ⚠ **Quanto costa nello shop, oppure niente se non si vende.**
+ *
+ * Una funzione sola per il cartellino e per la cassa: `/vetrina` scrive questo
+ * numero sotto alla figurina e `compra` scala questo numero dal saldo. Due conti
+ * fatti in due posti sono un prezzo che un giorno non torna.
+ *
+ * La vetrina vince sul pacchetto: se chi comanda ha messo in vendita una
+ * figurina con un prezzo suo, quello e' il prezzo, anche se sta pure in un
+ * pacchetto. E' la decisione di una persona, e batte la regola.
+ */
+export function prezzoNelloShop(deposito: Deposito, c: Collezionabile): number | null {
+  if (c.stato !== "presa") return null;
+  if (c.inVetrina) return c.prezzoVetrina ?? prezzoConsigliato(c.gradoVetrina ?? "basic");
+  if (pacchettoDi(deposito, c.id)) {
+    return prezzoDaPacchetto(gradoDiFigurina(c), deposito.impostazioni().costoPacchetto);
+  }
+  return null;
+}
+
 /**
  * Chi comanda mette una figurina in vetrina.
  *
@@ -1042,12 +1104,14 @@ export interface Acquisto {
 export function compra(deposito: Deposito, chi: string, id: string): Acquisto {
   const c = deposito.perId(id);
   if (!c) throw new NienteDaFare("Questa non c'e'.");
-  if (!c.inVetrina || c.stato !== "presa") throw new NienteDaFare("Questa non e' in vendita.");
+  // In vetrina o dentro a un pacchetto chiuso: il prezzo lo dice una funzione
+  // sola, la stessa che scrive il cartellino (vedi `prezzoNelloShop`).
+  const costo = prezzoNelloShop(deposito, c);
+  if (costo === null) throw new NienteDaFare("Questa non e' in vendita.");
 
   const conto = deposito.conto(chi);
   if (conto.collezione.includes(c.id)) throw new NienteDaFare("Ce l'hai gia'.");
 
-  const costo = c.prezzoVetrina ?? prezzoConsigliato(c.gradoVetrina ?? "basic");
   if (conto.saldo < costo) {
     throw new NienteDaFare("Ti mancano " + (costo - conto.saldo) + " lire.");
   }
@@ -1063,8 +1127,6 @@ export interface RigaClassifica {
   prese: number;
   mandate: number;
   collezione: number;
-  colpoGrosso: number;
-  migliorGrado?: string;
   saldo: number;
   giri: number;
 }
@@ -1075,6 +1137,11 @@ export interface RigaClassifica {
  * Ordinata per **quante cose gli hanno preso**, e poi per quante ne ha in
  * collezione. Non per il saldo: il saldo lo alza chi gioca di piu', e «chi ha
  * giocato di piu'» non e' una classifica, e' un contatore.
+ *
+ * ⚠ **Il colpo grosso non c'e' piu', nemmeno a pari merito.** Chiesto l'11
+ * settembre 2026: «togliamo la statistica colpo». Un numero che non si vede
+ * piu' e che decide lo stesso chi sta sopra sarebbe una regola nascosta. Resta
+ * scritto nel conto (`Conto.colpoGrosso`), e se un giorno serve si rimette.
  */
 export function classifica(deposito: Deposito): RigaClassifica[] {
   return deposito
@@ -1084,18 +1151,10 @@ export function classifica(deposito: Deposito): RigaClassifica[] {
       prese: c.prese,
       mandate: c.mandate,
       collezione: c.collezione.length,
-      colpoGrosso: c.colpoGrosso,
-      migliorGrado: c.migliorGrado,
       saldo: c.saldo,
       giri: c.giri,
     }))
-    .sort(
-      (a, b) =>
-        b.prese - a.prese ||
-        b.collezione - a.collezione ||
-        b.colpoGrosso - a.colpoGrosso ||
-        b.saldo - a.saldo,
-    );
+    .sort((a, b) => b.prese - a.prese || b.collezione - a.collezione || b.saldo - a.saldo);
 }
 
 /** Quanto e' pieno il magazzino, e a che punto sta la raccolta che si sta riempiendo. */

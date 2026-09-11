@@ -1,6 +1,6 @@
 {
   "name": "daprodsuite",
-  "version": "1.3.3",
+  "version": "1.3.4",
   "private": true,
   "description": "La suite DaProd: otto app AI locali in un solo programma.",
   "author": "DaProdProduzioni",
@@ -14,7 +14,7 @@
     "build": "pnpm --filter @daprod/ipc build && pnpm --filter @daprod/azioni build && pnpm --filter @daprod/giochi build && pnpm --filter @daprod/gateway build && pnpm --filter @daprod/mcp build && pnpm --filter @daprod/runtime build && pnpm --filter @daprod/visualizer build && pnpm --filter @daprod/shell build",
     "dist": "pnpm run build && pnpm --filter @daprod/shell dist",
     "typecheck": "pnpm -r typecheck",
-    "prova": "node packages/gateway/scripts/niente-backtick.mjs && node apps/shell/scripts/prova-cicli.mjs && node apps/shell/scripts/prova-avvio.mjs && node apps/shell/scripts/prova-azioni.mjs && node apps/shell/scripts/prova-gateway.mjs && node apps/shell/scripts/prova-travaso.mjs && node apps/shell/scripts/prova-finestre.mjs && node packages/giochi/scripts/niente-apici.mjs --provami && node packages/giochi/scripts/prova.mjs && node packages/giochi/scripts/prova-fila.mjs && node packages/giochi/scripts/prova-shop.mjs && node packages/giochi/scripts/prova-macchinetta.mjs && node apps/shell/scripts/prova-mcp.mjs",
+    "prova": "node packages/gateway/scripts/niente-backtick.mjs && node apps/shell/scripts/prova-cicli.mjs && node apps/shell/scripts/prova-avvio.mjs && node apps/shell/scripts/prova-azioni.mjs && node apps/shell/scripts/prova-gateway.mjs && node apps/shell/scripts/prova-travaso.mjs && node apps/shell/scripts/prova-finestre.mjs && node packages/giochi/scripts/niente-apici.mjs --provami && node packages/giochi/scripts/prova.mjs && node packages/giochi/scripts/prova-fila.mjs && node packages/giochi/scripts/prova-shop.mjs && node packages/giochi/scripts/prova-macchinetta.mjs && node packages/giochi/scripts/prova-inventario.mjs && node apps/shell/scripts/prova-mcp.mjs",
     "prova-telefono": "node apps/mobile/scripts/prova.mjs",
     "prova-telefono-vero": "cd apps/mobile && gradlew connectedDebugAndroidTest"
   },

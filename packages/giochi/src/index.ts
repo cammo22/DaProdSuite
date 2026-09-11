@@ -44,8 +44,12 @@ export {
   NienteDaFare,
   pezzoPerId,
   mettiInVetrina,
+  PACCHETTI_DI_PAVIMENTO,
+  pacchettoDi,
   prendi,
   prezzoConsigliato,
+  prezzoDaPacchetto,
+  prezzoNelloShop,
   regala,
   TAGLI,
   TAGLI_BONUS,
@@ -56,6 +60,7 @@ export {
   tira,
   togliDallaVetrina,
   vetrina,
+  VOLTE_LA_VETRINA,
   type Acquisto,
   type AperturaPacchetto,
   type EsitoInvio,
@@ -67,10 +72,13 @@ export {
  * Vedi `macchinetta.ts`, e CONCETTI.md § 11-bis.
  */
 export {
+  CASELLE,
   facciaDi,
+  FILE,
   gira as giraLaMacchinetta,
   mazzoMacchinetta,
   MINIMO_PER_ACCENDERSI,
+  PER_FILA,
   perche as percheSpenta,
   PUNTATE,
   quantoPagaIlPieno,
@@ -80,6 +88,17 @@ export {
   type FilaVinta,
   type SimboloMacchinetta,
 } from "./macchinetta";
+/**
+ * L'inventario: quello che c'e' da avere, con i buchi. Vedi `inventario.ts`, e
+ * CONCETTI.md § 13-bis.
+ */
+export {
+  inventario,
+  type CasellaInventario,
+  type Inventario,
+  type Obiettivo,
+  type PacchettoInventario,
+} from "./inventario";
 export {
   altezza,
   CAMBIO_EURO,
