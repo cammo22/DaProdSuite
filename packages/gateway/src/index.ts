@@ -6,6 +6,16 @@
  */
 
 export { Archivio, cartellaInvii, cartellaRisultati } from "./archivio";
+export {
+  argomentoDi,
+  BACHECA,
+  firmaDi,
+  leggiCartello,
+  pubblicaCartelli,
+  scriviCartello,
+  type Cartello,
+  type EsitoCartelli,
+} from "./cartello";
 export { elencoAzioni, eseguiAzione, type Esecutore, type EsitoAzione } from "./azioni";
 export { paginaConsole } from "./console";
 export { Remoto, SCADENZA_INVITO_MS } from "./remoto";

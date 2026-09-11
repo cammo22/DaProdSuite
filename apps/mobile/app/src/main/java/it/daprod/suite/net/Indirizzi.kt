@@ -165,7 +165,40 @@ object Indirizzi {
     internal fun ilPiuVicino(vivi: List<String>): String? =
         vivi.minByOrNull { quantoLontano(it) }
 
+    /**
+     * Quale indirizzo risponde, fra quelli che abbiamo e — se nessuno risponde
+     * — fra quelli scritti sul cartello.
+     *
+     * ⚠ **Il cartello, dall'11 settembre 2026.** Quella sera il tunnel aveva
+     * cambiato nome, e questa funzione tornava «silenzio» con il computer
+     * acceso e raggiungibile sotto un nome che il telefono non conosceva. Da
+     * fuori casa non c'era modo di impararlo: l'app diceva «non riesco a parlare
+     * col computer», e l'unica strada era farsi mandare l'indirizzo su WhatsApp.
+     *
+     * Adesso, prima di arrendersi, si legge il cartello che il computer ha
+     * scritto per questo telefono (vedi [Cartello]): gli indirizzi nuovi, firmati
+     * con la nostra chiave. Si provano come gli altri, con `/io`, e se uno
+     * risponde e' quello — chi chiama se lo salva come ha sempre fatto.
+     *
+     * Vale anche dopo un «no»: un 401 puo' venire da un nome di tunnel riciclato,
+     * e un cartello firmato con la nostra chiave dice che il computer ci conosce
+     * ancora.
+     */
     suspend fun cerca(basi: List<String>, preferito: String?, token: String): Esito {
+        val esito = fraQuelliCheAbbiamo(basi, preferito, token)
+        if (esito is Esito.Trovato) return esito
+        val giaProvati = (listOfNotNull(preferito) + basi).map { it.trim().trimEnd('/') }.toSet()
+        val dalCartello = try {
+            Cartello.leggi(token).filter { it !in giaProvati }
+        } catch (_: Exception) {
+            emptyList()
+        }
+        if (dalCartello.isEmpty()) return esito
+        val trovato = fraTutti(dalCartello, token)
+        return if (trovato is Esito.Trovato) trovato else esito
+    }
+
+    private suspend fun fraQuelliCheAbbiamo(basi: List<String>, preferito: String?, token: String): Esito {
         val puliti = (listOfNotNull(preferito) + basi)
             .map { it.trim().trimEnd('/') }
             .filter { it.isNotBlank() }

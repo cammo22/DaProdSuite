@@ -49,6 +49,7 @@ Contando, ci sta poco spazio in mezzo:
 | ~~1.3.4~~ | tre file alla macchinetta, l'inventario, e i pacchetti che si strappano |
 | ~~1.3.5~~ | la macchinetta a due tiri, una faccia per ogni figurina, e le figurine della casa |
 | ~~1.3.6~~ | il tunnel non si butta per un inciampo, e il suo registro non si perde |
+| ~~1.3.7~~ | il computer lascia un cartello, e l'app rientra da sola da fuori casa |
 
 ⚠ **La 1.3.0 è uscita prima che il traguardo chiudesse**, perché l'ha chiesta
 lui il 10 settembre 2026: «aggiusta tutto e facciamo la 1.3.0». Quindi il nome

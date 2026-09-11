@@ -10,6 +10,41 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ---
 
+## 1.3.7 — Il computer lascia un cartello
+
+> «Me lo apre il sito, ma sull'app aggiornata per telefono non mi fa entrare:
+> dice non riesco a parlare con il computer. La connessione è la cosa più
+> importante, deve sempre essere affidabile e riconnettere bene gli utenti.»
+
+Il sito si apriva perché l'indirizzo lo avevi in mano. Il telefono no: aveva in
+tasca il nome del tunnel di prima, e **non aveva nessun modo di sapere quello
+nuovo**. Per saperlo avrebbe dovuto chiederlo al computer, e per chiederglielo
+gli serviva l'indirizzo. Era un giro chiuso, e la 1.3.6 lo rendeva solo più raro.
+
+- **Il computer scrive dove trovarlo.** Ogni volta che il tunnel prende un nome,
+  la suite lo scrive su un cartello, uno per ogni telefono collegato, su una
+  bacheca pubblica e gratuita (ntfy.sh). Lo riscrive anche ogni quattro ore,
+  così un telefono che esce di casa dopo due giorni ci trova ancora qualcosa.
+- **Il telefono, quando non trova il computer, legge il cartello** e bussa agli
+  indirizzi nuovi. Se uno risponde se lo tiene, come se l'avesse imparato in
+  casa. Vale per l'app aperta e per il controllo in background.
+- **Nessuno può usarlo per entrare, e nemmeno per sviarti.** Il nome del
+  cartello si ricava dalla chiave del telefono e non la rivela. Il cartello è
+  firmato con quella chiave: un indirizzo scritto da un altro il telefono lo
+  butta. E comunque la porta la apre solo il computer che ti conosce.
+- Dal cartello il telefono prende **solo indirizzi https**, cioè quelli da fuori.
+  La rete di casa non esce di casa.
+
+Il registro sta in `logs/cartello.log`: ogni volta c'è l'ora, il motivo, e
+quanti cartelli sono stati scritti.
+
+⚠ **Perché funzioni col telefono che hai adesso**, il telefono deve prendere
+l'aggiornamento alla 1.3.7. L'aggiornamento arriva da GitHub, quindi si prende
+anche fuori casa, e il cartello vale da quel momento. Il computer deve avere la
+1.3.7 e la suite aperta.
+
+---
+
 ## 1.3.6 — Il tunnel non si butta per un inciampo
 
 > «Con questo nuovo update non mi fa collegare da internet, funzionava bene

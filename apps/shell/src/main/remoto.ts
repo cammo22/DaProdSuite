@@ -35,6 +35,7 @@ import {
   type InvitoVivo,
   type Risultato,
   type StatoPannello,
+  pubblicaCartelli,
   type StatoSuite,
   type VoceCommento,
 } from "@daprod/gateway";
@@ -101,6 +102,7 @@ import {
   modelliPerChiacchierare,
 } from "./chiacchierata";
 import { accendiTunnel, spegniTunnel, statoTunnel, suTunnelCambiato } from "./tunnel";
+import { createLogger } from "./logging";
 import { accendiFunnel, comeStaFunnel, spegniFunnel, type StatoFunnel } from "./funnel";
 import { salvaIndirizzoStabile } from "./impostazioni";
 import { apriLaPorta, statoFirewall, type StatoFirewall } from "./firewall";
@@ -1473,6 +1475,10 @@ async function accendi(): Promise<StatoAccesso> {
   if (impostazioni().connessione) annunciatore.accendi();
   else annunciatore.spegni();
   sveglia();
+  // Se il tunnel si e' acceso prima del gateway, il suo avviso e' andato a
+  // vuoto: il cartello si scrive adesso. Se non c'e' ancora un tunnel non fa
+  // niente, e ci pensera' il suo avviso.
+  void aggiornaIlCartello("il gateway e' partito");
   // Si guarda **adesso**, non prima: la porta vera la si conosce solo dopo che
   // il server è in ascolto. Non si aspetta la risposta — `netsh` è un processo
   // e il pannello deve comparire subito — e quando arriva il pannello si
@@ -1711,6 +1717,63 @@ async function spegniInternet(): Promise<StatoAccesso> {
 // — e il pannello deve vederlo scorrere invece di restare fermo su «accendo»
 // per un minuto e mezzo.
 suTunnelCambiato(() => sveglia());
+
+/* ------------------------------------------------------------ il cartello */
+
+/**
+ * ⚠ **Il cartello: dove questo computer scrive come trovarlo.** Dall'11
+ * settembre 2026 — la ricetta sta in `packages/gateway/src/cartello.ts`.
+ *
+ * Quella sera il tunnel aveva cambiato nome e il telefono, fuori casa, diceva
+ * «non riesco a parlare col computer» con il computer acceso e raggiungibile:
+ * conosceva solo i nomi di prima. Adesso, ogni volta che il tunnel prende un
+ * nome, il computer lo scrive sul cartello di ogni telefono collegato, e l'app
+ * quando non lo trova va a leggerlo (vedi `Cartello.kt`).
+ *
+ * Si riscrive anche **ogni quattro ore** con lo stesso nome: la bacheca tiene i
+ * messaggi dodici ore, e un telefono che esce di casa dopo due giorni deve
+ * trovarci ancora qualcosa.
+ *
+ * Sul cartello vanno solo gli indirizzi **https**: il tunnel, o un nome fisso.
+ * La rete di casa non esce di casa.
+ */
+const logCartello = createLogger("cartello");
+const OGNI_QUANTO_RISCRIVO_IL_CARTELLO = 4 * 60 * 60_000;
+let ultimoCartello = { basi: "", quando: 0 };
+
+async function aggiornaIlCartello(perche: string, forza = false): Promise<void> {
+  if (!gateway) return;
+  const basi = indirizziPubblici()
+    .map((i) => i.base)
+    .filter((b) => b.startsWith("https://"));
+  if (!basi.length) return;
+  const tokens = remoto.listaDispositivi().map((d) => d.token);
+  if (!tokens.length) return;
+  const cosa = basi.join(" ");
+  const recente = Date.now() - ultimoCartello.quando < OGNI_QUANTO_RISCRIVO_IL_CARTELLO;
+  if (!forza && cosa === ultimoCartello.basi && recente) return;
+  ultimoCartello = { basi: cosa, quando: Date.now() };
+  const esito = await pubblicaCartelli(tokens, remoto.ioSullaRete(), basi);
+  logCartello.write(
+    `${new Date().toISOString()} ${perche}: ${esito.scritti} di ${tokens.length} cartelli scritti` +
+      ` per ${cosa}` +
+      (esito.falliti.length ? ` · non scritti: ${esito.falliti.join("; ")}` : "") +
+      "\n",
+    false,
+  );
+  // Se non se n'e' scritto nessuno — la bacheca era giu' — si riprova al
+  // prossimo cambio o al prossimo giro, invece di aspettare quattro ore.
+  if (esito.scritti === 0) ultimoCartello.quando = 0;
+}
+
+suTunnelCambiato((s) => {
+  if (s.fase === "acceso" && s.indirizzo) void aggiornaIlCartello(`il tunnel si chiama ${s.indirizzo}`);
+});
+const battitoCartello = setInterval(
+  () => void aggiornaIlCartello("ogni quattro ore", true),
+  OGNI_QUANTO_RISCRIVO_IL_CARTELLO,
+);
+battitoCartello.unref?.();
 
 /* ------------------------------------------------------- decisioni */
 
