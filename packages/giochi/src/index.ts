@@ -73,21 +73,44 @@ export {
  */
 export {
   CASELLE,
+  DUE_FILE_VALGONO,
   facciaDi,
   FILE,
-  gira as giraLaMacchinetta,
   mazzoMacchinetta,
   MINIMO_PER_ACCENDERSI,
   PER_FILA,
   perche as percheSpenta,
+  PRIMO_TIRO,
   PUNTATE,
   quantoPagaIlPieno,
   quantoPagaUnaFila,
-  QUANTO_ESCE,
+  rigira as rigiraLaMacchinetta,
+  SECONDO_TIRO,
+  suonoDi,
+  tira as tiraLaMacchinetta,
+  TUTTO_UGUALE_VALE,
   type EsitoMacchinetta,
   type FilaVinta,
+  type PrimoTiro,
+  type Sbloccata,
   type SimboloMacchinetta,
 } from "./macchinetta";
+/**
+ * Le cinquanta figurine della casa, che crescono con le copie. Vedi `casa.ts`.
+ */
+export {
+  CASA,
+  COPIE_PER_GRADO,
+  copieDi,
+  copiePerIlProssimo,
+  dellaCasa,
+  eDellaCasa,
+  gradoDelleCopie,
+  gradoPer,
+  unaCopiaInPiu,
+  type CopiaDellaCasa,
+  type FigurinaDellaCasa,
+} from "./casa";
 /**
  * L'inventario: quello che c'e' da avere, con i buchi. Vedi `inventario.ts`, e
  * CONCETTI.md § 13-bis.

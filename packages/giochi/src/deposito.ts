@@ -63,7 +63,7 @@ import type {
  */
 function vuoto(): DatiGiochi {
   return {
-    versione: 3,
+    versione: 4,
     conti: [],
     collezionabili: [],
     ultimoNumero: 0,
@@ -157,7 +157,7 @@ export class Deposito {
       for (const id of Object.keys(prezzi)) prezzi[id] = colMetroNuovo(prezzi[id] ?? 0, metroVecchio);
     }
     return {
-      versione: 3,
+      versione: 4,
       conti: Array.isArray(lette.conti)
         ? (metroVecchio ? lette.conti.map((c) => rimettiIlSaldo(c, metroVecchio)) : lette.conti)
         : [],
@@ -166,7 +166,7 @@ export class Deposito {
       custom: Array.isArray(lette.custom) ? lette.custom : [],
       prezzi,
       formazioni: Array.isArray(lette.formazioni) ? lette.formazioni : [],
-      impostazioni: { ...IMPOSTAZIONI_DI_PARTENZA, ...(lette.impostazioni ?? {}) },
+      impostazioni: impostazioniDiAdesso(lette.impostazioni, versione),
       pacchetti: Array.isArray(lette.pacchetti)
         ? lette.pacchetti
         : /**
@@ -342,6 +342,18 @@ export class Deposito {
     return conto;
   }
 
+  /**
+   * Una copia in piu' di una figurina della casa. Torna quante ne ha adesso.
+   * Il grado che ne viene lo sa `casa.ts`: qui si conta e basta.
+   */
+  aggiungiCopia(chi: string, id: string): number {
+    const conto = this.conto(chi);
+    const copie = (conto.copie ??= {});
+    copie[id] = (copie[id] ?? 0) + 1;
+    this.salva();
+    return copie[id];
+  }
+
   /** Mette una figurina in collezione. Torna falso se ce l'aveva gia'. */
   colleziona(chi: string, idPezzo: string): boolean {
     const conto = this.conto(chi);
@@ -430,6 +442,38 @@ export class Deposito {
     this.salva();
     return this.dati.impostazioni;
   }
+}
+
+/**
+ * ⚠ **Le impostazioni di un file, portate a quelle di adesso.**
+ *
+ * Quelle scritte restano — «il giorno che se ne aggiunge una, chi gioca da
+ * prima non se la trova a zero» — tranne due, e il perche' si e' visto nel file
+ * vero l'11 settembre 2026: il pacchetto costava **250 lire**, mentre il codice
+ * dal giorno prima diceva cinquemila, e «non era facoltativo». Il file si era
+ * tenuto i numeri del giorno in cui era nato, e dalla pagina nessuno li puo'
+ * cambiare: non erano una scelta di qualcuno, erano vecchi.
+ *
+ * Quindi, per un file scritto prima della versione 4, **il prezzo del
+ * pacchetto e le carte per pacchetto** vengono dal codice: sono le due decisioni
+ * del codice che un file non poteva seguire (cinquemila lire, e nove carte dall'11
+ * settembre). E i punti per grado si fondono anche dentro: nel file mancava
+ * Ethernal, aggiunto dopo.
+ */
+function impostazioniDiAdesso(
+  scritte: Partial<Impostazioni> | undefined,
+  versione: number,
+): Impostazioni {
+  const fuori: Impostazioni = { ...IMPOSTAZIONI_DI_PARTENZA, ...(scritte ?? {}) };
+  fuori.puntiPerGrado = {
+    ...IMPOSTAZIONI_DI_PARTENZA.puntiPerGrado,
+    ...(scritte?.puntiPerGrado ?? {}),
+  };
+  if (versione < 4) {
+    fuori.costoPacchetto = IMPOSTAZIONI_DI_PARTENZA.costoPacchetto;
+    fuori.perPacchetto = IMPOSTAZIONI_DI_PARTENZA.perPacchetto;
+  }
+  return fuori;
 }
 
 /**

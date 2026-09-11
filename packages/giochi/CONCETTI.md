@@ -640,9 +640,10 @@ Le cose prese finiscono nel **magazzino**, in ordine di arrivo.
 Quando chi comanda decide che una raccolta e' finita, la chiude in un
 **pacchetto** — un album, come le figurine. Cento e' la misura che si consiglia,
 non una porta: vedi qui sotto. Il pacchetto chiuso e' quello che si compra:
-costa lire e dentro ci sono **cinque figurine a caso di quel pacchetto**,
-pescate con le stesse frequenze dei gradi (una Mythic esce una volta su mille).
-I doppioni non deludono: pagano il loro prezzo in lire.
+costa lire e dentro ci sono **nove carte a caso**, pescate fra le figurine di
+quel pacchetto e le cinquanta della casa, con le stesse frequenze dei gradi (una
+Mythic esce una volta su mille). I doppioni non deludono: una figurina vera
+paga il suo prezzo in lire, una della casa cresce.
 
 ### ⚠ Il pacchetto lo chiude una persona, quando vuole
 
@@ -717,6 +718,35 @@ hai: si tocca e si apre. In fondo c'e' la tendina con le cose prese che non
 stanno ancora in nessun pacchetto — quelle che finiscono nel prossimo — ed e'
 li' che chi comanda lo chiude.
 
+⚠ **Nove carte per pacchetto**, dall'11 settembre 2026: «molto belli i pack,
+mettiamo che in ogni pack escono 9 carte». E il prezzo e' tornato quello del
+codice: nel file vero il pacchetto costava ancora 250 lire, perche' il file si
+teneva le impostazioni del giorno in cui era nato (vedi la versione 4 del file).
+
+### ⚠ Le figurine della casa: cinquanta, e crescono
+
+> «Mettiamo un 50 item fake in modo da farli uscire, e quegli item fake piu' ne
+> collezioniamo piu' si evolvono: partono da basic fino a ethernal.»
+
+Stanno **in tutti i pacchetti** e sui rulli della macchinetta, con una faccia
+disegnata — un segno solo, grande, su un fondo della sua tinta. Pesano come un
+Basic, quindi escono quasi sempre: le figurine vere restano quelle rare.
+
+**Crescono con le copie.** La prima copia e' Basic; ogni copia in piu' della
+stessa la avvicina al grado dopo — due per Grand, tre per Rare, cinque per
+Arcane, e cosi' via fino a **cinquanta per Ethernal**. Crescendo il disegno si
+arricchisce: i raggi da Rare, l'anello da Unique, le stelle da Epic.
+
+⚠ **Una copia in piu' non paga lire: fa crescere.** E' la differenza con le
+figurine vere, dove il doppione paga il suo prezzo. Ed e' anche il motivo per
+cui nove carte a cinquemila lire non sono una stampante di soldi: quasi tutte le
+carte sono della casa, e non restituiscono niente.
+
+⚠ **Non stanno nel file del gioco, stanno nel codice** (`casa.ts`): sono le
+stesse per tutti e non le inventa nessuno. Nel conto c'e' solo quante copie se
+ne hanno. Non si comprano nello shop, non contano in classifica, e non entrano
+nei pacchetti da chiudere: sono il catalogo della sala, non combinazioni prese.
+
 E un pacchetto comprato **si strappa col dito**: «magari fai uno slide con il
 dito, tipo per tagliare e aprire il pacchetto, e poi si vede cosa esce». La busta
 si apre a tutto schermo, si passa il dito sulla riga tratteggiata, e le figurine
@@ -777,11 +807,12 @@ controllare, e paga esperienza. Qui non si monta niente: si punta, si tira, e
 ogni tanto cade una figurina. Sono due schede in fondo, non un interruttore
 dentro la stessa schermata.
 
-**Cosa gira sui rulli.** Le figurine dei pacchetti chiusi che hanno
-un'**immagine** da mostrare: il primo allegato che e' una foto, se no la
-copertina (che e' proprio la faccia che la suite fa ai brani e ai video), se no
-il file stesso quando la figurina **e'** un'immagine della galleria. Un prompt
-senza niente attaccato non gira: su un rullo una riga di testo non si riconosce.
+**Cosa gira sui rulli.** ⚠ **Tutte** le figurine dei pacchetti chiusi, e le
+cinquanta della casa. Fino all'11 settembre 2026 giravano solo quelle con
+un'immagine attaccata, e nel file vero erano undici su quarantacinque — tutte
+inventate dagli stessi due dispositivi: «vedo solo immagini di cammo o
+tabletcammo». Adesso ogni figurina ha una faccia (§ 13-bis): una foto, la
+copertina di un brano, o una disegnata col titolo e il colore del grado.
 
 **Il mazzo non e' scritto da nessuna parte: si conta a ogni giro.** Cosi' «a ogni
 pacchetto si aggiorna automaticamente» non e' una cosa da ricordarsi di fare, e'
@@ -798,14 +829,42 @@ quattro volte chi punta cinquanta — e rischia quattro volte tanto.
 
 | Cosa esce | Quanto | Quanto spesso |
 |---|---|---|
-| una fila | la puntata **×2** (Basic) fino a **×13** (Ethernal) | 12 giri su 100 |
-| due file | i due premi sommati | poco piu' di 1 su 100 |
-| tre file, non tutte uguali | i tre premi sommati | 1 giro su 1.000 |
-| **tutto lo schermo uguale** | la puntata **×40** fino a **×150**, e **la figurina e' tua** | 1 giro su 2.000 |
+| una fila | la puntata **×2** (Basic) fino a **×13** (Ethernal) |
+| due file | le due file, **il doppio** |
+| **tre file** | il superbonus del grado piu' alto — **×40** fino a **×150** — e **le figurine delle file si sbloccano** |
+| **tutto lo schermo uguale** | il superbonus **due volte**, e la figurina si sblocca |
 
-⚠ **Tre file vinte non sono mai lo schermo pieno.** Se la terza pescasse la
-stessa figurina delle altre due, le nove caselle sarebbero uguali: il colpo
-grosso regalato da un arrotondamento. La terza, in quel caso, e' diversa.
+### ⚠ Un giro sono due tiri, dall'11 settembre 2026
+
+> «Facciamo che giri una volta e poi puoi bloccare degli item per poi girare di
+> nuovo: l'utente paga, gira 2 volte, la prima si riempie lo schermo e puo'
+> decidere di bloccare alcuni item, quindi rigira. Se l'utente non seleziona
+> nulla viene comunque aggiornata la tabella: un giro in realta' sono due
+> click.»
+
+Si paga e si tira: lo schermo si riempie, e **il primo tiro non paga mai**, non
+fa mai una fila intera. Si toccano le caselle da tenere — l'anello d'oro, lo
+stesso dei rulli bloccati — e si rigira: cambiano le altre, ed e' li' che si
+decide. Anche tenendo niente: allora cambiano tutte. Fra i due tiri il giro sta
+scritto nel conto, quindi chiudere la pagina a meta' non lo perde e non lo fa
+pagare due volte.
+
+⚠ **Tenere aiuta, ma non regala.** Il principio di sempre resta: prima si decide
+cosa deve succedere, poi si riempiono le caselle. Il primo tiro mette una coppia
+in una fila **tre volte su dieci**; al secondo una fila si completa **quindici
+volte su cento** se ne manca una sola, tre se ne mancano due, una se non si e'
+tenuto niente. Tenendo le coppie, un giro paga qualcosa poco meno di una volta
+su cinque, e la macchinetta rende poco piu' di un terzo di quello che incassa.
+I numeri stanno in `PRIMO_TIRO` e `SECONDO_TIRO`, e la prova tira duemila volte
+giocando bene e guarda il conto scendere.
+
+⚠ **Tre file sbloccano, e sono rarissime**: una volta ogni qualche migliaio di
+giri. E' la stessa strada di sempre per avere una figurina senza inventarla ne'
+comprarla (§ 11): la fortuna costa tempo.
+
+⚠ **Piu' rapida**, lo stesso giorno: «la slot Fortuna facciamo l'animazione piu'
+rapida». Le caselle si fermano a cascata in meno di un secondo, e quelle tenute
+non si muovono proprio.
 
 ⚠ **Quanto spesso si vince e' una scelta, non un conto** — la stessa regola dei
 gradi sui rulli (§ 7). Se si pescassero sei simboli a caso e si guardasse cosa
@@ -979,6 +1038,19 @@ che non si puo' riempire fa smettere di giocare. Se una e' gia' tua — l'hai
 inventata, o riscoperta — si vede a parte, «fuori dai pacchetti».
 
 La collezione che stava in fondo a Mie adesso sta qui: un posto solo, non due.
+
+⚠ **Ogni figurina ha una faccia**, dall'11 settembre 2026: «nell'inventario non
+tutti gli item si vede la foto». Nel file vero trentaquattro figurine su
+quarantacinque erano solo un prompt. Adesso: una foto se c'e'; per un brano la
+copertina che la libreria della suite gli ha gia' fatto, anche se nessuno
+l'aveva attaccata; se no una faccia **disegnata** dalla pagina, col colore del
+grado, il segno del tavolo e il titolo. La stessa in Inventario, sulla
+macchinetta, nella busta e nello shop. E un brano, toccato, si apre grande con
+la copertina e suona subito: «facciamole sentire bene».
+
+Sotto ai pacchetti ci sono **le cinquanta della casa** (§ 11), ognuna col suo
+grado, le copie, e la barretta verso il grado dopo. Si accendono quando sono
+nuove e quando sono cresciute dall'ultima volta.
 
 Le **caselle dei pezzi** — la prima lettura — restano un'idea per dopo.
 

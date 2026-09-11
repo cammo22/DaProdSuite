@@ -467,7 +467,14 @@ export const IMPOSTAZIONI_DI_PARTENZA: Impostazioni = {
    * una cosa buona, riportato sulla scala di adesso.
    */
   costoPacchetto: 5_000,
-  perPacchetto: 5,
+  /**
+   * ⚠ **Nove carte, dall'11 settembre 2026**: «molto belli i pack, mettiamo che
+   * in ogni pack escono 9 carte». Nove sono uno schermo della macchinetta, e
+   * quasi tutte sono figurine della casa (`casa.ts`), che non pagano lire da
+   * doppione: crescono. E' per questo che nove carte a cinquemila lire non sono
+   * una stampante di soldi.
+   */
+  perPacchetto: 9,
   perSerie: 100,
   unaOgniGiri: 40,
   puntiPerGrado: Object.fromEntries(GRADI.map((g) => [g.id, g.punti])) as Partial<

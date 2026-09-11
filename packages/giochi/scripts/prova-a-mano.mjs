@@ -191,6 +191,12 @@ function fotoFinta(n, larga, alta) {
 /** I nomi degli altri: nella suite li sa il gateway, qui sono gli id stessi. */
 const contorno = {
   nomeDi: (id) => (id ? id.charAt(0).toUpperCase() + id.slice(1) : "qualcuno"),
+  /**
+   * La copertina di un brano, come la chiede la suite: per i brani della
+   * galleria finta c'e', per il resto risponde 404 — ed e' voluto, e' il caso
+   * in cui la pagina deve tenersi la faccia disegnata (11 settembre 2026).
+   */
+  anteprimaLibreria: (id) => "/finta/anteprima/" + encodeURIComponent(id),
   genera: (_chi, tavolo) => {
     quanteFatte += 1;
     const id = "finta-" + quanteFatte;
@@ -312,6 +318,18 @@ const server = createServer(async (req, res) => {
   if (percorso === "/" || percorso === "/giochi") {
     res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
     res.end(paginaGiochi("/giochi"));
+    return;
+  }
+
+  const copertina = percorso.match(/^\/finta\/anteprima\/brano(\d+)$/);
+  if (copertina) {
+    res.writeHead(200, { "content-type": "image/png", "cache-control": "max-age=3600" });
+    res.end(fotoFinta(Number(copertina[1]) + 1, 512, 512));
+    return;
+  }
+  if (percorso.startsWith("/finta/anteprima/")) {
+    res.writeHead(404, { "content-type": "text/plain; charset=utf-8" });
+    res.end("Per questa non c'e' un'anteprima.");
     return;
   }
 

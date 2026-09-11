@@ -740,8 +740,13 @@ prova("il pacchetto costa, da' le figurine, e i doppioni pagano", () =>
      *
      * Cosi' invece si sa cosa esce: prima, seconda, prima. Due diverse e un
      * doppione, sempre.
+     *
+     * ⚠ Dall'11 settembre 2026 nel mucchio ci sono anche le cinquanta della
+     * casa, dopo le figurine del pacchetto e con lo stesso peso di un Basic:
+     * cinquantadue fette uguali. Per pescare le due vere il dado sta nelle
+     * prime due — sotto un cinquantaduesimo, e sotto due.
      */
-    const pacco = apriPacchetto(d, "pino", 1, dado(0.1, 0.9, 0.1));
+    const pacco = apriPacchetto(d, "pino", 1, dado(0.005, 0.025, 0.005));
     uguale(pacco.figurine.length, 3);
     uguale(pacco.costo, 100);
     vero(pacco.figurine.some((f) => f.doppione), "tre pescate su due figurine: un doppione ci vuole");

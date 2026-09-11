@@ -236,7 +236,7 @@ export const COPIONE = `
    * Il tocco apre; il tasto «tienila» resta il tasto che sceglie. Sono due
    * gesti diversi su due bersagli diversi, e non si pestano i piedi.
    */
-  function grandeCosa(indirizzo, mime, titolo) {
+  function grandeCosa(indirizzo, mime, titolo, copertina) {
     if (!indirizzo) return;
     var vecchio = document.querySelector(".grande");
     if (vecchio) vecchio.remove();
@@ -244,6 +244,11 @@ export const COPIONE = `
     d.className = "grande guarda";
     var dentro = "<div class=\\"dentro\\">";
     if (String(mime || "").indexOf("audio/") === 0) {
+      // Un brano si ascolta guardando la sua copertina, grande: e' la faccia
+      // che ha in tutto il resto del gioco (11 settembre 2026).
+      if (copertina) {
+        dentro += "<img class=\\"copertona\\" src=\\"" + sicuro(copertina) + "\\" alt=\\"\\">";
+      }
       dentro += "<audio controls autoplay src=\\"" + sicuro(indirizzo) + "\\"></audio>";
     } else if (String(mime || "").indexOf("video/") === 0) {
       dentro += "<video controls src=\\"" + sicuro(indirizzo) + "\\"></video>";
@@ -936,6 +941,130 @@ export const COPIONE = `
   }
 
   /**
+   * ⚠ **Ogni figurina ha una faccia**, dall'11 settembre 2026: «nell'inventario
+   * non tutti gli item si vede la foto». Nel file vero trentaquattro figurine su
+   * quarantacinque erano solo un prompt, senza niente da guardare.
+   *
+   * Il PC dice se ce n'e' una vera, in «c.faccia»: una foto, o la copertina di
+   * un brano. Se no la faccia si **disegna** qui, col colore del grado, il segno
+   * del tavolo e il titolo. Il disegno sta sempre sotto: se la foto non arriva —
+   * una copertina che la libreria non ha — resta lui, invece di un riquadro
+   * rotto. Le figurine della casa hanno il loro disegno, che cambia col grado.
+   *
+   * Una funzione sola per la macchinetta, l'inventario, la busta e lo shop: una
+   * faccia che cambia da una schermata all'altra non si riconosce.
+   */
+  var disegni = 0;
+
+  /** Il titolo spezzato in righe: i pezzi di un prompt uno per riga, al massimo tre. */
+  function righeDelTitolo(titolo) {
+    var pezzi = String(titolo || "").split(" \u00b7 ");
+    if (pezzi.length < 2) {
+      var parole = pezzi[0].split(" ");
+      var riga = "";
+      pezzi = [];
+      for (var i = 0; i < parole.length; i++) {
+        var provata = riga ? riga + " " + parole[i] : parole[i];
+        if (provata.length > 15 && riga) { pezzi.push(riga); riga = parole[i]; }
+        else riga = provata;
+      }
+      if (riga) pezzi.push(riga);
+    }
+    return pezzi.slice(0, 3).map(function (p) {
+      return p.length > 16 ? p.slice(0, 15) + "\u2026" : p;
+    });
+  }
+
+  function disegnoFigurina(c) {
+    var s = scalinoDi(c.grado);
+    var id = "dis" + (disegni += 1);
+    var segno = c.tavolo === "musica" || c.tipo === "brano" ? "\u266B"
+      : c.tipo === "video" ? "\u25B6"
+        : c.tavolo === "immagini" || c.tipo === "immagine" ? "\u25C9" : "\u2726";
+    var righe = righeDelTitolo(c.titolo);
+    var h = "<svg class=\\"disegno\\" viewBox=\\"0 0 120 160\\" " +
+      "preserveAspectRatio=\\"xMidYMid slice\\" xmlns=\\"http://www.w3.org/2000/svg\\">" +
+      "<defs><linearGradient id=\\"" + id + "\\" x1=\\"0\\" y1=\\"0\\" x2=\\"1\\" y2=\\"1\\">" +
+      "<stop offset=\\"0\\" stop-color=\\"" + s.colore + "\\" stop-opacity=\\".6\\"/>" +
+      "<stop offset=\\"1\\" stop-color=\\"#0d0f16\\"/></linearGradient></defs>" +
+      "<rect width=\\"120\\" height=\\"160\\" fill=\\"#0d0f16\\"/>" +
+      "<rect width=\\"120\\" height=\\"160\\" fill=\\"url(#" + id + ")\\"/>" +
+      "<text x=\\"60\\" y=\\"72\\" text-anchor=\\"middle\\" font-size=\\"56\\" fill=\\"#fff\\" " +
+      "fill-opacity=\\".2\\">" + segno + "</text>";
+    var y = 106 - (righe.length - 1) * 7;
+    for (var i = 0; i < righe.length; i++) {
+      h += "<text x=\\"60\\" y=\\"" + (y + i * 15) + "\\" text-anchor=\\"middle\\" " +
+        "font-size=\\"11.5\\" font-weight=\\"700\\" fill=\\"#f2f3f8\\">" + sicuro(righe[i]) +
+        "</text>";
+    }
+    return h + "</svg>";
+  }
+
+  /**
+   * Il disegno di una figurina della casa: il suo segno su un fondo della sua
+   * tinta, e **si arricchisce crescendo** — i raggi da Rare, l'anello del grado
+   * da Unique, le stelle da Epic. Crescere si deve vedere, se no le copie sono
+   * un numero e basta.
+   */
+  function disegnoCasa(c) {
+    var k = c.casa;
+    var id = "dis" + (disegni += 1);
+    var s = c.grado ? scalinoDi(c.grado) : null;
+    var alto = 0;
+    if (s && io && io.gradi) {
+      for (var i = 0; i < io.gradi.length; i++) if (io.gradi[i].id === s.id) alto = i;
+    }
+    var h = "<svg class=\\"disegno\\" viewBox=\\"0 0 120 160\\" " +
+      "preserveAspectRatio=\\"xMidYMid slice\\" xmlns=\\"http://www.w3.org/2000/svg\\">" +
+      "<defs><radialGradient id=\\"" + id + "\\" cx=\\".5\\" cy=\\".4\\" r=\\".8\\">" +
+      "<stop offset=\\"0\\" stop-color=\\"hsl(" + k.tinta + ",70%,62%)\\"/>" +
+      "<stop offset=\\"1\\" stop-color=\\"hsl(" + k.tinta + ",55%,16%)\\"/>" +
+      "</radialGradient></defs>" +
+      "<rect width=\\"120\\" height=\\"160\\" fill=\\"url(#" + id + ")\\"/>";
+    if (alto >= 2) {
+      h += "<g stroke=\\"#fff\\" stroke-opacity=\\".2\\" stroke-width=\\"3\\">";
+      for (var r = 0; r < 12; r++) {
+        var ang = r * Math.PI / 6;
+        h += "<line x1=\\"60\\" y1=\\"64\\" x2=\\"" + (60 + Math.cos(ang) * 95).toFixed(1) +
+          "\\" y2=\\"" + (64 + Math.sin(ang) * 95).toFixed(1) + "\\"/>";
+      }
+      h += "</g>";
+    }
+    if (alto >= 5 && s) {
+      h += "<circle cx=\\"60\\" cy=\\"64\\" r=\\"41\\" fill=\\"none\\" stroke=\\"" + s.colore +
+        "\\" stroke-width=\\"3\\" stroke-dasharray=\\"5 5\\"/>";
+    }
+    if (alto >= 8) {
+      h += "<text x=\\"12\\" y=\\"24\\" font-size=\\"15\\" fill=\\"#fff\\">\u2726</text>" +
+        "<text x=\\"94\\" y=\\"24\\" font-size=\\"15\\" fill=\\"#fff\\">\u2726</text>";
+    }
+    h += "<text x=\\"60\\" y=\\"84\\" text-anchor=\\"middle\\" font-size=\\"52\\">" +
+      sicuro(k.segno) + "</text>" +
+      "<g class=\\"nome\\">" +
+      "<rect y=\\"124\\" width=\\"120\\" height=\\"36\\" fill=\\"#000\\" fill-opacity=\\".45\\"/>" +
+      "<text x=\\"60\\" y=\\"146\\" text-anchor=\\"middle\\" font-size=\\"12\\" " +
+      "font-weight=\\"700\\" fill=\\"#fff\\">" + sicuro(c.titolo) + "</text></g>";
+    return h + "</svg>";
+  }
+
+  /** La faccia: il disegno sotto, e la foto sopra se c'e'. */
+  function facciaHtml(c) {
+    if (c.casa) return "<span class=\\"faccia-d\\">" + disegnoCasa(c) + "</span>";
+    return "<span class=\\"faccia-d\\">" + disegnoFigurina(c) +
+      (c.faccia ? "<img src=\\"" + sicuro(c.faccia) + "\\" alt=\\"\\" loading=\\"lazy\\">" : "") +
+      "</span>";
+  }
+
+  // Una foto che non arriva se ne va, e sotto resta il disegno. L'errore di
+  // un'immagine non risale il documento: si ascolta mentre scende.
+  document.addEventListener("error", function (e) {
+    var t = e.target;
+    if (t && t.tagName === "IMG" && t.parentNode && t.parentNode.className === "faccia-d") {
+      t.parentNode.removeChild(t);
+    }
+  }, true);
+
+  /**
    * ⚠ **La firma: chi ha inventato quella cosa.**
    *
    * Chiesto il 12 settembre 2026: «evidenziamo meglio il nome di chi ha creato
@@ -1274,9 +1403,7 @@ export const COPIONE = `
      * stessa regola della macchinetta (vedi «vestita» nelle rotte). Il resto si
      * vede quando la figurina e' tua.
      */
-    h += c.faccia
-      ? "<img src=\\"" + sicuro(c.faccia) + "\\" alt=\\"\\" loading=\\"lazy\\">"
-      : faccinaDi(c.tipo);
+    h += facciaHtml(c);
     h += "</div><div class=\\"corpo\\">";
     h += "<h3>" + sicuro(c.titolo) + "</h3>";
     /**
@@ -1441,6 +1568,8 @@ export const COPIONE = `
       "</div></div>";
     h += "<div class=\\"riga-tasti\\"><button class=\\"btn oro\\" data-compra-pacco=\\"" +
       dati.serie + "\\">Compra un pacchetto · " + soldi(io.costi.pacchetto) + "</button></div>";
+    h += "<div class=\\"conto\\">In ogni pacchetto, oltre a queste, ci sono le cinquanta " +
+      "figurine della casa: escono quasi sempre, e crescono.</div>";
     h += dati.figurine.length
       ? dati.figurine.map(function (c) { return figurinaHtml(c); }).join("")
       : "<div class=\\"niente\\">Di questo pacchetto non ne hai ancora nessuna. " +
@@ -1600,8 +1729,9 @@ export const COPIONE = `
       var f = a.figurine[Number(nodo.getAttribute("data-carta"))];
       var s = scalinoDi(f.grado);
       // La scena cresce col grado, come dappertutto (CONCETTI.md § 7): il
-      // cinque e' l'unica cosa che ferma tutto, anche qui.
-      if (s.fuoco >= 1) lampo(s.colore);
+      // cinque e' l'unica cosa che ferma tutto, anche qui. Una della casa che
+      // cresce si accende anche lei: e' il suo premio.
+      if (s.fuoco >= 1 || (f.casa && f.casa.cresciuta && f.casa.prima)) lampo(s.colore);
       if (s.fuoco >= 2) {
         carte.classList.remove("scossa");
         void carte.offsetWidth;
@@ -1615,12 +1745,27 @@ export const COPIONE = `
     }
 
     function finito() {
-      var nuove = a.figurine.filter(function (f) { return !f.doppione; }).length;
-      dice.innerHTML = nuove === 0
-        ? "Tutti doppioni: <b>" + soldi(a.vinto) + "</b> indietro."
-        : "<b>" + nuove + (nuove === 1 ? " nuova" : " nuove") + "</b>" +
-          (a.vinto > 0 ? ", e " + soldi(a.vinto) + " dai doppioni." : ".") +
-          " Le trovi nell'Inventario.";
+      var vere = a.figurine.filter(function (f) { return !f.casa; });
+      var nuove = vere.filter(function (f) { return !f.doppione; }).length;
+      var casa = a.figurine.filter(function (f) { return f.casa; });
+      // ⚠ Una della casa alla prima copia «cresce» anche lei — nasce — ma dirlo
+      // cosi' faceva leggere «7 della casa, e 7 crescono» quando ne era
+      // cresciuta una. Nuove e cresciute si contano a parte.
+      var nuoveCasa = casa.filter(function (f) { return !f.casa.prima; }).length;
+      var crescono = casa.filter(function (f) { return f.casa.prima && f.casa.cresciuta; }).length;
+      var detto = [];
+      if (vere.length) {
+        detto.push(nuove === 0 ? "nessuna figurina nuova"
+          : "<b>" + nuove + (nuove === 1 ? " nuova" : " nuove") + "</b>");
+        if (a.vinto > 0) detto.push(soldi(a.vinto) + " dai doppioni");
+      }
+      if (casa.length) {
+        var come = [];
+        if (nuoveCasa) come.push(nuoveCasa + (nuoveCasa === 1 ? " nuova" : " nuove"));
+        if (crescono) come.push("<b>" + crescono + (crescono === 1 ? " cresce" : " crescono") + "</b>");
+        detto.push(casa.length + " della casa" + (come.length ? " (" + come.join(", ") + ")" : ""));
+      }
+      dice.innerHTML = detto.join(" \u00b7 ") + ". Le trovi nell'Inventario.";
       tasti.innerHTML = "<button class=\\"btn oro\\" data-busta=\\"fatto\\">Fatto</button>";
     }
 
@@ -1646,17 +1791,29 @@ export const COPIONE = `
     });
   }
 
-  /** Il davanti di una carta appena uscita: la faccia, il grado, chi l'ha fatta. */
+  /**
+   * Il davanti di una carta appena uscita: la faccia, il grado, chi l'ha fatta.
+   * Una della casa dice invece a che copia e' arrivata, e se e' cresciuta: e'
+   * quello il suo premio, al posto delle lire di un doppione.
+   */
   function fronteDellaCarta(f, s) {
-    return "<div class=\\"faccia\\">" +
-      (f.faccia ? "<img src=\\"" + sicuro(f.faccia) + "\\" alt=\\"\\">" : faccinaDi(f.tipo)) +
-      "</div><div class=\\"sotto\\"><span class=\\"grado\\">" + sicuro(s.nome) + "</span>" +
-      "<div class=\\"titolo\\">" + sicuro(f.titolo) + "</div>" +
-      firmaHtml(f.daNome, "") +
-      (f.doppione
+    var sotto;
+    if (f.casa) {
+      var k = f.casa;
+      sotto = !k.prima
+        ? "<div class=\\"nuova\\">nuova, della casa</div>"
+        : k.cresciuta
+          ? "<div class=\\"nuova\\">cresce a " + sicuro(s.nome) + "!</div>"
+          : "<div class=\\"doppia\\">copia " + k.copie +
+            (k.prossimo ? " di " + k.prossimo + " per crescere" : "") + "</div>";
+    } else {
+      sotto = firmaHtml(f.daNome, "") + (f.doppione
         ? "<div class=\\"doppia\\">doppione \u00b7 +" + soldi(f.lire) + "</div>"
-        : "<div class=\\"nuova\\">nuova!</div>") +
-      "</div>";
+        : "<div class=\\"nuova\\">nuova!</div>");
+    }
+    return "<div class=\\"faccia\\">" + facciaHtml(f) + "</div>" +
+      "<div class=\\"sotto\\"><span class=\\"grado\\">" + sicuro(s.nome) + "</span>" +
+      "<div class=\\"titolo\\">" + sicuro(f.titolo) + "</div>" + sotto + "</div>";
   }
 
   /* ----------------------------------------------------------- inventario */
@@ -1675,6 +1832,22 @@ export const COPIONE = `
    */
   /** Le figurine piene dell'inventario, per aprirle toccandole. */
   var invCose = {};
+  /** E quelle della casa, per numero. */
+  var invCasa = {};
+
+  /**
+   * Il brano di una figurina, se ne ha uno. ⚠ Chiesto l'11 settembre 2026: «le
+   * canzoni facciamole sentire bene». Toccandolo nell'Inventario si apre grande,
+   * con la copertina, e parte da solo.
+   */
+  function branoDi(c) {
+    var att = c.allegati || [];
+    for (var i = 0; i < att.length; i++) {
+      if (att[i] && att[i].url && siAscolta(att[i].mime)) return att[i].url;
+    }
+    if (c.dove && siAscolta(c.mime)) return c.dove;
+    return "";
+  }
 
   function casellaInvHtml(k, viste, primaVolta) {
     var s = scalinoDi(k.grado);
@@ -1687,11 +1860,42 @@ export const COPIONE = `
     invCose[c.id] = c;
     var appena = !primaVolta && !viste[c.id];
     return "<div class=\\"cas f" + s.fuoco + (appena ? " appena" : "") + "\\" style=\\"--g:" +
-      s.colore + "\\" data-inv=\\"" + sicuro(c.id) + "\\">" +
-      (c.faccia ? "<img src=\\"" + sicuro(c.faccia) + "\\" alt=\\"\\" loading=\\"lazy\\">"
-                : "<span class=\\"icona\\">" + faccinaDi(c.tipo) + "</span>") +
+      s.colore + "\\" data-inv=\\"" + sicuro(c.id) + "\\">" + facciaHtml(c) +
       "<span class=\\"n\\">" + (c.numero || "") + "</span>" +
+      (branoDi(c) ? "<span class=\\"suona\\">\u25B6</span>" : "") +
       "<span class=\\"t\\">" + sicuro(c.titolo) + "</span></div>";
+  }
+
+  /**
+   * Una casella della casa: il disegno col suo grado, le copie, e la barretta
+   * verso il grado dopo. ⚠ Si accende quando e' nuova **o quando e' cresciuta**
+   * dall'ultima volta: per queste, crescere e' sbloccarsi un'altra volta.
+   */
+  function casellaCasaHtml(f, viste, primaVolta) {
+    if (!f.copie) {
+      return "<div class=\\"cas buco casa\\" style=\\"--g:#8a8f9e\\"><span class=\\"n\\">" +
+        f.numero + "</span><span class=\\"q\\">?</span></div>";
+    }
+    var s = scalinoDi(f.grado);
+    invCasa[f.numero] = f;
+    var appena = !primaVolta && viste["casa-" + f.numero] !== f.grado;
+    var verso = f.prossimo ? Math.min(100, Math.round(f.copie * 100 / f.prossimo)) : 100;
+    return "<div class=\\"cas casa f" + s.fuoco + (appena ? " appena" : "") + "\\" style=\\"--g:" +
+      s.colore + "\\" data-casa=\\"" + f.numero + "\\">" +
+      facciaHtml({ casa: f, grado: f.grado, titolo: f.nome }) +
+      "<span class=\\"n\\">" + f.numero + "</span>" +
+      "<span class=\\"copie\\">\u00d7" + f.copie + "</span>" +
+      "<span class=\\"verso\\"><span style=\\"width:" + verso + "%\\"></span></span></div>";
+  }
+
+  function mostraCasa(f) {
+    if (!f) return;
+    var s = scalinoDi(f.grado);
+    grande(s.nome + " \u00b7 " + f.copie + (f.copie === 1 ? " copia" : " copie"), f.nome,
+      f.prossimo
+        ? "Con " + f.prossimo + " copie cresce di grado. Escono dai pacchetti e dalla macchinetta."
+        : "E' in cima: piu' di cosi' non cresce.",
+      s.colore);
   }
 
   function caricaInventario() {
@@ -1702,6 +1906,7 @@ export const COPIONE = `
       var primaVolta = !viste;
       viste = viste || {};
       invCose = {};
+      invCasa = {};
 
       var pct = d.di ? Math.round(d.hai * 100 / d.di) : 0;
       $("inv-testa").innerHTML =
@@ -1753,6 +1958,26 @@ export const COPIONE = `
           p.caselle.map(function (k) { return casellaInvHtml(k, viste, primaVolta); }).join("") +
           "</div></div>";
       }
+
+      /**
+       * ⚠ **Le cinquanta della casa**, dall'11 settembre 2026: «quegli item fake
+       * piu' ne collezioniamo piu' si evolvono, partono da basic fino a
+       * ethernal». Stanno dopo i pacchetti veri — quelli sono la raccolta — e
+       * si vedono solo quando c'e' un pacchetto da cui possono uscire.
+       */
+      var casa = d.casa;
+      if (casa && pacchi.length) {
+        var cq = Math.round(casa.hai * 100 / casa.di);
+        h += "<div class=\\"inv-pacco\\"><div class=\\"testa\\"><b>Le figurine della casa</b>" +
+          "<small>" + casa.hai + " su " + casa.di + "</small></div>" +
+          "<div class=\\"conto\\">Escono in tutti i pacchetti e sulla macchinetta. Ogni copia " +
+          "in piu' le fa crescere, da Basic fino a Ethernal.</div>" +
+          "<div class=\\"barretta\\"><span style=\\"width:" + cq + "%\\"></span></div>" +
+          "<div class=\\"caselle-inv\\">" +
+          casa.figurine.map(function (f) { return casellaCasaHtml(f, viste, primaVolta); }).join("") +
+          "</div></div>";
+      }
+
       var fuori = d.fuori || [];
       if (fuori.length) {
         h += "<div class=\\"inv-pacco\\"><div class=\\"testa\\"><b>Fuori dai pacchetti</b>" +
@@ -1765,9 +1990,13 @@ export const COPIONE = `
       }
       $("inv-pacchetti").innerHTML = h;
 
-      // Da adesso queste sono viste: la prossima volta si accendono solo le nuove.
+      // Da adesso queste sono viste: la prossima volta si accendono solo le
+      // nuove, e quelle della casa che sono cresciute.
       var ora = {};
       for (var id in invCose) if (Object.prototype.hasOwnProperty.call(invCose, id)) ora[id] = 1;
+      for (var n in invCasa) {
+        if (Object.prototype.hasOwnProperty.call(invCasa, n)) ora["casa-" + n] = invCasa[n].grado;
+      }
       try { localStorage.setItem(chiave, JSON.stringify(ora)); } catch (e) {}
     }).catch(function (e) { avviso(e.message, "male"); });
   }
@@ -1830,26 +2059,35 @@ export const COPIONE = `
     orologiMacchina = [];
   }
 
-  /** Una casella: la faccia di una figurina, col nome di chi l'ha inventata. */
-  function casellaHtml(sim, classe) {
+  /**
+   * Una casella: la faccia della figurina, e sotto chi l'ha inventata.
+   *
+   * ⚠ **La faccia c'e' sempre**, dall'11 settembre 2026: una foto, la copertina
+   * di un brano, o una disegnata (vedi «facciaHtml»). Prima sui rulli giravano
+   * solo le figurine con una foto — undici su quarantacinque, e tutte degli
+   * stessi due dispositivi: «vedo solo immagini di cammo o tabletcammo».
+   *
+   * ⚠ **Il nome di chi l'ha inventata sta sulla casella** (12 settembre 2026):
+   * una figurina che gira su un rullo e' una figurina come le altre. Quelle
+   * della casa non le ha inventate nessuno, e non hanno nome.
+   */
+  function casellaHtml(sim, classe, dove) {
     var s = sim ? scalinoDi(sim.grado) : { colore: "#2a2f3d" };
-    var h = "<div class=\\"casella " + (classe || "") + "\\" style=\\"--g:" + s.colore + "\\">";
-    if (sim && sim.faccia) {
-      h += "<img src=\\"" + sicuro(sim.faccia) + "\\" alt=\\"\\" loading=\\"lazy\\">";
-      /**
-       * ⚠ **Il nome di chi l'ha inventata sta sulla casella.** Chiesto il 12
-       * settembre 2026 insieme al resto: una figurina che gira su un rullo e'
-       * una figurina come le altre, e chi l'ha fatta si legge anche li'.
-       */
-      if (sim.daNome) h += "<span class=\\"chi\\">" + sicuro(sim.daNome) + "</span>";
+    var tenuta = Boolean(giro && giro.tenute[dove]);
+    var h = "<div class=\\"casella " + (classe || "") + (tenuta ? " tenuta" : "") +
+      "\\" data-casella=\\"" + dove + "\\" style=\\"--g:" + s.colore + "\\">";
+    if (sim) {
+      h += facciaHtml(sim);
+      if (sim.daNome && !sim.casa) h += "<span class=\\"chi\\">" + sicuro(sim.daNome) + "</span>";
     }
+    if (tenuta) h += "<span class=\\"ferma\\">tenuta</span>";
     h += "</div>";
     return h;
   }
 
   function disegnaCaselle(quali, classe) {
     var h = "";
-    for (var i = 0; i < quanteCaselle(); i++) h += casellaHtml(quali[i], classe);
+    for (var i = 0; i < quanteCaselle(); i++) h += casellaHtml(quali[i], classe, i);
     $("macchina-rulli").innerHTML = h;
   }
 
@@ -1857,26 +2095,50 @@ export const COPIONE = `
     return simboli.length ? simboli[Math.floor(Math.random() * simboli.length)] : null;
   }
 
+  /**
+   * ⚠ **Il giro a meta'**: pagato, tirato una volta, in attesa del secondo tiro.
+   * Chiesto l'11 settembre 2026: «l'utente paga, gira 2 volte: la prima si
+   * riempie lo schermo e puo' decidere di bloccare alcuni item, quindi rigira;
+   * se l'utente non seleziona nulla viene comunque aggiornata la tabella».
+   *
+   * Le tenute stanno qui finche' non si rigira: sono una scelta a meta', e una
+   * spunta non e' un giro di rete. Il giro invece sta sul PC: chiudendo la
+   * pagina a meta' si ritrova, e il secondo tiro non si paga di nuovo.
+   */
+  var giro = null;
+
   function disegnaPuntate() {
     var quali = (io && io.puntate) || [50, 100, 200];
+    var scelta = giro ? giro.puntata : puntata;
     var h = "";
     for (var i = 0; i < quali.length; i++) {
       h += "<button data-puntata=\\"" + quali[i] + "\\"" +
-        (quali[i] === puntata ? " class=\\"scelto\\"" : "") + ">" + soldi(quali[i]) + "</button>";
+        (quali[i] === scelta ? " class=\\"scelto\\"" : "") + (giro ? " disabled" : "") + ">" +
+        soldi(quali[i]) + "</button>";
     }
     $("puntate").innerHTML = h;
-    $("macchina-conto").innerHTML = "Una fila di tre uguali paga poco, e le file si sommano. " +
-      "<b>Tutto lo schermo uguale</b> paga il colpo grosso, e quella figurina diventa tua.";
+    $("tira").textContent = giro ? "Rigira" : "Tira \u00b7 " + soldi(puntata);
+    $("macchina-conto").innerHTML = giro
+      ? "Tocca le caselle da <b>tenere</b>, poi rigira: cambiano solo le altre. Il secondo " +
+        "tiro e' gia' pagato."
+      : "Un giro sono due tiri: il primo riempie lo schermo, tieni quelle che ti servono e " +
+        "rigira. Una fila paga, due il doppio, <b>tre file</b> il superbonus e sbloccano le " +
+        "figurine.";
   }
 
   /** La tabellina dei premi: quanto paga ogni grado. La dice il PC, non questa pagina. */
-  function disegnaPremi(premi) {
+  function disegnaPremi(dati) {
+    var premi = dati.premi || [];
     var h = "<div class=\\"premi\\">";
     for (var i = 0; i < premi.length; i++) {
       var g = premi[i];
       h += "<div class=\\"riga\\"><b style=\\"color:" + g.colore + "\\">" + sicuro(g.nome) + "</b>" +
-        "<span>fila &times;" + g.fila + "</span><span>tutto &times;" + g.pieno + "</span></div>";
+        "<span>fila &times;" + g.fila + "</span><span>tre file &times;" + g.pieno + "</span></div>";
     }
+    h += "<div class=\\"nota\\">Due file pagano " + (dati.dueFile || 2) + " volte le due file. " +
+      "Tre file pagano il superbonus del grado piu' alto, e le figurine delle file si " +
+      "sbloccano; se sono tutte e nove uguali, il superbonus vale " + (dati.tuttoUguale || 2) +
+      " volte.</div>";
     h += "</div>";
     $("macchina-premi").innerHTML = h;
   }
@@ -1892,15 +2154,28 @@ export const COPIONE = `
         $("macchina-spenta").textContent = dati.perche;
         return;
       }
+      io.puntate = dati.puntate;
       // La puntata di ieri, se e' ancora una di quelle buone.
       if (!puntata) {
         var vecchia = 0;
         try { vecchia = Number(localStorage.getItem(CHIAVE_PUNTATA)) || 0; } catch (e) {}
         puntata = dati.puntate.indexOf(vecchia) >= 0 ? vecchia : dati.puntate[0];
       }
-      io.puntate = dati.puntate;
+      disegnaPremi(dati);
+      // ⚠ Un giro lasciato a meta' si ritrova: le stesse caselle, e il secondo
+      // tiro gia' pagato. Le tenute scelte prima di cambiare scheda restano.
+      if (dati.aperto) {
+        var caselle = dati.aperto.caselle.map(function (c) { return c || unSimboloACaso(); });
+        var tenute = giro && giro.caselle.length === caselle.length ? giro.tenute : {};
+        giro = { puntata: dati.aperto.puntata, caselle: caselle, tenute: tenute };
+        disegnaPuntate();
+        disegnaCaselle(caselle, "");
+        $("macchina-esito").innerHTML =
+          "<span style=\\"color:var(--spento)\\">Il secondo tiro ti aspetta.</span>";
+        return;
+      }
+      giro = null;
       disegnaPuntate();
-      disegnaPremi(dati.premi || []);
       // A macchina ferma le caselle mostrano figurine a caso: una vetrina
       // spenta non fa venire voglia di tirare.
       disegnaCaselle(tutteACaso(), "");
@@ -1908,67 +2183,111 @@ export const COPIONE = `
     }).catch(function (e) { avviso(e.message, "male"); });
   }
 
+  /** Tenere una casella, o lasciarla: solo fra i due tiri. */
+  function tieniLaCasella(dove) {
+    if (!giro || macchinaGira || !giro.caselle[dove]) return;
+    giro.tenute[dove] = !giro.tenute[dove];
+    disegnaCaselle(giro.caselle, "");
+  }
+
   /**
-   * Tira.
+   * ⚠ **Le caselle si fermano a cascata, e in fretta.** Chiesto l'11 settembre
+   * 2026: «la slot Fortuna facciamo l'animazione piu' rapida». Settanta
+   * millisecondi a casella, meno di un secondo per tutte e nove — prima ne
+   * servivano due e mezzo, e adesso i tiri per giro sono due. Quelle tenute non
+   * si muovono proprio: se girassero, sembrerebbe che ti ridanno la stessa.
    *
-   * ⚠ **Le caselle si fermano una dopo l'altra**, da sinistra a destra come su
-   * una macchina vera: se si fermassero tutte insieme non ci sarebbe il
-   * momento in cui le prime due sono uguali e si aspetta la terza — che e'
-   * l'unica cosa per cui si gioca a una slot.
+   * Si fermano comunque una dopo l'altra: se si fermassero tutte insieme non ci
+   * sarebbe il momento in cui due sono uguali e si aspetta la terza.
    */
+  function fermaACascata(finali, ferme, poi) {
+    var quante = finali.length;
+    var scoperte = [];
+    var libere = [];
+    for (var i = 0; i < quante; i++) {
+      if (ferme[i]) scoperte[i] = finali[i];
+      else libere.push(i);
+    }
+    var disegna = function (classeFinale) {
+      var h = "";
+      for (var k = 0; k < quante; k++) {
+        h += scoperte[k]
+          ? casellaHtml(scoperte[k], classeFinale ? classeFinale(k) : "", k)
+          : casellaHtml(unSimboloACaso(), "gira", k);
+      }
+      $("macchina-rulli").innerHTML = h;
+    };
+    var mescola = setInterval(function () { disegna(null); }, 70);
+    if (!libere.length) { clearInterval(mescola); poi(disegna); return; }
+    for (var j = 0; j < libere.length; j++) {
+      (function (quale, ordine) {
+        orologiMacchina.push(setTimeout(function () {
+          scoperte[quale] = finali[quale];
+          if (ordine === libere.length - 1) { clearInterval(mescola); poi(disegna); }
+          else disegna(null);
+        }, 160 + ordine * 70));
+      })(libere[j], j);
+    }
+  }
+
+  /** Il tasto grosso: il primo tiro se il giro non c'e', il secondo se c'e'. */
   function tiraLaMacchinetta() {
-    if (macchinaGira) return;
-    if (!simboli.length) return;
+    if (macchinaGira || !simboli.length) return;
+    if (giro) { rigiraLaMacchinetta(); return; }
     macchinaGira = true;
     $("tira").disabled = true;
     $("macchina-esito").textContent = "";
     $("macchina-rulli").classList.remove("pieno");
     fermaOrologiMacchina();
-
     // Mentre si aspetta il PC le caselle scorrono: qualcosa deve muoversi
     // subito, se no il primo tocco sembra non aver fatto niente.
-    var mescola = setInterval(function () {
-      disegnaCaselle(tutteACaso(), "gira");
-    }, 90);
-
-    chiedi("POST", "/macchinetta", { puntata: puntata }).then(function (esito) {
-      io.saldo = esito.saldo;
+    var mescola = setInterval(function () { disegnaCaselle(tutteACaso(), "gira"); }, 70);
+    chiedi("POST", "/macchinetta", { puntata: puntata }).then(function (primo) {
+      clearInterval(mescola);
+      io.saldo = primo.saldo;
       disegnaSaldo(false);
-      var quante = esito.caselle.length;
-      var ultima = quante - 1;
-      // Quali caselle hanno fatto la fila: servono ad accenderle alla fine.
+      giro = { puntata: primo.puntata, caselle: primo.caselle, tenute: {} };
+      fermaACascata(primo.caselle, {}, function (disegna) {
+        disegna(null);
+        macchinaGira = false;
+        $("tira").disabled = false;
+        disegnaPuntate();
+        $("macchina-esito").innerHTML =
+          "<span style=\\"color:var(--spento)\\">Tieni quelle che ti servono, e rigira.</span>";
+      });
+    }).catch(function (e) {
+      clearInterval(mescola);
+      macchinaGira = false;
+      $("tira").disabled = false;
+      caricaMacchinetta();
+      avviso(e.message, "male");
+    });
+  }
+
+  /** Il secondo tiro: le tenute restano, le altre cambiano, e il PC decide. */
+  function rigiraLaMacchinetta() {
+    macchinaGira = true;
+    $("tira").disabled = true;
+    fermaOrologiMacchina();
+    var tenute = [];
+    var ferme = {};
+    for (var k in giro.tenute) {
+      if (giro.tenute[k]) { tenute.push(Number(k)); ferme[k] = true; }
+    }
+    chiedi("POST", "/macchinetta/rigira", { tenute: tenute }).then(function (esito) {
+      io.saldo = esito.saldo;
       var vincenti = {};
       for (var f = 0; f < esito.file.length; f++) {
         var da = esito.file[f].riga * forma.perFila;
         for (var p = 0; p < forma.perFila; p++) vincenti[da + p] = true;
       }
-
-      var scoperte = [];
-      var fermaUna = function (i) {
-        scoperte[i] = esito.caselle[i];
-        var h = "";
-        for (var k = 0; k < quante; k++) {
-          h += scoperte[k]
-            ? casellaHtml(scoperte[k], vincenti[k] && i === ultima ? "vince" : "")
-            : casellaHtml(unSimboloACaso(), "gira");
-        }
-        $("macchina-rulli").innerHTML = h;
-      };
-
-      // ⚠ Con nove caselle il passo si accorcia: a duecentossessanta
-      // millisecondi l'una il giro durava due secondi e mezzo, e chi tira
-      // cento volte in una sera li sente tutti.
-      for (var i = 0; i < quante; i++) {
-        (function (quale) {
-          orologiMacchina.push(setTimeout(function () {
-            if (quale === 0) clearInterval(mescola);
-            fermaUna(quale);
-            if (quale === ultima) raccontaLaMacchinetta(esito);
-          }, 380 + quale * 190));
-        })(i);
-      }
+      fermaACascata(esito.caselle, ferme, function (disegna) {
+        giro = null;
+        disegna(function (i) { return vincenti[i] ? "vince" : ""; });
+        disegnaSaldo(esito.vinto > 0);
+        raccontaLaMacchinetta(esito);
+      });
     }).catch(function (e) {
-      clearInterval(mescola);
       macchinaGira = false;
       $("tira").disabled = false;
       caricaMacchinetta();
@@ -1980,47 +2299,51 @@ export const COPIONE = `
   function raccontaLaMacchinetta(esito) {
     macchinaGira = false;
     $("tira").disabled = false;
+    disegnaPuntate();
 
     if (esito.pieno) {
-      var s = scalinoDi(esito.caselle[0].grado);
+      var meglio = esito.file[0].simbolo;
+      for (var m = 1; m < esito.file.length; m++) {
+        if (scalinoDi(esito.file[m].simbolo.grado).fuoco > scalinoDi(meglio.grado).fuoco) {
+          meglio = esito.file[m].simbolo;
+        }
+      }
+      var s = scalinoDi(meglio.grado);
       $("macchina-rulli").classList.add("pieno");
       lampo(s.colore);
       scuoti();
-      coriandoli(90, [s.colore, "#ffd166", "#ffffff"]);
+      coriandoli(esito.tuttoUguale ? 160 : 100, [s.colore, "#ffd166", "#ffffff"]);
       numeroVolante("+" + soldi(esito.vinto), "#ffd166");
-      $("macchina-esito").innerHTML = "TUTTO UGUALE · " + soldi(esito.vinto) +
-        (esito.sbloccata
-          ? " · <b>" + sicuro(esito.sbloccata.titolo) + "</b> e' tua"
-          : " · ce l'avevi gia': pagata in lire");
-      if (esito.sbloccata) {
-        grande(
-          "Sbloccata",
-          esito.sbloccata.titolo + " · l'ha inventata " + esito.sbloccata.daNome,
-          "E' nella tua collezione.",
-          s.colore,
-        );
-      }
+      var detto = esito.sbloccate.map(function (x) {
+        var come = x.copia
+          ? (x.copia.cresciuta && x.copia.prima ? "cresce a " + scalinoDi(x.copia.grado).nome
+            : x.copia.prima ? "una copia in piu'" : "nuova, della casa")
+          : x.nuova ? "e' tua" : "ce l'avevi: " + soldi(x.lire);
+        return x.simbolo.titolo + " \u2014 " + come;
+      });
+      $("macchina-esito").innerHTML = (esito.tuttoUguale ? "TUTTO UGUALE" : "TRE FILE") +
+        " \u00b7 " + soldi(esito.vinto);
+      grande(esito.tuttoUguale ? "Tutto uguale" : "Tre file", "Sbloccate", detto.join("\\n"),
+        s.colore);
       return;
     }
 
     if (esito.file.length) {
-      var meglio = esito.file[0];
+      var migliore = esito.file[0];
       for (var i = 1; i < esito.file.length; i++) {
-        if (esito.file[i].lire > meglio.lire) meglio = esito.file[i];
+        if (esito.file[i].lire > migliore.lire) migliore = esito.file[i];
       }
-      var s2 = scalinoDi(meglio.simbolo.grado);
+      var s2 = scalinoDi(migliore.simbolo.grado);
       lampo(s2.colore);
       numeroVolante("+" + soldi(esito.vinto), s2.colore);
-      var dette = ["", "UNA FILA", "DUE FILE", "TRE FILE"];
       $("macchina-esito").innerHTML =
-        (dette[esito.file.length] || esito.file.length + " FILE") + " · " + soldi(esito.vinto) +
-        " · " + sicuro(meglio.simbolo.titolo) +
-        " <span style=\\"color:var(--spento)\\">di " + sicuro(meglio.simbolo.daNome) + "</span>";
+        (esito.file.length > 1 ? "DUE FILE, IL DOPPIO" : "UNA FILA") + " \u00b7 " +
+        soldi(esito.vinto) + " \u00b7 " + sicuro(migliore.simbolo.titolo);
       return;
     }
 
     $("macchina-esito").innerHTML =
-      "<span style=\\"color:var(--spento)\\">Niente. Ritira.</span>";
+      "<span style=\\"color:var(--spento)\\">Niente, stavolta. Il prossimo giro si paga.</span>";
   }
 
   /* ---------------------------------------------------------------- casa */
@@ -3051,11 +3374,22 @@ export const COPIONE = `
     }
     if (chiudi("[data-torna-pacchi]")) { pacchettoAperto = 0; caricaPacchetti(); return; }
 
-    // Una casella piena dell'inventario: si apre la figurina intera.
+    // Una casella piena dell'inventario: un brano suona grande, il resto si
+    // apre intero. 11 settembre 2026: «le canzoni facciamole sentire bene».
     var casellaInv = chiudi("[data-inv]");
     if (casellaInv) {
       var cosaInv = invCose[casellaInv.getAttribute("data-inv")];
-      if (cosaInv) mostraFigurina(cosaInv);
+      if (cosaInv && branoDi(cosaInv)) {
+        grandeCosa(branoDi(cosaInv), "audio/*", cosaInv.titolo, cosaInv.faccia);
+      } else if (cosaInv) mostraFigurina(cosaInv);
+      return;
+    }
+    var casellaCasa = chiudi("[data-casa]");
+    if (casellaCasa) { mostraCasa(invCasa[casellaCasa.getAttribute("data-casa")]); return; }
+    // Fra i due tiri della macchinetta: tenere una casella, o lasciarla.
+    var casellaMacchina = chiudi("[data-casella]");
+    if (casellaMacchina) {
+      tieniLaCasella(Number(casellaMacchina.getAttribute("data-casella")));
       return;
     }
 

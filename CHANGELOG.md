@@ -10,6 +10,65 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ---
 
+## 1.3.5 — Due tiri, e le figurine della casa
+
+La sala giochi, provata la sera stessa. La macchinetta si gioca in due tiri,
+ogni figurina ha una faccia, e nei pacchetti arrivano cinquanta figurine che
+crescono.
+
+### La macchinetta: paghi, tiri, tieni, rigiri
+
+> «Facciamo che giri una volta e poi puoi bloccare degli item per poi girare di
+> nuovo: l'utente paga, gira 2 volte... un giro in realtà sono due click.»
+
+Si paga e si tira: lo schermo si riempie, e al primo tiro non si vince niente.
+Tocchi le caselle da **tenere** — l'anello d'oro — e rigiri: cambiano solo le
+altre, ed è lì che si decide. Anche senza tenere niente: cambiano tutte.
+
+| Cosa esce | Quanto paga |
+|---|---|
+| una fila | il suo premio, da 2 a 13 volte la puntata |
+| due file | **il doppio** |
+| tre file | **il superbonus**, e le figurine delle file si sbloccano |
+| tutte e nove uguali | il superbonus due volte, e lo sblocco |
+
+Tenere una coppia aiuta, ma non regala: la macchinetta porta via più di quanto
+dà. Se chiudi la pagina fra i due tiri, al ritorno il giro è lì, già pagato.
+
+> «Vedo solo immagini di cammo o tabletcammo.»
+
+Sui rulli adesso ci sono **tutte** le figurine dei pacchetti, non solo le undici
+con una foto, e le cinquanta della casa. Ed è **più rapida**: meno di un secondo
+per tiro.
+
+### Ogni figurina ha una faccia, e i brani si sentono
+
+> «Nell'inventario non tutti gli item si vede la foto, le canzoni pure non si
+> vede l'immagine, e facciamole sentire bene.»
+
+Nel pacchetto vero 34 figurine su 45 erano solo un prompt. Adesso chi non ha una
+foto ha una faccia **disegnata**, col colore del grado e il titolo. Un brano
+prende la copertina che la suite gli ha già fatto, anche se nessuno l'aveva
+attaccata. E toccato nell'Inventario si apre grande, con la copertina, e suona
+subito.
+
+### Pacchetti da nove, e cinquanta figurine della casa
+
+> «Mettiamo che in ogni pack escono 9 carte. Mettiamo un 50 item fake... più ne
+> collezioniamo più si evolvono, partono da basic fino a ethernal.»
+
+Ogni pacchetto dà **nove carte**, e quasi tutte sono **figurine della casa**:
+cinquanta, disegnate, uguali per tutti. Una copia in più della stessa non paga
+lire: **la fa crescere**. La prima è Basic, due fanno Grand, tre Rare, e così via
+fino a Ethernal alla cinquantesima. Crescendo il disegno si arricchisce, e la
+carta te lo dice quando esce. Nell'Inventario hanno una sezione loro, con le
+copie e la barretta verso il grado dopo.
+
+⚠ **Il pacchetto costava ancora 250 lire.** Il tuo file si era tenuto i numeri
+del giorno in cui era nato, e dalla pagina nessuno li può cambiare. Adesso il
+prezzo e le carte per pacchetto vengono dal codice: **5.000 lire, nove carte**.
+Il resto di quello che c'era scritto resta com'era.
+
 ## 1.3.4 — Tre file, e un inventario tutto tuo
 
 Sala giochi, ancora. La macchinetta cresce di una fila, arriva la pagina che
