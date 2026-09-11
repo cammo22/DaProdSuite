@@ -179,7 +179,7 @@ export function uccidiAlbero(pid: number): void {
  * cortesia invece di una tabella, e la si riconosce dal fatto che il nome che
  * cerchiamo non c'è dentro.
  */
-function immagineViva(pid: number): string {
+export function immagineViva(pid: number): string {
   if (process.platform !== "win32") return "";
   try {
     const uscita = spawnSync(

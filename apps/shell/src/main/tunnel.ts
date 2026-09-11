@@ -36,7 +36,7 @@
  */
 
 import { spawn, type ChildProcess } from "node:child_process";
-import { uccidiAlbero } from "./processi";
+import { immagineViva, uccidiAlbero } from "./processi";
 import {
   chmodSync,
   existsSync,
@@ -48,12 +48,24 @@ import {
 } from "node:fs";
 import { rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { TOOLS_DIR } from "./paths";
+import { LOGS_DIR, TOOLS_DIR } from "./paths";
 import { createLogger } from "./logging";
 
 /** Un log suo: quando il tunnel non parte, il motivo è nelle righe di cloudflared. */
 const log = createLogger("tunnel");
 const annota = (riga: string): void => log.write(`${riga}\n`, false);
+
+/**
+ * ⚠ **Le decisioni della suite, con l'ora.** Dall'11 settembre 2026.
+ *
+ * Quel giorno, all'avvio dopo l'aggiornamento alla 1.3.5, il registro diceva
+ * soltanto «chiudo il tunnel di prima, non risponde piu' per noi»: niente ora,
+ * niente motivo. Il tunnel era stato buttato, il telefono fuori casa restava
+ * fuori, e non c'era modo di sapere se il tunnel fosse davvero morto o se il
+ * controllo avesse inciampato. Le righe di `cloudflared` l'ora ce l'hanno gia';
+ * queste adesso anche, nello stesso formato, e dicono sempre perche'.
+ */
+const racconta = (riga: string): void => annota(`${new Date().toISOString()} ${riga}`);
 
 /** Dove sta l'eseguibile che la suite si scarica. */
 const ESEGUIBILE = join(TOOLS_DIR, "cloudflared.exe");
@@ -183,6 +195,36 @@ function eVivo(pid: number): boolean {
 }
 
 /**
+ * Il nome del programma che ha quel numero adesso, in minuscolo. Vuoto se non
+ * si sa (fuori da Windows, o se `tasklist` non risponde).
+ */
+function nomeDi(pid: number): string {
+  return process.platform === "win32" ? immagineViva(pid).toLowerCase() : "";
+}
+
+/**
+ * ⚠ **Quel numero e' ancora il nostro `cloudflared`?** Dall'11 settembre 2026.
+ *
+ * Windows **riusa i numeri dei processi**. Quel giorno, nel registro dei
+ * processi, il numero che adesso ha il `cloudflared` nuovo era stato prima
+ * `lms.exe` e poi `netsh`. Il ricordo dice «il tunnel e' il processo 27144», e
+ * fidarsi del numero e basta vuol dire due rischi: scambiare un altro programma
+ * per il tunnel, e **chiuderlo** quando «non risponde». Si chiude solo un
+ * processo che si chiama davvero `cloudflared.exe`.
+ */
+function eIlNostroCloudflared(pid: number): boolean {
+  if (!eVivo(pid)) return false;
+  if (process.platform !== "win32") return true;
+  return nomeDi(pid) === "cloudflared.exe";
+}
+
+/** Quante volte si chiede «chi sei» al tunnel di prima, e quanto si aspetta fra una e l'altra. */
+const PROVE_RIUSO = 4;
+const PAUSA_FRA_PROVE_MS = 5_000;
+
+type EsitoRiuso = { buono: TunnelRicordato } | { buono: null; motivo: string };
+
+/**
  * Il tunnel di prima e' ancora buono?
  *
  * Tre domande, e devono rispondere tutte e tre di si': il processo c'e', punta
@@ -190,22 +232,51 @@ function eVivo(pid: number): boolean {
  * computer**. L'ultima non e' pignoleria: un indirizzo di Cloudflare che non e'
  * piu' nostro risponde lo stesso — con un 530, o peggio con la roba di
  * qualcun altro — e riusarlo vorrebbe dire mandare il telefono da un estraneo.
+ *
+ * ⚠ **Si riprova, prima di buttarlo**, dall'11 settembre 2026. Fino alla 1.3.5
+ * bastava una domanda sola senza risposta entro otto secondi, e quel giorno —
+ * all'avvio dopo l'aggiornamento — e' andata cosi': il tunnel e' stato chiuso,
+ * ne e' nato uno con un altro nome, e il telefono fuori casa e' rimasto fuori.
+ * I due errori non costano uguale: tenere un tunnel morto per un minuto in piu'
+ * non costa niente, buttarne uno vivo chiude fuori tutti quelli che sono fuori
+ * casa. Quattro domande in quasi un minuto; si butta solo se non risponde mai.
  */
-async function tunnelDiPrimaAncoraBuono(porta: number): Promise<TunnelRicordato | null> {
+async function tunnelDiPrimaAncoraBuono(porta: number): Promise<EsitoRiuso> {
   const ricordo = leggiRicordo();
-  if (!ricordo || ricordo.porta !== porta || !eVivo(ricordo.pid)) return null;
-  try {
-    const risposta = await fetch(`${ricordo.indirizzo}/chi-sei`, {
-      signal: AbortSignal.timeout(8_000),
-    });
-    if (!risposta.ok) return null;
-    const dati = (await risposta.json()) as { pcId?: unknown };
-    // `/chi-sei` la serve il nostro gateway sulla porta locale: se risponde con
-    // un id, dall'altra parte del tunnel ci siamo noi.
-    return typeof dati.pcId === "string" && dati.pcId ? ricordo : null;
-  } catch {
-    return null;
+  if (!ricordo) return { buono: null, motivo: "non c'era un tunnel ricordato" };
+  if (ricordo.porta !== porta) {
+    return { buono: null, motivo: `puntava alla porta ${ricordo.porta}, adesso e' la ${porta}` };
   }
+  if (!eVivo(ricordo.pid)) return { buono: null, motivo: `il processo ${ricordo.pid} non c'e' piu'` };
+  const nome = nomeDi(ricordo.pid);
+  if (nome && nome !== "cloudflared.exe") {
+    return { buono: null, motivo: `il numero ${ricordo.pid} adesso e' ${nome}, non il tunnel` };
+  }
+  let motivo = "";
+  for (let prova = 1; prova <= PROVE_RIUSO; prova++) {
+    try {
+      const risposta = await fetch(`${ricordo.indirizzo}/chi-sei`, {
+        signal: AbortSignal.timeout(8_000),
+      });
+      if (risposta.ok) {
+        const dati = (await risposta.json()) as { pcId?: unknown };
+        // `/chi-sei` la serve il nostro gateway sulla porta locale: se risponde
+        // con un id, dall'altra parte del tunnel ci siamo noi.
+        if (typeof dati.pcId === "string" && dati.pcId) {
+          if (prova > 1) racconta(`il tunnel di prima ha risposto alla prova ${prova}`);
+          return { buono: ricordo };
+        }
+        // Risponde qualcun altro: non e' un inciampo, e riprovare non serve.
+        return { buono: null, motivo: "risponde, ma non col nostro id" };
+      }
+      motivo = `risponde ${risposta.status}`;
+    } catch (err) {
+      motivo = err instanceof Error ? err.message : String(err);
+    }
+    racconta(`il tunnel di prima non risponde (prova ${prova} di ${PROVE_RIUSO}): ${motivo}`);
+    if (prova < PROVE_RIUSO) await new Promise((r) => setTimeout(r, PAUSA_FRA_PROVE_MS));
+  }
+  return { buono: null, motivo };
 }
 
 export type FaseTunnel = "spento" | "scarico" | "accendo" | "acceso" | "guasto";
@@ -258,7 +329,7 @@ const RIPROVE_S = [3, 5, 10, 20, 30, 60];
 function programmaRisveglio(): void {
   if (!vogliamoAcceso || risveglio) return;
   const attesa = RIPROVE_S[Math.min(cadute, RIPROVE_S.length - 1)] ?? 60;
-  annota(`il tunnel e' caduto: riprovo fra ${attesa}s`);
+  racconta(`il tunnel e' caduto: riprovo fra ${attesa}s`);
   risveglio = setTimeout(() => {
     risveglio = null;
     if (!vogliamoAcceso) return;
@@ -353,23 +424,31 @@ export async function accendiTunnel(porta: number, rialzo = false): Promise<Stat
    * l'unico indirizzo che il telefono ha in tasca. Vedi `RICORDO`.
    */
   if (!rialzo) {
-    const buono = await tunnelDiPrimaAncoraBuono(porta);
+    const esito = await tunnelDiPrimaAncoraBuono(porta);
+    const buono = esito.buono;
     if (buono) {
-      annota(`riuso il tunnel di prima: ${buono.indirizzo} (processo ${buono.pid})`);
+      racconta(`riuso il tunnel di prima: ${buono.indirizzo} (processo ${buono.pid})`);
       vogliamoAcceso = true;
       portaUltima = porta;
       cadute = 0;
       cambia({ fase: "acceso", indirizzo: buono.indirizzo, motivo: undefined, da: buono.nato });
       return statoTunnel();
     }
+    if (!esito.buono) racconta(`non riuso il tunnel di prima: ${esito.motivo}`);
     /*
      * Non e' buono: se il processo c'e' ancora ma non risponde piu' per noi, va
-     * chiuso, se no resta in giro a occupare la rete per sempre.
+     * chiuso, se no resta in giro a occupare la rete per sempre. ⚠ Ma solo se
+     * e' davvero `cloudflared`: quel numero puo' essere passato a un altro
+     * programma (vedi `eIlNostroCloudflared`).
      */
     const vecchio = leggiRicordo();
-    if (vecchio && eVivo(vecchio.pid)) {
-      annota(`chiudo il tunnel di prima, non risponde piu' per noi (${vecchio.pid})`);
+    if (vecchio && eIlNostroCloudflared(vecchio.pid)) {
+      racconta(`chiudo il tunnel di prima (processo ${vecchio.pid})`);
       uccidiAlbero(vecchio.pid);
+    } else if (vecchio && eVivo(vecchio.pid)) {
+      racconta(
+        `il processo ${vecchio.pid} non e' cloudflared (${nomeDi(vecchio.pid) || "non si sa cos'e'"}): non lo tocco`,
+      );
     }
     await scordaIlTunnel();
   }
@@ -404,6 +483,22 @@ export async function accendiTunnel(porta: number, rialzo = false): Promise<Stat
         // `--no-autoupdate`: un aggiornamento automatico che riavvia il processo
         // mentre il telefono ci sta parlando è un guasto che nessuno capirebbe.
         "--no-autoupdate",
+        /**
+         * ⚠ **Un registro suo, che non si perde**, dall'11 settembre 2026.
+         *
+         * Le righe di `cloudflared` arrivavano solo attraverso la suite che
+         * l'aveva acceso: da quando il tunnel le sopravvive (1.1.4), al primo
+         * riavvio quel filo si stacca e le sue righe finiscono nel niente. Il
+         * giorno che la suite l'ha chiuso perche' «non rispondeva», del tunnel
+         * vecchio non c'era una riga sola da leggere. Questo file lo scrive lui,
+         * chiunque ci sia dall'altra parte.
+         *
+         * Provato prima di scriverlo: con `--logfile` le righe vanno sia nel
+         * file sia su stderr, e l'indirizzo compare in tutti e due — quindi la
+         * suite continua a trovarlo dove l'ha sempre cercato.
+         */
+        "--logfile",
+        join(LOGS_DIR, "cloudflared.log"),
         "--url",
         `http://127.0.0.1:${porta}`,
       ],
@@ -531,7 +626,7 @@ export async function spegniTunnel(perRiaccendere = false): Promise<void> {
      * avvio lo si riuserebbe, e chi l'ha spento se lo ritroverebbe acceso.
      */
     const ricordo = leggiRicordo();
-    if (ricordo && eVivo(ricordo.pid)) uccidiAlbero(ricordo.pid);
+    if (ricordo && eIlNostroCloudflared(ricordo.pid)) uccidiAlbero(ricordo.pid);
     await scordaIlTunnel();
   }
   fermaRisveglio();
