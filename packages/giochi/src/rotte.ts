@@ -57,6 +57,7 @@ import {
   quantoPagaIlPieno,
   quantoPagaUnaFila,
   rigira as rigiraLaMacchinetta,
+  SEI_UGUALI,
   suonoDi,
   tira as tiraLaMacchinetta,
   TUTTO_UGUALE_VALE,
@@ -213,22 +214,146 @@ function indirizzoDi(l: { id: string; url?: string } | undefined, contorno: Cont
 }
 
 /**
- * ⚠ **La faccia di una figurina, per questa persona.** La regola e' quella della
- * macchinetta (`facciaDi`): una foto se c'e'. Se no, per un brano, la copertina
- * che la libreria gli ha gia' fatto (`suonoDi`). Se no niente, e la pagina ne
- * disegna una: dall'11 settembre 2026 non c'e' piu' una figurina senza faccia.
+ * ⚠ **Il nome vero di una cosa della libreria.** Certe figurine si ricordano
+ * come id l'indirizzo intero del file («/libreria/file/musica%2Faudio%2F…»)
+ * invece del nome in libreria. Per ascoltarlo andava bene, perche' l'indirizzo
+ * e' quello; per chiedere la copertina no: la libreria cercava un file che si
+ * chiamasse «/libreria/file/…», non lo trovava, e il brano restava senza
+ * faccia con la copertina li' accanto sul disco. Visto l'11 settembre 2026 sul
+ * telefono di Cammo, dopo la 1.3.7.
+ */
+function idInLibreria(l: { id: string }): string {
+  const PREFISSO = "/libreria/file/";
+  if (!l.id.startsWith(PREFISSO)) return l.id;
+  try {
+    return decodeURIComponent(l.id.slice(PREFISSO.length));
+  } catch {
+    return l.id;
+  }
+}
+
+/** Un file della libreria, come lo tiene una figurina. */
+type Pezzo = { id: string; url?: string };
+
+/**
+ * ⚠ **Una foto della libreria si mostra dalla sua anteprima, non dal file.**
+ * Per un'immagine sono gli stessi pixel; cambia **chi li puo' chiedere**. La
+ * faccia di una figurina la vede chiunque la guardi in un pacchetto o nel
+ * negozio, il file intero solo chi l'ha sbloccata (vedi `sguardiDelGioco`).
+ * Chiesto l'11 settembre 2026 sera: «deve poter vedere l'anteprima e quando la
+ * sblocca puo' vederla bene o ascoltarla».
+ *
+ * Vuoto se non e' roba della libreria — un indirizzo scritto a mano resta com'e'.
+ */
+function anteprimaDelPezzo(l: Pezzo, contorno: Contorno): string {
+  if (!contorno.anteprimaLibreria) return "";
+  if (l.url && !l.url.startsWith("/libreria/file/")) return "";
+  return contorno.anteprimaLibreria(idInLibreria(l)) ?? "";
+}
+
+/**
+ * ⚠ **La faccia di una figurina, per questa persona: una regola sola.** La
+ * usano l'inventario, la bustina, il negozio e i rulli della macchinetta, perche'
+ * una figurina che cambia faccia da una schermata all'altra non si riconosce.
+ *
+ * 1. l'immagine attaccata (`facciaDi`);
+ * 2. se no, la copertina del brano attaccato (`suonoDi`): la libreria la fa da se';
+ * 3. se no, **cosa e' uscito dalle prove**: la prima immagine dell'ultima prova
+ *    che ha dato qualcosa, o la copertina del suo brano;
+ * 4. se no niente, e la pagina ne disegna una.
+ *
+ * Il punto 3 c'e' dall'11 settembre 2026 sera: «si continuano a non vedere certe
+ * immagini, c'e' un motivo o e' un bug?». Nel file vero 35 combinazioni su 58
+ * erano state generate e nessuno aveva attaccato il risultato: la scheda in
+ * «Mie» le faceva vedere, l'inventario no. Era la stessa figurina con due facce.
  *
  * Quando la foto o il brano **sono** la figurina, si mostrano solo a chi ce l'ha:
- * guardarla vorrebbe dire averla.
+ * guardarla vorrebbe dire averla. Quello che esce da una prova non e' la
+ * figurina — la figurina e' il prompt — e si mostra come gli allegati.
  */
-function indirizzoDellaFaccia(c: Collezionabile, scoperta: boolean, contorno: Contorno): string {
-  const f = facciaDi(c);
-  if (f) return scoperta || f !== c.libreria ? indirizzoDi(f, contorno) : "";
-  const s = suonoDi(c);
-  if (s && contorno.anteprimaLibreria && (scoperta || s !== c.libreria)) {
-    return contorno.anteprimaLibreria(s.id) ?? "";
+function facciaPerLaPagina(
+  cosa: { faccia: Pezzo | null; suono: Pezzo | null; libreria?: Pezzo; prove: string[] },
+  scoperta: boolean,
+  contorno: Contorno,
+): string {
+  const { faccia, suono, libreria } = cosa;
+  if (faccia) {
+    if (!scoperta && faccia === libreria) return "";
+    return anteprimaDelPezzo(faccia, contorno) || indirizzoDi(faccia, contorno);
+  }
+  if (suono && contorno.anteprimaLibreria && (scoperta || suono !== libreria)) {
+    return contorno.anteprimaLibreria(idInLibreria(suono)) ?? "";
+  }
+  if (!contorno.fruttiDi) return "";
+  for (const richiesta of [...cosa.prove].reverse()) {
+    const usciti = contorno.fruttiDi(richiesta);
+    const foto = usciti.find((v) => String(v.mime ?? "").startsWith("image/"));
+    if (foto) return foto.anteprima || foto.url;
+    const copertina = usciti.find((v) => v.anteprima);
+    if (copertina?.anteprima) return copertina.anteprima;
   }
   return "";
+}
+
+function indirizzoDellaFaccia(c: Collezionabile, scoperta: boolean, contorno: Contorno): string {
+  return facciaPerLaPagina(
+    {
+      faccia: facciaDi(c),
+      suono: suonoDi(c),
+      libreria: c.libreria,
+      prove: (c.prove ?? []).map((p) => p.richiesta),
+    },
+    scoperta,
+    contorno,
+  );
+}
+
+/** Quanto si puo' guardare un file per via del gioco: la faccia, o tutto. */
+export type Sguardo = "anteprima" | "tutto";
+
+/**
+ * ⚠ **Cosa della libreria puo' guardare una persona per via del gioco.**
+ *
+ * Chiesto l'11 settembre 2026 sera: «deve poter vedere l'anteprima e quando la
+ * sblocca puo' vederla bene o ascoltarla». Le foto e i brani delle combinazioni
+ * li genera chi comanda, e la libreria li fa vedere solo a lui, a chi li ha
+ * fatti e a quello che e' in bacheca: gli altri giocatori vedevano il disegno al
+ * posto della foto, anche nel negozio, dove si guarda per decidere se comprare.
+ *
+ * - una figurina che sta **in un pacchetto o nel negozio**: la sua faccia la
+ *   vede chiunque;
+ * - una figurina **sbloccata**: anche il file intero, da guardare grande o da
+ *   ascoltare.
+ *
+ * Si risponde solo per i file che una figurina porta con se' — gli allegati, la
+ * copertina, cosa e' uscito dalle prove, e il file che e' la figurina stessa (e
+ * quello solo a chi ce l'ha). Il resto della galleria resta chiuso: chi ospita
+ * chiede qui solo dopo che la libreria ha gia' detto di no.
+ */
+export function sguardiDelGioco(
+  deposito: Deposito,
+  chi: string,
+  contorno: Pick<Contorno, "fruttiDi">,
+): Map<string, Sguardo> {
+  const mie = new Set(deposito.conto(chi).collezione);
+  const inGioco = new Set<string>();
+  for (const p of deposito.pacchetti()) for (const id of p.dentro) inGioco.add(id);
+  const livelli = new Map<string, Sguardo>();
+  const segna = (id: string, quanto: Sguardo) => {
+    if (livelli.get(id) !== "tutto") livelli.set(id, quanto);
+  };
+  for (const c of deposito.collezionabili()) {
+    const sua = mie.has(c.id);
+    if (!sua && !inGioco.has(c.id) && !c.inVetrina) continue;
+    const quanto: Sguardo = sua ? "tutto" : "anteprima";
+    for (const a of c.allegati ?? []) segna(idInLibreria(a), quanto);
+    if (c.copertina) segna(idInLibreria(c.copertina), quanto);
+    if (c.libreria && sua) segna(idInLibreria(c.libreria), "tutto");
+    for (const p of c.prove ?? []) {
+      for (const v of contorno.fruttiDi?.(p.richiesta) ?? []) segna(v.id, quanto);
+    }
+  }
+  return livelli;
 }
 
 /**
@@ -301,7 +426,12 @@ function vestita(c: Collezionabile, contorno: Contorno, scoperta: boolean) {
      *
      * La prima e' la copertina della scheda; le altre stanno dietro.
      */
-    allegati: (c.allegati ?? []).map((a) => ({ url: dove(a), mime: a.mime })),
+    allegati: (c.allegati ?? []).map((a) => ({
+      url: dove(a),
+      mime: a.mime,
+      // Da guardare senza averla: vedi «anteprimaDelPezzo».
+      anteprima: anteprimaDelPezzo(a, contorno),
+    })),
     /** La copertina di un allegato che non si guarda: un brano, un video. */
     copertina: dove(c.copertina),
     /**
@@ -358,12 +488,12 @@ function vestiIlSimbolo(s: SimboloMacchinetta, contorno: Contorno) {
     casa: s.casa ?? null,
     daChi: s.daChi,
     daNome: s.casa ? "la casa" : contorno.nomeDi(s.daChi),
-    // Una foto, o la copertina di un brano; se no niente, e la pagina disegna.
-    faccia: s.faccia
-      ? indirizzoDi(s.faccia, contorno)
-      : s.suono && contorno.anteprimaLibreria
-        ? (contorno.anteprimaLibreria(s.suono.id) ?? "")
-        : "",
+    // La stessa faccia dell'inventario e della bustina: vedi «facciaPerLaPagina».
+    faccia: facciaPerLaPagina(
+      { faccia: s.faccia, suono: s.suono, prove: s.prove ?? [] },
+      true,
+      contorno,
+    ),
   };
 }
 
@@ -758,6 +888,7 @@ export function rispondi(
         })),
         dueFile: DUE_FILE_VALGONO,
         tuttoUguale: TUTTO_UGUALE_VALE,
+        seiUguali: SEI_UGUALI,
         simboli: quali.map((x) => vestiIlSimbolo(x, contorno)),
       });
     }
@@ -791,6 +922,7 @@ export function rispondi(
           simbolo: vestiIlSimbolo(f.simbolo, contorno),
         })),
         sbloccate: esito.sbloccate.map((s) => vestitaSbloccata(s, contorno)),
+        seiUguali: esito.seiUguali ? vestiIlSimbolo(esito.seiUguali, contorno) : null,
         vintoScritto: lire(esito.vinto),
         saldoScritto: lire(esito.saldo),
       });

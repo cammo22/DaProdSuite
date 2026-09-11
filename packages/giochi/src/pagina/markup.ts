@@ -82,6 +82,7 @@ export const MARKUP = `<header>
   -->
   <section class="pagina" id="p-fortuna">
     <div class="macchina" id="macchina">
+      <div class="tiri" id="macchina-tiri"></div>
       <div class="vetrina-macchina" id="macchina-rulli"></div>
       <div class="esito" id="macchina-esito"></div>
       <div class="puntate" id="puntate"></div>

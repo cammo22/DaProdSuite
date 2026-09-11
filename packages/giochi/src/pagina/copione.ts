@@ -1840,13 +1840,41 @@ export const COPIONE = `
    * canzoni facciamole sentire bene». Toccandolo nell'Inventario si apre grande,
    * con la copertina, e parte da solo.
    */
+  /**
+   * Il primo file uscito dalle prove, dall'ultima, che va bene a «vaBene». ⚠ Una
+   * combinazione generata e mai attaccata e' tua lo stesso: da sbloccata si
+   * guarda e si ascolta. 11 settembre 2026 sera: «quando la sblocca puo'
+   * vederla bene o ascoltarla».
+   */
+  function uscitoDi(c, vaBene) {
+    var prove = c.prove || [];
+    for (var j = prove.length - 1; j >= 0; j--) {
+      var usciti = prove[j].usciti || [];
+      for (var u = 0; u < usciti.length; u++) {
+        if (usciti[u] && usciti[u].url && vaBene(usciti[u].mime)) return usciti[u].url;
+      }
+    }
+    return "";
+  }
+
   function branoDi(c) {
     var att = c.allegati || [];
     for (var i = 0; i < att.length; i++) {
       if (att[i] && att[i].url && siAscolta(att[i].mime)) return att[i].url;
     }
     if (c.dove && siAscolta(c.mime)) return c.dove;
-    return "";
+    return uscitoDi(c, siAscolta);
+  }
+
+  /** La foto intera di una figurina, da guardare grande. */
+  function fotoDi(c) {
+    var eFoto = function (mime) { return String(mime || "").indexOf("image/") === 0; };
+    var att = c.allegati || [];
+    for (var i = 0; i < att.length; i++) {
+      if (att[i] && att[i].url && eFoto(att[i].mime)) return att[i].url;
+    }
+    if (c.dove && eFoto(c.mime)) return c.dove;
+    return uscitoDi(c, eFoto);
   }
 
   function casellaInvHtml(k, viste, primaVolta) {
@@ -2123,7 +2151,19 @@ export const COPIONE = `
         "tiro e' gia' pagato."
       : "Un giro sono due tiri: il primo riempie lo schermo, tieni quelle che ti servono e " +
         "rigira. Una fila paga, due il doppio, <b>tre file</b> il superbonus e sbloccano le " +
-        "figurine.";
+        "figurine. <b>Sei uguali</b>, in qualsiasi posto, sbloccano la loro.";
+    /**
+     * ⚠ **Il secondo tiro si riconosce da lontano.** Chiesto l'11 settembre 2026
+     * sera: «indichiamo bene anche quando c'e' il secondo giro». Prima lo diceva
+     * solo una riga grigia sotto le caselle, e il tasto cambiava una parola.
+     * Adesso i due tiri stanno scritti sopra la macchina, il bordo diventa d'oro
+     * e respira, e il tasto dice quale tiro e'.
+     */
+    $("macchina").classList.toggle("secondo", Boolean(giro));
+    $("macchina-tiri").innerHTML = giro
+      ? "<span>1&deg; tiro</span><b>2&deg; tiro &middot; gia' pagato</b>"
+      : "<b>1&deg; tiro</b><span>2&deg; tiro</span>";
+    if (giro) $("tira").textContent = "Rigira: secondo tiro";
   }
 
   /** La tabellina dei premi: quanto paga ogni grado. La dice il PC, non questa pagina. */
@@ -2138,7 +2178,8 @@ export const COPIONE = `
     h += "<div class=\\"nota\\">Due file pagano " + (dati.dueFile || 2) + " volte le due file. " +
       "Tre file pagano il superbonus del grado piu' alto, e le figurine delle file si " +
       "sbloccano; se sono tutte e nove uguali, il superbonus vale " + (dati.tuttoUguale || 2) +
-      " volte.</div>";
+      " volte. " + (dati.seiUguali || 6) + " caselle con la stessa figurina, in qualsiasi " +
+      "posto, la sbloccano anche senza file.</div>";
     h += "</div>";
     $("macchina-premi").innerHTML = h;
   }
@@ -2170,8 +2211,8 @@ export const COPIONE = `
         giro = { puntata: dati.aperto.puntata, caselle: caselle, tenute: tenute };
         disegnaPuntate();
         disegnaCaselle(caselle, "");
-        $("macchina-esito").innerHTML =
-          "<span style=\\"color:var(--spento)\\">Il secondo tiro ti aspetta.</span>";
+        $("macchina-esito").innerHTML = "<b style=\\"color:var(--oro)\\">Il secondo tiro ti " +
+          "aspetta:</b> tieni quelle che ti servono, e rigira.";
         return;
       }
       giro = null;
@@ -2252,8 +2293,8 @@ export const COPIONE = `
         macchinaGira = false;
         $("tira").disabled = false;
         disegnaPuntate();
-        $("macchina-esito").innerHTML =
-          "<span style=\\"color:var(--spento)\\">Tieni quelle che ti servono, e rigira.</span>";
+        $("macchina-esito").innerHTML = "<b style=\\"color:var(--oro)\\">Secondo tiro:</b> " +
+          "tocca le caselle da tenere, poi rigira.";
       });
     }).catch(function (e) {
       clearInterval(mescola);
@@ -2281,6 +2322,12 @@ export const COPIONE = `
         var da = esito.file[f].riga * forma.perFila;
         for (var p = 0; p < forma.perFila; p++) vincenti[da + p] = true;
       }
+      // Sei uguali: si accendono le loro caselle, dovunque siano.
+      if (esito.seiUguali) {
+        for (var q = 0; q < esito.caselle.length; q++) {
+          if (esito.caselle[q] && esito.caselle[q].id === esito.seiUguali.id) vincenti[q] = true;
+        }
+      }
       fermaACascata(esito.caselle, ferme, function (disegna) {
         giro = null;
         disegna(function (i) { return vincenti[i] ? "vince" : ""; });
@@ -2293,6 +2340,15 @@ export const COPIONE = `
       caricaMacchinetta();
       avviso(e.message, "male");
     });
+  }
+
+  /** Come e' andata una figurina sbloccata, detto a voce. */
+  function comeESbloccata(x) {
+    var come = x.copia
+      ? (x.copia.cresciuta && x.copia.prima ? "cresce a " + scalinoDi(x.copia.grado).nome
+        : x.copia.prima ? "una copia in piu'" : "nuova, della casa")
+      : x.nuova ? "e' tua" : "ce l'avevi: " + soldi(x.lire);
+    return x.simbolo.titolo + ": " + come;
   }
 
   /** Cos'e' successo, detto come si direbbe a voce. E la scena che ci va dietro. */
@@ -2325,6 +2381,25 @@ export const COPIONE = `
         " \u00b7 " + soldi(esito.vinto);
       grande(esito.tuttoUguale ? "Tutto uguale" : "Tre file", "Sbloccate", detto.join("\\n"),
         s.colore);
+      return;
+    }
+
+    /**
+     * ⚠ **Sei uguali, dovunque**: la figurina si sblocca anche senza file.
+     * Chiesto l'11 settembre 2026 sera. Le file che ci sono pagano lo stesso, e
+     * sono gia' dentro «vinto».
+     */
+    if (esito.seiUguali) {
+      var s6 = scalinoDi(esito.seiUguali.grado);
+      $("macchina-rulli").classList.add("pieno");
+      lampo(s6.colore);
+      scuoti();
+      coriandoli(120, [s6.colore, "#ffd166", "#ffffff"]);
+      if (esito.vinto > 0) numeroVolante("+" + soldi(esito.vinto), "#ffd166");
+      $("macchina-esito").innerHTML = "SEI UGUALI &middot; " + sicuro(esito.seiUguali.titolo) +
+        (esito.vinto > 0 ? " &middot; " + soldi(esito.vinto) : "");
+      grande("Sei uguali", "Sbloccata", esito.sbloccate.map(comeESbloccata).join("\\n"),
+        s6.colore);
       return;
     }
 
@@ -3381,6 +3456,9 @@ export const COPIONE = `
       var cosaInv = invCose[casellaInv.getAttribute("data-inv")];
       if (cosaInv && branoDi(cosaInv)) {
         grandeCosa(branoDi(cosaInv), "audio/*", cosaInv.titolo, cosaInv.faccia);
+      } else if (cosaInv && fotoDi(cosaInv)) {
+        // Una foto tua si guarda grande, intera: e' il premio di averla sbloccata.
+        grandeCosa(fotoDi(cosaInv), "image/*", cosaInv.titolo);
       } else if (cosaInv) mostraFigurina(cosaInv);
       return;
     }

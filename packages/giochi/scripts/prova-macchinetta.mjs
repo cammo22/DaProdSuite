@@ -41,6 +41,7 @@ import {
   quantoPagaUnaFila,
   rigiraLaMacchinetta,
   SECONDO_TIRO,
+  SEI_UGUALI,
   suonoDi,
   tiraLaMacchinetta,
   TUTTO_UGUALE_VALE,
@@ -267,9 +268,15 @@ prova("le caselle dicono quello che dice il conto, sempre", () =>
       uguale(e.file.map((f) => f.riga), piene.map((p, r) => (p ? r : -1)).filter((r) => r >= 0),
         "le file pagate sono proprio quelle che si vedono");
       uguale(e.pieno, piene.every(Boolean), "«tre file» vuol dire tutte e tre piene");
+      const conta = {};
+      for (const c of e.caselle) conta[c.id] = (conta[c.id] ?? 0) + 1;
+      const sei = Object.keys(conta).find((id) => conta[id] >= SEI_UGUALI) ?? null;
+      uguale(e.seiUguali ? e.seiUguali.id : null, sei, "i sei uguali sono quelli che si vedono");
       if (!e.pieno) {
         const somma = e.file.reduce((s, f) => s + f.lire, 0);
-        uguale(e.vinto, somma * (e.file.length === 2 ? DUE_FILE_VALGONO : 1),
+        // I sei uguali sbloccano anche senza file: un doppione paga il suo prezzo.
+        const doppioni = e.sbloccate.reduce((s, x) => s + x.lire, 0);
+        uguale(e.vinto, somma * (e.file.length === 2 ? DUE_FILE_VALGONO : 1) + doppioni,
           "una fila il suo premio, due il doppio");
       }
     }
@@ -369,6 +376,40 @@ prova("tutto uguale paga il superbonus doppio, e una della casa nasce", () =>
     uguale(e.sbloccate.length, 1);
     uguale(e.sbloccate[0].copia.copie, 1, "la prima copia");
     uguale(d.conto("pino").copie["casa-01"], 1);
+  }),
+);
+
+/**
+ * ⚠ **Sei uguali, in qualsiasi posto, sbloccano.** Chiesto l'11 settembre 2026
+ * sera: «mettiamo che 6 immagini uguali qualsiasi posizione si sblocca». Si
+ * tengono le tre coppie della prima della casa e col dado alto le file non si
+ * completano: sei uguali sparse, nessuna fila, e la figurina si sblocca lo stesso.
+ */
+prova("sei uguali dovunque sbloccano, anche senza file", () =>
+  conCartella((file) => {
+    const d = new Deposito(file);
+    conUnPacchetto(d, 3);
+    uguale(SEI_UGUALI, 6);
+    const primo = tiraLaMacchinetta(d, "pino", 100, dado(0.1, 0.03, 0.001, 0.1));
+    const tenute = [0, 1, 2].flatMap((r) => laCoppia(primo.caselle, r));
+    uguale(tenute.length, 6, "tre coppie della stessa");
+    const e = rigiraLaMacchinetta(d, "pino", tenute, dado(0.99));
+    uguale(e.file.length, 0, "nessuna fila");
+    uguale(e.seiUguali && e.seiUguali.id, "casa-01", "sei volte la prima della casa");
+    uguale(e.sbloccate.map((s) => s.simbolo.id), ["casa-01"]);
+    uguale(d.conto("pino").copie["casa-01"], 1, "e nasce");
+  }),
+);
+
+prova("meno di sei uguali non sbloccano", () =>
+  conCartella((file) => {
+    const d = new Deposito(file);
+    conUnPacchetto(d, 3);
+    const primo = tiraLaMacchinetta(d, "pino", 100, dado(0.1, 0.03, 0.001, 0.1));
+    const tenute = [...laCoppia(primo.caselle, 0), ...laCoppia(primo.caselle, 1)];
+    const e = rigiraLaMacchinetta(d, "pino", tenute, dado(0.99));
+    uguale(e.seiUguali, null, "quattro tenute, e niente fila");
+    uguale(e.sbloccate.length, 0);
   }),
 );
 

@@ -906,6 +906,19 @@ nav .pallino{display:inline-block; min-width:16px; padding:0 4px; margin-left:4p
  * file erano un metro e mezzo di macchina da scorrere.
  */
 .macchina{max-width:520px; margin:0 auto}
+/* ⚠ Il secondo tiro si riconosce da lontano (11 settembre 2026 sera: «indichiamo
+   bene anche quando c'e' il secondo giro»): i due tiri scritti sopra, il bordo
+   d'oro che respira, e il tasto d'oro. */
+.tiri{display:flex; justify-content:center; gap:8px; margin:0 0 8px; font-size:12px;
+  letter-spacing:.03em}
+.tiri span,.tiri b{padding:4px 12px; border-radius:999px; border:1px solid var(--riga);
+  color:var(--spento); font-weight:600}
+.tiri b{border-color:var(--oro); background:var(--oro); color:#141414; font-weight:800}
+.macchina.secondo .vetrina-macchina{border-color:var(--oro);
+  animation:secondoTiro 1.6s ease-in-out infinite}
+@keyframes secondoTiro{0%,100%{box-shadow:0 0 0 rgba(255,209,102,0)}
+  50%{box-shadow:0 0 24px rgba(255,209,102,.5)}}
+.macchina.secondo #tira{background:var(--oro); color:#141414}
 .vetrina-macchina{display:grid; grid-template-columns:repeat(3,1fr); gap:7px;
   padding:10px; border-radius:16px; border:1px solid var(--riga);
   background:linear-gradient(180deg, rgba(10,12,18,.9), rgba(16,10,22,.9));

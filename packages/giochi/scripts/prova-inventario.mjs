@@ -27,6 +27,7 @@ import {
   paginaGiochi,
   prezzoNelloShop,
   rispondi,
+  sguardiDelGioco,
   unaCopiaInPiu,
 } from "../dist/index.js";
 import vm from "node:vm";
@@ -354,6 +355,123 @@ prova("un brano senza copertina prende quella che la libreria gli ha gia' fatto"
     const r = rispondi(d, gino, conCopertine, "GET", "/inventario", {});
     const casella = r.dati.pacchetti[0].caselle[0];
     uguale(casella.cosa.faccia, "/libreria/anteprima/lib-canzone");
+  }),
+);
+
+/* ------------------------------------------- la faccia da cosa e' uscito */
+
+/**
+ * ⚠ **Una combinazione generata ha la faccia di quello che ne e' uscito.**
+ * L'11 settembre 2026 sera, nel file vero, 35 combinazioni su 58 erano state
+ * generate e nessuno aveva attaccato il risultato: in «Mie» si vedevano, nel
+ * l'inventario no. Il contorno qui sotto fa la parte della libreria: per ogni
+ * richiesta, i file che ne sono usciti. Quella nel forno non ha ancora niente.
+ */
+const conFrutti = {
+  nomeDi: (id) => id,
+  anteprimaLibreria: (id) => "/libreria/anteprima/" + encodeURIComponent(id),
+  fruttiDi: (r) =>
+    ({
+      "r-vecchia": [{ id: "vecchia", titolo: "v", mime: "image/png", url: "/libreria/file/vecchia" }],
+      "r-nuova": [{ id: "nuova", titolo: "n", mime: "image/png", url: "/libreria/file/nuova" }],
+      "r-brano": [
+        { id: "b", titolo: "b", mime: "audio/mpeg", url: "/libreria/file/b", anteprima: "/libreria/anteprima/b" },
+      ],
+    })[r] ?? [],
+};
+
+/** La faccia che arriva alla pagina per la prima casella dell'inventario di Gino. */
+function facciaInInventario(d, id) {
+  creaPacchetto(d, "capo");
+  d.colleziona("gino", id);
+  const r = rispondi(d, gino, conFrutti, "GET", "/inventario", {});
+  return r.dati.pacchetti[0].caselle[0].cosa.faccia;
+}
+
+prova("una combinazione generata e mai attaccata prende la faccia dall'ultima prova", () =>
+  conCartella((file) => {
+    const d = new Deposito(file);
+    const c = presa(d, "a", 100, false);
+    c.prove = [
+      { richiesta: "r-vecchia", quando: 1 },
+      { richiesta: "r-nuova", quando: 2 },
+      { richiesta: "r-forno", quando: 3 },
+    ];
+    uguale(facciaInInventario(d, "a"), "/libreria/file/nuova", "l'ultima che ha dato qualcosa");
+  }),
+);
+
+prova("un brano generato e mai attaccato prende la sua copertina", () =>
+  conCartella((file) => {
+    const d = new Deposito(file);
+    const c = presa(d, "a", 100, false);
+    c.prove = [{ richiesta: "r-brano", quando: 1 }];
+    uguale(facciaInInventario(d, "a"), "/libreria/anteprima/b");
+  }),
+);
+
+prova("quello attaccato a mano vince su quello uscito dalle prove", () =>
+  conCartella((file) => {
+    const d = new Deposito(file);
+    const c = presa(d, "a", 100);
+    c.prove = [{ richiesta: "r-nuova", quando: 1 }];
+    // La foto della libreria arriva dalla sua anteprima: la faccia la vede chiunque.
+    uguale(facciaInInventario(d, "a"), "/libreria/anteprima/f-a");
+  }),
+);
+
+/**
+ * ⚠ **Un brano attaccato col suo indirizzo intero trova la sua copertina.** Nel
+ * file vero l'id era «/libreria/file/musica%2Faudio%2F…»: la copertina c'era sul
+ * disco, ma la si chiedeva con un nome che la libreria non conosce.
+ */
+prova("un brano che si ricorda l'indirizzo intero trova la sua copertina", () =>
+  conCartella((file) => {
+    const d = new Deposito(file);
+    const c = presa(d, "a", 100, false);
+    const indirizzo = "/libreria/file/" + encodeURIComponent("musica/audio/Con rabbia.mp3");
+    c.allegati = [{ id: indirizzo, mime: "audio/mpeg", url: indirizzo }];
+    uguale(
+      facciaInInventario(d, "a"),
+      "/libreria/anteprima/" + encodeURIComponent("musica/audio/Con rabbia.mp3"),
+    );
+  }),
+);
+
+prova("sui rulli della macchinetta la figurina ha la stessa faccia", () =>
+  conCartella((file) => {
+    const d = new Deposito(file);
+    const c = presa(d, "a", 100, false);
+    c.prove = [{ richiesta: "r-nuova", quando: 1 }];
+    creaPacchetto(d, "capo");
+    const r = rispondi(d, gino, conFrutti, "GET", "/macchinetta", {});
+    vero(JSON.stringify(r.dati).includes("/libreria/file/nuova"), "la faccia uscita dalla prova gira anche li'");
+  }),
+);
+
+/**
+ * ⚠ **Chi gioca vede la faccia di quello che c'e' in gioco, e il file intero di
+ * quello che ha sbloccato.** Chiesto l'11 settembre 2026 sera: «deve poter
+ * vedere l'anteprima e quando la sblocca puo' vederla bene o ascoltarla». E
+ * soprattutto quello che **non** deve uscire: una figurina non ancora in un
+ * pacchetto non apre niente.
+ */
+prova("chi gioca vede la faccia di quello che e' in gioco, e intero quello che ha sbloccato", () =>
+  conCartella((file) => {
+    const d = new Deposito(file);
+    const a = presa(d, "a", 100);
+    a.prove = [{ richiesta: "r-nuova", quando: 1 }];
+    creaPacchetto(d, "capo");
+    presa(d, "dopo", 100);
+    let visti = sguardiDelGioco(d, "gino", conFrutti);
+    uguale(visti.get("f-a"), "anteprima", "la foto di una che sta in un pacchetto");
+    uguale(visti.get("nuova"), "anteprima", "anche quella uscita dalle prove");
+    uguale(visti.get("f-dopo"), undefined, "una non ancora in un pacchetto non si guarda");
+    uguale(visti.get("vecchia"), undefined, "e una prova che non e' sua non c'entra");
+    d.colleziona("gino", "a");
+    visti = sguardiDelGioco(d, "gino", conFrutti);
+    uguale(visti.get("f-a"), "tutto", "sbloccata: si guarda intera");
+    uguale(visti.get("nuova"), "tutto");
   }),
 );
 
