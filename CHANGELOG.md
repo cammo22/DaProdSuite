@@ -10,6 +10,34 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ---
 
+## 1.3.6 — Il tunnel non si butta per un inciampo
+
+> «Con questo nuovo update non mi fa collegare da internet, funzionava bene
+> prima.»
+
+Il registro del tunnel dice cos'è successo. All'avvio dopo l'aggiornamento alla
+1.3.5 la suite ha trovato il tunnel di prima ancora acceso, gli ha chiesto «chi
+sei» passando da Internet, **non ha avuto risposta entro otto secondi**, e l'ha
+chiuso. Ne è nato uno con un altro nome, e il telefono fuori casa aveva in
+tasca quello vecchio. Il codice della connessione non era cambiato: è andato
+storto un controllo, una volta — le altre volte, oggi compreso, era passato.
+
+- **Prima di buttare un tunnel si riprova**: quattro volte, in quasi un minuto.
+  Si chiude solo se non risponde mai. Tenere un tunnel morto un minuto in più
+  non costa niente; buttarne uno vivo chiude fuori chi è fuori casa.
+- **Si chiude solo un processo che è davvero `cloudflared`.** Windows riusa i
+  numeri dei processi, e il controllo si fidava del numero: poteva scambiare un
+  altro programma per il tunnel, e chiuderlo.
+- **Il registro dice quando e perché.** Ogni decisione ha l'ora e il motivo, e
+  `cloudflared` scrive un registro suo — `logs/cloudflared.log` — che non si
+  perde quando la suite si riavvia. Perché stavolta non abbia risposto non si
+  sa, ed è proprio per questo: le sue righe si perdevano.
+
+⚠ **Quello che resta aperto.** Finché da fuori si passa da un indirizzo che
+cambia, un tunnel che muore davvero porta un nome nuovo. La cura per sempre è un
+indirizzo fisso — un dominio proprio, o una porta sul router con un DDNS — e la
+decisione è tua.
+
 ## 1.3.5 — Due tiri, e le figurine della casa
 
 La sala giochi, provata la sera stessa. La macchinetta si gioca in due tiri,
