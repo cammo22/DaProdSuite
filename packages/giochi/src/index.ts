@@ -22,9 +22,11 @@ export { Deposito } from "./deposito";
 export { paginaGiochi } from "./pagina";
 export {
   rispondi,
+  sguardiDelGioco,
   type Chi,
   type Contorno,
   type Risposta,
+  type Sguardo,
   type VoceLibreria,
 } from "./rotte";
 export {
@@ -86,6 +88,7 @@ export {
   quantoPagaUnaFila,
   rigira as rigiraLaMacchinetta,
   SECONDO_TIRO,
+  SEI_UGUALI,
   suonoDi,
   tira as tiraLaMacchinetta,
   TUTTO_UGUALE_VALE,

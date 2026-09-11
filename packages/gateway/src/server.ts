@@ -91,7 +91,13 @@ import { copyFileSync, createReadStream, createWriteStream, mkdirSync, rmSync, s
 import { join, normalize } from "node:path";
 import { elencoAzioni, eseguiAzione, type Esecutore } from "./azioni";
 import { paginaConsole } from "./console";
-import { paginaGiochi, rispondi as rispondiAiGiochi, type Deposito as DepositoGiochi } from "@daprod/giochi";
+import {
+  paginaGiochi,
+  rispondi as rispondiAiGiochi,
+  sguardiDelGioco,
+  type Deposito as DepositoGiochi,
+  type Sguardo,
+} from "@daprod/giochi";
 import { Remoto } from "./remoto";
 import type { Rete } from "./rete";
 import type {
@@ -245,6 +251,8 @@ export class Gateway {
   private chiacchierata: FornitoreChiacchierata | undefined;
   private stili: FornitoreStili | undefined;
   private giochi: DepositoGiochi | undefined;
+  /** Quello che la sala giochi fa guardare, per persona: vedi `sguardoNeiGiochi`. */
+  private sguardi = new Map<string, { quando: number; livelli: Map<string, Sguardo> }>();
   private rete: Rete | undefined;
 
   constructor(opzioni: GatewayOpzioni) {
@@ -544,6 +552,8 @@ export class Gateway {
           (corpo ?? {}) as Record<string, unknown>,
         );
         this.json(res, esito.codice, esito.dati);
+        // Una mossa puo' aver sbloccato qualcosa: quello che si puo' guardare si rifa'.
+        if (req.method !== "GET") this.sguardi.clear();
         /**
          * Una mossa che cambia il conto di qualcuno la sanno anche gli altri: la
          * classifica e la fila delle combinazioni si aggiornano dove sono
@@ -1296,10 +1306,17 @@ export class Gateway {
       const anteprimaDi = percorso.match(/^\/libreria\/anteprima\/(.+)$/);
       if (anteprimaDi && (req.method === "GET" || req.method === "HEAD")) {
         if (!this.libreria?.anteprima) return this.errore(res, 404, "Niente anteprime qui.");
-        const percorsoFile = await this.libreria.anteprima(
-          decodeURIComponent(anteprimaDi[1] ?? ""),
-          dispositivo.id,
-        );
+        const idAnteprima = decodeURIComponent(anteprimaDi[1] ?? "");
+        let percorsoFile = await this.libreria.anteprima(idAnteprima, dispositivo.id);
+        // ⚠ La faccia di una figurina la vede chi la guarda nella sala giochi,
+        // anche quando il file e' di chi l'ha generata: vedi «sguardoNeiGiochi».
+        if (
+          !percorsoFile &&
+          this.libreria.anteprimaConcessa &&
+          this.sguardoNeiGiochi(dispositivo.id, idAnteprima)
+        ) {
+          percorsoFile = await this.libreria.anteprimaConcessa(idAnteprima);
+        }
         if (!percorsoFile) return this.errore(res, 404, "Per questa non c'è un'anteprima.");
         /**
          * **Il tipo si legge dal file, non si decide qui.**
@@ -2395,13 +2412,55 @@ export class Gateway {
    * Dal gateway esce **solo** un percorso che la libreria ha riconosciuto da un
    * id suo: quello che arriva da Internet è l'id, mai un percorso.
    */
+  /**
+   * ⚠ **Cosa della libreria si guarda per via della sala giochi.** Chiesto
+   * l'11 settembre 2026 sera: «deve poter vedere l'anteprima e quando la
+   * sblocca puo' vederla bene o ascoltarla». Le foto delle combinazioni le
+   * genera chi comanda, e la libreria le fa vedere solo a lui: gli altri
+   * giocatori vedevano il disegno al posto della foto, anche nel negozio.
+   *
+   * Si chiede qui solo quando la libreria ha gia' detto di no, e il gioco
+   * risponde solo per i file che una figurina porta con se' (vedi
+   * `sguardiDelGioco`): il resto della galleria resta chiuso come prima.
+   *
+   * Si tiene dieci secondi per persona: l'inventario chiede quaranta facce in
+   * un colpo, e ognuna rifarebbe il giro di tutte le figurine. Una mossa nel
+   * gioco lo butta (vedi la rotta `/giochi`), cosi' una figurina appena
+   * sbloccata si apre subito.
+   */
+  private sguardoNeiGiochi(chi: string, id: string): Sguardo | null {
+    if (!this.giochi) return null;
+    const adesso = Date.now();
+    let visto = this.sguardi.get(chi);
+    if (!visto || adesso - visto.quando > 10_000) {
+      visto = {
+        quando: adesso,
+        livelli: sguardiDelGioco(this.giochi, chi, {
+          fruttiDi: (richiesta) =>
+            (this.libreria?.elenco({ chi, dove: "tutte", richiesta, quanti: 8 }) ?? []).map((v) => ({
+              id: v.id,
+              titolo: v.nome,
+              mime: v.mime,
+              url: "",
+            })),
+        }),
+      };
+      this.sguardi.set(chi, visto);
+    }
+    return visto.livelli.get(id) ?? null;
+  }
+
   private serviLibreria(
     req: IncomingMessage,
     res: ServerResponse,
     id: string,
     chi: Dispositivo,
   ): void {
-    const voce = this.libreria?.file(id, chi.id);
+    let voce = this.libreria?.file(id, chi.id) ?? null;
+    // Una figurina sbloccata si guarda intera anche se il file e' di un altro.
+    if (!voce && this.libreria?.fileConcesso && this.sguardoNeiGiochi(chi.id, id) === "tutto") {
+      voce = this.libreria.fileConcesso(id);
+    }
     if (!voce) {
       this.errore(res, 404, "Non trovo questo file nella libreria.");
       return;

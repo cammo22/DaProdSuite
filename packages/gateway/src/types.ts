@@ -569,6 +569,16 @@ export interface FornitoreLibreria {
    * non scorre.
    */
   anteprima?(id: string, chi: string): Promise<string | null>;
+  /**
+   * ⚠ **Per la sala giochi: il file e l'anteprima senza la regola di chi li
+   * puo' vedere.** Il permesso lo da' il gateway chiedendo al gioco
+   * (`sguardiDelGioco`): la faccia di una figurina la vede chi la guarda in un
+   * pacchetto o nel negozio, il file intero chi l'ha sbloccata. Chiesto l'11
+   * settembre 2026 sera; senza, gli altri giocatori vedevano il disegno al
+   * posto delle foto generate da chi comanda.
+   */
+  fileConcesso?(id: string): { percorso: string; nome: string; mime: string; bytes: number } | null;
+  anteprimaConcessa?(id: string): Promise<string | null>;
   /** Mette o toglie il mi piace di questa persona. Torna quanti sono adesso. */
   miPiace?(id: string, chi: string, mi: boolean): number | null;
   /**

@@ -13,6 +13,9 @@
  * > rigira. Se l'utente non seleziona nulla viene comunque aggiornata la
  * > tabella: un giro in realta' sono due click.»
  *
+ * E la sera stessa: «mettiamo che 6 immagini uguali qualsiasi posizione si
+ * sblocca» (`SEI_UGUALI`).
+ *
  * ⚠ **Un giro sono due tiri, e si paga una volta.** Il primo riempie lo schermo
  * e non paga niente: serve a vedere cosa c'e'. Si tengono le caselle che
  * servono, e il secondo cambia le altre — ed e' li' che si decide. Fra i due il
@@ -81,6 +84,18 @@ export const DUE_FILE_VALGONO = 2;
 export const TUTTO_UGUALE_VALE = 2;
 
 /**
+ * ⚠ **Sei caselle con la stessa figurina, in qualsiasi posto, la sbloccano.**
+ * Chiesto l'11 settembre 2026 sera: «mettiamo che 6 immagini uguali qualsiasi
+ * posizione si sblocca». Non servono le file: si contano le caselle.
+ *
+ * Non ha una frequenza scritta come le file, ed e' voluto: nasce da cosa si
+ * tiene fra i due tiri. Con le figurine dei pacchetti e le cinquanta della casa
+ * sui rulli, sei uguali per caso escono di rado; ci si arriva tenendo le coppie
+ * della stessa figurina.
+ */
+export const SEI_UGUALI = 6;
+
+/**
  * ⚠ **Quanto paga una fila: da due a tredici volte la puntata**, secondo il
  * grado della figurina che l'ha fatta. «Un premio in lire leggero», parole sue.
  */
@@ -110,6 +125,12 @@ export interface SimboloMacchinetta {
   faccia: DallaLibreria | null;
   /** Il brano o il video attaccato: la sua copertina la sa la libreria. */
   suono: DallaLibreria | null;
+  /**
+   * Le prove mandate a generare, dalla prima all'ultima. Se non c'e' niente
+   * attaccato, la faccia la da' cosa ne e' uscito: vedi `facciaPerLaPagina` in
+   * `rotte.ts`, che e' la stessa per i rulli e per l'inventario.
+   */
+  prove?: string[];
   tipo: TipoCollezionabile | "casa";
   tavolo: string;
   /** Solo per le figurine della casa: il segno e la tinta del disegno. */
@@ -174,6 +195,7 @@ export function mazzoMacchinetta(deposito: Deposito, chi: string): SimboloMacchi
       daChi: c.daChi,
       faccia: facciaDi(c),
       suono: suonoDi(c),
+      prove: (c.prove ?? []).map((p) => p.richiesta),
       tipo: c.tipo,
       tavolo: c.tavolo ?? "",
     });
@@ -326,6 +348,8 @@ export interface EsitoMacchinetta {
   pieno: boolean;
   /** Tre file con la stessa figurina: tutto lo schermo uguale. */
   tuttoUguale: boolean;
+  /** La figurina che sta in almeno sei caselle, se c'e': si sblocca (`SEI_UGUALI`). */
+  seiUguali: SimboloMacchinetta | null;
   sbloccate: Sbloccata[];
   /** Quante lire sono entrate in tutto, doppioni compresi. */
   vinto: number;
@@ -364,7 +388,18 @@ function secondoTiroDellaFila(
   return fuori;
 }
 
-/** Sblocca una figurina vinta con le tre file. */
+/** La figurina che occupa almeno `SEI_UGUALI` caselle, dovunque siano. */
+function seiDellaStessa(caselle: SimboloMacchinetta[]): SimboloMacchinetta | null {
+  const quante = new Map<string, number>();
+  for (const s of caselle) {
+    const n = (quante.get(s.id) ?? 0) + 1;
+    quante.set(s.id, n);
+    if (n >= SEI_UGUALI) return s;
+  }
+  return null;
+}
+
+/** Sblocca una figurina vinta con le tre file, o con sei uguali. */
 function sblocca(deposito: Deposito, chi: string, s: SimboloMacchinetta): Sbloccata {
   if (s.casa) {
     const copia = unaCopiaInPiu(deposito, chi, s.id);
@@ -422,24 +457,29 @@ export function rigira(
   }
   const pieno = file.length === FILE;
   const tuttoUguale = pieno && file.every((f) => f.simbolo.id === file[0]!.simbolo.id);
+  const seiUguali = seiDellaStessa(caselle);
 
   let vinto = 0;
   const sbloccate: Sbloccata[] = [];
+  // Una figurina si sblocca una volta sola per giro, anche se la vincono sia le
+  // file sia i sei uguali: tutto lo schermo uguale fa tutte e due le cose.
+  const giaViste = new Set<string>();
+  const sbloccaUnaVolta = (s: SimboloMacchinetta) => {
+    if (giaViste.has(s.id)) return;
+    giaViste.add(s.id);
+    const fatta = sblocca(deposito, chi, s);
+    sbloccate.push(fatta);
+    vinto += fatta.lire;
+  };
   if (pieno) {
     let meglio = file[0]!.simbolo;
     for (const f of file) if (altezza(f.simbolo.grado) > altezza(meglio.grado)) meglio = f.simbolo;
     vinto = puntata * quantoPagaIlPieno(meglio.grado) * (tuttoUguale ? TUTTO_UGUALE_VALE : 1);
-    const giaViste = new Set<string>();
-    for (const f of file) {
-      if (giaViste.has(f.simbolo.id)) continue;
-      giaViste.add(f.simbolo.id);
-      const s = sblocca(deposito, chi, f.simbolo);
-      sbloccate.push(s);
-      vinto += s.lire;
-    }
+    for (const f of file) sbloccaUnaVolta(f.simbolo);
   } else {
     vinto = file.reduce((somma, f) => somma + f.lire, 0) * (file.length === 2 ? DUE_FILE_VALGONO : 1);
   }
+  if (seiUguali) sbloccaUnaVolta(seiUguali);
 
   if (vinto > 0) deposito.muovi(chi, vinto);
   deposito.salva();
@@ -450,6 +490,7 @@ export function rigira(
     file,
     pieno,
     tuttoUguale,
+    seiUguali,
     sbloccate,
     vinto,
     saldo: deposito.conto(chi).saldo,

@@ -700,6 +700,23 @@ const fornitoreLibreria: FornitoreLibreria = {
     };
   },
 
+  /**
+   * ⚠ **Per la sala giochi: il file senza chiedere di chi e'.** Il permesso
+   * l'ha gia' dato il gateway chiedendo al gioco (`sguardiDelGioco`): questa
+   * persona ha sbloccato la figurina che porta questo file. Qui lo si trova e
+   * basta. Chiesto l'11 settembre 2026 sera.
+   */
+  fileConcesso(id) {
+    const elemento = libreria.trova(id);
+    if (!elemento) return null;
+    return {
+      percorso: elemento.percorso,
+      nome: elemento.nome,
+      bytes: elemento.bytes,
+      mime: mimeDi(elemento.percorso, elemento.tipo),
+    };
+  },
+
   pubblica(id, chi, pubblicato, didascalia) {
     // `decide()` risponde alla stessa domanda che fa la galleria: chi ha il
     // permesso di decidere cura la bacheca di casa anche per gli altri.
@@ -783,6 +800,12 @@ const fornitoreLibreria: FornitoreLibreria = {
     const vista = suo || libreria.inBacheca(elemento);
     if (!vista) return null;
     return anteprimaDi(elemento);
+  },
+
+  /** Come `fileConcesso`, per la faccia: il permesso l'ha gia' dato il gioco. */
+  async anteprimaConcessa(id) {
+    const elemento = libreria.trova(id);
+    return elemento ? anteprimaDi(elemento) : null;
   },
 
   /* --------------------------------------------------------- i commenti */

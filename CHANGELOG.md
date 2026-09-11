@@ -10,6 +10,38 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ---
 
+## 1.3.8 — Ogni figurina con la sua faccia, e il secondo tiro che si vede
+
+> «Si continuano a non vedere certe immagini: c'è un motivo, tipo perché non
+> sbloccate, o è un bug?»
+
+Era un difetto. Quelle caselle mostravano la combinazione intera, quindi erano
+già tue. Nel file vero, 35 combinazioni su 58 erano state generate, ma nessuno
+aveva attaccato il risultato alla figurina: la scheda in «Mie» le faceva vedere,
+l'inventario no.
+
+- **Una combinazione generata ha la faccia di quello che ne è uscito**, anche se
+  nessuno l'ha attaccata: la prima immagine dell'ultima prova, o la copertina del
+  brano. Quello che attacchi a mano vince sempre. Vale ovunque: inventario,
+  bustina, negozio e rulli della Fortuna.
+- **I brani ritrovano la copertina.** Un brano attaccato si ricordava col suo
+  indirizzo intero invece che col suo nome in libreria, e chi cercava la
+  copertina non lo riconosceva. La copertina c'era, accanto al brano.
+- **Anche gli altri giocatori vedono le foto.** Prima la libreria le faceva
+  vedere solo a chi le aveva generate e a chi comanda: gli altri vedevano il
+  disegno, anche nel negozio. Adesso la faccia di quello che c'è nei pacchetti e
+  nel negozio la vede chiunque, e quando la sblocchi la puoi aprire grande o
+  ascoltare. Il resto della galleria resta chiuso come prima.
+- **Nell'inventario, toccando una figurina tua** si apre grande la foto, o parte
+  il brano, anche quelli usciti dalle prove.
+- **Fortuna: il secondo tiro si vede.** Sopra la macchina ci sono i due tiri, e
+  quello a cui sei è acceso; fra i due il bordo diventa d'oro e respira, e il
+  tasto dice «Rigira: secondo tiro».
+- **Fortuna: sei uguali, in qualsiasi posto, sbloccano la figurina**, anche
+  senza file. Le file che ci sono pagano lo stesso.
+
+---
+
 ## 1.3.7 — Il computer lascia un cartello
 
 > «Me lo apre il sito, ma sull'app aggiornata per telefono non mi fa entrare:

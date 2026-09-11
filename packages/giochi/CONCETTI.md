@@ -833,6 +833,7 @@ quattro volte chi punta cinquanta — e rischia quattro volte tanto.
 | due file | le due file, **il doppio** |
 | **tre file** | il superbonus del grado piu' alto — **×40** fino a **×150** — e **le figurine delle file si sbloccano** |
 | **tutto lo schermo uguale** | il superbonus **due volte**, e la figurina si sblocca |
+| **sei caselle con la stessa figurina**, in qualsiasi posto | la figurina si sblocca, anche senza file |
 
 ### ⚠ Un giro sono due tiri, dall'11 settembre 2026
 
@@ -861,6 +862,12 @@ giocando bene e guarda il conto scendere.
 ⚠ **Tre file sbloccano, e sono rarissime**: una volta ogni qualche migliaio di
 giri. E' la stessa strada di sempre per avere una figurina senza inventarla ne'
 comprarla (§ 11): la fortuna costa tempo.
+
+⚠ **Sei uguali, dovunque, sbloccano**, dall'11 settembre 2026 sera: «mettiamo che
+6 immagini uguali qualsiasi posizione si sblocca». Si contano le caselle, non le
+file. Non ha una frequenza scritta come le file, ed e' voluto: nasce da cosa si
+tiene fra i due tiri (`SEI_UGUALI`). La stessa sera il secondo tiro ha preso un
+segno che si vede da lontano: «indichiamo bene anche quando c'e' il secondo giro».
 
 ⚠ **Piu' rapida**, lo stesso giorno: «la slot Fortuna facciamo l'animazione piu'
 rapida». Le caselle si fermano a cascata in meno di un secondo, e quelle tenute
