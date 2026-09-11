@@ -2,8 +2,8 @@
  * Arbitro della GPU.
  *
  * La macchina di riferimento ha una RTX 4060 da 8 GB: ci sta un modello pesante
- * alla volta e basta. Se apri DaProdFoto mentre DaProdMusica tiene MiniMax Music 3
- * in VRAM, la seconda generazione muore per out-of-memory.
+ * alla volta e basta. Se apri DaProdFoto mentre DaProdMusica tiene ACE-Step in
+ * VRAM, la seconda generazione muore per out-of-memory.
  *
  * Quindi: chi vuole la GPU la chiede qui, e chi la teneva prima viene spento.
  * Un solo detentore per volta fra le app marcate `gpuHeavy`.

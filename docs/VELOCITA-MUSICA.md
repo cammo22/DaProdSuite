@@ -4,6 +4,16 @@ Cosa rallenta DaProdMusica, cosa fa WanGP che noi non facciamo, e cosa di quello
 si può davvero portare qui dentro. Scritto il 16 agosto 2026, dopo aver letto il
 loro codice e il nostro motore.
 
+> ⚠ **MiniMax H3 e MiniMax Music 3 sono usciti dalla suite nella 1.3.2**, l'11
+> settembre 2026: «togliamo i modelli minimax h3 e minimax musica, che sono
+> modelli che al momento non mi piacciono, e alleggeriamo molto». Fra i due erano
+> **58 GB** di catalogo, di cui 25 di solo text encoder di H3.
+>
+> Quello che c'e' scritto qui sotto su quei due modelli resta perche' e' il
+> **registro di quando c'erano**, e serve il giorno che uno dei due torna: il
+> lavoro sui pesi, i nodi, le lunghezze e i due orologi del rumore e' tutto vero.
+> Non e' pero' quello che la suite fa adesso — vale il codice.
+
 ---
 
 ## 1. Dove se ne va il tempo, misurato

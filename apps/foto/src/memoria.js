@@ -28,8 +28,30 @@
 
 import * as ponte from "./ponte.js";
 
-/** Chi occupa la VRAM per conto di un'altra app della suite. */
-const DI_ALTRE_APP = /^MiniMax/;
+/**
+ * Chi occupa la VRAM per conto di un'altra app della suite.
+ *
+ * Il nome e' quello della **classe Python** del modello caricato, cosi' come lo
+ * dichiara il motore (vedi `_modelli_caricati` in `daprod_ponte`): non e' il nome
+ * del file e non e' l'id del catalogo.
+ *
+ * ⚠ **Fino all'11 settembre 2026 qui c'era solo `/^MiniMax/`**, e quel giorno
+ * MiniMax Music 3 e' uscito dalla suite. Lasciando quella riga da sola, un
+ * modello musicale rimasto in memoria da DaProdMusica non sarebbe piu' stato
+ * riconosciuto, e la prima immagine dopo una canzone sarebbe morta per memoria
+ * esaurita — cioe' esattamente il difetto per cui questo file esiste.
+ *
+ * ⚠ **`ace` e' un prefisso, non un nome esatto**, ed e' voluto: la classe di
+ * ACE-Step 1.5 non l'abbiamo ancora letta da un motore accesso, e questo file
+ * non deve indovinarla. Qualunque cosa cominci per «ace» e' roba di DaProdMusica,
+ * e nessun modello di immagini si chiama cosi'. `minimax` resta per chi ha ancora
+ * un motore che li tiene su. Il giorno che si apre il pannello della memoria con
+ * una canzone in corso, si legge il nome vero e si scrive qui.
+ *
+ * Se sbagliasse, sbaglia dalla parte buona: la scheda non viene svuotata prima,
+ * cioe' si torna a come era senza questa riga.
+ */
+const DI_ALTRE_APP = /^(ace|minimax)/i;
 
 const RICORDO = "daprod.foto.ultimoInVram";
 

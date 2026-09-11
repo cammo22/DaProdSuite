@@ -37,8 +37,12 @@ import {
   RULLI_IMMAGINI,
   RULLI_MUSICA,
   TAGLI_BONUS,
+  tettoDelValore,
+  TETTO_FIGURINE,
+  TETTO_LIRE,
   tira,
   valoreDaPrendere,
+  valoreDeiPezzi,
   valuta,
   versoIlProssimo,
 } from "../dist/index.js";
@@ -95,7 +99,7 @@ prova("il livello sale, e ogni volta costa di piu'", () => {
   uguale(dove.serve, 1500, "al quarto ne servono millecinquecento");
 });
 
-prova("il valore di una presa e' la somma dei pezzi piu' il bonus", () => {
+prova("il valore di una presa e' quello dei pezzi piu' il bonus", () => {
   uguale(valoreDaPrendere(240, 60), 300);
   uguale(valoreDaPrendere(240, 0), 240, "il bonus puo' essere zero");
   uguale(valoreDaPrendere(0, 0), 1, "e non si scende mai sotto la lira");
@@ -103,58 +107,100 @@ prova("il valore di una presa e' la somma dei pezzi piu' il bonus", () => {
 });
 
 /**
- * ⚠ **La scala e' salita il 10 settembre 2026**: «aggiorna anche i gradi, da 1
- * milione di lire sono unique». I confini si provano uno per uno, sopra e
- * sotto, perche' e' esattamente li' che una figurina cambia nome.
+ * ⚠ **I confini si provano uno per uno, sopra e sotto**, perche' e' esattamente
+ * li' che una figurina cambia nome.
+ *
+ * ⚠ **I numeri non sono scritti a mano, si leggono da `GRADI`.** La scala e'
+ * cambiata tre volte in due giorni — 1.400, un milione, tre euro — e ogni volta
+ * questa prova andava riscritta a mano riga per riga: cioe' venti numeri copiati
+ * da un file all'altro, che e' il modo piu' sicuro di sbagliarne uno e non
+ * accorgersene. Cosi' invece la prova controlla la **regola** — la lira prima
+ * della soglia e' il grado di sotto, la soglia e' il grado nuovo — e vale su
+ * qualunque scala.
  */
 prova("il grado si legge dal prezzo, agli estremi giusti", () => {
-  uguale(gradoDiPrezzo(0), "basic");
-  uguale(gradoDiPrezzo(69_999), "basic");
-  uguale(gradoDiPrezzo(70_000), "grand");
-  uguale(gradoDiPrezzo(159_999), "grand");
-  uguale(gradoDiPrezzo(160_000), "rare");
-  uguale(gradoDiPrezzo(329_999), "rare");
-  uguale(gradoDiPrezzo(330_000), "arcane");
-  uguale(gradoDiPrezzo(599_999), "arcane");
-  uguale(gradoDiPrezzo(600_000), "heroic");
-  uguale(gradoDiPrezzo(999_999), "heroic");
-  // Il numero che ha detto lui, ed e' quello che regge tutta la scala.
-  uguale(gradoDiPrezzo(1_000_000), "unique");
-  uguale(gradoDiPrezzo(1_600_000), "celestial");
-  uguale(gradoDiPrezzo(2_699_999), "celestial");
-  uguale(gradoDiPrezzo(2_700_000), "divine");
-  uguale(gradoDiPrezzo(4_300_000), "epic");
-  uguale(gradoDiPrezzo(7_000_000), "legendary");
-  uguale(gradoDiPrezzo(11_000_000), "mythic");
-  uguale(gradoDiPrezzo(19_000_000), "ethernal");
-  uguale(gradoDiPrezzo(999_999_999), "ethernal");
+  uguale(gradoDiPrezzo(0), "basic", "sotto tutto c'e' Basic");
+  for (let i = 1; i < GRADI.length; i++) {
+    uguale(gradoDiPrezzo(GRADI[i].da), GRADI[i].id, "la soglia di " + GRADI[i].id);
+    uguale(
+      gradoDiPrezzo(GRADI[i].da - 1),
+      GRADI[i - 1].id,
+      "una lira prima di " + GRADI[i].id + " si sta ancora in " + GRADI[i - 1].id,
+    );
+  }
+  uguale(gradoDiPrezzo(999_999_999), "ethernal", "sopra tutto non c'e' altro");
+});
+
+/**
+ * ⚠ **Il tetto: fino a Unique, tre euro e non una lira di piu'.**
+ *
+ * Chiesto l'11 settembre 2026: «fino al livello unique valgono massimo
+ * l'equivalente di 3 euro». Il tetto non e' un numero scritto: e' l'ultima lira
+ * dentro `TETTO_FIGURINE`, e questa prova e' l'unica cosa che tiene insieme le
+ * due meta' — se un giorno si aprisse Celestial senza spostare il tetto, o si
+ * spostasse il tetto senza aprire il grado, qui si vede.
+ */
+prova("il valore di una cosa presa non passa il tetto", () => {
+  uguale(tettoDelValore(), TETTO_LIRE - 1, "il tetto e' l'ultima lira sotto i tre euro");
+  uguale(gradoDiPrezzo(tettoDelValore()), TETTO_FIGURINE, "e sta dentro al grado piu' alto che si da'");
+  uguale(valoreDaPrendere(3000, 900_000), tettoDelValore(), "un bonus enorme si fermа al tetto");
+  uguale(valoreDaPrendere(tettoDelValore(), 0), tettoDelValore(), "e al tetto ci si arriva");
+  vero(
+    Number.isFinite(tettoDelValore()),
+    "finche' i gradi si fermano sotto a Ethernal, un tetto ci deve essere",
+  );
+});
+
+/**
+ * ⚠ **Il valore di base e' la media, non la somma**, dall'11 settembre 2026:
+ * «le combinazioni sono quelle che possono avere valore, quindi aggiustiamo in
+ * modo da stabilizzare i prezzi».
+ *
+ * La cosa che questa prova protegge e' la seconda meta' del perche': **tre pezzi
+ * scelti devono valere come dodici pezzi uguali**. Con la somma, bloccarne
+ * dodici a caso pagava quattro volte tre pezzi scelti — cioe' il contrario di
+ * quello per cui si manda solo il bloccato.
+ */
+prova("una combinazione vale quanto la roba che ha dentro, non quanta ne ha", () => {
+  uguale(valoreDeiPezzi([]), 0, "senza pezzi non c'e' base");
+  uguale(valoreDeiPezzi([1000]), 1000, "un pezzo solo vale se stesso");
+  uguale(valoreDeiPezzi([1000, 1000, 1000]), 1000, "tre uguali valgono uno");
+  uguale(
+    valoreDeiPezzi([1000, 1000, 1000]),
+    valoreDeiPezzi(new Array(12).fill(1000)),
+    "tre pezzi scelti valgono come dodici pezzi uguali",
+  );
+  uguale(valoreDeiPezzi([0, 2000]), 1000, "e in mezzo si sta in mezzo");
 });
 
 /**
  * ⚠ **Una sola pressione non deve sfondare la scala.**
  *
- * E' la ragione per cui prima i tagli del bonus erano piccoli. Adesso sono
- * quelli dei regali, e la scala e' salita apposta per reggerli: il taglio piu'
- * grosso deve stare **sotto** all'Unique, se no chi comanda non puo' scegliere
- * i gradini bassi e ci sarebbe un tasto solo, che si chiama «massimo».
+ * E' la ragione per cui i tagli del bonus sono euro **piccoli** e non gli otto
+ * dei regali: con il tetto a tre euro, sette degli otto tasti dei regali lo
+ * sfondano al primo colpo, e sarebbero sette tasti che fanno tutti «massimo».
+ *
+ * Le due cose che devono valere sempre: il piu' grosso arriva **esattamente** al
+ * tetto e non oltre, e a ogni gradino che si puo' assegnare ci si arriva
+ * battendo. Se un grado non fosse raggiungibile con nessuna somma, quel grado
+ * non si potrebbe piu' dare a mano.
  */
 prova("i tagli del bonus stanno dentro la scala, un colpo alla volta", () => {
-  uguale(TAGLI_BONUS.length, 8, "otto tasti, come i regali");
+  vero(TAGLI_BONUS.length >= 4, "meno di quattro tasti non e' una cassa, e' un interruttore");
   uguale(gradoDiPrezzo(TAGLI_BONUS[0]), "basic", "il piu' piccolo non sposta niente");
-  vero(
-    TAGLI_BONUS[TAGLI_BONUS.length - 1] < 1_000_000,
-    "nemmeno il piu' grosso arriva da solo a Unique",
+  for (let i = 1; i < TAGLI_BONUS.length; i++) {
+    vero(TAGLI_BONUS[i] > TAGLI_BONUS[i - 1], "i tagli devono salire");
+  }
+  uguale(
+    TAGLI_BONUS[TAGLI_BONUS.length - 1],
+    TETTO_LIRE,
+    "il piu' grosso e' il tetto in persona: tre euro",
   );
-  /**
-   * E si arriva **su ogni gradino** battendo i tasti, che e' l'unica cosa che
-   * i tagli devono garantire: se un grado non fosse raggiungibile con nessuna
-   * somma, quel grado non si potrebbe piu' dare a mano.
-   */
   const somme = new Set([0]);
   for (let giro = 0; giro < 5; giro++) {
     for (const gia of [...somme]) for (const t of TAGLI_BONUS) somme.add(gia + t);
   }
-  for (const g of ["basic", "grand", "rare", "arcane", "heroic", "unique"]) {
+  for (const g of GRADI.map((x) => x.id).slice(0, altezza(TETTO_FIGURINE) + 1)) {
     vero([...somme].some((x) => gradoDiPrezzo(x) === g), "a " + g + " non ci si arriva battendo");
   }
 });
@@ -169,7 +215,10 @@ prova("il prezzo scende quando la roba e' piu' comune", () => {
    * dei pezzi no: sono due numeri che stanno nello stesso mondo, e il giorno
    * che si separano tutti i dodici rulli diventano grigi.
    */
-  vero(prezzoDiPartenza(0) >= 11_000_000, "il piu' raro di tutti deve poter essere Mythic");
+  vero(
+    altezza(gradoDiPrezzo(prezzoDiPartenza(0))) >= altezza("mythic"),
+    "il piu' raro di tutti deve poter arrivare almeno a Mythic",
+  );
   uguale(prezzoDiPartenza(undefined), prezzoDiPartenza(0.5), "senza dato si sta in mezzo");
 });
 

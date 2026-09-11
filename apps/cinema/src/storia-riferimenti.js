@@ -1,18 +1,18 @@
 /**
  * Le immagini e gli audio che si danno alla Storia.
  *
- * **A cosa servono, che sono due cose diverse e vanno dette separate.**
+ * **A cosa servono: a farli guardare a chi scrive le scene.** Se in LM Studio hai
+ * caricato un modello che sa vedere, le immagini gli arrivano insieme al
+ * soggetto — la faccia del protagonista, il posto, la luce che vuoi — e da lì
+ * scrive prompt che parlano di quello che hai mostrato invece di inventarselo.
+ * Con un modello di solo testo non succede niente di magico: LM Studio risponde
+ * che non sa guardare, e la suite lo scrive in italiano invece di far finta.
  *
- * 1. **Il modello che scrive le scene li guarda.** Se in LM Studio hai caricato
- *    un modello che sa vedere, le immagini gli arrivano insieme al soggetto: la
- *    faccia del protagonista, il posto, la luce che vuoi. Da lì scrive prompt
- *    che parlano di quello che hai mostrato invece di inventarselo. Con un
- *    modello di solo testo non succede niente di magico — LM Studio risponde
- *    che non sa guardare, e la suite lo scrive in italiano invece di far finta.
- * 2. **MiniMax H3 li usa come riferimento vero**, dentro ogni clip: `ref_image_N`
- *    e `ref_audio_N` del grafo. LTX 2.5 no, non ha quegli ingressi — con LTX i
- *    riferimenti restano al modello che scrive, e la riga sotto lo dice invece
- *    di lasciar credere che finiscano nel video.
+ * ⚠ **Servivano anche a un'altra cosa, e non più.** MiniMax H3 li usava come
+ * riferimento vero dentro ogni clip (`ref_image_N`, `ref_audio_N` del suo grafo),
+ * ed è uscito l'11 settembre 2026. LTX 2.5 non ha quegli ingressi, quindi adesso
+ * i riferimenti si fermano a chi scrive — e la riga sotto al pannello lo dice,
+ * invece di lasciar credere che finiscano nel video.
  *
  * **Dove vivono.** Nella cartella `input` del motore, caricati una volta sola
  * (`/upload/image` accetta qualunque file, vedi `ponte.carica`). Il nome che
@@ -27,7 +27,12 @@ import * as ponte from "./ponte.js";
 
 const RICORDO = "daprod.cinema.storia.riferimenti";
 
-/** Quanti se ne accettano. Tre immagini sono già il massimo che H3 usa bene. */
+/**
+ * Quanti se ne accettano.
+ *
+ * Sei è il numero che un modello che sa vedere riesce a tenere in testa insieme
+ * al soggetto: sopra, comincia a citarne uno e a dimenticare gli altri.
+ */
 const MASSIMO = 6;
 
 /**
@@ -68,9 +73,8 @@ function salva() {
 function generePer(file) {
   if (file.type.startsWith("audio/")) return "audio";
   if (file.type.startsWith("image/")) return "immagine";
-  // Un video di riferimento H3 lo saprebbe usare, ma qui non lo offriamo: nella
-  // Storia è la faccia o il posto che servono, e un video per scena vorrebbe
-  // dire caricare decine di MB per ognuna delle cento inquadrature.
+  // Un video no: nella Storia è la faccia o il posto che servono, e nessun
+  // modello di LM Studio guarda un filmato.
   return null;
 }
 
@@ -91,8 +95,7 @@ function disegna() {
 
   if (!riferimenti.length) {
     dove.innerHTML = `<div class="hint">Niente per ora. Aggiungi una faccia, un posto, una voce:
-      chi scrive le scene li guarda (se il modello sa vedere), e MiniMax H3 li usa
-      dentro ogni inquadratura.</div>`;
+      chi scrive le scene li guarda, se il modello di LM Studio sa vedere.</div>`;
     return;
   }
 
@@ -208,20 +211,6 @@ export async function riferimentiPerIlModello() {
     pronti.push({ genere: r.genere, base64: dati, mime: r.mime, nome: r.nome });
   }
   return pronti;
-}
-
-/**
- * Quello che si dà al grafo di MiniMax H3: i nomi nella cartella del motore.
- *
- * LTX non ha ingressi per i riferimenti, quindi chi chiama passa il modello e
- * qui si risponde vuoto invece di infilargli dentro nodi che non collegherebbe.
- */
-export function riferimentiPerIlGrafo(modello) {
-  if (modello?.ingressi !== "riferimenti") return { immagini: [], audio: [] };
-  return {
-    immagini: riferimenti.filter((r) => r.genere === "immagine").map((r) => r.nelMotore),
-    audio: riferimenti.filter((r) => r.genere === "audio").map((r) => r.nelMotore),
-  };
 }
 
 /* ---------------------------------------------------------------- l'aggancio */

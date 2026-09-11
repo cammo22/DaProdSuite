@@ -98,8 +98,8 @@
       <textarea id="caption" rows="3" placeholder="3-4 generi, in inglese"></textarea>
       <div class="hint"><b>Regola DaProd</b>: lo stile resta vago, <b>solo 3-4 generi</b>.
         Strumenti, mood e BPM restringono il modello e fanno uscire sempre la stessa cosa.
-        Le descrizioni dettagliate in fondo alla lista seguono invece lo schema MiniMax, per quando
-        vuoi un risultato preciso.</div>
+        Le descrizioni dettagliate in fondo alla lista seguono invece lo schema a tre blocchi,
+        per quando vuoi un risultato preciso.</div>
     </div>
 
     <div class="panel">
@@ -109,7 +109,7 @@
       <div class="hint" id="notaLingua"></div>
       <div class="chips" id="tags"></div>
       <textarea id="lyrics" rows="11" placeholder="[Verse]&#10;…"></textarea>
-      <div class="hint">Solo questi tag di sezione: sono gli unici che MiniMax Music 3 interpreta davvero.</div>
+      <div class="hint">Solo questi tag di sezione: sono gli unici che il modello interpreta davvero.</div>
     </div>
 
     <div class="panel">
@@ -162,14 +162,15 @@
             <label>CFG testo <span class="rangeval" id="cfgsVal">1.5</span></label>
             <input type="range" id="cfg_scale" min="0" max="5" step="0.1" value="1.5">
           </div>
-          <div class="field" data-campo="top_k">
-            <label>Top-K <span class="rangeval" id="topkVal">50</span></label>
-            <input type="range" id="top_k" min="1" max="200" step="1" value="50">
-          </div>
         </div>
-        <!-- I quattro di ACE-Step. Restano nascosti con MiniMax, che di battito
-             e tonalità non sa che farsene: mostrarli spenti sarebbe peggio che
-             non mostrarli, perché uno li muove e non succede niente. -->
+<!-- Battito, tonalità e tempo: le caselle di ACE-Step.
+
+             ⚠ Qui accanto c'era il **Top-K**, ed era il decoder di MiniMax Music
+             3: tolto il modello (11 settembre 2026) nessun modello dichiara quel
+             campo, quindi il cursore non si sarebbe più acceso — e un cursore che
+             non compare mai è codice che resta lì a far domande. `data-campo` è
+             il meccanismo che li accende: chi rimette MiniMax rimette anche
+             questo. -->
         <div class="row" data-campo="bpm">
           <div class="field">
             <label>Battito <span class="rangeval" id="bpmVal">120 BPM</span></label>

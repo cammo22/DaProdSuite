@@ -83,12 +83,6 @@ export const vuoleLaCatena = (secondi) => Number(secondi) > TUTTO_INTERO;
  * telefono di chi aveva chiesto.
  */
 export async function videoLungo(m, parametri, racconta = () => {}) {
-  if (m.ingressi !== "fotogrammi") {
-    throw new Error(
-      `${m.nome} non sa partire da un fotogramma: per i video lunghi serve LTX 2.5.`,
-    );
-  }
-
   const totale = Math.max(TUTTO_INTERO + 1, Number(parametri.secondi) || 30);
   const perPezzo = Math.min(PEZZO_SECONDI, m.durata?.max ?? PEZZO_SECONDI);
   const quanti = Math.ceil(totale / perPezzo);

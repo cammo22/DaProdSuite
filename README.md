@@ -68,11 +68,11 @@ Tutto in locale: nessun account, nessuna API, nessun dato che esce dal computer.
 | | App | Cosa fa | Modello | |
 |---|---|---|---|---|
 | 🟣 | **DaProdVisualizer** | Ascolti un file audio e lo vedi: la grafica si muove col suono | — | ✅ disponibile |
-| 🩷 | **DaProdMusica** | Crei canzoni intere, cantate e suonate, da un testo e uno stile | MiniMax Music 3 · ACE-Step 1.5 | ✅ disponibile |
+| 🩷 | **DaProdMusica** | Crei canzoni intere, cantate e suonate, da un testo e uno stile | ACE-Step 1.5 | ✅ disponibile |
 | 🟠 | **DaProdFoto** | Crei immagini scrivendo cosa vuoi vedere, poi ne cambi un pezzo | Anima Turbo · FLUX.2 Klein | ✅ disponibile |
 | 🩵 | **DaProdDream** | Trasformi un video mentre scorre: webcam, un file, o lo schermo | SD-Turbo · Anima | ✅ disponibile |
 | 🟥 | **DaProdIoDigitale** | Carichi la foto di un volto e ci parli: ti risponde a voce | LeapTalk | ✅ disponibile |
-| 🟪 | **DaProdCinema** | Video con il suono dentro, da una descrizione o da un'immagine | LTX 2.5 · MiniMax H3 | ✅ disponibile |
+| 🟪 | **DaProdCinema** | Video con il suono dentro, da una descrizione o da un'immagine | LTX 2.5 | ✅ disponibile |
 | 🟡 | **DaProdVoce** | Scrivi una frase e te la legge, con la voce che scegli tu | Audio8 TTS 0.1B · 0.6B | ✅ disponibile |
 | 🟢 | **DaProdCompanion** | Un assistente sul desktop che si ricorda delle conversazioni di prima | un modello a scelta via LM Studio | ⏳ in arrivo |
 | 🔵 | **DaProdConnessione** | Chi è collegato, cosa sta girando, e la stessa pagina che vedi dal telefono | — | ✅ disponibile |
@@ -228,9 +228,9 @@ non vengono mai riscaricati né cancellati**, nemmeno disinstallando.
 | DaProdVisualizer | — | |
 | DaProdDream | 2,6 GB | +5,6 GB per sognare con Anima |
 | DaProdFoto | 5,6 GB | +6,3 GB FLUX.2 Klein 4B · +12,0 GB il 9B |
-| DaProdMusica | 13,7 GB | +8,0 GB MiniMax Music 3 · +9,3 GB ACE-Step XL · +5,6 GB per le copertine con Anima* |
+| DaProdMusica | 13,7 GB | +9,3 GB ACE-Step XL · +5,6 GB per le copertine con Anima* |
 | DaProdIoDigitale | 10,4 GB | +6,0 GB modello Pro |
-| DaProdCinema | 23,2 GB | +41,6 GB MiniMax H3 |
+| DaProdCinema | 23,2 GB | — |
 
 <sub>* zero se hai già DaProdFoto o DaProdDream: i pesi di Anima sono gli stessi,
 condivisi.</sub>
@@ -277,7 +277,7 @@ collegamento e il suo nome — che è unico: se lo scegli già preso te lo dice
 subito.
 
 **Chiedi con il modello che vuoi.** Nel modulo si sceglie fra i modelli veri
-delle schede — Anima, Anima v2, FLUX.2 Klein, LTX 2.5, MiniMax H3 — chiamati
+delle schede — Anima, Anima v2, FLUX.2 Klein, ACE-Step, LTX 2.5 — chiamati
 come si chiamano, non con il loro id. E ci sono **i tuoi soliti**: un modo di
 generare salvato con un nome, che sta sul computer e si ritrova ovunque.
 
@@ -402,8 +402,8 @@ La suite non addestra nulla: mette insieme il lavoro di altri e lo rende usabile
 | | |
 |---|---|
 | [ComfyUI](https://github.com/comfyanonymous/ComfyUI) | il motore di inferenza di Musica, Foto e Cinema — GPL-3.0, scaricato a parte |
-| [MiniMax](https://github.com/MiniMax-AI) · [ACE-Step](https://huggingface.co/ACE-Step) | i due modi di fare una canzone |
-| [LTX-2.5](https://huggingface.co/Lightricks/LTX-2.5) · [MiniMax H3](https://huggingface.co/MiniMaxAI/MiniMax-H3) | il video di DaProdCinema, con il suono dentro |
+| [ACE-Step](https://huggingface.co/ACE-Step) | come si fa una canzone |
+| [LTX-2.5](https://huggingface.co/Lightricks/LTX-2.5) | il video di DaProdCinema, con il suono dentro |
 | [Anima](https://huggingface.co/circlestone-labs/Anima) · [FLUX.2 Klein](https://huggingface.co/unsloth/FLUX.2-klein-9B-GGUF) | le immagini |
 | [LeapTalk](https://huggingface.co/z-rx/leaptalk) · [SoulX-FlashHead](https://huggingface.co/Soul-AILab/SoulX-FlashHead-1_3B) | l'avatar parlante: LeapTalk gira sopra SoulX, che è il suo modello di base |
 | [SD-Turbo](https://huggingface.co/stabilityai/sd-turbo) | la trasformazione in tempo reale |

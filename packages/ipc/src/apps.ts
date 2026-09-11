@@ -153,7 +153,7 @@ export const APPS: Record<AppId, AppDescriptor> = {
       port: 8188,
       entry: "avvio.py",
       engine: "ComfyUI",
-      // Il primo avvio carica MiniMax Music 3 in VRAM: può volerci un minuto abbondante.
+      // Il primo avvio carica il modello in VRAM: può volerci un minuto abbondante.
       healthTimeoutMs: 180_000,
     },
     /**
@@ -164,6 +164,11 @@ export const APPS: Record<AppId, AppDescriptor> = {
      * 13,7): il conto però va fatto con quello che succede dopo, e cioè che
      * l'app si apriva su un modello che non era quello installato e chiedeva
      * subito di scaricarne un altro. Meglio installare quello che parte.
+     *
+     * ⚠ **Dalla 1.3.2 MiniMax Music 3 non c'è più del tutto**: «togliamo i
+     * modelli minimax h3 e minimax musica… e alleggeriamo molto». Erano 8 GB nel
+     * menu dei modelli, più 8,6 di un text encoder che su questa scheda non ci
+     * stava nemmeno.
      */
     models: ["acestep15-turbo", "acestep15-qwen-06b", "acestep15-qwen-4b", "acestep15-vae"],
     /**
@@ -174,19 +179,15 @@ export const APPS: Record<AppId, AppDescriptor> = {
      * chi vuole solo la musica sarebbe di troppo. La pagina controlla e li offre
      * nel momento in cui servono davvero.
      *
-     * Poi ci sono gli altri modelli musicali del menu — il DiT a 8 bit di
-     * MiniMax e i due ACE-Step 1.5 con i loro encoder. Si scaricano dal menu
-     * stesso, dentro l'app, e stanno elencati qui perché l'hub sappia a chi
-     * servono: senza, nel pannello dei modelli comparirebbero come pesi di
-     * nessuno, e sono venticinque GB di "pesi di nessuno".
+     * Poi c'è l'altro modello musicale del menu, l'ACE-Step XL Turbo. Si scarica
+     * dal menu stesso, dentro l'app, e sta elencato qui perché l'hub sappia a chi
+     * serve: senza, nel pannello dei modelli comparirebbe come un peso di
+     * nessuno, e sono dieci GB di "peso di nessuno".
      */
     extraModels: [
       "anima-turbo",
       "qwen3-06b-base",
       "qwen-image-vae",
-      "minimax-music3-dit-int8",
-      "minimax-music3-text-encoder",
-      "minimax-music3-vae",
       "acestep15-xl-turbo",
     ],
     gpuHeavy: true,
@@ -258,20 +259,20 @@ export const APPS: Record<AppId, AppDescriptor> = {
      * gira meglio: una scelta ragionevole, ma fatta al posto di chi la suite la
      * usa. Nella 0.4.1 Wan è uscito.
      *
-     * LTX 2.5 è quello di base perché fa **video e suono insieme**, è distillato
-     * (otto passi) e pesa poco più della metà di H3.
+     * LTX 2.5 fa **video e suono insieme** ed è distillato: otto passi.
+     *
+     * ⚠ **Ed è rimasto solo**, dalla 1.3.2: MiniMax H3 — l'altro della roadmap,
+     * 41,6 GB di cui 25 di solo text encoder — è uscito l'11 settembre 2026.
+     * «Togliamo i modelli minimax h3 e minimax musica, che sono modelli che al
+     * momento non mi piacciono, e alleggeriamo molto.» Con lui sono usciti i
+     * riferimenti: le immagini, i video e gli audio che si davano in pasto al
+     * modello. LTX prende due immagini, il primo e l'ultimo fotogramma.
+     *
+     * `extraModels` resta vuoto e non è tolto: è il posto dove tornerebbe H3, o
+     * il prossimo modello video che si sceglie dal menu dentro l'app.
      */
     models: ["ltx25-dit", "ltx25-text-encoder", "ltx25-vae", "ltx25-audio-vae"],
-    /**
-     * MiniMax H3, l'altro della roadmap: 41,6 GB, di cui 25 di solo text
-     * encoder (Qwen3-VL 32B). Si sceglie dal menu dentro l'app, che è anche il
-     * posto dove si vede quanto costa prima di premere.
-     *
-     * È la variante **ref2va** e non la fl2va: quella che prende immagini, video
-     * e audio di riferimento. Primo e ultimo fotogramma li fa già LTX 2.5, con
-     * metà del peso; i riferimenti li sa fare solo lui.
-     */
-    extraModels: ["h3-ref-dit", "h3-text-encoder", "h3-vae", "h3-audio-vae", "h3-lora-ref-turbo"],
+    extraModels: [],
     gpuHeavy: true,
     // Video: un fotogramma per volta, e i fotogrammi sono centinaia.
     schedaVideo: "obbligatoria",

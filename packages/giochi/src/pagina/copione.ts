@@ -1817,7 +1817,22 @@ export const COPIONE = `
             "<input type=\\"number\\" min=\\"1\\" placeholder=\\"o scrivi quanto\\" " +
             "data-regalo=\\"" + sicuro(g.chi) + "\\">" +
             "<button class=\\"btn oro\\" data-manda-lire=\\"" + sicuro(g.chi) +
-            "\\">Manda</button></div></div>";
+            "\\">Manda</button></div>" +
+            /**
+             * ⚠ **E il tasto che svuota**, chiesto l'11 settembre 2026: «un
+             * admin puo' anche azzerare il portafoglio degli altri, caso mai
+             * problemi: fai un bel tastino per resettare il portafoglio».
+             *
+             * Compare **solo se c'e' qualcosa da svuotare**: un tasto rosso
+             * accanto a un portafoglio gia' vuoto e' un tasto che si preme per
+             * scoprire che non fa niente.
+             */
+            (g.saldo > 0
+              ? "<div class=\\"riga-tasti\\">" +
+                "<button class=\\"btn brutto\\" data-svuota=\\"" + sicuro(g.chi) +
+                "\\">Azzera il portafoglio</button></div>"
+              : "") +
+            "</div>";
         }).join("")
       : "<div class=\\"niente\\">" +
         (cerca ? "Nessuno si chiama cosi'." : "Non c'e' ancora nessuno.") + "</div>";
@@ -1837,6 +1852,37 @@ export const COPIONE = `
             tagliScelti["regalo:" + chi] = 0;
             avviso(soldi(quanto) + " a " + r.nome + ". Adesso ha " + soldi(r.saldo) + ".", "bene");
             coriandoli(40, ["#ffd166", "#ffffff"]);
+            caricaGente();
+          }).catch(function (e) { avviso(e.message, "male"); });
+      });
+  }
+
+  /**
+   * ⚠ **Svuotare il portafoglio di qualcuno.**
+   *
+   * Si chiede il perche' **prima**, come per i regali, e per lo stesso motivo:
+   * chi lo riceve legge quella frase appena apre la sala giochi, e un
+   * portafoglio che si azzera senza spiegazioni si legge come un guasto.
+   *
+   * ⚠ **Il quanto non si chiede.** Azzera vuol dire azzera: se si potesse
+   * scegliere quanto togliere sarebbe una multa, che e' un'altra cosa e non c'e'.
+   * Nella domanda c'e' scritto quanto va via, cosi' quello che si sta per fare si
+   * legge prima di premere.
+   */
+  function svuotaPortafoglio(chi) {
+    var nome = "";
+    var quanto = 0;
+    for (var i = 0; i < gente.length; i++) {
+      if (gente[i].chi === chi) { nome = gente[i].nome; quanto = gente[i].saldo; }
+    }
+    chiediQualcosa("Azzeri il portafoglio di " + nome + "?",
+      "Via " + soldi(quanto) + ". La collezione, i livelli e le cose prese non si toccano. " +
+      "Due parole a chi lo riceve: le legge appena apre la sala giochi.",
+      { valore: "Si ricomincia da zero.", tastoSi: "Azzera" }).then(function (perche) {
+        if (perche === null) return;
+        chiedi("POST", "/azzera", { chi: chi, perche: perche })
+          .then(function (r) {
+            avviso("Portafoglio di " + r.nome + " azzerato: via " + r.toltoScritto + ".", "bene");
             caricaGente();
           }).catch(function (e) { avviso(e.message, "male"); });
       });
@@ -2110,6 +2156,13 @@ export const COPIONE = `
     }
     var lire = b.getAttribute && b.getAttribute("data-manda-lire");
     if (lire) { mandaLire(lire); return; }
+    // ⚠ «svuota» e non «azzera»: l'attributo data-azzera, due righe piu' in
+    // basso, azzera il **taglio scelto** e non tocca nessun conto. Due
+    // attributi che si chiamano uguale su due tasti che fanno cose molto
+    // diverse sono un guaio che si scopre il giorno che si sbaglia a copiare
+    // una riga.
+    var svuota = b.getAttribute && b.getAttribute("data-svuota");
+    if (svuota) { svuotaPortafoglio(svuota); return; }
 
     var attacca = b.getAttribute && b.getAttribute("data-attacca");
     if (attacca) { apriLibreria(attacca, "allegato"); return; }
@@ -2307,6 +2360,18 @@ export const COPIONE = `
       if (localStorage.getItem(chiave) === String(regalo.quando)) return;
       localStorage.setItem(chiave, String(regalo.quando));
     } catch (e) {}
+    /**
+     * ⚠ **Puo' anche essere un portafoglio azzerato**, dall'11 settembre 2026:
+     * allora il numero e' negativo. Lo stesso pannello, perche' e' la stessa
+     * cosa da dire — chi comanda ha messo mano al tuo saldo, ecco quanto ed
+     * ecco perche'. Cambiano le parole e il colore, non il meccanismo: un
+     * secondo pannello quasi identico sarebbe la solita gemella che il primo
+     * giorno fa la stessa cosa e il secondo no.
+     */
+    if (regalo.quanto < 0) {
+      grande("Il portafoglio e' stato azzerato", "dalla cassa", regalo.perche, "#ff6b6b");
+      return;
+    }
     grande("Ti hanno mandato " + soldi(regalo.quanto), "dalla cassa",
       regalo.perche, "#ffd166");
     coriandoli(60, ["#ffd166", "#ffffff", "#7fd1a8"]);

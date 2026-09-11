@@ -50,8 +50,8 @@ export interface ServiceConfig {
   logger: ServiceLogger;
   /**
    * Quanto aspettare che /health risponda. Va alzato per i motori che caricano
-   * pesi pesanti al primo avvio: MiniMax Music 3 e SoulX-FlashHead ci mettono
-   * minuti, non secondi.
+   * pesi pesanti al primo avvio: i motori di ComfyUI e SoulX-FlashHead ci
+   * mettono minuti, non secondi.
    */
   healthTimeoutMs?: number;
   /** Notificato quando il processo muore e non si riesce più a riavviarlo. */

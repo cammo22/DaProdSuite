@@ -162,6 +162,13 @@ export const MARKUP = `<header>
       E' l'unico rubinetto oltre alle combinazioni prese: girando escono punti,
       non lire. Sta qui e non nella classifica perche' e' una cosa che fa chi
       decide, e le cose che fa chi decide stanno tutte nella stessa scheda.
+
+      ⚠ **Da qui si azzera anche un portafoglio**, dall'11 settembre 2026:
+      «un admin puo' anche azzerare il portafoglio degli altri, caso mai
+      problemi». Sta nella stessa riga di ogni persona e non in un pannello suo,
+      perche' e' la stessa decisione girata al contrario e si prende guardando lo
+      stesso numero: quanto ha in tasca. Il cassetto continua a chiamarsi «Manda
+      lire» perche' quello e' il gesto di ogni giorno; azzerare e' quello di mai.
     -->
     <!--
       ⚠ **Anche questo e' un cassetto**, chiesto il 10 settembre 2026:

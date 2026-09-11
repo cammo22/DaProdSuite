@@ -127,13 +127,22 @@ const MODELLI_MODIFICA = {
   },
 } as const;
 
+/**
+ * ⚠ **Uno solo, dalla 1.3.2**: MiniMax H3 è uscito dalla suite l'11 settembre
+ * 2026. «Togliamo i modelli minimax h3 e minimax musica, che sono modelli che al
+ * momento non mi piacciono, e alleggeriamo molto.»
+ *
+ * Il campo «con cosa lo faccio» resta comunque, con una scelta sola: da fuori si
+ * legge cosa userà la suite, ed è una domanda che ha senso anche quando la
+ * risposta è una. Il giorno che ne arriva un altro si aggiunge una riga qui e la
+ * console, il telefono e MCP se ne accorgono da soli.
+ */
 const MODELLI_CINEMA = {
-  /** LTX 2.5: è l'unico che sa ripartire da un fotogramma, e serve alle storie. */
+  /** LTX 2.5: sa ripartire da un fotogramma, e serve alle storie. */
   predefinito: "ltx25",
-  scelte: ["ltx25", "h3"],
+  scelte: ["ltx25"],
   etichette: {
     ltx25: "LTX 2.5",
-    h3: "MiniMax H3",
   },
 } as const;
 
@@ -143,13 +152,15 @@ const MODELLI_MUSICA = {
    *
    * È più lento del Turbo e va in offload sulla scheda da 8 GB, ma di un brano
    * si aspetta comunque qualche minuto — e la differenza fra i due si sente.
+   *
+   * ⚠ **E dalla 1.3.2 sono due, non tre**: la voce «migliore» era MiniMax Music
+   * 3, uscito l'11 settembre 2026 insieme a MiniMax H3.
    */
   predefinito: "ace-xl-turbo",
-  scelte: ["ace-turbo", "ace-xl-turbo", "migliore"],
+  scelte: ["ace-turbo", "ace-xl-turbo"],
   etichette: {
     "ace-turbo": "ACE-Step Turbo",
     "ace-xl-turbo": "ACE-Step XL",
-    migliore: "MiniMax Music 3",
   },
 } as const;
 
@@ -584,8 +595,7 @@ export const AZIONI: readonly Azione[] = [
         nome: "lingua",
         etichetta: "In che lingua canta",
         descrizione:
-          "La lingua del canto. ACE-Step la riceve come impostazione, MiniMax se la trova " +
-          "aggiunta alla descrizione: da qui non cambia niente, si dice e basta.",
+          "La lingua del canto: ACE-Step la riceve come impostazione vera del suo nodo.",
         tipo: "scelta",
         obbligatorio: false,
         // Italiano di partenza, dalla 0.9.1: è la lingua della suite e di chi la
@@ -615,17 +625,18 @@ export const AZIONI: readonly Azione[] = [
        * sono da sempre; da telefono si poteva chiedere il genere e la durata, e
        * basta — cioè si poteva chiedere una canzone, non *quella* canzone.
        *
-       * **Valgono per MiniMax Music 3.** ACE-Step non ha caselle per BPM,
-       * tonalità e tempo: gliele si dà e non succede niente, e la descrizione
-       * lo dice invece di far credere il contrario. «Strumentale» invece vale
-       * per tutti e due.
+       * ⚠ **Sono le caselle di ACE-Step**, e le riceve davvero. Qui c'era scritto
+       * il contrario — «valgono per MiniMax Music 3, ACE-Step non ha caselle per
+       * BPM, tonalità e tempo» — ed era sbagliato da quando è stato scritto: di
+       * MiniMax era il Top-K, non queste tre. Corretto l'11 settembre 2026,
+       * togliendo MiniMax dalla suite (vedi `campi` in `apps/musica/src/grafi.js`,
+       * che è il posto dove si legge riga per riga chi usa cosa).
        */
       {
         nome: "bpm",
         etichetta: "Quanto va veloce",
         descrizione:
-          "Battiti al minuto: 70 è una ballata, 120 un pezzo da ballare, 170 una corsa. " +
-          "Lo capisce MiniMax Music 3; ACE-Step decide da sé.",
+          "Battiti al minuto: 70 è una ballata, 120 un pezzo da ballare, 170 una corsa.",
         tipo: "numero",
         obbligatorio: false,
         min: 40,
@@ -638,7 +649,7 @@ export const AZIONI: readonly Azione[] = [
         descrizione:
           "La scala del brano: le minori suonano malinconiche, le maggiori aperte. " +
           "Di suo la sceglie il modello, e cambia a ogni brano. " +
-          "Tieni premuta una tonalità per sapere che effetto fa. Solo MiniMax Music 3.",
+          "Tieni premuta una tonalità per sapere che effetto fa.",
         tipo: "scelta",
         obbligatorio: false,
         /**
@@ -664,8 +675,7 @@ export const AZIONI: readonly Azione[] = [
         nome: "tempo",
         etichetta: "Che ritmo",
         descrizione:
-          "Quanti movimenti per battuta. Tieni premuto per sapere che effetto fa. " +
-          "Solo MiniMax Music 3.",
+          "Quanti movimenti per battuta. Tieni premuto per sapere che effetto fa.",
         tipo: "scelta",
         obbligatorio: false,
         // A caso, dalla 0.9.1: il tempo è la cosa che meno si sa di una canzone

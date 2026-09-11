@@ -90,10 +90,10 @@ function collegaEstetica() {
 /**
  * La riga sotto al cursore della durata.
  *
- * Dice i **fotogrammi veri**, non quelli chiesti. Nessuno dei due modelli prende
- * un numero qualunque — LTX vuole `8n+1`, H3 vuole `17k+5` — e la differenza fra
- * i due numeri è il motivo per cui un video di «10 secondi» ne dura 10,04 o 9,7.
- * Scriverlo qui costa una riga e toglie di mezzo una domanda.
+ * Dice i **fotogrammi veri**, non quelli chiesti. LTX non prende un numero
+ * qualunque — vuole `8n+1`, perché il suo VAE comprime otto volte nel tempo — ed
+ * è il motivo per cui un video di «10 secondi» ne dura 10,04. Scriverlo qui costa
+ * una riga e toglie di mezzo una domanda.
  */
 function raccontaDurata() {
   const m = modelloCorrente();
@@ -130,12 +130,6 @@ export async function lungoDaFuori(secondi) {
   const m = modelloCorrente();
   const p = leggiModulo();
   if (!p.prompt) throw new Error("Scrivi cosa vuoi vedere.");
-  if (m.ingressi !== "fotogrammi") {
-    throw new Error(
-      "Per un video lungo serve LTX 2.5: e' l'unico che sa ripartire da un fotogramma.",
-    );
-  }
-
   await faiSpazio((detto) => occupa(el.genera, detto));
 
   // Fire and forget, con le sue parole: quello che va storto si legge qui.
@@ -183,7 +177,7 @@ export async function collegaCrea() {
 
   // I riquadri di sopra si ridisegnano quando cambia il modello e quando cambia
   // il loro contenuto: le etichette `<Picture 1>` dipendono da quanti ce n'è.
-  collegaIngressi(modelloCorrente(), raccontaDurata);
+  collegaIngressi(raccontaDurata);
   collegaComandiCoda();
 
   // Per ultimo: è il menu dei modelli che decide durata, passi e riquadri, e
@@ -204,9 +198,8 @@ async function genera() {
   const m = modelloCorrente();
   const p = leggiModulo();
 
-  // L'unica cosa che serve davvero: cosa vuoi vedere. I riferimenti di H3 sono
-  // facoltativi — il consiglio di usare LTX quando non ce ne sono sta scritto
-  // sotto ai riquadri, e resta un consiglio.
+  // L'unica cosa che serve davvero: cosa vuoi vedere. Il primo e l'ultimo
+  // fotogramma sono facoltativi tutti e due.
   if (!p.prompt) return mostraErrore("Scrivi cosa vuoi vedere.");
 
   // Da qui in poi il tasto è spento e racconta. Il `try` comincia **prima** di
@@ -219,7 +212,7 @@ async function genera() {
     // un'altra app o dal modello che scrive.
     await faiSpazio((detto) => occupa(el.genera, detto));
 
-    const dentro = await caricaIngressi(m, (detto) => occupa(el.genera, detto));
+    const dentro = await caricaIngressi((detto) => occupa(el.genera, detto));
 
     occupa(el.genera, "mando al motore…");
     const quante = Math.max(1, Math.min(4, parseInt(el.quante.value) || 1));

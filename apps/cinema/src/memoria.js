@@ -7,10 +7,10 @@
  * tutto, sempre.**
  *
  * Il motivo è aritmetico. Su una scheda da 8 GB, LTX 2.5 fa entrare 23 GB di
- * pesi passando dalla RAM un pezzo per volta; H3 ne fa entrare 41. In quelle
- * condizioni un modello di un'altra app rimasto in memoria non rallenta la
- * generazione: la fa fallire a metà, dopo minuti, con un errore di memoria
- * esaurita che sembra colpa del video.
+ * pesi passando dalla RAM un pezzo per volta. In quelle condizioni un modello di
+ * un'altra app rimasto in memoria non rallenta la generazione: la fa fallire a
+ * metà, dopo minuti, con un errore di memoria esaurita che sembra colpa del
+ * video.
  *
  * `racconta` scrive sul tasto Genera: svuotare la scheda può prendere qualche
  * secondo, ed è esattamente il genere di attesa muta che fa ripremere il tasto.

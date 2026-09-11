@@ -16,6 +16,7 @@
 
 import {
   apriPacchetto,
+  azzeraPortafoglio,
   butta,
   regala,
   TAGLI,
@@ -27,7 +28,7 @@ import {
   MAX_PROVE,
   mettiInVetrina,
   prezzoConsigliato,
-  sommaDeiPezzi,
+  valoreDiBase,
   togliDallaVetrina,
   vetrina,
   manda,
@@ -40,7 +41,15 @@ import {
   tira,
 } from "./banco";
 import type { Deposito } from "./deposito";
-import { EPOCHE, GRADI, TETTO_FIGURINE, lire, versoIlProssimo } from "./regole";
+import {
+  EPOCHE,
+  GRADI,
+  TETTO_EURO,
+  TETTO_FIGURINE,
+  lire,
+  tettoDelValore,
+  versoIlProssimo,
+} from "./regole";
 import { rulliDi } from "./rulli";
 import type { Collezionabile, Era, Grado, Tavolo, TipoCollezionabile } from "./tipi";
 
@@ -287,6 +296,16 @@ export function rispondi(
          * verita' da tenere allineate a mano.
          */
         tettoFigurine: TETTO_FIGURINE,
+        /**
+         * ⚠ **Il tetto in lire, e in euro.** Dall'11 settembre 2026: «fino al
+         * livello unique valgono massimo l'equivalente di 3 euro».
+         *
+         * Lo dice il PC e non la pagina, come tutti i numeri dei soldi: la
+         * pagina lo scrive accanto al bonus per far vedere dov'e' il muro prima
+         * di batterci contro, ma chi lo fa rispettare e' `valoreDaPrendere`.
+         */
+        tettoLire: tettoDelValore(),
+        tettoEuro: TETTO_EURO,
         epoche: EPOCHE,
         tavoli: [
           { id: "musica", nome: "Musica", rulli: rulliDi("musica") },
@@ -502,6 +521,7 @@ export function rispondi(
       percorso === "/butta" ||
       percorso === "/gente" ||
       percorso === "/regala" ||
+      percorso === "/azzera" ||
       percorso === "/prova" ||
       percorso === "/libreria"
     ) {
@@ -559,6 +579,33 @@ export function rispondi(
     }
 
     /**
+     * ⚠ **Azzerare il portafoglio di qualcuno.** Chiesto l'11 settembre 2026:
+     * «un admin puo' anche azzerare il portafoglio degli altri, caso mai
+     * problemi».
+     *
+     * Sta accanto a «manda lire» e non in una schermata sua perche' e' la stessa
+     * decisione girata al contrario, e si prende guardando la stessa riga: **il
+     * saldo di quella persona**. Un pannello a parte vorrebbe dire cercare due
+     * volte lo stesso nome.
+     */
+    if (metodo === "POST" && percorso === "/azzera") {
+      const fatto = azzeraPortafoglio(
+        deposito,
+        chi.id,
+        String(corpo["chi"] ?? ""),
+        String(corpo["perche"] ?? ""),
+      );
+      return OK({
+        chi: fatto.conto.chi,
+        nome: contorno.nomeDi(fatto.conto.chi),
+        togliere: fatto.togliere,
+        toltoScritto: lire(fatto.togliere),
+        saldo: fatto.conto.saldo,
+        saldoScritto: lire(fatto.conto.saldo),
+      });
+    }
+
+    /**
      * Cosa c'e' nella libreria della suite, per attaccarlo a una figurina.
      *
      * ⚠ **Il gioco non sa dove stanno i file**, e non deve saperlo: chiede
@@ -578,9 +625,15 @@ export function rispondi(
         .sort((a, b) => a.quando - b.quando)
         .map((c) => ({
           ...vestita(c, contorno, true),
-          // Il valore di base: la somma dei pezzi. Chi comanda ci aggiunge
-          // solo il bonus, cosi' non deve inventarsi un numero da zero.
-          base: sommaDeiPezzi(deposito, c),
+          /**
+           * Il valore di base: quanto valgono i pezzi, in media. Chi comanda ci
+           * aggiunge solo il bonus, cosi' non deve inventarsi un numero da zero.
+           *
+           * ⚠ Era la **somma** fino all'11 settembre 2026, ed e' diventata la
+           * media: vedi `valoreDeiPezzi`. Sommando, tre pezzi scelti valevano
+           * un quarto di dodici pezzi qualunque.
+           */
+          base: valoreDiBase(deposito, c),
         }));
       /**
        * ⚠ **Prese e buttate sono due mazzi, non uno.**

@@ -52,9 +52,9 @@ collegaBonsai();
  * Su un computer senza scheda video si dice subito, prima che qualcuno prema
  * Genera e aspetti.
  *
- * **Perché non basta lasciar fare.** MiniMax Music 3 sulla CPU non dà errore:
- * parte, e finisce dopo ore. Da fuori si vede una barra che non si muove, e la
- * conclusione naturale è che l'app sia rotta. Non lo è: è la macchina che non
+ * **Perché non basta lasciar fare.** Un modello musicale sulla CPU non dà
+ * errore: parte, e finisce dopo ore. Da fuori si vede una barra che non si
+ * muove, e la conclusione naturale è che l'app sia rotta. Non lo è: è la macchina che non
  * ha l'attrezzo giusto, e questo è l'unico posto in cui dirlo prima e non dopo.
  */
 try {
@@ -97,10 +97,9 @@ collegaLavoriDaFuori(async (richiesta) => {
    * La lingua del canto, se chi ha chiesto l'ha detta.
    *
    * Dalla 0.7.7 arriva da fuori come le altre cose. Qui non e' un campo del
-   * modulo ma una preferenza con delle pastiglie, quindi va messa a mano:
-   * ACE-Step la riceve come impostazione vera, MiniMax se la trova aggiunta
-   * alla descrizione — e chi ha chiesto non deve sapere quale dei due sta
-   * usando.
+   * modulo ma una preferenza con delle pastiglie, quindi va messa a mano.
+   * ACE-Step la riceve come impostazione vera del nodo, e chi ha chiesto non
+   * deve sapere niente di tutto questo.
    */
   if (richiesta.opzioni.lingua) scegliLingua(richiesta.opzioni.lingua);
   /**
@@ -131,10 +130,15 @@ collegaLavoriDaFuori(async (richiesta) => {
    * da fuori non arrivavano, quindi da un telefono si poteva chiedere una
    * canzone ma non *quella* canzone.
    *
-   * ⚠ **Valgono per MiniMax Music 3.** ACE-Step non ha queste caselle
-   * (`usaCampo` in grafi.js lo dice riga per riga): scriverle non rompe niente
-   * e non cambia niente, e il catalogo delle azioni lo dichiara invece di far
-   * credere il contrario. «Strumentale» invece vale per tutti e due.
+   * ⚠ **Sono le caselle di ACE-Step** — battito, tonalità, tempo — e chi legge
+   * `usaCampo` in `grafi.js` lo vede riga per riga. Qui c'era scritto il
+   * contrario («valgono per MiniMax Music 3»), ed era sbagliato da quando è
+   * stato scritto: il Top-K era di MiniMax, queste tre no. Corretto l'11
+   * settembre 2026, togliendo MiniMax.
+   *
+   * Un modello che non le usa non si rompe se arrivano: le scrive nel modulo e
+   * il grafo non le collega. Il catalogo delle azioni dichiara quali valgono,
+   * invece di far credere il contrario.
    */
   if (richiesta.opzioni.bpm) {
     scrivi(el.bpm, String(numero(richiesta.opzioni.bpm, 40, 220, 120)));

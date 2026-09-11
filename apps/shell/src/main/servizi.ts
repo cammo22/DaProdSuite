@@ -98,7 +98,7 @@ export async function avviaInPiu(id: AppId, servizioId: string): Promise<string>
 /**
  * Accende il motore dell'app, se ne ha uno, e torna quando risponde a `/health`.
  *
- * Può volerci più di un minuto: MiniMax Music 3 carica 5,5 GB di pesi prima di
+ * Può volerci più di un minuto: un modello musicale carica GB di pesi prima di
  * dire che è pronto. Chi chiama deve aver già messo la scheda in "in-avvio".
  */
 export async function avvia(id: AppId, onFatal: (motivo: string) => void): Promise<void> {

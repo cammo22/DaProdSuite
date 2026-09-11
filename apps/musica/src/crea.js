@@ -35,17 +35,23 @@ const CHIAVE_LINGUA = "daprod.musica.lingua";
 /**
  * Con quale modello si genera.
  *
- * `leggera` era il MiniMax a 4 bit, tolto nella 0.4.1: chi l'aveva scelto
- * finisce sull'int8, che è lo stesso modello meglio quantizzato, e non sul
- * primo della lista — aveva scelto MiniMax, e MiniMax resta.
+ * ⚠ **Chi aveva scelto MiniMax si ritrova sul Turbo**, dall'11 settembre 2026:
+ * `leggera` era il MiniMax a 4 bit (tolto nella 0.4.1) e `migliore` era quello a
+ * 8 bit, e nessuno dei due c'è più. Non c'è niente su cui rimandarli che sia
+ * «lo stesso modello meglio fatto», quindi si va sul primo della lista.
+ *
+ * ⚠ **La scelta vecchia si cancella**, non si lascia lì: senza, il menu
+ * mostrerebbe la casella vuota (nessuna `<option>` ha quel valore) e la pagina
+ * genererebbe con il Turbo — cioè lo schermo direbbe una cosa e il motore ne
+ * farebbe un'altra.
  */
 export function modelloScelto() {
   const salvato = localStorage.getItem(CHIAVE_QUALITA);
-  if (salvato === "leggera") return "migliore";
+  if (salvato && !MODELLI[salvato]) localStorage.removeItem(CHIAVE_QUALITA);
   return MODELLI[salvato] ? salvato : "ace-turbo";
 }
 
-/** In che lingua si canta. Vale per tutti e due i modelli, in due modi diversi. */
+/** In che lingua si canta: ACE-Step la riceve come impostazione vera del nodo. */
 export function linguaScelta() {
   const salvata = localStorage.getItem(CHIAVE_LINGUA);
   return LINGUE.some((l) => l.id === salvata) ? salvata : LINGUA_PREDEFINITA;
@@ -57,10 +63,12 @@ export function linguaScelta() {
  * Stessa strada di DaProdFoto: la pagina non indovina cosa c'è sul disco, lo
  * chiede alla suite e, se manca, lo scarica da qui.
  *
- * Cambiare modello cambia anche **cosa si vede negli avanzati**: MiniMax ha il
- * Top-K del suo decoder, ACE-Step ha battito, tonalità, tempo e lingua. Mostrare
- * a ognuno i comandi dell'altro vorrebbe dire cursori che non fanno niente, che
- * è il modo più veloce di far perdere fiducia a chi li muove.
+ * Cambiare modello cambia anche **cosa si vede negli avanzati** (vedi `campi` in
+ * `grafi.js`): mostrare a un modello i comandi di un altro vorrebbe dire cursori
+ * che non fanno niente, che è il modo più veloce di far perdere fiducia a chi li
+ * muove. Adesso i due ACE hanno gli stessi comandi, e la riga resta perché la
+ * regola non è «quanti modelli ci sono» — è «un cursore che non fa niente non si
+ * mostra».
  */
 async function collegaModelli() {
   el.qualita.innerHTML = Object.values(MODELLI)
@@ -108,9 +116,11 @@ async function collegaModelli() {
  * erano un menu a tendina in fondo ai parametri avanzati, visibile solo con
  * ACE-Step scelto — cioè invisibile proprio a chi aveva il problema.
  *
- * La riga sotto cambia con il modello e non è pignoleria: con ACE-Step è
- * un'impostazione che il nodo riceve, con MiniMax è una frase che finisce nella
- * descrizione. Sono due cose diverse e chi le usa merita di saperlo.
+ * ⚠ **La riga sotto diceva due cose diverse a seconda del modello**, e adesso ne
+ * dice una: ACE-Step la lingua la riceve come impostazione vera del nodo.
+ * MiniMax Music 3 non aveva la casella e gliela si scriveva in fondo alla
+ * descrizione — «aiuta, ma non è un interruttore» — ed è uscito l'11 settembre
+ * 2026 insieme a quella spiegazione.
  */
 function disegnaLingue(m) {
   const scelta = linguaScelta();
@@ -128,10 +138,7 @@ function disegnaLingue(m) {
   }
 
   el.notaLingua.innerHTML =
-    m.lingua === "impostazione"
-      ? "<b>ACE-Step</b> la riceve come impostazione: canta nella lingua che scegli qui."
-      : "<b>MiniMax Music 3</b> non ha una casella per la lingua: la aggiungo alla descrizione dello " +
-        "stile insieme alla richiesta di scandire le parole. Aiuta, ma non è un interruttore.";
+    "<b>ACE-Step</b> la riceve come impostazione: canta nella lingua che scegli qui.";
 }
 
 /**
@@ -244,23 +251,21 @@ function leggiModulo() {
     steps: parseInt(el.steps.value),
     cfg: parseFloat(el.cfg.value),
     cfg_scale: parseFloat(el.cfg_scale.value),
-    top_k: parseInt(el.top_k.value),
     seed_text: parseInt(el.seed_text.value) || 0,
     seed_audio: parseInt(el.seed_audio.value) || 0,
     format: el.format.value,
     tiled: el.tiled.checked,
     tile: parseInt(el.tile.value) || 1536,
     qualita: modelloScelto(),
-    // I quattro di ACE-Step. Si leggono sempre, anche con MiniMax scelto: costa
-    // niente, e vuol dire che riaprendo un brano vecchio i suoi valori tornano
-    // al loro posto invece di sparire.
+    // I quattro di ACE-Step. Si leggono sempre, anche quando il modello scelto
+    // non li usa: costa niente, e vuol dire che riaprendo un brano vecchio i suoi
+    // valori tornano al loro posto invece di sparire.
     bpm: parseInt(el.bpm.value) || 120,
     // «A caso» diventa una tonalità vera **adesso**, non quando si e' scelto:
     // tirandola alla scelta, due brani di fila uscirebbero uguali.
     tonalita: tonalitaVera(el.tonalita.value),
     tempo: el.tempo.value,
-    // La lingua invece si legge sempre e vale per tutti e due: ACE-Step la
-    // riceve come impostazione, MiniMax se la ritrova nella descrizione.
+    // La lingua si legge sempre: ACE-Step la riceve come impostazione del nodo.
     lingua: linguaScelta(),
   };
 }
@@ -277,7 +282,6 @@ export function applicaMeta(meta) {
   if (meta.steps) el.steps.value = meta.steps;
   if (meta.cfg) el.cfg.value = meta.cfg;
   if (meta.cfg_scale != null) el.cfg_scale.value = meta.cfg_scale;
-  if (meta.top_k) el.top_k.value = meta.top_k;
   if (meta.seed_text != null) el.seed_text.value = meta.seed_text;
   if (meta.seed_audio != null) el.seed_audio.value = meta.seed_audio;
   if (meta.format) el.format.value = meta.format;
@@ -293,7 +297,7 @@ export function applicaMeta(meta) {
   el.randomSeed.checked = false;
   // Le etichette dei cursori si aggiornano su "input": senza questo, i numeri
   // resterebbero quelli di prima mentre i cursori si sono già mossi.
-  for (const k of ["duration", "steps", "cfg", "cfg_scale", "top_k", "bpm"]) {
+  for (const k of ["duration", "steps", "cfg", "cfg_scale", "bpm"]) {
     el[k].dispatchEvent(new Event("input"));
   }
 }
@@ -406,7 +410,6 @@ export function collegaCrea() {
   legaValore("steps", "stepsVal");
   legaValore("cfg", "cfgVal");
   legaValore("cfg_scale", "cfgsVal");
-  legaValore("top_k", "topkVal");
   legaValore("bpm", "bpmVal", (v) => `${v} BPM`);
 
   el.dice1.onclick = () => (el.seed_text.value = rnd());

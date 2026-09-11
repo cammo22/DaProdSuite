@@ -24,7 +24,9 @@
  * che comincia a produrre sempre la stessa cosa. Si affina lavorando sui
  * sottogeneri (`melodic trap`, `italo disco`), non aggiungendo prosa.
  *
- * Le tre descrizioni lunghe in fondo seguono lo schema ufficiale di MiniMax, e
+ * Le tre descrizioni lunghe in fondo seguono lo schema a tre blocchi — nato dalla
+ * documentazione di MiniMax Music 3, e rimasto quando il modello è uscito dalla
+ * suite (1.3.2) — e
  * servono al caso opposto: quando si vuole un risultato preciso invece che
  * variabile.
  *
@@ -67,7 +69,7 @@ export const STILI_DI_PARTENZA: Readonly<Record<string, string>> = {
 /**
  * Le istruzioni di sezione, fra parentesi quadre.
  *
- * Sono **solo quelle documentate per MiniMax Music 3**: qualunque altro `[tag]`
+ * Sono **solo quelle che i modelli musicali riconoscono davvero**: qualunque altro `[tag]`
  * viene minuscolizzato e passato come testo (vedi `normalize_lyrics` nel
  * sorgente del nodo). Metterne di inventati non fa niente di male, ma nemmeno
  * niente di buono — e chi le legge in un elenco crede che funzionino tutte.

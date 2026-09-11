@@ -4,7 +4,7 @@
  * Ogni voce ha una spiegazione e un elenco di proposte da cliccare: quelle a
  * scelta multipla si sommano, le altre si sostituiscono, e in ogni caso si può
  * scrivere di proprio nel campo. `block` decide in quale dei tre blocchi dello
- * schema MiniMax finisce (metadati globali, voce, arrangiamento).
+ * schema a tre blocchi finisce (metadati globali, voce, arrangiamento).
  */
 
 export const FIELDS = [
