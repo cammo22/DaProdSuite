@@ -1,6 +1,7 @@
 name: Release
 
-# Si pubblica taggando: `git tag v1.2.3 && git push --tags`.
+# Si pubblica taggando. Dalla 1.4.0 il tag lo fa da solo `tag-versione.yml`
+# quando su main arriva una versione nuova in package.json; a mano si puo' ancora.
 # La CI compila su Windows e allega alla Release l'installer e il file latest.yml
 # che electron-updater legge per capire se c'è una versione nuova.
 on:

@@ -43,7 +43,7 @@ Il ciclo è questo:
 1.  si lavora sul PC              →  la copia locale può stare avanti quanto vuole
 2.  commit su main                →  quando una cosa è finita e compila
 3.  push su GitHub                →  il lavoro sta al sicuro e si vede da fuori
-4.  tag                           →  git tag v0.1.0 && git push --tags
+4.  tag                           →  da solo: tag-versione.yml, se package.json ha una versione nuova
 5.  la CI compila e pubblica      →  Release con installer + latest.yml
 6.  chi ha la suite installata    →  vede l'aggiornamento e lo applica
 ```

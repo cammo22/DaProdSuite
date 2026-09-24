@@ -1,0 +1,46 @@
+name: Tag della versione
+
+# Una versione nuova arrivata su main si tagga da sola, e la Release parte.
+#
+# ⚠ Nuovo nella 1.4.0. Prima si pubblicava solo col tag fatto a mano
+# (`git tag v1.2.3` e poi il push dei tag): un gesto in più, e da una sessione
+# nel cloud il tag non passa proprio — il proxy di git lascia spingere solo il
+# ramo di lavoro. Adesso la versione la dice `package.json`: se su main c'è una
+# versione che non ha ancora il suo tag, lo si crea qui e si lancia Release.
+#
+# Il tag creato con GITHUB_TOKEN non fa partire altri workflow (e' una regola di
+# GitHub, per non fare giri infiniti), ma `workflow_dispatch` si': per questo
+# Release si lancia a mano da qui, sul tag appena creato.
+#
+# Gira a ogni push su main (non solo quando cambia package.json): se il tag
+# c'e' gia' finisce in un secondo, e cosi' non si perde la versione arrivata
+# insieme a un altro file.
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Tagga e pubblica, se la versione e' nuova
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          v="v$(node -p "require('./package.json').version")"
+          if git rev-parse -q --verify "refs/tags/$v" >/dev/null; then
+            echo "$v c'e' gia': niente da fare."
+            exit 0
+          fi
+          git tag "$v" "$GITHUB_SHA"
+          git push origin "$v"
+          gh workflow run release.yml --ref "$v"
+          echo "Creato $v e lanciata la Release."
