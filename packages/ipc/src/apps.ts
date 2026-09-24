@@ -128,22 +128,6 @@ export const APPS: Record<AppId, AppDescriptor> = {
     kind: "renderer",
     accent: "#22d3ee",
     models: [],
-    /**
-     * ⚠ Il giudice della sala giochi (1.4.0): Jev-Omni, che dà un parere sulle
-     * combinazioni in fila. Parte solo quando chi comanda lo chiede — la
-     * console funziona uguale senza, ed è per questo che il modello sta fra
-     * gli extra e non fra quelli di serie.
-     */
-    motoriInPiu: [
-      {
-        id: "giudice",
-        port: 8790,
-        entry: "avvio.py",
-        // Carica un 12B a 4 bit alla prima domanda: dal disco, qualche minuto.
-        healthTimeoutMs: 60_000,
-      },
-    ],
-    extraModels: ["jev-omni"],
     gpuHeavy: false,
     schedaVideo: "non-serve",
   },

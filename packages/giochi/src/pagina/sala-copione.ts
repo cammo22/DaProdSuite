@@ -93,14 +93,8 @@ export const COPIONE_SALA = `
 
   function disegnaSala() {
     if (!sala) return;
-    var h = '';
-    sala.giochi.forEach(function (g) {
-      h += '<button class="gioco-sala" data-apri-gioco="' + g.id + '">' +
-        '<span class="icona ' + g.id + '">' + (ICONE_SALA[g.id] || '🎮') + '</span>' +
-        '<b>' + sicuro(g.nome) + '</b><small>' + sicuro(g.riga) + '</small>' +
-        '<span class="entra">entri con ' + soldi(g.ingresso) + '</span></button>';
-    });
-    $('sala-giochi').innerHTML = h;
+    // La stessa carta della Home (home-copione.ts): la schermata vera del gioco.
+    $('sala-giochi').innerHTML = tuttiIGiochi().map(cartaGiocoHtml).join('');
     $('sala-partita').innerHTML = cifreDellaPartita();
   }
 

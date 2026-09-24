@@ -1,5 +1,0 @@
-# Le librerie del giudice che l'ambiente condiviso non ha gia'.
-#
-# Torch e transformers ci sono (li usano gli altri motori). bitsandbytes serve a
-# caricare Jev-Omni in 4 bit: in FP32 sono 50 GB, e la scheda ne ha 8.
-bitsandbytes>=0.45

@@ -1,9 +1,10 @@
 /**
  * Il giudice: un parere in piu' per chi comanda, davanti alla fila.
  *
- * ⚠ Nuovo nella 1.4.0: vedi CONCETTI.md § 18.7. Il giudice e' Jev-Omni, un
- * modello che non scrive: davanti a una situazione, una domanda e qualche
- * risposta possibile, dice **quanto e' probabile ognuna**. E' proprio il
+ * ⚠ Nuovo nella 1.4.0: vedi CONCETTI.md § 18.7. Il giudice e' un modello che
+ * non scrive: davanti a una situazione, una domanda e qualche risposta
+ * possibile, **sceglie e dice quanto ci crede** (dalla 1.4.3 e' Needle 3; nella
+ * 1.4.0 era Jev-Omni, 50 GB, troppi). E' proprio il
  * mestiere di chi guarda la fila — «questa la prendo, la butto, o la metto in
  * vetrina?» — fatto da uno che non si stanca alla trentesima riga.
  *

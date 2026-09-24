@@ -78,7 +78,7 @@ import {
   togliDallaFila,
 } from "./esecuzione";
 import { avvisaSulComputer } from "./avvisi";
-import { capisciComunque } from "./needle";
+import { capisciComunque, classifica, scaricaNeedle } from "./needle";
 import { cartelleImportanti, tieniInDaProd } from "./cartelle";
 import {
   buttaLaCartella,
@@ -89,9 +89,6 @@ import {
   togliStile,
 } from "./stili";
 import { turno } from "./turno";
-import { avviaInPiu } from "./servizi";
-import { isModelPresent } from "./models";
-import { librerieDelMotoreInPiu } from "./scaricamenti";
 import { anteprimaDi, puoAvereAnteprima } from "./anteprime";
 import {
   accettaIlPiano,
@@ -1093,33 +1090,34 @@ function nomeScheda(app: string): string {
  * vetrina senza un nome sopra, e va bene così: lo stile è ancora buono.
  */
 /**
- * Il giudice della sala giochi: Jev-Omni, dietro al motore «giudice».
+ * Il giudice della sala giochi: **Needle 3**, lo stesso motore di «capisci».
  *
- * ⚠ Nuovo nella 1.4.0. Si accende **solo alla prima domanda**, come motore in
- * più di DaProdConnessione: sono GB di pesi, e chi non guarda la fila non deve
- * pagarli. Se i pesi non ci sono lo si dice subito, invece di far partire un
- * motore che morirebbe cercandoli.
+ * ⚠ Dalla 1.4.3. Nella 1.4.0 era Jev-Omni, e Cammo l'ha fermato il 24 settembre
+ * 2026: «sono 50 GB, sono troppi». La Q4 di Jev esiste (Reza2kn, circa 7 GB)
+ * ma da sola non basta — vuole llama-server, la testa di decisione a parte e il
+ * suo script — e occupa la scheda video mentre la stessa scheda genera. Needle
+ * 3 sono 29 MB sul processore, si scarica da solo alla prima domanda, e
+ * classifica con una fiducia calibrata.
+ *
+ * Needle sceglie **una** risposta e dice quanto ci crede: la pagina vuole
+ * quattro barre, quindi la fiducia va alla scelta e il resto si divide fra le
+ * altre. È onesto: sono i due numeri che il modello dà davvero.
  */
 const fornitoreGiudice: FornitoreGiudice = {
   async giudica(d) {
-    if (!isModelPresent("jev-omni")) {
-      throw new Error("Il giudice non e' installato: scarica Jev-Omni dall'hub, sotto DaProdConnessione.");
-    }
-    // bitsandbytes, la prima volta: il giudice non ha una scheda da installare.
-    const log = createLogger("giudice");
-    await librerieDelMotoreInPiu("giudice", (riga) => log.write(riga + "\n", false));
-    const base = await avviaInPiu("connessione", "giudice");
-    const file = d.libreria ? libreria.trova(d.libreria)?.percorso : undefined;
-    const risposta = await fetch(base + "/api/giudica", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ stato: d.stato, domanda: d.domanda, opzioni: d.opzioni, file, tipo: file ? d.tipo : undefined }),
-      // La prima volta carica il modello: qualche minuto e' normale.
-      signal: AbortSignal.timeout(10 * 60_000),
+    const manca = await scaricaNeedle();
+    if (manca) throw new Error(`Il giudice (Needle 3) non si scarica: ${manca}`);
+    const scelto = await classifica({
+      testo: `${d.stato}\n\n${d.domanda}`,
+      cosa: d.domanda,
+      opzioni: d.opzioni,
     });
-    const dati = (await risposta.json().catch(() => ({}))) as { probabilita?: Record<string, number>; detail?: string };
-    if (!risposta.ok || !dati.probabilita) throw new Error(dati.detail ?? "Il giudice non ha risposto.");
-    return { probabilita: dati.probabilita };
+    if (!scelto) throw new Error("Il giudice non ha saputo scegliere: riprova, o decidi tu.");
+    const fiducia = Math.min(0.99, Math.max(0.25, scelto.fiducia ?? 0.6));
+    const resto = (1 - fiducia) / Math.max(1, d.opzioni.length - 1);
+    const probabilita: Record<string, number> = {};
+    for (const o of d.opzioni) probabilita[o] = o === scelto.scelta ? fiducia : resto;
+    return { probabilita };
   },
 };
 

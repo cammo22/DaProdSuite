@@ -1266,10 +1266,14 @@ da se':
 
 Chi comanda guarda la fila da solo, e alla trentesima riga non vede piu'
 niente. Dalla 1.4.0 accanto a ogni combinazione in fila c'e' **«chiedi al
-giudice»**: il PC accende Jev-Omni (un classificatore di decisioni, vedi
-`services/giudice`) e gli fa una domanda sola, con quattro risposte possibili —
-**slop**, **normale**, **buona**, **da vetrina**. Torna quanto e' probabile
-ognuna, e sulla card compaiono quattro barre.
+giudice»**: il PC chiede a Needle 3 (29 MB, sul processore, si scarica da solo
+alla prima domanda) una domanda sola, con quattro risposte possibili —
+**slop**, **normale**, **buona**, **da vetrina**. Needle ne sceglie una e dice
+quanto ci crede; sulla card compaiono quattro barre.
+
+⚠ Nella 1.4.0 il giudice era Jev-Omni: 50 GB. Cammo l'ha fermato («sono
+troppi»), e la sua Q4 da sola non basta (vuole llama-server, una testa di
+decisione a parte e occupa la scheda video che sta generando).
 
 - Quattro scatole e non dodici gradi: fra Arcane e Heroic nessuno sa dire la
   differenza guardando una riga, modello o persona.

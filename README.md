@@ -10,7 +10,7 @@ Un programma solo per fare musica, immagini, video, voci e parlare con un avatar
 Ogni app la installi quando ti serve e la disinstalli quando non ti serve più.
 Gira sul tuo computer: niente account, niente chiavi API, codice aperto.
 
-[![versione](https://img.shields.io/badge/versione-1.4.2-7c5cff)](https://github.com/cammo22/DaProdSuite/releases/latest)
+[![versione](https://img.shields.io/badge/versione-1.4.3-7c5cff)](https://github.com/cammo22/DaProdSuite/releases/latest)
 [![licenza](https://img.shields.io/badge/licenza-MIT-5cff9d)](LICENSE)
 [![piattaforma](https://img.shields.io/badge/Windows-x64-3ddbff)](#requisiti)
 [![sito](https://img.shields.io/badge/sito-cammo22.github.io-ffa63d)](https://cammo22.github.io/DaProdSuite/)
@@ -75,7 +75,7 @@ Tutto in locale: nessun account, nessuna API, nessun dato che esce dal computer.
 | 🟪 | **DaProdCinema** | Video con il suono dentro, da una descrizione o da un'immagine | LTX 2.5 | ✅ disponibile |
 | 🟡 | **DaProdVoce** | Scrivi una frase e te la legge, con la voce che scegli tu | Audio8 TTS 0.1B · 0.6B | ✅ disponibile |
 | 🟢 | **DaProdCompanion** | Un assistente sul desktop che si ricorda delle conversazioni di prima | un modello a scelta via LM Studio | ⏳ in arrivo |
-| 🔵 | **DaProdConnessione** | Chi è collegato, cosa sta girando, la sala giochi, e la stessa pagina che vedi dal telefono | Jev-Omni (il giudice, a richiesta) | ✅ disponibile |
+| 🔵 | **DaProdConnessione** | Chi è collegato, cosa sta girando, la sala giochi, e la stessa pagina che vedi dal telefono | Needle 3 (il giudice) | ✅ disponibile |
 
 Questa non è una lista chiusa: continuiamo a testare modelli nuovi e ad
 aggiungere schede. Quello che vedi qui è dove siamo adesso, non dove ci
@@ -113,7 +113,7 @@ chi è collegato alla suite.
 DaProd (vetro scuro, pioggia verde, bottoni aqua), Qwen-Image 2.1 al posto di
 FLUX per creare e modificare, YuE2 in Musica, il 3D da una foto con TRELLIS.2,
 il dado delle idee senza cliché, la sala d'arcade con la Lira DaProd e il
-giudice Jev-Omni per la fila. Il passaggio a Tauri è pianificato in
+giudice della fila (dalla 1.4.3 Needle 3, 29 MB). Il passaggio a Tauri è pianificato in
 [docs/TAURI.md](docs/TAURI.md).
 
 Prima, la 1.2.1 — «Adesso che si arriva al computer, si guarda cosa c'è dentro»: Col tunnel che regge (1.2.0: il computer si fa trovare dalla rete
@@ -426,7 +426,7 @@ La suite non addestra nulla: mette insieme il lavoro di altri e lo rende usabile
 | [Anima](https://huggingface.co/circlestone-labs/Anima) · [Qwen-Image 2.1](https://huggingface.co/Qwen/Qwen-Image-2.1) ([GGUF di Unsloth](https://huggingface.co/unsloth/Qwen-Image-2.1-GGUF)) | le immagini, nuove e modificate |
 | [YuE2](https://huggingface.co/m-a-p/YuE2-3B) | canzoni con la voce, anche a partire da una partitura |
 | [TRELLIS.2](https://huggingface.co/microsoft/TRELLIS.2-4B) | da una foto a un modellino 3D con la sua texture |
-| [Jev-Omni](https://huggingface.co/akhilaaa3/Jev-Omni) | il giudice della sala giochi: dà un parere sulle combinazioni |
+| [Needle 3](https://huggingface.co/Cactus-Compute/needle3) | capisce le frasi, e fa da giudice della sala giochi |
 | [LeapTalk](https://huggingface.co/z-rx/leaptalk) · [SoulX-FlashHead](https://huggingface.co/Soul-AILab/SoulX-FlashHead-1_3B) | l'avatar parlante: LeapTalk gira sopra SoulX, che è il suo modello di base |
 | [SD-Turbo](https://huggingface.co/stabilityai/sd-turbo) | la trasformazione in tempo reale |
 | [Whisper](https://github.com/SYSTRAN/faster-whisper) · [Piper](https://github.com/rhasspy/piper) | ascoltano e parlano, in locale |

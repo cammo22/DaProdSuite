@@ -64,9 +64,6 @@ import {
   cartellaLibreriePrivate,
   fileRequisiti,
   fileRequisitiPrivati,
-  librerieDelMotorePronte,
-  requisitiDelMotore,
-  segnaLibrerieDelMotore,
   segnaLibrerieServizio,
 } from "./librerie-servizio";
 import * as servizi from "./servizi";
@@ -335,31 +332,6 @@ async function installaLibrerieServizio(id: AppId, corsa: Corsa): Promise<void> 
   // Solo adesso: se qualcosa è andato storto sopra, la scheda resta «da
   // installare» e il prossimo tentativo rifà il giro invece di credersi a posto.
   segnaLibrerieServizio(id);
-}
-
-/**
- * Le librerie di un motore in più, alla prima accensione (1.4.0).
- *
- * Stessa strada di `installaLibrerieServizio` — uv, i vincoli comuni, il
- * segnaposto con l'impronta — ma senza una scheda da far avanzare: chi chiama
- * è una richiesta che aspetta, e le righe vanno nel log del motore. La seconda
- * volta non fa niente.
- */
-export async function librerieDelMotoreInPiu(servizioId: string, scrivi: (riga: string) => void): Promise<void> {
-  const requisiti = requisitiDelMotore(servizioId);
-  if (!requisiti || librerieDelMotorePronte(servizioId)) return;
-  const uv = await ensureUv({ toolsDir: TOOLS_DIR, onLine: scrivi });
-  scrivi(`Librerie del motore da ${requisiti}`);
-  await installaRequisiti({
-    uv,
-    runtimeDir: RUNTIME_DIR,
-    requisiti,
-    vincoli: VINCOLI_REQUIREMENTS,
-    segnale: AbortSignal.timeout(30 * 60_000),
-    onLine: scrivi,
-    timeoutMs: 30 * 60_000,
-  });
-  segnaLibrerieDelMotore(servizioId);
 }
 
 /**

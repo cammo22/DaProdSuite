@@ -1,5 +1,5 @@
 /**
- * Una frase in italiano, e diventa un lavoro. **Needle 2 al posto giusto.**
+ * Una frase in italiano, e diventa un lavoro. **Needle al posto giusto.**
  *
  * ## Il terzo passo, quello che mancava
  *
@@ -11,7 +11,10 @@
  *
  * Chiesto il 5 settembre 2026: «attiviamo anche il modello needle». Adesso c'è.
  *
- * ## Cos'è Needle 2, e perché ha senso qui
+ * ## Cos'è Needle, e perché ha senso qui
+ *
+ * (Qui sotto è scritto per Needle 2, che è com'è nato. Dalla 1.4.3 è Needle 3:
+ * cosa cambia sta più giù, sopra `piattaforma()`.)
  *
  * [Cactus-Compute/needle2](https://huggingface.co/Cactus-Compute/needle2): un
  * modello da 45 milioni di parametri che fa **una cosa sola** — legge una frase
@@ -22,8 +25,8 @@
  *
  * Tre numeri che spiegano perché sta bene in questa suite:
  *
- * - **14 MB**, e il modello è dentro il binario: niente pesi da scaricare a
- *   parte, niente runtime, niente rete;
+ * - **pochi mega**: 14 per il 2, 29 di pesi più un motore da meno di un mega
+ *   per il 3. Niente runtime, e dopo lo scaricamento niente rete;
  * - **28 MB di RAM** in tutta la sessione. Non tocca la scheda video, che qui è
  *   la risorsa che si litiga;
  * - **centinaia di token al secondo** anche su un Raspberry Pi. La risposta
@@ -67,9 +70,50 @@ import { chiediAllLlm } from "./llm";
 const log = createLogger("needle");
 const annota = (riga: string): void => log.write(`${riga}\n`, false);
 
-/** Dove sta il binario, una volta scaricato. */
+/*
+ * ## Needle 3, dalla 1.4.3
+ *
+ * Chiesto il 24 settembre 2026: «Jev-Omni sono 50 GB, sono troppi: usiamo le
+ * versioni Q4, altrimenti vediamo il nuovo Needle 3 uscito da poco».
+ *
+ * [Needle 3](https://huggingface.co/Cactus-Compute/needle3) cambia due cose
+ * rispetto al 2, e tutte e due contano qui:
+ *
+ * - **i pesi non stanno più dentro il binario.** C'è un motore da meno di un
+ *   mega per piattaforma (`windows-x86_64/`) e un file di pesi solo,
+ *   `needle3.cact`, da 29 MB. Il motore si lancia con `--model`;
+ * - **classifica.** L'estrazione strutturata con un campo `enum` è una
+ *   classificazione, e ogni risposta porta una `confidence` calibrata da una
+ *   testa addestrata apposta. È il mestiere del giudice della sala giochi
+ *   (`giudica`, qui sotto), fatto da un modello che non tocca la scheda video
+ *   — che mentre si guarda la fila sta generando.
+ *
+ * Il formato della risposta è lo stesso del 2 (`function_calls`, `reasoning`,
+ * `confidence`), quindi `leggiLaRisposta` non cambia. Letto dal pacchetto
+ * ufficiale `cactus-needle` 3.0.5 su PyPI: `needle/agent/fetch.py` dice dove
+ * stanno motore e pesi, il README come si lancia.
+ *
+ * ⚠ **La telemetria del motore è accesa di serie.** Qui si spegne sempre
+ * (`NEEDLE_TELEMETRY=0`, `DO_NOT_TRACK=1`): la suite promette che non esce
+ * niente dal computer, e un modello da 29 MB non cambia la promessa.
+ */
+
+const REPO = "https://huggingface.co/Cactus-Compute/needle3";
+const PESI = "needle3.cact";
+/** Quanto pesano i pesi, più o meno: il vero lo dice l'elenco di HuggingFace. */
+const PESI_STIMA = 29 * 1024 * 1024;
+
+/** La cartella del motore per questo computer, come la chiama la repo. */
+function piattaforma(): string | null {
+  if (process.platform === "win32" && process.arch === "x64") return "windows-x86_64";
+  if (process.platform === "linux" && process.arch === "x64") return "linux-x86_64";
+  if (process.platform === "darwin" && process.arch === "arm64") return "macos-arm64";
+  return null;
+}
+
+/** Dove sta il motore, una volta scaricato. */
 function cartella(): string {
-  const dove = join(DATA_ROOT, "needle");
+  const dove = join(DATA_ROOT, "needle3");
   mkdirSync(dove, { recursive: true });
   return dove;
 }
@@ -78,73 +122,116 @@ function binario(): string {
   return join(cartella(), process.platform === "win32" ? "needle.exe" : "needle");
 }
 
-function fileAttrezzi(): string {
-  return join(cartella(), "azioni.json");
+function pesi(): string {
+  return join(cartella(), PESI);
 }
 
-/**
- * Da dove si scarica.
- *
- * Il file è **il modello**: i pesi sono dentro il binario, quindi non c'è un
- * secondo scaricamento e non c'è niente da tenere allineato. Quattordici mega.
- */
-const DA_DOVE =
-  "https://huggingface.co/Cactus-Compute/needle2/resolve/main/windows-x86_64/needle.exe";
+function fileAttrezzi(nome = "azioni"): string {
+  return join(cartella(), `${nome}.json`);
+}
 
-/** Quanto pesa, più o meno: serve a `scaricaFile` per sapere quando ha finito. */
-const QUANTO_PESA = 14 * 1024 * 1024;
+/** Il motore gira senza raccontare niente a nessuno. */
+const SENZA_TELEMETRIA = { ...process.env, NEEDLE_TELEMETRY: "0", DO_NOT_TRACK: "1" };
 
 /**
  * Quanto si aspetta una risposta.
  *
- * Needle risponde in decine di millisecondi. Tre secondi sono un'eternità, e
- * sono lì per il primo avvio — quando Windows deve ancora leggere il file dal
- * disco — non per il modello.
+ * Needle risponde in decine di millisecondi. I secondi in più sono per il
+ * primo avvio — quando Windows deve ancora leggere i pesi dal disco — non per
+ * il modello.
  */
-const ATTESA_MS = 5_000;
+const ATTESA_MS = 8_000;
 
 export interface StatoNeedle {
-  /** Il binario c'è su questo computer. */
+  /** Motore e pesi ci sono su questo computer. */
   ceLAbbiamo: boolean;
-  /** Su questo sistema si può usare. Oggi: solo Windows x64. */
+  /** Su questo sistema si può usare: Windows x64, Linux x64, Mac Apple. */
   possibile: boolean;
 }
 
 export function statoNeedle(): StatoNeedle {
   return {
-    ceLAbbiamo: existsSync(binario()),
-    // Il binario che scarichiamo è quello di Windows x64. La suite gira lì; il
-    // giorno che girasse altrove, qui si aggiunge una riga e un indirizzo.
-    possibile: process.platform === "win32" && process.arch === "x64",
+    ceLAbbiamo: existsSync(binario()) && existsSync(pesi()),
+    possibile: piattaforma() !== null,
   };
 }
 
+interface VoceRepo {
+  type: string;
+  path: string;
+  size?: number;
+  lfs?: { size?: number };
+}
+
+/** L'elenco dei file di una cartella della repo, col loro peso. */
+async function elenco(sotto: string): Promise<VoceRepo[]> {
+  const risposta = await fetch(`https://huggingface.co/api/models/Cactus-Compute/needle3/tree/main/${sotto}`, {
+    headers: { "user-agent": "DaProdSuite" },
+  });
+  if (!risposta.ok) throw new Error(`HuggingFace risponde ${risposta.status} per ${sotto || "la repo"}`);
+  return ((await risposta.json()) as VoceRepo[]).filter((v) => v.type === "file");
+}
+
+let scaricando: Promise<string | null> | null = null;
+
 /**
- * Lo scarica, se non c'è.
+ * Lo scarica, se non c'è: il motore della sua piattaforma e i pesi.
  *
  * Torna il motivo se non ci riesce, `null` se è andata. Non solleva: chi
- * chiama è un tasto in un pannello, e un tasto che fa esplodere la suite
- * perché HuggingFace è lento non è un tasto.
+ * chiama è un tasto, e un tasto che fa esplodere la suite perché HuggingFace è
+ * lento non è un tasto. Due chiamate insieme fanno un solo scaricamento.
  */
-export async function scaricaNeedle(): Promise<string | null> {
-  if (!statoNeedle().possibile) {
-    return "Needle si scarica solo su Windows a 64 bit.";
-  }
+export function scaricaNeedle(): Promise<string | null> {
+  scaricando ??= scarica().finally(() => {
+    scaricando = null;
+  });
+  return scaricando;
+}
+
+async function scarica(): Promise<string | null> {
+  const dove = piattaforma();
+  if (!dove) return "Needle 3 non ha un motore per questo computer.";
   if (statoNeedle().ceLAbbiamo) return null;
   try {
-    await scaricaFile({ url: DA_DOVE, destinazione: binario(), bytes: QUANTO_PESA });
-    // Su Windows non serve, ma non costa niente ed è quello che vuole il giorno
-    // che questo file gira altrove.
+    // Il motore: tutta la sua cartella, qualunque file ci sia dentro (l'eseguibile,
+    // e su qualche piattaforma la libreria accanto).
+    for (const f of await elenco(dove)) {
+      const nome = f.path.split("/").pop() ?? f.path;
+      await scaricaFile({
+        url: `${REPO}/resolve/main/${f.path}`,
+        destinazione: join(cartella(), nome),
+        bytes: f.lfs?.size ?? f.size ?? 0,
+      });
+    }
+    const radice = await elenco("").catch(() => [] as VoceRepo[]);
+    const voce = radice.find((f) => f.path === PESI);
+    await scaricaFile({
+      url: `${REPO}/resolve/main/${PESI}`,
+      destinazione: pesi(),
+      bytes: voce?.lfs?.size ?? voce?.size ?? PESI_STIMA,
+    });
     try {
       chmodSync(binario(), 0o755);
     } catch {
       // Su Windows i permessi non si toccano così: va bene lo stesso.
     }
-    annota("needle: scaricato");
+    if (!statoNeedle().ceLAbbiamo) return "Il motore di Needle 3 non era nella cartella scaricata.";
+    annota("needle3: scaricato");
     return null;
   } catch (err) {
-    return err instanceof Error ? err.message : String(err);
+    const perche = err instanceof Error ? err.message : String(err);
+    annota(`needle3: non scaricato (${perche})`);
+    return perche;
   }
+}
+
+/** Una domanda a Needle, con i suoi attrezzi: torna quello che stampa. */
+async function chiedi(attrezzi: string, frase: string): Promise<string> {
+  const risposta = await capture(binario(), ["--model", pesi(), "--tools", attrezzi, "--prompt", frase], {
+    timeoutMs: ATTESA_MS,
+    env: SENZA_TELEMETRIA,
+  });
+  return typeof risposta === "string" ? risposta : String(risposta ?? "");
 }
 
 /**
@@ -203,12 +290,7 @@ export async function capisci(frase: string): Promise<Capito | null> {
 
   let uscita: string;
   try {
-    const risposta = await capture(
-      binario(),
-      ["--tools", scriviAttrezzi(), "--prompt", pulita],
-      { timeoutMs: ATTESA_MS },
-    );
-    uscita = typeof risposta === "string" ? risposta : String(risposta ?? "");
+    uscita = await chiedi(scriviAttrezzi(), pulita);
   } catch (err) {
     annota(`needle: non ha risposto (${err instanceof Error ? err.message : String(err)})`);
     return null;
@@ -267,6 +349,73 @@ export function leggiLaRisposta(uscita: string): Capito | null {
     fiducia: typeof dati.confidence === "number" ? dati.confidence : 0,
     perche: typeof dati.reasoning === "string" ? dati.reasoning : undefined,
   };
+}
+
+/* ------------------------------------------------ classificare (Needle 3) */
+
+/** Cosa ha scelto, e quanto ci crede. */
+export interface Scelta {
+  scelta: string;
+  /** Da 0 a 1, calibrata. `null` se i pesi non hanno la testa della fiducia. */
+  fiducia: number | null;
+}
+
+/**
+ * Sceglie una fra poche risposte: **la classificazione di Needle 3**.
+ *
+ * Come la chiede la guida di Cactus (estrazione strutturata con un `enum`): un
+ * attrezzo solo, che è il modulo da riempire, con un campo che può valere solo
+ * una delle risposte. La grammatica non lascia scrivere altro. Serve al giudice
+ * della sala giochi, ed è generica apposta: una domanda, le risposte, e basta.
+ *
+ * Torna `null` se Needle non c'è o non ha scelto — il giudice lo dice, non
+ * inventa.
+ */
+export async function classifica(domanda: {
+  testo: string;
+  cosa: string;
+  opzioni: string[];
+}): Promise<Scelta | null> {
+  if (!statoNeedle().ceLAbbiamo || domanda.opzioni.length === 0) return null;
+  const attrezzi = [
+    {
+      name: "classify",
+      description: domanda.cosa,
+      parameters: {
+        type: "object",
+        properties: { label: { type: "string", enum: domanda.opzioni, description: domanda.cosa } },
+        required: ["label"],
+      },
+    },
+  ];
+  const file = fileAttrezzi("classifica");
+  writeFileSync(file, `${JSON.stringify(attrezzi, null, 1)}\n`, "utf8");
+  let uscita: string;
+  try {
+    uscita = await chiedi(file, domanda.testo.slice(0, 2000));
+  } catch (err) {
+    annota(`needle3: non ha classificato (${err instanceof Error ? err.message : String(err)})`);
+    return null;
+  }
+  return leggiLaScelta(uscita, domanda.opzioni);
+}
+
+/** La scelta dal JSON che Needle stampa. Esportata per provarla senza il motore. */
+export function leggiLaScelta(uscita: string, opzioni: string[]): Scelta | null {
+  try {
+    const righe = uscita.split(/\r?\n/).filter((r) => r.trim().startsWith("{"));
+    const ultima = righe[righe.length - 1];
+    if (!ultima) return null;
+    const dati = JSON.parse(ultima) as {
+      function_calls?: { arguments?: Record<string, unknown> }[];
+      confidence?: number | null;
+    };
+    const scelta = String(dati.function_calls?.[0]?.arguments?.["label"] ?? "");
+    if (!opzioni.includes(scelta)) return null;
+    return { scelta, fiducia: typeof dati.confidence === "number" ? dati.confidence : null };
+  } catch {
+    return null;
+  }
 }
 
 /* ------------------------------------------------- l'altra strada: il modello */
