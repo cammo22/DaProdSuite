@@ -401,6 +401,13 @@ const STORIA = {
 
 // ============================================================ NOVITÀ (mostrate in gioco al primo avvio di una versione)
 const NOVITA = {
+  "v2.1.2": {
+    titolo: "La ricarica, quanto vuoi",
+    punti: [
+      "Dentro la DaProd Suite la ricarica apre il portafoglio: scegli quante lire passare al gioco.",
+      "Ogni L.100 della suite diventano un minuto di produzione del quartiere."
+    ]
+  },
   "v2.1.1": {
     titolo: "Qui si gioca e basta",
     punti: [
