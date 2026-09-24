@@ -7,6 +7,7 @@
  */
 
 import { COVER_NEG, ESTETICHE, MOTIVI } from "./dati/estetiche.js";
+import { QWEN21, grafoQwenImmagine } from "/comune/qwen-image.js";
 
 /**
  * Con che cosa si fa il brano: **ACE-Step 1.5**, in due taglie.
@@ -89,6 +90,52 @@ export const MODELLI = {
   },
 };
 
+/**
+ * **YuE2 3B**, dalla 1.4.0: «per la musica mettiamo anche YuE2-3B».
+ *
+ * Un'altra idea di canzone. ACE-Step disegna il suono tutto insieme; YuE2 fa
+ * come un musicista: **prima scrive la partitura** — melodia e accordi in
+ * notazione ABC, allineati al testo — e poi la suona. Gli autori lo misurano
+ * sopra Suno v5 su SongBench, ed è il primo open che ci arriva.
+ *
+ * Due voci nel menu invece di un interruttore, perché sono due attese diverse:
+ * **diretto** va dal testo al suono, **con la partitura** passa prima dalla
+ * melodia scritta, che costa un altro giro del modello di lingua e in cambio dà
+ * canzoni più tenute insieme. È lo stesso file, e lo stesso grafo.
+ *
+ * Tutto sta in **un checkpoint solo** — modello, lettore e VAE — ripacchettato
+ * da Comfy-Org, e i nodi sono di serie in ComfyUI dalla 0.37: niente da
+ * installare nel motore. ⚠ Gli autori misurano 24 GB di VRAM senza
+ * compressione; qui c'è l'int8, e su 8 GB ComfyUI sposta i pesi fra scheda e
+ * RAM. Si sente nel tempo, non nella canzone.
+ */
+const YUE2 = {
+  famiglia: "yue2",
+  ckpt: "yue2_3b_int8_convrot.safetensors",
+  grafo: grafoYue2,
+  campi: ["steps"],
+  // I passi del campionatore del suono, dal grafo ufficiale: 32, dpm_2.
+  passi: { min: 16, max: 48, valore: 32 },
+  comuni: [],
+};
+
+MODELLI["yue2"] = {
+  ...YUE2,
+  id: "yue2",
+  nome: "YuE2 3B",
+  riga: "Canzoni intere col testo cantato, come le scrive un musicista. 4,3 GB.",
+  partitura: false,
+  catalogo: ["yue2-3b-int8"],
+};
+MODELLI["yue2-partitura"] = {
+  ...YUE2,
+  id: "yue2-partitura",
+  nome: "YuE2 3B, con la partitura",
+  riga: "Prima scrive melodia e accordi, poi li suona: più lento, più tenuto insieme.",
+  partitura: true,
+  catalogo: ["yue2-3b-int8"],
+};
+
 /** Il modello scelto, o quello che parte se l'id salvato non esiste più. */
 export const modello = (id) => MODELLI[id] ?? MODELLI["ace-turbo"];
 
@@ -107,15 +154,16 @@ const MODELLI_IMMAGINE = {
  * per la copertina», e «rendiamo flux klein 4b default per le immagini, lo
  * stesso per le copertine».
  *
- * **Perché due e non quattro.** Una copertina è un quadrato che si guarda in
- * una lista: i due FLUX grossi ci starebbero, ma vorrebbero dire caricare
- * undici giga in scheda subito dopo aver fatto un brano — e su 8 GB è la strada
- * per l'out-of-memory. Anima resta perché è la più veloce e non serve la
- * scheda; Klein 4B perché capisce le descrizioni lunghe, che è quello che si
- * scrive quando si dice come deve essere una copertina.
+ * ⚠ **Dalla 1.4.0 al posto di FLUX.2 Klein 4B c'è Qwen-Image 2.1 Turbo.** FLUX
+ * è uscito dalla suite il 24 settembre 2026. Il turbo e non quello di serie per
+ * la stessa ragione per cui era il 4B e non il 9B: una copertina è un quadrato
+ * che si guarda in una lista, e arriva subito dopo un brano — quattro passi
+ * invece di venticinque. Qwen le scritte le sa fare meglio di Klein, e una
+ * copertina con il titolo sopra è esattamente quello (vedi `conScritta`).
  *
  * Gli id sono gli stessi di DaProdFoto, e non è un caso: chi chiede da fuori
- * dice «flux2-4b» e vale in tutte e due le schede.
+ * dice «qwen21-turbo» e vale in tutte e due le schede. Il grafo non sta qui:
+ * è quello comune di `packages/ui/src/qwen-image.js`.
  */
 export const MODELLI_COPERTINA = {
   anima: {
@@ -124,63 +172,14 @@ export const MODELLI_COPERTINA = {
     grafo: (prompt, seed, opzioni) => grafoAnima(prompt, seed, opzioni),
     catalogo: [],
   },
-  "flux2-4b": {
-    id: "flux2-4b",
-    nome: "FLUX.2 Klein 4B",
-    dit: "flux-2-klein-4b-Q5_K_M.gguf",
-    txt: "Qwen3-4B-Q5_K_M.gguf",
-    vae: "flux2-vae.safetensors",
-    grafo: (prompt, seed, opzioni) => grafoFluxCopertina(prompt, seed, opzioni),
-    catalogo: ["flux2-klein-4b-q5km", "flux2-4b-text-encoder", "flux2-vae"],
+  "qwen21-turbo": {
+    id: "qwen21-turbo",
+    nome: "Qwen-Image 2.1 Turbo",
+    grafo: (prompt, seed, { larghezza = 1024, altezza = 1024, salva = false } = {}) =>
+      grafoQwenImmagine({ prompt, seed, larghezza, altezza, turbo: true, salva, prefisso: "immagini/daprod" }),
+    catalogo: QWEN21.catalogoTurbo,
   },
 };
-
-/**
- * La copertina con FLUX.2 Klein 4B.
- *
- * È il grafo di DaProdFoto ridotto all'osso: niente ritocco, niente misure
- * libere, niente negativo. Klein è distillato e lavora a CFG 1, e a CFG 1 il
- * negativo non viene guardato — si passa un conditioning azzerato, che è quello
- * che fa il flusso ufficiale e costa un encoding in meno.
- *
- * ⚠ Il testo del prompt qui **non si traduce**: FLUX.2 legge con un Qwen3, che
- * l'italiano lo capisce. È la differenza con Anima, che l'inglese lo vuole.
- */
-function grafoFluxCopertina(prompt, seed, { larghezza = 1024, altezza = 1024, salva = false } = {}) {
-  const m = MODELLI_COPERTINA["flux2-4b"];
-  return {
-    "1": { class_type: "UnetLoaderGGUF", inputs: { unet_name: m.dit } },
-    "2": { class_type: "CLIPLoaderGGUF", inputs: { clip_name: m.txt, type: "flux2" } },
-    "3": { class_type: "CLIPTextEncode", inputs: { clip: ["2", 0], text: prompt } },
-    "4": { class_type: "ConditioningZeroOut", inputs: { conditioning: ["3", 0] } },
-    "5": {
-      class_type: "CFGGuider",
-      inputs: { model: ["1", 0], positive: ["3", 0], negative: ["4", 0], cfg: 1 },
-    },
-    "6": { class_type: "RandomNoise", inputs: { noise_seed: seed } },
-    "7": { class_type: "KSamplerSelect", inputs: { sampler_name: "euler" } },
-    "8": {
-      class_type: "Flux2Scheduler",
-      inputs: { steps: 20, width: larghezza, height: altezza },
-    },
-    "9": { class_type: "VAELoader", inputs: { vae_name: m.vae } },
-    "11": {
-      class_type: "EmptyFlux2LatentImage",
-      inputs: { width: larghezza, height: altezza, batch_size: 1 },
-    },
-    "12": {
-      class_type: "SamplerCustomAdvanced",
-      inputs: {
-        noise: ["6", 0], guider: ["5", 0], sampler: ["7", 0],
-        sigmas: ["8", 0], latent_image: ["11", 0],
-      },
-    },
-    "10": { class_type: "VAEDecode", inputs: { samples: ["12", 0], vae: ["9", 0] } },
-    "13": salva
-      ? { class_type: "SaveImage", inputs: { images: ["10", 0], filename_prefix: "immagini/daprod" } }
-      : { class_type: "PreviewImage", inputs: { images: ["10", 0] } },
-  };
-}
 
 const PREFISSO = "audio/daprodmusica";
 const SALVATAGGI = {
@@ -269,6 +268,74 @@ function grafoAce(m, p) {
 }
 
 /**
+ * YuE2: la canzone, con o senza la partitura scritta prima.
+ *
+ * Il grafo è quello ufficiale (`audio_yue2_text2music` dei template di ComfyUI
+ * 0.37), e i numeri dei nodi seguono la convenzione di questo file perché la
+ * barra funzioni senza sapere che modello è: 1 il caricamento, 2 la parte lunga
+ * (il modello di lingua che compone), 6 il suono, 8 l'audio, 9 il salvataggio.
+ *
+ * `YuE2GenerateMusic` dice anche **quanto dura davvero** (la sua seconda
+ * uscita): la durata chiesta è un tetto, e il modello la accorcia se il testo
+ * finisce prima. Il latente si fa di quella misura, non di quella chiesta —
+ * altrimenti la canzone finirebbe con un minuto di silenzio.
+ *
+ * A CFG 1 il negativo non conta, ed è un conditioning azzerato come negli altri.
+ */
+function grafoYue2(m, p) {
+  const grafo = {
+    "1": { class_type: "CheckpointLoaderSimple", inputs: { ckpt_name: m.ckpt } },
+    "2": {
+      class_type: "YuE2GenerateMusic",
+      inputs: {
+        clip: ["1", 1],
+        style: p.caption,
+        lyrics: p.lyrics,
+        abc: m.partitura ? ["11", 0] : "",
+        seed: p.seed_text,
+        mode: "full",
+        max_duration: p.duration,
+        temperature: 1,
+        top_p: 0.95,
+        top_k: 100,
+        repetition_penalty: 1.2,
+      },
+    },
+    "3": { class_type: "ConditioningZeroOut", inputs: { conditioning: ["2", 0] } },
+    "5": { class_type: "EmptyYuE2LatentAudio", inputs: { seconds: ["2", 1], batch_size: 1 } },
+    "6": {
+      class_type: "KSampler",
+      inputs: {
+        model: ["1", 0], positive: ["2", 0], negative: ["3", 0], latent_image: ["5", 0],
+        seed: p.seed_audio, steps: p.steps, cfg: 1,
+        sampler_name: "dpm_2", scheduler: "sgm_uniform", denoise: 1,
+      },
+    },
+    "8": { class_type: "VAEDecodeAudio", inputs: { samples: ["6", 0], vae: ["1", 2] } },
+    "9": SALVATAGGI[p.format],
+  };
+  if (m.partitura) {
+    grafo["11"] = {
+      class_type: "YuE2GenerateABC",
+      inputs: {
+        clip: ["1", 1],
+        style: p.caption,
+        lyrics: p.lyrics,
+        seed: p.seed_text,
+        mode: "full",
+        max_abc_tokens: 8192,
+        temperature: 0.7,
+        top_p: 0.9,
+        top_k: 30,
+        repetition_penalty: 1.005,
+        penalty_window: 100,
+      },
+    };
+  }
+  return grafo;
+}
+
+/**
  * Un'immagine.
  *
  * `salva` distingue i due usi. Un'immagine della scheda Immagini si tiene, e
@@ -280,12 +347,13 @@ function grafoAce(m, p) {
 /**
  * La copertina, con il modello che si è scelto.
  *
- * Di suo **FLUX.2 Klein 4B**, dalla 0.9.1: capisce le descrizioni lunghe, che è
- * quello che si scrive quando si dice come dev'essere una copertina. Un id che
- * non conosciamo torna ad Anima invece di far fallire il lavoro.
+ * Di suo **Qwen-Image 2.1 Turbo**, dalla 1.4.0 (prima FLUX.2 Klein 4B): capisce
+ * le descrizioni lunghe e le scritte. Un id che non conosciamo — compreso il
+ * `flux2-4b` di chi aveva scelto quello prima dell'aggiornamento — torna al
+ * turbo invece di far fallire il lavoro.
  */
 export function grafoImmagine(prompt, seed, opzioni = {}) {
-  const quale = MODELLI_COPERTINA[opzioni.modello] ?? MODELLI_COPERTINA["flux2-4b"];
+  const quale = MODELLI_COPERTINA[opzioni.modello] ?? MODELLI_COPERTINA["qwen21-turbo"];
   return quale.grafo(prompt, seed, opzioni);
 }
 
@@ -352,8 +420,8 @@ export function promptCopertina(titolo, testo, estetica) {
  *
  * ## Le virgolette non sono decorazione
  *
- * FLUX sa scrivere, e sa scrivere **quello che gli metti fra virgolette**: e'
- * il modo in cui il modello capisce dove finisce la descrizione e comincia il
+ * FLUX sapeva scrivere, e Qwen-Image 2.1 ancora meglio — **quello che gli metti
+ * fra virgolette**: e' il modo in cui il modello capisce dove finisce la descrizione e comincia il
  * testo da disegnare. Senza, il titolo si scioglie nella scena e il modello
  * disegna qualcosa *a proposito* di quelle parole invece delle parole.
  *
@@ -397,6 +465,8 @@ export const SEPARAZIONE = 0.8;
 
 export const FASI = {
   "10": { label: "preparo il campionamento", da: 0.82, a: 0.82, fase: 2 },
+  // Solo YuE2 con la partitura: la melodia scritta prima di tutto il resto.
+  "11": { label: "scrivo la partitura", da: 0.03, a: 0.3, fase: 1 },
   "1": { label: "carico il modello di testo", da: 0, a: 0.03, fase: 1 },
   "2": { label: "compongo la struttura", da: 0.03, a: SEPARAZIONE, fase: 1 },
   "4": { label: "carico il modello musicale", da: SEPARAZIONE, a: 0.82, fase: 2 },

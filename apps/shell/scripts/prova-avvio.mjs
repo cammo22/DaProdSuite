@@ -170,7 +170,7 @@ console.log("\n— quello che c'è scritto accanto a un file —");
   // Un'immagine: campi diversi, stessa tabella.
   const foto = libreria.comeEStataFatta({
     percorso: join(finti, "un faro.png"),
-    meta: { titolo: "un faro", prompt: "un faro al tramonto", estetica: "Ora dorata", formato: "960x720", modello: "flux2-4b" },
+    meta: { titolo: "un faro", prompt: "un faro al tramonto", estetica: "Ora dorata", formato: "960x720", modello: "qwen21-turbo" },
   }) ?? {};
   dice("di un'immagine si legge lo stile", foto["Lo stile"] === "Ora dorata", `→ ${foto["Lo stile"]}`);
   dice("e la misura", foto["Che misura"] === "960x720", `→ ${foto["Che misura"]}`);

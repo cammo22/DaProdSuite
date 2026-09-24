@@ -461,6 +461,10 @@ export class Gateway {
              * genera una clip di 60 secondi con ace step turbo strumentale, nel
              * caso dell'immagine genera l'immagine 4:3 con flux 9b».
              *
+             * ⚠ Dalla 1.4.0 il 9B non c'e' piu': FLUX e' uscito dalla suite, e
+             * al suo posto c'e' Qwen-Image 2.1 di serie, che e' il predefinito
+             * delle immagini per la stessa ragione per cui lo era lui.
+             *
              * Strumentale vuol dire **testo vuoto**: e' cosi' che si chiede uno
              * strumentale a `genera.brano`, non con una spunta. E la richiesta
              * passa da `creaRichiesta` come tutte le altre, quindi rispetta la
@@ -477,7 +481,7 @@ export class Gateway {
                       tipo: "genera.immagine",
                       app: "foto",
                       testo: cosa.prompt,
-                      opzioni: { forma: "4:3", modello: "flux2-9b", quante: "1" },
+                      opzioni: { forma: "4:3", modello: "qwen21", quante: "1" },
                       daDispositivo: chiGioca,
                     }
                   : {

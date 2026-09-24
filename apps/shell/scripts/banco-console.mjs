@@ -106,7 +106,7 @@ const voci = [
       "Che forma": "1:1 - quadrato",
       "Quanto grande": "1080p",
       "Quante immagini": "2",
-      "Con che modello": "FLUX.2 Klein 9B",
+      "Con che modello": "Qwen-Image 2.1",
     },
   },
   {
@@ -250,7 +250,7 @@ const fintiStili = {
           testo: "Un robot che suona una chitarra in un teatro in fiamme",
           tipo: "immagine",
           genere: "prompt",
-          campi: { quante: "2", modello: "flux2-9b" },
+          campi: { quante: "2", modello: "qwen21" },
           da: "mio",
           quando: 5,
         },

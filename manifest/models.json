@@ -188,52 +188,105 @@
       "bytes": 5843204206
     },
 
-    "flux2-klein-4b-q5km": {
-      "label": "FLUX.2 Klein 4B — Q5_K_M (il più leggero dei due)",
+    "qwen21-q4km": {
+      "label": "Qwen-Image 2.1 — Q4_K_M (immagini e modifiche)",
       "kind": "file",
-      "$comment": "Il fratello piccolo del 9B: 3 GB invece di 5,8, e con 8 GB di VRAM lascia molto più spazio. Divide con lui text encoder e VAE, quindi chi ha già il 9B lo aggiunge con 3 GB e basta. Quantizzazione più alta del 9B (Q5 invece di Q4) proprio perché il modello è piccolo: ci sta comunque.",
+      "$comment": "Il modello delle immagini dalla 1.4.0, al posto dei due FLUX.2 Klein: «per le foto eliminiamo totalmente flux e usiamo Qwen-Image-2.1, le versioni gguf q4». Un modello solo per generare e per modificare — la stessa rete legge fino a dieci immagini di riferimento — con 7 miliardi di parametri nella parte che disegna. Q4_K_M di Unsloth (Dynamic 2.0): il compromesso che loro stessi consigliano, circa 4,6 GB. In diffusion_models e non in unet, come i GGUF di prima: UnetLoaderGGUF cerca dove cerca ComfyUI. ⚠ Licenza Qwen Research: per uso personale e di ricerca, non commerciale.",
       "dir": "diffusion_models",
-      "file": "flux-2-klein-4b-Q5_K_M.gguf",
-      "url": "https://huggingface.co/unsloth/FLUX.2-klein-4B-GGUF/resolve/main/flux-2-klein-4b-Q5_K_M.gguf",
+      "file": "qwen-image-2.1-Q4_K_M.gguf",
+      "url": "https://huggingface.co/unsloth/Qwen-Image-2.1-GGUF/resolve/main/qwen-image-2.1-Q4_K_M.gguf",
       "nodi": ["comfyui-gguf"],
-      "bytes": 3073368640
+      "pesoDaConfermare": true,
+      "bytes": 4600000000
     },
-    "flux2-klein-q4ks": {
-      "label": "FLUX.2 Klein 9B — Q4_K_S (consigliato su 8 GB)",
+    "qwen21-text-encoder": {
+      "label": "Qwen3-VL 8B (W4A8) — chi legge il prompt e guarda le foto",
       "kind": "file",
-      "$comment": "In diffusion_models e non in unet: il nodo UnetLoaderGGUF cerca dove cerca ComfyUI per i modelli di diffusione, e delle sue due cartelle storiche la suite ne dichiara una sola (services/comfy/avvio.py).",
+      "$comment": "Qwen-Image 2.1 legge con un modello che vede: Qwen3-VL 8B. Non e' un dettaglio, e' il motivo per cui sa modificare — la foto da cambiare la guarda lui. Per questo NON si usa il GGUF testuale di Unsloth: quello si porta dietro la parte che legge, non quella che vede. W4A8 ConvRot, lo stesso formato del text encoder di LTX 2.5: ComfyUI lo carica da se', ed e' il piu' piccolo del repo ufficiale. Lo carica CLIPLoader con tipo 'qwen_image'.",
+      "dir": "text_encoders",
+      "file": "qwen3vl_8b_w4a8.safetensors",
+      "url": "https://huggingface.co/Comfy-Org/Qwen-Image-2.1/resolve/main/text_encoders/qwen3vl_8b_w4a8.safetensors",
+      "pesoDaConfermare": true,
+      "bytes": 5600000000
+    },
+    "qwen21-vae": {
+      "label": "VAE di Qwen-Image 2.1 (RGBA, 64 canali)",
+      "kind": "file",
+      "$comment": "Non e' quello di Qwen-Image 1 ('qwen-image-vae', che resta per Anima): questo ha 64 canali, comprime 16 volte e sa la trasparenza. Serve sia a generare sia a modificare, perche' le foto di riferimento entrano nel modello come latenti.",
+      "dir": "vae",
+      "file": "qwen_image_2.1_vae_bf16.safetensors",
+      "url": "https://huggingface.co/Comfy-Org/Qwen-Image-2.1/resolve/main/vae/qwen_image_2.1_vae_bf16.safetensors",
+      "pesoDaConfermare": true,
+      "bytes": 500000000
+    },
+    "qwen21-turbo-4step": {
+      "label": "Qwen-Image 2.1 Turbo — LoRA a 4 passi",
+      "kind": "file",
+      "$comment": "La strada veloce: una LoRA distillata da Viggle sul programma a 4 passi, convertita nei nomi di ComfyUI da T8star senza toccare i pesi. Si attacca con LoraLoaderModelOnly a forza 1 e il modello fa in 4 passi quello che di serie fa in 25. ⚠ Le Lightning di lightx2v (quelle a 4 e 8 passi di Qwen-Image 1) per la 2.1 non ci sono ancora: la richiesta e' aperta dal 22 settembre 2026 (ModelTC/LightX2V#1548). Il giorno che escono, entrano qui accanto.",
+      "dir": "loras",
+      "file": "Qwen-Image-2.1-viggle-turbo-4step-r64-comfyui-T8.safetensors",
+      "url": "https://huggingface.co/t8star/Qwen-Image-2.1-viggle-turbo-4step-r64-comfy/resolve/main/Qwen-Image-2.1-viggle-turbo-4step-r64-comfyui-T8.safetensors",
+      "pesoDaConfermare": true,
+      "bytes": 339738624
+    },
+
+    "yue2-3b-int8": {
+      "label": "YuE2 3B — canzoni intere col testo cantato (int8)",
+      "kind": "file",
+      "$comment": "Il secondo motore di DaProdMusica, dalla 1.4.0, accanto ad ACE-Step: «per la musica mettiamo anche YuE2-3B». Scrive prima la partitura (melodia e accordi, in notazione ABC) e poi la suona, e la partitura si puo' leggere e cambiare. Un file solo con dentro modello, text encoder e VAE, ripacchettato da Comfy-Org; i nodi sono di serie in ComfyUI dalla 0.37. int8 ConvRot invece dei 7,8 GB della bf16: gli autori misurano 24 GB di VRAM senza compressione, e su 8 GB serve tutto quello che si puo' togliere.",
+      "dir": "checkpoints",
+      "file": "yue2_3b_int8_convrot.safetensors",
+      "url": "https://huggingface.co/Comfy-Org/YuE2/resolve/main/checkpoints/yue2_3b_int8_convrot.safetensors",
+      "pesoDaConfermare": true,
+      "bytes": 4300000000
+    },
+
+    "trellis2-int8": {
+      "label": "TRELLIS.2 (Microsoft, 4B) — dalla foto al modellino 3D",
+      "kind": "file",
+      "$comment": "Il 3D della suite, dalla 1.4.0: «gli dai un'immagine e fa il modello con una bella texture, che poi possiamo usare nei contenuti e nei giochi». Scelto fra quelli che ComfyUI sa gia' far girare da se': Hunyuan3D 2.1 fa solo la forma (la texture vorrebbe un secondo modello e 21 GB), TRELLIS.2 fa forma e colori nello stesso giro, e con le texture cotte su UV esce un GLB che three.js apre cosi' com'e' — lo stesso formato dei modellini della Claw Machine. int8 ConvRot.",
       "dir": "diffusion_models",
-      "file": "flux-2-klein-9b-Q4_K_S.gguf",
-      "url": "https://huggingface.co/unsloth/FLUX.2-klein-9B-GGUF/resolve/main/flux-2-klein-9b-Q4_K_S.gguf",
-      "nodi": ["comfyui-gguf"],
-      "bytes": 5834332448
+      "file": "trellis_2_int8_convrot.safetensors",
+      "url": "https://huggingface.co/Comfy-Org/TRELLIS.2/resolve/main/diffusion_models/trellis_2_int8_convrot.safetensors",
+      "pesoDaConfermare": true,
+      "bytes": 4400000000
     },
-    "flux2-4b-text-encoder": {
-      "label": "Qwen3-4B Q5_K_M — text encoder di FLUX.2 Klein 4B",
-      "kind": "file",
-      "$comment": "Il 4B NON usa lo stesso text encoder del 9B, e non è un dettaglio: dandogli quello dell'8B il motore muore con 'mat1 and mat2 shapes cannot be multiplied (512x12288 and 7680x3072)'. Il 4B vuole vettori da 7680 (2560x3, cioè Qwen3-4B), il 9B da 12288 (4096x3, cioè Qwen3-8B).",
-      "dir": "text_encoders",
-      "file": "Qwen3-4B-Q5_K_M.gguf",
-      "url": "https://huggingface.co/unsloth/Qwen3-4B-GGUF/resolve/main/Qwen3-4B-Q5_K_M.gguf",
-      "nodi": ["comfyui-gguf"],
-      "bytes": 2889514272
-    },
-    "flux2-text-encoder": {
-      "label": "Qwen3-8B Q5_K_M — text encoder di FLUX.2 Klein 9B",
-      "kind": "file",
-      "dir": "text_encoders",
-      "file": "Qwen3-8B-Q5_K_M.gguf",
-      "url": "https://huggingface.co/unsloth/Qwen3-8B-GGUF/resolve/main/Qwen3-8B-Q5_K_M.gguf",
-      "nodi": ["comfyui-gguf"],
-      "bytes": 5851113280
-    },
-    "flux2-vae": {
-      "label": "VAE di FLUX.2 (non quello di FLUX.1)",
+    "trellis2-shape-vae": {
+      "label": "TRELLIS.2 — VAE della forma",
       "kind": "file",
       "dir": "vae",
-      "file": "flux2-vae.safetensors",
-      "url": "https://huggingface.co/Comfy-Org/vae-text-encorder-for-flux-klein-9b/resolve/main/split_files/vae/flux2-vae.safetensors",
-      "bytes": 336211292
+      "file": "trellis_2_shape_vae_bf16.safetensors",
+      "url": "https://huggingface.co/Comfy-Org/Pixal3D/resolve/main/vae/trellis_2_shape_vae_bf16.safetensors",
+      "pesoDaConfermare": true,
+      "bytes": 700000000
+    },
+    "trellis2-texture-vae": {
+      "label": "TRELLIS.2 — VAE dei colori",
+      "kind": "file",
+      "dir": "vae",
+      "file": "trellis_2_texture_vae_bf16.safetensors",
+      "url": "https://huggingface.co/Comfy-Org/Pixal3D/resolve/main/vae/trellis_2_texture_vae_bf16.safetensors",
+      "pesoDaConfermare": true,
+      "bytes": 700000000
+    },
+    "dinov3-l": {
+      "label": "DINOv3 L — come TRELLIS.2 guarda la foto",
+      "kind": "file",
+      "dir": "clip_vision",
+      "file": "dino_v3_L_naf_fp32.safetensors",
+      "url": "https://huggingface.co/Comfy-Org/Pixal3D/resolve/main/clip_vision/dino_v3_L_naf_fp32.safetensors",
+      "pesoDaConfermare": true,
+      "bytes": 1250000000
+    },
+    "birefnet": {
+      "label": "BiRefNet — toglie lo sfondo",
+      "kind": "file",
+      "$comment": "Il soggetto si stacca dallo sfondo prima di diventare 3D: TRELLIS.2 fa un modellino di quello che vede, e se vede anche il tavolo fa anche il tavolo.",
+      "dir": "background_removal",
+      "file": "birefnet.safetensors",
+      "url": "https://huggingface.co/Comfy-Org/BiRefNet/resolve/main/background_removal/birefnet.safetensors",
+      "pesoDaConfermare": true,
+      "bytes": 900000000
     },
 
     "sd-turbo": {

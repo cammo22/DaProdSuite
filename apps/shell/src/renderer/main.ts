@@ -1548,7 +1548,6 @@ const memSvuota = document.getElementById("memoria-svuota") as HTMLButtonElement
 const NOMI_VRAM: Record<string, string> = {
   Anima: "Le immagini (Anima)",
   WanVAE: "Le immagini, ultimo passo (VAE)",
-  Flux2: "Le immagini (FLUX.2 Klein)",
   Traduttore: "L'italiano tradotto in inglese",
 };
 

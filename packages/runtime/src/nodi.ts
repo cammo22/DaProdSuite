@@ -52,7 +52,7 @@ export const NODI: Record<string, NodoCustom> = {
     // 12 gennaio 2026: è il commit con cui FLUX.2 Klein girava in Flux Klein
     // Studio, il progetto da cui viene DaProdFoto.
     commit: "6ea2651e7df66d7585f6ffee804b20e92fb38b8a",
-    perche: "Carica i modelli quantizzati GGUF (FLUX.2 Klein e il suo text encoder).",
+    perche: "Carica i modelli quantizzati GGUF (Qwen-Image 2.1).",
     licenza: "Apache-2.0",
   },
 

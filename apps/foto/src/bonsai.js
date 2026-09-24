@@ -13,7 +13,7 @@
  * - **Proponi** parte da zero, per quando non si sa da dove cominciare.
  *
  * **Sempre in inglese.** Anima capisce solo quello (per questo esiste
- * l'interruttore della traduzione), e FLUX.2 l'inglese lo capisce comunque:
+ * l'interruttore della traduzione), e Qwen-Image l'inglese lo capisce comunque:
  * facendolo scrivere già in inglese, la traduzione non ha più niente da fare e
  * si toglie di mezzo un passaggio che poteva sbagliare.
  *

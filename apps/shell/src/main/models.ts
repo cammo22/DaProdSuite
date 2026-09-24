@@ -14,7 +14,11 @@ import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { app } from "electron";
 import type { StatoModelli } from "@daprod/ipc";
-import { NODI, nodiMancanti as nodiMancantiSulDisco } from "@daprod/runtime";
+import {
+  NODI,
+  nodiMancanti as nodiMancantiSulDisco,
+  presenteConRicevuta,
+} from "@daprod/runtime";
 import { ENGINES_DIR, MODELS_DIR } from "./paths";
 
 export interface FileModel {
@@ -30,6 +34,12 @@ export interface FileModel {
    */
   nodi?: string[];
   bytes: number;
+  /**
+   * `bytes` e' una stima, e il peso vero lo dice il server al momento di
+   * scaricare: vedi `packages/runtime/src/peso.ts`. Per questi file «presente»
+   * vuol dire file **e** ricevuta, non file della misura del catalogo.
+   */
+  pesoDaConfermare?: boolean;
 }
 
 export interface HfRepoModel {
@@ -104,6 +114,7 @@ export function isModelPresent(id: string): boolean {
   switch (entry.kind) {
     case "file": {
       const path = join(MODELS_DIR, entry.dir, entry.file);
+      if (entry.pesoDaConfermare) return presenteConRicevuta(path);
       if (!existsSync(path)) return false;
       return statSync(path).size === entry.bytes;
     }

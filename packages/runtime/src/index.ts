@@ -37,6 +37,7 @@ export {
   type ScaricaFileOptions,
 } from "./scarica";
 export { pesoCartella, scaricaRepo, type ScaricaRepoOptions } from "./hf";
+export { fileRicevuta, pesoDalServer, presenteConRicevuta, scriviRicevuta } from "./peso";
 export {
   COMFY_VERSION,
   installaMotore,

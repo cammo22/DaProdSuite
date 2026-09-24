@@ -48,7 +48,7 @@ const PROMPT_MAX = 2000;
  * chiede da fuori non è tenuto a sapere che modelli ci sono.
  */
 /**
- * **Il modello che parte per le immagini: FLUX.2 Klein 9B.**
+ * **Il modello che parte per le immagini: Qwen-Image 2.1.**
  *
  * ⚠ **Sta scritto qui una volta sola, e c'è un motivo.** Fino alla 1.2.2 il
  * predefinito era in due posti che non si parlavano: qui c'era `flux2-4b` (per
@@ -57,20 +57,21 @@ const PROMPT_MAX = 2000;
  * la stessa cosa da due parti otteneva due immagini diverse senza sapere
  * perché. Trovato guardando il codice il 7 settembre 2026.
  *
- * Il numero l'ha scelto Cammo lo stesso giorno: **9B**. Pesa 11,2 GB ed è più
- * lento del 4B su una scheda da 8 — e lo dice, nella riga sotto al suo nome nel
- * menu della scheda. In cambio è quello che capisce meglio le descrizioni
- * lunghe, che è quello che si scrive davvero quando si chiede una foto.
+ * ⚠ **Dalla 1.4.0 è Qwen-Image 2.1**, di serie a 25 passi. Fino alla 1.3.9 era
+ * FLUX.2 Klein 9B, scelto da Cammo il 7 settembre perché capiva meglio le
+ * descrizioni lunghe; il 24 settembre FLUX è uscito del tutto: «per le foto
+ * eliminiamo totalmente flux e usiamo Qwen-Image-2.1». Qwen fa quello che
+ * faceva il 9B, scrive le parole giuste nell'immagine, e modifica a parole.
  *
  * La scheda foto ne tiene una copia in `grafi.js` — è una pagina, non può
  * importare un pacchetto Node — e `apps/shell/scripts/prova-azioni.mjs` le
  * confronta a ogni giro: il giorno che divergono, la prova diventa rossa.
  */
-export const PREDEFINITO_IMMAGINI = "flux2-9b";
+export const PREDEFINITO_IMMAGINI = "qwen21";
 
 const MODELLI_FOTO = {
   predefinito: PREDEFINITO_IMMAGINI,
-  scelte: ["anima", "anima2", "flux2-4b", "flux2-9b"],
+  scelte: ["anima", "anima2", "qwen21", "qwen21-turbo"],
   /**
    * ⚠ **Solo i nomi.** Chiesto il 7 settembre 2026: «togli la scritta un
    * minuto e mezzo da LLaDA-Image, lascia solo i nomi, anche con gli altri
@@ -84,8 +85,8 @@ const MODELLI_FOTO = {
   etichette: {
     anima: "Anima",
     anima2: "Anima v2",
-    "flux2-4b": "FLUX.2 Klein 4B",
-    "flux2-9b": "FLUX.2 Klein 9B",
+    qwen21: "Qwen-Image 2.1",
+    "qwen21-turbo": "Qwen-Image 2.1 Turbo",
   },
 } as const;
 
@@ -108,6 +109,10 @@ const MODELLI_FOTO = {
  * tolto (vedi #86), e con lui se n'e' andato quel modo — e `senzaZona`, che
  * esisteva solo per dire che lui il pennello non ce l'aveva.
  *
+ * ⚠ **Dalla 1.4.0 il modo a parole e' tornato**, con Qwen-Image 2.1: senza
+ * zona dipinta cambia la foto come dice la descrizione, e con una zona cambia
+ * solo quella — il resto viene rimesso identico a fine lavoro.
+ *
  * Il predefinito e' lo stesso della generazione, e non per pigrizia: chi
  * modifica una foto l'ha appena fatta con quel modello, e cambiarglielo sotto
  * vuol dire un secondo modello caricato in scheda per niente. Uno solo, e sta
@@ -115,15 +120,15 @@ const MODELLI_FOTO = {
  */
 const MODELLI_MODIFICA = {
   predefinito: PREDEFINITO_IMMAGINI,
-  scelte: ["anima", "anima2", "flux2-4b", "flux2-9b"],
+  scelte: ["anima", "anima2", "qwen21", "qwen21-turbo"],
   // Solo i nomi, come per la generazione. Chi non sa usare la zona lo dice il
   // modulo quando lo scegli, che è il momento in cui serve saperlo: vedi
   // `senzaZona` qui sotto.
   etichette: {
     anima: "Anima",
     anima2: "Anima v2",
-    "flux2-4b": "FLUX.2 Klein 4B",
-    "flux2-9b": "FLUX.2 Klein 9B",
+    qwen21: "Qwen-Image 2.1",
+    "qwen21-turbo": "Qwen-Image 2.1 Turbo",
   },
 } as const;
 
@@ -157,10 +162,17 @@ const MODELLI_MUSICA = {
    * 3, uscito l'11 settembre 2026 insieme a MiniMax H3.
    */
   predefinito: "ace-xl-turbo",
-  scelte: ["ace-turbo", "ace-xl-turbo"],
+  /**
+   * ⚠ **YuE2 dalla 1.4.0**, con le sue due strade: dritto dal testo al suono,
+   * o passando prima dalla partitura scritta. Il predefinito resta ACE-Step XL:
+   * YuE2 è la seconda voce, non quella che parte da sola.
+   */
+  scelte: ["ace-turbo", "ace-xl-turbo", "yue2", "yue2-partitura"],
   etichette: {
     "ace-turbo": "ACE-Step Turbo",
     "ace-xl-turbo": "ACE-Step XL",
+    yue2: "YuE2",
+    "yue2-partitura": "YuE2 con la partitura",
   },
 } as const;
 
@@ -213,11 +225,11 @@ function campoModelloCopertina() {
     descrizione: "Quello che parte se non tocchi niente è già selezionato.",
     tipo: "scelta",
     obbligatorio: false,
-    predefinito: "flux2-4b",
-    scelte: ["anima", "flux2-4b"],
+    predefinito: "qwen21-turbo",
+    scelte: ["anima", "qwen21-turbo"],
     etichette: {
       anima: "Anima",
-      "flux2-4b": "FLUX.2 Klein 4B",
+      "qwen21-turbo": "Qwen-Image 2.1 Turbo",
     },
   } as const;
 }
@@ -277,7 +289,7 @@ export const AZIONI: readonly Azione[] = [
        * essere"».
        *
        * Ed è la cosa giusta, non solo quella chiesta. I modelli di questa
-       * scheda lavorano tutti a CFG 1 — Anima è distillata, FLUX.2 Klein pure —
+       * scheda lavorano tutti a CFG 1 — Anima è distillata, Qwen-Image 2.1 pure —
        * e a CFG 1 **il prompt negativo non fa niente**: non c'è una seconda
        * passata da cui sottrarlo. Era una casella che accettava del testo, lo
        * mandava al motore, e non cambiava un pixel. Peggio: chi la riempiva

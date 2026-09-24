@@ -4,7 +4,7 @@
  * L'app sa già dire cosa ha **in memoria** — barra di stato, VRAM, modello
  * caricato — ma non sapeva dire cosa ha **su disco**: se SD-Turbo manca, il
  * motore prova a caricarlo, fallisce e resta lì. Le altre app della suite hanno
- * tutte lo stesso riquadro (Foto per FLUX, Musica per la qualità del suono), e
+ * tutte lo stesso riquadro (Foto per Qwen-Image, Musica per la qualità del suono), e
  * adesso ce l'ha anche questa.
  *
  * Sta in un file a parte e non dentro `app.js` di proposito: è roba della suite,

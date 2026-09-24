@@ -31,8 +31,8 @@ let pronto = true;
  * Vero se questo computer non ha una scheda video utilizzabile.
  *
  * Lo dice la suite una volta sola all'avvio. Cambia cosa si può offrire nel
- * menu: FLUX.2 Klein sulla CPU non è "più lento", è un'immagine che non arriva
- * — e undici GB scaricati per scoprirlo.
+ * menu: Qwen-Image 2.1 sulla CPU non è "più lento", è un'immagine che non
+ * arriva — e undici GB scaricati per scoprirlo.
  */
 let senzaScheda = false;
 
@@ -48,7 +48,7 @@ export const modelloUsabile = () => !(senzaScheda && corrente.serveScheda) && pr
 export async function collegaScelta() {
   // Prima di disegnare il menu: da questo dipende quali voci sono scegliibili.
   // Se la suite non risponde si tira dritto — meglio offrire tutto che spegnere
-  // FLUX per un dubbio nostro.
+  // Qwen-Image per un dubbio nostro.
   try {
     senzaScheda = !(await ponte.macchina()).gpu;
   } catch {
@@ -106,7 +106,7 @@ function scegli(id) {
   el.rigaModello.textContent = corrente.riga;
   applicaPreferenze(corrente);
   // La traduzione è una proprietà del modello, non una preferenza dell'utente:
-  // a FLUX.2 l'italiano lo si può scrivere direttamente.
+  // a Qwen-Image l'italiano lo si può scrivere direttamente.
   traduzionePerModello(corrente);
   void controlla();
 }
@@ -114,7 +114,7 @@ function scegli(id) {
 /**
  * I cursori si spostano sul punto di lavoro del modello.
  *
- * Trenta step su Anima e venti su FLUX non sono lo stesso numero regolato
+ * Trenta step su Anima e quattro su Qwen turbo non sono lo stesso numero regolato
  * diversamente: sono due modelli che lavorano in modo diverso, e lasciare il
  * cursore dov'era significa generare male col modello appena scelto.
  */
@@ -124,10 +124,19 @@ function applicaPreferenze(m) {
     campo.min = regola.min;
     campo.max = regola.max;
     campo.value = regola.valore;
-    // Un cursore che può stare solo dov'è non è un cursore: FLUX.2 Klein è
+    // Un cursore che può stare solo dov'è non è un cursore: Qwen-Image 2.1 è
     // distillato e il CFG resta a 1.
     campo.disabled = regola.min === regola.max;
     campo.dispatchEvent(new Event("input"));
+  }
+
+  // «Quanto cambiare» vale per chi ridipinge partendo dal rumore della foto
+  // (Anima). Qwen-Image modifica guardandola, e quel cursore non gli dice niente.
+  if (el.denoise) {
+    el.denoise.disabled = m.usaDenoise === false;
+    el.denoise.title = m.usaDenoise === false
+      ? `${m.nome} modifica guardando la foto: cambia quello che scrivi, e basta.`
+      : "";
   }
 
   // La riga sotto al negativo la scrive il modello, non questa pagina: con tre

@@ -139,7 +139,7 @@ export interface Contorno {
    *
    * ⚠ **Il gioco non sa niente di modelli.** Dice solo «questo e' un prompt
    * di musica» oppure «di immagini», e chi ospita sa cosa vuol dire: sessanta
-   * secondi strumentali con ACE-Step Turbo, o un 4:3 con FLUX.2 9B. Se un
+   * secondi strumentali con ACE-Step Turbo, o un 4:3 con Qwen-Image 2.1. Se un
    * giorno cambia il modello buono, cambia li' — non in dodici posti.
    *
    * Torna niente se chi ospita non sa generare (il banco di prova, per esempio).

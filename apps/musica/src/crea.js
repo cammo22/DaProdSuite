@@ -137,8 +137,11 @@ function disegnaLingue(m) {
     el.lingue.appendChild(chip);
   }
 
-  el.notaLingua.innerHTML =
-    "<b>ACE-Step</b> la riceve come impostazione: canta nella lingua che scegli qui.";
+  // YuE2 la casella non ce l'ha: canta nella lingua del testo che gli dai.
+  // Come fu per MiniMax, lo si dice invece di far finta che il tasto conti.
+  el.notaLingua.innerHTML = m && m.famiglia === "yue2"
+    ? "<b>YuE2</b> canta nella lingua in cui è scritto il testo: questa scelta non lo cambia."
+    : "<b>ACE-Step</b> la riceve come impostazione: canta nella lingua che scegli qui.";
 }
 
 /**
@@ -365,7 +368,7 @@ async function creaBrano(p, racconta = () => {}) {
           .filter(Boolean)
           .join(", ")
       : promptCopertina(p.titolo, p.lyrics, el.coverStyleNew.value);
-    // Con che modello: dalla 0.9.1 si sceglie, e di suo è FLUX.2 Klein 4B.
+    // Con che modello: dalla 0.9.1 si sceglie, e di suo è Qwen-Image 2.1 Turbo.
     // Vedi `MODELLI_COPERTINA` in grafi.js per il perché sono due e non quattro.
     idCopertina = await ponte.invia(
       grafoImmagine(prompt, rnd(), { modello: el.coverModello ? el.coverModello.value : "" }),
