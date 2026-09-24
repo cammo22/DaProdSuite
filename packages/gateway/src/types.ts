@@ -1214,12 +1214,12 @@ export interface FornitoreStili {
 }
 
 /**
- * Chi sa chiedere un parere al giudice (Jev-Omni): lo passa lo shell.
+ * Chi sa chiedere un parere al giudice: lo passa lo shell.
  *
- * ⚠ Nuovo nella 1.4.0. Il gateway non sa niente del modello: passa la domanda
- * come l'ha montata la sala giochi (`domandaPer`) e riporta le probabilita'.
- * Il motore si accende solo quando qualcuno lo chiede, e la prima volta ci
- * mette: la promessa puo' durare minuti.
+ * ⚠ Nuovo nella 1.4.0 (allora era Jev-Omni, dalla 1.4.3 e' Needle 3). Il
+ * gateway non sa niente del modello: passa la domanda come l'ha montata la
+ * sala giochi (`domandaPer`) e riporta le probabilita'. La prima volta il
+ * modello si scarica (29 MB): la promessa puo' durare qualche secondo.
  */
 export interface FornitoreGiudice {
   giudica(domanda: {

@@ -2822,8 +2822,8 @@ export const COPIONE = `
   /**
    * **Il parere del giudice** (1.4.0, CONCETTI.md § 18.7).
    *
-   * Jev-Omni guarda il prompt, e se c'e' la prima cosa gia' tenuta, e dice
-   * quanto e' probabile che sia slop, normale, buona o da vetrina. Consiglia e
+   * Needle 3 guarda il prompt e dice se e' slop, normale, buona o da vetrina,
+   * e quanto ci crede. Consiglia e
    * basta: le barre stanno sulla card, il tasto «prendi» resta tuo.
    */
   var VERDETTI_DETTI = { slop: "slop", normale: "normale", buona: "buona", vetrina: "da vetrina" };

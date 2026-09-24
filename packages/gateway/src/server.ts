@@ -177,7 +177,7 @@ export interface GatewayOpzioni {
    */
   giochi?: DepositoGiochi;
   /**
-   * Il giudice della sala giochi (Jev-Omni), se questa suite ce l'ha. Senza,
+   * Il giudice della sala giochi (Needle 3), se questa suite ce l'ha. Senza,
    * il tasto «chiedi al giudice» risponde 501 e la fila funziona come prima.
    */
   giudice?: FornitoreGiudice;

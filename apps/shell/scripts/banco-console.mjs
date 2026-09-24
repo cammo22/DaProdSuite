@@ -389,7 +389,7 @@ const gateway = new G.Gateway({
    */
   giochi: new (require(join(import.meta.dirname, "..", "..", "..", "packages", "giochi", "dist", "index.js")).Deposito)(join(radice, "giochi.json")),
   /**
-   * Il giudice **finto**: Jev-Omni sono 50 GB e qui non c'e'. Risponde con
+   * Il giudice **finto**: Needle 3 qui non si scarica (HuggingFace e' chiuso). Risponde con
    * numeri fissi dopo un attimo, per vedere le barre sulla card e il giro
    * intero della rotta (1.4.0).
    */

@@ -19,6 +19,9 @@ import { STILE } from "./stile";
 import { COPIONE_SALA } from "./sala-copione";
 import { MARKUP_SALA } from "./sala-markup";
 import { STILE_SALA } from "./sala-stile";
+import { COPIONE_HOME } from "./home-copione";
+import { MARKUP_HOME } from "./home-markup";
+import { STILE_HOME } from "./home-stile";
 
 /**
  * ⚠ **`sessione` e' la strada per far vedere le immagini.**
@@ -49,13 +52,14 @@ export function paginaGiochi(radice: string = "/giochi", sessione: string = ""):
 ` +
     STILE +
     STILE_SALA +
+    STILE_HOME +
     `
 </style>
 </head>
 <body>
 ` +
     // Le schede della 1.4.0 (Sala e Borsa) stanno dentro «main» con le altre.
-    MARKUP.replace("</main>", MARKUP_SALA + "</main>") +
+    MARKUP.replace("</main>", MARKUP_SALA + "</main>").replace('<div class="sotto" id="sotto">', MARKUP_HOME + '<div class="sotto" id="sotto">') +
     `
 <script>
 (() => {
@@ -69,6 +73,7 @@ export function paginaGiochi(radice: string = "/giochi", sessione: string = ""):
 ` +
     COPIONE +
     COPIONE_SALA +
+    COPIONE_HOME +
     `
 })();
 </script>

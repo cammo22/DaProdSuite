@@ -1,7 +1,17 @@
 /**
  * L'ossatura della pagina, senza un dato dentro.
  *
- * Sette schede in fondo, e l'ottava si vede solo a chi decide:
+ * ⚠ **Dalla 1.4.3 le schede stanno in quattro stanze**, coi tasti in fondo:
+ *
+ * | stanza | dentro |
+ * |---|---|
+ * | Home | le schermate dei giochi, il tuo conto, la mano, la Borsa |
+ * | Gioca | Sala (i giochi d'arcade), Fortuna, Borsa |
+ * | Genera | la slot delle combinazioni, le mie, la fila (solo admin) |
+ * | Collezione | pacchetti, inventario, shop, classifica |
+ *
+ * Qui sotto, com'era prima: le schede sono le stesse, e rispondono alle stesse
+ * domande.
  *
  * | scheda | a che domanda risponde |
  * |---|---|
@@ -46,9 +56,26 @@ export const MARKUP = `<header>
 
 <main>
 
+  <!--
+    I tasti di una stanza (1.4.3): se ne vede una fila sola, quella della
+    stanza in cui sei. La Home non ne ha.
+  -->
+  <div class="sotto" id="sotto">
+    <div class="sotto-fila" data-di="gioca">
+      <button data-va="sala">Sala</button><button data-va="fortuna">Fortuna</button><button data-va="borsa">Borsa</button>
+    </div>
+    <div class="sotto-fila" data-di="genera">
+      <button data-va="slot">Combinazioni</button><button data-va="mie">Le mie</button>
+      <button data-va="fila" id="tasto-fila" hidden>Fila<span class="pallino" id="quante-attesa" hidden></span></button>
+    </div>
+    <div class="sotto-fila" data-di="collezione">
+      <button data-va="pacchetti">Pacchetti</button><button data-va="inventario">Inventario</button><button data-va="shop">Shop</button><button data-va="casa">Classifica</button>
+    </div>
+  </div>
+
   <!-- =============================================================== slot -->
-  <section class="pagina viva" id="p-slot">
-    <div class="fila-scelte" id="tavoli"></div>
+  <section class="pagina" id="p-slot">
+    <div class="fila-scelte tavoli" id="tavoli"></div>
     <!--
       Le epoche. Non sono un filtro fra i tanti: cambiano **il colore di tutta
       la sala** e pesano cosa esce dai rulli. Erano cosi' nella prima versione
@@ -64,18 +91,23 @@ export const MARKUP = `<header>
     -->
     <div class="mano" id="mano" hidden></div>
 
-    <div class="esito" id="esito"></div>
-
-    <div class="leva">
-      <button class="btn grosso" id="gira">Gira</button>
-      <button class="btn oro" id="manda" disabled>Manda a controllare</button>
-    </div>
-
-    <h2>Il prompt che stai montando</h2>
-    <div class="prompt" id="prompt"><span class="vuoto">Tira la leva.</span></div>
-    <div class="riga-tasti">
-      <button class="btn piano" id="copia">Copia</button>
-      <button class="btn piano" id="sblocca">Sblocca tutti</button>
+    <!--
+      Il piede della slot (1.4.3): il prompt su una riga, i due tastini e la
+      leva, tutti insieme in fondo e sempre in vista. Prima la leva stava a meta'
+      e il prompt sotto, con un titolo suo: sul telefono la leva finiva sotto
+      al pollice solo scorrendo.
+    -->
+    <div class="slot-piede">
+      <div class="prompt-riga">
+        <div class="prompt" id="prompt"><span class="vuoto">Tira la leva.</span></div>
+        <button class="btn piano mini-tasto" id="copia" title="Copia il prompt">Copia</button>
+        <button class="btn piano mini-tasto" id="sblocca" title="Sblocca tutti i rulli">Sblocca</button>
+      </div>
+      <div class="esito" id="esito"></div>
+      <div class="leva">
+        <button class="btn grosso" id="gira">Gira</button>
+        <button class="btn oro" id="manda" disabled>Manda a controllare</button>
+      </div>
     </div>
   </section>
 
@@ -93,6 +125,8 @@ export const MARKUP = `<header>
   -->
   <section class="pagina" id="p-fortuna">
     <div class="macchina" id="macchina">
+      <!-- L'insegna del cabinato (1.4.3): lampadine e neon, come in sala. -->
+      <div class="insegna" aria-hidden="true"><span class="lampadine"></span><b>FORTUNA</b><span class="lampadine"></span></div>
       <div class="tiri" id="macchina-tiri"></div>
       <div class="vetrina-macchina" id="macchina-rulli"></div>
       <div class="esito" id="macchina-esito"></div>
@@ -344,16 +378,23 @@ export const MARKUP = `<header>
   otto pixel. Se non ci stanno, la barra scorre di lato; se ci stanno, si
   allargano come prima.
 -->
-<nav>
-  <button class="viva" data-va="slot">Slot</button>
-  <button data-va="fortuna">Fortuna</button>
-  <button data-va="sala">Sala</button>
-  <button data-va="borsa">Borsa</button>
-  <button data-va="mie">Mie</button>
-  <button data-va="pacchetti">Pacchetti</button>
-  <button data-va="inventario">Inventario</button>
-  <button data-va="shop">Shop</button>
-  <button data-va="casa">Casa</button>
-  <button data-va="fila" id="tasto-fila" hidden>Fila<span class="pallino" id="quante-attesa" hidden></span></button>
+<!--
+  ⚠ **Quattro tasti, non dieci** (1.4.3). Chiesto il 24 settembre 2026: «mettiamo
+  una home con gli screen dei vari giochi, una parte gioco e una genera
+  dedicate, cosi' da creare meno casino». Erano dieci linguette in fila che
+  scorrevano di lato: chi apriva la sala non sapeva da dove cominciare. Adesso
+  ci sono quattro stanze, e dentro ognuna i suoi tasti in alto (vedi «.sotto»).
+  La classe «tabs» tiene lontano il vestito della console, che le pillole le
+  disegna per un altro mestiere.
+-->
+<nav class="tabs giu" id="giu">
+  <button class="viva" data-va="home" data-gruppo="home">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5M5.5 10v9.5h5v-6h3v6h5V10"/></svg>Home</button>
+  <button data-va="sala" data-gruppo="gioca">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="7" width="19" height="11" rx="5.5"/><path d="M7.5 10.5v4M5.5 12.5h4"/><circle cx="16" cy="11.2" r="1.1"/><circle cx="18" cy="13.8" r="1.1"/></svg>Gioca</button>
+  <button data-va="slot" data-gruppo="genera">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l1.9 5.2 5.3.2-4.2 3.3 1.5 5.2L12 14.4l-4.5 3 1.5-5.2-4.2-3.3 5.3-.2z"/></svg>Genera<span class="pallino" id="pallino-genera" hidden></span></button>
+  <button data-va="pacchetti" data-gruppo="collezione">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3.5" width="12" height="16" rx="2"/><path d="M8 20.5h10.5a2 2 0 0 0 2-2V7"/></svg>Collezione</button>
 </nav>
 `;

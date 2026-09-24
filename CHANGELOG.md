@@ -10,6 +10,41 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ---
 
+## 1.4.3 — La sala giochi con la sua home
+
+> «Jev-Omni sono 50 GB, sono troppi: usiamo le versioni Q4, altrimenti vediamo
+> il nuovo Needle 3. E poi facciamo un bel redesign di queste due schermate, e
+> mettiamo una home con gli screen dei vari giochi, una parte gioco e una genera
+> dedicate, così da creare meno casino generale.»
+
+**La sala giochi ha una Home.** Si entra lì, non più dritti nella slot: chi
+sei, quanto hai in tasca, i punti della partita e la Lira; poi due porte grandi,
+**Gioca** e **Genera**, i giochi con la loro schermata vera, la mano delle carte
+e la Borsa con lo stacco a portata di dito.
+
+**Quattro tasti in fondo, non dieci.** Home, Gioca, Genera, Collezione. Dentro
+ogni stanza, in alto, i suoi tasti:
+
+- **Gioca**: Sala (Coin Dozer, Claw Machine, Neon Partenope), Fortuna, Borsa;
+- **Genera**: la slot delle combinazioni, le mie, e la fila per chi comanda;
+- **Collezione**: pacchetti, inventario, shop, classifica.
+
+**La slot delle combinazioni, rifatta.** Musica e Immagini sono un interruttore
+solo; le carte dei rulli hanno il colore del grado come striscia e il prezzo
+in una pastiglia; il prompt sta su una riga in fondo, accanto a Copia e
+Sblocca, e sotto c'è la leva — sempre in vista, senza scorrere.
+
+**Fortuna, rifatta da cabinato.** L'insegna con le lampadine, la vetrina dei
+rulli incassata, le puntate come gettoni d'oro, e il secondo tiro che si vede
+da lontano.
+
+**Il giudice è Needle 3.** Jev-Omni esce: erano 50 GB, e la sua Q4 da sola non
+basta (vuole llama.cpp, una testa di decisione a parte, e occupa la scheda
+video che intanto genera). Needle 3 sono **29 MB sul processore**, si scarica da
+solo la prima volta che chiedi un parere, e dice cosa ne pensa con una fiducia
+calibrata. È anche il nuovo motore della frase che diventa un lavoro, al posto
+di Needle 2. La telemetria del motore è spenta.
+
 ## 1.4.2 — L'app del telefono torna nella release
 
 - La 1.4.0 e la 1.4.1 sono uscite **senza l'APK**: il server che la compila ha
