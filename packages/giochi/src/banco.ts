@@ -174,6 +174,15 @@ export function tira(
   const prima = livelloDi(conto.esperienza, imp.perIlLivello);
   const aggiornato = deposito.segnaGiro(chi, punti, meglio);
   const livello = livelloDi(aggiornato.esperienza, imp.perIlLivello);
+  // ⚠ Dalla 1.4.0 i punti del giro entrano anche nella partita (CONCETTI.md
+  // § 18.2): gli stessi dell'esperienza, tutti, perche' la slot gira sul PC.
+  // Scritto qui e non chiamando `sala.ts`, che a sua volta usa questo file.
+  if (punti > 0) {
+    const partita = (aggiornato.partita ??= { punti: 0, daQuando: Date.now(), perGioco: {} });
+    partita.punti += punti;
+    partita.perGioco["slot"] = (partita.perGioco["slot"] ?? 0) + punti;
+    deposito.salva();
+  }
 
   return {
     tavolo,
@@ -768,7 +777,9 @@ export function azzeraPortafoglio(
   if (prima.saldo <= 0) throw new NienteDaFare("Il portafoglio e' gia' vuoto.");
 
   const togliere = prima.saldo;
-  const conto = deposito.muovi(chi, -togliere);
+  // Una correzione di chi comanda, non un'operazione di mercato: la Borsa non
+  // la vede (CONCETTI.md § 18.3).
+  const conto = deposito.muovi(chi, -togliere, false);
   conto.ultimoRegalo = {
     quanto: -togliere,
     quando: Date.now(),

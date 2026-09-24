@@ -73,8 +73,9 @@ import {
   tettoDelValore,
   versoIlProssimo,
 } from "./regole";
-import { rulliDi } from "./rulli";
-import type { Collezionabile, Era, Grado, Tavolo, TipoCollezionabile } from "./tipi";
+import { RULLI, rulliDi } from "./rulli";
+import { entra, evento, giocaCarta, segnaPunti, stacca, statoSala, type StatoSala } from "./sala";
+import type { Collezionabile, Era, Grado, PezzoInGioco, Tavolo, TipoCollezionabile } from "./tipi";
 
 /** Chi sta chiedendo. Nella suite e' il dispositivo accoppiato. */
 export interface Chi {
@@ -507,6 +508,25 @@ function vestitaSbloccata(s: Sbloccata, contorno: Contorno) {
   };
 }
 
+/** Una carta della mano, come la vede la pagina: il pezzo e il suo rullo. */
+function vestiCarta(p: PezzoInGioco) {
+  const rullo = RULLI.find((r) => r.id === p.rullo);
+  return {
+    id: p.id,
+    nome: p.nome,
+    testo: p.testo,
+    rullo: p.rullo,
+    nomeRullo: rullo ? rullo.nome : p.rullo,
+    tavolo: rullo ? rullo.tavolo : "",
+    grado: p.grado,
+    prezzo: p.prezzo,
+  };
+}
+
+function vestiSala(st: StatoSala, _contorno: Contorno) {
+  return { ...st, mano: st.mano.map(vestiCarta) };
+}
+
 /**
  * Risponde a una richiesta della sala giochi.
  *
@@ -610,6 +630,38 @@ export function rispondi(
         saldoScritto: lire(giro.saldo),
         regalo: giro.regalo ? vestita(giro.regalo, contorno, true) : null,
       });
+    }
+
+    /* ----------------------------------------- la partita e la sala (1.4.0) */
+
+    /**
+     * ⚠ **La sala d'arcade, la partita e la Borsa** (CONCETTI.md § 18). La
+     * pagina chiede com'e' messa la sala; i giochi d'arcade — che girano in una
+     * cornice e parlano attraverso la pagina — entrano, mandano punti e cose
+     * grosse; chi gioca stacca.
+     */
+    if (metodo === "GET" && (percorso === "/sala" || percorso === "/borsa")) {
+      return OK(vestiSala(statoSala(deposito, chi.id), contorno));
+    }
+    if (metodo === "POST" && percorso === "/sala/entra") {
+      const fatto = entra(deposito, chi.id, String(corpo["gioco"] ?? ""));
+      return OK({ ...fatto, saldoScritto: lire(fatto.saldo) });
+    }
+    if (metodo === "POST" && percorso === "/sala/punti") {
+      const fatto = segnaPunti(deposito, chi.id, String(corpo["gioco"] ?? ""), Number(corpo["grezzo"] ?? 0));
+      return OK(fatto);
+    }
+    if (metodo === "POST" && percorso === "/sala/evento") {
+      const fatto = evento(deposito, chi.id, String(corpo["gioco"] ?? ""), String(corpo["evento"] ?? ""), Math.random);
+      return OK({ ...fatto, carta: fatto.carta ? vestiCarta(fatto.carta) : null });
+    }
+    if (metodo === "POST" && percorso === "/stacca") {
+      const fatto = stacca(deposito, chi.id);
+      return OK({ ...fatto, saldoScritto: lire(fatto.saldo) });
+    }
+    if (metodo === "POST" && percorso === "/mano/gioca") {
+      const pezzo = giocaCarta(deposito, chi.id, String(corpo["id"] ?? ""));
+      return OK(vestiCarta(pezzo));
     }
 
     /* --------------------------------------------------------------- mandare */

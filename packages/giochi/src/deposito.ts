@@ -30,6 +30,7 @@
 
 import { copyFileSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
+import { conMovimento } from "./borsa";
 import {
   altezza,
   GRADI,
@@ -45,6 +46,7 @@ import type {
   Formazione,
   Grado,
   Impostazioni,
+  OraDiBorsa,
   Pacchetto,
   Pezzo,
 } from "./tipi";
@@ -72,6 +74,7 @@ function vuoto(): DatiGiochi {
     formazioni: [],
     impostazioni: { ...IMPOSTAZIONI_DI_PARTENZA },
     pacchetti: [],
+    borsa: { ore: [] },
   };
 }
 
@@ -167,6 +170,9 @@ export class Deposito {
       prezzi,
       formazioni: Array.isArray(lette.formazioni) ? lette.formazioni : [],
       impostazioni: impostazioniDiAdesso(lette.impostazioni, versione),
+      // La Borsa (1.4.0): un file di prima non ce l'ha, e comincia vuota.
+      borsa:
+        lette.borsa && Array.isArray(lette.borsa.ore) ? { ore: lette.borsa.ore } : { ore: [] },
       pacchetti: Array.isArray(lette.pacchetti)
         ? lette.pacchetti
         : /**
@@ -311,11 +317,39 @@ export class Deposito {
    * non vuol dire niente — vorrebbe solo dire che qualcuno, da qualche parte,
    * ha scalato due volte lo stesso giro.
    */
-  muovi(chi: string, quanto: number): Conto {
+  /**
+   * ⚠ **Ogni lira che si muove muove anche la Borsa**, dalla 1.4.0
+   * (CONCETTI.md § 18.3): quella che esce da un conto e' bruciata, quella che
+   * entra e' coniata. Sta qui, nel posto da cui passano tutte, e non in ognuno
+   * dei punti che spendono o pagano: una regola sola, e nessuno se la dimentica.
+   *
+   * `mercato: false` e' per le correzioni di chi comanda (azzerare un
+   * portafoglio): non sono un'operazione di mercato, e la Borsa non le vede.
+   */
+  muovi(chi: string, quanto: number, mercato = true): Conto {
     const conto = this.conto(chi);
+    const prima = conto.saldo;
     conto.saldo = Math.max(0, Math.round(conto.saldo + quanto));
+    const mosso = conto.saldo - prima;
+    if (mercato && mosso !== 0) this.segnaInBorsa(chi, mosso);
     this.salva();
     return conto;
+  }
+
+  /** La Borsa: le ultime ore. Vedi `borsa.ts`. */
+  borsa(): OraDiBorsa[] {
+    if (!this.dati.borsa) this.dati.borsa = { ore: [] };
+    return this.dati.borsa.ore;
+  }
+
+  /**
+   * Un movimento in Borsa, anche senza lire: chi entra in sala e basta conta
+   * fra la gente che c'era (`lire` a zero).
+   */
+  segnaInBorsa(chi: string, lire: number, adesso: number = Date.now()): void {
+    if (!this.dati.borsa) this.dati.borsa = { ore: [] };
+    this.dati.borsa.ore = conMovimento(this.dati.borsa.ore, chi, lire, adesso);
+    this.salva();
   }
 
   /**

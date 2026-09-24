@@ -189,3 +189,27 @@ export type {
   TipoCollezionabile,
   Vincita,
 } from "./tipi";
+
+// La partita, la Borsa della Lira e la sala d'arcade (1.4.0, CONCETTI.md § 18).
+export {
+  CARTA_OGNI_MS,
+  GIOCHI_SALA,
+  MANO_MAX,
+  QUOTA_BASE,
+  QUOTA_MAX,
+  QUOTA_MIN,
+  TETTO_STACCO_GIORNO,
+  conMovimento,
+  daUnaCarta,
+  fetta,
+  listino,
+  onda,
+  puntiAmmessi,
+  quotazione,
+  stacco as contoDelloStacco,
+  type GiocoSala,
+  type IdGiocoSala,
+  type Listino,
+} from "./borsa";
+export { entra, evento, giocaCarta, pescaCarta, segnaPunti, stacca, statoSala, type StatoSala } from "./sala";
+export type { Borsa, OraDiBorsa, Partita, Stacco } from "./tipi";

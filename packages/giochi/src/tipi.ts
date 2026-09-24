@@ -487,6 +487,68 @@ export interface Conto {
    * e il secondo tiro non si paga di nuovo.
    */
   giroAperto?: { puntata: number; caselle: string[]; quando: number };
+  /**
+   * ⚠ **La partita aperta**, dalla 1.4.0 (CONCETTI.md § 18.2): i punti fatti in
+   * tutti i giochi della sala da quando si e' staccato l'ultima volta. Si
+   * chiude staccando, e fino ad allora resta — anche domani.
+   */
+  partita?: Partita;
+  /**
+   * ⚠ **La mano**, dalla 1.4.0 (§ 18.5): le carte pescate dal PC quando nei
+   * giochi d'arcade succede una cosa grossa. Sono id di pezzi dei rulli, e si
+   * giocano nella slot gia' bloccate. Dodici al massimo.
+   */
+  mano?: string[];
+  /** Quanto si e' staccato oggi, per il tetto del giorno (§ 18.2). */
+  staccatoOggi?: { giorno: string; lire: number };
+  /** L'ultimo stacco, per farlo vedere com'e' andato. */
+  ultimoStacco?: Stacco;
+  /**
+   * Quando ciascun gioco d'arcade ha mandato punti o carte l'ultima volta, e
+   * quanti in questo minuto: i tetti del § 18.4, che il PC fa rispettare perche'
+   * il punteggio di un gioco nel browser lo racconta la pagina.
+   */
+  ritmo?: Record<string, { minuto: number; punti: number; carta: number; giorno: string; puntiOggi: number }>;
+}
+
+/** La partita aperta di una persona: i punti, e da quali giochi. */
+export interface Partita {
+  punti: number;
+  daQuando: number;
+  /** I punti per gioco, per farli vedere divisi. */
+  perGioco: Record<string, number>;
+}
+
+/** Uno stacco fatto: da quanti punti, a che quotazione, con che fetta. */
+export interface Stacco {
+  quando: number;
+  punti: number;
+  quota: number;
+  fetta: number;
+  lire: number;
+  /** I punti che non ci stavano nel tetto del giorno, e sono rimasti nella partita. */
+  avanzati: number;
+}
+
+/**
+ * Un'ora di Borsa (§ 18.3): quanto si e' coniato e bruciato, chi c'era, e com'e'
+ * andata la quotazione — apertura, chiusura, massimo e minimo.
+ */
+export interface OraDiBorsa {
+  /** L'inizio dell'ora, in millisecondi. */
+  ora: number;
+  coniate: number;
+  bruciate: number;
+  giocatori: string[];
+  apre: number;
+  chiude: number;
+  max: number;
+  min: number;
+}
+
+export interface Borsa {
+  /** Le ultime 168 ore, dalla piu' vecchia. */
+  ore: OraDiBorsa[];
 }
 
 /** Un regalo di chi comanda: quanto, quando, e perche'. */
@@ -639,6 +701,11 @@ export interface DatiGiochi {
    * id di quel giorno, e restano quelli per sempre.
    */
   pacchetti: Pacchetto[];
+  /**
+   * ⚠ **La Borsa della Lira**, dalla 1.4.0 (CONCETTI.md § 18.3). Facoltativa:
+   * un file di prima si apre senza, e comincia a riempirsi dal primo movimento.
+   */
+  borsa?: Borsa;
 }
 
 /**
