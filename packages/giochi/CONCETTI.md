@@ -1240,18 +1240,27 @@ combinazioni migliori sono quelle che pagano davvero (§ 9).
 Con la mano piena, la carta nuova non si perde: diventa **punti della partita**,
 quanto vale il suo grado.
 
-### 18.6 Fuori dalla suite: lo stesso portafoglio sul sito
+### 18.6 Fuori dalla suite: i giochi sono demo, senza lire
 
-I tre giochi stanno anche sul sito, su GitHub Pages, e li' la suite non c'e'.
-Stanno tutti sullo stesso indirizzo (`cammo22.github.io`), quindi possono
-dividersi **lo stesso portafoglio** nel browser: il modulo `daprod-lira.js`,
-uguale nei tre giochi e nella suite, tiene le lire staccate e le rende
-spendibili negli altri due. Li' la Borsa e' **locale** — l'onda e' la stessa,
-calcolata dall'ora, ma chi brucia e chi conia e' solo chi gioca su quel browser —
-e lo dice.
+I tre giochi stanno anche sul sito, su GitHub Pages, e hanno le loro app. Li'
+**restano demo giocabili come prima**: niente lire DaProd, niente barra, niente
+salvato in piu'. Le Lire DaProd sono una cosa di chi e' collegato alla suite.
 
-Dentro la suite, lo stesso modulo si accorge di essere in una cornice della
-sala e parla col PC: conto, partita e Borsa sono quelli veri.
+⚠ Deciso da Cammo il 24 settembre 2026, dopo una prima versione che teneva un
+portafoglio anche nel browser del sito: «le pagine GitHub dei giochi devono
+rimanere demo giocabili normalmente; solo gli utenti collegati alla DaProd Suite
+hanno questo sistema di lire, e i giochi devono essere giocabili anche se un
+computer DaProd non e' collegato».
+
+Il modulo `daprod-lira.js` e' lo stesso nei tre giochi e nella sala, e decide
+da se':
+
+- in una cornice della sala, con `?suite=1`, parla col PC: conto, partita,
+  Borsa e carte sono quelli veri;
+- dappertutto il resto non fa niente, e ogni sua funzione si puo' chiamare lo
+  stesso: il gioco non deve sapere dove sta;
+- se la sala non risponde si spegne da solo e il gioco continua. E se il PC
+  non risponde quando si entra, la sala apre il gioco lo stesso, come demo.
 
 ### 18.7 Il giudice: un parere, non una decisione
 

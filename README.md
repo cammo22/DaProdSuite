@@ -10,7 +10,7 @@ Un programma solo per fare musica, immagini, video, voci e parlare con un avatar
 Ogni app la installi quando ti serve e la disinstalli quando non ti serve più.
 Gira sul tuo computer: niente account, niente chiavi API, codice aperto.
 
-[![versione](https://img.shields.io/badge/versione-1.4.0-7c5cff)](https://github.com/cammo22/DaProdSuite/releases/latest)
+[![versione](https://img.shields.io/badge/versione-1.4.1-7c5cff)](https://github.com/cammo22/DaProdSuite/releases/latest)
 [![licenza](https://img.shields.io/badge/licenza-MIT-5cff9d)](LICENSE)
 [![piattaforma](https://img.shields.io/badge/Windows-x64-3ddbff)](#requisiti)
 [![sito](https://img.shields.io/badge/sito-cammo22.github.io-ffa63d)](https://cammo22.github.io/DaProdSuite/)
@@ -104,7 +104,8 @@ quando tutti incassano. Il giorno dopo rigiochi, magari meglio, e le lire
 accumulate si spendono nei giochi. Le cose grosse (un jackpot, uno shiny, un
 boss) danno una **carta**: un pezzo che giochi nella slot, già bloccato.
 
-Gli stessi tre giochi sul sito dividono lo stesso portafoglio nel browser.
+Sul sito e nelle loro app i tre giochi restano demo normali: le lire sono di
+chi è collegato alla suite.
 
 ## A che punto siamo
 
