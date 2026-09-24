@@ -1,0 +1,519 @@
+/* ─────────────────────────────────────────────────────────────────────────
+ * Il vestito DaProd: la stessa faccia per tutta la suite.
+ *
+ * ⚠ Nuovo nella 1.4.0. Detto il 24 settembre 2026: «la DaProd Suite, che
+ * doveva essere il fiore all'occhiello, sembra essere diventata la più brutta
+ * graficamente: facciamo un remake in stile DaProd». Lo stile DaProd è quello
+ * del sito (il Portfolio) e dei giochi della sala: base tech scura — pioggia
+ * Matrix, scanline, Space Mono, verde #00ff41 e ciano #3ddbff — con i dettagli
+ * lucidi Y2K / Frutiger Aero: vetro scuro, bottoni aqua, icone lucide, bolle.
+ * Non troppo Frutiger chiaro, e niente tono aziendale.
+ *
+ * **Un file solo, cinque posti.** Lo leggono l'hub (copiato accanto al suo
+ * HTML da `copy-assets`), le schede (`/comune/daprod.css`, dopo il loro
+ * foglio), la console del telefono e la sala giochi (il gateway lo serve
+ * sotto `/daprod/`). Il giorno che cambia un colore, cambia qui.
+ *
+ * **Come veste senza rompere.** Le schede hanno fogli loro, nati copiati uno
+ * dall'altro, con le stesse classi: `.panel`, `.btn`, `.mini`, `.chip`,
+ * `header`, `nav`. Questo foglio arriva **dopo** e ridefinisce due cose: i
+ * colori (le stesse variabili che loro usano già: `--bg`, `--panel`, `--line`,
+ * `--txt`, `--dim`…) e l'aspetto di quei pochi pezzi. Le misure e le griglie
+ * restano quelle delle schede, che sono state provate una per una: qui si
+ * cambia il vestito, non lo scheletro.
+ *
+ * L'accento di ogni scheda (`--accent`, l'ambra di Foto, il rosa di Musica)
+ * resta suo: è quello che dice in che stanza sei. Il verde DaProd è la casa.
+ * ───────────────────────────────────────────────────────────────────────── */
+
+@font-face {
+  font-family: "Space Mono";
+  src: url("fonts/space-mono-400.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Space Mono";
+  src: url("fonts/space-mono-700.woff2") format("woff2");
+  font-weight: 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Nunito";
+  src: url("fonts/nunito.woff2") format("woff2");
+  font-weight: 200 1000;
+  font-display: swap;
+}
+@font-face {
+  font-family: "M PLUS Rounded 1c";
+  src: url("fonts/mplus-rounded-800.woff2") format("woff2");
+  font-weight: 800;
+  font-display: swap;
+}
+
+:root {
+  /* La casa */
+  --dp-bg: #020806;
+  --dp-g: #00ff41;
+  --dp-g2: #3dff8a;
+  --dp-cy: #3ddbff;
+  --dp-head: #f2fffb;
+  --dp-txt: #cfe3dd;
+  --dp-txt2: #86a59c;
+  --dp-glass: rgba(8, 22, 20, 0.62);
+  --dp-glass2: rgba(10, 28, 25, 0.78);
+  --dp-glass-b: rgba(120, 255, 200, 0.16);
+  --dp-glass-b2: rgba(120, 255, 200, 0.28);
+  --dp-shadow: 0 18px 44px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(0, 0, 0, 0.4);
+  --dp-mono: "Space Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --dp-body: "Nunito", "Segoe UI", system-ui, sans-serif;
+  --dp-round: "M PLUS Rounded 1c", "Nunito", system-ui, sans-serif;
+
+  /* Le variabili che le schede usano già, girate sulla casa. */
+  --bg: var(--dp-bg);
+  --panel: rgba(8, 22, 20, 0.62);
+  --panel2: rgba(6, 18, 16, 0.7);
+  --line: rgba(120, 255, 200, 0.14);
+  --line2: rgba(120, 255, 200, 0.26);
+  --txt: var(--dp-txt);
+  --dim: var(--dp-txt2);
+  --fioco: #5f7d74;
+  --accent2: var(--dp-cy);
+  --ok: var(--dp-g2);
+  --err: #ff5c6c;
+  --radius: 18px;
+  --raggio: 18px;
+  color-scheme: dark;
+}
+
+/* ─── il fondo: aurora, scanline, e la pioggia (daprod-sfondo.js) ─── */
+
+/* Il colore di fondo sta sul body e non su html, apposta: così il browser lo
+   porta sulla finestra intera, e le due tele del fondo (z-index -1) restano
+   sopra di lui e sotto al contenuto. Messo su html, il body dipingerebbe il suo
+   sopra alle tele e la pioggia sparirebbe. */
+body {
+  font-family: var(--dp-body);
+  color: var(--dp-txt);
+  background:
+    radial-gradient(900px 520px at 88% -10%, rgba(61, 219, 255, 0.16), transparent 62%),
+    radial-gradient(820px 560px at -8% 108%, rgba(0, 255, 65, 0.12), transparent 60%),
+    radial-gradient(600px 420px at 55% 45%, rgba(124, 92, 255, 0.06), transparent 65%),
+    var(--dp-bg);
+  background-attachment: fixed;
+}
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  /* Sotto il contenuto, come nel sito: sopra, velerebbe anche le foto. */
+  z-index: -1;
+  pointer-events: none;
+  background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.13) 0 1px, transparent 1px 3px);
+}
+#daprod-pioggia,
+#daprod-bolle {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+#daprod-pioggia {
+  opacity: 0.13;
+}
+
+::selection {
+  background: rgba(0, 255, 65, 0.3);
+  color: #fff;
+}
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 255, 65, 0.22);
+  border-radius: 99px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 255, 65, 0.4);
+  background-clip: content-box;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ─── la testata delle schede ─── */
+
+body > header {
+  background: rgba(3, 12, 10, 0.72);
+  -webkit-backdrop-filter: blur(18px) saturate(1.5);
+  backdrop-filter: blur(18px) saturate(1.5);
+  border-bottom: 1px solid var(--dp-glass-b);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45), inset 0 -1px 0 rgba(0, 255, 65, 0.08);
+}
+body .logo,
+body .brand,
+body .topbar h1 {
+  font-family: var(--dp-mono);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--dp-head);
+  text-shadow: 0 0 18px rgba(61, 219, 255, 0.25);
+}
+body .logo span,
+body .topbar h1 span {
+  background: linear-gradient(90deg, var(--dp-g), var(--dp-cy));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: none;
+}
+/* Il cursore davanti al nome della scheda. Solo per il logo a parole delle
+   schede (`DaProd<span>Foto</span>`): l'hub ha un logo a bolla, suo. */
+body > header .logo::before {
+  content: "▮";
+  color: var(--dp-g);
+  margin-right: 6px;
+  text-shadow: 0 0 10px var(--dp-g);
+  animation: daprod-cursore 1.1s steps(1) infinite;
+  -webkit-text-fill-color: var(--dp-g);
+}
+@keyframes daprod-cursore {
+  50% {
+    opacity: 0;
+  }
+}
+
+body > header nav,
+body nav:not(.tabs) {
+  background: rgba(2, 10, 8, 0.6);
+  border: 1px solid var(--dp-glass-b);
+  border-radius: 999px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+body > header nav button,
+body nav:not(.tabs) button {
+  border-radius: 999px;
+  font-family: var(--dp-mono);
+  font-weight: 700;
+  font-size: 12.5px;
+  letter-spacing: 0.02em;
+  color: var(--dp-txt2);
+}
+body > header nav button:hover {
+  color: var(--dp-head);
+  background: rgba(0, 255, 65, 0.07);
+}
+body > header nav button.on,
+body nav:not(.tabs) button.on {
+  color: #fff;
+  text-shadow: 0 1px 1px rgba(0, 40, 10, 0.6);
+  background: linear-gradient(180deg, #caffc4 0%, #19d64a 50%, #0a8a26 51%, #19d64a 100%);
+  box-shadow: 0 0 16px rgba(25, 214, 74, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+body .dot.on {
+  background: var(--dp-g);
+  box-shadow: 0 0 10px var(--dp-g);
+}
+
+/* ─── il vetro ─── */
+
+body .panel {
+  position: relative;
+  background: var(--dp-glass);
+  -webkit-backdrop-filter: blur(14px) saturate(1.4);
+  backdrop-filter: blur(14px) saturate(1.4);
+  border: 1px solid var(--dp-glass-b);
+  border-radius: var(--radius);
+  box-shadow: var(--dp-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  isolation: isolate;
+}
+body .panel::before {
+  content: "";
+  position: absolute;
+  inset: 1px 1px auto 1px;
+  height: 46%;
+  max-height: 90px;
+  border-radius: calc(var(--radius) - 1px) calc(var(--radius) - 1px) 50% 50% / calc(var(--radius) - 1px) calc(var(--radius) - 1px) 16px 16px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0));
+  pointer-events: none;
+  z-index: -1;
+}
+body .panel h2,
+body .panel > h3 {
+  font-family: var(--dp-mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--dp-g2);
+}
+body .panel h2::before {
+  content: "// ";
+  color: var(--dp-txt2);
+  letter-spacing: 0;
+}
+body .panel h2 .right,
+body .panel h2 .hint {
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+/* ─── i bottoni aqua ─── */
+
+body .btn,
+body button.wide,
+body .pi-button.primary {
+  --a1: color-mix(in srgb, var(--accent, #19d64a) 35%, #ffffff);
+  --a2: var(--accent, #19d64a);
+  --a3: color-mix(in srgb, var(--accent, #19d64a) 70%, #000000);
+  position: relative;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.5);
+  font-family: var(--dp-round);
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  color: #fff;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.45);
+  background: linear-gradient(180deg, var(--a1) 0%, var(--a2) 50%, var(--a3) 51%, var(--a2) 100%);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--a2) 40%, transparent), 0 6px 14px rgba(0, 0, 0, 0.45),
+    inset 0 -3px 6px rgba(255, 255, 255, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.85);
+  overflow: hidden;
+  isolation: isolate;
+  transition: transform 0.15s, filter 0.2s, box-shadow 0.2s;
+}
+body .btn::before,
+body button.wide::before {
+  content: "";
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  top: 2px;
+  height: 46%;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.05));
+  pointer-events: none;
+  z-index: -1;
+}
+body .btn:hover:not(:disabled),
+body button.wide:hover:not(:disabled) {
+  filter: brightness(1.1) saturate(1.1);
+  transform: translateY(-1px);
+}
+body .btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+body .btn:disabled,
+body button.wide:disabled {
+  filter: grayscale(0.85) brightness(0.7);
+  box-shadow: none;
+}
+body .btn.cyan {
+  --accent: #1fb8ee;
+}
+body .btn.ghost {
+  color: var(--dp-txt);
+  text-shadow: none;
+  border-color: rgba(120, 255, 200, 0.25);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.03) 50%, rgba(0, 0, 0, 0.2) 51%, rgba(255, 255, 255, 0.04));
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+body .btn.ghost::before {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0));
+}
+body .btn.ghost:hover:not(:disabled) {
+  color: #fff;
+  border-color: var(--dp-g);
+  box-shadow: 0 0 18px rgba(0, 255, 65, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+body .mini,
+body .acts button,
+body .icon-btn {
+  border-radius: 999px;
+  border: 1px solid rgba(120, 255, 200, 0.2);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02) 50%, rgba(0, 0, 0, 0.18) 51%, rgba(255, 255, 255, 0.03));
+  color: var(--dp-txt);
+  font-family: var(--dp-body);
+  font-weight: 700;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+body .mini:hover:not(:disabled),
+body .acts button:hover:not(:disabled),
+body .icon-btn:hover {
+  color: #fff;
+  border-color: rgba(0, 255, 65, 0.55);
+  box-shadow: 0 0 12px rgba(0, 255, 65, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+body .mini.on {
+  color: #04130b;
+  background: linear-gradient(180deg, #caffc4, #19d64a);
+  border-color: #0a8a26;
+}
+body .mini.danger:hover,
+body .acts .del:hover {
+  border-color: var(--err);
+  color: #ffd0d4;
+}
+
+/* ─── pastiglie ─── */
+
+body .chip {
+  border-radius: 999px;
+  border: 1px solid rgba(120, 255, 200, 0.18);
+  background: rgba(4, 16, 13, 0.7);
+  color: var(--dp-txt);
+  font-weight: 700;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+body .chip:hover {
+  border-color: rgba(0, 255, 65, 0.5);
+  color: #fff;
+}
+body .chip.on {
+  color: #04130b;
+  border-color: #0a8a26;
+  background: linear-gradient(180deg, #caffc4 0%, #19d64a 50%, #0a8a26 51%, #19d64a 100%);
+  box-shadow: 0 0 12px rgba(25, 214, 74, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+/* ─── i campi ─── */
+
+body textarea,
+body input[type="text"],
+body input[type="number"],
+body input[type="search"],
+body input[type="password"],
+body select {
+  background: rgba(1, 8, 6, 0.72);
+  border: 1px solid rgba(120, 255, 200, 0.18);
+  color: var(--dp-head);
+  border-radius: 12px;
+  font-family: var(--dp-body);
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.45);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+body textarea:focus,
+body input:focus,
+body select:focus {
+  outline: none;
+  border-color: rgba(0, 255, 65, 0.6);
+  box-shadow: 0 0 0 3px rgba(0, 255, 65, 0.14), inset 0 2px 8px rgba(0, 0, 0, 0.45);
+}
+body textarea::placeholder,
+body input::placeholder {
+  color: #4f6b62;
+}
+body input[type="range"] {
+  accent-color: var(--dp-g);
+}
+body input[type="checkbox"] {
+  accent-color: var(--dp-g);
+}
+body label {
+  color: var(--dp-txt2);
+}
+body .rangeval,
+body .misura,
+body .hud-label {
+  font-family: var(--dp-mono);
+  color: var(--dp-cy);
+}
+body .hint {
+  color: #7e9d94;
+}
+body .err {
+  background: rgba(60, 4, 10, 0.55);
+  border: 1px solid rgba(255, 92, 108, 0.5);
+  color: #ffc9ce;
+  border-radius: 12px;
+}
+body .manca {
+  background: rgba(40, 28, 0, 0.5);
+  border: 1px solid rgba(255, 200, 60, 0.4);
+  border-radius: 14px;
+}
+
+/* ─── le card della galleria ─── */
+
+body .card {
+  background: var(--dp-glass2);
+  border: 1px solid var(--dp-glass-b);
+  border-radius: 16px;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+  transition: transform 0.18s, border-color 0.18s, box-shadow 0.18s;
+}
+body .card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(0, 255, 65, 0.4);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.55), 0 0 22px rgba(0, 255, 65, 0.12);
+}
+body .card .nm {
+  color: var(--dp-head);
+  font-weight: 800;
+}
+body .card .sub {
+  font-family: var(--dp-mono);
+  font-size: 11px;
+}
+
+/* ─── chi non vuole il movimento ─── */
+
+@media (prefers-reduced-motion: reduce) {
+  #daprod-pioggia,
+  #daprod-bolle {
+    display: none;
+  }
+  body > header .logo::before {
+    animation: none;
+  }
+}
+
+/* ─── la console del telefono (il gateway) ───
+ * Classi che esistono solo lì: `.marchio`, `.quadrato`, `.tastone`, `.quadro`.
+ * Le misure restano quelle della console, che sono state decise a dito su un
+ * telefono (vedi `packages/gateway/src/console/stile.ts`). */
+
+body .marchio {
+  font-family: var(--dp-mono);
+  font-weight: 700;
+  color: var(--dp-head);
+  text-shadow: 0 0 16px rgba(61, 219, 255, 0.3);
+}
+body .marchio span {
+  color: var(--dp-g);
+  text-shadow: 0 0 12px rgba(0, 255, 65, 0.5);
+}
+body .marchio::after {
+  content: "▮";
+  margin-left: 3px;
+  color: var(--dp-g);
+  animation: daprod-cursore 1.1s steps(1) infinite;
+}
+body .quadrato,
+body .tastone,
+body .quadro,
+body .striscia,
+body .avviso {
+  background: var(--dp-glass);
+  border-color: var(--dp-glass-b);
+  -webkit-backdrop-filter: blur(12px) saturate(1.3);
+  backdrop-filter: blur(12px) saturate(1.3);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+body .quadrato:hover,
+body .tastone:hover,
+body .quadro:hover {
+  border-color: rgba(0, 255, 65, 0.45);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5), 0 0 18px rgba(0, 255, 65, 0.12);
+}
+body .quadrato .grande,
+body .cifre {
+  font-family: var(--dp-mono);
+}
+body .quadrato .segno {
+  text-shadow: 0 0 12px currentColor;
+}

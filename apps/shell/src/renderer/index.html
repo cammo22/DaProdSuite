@@ -8,6 +8,11 @@
     />
     <title>DaProd Suite</title>
     <link rel="stylesheet" href="style.css" />
+    <!-- Il vestito DaProd (1.4.0): prima quello comune a tutta la suite, poi i
+         pezzi che sono solo dell'hub. Vedi daprod-hub.css. -->
+    <link rel="stylesheet" href="daprod/daprod.css" />
+    <link rel="stylesheet" href="daprod-hub.css" />
+    <script src="daprod/daprod-sfondo.js" data-effetti="pieni" defer></script>
   </head>
   <body>
     <!-- Copre tutto finché l'hub non ha davvero i dati (schede, ambiente, GPU,
@@ -41,6 +46,14 @@
     </header>
 
 
+
+    <!-- La riga del terminale, come in cima al sito DaProd. È solo un saluto:
+         quello che conta sta nelle schede qui sotto. -->
+    <section class="terminale" aria-hidden="true">
+      <span class="chi">cammo@napoli:~$</span>
+      <span class="cosa">./daprod-suite <b>--tutto-in-locale</b></span><span class="cursore"></span>
+      <p class="detto">Musica, immagini, video, voci e 3D: i modelli girano qui, sul tuo computer.</p>
+    </section>
 
     <!-- L'ambiente Python, sempre in vista.
          Prima stava in due posti e nessuno dei due era questo: una spia nel

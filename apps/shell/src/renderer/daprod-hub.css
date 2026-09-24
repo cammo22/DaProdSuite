@@ -1,0 +1,469 @@
+/*
+  L'hub vestito da DaProd. Nuovo nella 1.4.0.
+
+  Arriva dopo `style.css` e dopo il vestito comune (`daprod/daprod.css`): da
+  quello prende i colori, i font e il fondo, e qui ci sono i pezzi che sono
+  solo dell'hub — la testata, la riga del terminale, le schede, il piede.
+
+  Come nelle schede: si cambia il vestito, non lo scheletro. Le griglie, le
+  misure e l'ordine delle cose restano quelli di `style.css`, che sono stati
+  decisi uno per uno (la testata sottile, l'ambiente sempre in vista, i tasti
+  in fondo alla scheda). Quello che cambia è come si vede.
+*/
+
+:root {
+  --fondo: transparent;
+  --fondo-alto: rgba(3, 12, 10, 0.72);
+  --fondo-scheda: rgba(8, 22, 20, 0.62);
+  --bordo: rgba(120, 255, 200, 0.14);
+  --bordo-vivo: rgba(120, 255, 200, 0.3);
+  --testo: #cfe3dd;
+  --testo-tenue: #86a59c;
+  --testo-fioco: #5f7d74;
+  --ok: #3dff8a;
+  --attesa: #ffc65c;
+  --errore: #ff5c6c;
+  --raggio: 20px;
+}
+
+body {
+  font-family: var(--dp-body);
+  font-size: 14.5px;
+}
+
+/* ─── la testata: la pillola di vetro del sito ─── */
+
+.testata {
+  margin: 10px 14px 0;
+  padding: 9px 12px 9px 14px;
+  border: 1px solid var(--dp-glass-b);
+  border-radius: 999px;
+  background: rgba(4, 14, 12, 0.66);
+  -webkit-backdrop-filter: blur(18px) saturate(1.5);
+  backdrop-filter: blur(18px) saturate(1.5);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+/* Il logo è la bolla col «D» del sito: un'icona lucida, non un disco a colori. */
+.logo,
+.splash-logo {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #b4f4ff 0%, #1fb8ee 45%, #0873c4 75%, #043f73 100%);
+  box-shadow: 0 0 18px rgba(31, 184, 238, 0.55), inset 0 -4px 8px rgba(0, 0, 0, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+  overflow: hidden;
+}
+body .testata .logo::before,
+.splash-logo::before {
+  content: "D";
+  margin: 0;
+  animation: none;
+  -webkit-text-fill-color: #fff;
+  position: relative;
+  z-index: 1;
+  font: 700 20px/1 var(--dp-round);
+  color: #fff;
+  text-shadow: 0 2px 3px rgba(0, 40, 80, 0.55);
+}
+.logo::after,
+.splash-logo::after {
+  content: "";
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  top: 4%;
+  height: 44%;
+  border-radius: 50%;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0.08));
+}
+
+.testata h1,
+.splash h1 {
+  font-family: var(--dp-mono);
+  font-weight: 700;
+  font-size: 17px;
+  letter-spacing: -0.01em;
+  color: var(--dp-head);
+  text-shadow: 0 0 18px rgba(61, 219, 255, 0.3);
+}
+.testata h1::after {
+  content: "▮";
+  margin-left: 4px;
+  color: var(--dp-g);
+  text-shadow: 0 0 10px var(--dp-g);
+  animation: daprod-cursore 1.1s steps(1) infinite;
+}
+.versione {
+  display: inline-block;
+  margin-top: 2px;
+  padding: 0 8px;
+  border: 1px solid rgba(0, 255, 65, 0.3);
+  border-radius: 99px;
+  font-family: var(--dp-mono);
+  font-size: 10.5px;
+  color: var(--dp-g2);
+  background: rgba(0, 255, 65, 0.06);
+}
+.stato-agg {
+  font-family: var(--dp-mono);
+  font-size: 11.5px;
+}
+
+/* ─── la riga del terminale ─── */
+
+.terminale {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  max-width: 1200px;
+  margin: 18px auto 0;
+  padding: 0 28px;
+  font-family: var(--dp-mono);
+  font-size: 15px;
+  font-weight: 700;
+}
+.terminale .chi {
+  color: var(--dp-g);
+  text-shadow: 0 0 12px rgba(0, 255, 65, 0.45);
+}
+.terminale .cosa {
+  color: var(--dp-head);
+}
+.terminale .cosa b {
+  color: var(--dp-cy);
+}
+.terminale .cursore {
+  display: inline-block;
+  width: 9px;
+  height: 17px;
+  transform: translateY(3px);
+  background: var(--dp-g);
+  box-shadow: 0 0 10px var(--dp-g);
+  animation: daprod-cursore 1.1s steps(1) infinite;
+}
+.terminale .detto {
+  flex-basis: 100%;
+  margin: 2px 0 0;
+  font-family: var(--dp-body);
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--dp-txt2);
+}
+
+/* ─── l'ambiente: una riga da HUD ─── */
+
+.ambiente {
+  margin: 8px 14px 0;
+  border: 1px solid var(--dp-glass-b);
+  border-radius: 16px;
+  background: rgba(2, 10, 8, 0.55);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+.ambiente-detto {
+  font-family: var(--dp-mono);
+  font-size: 11.5px;
+  color: var(--dp-txt2);
+}
+.ambiente-spia.ok {
+  background: var(--dp-g);
+  box-shadow: 0 0 10px var(--dp-g);
+}
+.log,
+.log-righe {
+  background: rgba(0, 6, 4, 0.8) !important;
+  border: 1px solid rgba(0, 255, 65, 0.15);
+  color: #7fe0a4 !important;
+  font-family: var(--dp-mono) !important;
+}
+
+/* ─── le schede delle app ─── */
+
+main {
+  padding: 22px 28px 28px;
+}
+.griglia {
+  gap: 20px;
+}
+
+.scheda {
+  position: relative;
+  padding: 0 0 18px;
+  gap: 12px;
+  overflow: hidden;
+  border: 1px solid var(--dp-glass-b);
+  border-radius: var(--raggio);
+  background: var(--dp-glass);
+  background-image: radial-gradient(120% 70% at 0% 100%, color-mix(in srgb, var(--accento) 14%, transparent), transparent 60%);
+  -webkit-backdrop-filter: blur(12px) saturate(1.4);
+  backdrop-filter: blur(12px) saturate(1.4);
+  box-shadow: var(--dp-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+.scheda:hover {
+  transform: translateY(-3px);
+  border-color: color-mix(in srgb, var(--accento) 55%, transparent);
+  box-shadow: 0 22px 50px rgba(0, 0, 0, 0.6), 0 0 26px color-mix(in srgb, var(--accento) 25%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14);
+}
+.scheda-arte {
+  position: relative;
+  margin: 0 !important;
+  border-radius: 0 !important;
+}
+.scheda-arte::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.16) 0 1px, transparent 1px 3px),
+    linear-gradient(180deg, transparent 45%, rgba(3, 12, 10, 0.92));
+}
+.scheda-testa,
+.scheda-fondo,
+.barra-scheda {
+  margin-left: 18px !important;
+  margin-right: 18px !important;
+}
+.scheda-testa {
+  align-items: center;
+  margin-top: -30px;
+  position: relative;
+  z-index: 1;
+}
+
+/* L'icona lucida: il pallino di prima, cresciuto. Il segno lo mette main.ts. */
+.pallino {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  margin: 0;
+  border-radius: 14px;
+  color: #fff;
+  font-size: 21px;
+  line-height: 1;
+  text-shadow: 0 2px 3px rgba(0, 0, 0, 0.35);
+  background: linear-gradient(160deg, color-mix(in srgb, var(--accento) 45%, #ffffff), var(--accento) 55%,
+    color-mix(in srgb, var(--accento) 65%, #000000));
+  box-shadow: 0 0 20px color-mix(in srgb, var(--accento) 40%, transparent), 0 8px 16px rgba(0, 0, 0, 0.45),
+    inset 0 -4px 8px rgba(0, 0, 0, 0.18), inset 0 0 0 1px rgba(255, 255, 255, 0.3);
+  overflow: hidden;
+}
+.pallino::before {
+  content: "";
+  position: absolute;
+  left: -10%;
+  right: -10%;
+  top: -30%;
+  height: 78%;
+  border-radius: 0 0 50% 50%;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.08));
+}
+.scheda h2 {
+  font-family: var(--dp-mono);
+  font-size: 15.5px;
+  font-weight: 700;
+  color: var(--dp-head);
+}
+.scheda p {
+  color: var(--dp-txt2);
+}
+.etichetta {
+  font-family: var(--dp-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.etichetta.pronta::before,
+.etichetta.attesa::before,
+.etichetta.guasto::before {
+  content: "●";
+  margin-right: 6px;
+  text-shadow: 0 0 8px currentColor;
+}
+
+/* ─── i bottoni: aqua, col colore dell'app ─── */
+
+.bottone {
+  --a1: color-mix(in srgb, var(--accento, #19d64a) 35%, #ffffff);
+  --a2: var(--accento, #19d64a);
+  --a3: color-mix(in srgb, var(--accento, #19d64a) 70%, #000000);
+  position: relative;
+  padding: 9px 18px;
+  border: 1px solid rgba(0, 0, 0, 0.5);
+  border-radius: 999px;
+  font-family: var(--dp-round);
+  font-weight: 800;
+  color: #fff;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.45);
+  background: linear-gradient(180deg, var(--a1) 0%, var(--a2) 50%, var(--a3) 51%, var(--a2) 100%);
+  box-shadow: 0 0 16px color-mix(in srgb, var(--a2) 40%, transparent), 0 6px 14px rgba(0, 0, 0, 0.45),
+    inset 0 -3px 6px rgba(255, 255, 255, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.85);
+  overflow: hidden;
+  isolation: isolate;
+  transition: transform 0.15s, filter 0.2s;
+}
+.bottone::before {
+  content: "";
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  top: 2px;
+  height: 46%;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.05));
+  pointer-events: none;
+  z-index: -1;
+}
+.bottone:hover:not(:disabled) {
+  filter: brightness(1.1) saturate(1.1);
+  transform: translateY(-1px);
+}
+.bottone:disabled {
+  color: var(--testo-fioco);
+  text-shadow: none;
+  background: rgba(255, 255, 255, 0.03);
+  border-color: var(--bordo);
+  box-shadow: none;
+}
+.bottone:disabled::before {
+  display: none;
+}
+.bottone.secondario {
+  color: var(--dp-txt);
+  text-shadow: none;
+  border-color: rgba(120, 255, 200, 0.22);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.02) 50%, rgba(0, 0, 0, 0.2) 51%, rgba(255, 255, 255, 0.03));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14);
+}
+.bottone.secondario::before {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0));
+}
+.bottone.secondario:hover:not(:disabled) {
+  color: #fff;
+  border-color: var(--dp-g);
+  box-shadow: 0 0 14px rgba(0, 255, 65, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+.bottone.secondario.on {
+  color: #04130b;
+  text-shadow: none;
+  background: linear-gradient(180deg, #caffc4 0%, #19d64a 50%, #0a8a26 51%, #19d64a 100%);
+  border-color: #0a8a26;
+}
+
+/* ─── i pannelli in fondo ─── */
+
+.llm,
+.pannello,
+.spazio {
+  border: 1px solid var(--dp-glass-b) !important;
+  border-radius: 20px !important;
+  background: var(--dp-glass) !important;
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  box-shadow: var(--dp-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+.llm h2,
+.pannello-testa h2,
+.spazio-testa h2 {
+  font-family: var(--dp-mono);
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--dp-g2);
+}
+.llm h2::before,
+.pannello-testa h2::before,
+.spazio-testa h2::before {
+  content: "// ";
+  color: var(--dp-txt2);
+}
+.llm a {
+  color: var(--dp-cy);
+}
+
+/* ─── il piede: le spie da HUD ─── */
+
+.pieddi {
+  margin: 0 14px 10px;
+  padding: 7px 10px 7px 16px;
+  border: 1px solid var(--dp-glass-b);
+  /* Non a pillola: su una finestra stretta va a capo su due righe, e una
+     pillola alta due righe è un uovo. */
+  border-radius: 22px;
+  background: rgba(4, 14, 12, 0.72);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  font-family: var(--dp-mono);
+  font-size: 11px;
+}
+.spia {
+  color: var(--dp-txt2);
+}
+#spia-gpu::before {
+  content: "▮ ";
+  color: var(--dp-g);
+}
+.collegamento {
+  white-space: nowrap;
+  border-radius: 999px;
+  font-family: var(--dp-mono);
+  color: var(--dp-txt2);
+}
+.collegamento:hover,
+.collegamento.on {
+  color: #04130b;
+  background: linear-gradient(180deg, #caffc4, #19d64a);
+}
+
+/* ─── la partenza e la guida ─── */
+
+.splash {
+  background: var(--dp-bg) !important;
+}
+.splash-spinner {
+  border-color: rgba(0, 255, 65, 0.18) !important;
+  border-top-color: var(--dp-g) !important;
+}
+.splash-stato {
+  font-family: var(--dp-mono);
+  color: var(--dp-g2) !important;
+}
+.guida {
+  background: rgba(1, 6, 4, 0.72) !important;
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+.guida-foglio {
+  background: var(--dp-glass2) !important;
+  border: 1px solid var(--dp-glass-b2) !important;
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+}
+.guida-foglio h2 {
+  font-family: var(--dp-mono);
+  color: var(--dp-head);
+}
+
+select {
+  border-radius: 999px !important;
+  background: rgba(1, 8, 6, 0.72) !important;
+  border: 1px solid rgba(120, 255, 200, 0.2) !important;
+  color: var(--dp-txt) !important;
+  font-family: var(--dp-mono) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .testata h1::after,
+  .terminale .cursore {
+    animation: none;
+  }
+}

@@ -91,6 +91,7 @@ import { copyFileSync, createReadStream, createWriteStream, mkdirSync, rmSync, s
 import { join, normalize } from "node:path";
 import { elencoAzioni, eseguiAzione, type Esecutore } from "./azioni";
 import { paginaConsole } from "./console";
+import { VESTE, VESTE_VERSIONE } from "./veste-generata";
 import {
   paginaGiochi,
   rispondi as rispondiAiGiochi,
@@ -323,7 +324,32 @@ export class Gateway {
       // La console web: una pagina sola, senza dati dentro. Il token se lo
       // procura lei accoppiandosi, come fa il telefono.
       if ((percorso === "/" || percorso === "/console") && req.method === "GET") {
-        this.pagina(res, paginaConsole());
+        this.pagina(res, vestita(paginaConsole()));
+        return;
+      }
+
+      /**
+       * ⚠ **Il vestito DaProd**, dalla 1.4.0: il foglio, il fondo animato e i
+       * font, gli stessi dell'hub e delle schede (`packages/ui/src`). Sono file
+       * che non dicono niente di nessuno, quindi **niente token**: servono prima
+       * ancora che la pagina si sia accoppiata, o la schermata del codice
+       * resterebbe senza font.
+       *
+       * Al contrario della pagina, questi **si tengono in cache per un anno**:
+       * nell'indirizzo c'e' la loro impronta (`?v=`), e quando cambiano cambia
+       * l'indirizzo. Cosi' i 100 KB di font passano dal tunnel una volta sola.
+       */
+      if (percorso.startsWith("/daprod/") && req.method === "GET") {
+        const voce = VESTE[percorso.slice("/daprod/".length)];
+        if (!voce) return this.errore(res, 404, "Qui non c'e'.");
+        const corpo = Buffer.from(voce.base64, "base64");
+        res.writeHead(200, {
+          "Content-Type": voce.tipo,
+          "Content-Length": corpo.length,
+          "Cache-Control": "public, max-age=31536000, immutable",
+          "X-Content-Type-Options": "nosniff",
+        });
+        res.end(corpo);
         return;
       }
 
@@ -343,7 +369,7 @@ export class Gateway {
        * chiedendo, passa la domanda, riporta la risposta.
        */
       if (percorso === "/giochi" && req.method === "GET") {
-        this.pagina(res, paginaGiochi("/giochi", "/sessione"));
+        this.pagina(res, vestita(paginaGiochi("/giochi", "/sessione")));
         return;
       }
       /**
@@ -2955,9 +2981,16 @@ export class Gateway {
       // `<audio>` della libreria non partono e non dicono perché. `blob:` serve
       // ai download, che passano da un oggetto in memoria per poter avere il
       // nome giusto del file.
+      //
+      // ⚠ Dalla 1.4.0 `style-src`, `script-src` e `font-src` accettano anche
+      // `'self'`: il vestito DaProd arriva da `/daprod/`, cioe' da questo
+      // stesso computer. Da fuori continua a non entrare niente. E `frame-src
+      // 'self'` e' per i giochi della sala, che girano in una cornice loro
+      // servita da qui (`/giochi/sala/`).
       "Content-Security-Policy":
         "default-src 'none'; connect-src 'self'; img-src 'self' data: blob:; " +
-        "media-src 'self' blob:; style-src 'unsafe-inline'; script-src 'unsafe-inline'",
+        "media-src 'self' blob:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; " +
+        "font-src 'self'; frame-src 'self'",
       "Referrer-Policy": "no-referrer",
       "X-Content-Type-Options": "nosniff",
     });
@@ -2981,6 +3014,20 @@ export class Gateway {
   private errore(res: ServerResponse, codice: number, messaggio: string): void {
     this.json(res, codice, { errore: messaggio });
   }
+}
+
+/**
+ * La pagina col vestito DaProd addosso: il foglio e il fondo, messi **in fondo**
+ * alla testa, cosi' arrivano dopo lo stile della pagina e ne cambiano i colori.
+ * Vedi la rotta `/daprod/`.
+ */
+function vestita(html: string): string {
+  const v = "?v=" + VESTE_VERSIONE;
+  return html.replace(
+    "</head>",
+    '<link rel="stylesheet" href="/daprod/daprod.css' + v + '">\n' +
+      '<script src="/daprod/daprod-sfondo.js' + v + '" data-effetti="pieni" defer></script>\n</head>',
+  );
 }
 
 /** Il dispositivo senza il token: è quel che si può mostrare in giro. */
