@@ -466,6 +466,8 @@ function vestita(c: Collezionabile, contorno: Contorno, scoperta: boolean) {
     quando: c.quando,
     tavolo: c.tavolo ?? "",
     era: c.era ?? "",
+    /** Il parere del giudice, se chi comanda l'ha chiesto: da coperta non si vede. */
+    giudizio: scoperta ? (c.giudizio ?? null) : null,
   };
 }
 

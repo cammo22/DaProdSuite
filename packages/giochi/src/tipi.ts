@@ -412,6 +412,16 @@ export interface Collezionabile {
   decisa?: number;
   /** Perche' e' stata buttata. Si dice sempre. */
   motivo?: string;
+  /** Il parere del giudice, se chi comanda l'ha chiesto (§ 18.7). Consiglia, non decide. */
+  giudizio?: Giudizio;
+}
+
+/** Cosa ha detto il giudice di una figurina: quanto e' probabile ogni verdetto. */
+export interface Giudizio {
+  quando: number;
+  /** Per id del verdetto (`slop`, `normale`, `buona`, `vetrina`), somma 1. */
+  probabilita: Record<string, number>;
+  meglio: string;
 }
 
 /* ---------------------------------------------------------------- le persone */

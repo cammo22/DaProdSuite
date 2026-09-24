@@ -465,7 +465,7 @@
 <script type="module">
 import * as THREE from 'three';
 
-const VERSIONE = 'v2.1.0';
+const VERSIONE = 'v2.2.0';
 const $ = (id) => document.getElementById(id);
 const TATTILE = (typeof matchMedia === 'function') &&
   (matchMedia('(hover: none)').matches || matchMedia('(pointer: coarse)').matches);
@@ -2635,6 +2635,7 @@ requestAnimationFrame(ciclo);
 if (window.DaProdLira) DaProdLira.init({
   gioco: 'dozer',
   posto: 'basso-sinistra',
+  telefono: { top: '118px', left: '8px' },
   ricarica: { detto: '+L.2.000 di monete', dai: () => { stato.saldo += 2000; aggiornaHUD(); daSalvare = true; avviso('🪙 Ricarica DaProd: +' + soldi(2000), 'cia'); } },
 });
 

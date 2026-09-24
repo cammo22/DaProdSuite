@@ -30,6 +30,9 @@ import {
   statoSala,
   TETTO_STACCO_GIORNO,
   tira,
+  VERDETTI,
+  domandaPer,
+  segnaGiudizio,
 } from "../dist/index.js";
 import { conCartella, dado, prova, tirandoLeSomme, uguale, vero } from "./attrezzi.mjs";
 
@@ -274,6 +277,33 @@ prova("la Borsa si salva e si rilegge", () =>
     d.scriviOra();
     const di = new Deposito(file);
     vero(di.borsa().length >= 1, "la Borsa e' tornata dal disco");
+  }),
+);
+
+prova("il giudice fa sempre la stessa domanda, con le quattro risposte", () => {
+  const d = domandaPer({ id: "x", titolo: "Tre pezzi", tavolo: "immagini", era: "80", prompt: "a neon harbour at dawn" });
+  uguale(d.opzioni.length, 4);
+  vero(d.stato.includes("a neon harbour at dawn"), "il prompt e' nello stato");
+  vero(d.stato.includes("80s"), "l'epoca e' nello stato");
+  uguale(d.libreria, undefined);
+});
+
+prova("il parere si scrive sulla figurina, normalizzato, e non decide niente", () =>
+  conCartella((file) => {
+    const dep = new Deposito(file);
+    const c = dep.aggiungi({ id: "g1", tipo: "prompt", titolo: "Prova", impronta: "p1", prompt: "x", daChi: "pino", quando: ADESSO, stato: "in-attesa" });
+    const risposta = {};
+    risposta[VERDETTI[0].detto] = 2;
+    risposta[VERDETTI[3].detto] = 6;
+    risposta["una risposta che non esiste"] = 50;
+    const g = segnaGiudizio(dep, c.id, risposta, ADESSO);
+    uguale(g.meglio, "vetrina");
+    uguale(g.probabilita.slop, 0.25);
+    uguale(g.probabilita.vetrina, 0.75);
+    dep.scriviOra();
+    const di = new Deposito(file);
+    uguale(di.perId(c.id).giudizio.meglio, "vetrina");
+    uguale(di.perId(c.id).stato, "in-attesa");
   }),
 );
 

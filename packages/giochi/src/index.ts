@@ -19,6 +19,7 @@
  */
 
 export { Deposito } from "./deposito";
+export { VERDETTI, domandaPer, segnaGiudizio, type DomandaAlGiudice, type Verdetto } from "./giudice";
 export { paginaGiochi } from "./pagina";
 export {
   rispondi,
@@ -212,5 +213,5 @@ export {
   type Listino,
 } from "./borsa";
 export { entra, evento, giocaCarta, pescaCarta, segnaPunti, stacca, statoSala, type StatoSala } from "./sala";
-export type { Borsa, OraDiBorsa, Partita, Stacco } from "./tipi";
+export type { Borsa, Giudizio, OraDiBorsa, Partita, Stacco } from "./tipi";
 export { fileDellaSala } from "./sala-file";

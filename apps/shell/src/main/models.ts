@@ -60,6 +60,11 @@ export interface HfRepoModel {
   /** Come in `FileModel`: i nodi custom senza cui questi pesi non si aprono. */
   nodi?: string[];
   bytes: number;
+  /**
+   * `bytes` e' una stima (1.4.0): la cartella non si pesa, si guarda la
+   * ricevuta che si scrive a scaricamento finito (`.daprod-completo`).
+   */
+  pesoDaConfermare?: boolean;
 }
 
 /**
@@ -123,6 +128,7 @@ export function isModelPresent(id: string): boolean {
       // che la cartella esista e pesi almeno il 95% dell'atteso.
       const dir = join(MODELS_DIR, entry.dir, entry.verifica ?? "");
       if (!existsSync(dir)) return false;
+      if (entry.pesoDaConfermare) return existsSync(join(dir, ".daprod-completo"));
       return dirSize(dir) >= entry.bytes * 0.95;
     }
     case "lmstudio":

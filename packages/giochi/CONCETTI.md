@@ -1253,6 +1253,24 @@ e lo dice.
 Dentro la suite, lo stesso modulo si accorge di essere in una cornice della
 sala e parla col PC: conto, partita e Borsa sono quelli veri.
 
+### 18.7 Il giudice: un parere, non una decisione
+
+Chi comanda guarda la fila da solo, e alla trentesima riga non vede piu'
+niente. Dalla 1.4.0 accanto a ogni combinazione in fila c'e' **«chiedi al
+giudice»**: il PC accende Jev-Omni (un classificatore di decisioni, vedi
+`services/giudice`) e gli fa una domanda sola, con quattro risposte possibili —
+**slop**, **normale**, **buona**, **da vetrina**. Torna quanto e' probabile
+ognuna, e sulla card compaiono quattro barre.
+
+- Quattro scatole e non dodici gradi: fra Arcane e Heroic nessuno sa dire la
+  differenza guardando una riga, modello o persona.
+- Se la combinazione ha gia' un allegato tenuto, il giudice guarda anche quello.
+- **Il giudice consiglia, non decide.** Non prende, non butta, non mette prezzi:
+  lo scrive sulla figurina (`giudizio`) e basta. Decide sempre una persona (§ 10).
+- Le domande e dove si scrive la risposta sono funzioni pure (`giudice.ts`); il
+  modello lo conosce solo chi ospita. Senza giudice la rotta dice 501 e la fila
+  funziona come prima.
+
 ## 17. Quello che ancora non e' deciso
 
 - ⚠ **Il costo del giro, adesso che il tetto e' tre euro.** Dall'11 settembre

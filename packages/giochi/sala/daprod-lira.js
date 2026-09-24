@@ -218,7 +218,7 @@
         allaSala("ciao", { gioco: gioco, ricarica: ricarica ? ricarica.detto || "" : "" }).then(annuncia, function () {});
       } else {
         annuncia(statoLocale());
-        if (opzioni.barra !== false) montaHud(opzioni.posto || "basso-sinistra");
+        if (opzioni.barra !== false) montaHud(opzioni.posto || "basso-sinistra", opzioni.telefono, opzioni.tondo);
       }
       return Lira;
     },
@@ -291,34 +291,57 @@
   /* ------------------------------------------- la barra, sul sito -- */
 
   var hud = null;
-  function montaHud(posto) {
+  /**
+   * La barra. Sul computer e' una riga coi soldi, dove dice il gioco (`posto`).
+   * Sul telefono i comandi del gioco occupano tutti i bordi: li' diventa un
+   * bottoncino tondo «₤», messo dove il gioco ha un buco (`telefono`, con le
+   * misure CSS: `{ top: "130px", left: "8px" }`), e toccandolo si apre.
+   */
+  function montaHud(posto, telefono, sempreTondo) {
     if (hud || !document.body) return;
     var st = document.createElement("style");
     st.textContent =
       "#dpLira{position:fixed;left:10px;bottom:10px;z-index:2147483000;font:700 12px/1.2 ui-monospace,Consolas,monospace;color:#cfe3dd;" +
       "background:rgba(4,14,12,.8);border:1px solid rgba(120,255,200,.25);border-radius:16px;box-shadow:0 10px 26px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.12);" +
       "-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);max-width:calc(100vw - 20px);user-select:none}" +
-      "#dpLira .riga{display:flex;align-items:center;gap:9px;padding:7px 8px 7px 11px;cursor:pointer;white-space:nowrap}" +
-      "#dpLira b{color:#3dff8a;font-size:13px}#dpLira .su{color:#3dff8a}#dpLira .giu{color:#ff5c6c}" +
+      "#dpLira .dpl-riga{display:flex;align-items:center;gap:9px;padding:7px 8px 7px 11px;cursor:pointer;white-space:nowrap}" +
+      "#dpLira b{color:#3dff8a;font-size:13px}#dpLira .dpl-su{color:#3dff8a}#dpLira .dpl-giu{color:#ff5c6c}" +
       "#dpLira button{font:800 12px/1 system-ui,sans-serif;color:#fff;border:1px solid rgba(0,0,0,.5);border-radius:99px;padding:6px 11px;cursor:pointer;" +
       "background:linear-gradient(180deg,#caffc4 0%,#19d64a 50%,#0a8a26 51%,#19d64a 100%);text-shadow:0 1px 1px rgba(0,40,10,.6);box-shadow:0 0 12px rgba(25,214,74,.35)}" +
-      "#dpLira button.cyan{background:linear-gradient(180deg,#b4f4ff 0%,#1fb8ee 50%,#0873c4 51%,#1fb8ee 100%)}" +
+      "#dpLira button.dpl-cyan{background:linear-gradient(180deg,#b4f4ff 0%,#1fb8ee 50%,#0873c4 51%,#1fb8ee 100%)}" +
       "#dpLira button:disabled{filter:grayscale(1) brightness(.6)}" +
-      "#dpLira .aperta{display:none;padding:2px 12px 11px;font-weight:400;line-height:1.5;max-width:320px;white-space:normal}" +
-      "#dpLira.su .aperta{display:block}#dpLira .aperta p{margin:6px 0}#dpLira .tasti{display:flex;gap:6px;flex-wrap:wrap}";
+      "#dpLira .dpl-aperta{display:none;padding:2px 12px 11px;font-weight:400;line-height:1.5;max-width:320px;white-space:normal}" +
+      "#dpLira.dpl-su .dpl-aperta{display:block}#dpLira .dpl-aperta p{margin:6px 0}#dpLira .dpl-tasti{display:flex;gap:6px;flex-wrap:wrap}" +
+      "#dpLira .dpl-tondo{display:none}" +
+      "#dpLira.dpl-piccolo:not(.dpl-su){border-radius:50%}#dpLira.dpl-piccolo:not(.dpl-su) .dpl-riga{display:none}" +
+      "#dpLira.dpl-piccolo:not(.dpl-su) .dpl-tondo{display:grid;place-items:center;width:40px;height:40px;cursor:pointer;color:#3dff8a;font:800 18px/1 system-ui,sans-serif}" +
+      "#dpLira.dpl-piccolo.dpl-su{max-width:min(330px,calc(100vw - 20px))}";
     document.head.appendChild(st);
     hud = document.createElement("div");
     hud.id = "dpLira";
     // Dove non copre i comandi del gioco: lo dice il gioco.
-    var p = String(posto).split("-");
-    hud.style[p[0] === "alto" ? "top" : "bottom"] = "10px";
-    hud.style.left = p[1] === "destra" ? "auto" : "10px";
-    hud.style.right = p[1] === "destra" ? "10px" : "auto";
-    hud.innerHTML = '<div class="riga" id="dpLiraRiga"></div><div class="aperta" id="dpLiraAperta"></div>';
+    function sistema() {
+      // `tondo: true` e' per i giochi che non hanno un buco nemmeno sul computer.
+      var stretto = sempreTondo || window.innerWidth < 700;
+      hud.classList.toggle("dpl-piccolo", stretto);
+      hud.style.top = hud.style.bottom = hud.style.left = hud.style.right = "auto";
+      if (stretto && telefono) {
+        for (var k in telefono) hud.style[k] = telefono[k];
+        return;
+      }
+      var p = String(posto).split("-");
+      hud.style[p[0] === "alto" ? "top" : "bottom"] = "10px";
+      hud.style[p[1] === "destra" ? "right" : "left"] = "10px";
+    }
+    sistema();
+    window.addEventListener("resize", sistema);
+    hud.innerHTML = '<div class="dpl-tondo" id="dpLiraTondo" title="Le Lire DaProd">₤</div>' +
+      '<div class="dpl-riga" id="dpLiraRiga"></div><div class="dpl-aperta" id="dpLiraAperta"></div>';
     document.body.appendChild(hud);
+    hud.querySelector("#dpLiraTondo").addEventListener("click", function () { hud.classList.add("dpl-su"); });
     hud.querySelector("#dpLiraRiga").addEventListener("click", function (e) {
       if (e.target && e.target.tagName === "BUTTON") return;
-      hud.classList.toggle("su");
+      hud.classList.toggle("dpl-su");
     });
     hud.addEventListener("click", function (e) {
       var t = e.target;
@@ -343,7 +366,7 @@
     hud.querySelector("#dpLiraRiga").innerHTML =
       "<span>₤</span><b>" + lire(s.saldo) + "</b>" +
       "<span>" + s.partita + " pt</span>" +
-      "<span class='" + (su ? "su" : "giu") + "'>" + (su ? "▲" : "▼") + " " + s.quota.toFixed(2).replace(".", ",") + "</span>" +
+      "<span class='" + (su ? "dpl-su" : "dpl-giu") + "'>" + (su ? "▲" : "▼") + " " + s.quota.toFixed(2).replace(".", ",") + "</span>" +
       "<button data-fai='stacca'" + (s.partita > 0 ? "" : " disabled") + ">Stacca</button>";
     var g = GIOCHI[gioco];
     hud.querySelector("#dpLiraAperta").innerHTML =
@@ -353,7 +376,7 @@
       "<p>La quotazione sale quando si spende e scende quando si incassa (" + (su ? "+" : "") + String(s.variazione).replace(".", ",") + "% in 24 ore). " +
       "Staccando adesso prenderesti <b>" + lire(s.staccando) + "</b>.</p>" +
       (detto ? "<p><b>" + detto + "</b></p>" : "") +
-      "<div class='tasti'>" + (g && ricarica ? "<button class='cyan' data-fai='ricarica'>Ricarica · " + lire(g.ingresso) + "</button>" : "") +
+      "<div class='dpl-tasti'>" + (g && ricarica ? "<button class='dpl-cyan' data-fai='ricarica'>Ricarica · " + lire(g.ingresso) + "</button>" : "") +
       "<button data-fai='stacca'" + (s.partita > 0 ? "" : " disabled") + ">Stacca " + lire(s.staccando) + "</button></div>";
   }
 

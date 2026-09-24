@@ -35,6 +35,7 @@ export type {
   FornitoreLibreria,
   FornitoreMacchina,
   FornitorePannello,
+  FornitoreGiudice,
   FornitoreStili,
   IndirizzoPubblico,
   Invio,

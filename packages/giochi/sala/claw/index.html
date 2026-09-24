@@ -548,7 +548,7 @@
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
-const VERSIONE = 'v1.0.0';
+const VERSIONE = 'v1.1.0';
 const $ = (id) => document.getElementById(id);
 const PARAMETRI = new URLSearchParams(location.search);
 // gioco = la partita vera; demo = la macchina gioca da sola (sfondo della home); vetrina = sfilata dei modellini
@@ -2878,7 +2878,10 @@ requestAnimationFrame((t) => { ultimo = t; requestAnimationFrame(ciclo); $('cari
 // giochi; sul sito il browser, diviso con gli altri giochi DaProd.
 if (window.DaProdLira && MODO === 'gioco') DaProdLira.init({
   gioco: 'claw',
-  posto: 'basso-sinistra',
+  // Nella Claw i bordi sono tutti occupati (vetrina, officina, PRENDI): il
+  // portafoglio e' il tondo sotto al marchio, sul telefono e sul computer.
+  tondo: true,
+  telefono: { top: '70px', left: '10px' },
   ricarica: { detto: '+L.3.000 per le prese', dai: () => { stato.lire += 3000; aggiornaHUD(); daSalvare = true; avviso('🦾 Ricarica DaProd: +' + lire(3000), 'cia'); } },
 });
 

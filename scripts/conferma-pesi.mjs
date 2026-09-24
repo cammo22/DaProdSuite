@@ -24,19 +24,45 @@ const percorso = join(import.meta.dirname, "..", "manifest", "models.json");
 let testo = readFileSync(percorso, "utf8");
 const catalogo = JSON.parse(testo);
 
+/** Un file solo: chiede il primo byte, e il server dice il totale in Content-Range. */
+async function pesoDelFile(url) {
+  const risposta = await fetch(url, {
+    headers: { "user-agent": "DaProdSuite", range: "bytes=0-0" },
+    redirect: "follow",
+  });
+  await risposta.arrayBuffer().catch(() => undefined);
+  if (!risposta.ok) throw new Error(`risponde ${risposta.status}`);
+  const totale = Number((risposta.headers.get("content-range") ?? "").split("/")[1]);
+  if (!Number.isFinite(totale) || totale <= 0) throw new Error("non dice quanto pesa");
+  return totale;
+}
+
+/** Glob semplice di HF: `*` e basta, come negli `include` del catalogo. */
+function combacia(nome, schemi) {
+  return schemi.some((g) => new RegExp("^" + g.replace(/[.+^${}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*") + "$").test(nome));
+}
+
+/** Una repo intera: l'API di HF elenca i file col loro peso; si sommano quelli che si scaricano. */
+async function pesoDellaRepo(voce) {
+  const risposta = await fetch(`https://huggingface.co/api/models/${voce.repo}/tree/main?recursive=true`, {
+    headers: { "user-agent": "DaProdSuite" },
+  });
+  if (!risposta.ok) throw new Error(`l'elenco risponde ${risposta.status}`);
+  const file = (await risposta.json()).filter((f) => f.type === "file");
+  const tenuti = file.filter(
+    (f) => (!voce.include || combacia(f.path, voce.include)) && !(voce.exclude && combacia(f.path, voce.exclude)),
+  );
+  const totale = tenuti.reduce((a, f) => a + (f.lfs?.size ?? f.size ?? 0), 0);
+  if (totale <= 0) throw new Error("nessun file da scaricare");
+  return totale;
+}
+
 let confermati = 0;
 let rotti = 0;
 for (const [id, voce] of Object.entries(catalogo.models)) {
   if (!voce.pesoDaConfermare) continue;
   try {
-    const risposta = await fetch(voce.url, {
-      headers: { "user-agent": "DaProdSuite", range: "bytes=0-0" },
-      redirect: "follow",
-    });
-    await risposta.arrayBuffer().catch(() => undefined);
-    if (!risposta.ok) throw new Error(`risponde ${risposta.status}`);
-    const totale = Number((risposta.headers.get("content-range") ?? "").split("/")[1]);
-    if (!Number.isFinite(totale) || totale <= 0) throw new Error("non dice quanto pesa");
+    const totale = voce.kind === "hf-repo" ? await pesoDellaRepo(voce) : await pesoDelFile(voce.url);
 
     const inizio = testo.indexOf(`"${id}": {`);
     const fine = testo.indexOf("\n    }", inizio);
@@ -50,7 +76,7 @@ for (const [id, voce] of Object.entries(catalogo.models)) {
     console.log(`✓ ${id}: ${totale} byte (${(totale / 1024 ** 3).toFixed(2)} GB, stimati ${(voce.bytes / 1024 ** 3).toFixed(2)})`);
   } catch (errore) {
     rotti++;
-    console.log(`✗ ${id}: ${errore.message} — ${voce.url}`);
+    console.log(`✗ ${id}: ${errore.message} — ${voce.url ?? voce.repo}`);
   }
 }
 

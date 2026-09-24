@@ -93,8 +93,11 @@ import { elencoAzioni, eseguiAzione, type Esecutore } from "./azioni";
 import { paginaConsole } from "./console";
 import { VESTE, VESTE_VERSIONE } from "./veste-generata";
 import {
+  domandaPer,
   fileDellaSala,
+  NienteDaFare,
   paginaGiochi,
+  segnaGiudizio,
   rispondi as rispondiAiGiochi,
   sguardiDelGioco,
   type Deposito as DepositoGiochi,
@@ -110,6 +113,7 @@ import type {
   FornitoreLibreria,
   FornitoreMacchina,
   FornitorePannello,
+  FornitoreGiudice,
   FornitoreStili,
   StatoRichiesta,
   StatoSuite,
@@ -172,6 +176,11 @@ export interface GatewayOpzioni {
    * sparire, e chi la apre legge una frase invece di un numero.
    */
   giochi?: DepositoGiochi;
+  /**
+   * Il giudice della sala giochi (Jev-Omni), se questa suite ce l'ha. Senza,
+   * il tasto «chiedi al giudice» risponde 501 e la fila funziona come prima.
+   */
+  giudice?: FornitoreGiudice;
   /**
    * L'annunciatore sulla rete locale, se questa suite ce l'ha.
    *
@@ -252,6 +261,7 @@ export class Gateway {
   private macchina: FornitoreMacchina | undefined;
   private chiacchierata: FornitoreChiacchierata | undefined;
   private stili: FornitoreStili | undefined;
+  private giudice: FornitoreGiudice | undefined;
   private giochi: DepositoGiochi | undefined;
   /** Quello che la sala giochi fa guardare, per persona: vedi `sguardoNeiGiochi`. */
   private sguardi = new Map<string, { quando: number; livelli: Map<string, Sguardo> }>();
@@ -269,6 +279,7 @@ export class Gateway {
     this.macchina = opzioni.macchina;
     this.chiacchierata = opzioni.chiacchierata;
     this.stili = opzioni.stili;
+    this.giudice = opzioni.giudice;
     this.giochi = opzioni.giochi;
     this.rete = opzioni.rete;
     this.server = createServer((req, res) => {
@@ -475,6 +486,30 @@ export class Gateway {
         if (!chiGioca) return this.errore(res, 401, "Token mancante o non riconosciuto.");
         if (!this.giochi) {
           return this.errore(res, 501, "Questa suite non ha la sala giochi accesa.");
+        }
+        /**
+         * ⚠ **Il parere del giudice** (1.4.0, CONCETTI.md § 18.7). Sta qui e
+         * non fra le rotte del gioco perche' e' l'unica che aspetta un modello:
+         * le rotte del gioco sono sincrone, e devono restarlo — decidono sul
+         * conto delle persone, e una decisione a meta' mentre si aspetta un
+         * motore e' il modo di perdere lire.
+         */
+        if (percorso === "/giochi/giudica" && req.method === "POST") {
+          if (chiGioca.ruolo !== "admin") return this.errore(res, 403, "Questa parte e' di chi decide.");
+          if (!this.giudice) return this.errore(res, 501, "Questa suite non ha il giudice.");
+          const id = String((corpo as Record<string, unknown> | undefined)?.["id"] ?? "");
+          const c = this.giochi.perId(id);
+          if (!c) return this.errore(res, 404, "Questa non c'e'.");
+          try {
+            const risposta = await this.giudice.giudica(domandaPer(c));
+            this.json(res, 200, segnaGiudizio(this.giochi, id, risposta.probabilita));
+            this.sguardi.clear();
+            this.aggiorna();
+          } catch (e) {
+            const perche = e instanceof Error ? e.message : String(e);
+            this.errore(res, e instanceof NienteDaFare ? 409 : 502, perche);
+          }
+          return;
         }
         const esito = rispondiAiGiochi(
           this.giochi,

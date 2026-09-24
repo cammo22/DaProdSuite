@@ -133,3 +133,41 @@ function impronta(requisiti: string | null, privati: string | null): string {
   if (existsSync(VINCOLI_REQUIREMENTS)) hash.update(readFileSync(VINCOLI_REQUIREMENTS));
   return hash.digest("hex").slice(0, 16);
 }
+
+/* --------------------------------------------- i motori in piu' (1.4.0) */
+
+/**
+ * ⚠ **Le librerie di un motore in più**, che non ha una scheda sua.
+ *
+ * Nuovo nella 1.4.0, per il giudice della sala giochi. Un motore in più
+ * (`motoriInPiu`) non passa da «Installa»: lo accende la finestra quando
+ * serve. Legarne le librerie alla scheda che lo ospita avrebbe fatto tornare
+ * DaProdConnessione «da installare» per tutti — anche per chi il giudice non
+ * lo userà mai. Qui invece si installano **alla prima accensione**, con lo
+ * stesso segnaposto e la stessa impronta delle schede.
+ */
+export function requisitiDelMotore(servizioId: string): string | null {
+  const percorso = join(SERVICES_DIR, servizioId, "requisiti.txt");
+  return existsSync(percorso) ? percorso : null;
+}
+
+export function librerieDelMotorePronte(servizioId: string): boolean {
+  const requisiti = requisitiDelMotore(servizioId);
+  if (!requisiti) return true;
+  try {
+    return readFileSync(join(CARTELLA, `${servizioId}.txt`), "utf8").trim() === impronta(requisiti, null);
+  } catch {
+    return false;
+  }
+}
+
+export function segnaLibrerieDelMotore(servizioId: string): void {
+  const requisiti = requisitiDelMotore(servizioId);
+  if (!requisiti) return;
+  try {
+    mkdirSync(CARTELLA, { recursive: true });
+    writeFileSync(join(CARTELLA, `${servizioId}.txt`), `${impronta(requisiti, null)}\n`, "utf8");
+  } catch {
+    // Come per le schede: al massimo si rifà, e uv vede che c'è già tutto.
+  }
+}

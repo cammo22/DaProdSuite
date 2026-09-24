@@ -37,6 +37,7 @@ function avvio() {
   if (window.DaProdLira) DaProdLira.init({
     gioco: "neon",
     posto: "basso-destra",
+    telefono: { bottom: "74px", right: "8px" },
     ricarica: {
       detto: "un minuto di produzione del quartiere",
       dai: () => {

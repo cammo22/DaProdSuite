@@ -289,6 +289,17 @@
       "bytes": 900000000
     },
 
+    "jev-omni": {
+      "label": "Jev-Omni — il giudice della sala giochi",
+      "kind": "hf-repo",
+      "dir": "jev-omni",
+      "repo": "akhilaaa3/Jev-Omni",
+      "$comment": "1.4.0. Classificatore di decisioni (Gemma 4 12B con testa di classificazione, Apache-2.0): dato uno stato, una domanda e le risposte possibili, dice quanto e' probabile ognuna. Serve alla fila della sala giochi (services/giudice). I pesi pubblicati sono FP32, circa 50 GB: il servizio li carica in 4 bit con bitsandbytes. Il peso vero si legge al primo scaricamento (pesoDaConfermare): quello scritto qui e' una stima.",
+      "include": ["*.json", "*.py", "*.txt", "*.model", "*.safetensors", "*.md"],
+      "bytes": 50000000000,
+      "pesoDaConfermare": true
+    },
+
     "sd-turbo": {
       "label": "SD-Turbo — trasformazione in tempo reale",
       "kind": "hf-repo",
