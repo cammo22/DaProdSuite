@@ -1128,7 +1128,8 @@ cambio con l'euro (vedi 18.3).
 ### 18.2 La partita, e lo stacco
 
 Si gioca **una partita**. Ogni gioco della sala fa punti — la slot coi suoi
-gradi (gli stessi punti che danno l'esperienza, § 8), la Coin Dozer con quello
+gradi (un ottavo dei punti d'esperienza del giro, § 8: interi, un giro da
+dieci lire ne renderebbe ventisei, e la slot deve consumare lire, § 4), la Coin Dozer con quello
 che cade nella vasca, la Claw con quello che prende, Neon con quello che
 guadagna — e i punti **di tutti i giochi si sommano nella stessa partita**. La
 macchinetta resta com'e': paga in lire, subito (§ 11-bis). Si gira tre volte la

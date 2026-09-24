@@ -213,3 +213,4 @@ export {
 } from "./borsa";
 export { entra, evento, giocaCarta, pescaCarta, segnaPunti, stacca, statoSala, type StatoSala } from "./sala";
 export type { Borsa, OraDiBorsa, Partita, Stacco } from "./tipi";
+export { fileDellaSala } from "./sala-file";

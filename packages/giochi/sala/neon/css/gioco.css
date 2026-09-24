@@ -1,0 +1,231 @@
+/* NEON PARTENOPE — impaginazione e arena */
+#corpo { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(440px, 1.05fr) minmax(420px, 1fr); gap: 14px; padding: 12px 16px 16px; }
+#colArena, #colPannelli { min-height: 0; display: flex; flex-direction: column; gap: 10px; }
+#pannello { flex: 1; min-height: 0; overflow-y: auto; padding: 16px 18px 24px; scrollbar-width: thin; scrollbar-color: #3a2f5e transparent; }
+#schede { display: flex; gap: 6px; flex-wrap: wrap; }
+#schede button { display: flex; align-items: center; gap: 6px; padding: 8px 12px; border-radius: 12px; background: var(--vetro); border: 1px solid var(--linea);
+  font: 700 13.5px/1 var(--f-txt); color: var(--txt2); transition: .15s; position: relative; }
+#schede button span { font-size: 16px; }
+#schede button em { font-style: normal; }
+#schede button:hover { color: var(--txt); }
+#schede button.on { color: #0b0616; background: linear-gradient(180deg, #ffe27a, #ffb300); border-color: #ffe9a0; box-shadow: 0 0 18px rgba(255,190,40,.3); }
+[data-scheda].avviso::after { content: ""; position: absolute; top: 5px; right: 5px; width: 8px; height: 8px; border-radius: 50%; background: var(--rosso); box-shadow: 0 0 8px var(--rosso); }
+#barraMobile, #altroMenu { display: none; }
+
+/* ---------- arena ---------- */
+#arena { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+#arenaTesta { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-bottom: 1px solid var(--linea); }
+#attoChip { display: grid; gap: 3px; padding: 6px 10px; border-radius: 10px; background: color-mix(in srgb, var(--neon) 14%, transparent); border: 1px solid color-mix(in srgb, var(--neon) 45%, transparent); }
+#attoChip small { font: 800 9.5px/1 var(--f-num); letter-spacing: 2.5px; color: var(--neon); }
+#attoChip b { font: 800 13px/1 var(--f-num); letter-spacing: 1px; color: #fff; }
+#stanzaBox { display: grid; justify-items: center; }
+#stanzaBox small { font: 800 9px/1 var(--f-num); letter-spacing: 2px; color: var(--txt3); }
+#stanzaBox b { font: 900 24px/1 var(--f-num); color: var(--oro); text-shadow: 0 0 14px rgba(255,190,40,.5); }
+#ondeBox { display: grid; gap: 4px; }
+#onde { display: flex; gap: 4px; }
+#onde i { width: 22px; height: 6px; border-radius: 3px; background: rgba(255,255,255,.1); }
+#onde i.fatta { background: var(--neon2); box-shadow: 0 0 8px var(--neon2); }
+#onde i.ora { background: color-mix(in srgb, var(--neon2) 45%, transparent); animation: pulsaOnda 1s infinite; }
+#onde i.boss { width: auto; height: auto; font-style: normal; font-size: 16px; background: none; }
+@keyframes pulsaOnda { 50% { opacity: .5; } }
+#prossimoBoss { font: 700 11px/1 var(--f-txt); color: var(--txt3); letter-spacing: .5px; }
+.arena-btn { display: flex; gap: 6px; margin-left: auto; align-items: center; }
+#bAuto.off { color: var(--oro); border-color: rgba(255,213,74,.5); }
+
+#bossBarra { display: none; padding: 8px 12px 10px; gap: 6px; border-bottom: 1px solid var(--linea); background: linear-gradient(180deg, rgba(255,59,92,.12), transparent); }
+#bossBarra.on { display: grid; }
+.bb-riga { display: flex; align-items: center; }
+#bbNome { font: 900 15px/1 var(--f-num); letter-spacing: 1.5px; text-shadow: 0 0 12px currentColor; }
+#bbRitirata { margin-left: auto; }
+.bb-vita, .bb-tempo { position: relative; height: 14px; border-radius: 7px; background: rgba(255,255,255,.07); overflow: hidden; }
+.bb-tempo { height: 8px; }
+.bb-vita i { position: absolute; inset: 0 auto 0 0; background: linear-gradient(90deg, #ff3b5c, #ff8a3d); box-shadow: 0 0 12px rgba(255,59,92,.6); transition: width .12s; }
+.bb-tempo i { position: absolute; inset: 0 auto 0 0; background: linear-gradient(90deg, var(--cia), #9d6bff); transition: width .1s linear; }
+.bb-vita span, .bb-tempo span { position: absolute; inset: 0; display: grid; place-items: center; font: 800 10px/1 var(--f-num); color: #fff; text-shadow: 0 1px 2px #000; }
+.bb-tempo span { font-size: 8px; }
+#bossBarra.urgente .bb-tempo i { background: var(--rosso); animation: pulsaOnda .4s infinite; }
+
+#palco { position: relative; flex: 1; min-height: 180px; overflow: hidden; cursor: crosshair; touch-action: manipulation;
+  background: radial-gradient(ellipse at 50% 100%, color-mix(in srgb, var(--neon) 16%, transparent), transparent 70%); }
+#palco.scossa { animation: scossa .32s; }
+@keyframes scossa { 20% { transform: translate(var(--scossa), calc(var(--scossa) * -.5)); } 40% { transform: translate(calc(var(--scossa) * -1), var(--scossa)); } 60% { transform: translate(calc(var(--scossa) * .6), 0); } 80% { transform: translate(0, calc(var(--scossa) * -.4)); } }
+#palco.ferito::after { content: ""; position: absolute; inset: 0; pointer-events: none; box-shadow: inset 0 0 70px rgba(255,30,60,.7); animation: svanisce .5s forwards; }
+#palco.sovra { background: radial-gradient(ellipse at 50% 100%, rgba(255,90,31,.35), transparent 70%); }
+#palco.sovra .pavimento { --col: rgba(255,120,40,.5); }
+@keyframes svanisce { to { opacity: 0; } }
+.pavimento { --col: color-mix(in srgb, var(--neon2) 35%, transparent); position: absolute; left: -40%; right: -40%; bottom: -10%; height: 60%;
+  background-image: linear-gradient(var(--col) 1px, transparent 1px), linear-gradient(90deg, var(--col) 1px, transparent 1px); background-size: 48px 48px;
+  transform: perspective(300px) rotateX(62deg); transform-origin: 50% 100%; mask-image: linear-gradient(transparent, #000 60%); -webkit-mask-image: linear-gradient(transparent, #000 60%);
+  animation: scorri 3s linear infinite; opacity: .7; }
+@keyframes scorri { to { background-position: 0 48px; } }
+[data-qualita="bassa"] .pavimento { animation: none; }
+#fx { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 4; }
+#lampo { position: absolute; inset: 0; pointer-events: none; opacity: 0; z-index: 5; }
+#lampo.on { animation: lampo .5s ease-out; }
+@keyframes lampo { 0% { opacity: 1; } 100% { opacity: 0; } }
+.suggerimento { position: absolute; bottom: 8px; right: 12px; font: 700 11px/1 var(--f-txt); letter-spacing: 1px; color: var(--txt3); pointer-events: none; text-transform: uppercase; }
+
+/* orda */
+#orda { position: absolute; inset: 4% 4% 10% 22%; display: grid; place-items: center; gap: 6px; z-index: 3; --dim: clamp(38px, 9vmin, 78px); }
+#orda.n1 { grid-template-columns: 1fr; --dim: clamp(64px, 16vmin, 120px); }
+#orda.n2 { grid-template-columns: repeat(2, 1fr); --dim: clamp(52px, 12vmin, 96px); }
+#orda.n3 { grid-template-columns: repeat(3, 1fr); --dim: clamp(46px, 10vmin, 84px); }
+#orda.n4 { grid-template-columns: repeat(2, 1fr); }
+#orda.n5, #orda.n6 { grid-template-columns: repeat(3, 1fr); }
+#orda.n7, #orda.n8 { grid-template-columns: repeat(4, 1fr); --dim: clamp(34px, 7.5vmin, 64px); }
+#orda.conBoss { inset: 2% 4% 4% 20%; }
+.nemico { position: relative; display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; animation: galleggia 3s ease-in-out infinite; animation-delay: calc(var(--r) * -3s); }
+.nemico.entra { animation: entra .35s cubic-bezier(.2,1.4,.4,1), galleggia 3s ease-in-out .35s infinite; }
+.n-alone { position: absolute; top: 10%; width: calc(var(--dim) * 1.3); height: calc(var(--dim) * 1.3); border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--neon) 40%, transparent), transparent 65%); pointer-events: none; }
+.n-ico { font-size: var(--dim); line-height: 1.05; filter: drop-shadow(0 6px 10px rgba(0,0,0,.6)) drop-shadow(0 0 12px color-mix(in srgb, var(--neon) 55%, transparent)); transition: transform .08s; }
+.nemico.elite .n-ico { filter: drop-shadow(0 0 14px #ffd54a) drop-shadow(0 0 4px #fff); }
+.nemico.elite .n-alone { background: radial-gradient(circle, rgba(255,213,74,.45), transparent 65%); }
+.nemico.eco .n-ico { filter: hue-rotate(160deg) drop-shadow(0 0 12px #9d6bff); }
+.n-nome { font: 700 11px/1 var(--f-txt); color: var(--txt2); white-space: nowrap; max-width: 130px; overflow: hidden; text-overflow: ellipsis; }
+.nemico.elite .n-nome { color: var(--oro); }
+.n-vita { width: clamp(54px, calc(var(--dim) * 1.2), 120px); height: 6px; border-radius: 3px; background: rgba(255,255,255,.1); overflow: hidden; }
+.n-vita i { display: block; height: 100%; width: 100%; background: linear-gradient(90deg, var(--rosso), #ff9a4a); transition: width .1s; }
+.nemico.colpito .n-ico { animation: colpito .14s; }
+.nemico.morto { animation: morto .35s forwards; pointer-events: none; }
+.nemico.boss { animation: galleggiaBoss 4s ease-in-out infinite; }
+.nemico.boss .n-ico { width: min(62vmin, 300px, 100%); aspect-ratio: 1; font-size: 0; filter: drop-shadow(0 10px 20px rgba(0,0,0,.6)) drop-shadow(0 0 24px color-mix(in srgb, var(--neon) 60%, transparent)); }
+.nemico.boss .n-alone { width: 90%; height: 90%; top: 5%; }
+@keyframes galleggia { 50% { transform: translateY(-6px); } }
+@keyframes galleggiaBoss { 50% { transform: translateY(-10px) scale(1.02); } }
+@keyframes entra { from { transform: scale(0) translateY(20px); opacity: 0; } }
+@keyframes colpito { 40% { transform: scale(.88) rotate(-4deg); filter: brightness(2.2); } }
+@keyframes morto { to { transform: scale(1.4) translateY(-10px); opacity: 0; filter: brightness(3) blur(2px); } }
+
+/* Ferro Vecchio sul palco */
+#robotPalco { position: absolute; left: 3%; bottom: 3%; width: 19%; max-width: 150px; aspect-ratio: 200/230; z-index: 3; pointer-events: none;
+  filter: drop-shadow(0 0 14px color-mix(in srgb, var(--neon2) 40%, transparent)); animation: respira 3s ease-in-out infinite; }
+#robotPalco svg { overflow: visible; }
+#robotPalco .br-dx { transform-origin: 145px 110px; transition: transform .1s; }
+#robotPalco.pugno .br-dx { animation: pugno .18s; }
+@keyframes respira { 50% { transform: translateY(-3px); } }
+@keyframes pugno { 40% { transform: rotate(-70deg) translate(10px, -6px); } }
+.lampeggia { animation: pulsaOnda 1s infinite; }
+
+/* intro boss, annuncio dell'atto, abbattuto */
+#introBoss { position: absolute; inset: 0; z-index: 6; display: flex; align-items: center; justify-content: center; gap: 18px; padding: 16px;
+  background: linear-gradient(90deg, rgba(5,2,10,.92), rgba(40,6,20,.85)); opacity: 0; pointer-events: none; transition: .3s; }
+#introBoss.on { opacity: 1; }
+#introBoss.on .ib-arte { animation: entra .6s cubic-bezier(.2,1.3,.4,1); }
+.ib-arte { width: min(40%, 200px); aspect-ratio: 1; }
+.ib-testo { max-width: 55%; display: grid; gap: 6px; }
+.ib-sopra { font: 800 10px/1 var(--f-num); letter-spacing: 3px; color: var(--rosso); }
+.ib-nome { font: 900 clamp(20px, 3.4vw, 32px)/1 var(--f-num); letter-spacing: 1px; text-shadow: 0 0 20px currentColor; }
+.ib-desc { font: 600 14px/1.4 var(--f-txt); color: var(--txt2); }
+.ib-tempo { font: 700 12px/1 var(--f-num); color: var(--oro); letter-spacing: .5px; }
+#annuncio { position: absolute; inset: 0; z-index: 6; display: grid; place-content: center; text-align: center; pointer-events: none; opacity: 0; }
+#annuncio.on { animation: annuncio 3.2s ease-in-out forwards; }
+@keyframes annuncio { 0% { opacity: 0; transform: scale(1.3); letter-spacing: 12px; } 15%, 75% { opacity: 1; transform: none; letter-spacing: 2px; } 100% { opacity: 0; } }
+.an-sopra { font: 800 12px/1 var(--f-num); letter-spacing: 6px; color: var(--txt2); }
+.an-nome { font: 900 clamp(26px, 5vw, 46px)/1.1 var(--f-num); text-shadow: 0 0 24px currentColor; margin: 8px 0; }
+.an-sotto { font: 600 15px/1 var(--f-mono); color: #d4ffe0; }
+#abbattuto { position: absolute; inset: 0; z-index: 7; display: none; place-content: center; text-align: center; gap: 8px; padding: 16px; background: rgba(40,0,10,.82); }
+#abbattuto.on { display: grid; }
+.ab-titolo { font: 900 24px/1 var(--f-num); color: var(--rosso); letter-spacing: 2px; text-shadow: 0 0 20px var(--rosso); animation: pulsaOnda .8s infinite; }
+#abbattuto p { color: var(--txt2); }
+
+/* piede dell'arena */
+#arenaPiede { padding: 10px 12px 12px; border-top: 1px solid var(--linea); display: grid; gap: 8px; }
+.barre { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.barra { display: flex; align-items: center; gap: 6px; }
+.barra > div { flex: 1; height: 10px; border-radius: 5px; background: rgba(255,255,255,.08); overflow: hidden; }
+.barra i { display: block; height: 100%; transition: width .15s; }
+.barra b { font: 800 11px/1 var(--f-num); min-width: 64px; text-align: right; color: var(--txt2); }
+.energia i { background: linear-gradient(90deg, #1fcf8a, #7dffc4); box-shadow: 0 0 10px rgba(93,255,180,.5); }
+.calore i { background: linear-gradient(90deg, #ff9d00, #ff3b1f); }
+.calore.attivo i { background: linear-gradient(90deg, #ffd54a, #ff5a1f, #ffd54a); background-size: 200%; animation: fuoco .5s linear infinite; box-shadow: 0 0 12px #ff5a1f; }
+.calore.attivo b { color: var(--lava); }
+@keyframes fuoco { to { background-position: 200% 0; } }
+.piede-riga { display: flex; align-items: center; gap: 10px; }
+.stat-arena { display: flex; gap: 14px; font: 700 13px/1 var(--f-txt); color: var(--txt2); }
+.stat-arena b { font: 800 13px/1 var(--f-num); color: #fff; }
+#bAutomi.off { opacity: .5; }
+#bProto { padding: 8px 14px; border-radius: 999px; font: 800 12px/1 var(--f-num); letter-spacing: .5px; border: 1px solid var(--linea2); }
+#bProto.pronto { background: linear-gradient(90deg, var(--cia), var(--mag)); color: #07030f; box-shadow: 0 0 18px rgba(53,232,255,.5); animation: pulsa 1.4s infinite; }
+#bProto.attivo { background: var(--cia); color: #031018; }
+#bProto.ricarica { background: rgba(255,255,255,.05); color: var(--txt3); }
+
+/* mini borsa trascinabile */
+#borsaHud { position: fixed; right: 18px; bottom: 18px; z-index: 40; width: 250px; display: none; grid-template-columns: 110px 1fr; gap: 10px; align-items: center;
+  padding: 10px 12px; border-radius: 14px; background: rgba(12,8,26,.9); border: 1px solid var(--linea2); cursor: grab; box-shadow: 0 12px 30px rgba(0,0,0,.5); touch-action: none; }
+#borsaHud.on { display: grid; }
+#borsaHud canvas { width: 110px; height: 42px; }
+.bh-dati { display: grid; gap: 3px; }
+.bh-dati b { font: 800 12px/1 var(--f-num); color: var(--oro); }
+.bh-dati small { font: 700 11px/1 var(--f-txt); color: var(--txt2); }
+
+/* ---------- telefono e tablet ---------- */
+@media (max-width: 979px) {
+  :root { --testa: 52px; }
+  #testa { gap: 8px; padding: calc(6px + var(--sat)) 10px 6px; }
+  .marchio .emblema { width: 32px; height: 32px; }
+  .marchio > div { display: none; }
+  #valute { gap: 5px; margin-left: 0; flex: 1; }
+  .val { padding: 5px 8px; gap: 5px; }
+  .val .ico { font-size: 14px; }
+  .val b { font-size: 12.5px; }
+  .val.lire { flex: 1; }
+  .val.lire b { font-size: 14px; }
+  .val.lire small { font-size: 10px; }
+  #azioni button { width: 32px; height: 32px; font-size: 15px; }
+  #bRadio, #bMusica { display: none; }
+  #corpo { display: flex; flex-direction: column; gap: 8px; padding: 8px 8px calc(64px + var(--sab)); }
+  #colArena { flex: 0 0 auto; height: 47dvh; min-height: 300px; }
+  #colPannelli { flex: 1; }
+  #schede { display: none; }
+  #pannello { padding: 12px 12px 20px; }
+  #arenaTesta { padding: 7px 8px; gap: 7px; }
+  #attoChip { padding: 4px 7px; }
+  #attoChip small { font-size: 8px; letter-spacing: 1.5px; }
+  #attoChip b { font-size: 10.5px; }
+  #stanzaBox b { font-size: 19px; }
+  #onde i { width: 14px; }
+  #prossimoBoss { font-size: 9.5px; }
+  .arena-btn .chip span { display: none; }
+  #bRiprova span { display: inline; }
+  #arenaPiede { padding: 7px 8px 8px; gap: 6px; }
+  .barra b { min-width: 44px; font-size: 9.5px; }
+  .stat-arena { gap: 8px; font-size: 11px; }
+  .stat-arena b { font-size: 11px; }
+  .suggerimento { display: none; }
+  #orda { inset: 3% 3% 8% 24%; }
+  #robotPalco { width: 22%; }
+  #barraMobile { display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 45; padding: 6px 6px calc(6px + var(--sab));
+    background: rgba(8,5,18,.96); border-top: 1px solid var(--linea2); }
+  #barraMobile button { flex: 1; display: grid; justify-items: center; gap: 3px; padding: 5px 0; border-radius: 10px; color: var(--txt3); position: relative; }
+  #barraMobile span { font-size: 20px; line-height: 1; }
+  #barraMobile em { font: 700 10.5px/1 var(--f-txt); font-style: normal; letter-spacing: .3px; }
+  #barraMobile button.on { color: var(--oro); background: rgba(255,213,74,.1); }
+  #altroMenu { position: fixed; right: 8px; bottom: calc(68px + var(--sab)); z-index: 46; display: grid; gap: 4px; padding: 8px; border-radius: 14px; background: rgba(14,10,30,.98);
+    border: 1px solid var(--linea2); box-shadow: 0 -10px 30px rgba(0,0,0,.6); transform: translateY(20px); opacity: 0; pointer-events: none; transition: .2s; min-width: 190px; }
+  #altroMenu.on { transform: none; opacity: 1; pointer-events: auto; }
+  #altroMenu button { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; font: 700 15px/1 var(--f-txt); text-align: left; }
+  #altroMenu button.on { color: var(--oro); background: rgba(255,213,74,.1); }
+  #altroMenu span { font-size: 18px; }
+  #toasts { bottom: calc(72px + var(--sab)); right: 8px; width: min(320px, calc(100vw - 16px)); }
+  #radio { bottom: calc(70px + var(--sab)); }
+  .toast { padding: 8px 12px; }
+  #introBoss { flex-direction: column; gap: 8px; text-align: center; }
+  .ib-arte { width: 34%; }
+  .ib-testo { max-width: 100%; }
+  .ib-desc { display: none; }
+}
+@media (max-width: 979px) and (min-height: 820px) { #colArena { height: 50dvh; } }
+@media (max-width: 380px) { .val:not(.lire) .ico { display: none; } }
+
+/* l'arena lascia vedere il Vesuvio: vetro solo in testa e ai piedi */
+#arena.carta { background: linear-gradient(180deg, rgba(10,6,22,.9) 0, rgba(10,6,22,.45) 70px, rgba(10,6,22,.18) 45%, rgba(10,6,22,.5) 85%, rgba(10,6,22,.92) 100%);
+  backdrop-filter: none; -webkit-backdrop-filter: none; }
+#arenaTesta, #arenaPiede { background: rgba(8,5,18,.55); }
+@media (min-width: 980px) { #pannello { padding-bottom: 96px; } }
+@media (max-width: 979px) {
+  #radio { top: calc(var(--testa) + 10px + var(--sat)); bottom: auto; transform: translate(-50%, -160%); }
+  #radio.on { transform: translate(-50%, 0); }
+  #radio .r-testa { font-size: 9.5px; letter-spacing: 1px; }
+  #radio p { font-size: 13px; min-height: 0; }
+}

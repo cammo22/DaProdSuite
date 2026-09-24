@@ -93,6 +93,7 @@ import { elencoAzioni, eseguiAzione, type Esecutore } from "./azioni";
 import { paginaConsole } from "./console";
 import { VESTE, VESTE_VERSIONE } from "./veste-generata";
 import {
+  fileDellaSala,
   paginaGiochi,
   rispondi as rispondiAiGiochi,
   sguardiDelGioco,
@@ -339,6 +340,30 @@ export class Gateway {
        * nell'indirizzo c'e' la loro impronta (`?v=`), e quando cambiano cambia
        * l'indirizzo. Cosi' i 100 KB di font passano dal tunnel una volta sola.
        */
+      /**
+       * ⚠ **I giochi d'arcade della sala**, dalla 1.4.0 (CONCETTI.md § 18.4):
+       * Coin Dozer, Claw Machine e Neon Partenope, coi loro file e three.js in
+       * casa. Sono file di un gioco e non dicono niente di nessuno, quindi
+       * niente token — il conto non passa da qui: il gioco gira in una cornice
+       * della pagina della sala, e i soldi li chiede a lei (`daprod-lira.js`).
+       */
+      if (percorso.startsWith("/giochi/sala/") && req.method === "GET") {
+        const trovato = fileDellaSala(percorso.slice("/giochi/sala/".length));
+        if (!trovato) return this.errore(res, 404, "Questo gioco non c'e'.");
+        res.writeHead(200, {
+          "Content-Type": trovato.tipo,
+          "Content-Length": statSync(trovato.file).size,
+          "Cache-Control": trovato.tipo.startsWith("text/html") ? "no-store" : "public, max-age=86400",
+          "Content-Security-Policy":
+            "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; " +
+            "img-src 'self' data: blob:; media-src 'self' data: blob:; connect-src 'self'; font-src 'self' data:; " +
+            "frame-ancestors 'self'",
+          "X-Content-Type-Options": "nosniff",
+        });
+        createReadStream(trovato.file).pipe(res);
+        return;
+      }
+
       if (percorso.startsWith("/daprod/") && req.method === "GET") {
         const voce = VESTE[percorso.slice("/daprod/".length)];
         if (!voce) return this.errore(res, 404, "Qui non c'e'.");
