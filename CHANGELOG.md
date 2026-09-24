@@ -10,6 +10,13 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ---
 
+## 1.4.2 — L'app del telefono torna nella release
+
+- La 1.4.0 e la 1.4.1 sono uscite **senza l'APK**: il server che la compila ha
+  cambiato l'SDK di Android, e il passo che lo prepara cercava un pezzo che non
+  c'è più. Il programma per Windows c'era; l'app del telefono no. Adesso c'è
+  di nuovo, con dentro tutto quello della 1.4.0 e della 1.4.1.
+
 ## 1.4.1 — Le lire solo nella suite
 
 > «Le pagine GitHub dei giochi devono rimanere demo giocabili normalmente: solo
