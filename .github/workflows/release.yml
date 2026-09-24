@@ -113,7 +113,12 @@ jobs:
           distribution: temurin
           java-version: 17
 
+      # Solo platform-tools: il predefinito chiede anche «tools», che dal
+      # settembre 2026 non c'e' piu' nell'SDK del runner e faceva cadere il job
+      # prima di compilare (1.4.0 e 1.4.1 sono uscite senza APK per questo).
       - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
 
       - name: Compila l'APK
         working-directory: apps/mobile
