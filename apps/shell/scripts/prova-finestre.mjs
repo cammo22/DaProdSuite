@@ -63,8 +63,9 @@ Module._load = function (chiesto, ...resto) {
               p.y >= s.workArea.y &&
               p.y < s.workArea.y + s.workArea.height,
           ) ?? schermi[0],
+        getPrimaryDisplay: () => ({ workAreaSize: { width: schermi[0].workArea.width, height: schermi[0].workArea.height } }),
       },
-      BrowserWindow: { getAllWindows: () => finestreFinte },
+      BrowserWindow: { getAllWindows: () => finestreFinte, getFocusedWindow: () => conFuoco },
     };
   }
   return caricaVero.call(this, chiesto, ...resto);
@@ -96,12 +97,17 @@ function finestraFinta(dove) {
     maximize() { this._ingrandita = true; },
     unmaximize() { this._ingrandita = false; },
     restore() { this._minimizzata = false; },
-    show() { this._visibile = true; },
+    show() { this._visibile = true; this._davanti = true; },
+    showInactive() { this._visibile = true; this._minimizzata = false; },
+    flashFrame(si) { this._lampeggia = si; },
+    once() {},
     focus() { this._fuoco++; },
   };
 }
 
 let finestreFinte = [];
+/** La finestra della suite che ha il fuoco adesso: null se si sta in un altro programma. */
+let conFuoco = null;
 
 const OUT = join(import.meta.dirname, "..", "out", "main");
 if (!existsSync(join(OUT, "finestre.js"))) {
@@ -158,12 +164,12 @@ console.log("\n— al riavvio, la posizione persa si butta e il resto resta —"
   // Com'era messa DaProdConnessione: sul secondo schermo, che adesso e' spento.
   writeFileSync(
     join(cartella, "window.json"),
-    JSON.stringify({ x: 2200, y: 140, width: 1100, height: 860, maximized: false }),
+    JSON.stringify({ x: 2200, y: 140, width: 1050, height: 820, maximized: false }),
     "utf8",
   );
   const persa = stato.readBounds("connessione", { width: 1100, height: 860, maximized: false });
   dice("x e y spariscono", persa.x === undefined && persa.y === undefined, `→ ${JSON.stringify(persa)}`);
-  dice("la dimensione che si era scelto resta", persa.width === 1100 && persa.height === 860);
+  dice("la dimensione che si era scelto resta", persa.width === 1050 && persa.height === 820);
 
   // E una che stava dov'e' ancora raggiungibile non si tocca.
   writeFileSync(
@@ -204,7 +210,9 @@ console.log("\n— «mostraDavvero»: quello che fanno tutte e nove le schede �
   const persa = finestraFinta({ x: 2200, y: 140, width: 1100, height: 860 });
   persa._minimizzata = true;
   persa._visibile = false;
+  conFuoco = { isDestroyed: () => false }; // l'hub: la si e' chiesta da li'
   finestre.mostraDavvero(persa);
+  conFuoco = null;
   dice("la tira su da minimizzata", !persa.isMinimized());
   dice("la mostra", persa.isVisible());
   dice("le da' il fuoco", persa._fuoco === 1);
@@ -240,5 +248,51 @@ console.log("\n— «rimettile al centro», dal menu vicino all'orologio —");
   dice("e anche quella che stava in un angolo e' al centro", b.getBounds().x === Math.round((1920 - 700) / 2), `→ x ${b.getBounds().x}`);
 }
 
+
+console.log("\n— la misura della prima volta: un po' piu' grande (1.4.5) —");
+{
+  const cartella = join(DATI, "state", "foto");
+  mkdirSync(cartella, { recursive: true });
+  const base = { width: 1420, height: 900, maximized: false };
+  const nuova = stato.readBounds("foto", base);
+  dice("mai aperta: si apre piu' grande", nuova.width > 1420 && nuova.height > 900, `→ ${JSON.stringify(nuova)}`);
+  dice("ma dentro lo schermo", nuova.width <= 1920 * 0.94 && nuova.height <= 1040 * 0.94, `→ ${JSON.stringify(nuova)}`);
+
+  writeFileSync(join(cartella, "window.json"), JSON.stringify({ x: 100, y: 50, width: 1420, height: 900 }), "utf8");
+  const maiToccata = stato.readBounds("foto", base);
+  dice("salvata alla misura vecchia, mai ridimensionata: si allarga", maiToccata.width === nuova.width, `→ ${JSON.stringify(maiToccata)}`);
+
+  writeFileSync(join(cartella, "window.json"), JSON.stringify({ x: 100, y: 50, width: 1200, height: 800 }), "utf8");
+  dice("ridimensionata a mano: resta com'era", stato.readBounds("foto", base).width === 1200);
+
+  const piccolo = schermi;
+  schermi = [{ workArea: { x: 0, y: 0, width: 1366, height: 728 } }];
+  const portatile = finestre.misuraDiPartenza({ width: 1420, height: 900 });
+  dice("su un portatile non esce dal bordo", portatile.width <= 1366 && portatile.height <= 728, `→ ${JSON.stringify(portatile)}`);
+  schermi = piccolo;
+}
+
+console.log("\n— il primo piano non si ruba (1.4.5) —");
+{
+  const daSola = finestraFinta({ x: 100, y: 100, width: 800, height: 600 });
+  daSola._visibile = false;
+  conFuoco = null; // si sta scrivendo in un altro programma
+  finestre.appari(daSola);
+  dice("aperta mentre si fa altro: si vede", daSola.isVisible());
+  dice("ma non viene davanti", !daSola._davanti && daSola._fuoco === 0);
+
+  const chiesta = finestraFinta({ x: 100, y: 100, width: 800, height: 600 });
+  chiesta._visibile = false;
+  conFuoco = { isDestroyed: () => false }; // cliccata dall'hub
+  finestre.appari(chiesta);
+  dice("chiesta dall'hub: viene davanti", chiesta._davanti === true);
+
+  const consegna = finestraFinta({ x: 100, y: 100, width: 800, height: 600 });
+  conFuoco = null;
+  finestre.mostraDavvero(consegna);
+  dice("una consegna dal telefono non prende il fuoco", consegna._fuoco === 0);
+  finestre.mostraDavvero(consegna, { fuoco: true });
+  dice("il menu vicino all'orologio si': la sta cercando", consegna._fuoco === 1);
+}
 console.log(falliti ? `\n  ${falliti} da guardare.\n` : "\n  Tutto a posto.\n");
 process.exit(falliti ? 1 : 0);

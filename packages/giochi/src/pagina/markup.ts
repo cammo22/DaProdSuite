@@ -35,6 +35,13 @@
  */
 
 export const MARKUP = `<header>
+  <!--
+    Tornare alla suite (1.4.5). «Per Android non c'e' un modo per uscire dalla
+    sala giochi»: la sala e' una pagina a se', aperta dalla console, e non aveva
+    un tasto per tornare. Il tasto indietro del telefono adesso chiude prima
+    quello che c'e' aperto (vedi DaProdPagina in home-copione.ts).
+  -->
+  <button class="esci-sala" id="esci-sala" title="Torna alla suite" aria-label="Torna alla suite">&#8592;<span>Suite</span></button>
   <div class="marchio">DaProd<span>Giochi</span></div>
   <div class="cresci"></div>
   <!--
@@ -66,7 +73,7 @@ export const MARKUP = `<header>
       <button data-va="sala">Sala</button><button data-va="fortuna">Fortuna</button><button data-va="borsa">Borsa</button>
     </div>
     <div class="sotto-fila" data-di="genera">
-      <button data-va="slot">Combinazioni</button><button data-va="mie">Le mie</button>
+      <button data-va="studio">Studio</button><button data-va="slot">Combinazioni</button><button data-va="mie">Le mie</button>
     </div>
     <div class="sotto-fila" data-di="admin">
       <button data-va="fila" id="tasto-fila" hidden>Fila<span class="pallino" id="quante-attesa" hidden></span></button>
@@ -347,6 +354,9 @@ export const MARKUP = `<header>
   -->
   <section class="pagina" id="p-giocatori">
     <div class="giocatori-testa"><h2>I giocatori <span class="quanti" id="quanta-gente"></span></h2></div>
+    <!-- La cassa di DaProd, per chi comanda (1.4.5): la riserva garantisce i
+         minimi dei premi, e da qui la si riempie. Vedi banca.ts. -->
+    <div class="banca-admin" id="banca-admin"></div>
     <input class="cerca" id="cerca-gente" type="search" placeholder="cerca una persona">
     <div id="gente"></div>
   </section>
@@ -402,7 +412,7 @@ export const MARKUP = `<header>
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5M5.5 10v9.5h5v-6h3v6h5V10"/></svg>Home</button>
   <button data-va="sala" data-gruppo="gioca">
     <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="7" width="19" height="11" rx="5.5"/><path d="M7.5 10.5v4M5.5 12.5h4"/><circle cx="16" cy="11.2" r="1.1"/><circle cx="18" cy="13.8" r="1.1"/></svg>Gioca</button>
-  <button data-va="slot" data-gruppo="genera">
+  <button data-va="studio" data-gruppo="genera">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l1.9 5.2 5.3.2-4.2 3.3 1.5 5.2L12 14.4l-4.5 3 1.5-5.2-4.2-3.3 5.3-.2z"/></svg>Genera</button>
   <button data-va="pacchetti" data-gruppo="collezione">
     <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3.5" width="12" height="16" rx="2"/><path d="M8 20.5h10.5a2 2 0 0 0 2-2V7"/></svg>Collezione</button>

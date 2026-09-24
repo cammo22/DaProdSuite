@@ -16,7 +16,7 @@ export const COPIONE_HOME = `
   var STANZE = {
     home: 'home',
     sala: 'gioca', fortuna: 'gioca', borsa: 'gioca',
-    slot: 'genera', mie: 'genera',
+    studio: 'genera', slot: 'genera', mie: 'genera',
     fila: 'admin', giocatori: 'admin',
     pacchetti: 'collezione', inventario: 'collezione', shop: 'collezione', casa: 'collezione',
   };
@@ -54,6 +54,17 @@ export const COPIONE_HOME = `
     return lista.concat(sala ? sala.giochi : []);
   }
 
+  /**
+   * «L.» sopra e il numero sotto (1.4.5): «nella card Bentornato metti L. e a
+   * capo il numero, com'e' ora overlappa». Con sei cifre la casella delle lire
+   * usciva dal bordo sul telefono.
+   */
+  function soldiACapo(v) {
+    var s = soldi(v);
+    var spazio = s.indexOf(' ');
+    return spazio < 0 ? s : '<i>' + s.slice(0, spazio) + '</i>' + s.slice(spazio + 1);
+  }
+
   function disegnaHome() {
     if (!io) return;
     var c = conteggioLivello(io.conto.esperienza);
@@ -64,7 +75,7 @@ export const COPIONE_HOME = `
       '<div class="ciao-testo"><small>Bentornato</small><b>' + sicuro(io.nome || 'giocatore') + '</b></div>' +
       '<div class="ciao-numeri">' +
       '<span class="num"><b>' + c.livello + '</b><small>livello</small></span>' +
-      '<span class="num lire"><b>' + soldi(io.saldo) + '</b><small>in tasca</small></span>' +
+      '<span class="num lire"><b>' + soldiACapo(io.saldo) + '</b><small>in tasca</small></span>' +
       '<span class="num"><b>' + puntiIt(pt) + '</b><small>punti partita</small></span>' +
       (b ? '<span class="num ' + (su ? 'su' : 'giu') + '"><b>' + (su ? '▲ ' : '▼ ') + numeroIt(b.quota, 2) + '</b><small>la Lira</small></span>' : '') +
       '</div>';
@@ -87,16 +98,94 @@ export const COPIONE_HOME = `
       m.innerHTML = '';
     }
 
+    disegnaBanca();
+
     if (b) {
       $('home-borsa').innerHTML =
         '<div class="borsa-mini">' + candele((b.candele || []).slice(-24)) + '</div>' +
         '<div class="borsa-lato">' +
         '<span class="quota">' + numeroIt(b.quota, 3) + '</span><small>lire a punto</small>' + freccia(b.variazione) +
         '<button class="btn oro" id="stacca-home"' + (sala.partita.punti > 0 && sala.tettoRimasto > 0 ? '' : ' disabled') + '>' +
-        (sala.partita.punti > 0 ? 'Stacca ' + soldi(sala.staccando) : 'Niente da staccare') + '</button></div>';
+        (sala.partita.punti > 0 ? 'Incassa ' + soldi(sala.staccando) : 'Niente da incassare') + '</button></div>';
     } else {
       $('home-borsa').innerHTML = '<div class="niente">La Borsa si carica…</div>';
     }
+  }
+
+  /* ---------------------------------------------------- la Banca (1.4.5) */
+
+  /** «fra 5 h 12 min», «fra 3 giorni»: quanto manca, detto come si dice. */
+  function fraQuanto(ms) {
+    var min = Math.max(1, Math.round(ms / 60000));
+    if (min < 60) return 'fra ' + min + ' min';
+    var ore = Math.floor(min / 60);
+    if (ore < 48) return 'fra ' + ore + ' h ' + (min % 60) + ' min';
+    return 'fra ' + Math.round(ore / 24) + ' giorni';
+  }
+
+  /**
+   * I tre cassetti, la mia parte, e gli ultimi premi. I soldi vengono dalle
+   * lire spese in sala (gettoni, ricariche, giri, pacchetti): la Banca le
+   * ridivide, non ne crea. Il perche' e i numeri stanno in banca.ts.
+   */
+  function disegnaBanca() {
+    var dove = $('home-banca');
+    if (!dove) return;
+    var banca = sala && sala.banca;
+    if (!banca) { dove.innerHTML = '<div class="niente">La Banca si carica…</div>'; return; }
+    var h = '<div class="banca-cassetti">';
+    banca.cassetti.forEach(function (c) {
+      var mese = c.cassetto === 'mese';
+      var mia;
+      if (!c.mieiPunti) {
+        mia = '<div class="mia fuori">Gioca per entrare nel premio: ' +
+          (mese ? 'ogni punto attivita\\' e\\' un biglietto.' : 'tocca a chi ha giocato.') + '</div>';
+      } else if (mese) {
+        mia = '<div class="mia">I tuoi biglietti: <b>' + Math.max(1, Math.round(c.miaParte * 100)) + '%</b> di vincerlo</div>';
+      } else if (c.miaParte > 0) {
+        mia = '<div class="mia">Se si aprisse adesso: <b>' + soldi(c.miaParte) + '</b></div>';
+      } else {
+        mia = '<div class="mia fuori">Sei fuori dai primi ' + 10 + ': gioca ancora un po\\'.</div>';
+      }
+      h += '<div class="banca-cassetto ' + c.cassetto + '">' +
+        '<span class="nome">' + sicuro(c.nome) + '</span>' +
+        '<span class="monte">' + soldiACapo(c.lire) + '</span>' +
+        '<span class="fra">&#9203; si apre <b data-fra="' + c.siApre + '">' + fraQuanto(c.fraMs) + '</b></span>' +
+        '<small>' + (c.quanti ? c.quanti + (c.quanti === 1 ? ' persona in gara' : ' persone in gara') : 'nessuno in gara, per ora') +
+        (mese ? ' · a uno solo, estratto' : c.cassetto === 'settimana' ? ' · fra i 10 piu\\' attivi' : ' · fra tutti quelli che giocano') + '</small>' +
+        mia + '</div>';
+    });
+    h += '</div>';
+    h += '<div class="banca-piede"><span>in riserva <b>' + soldi(banca.riserva) + '</b></span>' +
+      '<span>entrate da sempre <b>' + soldi(banca.entrate) + '</b></span>' +
+      '<span>tornate a voi <b>' + soldi(banca.pagate) + '</b></span></div>';
+    if (banca.ultime && banca.ultime.length) {
+      h += '<div class="banca-vinti">';
+      banca.ultime.slice(0, 4).forEach(function (a) {
+        var chi = a.vincite.map(function (v) { return sicuro(v.nome); }).join(', ') + (a.quanti > a.vincite.length ? ' e altri ' + (a.quanti - a.vincite.length) : '');
+        h += '<div><span>' + sicuro(a.cassetto === 'mese' ? 'Super jackpot' : a.cassetto === 'settimana' ? 'Settimana' : 'Giorno') + ' · ' + chi + '</span><b>' + soldi(a.montepremi) + '</b></div>';
+      });
+      h += '</div>';
+    }
+    dove.innerHTML = h;
+  }
+
+  // Il conto alla rovescia si aggiorna da solo, senza ridisegnare niente.
+  setInterval(function () {
+    if (document.hidden) return;
+    var qui = document.querySelectorAll('[data-fra]');
+    for (var i = 0; i < qui.length; i++) qui[i].textContent = fraQuanto(Number(qui[i].getAttribute('data-fra')) - Date.now());
+  }, 30000);
+
+  /** Un premio vinto si dice una volta, la prima volta che si apre la sala dopo. */
+  var premioVisto = (function () { try { return Number(localStorage.getItem('daprod.premio.visto') || 0); } catch (e) { return 0; } })();
+  function diIlPremio() {
+    var p = sala && sala.premio;
+    if (!p || p.quando <= premioVisto) return;
+    premioVisto = p.quando;
+    try { localStorage.setItem('daprod.premio.visto', String(p.quando)); } catch (e) { /* va bene lo stesso */ }
+    avviso('Hai vinto ' + soldi(p.lire) + ' nel ' + p.nome + '! Sono gia\\' nel portafoglio.', 'bene');
+    if (typeof coriandoli === 'function') coriandoli(p.cassetto === 'mese' ? 120 : 50, ['#ffd166', '#3dff8a', '#ffffff']);
   }
 
   /** Accende il tasto della stanza, e mostra la fila di tasti di quella stanza. */
@@ -124,6 +213,7 @@ export const COPIONE_HOME = `
   caricaSala = function () {
     return caricaSalaHome().then(function (s) {
       if (viva('p-home')) disegnaHome();
+      diIlPremio();
       return s;
     });
   };
@@ -146,6 +236,54 @@ export const COPIONE_HOME = `
     // Una carta giocata dalla Home porta alla slot, dove la si vede sul rullo.
     if (qui('#home-mano [data-carta]')) { setTimeout(function () { vaiA('slot'); }, 0); return; }
     if (qui('#stacca-home')) staccaAdesso().catch(function (e) { avviso(e.message, 'male'); });
+    if (qui('#banca-come')) {
+      chiediQualcosa('La Banca DaProd',
+        'Ogni lira che spendi in sala (gettoni, ricariche, giri, pacchetti) entra qui. ' +
+        'Il 40% va nel premio del giorno, diviso a mezzanotte fra tutti quelli che hanno giocato; ' +
+        'il 30% nel premio della settimana, diviso la domenica notte fra i 10 piu\\' attivi; ' +
+        'il 20% nel super jackpot del mese, estratto a uno solo: ogni punto attivita\\' e\\' un biglietto. ' +
+        'Il resto e\\' la riserva di DaProd, che garantisce un minimo ai premi. ' +
+        'L\\'attivita\\' e\\' quanto giochi: una ogni 10 lire spese, 5 a giro di slot, meta\\' dei punti fatti nei giochi.',
+        { valore: 'ok', tastoSi: 'Ho capito', soloSi: true });
+    }
+  });
+
+  /* --------------------------------------- uscire, e il tasto indietro (1.4.5) */
+
+  /** La console della suite: la sala sta sotto «/giochi», lei sta sopra. */
+  function tornaAllaSuite() {
+    // Senza espressioni regolari: in questo file le barre rovesciate vanno
+    // raddoppiate, ed e' facile sbagliarne una.
+    var casa = RADICE;
+    if (casa.slice(-1) === '/') casa = casa.slice(0, -1);
+    if (casa.slice(-7) === '/giochi') casa = casa.slice(0, -7);
+    casa += '/';
+    location.href = casa + (token ? '#t=' + encodeURIComponent(token) : '');
+  }
+
+  /**
+   * Il tasto indietro del telefono, chiesto dall'app Android (lo stesso patto
+   * della console, in copione-avvio.ts): chiude la cosa piu' in alto e dice
+   * di si'; se non c'e' niente da chiudere e si e' fuori dalla Home, torna
+   * alla Home; solo dalla Home dice di no, e l'app torna alla suite.
+   */
+  window.DaProdPagina = {
+    chiudiQualcosa: function () {
+      var chiede = document.querySelector('.chiede');
+      if (chiede) { chiede.remove(); return true; }
+      var grandi = document.querySelectorAll('.grande');
+      if (grandi.length) { grandi[grandi.length - 1].remove(); return true; }
+      if (!$('portafoglio').hidden) { chiudiPortafoglio(); return true; }
+      if (!$('cornice').hidden) { chiudiGioco(); return true; }
+      if (!viva('p-home')) { vaiA('home'); return true; }
+      return false;
+    },
+  };
+  document.addEventListener('keydown', function (ev) {
+    if (ev.key === 'Escape' && !document.querySelector('.chiede')) window.DaProdPagina.chiudiQualcosa();
+  });
+  document.addEventListener('click', function (ev) {
+    if (ev.target && ev.target.closest && ev.target.closest('#esci-sala')) tornaAllaSuite();
   });
 
   segnaLaStanza('home');

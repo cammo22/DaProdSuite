@@ -263,7 +263,7 @@ export const MODELLI = {
     serveScheda: false,
   },
   /**
-   * Qwen-Image 2.1, di serie: 25 passi, come nel grafo ufficiale.
+   * Qwen-Image 2.1, di serie: 40 passi (dalla 1.4.5; prima 25).
    *
    * ⚠ È il predefinito dalla 1.4.0, al posto di FLUX.2 Klein 9B, e per la
    * stessa ragione per cui lo era lui: è quello che capisce meglio le
@@ -274,22 +274,22 @@ export const MODELLI = {
     ...QWEN_COMUNE,
     id: "qwen21",
     nome: "Qwen-Image 2.1",
-    riga: "Il più bravo: descrizioni lunghe, scritte, e modifiche a parole. 25 passi.",
+    riga: "Il più bravo: descrizioni lunghe, scritte, e modifiche a parole. 40 passi.",
     catalogo: QWEN21.catalogo,
     step: PASSI.standard,
     turbo: false,
   },
   /**
-   * Lo stesso modello con la LoRA turbo: 4 passi invece di 25.
+   * Lo stesso modello con la LoRA turbo: 5 passi invece di 40.
    *
-   * Si può salire fino a 8 per un po' di dettaglio. Le Lightning a 8 passi di
-   * lightx2v per la 2.1 non ci sono ancora (vedi `manifest/models.json`).
+   * Si può salire fino a 10 per un po' di dettaglio. Dalla 1.4.5 è la Viggle
+   * Turbo v0.2 a 5 passi, al posto della v0.1 a 4 (vedi `manifest/models.json`).
    */
   "qwen21-turbo": {
     ...QWEN_COMUNE,
     id: "qwen21-turbo",
     nome: "Qwen-Image 2.1 Turbo",
-    riga: "Lo stesso, in 4 passi: sei volte più veloce, 324 MB in più.",
+    riga: "Lo stesso, in 5 passi: otto volte più veloce, 1,3 GB in più.",
     catalogo: QWEN21.catalogoTurbo,
     step: PASSI.turbo,
     turbo: true,

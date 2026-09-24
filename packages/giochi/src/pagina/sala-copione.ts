@@ -82,15 +82,15 @@ export const COPIONE_SALA = `
 
   function cifreDellaPartita() {
     var h = cifra(puntiIt(sala.partita.punti) + ' pt', 'la partita aperta');
-    h += cifra(soldi(sala.staccando), 'staccando adesso');
+    h += cifra(soldi(sala.staccando), 'incassando adesso');
     h += cifra(Math.round(sala.fetta * 100) + '%', 'la tua fetta (livello ' + sala.livello + ')');
-    h += cifra(soldi(sala.tettoRimasto), 'si possono staccare ancora oggi');
+    h += cifra(soldi(sala.tettoRimasto), 'si possono incassare ancora oggi');
     var per = sala.partita.perGioco || {};
     Object.keys(per).forEach(function (g) {
       h += cifra(puntiIt(per[g]) + ' pt', g === 'slot' ? 'dalla slot' : g === 'avanzati' ? 'rimasti da ieri' : 'da ' + g);
     });
     if (sala.ultimoStacco) {
-      h += cifra(soldi(sala.ultimoStacco.lire), 'l ultimo stacco, a ' + numeroIt(sala.ultimoStacco.quota, 2));
+      h += cifra(soldi(sala.ultimoStacco.lire), 'l ultimo incasso, a ' + numeroIt(sala.ultimoStacco.quota, 2));
     }
     return h;
   }
@@ -136,7 +136,7 @@ export const COPIONE_SALA = `
       cifra(String(b.giocatori24), b.giocatori24 === 1 ? 'persona in sala' : 'persone in sala');
     $('borsa-numeri').innerHTML = h + cifreDellaPartita();
     $('stacca-borsa').disabled = !(sala.partita.punti > 0 && sala.tettoRimasto > 0);
-    $('stacca-borsa').textContent = sala.partita.punti > 0 ? 'Stacca ' + soldi(sala.staccando) : 'Niente da staccare';
+    $('stacca-borsa').textContent = sala.partita.punti > 0 ? 'Incassa ' + soldi(sala.staccando) : 'Niente da incassare';
   }
 
   function disegnaMano() {
@@ -165,17 +165,18 @@ export const COPIONE_SALA = `
     var su = sala.borsa.variazione >= 0;
     var pt = sala.partita.punti;
     $('cornice-conto').innerHTML =
-      '<span class="pastiglia lire"><small>in tasca</small><b>' + soldi(io ? io.saldo : 0) + '</b></span>' +
+      '<span class="pastiglia lire borsellino" id="pastiglia-portafoglio"><small>portafoglio</small><b>' + soldi(io ? io.saldo : 0) + '</b></span>' +
       '<span class="pastiglia punti" id="pastiglia-punti"><small>partita</small><b>' + puntiIt(pt) + ' pt</b></span>' +
       '<span class="pastiglia ' + (su ? 'su' : 'giu') + '"><small>la Lira</small><b>' + (su ? '▲ ' : '▼ ') + numeroIt(sala.borsa.quota, 2) + '</b></span>' +
-      '<span class="pastiglia"><small>staccando</small><b>' + soldi(sala.staccando) + '</b></span>';
+      '<span class="pastiglia"><small>incassi</small><b>' + soldi(sala.staccando) + '</b></span>';
     if (ultimaPartita >= 0 && pt > ultimaPartita) {
       var p = $('pastiglia-punti');
       if (p) { p.classList.add('sale'); p.setAttribute('data-piu', '+' + puntiIt(pt - ultimaPartita)); }
     }
     ultimaPartita = pt;
+    disegnaTagliAlVolo();
     $('cornice-stacca').disabled = !(pt > 0);
-    $('cornice-stacca').textContent = pt > 0 ? 'Stacca ' + soldi(sala.staccando) : 'Stacca';
+    $('cornice-stacca').textContent = pt > 0 ? 'Incassa ' + soldi(sala.staccando) : 'Incassa';
   }
 
   /* ------------------------------------------------ il portafoglio (1.4.4) */
@@ -223,7 +224,7 @@ export const COPIONE_SALA = `
     $('portafoglio-ok').disabled = !puo;
     $('portafoglio-ok').textContent = puo ? 'Ricarica ' + soldi(quanteRicarica) : 'Non bastano le lire';
     $('portafoglio-nota').textContent = saldo < minimo
-      ? 'Servono almeno ' + soldi(minimo) + '. Stacca la partita o gioca alla slot per farne.'
+      ? 'Servono almeno ' + soldi(minimo) + '. Incassa la partita o gioca alla slot per farne.'
       : 'Le lire spese fanno salire la Lira in Borsa. Minimo ' + soldi(minimo) + '.';
   }
 
@@ -235,16 +236,53 @@ export const COPIONE_SALA = `
   }
 
   function confermaRicarica() {
-    var lire = quanteRicarica;
     $('portafoglio-ok').disabled = true;
-    chiedi('POST', '/sala/ricarica', { gioco: giocoAperto, lire: lire }).then(function (r) {
+    ricaricaDi(quanteRicarica).catch(function () { disegnaPortafoglio(); });
+  }
+
+  /**
+   * Una ricarica, da qualunque tasto venga: il foglio o i tagli al volo. Una
+   * sola strada verso il PC e verso il gioco, cosi' le due non si comportano
+   * mai diverso.
+   */
+  var ricaricaInCorso = false;
+  function ricaricaDi(lire) {
+    if (ricaricaInCorso) return Promise.resolve(null);
+    ricaricaInCorso = true;
+    disegnaTagliAlVolo();
+    return chiedi('POST', '/sala/ricarica', { gioco: giocoAperto, lire: lire }).then(function (r) {
+      ricaricaInCorso = false;
       if (io) io.saldo = r.saldo;
       disegnaSaldo(true);
       mandaAlGioco({ ricarica: true, lire: r.lire });
       chiudiPortafoglio();
       avviso('Ricaricato: ' + soldi(r.lire) + (cambioDelGioco ? ' diventano ' + soldi(r.lire * cambioDelGioco) + ' nel gioco' : ''), 'bene');
+      disegnaCornice();
+      var p = $('pastiglia-portafoglio');
+      if (p) { p.classList.remove('cala'); void p.offsetWidth; p.classList.add('cala'); }
       caricaSala();
-    }).catch(function (e) { avviso(e.message, 'male'); disegnaPortafoglio(); });
+      return r;
+    }).catch(function (e) {
+      ricaricaInCorso = false;
+      disegnaTagliAlVolo();
+      avviso(e.message, 'male');
+      throw e;
+    });
+  }
+
+  /** La riga dei tagli al volo, sotto la barra: quelli che si possono pagare adesso. */
+  var TAGLI_AL_VOLO = [100, 500, 1000, 5000, 10000];
+  function disegnaTagliAlVolo() {
+    var riga = $('cornice-tagli');
+    if (!riga) return;
+    riga.hidden = !(giocoAperto && ricaricaDelGioco);
+    if (riga.hidden) return;
+    var minimo = ingressoDi(giocoAperto);
+    var saldo = io ? io.saldo : 0;
+    riga.innerHTML = '<small>ricarica</small>' + TAGLI_AL_VOLO.filter(function (t) { return t >= minimo; }).map(function (t) {
+      var dice = cambioDelGioco ? ' title="nel gioco diventano ' + soldi(t * cambioDelGioco) + '"' : '';
+      return '<button data-al-volo="' + t + '"' + dice + (t > saldo || ricaricaInCorso ? ' disabled' : '') + '>' + soldi(t) + '</button>';
+    }).join('') + '<button class="altro" id="al-volo-altro">Altro…</button>';
   }
 
   /* ---------------------------------------------------------- i gesti */
@@ -253,7 +291,7 @@ export const COPIONE_SALA = `
     return chiedi('POST', '/stacca').then(function (r) {
       if (io) io.saldo = r.saldo;
       disegnaSaldo(true);
-      avviso('Staccato: ' + puntiIt(r.punti) + ' punti a ' + numeroIt(r.quota, 2) + ' × ' + Math.round(r.fetta * 100) +
+      avviso('Incassato: ' + puntiIt(r.punti) + ' punti a ' + numeroIt(r.quota, 2) + ' × ' + Math.round(r.fetta * 100) +
         '% = ' + soldi(r.lire) + (r.avanzati ? ' (' + puntiIt(r.avanzati) + ' punti restano per domani)' : ''), 'bene');
       if (typeof coriandoli === 'function') coriandoli(40, ['#00ff41', '#3ddbff', '#ffffff']);
       caricaSala();
@@ -296,7 +334,7 @@ export const COPIONE_SALA = `
       $('cornice-nome').textContent = (ICONE_SALA[id] || '') + ' ' + (g ? g.nome : id);
       $('cornice-ricarica').hidden = true;
       $('cornice').hidden = false;
-      $('cornice-gioco').src = RADICE + '/sala/' + id + '/?suite=1';
+      caricaNellaCornice(RADICE + '/sala/' + id + '/?suite=1');
       disegnaCornice();
     }).catch(function (e) {
       /*
@@ -311,12 +349,32 @@ export const COPIONE_SALA = `
       $('cornice-nome').textContent = (ICONE_SALA[id] || '') + ' demo, senza lire';
       $('cornice-ricarica').hidden = true;
       $('cornice').hidden = false;
-      $('cornice-gioco').src = RADICE + '/sala/' + id + '/';
+      caricaNellaCornice(RADICE + '/sala/' + id + '/');
     });
   }
 
+  /**
+   * Un gioco nella cornice **senza lasciare tracce nella cronologia** (1.4.5).
+   *
+   * Cambiare la «src» di un iframe gia' in pagina aggiunge un passo alla
+   * cronologia: sull'app Android il tasto indietro tornava da un gioco
+   * all'altro invece di uscire, ed era uno dei modi in cui «non c'e' un modo
+   * per uscire dalla sala giochi». Un iframe nuovo, con l'indirizzo dato
+   * prima di metterlo in pagina, carica senza passo in piu'.
+   */
+  function caricaNellaCornice(indirizzo) {
+    var vecchio = $('cornice-gioco');
+    var nuovo = document.createElement('iframe');
+    nuovo.id = 'cornice-gioco';
+    nuovo.title = 'Gioco';
+    nuovo.setAttribute('allow', 'autoplay; fullscreen');
+    if (indirizzo) nuovo.src = indirizzo;
+    vecchio.parentNode.replaceChild(nuovo, vecchio);
+  }
+
   function chiudiGioco() {
-    $('cornice-gioco').src = 'about:blank';
+    caricaNellaCornice('');
+    $('cornice-tagli').hidden = true;
     chiudiPortafoglio();
     $('cornice').hidden = true;
     giocoAperto = null;
@@ -338,6 +396,7 @@ export const COPIONE_SALA = `
       dettoDellaRicarica = String(d.ricarica || '');
       cambioDelGioco = Number(d.cambio) || 0;
       $('cornice-ricarica').hidden = !ricaricaDelGioco;
+      disegnaTagliAlVolo();
       if (ricaricaDelGioco) {
         $('cornice-ricarica').textContent = 'Ricarica';
         $('cornice-ricarica').title = d.ricarica + ', per un gettone d ingresso';
@@ -374,7 +433,9 @@ export const COPIONE_SALA = `
     var carta = qui('[data-carta]');
     if (carta) { giocaLaCarta(carta.getAttribute('data-carta')); return; }
     if (qui('#cornice-esci')) { chiudiGioco(); return; }
-    if (qui('#cornice-ricarica')) { ricaricaDallaCornice(); return; }
+    if (qui('#cornice-ricarica') || qui('#al-volo-altro')) { ricaricaDallaCornice(); return; }
+    var alVolo = qui('[data-al-volo]');
+    if (alVolo) { ricaricaDi(Number(alVolo.getAttribute('data-al-volo'))).catch(function () {}); return; }
     var taglio = qui('[data-ricarica]');
     if (taglio) { segnaQuante(Number(taglio.getAttribute('data-ricarica'))); return; }
     if (qui('#portafoglio-piu')) { segnaQuante(quanteRicarica + Number($('portafoglio-scorri').step) * 2); return; }

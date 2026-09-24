@@ -98,18 +98,23 @@ tutte lo stesso.
 Dentro la suite c'è una sala giochi: la slot delle combinazioni, che dà i pezzi
 per fare prompt, e dalla 1.4.0 anche **Coin Dozer, Claw Machine e Neon
 Partenope**, gli altri giochi DaProd. Si fa una partita ogni tanto, i punti si
-sommano, e quando vuoi staccare **la partita diventa Lire DaProd** — una finta
+sommano, e quando vuoi incassare **la partita diventa Lire DaProd** — una finta
 valuta con una sua Borsa: la quotazione sale quando tutti spendono e scende
 quando tutti incassano. Il giorno dopo rigiochi, magari meglio, e le lire
 accumulate si spendono nei giochi. Le cose grosse (un jackpot, uno shiny, un
 boss) danno una **carta**: un pezzo che giochi nella slot, già bloccato.
+
+Dalla 1.4.5 le lire spese non spariscono: entrano nella **Banca DaProd** e
+tornano a chi gioca, come premio del giorno, della settimana e super jackpot del
+mese. E la stanza Genera comincia dallo **Studio**: Qwen-Image 2.1 in mano a chi
+gioca, con la scritta dentro l'immagine e il ritocco a parole.
 
 Sul sito e nelle loro app i tre giochi restano demo normali: le lire sono di
 chi è collegato alla suite.
 
 ## A che punto siamo
 
-**Ultima pubblicata: 1.4.0 — «Il fiore all'occhiello».** La suite rivestita da
+**Ultima pubblicata: 1.4.5** — Qwen-Image 2.1 che parte davvero (40 passi, turbo a 5), la Banca DaProd e lo Studio. **La 1.4.0 — «Il fiore all'occhiello»:** La suite rivestita da
 DaProd (vetro scuro, pioggia verde, bottoni aqua), Qwen-Image 2.1 al posto di
 FLUX per creare e modificare, YuE2 in Musica, il 3D da una foto con TRELLIS.2,
 il dado delle idee senza cliché, la sala d'arcade con la Lira DaProd e il
@@ -243,7 +248,7 @@ non vengono mai riscaricati né cancellati**, nemmeno disinstallando.
 |---|---|---|
 | DaProdVisualizer | — | |
 | DaProdDream | 2,6 GB | +5,6 GB per sognare con Anima |
-| DaProdFoto | 5,6 GB | +~19 GB Qwen-Image 2.1 (Q4, con il turbo a 4 passi) · +~6 GB TRELLIS.2 per il 3D** |
+| DaProdFoto | 5,6 GB | +~20 GB Qwen-Image 2.1 (Q4, con il turbo a 5 passi) · +~6 GB TRELLIS.2 per il 3D** |
 | DaProdMusica | 13,7 GB | +9,3 GB ACE-Step XL · +~4 GB YuE2 3B · +5,6 GB per le copertine con Anima* |
 | DaProdIoDigitale | 10,4 GB | +6,0 GB modello Pro |
 | DaProdCinema | 23,2 GB | — |
@@ -345,7 +350,7 @@ davanti.
 **Il modello base non è il più grande.** DaProdFoto parte con Anima (5,6 GB,
 veloce). Qwen-Image 2.1 in GGUF Q4 è a un clic di distanza per quando la qualità
 conta, e fa **sia le immagini nuove sia le modifiche** con lo stesso modello: con
-il LoRA turbo ci mette 4 passi invece di 25. FLUX è uscito dalla suite nella 1.4.0.
+il LoRA turbo ci mette 5 passi invece di 40. FLUX è uscito dalla suite nella 1.4.0.
 
 Il ragionamento completo è in
 [docs/MODELLI-E-STRATEGIA.md](docs/MODELLI-E-STRATEGIA.md).

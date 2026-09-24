@@ -1262,6 +1262,8 @@ class MainActivity : AppCompatActivity() {
         val cl = client ?: return@launch
 
         binding.attesa.visibility = View.VISIBLE
+        // La riga sotto la barra dice a chi si bussa (1.4.5).
+        binding.attesaTesto.text = getString(R.string.avvio_cerco, persona.nome)
 
         /**
          * ⚠ **Tailscale prima di bussare**, nuovo nella 1.0.1.
@@ -1325,6 +1327,7 @@ class MainActivity : AppCompatActivity() {
          */
         if (vivo == null) {
             binding.attesa.visibility = View.VISIBLE
+            binding.attesaTesto.text = getString(R.string.avvio_giro)
             val sentiti = Scoperta.cerca(this@MainActivity, 3_000)
             binding.attesa.visibility = View.GONE
             /**

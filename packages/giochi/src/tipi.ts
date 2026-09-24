@@ -519,6 +519,13 @@ export interface Conto {
    * il punteggio di un gioco nel browser lo racconta la pagina.
    */
   ritmo?: Record<string, { minuto: number; punti: number; carta: number; giorno: string; puntiOggi: number }>;
+  /**
+   * L'ultimo premio della Banca DaProd vinto (1.4.5), per dirlo a chi l'ha
+   * vinto la prima volta che apre la sala. Come `ultimoRegalo`.
+   */
+  ultimoPremio?: { cassetto: string; nome: string; lire: number; quando: number; chiave: string };
+  /** Il quaderno dello Studio (1.4.5): le ultime cose create o ritoccate. Vedi `studio.ts`. */
+  studio?: import("./studio").LavoroStudio[];
 }
 
 /** La partita aperta di una persona: i punti, e da quali giochi. */
@@ -716,6 +723,11 @@ export interface DatiGiochi {
    * un file di prima si apre senza, e comincia a riempirsi dal primo movimento.
    */
   borsa?: Borsa;
+  /**
+   * ⚠ **La Banca DaProd**, dalla 1.4.5: dove finiscono le lire spese e da dove
+   * tornano in premi. La forma sta in `banca.ts`; facoltativa come la Borsa.
+   */
+  banca?: import("./banca").StatoBanca;
 }
 
 /**

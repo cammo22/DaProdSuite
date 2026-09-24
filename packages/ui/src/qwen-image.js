@@ -27,13 +27,22 @@
  * - **CFG 1, sempre.** Il modello e' distillato: alzarlo brucia l'immagine, e a
  *   CFG 1 il negativo non fa niente. Per questo qui il negativo non c'e'.
  *
- * **Le due strade.** Di serie 25 passi, euler/simple, come nel grafo ufficiale.
- * Con la LoRA turbo (Viggle, convertita per ComfyUI) bastano 4 passi: e' la
- * stessa rete, con 324 MB in piu' attaccati da `LoraLoaderModelOnly` a forza 1.
- * Si puo' spingere fino a 8 passi per un po' di dettaglio in piu'. ⚠ Le
- * Lightning di lightx2v a 4 e 8 passi, quelle di Qwen-Image 1, per la 2.1 non
- * sono ancora uscite: il giorno che escono si aggiunge un file al catalogo e un
- * nome qui sotto.
+ * **Le due strade.** Di serie **40 passi**, euler/simple: e' il numero su cui
+ * il modello e' stato provato dai suoi autori, e quello che Cammo si aspetta
+ * («lo standard e' a 40 step»). Fino alla 1.4.4 erano 25.
+ *
+ * Con la LoRA turbo bastano **5 passi** (dalla 1.4.5): la Viggle Turbo v0.2,
+ * distillata sul programma a 5 passi e convertita per ComfyUI, attaccata da
+ * `LoraLoaderModelOnly` a forza 1. Prima c'era la v0.1 a 4 passi, e Cammo ha
+ * chiesto questa: la v0.2 e' molto piu' pulita, al costo di un passo. Si puo'
+ * salire fino a 10 per un po' di dettaglio in piu'.
+ *
+ * **Il turbo si campiona coi sigma suoi**, non con il programma «simple»: la
+ * LoRA e' stata distillata su 1 / 0,875 / 0,75 / 0,5 / 0,25, e con altri punti
+ * sporca. Quindi nel turbo niente KSampler: `ManualSigmas` coi punti esatti e
+ * `SamplerCustomAdvanced` (euler, senza CFG). Con piu' di 5 passi la stessa
+ * curva si ricampiona piu' fitta (`sigmiTurbo`). Le barre di avanzamento
+ * leggono anche lui: manda gli stessi «progress» del KSampler.
  *
  * ⚠ **Niente backtick in questo file**: e' servito com'e' alle pagine, e le
  * pagine della console lo leggono anche come testo.
@@ -44,16 +53,16 @@ export const QWEN21 = {
   dit: "qwen-image-2.1-Q4_K_M.gguf",
   txt: "qwen3vl_8b_w4a8.safetensors",
   vae: "qwen_image_2.1_vae_bf16.safetensors",
-  turbo: "Qwen-Image-2.1-viggle-turbo-4step-r64-comfyui-T8.safetensors",
+  turbo: "Qwen-Image-2.1-viggle-turbo-v0.2-5step-lora-r256_comfy.safetensors",
   /** Gli id del catalogo, per chiedere alla suite se ci sono gia'. */
   catalogo: ["qwen21-q4km", "qwen21-text-encoder", "qwen21-vae"],
-  catalogoTurbo: ["qwen21-q4km", "qwen21-text-encoder", "qwen21-vae", "qwen21-turbo-4step"],
+  catalogoTurbo: ["qwen21-q4km", "qwen21-text-encoder", "qwen21-vae", "qwen21-turbo-5step"],
 };
 
 /** Quanti passi, per strada: il minimo, il massimo, e quello che parte. */
 export const PASSI = {
-  standard: { min: 12, max: 40, valore: 25 },
-  turbo: { min: 4, max: 8, valore: 4 },
+  standard: { min: 20, max: 50, valore: 40 },
+  turbo: { min: 5, max: 10, valore: 5 },
 };
 
 /** Qwen-Image 2.1 vuole misure multiple di 32: 16 di compressione, 2x2 per casella. */
@@ -85,6 +94,42 @@ function caricatori(turbo) {
 
 /** Il modello da dare al campionatore: quello nudo, o quello con la turbo. */
 const modello = (turbo) => (turbo ? ["20", 0] : ["1", 0]);
+
+/** I punti del turbo, quelli su cui e' stata distillata la LoRA di Viggle. */
+const SIGMI_TURBO = [1, 0.875, 0.75, 0.5, 0.25];
+
+/**
+ * I sigma per `passi` passi, sulla curva del turbo: a 5 sono esattamente i
+ * suoi, con piu' passi si prendono piu' punti sulla stessa spezzata. Lo zero in
+ * fondo e' la fine del campionamento, e non conta come passo.
+ */
+export function sigmiTurbo(passi) {
+  const n = Math.max(1, Math.round(passi || SIGMI_TURBO.length));
+  const punti = [];
+  for (let i = 0; i < n; i++) {
+    const t = n === 1 ? 0 : (i * (SIGMI_TURBO.length - 1)) / (n - 1);
+    const a = Math.floor(t);
+    const b = Math.min(SIGMI_TURBO.length - 1, a + 1);
+    const v = SIGMI_TURBO[a] + (SIGMI_TURBO[b] - SIGMI_TURBO[a]) * (t - a);
+    punti.push(Math.round(v * 10000) / 10000);
+  }
+  return punti.concat([0]).join(", ");
+}
+
+/**
+ * Il turbo: rumore, guida senza CFG, euler, i suoi sigma. Il nodo che esce e'
+ * sempre il «6», come il KSampler, cosi' il resto del grafo non cambia.
+ */
+function campionatoreTurbo(grafo, latente, seed, passi) {
+  grafo["40"] = { class_type: "RandomNoise", inputs: { noise_seed: seed } };
+  grafo["41"] = { class_type: "BasicGuider", inputs: { model: modello(true), conditioning: ["3", 0] } };
+  grafo["42"] = { class_type: "KSamplerSelect", inputs: { sampler_name: "euler" } };
+  grafo["43"] = { class_type: "ManualSigmas", inputs: { sigmas: sigmiTurbo(passi) } };
+  grafo["6"] = {
+    class_type: "SamplerCustomAdvanced",
+    inputs: { noise: ["40", 0], guider: ["41", 0], sampler: ["42", 0], sigmas: ["43", 0], latent_image: latente },
+  };
+}
 
 function campionatore(turbo, latente, seed, passi) {
   return {
@@ -120,7 +165,7 @@ export function grafoQwenImmagine(opzioni) {
   const turbo = Boolean(opzioni.turbo);
   const strada = turbo ? PASSI.turbo : PASSI.standard;
   const passi = opzioni.passi || strada.valore;
-  return {
+  const grafo = {
     ...caricatori(turbo),
     "3": {
       class_type: "TextEncodeQwenImage21",
@@ -134,6 +179,8 @@ export function grafoQwenImmagine(opzioni) {
     "8": { class_type: "VAEDecode", inputs: { samples: ["6", 0], vae: ["7", 0] } },
     "9": salvataggio(["8", 0], opzioni.salva, opzioni.prefisso || "immagini/daprod"),
   };
+  if (turbo) campionatoreTurbo(grafo, ["5", 0], opzioni.seed, passi);
+  return grafo;
 }
 
 /**
@@ -220,7 +267,8 @@ export function grafoQwenModifica(opzioni) {
     class_type: "TextEncodeQwenImage21",
     inputs: { clip: ["2", 0], prompt: testo, negative_prompt: "", resolution: 0, vae: ["7", 0], ...immagini },
   };
-  grafo["6"] = campionatore(turbo, ["3", 2], opzioni.seed, passi);
+  if (turbo) campionatoreTurbo(grafo, ["3", 2], opzioni.seed, passi);
+  else grafo["6"] = campionatore(turbo, ["3", 2], opzioni.seed, passi);
   grafo["8"] = { class_type: "VAEDecode", inputs: { samples: ["6", 0], vae: ["7", 0] } };
 
   let finale = ["8", 0];

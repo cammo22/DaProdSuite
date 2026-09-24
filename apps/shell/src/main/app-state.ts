@@ -13,7 +13,7 @@ import { mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node
 import { join } from "node:path";
 import type { AppId } from "@daprod/ipc";
 import { DATA_ROOT } from "./paths";
-import { siVedeDaQualcheParte } from "./finestre";
+import { misuraDiPartenza, siVedeDaQualcheParte } from "./finestre";
 
 function stateDir(appId: AppId): string {
   const dir = join(DATA_ROOT, "state", appId);
@@ -75,15 +75,20 @@ export interface WindowBounds {
  * `finestre.ts`.
  */
 export function readBounds(appId: AppId, fallback: WindowBounds): WindowBounds {
+  // Un po' piu' grande della misura della scheda (1.4.5): vedi misuraDiPartenza.
+  const partenza = { ...fallback, ...misuraDiPartenza(fallback) };
   const raw = readState(appId, "window");
-  if (typeof raw !== "object" || raw === null) return { ...fallback };
+  if (typeof raw !== "object" || raw === null) return { ...partenza };
 
   const b = raw as Partial<WindowBounds>;
   const num = (v: unknown, predefinito: number) =>
     typeof v === "number" && Number.isFinite(v) ? Math.round(v) : predefinito;
 
-  const width = Math.max(360, num(b.width, fallback.width));
-  const height = Math.max(280, num(b.height, fallback.height));
+  // Chi non l'ha mai ridimensionata ha salvata la misura di partenza vecchia,
+  // al pixel: quella non e' una scelta sua, e si allarga anche per lui.
+  const maiToccata = b.width === fallback.width && b.height === fallback.height;
+  const width = maiToccata ? partenza.width : Math.max(360, num(b.width, partenza.width));
+  const height = maiToccata ? partenza.height : Math.max(280, num(b.height, partenza.height));
   const x = typeof b.x === "number" && Number.isFinite(b.x) ? Math.round(b.x) : undefined;
   const y = typeof b.y === "number" && Number.isFinite(b.y) ? Math.round(b.y) : undefined;
 

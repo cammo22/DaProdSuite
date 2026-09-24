@@ -31,7 +31,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const QUI = dirname(fileURLToPath(import.meta.url));
-const FILE = ["stile.ts", "markup.ts", "copione.ts", "sala-stile.ts", "sala-markup.ts", "sala-copione.ts", "home-stile.ts", "home-markup.ts", "home-copione.ts"];
+const FILE = ["stile.ts", "markup.ts", "copione.ts", "sala-stile.ts", "sala-markup.ts", "sala-copione.ts", "home-stile.ts", "home-markup.ts", "home-copione.ts", "studio-stile.ts", "studio-markup.ts", "studio-copione.ts"];
 const APICE = String.fromCharCode(96);
 
 /**

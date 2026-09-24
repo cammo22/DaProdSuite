@@ -18,7 +18,7 @@ import { BrowserWindow, app, ipcMain, shell } from "electron";
 import { join } from "node:path";
 import { readBounds, writeState } from "../../app-state";
 import { gestisciSchema, serviInterfaccia, urlInterfaccia } from "../../file-scheme";
-import { mostraDavvero, registraConsole } from "../../finestre";
+import { appari, mostraDavvero, registraConsole } from "../../finestre";
 import { iconaApp } from "../../paths";
 import { montaTerminale } from "../../terminale";
 import { indirizzo } from "../../servizi";
@@ -75,7 +75,8 @@ export function apri(onClose: () => void): void {
   registraConsole(win, "cinema");
   montaTerminale(win, "cinema");
   if (bounds.maximized) win.maximize();
-  win.once("ready-to-show", () => win.show());
+  // Non ruba il primo piano se non l'ha chiesto chi sta davanti (finestre.ts).
+  win.once("ready-to-show", () => appari(win));
 
   win.webContents.setWindowOpenHandler(({ url }) => {
     if (/^https?:/.test(url)) void shell.openExternal(url);

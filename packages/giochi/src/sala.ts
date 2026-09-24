@@ -22,6 +22,7 @@ import {
   type IdGiocoSala,
   type Listino,
 } from "./borsa";
+import { vetrina, type VetrinaBanca } from "./banca";
 import type { Deposito } from "./deposito";
 import { altezza, livelloDi, pescaPesata, scalino, type Caso } from "./regole";
 import { rulliDi } from "./rulli";
@@ -127,6 +128,8 @@ export function segnaPunti(deposito: Deposito, chi: string, idGioco: string, gre
   r.punti += entrati;
   r.puntiOggi += entrati;
   const p = aggiungi(conto, gioco.id, entrati, adesso);
+  // I punti fatti in sala contano per i premi della Banca (1.4.5): meta'.
+  if (entrati > 0) deposito.attivita(chi, entrati / 2);
   deposito.salva();
   return { chiesti, entrati, partita: p.punti, fermati: chiesti - entrati };
 }
@@ -244,6 +247,10 @@ export interface StatoSala {
   borsa: Listino;
   ultimoStacco: Stacco | null;
   giochi: { id: string; nome: string; riga: string; ingresso: number }[];
+  /** La Banca DaProd (1.4.5): i tre cassetti, la mia parte, gli ultimi premi. */
+  banca: VetrinaBanca;
+  /** L'ultimo premio della Banca vinto: la pagina lo dice una volta. */
+  premio: Conto["ultimoPremio"] | null;
 }
 
 export function statoSala(deposito: Deposito, chi: string, adesso = Date.now()): StatoSala {
@@ -265,5 +272,7 @@ export function statoSala(deposito: Deposito, chi: string, adesso = Date.now()):
     borsa: b,
     ultimoStacco: conto.ultimoStacco ?? null,
     giochi: Object.values(GIOCHI_SALA).map((g) => ({ id: g.id, nome: g.nome, riga: g.riga, ingresso: g.ingresso })),
+    banca: vetrina(deposito.statoBanca(), chi, adesso),
+    premio: conto.ultimoPremio ?? null,
   };
 }

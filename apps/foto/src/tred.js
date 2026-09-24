@@ -22,10 +22,10 @@
 import { escapeHtml, rnd, occupa, libera, mostraScheda } from "./dom.js";
 import { stato } from "./stato.js";
 import { ascolta } from "./bus.js";
-import { aggiungiLavoro } from "./coda.js";
+import { aggiungiLavoro, seguiLavoro } from "./coda.js";
 import { faiSpazio } from "./memoria.js";
 import * as ponte from "./ponte.js";
-import { QUALITA, TRELLIS2, grafoModellino } from "/comune/trellis.js";
+import { QUALITA, TAPPE_MODELLINO, TRELLIS2, avanzamentoModellino, grafoModellino } from "/comune/trellis.js";
 import { collegaScaricamento } from "/comune/scaricamento.js";
 
 const $ = (id) => document.getElementById(id);
@@ -170,6 +170,56 @@ function accendiBottone() {
 
 /* --------------------------------------------------------------- il lavoro */
 
+/**
+ * La barra sotto il bottone (1.4.5): tappa, tempo, e una riga con tutte le
+ * tappe, quella di adesso in evidenza. Si aggiorna da `seguiLavoro` (i messaggi
+ * del motore) e ogni secondo per il tempo.
+ */
+function seguiIlModellino(id) {
+  const scatola = $("tredAvanza");
+  const inizio = Date.now();
+  let tappa = 0;
+  // La barra va solo avanti: dentro una tappa, il nodo dopo il campionatore
+  // riparte da zero passi, e tornare indietro direbbe una bugia.
+  let massimo = 0;
+  scatola.hidden = false;
+  const tempo = () => {
+    const s = Math.floor((Date.now() - inizio) / 1000);
+    $("tredTempo").textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+  };
+  const disegna = (a) => {
+    tappa = a.tappa;
+    massimo = Math.max(massimo, a.quanto);
+    $("tredFase").textContent = a.nome;
+    $("tredBarra").style.width = `${(massimo * 100).toFixed(1)}%`;
+    $("tredTappe").innerHTML = TAPPE_MODELLINO.map((t, i) =>
+      i < a.tappa ? `<s>${escapeHtml(t.nome)}</s>` : i === a.tappa ? `<b>${escapeHtml(t.nome)}</b>` : escapeHtml(t.nome),
+    ).join(" · ");
+  };
+  disegna(avanzamentoModellino(null, 0, 0));
+  tempo();
+  const orologio = setInterval(tempo, 1000);
+  const smetti = seguiLavoro(id, (l) => {
+    if (l.finito) return;
+    if (l.stato !== "in-corso") {
+      $("tredFase").textContent = "in coda, aspetto il motore";
+      return;
+    }
+    disegna(avanzamentoModellino(l.nodo, l.avanzamento, tappa));
+  });
+  return (bene) => {
+    clearInterval(orologio);
+    smetti();
+    if (bene) {
+      $("tredBarra").style.width = "100%";
+      $("tredFase").textContent = "fatto";
+      setTimeout(() => (scatola.hidden = true), 2500);
+    } else {
+      scatola.hidden = true;
+    }
+  };
+}
+
 /** Aspetta che il motore abbia finito questo lavoro, e dice dov'è il GLB. */
 async function aspettaIlModellino(id) {
   for (;;) {
@@ -191,6 +241,7 @@ async function vai() {
   const bottone = $("tredVai");
   $("tredErrore").hidden = true;
   occupa(bottone, "preparo…");
+  let chiudiBarra = null;
   try {
     const nome = await ponte.carica(foto, "modellino.png");
     const m = { id: "trellis2", nome: "TRELLIS.2", serveScheda: true, catalogo: TRELLIS2.catalogo };
@@ -205,7 +256,10 @@ async function vai() {
     occupa(bottone, "il motore lavora…");
     const id = await ponte.invia(grafo);
     aggiungiLavoro(id, `modellino 3D (${QUALITA[qualita].nome.toLowerCase()})`, { modello: "TRELLIS.2", tred: true }, grafo);
+    chiudiBarra = seguiIlModellino(id);
     const glb = await aspettaIlModellino(id);
+    chiudiBarra(true);
+    chiudiBarra = null;
     const voce = {
       file: glb.filename,
       cartella: glb.subfolder,
@@ -218,6 +272,7 @@ async function vai() {
     $("tredErrore").hidden = false;
     $("tredErrore").textContent = String(e.message || e);
   } finally {
+    if (chiudiBarra) chiudiBarra(false);
     libera(bottone);
     accendiBottone();
   }

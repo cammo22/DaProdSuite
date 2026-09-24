@@ -31,6 +31,7 @@
 import { copyFileSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { conMovimento } from "./borsa";
+import { NOMI, apriIScaduti, bancaInRiga, bancaNuova, segnaAttivita, versa, type Apertura, type StatoBanca } from "./banca";
 import {
   altezza,
   GRADI,
@@ -75,6 +76,7 @@ function vuoto(): DatiGiochi {
     impostazioni: { ...IMPOSTAZIONI_DI_PARTENZA },
     pacchetti: [],
     borsa: { ore: [] },
+    banca: bancaNuova(Date.now()),
   };
 }
 
@@ -173,6 +175,8 @@ export class Deposito {
       // La Borsa (1.4.0): un file di prima non ce l'ha, e comincia vuota.
       borsa:
         lette.borsa && Array.isArray(lette.borsa.ore) ? { ore: lette.borsa.ore } : { ore: [] },
+      // La Banca (1.4.5): un file di prima non ce l'ha, e parte col fondo di DaProd.
+      banca: bancaInRiga(lette.banca, Date.now()),
       pacchetti: Array.isArray(lette.pacchetti)
         ? lette.pacchetti
         : /**
@@ -332,8 +336,52 @@ export class Deposito {
     conto.saldo = Math.max(0, Math.round(conto.saldo + quanto));
     const mosso = conto.saldo - prima;
     if (mercato && mosso !== 0) this.segnaInBorsa(chi, mosso);
+    /**
+     * ⚠ **E ogni lira spesa entra nella Banca DaProd** (1.4.5, `banca.ts`).
+     * Stesso posto e stessa ragione della Borsa qui sopra: tutte le spese
+     * passano di qui, e cosi' nessuna se la dimentica. Chi spende conta anche
+     * come attivita': una ogni dieci lire.
+     */
+    if (mercato && mosso < 0) {
+      const b = this.statoBanca();
+      versa(b, -mosso);
+      segnaAttivita(b, chi, -mosso / 10);
+    }
     this.salva();
     return conto;
+  }
+
+  /* ------------------------------------------------------ la Banca DaProd */
+
+  /** Lo stato della Banca, cosi' com'e' (senza aprire niente). */
+  statoBanca(): StatoBanca {
+    if (!this.dati.banca) this.dati.banca = bancaNuova(Date.now());
+    return this.dati.banca;
+  }
+
+  /** Punti attivita' per i premi della Banca. Vedi `banca.ts`. */
+  attivita(chi: string, punti: number): void {
+    segnaAttivita(this.statoBanca(), chi, punti);
+    this.salva();
+  }
+
+  /**
+   * Apre i cassetti scaduti e paga chi ha vinto. Si chiama quando qualcuno
+   * guarda la sala: vedi `apriIScaduti` sul perche' non serve mezzanotte.
+   *
+   * Il premio entra come una lira coniata (la Borsa lo vede), e resta scritto
+   * sul conto per dirlo a chi l'ha vinto.
+   */
+  apriLaBanca(adesso: number = Date.now(), caso: () => number = Math.random): Apertura[] {
+    const fatte = apriIScaduti(this.statoBanca(), adesso, caso);
+    for (const a of fatte) {
+      for (const v of a.vincite) {
+        const conto = this.muovi(v.chi, v.lire);
+        conto.ultimoPremio = { cassetto: a.cassetto, nome: NOMI[a.cassetto], lire: v.lire, quando: adesso, chiave: a.chiave };
+      }
+    }
+    if (fatte.length) this.salva();
+    return fatte;
   }
 
   /** La Borsa: le ultime ore. Vedi `borsa.ts`. */
@@ -363,6 +411,8 @@ export class Deposito {
   segnaGiro(chi: string, punti: number, meglio?: Grado): Conto {
     const conto = this.conto(chi);
     conto.giri += 1;
+    // Un giro di slot vale cinque punti attivita' per la Banca (1.4.5).
+    segnaAttivita(this.statoBanca(), chi, 5);
     conto.ultimoGiro = Date.now();
     if (punti > 0) {
       conto.esperienza += punti;

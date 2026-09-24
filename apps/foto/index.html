@@ -241,6 +241,14 @@
     <div class="hint" id="tredRigaQualita"></div>
     <label class="switch"><input type="checkbox" id="tredSfondo" checked> Stacca il soggetto dallo sfondo</label>
     <button class="btn wide" id="tredVai" disabled>Fai il modellino</button>
+    <!-- La barra del modellino (1.4.5): prima si vedeva solo nell'hub. Una
+         barra sola dall'inizio alla fine, con la tappa scritta sopra: vedi
+         TAPPE_MODELLINO in packages/ui/src/trellis.js. -->
+    <div class="tred-avanza" id="tredAvanza" hidden>
+      <div class="riga"><b id="tredFase">preparo…</b><span id="tredTempo"></span></div>
+      <div class="bar"><i class="p1" id="tredBarra" style="width:0%"></i></div>
+      <div class="hint" id="tredTappe"></div>
+    </div>
     <div id="tredErrore" class="err" hidden></div>
     <div class="hint">Esce un file <b>.glb</b> con la sua texture: si apre in Blender, si stampa
       in 3D, e si mette nei giochi della sala. La texture finisce anche in galleria.</div>

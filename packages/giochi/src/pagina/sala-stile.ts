@@ -101,6 +101,26 @@ export const STILE_SALA = `
     .pastiglia { flex: 0 0 auto; }
   }
   .cornice iframe { flex: 1; width: 100%; border: 0; background: #000; }
+  /* Il portafoglio in cima (1.4.5): piu' grande delle altre pastiglie, con la sua icona. */
+  .pastiglia.borsellino { padding-left: 34px; border-color: rgba(255,209,102,.45);
+    background: linear-gradient(180deg, rgba(60,44,6,.75), rgba(20,14,2,.8)); }
+  .pastiglia.borsellino::before { content: "\\1F45B"; position: absolute; left: 9px; top: 50%; transform: translateY(-50%); font-size: 17px; }
+  .pastiglia.borsellino b { font-size: 15.5px; }
+  .pastiglia.borsellino.cala { animation: cala-lire .7s ease-out; }
+  @keyframes cala-lire { 0% { box-shadow: 0 0 0 0 rgba(255,209,102,.8); } 100% { box-shadow: 0 0 0 10px rgba(255,209,102,0); } }
+  /* I tagli al volo, una riga sotto la barra: scorre di lato sul telefono. */
+  .cornice-tagli { display: flex; align-items: center; gap: 6px; padding: 6px 10px; overflow-x: auto; scrollbar-width: none;
+    background: rgba(3,10,8,.92); border-bottom: 1px solid rgba(120,255,200,.1); }
+  .cornice-tagli[hidden] { display: none; }
+  .cornice-tagli::-webkit-scrollbar { display: none; }
+  .cornice-tagli small { flex: none; color: #86a59c; font: 700 10px/1 "Space Mono", monospace; letter-spacing: .06em; text-transform: uppercase; }
+  .cornice-tagli button { flex: none; padding: 8px 12px; border-radius: 999px; cursor: pointer;
+    font: 700 12.5px/1 "Space Mono", monospace; color: #04110b; border: 1px solid rgba(0,0,0,.4);
+    background: linear-gradient(180deg, #d8fbff 0%, #3ddbff 50%, #1aa6c9 51%, #3ddbff 100%);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.7), 0 3px 8px rgba(0,0,0,.35); }
+  .cornice-tagli button:disabled { filter: grayscale(.9) brightness(.6); cursor: default; }
+  .cornice-tagli button.altro { color: #eafff4; background: rgba(255,255,255,.06); border-color: rgba(120,255,200,.3); }
+  .cornice-tagli button:active:not(:disabled) { transform: translateY(1px); }
 
   /* Il portafoglio della ricarica (1.4.4): un foglio che sale dal basso. */
   .portafoglio { position: absolute; inset: 0; z-index: 5; display: flex; align-items: flex-end; justify-content: center;

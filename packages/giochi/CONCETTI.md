@@ -1284,6 +1284,48 @@ decisione a parte e occupa la scheda video che sta generando).
   modello lo conosce solo chi ospita. Senza giudice la rotta dice 501 e la fila
   funziona come prima.
 
+### 18.8 La Banca DaProd: le lire spese tornano (1.4.5)
+
+> «Inseriamo un conto tipo del banco, i soldi che ha DaProd, che poi vengono
+> partizionati agli utenti in base alle attivita' nel tempo: una settimana e da'
+> i premi, e giornalmente, e un mese un super jackpot DaProd.»
+
+Fino alla 1.4.4 una lira spesa si **bruciava**: usciva dal conto, spostava la
+Borsa, e basta. Dalla 1.4.5 entra nella Banca, da un posto solo
+(`deposito.muovi`, lo stesso della Borsa), e si divide in quattro cassetti: 40%
+il premio del giorno, 30% quello della settimana, 20% il super jackpot del mese,
+10% la riserva di DaProd, che garantisce un minimo ai premi quando la cassa e'
+magra.
+
+**Tocca a chi gioca, non a chi ha.** La parte di ognuno la decidono i punti
+attivita' del periodo: uno ogni dieci lire spese, cinque a giro di slot, meta'
+dei punti fatti in sala. Il giorno si divide fra tutti, la settimana fra i dieci
+piu' attivi, il mese si **estrae** con tanti biglietti quanti i punti — chi gioca
+tanto ha piu' biglietti, chi gioca poco puo' vincerlo lo stesso.
+
+**Si apre quando qualcuno guarda**, non a mezzanotte: il PC puo' essere spento.
+L'attivita' e' scritta sotto la chiave del suo periodo, e un cassetto di ieri
+aperto stamattina da' quello che avrebbe dato ieri. Un premio senza nessuno in
+gara passa al periodo dopo. Tutto in `banca.ts`, funzioni pure come la Borsa.
+
+### 18.9 Lo Studio: Qwen-Image 2.1 in mano a chi gioca (1.4.5)
+
+> «Con i nuovi modelli Qwen, molto capaci nelle immagini, reinventiamo la parte
+> di genera completamente.»
+
+La slot monta un prompt e lo manda in fila; l'immagine la vedeva solo chi
+comanda. Lo Studio fa vedere a chi gioca cosa esce: si scrive o si tira il dado
+(coi pezzi veri dei rulli), si sceglie la forma e **la scritta da mettere
+nell'immagine** — Qwen la scrive giusta, ed e' la cosa che lo distingue — e si
+paga in lire, che vanno in Banca. Quello che esce si **ritocca a parole** (la
+modifica di Qwen) o diventa una figurina in fila, per la strada di sempre
+(`manda-dalla-libreria`).
+
+Le richieste passano dalla fila come tutte: lo Studio non salta la regola «chi
+decide genera, chi chiede aspetta un si'». Quello che chi comanda scarta si
+rimborsa, una volta sola, la prima volta che chi l'aveva chiesto guarda.
+Le regole in `studio.ts`, le rotte `/studio` in `rotte.ts`.
+
 ## 17. Quello che ancora non e' deciso
 
 - ⚠ **Il costo del giro, adesso che il tetto e' tre euro.** Dall'11 settembre

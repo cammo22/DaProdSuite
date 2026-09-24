@@ -472,11 +472,71 @@
           Parte **acceso**: e' la prima cosa che si vede aprendo l'app, al posto
           di «Chi sei?».
         -->
-        <ProgressBar
+        <!--
+          ⚠ Rifatto nella 1.4.5: «dobbiamo fare un redesign anche della pagina
+          iniziale e caricamento app per android». Era una rotella viola da sola
+          in mezzo al nero: non diceva di chi fosse l'app ne' cosa stesse
+          facendo. Adesso e' il marchio, il nome, una barra verde sottile e una
+          riga che dice cosa succede. L'id resta «attesa» e il codice lo
+          accende e lo spegne come prima: cambia la veste, non il giro.
+        -->
+        <LinearLayout
             android:id="@+id/attesa"
-            style="?android:attr/progressBarStyleLarge"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center" />
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:background="@drawable/sfondo_avvio"
+            android:paddingHorizontal="48dp">
+
+            <ImageView
+                android:layout_width="112dp"
+                android:layout_height="112dp"
+                android:contentDescription="@null"
+                android:src="@drawable/logo_daprod" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:fontFamily="monospace"
+                android:letterSpacing="0.02"
+                android:text="@string/avvio_marchio"
+                android:textColor="@color/testo"
+                android:textSize="26sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:fontFamily="monospace"
+                android:letterSpacing="0.3"
+                android:text="@string/avvio_sotto"
+                android:textAllCaps="true"
+                android:textColor="@color/ciano"
+                android:textSize="11sp" />
+
+            <!-- La barra di serie di Android, tinta di verde: nessun attributo
+                 di libreria, cosi' l'APK si compila come prima. -->
+            <ProgressBar
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="180dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="30dp"
+                android:indeterminate="true"
+                android:indeterminateTint="@color/verde"
+                android:progressBackgroundTint="@color/tratto" />
+
+            <TextView
+                android:id="@+id/attesa_testo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:gravity="center"
+                android:text="@string/avvio_attesa"
+                android:textColor="@color/testo_debole"
+                android:textSize="13sp" />
+        </LinearLayout>
     </FrameLayout>
 </LinearLayout>

@@ -215,3 +215,44 @@ export {
 export { azzeraPartita, entra, evento, giocaCarta, pescaCarta, ricarica, segnaPunti, stacca, statoSala, type StatoSala } from "./sala";
 export type { Borsa, Giudizio, OraDiBorsa, Partita, Stacco } from "./tipi";
 export { fileDellaSala } from "./sala-file";
+
+// La Banca DaProd (1.4.5): le lire spese tornano in premi del giorno, della
+// settimana e nel super jackpot del mese.
+export {
+  CHIAVE as CHIAVI_BANCA,
+  FONDO_DI_PARTENZA,
+  MINIMI as MINIMI_BANCA,
+  NOMI as NOMI_BANCA,
+  PRIMI_SETTIMANA,
+  QUOTE as QUOTE_BANCA,
+  apriIScaduti,
+  bancaInRiga,
+  bancaNuova,
+  chiaveGiorno,
+  chiaveMese,
+  chiaveSettimana,
+  dividi,
+  estrai,
+  quandoSiApre,
+  segnaAttivita,
+  versa as versaInBanca,
+  versaInRiserva,
+  vetrina as vetrinaBanca,
+  type Apertura,
+  type Cassetto,
+  type StatoBanca,
+  type VetrinaBanca,
+  type Vincita as VincitaBanca,
+} from "./banca";
+
+// Lo Studio (1.4.5): Qwen-Image 2.1 in mano a chi gioca.
+export {
+  COSTI_STUDIO,
+  FORME_STUDIO,
+  LAVORI_TENUTI,
+  SCRITTA_MAX,
+  formaDi,
+  promptStudio,
+  type FormaStudio,
+  type LavoroStudio,
+} from "./studio";

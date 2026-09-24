@@ -1891,4 +1891,72 @@ export const STILE = `  :root {
     nav.fondo button { flex-direction: row; padding: 13px 18px; font-size: 13px; }
   }
 
+  /* ================================================ la Casa, rifatta (1.4.5)
+     «Dobbiamo fare un redesign anche della pagina iniziale.» Era una pila di
+     riquadri grigi uguali: i quattro numeri grandi come i tasti, e i tasti con
+     un simbolo piccolo in un angolo. Adesso i numeri sono una riga sola e
+     stretta (si guardano, non si toccano quasi mai), i tasti hanno la loro
+     luce e il loro bottone lucido, e la Sala giochi e' larga, con le facce dei
+     giochi: e' l'unica porta che porta in un posto diverso. */
+  #pag-casa .semaforo { border-radius: 22px; padding: 16px 18px;
+    box-shadow: 0 12px 28px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.06); }
+  #pag-casa .quadrati { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+  #pag-casa .quadrato { min-height: 0; padding: 11px 6px 10px; align-items: center; text-align: center; gap: 2px;
+    border-radius: 16px; background: rgba(6,20,17,.78); }
+  #pag-casa .quadrato .grande { font-size: 22px; }
+  #pag-casa .quadrato .nome { font-size: 11px; line-height: 1.2; color: var(--dim); font-weight: 600; }
+  #pag-casa .quadrato .segno { font-size: 16px; }
+  @media (max-width: 360px) { #pag-casa .quadrati { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  #pag-casa .tastoni { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: minmax(148px, auto); gap: 12px; }
+  @media (min-width: 760px) { #pag-casa .tastoni { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+  #pag-casa .tastone { min-height: 148px; padding: 16px 15px 15px; border-radius: 22px; gap: 4px;
+    border-color: color-mix(in srgb, var(--tinta) 30%, transparent);
+    background:
+      radial-gradient(120% 90% at 100% 0%, color-mix(in srgb, var(--tinta) 26%, transparent), transparent 62%),
+      linear-gradient(165deg, rgba(10,24,19,.96), rgba(3,9,7,.96));
+    box-shadow: 0 12px 28px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.06); }
+  #pag-casa .tastone::after { display: none; }
+  #pag-casa .tastone .segno { width: 46px; height: 46px; border-radius: 50%; font-size: 21px; color: #fff; margin-bottom: auto;
+    background: radial-gradient(circle at 35% 28%, rgba(255,255,255,.75), var(--tinta) 52%, color-mix(in srgb, var(--tinta) 55%, #000));
+    box-shadow: 0 0 18px color-mix(in srgb, var(--tinta) 50%, transparent), inset 0 -3px 6px rgba(0,0,0,.25);
+    text-shadow: 0 1px 2px rgba(0,0,0,.4); }
+  #pag-casa .tastone .nome { font-size: 15.5px; }
+  #pag-casa .tastone:active { transform: translateY(1px); }
+  /* La Sala giochi: larga, con le facce dei tre giochi che sfumano nel buio. */
+  #pag-casa .tastone.sala { grid-column: 1 / -1; min-height: 172px; justify-content: flex-end; padding-top: 90px; }
+  #pag-casa .tastone.sala .facce { position: absolute; inset: 0 0 auto 0; height: 112px; display: grid;
+    grid-template-columns: repeat(3, 1fr); gap: 2px; opacity: .78;
+    -webkit-mask-image: linear-gradient(180deg, #000 45%, transparent);
+    mask-image: linear-gradient(180deg, #000 45%, transparent); }
+  #pag-casa .tastone.sala .facce img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  #pag-casa .tastone.sala .segno { position: absolute; right: 15px; bottom: 15px; margin: 0; }
+  #pag-casa .tastone.sala .nome, #pag-casa .tastone.sala small { padding-right: 64px; text-align: left; position: relative; }
+  /* L'avviso della bacheca vuoto e' una striscia scura sotto «Carica»: si vede solo quando dice qualcosa. */
+  #avviso-bacheca:empty { display: none; }
+  #pag-casa h3 { letter-spacing: .08em; }
+
+  /* ================================================ la bacheca DaProd (1.4.5)
+     «Bisogna migliorare anche tutta la parte simil social.» Sul telefono «Da
+     provare» usava la griglia a tre colonne della scheda Stili: una carta sola
+     restava larga un terzo, col nome spezzato in sei righe e i tre tasti uno
+     sopra l'altro. Qui diventa una fila che scorre di lato, carte larghe, tasti
+     in riga. E i post prendono la stessa veste delle carte della sala. */
+  #da-provare .stili { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory;
+    padding: 2px 2px 8px; scrollbar-width: none; }
+  #da-provare .stili::-webkit-scrollbar { display: none; }
+  #da-provare .stile { flex: 0 0 min(86%, 330px); scroll-snap-align: start; display: grid; gap: 8px; cursor: default;
+    padding: 14px 15px; border-radius: 20px; border-color: rgba(244,114,182,.3);
+    background: radial-gradient(120% 80% at 100% 0%, rgba(244,114,182,.14), transparent 60%),
+      linear-gradient(165deg, rgba(14,20,24,.96), rgba(5,8,10,.96)); }
+  #da-provare .stile .nome { font-weight: 700; font-size: 15px; overflow-wrap: anywhere; }
+  #da-provare .stile .sotto { color: var(--dim); font-size: 12px; }
+  #da-provare .stile .parole { color: #cfe; font-size: 12.5px; line-height: 1.45;
+    display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+  #da-provare .stile .fila { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px; }
+  .posta { border-radius: 22px; border-color: rgba(120,255,200,.14);
+    box-shadow: 0 14px 30px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.05); }
+  .posta .testa .faccia-tonda { width: 40px; height: 40px; box-shadow: 0 0 0 2px rgba(0,255,65,.35); }
+  .posta .piedi { border-top: 1px solid rgba(120,255,200,.08); }
+  .cuore.mio .simbolo { text-shadow: 0 0 10px rgba(244,114,182,.7); }
+
   [hidden] { display: none !important; }`;

@@ -64,6 +64,33 @@ main.con-sotto #p-slot.viva{height:calc(100% - 52px)}
 .ciao-numeri .num b{font:700 16px/1 "Space Mono", monospace; color:#f2fffb; white-space:nowrap}
 .ciao-numeri .num small{color:#86a59c; font-size:11px}
 .ciao-numeri .lire b{color:#ffd166}
+/* «L.» sopra e il numero sotto (1.4.5): con sei cifre la casella usciva dal bordo. */
+.ciao-numeri .lire b i{display:block; font-style:normal; font-size:.7em; opacity:.75; margin-bottom:3px}
+
+/* ========================================================== la Banca (1.4.5) */
+.home-banca{display:grid; gap:12px}
+.banca-cassetti{display:grid; grid-template-columns:repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap:10px}
+.banca-cassetto{position:relative; display:grid; gap:6px; padding:14px 16px; border-radius:20px; min-width:0; overflow:hidden;
+  background:linear-gradient(160deg, rgba(10,30,24,.92), rgba(4,12,10,.92)); border:1px solid rgba(120,255,200,.16);
+  box-shadow:0 10px 24px rgba(0,0,0,.35)}
+.banca-cassetto.mese{border-color:rgba(255,209,102,.45);
+  background:linear-gradient(160deg, rgba(48,36,6,.92), rgba(12,9,2,.94)); box-shadow:0 0 24px rgba(255,209,102,.12)}
+.banca-cassetto small{color:#86a59c; font-size:11.5px; line-height:1.35}
+.banca-cassetto .nome{font:700 12.5px/1.2 "Space Mono", monospace; color:#3ddbff; text-transform:uppercase; letter-spacing:.04em}
+.banca-cassetto.mese .nome{color:#ffd166}
+.banca-cassetto .monte{font:800 26px/1.05 "Space Mono", monospace; color:#ffd166; overflow-wrap:anywhere}
+.banca-cassetto .monte i{display:block; font-style:normal; font-size:.46em; opacity:.75}
+.banca-cassetto .fra{display:inline-flex; gap:6px; align-items:center; color:#d7fff0; font-size:12px}
+.banca-cassetto .mia{margin-top:4px; padding:7px 10px; border-radius:12px; background:rgba(0,255,65,.07); color:#bfffd8; font-size:12.5px}
+.banca-cassetto .mia b{color:#3dff8a}
+.banca-cassetto .mia.fuori{background:rgba(255,255,255,.04); color:#86a59c}
+.banca-piede{display:flex; flex-wrap:wrap; gap:6px 14px; color:#86a59c; font-size:12px}
+.banca-piede b{color:#e6fff5; font-family:"Space Mono", monospace}
+.banca-vinti{display:grid; gap:6px}
+.banca-vinti div{display:flex; justify-content:space-between; gap:10px; padding:8px 12px; border-radius:12px;
+  background:rgba(1,8,6,.5); border:1px solid rgba(120,255,200,.08); font-size:12.5px; color:#cfe}
+.banca-vinti div b{color:#ffd166; font-family:"Space Mono", monospace; white-space:nowrap}
+.banca-vinti div span{min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
 .ciao-numeri .su b{color:#3dff8a}
 .ciao-numeri .giu b{color:#ff5c6c}
 
@@ -239,22 +266,45 @@ body #p-fortuna .cassetto{max-width:500px; margin:12px auto 0}
 /* ========================================================= i giocatori (1.4.4) */
 .giocatori-testa h2{display:flex; align-items:center; gap:8px}
 #p-giocatori .cerca{width:100%; margin:4px 0 12px}
-#p-giocatori #gente{display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:12px}
-#p-giocatori .persona{display:grid; gap:10px; padding:14px; border-radius:20px; background:rgba(6,20,17,.82);
+/* ⚠ 1.4.5: la foto di Cammo aveva la scheda di chi si stava gestendo che
+   finiva sopra quella accanto. Le schede sono celle di una griglia, e una cella
+   di griglia non si stringe sotto il suo contenuto se non glielo si dice
+   (min-width:0): i tagli, che non vanno a capo, la allargavano. E le altre
+   della stessa riga si stiravano in altezza con lei: align-items:start. */
+#p-giocatori #gente{display:grid; grid-template-columns:repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+  gap:12px; align-items:start}
+#p-giocatori .persona{display:grid; grid-template-columns:minmax(0, 1fr); gap:10px; min-width:0; padding:14px;
+  border-radius:20px; background:rgba(6,20,17,.82);
   border:1px solid rgba(120,255,200,.16); box-shadow:0 10px 26px rgba(0,0,0,.4)}
-.persona-testa{display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:10px}
+#p-giocatori .persona > *{min-width:0}
+.persona-testa{display:grid; grid-template-columns:auto minmax(0, 1fr); align-items:center; gap:10px}
 .persona-testa .tondo{width:42px; height:42px; border-radius:50%; display:grid; place-items:center;
   font:800 18px/1 "M PLUS Rounded 1c", "Nunito", sans-serif; color:#021;
   background:radial-gradient(circle at 35% 30%, #caffc4, #19d64a 60%, #0a8a26); box-shadow:0 0 14px rgba(25,214,74,.4)}
-.persona-testa .chi-e{min-width:0}
-.persona-testa .chi-e b{display:block; font:700 15px/1.2 "Space Mono", monospace; color:#f2fffb; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
-.persona-testa .chi-e small{color:#86a59c; font-size:12px}
-.persona-saldo{font:700 16px/1 "Space Mono", monospace; color:#ffd166; white-space:nowrap}
-.persona-numeri{display:grid; grid-template-columns:repeat(5,1fr); gap:6px}
+.persona-testa .chi-e{min-width:0; display:flex; flex-wrap:wrap; align-items:baseline; justify-content:space-between; gap:2px 10px}
+.persona-testa .chi-e b{font:700 15px/1.2 "Space Mono", monospace; color:#f2fffb; white-space:nowrap; overflow:hidden;
+  text-overflow:ellipsis; min-width:0; max-width:100%}
+.persona-saldo{font:700 16px/1.2 "Space Mono", monospace; color:#ffd166; white-space:nowrap}
+.persona-riga{display:block; color:#86a59c; font-size:12px; line-height:1.45; overflow-wrap:anywhere}
+.persona-numeri{display:grid; grid-template-columns:repeat(auto-fit, minmax(58px, 1fr)); gap:6px}
 .persona-numeri span{display:flex; flex-direction:column; gap:2px; padding:7px 6px; border-radius:12px; text-align:center;
-  background:rgba(1,8,6,.55); border:1px solid rgba(120,255,200,.1)}
+  background:rgba(1,8,6,.55); border:1px solid rgba(120,255,200,.1); min-width:0}
 .persona-numeri b{font:700 13px/1.1 "Space Mono", monospace; color:#f2fffb; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
 .persona-numeri small{color:#86a59c; font-size:10px; line-height:1.2}
+.banca-admin:empty{display:none}
+.banca-admin{display:grid; gap:8px; margin:4px 0 14px; padding:14px 16px; border-radius:20px;
+  background:linear-gradient(160deg, rgba(48,36,6,.85), rgba(12,9,2,.9)); border:1px solid rgba(255,209,102,.35)}
+.banca-admin-testa{display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 12px}
+.banca-admin-testa b{font:700 14px/1 "Space Mono", monospace; color:#ffd166}
+.banca-admin-testa small{color:#d8c79a; font-size:12px}
+.banca-admin-cassetti{display:grid; grid-template-columns:repeat(auto-fit, minmax(120px, 1fr)); gap:6px}
+.banca-admin-cassetti span{display:grid; gap:2px; padding:8px 10px; border-radius:12px; background:rgba(0,0,0,.3)}
+.banca-admin-cassetti small{color:#d8c79a; font-size:10.5px}
+.banca-admin-cassetti b{font:700 14px/1.1 "Space Mono", monospace; color:#fff3cf}
+body .banca-admin .riga-tasti .btn{flex:0 0 auto; width:auto; padding:10px 18px}
+#p-giocatori .tagli{grid-template-columns:repeat(auto-fill, minmax(92px, 1fr))}
+#p-giocatori .tagli button{white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+#p-giocatori .riga-tasti > *{min-width:0}
 .persona-azioni summary{cursor:pointer; padding:9px 14px; border-radius:999px; width:max-content; list-style:none;
   font:700 12.5px/1 "Space Mono", monospace; color:#3ddbff; border:1px solid rgba(61,219,255,.35); background:rgba(61,219,255,.07)}
 .persona-azioni summary::-webkit-details-marker{display:none}

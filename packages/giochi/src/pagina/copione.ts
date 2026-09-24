@@ -404,12 +404,15 @@ export const COPIONE = `
         carta.append(p);
       }
 
+      // Senza casella (1.4.5): per spiegare una cosa («soloSi», un tasto solo)
+      // o per confermarla («senzaCasella»). Prima c'era sempre, e una conferma
+      // mostrava una casella con dentro «ok» da non toccare.
       var casella = document.createElement(o.righe ? "textarea" : "input");
       if (!o.righe) casella.type = o.tipo || "text";
       if (o.righe) casella.rows = o.righe;
       casella.value = o.valore || "";
       if (o.suggerimento) casella.placeholder = o.suggerimento;
-      carta.append(casella);
+      if (!o.soloSi && !o.senzaCasella) carta.append(casella);
 
       var fila = document.createElement("div");
       fila.className = "riga-tasti";
@@ -419,7 +422,8 @@ export const COPIONE = `
       var si = document.createElement("button");
       si.className = "btn oro";
       si.textContent = o.tastoSi || "Vai";
-      fila.append(no, si);
+      if (o.soloSi) fila.append(si);
+      else fila.append(no, si);
       carta.append(fila);
       fondo.append(carta);
       document.body.appendChild(fondo);
@@ -434,7 +438,12 @@ export const COPIONE = `
       });
       // Il fuoco dopo un giro: su un telefono aprire la tastiera subito e'
       // quello che ci si aspetta, e sul computer si scrive senza toccare.
-      setTimeout(function () { try { casella.focus(); casella.select(); } catch (e) {} }, 40);
+      setTimeout(function () {
+        try {
+          if (o.soloSi || o.senzaCasella) si.focus();
+          else { casella.focus(); casella.select(); }
+        } catch (e) {}
+      }, 40);
     });
   }
 
@@ -3041,6 +3050,7 @@ export const COPIONE = `
       var quanti = $("quanta-gente");
       if (quanti) quanti.textContent = gente.length ? String(gente.length) : "";
       disegnaGente();
+      disegnaBancaAdmin();
     }).catch(function (e) { avviso(e.message, "male"); });
   }
 
@@ -3072,15 +3082,19 @@ export const COPIONE = `
           var messe = quantoScelto("regalo", g.chi);
           var numero = function (v, cosa) { return "<span><b>" + v + "</b><small>" + cosa + "</small></span>"; };
           return "<div class=\\"persona\\">" +
+            // Nome e saldo sulla stessa riga finche' ci stanno, poi il saldo va
+            // a capo; la riga lunga dei dettagli sta sotto, larga quanto la
+            // scheda (1.4.5: prima spingeva il saldo fuori, sulla scheda accanto).
             "<div class=\\"persona-testa\\"><span class=\\"tondo\\">" + sicuro((g.nome || "?").charAt(0).toUpperCase()) + "</span>" +
-            "<div class=\\"chi-e\\"><b>" + sicuro(g.nome) + "</b><small>" +
+            "<div class=\\"chi-e\\"><b>" + sicuro(g.nome) + "</b>" +
+            "<span class=\\"persona-saldo\\">" + soldi(g.saldo) + "</span></div></div>" +
+            "<small class=\\"persona-riga\\">" +
             (g.mai ? "non ha mai aperto la sala giochi"
-              : "livello " + g.livello + (g.ultimoStacco ? " · ultimo stacco " + quando(g.ultimoStacco) : "") +
-                (g.regali ? " · regalate " + soldi(g.regali) : "")) + "</small></div>" +
-            "<span class=\\"persona-saldo\\">" + soldi(g.saldo) + "</span></div>" +
+              : "livello " + g.livello + (g.ultimoStacco ? " · ultimo incasso " + quando(g.ultimoStacco) : "") +
+                (g.regali ? " · regalate " + soldi(g.regali) : "")) + "</small>" +
             (g.mai ? "" : "<div class=\\"persona-numeri\\">" +
               numero(String(g.partita || 0), "pt partita") +
-              numero(soldi(g.staccatoOggi || 0), "staccate oggi") +
+              numero(soldi(g.staccatoOggi || 0), "incassate oggi") +
               numero(String(g.giri || 0), "giri") +
               numero(String(g.prese || 0), "prese") +
               numero(String(g.mano || 0), "carte") + "</div>") +
@@ -3104,6 +3118,38 @@ export const COPIONE = `
         (cerca ? "Nessuno si chiama cosi'." : "Non c'e' ancora nessuno.") + "</div>";
   }
 
+  /**
+   * La Banca DaProd vista da chi comanda (1.4.5): quanto c'e' nei cassetti e
+   * nella riserva, e un tasto per metterci lire di DaProd. La riserva non esce
+   * dal conto di nessuno: garantisce che un premio non sia mai da tre lire.
+   */
+  function disegnaBancaAdmin() {
+    var dove = $("banca-admin");
+    if (!dove) return;
+    var b = typeof sala !== "undefined" && sala ? sala.banca : null;
+    if (!b) { dove.innerHTML = ""; return; }
+    var cassetti = b.cassetti.map(function (c) {
+      return "<span><small>" + sicuro(c.nome) + "</small><b>" + soldi(c.lire) + "</b></span>";
+    }).join("");
+    dove.innerHTML = "<div class=\\"banca-admin-testa\\"><b>Banca DaProd</b><small>riserva " + soldi(b.riserva) +
+      " · entrate " + soldi(b.entrate) + " · tornate " + soldi(b.pagate) + "</small></div>" +
+      "<div class=\\"banca-admin-cassetti\\">" + cassetti + "</div>" +
+      "<div class=\\"riga-tasti\\"><button class=\\"btn oro\\" id=\\"versa-riserva\\">Versa nella riserva</button></div>";
+  }
+
+  function versaNellaRiserva() {
+    chiediQualcosa("Quante lire di DaProd nella riserva?",
+      "Non escono dal conto di nessuno: garantiscono il minimo dei premi del giorno, della settimana e del mese.",
+      { tipo: "number", valore: "10000", tastoSi: "Versa" }).then(function (r) {
+        if (r === null) return;
+        chiedi("POST", "/banca/riserva", { lire: Number(r) }).then(function (v) {
+          if (sala) sala.banca = v;
+          avviso("Versate " + soldi(Number(r)) + ". Riserva: " + soldi(v.riserva) + ".", "bene");
+          disegnaBancaAdmin();
+        }).catch(function (e) { avviso(e.message, "male"); });
+      });
+  }
+
   /** Chiude la partita di qualcuno senza staccarla (1.4.4): i punti vanno via. */
   function azzeraPartitaDi(chi) {
     var nome = "";
@@ -3111,7 +3157,7 @@ export const COPIONE = `
     for (var i = 0; i < gente.length; i++) if (gente[i].chi === chi) { nome = gente[i].nome; punti = gente[i].partita; }
     chiediQualcosa("Chiudi la partita di " + nome + "?",
       "Via " + punti + " punti, che non diventano lire. Serve per i casi storti: un gioco che ha dato punti per sbaglio.",
-      { valore: "ok", tastoSi: "Chiudi la partita" }).then(function (r) {
+      { valore: "ok", tastoSi: "Chiudi la partita", senzaCasella: true }).then(function (r) {
         if (r === null) return;
         chiedi("POST", "/gente/partita", { chi: chi }).then(function (e) {
           avviso("Partita chiusa: via " + e.via + " punti.", "bene");
@@ -3599,6 +3645,7 @@ export const COPIONE = `
     if (svuota) { svuotaPortafoglio(svuota); return; }
     var chiudiPartita = b.getAttribute && b.getAttribute("data-azzera-partita");
     if (chiudiPartita) { azzeraPartitaDi(chiudiPartita); return; }
+    if (b.id === "versa-riserva") { versaNellaRiserva(); return; }
 
     var attacca = b.getAttribute && b.getAttribute("data-attacca");
     if (attacca) { apriLibreria(attacca, "allegato"); return; }

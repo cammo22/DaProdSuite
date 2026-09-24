@@ -6,7 +6,7 @@
  * graficamente: facciamo un remake in stile DaProd». Lo stile DaProd è quello
  * del sito (il Portfolio) e dei giochi della sala: base tech scura — pioggia
  * Matrix, scanline, Space Mono, verde #00ff41 e ciano #3ddbff — con i dettagli
- * lucidi Y2K / Frutiger Aero: vetro scuro, bottoni aqua, icone lucide, bolle.
+ * lucidi Y2K / Frutiger Aero: vetro scuro, bottoni aqua, icone lucide.
  * Non troppo Frutiger chiaro, e niente tono aziendale.
  *
  * **Un file solo, cinque posti.** Lo leggono l'hub (copiato accanto al suo
@@ -111,8 +111,7 @@ body::after {
   pointer-events: none;
   background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.13) 0 1px, transparent 1px 3px);
 }
-#daprod-pioggia,
-#daprod-bolle {
+#daprod-pioggia {
   position: fixed;
   inset: 0;
   z-index: -1;
@@ -283,6 +282,13 @@ body .pi-button.primary {
   overflow: hidden;
   isolation: isolate;
   transition: transform 0.15s, filter 0.2s, box-shadow 0.2s;
+}
+/* I bottoni larghi sono l'azione della scheda (Genera, Fai il modellino): un
+   po' d'aria sopra e sotto, che non si attacchino al pannello dopo. Dalla
+   1.4.5, chiesto da Cammo: «il tasto genera sotto e' troppo attaccato». */
+body button.wide {
+  margin-top: 18px;
+  margin-bottom: 18px;
 }
 body .btn::before,
 body button.wide::before {
@@ -463,8 +469,7 @@ body .card .sub {
 /* ─── chi non vuole il movimento ─── */
 
 @media (prefers-reduced-motion: reduce) {
-  #daprod-pioggia,
-  #daprod-bolle {
+  #daprod-pioggia {
     display: none;
   }
   body > header .logo::before {

@@ -76,6 +76,19 @@ import {
 } from "./regole";
 import { RULLI, rulliDi } from "./rulli";
 import { giornoDi as giornoDellaSala } from "./borsa";
+import { versaInRiserva, vetrina as vetrinaBanca } from "./banca";
+import {
+  COSTI_STUDIO,
+  FORME_STUDIO,
+  LAVORI_TENUTI,
+  SCRITTA_MAX,
+  TESTO_MAX,
+  TESTO_MIN,
+  dadoStudio,
+  formaDi,
+  promptStudio,
+  type LavoroStudio,
+} from "./studio";
 import { azzeraPartita, entra, evento, giocaCarta, ricarica, segnaPunti, stacca, statoSala, type StatoSala } from "./sala";
 import type { Collezionabile, Era, Grado, PezzoInGioco, Tavolo, TipoCollezionabile } from "./tipi";
 
@@ -150,8 +163,27 @@ export interface Contorno {
   genera?(
     chi: string,
     tavolo: "immagini" | "musica",
-    cosa: { prompt: string; titolo: string },
+    cosa: {
+      prompt: string;
+      titolo: string;
+      /** Lo Studio (1.4.5): che forma, e se veloce (turbo) o fine (di serie). */
+      forma?: string;
+      veloce?: boolean;
+    },
   ): { id: string; dove?: string } | null;
+  /**
+   * Ritocca a parole una cosa della libreria di chi chiede (1.4.5, lo Studio):
+   * la modifica di Qwen-Image 2.1. `libreria` e' l'id della voce, che deve
+   * essere **sua** — chi ospita lo controlla. Torna la targa della richiesta,
+   * o niente se non si puo'.
+   */
+  ritocca?(chi: string, libreria: string, istruzione: string, veloce: boolean): { id: string } | null;
+  /**
+   * A che punto e' una richiesta: «in-attesa» del si', «accettata», «in-lavoro»,
+   * «pronta», «scartata», «scaduta». Serve allo Studio per dire a chi aspetta
+   * cosa sta succedendo, e per rimborsare quello che chi comanda scarta.
+   */
+  statoDi?(richiesta: string): string | null;
   /**
    * **Cosa e' uscito da una generazione**, quando e' pronta.
    *
@@ -527,8 +559,20 @@ function vestiCarta(p: PezzoInGioco) {
   };
 }
 
-function vestiSala(st: StatoSala, _contorno: Contorno) {
-  return { ...st, mano: st.mano.map(vestiCarta) };
+function vestiSala(st: StatoSala, contorno: Contorno) {
+  return {
+    ...st,
+    mano: st.mano.map(vestiCarta),
+    // I premi della Banca col nome di chi ha vinto, non il suo id (1.4.5).
+    banca: {
+      ...st.banca,
+      ultime: st.banca.ultime.map((a) => ({
+        ...a,
+        vincite: a.vincite.slice(0, 5).map((v) => ({ ...v, nome: contorno.nomeDi(v.chi) })),
+        quanti: a.vincite.length,
+      })),
+    },
+  };
 }
 
 /**
@@ -645,7 +689,23 @@ export function rispondi(
      * grosse; chi gioca stacca.
      */
     if (metodo === "GET" && (percorso === "/sala" || percorso === "/borsa")) {
+      // Prima si aprono i cassetti scaduti della Banca (1.4.5): chi guarda
+      // trova gia' pagato il premio di ieri.
+      deposito.apriLaBanca();
       return OK(vestiSala(statoSala(deposito, chi.id), contorno));
+    }
+    /**
+     * La riserva della Banca DaProd, per chi comanda (1.4.5): quanto c'e', e
+     * «versa» — lire di DaProd messe nella riserva, che garantisce i minimi dei
+     * premi. Non esce da nessun conto: e' la zecca della casa.
+     */
+    if (metodo === "POST" && percorso === "/banca/riserva") {
+      if (!chi.admin) return NO(403, "La Banca la tiene chi comanda.");
+      const lireQui = Math.floor(numero(corpo["lire"], 0));
+      if (lireQui <= 0 || lireQui > 10_000_000) return NO(400, "Quante lire? Fra 1 e 10 milioni.");
+      versaInRiserva(deposito.statoBanca(), lireQui);
+      deposito.salva();
+      return OK(vetrinaBanca(deposito.statoBanca(), chi.id, Date.now()));
     }
     if (metodo === "POST" && percorso === "/sala/entra") {
       const fatto = entra(deposito, chi.id, String(corpo["gioco"] ?? ""));
@@ -663,6 +723,82 @@ export function rispondi(
       const fatto = evento(deposito, chi.id, String(corpo["gioco"] ?? ""), String(corpo["evento"] ?? ""), Math.random);
       return OK({ ...fatto, carta: fatto.carta ? vestiCarta(fatto.carta) : null });
     }
+    /* --------------------------------------------------- lo Studio (1.4.5) */
+
+    /**
+     * Il quaderno dello Studio: le ultime cose chieste, a che punto sono, e
+     * quello che e' uscito. Chi comanda scarta una richiesta? Si rimborsa qui,
+     * una volta sola, la prima volta che chi l'ha chiesta guarda.
+     */
+    if (metodo === "GET" && percorso === "/studio") {
+      const conto = deposito.conto(chi.id);
+      const lavori = conto.studio ?? [];
+      let rimborsate = 0;
+      const visti = lavori.map((l) => {
+        const stato = contorno.statoDi ? contorno.statoDi(l.richiesta) : null;
+        if ((stato === "scartata" || stato === "scaduta") && !l.rimborsato) {
+          deposito.muovi(chi.id, l.costo);
+          l.rimborsato = true;
+          rimborsate += l.costo;
+        }
+        const frutti = contorno.fruttiDi ? contorno.fruttiDi(l.richiesta).filter((v) => v.mime.startsWith("image/")) : [];
+        return { ...l, stato: frutti.length ? "pronta" : stato, frutti };
+      });
+      if (rimborsate) deposito.salva();
+      return OK({
+        lavori: visti,
+        costi: COSTI_STUDIO,
+        forme: FORME_STUDIO,
+        scrittaMax: SCRITTA_MAX,
+        testoMax: TESTO_MAX,
+        puoi: Boolean(contorno.genera),
+        puoiRitoccare: Boolean(contorno.ritocca),
+        rimborsate,
+        saldo: conto.saldo,
+      });
+    }
+
+    if (metodo === "GET" && percorso === "/studio/dado") {
+      return OK(dadoStudio(Math.random));
+    }
+
+    if (metodo === "POST" && (percorso === "/studio/crea" || percorso === "/studio/ritocca")) {
+      const ritocco = percorso === "/studio/ritocca";
+      if (!ritocco && !contorno.genera) return NO(501, "Qui non c'e' niente che sappia generare.");
+      if (ritocco && !contorno.ritocca) return NO(501, "Qui non si ritocca.");
+      const testo = String(corpo[ritocco ? "istruzione" : "testo"] ?? "").trim();
+      if (testo.length < TESTO_MIN) return NO(400, ritocco ? "Scrivi cosa deve cambiare." : "Scrivi cosa vuoi vedere.");
+      if (testo.length > TESTO_MAX) return NO(400, "Troppo lungo: al massimo " + TESTO_MAX + " caratteri.");
+      const veloce = ritocco ? true : corpo["veloce"] !== false;
+      const costo = ritocco ? COSTI_STUDIO.ritocco : veloce ? COSTI_STUDIO.veloce : COSTI_STUDIO.fine;
+      const conto = deposito.conto(chi.id);
+      if (conto.saldo < costo) return NO(409, "Servono " + lire(costo) + ": nel portafoglio ce ne sono " + lire(conto.saldo) + ".");
+      const forma = formaDi(corpo["forma"]);
+      const scritta = ritocco ? "" : String(corpo["scritta"] ?? "").slice(0, SCRITTA_MAX);
+      const da = ritocco ? String(corpo["libreria"] ?? "") : undefined;
+      if (ritocco && !da) return NO(400, "Quale immagine?");
+      // Prima si chiede, poi si paga: se la suite dice di no, non si perde una lira.
+      const fatto = ritocco
+        ? contorno.ritocca!(chi.id, da!, testo, true)
+        : contorno.genera!(chi.id, "immagini", { prompt: promptStudio(testo, scritta), titolo: testo.slice(0, 80), forma, veloce });
+      if (!fatto) return NO(ritocco ? 404 : 501, ritocco ? "Questa immagine non e' tua, o non c'e' piu'." : "Non e' partita: qui non si genera.");
+      deposito.muovi(chi.id, -costo);
+      const lavoro: LavoroStudio = {
+        richiesta: fatto.id,
+        quando: Date.now(),
+        che: ritocco ? "ritocco" : "crea",
+        testo,
+        scritta: scritta || undefined,
+        forma,
+        veloce,
+        costo,
+        da,
+      };
+      conto.studio = [lavoro, ...(conto.studio ?? [])].slice(0, LAVORI_TENUTI);
+      deposito.salva();
+      return OK({ lavoro, saldo: conto.saldo, saldoScritto: lire(conto.saldo) });
+    }
+
     if (metodo === "POST" && percorso === "/stacca") {
       const fatto = stacca(deposito, chi.id);
       return OK({ ...fatto, saldoScritto: lire(fatto.saldo) });
