@@ -1,12 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  I colori DaProd (1.4.5): il verde della pioggia e il ciano, sul nero verde
+  della suite. Fino alla 1.4.4 l'app era viola e grigia, e usciva dalla console
+  (verde) per entrare in un'altra app. Stessi nomi di prima, cosi' ogni
+  schermata cambia colore senza toccarla.
+-->
 <resources>
-    <color name="sfondo">#0d0f14</color>
-    <color name="carta">#151821</color>
-    <color name="tratto">#262b3a</color>
-    <color name="testo">#e8eaf0</color>
-    <color name="testo_debole">#8a93a6</color>
-    <color name="accento">#7c5cff</color>
-    <color name="accento_scuro">#5a3fd8</color>
-    <color name="verde">#5cff9d</color>
+    <color name="sfondo">#040b08</color>
+    <color name="carta">#0a1712</color>
+    <color name="tratto">#17352a</color>
+    <color name="testo">#e8fff4</color>
+    <color name="testo_debole">#86a59c</color>
+    <color name="accento">#12a83c</color>
+    <color name="accento_scuro">#0a7a28</color>
+    <color name="verde">#3dff8a</color>
+    <color name="ciano">#3ddbff</color>
     <color name="rosso">#ff5c7a</color>
 </resources>

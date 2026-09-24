@@ -29,7 +29,7 @@
 
 import { BrowserWindow, shell } from "electron";
 import { readBounds, writeState } from "../../app-state";
-import { mostraDavvero, registraConsole } from "../../finestre";
+import { appari, mostraDavvero, registraConsole } from "../../finestre";
 import { iconaApp } from "../../paths";
 
 const PREDEFINITI = { width: 1100, height: 860, maximized: false };
@@ -99,7 +99,8 @@ export function apri(onClose: () => void): void {
   const win = finestra;
   registraConsole(win, "connessione");
   if (bounds.maximized) win.maximize();
-  win.once("ready-to-show", () => win.show());
+  // Non ruba il primo piano se non l'ha chiesto chi sta davanti (finestre.ts).
+  win.once("ready-to-show", () => appari(win));
 
   win.webContents.setWindowOpenHandler(({ url }) => {
     if (/^https?:/.test(url)) void shell.openExternal(url);

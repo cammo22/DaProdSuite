@@ -20,6 +20,30 @@ const lavori = new Map();
 let ordine = [];
 
 const lavoro = (id) => lavori.get(id);
+
+/**
+ * Chi vuole sapere di un lavoro solo, mentre va. Nuovo nella 1.4.5.
+ *
+ * La coda la disegna la scheda Crea; la scheda 3D ha bisogno della sua barra,
+ * sotto il suo bottone, e senza questo aggancio doveva indovinare. Riceve il
+ * lavoro com'e' adesso (stato, fase, nodo, avanzamento del nodo) e, alla fine,
+ * `finito: true`.
+ */
+const seguaci = new Map();
+export function seguiLavoro(id, fn) {
+  seguaci.set(id, fn);
+  return () => seguaci.delete(id);
+}
+function racconta(l, fine) {
+  const fn = l && seguaci.get(l.id);
+  if (!fn) return;
+  try {
+    fn({ ...l, finito: Boolean(fine) });
+  } catch {
+    /* una barra rotta non deve fermare la coda */
+  }
+  if (fine) seguaci.delete(l.id);
+}
 const inCorso = () => ordine.map(lavoro).find((l) => l && l.stato === "in-corso");
 
 /**
@@ -69,6 +93,25 @@ const FASI = {
   VAEDecode: "sviluppo l'immagine",
   VAEDecodeTiled: "sviluppo l'immagine",
   SaveImage: "salvo",
+  // Il 3D (1.4.5): prima questi nodi dicevano tutti «ci sta lavorando».
+  CLIPVisionLoader: "carico il modello",
+  LoadBackgroundRemovalModel: "carico il modello",
+  RemoveBackground: "stacco il soggetto dallo sfondo",
+  ImageCropToMask: "preparo la foto",
+  Trellis2Conditioning: "guardo la foto",
+  VaeDecodeStructureTrellis2: "la struttura",
+  Trellis2ShapeStage: "la forma",
+  Trellis2UpsampleStage: "i dettagli",
+  VaeDecodeShapeTrellis: "i dettagli",
+  Trellis2TextureStage: "i colori",
+  VaeDecodeTextureTrellis: "i colori",
+  DecimateMesh: "sistemo le facce",
+  MeshSmoothNormals: "sistemo le facce",
+  UnwrapMesh: "stendo la texture",
+  BakeTextureFromVoxel: "cuocio la texture",
+  ApplyTextureToMesh: "cuocio la texture",
+  MeshToFile3D: "salvo",
+  SaveGLB: "salvo",
 };
 
 function fasePerNodo(grafo, nodo) {
@@ -221,6 +264,7 @@ export function messaggioDalMotore(msg) {
         l.inizio = l.inizio || Date.now();
         l.fase = "ci sta lavorando";
         raccontaAllaSuite(null, l.fase);
+        racconta(l);
         disegnaSessione();
       }
       break;
@@ -242,6 +286,7 @@ export function messaggioDalMotore(msg) {
       suo.stato = "in-corso";
       suo.inizio = suo.inizio || Date.now();
       suo.fase = fasePerNodo(suo.grafo, d.node);
+      suo.nodo = d.node;
       /**
        * ⚠ **Il conteggio dei passi vale per il nodo che li conta, non per il
        * grafo.** Cambiando nodo si riparte da capo: lasciare il 100% del
@@ -250,6 +295,7 @@ export function messaggioDalMotore(msg) {
        */
       suo.avanzamento = 0;
       raccontaAllaSuite(null, suo.fase);
+      racconta(suo);
       disegnaSessione();
       break;
     }
@@ -261,21 +307,25 @@ export function messaggioDalMotore(msg) {
       suo.inizio = suo.inizio || Date.now();
       suo.avanzamento = d.value / d.max;
       raccontaAllaSuite(suo.avanzamento, suo.fase || "disegno");
+      racconta(suo);
       disegnaSessione();
       break;
     }
 
     case "execution_success":
+      if (l) racconta(l, true);
       if (l) void concludi(l);
       break;
 
     case "execution_interrupted":
+      if (l) racconta(l, true);
       if (l) togliLavoro(l.id);
       raccontaAllaSuite(null, "");
       break;
 
     case "execution_error":
       annuncia("errore", `${d.exception_type || ""}: ${d.exception_message || "errore sconosciuto"}`);
+      if (l) racconta(l, true);
       if (l) togliLavoro(l.id);
       raccontaAllaSuite(null, "");
       break;

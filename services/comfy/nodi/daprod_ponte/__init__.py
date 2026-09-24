@@ -823,6 +823,23 @@ def _apri_la_strada_al_gguf() -> None:
 _apri_la_strada_al_gguf()
 
 
+# Qwen-Image 2.1 in GGUF: senza questo, «Unknown model architecture!». Il
+# perche' sta tutto in gguf_qwen.py. Se un giorno non si caricasse, il motore
+# parte lo stesso: Anima e il resto non ne hanno bisogno.
+try:
+    try:
+        from . import gguf_qwen as _gguf_qwen
+    except ImportError:
+        import importlib.util as _iu
+
+        _spec = _iu.spec_from_file_location("daprod_gguf_qwen", Path(__file__).with_name("gguf_qwen.py"))
+        _gguf_qwen = _iu.module_from_spec(_spec)
+        _spec.loader.exec_module(_gguf_qwen)
+    _gguf_qwen.apri()
+except Exception as errore:  # noqa: BLE001
+    logging.warning("[daprod] Qwen-Image in GGUF: la correzione non e' partita (%s)", errore)
+
+
 # ------------------------------------------- LLaDA: la decodifica sulla scheda
 
 

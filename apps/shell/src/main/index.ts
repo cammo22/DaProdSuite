@@ -149,7 +149,7 @@ async function start(): Promise<void> {
     mostraHub: () => {
       // Anche l'hub puo' restare su uno schermo staccato: «mostraDavvero» lo
       // riporta dentro prima di dargli il fuoco. Vedi finestre.ts.
-      if (hub && !hub.isDestroyed()) mostraDavvero(hub);
+      if (hub && !hub.isDestroyed()) mostraDavvero(hub, { fuoco: true });
       else createHub();
     },
     /**

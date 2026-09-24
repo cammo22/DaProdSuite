@@ -110,7 +110,19 @@ export const COPIONE_PRODUZIONE = `
   function tastoneGiochi() {
     var b = document.createElement("button");
     b.type = "button";
-    b.className = "tastone rosa";
+    b.className = "tastone rosa sala";
+    // Le facce dei giochi (1.4.5): le stesse schermate della Home della sala.
+    var facce = document.createElement("span");
+    facce.className = "facce";
+    facce.setAttribute("aria-hidden", "true");
+    ["dozer", "claw", "neon"].forEach(function (id) {
+      var img = document.createElement("img");
+      img.loading = "lazy";
+      img.alt = "";
+      img.src = "/giochi/sala/img/" + id + ".webp";
+      facce.append(img);
+    });
+    b.append(facce);
     var s = document.createElement("span");
     s.className = "segno";
     s.textContent = "\\u2685";
@@ -118,7 +130,7 @@ export const COPIONE_PRODUZIONE = `
     n.className = "nome";
     n.textContent = "Sala giochi";
     var p = document.createElement("small");
-    p.textContent = "gira la slot, monta un prompt, mandalo";
+    p.textContent = "Coin Dozer, Claw Machine, Neon Partenope, la slot e la Banca DaProd";
     b.append(s, n, p);
     b.addEventListener("click", function () {
       var dove = "/giochi";

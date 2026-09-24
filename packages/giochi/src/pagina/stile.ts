@@ -46,6 +46,12 @@ header{position:sticky; top:0; z-index:30; display:flex; align-items:center; gap
   padding:10px 14px; background:rgba(8,9,13,.82); backdrop-filter:blur(10px);
   border-bottom:1px solid var(--riga)}
 .marchio{font-weight:700; letter-spacing:.2px}
+.esci-sala{display:inline-flex; align-items:center; gap:6px; padding:7px 12px 7px 10px; border-radius:999px; cursor:pointer;
+  font:700 13px/1 "Space Mono", monospace; color:#eafff4; border:1px solid rgba(120,255,200,.28);
+  background:linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.02) 50%, rgba(0,0,0,.2) 51%, rgba(255,255,255,.04));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.2), 0 4px 10px rgba(0,0,0,.35)}
+.esci-sala span{font-size:12px}
+@media (max-width:520px){ .esci-sala span{display:none} .esci-sala{padding:8px 11px} }
 .marchio span{color:var(--luce); transition:color 700ms ease}
 .cresci{flex:1}
 /* ⚠ Su una riga sola: «Cammo · decidi tu» andava a capo quattro volte su un

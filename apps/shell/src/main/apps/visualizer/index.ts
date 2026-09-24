@@ -17,7 +17,7 @@ import { basename, join } from "node:path";
 import { readBounds, writeState, readState } from "../../app-state";
 import { findFfmpeg, transcodeToWav } from "./ffmpeg";
 import { codificaUrl, gestisciSchema } from "../../file-scheme";
-import { mostraDavvero, registraConsole } from "../../finestre";
+import { appari, mostraDavvero, registraConsole } from "../../finestre";
 import { iconaApp } from "../../paths";
 import { montaTerminale } from "../../terminale";
 import { rivela } from "../../rivela";
@@ -90,7 +90,8 @@ export function apri(onClose: () => void): void {
   // Iniettato dalla shell: e' una implementazione sola per tutte le app.
   montaTerminale(win, "visualizer");
   if (bounds.maximized) win.maximize();
-  win.once("ready-to-show", () => win.show());
+  // Non ruba il primo piano se non l'ha chiesto chi sta davanti (finestre.ts).
+  win.once("ready-to-show", () => appari(win));
 
   // Un player locale non ha motivo di navigare sul web: i link esterni vanno nel
   // browser di sistema, tutto il resto è negato.

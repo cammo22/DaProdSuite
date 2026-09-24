@@ -140,4 +140,10 @@
     -->
     <string name="perm_file">File e memoria</string>
     <string name="perm_file_perche">Non serve un permesso: la suite salva nella tua galleria e legge solo i file che scegli tu. Tocca per vedere tutto in Android.</string>
+    <!-- Il caricamento (1.4.5). -->
+    <string name="avvio_marchio">DaProd Suite</string>
+    <string name="avvio_sotto">DaProd Produzioni</string>
+    <string name="avvio_attesa">Un attimo, cerco il computer…</string>
+    <string name="avvio_cerco">Entro come %1$s…</string>
+    <string name="avvio_giro">Il computer ha cambiato strada: lo cerco in casa…</string>
 </resources>

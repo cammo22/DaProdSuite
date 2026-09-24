@@ -567,7 +567,13 @@ export class Gateway {
                       tipo: "genera.immagine",
                       app: "foto",
                       testo: cosa.prompt,
-                      opzioni: { forma: "4:3", modello: "qwen21", quante: "1" },
+                      // Lo Studio (1.4.5) sceglie forma e velocita'; la prova di
+                      // una combinazione resta com'era, 4:3 di serie.
+                      opzioni: {
+                        forma: cosa.forma || "4:3",
+                        modello: cosa.veloce ? "qwen21-turbo" : "qwen21",
+                        quante: "1",
+                      },
                       daDispositivo: chiGioca,
                     }
                   : {
@@ -587,6 +593,36 @@ export class Gateway {
               );
               return { id: richiesta.id };
             },
+            /**
+             * ⚠ **Il ritocco dello Studio** (1.4.5): la modifica a parole di
+             * Qwen-Image 2.1, su una cosa della libreria.
+             *
+             * La foto si copia nella cartella degli invii col nome che le
+             * darebbe «POST /sorgente»: da li' in poi e' una modifica come
+             * quelle che arrivano dal telefono, e passa dalla stessa fila con
+             * le stesse regole. `file(id, chi)` dice di no se la foto non e'
+             * roba che questa persona puo' vedere.
+             */
+            ritocca: (_chi, libreriaId, istruzione, veloce) => {
+              const quale = this.libreria?.file ? this.libreria.file(libreriaId, chiGioca.id) : null;
+              if (!quale || !quale.mime.startsWith("image/")) return null;
+              const suDisco = "sorgente-" + Date.now() + (quale.mime === "image/png" ? ".png" : ".jpg");
+              try {
+                mkdirSync(this.remoto.inviiDir, { recursive: true });
+                copyFileSync(quale.percorso, join(this.remoto.inviiDir, suDisco));
+              } catch {
+                return null;
+              }
+              const richiesta = this.remoto.creaRichiesta({
+                tipo: "modifica.immagine",
+                app: "foto",
+                testo: istruzione,
+                opzioni: { immagine: suDisco, prompt: istruzione, modello: veloce ? "qwen21-turbo" : "qwen21" },
+                daDispositivo: chiGioca,
+              });
+              return { id: richiesta.id };
+            },
+            statoDi: (id) => this.remoto.richiesta(id)?.stato ?? null,
             gente: () =>
               this.remoto.listaDispositivi().map((d) => ({
                 id: d.id,
@@ -610,7 +646,9 @@ export class Gateway {
               (
                 this.libreria?.elenco({
                   chi: chiGioca.id,
-                  dove: "tutte",
+                  // Dalla 1.4.5 ci arriva anche chi gioca (lo Studio): lui vede
+                  // le sue, chi comanda tutto come prima.
+                  dove: chiGioca.ruolo === "admin" ? "tutte" : "mie",
                   richiesta,
                   quanti: 8,
                 }) ?? []

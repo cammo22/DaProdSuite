@@ -13,7 +13,8 @@ export const MARKUP_SALA = `
     <h2>La sala d'arcade</h2>
     <p class="spiega">I giochi DaProd, dentro la suite. Quello che vinci fa punti della
       <b>partita</b>; le cose grosse ti danno <b>carte</b> per la slot. Si entra con un
-      gettone, e quando vuoi smettere <b>stacchi</b>.</p>
+      gettone, e quando vuoi smettere <b>incassi</b>: i punti diventano lire al cambio
+      della Borsa di quel momento.</p>
     <div class="sala-giochi" id="sala-giochi"></div>
     <div class="sala-partita" id="sala-partita"></div>
   </section>
@@ -26,10 +27,10 @@ export const MARKUP_SALA = `
     <div class="borsa-numeri" id="borsa-numeri"></div>
     <p class="spiega">Quanto vale un punto in lire lo decide la sala, non una persona:
       <b>sale</b> quando si spende (giri, gettoni, pacchetti, shop) e <b>scende</b>
-      quando si incassa (stacchi, combinazioni prese, regali). Un po' la tira su anche
-      la gente che gioca, e c'e' un'onda lenta, uguale per tutti. Staccare adesso o
+      quando si incassa (incassi, combinazioni prese, regali). Un po' la tira su anche
+      la gente che gioca, e c'e' un'onda lenta, uguale per tutti. Incassare adesso o
       aspettare: e' quello il gioco.</p>
-    <div class="riga-tasti"><button class="btn oro" id="stacca-borsa">Stacca</button></div>
+    <div class="riga-tasti"><button class="btn oro" id="stacca-borsa">Incassa</button></div>
   </section>
 
   <!-- ============================================== la cornice di un gioco -->
@@ -44,9 +45,15 @@ export const MARKUP_SALA = `
       <button class="tasto-tondo" id="cornice-esci" title="Torna alla sala" aria-label="Torna alla sala">&#8592;</button>
       <div class="cornice-nome" id="cornice-nome"></div>
       <button class="btn cyan" id="cornice-ricarica" hidden>Ricarica</button>
-      <button class="btn oro" id="cornice-stacca">Stacca</button>
+      <button class="btn oro" id="cornice-stacca" title="I punti della partita diventano lire, al cambio della Borsa di adesso">Incassa</button>
       <div class="cornice-conto" id="cornice-conto"></div>
     </div>
+    <!--
+      I tagli al volo (1.4.5): «mettiamo dei pulsanti di ricarica nei giochi
+      come nel pannello admin». Un tocco e la ricarica parte, senza foglio; il
+      foglio col cursore resta dietro «Altro…» per le cifre precise.
+    -->
+    <div class="cornice-tagli" id="cornice-tagli" hidden></div>
     <iframe id="cornice-gioco" title="Gioco" allow="autoplay; fullscreen"></iframe>
 
     <!--

@@ -35,6 +35,22 @@ import {
   ricarica,
   domandaPer,
   segnaGiudizio,
+  bancaNuova,
+  versaInBanca,
+  segnaAttivita,
+  apriIScaduti,
+  dividi,
+  estrai,
+  chiaveGiorno,
+  chiaveSettimana,
+  chiaveMese,
+  quandoSiApre,
+  vetrinaBanca,
+  FONDO_DI_PARTENZA,
+  MINIMI_BANCA,
+  rispondi,
+  COSTI_STUDIO,
+  promptStudio,
 } from "../dist/index.js";
 import { conCartella, dado, prova, tirandoLeSomme, uguale, vero } from "./attrezzi.mjs";
 
@@ -334,6 +350,229 @@ prova("chi comanda chiude una partita: i punti vanno via senza diventare lire", 
     vero(e.via > 0, "c'erano punti");
     uguale(d.conto("pino").partita.punti, 0);
     uguale(d.conto("pino").saldo, prima);
+  }),
+);
+
+
+/* ---------------------------------------------------- la Banca DaProd -- */
+
+const GIORNO = 24 * ORA;
+
+prova("la Banca: i periodi all'ora di Roma", () => {
+  uguale(chiaveGiorno(ADESSO), "2026-09-22");
+  uguale(chiaveSettimana(ADESSO), "2026-09-21", "la settimana comincia il lunedi'");
+  uguale(chiaveMese(ADESSO), "2026-09");
+  // Le 23:30 di Roma del 22 sono ancora il 22 (UTC+2 d'estate).
+  uguale(chiaveGiorno(Date.UTC(2026, 8, 22, 21, 30)), "2026-09-22");
+  uguale(chiaveGiorno(Date.UTC(2026, 8, 22, 22, 30)), "2026-09-23");
+  const apre = quandoSiApre("giorno", ADESSO);
+  uguale(chiaveGiorno(apre), "2026-09-23", "si apre col giorno dopo");
+  uguale(chiaveGiorno(apre - 1), "2026-09-22");
+});
+
+prova("la Banca: le lire spese si dividono nei cassetti, senza perderne una", () => {
+  const b = bancaNuova(ADESSO);
+  uguale(b.riserva, FONDO_DI_PARTENZA);
+  versaInBanca(b, 1001);
+  uguale(b.cassetti.giorno.lire, 400);
+  uguale(b.cassetti.settimana.lire, 300);
+  uguale(b.cassetti.mese.lire, 200);
+  uguale(b.riserva, FONDO_DI_PARTENZA + 101, "il resto e gli spiccioli alla riserva");
+  uguale(b.entrate, 1001);
+});
+
+prova("la Banca: dividere in proporzione, e gli spiccioli avanzano", () => {
+  const { vincite, avanzo } = dividi(1000, { a: 2, b: 1, c: 0 });
+  uguale(vincite.length, 2, "chi non ha fatto niente non prende");
+  uguale(vincite[0].chi, "a");
+  uguale(vincite[0].lire, 666);
+  uguale(vincite[1].lire, 333);
+  uguale(avanzo, 1);
+});
+
+prova("la Banca: il jackpot si estrae coi biglietti dell'attivita'", () => {
+  uguale(estrai({ a: 1, b: 3 }, () => 0.1), "a");
+  uguale(estrai({ a: 1, b: 3 }, () => 0.9), "b");
+  uguale(estrai({}, () => 0.5), null);
+});
+
+prova("la Banca: a mezzanotte il premio del giorno va a chi ha giocato", () => {
+  const b = bancaNuova(ADESSO);
+  versaInBanca(b, 10_000);
+  segnaAttivita(b, "pino", 30);
+  segnaAttivita(b, "rosa", 10);
+  uguale(apriIScaduti(b, ADESSO + ORA, dado(0.5)).length, 0, "prima della mezzanotte non si apre niente");
+  const fatte = apriIScaduti(b, ADESSO + GIORNO, dado(0.5));
+  uguale(fatte.length, 1, "solo il giorno: settimana e mese sono ancora aperti");
+  uguale(fatte[0].cassetto, "giorno");
+  const pino = fatte[0].vincite.find((v) => v.chi === "pino");
+  const rosa = fatte[0].vincite.find((v) => v.chi === "rosa");
+  uguale(pino.lire, 3000);
+  uguale(rosa.lire, 1000);
+  uguale(b.cassetti.giorno.lire, 0, "il cassetto nuovo parte vuoto");
+  uguale(b.cassetti.giorno.chiave, chiaveGiorno(ADESSO + GIORNO));
+  vero(b.cassetti.settimana.attivita.pino > 0, "l'attivita' della settimana resta");
+});
+
+prova("la Banca: un premio con pochi soldi lo completa la riserva, fino al minimo", () => {
+  const b = bancaNuova(ADESSO);
+  versaInBanca(b, 100);
+  segnaAttivita(b, "pino", 1);
+  const riserva = b.riserva;
+  const [a] = apriIScaduti(b, ADESSO + GIORNO, dado(0.5));
+  uguale(a.vincite[0].lire, MINIMI_BANCA.giorno);
+  uguale(b.riserva, riserva - (MINIMI_BANCA.giorno - 40));
+});
+
+prova("la Banca: se nessuno ha giocato il montepremi passa al giorno dopo", () => {
+  const b = bancaNuova(ADESSO);
+  versaInBanca(b, 1000);
+  uguale(apriIScaduti(b, ADESSO + GIORNO, dado(0.5)).length, 0);
+  uguale(b.cassetti.giorno.lire, 400, "resta nel cassetto");
+});
+
+prova("la Banca: la settimana va ai dieci piu' attivi, il mese a uno solo", () => {
+  const b = bancaNuova(ADESSO);
+  versaInBanca(b, 100_000);
+  for (let i = 0; i < 12; i++) segnaAttivita(b, "g" + i, i + 1);
+  // Lunedi' 28 settembre: si chiude la settimana (e il giorno).
+  const lunedi = Date.UTC(2026, 8, 28, 8, 0);
+  const sett = apriIScaduti(b, lunedi, dado(0.5)).find((a) => a.cassetto === "settimana");
+  uguale(sett.vincite.length, 10);
+  vero(!sett.vincite.some((v) => v.chi === "g0" || v.chi === "g1"), "i due meno attivi restano fuori");
+  // Primo ottobre: il super jackpot.
+  segnaAttivita(b, "pino", 5);
+  const mese = apriIScaduti(b, Date.UTC(2026, 9, 1, 8, 0), dado(0.99)).find((a) => a.cassetto === "mese");
+  uguale(mese.vincite.length, 1, "uno solo");
+  vero(mese.vincite[0].lire >= MINIMI_BANCA.mese, "almeno il minimo");
+});
+
+prova("la Banca nel deposito: spendere versa, e il premio arriva sul conto", () =>
+  conCartella((file) => {
+    const d = new Deposito(file);
+    d.conto("pino").saldo = 5000;
+    d.muovi("pino", -1000);
+    const b = d.statoBanca();
+    uguale(b.cassetti.giorno.lire, 400, "la ricarica e' entrata nella Banca");
+    vero(b.cassetti.giorno.attivita.pino > 0, "e conta come attivita'");
+    const saldo = d.conto("pino").saldo;
+    // Il cassetto si apre quando qualcuno guarda, il giorno dopo.
+    b.cassetti.giorno.chiave = "2000-01-01";
+    const fatte = d.apriLaBanca(Date.now(), () => 0.5);
+    vero(fatte.length >= 1);
+    vero(d.conto("pino").saldo > saldo, "il premio e' sul conto");
+    uguale(d.conto("pino").ultimoPremio.cassetto, "giorno");
+    const v = vetrinaBanca(d.statoBanca(), "pino", Date.now());
+    uguale(v.cassetti.length, 3);
+    vero(v.ultime.length >= 1, "l'apertura resta nella storia");
+  }),
+);
+
+prova("la Banca nel deposito: un file di prima si apre col fondo di DaProd", () =>
+  conCartella((file) => {
+    const primo = new Deposito(file);
+    primo.conto("pino");
+    primo.scriviOra();
+    const d = new Deposito(file);
+    uguale(d.statoBanca().riserva, FONDO_DI_PARTENZA);
+  }),
+);
+
+/* ----------------------------------------------------- lo Studio (1.4.5) -- */
+
+const PINO = { id: "pino", nome: "pino", admin: false };
+function contornoStudio() {
+  const chieste = [];
+  const stati = {};
+  const frutti = {};
+  return {
+    chieste, stati, frutti,
+    nomeDi: (id) => id,
+    genera: (_chi, tavolo, cosa) => { const id = "r" + (chieste.length + 1); chieste.push({ id, tavolo, ...cosa }); return { id }; },
+    ritocca: (_chi, lib, istruzione, veloce) => (lib === "mia" ? (chieste.push({ id: "t1", lib, istruzione, veloce }), { id: "t1" }) : null),
+    statoDi: (id) => stati[id] ?? "in-attesa",
+    fruttiDi: (id) => frutti[id] ?? [],
+  };
+}
+
+prova("lo Studio: la scritta va tra virgolette e senza virgolette sue", () => {
+  const p = promptStudio("un bar di Napoli", 'BAR "DAPROD"');
+  vero(p.includes('"BAR DAPROD"'), p);
+  uguale(promptStudio("solo testo", ""), "solo testo");
+});
+
+prova("lo Studio: crea paga il veloce, porta forma e velocita' a chi genera, e la spesa va in Banca", () =>
+  conCartella((file) => {
+    const d = new Deposito(file);
+    d.conto("pino").saldo = 5000;
+    const c = contornoStudio();
+    const r = rispondi(d, PINO, c, "POST", "/studio/crea", { testo: "una vespa rossa", scritta: "CIAO", forma: "16:9", veloce: true });
+    uguale(r.codice, 200, JSON.stringify(r.dati));
+    uguale(d.conto("pino").saldo, 5000 - COSTI_STUDIO.veloce);
+    uguale(c.chieste[0].forma, "16:9");
+    uguale(c.chieste[0].veloce, true);
+    vero(c.chieste[0].prompt.includes('"CIAO"'), "la scritta arriva al modello");
+    uguale(d.statoBanca().entrate, COSTI_STUDIO.veloce, "la spesa e' entrata nella Banca");
+    const fine = rispondi(d, PINO, c, "POST", "/studio/crea", { testo: "un faro", veloce: false });
+    uguale(fine.codice, 200);
+    uguale(d.conto("pino").saldo, 5000 - COSTI_STUDIO.veloce - COSTI_STUDIO.fine);
+  }),
+);
+
+prova("lo Studio: senza lire non parte, e non si paga niente", () =>
+  conCartella((file) => {
+    const d = new Deposito(file);
+    d.conto("pino").saldo = 10;
+    const c = contornoStudio();
+    const r = rispondi(d, PINO, c, "POST", "/studio/crea", { testo: "una vespa rossa" });
+    uguale(r.codice, 409);
+    uguale(c.chieste.length, 0, "la scheda video non si disturba");
+    uguale(d.conto("pino").saldo, 10);
+  }),
+);
+
+prova("lo Studio: si ritocca solo una cosa propria, e se chi ospita dice di no non si paga", () =>
+  conCartella((file) => {
+    const d = new Deposito(file);
+    d.conto("pino").saldo = 5000;
+    const c = contornoStudio();
+    const no = rispondi(d, PINO, c, "POST", "/studio/ritocca", { libreria: "di-un-altro", istruzione: "fallo di notte" });
+    uguale(no.codice, 404);
+    uguale(d.conto("pino").saldo, 5000);
+    const si = rispondi(d, PINO, c, "POST", "/studio/ritocca", { libreria: "mia", istruzione: "fallo di notte" });
+    uguale(si.codice, 200);
+    uguale(d.conto("pino").saldo, 5000 - COSTI_STUDIO.ritocco);
+  }),
+);
+
+prova("lo Studio: una richiesta scartata da chi comanda si rimborsa, una volta sola", () =>
+  conCartella((file) => {
+    const d = new Deposito(file);
+    d.conto("pino").saldo = 5000;
+    const c = contornoStudio();
+    rispondi(d, PINO, c, "POST", "/studio/crea", { testo: "una vespa rossa" });
+    c.stati.r1 = "scartata";
+    const g = rispondi(d, PINO, c, "GET", "/studio", {});
+    uguale(g.dati.rimborsate, COSTI_STUDIO.veloce);
+    uguale(d.conto("pino").saldo, 5000);
+    const di_nuovo = rispondi(d, PINO, c, "GET", "/studio", {});
+    uguale(di_nuovo.dati.rimborsate, 0, "non due volte");
+    uguale(d.conto("pino").saldo, 5000);
+  }),
+);
+
+prova("lo Studio: quando e' pronta, il quaderno porta l'immagine", () =>
+  conCartella((file) => {
+    const d = new Deposito(file);
+    d.conto("pino").saldo = 5000;
+    const c = contornoStudio();
+    rispondi(d, PINO, c, "POST", "/studio/crea", { testo: "una vespa rossa" });
+    c.frutti.r1 = [{ id: "f1", titolo: "vespa", mime: "image/png", url: "/libreria/file/f1" }];
+    const g = rispondi(d, PINO, c, "GET", "/studio", {});
+    uguale(g.dati.lavori[0].stato, "pronta");
+    uguale(g.dati.lavori[0].frutti[0].id, "f1");
+    const dado = rispondi(d, PINO, c, "GET", "/studio/dado", {});
+    vero(dado.dati.testo.length > 10 && dado.dati.nomi.length === 6, JSON.stringify(dado.dati));
   }),
 );
 

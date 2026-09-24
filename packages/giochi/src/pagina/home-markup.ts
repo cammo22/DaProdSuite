@@ -26,18 +26,18 @@ export const MARKUP_HOME = `
         </span>
         <span class="porta-testo">
           <b>Gioca</b>
-          <small>Fortuna, Coin Dozer, Claw Machine, Neon Partenope. Fai punti e staccali in lire.</small>
+          <small>Fortuna, Coin Dozer, Claw Machine, Neon Partenope. Fai punti e incassali in lire.</small>
         </span>
         <span class="porta-freccia" aria-hidden="true">&#8594;</span>
       </button>
-      <button class="home-porta porta-genera" data-va="slot">
+      <button class="home-porta porta-genera" data-va="studio">
         <span class="porta-rulli" aria-hidden="true">
           <i style="--g:#5cc8ff">genere</i><i style="--g:#b07cff">voce</i><i style="--g:#ffd166">andatura</i>
           <i style="--g:#ff6fb5">atmosfera</i><i style="--g:#7fd1a8">strumento</i><i style="--g:#6ee7f0">la firma</i>
         </span>
         <span class="porta-testo">
           <b>Genera</b>
-          <small>Gira i rulli, blocca i pezzi buoni e manda la combinazione: se la prendono, diventa una figurina.</small>
+          <small>Lo Studio con Qwen-Image 2.1: scrivi, crea, ritocca a parole. E la slot delle combinazioni, che diventano figurine.</small>
         </span>
         <span class="porta-freccia" aria-hidden="true">&#8594;</span>
       </button>
@@ -47,6 +47,10 @@ export const MARKUP_HOME = `
     <div class="home-giochi" id="home-giochi"></div>
 
     <div class="home-mano" id="home-mano" hidden></div>
+
+    <!-- La Banca DaProd (1.4.5): le lire spese tornano in premi. Vedi banca.ts. -->
+    <div class="home-titolo"><h2>La Banca DaProd</h2><button class="link" id="banca-come">come funziona</button></div>
+    <div class="home-banca" id="home-banca"></div>
 
     <div class="home-titolo"><h2>La Borsa della Lira</h2><button class="link" data-va="borsa">apri &#8594;</button></div>
     <div class="home-borsa" id="home-borsa"></div>

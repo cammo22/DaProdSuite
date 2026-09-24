@@ -10,6 +10,74 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ---
 
+## 1.4.5 — Qwen che parte, la Banca DaProd e lo Studio
+
+> «Per Qwen Image dice ValueError: This model is not currently supported —
+> Unknown model architecture. [...] Inseriamo un conto tipo del banco, i soldi
+> che ha DaProd, che poi vengono partizionati agli utenti in base alle attività:
+> giornalmente, una settimana, e un mese un super jackpot DaProd. Con i nuovi
+> modelli Qwen reinventiamo la parte di genera completamente.»
+
+**Qwen-Image 2.1 parte.** Il GGUF di Unsloth non dice di che modello è, e il
+lettore dei GGUF (fermo a gennaio) non lo riconosceva: da lì l'errore. Adesso
+la suite glielo insegna quando si accende il motore, senza toccare file di
+altri. Provato nel ComfyUI vero con un GGUF costruito senza architettura:
+prima l'errore di Cammo, dopo passa.
+
+**Quaranta passi di serie, cinque col turbo.** Il modello di serie lavora a 40
+passi (prima 25). Il turbo è la **Viggle Turbo v0.2 a 5 passi** al posto della
+v0.1 a 4, campionata con i suoi sigma (1 · 0,875 · 0,75 · 0,5 · 0,25): la
+prima volta si scarica la LoRA nuova, 1,3 GB.
+
+**La Banca DaProd.** Ogni lira spesa in sala — gettoni, ricariche, giri,
+pacchetti, Studio — entra nella Banca invece di sparire, e torna a chi gioca:
+
+- il **premio del giorno** (40%), diviso a mezzanotte fra tutti quelli che hanno
+  giocato, in proporzione a quanto;
+- il **premio della settimana** (30%), la domenica notte fra i 10 più attivi;
+- il **super jackpot del mese** (20%), estratto a uno solo: ogni punto attività
+  è un biglietto.
+
+Il resto è la riserva di DaProd, che garantisce un minimo a ogni premio; chi
+comanda la riempie dalla stanza Admin. In Home si vedono i tre montepremi, quanto
+manca, la tua parte e gli ultimi vincitori; chi vince lo trova scritto appena
+apre la sala.
+
+**Lo Studio.** La stanza Genera comincia da qui: scrivi (o tira il dado, che
+usa i pezzi veri della slot), scegli la forma e, se vuoi, **la scritta da far
+comparire nell'immagine** — la cosa che Qwen sa fare meglio di tutti. «Veloce»
+(5 passi, L.300) o «Fine» (40 passi, L.900). Ogni cosa fatta si **ritocca a
+parole** («fallo di notte», L.400) o diventa una **figurina** in fila. Quello
+che chi comanda scarta si rimborsa da solo.
+
+**«Stacca» si chiama «Incassa».** È la stessa cosa: i punti della partita
+diventano lire, al cambio della Borsa di quel momento.
+
+**Nei giochi, dalla suite.** Sotto la barra c'è una riga di **tagli al volo**
+(L.100, L.500, L.1.000…): un tocco e la ricarica parte, senza foglio. Il
+portafoglio è la prima pastiglia, col suo borsellino.
+
+**Sistemato:**
+
+- nella stanza Giocatori la scheda di chi si gestisce **non finisce più sopra
+  quella accanto**, e le altre della riga non si stirano;
+- nel Bentornato le lire vanno **su due righe** («L.» sopra, il numero sotto);
+- **sul telefono si esce dalla sala giochi**: c'è «← Suite» in alto, e il tasto
+  indietro chiude prima il gioco o il foglio aperto, poi torna alla Home, e solo
+  da lì esce;
+- il **3D** ha la sua barra nella scheda, dall'inizio alla fine, con la tappa
+  scritta sopra (struttura, forma, dettagli, colori, texture);
+- il tasto **Genera** non è più attaccato al pannello sotto;
+- le finestre si aprono **un po' più grandi**, e **non si mettono più davanti**
+  quando si aprono da sole (dal telefono, a fine caricamento): compaiono dietro
+  e lampeggiano nella barra;
+- via le **bolle** dallo sfondo.
+
+**Rifatte:** la Casa della console (numeri in una riga, tasti con la loro luce,
+la Sala giochi larga con le facce dei giochi), la bacheca DaProd («Da provare»
+in una fila che scorre, post più curati), e il caricamento dell'app Android
+(marchio, barra verde, e una riga che dice a chi sta bussando), coi colori DaProd.
+
 ## 1.4.4 — Il portafoglio, la barra dal vivo e la stanza Admin
 
 > «Quando dobbiamo scambiare le lire della suite alle lire nei giochi, clicchiamo

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Il fondo del caricamento (1.4.5): una luce verde dal basso, come la suite. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <gradient
+        android:type="radial"
+        android:centerX="0.5"
+        android:centerY="1.0"
+        android:gradientRadius="700dp"
+        android:startColor="#ff0c2e1c"
+        android:endColor="#ff040b08" />
+</shape>

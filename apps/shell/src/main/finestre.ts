@@ -196,12 +196,91 @@ export function riportaSottoGliOcchi(finestra: BrowserWindow): boolean {
  * poi si mostra, e il fuoco per ultimo — dare il fuoco a una finestra ancora
  * nascosta, su Windows, non fa niente.
  */
-export function mostraDavvero(finestra: BrowserWindow): void {
+export function mostraDavvero(finestra: BrowserWindow, opzioni: { fuoco?: boolean } = {}): void {
   if (finestra.isDestroyed()) return;
   riportaSottoGliOcchi(finestra);
+  const fuoco = opzioni.fuoco ?? laSuiteHaIlFuoco();
+  if (!fuoco) {
+    // Chi sta davanti sta facendo altro: la finestra c'e', ma non gli salta in
+    // faccia. Vedi «appari» qui sotto.
+    if (!finestra.isVisible() || finestra.isMinimized()) finestra.showInactive();
+    segnala(finestra);
+    return;
+  }
   if (finestra.isMinimized()) finestra.restore();
   if (!finestra.isVisible()) finestra.show();
   finestra.focus();
+}
+
+/* ------------------------------------------ il primo piano non si ruba */
+
+/**
+ * **Una finestra che si apre da sola non si mette davanti.** Dalla 1.4.5.
+ *
+ * > «Quando parte qualcosa non deve mettere in primo piano le finestre.»
+ *
+ * Succedeva in tre modi, tutti uguali visti da chi sta scrivendo in un'altra
+ * finestra: una scheda aperta dal telefono, una consegna da un'altra app, una
+ * pagina che finisce di caricare mentre tu sei gia' altrove. In tutti e tre la
+ * finestra si prendeva il fuoco, e quello che stavi scrivendo finiva nel posto
+ * sbagliato.
+ *
+ * **La regola, una sola per tutte le finestre: la suite prende il fuoco solo
+ * se ce l'ha gia'.** Se hai appena cliccato una scheda nell'hub, l'hub ha il
+ * fuoco e la scheda nuova te lo prende — e' quello che hai chiesto. Se stai in
+ * un altro programma, la finestra compare **dietro** e lampeggia nella barra
+ * delle applicazioni: c'e', e quando vuoi la prendi.
+ *
+ * Chi la vuole davanti comunque lo dice (`fuoco: true`): il menu vicino
+ * all'orologio, per esempio, che si usa proprio per ritrovare una finestra.
+ */
+export function laSuiteHaIlFuoco(): boolean {
+  const davanti = BrowserWindow.getFocusedWindow();
+  return davanti !== null && !davanti.isDestroyed();
+}
+
+/** Lampeggia nella barra delle applicazioni finche' non la guardi. Solo Windows lo fa bene. */
+function segnala(finestra: BrowserWindow): void {
+  if (process.platform !== "win32" || finestra.isDestroyed()) return;
+  finestra.flashFrame(true);
+  finestra.once("focus", () => {
+    if (!finestra.isDestroyed()) finestra.flashFrame(false);
+  });
+}
+
+/** La prima volta che una finestra si fa vedere: al posto di `win.show()` nel «ready-to-show». */
+export function appari(finestra: BrowserWindow): void {
+  if (finestra.isDestroyed()) return;
+  if (laSuiteHaIlFuoco()) {
+    finestra.show();
+    return;
+  }
+  finestra.showInactive();
+  segnala(finestra);
+}
+
+/* ------------------------------------------ la misura della prima volta */
+
+/**
+ * **La misura con cui una scheda si apre la prima volta**, un po' piu' grande.
+ *
+ * > «Tutte le app si devono aprire leggermente piu' grandi in finestra di
+ * > default.» (1.4.5)
+ *
+ * Ogni scheda ha la sua misura di partenza, pensata per quello che ci sta
+ * dentro: qui si allarga del 12% e si tiene dentro lo schermo (il 94% dell'area
+ * utile), cosi' su un portatile non esce dal bordo e su un 1440p non resta un
+ * francobollo. La proporzione resta quella della scheda.
+ */
+export function misuraDiPartenza(base: { width: number; height: number }): { width: number; height: number } {
+  let area = { width: 1920, height: 1040 };
+  try {
+    area = screen.getPrimaryDisplay().workAreaSize;
+  } catch {
+    // Prima che la suite sia pronta: si tiene lo schermo piu' comune.
+  }
+  const scala = Math.min(1.12, (area.width * 0.94) / base.width, (area.height * 0.94) / base.height);
+  return { width: Math.floor(base.width * scala), height: Math.floor(base.height * scala) };
 }
 
 /**

@@ -392,3 +392,11 @@ legend{font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var
 .tred-voce{display:flex;align-items:center;gap:8px;font-size:13px}
 .tred-voce span{flex:1;color:var(--dim)}
 .tred-voce a.mini{text-decoration:none}
+
+/* La barra del modellino, nella scheda 3D (1.4.5). */
+.tred-avanza{margin:-6px 0 14px; padding:12px 14px; border-radius:14px;
+  background:rgba(0,255,65,.05); border:1px solid rgba(0,255,65,.18)}
+.tred-avanza .riga{display:flex; justify-content:space-between; gap:10px; margin-bottom:8px; font-size:13px}
+.tred-avanza .riga span{color:var(--dim); font-variant-numeric:tabular-nums}
+.tred-avanza .bar{height:8px}
+.tred-avanza .hint{margin-top:8px}

@@ -157,8 +157,8 @@ const MODELLI_IMMAGINE = {
  * ⚠ **Dalla 1.4.0 al posto di FLUX.2 Klein 4B c'è Qwen-Image 2.1 Turbo.** FLUX
  * è uscito dalla suite il 24 settembre 2026. Il turbo e non quello di serie per
  * la stessa ragione per cui era il 4B e non il 9B: una copertina è un quadrato
- * che si guarda in una lista, e arriva subito dopo un brano — quattro passi
- * invece di venticinque. Qwen le scritte le sa fare meglio di Klein, e una
+ * che si guarda in una lista, e arriva subito dopo un brano — cinque passi
+ * invece di quaranta. Qwen le scritte le sa fare meglio di Klein, e una
  * copertina con il titolo sopra è esattamente quello (vedi `conScritta`).
  *
  * Gli id sono gli stessi di DaProdFoto, e non è un caso: chi chiede da fuori

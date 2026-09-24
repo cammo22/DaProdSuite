@@ -164,3 +164,47 @@ export function grafoModellino(opzioni) {
   }
   return grafo;
 }
+
+/**
+ * **Le tappe di un modellino**, per la barra della scheda 3D. Nuove nella 1.4.5.
+ *
+ * > «Quando fa il modello 3D non c'e' una barra con il progresso
+ * > nell'interfaccia, ma appare correttamente nel menu iniziale.»
+ *
+ * Il motore racconta due cose: quale nodo ha in mano, e — solo dai
+ * campionatori — a che passo e'. Per un'immagine basta, c'e' un campionatore
+ * solo. Qui ce ne sono **quattro** (struttura, forma, dettagli, colori) piu' una
+ * coda lunga di nodi che non contano niente (la cottura della texture puo'
+ * durare un minuto): una barra per nodo ripartirebbe da zero sei volte.
+ *
+ * Quindi il grafo si divide in tappe, ognuna col suo peso (piu' o meno quanto
+ * dura), e la barra e' **una sola**, dall'inizio alla fine. Dentro una tappa
+ * che campiona, i passi la fanno avanzare; le altre avanzano quando finiscono.
+ * I nodi che non sono in elenco (le regolazioni della CFG, velocissime) non
+ * spostano niente: la tappa resta quella di prima.
+ */
+export const TAPPE_MODELLINO = [
+  { nome: "preparo la foto e il motore", peso: 1, nodi: ["1", "2", "7", "70", "10", "11", "12", "13"] },
+  { nome: "guardo la foto", peso: 0.5, nodi: ["3"] },
+  { nome: "la struttura (1 di 4)", peso: 2, nodi: ["4", "5", "8"] },
+  { nome: "la forma (2 di 4)", peso: 2, nodi: ["30", "31"] },
+  { nome: "i dettagli (3 di 4)", peso: 2, nodi: ["32", "33", "34"] },
+  { nome: "i colori (4 di 4)", peso: 2, nodi: ["40", "41", "42"] },
+  { nome: "cuocio la texture e salvo", peso: 1.5, nodi: ["50", "51", "52", "53", "54", "55", "56", "9", "90"] },
+];
+
+/**
+ * A che punto e' il modellino, da 0 a 1, e come si chiama la tappa.
+ *
+ * `tappaPrima`: l'indice della tappa di prima, cosi' un nodo fuori elenco non
+ * fa tornare indietro la barra. `frazione`: i passi del campionatore, da 0 a 1,
+ * se ci sono.
+ */
+export function avanzamentoModellino(nodo, frazione, tappaPrima) {
+  let tappa = TAPPE_MODELLINO.findIndex((t) => t.nodi.indexOf(String(nodo)) >= 0);
+  if (tappa < 0) tappa = Math.max(0, tappaPrima || 0);
+  const totale = TAPPE_MODELLINO.reduce((s, t) => s + t.peso, 0);
+  const fatto = TAPPE_MODELLINO.slice(0, tappa).reduce((s, t) => s + t.peso, 0);
+  const dentro = Math.min(1, Math.max(0, frazione || 0)) * TAPPE_MODELLINO[tappa].peso;
+  return { tappa, nome: TAPPE_MODELLINO[tappa].nome, quanto: Math.min(0.99, (fatto + dentro) / totale) };
+}

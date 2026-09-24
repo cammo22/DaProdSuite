@@ -18,7 +18,7 @@
 import { BrowserWindow, app, shell } from "electron";
 import { join } from "node:path";
 import { readBounds, writeState } from "../../app-state";
-import { mostraDavvero, registraConsole } from "../../finestre";
+import { appari, mostraDavvero, registraConsole } from "../../finestre";
 import { iconaApp } from "../../paths";
 import { montaTerminale } from "../../terminale";
 import { indirizzo } from "../../servizi";
@@ -67,7 +67,8 @@ export function apri(onClose: () => void): void {
   // Iniettato dalla shell: e' una implementazione sola per tutte le app.
   montaTerminale(win, "dream");
   if (bounds.maximized) win.maximize();
-  win.once("ready-to-show", () => win.show());
+  // Non ruba il primo piano se non l'ha chiesto chi sta davanti (finestre.ts).
+  win.once("ready-to-show", () => appari(win));
 
   win.webContents.setWindowOpenHandler(({ url }) => {
     if (/^https?:/.test(url)) void shell.openExternal(url);

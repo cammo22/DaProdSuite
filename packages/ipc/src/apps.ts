@@ -198,7 +198,7 @@ export const APPS: Record<AppId, AppDescriptor> = {
       "qwen21-q4km",
       "qwen21-text-encoder",
       "qwen21-vae",
-      "qwen21-turbo-4step",
+      "qwen21-turbo-5step",
     ],
     gpuHeavy: true,
     // In CPU un brano si fa, ma si misura in ore invece che in minuti: è una
@@ -234,8 +234,8 @@ export const APPS: Record<AppId, AppDescriptor> = {
      * ⚠ **Qwen-Image 2.1 al posto dei due FLUX.2 Klein, dalla 1.4.0.** «Per le
      * foto eliminiamo totalmente flux e usiamo Qwen-Image-2.1, le versioni gguf
      * q4, sia standard che con le lora per il 4 o 8 step, e lo usiamo sia per
-     * la creazione che per la modifica.» Un modello e due strade: 25 passi di
-     * serie, o 4 con la LoRA turbo, che sono gli stessi pesi più 324 MB.
+     * la creazione che per la modifica.» Un modello e due strade: 40 passi di
+     * serie, o 5 con la LoRA turbo (dalla 1.4.5 la Viggle v0.2, 1,3 GB).
      *
      * **TRELLIS.2 e i suoi quattro compagni** sono il 3D di DaProdFoto: dalla
      * foto al modellino. Stanno qui perché si scaricano solo aprendo la scheda
@@ -247,7 +247,7 @@ export const APPS: Record<AppId, AppDescriptor> = {
       "qwen21-q4km",
       "qwen21-text-encoder",
       "qwen21-vae",
-      "qwen21-turbo-4step",
+      "qwen21-turbo-5step",
       "trellis2-int8",
       "trellis2-shape-vae",
       "trellis2-texture-vae",
