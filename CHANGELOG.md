@@ -10,6 +10,22 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ---
 
+## 1.4.6 — La sala giochi sta nel telefono
+
+> «Molto brutta la UI su smartphone nella 1.4.5, molto brutta la sala giochi.»
+
+**La sala non scorre più di lato.** Nella 1.4.5 il tasto «← Suite» ha fatto
+traboccare la testata: con L. 111.433 e 34.223 punti misurava 498 px su uno
+schermo da 390, e tutta la pagina si trascinava col bordo sinistro tagliato.
+Sul telefono adesso la testata tiene solo i numeri (il nome sta già nel
+Bentornato), e niente nella pagina può più allargarla. Provato stanza per stanza
+a 360 e 390 px: nessuna sborda.
+
+**La barra di un gioco sta nello schermo.** «Incassa» e la pastiglia degli
+incassi uscivano a destra: sul telefono le quattro pastiglie stanno in quattro
+colonne (il portafoglio più larga), e il tasto Ricarica lascia il posto alla
+riga dei tagli al volo, che ha già «Altro…».
+
 ## 1.4.5 — Qwen che parte, la Banca DaProd e lo Studio
 
 > «Per Qwen Image dice ValueError: This model is not currently supported —

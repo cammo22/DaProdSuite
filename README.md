@@ -114,7 +114,7 @@ chi è collegato alla suite.
 
 ## A che punto siamo
 
-**Ultima pubblicata: 1.4.5** — Qwen-Image 2.1 che parte davvero (40 passi, turbo a 5), la Banca DaProd e lo Studio. **La 1.4.0 — «Il fiore all'occhiello»:** La suite rivestita da
+**Ultima pubblicata: 1.4.6** — la sala giochi che sta nel telefono. Prima, la 1.4.5: Qwen-Image 2.1 che parte davvero (40 passi, turbo a 5), la Banca DaProd e lo Studio. **La 1.4.0 — «Il fiore all'occhiello»:** La suite rivestita da
 DaProd (vetro scuro, pioggia verde, bottoni aqua), Qwen-Image 2.1 al posto di
 FLUX per creare e modificare, YuE2 in Musica, il 3D da una foto con TRELLIS.2,
 il dado delle idee senza cliché, la sala d'arcade con la Lira DaProd e il

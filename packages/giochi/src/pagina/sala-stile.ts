@@ -95,6 +95,19 @@ export const STILE_SALA = `
     color: #3dff8a; text-shadow: 0 0 8px rgba(0,255,65,.8); animation: vola-su .9s ease-out forwards; }
   @keyframes sale-punti { 0% { box-shadow: 0 0 0 0 rgba(0,255,65,.7); border-color: #3dff8a; } 100% { box-shadow: 0 0 0 10px rgba(0,255,65,0); } }
   @keyframes vola-su { to { transform: translateY(-14px); opacity: 0; } }
+  /* ⚠ Sul telefono (1.4.6): nella foto di Cammo «Incassa € 1,55» e la
+     pastiglia degli incassi uscivano a destra. Con la riga dei tagli al volo il
+     tasto Ricarica e' un doppione (c'e' «Altro…»), e le quattro pastiglie
+     stanno in quattro colonne uguali invece di scorrere. */
+  @media (max-width: 759px) {
+    .cornice-barra { grid-template-columns: auto minmax(0, 1fr) auto auto; gap: 6px; padding-left: 8px; padding-right: 8px; }
+    .cornice.con-tagli #cornice-ricarica { display: none; }
+    body .cornice-barra .btn { padding: 8px 11px; font-size: 12px; max-width: 46vw; overflow: hidden; text-overflow: ellipsis; }
+    .cornice-conto { display: grid; grid-template-columns: minmax(0, 1.45fr) repeat(3, minmax(0, 1fr)); gap: 5px; overflow: visible; }
+    .pastiglia { padding: 5px 7px; min-width: 0; }
+    .pastiglia small { font-size: 8.5px; letter-spacing: .04em; overflow: hidden; text-overflow: ellipsis; }
+    .pastiglia b { font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; }
+  }
   @media (min-width: 760px) {
     .cornice-barra { grid-template-columns: auto auto 1fr auto auto; }
     .cornice-conto { grid-column: 3; grid-row: 1; justify-content: flex-end; }
@@ -149,4 +162,10 @@ export const STILE_SALA = `
     box-shadow: 0 0 14px rgba(255,201,51,.5); }
   body .portafoglio-foglio #portafoglio-ok { width: 100%; padding: 15px; font-size: 17px; }
   .portafoglio-nota { margin: 0; color: #86a59c; font-size: 12.5px; text-align: center; }
+  /* In fondo apposta: vince sulle regole del borsellino qui sopra. */
+  @media (max-width: 759px) {
+    .pastiglia.borsellino { padding-left: 8px; }
+    .pastiglia.borsellino::before { display: none; }
+    .pastiglia.borsellino b { font-size: 13px; }
+  }
 `;

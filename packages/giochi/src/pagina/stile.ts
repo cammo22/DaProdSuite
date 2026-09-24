@@ -70,6 +70,24 @@ header{position:sticky; top:0; z-index:30; display:flex; align-items:center; gap
 /* Sotto ai quattrocento pixel quanto costa un giro si legge sulla slot: qui
    sta il saldo, e basta. */
 @media (max-width:400px){ .saldo small{display:none} }
+/* ⚠ La testata sul telefono (1.4.6). Nella 1.4.5 il tasto «← Suite» l'ha fatta
+   traboccare: con L. 111.433 e 34.223 punti la riga misurava 498 px su 390, e
+   tutta la pagina si trascinava di lato col bordo sinistro tagliato — la foto di
+   Cammo. Sul telefono il nome (che c'e' gia' nel Bentornato), la barra
+   dell'esperienza e sotto i 430 px il marchio lasciano il posto ai numeri. */
+header{min-width:0; max-width:100vw; box-sizing:border-box}
+header > *{flex-shrink:0}
+header .partita{min-width:0; flex-shrink:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+@media (max-width:640px){
+  header{gap:7px; padding:8px 10px}
+  .chi{display:none}
+  .livello .barra{display:none}
+  .livello{padding:4px}
+  .marchio{font-size:14px}
+}
+@media (max-width:430px){ .marchio{display:none} .cresci{min-width:0} }
+/* E una sicura: niente, in questa pagina, deve far scorrere lo schermo di lato. */
+html, body{overflow-x:clip; max-width:100%}
 .saldo.su{animation:soldi-su .55s ease}
 @keyframes soldi-su{
   0%{transform:scale(1)} 30%{transform:scale(1.18); box-shadow:0 0 22px rgba(255,209,102,.55)}
