@@ -381,3 +381,14 @@ legend{font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var
 
 /* La riga che dice se il modello che scrive c'e' o no. */
 .hint.guasto{color:var(--err)}
+
+
+/* ------------------------------------------------------------- 3D (1.4.0) */
+.tred-foto{display:grid;place-items:center;min-height:260px;margin:10px 0 14px;border:1px dashed var(--line2);border-radius:14px;overflow:hidden;background:rgba(0,0,0,.25)}
+.tred-foto img{max-width:100%;max-height:360px;display:block}
+.tred-tela{width:100%;aspect-ratio:1/1;display:block;border-radius:14px;
+  background:radial-gradient(circle at 50% 60%,rgba(0,255,65,.10),transparent 60%),#030907;border:1px solid var(--line)}
+.tred-elenco{display:grid;gap:6px;margin-top:12px}
+.tred-voce{display:flex;align-items:center;gap:8px;font-size:13px}
+.tred-voce span{flex:1;color:var(--dim)}
+.tred-voce a.mini{text-decoration:none}

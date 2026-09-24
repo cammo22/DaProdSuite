@@ -13,7 +13,7 @@ for (const chiave of [
   "seed_text", "seed_audio", "format", "batch", "tiled", "tile", "instrumental",
   "qualita", "rigaQualita", "mancaQualita",
   "bpm", "bpmVal", "tonalita", "tempo", "lingue", "notaLingua",
-  "ideaCanzone", "ideaCopertina", "bonsaiTutto", "bonsaiFinisci", "bonsaiStato", "selettoreLlm",
+  "ideaCanzone", "ideaCopertina", "bonsaiTutto", "bonsaiFinisci", "bonsaiDado", "bonsaiStato", "selettoreLlm",
   "randomSeed", "autoCover", "coverStyleNew", "coverModello", "go", "goAudio", "stopBtn", "clearQueue",
   "mancaAnima", "mancaAnimaCrea",
   "avvisoCpu",
