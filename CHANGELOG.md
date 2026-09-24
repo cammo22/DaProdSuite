@@ -10,6 +10,40 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ---
 
+## 1.4.4 — Il portafoglio, la barra dal vivo e la stanza Admin
+
+> «Quando dobbiamo scambiare le lire della suite alle lire nei giochi, clicchiamo
+> sul tasto e si vede bene il portafoglio con la quantità selezionabile e alcuni
+> tagli rapidi; curiamo meglio la barra in alto con il punteggio in tempo reale;
+> e gli admin devono poter gestire facilmente i player.»
+
+**Ricaricare è un portafoglio.** Nella cornice di un gioco, «Ricarica» apre un
+foglio dal basso: quante lire hai nella suite, quante ne vuoi passare al gioco
+(coi tasti − e +, la barra che scorre, e i tagli rapidi da L.100 a L.50.000 più
+«Tutto»), e quanto diventano nel gioco — nel Coin Dozer L.1 fa L.20 di monete,
+nella Claw L.30 per le prese, in Neon Partenope un minuto e mezzo di quartiere
+ogni L.150. Prima era un gettone fisso.
+
+**La barra in alto dal vivo.** Una riga coi tasti e sotto quattro pastiglie: in
+tasca, la partita, la Lira, quanto daresti staccando. I punti arrivano dal gioco
+ogni tre secondi (prima quindici), e la pastiglia della partita si accende e
+mostra quanti ne sono entrati.
+
+**La stanza Admin.** Chi comanda ha un quinto tasto in fondo, con la Fila e i
+**Giocatori**: ogni persona è una scheda con saldo, livello, partita aperta,
+lire staccate oggi, giri, prese e carte in mano; in «Gestisci» ci sono i tagli
+per mandare lire, «Chiudi la partita» (per i casi storti: i punti vanno via
+senza diventare lire) e «Azzera il portafoglio».
+
+**Nei giochi** (Coin Dozer 2.2.2, Claw Machine 1.1.1, Neon Partenope 2.1.2):
+
+- il **bonus di cortesia** arriva al massimo **5 volte ogni 6 ore**, e dice quanti
+  ne restano e quando torna;
+- nel **Coin Dozer** la moneta da lanciare è un tasto solo: toccato, si aprono
+  tutti i tagli;
+- nella **Claw Machine** la vetrina è **a schermo intero**, in due passi: prima
+  tutti i modellini, poi quello scelto sul palco con la sua scheda sotto.
+
 ## 1.4.3 — La sala giochi con la sua home
 
 > «Jev-Omni sono 50 GB, sono troppi: usiamo le versioni Q4, altrimenti vediamo

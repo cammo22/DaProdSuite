@@ -402,6 +402,42 @@
     #teste .azione, .testa small { display: none; }
     #hint { display: none; }
   }
+
+  /* ============ LA VETRINA A SCHERMO INTERO (1.1.1) ============
+     Chiesto da Cammo il 24 settembre 2026: «va aggiustato il menu della vetrina
+     in modo da vedere bene a schermo intero, non come ora sempre diviso».
+     Prima erano due meta': l'elenco da una parte e il palco 3D dall'altra, e sul
+     telefono nessuna delle due si vedeva bene. Adesso sono due passi:
+     1. la vetrina: tutti i modellini, a tutto schermo;
+     2. toccato un modellino: il palco 3D a tutto schermo e la sua scheda sopra
+        (in fondo sul telefono, a destra sul computer), con «Vetrina» per tornare. */
+  #vetrina { display: block; }
+  #vetrina .lato { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 0; border: 0; box-shadow: none;
+    background: linear-gradient(180deg, rgba(10,7,20,.985), rgba(16,11,30,.975)); }
+  #vetrina.chiuso .lato { transform: translateY(24px); }
+  #vetrina #palco { position: absolute; inset: 0; z-index: 1; }
+  #vetrina .lato { z-index: 2; }
+  #vetrina #scheda, #vetrina .indietro { display: none; }
+  #vetrina .celle { grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); }
+  #vetrina .indietro { align-items: center; gap: 6px; padding: 8px 14px; border-radius: 999px; border: 1px solid var(--bordo);
+    background: rgba(255,255,255,.06); color: #fff; font: 800 12px/1 var(--num); letter-spacing: 1.5px; }
+  #vetrina.dettaglio .indietro { display: inline-flex; }
+  #vetrina.dettaglio .intesta h2, #vetrina.dettaglio #palco .etichetta { display: none; }
+  #vetrina:not(.dettaglio) .lato { background: linear-gradient(180deg, #0a0714, #100b1e); }
+  #vetrina.dettaglio #poteri, #vetrina.dettaglio #griglia { display: none; }
+  #vetrina.dettaglio #scheda { display: block; }
+  #vetrina.dettaglio .lato { top: auto; height: auto; max-height: 62%; border-radius: 24px 24px 0 0;
+    border-top: 1px solid var(--bordo); box-shadow: 0 -20px 50px rgba(0,0,0,.55);
+    background: linear-gradient(180deg, rgba(14,10,28,.93), rgba(8,6,16,.97)); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+  #vetrina.dettaglio #palco { bottom: var(--foglio, 45%); }
+  #vetrina.dettaglio #palco .etichetta { bottom: 14px; }
+  @media (min-width: 900px) {
+    #vetrina.dettaglio .lato { top: 0; left: auto; width: 420px; height: 100%; max-height: none; border-radius: 0;
+      border-top: 0; border-left: 1px solid var(--bordo); box-shadow: -20px 0 60px rgba(0,0,0,.5); }
+    #vetrina.dettaglio #palco { bottom: 0; right: 420px; }
+    #vetrina.dettaglio #scheda { flex: 1; overflow-y: auto; }
+    #vetrina.dettaglio #scheda .desc { display: block; }
+  }
 </style>
 </head>
 <body>
@@ -521,6 +557,7 @@
 <div id="vetrina" class="chiuso">
   <div class="lato">
     <div class="intesta">
+      <button class="indietro" id="indietroVet" aria-label="torna alla vetrina">← VETRINA</button>
       <h2>🏆 VETRINA<small id="vetrinaSub">0/20 MODELLINI · POTENZA 0</small></h2>
       <button class="chiudi" id="chiudiVet" aria-label="chiudi">✕</button>
     </div>
@@ -534,7 +571,7 @@
   </div>
 </div>
 
-<!-- Le Lire DaProd: il portafoglio unico dei giochi DaProd (vedi daprod-lira.js). -->
+<!-- Le Lire DaProd: il ponte con la sala giochi della DaProd Suite. Fuori dalla suite non fa niente. -->
 <script src="../daprod-lira.js"></script>
 <script type="importmap">
 {
@@ -548,7 +585,7 @@
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
-const VERSIONE = 'v1.1.0';
+const VERSIONE = 'v1.1.1';
 const $ = (id) => document.getElementById(id);
 const PARAMETRI = new URLSearchParams(location.search);
 // gioco = la partita vera; demo = la macchina gioca da sola (sfondo della home); vetrina = sfilata dei modellini
@@ -796,6 +833,7 @@ function pulisci(d) {                           // accetta solo valori validi: u
   if (d.st && typeof d.st === 'object') for (const k in s.st) s.st[k] = numOk(d.st[k], 0, 0, 1e15);
   s.ultima = numOk(d.ultima, Date.now(), 0, Date.now());
   if (Array.isArray(d.vasca)) s.vasca = d.vasca;
+  if (Array.isArray(d.cortesie)) s.cortesie = d.cortesie.filter(t => typeof t === 'number' && isFinite(t)).slice(-5);
   if (s.st.catturati > 0) s.primaPresa = false;
   return s;
 }
@@ -2364,10 +2402,23 @@ function apriVetrina(m) {
   vetrinaAperta = true; $('vetrinaBtn').classList.remove('nuovo'); document.body.classList.add('invetrina');
   if (typeof m === 'number') selV = m;
   else { const pronto = MODELLI.findIndex(x => prontoPerSalire(x)); if (pronto >= 0) selV = pronto; }
+  // Aperta su un modellino preciso (una presa appena fatta): dritti al palco.
+  $('vetrina').classList.toggle('dettaglio', typeof m === 'number');
   rendiVetrina();
   $('vetrina').classList.remove('chiuso');
-  impostaCameraVetrina();
+  sistemaVetrina();
   suono.clic();
+}
+/** Il palco prende lo spazio che la scheda lascia libero, e la camera lo segue. */
+function sistemaVetrina() {
+  const v = $('vetrina');
+  if (v.classList.contains('dettaglio') && innerWidth < 900) v.style.setProperty('--foglio', v.querySelector('.lato').offsetHeight + 'px');
+  requestAnimationFrame(impostaCameraVetrina);
+}
+function dettaglioVetrina(si) {
+  $('vetrina').classList.toggle('dettaglio', si);
+  if (!si) rendiVetrina();
+  sistemaVetrina();
 }
 function chiudiVetrina() { vetrinaAperta = false; document.body.classList.remove('invetrina'); $('vetrina').classList.add('chiuso'); camV.clearViewOffset(); }
 function rendiPoteri() {
@@ -2397,7 +2448,8 @@ function rendiVetrina() {
   });
   const scroll = $('griglia').scrollTop;
   $('griglia').innerHTML = h; $('griglia').scrollTop = scroll;
-  for (const b of document.querySelectorAll('#griglia .cella')) b.addEventListener('click', () => { selV = +b.dataset.m; suono.clic(); rendiVetrina(); });
+  if ($('vetrina').classList.contains('dettaglio')) sistemaVetrina();
+  for (const b of document.querySelectorAll('#griglia .cella')) b.addEventListener('click', () => { selV = +b.dataset.m; suono.clic(); rendiVetrina(); dettaglioVetrina(true); });
   rendiScheda();
 }
 function rendiScheda() {
@@ -2758,6 +2810,7 @@ $('prendiBtn').addEventListener('click', () => { audio(); prendi(); });
 $('vetrinaBtn').addEventListener('click', () => apriVetrina());
 $('officinaBtn').addEventListener('click', () => apriOfficina());
 $('chiudiVet').addEventListener('click', chiudiVetrina);
+$('indietroVet').addEventListener('click', () => { suono.clic(); dettaglioVetrina(false); });
 $('chiudiOff').addEventListener('click', chiudiOfficina);
 $('chiudiSbl').addEventListener('click', () => $('sblocco').classList.add('chiuso'));
 $('sbloccaBtn').addEventListener('click', () => sblocca(sbloccoZ));
@@ -2779,12 +2832,40 @@ function gioca() {
   aggiornaHUD();
 }
 let cortesiaT = 0;
+// Il bonus di cortesia (1.1.1): al massimo 5 ogni 6 ore. Chiesto da Cammo il
+// 24 settembre 2026: «limitiamolo a 5 volte massimo ogni 6 ore». Si ricorda in
+// stato.cortesie, cioe' nel salvataggio: ricaricare la pagina non lo azzera.
+const CORTESIA_MAX = 5, CORTESIA_FINESTRA = 6 * 3600e3;
+let cortesiaDetta = false;
+function cortesieRimaste() {
+  const ora = Date.now();
+  if (!Array.isArray(stato.cortesie)) stato.cortesie = [];
+  stato.cortesie = stato.cortesie.filter(t => typeof t === 'number' && ora - t < CORTESIA_FINESTRA && t <= ora);
+  return CORTESIA_MAX - stato.cortesie.length;
+}
+function bonusDiCortesia() {
+  if (cortesieRimaste() > 0) {
+    stato.cortesie.push(Date.now()); cortesiaDetta = false;
+    const restano = cortesieRimaste();
+    stato.lire += 1000;
+    avviso('🎁 BONUS DI CORTESIA DaProd: +L.1.000' + (restano ? ' · ne restano ' + restano : ' · era l ultimo per ora'), 'cia');
+    suono.cortesia(); brillaSaldo(); aggiornaHUD(); daSalvare = true;
+    return true;
+  }
+  if (!cortesiaDetta) {
+    cortesiaDetta = true;
+    const min = Math.ceil((stato.cortesie[0] + CORTESIA_FINESTRA - Date.now()) / 60000);
+    const quando = min >= 60 ? Math.floor(min / 60) + ' h ' + (min % 60) + ' min' : min + ' min';
+    avviso('⏳ Bonus di cortesia finiti: il prossimo fra ' + quando + (window.DaProdLira && DaProdLira.modo === 'suite' ? ' · ricarica dalla sala' : ''), 'imp');
+  }
+  return false;
+}
 function rendimento(dt) {
   if (MODO !== 'gioco') return;
   stato.lire += rendita() * dt;
   if (inGioco && stato.lire < costoPresa(0, 'pinza') && pinza.fase === 'libera' && !pinza.prenota) {
     cortesiaT += dt;
-    if (cortesiaT > 5) { cortesiaT = 0; stato.lire += 1000; avviso('🎁 BONUS DI CORTESIA DaProd: +L.1.000', 'cia'); suono.cortesia(); brillaSaldo(); aggiornaHUD(); daSalvare = true; }
+    if (cortesiaT > 5) { cortesiaT = 0; bonusDiCortesia(); }
   } else cortesiaT = 0;
 }
 
@@ -2873,21 +2954,18 @@ posaCamera(1, true);
 preparaPost();
 requestAnimationFrame((t) => { ultimo = t; requestAnimationFrame(ciclo); $('caricamento').classList.add('via'); });
 
-// Le Lire DaProd: la partita fatta qui si stacca in lire, e le lire si
-// spendono per ricaricare. Dentro la DaProd Suite il conto lo tiene la sala
-// giochi; sul sito il browser, diviso con gli altri giochi DaProd.
+// Le Lire DaProd: solo dentro la sala giochi della DaProd Suite la partita
+// fatta qui si stacca in lire. Qui sul sito e nelle app daprod-lira.js non fa
+// niente, e il gioco e' la sua demo.
 if (window.DaProdLira && MODO === 'gioco') DaProdLira.init({
   gioco: 'claw',
-  // Nella Claw i bordi sono tutti occupati (vetrina, officina, PRENDI): il
-  // portafoglio e' il tondo sotto al marchio, sul telefono e sul computer.
-  tondo: true,
-  telefono: { top: '70px', left: '10px' },
-  ricarica: { detto: '+L.3.000 per le prese', dai: () => { stato.lire += 3000; aggiornaHUD(); daSalvare = true; avviso('🦾 Ricarica DaProd: +' + lire(3000), 'cia'); } },
+  // Le lire della suite diventano lire per le prese: L.1 = L.30 (L.100 → L.3.000).
+  ricarica: { detto: 'L.1 della suite = L.30 per le prese', cambio: 30, dai: (quante) => { const l = Math.round((quante || 100) * 30); stato.lire += l; aggiornaHUD(); daSalvare = true; avviso('🦾 Ricarica DaProd: +' + lire(l), 'cia'); } },
 });
 
 // API per le prove automatiche e per chi vuole curiosare dalla console
 window.CLAW = {
-  VERSIONE, MODO, GRADI, ZONE, MODELLI, TESTE, POT, SOGLIA, stato, pinza, FORZA,
+  VERSIONE, MODO, GRADI, ZONE, MODELLI, TESTE, POT, SOGLIA, stato, pinza, FORZA, bonusDiCortesia,
   oggetti: () => oggetti.filter(o => o.stato !== 'via'), tutti: () => oggetti,
   passo, simula, prendi, gioca, bersaglio, scegliTesta, vaiZona, sblocca, potenzia, compra, compraTesta,
   apriVetrina, chiudiVetrina, apriOfficina, chiudiOfficina, salva, carica, pulisci, fotografaVasca,

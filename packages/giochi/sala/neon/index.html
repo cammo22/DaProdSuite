@@ -17,7 +17,7 @@
 <link rel="apple-touch-icon" href="img/icona-192.png">
 <link rel="manifest" href="manifest.webmanifest">
 <style>html,body{background:#07060d;margin:0}body{opacity:0}</style>
-<!-- Le Lire DaProd: il portafoglio unico dei giochi DaProd (vedi daprod-lira.js). -->
+<!-- Le Lire DaProd: il ponte con la sala giochi della DaProd Suite. Fuori dalla suite non fa niente. -->
 <script src="../daprod-lira.js"></script>
 <script>
 // ---------------------------------------------------------------------------------------------
@@ -26,7 +26,7 @@
 // corrispondente, compila APK, EXE e DMG e la pubblica con le note del CHANGELOG.
 // La stessa versione finisce in coda a CSS e JS (?v=...), così GitHub Pages non serve file vecchi.
 // ---------------------------------------------------------------------------------------------
-const VERSIONE = 'v2.1.0';
+const VERSIONE = 'v2.1.2';
 (function () {
   const v = "?v=" + VERSIONE.slice(1);
   const css = ["css/base.css", "css/gioco.css", "css/pannelli.css"];

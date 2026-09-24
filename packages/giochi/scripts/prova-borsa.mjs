@@ -31,6 +31,8 @@ import {
   TETTO_STACCO_GIORNO,
   tira,
   VERDETTI,
+  azzeraPartita,
+  ricarica,
   domandaPer,
   segnaGiudizio,
 } from "../dist/index.js";
@@ -304,6 +306,34 @@ prova("il parere si scrive sulla figurina, normalizzato, e non decide niente", (
     const di = new Deposito(file);
     uguale(di.perId(c.id).giudizio.meglio, "vetrina");
     uguale(di.perId(c.id).stato, "in-attesa");
+  }),
+);
+
+prova("la ricarica spende quante lire si sceglie, almeno il gettone, e brucia in Borsa", () =>
+  conCartella((file) => {
+    const d = new Deposito(file);
+    d.muovi("pino", 5000);
+    const r = ricarica(d, "pino", "dozer", 1200);
+    uguale(r.lire, 1200);
+    uguale(r.saldo, d.conto("pino").saldo);
+    let poco = false;
+    try { ricarica(d, "pino", "dozer", 20); } catch (e) { poco = e instanceof NienteDaFare; }
+    vero(poco, "sotto il gettone dice di no");
+    let troppo = false;
+    try { ricarica(d, "pino", "dozer", 10_000_000); } catch (e) { troppo = e instanceof NienteDaFare; }
+    vero(troppo, "piu' del saldo dice di no");
+  }),
+);
+
+prova("chi comanda chiude una partita: i punti vanno via senza diventare lire", () =>
+  conCartella((file) => {
+    const d = new Deposito(file);
+    segnaPunti(d, "pino", "dozer", 5000, ADESSO);
+    const prima = d.conto("pino").saldo;
+    const e = azzeraPartita(d, "pino", ADESSO);
+    vero(e.via > 0, "c'erano punti");
+    uguale(d.conto("pino").partita.punti, 0);
+    uguale(d.conto("pino").saldo, prima);
   }),
 );
 

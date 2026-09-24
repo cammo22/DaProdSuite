@@ -7,8 +7,9 @@
  * |---|---|
  * | Home | le schermate dei giochi, il tuo conto, la mano, la Borsa |
  * | Gioca | Sala (i giochi d'arcade), Fortuna, Borsa |
- * | Genera | la slot delle combinazioni, le mie, la fila (solo admin) |
+ * | Genera | la slot delle combinazioni, le mie |
  * | Collezione | pacchetti, inventario, shop, classifica |
+ * | Admin | la fila e i giocatori (solo chi comanda, dalla 1.4.4) |
  *
  * Qui sotto, com'era prima: le schede sono le stesse, e rispondono alle stesse
  * domande.
@@ -66,7 +67,10 @@ export const MARKUP = `<header>
     </div>
     <div class="sotto-fila" data-di="genera">
       <button data-va="slot">Combinazioni</button><button data-va="mie">Le mie</button>
+    </div>
+    <div class="sotto-fila" data-di="admin">
       <button data-va="fila" id="tasto-fila" hidden>Fila<span class="pallino" id="quante-attesa" hidden></span></button>
+      <button data-va="giocatori">Giocatori</button>
     </div>
     <div class="sotto-fila" data-di="collezione">
       <button data-va="pacchetti">Pacchetti</button><button data-va="inventario">Inventario</button><button data-va="shop">Shop</button><button data-va="casa">Classifica</button>
@@ -334,11 +338,17 @@ export const MARKUP = `<header>
       combinazioni da controllare. Mandare lire e' una cosa che si fa ogni
       tanto; controllare la fila e' quella che si fa sempre.
     -->
-    <details class="cassetto" id="cassetto-gente">
-      <summary>Manda lire <span class="quanti" id="quanta-gente"></span></summary>
-      <input class="cerca" id="cerca-gente" type="search" placeholder="cerca una persona">
-      <div id="gente"></div>
-    </details>
+  </section>
+
+  <!-- ========================================================== giocatori -->
+  <!--
+    ⚠ La gente ha una pagina sua dalla 1.4.4 (era il cassetto «Manda lire» in
+    fondo alla fila): chi comanda deve poter gestire i giocatori senza cercarli.
+  -->
+  <section class="pagina" id="p-giocatori">
+    <div class="giocatori-testa"><h2>I giocatori <span class="quanti" id="quanta-gente"></span></h2></div>
+    <input class="cerca" id="cerca-gente" type="search" placeholder="cerca una persona">
+    <div id="gente"></div>
   </section>
 
 </main>
@@ -393,8 +403,11 @@ export const MARKUP = `<header>
   <button data-va="sala" data-gruppo="gioca">
     <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="7" width="19" height="11" rx="5.5"/><path d="M7.5 10.5v4M5.5 12.5h4"/><circle cx="16" cy="11.2" r="1.1"/><circle cx="18" cy="13.8" r="1.1"/></svg>Gioca</button>
   <button data-va="slot" data-gruppo="genera">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l1.9 5.2 5.3.2-4.2 3.3 1.5 5.2L12 14.4l-4.5 3 1.5-5.2-4.2-3.3 5.3-.2z"/></svg>Genera<span class="pallino" id="pallino-genera" hidden></span></button>
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l1.9 5.2 5.3.2-4.2 3.3 1.5 5.2L12 14.4l-4.5 3 1.5-5.2-4.2-3.3 5.3-.2z"/></svg>Genera</button>
   <button data-va="pacchetti" data-gruppo="collezione">
     <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3.5" width="12" height="16" rx="2"/><path d="M8 20.5h10.5a2 2 0 0 0 2-2V7"/></svg>Collezione</button>
+  <!-- Solo per chi comanda (1.4.4): la fila e i giocatori, in una stanza sua. -->
+  <button data-va="fila" data-gruppo="admin" id="tasto-admin" hidden>
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4.5 6v5.5c0 4.6 3.2 8.3 7.5 9.5 4.3-1.2 7.5-4.9 7.5-9.5V6z"/><path d="m9 12 2 2 4-4"/></svg>Admin<span class="pallino" id="pallino-admin" hidden></span></button>
 </nav>
 `;

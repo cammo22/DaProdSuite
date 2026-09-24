@@ -81,6 +81,40 @@ export function entra(deposito: Deposito, chi: string, idGioco: string, adesso =
 }
 
 /**
+ * Ricaricare un gioco con quante lire si vuole (1.4.4).
+ *
+ * Chiesto da Cammo il 24 settembre 2026: «quando dobbiamo scambiare le lire
+ * della suite alle lire nei giochi, clicchiamo sul tasto e si vede bene il
+ * portafoglio, con la quantita' selezionabile e alcuni tagli rapidi». Prima la
+ * ricarica era un gettone fisso d'ingresso. Il minimo resta il gettone: meno
+ * di cosi' non vale il gesto. Quello che si spende brucia lire (Borsa).
+ */
+export function ricarica(deposito: Deposito, chi: string, idGioco: string, quante: number) {
+  const gioco = giocoDi(idGioco);
+  const conto = deposito.conto(chi);
+  const lire = Math.floor(Number(quante) || 0);
+  if (lire < gioco.ingresso) throw new NienteDaFare("Si ricarica almeno con " + gioco.ingresso + " lire.");
+  if (lire > conto.saldo) throw new NienteDaFare("In tasca ci sono " + conto.saldo + " lire: non bastano.");
+  deposito.muovi(chi, -lire);
+  deposito.salva();
+  return { saldo: conto.saldo, lire };
+}
+
+/**
+ * Chi comanda chiude la partita di qualcuno, senza staccarla (1.4.4).
+ *
+ * Per i casi storti — un gioco che ha dato punti per un difetto — non per
+ * punire. I punti vanno via e basta: non diventano lire.
+ */
+export function azzeraPartita(deposito: Deposito, chi: string, adesso = Date.now()) {
+  const conto = deposito.conto(chi);
+  const via = conto.partita?.punti ?? 0;
+  conto.partita = { punti: 0, daQuando: adesso, perGioco: {} };
+  deposito.salva();
+  return { via };
+}
+
+/**
  * Il gioco racconta quanto ha vinto coi suoi gettoni; il PC lo cambia in
  * punti, e ne fa entrare quanti ne ammettono i tetti.
  */

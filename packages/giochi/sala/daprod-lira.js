@@ -91,8 +91,9 @@
         var a = attese[m.n]; delete attese[m.n];
         if (m.errore) a.rifiuta(new Error(m.errore)); else a.risolvi(m.esito);
       }
-      // La sala chiede di ricaricare: il gioco da' i suoi gettoni.
-      if (m.ricarica && ricarica) { try { ricarica.dai(); } catch (e) { /* niente */ } }
+      // La sala ha ricaricato: il gioco cambia quelle lire nei suoi gettoni.
+      // Dalla 1.4.4 arriva quante (m.lire): prima era sempre un gettone solo.
+      if (m.ricarica && ricarica) { try { ricarica.dai(Number(m.lire) || 0); } catch (e) { /* niente */ } }
     });
   }
 
@@ -120,10 +121,17 @@
       gioco = opzioni.gioco || gioco;
       ricarica = opzioni.ricarica || null;
       if (spento) return Lira;
-      if (!orologio) orologio = setInterval(manda, 15000);
+      // Ogni tre secondi (1.4.4): la barra della sala mostra la partita quasi dal
+      // vivo. Prima erano quindici, e i punti arrivavano a scatti.
+      if (!orologio) orologio = setInterval(manda, 3000);
       document.addEventListener("visibilitychange", function () { if (document.hidden) manda(); });
       window.addEventListener("pagehide", manda);
-      allaSala("ciao", { gioco: gioco, ricarica: ricarica ? ricarica.detto || "" : "" }).then(annuncia, function () {});
+      allaSala("ciao", {
+        gioco: gioco,
+        ricarica: ricarica ? ricarica.detto || "" : "",
+        // Quanto vale una lira della suite nel gioco: la sala lo mostra nel portafoglio.
+        cambio: ricarica && ricarica.cambio ? Number(ricarica.cambio) : 0,
+      }).then(annuncia, function () {});
       return Lira;
     },
 
@@ -142,10 +150,14 @@
       return allaSala("evento", { gioco: g || gioco, evento: cosa }).catch(function () { return null; });
     },
 
-    /** Si spende il gettone d'ingresso e il gioco ricarica i suoi. Solo nella suite. */
+    /**
+     * Chiede alla sala di aprire il portafoglio per ricaricare. Solo nella suite:
+     * quante lire lo sceglie chi gioca, e le monete arrivano col messaggio della
+     * sala (vedi sopra), non da qui.
+     */
     ricarica: function () {
       if (!ricarica) return Promise.reject(new Error("Questo gioco non si ricarica da qui."));
-      return allaSala("ricarica", { gioco: gioco }).then(function (e) { ricarica.dai(); return e; });
+      return allaSala("ricarica", { gioco: gioco });
     },
 
     /** Lo stacco: la partita diventa lire, alla quotazione di adesso. Solo nella suite. */

@@ -14,7 +14,7 @@ export const STILE_HOME = `
 /* ============================================================ le stanze */
 
 body nav.giu{position:fixed; left:0; right:0; bottom:0; z-index:30; display:grid;
-  grid-template-columns:repeat(4,1fr); gap:4px; padding:6px 8px calc(6px + env(safe-area-inset-bottom));
+  grid-auto-flow:column; grid-auto-columns:1fr; gap:4px; padding:6px 8px calc(6px + env(safe-area-inset-bottom));
   background:linear-gradient(180deg, rgba(4,14,12,.86), rgba(2,8,6,.97));
   -webkit-backdrop-filter:blur(14px) saturate(1.4); backdrop-filter:blur(14px) saturate(1.4);
   border-top:1px solid rgba(120,255,200,.16); overflow:visible}
@@ -235,4 +235,29 @@ body #p-fortuna #tira{display:block; width:100%; padding:16px; font-size:20px; l
 body #p-fortuna .macchina.secondo #tira{--accent:#e0a100; color:#2a1a00; text-shadow:0 1px 0 rgba(255,255,255,.45)}
 body #p-fortuna .conto{margin-top:12px; color:#9d93b8; font-size:12.5px; line-height:1.5; text-align:center}
 body #p-fortuna .cassetto{max-width:500px; margin:12px auto 0}
+
+/* ========================================================= i giocatori (1.4.4) */
+.giocatori-testa h2{display:flex; align-items:center; gap:8px}
+#p-giocatori .cerca{width:100%; margin:4px 0 12px}
+#p-giocatori #gente{display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:12px}
+#p-giocatori .persona{display:grid; gap:10px; padding:14px; border-radius:20px; background:rgba(6,20,17,.82);
+  border:1px solid rgba(120,255,200,.16); box-shadow:0 10px 26px rgba(0,0,0,.4)}
+.persona-testa{display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:10px}
+.persona-testa .tondo{width:42px; height:42px; border-radius:50%; display:grid; place-items:center;
+  font:800 18px/1 "M PLUS Rounded 1c", "Nunito", sans-serif; color:#021;
+  background:radial-gradient(circle at 35% 30%, #caffc4, #19d64a 60%, #0a8a26); box-shadow:0 0 14px rgba(25,214,74,.4)}
+.persona-testa .chi-e{min-width:0}
+.persona-testa .chi-e b{display:block; font:700 15px/1.2 "Space Mono", monospace; color:#f2fffb; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.persona-testa .chi-e small{color:#86a59c; font-size:12px}
+.persona-saldo{font:700 16px/1 "Space Mono", monospace; color:#ffd166; white-space:nowrap}
+.persona-numeri{display:grid; grid-template-columns:repeat(5,1fr); gap:6px}
+.persona-numeri span{display:flex; flex-direction:column; gap:2px; padding:7px 6px; border-radius:12px; text-align:center;
+  background:rgba(1,8,6,.55); border:1px solid rgba(120,255,200,.1)}
+.persona-numeri b{font:700 13px/1.1 "Space Mono", monospace; color:#f2fffb; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.persona-numeri small{color:#86a59c; font-size:10px; line-height:1.2}
+.persona-azioni summary{cursor:pointer; padding:9px 14px; border-radius:999px; width:max-content; list-style:none;
+  font:700 12.5px/1 "Space Mono", monospace; color:#3ddbff; border:1px solid rgba(61,219,255,.35); background:rgba(61,219,255,.07)}
+.persona-azioni summary::-webkit-details-marker{display:none}
+.persona-azioni[open] summary{margin-bottom:10px; color:#fff; background:rgba(61,219,255,.18)}
+.persona-azioni .riga-tasti{flex-wrap:wrap}
 `;

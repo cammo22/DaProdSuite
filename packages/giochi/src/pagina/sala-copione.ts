@@ -18,6 +18,10 @@ export const COPIONE_SALA = `
   var sala = null;
   var giocoAperto = null;
   var ricaricaDelGioco = false;
+  var cambioDelGioco = 0;
+  var dettoDellaRicarica = '';
+  var quanteRicarica = 0;
+  var ultimaPartita = -1;
   var ICONE_SALA = { dozer: '🪙', claw: '🦾', neon: '🌋' };
 
   function numeroIt(n, dec) { return Number(n || 0).toFixed(dec).replace('.', ','); }
@@ -150,11 +154,97 @@ export const COPIONE_SALA = `
     m.innerHTML = h;
   }
 
+  /**
+   * La barra in alto della cornice (1.4.4): tre pastiglie, e quella della
+   * partita si accende quando i punti salgono. I punti arrivano dal gioco ogni
+   * tre secondi (daprod-lira.js), quindi si vede la partita crescere mentre si
+   * gioca invece che a scatti ogni quarto d ora.
+   */
   function disegnaCornice() {
     if (!giocoAperto || !sala) return;
-    $('cornice-conto').innerHTML = soldi(io ? io.saldo : 0) + ' · ' + puntiIt(sala.partita.punti) + ' pt · ' +
-      numeroIt(sala.borsa.quota, 2);
-    $('cornice-stacca').disabled = !(sala.partita.punti > 0);
+    var su = sala.borsa.variazione >= 0;
+    var pt = sala.partita.punti;
+    $('cornice-conto').innerHTML =
+      '<span class="pastiglia lire"><small>in tasca</small><b>' + soldi(io ? io.saldo : 0) + '</b></span>' +
+      '<span class="pastiglia punti" id="pastiglia-punti"><small>partita</small><b>' + puntiIt(pt) + ' pt</b></span>' +
+      '<span class="pastiglia ' + (su ? 'su' : 'giu') + '"><small>la Lira</small><b>' + (su ? '▲ ' : '▼ ') + numeroIt(sala.borsa.quota, 2) + '</b></span>' +
+      '<span class="pastiglia"><small>staccando</small><b>' + soldi(sala.staccando) + '</b></span>';
+    if (ultimaPartita >= 0 && pt > ultimaPartita) {
+      var p = $('pastiglia-punti');
+      if (p) { p.classList.add('sale'); p.setAttribute('data-piu', '+' + puntiIt(pt - ultimaPartita)); }
+    }
+    ultimaPartita = pt;
+    $('cornice-stacca').disabled = !(pt > 0);
+    $('cornice-stacca').textContent = pt > 0 ? 'Stacca ' + soldi(sala.staccando) : 'Stacca';
+  }
+
+  /* ------------------------------------------------ il portafoglio (1.4.4) */
+
+  var TAGLI_RICARICA = [100, 500, 1000, 5000, 10000, 50000];
+
+  function ingressoDi(id) {
+    var g = (sala && sala.giochi || []).filter(function (x) { return x.id === id; })[0];
+    return g ? g.ingresso : 100;
+  }
+
+  function apriPortafoglio() {
+    if (!giocoAperto) return;
+    var minimo = ingressoDi(giocoAperto);
+    var saldo = io ? io.saldo : 0;
+    if (!quanteRicarica || quanteRicarica > saldo) quanteRicarica = Math.min(saldo, Math.max(minimo, 500));
+    var g = (sala && sala.giochi || []).filter(function (x) { return x.id === giocoAperto; })[0];
+    $('portafoglio-titolo').textContent = 'Ricarica ' + (g ? g.nome : giocoAperto);
+    $('portafoglio').hidden = false;
+    disegnaPortafoglio();
+  }
+
+  function chiudiPortafoglio() { $('portafoglio').hidden = true; }
+
+  function disegnaPortafoglio() {
+    var minimo = ingressoDi(giocoAperto);
+    var saldo = io ? io.saldo : 0;
+    var scorri = $('portafoglio-scorri');
+    scorri.min = String(minimo);
+    scorri.max = String(Math.max(minimo, saldo));
+    scorri.step = saldo > 20000 ? '100' : '50';
+    scorri.value = String(quanteRicarica);
+    scorri.disabled = saldo < minimo;
+    $('portafoglio-saldo').textContent = soldi(saldo);
+    $('portafoglio-quante').textContent = soldi(quanteRicarica);
+    $('portafoglio-diventa').textContent = cambioDelGioco
+      ? 'nel gioco diventano ' + soldi(quanteRicarica * cambioDelGioco)
+      : (dettoDellaRicarica || '');
+    var h = TAGLI_RICARICA.filter(function (t) { return t >= minimo && t <= saldo; }).map(function (t) {
+      return '<button data-ricarica="' + t + '"' + (t === quanteRicarica ? ' class="scelto"' : '') + '>' + soldi(t) + '</button>';
+    }).join('');
+    if (saldo >= minimo) h += '<button data-ricarica="' + saldo + '"' + (saldo === quanteRicarica ? ' class="scelto"' : '') + '>Tutto</button>';
+    $('portafoglio-tagli').innerHTML = h;
+    var puo = saldo >= minimo && quanteRicarica >= minimo && quanteRicarica <= saldo;
+    $('portafoglio-ok').disabled = !puo;
+    $('portafoglio-ok').textContent = puo ? 'Ricarica ' + soldi(quanteRicarica) : 'Non bastano le lire';
+    $('portafoglio-nota').textContent = saldo < minimo
+      ? 'Servono almeno ' + soldi(minimo) + '. Stacca la partita o gioca alla slot per farne.'
+      : 'Le lire spese fanno salire la Lira in Borsa. Minimo ' + soldi(minimo) + '.';
+  }
+
+  function segnaQuante(n) {
+    var minimo = ingressoDi(giocoAperto);
+    var saldo = io ? io.saldo : 0;
+    quanteRicarica = Math.max(minimo, Math.min(saldo, Math.round(n)));
+    disegnaPortafoglio();
+  }
+
+  function confermaRicarica() {
+    var lire = quanteRicarica;
+    $('portafoglio-ok').disabled = true;
+    chiedi('POST', '/sala/ricarica', { gioco: giocoAperto, lire: lire }).then(function (r) {
+      if (io) io.saldo = r.saldo;
+      disegnaSaldo(true);
+      mandaAlGioco({ ricarica: true, lire: r.lire });
+      chiudiPortafoglio();
+      avviso('Ricaricato: ' + soldi(r.lire) + (cambioDelGioco ? ' diventano ' + soldi(r.lire * cambioDelGioco) + ' nel gioco' : ''), 'bene');
+      caricaSala();
+    }).catch(function (e) { avviso(e.message, 'male'); disegnaPortafoglio(); });
   }
 
   /* ---------------------------------------------------------- i gesti */
@@ -200,6 +290,8 @@ export const COPIONE_SALA = `
       disegnaSaldo(true);
       giocoAperto = id;
       ricaricaDelGioco = false;
+      ultimaPartita = -1;
+      chiudiPortafoglio();
       var g = (sala && sala.giochi || []).filter(function (x) { return x.id === id; })[0];
       $('cornice-nome').textContent = (ICONE_SALA[id] || '') + ' ' + (g ? g.nome : id);
       $('cornice-ricarica').hidden = true;
@@ -225,20 +317,13 @@ export const COPIONE_SALA = `
 
   function chiudiGioco() {
     $('cornice-gioco').src = 'about:blank';
+    chiudiPortafoglio();
     $('cornice').hidden = true;
     giocoAperto = null;
     caricaSala();
   }
 
-  function ricaricaDallaCornice() {
-    if (!giocoAperto) return;
-    chiedi('POST', '/sala/entra', { gioco: giocoAperto }).then(function (r) {
-      if (io) io.saldo = r.saldo;
-      disegnaSaldo(true);
-      mandaAlGioco({ ricarica: true });
-      caricaSala();
-    }).catch(function (e) { avviso(e.message, 'male'); });
-  }
+  function ricaricaDallaCornice() { apriPortafoglio(); }
 
   /** Le domande che arrivano dai giochi, via daprod-lira.js. */
   window.addEventListener('message', function (ev) {
@@ -250,6 +335,8 @@ export const COPIONE_SALA = `
     var d = m.dati || {};
     if (m.cosa === 'ciao') {
       ricaricaDelGioco = Boolean(d.ricarica);
+      dettoDellaRicarica = String(d.ricarica || '');
+      cambioDelGioco = Number(d.cambio) || 0;
       $('cornice-ricarica').hidden = !ricaricaDelGioco;
       if (ricaricaDelGioco) {
         $('cornice-ricarica').textContent = 'Ricarica';
@@ -270,12 +357,10 @@ export const COPIONE_SALA = `
         caricaFraPoco();
       }, sbaglio);
     } else if (m.cosa === 'ricarica') {
-      chiedi('POST', '/sala/entra', { gioco: d.gioco || giocoAperto }).then(function (r) {
-        if (io) io.saldo = r.saldo;
-        disegnaSaldo(true);
-        rispondi(r);
-        caricaFraPoco();
-      }, sbaglio);
+      // Il gioco chiede di ricaricare: si apre il portafoglio, e quante lire lo
+      // sceglie chi gioca. Le monete arrivano al gioco quando conferma.
+      apriPortafoglio();
+      rispondi({ aperto: true });
     } else if (m.cosa === 'stacca') {
       staccaAdesso().then(rispondi, sbaglio);
     }
@@ -290,9 +375,23 @@ export const COPIONE_SALA = `
     if (carta) { giocaLaCarta(carta.getAttribute('data-carta')); return; }
     if (qui('#cornice-esci')) { chiudiGioco(); return; }
     if (qui('#cornice-ricarica')) { ricaricaDallaCornice(); return; }
+    var taglio = qui('[data-ricarica]');
+    if (taglio) { segnaQuante(Number(taglio.getAttribute('data-ricarica'))); return; }
+    if (qui('#portafoglio-piu')) { segnaQuante(quanteRicarica + Number($('portafoglio-scorri').step) * 2); return; }
+    if (qui('#portafoglio-meno')) { segnaQuante(quanteRicarica - Number($('portafoglio-scorri').step) * 2); return; }
+    if (qui('#portafoglio-ok')) { confermaRicarica(); return; }
+    if (qui('#portafoglio-chiudi') || b.id === 'portafoglio') { chiudiPortafoglio(); return; }
     if (qui('#cornice-stacca') || qui('#stacca-borsa')) {
       staccaAdesso().catch(function (e) { avviso(e.message, 'male'); });
     }
+  });
+
+  document.addEventListener('input', function (e) {
+    if (e.target && e.target.id === 'portafoglio-scorri') segnaQuante(Number(e.target.value));
+  });
+  // La pastiglia dei punti smette di brillare da sola.
+  document.addEventListener('animationend', function (e) {
+    if (e.target && e.target.id === 'pastiglia-punti') e.target.classList.remove('sale');
   });
 
   // Le due schede nuove si caricano entrando, come le altre; e un giro della
