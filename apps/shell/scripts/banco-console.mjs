@@ -106,7 +106,7 @@ const voci = [
       "Che forma": "1:1 - quadrato",
       "Quanto grande": "1080p",
       "Quante immagini": "2",
-      "Con che modello": "FLUX.2 Klein 9B",
+      "Con che modello": "Qwen-Image 2.1",
     },
   },
   {
@@ -250,7 +250,7 @@ const fintiStili = {
           testo: "Un robot che suona una chitarra in un teatro in fiamme",
           tipo: "immagine",
           genere: "prompt",
-          campi: { quante: "2", modello: "flux2-9b" },
+          campi: { quante: "2", modello: "qwen21" },
           da: "mio",
           quando: 5,
         },
@@ -388,6 +388,18 @@ const gateway = new G.Gateway({
    * scrive — la stessa cartella usa e getta di tutto il resto del banco.
    */
   giochi: new (require(join(import.meta.dirname, "..", "..", "..", "packages", "giochi", "dist", "index.js")).Deposito)(join(radice, "giochi.json")),
+  /**
+   * Il giudice **finto**: Jev-Omni sono 50 GB e qui non c'e'. Risponde con
+   * numeri fissi dopo un attimo, per vedere le barre sulla card e il giro
+   * intero della rotta (1.4.0).
+   */
+  giudice: {
+    async giudica(d) {
+      await new Promise((r) => setTimeout(r, 600));
+      const p = [0.12, 0.38, 0.35, 0.15];
+      return { probabilita: Object.fromEntries(d.opzioni.map((o, i) => [o, p[i] ?? 0])) };
+    },
+  },
   macchina: {
     stato: macchina.stato,
     pausa: macchina.pausa,

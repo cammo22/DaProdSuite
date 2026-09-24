@@ -609,6 +609,13 @@ h2:first-child{margin-top:2px}
  * senza avvicinarsi.
  */
 .prove{margin-top:9px}
+/* Il giudice (1.4.0): quattro barre, la piu' lunga dice il parere. */
+.giudizio{margin-top:9px}
+.barra-giudice{display:grid;grid-template-columns:78px 1fr 40px;align-items:center;gap:8px;font-size:12px;margin:3px 0}
+.barra-giudice i{display:block;height:7px;border-radius:4px;background:#3ddbff;box-shadow:0 0 8px rgba(61,219,255,.5);min-width:2px}
+.barra-giudice.v-slop i{background:#ff4d6d;box-shadow:0 0 8px rgba(255,77,109,.5)}
+.barra-giudice.v-vetrina i{background:#00ff41;box-shadow:0 0 8px rgba(0,255,65,.5)}
+.barra-giudice b{text-align:right;font-variant-numeric:tabular-nums}
 .nate{display:flex; gap:8px; margin-top:9px; overflow-x:auto;
   padding-bottom:4px; scrollbar-width:thin}
 .nata{flex:0 0 auto; width:124px; display:flex; flex-direction:column; gap:6px;

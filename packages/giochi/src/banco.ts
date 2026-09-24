@@ -56,6 +56,9 @@ import type {
 /** Quando qualcosa non si puo' fare, si dice **perche'**, in italiano. */
 export class NienteDaFare extends Error {}
 
+/** Quanti punti d'esperienza della slot fanno un punto della partita (§ 18.2). */
+export const PUNTI_SLOT_PER_PARTITA = 8;
+
 /* ------------------------------------------------------------------ i mazzi */
 
 /**
@@ -174,6 +177,18 @@ export function tira(
   const prima = livelloDi(conto.esperienza, imp.perIlLivello);
   const aggiornato = deposito.segnaGiro(chi, punti, meglio);
   const livello = livelloDi(aggiornato.esperienza, imp.perIlLivello);
+  // ⚠ Dalla 1.4.0 i punti del giro entrano anche nella partita (CONCETTI.md
+  // § 18.2), **un ottavo**: un giro fa in media 262 punti d'esperienza, e
+  // interi renderebbero 2,6 volte quello che costa. Cosi' rende dal 33% al
+  // 82% — la slot resta una cosa che consuma lire (§ 4). Scritto qui e non
+  // chiamando `sala.ts`, che a sua volta usa questo file.
+  const perLaPartita = Math.round(punti / PUNTI_SLOT_PER_PARTITA);
+  if (perLaPartita > 0) {
+    const partita = (aggiornato.partita ??= { punti: 0, daQuando: Date.now(), perGioco: {} });
+    partita.punti += perLaPartita;
+    partita.perGioco["slot"] = (partita.perGioco["slot"] ?? 0) + perLaPartita;
+    deposito.salva();
+  }
 
   return {
     tavolo,
@@ -768,7 +783,9 @@ export function azzeraPortafoglio(
   if (prima.saldo <= 0) throw new NienteDaFare("Il portafoglio e' gia' vuoto.");
 
   const togliere = prima.saldo;
-  const conto = deposito.muovi(chi, -togliere);
+  // Una correzione di chi comanda, non un'operazione di mercato: la Borsa non
+  // la vede (CONCETTI.md § 18.3).
+  const conto = deposito.muovi(chi, -togliere, false);
   conto.ultimoRegalo = {
     quanto: -togliere,
     quando: Date.now(),

@@ -24,6 +24,9 @@ import { LINGUE } from "./dati/ace.js";
 // della pagina. Fino al 19 agosto 2026 ce n'erano due copie identiche, una
 // qui e una nell'altra app.
 import { collegaSelettoreLlm, modelloScelto } from "/comune/selettore-llm.js";
+// Il dado delle idee e il filtro delle parole vuote, nuovi nella 1.4.0: sono
+// gli stessi di DaProdFoto. Vedi `packages/ui/src/idee.js`.
+import { ANTISLOP, ideaBrano, pulisci } from "/comune/idee.js";
 
 const suite = window.daprodSuite;
 
@@ -74,8 +77,8 @@ COME DEVE ESSERE IL TESTO:
 - Il [Chorus] si ripete uguale: è quello che la gente ricorda.
 - Immagini concrete (una serranda, un bicchiere, una strada), non concetti astratti.
 
-LO STILE va invece scritto in INGLESE, 3 o 4 generi musicali separati da virgola.
-LA COPERTINA va scritta in INGLESE: una scena concreta, senza scritte dentro.`;
+LO STILE va invece scritto in INGLESE: due generi precisi incrociati (non "pop" o "rock" da soli), i bpm, due strumenti veri e come suonano, che voce, come e' registrato.
+LA COPERTINA va scritta in INGLESE: una scena concreta, senza scritte dentro.` + ANTISLOP;
 }
 
 /**
@@ -146,7 +149,9 @@ function leggiJson(testo) {
 }
 
 function riempi(dati) {
-  if (dati.stile) el.caption.value = String(dati.stile).trim();
+  // Quello che il modello scrive passa dal filtro: il divieto nelle istruzioni
+  // da solo non basta, e «epic emotional cinematic» è il suono di tutti.
+  if (dati.stile) el.caption.value = pulisci(String(dati.stile).trim());
   if (dati.testo) {
     el.lyrics.value = String(dati.testo).trim();
     el.instrumental.checked = false;
@@ -155,7 +160,7 @@ function riempi(dati) {
   el.titolo.value = String(dati.titolo || "").trim() || titoloAuto(el.lyrics.value, el.caption.value);
   // La copertina è un prompt in inglese: lo mettiamo dove la scheda Crea lo
   // cerca, così premendo Crea arriva anche l'artwork senza altri passaggi.
-  if (dati.copertina) el.ideaCopertina.value = String(dati.copertina).trim();
+  if (dati.copertina) el.ideaCopertina.value = pulisci(String(dati.copertina).trim());
 }
 
 async function chiedi(bottone, utente, attesa) {
@@ -190,9 +195,13 @@ export function collegaBonsai() {
   el.bonsaiTutto.onclick = () => {
     const idea = el.ideaCanzone.value.trim();
     if (!idea) return mostraErrore("Scrivi in una riga di cosa deve parlare la canzone.");
+    // Se lo stile c'è già — tirato col dado, o scritto a mano — si tiene: è una
+    // scelta, e il paroliere ci scrive sopra invece di rifarla.
+    const stile = el.caption.value.trim();
     void chiedi(
       el.bonsaiTutto,
-      `Scrivi una canzone su questa idea: "${idea}".\n`,
+      `Scrivi una canzone su questa idea: "${idea}".\n` +
+        (stile ? `Lo stile è già deciso: riscrivilo identico nel campo stile.\nStile: ${stile}\n` : ""),
       "sto scrivendo…",
     );
   };
@@ -209,6 +218,18 @@ export function collegaBonsai() {
       "sto finendo…",
     );
   };
+
+  // Il dado: uno stile concreto e un tema, pescati dai mazzi. Non chiede niente
+  // a nessuno, quindi funziona anche senza LM Studio. Il tema finisce nella
+  // casella dell'idea, così «Fai tutto» ci scrive sopra le parole.
+  if (el.bonsaiDado) {
+    el.bonsaiDado.onclick = () => {
+      const idea = ideaBrano();
+      el.caption.value = idea.stile;
+      el.ideaCanzone.value = idea.tema;
+      el.caption.dispatchEvent(new Event("input"));
+    };
+  }
 
   // Se LM Studio non c'è i bottoni restano, ma dicono perché: nasconderli
   // vorrebbe dire lasciare l'utente a chiedersi dove sia finita quella cosa.

@@ -23,6 +23,19 @@ import type {
 
 const api = window.daprod;
 
+/** Il segno sull'icona di ogni scheda. Caratteri e non immagini: pesano zero. */
+const GLIFI: Partial<Record<AppId, string>> = {
+  connessione: "⌁",
+  visualizer: "◉",
+  musica: "♫",
+  foto: "◈",
+  cinema: "▶",
+  voce: "❝",
+  dream: "☾",
+  companion: "☻",
+  iodigitale: "◐",
+};
+
 const griglia = document.getElementById("griglia") as HTMLElement;
 const statoAgg = document.getElementById("stato-agg") as HTMLElement;
 const btnAgg = document.getElementById("btn-agg") as HTMLButtonElement;
@@ -65,8 +78,12 @@ function costruisciGriglia(): void {
     const testa = document.createElement("div");
     testa.className = "scheda-testa";
 
+    // L'icona lucida della scheda (1.4.0): era un pallino colorato, adesso è
+    // una piastrella col segno dell'app, come le icone del sito DaProd.
     const pallino = document.createElement("span");
     pallino.className = "pallino";
+    pallino.setAttribute("aria-hidden", "true");
+    pallino.textContent = GLIFI[app.id] ?? "◆";
 
     const testi = document.createElement("div");
     const titolo = document.createElement("h2");
@@ -1548,7 +1565,6 @@ const memSvuota = document.getElementById("memoria-svuota") as HTMLButtonElement
 const NOMI_VRAM: Record<string, string> = {
   Anima: "Le immagini (Anima)",
   WanVAE: "Le immagini, ultimo passo (VAE)",
-  Flux2: "Le immagini (FLUX.2 Klein)",
   Traduttore: "L'italiano tradotto in inglese",
 };
 

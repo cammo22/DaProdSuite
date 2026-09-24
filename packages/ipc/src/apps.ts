@@ -128,6 +128,22 @@ export const APPS: Record<AppId, AppDescriptor> = {
     kind: "renderer",
     accent: "#22d3ee",
     models: [],
+    /**
+     * ⚠ Il giudice della sala giochi (1.4.0): Jev-Omni, che dà un parere sulle
+     * combinazioni in fila. Parte solo quando chi comanda lo chiede — la
+     * console funziona uguale senza, ed è per questo che il modello sta fra
+     * gli extra e non fra quelli di serie.
+     */
+    motoriInPiu: [
+      {
+        id: "giudice",
+        port: 8790,
+        entry: "avvio.py",
+        // Carica un 12B a 4 bit alla prima domanda: dal disco, qualche minuto.
+        healthTimeoutMs: 60_000,
+      },
+    ],
+    extraModels: ["jev-omni"],
     gpuHeavy: false,
     schedaVideo: "non-serve",
   },
@@ -183,12 +199,22 @@ export const APPS: Record<AppId, AppDescriptor> = {
      * dal menu stesso, dentro l'app, e sta elencato qui perché l'hub sappia a chi
      * serve: senza, nel pannello dei modelli comparirebbe come un peso di
      * nessuno, e sono dieci GB di "peso di nessuno".
+     *
+     * ⚠ **YuE2 dalla 1.4.0**: il secondo motore delle canzoni, quello che
+     * scrive prima la partitura e poi la canta. E le copertine, che prima si
+     * facevano con FLUX.2 Klein 4B, adesso si fanno con Qwen-Image 2.1 turbo:
+     * gli stessi file di DaProdFoto, scaricati una volta per tutte e due.
      */
     extraModels: [
       "anima-turbo",
       "qwen3-06b-base",
       "qwen-image-vae",
       "acestep15-xl-turbo",
+      "yue2-3b-int8",
+      "qwen21-q4km",
+      "qwen21-text-encoder",
+      "qwen21-vae",
+      "qwen21-turbo-4step",
     ],
     gpuHeavy: true,
     // In CPU un brano si fa, ma si misura in ore invece che in minuti: è una
@@ -198,7 +224,7 @@ export const APPS: Record<AppId, AppDescriptor> = {
   foto: {
     id: "foto",
     name: "DaProdFoto",
-    tagline: "Immagini da prompt e ritocco con maschera, in locale.",
+    tagline: "Immagini da un'idea, modifiche a parole, e dalla foto al modellino 3D.",
     kind: "service",
     // Gira sullo stesso ComfyUI di Musica: un solo motore, due app.
     service: {
@@ -209,32 +235,43 @@ export const APPS: Record<AppId, AppDescriptor> = {
       healthTimeoutMs: 180_000,
     },
     accent: "#ffa63d",
-    // Anima come base: 5,6 GB, veloce, e in Musica fa già le copertine. FLUX.2
-    // Klein dà di più ma pesa 12,4 GB ed è al limite degli 8 GB di VRAM, quindi
-    // è una scelta, non un obbligo.
+    // Anima come base: 5,6 GB, veloce, e in Musica fa già le copertine.
+    // Qwen-Image 2.1 dà di più — e sa modificare a parole — ma pesa sui 10,7 GB
+    // fra pesi, text encoder e VAE, quindi si scarica dal menu quando lo si
+    // sceglie, come si faceva con FLUX.2.
     models: ["anima-turbo", "qwen3-06b-base", "qwen-image-vae"],
     /**
      * Quello che il menu dei modelli sa offrire in più, e che si scarica da lì.
      *
-     * **Anima v2** (il 2.9B) è la più economica delle tre aggiunte: divide con
+     * **Anima v2** (il 2.9B) è la più economica delle aggiunte: divide con
      * Anima il text encoder e il VAE, quindi sono 3,1 GB e basta. La bf16 è lo
      * stesso modello non compresso, per il giorno che la scheda video cresce.
      *
-     * **I due FLUX.2 Klein**, il 4B e il 9B, dividono solo il VAE: ognuno vuole
-     * il **suo** text encoder, Qwen3-4B contro Qwen3-8B, e scambiarli non dà
-     * un'immagine brutta, dà un errore di moltiplicazione fra matrici.
+     * ⚠ **Qwen-Image 2.1 al posto dei due FLUX.2 Klein, dalla 1.4.0.** «Per le
+     * foto eliminiamo totalmente flux e usiamo Qwen-Image-2.1, le versioni gguf
+     * q4, sia standard che con le lora per il 4 o 8 step, e lo usiamo sia per
+     * la creazione che per la modifica.» Un modello e due strade: 25 passi di
+     * serie, o 4 con la LoRA turbo, che sono gli stessi pesi più 324 MB.
+     *
+     * **TRELLIS.2 e i suoi quattro compagni** sono il 3D di DaProdFoto: dalla
+     * foto al modellino. Stanno qui perché si scaricano solo aprendo la scheda
+     * 3D — chi fa solo foto non li vede mai.
      */
     extraModels: [
       "anima2-int8",
       "anima2-bf16",
-      "flux2-klein-4b-q5km",
-      "flux2-4b-text-encoder",
-      "flux2-klein-q4ks",
-      "flux2-text-encoder",
-      "flux2-vae",
+      "qwen21-q4km",
+      "qwen21-text-encoder",
+      "qwen21-vae",
+      "qwen21-turbo-4step",
+      "trellis2-int8",
+      "trellis2-shape-vae",
+      "trellis2-texture-vae",
+      "dinov3-l",
+      "birefnet",
     ],
     gpuHeavy: true,
-    // Anima in CPU è lentissima ma arriva in fondo. FLUX.2 Klein no, ed è
+    // Anima in CPU è lentissima ma arriva in fondo. Qwen-Image 2.1 no, ed è
     // l'app stessa a spegnerlo nel menu dei modelli quando la scheda non c'è.
     schedaVideo: "molto-meglio",
   },

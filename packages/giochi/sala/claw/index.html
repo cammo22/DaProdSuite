@@ -1,0 +1,2906 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#07060d">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="description" content="DaProd Claw Machine — la Grande Vasca: pesca, grabba e acchiappa 20 modellini e potenziali in 8 gradi sempre più shiny. Gioca da telefono o desktop.">
+<meta name="author" content="DaProd">
+<title>DaProd · Claw Machine</title>
+<style>
+  :root {
+    --oro: #ffd54a; --oro2: #ffab00; --mag: #ff3df2; --cia: #35e8ff; --verde: #5dffb4; --rosso: #ff5a6e;
+    --vetro: rgba(14,10,26,.72); --vetro2: rgba(22,16,40,.9);
+    --bordo: rgba(255,213,74,.28); --r: 18px;
+    --num: "Orbitron", "Arial Black", system-ui, sans-serif;
+    --txt: "Rajdhani", -apple-system, "Segoe UI", system-ui, sans-serif;
+    --sal: env(safe-area-inset-bottom, 0px); --sat: env(safe-area-inset-top, 0px);
+    --g1: #c9c3dc; --g2: #e0945a; --g3: #e8eef8; --g4: #ffd54a; --g5: #9ffcff; --g6: #ff9df5; --g7: #d8fbff; --g8: #c77dff;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #07060d; color: #fff;
+    font-family: var(--txt); user-select: none; -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent; overscroll-behavior: none; }
+  button { font-family: inherit; touch-action: manipulation; -webkit-tap-highlight-color: transparent; cursor: pointer; }
+  button:focus-visible { outline: 2px solid var(--cia); outline-offset: 2px; }
+  /* larghezza e altezza esplicite: senza, il canvas si mostra grande quanto i suoi pixel (2-3 volte lo schermo su telefono) */
+  canvas#gioco { display: block; position: fixed; left: 0; top: 0; width: 100%; height: 100%; touch-action: none; cursor: crosshair; }
+  #vignetta { position: fixed; inset: 0; pointer-events: none; z-index: 4;
+    background: radial-gradient(ellipse at 50% 45%, rgba(0,0,0,0) 52%, rgba(0,0,0,.62) 100%); }
+  .nascosto { display: none !important; }
+
+  /* ---------- caricamento ---------- */
+  #caricamento { position: fixed; inset: 0; z-index: 90; display: grid; place-items: center; background: #07060d;
+    transition: opacity .6s, visibility .6s; }
+  #caricamento.via { opacity: 0; visibility: hidden; pointer-events: none; }
+  #caricamento .c { display: flex; flex-direction: column; align-items: center; gap: 18px; }
+  #caricamento .pinzetta { width: 64px; height: 64px; border-radius: 50%; border: 3px solid rgba(255,213,74,.15);
+    border-top-color: var(--oro); border-right-color: var(--mag); animation: giro 1s linear infinite; }
+  #caricamento b { font: 800 11px/1 var(--num); letter-spacing: 4px; color: #cdbd8e; }
+  @keyframes giro { to { transform: rotate(360deg); } }
+
+  /* ---------- logo DaProd ---------- */
+  .logoDP { display: block; filter: drop-shadow(0 0 10px rgba(255,190,40,.55)); }
+  .logoDP .neon { animation: neon 3.4s ease-in-out infinite; }
+  @keyframes neon { 0%,100% { opacity: 1; } 46% { opacity: 1; } 48% { opacity: .55; } 50% { opacity: 1; } 52% { opacity: .75; } 54% { opacity: 1; } }
+
+  /* ---------- colori dei gradi ---------- */
+  .g1 { --gc: var(--g1); } .g2 { --gc: var(--g2); } .g3 { --gc: var(--g3); } .g4 { --gc: var(--g4); }
+  .g5 { --gc: var(--g5); } .g6 { --gc: var(--g6); } .g7 { --gc: var(--g7); } .g8 { --gc: var(--g8); }
+  .gtesto { color: var(--gc); text-shadow: 0 0 12px color-mix(in srgb, var(--gc) 60%, transparent); }
+  .g5.gtesto, .g6.gtesto, .g7.gtesto, .g8.gtesto { background-size: 200% 100%; -webkit-background-clip: text; background-clip: text;
+    color: transparent; animation: iride 3s linear infinite; text-shadow: none; filter: drop-shadow(0 0 8px color-mix(in srgb, var(--gc) 70%, transparent)); }
+  .g5.gtesto { background-image: linear-gradient(90deg, #9ffcff, #f7b8ff, #fff4a8, #9ffcff); }
+  .g6.gtesto { background-image: linear-gradient(90deg, #ff5d5d, #ffd23f, #5dff8f, #45c8ff, #c86bff, #ff5d5d); }
+  .g7.gtesto { background-image: linear-gradient(90deg, #ffffff, #b5f4ff, #ffffff, #d8c8ff, #ffffff); }
+  .g8.gtesto { background-image: linear-gradient(90deg, #ff3df2, #7b4dff, #35e8ff, #ff3df2); }
+  @keyframes iride { to { background-position: 200% 0; } }
+
+  /* ---------- HUD ---------- */
+  #hud { position: fixed; left: 0; right: 0; top: 0; z-index: 10; pointer-events: none;
+    padding: calc(12px + var(--sat)) 16px 0; display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+  .carta { background: var(--vetro); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    border: 1px solid var(--bordo); border-radius: var(--r);
+    box-shadow: 0 12px 34px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.10); }
+  #marchio { padding: 8px 16px 9px 12px; display: flex; flex-direction: column; gap: 2px; }
+  #marchio svg { width: 172px; height: auto; }
+  #marchio .sub { font: 800 9px/1 var(--num); letter-spacing: 3.2px; color: #c7b8ff; padding-left: 50px; margin-top: -3px; white-space: nowrap; }
+  #marchio .sub b { color: var(--cia); font-weight: 800; }
+  #zonaBox { pointer-events: auto; display: flex; align-items: center; gap: 4px; padding: 6px; position: absolute; left: 50%; top: calc(12px + var(--sat));
+    transform: translateX(-50%); }
+  #zonaBox .freccia { width: 36px; height: 44px; border-radius: 12px; border: 0; background: rgba(255,255,255,.06); color: var(--oro); font-size: 15px; }
+  #zonaBox .freccia:disabled { opacity: .25; cursor: default; }
+  #zonaBox .freccia.bloccata { color: #fff; background: rgba(255,61,242,.16); }
+  #zonaInfo { text-align: center; min-width: 170px; padding: 0 6px; white-space: nowrap; }
+  #zonaInfo .etich b { color: var(--zc, var(--oro)); }
+  #zonaNome { font: 900 15px/1.15 var(--num); letter-spacing: 1.6px; color: var(--zc, #fff); margin-top: 3px; white-space: nowrap;
+    text-shadow: 0 0 14px color-mix(in srgb, var(--zc, #fff) 55%, transparent); }
+  #destra { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+  #saldoBox { padding: 9px 18px 10px; min-width: 190px; text-align: right; position: relative; overflow: hidden; }
+  #saldoBox::after { content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(100deg, transparent 30%, rgba(255,230,150,.22) 50%, transparent 70%); transform: translateX(-120%); }
+  #saldoBox.brilla::after { animation: brilla .8s ease-out; }
+  @keyframes brilla { to { transform: translateX(120%); } }
+  .etich { font: 800 9.5px/1 var(--num); letter-spacing: 2.6px; color: #cdbd8e; }
+  #saldo { font: 900 27px/1.05 var(--num); color: var(--oro); letter-spacing: .5px; margin-top: 4px;
+    text-shadow: 0 0 16px rgba(255,180,0,.55); white-space: nowrap; }
+  #saldo.giu { color: #ff8a8a; text-shadow: 0 0 14px rgba(255,80,80,.5); }
+  #rendita { font: 800 10px/1 var(--num); color: var(--verde); margin-top: 5px; letter-spacing: .6px; }
+  #mini { display: flex; gap: 8px; align-items: flex-start; }
+  .mini { padding: 7px 12px 8px; min-width: 92px; text-align: right; }
+  .mini b { display: block; font: 800 14px/1.1 var(--num); color: #fff; margin-top: 3px; white-space: nowrap; }
+  #potenza { color: var(--cia); text-shadow: 0 0 10px rgba(53,232,255,.45); }
+  #audioBtn { pointer-events: auto; width: 40px; height: 40px; border-radius: 50%; font-size: 17px; color: var(--oro); display: grid; place-items: center; }
+  #audioBtn.off { color: #756d8a; }
+  #fps { position: fixed; left: 16px; top: calc(96px + var(--sat)); z-index: 10; font: 700 11px var(--num); color: #9ff; display: none; }
+
+  /* ---------- avvisi, fluttuanti, banner ---------- */
+  #avvisi { position: fixed; top: calc(96px + var(--sat)); left: 50%; transform: translateX(-50%); z-index: 20;
+    display: flex; flex-direction: column; align-items: center; gap: 6px; pointer-events: none; width: 92vw; }
+  .avviso { background: var(--vetro2); border: 1px solid var(--bordo); border-radius: 999px; padding: 8px 18px;
+    font: 800 12px/1.2 var(--num); letter-spacing: 1.2px; color: #fff3c4; text-align: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,.5); animation: avvIn .35s cubic-bezier(.2,1.4,.4,1), avvOut .5s ease-in 2.6s forwards; }
+  .avviso.mag { border-color: rgba(255,61,242,.5); color: #ffd1fb; }
+  .avviso.cia { border-color: rgba(53,232,255,.5); color: #d4fbff; }
+  .avviso.verde { border-color: rgba(93,255,180,.5); color: #d5ffee; }
+  .avviso.rosso { border-color: rgba(255,90,90,.55); color: #ffd0d0; }
+  @keyframes avvIn { from { transform: translateY(-14px) scale(.85); opacity: 0; } }
+  @keyframes avvOut { to { transform: translateY(-10px); opacity: 0; } }
+  #fluttuanti { position: fixed; inset: 0; pointer-events: none; z-index: 9; overflow: hidden; }
+  .fluttua { position: absolute; transform: translate(-50%,-50%); font: 900 16px/1 var(--num); color: var(--oro);
+    text-shadow: 0 0 10px rgba(255,170,0,.8), 0 2px 0 rgba(0,0,0,.6); white-space: nowrap;
+    animation: sale 1.5s cubic-bezier(.2,.8,.3,1) forwards; }
+  .fluttua small { display: block; font-size: 10px; letter-spacing: 2px; color: #fff; text-align: center; margin-top: 4px; }
+  .fluttua.gr { font-size: 22px; }
+  .fluttua.perso { color: #ff9a9a; font-size: 12px; text-shadow: 0 0 10px rgba(255,60,60,.7); }
+  @keyframes sale { 0% { opacity: 0; transform: translate(-50%,-30%) scale(.6); } 14% { opacity: 1; transform: translate(-50%,-60%) scale(1.14); }
+    100% { opacity: 0; transform: translate(-50%,-210%) scale(1); } }
+  #banner { position: fixed; left: 50%; top: 30%; z-index: 25; pointer-events: none; text-align: center;
+    transform: translate(-50%,-50%) scale(.5); opacity: 0; transition: opacity .25s, transform .35s cubic-bezier(.2,1.6,.4,1); }
+  #banner.su { opacity: 1; transform: translate(-50%,-50%) scale(1); }
+  #banner .sopra { font: 800 12px/1 var(--num); letter-spacing: 6px; color: #fff; text-shadow: 0 0 12px rgba(255,255,255,.6); }
+  #banner .grande { font: 900 clamp(30px, 8vw, 64px)/1.05 var(--num); letter-spacing: 3px; margin-top: 8px; }
+  #banner .sotto { font: 700 16px/1.2 var(--txt); color: #eee; margin-top: 8px; text-shadow: 0 2px 8px rgba(0,0,0,.8); }
+  #lampo { position: fixed; inset: 0; z-index: 24; pointer-events: none; background: radial-gradient(circle, rgba(255,255,255,.9), rgba(255,255,255,0) 70%); opacity: 0; }
+
+  /* ---------- barra in basso ---------- */
+  #barra { position: fixed; left: 0; right: 0; bottom: 0; z-index: 12; pointer-events: none;
+    padding: 0 16px calc(14px + var(--sal)); display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
+  .gruppo { display: flex; gap: 10px; align-items: flex-end; }
+  .tondo { pointer-events: auto; position: relative; width: 74px; height: 74px; border-radius: 50%;
+    border: 1px solid var(--bordo); background: radial-gradient(circle at 50% 30%, #2d2446, #120e1f 70%);
+    color: var(--oro); display: grid; place-items: center; text-align: center;
+    box-shadow: 0 12px 30px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.14), 0 0 0 4px rgba(0,0,0,.25);
+    transition: transform .12s, filter .2s; }
+  .tondo:hover { transform: translateY(-2px); filter: brightness(1.15); }
+  .tondo:active { transform: scale(.95); }
+  .tondo .ico { font-size: 25px; line-height: 1; display: block; }
+  .tondo .lab { font: 800 8.5px/1 var(--num); letter-spacing: 1.3px; margin-top: 4px; display: block; }
+  .tondo .punto { position: absolute; top: 3px; right: 5px; width: 13px; height: 13px; border-radius: 50%;
+    background: var(--mag); box-shadow: 0 0 10px var(--mag); animation: pulsa 1.2s infinite; display: none; }
+  .tondo.nuovo .punto { display: block; }
+  @keyframes pulsa { 50% { transform: scale(1.35); } }
+  #prendiBtn { width: 104px; height: 104px; color: #1a1000; border: 0;
+    background: radial-gradient(circle at 50% 28%, #fff6c8, var(--oro) 48%, var(--oro2) 100%);
+    box-shadow: 0 14px 36px rgba(255,160,0,.45), inset 0 -5px 0 rgba(0,0,0,.2), 0 0 0 5px rgba(255,213,74,.18); }
+  #prendiBtn .ico { font-size: 30px; }
+  #prendiBtn .lab { font-size: 11px; letter-spacing: 2px; }
+  #prendiBtn .costo { display: block; font: 800 10px/1 var(--num); margin-top: 3px; opacity: .8; }
+  #prendiBtn.occupato { filter: grayscale(.7) brightness(.7); }
+  #prendiBtn.pronto { animation: invito 1.6s ease-in-out infinite; }
+  #prendiBtn.no { animation: no .35s; }
+  @keyframes invito { 50% { box-shadow: 0 14px 44px rgba(255,160,0,.7), inset 0 -5px 0 rgba(0,0,0,.2), 0 0 0 10px rgba(255,213,74,.10); } }
+  @keyframes no { 20%,60% { transform: translateX(-5px); } 40%,80% { transform: translateX(5px); } }
+
+  #teste { pointer-events: auto; display: flex; gap: 6px; padding: 7px; border-radius: 22px; }
+  .testa { position: relative; width: 92px; padding: 8px 4px 7px; border-radius: 16px; border: 1px solid transparent; background: transparent;
+    color: #fff; display: flex; flex-direction: column; align-items: center; gap: 3px; transition: background .2s, border-color .2s, transform .15s; }
+  .testa .ico { font-size: 26px; line-height: 1; transition: transform .2s; }
+  .testa b { font: 800 10px/1 var(--num); letter-spacing: 1.2px; }
+  .testa small { font: 700 12px/1 var(--txt); color: #b9aed6; white-space: nowrap; }
+  .testa .azione { font: 800 7.5px/1 var(--num); letter-spacing: 1.6px; color: var(--cia); }
+  .testa:hover .ico { transform: translateY(-3px) rotate(-8deg); }
+  .testa.sel { background: linear-gradient(180deg, rgba(255,213,74,.22), rgba(255,213,74,.04)); border-color: rgba(255,213,74,.6); }
+  .testa.sel b { color: var(--oro); }
+  .testa.bloccata .ico { filter: grayscale(1) brightness(.45); }
+  .testa.bloccata::after { content: "🔒"; position: absolute; top: 8px; left: 50%; transform: translateX(-50%); font-size: 16px; }
+  .testa.bloccata small { color: #8f86a8; }
+
+  #hint { position: fixed; left: 50%; bottom: calc(140px + var(--sal)); transform: translateX(-50%); z-index: 11;
+    padding: 9px 18px; border-radius: 999px; font: 700 13px/1.3 var(--txt); color: #e4dcf5; pointer-events: none;
+    text-align: center; max-width: 88vw; transition: opacity .6s, transform .6s; }
+  #hint b { color: var(--oro); }
+  #hint.via { opacity: 0; transform: translateX(-50%) translateY(12px); }
+
+  /* ---------- schermata iniziale ---------- */
+  #intro { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; padding: 18px;
+    background: radial-gradient(ellipse at 50% 30%, rgba(40,14,60,.5), rgba(5,4,10,.9) 70%);
+    backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); transition: opacity .6s, visibility .6s; overflow-y: auto; }
+  #intro.via { opacity: 0; visibility: hidden; pointer-events: none; }
+  #intro .box { width: min(620px, 100%); text-align: center; display: flex; flex-direction: column; align-items: center; gap: 14px; margin: auto; }
+  #intro .logoGrande svg { width: min(400px, 82vw); height: auto; }
+  #intro .titolo2 { font: 900 clamp(22px, 6vw, 44px)/1 var(--num); letter-spacing: clamp(4px, 1.4vw, 10px); margin-top: -4px;
+    background: linear-gradient(180deg, #fff, #ffe27a 45%, #ff9d00 75%, #ff3df2); -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 0 18px rgba(255,160,0,.6)); }
+  #intro .motto { font: 800 11px/1 var(--num); letter-spacing: 4px; color: var(--cia); text-shadow: 0 0 12px rgba(53,232,255,.7); }
+  #intro .passi { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 100%; }
+  #intro .passo { padding: 12px 10px; font: 600 14px/1.25 var(--txt); color: #ddd4f0; }
+  #intro .passo i { display: block; font-style: normal; font-size: 28px; margin-bottom: 6px; }
+  #intro .passo b { color: var(--oro); display: block; font: 900 12px/1 var(--num); letter-spacing: 2px; margin-bottom: 6px; }
+  #intro .gradi { width: 100%; padding: 12px; }
+  #intro .gradi .etich { color: #fff3c4; }
+  .scala { display: flex; gap: 4px; justify-content: center; flex-wrap: wrap; margin-top: 10px; }
+  .scala span { font: 900 9.5px/1 var(--num); letter-spacing: 1px; padding: 6px 8px; border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--gc) 60%, transparent); background: color-mix(in srgb, var(--gc) 12%, transparent); }
+  #bentornato { font: 700 15px/1.3 var(--txt); color: #d5ffee; }
+  #bentornato b { color: var(--verde); font-family: var(--num); }
+  #giocaBtn { pointer-events: auto; font: 900 18px/1 var(--num); letter-spacing: 4px; color: #1a1000;
+    padding: 17px 44px; border-radius: 999px; border: 0;
+    background: linear-gradient(180deg, #fff3b8, var(--oro) 45%, var(--oro2));
+    box-shadow: 0 0 0 3px rgba(255,213,74,.25), 0 12px 36px rgba(255,170,0,.45), inset 0 -3px 0 rgba(0,0,0,.2);
+    animation: invito2 1.8s ease-in-out infinite; }
+  #giocaBtn:active { transform: scale(.96); }
+  @keyframes invito2 { 50% { box-shadow: 0 0 0 9px rgba(255,213,74,.10), 0 16px 44px rgba(255,170,0,.65), inset 0 -3px 0 rgba(0,0,0,.2); } }
+  #intro .piede { font: 700 10px/1 var(--num); letter-spacing: 2.5px; color: #7c7299; }
+
+  /* ---------- pannelli (officina, sblocco) ---------- */
+  .modale { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 14px;
+    background: rgba(4,3,9,.6); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); transition: opacity .25s, visibility .25s; }
+  .modale.chiuso { opacity: 0; visibility: hidden; pointer-events: none; }
+  .pannello { width: min(660px, 100%); max-height: min(88vh, 780px); display: flex; flex-direction: column;
+    background: linear-gradient(180deg, rgba(30,22,52,.97), rgba(12,9,22,.98)); border: 1px solid var(--bordo);
+    border-radius: 24px; overflow: hidden; box-shadow: 0 30px 80px rgba(0,0,0,.7), 0 0 60px rgba(255,61,242,.12);
+    transition: transform .3s cubic-bezier(.2,1.2,.4,1); }
+  .modale.chiuso .pannello { transform: translateY(30px) scale(.97); }
+  .pannello .intesta { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 16px 10px; }
+  .pannello .intesta h2 { font: 900 17px/1.1 var(--num); letter-spacing: 2px; color: #fff; }
+  .pannello .intesta .s { text-align: right; margin-left: auto; }
+  .pannello .intesta .s b { font: 900 18px/1.1 var(--num); color: var(--oro); }
+  .chiudi { width: 38px; height: 38px; border-radius: 50%; border: 1px solid rgba(255,255,255,.15); background: rgba(255,255,255,.06);
+    color: #fff; font-size: 16px; flex: 0 0 auto; }
+  .schede { display: flex; gap: 6px; padding: 0 12px 10px; overflow-x: auto; scrollbar-width: none; }
+  .schede::-webkit-scrollbar { display: none; }
+  .schede button { flex: 1 0 auto; border: 1px solid rgba(255,255,255,.1); background: rgba(255,255,255,.04); color: #bdb3d6;
+    font: 800 10.5px/1 var(--num); letter-spacing: 1.2px; padding: 11px 12px; border-radius: 12px; white-space: nowrap; }
+  .schede button.on { color: #1a1000; background: linear-gradient(180deg, #fff0a8, var(--oro)); border-color: transparent; }
+  .contenuto { overflow-y: auto; padding: 4px 12px 16px; display: flex; flex-direction: column; gap: 8px; min-height: 0; }
+  .riga { display: flex; align-items: center; gap: 12px; padding: 11px 12px; border-radius: 16px;
+    background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.07); }
+  .riga.ok { border-color: rgba(255,213,74,.45); background: linear-gradient(90deg, rgba(255,213,74,.10), rgba(255,255,255,.03)); }
+  .riga.max { border-color: rgba(93,255,180,.35); background: linear-gradient(90deg, rgba(93,255,180,.08), rgba(255,255,255,.03)); }
+  .riga .ico { width: 48px; height: 48px; flex: 0 0 auto; display: grid; place-items: center; font-size: 27px;
+    border-radius: 14px; background: rgba(0,0,0,.35); border: 1px solid rgba(255,255,255,.08); }
+  .riga .info { flex: 1; min-width: 0; }
+  .riga .info b { display: block; font: 800 12.5px/1.2 var(--num); letter-spacing: .6px; color: #fff; }
+  .riga .info small { display: block; font: 600 13.5px/1.25 var(--txt); color: #b6acd0; margin-top: 3px; }
+  .riga .info small em { font-style: normal; color: var(--verde); }
+  .pips { display: flex; gap: 3px; margin-top: 6px; flex-wrap: wrap; }
+  .pips i { width: 14px; height: 5px; border-radius: 3px; background: rgba(255,255,255,.12); }
+  .pips i.on { background: linear-gradient(90deg, var(--oro2), var(--oro)); box-shadow: 0 0 6px rgba(255,190,40,.6); }
+  .compra { flex: 0 0 auto; min-width: 108px; padding: 11px 12px; border-radius: 12px; border: 0;
+    font: 900 11.5px/1.1 var(--num); letter-spacing: .4px; color: #1a1000;
+    background: linear-gradient(180deg, #fff0a8, var(--oro) 50%, var(--oro2)); box-shadow: 0 6px 16px rgba(255,170,0,.25); }
+  .compra small { display: block; font: 700 11px/1 var(--txt); letter-spacing: 0; margin-top: 3px; opacity: .8; }
+  .compra:disabled { background: rgba(255,255,255,.07); color: #7f7798; box-shadow: none; cursor: not-allowed; }
+  .compra.inuso { background: transparent; color: var(--verde); border: 1px solid rgba(93,255,180,.45); box-shadow: none; }
+  .compra.usa { background: linear-gradient(180deg, #b9fff0, #3fe0b4); }
+  .sezione { font: 800 10px/1 var(--num); letter-spacing: 3px; color: #cdbd8e; margin: 10px 4px 2px; }
+  .nota { font: 600 13px/1.35 var(--txt); color: #a99fc4; padding: 0 4px; }
+  .opz { display: flex; gap: 6px; flex-wrap: wrap; }
+  .opz button { border: 1px solid rgba(255,255,255,.14); background: rgba(255,255,255,.05); color: #cfc7de;
+    font: 800 10.5px/1 var(--num); letter-spacing: 1px; padding: 11px 13px; border-radius: 12px; }
+  .opz button.on { color: #062a1e; background: linear-gradient(180deg, #b9fff0, #3fe0b4); border-color: transparent; }
+  .opz button.rosso { color: #ffd0d0; border-color: rgba(255,90,90,.5); background: rgba(255,60,60,.1); }
+  .stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+  .stats div { padding: 10px 12px; border-radius: 14px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.07); }
+  .stats b { display: block; font: 900 16px/1.2 var(--num); color: var(--oro); margin-top: 4px; }
+
+  /* ---------- sblocco zona ---------- */
+  #sblocco .pannello { width: min(440px, 100%); text-align: center; }
+  #sblocco .corpo { padding: 6px 20px 22px; display: flex; flex-direction: column; gap: 12px; align-items: center; }
+  #sblocco .grossa { font-size: 54px; line-height: 1; filter: drop-shadow(0 0 18px rgba(255,255,255,.4)); }
+  #sblocco h3 { font: 900 20px/1.1 var(--num); letter-spacing: 2px; color: var(--zc, #fff); text-shadow: 0 0 16px color-mix(in srgb, var(--zc, #fff) 55%, transparent); }
+  .requisito { width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 11px 14px; border-radius: 14px;
+    background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); font: 700 15px/1.2 var(--txt); }
+  .requisito b { font: 900 13px/1 var(--num); }
+  .requisito.ok { border-color: rgba(93,255,180,.4); } .requisito.ok b { color: var(--verde); }
+  .requisito.no b { color: #ff9a9a; }
+  #sbloccaBtn { font: 900 15px/1 var(--num); letter-spacing: 3px; padding: 15px 30px; border-radius: 999px; border: 0; color: #1a1000;
+    background: linear-gradient(180deg, #fff3b8, var(--oro) 45%, var(--oro2)); box-shadow: 0 12px 30px rgba(255,170,0,.4); }
+  #sbloccaBtn:disabled { background: rgba(255,255,255,.08); color: #7f7798; box-shadow: none; cursor: not-allowed; }
+
+  /* ---------- VETRINA ---------- */
+  #vetrina { position: fixed; inset: 0; z-index: 45; display: flex; pointer-events: none; transition: opacity .3s, visibility .3s; }
+  #vetrina.chiuso { opacity: 0; visibility: hidden; }
+  body.invetrina #hud, body.invetrina #barra, body.invetrina #hint, body.invetrina #fps { opacity: 0; visibility: hidden; pointer-events: none; }
+  #hud, #barra, #hint { transition: opacity .3s, visibility .3s; }
+  #vetrina .lato { pointer-events: auto; width: min(520px, 46vw); height: 100%; display: flex; flex-direction: column;
+    background: linear-gradient(90deg, rgba(10,7,20,.97), rgba(16,11,30,.93)); border-right: 1px solid var(--bordo);
+    box-shadow: 20px 0 60px rgba(0,0,0,.5); padding-top: var(--sat); transition: transform .35s cubic-bezier(.2,1.1,.4,1); }
+  #vetrina.chiuso .lato { transform: translateX(-40px); }
+  #vetrina .intesta { display: flex; align-items: center; gap: 10px; padding: 14px 14px 8px; }
+  #vetrina .intesta h2 { font: 900 17px/1 var(--num); letter-spacing: 2px; }
+  #vetrina .intesta h2 small { display: block; font: 800 9px/1 var(--num); letter-spacing: 2.5px; color: #cdbd8e; margin-top: 5px; }
+  #vetrina .intesta .chiudi { margin-left: auto; }
+  #poteri { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; padding: 0 14px 10px; }
+  .potere { padding: 7px 4px 6px; border-radius: 12px; text-align: center; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.07); }
+  .potere i { font-style: normal; font-size: 17px; display: block; }
+  .potere b { display: block; font: 900 10.5px/1.1 var(--num); color: var(--verde); margin-top: 3px; }
+  .potere small { display: block; font: 700 9.5px/1.1 var(--txt); color: #a99fc4; margin-top: 2px; }
+  #griglia { flex: 1; min-height: 0; overflow-y: auto; padding: 0 14px 14px; }
+  .famiglia { font: 800 10px/1 var(--num); letter-spacing: 2.5px; margin: 12px 2px 7px; display: flex; justify-content: space-between; color: var(--zc); }
+  .famiglia span { color: #8f86a8; }
+  .celle { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; }
+  .cella { position: relative; aspect-ratio: .82; border-radius: 14px; border: 1px solid rgba(255,255,255,.08); background: rgba(255,255,255,.03);
+    display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding: 4px 3px 6px; overflow: hidden; color: #fff;
+    transition: transform .15s, border-color .2s, background .2s; }
+  .cella:hover { transform: translateY(-2px); }
+  .cella img { position: absolute; inset: 2px 2px 26px; width: calc(100% - 4px); height: calc(100% - 28px); object-fit: contain; }
+  .cella b { position: relative; font: 800 8.5px/1.1 var(--num); letter-spacing: .4px; text-align: center; white-space: nowrap; overflow: hidden; max-width: 100%; }
+  .cella .st { position: relative; display: flex; gap: 1.5px; margin-top: 3px; }
+  .cella .st i { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,.14); }
+  .cella .st i.on { background: var(--gc); box-shadow: 0 0 5px var(--gc); }
+  .cella.sel { border-color: var(--oro); background: rgba(255,213,74,.10); box-shadow: 0 0 0 1px var(--oro), 0 0 18px rgba(255,213,74,.25); }
+  .cella.ignota b { color: #6f6789; }
+  .cella.pronta::after { content: "⬆"; position: absolute; top: 4px; right: 5px; width: 18px; height: 18px; border-radius: 50%;
+    display: grid; place-items: center; font-size: 10px; color: #1a1000; background: var(--verde); box-shadow: 0 0 10px var(--verde); animation: pulsa 1.2s infinite; }
+  .cella.g5, .cella.g6, .cella.g7, .cella.g8 { background: linear-gradient(160deg, color-mix(in srgb, var(--gc) 16%, transparent), rgba(255,255,255,.02)); }
+  #scheda { pointer-events: auto; border-top: 1px solid rgba(255,255,255,.08); padding: 12px 14px calc(14px + var(--sal)); background: rgba(8,6,16,.6); }
+  #scheda .nome { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+  #scheda .nome b { font: 900 18px/1.1 var(--num); letter-spacing: 1px; }
+  #scheda .nome span { font: 900 12px/1 var(--num); letter-spacing: 2px; }
+  #scheda .desc { font: 600 13.5px/1.3 var(--txt); color: #b6acd0; margin-top: 4px; }
+  #scheda .num { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 10px; }
+  #scheda .num div { padding: 7px 8px; border-radius: 12px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.07); }
+  #scheda .num b { display: block; font: 900 13px/1.1 var(--num); margin-top: 3px; color: #fff; }
+  #scheda .barraCopie { height: 8px; border-radius: 99px; background: rgba(255,255,255,.08); margin-top: 10px; overflow: hidden; }
+  #scheda .barraCopie i { display: block; height: 100%; width: 0; border-radius: 99px; background: linear-gradient(90deg, var(--cia), var(--verde)); transition: width .4s; }
+  #scheda .copieTxt { font: 700 12.5px/1 var(--txt); color: #a99fc4; margin-top: 6px; display: flex; justify-content: space-between; }
+  #potenziaBtn { width: 100%; margin-top: 10px; font: 900 14px/1.1 var(--num); letter-spacing: 2px; padding: 14px; border-radius: 14px; border: 0; color: #1a1000;
+    background: linear-gradient(180deg, #d4fff0, var(--verde) 50%, #1fcf8e); box-shadow: 0 10px 28px rgba(60,255,170,.3); }
+  #potenziaBtn small { display: block; font: 700 12px/1 var(--txt); letter-spacing: 0; margin-top: 4px; opacity: .8; }
+  #potenziaBtn:disabled { background: rgba(255,255,255,.07); color: #8f86a8; box-shadow: none; cursor: not-allowed; }
+  #potenziaBtn.pronto { animation: invito3 1.4s ease-in-out infinite; }
+  @keyframes invito3 { 50% { box-shadow: 0 10px 36px rgba(60,255,170,.6), 0 0 0 6px rgba(93,255,180,.12); } }
+  #palco { flex: 1; position: relative; }
+  #palco .etichetta { position: absolute; left: 50%; bottom: calc(26px + var(--sal)); transform: translateX(-50%); text-align: center; pointer-events: none; }
+  #palco .etichetta b { display: block; font: 900 clamp(22px, 3.2vw, 38px)/1 var(--num); letter-spacing: 3px; }
+  #palco .etichetta span { display: block; font: 800 11px/1 var(--num); letter-spacing: 5px; color: #fff; margin-top: 8px; opacity: .85; }
+  #palco .giraHint { position: absolute; left: 50%; top: calc(20px + var(--sat)); transform: translateX(-50%); font: 700 12px/1 var(--txt); color: #a99fc4;
+    background: var(--vetro); padding: 7px 14px; border-radius: 999px; border: 1px solid rgba(255,255,255,.08); white-space: nowrap; }
+
+  #erroreGioco { position: fixed; left: 50%; top: 14px; transform: translateX(-50%); z-index: 99; background: rgba(120,10,20,.95);
+    border: 1px solid #ff6b81; border-radius: 14px; padding: 12px 18px; font: 700 13px/1.5 var(--txt); color: #fff; max-width: 92vw; text-align: center; }
+
+  /* ---------- incorporato nella pagina (demo e vetrina della home) ---------- */
+  body.incorporato #hud, body.incorporato #barra, body.incorporato #hint, body.incorporato #intro, body.incorporato #avvisi,
+  body.incorporato #vetrina, body.incorporato #fps { display: none !important; }
+  body.incorporato canvas#gioco { cursor: default; }
+  #didascalia { position: fixed; left: 0; right: 0; bottom: 18px; text-align: center; pointer-events: none; z-index: 10; display: none; }
+  body.incorporato #didascalia { display: block; }
+  #didascalia b { display: block; font: 900 clamp(18px, 5vw, 30px)/1 var(--num); letter-spacing: 3px; }
+  #didascalia span { display: block; font: 800 10px/1 var(--num); letter-spacing: 5px; color: #fff; margin-top: 8px; opacity: .8; }
+
+  /* ---------- telefono ---------- */
+  @media (max-width: 760px) {
+    #hud { padding: calc(8px + var(--sat)) 8px 0; flex-wrap: wrap; }
+    #marchio { padding: 6px 10px 7px 8px; }
+    #marchio svg { width: 112px; }
+    #marchio .sub { font-size: 6.5px; letter-spacing: 1.4px; padding-left: 29px; }
+    #zonaBox { position: fixed; top: auto; bottom: calc(196px + var(--sal)); padding: 4px; }
+    #zonaBox .freccia { width: 32px; height: 36px; }
+    #zonaInfo { min-width: 150px; }
+    #zonaInfo .etich { font-size: 7.5px; letter-spacing: 1.6px; }
+    #zonaNome { font-size: 12.5px; }
+    #saldoBox { min-width: 0; padding: 7px 12px 8px; }
+    #saldo { font-size: 19px; }
+    #rendita { font-size: 8.5px; }
+    #destra { gap: 6px; }
+    #mini { gap: 5px; }
+    .mini { min-width: 0; padding: 5px 8px 6px; }
+    .mini .etich { font-size: 7px; letter-spacing: 1.4px; }
+    .mini b { font-size: 11px; }
+    #audioBtn { width: 34px; height: 34px; font-size: 14px; }
+    #barra { flex-wrap: wrap; padding: 0 8px calc(8px + var(--sal)); gap: 8px; align-items: flex-end; }
+    #teste { order: -1; flex: 1 0 100%; justify-content: center; padding: 5px; }
+    .testa { flex: 1; width: auto; padding: 6px 2px 5px; }
+    .testa .ico { font-size: 22px; }
+    .tondo { width: 60px; height: 60px; }
+    .tondo .ico { font-size: 21px; }
+    .tondo .lab { font-size: 7px; }
+    #prendiBtn { width: 84px; height: 84px; }
+    #prendiBtn .ico { font-size: 24px; }
+    #hint { bottom: calc(250px + var(--sal)); font-size: 12px; }
+    #avvisi { top: calc(112px + var(--sat)); }
+    #banner { top: 34%; }
+    #intro .passi { grid-template-columns: 1fr; }
+    #intro .passo { display: flex; align-items: center; gap: 12px; text-align: left; padding: 9px 12px; }
+    #intro .passo i { margin: 0; }
+    #intro .passo b { margin-bottom: 3px; }
+    .compra { min-width: 92px; font-size: 10.5px; }
+    .riga { gap: 9px; padding: 9px; }
+    .riga .ico { width: 42px; height: 42px; font-size: 23px; }
+    #vetrina { flex-direction: column-reverse; }
+    #vetrina .lato { width: 100%; height: 60%; border-right: 0; border-top: 1px solid var(--bordo); padding-top: 0; border-radius: 22px 22px 0 0; }
+    #vetrina.chiuso .lato { transform: translateY(40px); }
+    #vetrina .intesta { padding: 10px 12px 6px; }
+    #poteri { padding: 0 12px 8px; gap: 4px; }
+    .potere small { display: none; }
+    #griglia { padding: 0 12px 10px; }
+    #scheda { padding: 10px 12px calc(10px + var(--sal)); }
+    #scheda .desc { display: none; }
+    #vetrina .lato { height: 64%; }
+    #scheda .num { gap: 4px; }
+    #palco .etichetta { bottom: 12px; }
+    #palco .etichetta b { font-size: 20px; }
+  }
+  @media (max-width: 760px) and (min-height: 500px) { #fps { top: calc(110px + var(--sat)); } }
+  @media (max-height: 520px) and (orientation: landscape) {
+    #teste .azione, .testa small { display: none; }
+    #hint { display: none; }
+  }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <linearGradient id="dpOro" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fffbe0"/><stop offset=".45" stop-color="#ffd54a"/><stop offset="1" stop-color="#b87a14"/>
+    </linearGradient>
+    <linearGradient id="dpMag" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ff7bf6"/><stop offset="1" stop-color="#8a2cff"/>
+    </linearGradient>
+    <symbol id="logoDaProd" viewBox="0 0 260 64">
+      <g class="neon">
+        <circle cx="32" cy="32" r="27" fill="#150e24" stroke="url(#dpOro)" stroke-width="4"/>
+        <circle cx="32" cy="32" r="20.5" fill="none" stroke="url(#dpMag)" stroke-width="2" stroke-dasharray="3 3.4"/>
+        <path d="M24 19h9.5c8 0 13 5 13 13s-5 13-13 13H24z M30 25v14h3.2c4.3 0 7-2.6 7-7s-2.7-7-7-7z" fill="url(#dpOro)" fill-rule="evenodd"/>
+        <text x="70" y="44" font-family="Orbitron, 'Arial Black', sans-serif" font-weight="900" font-size="36" letter-spacing="1" fill="#fff6dd">Da<tspan fill="url(#dpOro)">Prod</tspan></text>
+      </g>
+    </symbol>
+  </defs>
+</svg>
+
+<canvas id="gioco"></canvas>
+<div id="vignetta"></div>
+<div id="fluttuanti"></div>
+<div id="lampo"></div>
+
+<div id="caricamento"><div class="c"><div class="pinzetta"></div><b>ACCENDO LA SALA…</b></div></div>
+
+<div id="hud">
+  <div id="marchio" class="carta">
+    <svg class="logoDP" viewBox="0 0 260 64" aria-label="DaProd"><use href="#logoDaProd"/></svg>
+    <div class="sub">CLAW MACHINE · <b id="versione">v1</b></div>
+  </div>
+  <div id="zonaBox" class="carta">
+    <button class="freccia" id="zonaPrec" aria-label="zona precedente">◀</button>
+    <div id="zonaInfo"><div class="etich">ZONA <b id="zonaNum">1</b> · <span id="zonaCosto">L.100</span> a presa</div><div id="zonaNome">PELUCHE PARK</div></div>
+    <button class="freccia" id="zonaSucc" aria-label="zona successiva">▶</button>
+  </div>
+  <div id="destra">
+    <div style="display:flex;gap:8px;align-items:flex-start">
+      <div id="saldoBox" class="carta"><div class="etich">SALDO</div><div id="saldo">L.0</div><div id="rendita">+L.0 al secondo</div></div>
+      <button id="audioBtn" class="carta" aria-label="audio">🔊</button>
+    </div>
+    <div id="mini">
+      <div class="mini carta"><div class="etich">⚡ POTENZA</div><b id="potenza">0</b></div>
+      <div class="mini carta"><div class="etich">📦 COLLEZIONE</div><b id="collez">0/20</b></div>
+    </div>
+  </div>
+</div>
+<div id="fps"></div>
+<div id="avvisi"></div>
+<div id="banner"><div class="sopra" id="bannerSopra"></div><div class="grande" id="bannerGrande"></div><div class="sotto" id="bannerSotto"></div></div>
+<div id="hint" class="carta"><b>Tocca</b> la vasca per spostare la pinza · <b>PRENDI</b> per calarla</div>
+<div id="didascalia"><b id="didNome"></b><span id="didGrado"></span></div>
+
+<div id="barra">
+  <div class="gruppo">
+    <button id="vetrinaBtn" class="tondo" aria-label="vetrina"><span class="punto"></span><span><span class="ico">🏆</span><span class="lab">VETRINA</span></span></button>
+    <button id="officinaBtn" class="tondo" aria-label="officina"><span class="punto"></span><span><span class="ico">🔧</span><span class="lab">OFFICINA</span></span></button>
+  </div>
+  <div id="teste" class="carta"></div>
+  <button id="prendiBtn" class="tondo pronto" aria-label="prendi"><span><span class="ico">⬇</span><span class="lab">PRENDI</span><span class="costo" id="costoPresa">L.100</span></span></button>
+</div>
+
+<div id="intro">
+  <div class="box">
+    <div class="logoGrande"><svg class="logoDP" viewBox="0 0 260 64" aria-label="DaProd"><use href="#logoDaProd"/></svg></div>
+    <div class="titolo2">CLAW MACHINE</div>
+    <div class="motto">LA GRANDE VASCA DEI MODELLINI</div>
+    <div class="passi">
+      <div class="passo carta"><i>🦾</i><span><b>GRABBA</b>La pinza ne tira su due alla volta</span></div>
+      <div class="passo carta"><i>🎣</i><span><b>PESCA</b>L'amo non sbaglia quasi mai: per i rari</span></div>
+      <div class="passo carta"><i>🥅</i><span><b>ACCHIAPPA</b>La rete ne raccoglie un mucchio</span></div>
+    </div>
+    <div class="gradi carta">
+      <div class="etich">20 MODELLINI · 8 GRADI SEMPRE PIÙ SHINY E POTENTI</div>
+      <div class="scala" id="scalaGradi"></div>
+    </div>
+    <div id="bentornato"></div>
+    <button id="giocaBtn">▶ GIOCA</button>
+    <div class="piede">DaProd · SALA GIOCHI · <span id="versione2"></span></div>
+  </div>
+</div>
+
+<div id="officina" class="modale chiuso">
+  <div class="pannello">
+    <div class="intesta">
+      <h2>🔧 OFFICINA</h2>
+      <div class="s"><div class="etich">SALDO</div><b id="saldoOff">L.0</b></div>
+      <button class="chiudi" id="chiudiOff" aria-label="chiudi">✕</button>
+    </div>
+    <div class="schede" id="schedeOff">
+      <button data-scheda="pot" class="on">⚡ POTENZIAMENTI</button>
+      <button data-scheda="teste">🦾 TESTE</button>
+      <button data-scheda="opz">⚙️ OPZIONI</button>
+      <button data-scheda="stat">📊 STATISTICHE</button>
+    </div>
+    <div class="contenuto" id="contenutoOff"></div>
+  </div>
+</div>
+
+<div id="sblocco" class="modale chiuso">
+  <div class="pannello">
+    <div class="intesta"><h2>🔒 ZONA CHIUSA</h2><button class="chiudi" id="chiudiSbl" aria-label="chiudi">✕</button></div>
+    <div class="corpo">
+      <div class="grossa" id="sblIco">🚀</div>
+      <h3 id="sblNome">ZONA</h3>
+      <div class="nota" id="sblDesc"></div>
+      <div class="requisito" id="reqPot"><span>⚡ Potenza collezione</span><b></b></div>
+      <div class="requisito" id="reqLire"><span>💰 Costo di apertura</span><b></b></div>
+      <button id="sbloccaBtn">APRI LA ZONA</button>
+    </div>
+  </div>
+</div>
+
+<div id="vetrina" class="chiuso">
+  <div class="lato">
+    <div class="intesta">
+      <h2>🏆 VETRINA<small id="vetrinaSub">0/20 MODELLINI · POTENZA 0</small></h2>
+      <button class="chiudi" id="chiudiVet" aria-label="chiudi">✕</button>
+    </div>
+    <div id="poteri"></div>
+    <div id="griglia"></div>
+    <div id="scheda"></div>
+  </div>
+  <div id="palco">
+    <div class="giraHint">↔ trascina per girare il modellino</div>
+    <div class="etichetta"><b id="palcoNome"></b><span id="palcoGrado"></span></div>
+  </div>
+</div>
+
+<!-- Le Lire DaProd: il portafoglio unico dei giochi DaProd (vedi daprod-lira.js). -->
+<script src="../daprod-lira.js"></script>
+<script type="importmap">
+{
+  "imports": {
+    "three": "../three/build/three.module.js",
+    "three/addons/": "../three/examples/jsm/"
+  }
+}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+const VERSIONE = 'v1.1.0';
+const $ = (id) => document.getElementById(id);
+const PARAMETRI = new URLSearchParams(location.search);
+// gioco = la partita vera; demo = la macchina gioca da sola (sfondo della home); vetrina = sfilata dei modellini
+const MODO = PARAMETRI.has('vetrina') ? 'vetrina' : PARAMETRI.has('demo') ? 'demo' : 'gioco';
+const INCORPORATO = MODO !== 'gioco';
+const TATTILE = (typeof matchMedia === 'function') &&
+  (matchMedia('(hover: none)').matches || matchMedia('(pointer: coarse)').matches);
+const TELEFONO = /Android|iPhone|iPad|Mobi/i.test(navigator.userAgent) || (TATTILE && Math.min(screen.width, screen.height) < 820);
+if (INCORPORATO) document.body.classList.add('incorporato');
+
+// Se qualcosa va storto lo scrivo a schermo invece di lasciare il gioco nero
+function mostraErrore(msg) {
+  try {
+    let box = $('erroreGioco');
+    if (!box) { box = document.createElement('div'); box.id = 'erroreGioco'; document.body.appendChild(box); }
+    box.textContent = '⚠️ ' + msg + ' — ricarica la pagina (Ctrl+Shift+R).';
+    $('caricamento').classList.add('via');
+  } catch (e) {}
+}
+addEventListener('error', (e) => mostraErrore(e && e.message ? e.message : 'errore sconosciuto'));
+addEventListener('unhandledrejection', (e) => mostraErrore(String((e && e.reason && e.reason.message) || e.reason || 'errore')));
+
+// ============ NUMERI ============
+const punti = (n) => String(Math.round(Math.abs(n))).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+const lire = (n) => (n < 0 ? '-' : '') + 'L.' + punti(n);
+function lireBrevi(n) {
+  const a = Math.abs(n);
+  if (a >= 1e9) return 'L.' + (n / 1e9).toFixed(a >= 1e11 ? 0 : 1).replace('.', ',') + ' mld';
+  if (a >= 1e7) return 'L.' + (n / 1e6).toFixed(a >= 1e8 ? 0 : 1).replace('.', ',') + ' mln';
+  return lire(n);
+}
+function numero(n) {
+  if (n >= 1e6) return (n / 1e6).toFixed(n >= 1e8 ? 0 : 1).replace('.', ',') + ' mln';
+  if (n >= 1e4) return punti(n);
+  return n >= 100 ? punti(n) : String(Math.round(n * 10) / 10).replace('.', ',');
+}
+let casuale = Math.random;                      // le prove possono renderlo prevedibile
+const rnd = (a, b) => a + casuale() * (b - a);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const liscio = (t) => t * t * (3 - 2 * t);
+const avvicina = (v, a, passo) => v < a ? Math.min(a, v + passo) : Math.max(a, v - passo);
+
+// ============ DATI DEL GIOCO ============
+// Gradi: ogni grado moltiplica potenza e premio. Le copie servono a salire (soglie cumulative).
+const GRADI = [null,
+  { g: 1, nome: 'BASE',       mult: 1,   tinta: 0xffffff, mix: 0,    bordo: 0x000000, bordoK: 0,
+    mat: { roughness: .5, metalness: 0, clearcoat: .3, clearcoatRoughness: .4, envMapIntensity: .45 } },
+  { g: 2, nome: 'BRONZO',     mult: 2.2, tinta: 0xc47a42, mix: .85,  bordo: 0xff9147, bordoK: .12,
+    mat: { roughness: .34, metalness: .85, clearcoat: .4, clearcoatRoughness: .25, envMapIntensity: 1.25 } },
+  { g: 3, nome: 'ARGENTO',    mult: 5,   tinta: 0xe2e9f4, mix: .92,  bordo: 0xd8ecff, bordoK: .2,
+    mat: { roughness: .2, metalness: 1, clearcoat: .7, clearcoatRoughness: .12, envMapIntensity: 1.5 } },
+  { g: 4, nome: 'ORO',        mult: 11,  tinta: 0xffc23a, mix: .94,  bordo: 0xffcf50, bordoK: .38, pulsa: true,
+    mat: { roughness: .15, metalness: 1, clearcoat: 1, clearcoatRoughness: .05, envMapIntensity: 1.8 } },
+  { g: 5, nome: 'OLOGRAFICO', mult: 24,  tinta: 0xd6e4ff, mix: .62,  bordo: 0x7ffcff, bordoK: .55,
+    mat: { roughness: .1, metalness: 1, clearcoat: 1, clearcoatRoughness: .04, iridescence: 1, iridescenceIOR: 1.9,
+      iridescenceThicknessRange: [150, 900], envMapIntensity: 2 } },
+  { g: 6, nome: 'PRISMA',     mult: 52,  tinta: 0xffffff, mix: .86,  bordo: 0xffffff, bordoK: .65, modo: 1,
+    mat: { roughness: .1, metalness: .85, clearcoat: 1, clearcoatRoughness: .03, iridescence: .7, envMapIntensity: 2 } },
+  { g: 7, nome: 'DIAMANTE',   mult: 115, tinta: 0xeefcff, mix: .95,  bordo: 0xaaf4ff, bordoK: .95, scintille: true,
+    mat: { roughness: .04, metalness: .7, clearcoat: 1, clearcoatRoughness: 0, iridescence: 1, iridescenceIOR: 2.4, envMapIntensity: 3 } },
+  { g: 8, nome: 'COSMICO',    mult: 250, tinta: 0x1a0d3d, mix: 1,    bordo: 0xff4df5, bordoK: 1.35, modo: 2, pulsa: true,
+    mat: { roughness: .22, metalness: .4, clearcoat: 1, clearcoatRoughness: .05, iridescence: .5, envMapIntensity: 1.5 } },
+];
+const MAX_GRADO = 8;
+const SOGLIA = [0, 1, 3, 7, 15, 30, 60, 120, 250];           // copie totali per arrivare al grado g
+const COSTO_GRADO = [0, 0, 3, 8, 20, 50, 130, 350, 900];      // x valore del modellino per salire al grado g
+const COLORE_GRADO = [null, '#c9c3dc', '#e0945a', '#e8eef8', '#ffd54a', '#9ffcff', '#ff9df5', '#d8fbff', '#c77dff'];
+
+// Le cinque zone della Grande Vasca, una accanto all'altra. Ogni famiglia di modellini dà un potere.
+const ZONE = [
+  { nome: 'PELUCHE PARK',   ico: '🧸', col: '#ff6fb5', costo: 100,   pot: 0,    prezzo: 0,
+    potere: { chiave: 'presa', ico: '💪', k: .008, testo: 'presa' }, desc: 'Orsetti, coniglietti e compagnia: morbidi e facili da prendere.' },
+  { nome: 'GIOCATTOLERIA',  ico: '🦆', col: '#ffa53d', costo: 400,   pot: 12,   prezzo: 3000,
+    potere: { chiave: 'apertura', ico: '📐', k: .012, testo: 'apertura' }, desc: 'Paperelle, trottole, macchinine e dinosauri di plastica.' },
+  { nome: 'BASE SPAZIALE',  ico: '🚀', col: '#35e8ff', costo: 1500,  pot: 90,   prezzo: 40000,
+    potere: { chiave: 'motore', ico: '⚡', k: .02, testo: 'velocità' }, desc: 'Razzi, dischi volanti e astronauti: pesanti ma preziosi.' },
+  { nome: 'TANA DEI MOSTRI', ico: '🐉', col: '#b36bff', costo: 5000,  pot: 600,  prezzo: 350000,
+    potere: { chiave: 'fortuna', ico: '🍀', k: .04, testo: 'shiny' }, desc: 'Draghetti, fantasmi e unicorni. Qui gli shiny escono più spesso.' },
+  { nome: 'CAVEAU DEI TESORI', ico: '👑', col: '#ffd54a', costo: 18000, pot: 4000, prezzo: 3000000,
+    potere: { chiave: 'lire', ico: '💰', k: .05, testo: 'lire' }, desc: 'Corone, trofei, gemme e il leggendario gettone DaProd.' },
+];
+
+// 20 modellini, 4 per zona. r = raggio (fisica), peso = quanto è difficile tenerlo, w = frequenza nella vasca
+const MODELLI = [
+  { id: 'orsetto',    nome: 'Orsetto',      em: '🧸', zona: 0, r: .5,  peso: 1.1, valore: 70,    pot: 1,   w: 32, desc: 'Il classico delle sale giochi. Morbido e facile da tenere.' },
+  { id: 'coniglio',   nome: 'Coniglietto',  em: '🐰', zona: 0, r: .48, peso: 1.0, valore: 80,    pot: 1,   w: 26, desc: 'Orecchie lunghe, zampe corte, sempre in cima al mucchio.' },
+  { id: 'rana',       nome: 'Rana',         em: '🐸', zona: 0, r: .5,  peso: 1.15, valore: 90,   pot: 1,   w: 22, desc: 'Scivolosa quanto basta per farti sudare.' },
+  { id: 'pinguino',   nome: 'Pinguino',     em: '🐧', zona: 0, r: .52, peso: 1.3, valore: 120,   pot: 1.5, w: 14, desc: 'Il più raro del parco: elegante e un po\' pesante.' },
+  { id: 'paperella',  nome: 'Paperella',    em: '🦆', zona: 1, r: .48, peso: 1.0, valore: 300,   pot: 4,   w: 30, desc: 'Galleggia nella vasca da bagno, affonda nella vasca dei premi.' },
+  { id: 'trottola',   nome: 'Trottola',     em: '🌀', zona: 1, r: .5,  peso: 1.35, valore: 340,  pot: 4,   w: 26, desc: 'Gira, gira, gira… e scivola via dalle dita.' },
+  { id: 'macchinina', nome: 'Macchinina',   em: '🚗', zona: 1, r: .55, peso: 1.5, valore: 380,   pot: 4,   w: 22, desc: 'Da corsa, rossa fiammante, con i fari accesi.' },
+  { id: 'dino',       nome: 'Dinosauro',    em: '🦖', zona: 1, r: .56, peso: 1.5, valore: 480,   pot: 6,   w: 14, desc: 'Un T-rex giocattolo. Le braccine non aiutano a tenersi.' },
+  { id: 'razzo',      nome: 'Razzo',        em: '🚀', zona: 2, r: .55, peso: 1.6, valore: 1100,  pot: 15,  w: 30, desc: 'Tre alette, un oblò e tanta voglia di partire.' },
+  { id: 'ufo',        nome: 'Disco volante', em: '🛸', zona: 2, r: .58, peso: 1.4, valore: 1300, pot: 15,  w: 26, desc: 'Il pilota saluta da sotto la cupola.' },
+  { id: 'astronauta', nome: 'Astronauta',   em: '👩‍🚀', zona: 2, r: .56, peso: 1.7, valore: 1450, pot: 15,  w: 22, desc: 'Casco a specchio e zaino dell\'ossigeno.' },
+  { id: 'pianeta',    nome: 'Pianeta',      em: '🪐', zona: 2, r: .55, peso: 1.8, valore: 1800,  pot: 22,  w: 14, desc: 'Ha gli anelli, una luna e un sorriso.' },
+  { id: 'draghetto',  nome: 'Draghetto',    em: '🐉', zona: 3, r: .56, peso: 1.5, valore: 3800,  pot: 50,  w: 30, desc: 'Sputa scintille quando diventa shiny.' },
+  { id: 'fantasmino', nome: 'Fantasmino',   em: '👻', zona: 3, r: .52, peso: .8,  valore: 4300,  pot: 50,  w: 26, desc: 'Leggerissimo: la pinza lo tiene senza fatica.' },
+  { id: 'slime',      nome: 'Slime',        em: '🫧', zona: 3, r: .55, peso: 1.2, valore: 4800,  pot: 50,  w: 22, desc: 'Gelatinoso e sorridente. Non chiedere di cosa sa.' },
+  { id: 'unicorno',   nome: 'Unicorno',     em: '🦄', zona: 3, r: .58, peso: 1.7, valore: 6000,  pot: 75,  w: 14, desc: 'Criniera arcobaleno e corno d\'oro. Rarissimo.' },
+  { id: 'corona',     nome: 'Corona',       em: '👑', zona: 4, r: .52, peso: 2.0, valore: 14000, pot: 150, w: 30, desc: 'Tre gemme incastonate, degna di un re.' },
+  { id: 'trofeo',     nome: 'Trofeo',       em: '🏆', zona: 4, r: .55, peso: 2.1, valore: 16000, pot: 150, w: 26, desc: 'La coppa del campione della Grande Vasca.' },
+  { id: 'gemma',      nome: 'Gemma',        em: '💎', zona: 4, r: .5,  peso: 1.6, valore: 18000, pot: 150, w: 22, desc: 'Taglio brillante, sfaccettature vere.' },
+  { id: 'gettone',    nome: 'Gettone DaProd', em: '🪙', zona: 4, r: .56, peso: 2.2, valore: 25000, pot: 220, w: 14, desc: 'Il leggendario gettone della sala DaProd.' },
+];
+const INDICE = Object.fromEntries(MODELLI.map((m, i) => [m.id, i]));
+
+// Tre teste per il carroponte: grabba, pesca, acchiappa
+const TESTE = {
+  pinza: { id: 'pinza', nome: 'PINZA', verbo: 'GRABBA',    ico: '🦾', raggio: .95, cap: 2, presa: .7,  scivola: .35, mult: 1,   vel: 1,    prezzo: 0,
+    desc: 'Tre artigli: tira su fino a 2 modellini alla volta.' },
+  amo:   { id: 'amo',   nome: 'AMO',   verbo: 'PESCA',     ico: '🎣', raggio: .6,  cap: 1, presa: .93, scivola: .05, mult: .8,  vel: 1.35, prezzo: 2000,
+    desc: 'Pesca il modellino più vicino e non lo molla quasi mai. Perfetto per gli shiny.' },
+  rete:  { id: 'rete',  nome: 'RETE',  verbo: 'ACCHIAPPA', ico: '🥅', raggio: 1.55, cap: 5, presa: .52, scivola: .3, mult: 1.5, vel: .85,  prezzo: 12000,
+    desc: 'Un anello largo con la rete: ne acchiappa un mucchio, ma qualcuno scappa.' },
+};
+const ORDINE_TESTE = ['pinza', 'amo', 'rete'];
+
+// Officina: potenziamenti del carroponte
+const POT = [
+  { id: 'presa',    ico: '💪', nome: 'PRESA FORTE',   base: 500,  cresce: 2.05, max: 8,  desc: (l) => `+${(3.5 * l).toFixed(1).replace('.', ',')}% di presa`, passo: '+3,5% di presa per livello' },
+  { id: 'apertura', ico: '📐', nome: 'APERTURA',      base: 700,  cresce: 2.1,  max: 8,  desc: (l) => `+${6 * l}% di raggio`, passo: '+6% di raggio della presa per livello' },
+  { id: 'capienza', ico: '🎒', nome: 'CAPIENZA',      base: 2500, cresce: 3.2,  max: 4,  desc: (l) => `+${l} alla pinza, +${2 * l} alla rete`, passo: 'un modellino in più per presa (due con la rete)' },
+  { id: 'motore',   ico: '⚡', nome: 'MOTORE',        base: 400,  cresce: 2,    max: 6,  desc: (l) => `+${12 * l}% di velocità`, passo: '+12% di velocità del carroponte per livello' },
+  { id: 'fortuna',  ico: '🍀', nome: 'FORTUNA SHINY', base: 1500, cresce: 2.3,  max: 8,  desc: (l) => `+${20 * l}% di shiny`, passo: '+20% di modellini shiny nella vasca per livello' },
+  { id: 'magnate',  ico: '💰', nome: 'RENDITA',       base: 1000, cresce: 2.2,  max: 10, desc: (l) => `+${15 * l}% di lire al secondo`, passo: '+15% di lire al secondo dalla collezione' },
+];
+const costoPot = (p, liv) => Math.round(p.base * Math.pow(p.cresce, liv) / 10) * 10;
+
+// ============ SUONO (sintetizzato, nessun file) ============
+let AC = null, master = null, motoreOsc = null, motoreGain = null;
+function audio() {
+  if (!stato.opz.audio || INCORPORATO) return null;
+  try {
+    if (!AC) {
+      AC = new (window.AudioContext || window.webkitAudioContext)();
+      master = AC.createGain(); master.gain.value = .55; master.connect(AC.destination);
+    }
+    if (AC.state === 'suspended') AC.resume();
+  } catch (e) { return null; }
+  return AC;
+}
+function nota(f, dur, tipo = 'sine', vol = .1, rit = 0, fine = 0) {
+  const a = audio(); if (!a) return;
+  const t = a.currentTime + rit, o = a.createOscillator(), g = a.createGain();
+  o.type = tipo; o.frequency.setValueAtTime(f, t);
+  if (fine) o.frequency.exponentialRampToValueAtTime(fine, t + dur);
+  g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + .012);
+  g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+  o.connect(g); g.connect(master); o.start(t); o.stop(t + dur + .03);
+}
+let bufRumore = null;
+function rumore(dur, freq, vol = .1, q = 1.2, rit = 0) {
+  const a = audio(); if (!a) return;
+  if (!bufRumore) {
+    bufRumore = a.createBuffer(1, a.sampleRate, a.sampleRate);
+    const d = bufRumore.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  }
+  const t = a.currentTime + rit, s = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain();
+  s.buffer = bufRumore; f.type = 'bandpass'; f.frequency.value = freq; f.Q.value = q;
+  g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+  s.connect(f); f.connect(g); g.connect(master); s.start(t); s.stop(t + dur + .02);
+}
+function motore(v) {                          // ronzio del carroponte, segue la velocità
+  const a = AC; if (!a || !master || !stato.opz.audio) return;
+  if (!motoreOsc) {
+    motoreOsc = a.createOscillator(); motoreOsc.type = 'sawtooth';
+    const f = a.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 420;
+    motoreGain = a.createGain(); motoreGain.gain.value = 0;
+    motoreOsc.connect(f); f.connect(motoreGain); motoreGain.connect(master); motoreOsc.start();
+  }
+  const t = a.currentTime;
+  motoreOsc.frequency.setTargetAtTime(58 + v * 16, t, .08);
+  motoreGain.gain.setTargetAtTime(Math.min(.045, v * .009), t, .08);
+}
+const scala = [523.25, 587.33, 659.25, 783.99, 880, 1046.5, 1174.66, 1318.5, 1568, 1760, 2093];
+const suono = {
+  clic() { nota(900, .05, 'square', .04); },
+  moneta() { nota(1318, .08, 'square', .05); nota(1976, .16, 'square', .05, .06); rumore(.12, 5200, .05, 3, .02); },
+  scende() { nota(420, .5, 'triangle', .05, 0, 180); },
+  tocco() { rumore(.09, 900, .16, 1.5); nota(140, .08, 'sine', .12); },
+  presa() { rumore(.06, 2400, .12, 4); nota(320, .07, 'square', .05); nota(250, .09, 'square', .05, .05); },
+  sale() { nota(180, .6, 'triangle', .04, 0, 420); },
+  scivola() { nota(600, .35, 'sawtooth', .05, 0, 140); rumore(.2, 700, .06, 1); },
+  vuoto() { nota(330, .18, 'triangle', .06); nota(247, .3, 'triangle', .06, .15); },
+  rilascio() { rumore(.1, 1500, .08, 2); },
+  vinci(g) {
+    const n = 3 + Math.min(6, g);
+    for (let i = 0; i < n; i++) nota(scala[Math.min(scala.length - 1, i + g - 1)], .16, 'square', .045, i * .065);
+    rumore(.3, 6000, .05, 2, .05);
+  },
+  nuovo() { [0, 2, 4, 7].forEach((k, i) => nota(scala[k], .22, 'triangle', .08, i * .09)); nota(scala[9], .5, 'sine', .07, .38); },
+  shiny(g) {
+    for (let i = 0; i < 10 + g * 2; i++) nota(1200 + i * 140 + Math.random() * 80, .12, 'sine', .035, i * .035);
+    nota(scala[Math.min(10, g + 2)], .7, 'triangle', .06, .3);
+  },
+  potenzia(g) {
+    [0, 4, 7, 12].forEach((k, i) => nota(261.6 * Math.pow(2, (k + g * 2) / 12), .3, 'sawtooth', .05, i * .1));
+    nota(261.6 * Math.pow(2, (19 + g * 2) / 12), .9, 'triangle', .08, .42);
+    rumore(.6, 7000, .05, 1, .4);
+  },
+  sblocca() { [0, 4, 7, 12, 16, 19, 24].forEach((k, i) => nota(220 * Math.pow(2, k / 12), .25, 'square', .05, i * .08)); },
+  errore() { nota(160, .18, 'square', .06); nota(120, .22, 'square', .06, .1); },
+  cortesia() { [0, 7, 12].forEach((k, i) => nota(440 * Math.pow(2, k / 12), .18, 'triangle', .07, i * .1)); },
+};
+
+// ============ STATO E SALVATAGGIO ============
+const SALVA = 'daprod_claw_v3';
+function statoNuovo() {
+  return {
+    v: 3, lire: 2000, coll: {}, pot: Object.fromEntries(POT.map(p => [p.id, 0])),
+    teste: { pinza: true, amo: false, rete: false }, testa: 'pinza',
+    zone: [true, false, false, false, false], zona: 0, primaPresa: true,
+    opz: { audio: true, qualita: TELEFONO ? 'media' : 'alta', auto: true, fps: false },
+    st: { prese: 0, vuote: 0, diFila: 0, catturati: 0, shiny: 0, spesi: 0, vinti: 0, potenziamenti: 0, gradoMax: 0, scivolati: 0, sicurezza: 0, regali: 0 },
+    ultima: Date.now(), vasca: null,
+  };
+}
+const numOk = (v, def, min = -Infinity, max = Infinity) => (typeof v === 'number' && Number.isFinite(v)) ? clamp(v, min, max) : def;
+function pulisci(d) {                           // accetta solo valori validi: un salvataggio rovinato non rompe l'avvio
+  const s = statoNuovo();
+  if (!d || typeof d !== 'object') return s;
+  s.lire = numOk(d.lire, s.lire, 0, 1e15);
+  if (d.coll && typeof d.coll === 'object') {
+    for (const m of MODELLI) {
+      const r = d.coll[m.id];
+      if (r && typeof r === 'object') {
+        const g = Math.round(numOk(r.g, 0, 0, MAX_GRADO)), c = Math.round(numOk(r.c, 0, 0, 1e9));
+        if (g > 0 || c > 0) s.coll[m.id] = { g: Math.max(1, g), c: Math.max(c, 1) };
+      }
+    }
+  }
+  if (d.pot && typeof d.pot === 'object') for (const p of POT) s.pot[p.id] = Math.round(numOk(d.pot[p.id], 0, 0, p.max));
+  if (d.teste && typeof d.teste === 'object') for (const t of ORDINE_TESTE) s.teste[t] = t === 'pinza' || d.teste[t] === true;
+  if (TESTE[d.testa] && s.teste[d.testa]) s.testa = d.testa;
+  if (Array.isArray(d.zone)) for (let i = 1; i < ZONE.length; i++) s.zone[i] = d.zone[i] === true && s.zone[i - 1];
+  s.zona = Math.round(numOk(d.zona, 0, 0, ZONE.length - 1)); if (!s.zone[s.zona]) s.zona = 0;
+  s.primaPresa = d.primaPresa !== false && !(s.st && d.st && d.st.catturati > 0);
+  if (d.opz && typeof d.opz === 'object') {
+    s.opz.audio = d.opz.audio !== false;
+    if (['alta', 'media', 'bassa'].includes(d.opz.qualita)) s.opz.qualita = d.opz.qualita;
+    s.opz.auto = d.opz.auto !== false; s.opz.fps = d.opz.fps === true;
+  }
+  if (d.st && typeof d.st === 'object') for (const k in s.st) s.st[k] = numOk(d.st[k], 0, 0, 1e15);
+  s.ultima = numOk(d.ultima, Date.now(), 0, Date.now());
+  if (Array.isArray(d.vasca)) s.vasca = d.vasca;
+  if (s.st.catturati > 0) s.primaPresa = false;
+  return s;
+}
+// Chi arriva dalla vecchia claw machine (v0.x): le lire restano, i peluche della borsa diventano copie
+function migraV2(v2) {
+  const s = statoNuovo();
+  s.lire = Math.max(2000, Math.round(numOk(v2.lire, 0, 0, 1e9)));
+  const bag = (v2.bag && typeof v2.bag === 'object') ? v2.bag : {};
+  const mappa = { Orsetto: 'orsetto', Coniglietto: 'coniglio', Rana: 'rana', Pinguino: 'pinguino' };
+  let extra = 0;
+  for (const k in bag) {
+    const n = Math.round(numOk(bag[k], 0, 0, 1e6)); if (!n) continue;
+    if (mappa[k]) {
+      let g = 1; while (g < MAX_GRADO && SOGLIA[g + 1] <= n) g++;
+      s.coll[mappa[k]] = { g: Math.min(g, 4), c: n };
+    } else extra += n * 300;
+  }
+  s.lire += extra;
+  s.opz.audio = v2.sound !== false;
+  if (Object.keys(s.coll).length) s.primaPresa = false;
+  s.migrato = true;
+  return s;
+}
+function carica() {
+  if (INCORPORATO) { const s = statoNuovo(); s.zone = ZONE.map(() => true); s.lire = 1e9; s.primaPresa = false; s.opz.audio = false; return s; }
+  try {
+    const t = localStorage.getItem(SALVA);
+    if (t) return pulisci(JSON.parse(t));
+    const v2 = localStorage.getItem('daprod_claw_v2');
+    if (v2) return migraV2(JSON.parse(v2));
+  } catch (e) { console.warn('salvataggio illeggibile, si riparte', e); }
+  return statoNuovo();
+}
+const stato = carica();
+let daSalvare = false, azzerato = false;
+function salva() {
+  if (INCORPORATO || azzerato) return;
+  try {
+    stato.ultima = Date.now();
+    stato.vasca = fotografaVasca();
+    const copia = Object.assign({}, stato); delete copia.migrato;
+    localStorage.setItem(SALVA, JSON.stringify(copia));
+    daSalvare = false;
+  } catch (e) { console.warn('salvataggio non riuscito', e); }
+}
+
+// ============ FORMULE ============
+let bonusCache = null;
+function gradiFamiglia(z) { let s = 0; for (const m of MODELLI) if (m.zona === z && stato.coll[m.id]) s += stato.coll[m.id].g; return s; }
+function bonus() {
+  if (bonusCache) return bonusCache;
+  const b = { presa: 0, apertura: 0, motore: 0, fortuna: 0, lire: 0 };
+  ZONE.forEach((z, i) => { b[z.potere.chiave] += z.potere.k * gradiFamiglia(i); });
+  return (bonusCache = b);
+}
+const presaEff = (T) => Math.min(.97, T.presa + .035 * stato.pot.presa + bonus().presa);
+const raggioEff = (T) => T.raggio * (1 + .06 * stato.pot.apertura + bonus().apertura);
+const capEff = (T) => T.cap + (T.id === 'amo' ? 0 : stato.pot.capienza * (T.id === 'rete' ? 2 : 1));
+const velEff = () => 1 + .12 * stato.pot.motore + bonus().motore;
+const chanceShiny = () => Math.min(.4, .07 * (1 + .2 * stato.pot.fortuna + bonus().fortuna));
+const passoShiny = () => Math.min(.45, .28 + .015 * stato.pot.fortuna);
+const moltLire = () => 1 + bonus().lire;
+const potenzaModello = (m) => { const r = stato.coll[m.id]; return r ? m.pot * GRADI[r.g].mult : 0; };
+let potenzaCache = -1;
+function potenzaTotale() { if (potenzaCache < 0) potenzaCache = MODELLI.reduce((s, m) => s + potenzaModello(m), 0); return potenzaCache; }
+const rendita = () => potenzaTotale() * .5 * (1 + .15 * stato.pot.magnate) * moltLire();
+const costoPresa = (z, t) => Math.round(ZONE[z].costo * TESTE[t].mult);
+const costoPotenzia = (m, g) => Math.round(m.valore * COSTO_GRADO[g]);
+const quantiPosseduti = () => MODELLI.filter(m => stato.coll[m.id]).length;
+function ricalcola() { bonusCache = null; potenzaCache = -1; }
+function prontoPerSalire(m) {
+  const r = stato.coll[m.id];
+  return !!r && r.g < MAX_GRADO && r.c >= SOGLIA[r.g + 1];
+}
+function sceltaGrado(zona) {                        // grado di un modellino nuovo nella vasca
+  let g = 1;
+  const base = chanceShiny() * (1 + zona * .12) * (MODO === 'demo' ? 3 : 1);
+  if (casuale() < base) { g = 2; while (g < MAX_GRADO && casuale() < passoShiny()) g++; }
+  return g;
+}
+function sceltaModello(zona) {
+  const lista = MODELLI.filter(m => m.zona === zona);
+  let tot = lista.reduce((s, m) => s + m.w, 0), x = casuale() * tot;
+  for (const m of lista) { x -= m.w; if (x <= 0) return INDICE[m.id]; }
+  return INDICE[lista[0].id];
+}
+
+// ============ RENDERER E SCENA ============
+const canvas = $('gioco');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: !TELEFONO, alpha: true, powerPreference: 'high-performance' });
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = .9;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+const scena = new THREE.Scene();
+scena.background = new THREE.Color(0x07060d);
+scena.fog = new THREE.Fog(0x07060d, 34, 80);
+const pmrem = new THREE.PMREMGenerator(renderer);
+const ENV = pmrem.fromScene(new RoomEnvironment(renderer), .04).texture;
+scena.environment = ENV;
+const camera = new THREE.PerspectiveCamera(42, innerWidth / innerHeight, .1, 220);
+const U_TEMPO = { value: 0 };
+
+// ============ MODELLINI: parti primitive fuse in una sola geometria con i colori per vertice ============
+const QM = TELEFONO ? .7 : 1;
+const _prim = {};
+// segmenti in base alla grandezza della parte: i dettagli piccoli costano pochissimo
+function sph(r, seg) {
+  const s = Math.max(6, Math.round((seg || (r > .45 ? 16 : r > .25 ? 12 : r > .12 ? 9 : 7)) * QM)), k = 's' + r.toFixed(3) + '_' + s;
+  return _prim[k] || (_prim[k] = new THREE.SphereGeometry(r, s, Math.max(4, Math.round(s * .65))));
+}
+function cap(r, l) {
+  const rs = Math.max(6, Math.round((r > .3 ? 14 : r > .15 ? 10 : 7) * QM)), k = 'c' + r.toFixed(3) + '_' + l.toFixed(3) + '_' + rs;
+  return _prim[k] || (_prim[k] = new THREE.CapsuleGeometry(r, l, Math.max(2, Math.round(3 * QM)), rs));
+}
+function cono(r, h, seg) { const s = Math.max(6, Math.round((seg || 14) * QM)), k = 'k' + r.toFixed(3) + h.toFixed(3) + s;
+  return _prim[k] || (_prim[k] = new THREE.ConeGeometry(r, h, s)); }
+function cil(rt, rb, h, seg) { const s = Math.max(6, Math.round((seg || 16) * QM)), k = 'y' + rt.toFixed(3) + rb.toFixed(3) + h.toFixed(3) + s;
+  return _prim[k] || (_prim[k] = new THREE.CylinderGeometry(rt, rb, h, s)); }
+function tor(R, t, arco = Math.PI * 2) { const k = 't' + R.toFixed(3) + t.toFixed(3) + arco.toFixed(2);
+  return _prim[k] || (_prim[k] = new THREE.TorusGeometry(R, t, Math.max(5, Math.round(7 * QM)), Math.max(12, Math.round(28 * QM * Math.min(1, R + .3))), arco)); }
+function sca(w, h, d) { const k = 'b' + w + h + d; return _prim[k] || (_prim[k] = new THREE.BoxGeometry(w, h, d)); }
+function estrusa(nome, forma, prof, bev = .08) {
+  if (_prim[nome]) return _prim[nome];
+  const g = new THREE.ExtrudeGeometry(forma, { depth: prof, bevelEnabled: true, bevelThickness: bev, bevelSize: bev * .8,
+    bevelSegments: 2, curveSegments: TELEFONO ? 8 : 12, steps: 1 });
+  g.center(); g.computeVertexNormals(); return (_prim[nome] = g);
+}
+function tornio(nome, punti, seg = 28) {
+  if (_prim[nome]) return _prim[nome];
+  const g = new THREE.LatheGeometry(punti.map(p => new THREE.Vector2(p[0], p[1])), Math.round(seg * QM));
+  g.computeVertexNormals(); return (_prim[nome] = g);
+}
+const schiarisci = (hex, k) => new THREE.Color(hex).lerp(new THREE.Color(0xffffff), k).getHex();
+const scurisci = (hex, k) => new THREE.Color(hex).lerp(new THREE.Color(0x000000), k).getHex();
+const OCCHIO = 0x1a1220, CREMA = 0xf7e6cf, ROSA = 0xff9ec4, BIANCO = 0xffffff;
+const occhi = (x, y, z, r = .095) => [
+  { g: sph(r), c: OCCHIO, p: [-x, y, z] }, { g: sph(r), c: OCCHIO, p: [x, y, z] },
+  { g: sph(r * .45), c: BIANCO, p: [-x + r * .3, y + r * .45, z + r * .7] }, { g: sph(r * .45), c: BIANCO, p: [x + r * .3, y + r * .45, z + r * .7] },
+];
+const guance = (x, y, z, r = .09) => [
+  { g: sph(r), c: ROSA, p: [-x, y, z], s: [1.3, .7, .4] }, { g: sph(r), c: ROSA, p: [x, y, z], s: [1.3, .7, .4] },
+];
+
+// Fonde le parti in una geometria indicizzata con i colori per vertice (1 draw call per modellino)
+function fondi(parti) {
+  const pronte = parti.map(p => {
+    const m = new THREE.Matrix4().compose(new THREE.Vector3(...(p.p || [0, 0, 0])),
+      new THREE.Quaternion().setFromEuler(new THREE.Euler(...(p.rot || [0, 0, 0]))), new THREE.Vector3(...(p.s || [1, 1, 1])));
+    let t = p.g.clone(); if (p.piatta && t.index) t = t.toNonIndexed();
+    t.applyMatrix4(m); if (p.piatta) t.computeVertexNormals();
+    return { t, c: new THREE.Color(p.c) };
+  });
+  let nV = 0, nI = 0;
+  for (const q of pronte) { nV += q.t.attributes.position.count; nI += q.t.index ? q.t.index.count : q.t.attributes.position.count; }
+  const pos = new Float32Array(nV * 3), nor = new Float32Array(nV * 3), col = new Float32Array(nV * 3), idx = new Uint32Array(nI);
+  let vo = 0, io = 0;
+  for (const { t, c } of pronte) {
+    const n = t.attributes.position.count;
+    pos.set(t.attributes.position.array, vo * 3);
+    nor.set(t.attributes.normal.array, vo * 3);
+    for (let k = 0; k < n; k++) { col[(vo + k) * 3] = c.r; col[(vo + k) * 3 + 1] = c.g; col[(vo + k) * 3 + 2] = c.b; }
+    if (t.index) { const I = t.index.array; for (let k = 0; k < I.length; k++) idx[io + k] = I[k] + vo; io += I.length; }
+    else { for (let k = 0; k < n; k++) idx[io + k] = vo + k; io += n; }
+    vo += n; t.dispose();
+  }
+  for (let i = 0; i < nV; i++) {
+    const x = nor[i * 3], y = nor[i * 3 + 1], z = nor[i * 3 + 2], L = Math.hypot(x, y, z) || 1;
+    nor[i * 3] = x / L; nor[i * 3 + 1] = y / L; nor[i * 3 + 2] = z / L;
+  }
+  const out = new THREE.BufferGeometry();
+  out.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  out.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
+  out.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  out.setIndex(new THREE.BufferAttribute(idx, 1));
+  // centro e scala: il modellino sta dentro una sfera di raggio 1
+  out.computeBoundingBox();
+  const bb = out.boundingBox, cx = (bb.min.x + bb.max.x) / 2, cy = (bb.min.y + bb.max.y) / 2, cz = (bb.min.z + bb.max.z) / 2;
+  out.translate(-cx, -cy, -cz);
+  let r2 = 0; for (let i = 0; i < nV; i++) { const x = pos[i * 3], y = pos[i * 3 + 1], z = pos[i * 3 + 2]; r2 = Math.max(r2, x * x + y * y + z * z); }
+  const k = 1 / Math.sqrt(r2) * 1.12; out.scale(k, k, k);
+  out.computeBoundingSphere();
+  return out;
+}
+
+// --- forme estruse ---
+function formaStella(r) { const s = new THREE.Shape(); for (let i = 0; i < 10; i++) { const a = Math.PI / 2 + i * Math.PI / 5, q = i % 2 ? r * .45 : r; i ? s.lineTo(Math.cos(a) * q, Math.sin(a) * q) : s.moveTo(Math.cos(a) * q, Math.sin(a) * q); } s.closePath(); return s; }
+function formaCorona(r) {
+  const s = new THREE.Shape();
+  s.moveTo(-r * .95, -r * .55); s.lineTo(r * .95, -r * .55); s.lineTo(r * .88, r * .5); s.lineTo(r * .45, -r * .02);
+  s.lineTo(0, r * .7); s.lineTo(-r * .45, -r * .02); s.lineTo(-r * .88, r * .5); s.closePath(); return s;
+}
+function formaD(r) {
+  const s = new THREE.Shape();
+  s.moveTo(-r * .55, -r * .7); s.lineTo(-r * .05, -r * .7); s.absarc(-r * .05, 0, r * .7, -Math.PI / 2, Math.PI / 2, false); s.lineTo(-r * .55, r * .7); s.closePath();
+  const h = new THREE.Path();
+  h.moveTo(-r * .27, -r * .42); h.lineTo(-r * .05, -r * .42); h.absarc(-r * .05, 0, r * .42, -Math.PI / 2, Math.PI / 2, false); h.lineTo(-r * .27, r * .42); h.closePath();
+  s.holes.push(h); return s;
+}
+
+// --- i 20 modellini (parti a scala 1, rivolti verso +z) ---
+const COSTRUTTORI = {
+  orsetto() {
+    const c = 0xc8844f, f = schiarisci(c, .14), d = scurisci(c, .2);
+    return [
+      { g: sph(.95), c, p: [0, -.15, 0], s: [1, .98, .86] }, { g: sph(.6), c: CREMA, p: [0, -.2, .48], s: [1, .92, .42] },
+      { g: sph(.72), c: f, p: [0, .78, 0] },
+      { g: sph(.28), c, p: [-.54, 1.2, -.08], s: [1, 1, .62] }, { g: sph(.28), c, p: [.54, 1.2, -.08], s: [1, 1, .62] },
+      { g: sph(.16), c: ROSA, p: [-.54, 1.2, .06], s: [1, 1, .4] }, { g: sph(.16), c: ROSA, p: [.54, 1.2, .06], s: [1, 1, .4] },
+      { g: sph(.3), c: CREMA, p: [0, .66, .56], s: [1, .78, .82] }, { g: sph(.1), c: OCCHIO, p: [0, .78, .76], s: [1.2, .85, .7] },
+      ...occhi(.27, .92, .56), ...guance(.45, .66, .5),
+      { g: cap(.18, .4), c: d, p: [-.85, -.12, .1], rot: [0, 0, .55] }, { g: cap(.18, .4), c: d, p: [.85, -.12, .1], rot: [0, 0, -.55] },
+      { g: cap(.21, .18), c: d, p: [-.4, -.8, .28], rot: [.35, 0, .1] }, { g: cap(.21, .18), c: d, p: [.4, -.8, .28], rot: [.35, 0, -.1] },
+      { g: sph(.2), c: 0xff4d6d, p: [0, .22, .72], s: [1.6, .7, .5] },          // fiocco
+    ];
+  },
+  coniglio() {
+    const c = 0xd9c8ff, f = schiarisci(c, .3);
+    return [
+      { g: sph(.9), c, p: [0, -.2, 0], s: [.95, 1, .9] }, { g: sph(.55), c: BIANCO, p: [0, -.25, .45], s: [1, .95, .4] },
+      { g: sph(.68), c: f, p: [0, .72, 0] },
+      { g: cap(.16, .72), c: f, p: [-.3, 1.5, -.05], rot: [0, 0, .18], s: [1, 1, .62] }, { g: cap(.16, .72), c: f, p: [.3, 1.5, -.05], rot: [0, 0, -.18], s: [1, 1, .62] },
+      { g: cap(.09, .6), c: ROSA, p: [-.3, 1.5, .07], rot: [0, 0, .18], s: [1, 1, .5] }, { g: cap(.09, .6), c: ROSA, p: [.3, 1.5, .07], rot: [0, 0, -.18], s: [1, 1, .5] },
+      { g: sph(.12), c: ROSA, p: [0, .6, .64], s: [1.2, .8, .7] }, ...occhi(.26, .85, .52), ...guance(.42, .58, .48),
+      { g: sph(.28), c: BIANCO, p: [0, -.5, -.6] },
+      { g: cap(.16, .34), c: f, p: [-.78, -.2, .1], rot: [0, 0, .6] }, { g: cap(.16, .34), c: f, p: [.78, -.2, .1], rot: [0, 0, -.6] },
+      { g: cap(.2, .14), c: f, p: [-.34, -.85, .3], rot: [.4, 0, 0] }, { g: cap(.2, .14), c: f, p: [.34, -.85, .3], rot: [.4, 0, 0] },
+    ];
+  },
+  rana() {
+    const c = 0x5fcf5a, b = schiarisci(c, .6), l = scurisci(c, .28);
+    return [
+      { g: sph(.9), c, p: [0, -.2, 0], s: [1.15, .85, 1] }, { g: sph(.62), c: b, p: [0, -.28, .42], s: [1.1, .85, .45] },
+      { g: sph(.62), c, p: [0, .5, 0], s: [1.25, .8, 1.05] },
+      { g: sph(.26), c, p: [-.4, .95, .1] }, { g: sph(.26), c, p: [.4, .95, .1] },
+      { g: sph(.17), c: BIANCO, p: [-.4, 1.0, .24], s: [1, 1, .6] }, { g: sph(.17), c: BIANCO, p: [.4, 1.0, .24], s: [1, 1, .6] },
+      { g: sph(.09), c: OCCHIO, p: [-.4, 1.02, .36] }, { g: sph(.09), c: OCCHIO, p: [.4, 1.02, .36] },
+      { g: sph(.24), c: l, p: [0, .3, .6], s: [1.4, .45, .6] }, ...guance(.52, .42, .56),
+      { g: cap(.17, .3), c, p: [-.75, -.5, .25], rot: [.5, 0, .9] }, { g: cap(.17, .3), c, p: [.75, -.5, .25], rot: [.5, 0, -.9] },
+      { g: cap(.15, .26), c, p: [-.6, -.62, -.2], rot: [-.4, 0, .7] }, { g: cap(.15, .26), c, p: [.6, -.62, -.2], rot: [-.4, 0, -.7] },
+      { g: sph(.12), c: 0xffd23e, p: [-.25, .78, .62], s: [1, 1, .4] },   // coroncina di macchie
+    ];
+  },
+  pinguino() {
+    const c = 0x2b2f4a, o = 0xff9a2e, w = schiarisci(c, .18);
+    return [
+      { g: cap(.72, .55), c, p: [0, 0, 0], s: [1, 1, .92] }, { g: sph(.6), c: 0xfdfdfd, p: [0, -.05, .42], s: [1, 1.15, .42] },
+      { g: sph(.5), c, p: [0, .85, 0], s: [1, .92, 1] }, { g: sph(.32), c: 0xfdfdfd, p: [0, .8, .3], s: [1.2, .9, .6] },
+      { g: cono(.14, .3), c: o, p: [0, .76, .6], rot: [Math.PI / 2, 0, 0] }, ...occhi(.2, .95, .44, .085), ...guance(.3, .75, .42, .07),
+      { g: cap(.17, .5), c: w, p: [-.72, -.05, 0], rot: [0, 0, .25], s: [1, 1, .5] }, { g: cap(.17, .5), c: w, p: [.72, -.05, 0], rot: [0, 0, -.25], s: [1, 1, .5] },
+      { g: sph(.2), c: o, p: [-.24, -.95, .18], s: [1.2, .45, 1.5] }, { g: sph(.2), c: o, p: [.24, -.95, .18], s: [1.2, .45, 1.5] },
+      { g: sca(.9, .16, .2), c: 0xff3b5c, p: [0, .42, .3], s: [1, 1, 1] },        // sciarpa
+      { g: sca(.18, .5, .1), c: 0xff3b5c, p: [.3, .15, .5], rot: [0, 0, .2] },
+    ];
+  },
+  paperella() {
+    const c = 0xffd93b, o = 0xff8a1f;
+    return [
+      { g: sph(.85), c, p: [0, -.2, 0], s: [1.15, .8, 1.05] }, { g: sph(.55), c, p: [0, .55, .25] },
+      { g: sph(.22), c: o, p: [0, .46, .78], s: [1.35, .42, 1.1] }, { g: sph(.2), c: o, p: [0, .38, .74], s: [1.2, .3, 1] },
+      ...occhi(.2, .68, .66), ...guance(.34, .5, .62, .08),
+      { g: cono(.25, .45), c, p: [0, .15, -.9], rot: [-1.15, 0, 0] },
+      { g: sph(.4), c: schiarisci(c, .25), p: [-.82, -.1, -.05], s: [.4, .7, 1] }, { g: sph(.4), c: schiarisci(c, .25), p: [.82, -.1, -.05], s: [.4, .7, 1] },
+      { g: sph(.2), c: 0x3aa0ff, p: [0, .98, .12], s: [1.5, .5, 1.5] }, { g: sph(.1), c: 0xff4d6d, p: [0, 1.08, .12] },   // cappellino da marinaio
+    ];
+  },
+  trottola() {
+    const r = 0xff4d5e, y = 0xffd23e, b = 0x3aa0ff;
+    return [
+      { g: cil(.95, .95, .3, 32), c: r, p: [0, .12, 0] }, { g: cil(.97, .97, .1, 32), c: y, p: [0, .22, 0] },
+      { g: cono(.95, 1.0, 32), c: b, p: [0, -.53, 0], rot: [Math.PI, 0, 0] }, { g: cil(.66, .66, .08, 28), c: y, p: [0, -.28, 0] },
+      { g: cono(.6, .4, 28), c: r, p: [0, .47, 0] }, { g: cil(.11, .11, .55, 12), c: 0xf2f2f2, p: [0, .8, 0] },
+      { g: sph(.17), c: y, p: [0, 1.08, 0] }, { g: sph(.08), c: 0x333333, p: [0, -1.05, 0] },
+      ...occhi(.26, .12, .92, .1), { g: sph(.1), c: OCCHIO, p: [0, -.02, .94], s: [1.6, .5, .4] },
+    ];
+  },
+  macchinina() {
+    const c = 0xff3b3b, v = 0x9fe3ff, n = 0x222230;
+    const ruota = (x, z) => [{ g: cil(.26, .26, .2, 20), c: n, p: [x, -.48, z], rot: [Math.PI / 2, 0, 0] }, { g: cil(.12, .12, .22, 12), c: 0xdddddd, p: [x, -.48, z], rot: [Math.PI / 2, 0, 0] }];
+    return [
+      { g: cap(.42, 1.05), c, p: [0, -.18, 0], rot: [0, 0, Math.PI / 2], s: [.72, 1, 1.25] },
+      { g: sph(.46), c: v, p: [-.05, .24, 0], s: [1.35, .78, 1.02] }, { g: sph(.46), c, p: [-.05, .19, 0], s: [1.4, .7, 1.06] },
+      { g: sca(.12, .1, .7), c: BIANCO, p: [.25, .2, 0] },
+      ...ruota(.6, .5), ...ruota(.6, -.5), ...ruota(-.6, .5), ...ruota(-.6, -.5),
+      { g: sph(.1), c: 0xfff3a0, p: [.97, -.12, .3] }, { g: sph(.1), c: 0xfff3a0, p: [.97, -.12, -.3] },
+      { g: sph(.2), c: BIANCO, p: [0, -.15, .52], s: [1, 1, .2] }, { g: sph(.1), c: n, p: [0, -.15, .56], s: [1, 1, .2] },   // numero da corsa
+      ...occhi(.2, .28, .45, .09).map(q => Object.assign({}, q, { p: [q.p[0] + .1, q.p[1], q.p[2] + .02] })),
+    ];
+  },
+  dino() {
+    const c = 0x3fcfb4, v = schiarisci(c, .5), s = 0xff7a3d;
+    return [
+      { g: sph(.7), c, p: [0, -.2, -.1], s: [1, .92, 1.15] }, { g: sph(.45), c: v, p: [0, -.25, .35], s: [1, 1, .5] },
+      { g: sph(.48), c, p: [0, .5, .42], s: [1, .9, 1.15] }, { g: sph(.32), c, p: [0, .38, .82], s: [1.05, .72, 1] },
+      { g: sph(.2), c: v, p: [0, .28, .95], s: [1.2, .4, .8] }, ...occhi(.22, .66, .74, .08),
+      { g: cono(.34, 1.1), c, p: [0, -.38, -.95], rot: [-1.95, 0, 0] },
+      { g: cap(.2, .25), c, p: [-.36, -.76, 0] }, { g: cap(.2, .25), c, p: [.36, -.76, 0] },
+      { g: cap(.08, .16), c, p: [-.34, .02, .45], rot: [1.1, 0, .2] }, { g: cap(.08, .16), c, p: [.34, .02, .45], rot: [1.1, 0, -.2] },
+      { g: cono(.12, .26), c: s, p: [0, .95, .3] }, { g: cono(.12, .26), c: s, p: [0, .62, -.28], rot: [-.5, 0, 0] },
+      { g: cono(.11, .24), c: s, p: [0, .35, -.62], rot: [-.9, 0, 0] }, { g: cono(.1, .22), c: s, p: [0, .02, -1.0], rot: [-1.2, 0, 0] },
+    ];
+  },
+  razzo() {
+    const w = 0xf4f4f8, r = 0xff3b5c, b = 0x3aa0ff;
+    const alette = [0, 1, 2].map(i => { const a = i * Math.PI * 2 / 3 + Math.PI / 2; return { g: sca(.08, .55, .5), c: r, p: [Math.cos(a) * .48, -.5, Math.sin(a) * .48], rot: [0, -a, 0] }; });
+    return [
+      { g: cil(.42, .44, 1.25, 28), c: w, p: [0, 0, 0] }, { g: cono(.42, .62, 28), c: r, p: [0, .93, 0] },
+      { g: cil(.45, .45, .1, 28), c: r, p: [0, -.35, 0] },
+      { g: sph(.2), c: b, p: [0, .25, .38], s: [1, 1, .45] }, { g: tor(.2, .045), c: 0xb8c0cc, p: [0, .25, .4] },
+      ...alette, { g: cono(.3, .28, 20), c: 0x9aa3b5, p: [0, -.76, 0], rot: [Math.PI, 0, 0] },
+      { g: sph(.24), c: 0xffa42e, p: [0, -1.02, 0], s: [1, 1.5, 1] }, { g: sph(.14), c: 0xfff06a, p: [0, -.98, 0], s: [1, 1.5, 1] },
+    ];
+  },
+  ufo() {
+    const g = 0xb9c3d6, a = 0x8dff6a;
+    const luci = []; for (let i = 0; i < 10; i++) { const t = i / 10 * Math.PI * 2; luci.push({ g: sph(.08), c: i % 2 ? 0xffd23e : 0xff4df5, p: [Math.cos(t) * .92, -.02, Math.sin(t) * .92] }); }
+    return [
+      { g: sph(1), c: g, p: [0, 0, 0], s: [1.05, .26, 1.05] }, { g: tor(.98, .05), c: 0x7d879c, p: [0, 0, 0], rot: [Math.PI / 2, 0, 0] },
+      { g: cil(.34, .44, .16, 24), c: 0x7d879c, p: [0, -.26, 0] }, { g: sph(.24), c: 0x7ffcff, p: [0, -.34, 0], s: [1, .4, 1] },
+      { g: sph(.38), c: a, p: [0, .34, 0] }, ...occhi(.14, .42, .3, .1),
+      { g: sph(.06), c: OCCHIO, p: [0, .26, .35], s: [1.8, .6, .5] },
+      { g: cil(.02, .02, .3, 6), c: a, p: [-.14, .78, 0], rot: [0, 0, .25] }, { g: cil(.02, .02, .3, 6), c: a, p: [.14, .78, 0], rot: [0, 0, -.25] },
+      { g: sph(.07), c: 0xffd23e, p: [-.19, .93, 0] }, { g: sph(.07), c: 0xffd23e, p: [.19, .93, 0] },
+      ...luci,
+    ];
+  },
+  astronauta() {
+    const w = 0xf2f4f8, v = 0x1b2a4a, gr = 0xa9b2c4;
+    return [
+      { g: cap(.42, .45), c: w, p: [0, -.28, 0] }, { g: sph(.52), c: w, p: [0, .55, 0] },
+      { g: sph(.37), c: v, p: [0, .55, .25], s: [1.1, .82, .62] }, { g: sph(.1), c: 0x9fe3ff, p: [-.14, .66, .44], s: [1, .6, .3] },
+      { g: tor(.4, .06), c: gr, p: [0, .12, 0], rot: [Math.PI / 2, 0, 0] },
+      { g: sca(.62, .66, .3), c: gr, p: [0, -.12, -.44] },
+      { g: cap(.14, .34), c: w, p: [-.55, -.16, 0], rot: [0, 0, .5] }, { g: cap(.14, .34), c: w, p: [.55, -.16, 0], rot: [0, 0, -.5] },
+      { g: sph(.13), c: gr, p: [-.72, -.42, 0] }, { g: sph(.13), c: gr, p: [.72, -.42, 0] },
+      { g: cap(.16, .22), c: w, p: [-.2, -.92, 0] }, { g: cap(.16, .22), c: w, p: [.2, -.92, 0] },
+      { g: sph(.08), c: 0xff3b5c, p: [.2, -.05, .41] }, { g: sph(.07), c: 0x3aa0ff, p: [-.18, -.05, .41] },
+      { g: cil(.02, .02, .25, 6), c: gr, p: [.3, 1.05, 0] }, { g: sph(.06), c: 0xff3b5c, p: [.3, 1.2, 0] },
+    ];
+  },
+  pianeta() {
+    const c = 0xff9d4d, a = 0xffe3a3;
+    return [
+      { g: sph(.72), c, p: [0, 0, 0] }, { g: sph(.73), c: 0xffb877, p: [0, .12, 0], s: [1, .25, 1] },
+      { g: sph(.73), c: 0xe8773a, p: [0, -.28, 0], s: [1, .2, 1] },
+      { g: tor(1.08, .1), c: a, p: [0, 0, 0], rot: [Math.PI / 2 + .35, .2, 0], s: [1, 1, .28] },
+      { g: tor(.88, .05), c: 0xffc6f0, p: [0, 0, 0], rot: [Math.PI / 2 + .35, .2, 0], s: [1, 1, .3] },
+      ...occhi(.22, .14, .66, .09), ...guance(.4, 0, .6, .09), { g: sph(.08), c: OCCHIO, p: [0, -.08, .71], s: [1.6, .5, .4] },
+      { g: sph(.17), c: 0xc9cdd8, p: [.92, .72, -.1] },
+    ];
+  },
+  draghetto() {
+    const c = 0xff6b3d, v = 0xffe08a, a = scurisci(c, .25);
+    return [
+      { g: sph(.7), c, p: [0, -.2, 0], s: [1, .95, 1] }, { g: sph(.46), c: v, p: [0, -.25, .38], s: [1, 1.05, .5] },
+      { g: sph(.55), c, p: [0, .55, .15] }, { g: sph(.32), c, p: [0, .45, .62], s: [1.15, .75, 1] },
+      { g: sph(.05), c: OCCHIO, p: [-.1, .52, .92] }, { g: sph(.05), c: OCCHIO, p: [.1, .52, .92] }, ...occhi(.24, .72, .56, .09),
+      { g: cono(.1, .32), c: v, p: [-.26, 1.05, .05], rot: [0, 0, .35] }, { g: cono(.1, .32), c: v, p: [.26, 1.05, .05], rot: [0, 0, -.35] },
+      { g: sph(.5), c: a, p: [-.72, .28, -.35], rot: [0, .6, .5], s: [.12, .8, .62] }, { g: sph(.5), c: a, p: [.72, .28, -.35], rot: [0, -.6, -.5], s: [.12, .8, .62] },
+      { g: cono(.22, .85), c, p: [0, -.52, -.78], rot: [-2.0, 0, 0] }, { g: cono(.1, .2), c: v, p: [0, -.72, -1.2], rot: [-2.0, 0, 0] },
+      { g: cono(.09, .2), c: v, p: [0, .92, -.2], rot: [-.5, 0, 0] }, { g: cono(.09, .2), c: v, p: [0, .45, -.55], rot: [-1.1, 0, 0] },
+      { g: cap(.16, .15), c, p: [-.35, -.8, .15] }, { g: cap(.16, .15), c, p: [.35, -.8, .15] },
+    ];
+  },
+  fantasmino() {
+    const c = 0xf4f1ff;
+    const bordi = []; for (let i = 0; i < 7; i++) { const t = i / 7 * Math.PI * 2; bordi.push({ g: sph(.2), c, p: [Math.cos(t) * .6, -.72, Math.sin(t) * .6] }); }
+    return [
+      { g: sph(.76), c, p: [0, .18, 0], s: [1, 1.06, 1] }, { g: cil(.76, .8, .62, 28), c, p: [0, -.38, 0] }, ...bordi,
+      { g: sph(.2), c, p: [-.8, -.05, .1], s: [1.4, .8, .8] }, { g: sph(.2), c, p: [.8, -.05, .1], s: [1.4, .8, .8] },
+      { g: sph(.13), c: OCCHIO, p: [-.24, .34, .66], s: [.8, 1.25, .5] }, { g: sph(.13), c: OCCHIO, p: [.24, .34, .66], s: [.8, 1.25, .5] },
+      { g: sph(.05), c: BIANCO, p: [-.21, .42, .72] }, { g: sph(.05), c: BIANCO, p: [.27, .42, .72] },
+      { g: sph(.1), c: 0x3b2448, p: [0, .06, .74], s: [1, 1.3, .5] }, ...guance(.44, .16, .6, .1),
+    ];
+  },
+  slime() {
+    const c = 0x49c8ff, s = schiarisci(c, .35);
+    return [
+      { g: sph(.92), c, p: [0, -.3, 0], s: [1.15, .72, 1.1] }, { g: sph(.6), c, p: [0, .12, 0], s: [1, .8, 1] },
+      { g: cono(.32, .55), c, p: [0, .6, -.05], rot: [-.15, 0, 0] },
+      { g: sph(.2), c: BIANCO, p: [-.4, .12, .55], s: [1, .6, .4] }, { g: sph(.09), c: BIANCO, p: [-.18, .3, .6], s: [1, .6, .4] },
+      ...occhi(.26, -.06, .84, .12), { g: sph(.12), c: 0x1a4a70, p: [0, -.28, .9], s: [1.5, .7, .4] },
+      { g: sph(.25), c: s, p: [.7, -.62, .4] }, { g: sph(.16), c: s, p: [-.78, -.66, .3] },
+    ];
+  },
+  unicorno() {
+    const c = 0xffffff, m = [0xff5d8f, 0xffd23f, 0x5dff8f, 0x45c8ff, 0xc86bff];
+    const criniera = m.map((col, i) => ({ g: sph(.2), c: col, p: [0, .95 - i * .2, .08 - i * .14] }));
+    return [
+      { g: sph(.66), c, p: [0, -.28, -.1], s: [1, .9, 1.22] }, { g: sph(.5), c, p: [0, .45, .32] },
+      { g: sph(.3), c: 0xffd6ea, p: [0, .32, .74], s: [1, .8, 1] }, { g: sph(.05), c: 0xc4588a, p: [-.1, .32, .98] }, { g: sph(.05), c: 0xc4588a, p: [.1, .32, .98] },
+      ...occhi(.24, .56, .66, .085), ...guance(.36, .36, .66, .08),
+      { g: cono(.1, .6, 16), c: 0xffd54a, p: [0, 1.05, .42], rot: [.35, 0, 0] }, { g: tor(.08, .025), c: 0xfff3b0, p: [0, .92, .38], rot: [Math.PI / 2 - .35, 0, 0] },
+      { g: cono(.09, .22), c, p: [-.24, .92, .18], rot: [0, 0, .3] }, { g: cono(.09, .22), c, p: [.24, .92, .18], rot: [0, 0, -.3] },
+      ...criniera,
+      { g: cil(.13, .12, .45, 12), c, p: [-.3, -.85, .3] }, { g: cil(.13, .12, .45, 12), c, p: [.3, -.85, .3] },
+      { g: cil(.13, .12, .45, 12), c, p: [-.3, -.85, -.45] }, { g: cil(.13, .12, .45, 12), c, p: [.3, -.85, -.45] },
+      { g: sph(.2), c: m[0], p: [0, -.2, -.95] }, { g: sph(.18), c: m[3], p: [0, -.4, -1.08] }, { g: sph(.15), c: m[4], p: [0, -.58, -1.12] },
+    ];
+  },
+  corona() {
+    const o = 0xffc93a;
+    return [
+      { g: estrusa('corona', formaCorona(1), .5, .1), c: o, p: [0, 0, 0] },
+      { g: cil(.95, .95, .5, 32), c: scurisci(o, .15), p: [0, -.55, -.35], s: [1, .4, .5] },
+      { g: sph(.14), c: 0xff2d78, p: [-.5, -.18, .34] }, { g: sph(.17), c: 0x22ccff, p: [0, -.12, .36] }, { g: sph(.14), c: 0x31d158, p: [.5, -.18, .34] },
+      { g: sph(.1), c: BIANCO, p: [-.88, .55, 0] }, { g: sph(.12), c: BIANCO, p: [0, .78, 0] }, { g: sph(.1), c: BIANCO, p: [.88, .55, 0] },
+    ];
+  },
+  trofeo() {
+    const o = 0xffc93a;
+    return [
+      { g: tornio('coppa', [[0.01, -.05], [.35, -.02], [.6, .25], [.72, .7], [.74, .9], [.68, .92], [.62, .72], [.5, .3], [.01, .12]]), c: o, p: [0, 0, 0] },
+      { g: tor(.26, .06, Math.PI * 1.3), c: o, p: [-.72, .52, 0], rot: [0, 0, Math.PI * .35] }, { g: tor(.26, .06, Math.PI * 1.3), c: o, p: [.72, .52, 0], rot: [0, 0, -Math.PI * .65] },
+      { g: cil(.12, .16, .45, 16), c: o, p: [0, -.3, 0] }, { g: cil(.42, .5, .18, 28), c: 0x3b2a6a, p: [0, -.6, 0] },
+      { g: cil(.5, .5, .12, 28), c: o, p: [0, -.74, 0] }, { g: estrusa('stellina', formaStella(.25), .08, .03), c: BIANCO, p: [0, .45, .66], rot: [-.15, 0, 0] },
+    ];
+  },
+  gemma() {
+    return [
+      { g: tornio('gemma', [[.001, -1.0], [.95, -.05], [.66, .42], [.001, .46]], 10), c: 0x22d3ff, p: [0, 0, 0], piatta: true },
+    ];
+  },
+  gettone() {
+    const o = 0xffc93a;
+    return [
+      { g: cil(.95, .95, .22, 40), c: o, p: [0, 0, 0], rot: [Math.PI / 2, 0, 0] },
+      { g: tor(.95, .07), c: scurisci(o, .12), p: [0, 0, 0] },
+      { g: tor(.72, .035), c: 0xff4df5, p: [0, 0, .12] }, { g: tor(.72, .035), c: 0xff4df5, p: [0, 0, -.12] },
+      { g: estrusa('dap', formaD(.62), .09, .025), c: 0x2a1450, p: [.04, 0, .15] },
+      { g: estrusa('dap', formaD(.62), .09, .025), c: 0x2a1450, p: [.04, 0, -.15], rot: [0, Math.PI, 0] },
+    ];
+  },
+};
+const GEO = MODELLI.map(m => fondi(COSTRUTTORI[m.id]()));
+
+// ============ MATERIALI DEI GRADI (shader: tinta metallica, arcobaleno, stelle, scintille, bordo luminoso) ============
+const GLSL_EXTRA = `
+vec3 dpHsv(vec3 c) { vec4 K = vec4(1., 2. / 3., 1. / 3., 3.); vec3 p = abs(fract(c.xxx + K.xyz) * 6. - K.www); return c.z * mix(K.xxx, clamp(p - K.xxx, 0., 1.), c.y); }
+float dpHash(vec3 p) { return fract(sin(dot(p, vec3(12.9898, 78.233, 45.164))) * 43758.5453); }
+`;
+function materialeGrado(g, extra = {}) {
+  const D = GRADI[g];
+  const m = new THREE.MeshPhysicalMaterial(Object.assign({ vertexColors: true }, D.mat, extra));
+  m.onBeforeCompile = (sh) => {
+    sh.uniforms.uTempo = U_TEMPO;
+    sh.uniforms.uTinta = { value: new THREE.Color(D.tinta) };
+    sh.uniforms.uMix = { value: D.mix };
+    sh.uniforms.uBordo = { value: new THREE.Color(D.bordo) };
+    sh.uniforms.uBordoK = { value: D.bordoK };
+    sh.vertexShader = 'varying vec3 vPosM;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n  vPosM = position;');
+    sh.fragmentShader = 'varying vec3 vPosM;\nuniform float uTempo;\nuniform vec3 uTinta;\nuniform float uMix;\nuniform vec3 uBordo;\nuniform float uBordoK;\n' + GLSL_EXTRA +
+      sh.fragmentShader
+        .replace('#include <color_fragment>', `
+          vec3 baseC = vec3(1.0);
+          #if defined( USE_COLOR )
+            baseC = vColor.rgb;
+          #endif
+          float luma = dot(baseC, vec3(0.299, 0.587, 0.114));
+          vec3 tinta = uTinta;
+          ${D.modo === 1 ? 'tinta = dpHsv(vec3(fract(vPosM.y * .55 + vPosM.x * .3 + uTempo * .18), .72, 1.));' : ''}
+          vec3 metallo = tinta * (0.32 + 0.85 * luma);
+          diffuseColor.rgb *= mix(baseC, metallo, uMix);`)
+        .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
+          {
+            vec3 vdir = normalize(vViewPosition);
+            float fres = pow(1.0 - clamp(abs(dot(normal, vdir)), 0.0, 1.0), 2.2);
+            vec3 bordo = uBordo;
+            ${D.modo === 1 ? 'bordo = tinta; totalEmissiveRadiance += tinta * .16;' : ''}
+            float puls = ${D.pulsa ? '0.72 + 0.28 * sin(uTempo * 3.0)' : '1.0'};
+            totalEmissiveRadiance += bordo * fres * uBordoK * puls;
+            ${D.modo === 2 ? `
+              vec3 cp = vPosM * 3.0;
+              float neb = 0.5 + 0.5 * sin(cp.x * 1.7 + uTempo * .6 + sin(cp.y * 2.3 - uTempo * .4)) * sin(cp.z * 1.9 + cp.y);
+              totalEmissiveRadiance += mix(vec3(.35, .04, .6), vec3(.0, .45, .9), neb) * .5;
+              vec3 cella = floor(vPosM * 16.0);
+              float h = dpHash(cella);
+              float st = step(.9, h) * smoothstep(.42, .0, length(fract(vPosM * 16.0) - .5)) * (.55 + .45 * sin(uTempo * 4. + h * 40.));
+              totalEmissiveRadiance += vec3(1., .92, 1.) * st * 3.0;` : ''}
+            ${D.scintille ? `
+              vec3 c2 = floor(vPosM * 7.0);
+              float h2 = dpHash(c2 + floor(uTempo * 2.2));
+              float sp = step(.86, h2) * smoothstep(.5, .0, length(fract(vPosM * 7.0) - .5));
+              totalEmissiveRadiance += vec3(.85, 1., 1.) * sp * 3.2;` : ''}
+          }`);
+  };
+  m.customProgramCacheKey = () => 'dpGrado' + g;
+  return m;
+}
+const MAT = GRADI.map((D, g) => g ? materialeGrado(g) : null);
+const MAT_SAGOMA = new THREE.MeshBasicMaterial({ color: 0x000000 });
+
+// ============ LA GRANDE VASCA ============
+const ZL = 12, ZP = 10;                        // larghezza e profondità interne di una zona
+const PASSO_ZONA = 13.4;
+const cxZona = (i) => i * PASSO_ZONA;
+const BUCA_MEZZA = 1.45, BUCA_Z0 = 3.0, BUCA_Z1 = ZP / 2;   // la buca sta davanti, al centro di ogni zona
+const MURO_H = 1.1, PARETE_BUCA_H = 1.0;
+const Y_ALTO = 3.5, Y_CARRELLO = 9.4;           // il carroponte sta sopra la camera: non copre mai la vasca
+const zonaDi = (x) => clamp(Math.round(x / PASSO_ZONA), 0, ZONE.length - 1);
+const buca = (z) => ({ x: cxZona(z), z: (BUCA_Z0 + BUCA_Z1) / 2 });
+const sopraBuca = (x, z, zona) => Math.abs(x - cxZona(zona)) < BUCA_MEZZA && z > BUCA_Z0;
+
+function tela(w, h) { const c = document.createElement('canvas'); c.width = w; c.height = h; return [c, c.getContext('2d')]; }
+function tex(c, srgb = true) { const t = new THREE.CanvasTexture(c); if (srgb) t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t; }
+function logoDaProd(g, cx, cy, h, alfa = 1) {     // l'emblema DaProd disegnato su canvas
+  g.save(); g.globalAlpha = alfa; g.translate(cx, cy); const k = h / 64; g.scale(k, k); g.translate(-32, -32);
+  g.beginPath(); g.arc(32, 32, 27, 0, Math.PI * 2); g.fillStyle = '#150e24'; g.fill();
+  g.lineWidth = 4; g.strokeStyle = '#ffd54a'; g.stroke();
+  g.setLineDash([3, 3.4]); g.lineWidth = 2; g.strokeStyle = '#ff5cf4'; g.beginPath(); g.arc(32, 32, 20.5, 0, Math.PI * 2); g.stroke(); g.setLineDash([]);
+  g.fillStyle = '#ffd54a'; g.fill(new Path2D('M24 19h9.5c8 0 13 5 13 13s-5 13-13 13H24z M30 25v14h3.2c4.3 0 7-2.6 7-7s-2.7-7-7-7z'), 'evenodd');
+  g.restore();
+}
+
+const mLacca = (col) => new THREE.MeshPhysicalMaterial({ color: col, roughness: .35, metalness: .1, clearcoat: 1, clearcoatRoughness: .12, envMapIntensity: .5 });
+const M_CROMO = new THREE.MeshStandardMaterial({ color: 0xdfe4ee, metalness: 1, roughness: .16 });
+const M_ORO = new THREE.MeshStandardMaterial({ color: 0xffc933, metalness: 1, roughness: .24 });
+const M_VIOLA = mLacca(0x3a2470);
+const M_ROSA = mLacca(0xff2d78);
+const M_SCURO = new THREE.MeshStandardMaterial({ color: 0x15101f, roughness: .6, metalness: .2 });
+const mLed = (col, k = 2.4) => new THREE.MeshBasicMaterial({ color: new THREE.Color(col).multiplyScalar(k) });
+const M_VETRO = new THREE.MeshStandardMaterial({ color: 0xa8ecff, transparent: true, opacity: .16, roughness: .04, metalness: .2, envMapIntensity: 2.5, depthWrite: false, side: THREE.DoubleSide });
+function scatola(w, h, d, mat, x, y, z, ombre = true) {
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat); m.position.set(x, y, z);
+  m.castShadow = ombre; m.receiveShadow = true; return m;
+}
+
+// --- luci ---
+const emisfero = new THREE.HemisphereLight(0xc8bfff, 0x1a1026, .6); scena.add(emisfero);
+const sole = new THREE.DirectionalLight(0xfff0e0, 1.9);
+sole.castShadow = true; sole.shadow.bias = -.0006; sole.shadow.normalBias = .02;
+Object.assign(sole.shadow.camera, { left: -8.5, right: 8.5, top: 7, bottom: -7, near: 1, far: 40 });
+scena.add(sole); scena.add(sole.target);
+const faro = new THREE.SpotLight(0xfff2dd, 60, 16, .3, .7, 1.2); scena.add(faro); scena.add(faro.target);
+
+// --- pavimento della sala e parete di fondo ---
+{
+  const [c, g] = tela(512, 512);
+  g.fillStyle = '#0f0b18'; g.fillRect(0, 0, 512, 512);
+  g.strokeStyle = 'rgba(160,120,255,.16)'; g.lineWidth = 2;
+  for (let i = 0; i <= 512; i += 64) { g.beginPath(); g.moveTo(i, 0); g.lineTo(i, 512); g.stroke(); g.beginPath(); g.moveTo(0, i); g.lineTo(512, i); g.stroke(); }
+  const t = tex(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(40, 12);
+  const p = new THREE.Mesh(new THREE.PlaneGeometry(160, 48), new THREE.MeshStandardMaterial({ map: t, roughness: .32, metalness: .35 }));
+  p.rotation.x = -Math.PI / 2; p.position.set(cxZona(2), -.02, 6); p.receiveShadow = true; scena.add(p);
+  const [c2, g2] = tela(1024, 256);
+  const gr = g2.createLinearGradient(0, 0, 0, 256); gr.addColorStop(0, '#07060d'); gr.addColorStop(1, '#1a0f33');
+  g2.fillStyle = gr; g2.fillRect(0, 0, 1024, 256);
+  const cols = ['#ff3df2', '#35e8ff', '#ffd54a', '#8a5cff', '#ff7a3d'];
+  for (let i = 0; i < 90; i++) {
+    const x = Math.random() * 1024, y = 60 + Math.random() * 190, r = 4 + Math.random() * 18;
+    const rg = g2.createRadialGradient(x, y, 0, x, y, r); const col = cols[i % cols.length];
+    rg.addColorStop(0, col); rg.addColorStop(1, 'rgba(0,0,0,0)'); g2.globalAlpha = .25 + Math.random() * .35;
+    g2.fillStyle = rg; g2.beginPath(); g2.arc(x, y, r, 0, Math.PI * 2); g2.fill();
+  }
+  g2.globalAlpha = 1;
+  const fondo = new THREE.Mesh(new THREE.PlaneGeometry(170, 34), new THREE.MeshBasicMaterial({ map: tex(c2) }));
+  fondo.position.set(cxZona(2), 10, -16); scena.add(fondo);
+}
+
+// --- texture delle zone ---
+function texPanno(z) {
+  const [c, g] = tela(1024, 853), col = new THREE.Color(ZONE[z].col);
+  const scuro = '#' + col.clone().multiplyScalar(.28).getHexString(), medio = '#' + col.clone().multiplyScalar(.42).getHexString();
+  g.fillStyle = scuro; g.fillRect(0, 0, 1024, 853);
+  g.strokeStyle = medio; g.lineWidth = 3;
+  for (let i = -900; i < 1900; i += 58) { g.beginPath(); g.moveTo(i, 0); g.lineTo(i + 853, 853); g.stroke(); g.beginPath(); g.moveTo(i + 853, 0); g.lineTo(i, 853); g.stroke(); }
+  for (let i = 0; i < 2600; i++) { g.fillStyle = `rgba(255,255,255,${Math.random() * .035})`; g.fillRect(Math.random() * 1024, Math.random() * 853, 2, 2); }
+  logoDaProd(g, 512, 380, 260, .22);
+  g.font = '900 54px Orbitron, Arial Black, sans-serif'; g.textAlign = 'center'; g.fillStyle = 'rgba(255,255,255,.1)';
+  g.fillText(ZONE[z].nome, 512, 580);
+  // la zona della buca: frecce
+  g.fillStyle = 'rgba(255,255,255,.14)';
+  for (let k = 0; k < 3; k++) { g.beginPath(); const y = 640 + k * 42; g.moveTo(470, y); g.lineTo(554, y); g.lineTo(512, y + 30); g.closePath(); g.fill(); }
+  const t = tex(c); t.repeat.set(1 / ZL, 1 / ZP); t.offset.set(.5, .5); return t;
+}
+function texInsegna(z) {
+  const [c, g] = tela(1024, 200), Z = ZONE[z];
+  g.clearRect(0, 0, 1024, 200);
+  g.fillStyle = 'rgba(12,8,24,.92)'; g.beginPath(); g.roundRect(8, 8, 1008, 184, 40); g.fill();
+  g.lineWidth = 7; g.strokeStyle = Z.col; g.shadowColor = Z.col; g.shadowBlur = 26; g.stroke();
+  g.shadowBlur = 0; g.font = '96px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(Z.ico, 110, 104);
+  g.font = '900 76px Orbitron, Arial Black, sans-serif'; g.fillStyle = '#fff'; g.shadowColor = Z.col; g.shadowBlur = 30;
+  const nome = Z.nome.length > 13 ? Z.nome.replace(' DEI ', ' ').replace('CAVEAU TESORI', 'CAVEAU') : Z.nome;
+  g.font = `900 ${nome.length > 12 ? 62 : 76}px Orbitron, Arial Black, sans-serif`;
+  g.fillText(nome, 562, 104); g.fillText(nome, 562, 104);
+  return tex(c);
+}
+function texRete() {
+  const [c, g] = tela(256, 128);
+  g.clearRect(0, 0, 256, 128); g.strokeStyle = '#fff'; g.lineWidth = 5;
+  for (let i = -128; i < 384; i += 32) { g.beginPath(); g.moveTo(i, 0); g.lineTo(i + 128, 128); g.stroke(); g.beginPath(); g.moveTo(i + 128, 0); g.lineTo(i, 128); g.stroke(); }
+  const t = tex(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(4, 2); return t;
+}
+function texCartello(righe, col) {                 // cartello olografico delle zone chiuse
+  const [c, g] = tela(768, 400);
+  g.fillStyle = 'rgba(10,6,22,.86)'; g.beginPath(); g.roundRect(10, 10, 748, 380, 36); g.fill();
+  g.lineWidth = 6; g.strokeStyle = col; g.shadowColor = col; g.shadowBlur = 22; g.stroke(); g.shadowBlur = 0;
+  g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.font = '110px sans-serif'; g.fillText('🔒', 384, 100);
+  g.font = '900 50px Orbitron, Arial Black, sans-serif'; g.fillStyle = '#fff'; g.fillText(righe[0], 384, 210);
+  g.font = '800 36px Orbitron, Arial Black, sans-serif'; g.fillStyle = col; g.fillText(righe[1], 384, 285);
+  g.font = '700 30px Rajdhani, sans-serif'; g.fillStyle = '#d9d2ee'; g.fillText(righe[2], 384, 345);
+  return tex(c);
+}
+function texBarriera(col) {
+  const [c, g] = tela(64, 256);
+  const gr = g.createLinearGradient(0, 0, 0, 256); gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(.5, col); gr.addColorStop(1, 'rgba(0,0,0,0)');
+  for (let y = 0; y < 256; y += 8) { g.globalAlpha = .15 + (y % 32 === 0 ? .5 : .1); g.fillStyle = gr; g.fillRect(0, y, 64, 3); }
+  const t = tex(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(10, 3); return t;
+}
+// cono di luce finto (volumetrico) dal soffitto
+const M_CONO = new THREE.ShaderMaterial({
+  transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide,
+  uniforms: { uCol: { value: new THREE.Color(1, .9, .8) } },
+  vertexShader: 'varying float vY; varying vec3 vN; varying vec3 vV; void main(){ vY = uv.y; vec4 mv = modelViewMatrix * vec4(position,1.); vN = normalize(normalMatrix*normal); vV = normalize(-mv.xyz); gl_Position = projectionMatrix*mv; }',
+  fragmentShader: 'uniform vec3 uCol; varying float vY; varying vec3 vN; varying vec3 vV; void main(){ float f = pow(abs(dot(vN, vV)), 1.6); gl_FragColor = vec4(uCol * f * vY * vY * .035, 1.); }',
+});
+
+// --- le cinque zone ---
+const ZONE3D = [];
+const M_PANNO = [];
+for (let i = 0; i < ZONE.length; i++) {
+  const Z = ZONE[i], cx = cxZona(i), col = new THREE.Color(Z.col), gruppo = new THREE.Group();
+  // pavimento con la tacca della buca
+  const f = new THREE.Shape();
+  f.moveTo(-ZL / 2, -ZP / 2); f.lineTo(-BUCA_MEZZA, -ZP / 2); f.lineTo(-BUCA_MEZZA, -ZP / 2 + (BUCA_Z1 - BUCA_Z0));
+  f.lineTo(BUCA_MEZZA, -ZP / 2 + (BUCA_Z1 - BUCA_Z0)); f.lineTo(BUCA_MEZZA, -ZP / 2); f.lineTo(ZL / 2, -ZP / 2);
+  f.lineTo(ZL / 2, ZP / 2); f.lineTo(-ZL / 2, ZP / 2); f.closePath();
+  const mp = new THREE.MeshStandardMaterial({ map: texPanno(i), roughness: .95, metalness: 0, envMapIntensity: .25 }); M_PANNO.push(mp);
+  const pav = new THREE.Mesh(new THREE.ShapeGeometry(f), mp);
+  pav.rotation.x = -Math.PI / 2; pav.position.set(cx, 0, 0); pav.receiveShadow = true; gruppo.add(pav);
+  // muri della vasca: lacca del colore della zona, bordo cromato, led
+  const lacca = mLacca(col.clone().multiplyScalar(.5)), led = mLed(Z.col, 2.2);
+  const muri = [[.3, ZP + .6, cx - ZL / 2 - .15, 0], [.3, ZP + .6, cx + ZL / 2 + .15, 0], [ZL + .6, .3, cx, -ZP / 2 - .15], [ZL + .6, .3, cx, ZP / 2 + .15]];
+  for (const [w, d, x, z] of muri) {
+    gruppo.add(scatola(w, MURO_H, d, lacca, x, MURO_H / 2, z));
+    gruppo.add(scatola(w + .08, .07, d + .08, M_CROMO, x, MURO_H + .035, z, false));
+  }
+  gruppo.add(scatola(ZL, .05, .05, led, cx, MURO_H - .1, -ZP / 2 + .01, false));
+  gruppo.add(scatola(ZL, .05, .05, led, cx, MURO_H - .1, ZP / 2 - .01, false));
+  gruppo.add(scatola(.05, .05, ZP, led, cx - ZL / 2 + .01, MURO_H - .1, 0, false));
+  gruppo.add(scatola(.05, .05, ZP, led, cx + ZL / 2 - .01, MURO_H - .1, 0, false));
+  // la buca: pozzo scuro, pareti di vetro e neon
+  const pozzo = new THREE.Mesh(new THREE.BoxGeometry(BUCA_MEZZA * 2, 3, BUCA_Z1 - BUCA_Z0),
+    new THREE.MeshStandardMaterial({ color: 0x0a0712, emissive: col.clone().multiplyScalar(.18), roughness: .9, side: THREE.BackSide }));
+  pozzo.position.set(cx, -1.5, (BUCA_Z0 + BUCA_Z1) / 2); gruppo.add(pozzo);
+  const lungZ = BUCA_Z1 - BUCA_Z0, mz = (BUCA_Z0 + BUCA_Z1) / 2, ledB = mLed(Z.col, 3);
+  gruppo.add(scatola(.06, PARETE_BUCA_H, lungZ, M_VETRO, cx - BUCA_MEZZA - .03, PARETE_BUCA_H / 2, mz, false));
+  gruppo.add(scatola(.06, PARETE_BUCA_H, lungZ, M_VETRO, cx + BUCA_MEZZA + .03, PARETE_BUCA_H / 2, mz, false));
+  gruppo.add(scatola(BUCA_MEZZA * 2 + .12, PARETE_BUCA_H, .06, M_VETRO, cx, PARETE_BUCA_H / 2, BUCA_Z0 - .03, false));
+  gruppo.add(scatola(.07, .07, lungZ, ledB, cx - BUCA_MEZZA - .03, PARETE_BUCA_H, mz, false));
+  gruppo.add(scatola(.07, .07, lungZ, ledB, cx + BUCA_MEZZA + .03, PARETE_BUCA_H, mz, false));
+  gruppo.add(scatola(BUCA_MEZZA * 2 + .14, .07, .07, ledB, cx, PARETE_BUCA_H, BUCA_Z0 - .03, false));
+  // insegna al neon sul fondo
+  const ins = new THREE.Mesh(new THREE.PlaneGeometry(7.6, 1.48), new THREE.MeshBasicMaterial({ map: texInsegna(i), transparent: true, toneMapped: false, color: new THREE.Color(1.5, 1.5, 1.5) }));
+  ins.position.set(cx, 3.2, -ZP / 2 - .7); gruppo.add(ins);
+  const pannello = scatola(ZL + .6, 3.6, .2, M_SCURO, cx, 1.8 + MURO_H * .5, -ZP / 2 - .9, false); gruppo.add(pannello);
+  // cono di luce e luce colorata
+  const cono = new THREE.Mesh(new THREE.ConeGeometry(4.2, 9, 32, 1, true), M_CONO.clone());
+  cono.material.uniforms.uCol.value = col.clone().lerp(new THREE.Color(1, 1, 1), .5);
+  cono.position.set(cx, 5.5, -.5); gruppo.add(cono);
+  const luce = new THREE.PointLight(col, 9, 16, 1.6); luce.position.set(cx, 4.2, 1.5); gruppo.add(luce);
+  scena.add(gruppo);
+  // zona chiusa: velo scuro, barriera olografica e cartello
+  const chiusa = new THREE.Group();
+  const velo = new THREE.Mesh(new THREE.PlaneGeometry(ZL, ZP), new THREE.MeshBasicMaterial({ color: 0x05030b, transparent: true, opacity: .55, depthWrite: false }));
+  velo.rotation.x = -Math.PI / 2; velo.position.set(cx, 2.2, 0); chiusa.add(velo);
+  const tb = texBarriera(Z.col);
+  const barriera = new THREE.Mesh(new THREE.PlaneGeometry(ZP + .8, 5), new THREE.MeshBasicMaterial({ map: tb, transparent: true, opacity: .8, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, toneMapped: false }));
+  barriera.rotation.y = Math.PI / 2; barriera.position.set(cx - PASSO_ZONA / 2, 2.5, 0); chiusa.add(barriera);
+  const cartello = new THREE.Mesh(new THREE.PlaneGeometry(4.4, 2.3), new THREE.MeshBasicMaterial({ transparent: true, toneMapped: false, depthTest: false }));
+  cartello.position.set(cx, 3.1, 1.2); cartello.renderOrder = 5; chiusa.add(cartello);
+  scena.add(chiusa);
+  ZONE3D.push({ gruppo, chiusa, cartello, barriera, tb, luce, cono, velo, fade: 1 });
+}
+function aggiornaCartelli() {
+  ZONE3D.forEach((Z3, i) => {
+    Z3.chiusa.visible = !stato.zone[i];
+    if (stato.zone[i]) return;
+    const Z = ZONE[i];
+    const righe = stato.zone[i - 1] ? [Z.nome, `⚡ ${punti(Z.pot)} · ${lireBrevi(Z.prezzo)}`, 'potenza della collezione + lire'] : [Z.nome, 'APRI PRIMA LA ZONA ' + i, Z.desc.split(',')[0]];
+    const chiave = righe.join('|');
+    if (Z3.chiave === chiave) return;
+    Z3.chiave = chiave;
+    if (Z3.cartello.material.map) Z3.cartello.material.map.dispose();
+    Z3.cartello.material.map = texCartello(righe, Z.col); Z3.cartello.material.needsUpdate = true;
+  });
+}
+
+// --- carroponte: binari, ponte, carrello, cavo ---
+const X_MIN_SALA = cxZona(0) - ZL / 2 - .6, X_MAX_SALA = cxZona(ZONE.length - 1) + ZL / 2 + .6, LUNG = X_MAX_SALA - X_MIN_SALA, XM = (X_MIN_SALA + X_MAX_SALA) / 2;
+scena.add(scatola(LUNG, .28, .4, M_VIOLA, XM, Y_CARRELLO + .15, -ZP / 2 - .45));
+const binarioDavanti = new THREE.Group(); scena.add(binarioDavanti);
+binarioDavanti.add(scatola(LUNG, .28, .4, M_VIOLA, XM, Y_CARRELLO + .15, ZP / 2 + .45));
+binarioDavanti.add(scatola(LUNG, .06, .06, mLed('#ffd54a', 2), XM, Y_CARRELLO - .01, ZP / 2 + .66, false));
+scena.add(scatola(LUNG, .06, .06, mLed('#ffd54a', 2), XM, Y_CARRELLO - .01, -ZP / 2 - .66, false));
+for (let i = 0; i <= ZONE.length; i++) {
+  const x = cxZona(i) - PASSO_ZONA / 2;
+  const pil = new THREE.Mesh(new THREE.CylinderGeometry(.16, .2, Y_CARRELLO + .3, 16), M_CROMO); pil.position.set(x, (Y_CARRELLO + .3) / 2, -ZP / 2 - .45); pil.castShadow = true; scena.add(pil);
+  const ast = new THREE.Mesh(new THREE.CylinderGeometry(.05, .05, 10, 8), M_CROMO); ast.position.set(x, Y_CARRELLO + 5.2, ZP / 2 + .45); binarioDavanti.add(ast);
+}
+const ponte = new THREE.Group(); scena.add(ponte);
+ponte.add(scatola(.42, .34, ZP + 1.3, M_VIOLA, 0, Y_CARRELLO + .15, 0));
+ponte.add(scatola(.46, .05, ZP + 1.1, mLed('#ff3df2', 2.4), 0, Y_CARRELLO - .04, 0, false));
+ponte.add(scatola(.8, .4, .6, M_ROSA, 0, Y_CARRELLO + .2, -ZP / 2 - .45));
+ponte.add(scatola(.8, .4, .6, M_ROSA, 0, Y_CARRELLO + .2, ZP / 2 + .45));
+const carrello = new THREE.Group(); scena.add(carrello);
+carrello.add(scatola(.95, .45, .95, M_ROSA, 0, 0, 0));
+carrello.add(scatola(.7, .12, .7, M_CROMO, 0, -.28, 0));
+const ledCarrello = new THREE.Mesh(new THREE.TorusGeometry(.3, .035, 8, 28), mLed('#ffd54a', 3)); ledCarrello.rotation.x = Math.PI / 2; ledCarrello.position.y = -.35; carrello.add(ledCarrello);
+const cavo = new THREE.Mesh(new THREE.CylinderGeometry(.028, .028, 1, 8), new THREE.MeshStandardMaterial({ color: 0x9aa0ad, metalness: .9, roughness: .3 }));
+scena.add(cavo);
+
+// --- le tre teste ---
+const testa3D = new THREE.Group(); scena.add(testa3D);
+const TESTE3D = {};
+{ // PINZA: mozzo rosa e tre artigli d'oro con due snodi
+  const g = new THREE.Group(), dita = [];
+  const mozzo = new THREE.Mesh(new THREE.CylinderGeometry(.34, .4, .42, 24), M_ROSA); mozzo.position.y = .98; mozzo.castShadow = true; g.add(mozzo);
+  const cupola = new THREE.Mesh(new THREE.SphereGeometry(.34, 20, 12, 0, Math.PI * 2, 0, Math.PI / 2), M_CROMO); cupola.position.y = 1.19; g.add(cupola);
+  const anello = new THREE.Mesh(new THREE.TorusGeometry(.38, .04, 8, 30), mLed('#ffd54a', 3)); anello.rotation.x = Math.PI / 2; anello.position.y = .8; g.add(anello);
+  for (let i = 0; i < 3; i++) {
+    const a = i / 3 * Math.PI * 2;
+    const base = new THREE.Group(); base.rotation.y = a; base.position.y = .78; g.add(base);
+    const perno1 = new THREE.Group(); perno1.position.x = .26; base.add(perno1);
+    const b1 = new THREE.Mesh(new THREE.BoxGeometry(.12, .55, .17), M_ORO); b1.position.y = -.275; b1.castShadow = true; perno1.add(b1);
+    const s1 = new THREE.Mesh(new THREE.CylinderGeometry(.06, .06, .22, 12), M_CROMO); s1.rotation.x = Math.PI / 2; perno1.add(s1);
+    const perno2 = new THREE.Group(); perno2.position.y = -.55; perno1.add(perno2);
+    const s2 = s1.clone(); perno2.add(s2);
+    const b2 = new THREE.Mesh(new THREE.BoxGeometry(.1, .45, .15), M_ORO); b2.position.y = -.225; b2.castShadow = true; perno2.add(b2);
+    const punta = new THREE.Mesh(new THREE.SphereGeometry(.085, 12, 8), new THREE.MeshStandardMaterial({ color: 0x1e1a2b, roughness: .9 })); punta.position.y = -.45; perno2.add(punta);
+    dita.push({ perno1, perno2 });
+  }
+  g.userData = { dita, cima: 1.3 };
+  TESTE3D.pinza = g; testa3D.add(g);
+}
+{ // AMO: piombo rosso, gambo e uncino d'oro
+  const g = new THREE.Group();
+  const piombo = new THREE.Mesh(new THREE.SphereGeometry(.2, 20, 14), M_ROSA); piombo.position.y = .78; piombo.scale.y = 1.25; piombo.castShadow = true; g.add(piombo);
+  const gir = new THREE.Mesh(new THREE.CylinderGeometry(.05, .05, .22, 12), M_CROMO); gir.position.y = 1.08; g.add(gir);
+  const gambo = new THREE.Mesh(new THREE.CylinderGeometry(.035, .035, .46, 10), M_ORO); gambo.position.y = .36; g.add(gambo);
+  const unc = new THREE.Mesh(new THREE.TorusGeometry(.17, .042, 10, 28, Math.PI * 1.25), M_ORO); unc.rotation.z = Math.PI; unc.position.set(.17, .13, 0); unc.castShadow = true; g.add(unc);
+  const ardiglione = new THREE.Mesh(new THREE.ConeGeometry(.055, .14, 10), M_ORO); ardiglione.position.set(.29, .25, 0); ardiglione.rotation.z = -.6; g.add(ardiglione);
+  const lucina = new THREE.Mesh(new THREE.SphereGeometry(.06, 10, 8), mLed('#35e8ff', 3)); lucina.position.y = 1.0; g.add(lucina);
+  g.userData = { cima: 1.2 };
+  TESTE3D.amo = g; testa3D.add(g);
+}
+{ // RETE: anello cromato con la rete a sacco
+  const g = new THREE.Group();
+  const anello = new THREE.Mesh(new THREE.TorusGeometry(1, .05, 10, 48), M_CROMO); anello.rotation.x = Math.PI / 2; anello.position.y = .95; anello.castShadow = true; g.add(anello);
+  const ledR = new THREE.Mesh(new THREE.TorusGeometry(1, .02, 6, 48), mLed('#35e8ff', 2.6)); ledR.rotation.x = Math.PI / 2; ledR.position.y = 1.0; g.add(ledR);
+  const rete = new THREE.Mesh(new THREE.CylinderGeometry(1, .32, .9, 24, 3, true),
+    new THREE.MeshStandardMaterial({ map: texRete(), color: 0xf2f6ff, transparent: true, alphaTest: .4, side: THREE.DoubleSide, roughness: .7 }));
+  rete.position.y = .5; g.add(rete);
+  const mozzo = new THREE.Mesh(new THREE.CylinderGeometry(.18, .22, .3, 16), M_ROSA); mozzo.position.y = 1.9; g.add(mozzo);
+  const fili = [];
+  for (let i = 0; i < 3; i++) {
+    const a = i / 3 * Math.PI * 2, f = new THREE.Mesh(new THREE.CylinderGeometry(.015, .015, 1, 6), M_CROMO);
+    g.add(f); fili.push({ f, a });
+  }
+  g.userData = { rete, anello, ledR, fili, cima: 2.05 };
+  TESTE3D.rete = g; testa3D.add(g);
+}
+// mirino sul mucchio e raggio laser
+const mirino = new THREE.Group(); scena.add(mirino);
+const M_MIRINO = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: .85, depthTest: false, toneMapped: false });
+const anelloMirino = new THREE.Mesh(new THREE.RingGeometry(.9, 1, 56), M_MIRINO); anelloMirino.rotation.x = -Math.PI / 2; anelloMirino.renderOrder = 4; mirino.add(anelloMirino);
+const puntoMirino = new THREE.Mesh(new THREE.CircleGeometry(.07, 16), M_MIRINO); puntoMirino.rotation.x = -Math.PI / 2; puntoMirino.renderOrder = 4; mirino.add(puntoMirino);
+const laser = new THREE.Mesh(new THREE.CylinderGeometry(.012, .012, 1, 6), new THREE.MeshBasicMaterial({ color: 0xff5cf4, transparent: true, opacity: .55, toneMapped: false, depthWrite: false }));
+scena.add(laser);
+
+// --- stelline luccicanti (shiny) e particelle ---
+function texStella() {
+  const [c, g] = tela(64, 64);
+  const rg = g.createRadialGradient(32, 32, 0, 32, 32, 32); rg.addColorStop(0, 'rgba(255,255,255,1)'); rg.addColorStop(.25, 'rgba(255,255,255,.55)'); rg.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = rg; g.fillRect(0, 0, 64, 64);
+  g.fillStyle = '#fff'; g.beginPath(); g.moveTo(32, 0); g.lineTo(35, 29); g.lineTo(64, 32); g.lineTo(35, 35); g.lineTo(32, 64); g.lineTo(29, 35); g.lineTo(0, 32); g.lineTo(29, 29); g.closePath(); g.fill();
+  return tex(c);
+}
+const TEX_STELLA = texStella();
+function nuvolaPunti(n, dim) {
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(n * 3), 3));
+  geo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(n * 3), 3));
+  const p = new THREE.Points(geo, new THREE.PointsMaterial({ size: dim, map: TEX_STELLA, vertexColors: true, transparent: true, depthWrite: false,
+    blending: THREE.AdditiveBlending, toneMapped: false, sizeAttenuation: true }));
+  p.frustumCulled = false; return p;
+}
+
+// ============ I MODELLINI NELLA VASCA ============
+const N_ZONA = TELEFONO ? 46 : 78;             // quanti modellini tiene ogni zona
+let oggetti = [], contaId = 0;
+function nuovoOggetto(m, g, zona, x, y, z) {
+  const M = MODELLI[m];
+  const o = { id: ++contaId, m, g, zona, r: M.r, peso: M.peso, x, y, z, vx: 0, vy: 0, vz: 0, w: null,
+    q: new THREE.Quaternion().setFromEuler(new THREE.Euler(rnd(-.35, .35), rnd(-1.1, 1.1), rnd(-.35, .35))),
+    dorme: false, calma: 0, appoggio: false, stato: 'campo', dallaPinza: false, tRil: 0, off: null, scivolaT: Infinity };
+  oggetti.push(o); return o;
+}
+const inCampo = (z) => oggetti.filter(o => o.zona === z && (o.stato === 'campo' || o.stato === 'presa'));
+function puntoLibero(z) {                        // un punto della zona lontano dalla buca
+  const cx = cxZona(z);
+  for (let i = 0; i < 20; i++) {
+    const x = cx + rnd(-ZL / 2 + .7, ZL / 2 - .7), zz = rnd(-ZP / 2 + .7, ZP / 2 - .7);
+    if (!(Math.abs(x - cx) < BUCA_MEZZA + .8 && zz > BUCA_Z0 - .8)) return [x, zz];
+  }
+  return [cx - 3, -2];
+}
+function riempiZona(z, n) {                      // mucchio iniziale, a strati
+  for (let i = 0; i < n; i++) {
+    const [x, zz] = puntoLibero(z);
+    nuovoOggetto(sceltaModello(z), sceltaGrado(z), z, x, .6 + Math.floor(i / 34) * 1.05 + rnd(0, .4), zz);
+  }
+}
+// salvataggio del mucchio: [modello, grado, zona, x, y, z] arrotondati
+function fotografaVasca() {
+  const r2 = (v) => Math.round(v * 100) / 100;
+  return oggetti.filter(o => o.stato === 'campo' && o.y > 0).map(o => [o.m, o.g, o.zona, r2(o.x), r2(o.y), r2(o.z)]);
+}
+function ripristinaVasca(arr) {
+  if (!Array.isArray(arr) || arr.length < 10) return false;
+  let n = 0;
+  for (const a of arr) {
+    if (!Array.isArray(a) || a.length !== 6 || !a.every(v => typeof v === 'number' && Number.isFinite(v))) continue;
+    const [m, g, z, x, y, zz] = a;
+    if (!MODELLI[m] || g < 1 || g > MAX_GRADO || !ZONE[z] || Math.abs(x - cxZona(z)) > ZL / 2 || Math.abs(zz) > ZP / 2 || y < 0 || y > 8) continue;
+    if (sopraBuca(x, zz, z)) continue;
+    const o = nuovoOggetto(m | 0, g | 0, z | 0, x, y + .02, zz); o.dorme = false; n++;
+  }
+  return n >= 10;
+}
+
+// ============ FISICA (sfere, passo fisso, griglia spaziale, sonno) ============
+const PASSO = 1 / 120, GRAV = 20, RIMBALZO = .12, CELLA = 1.3;
+const griglia = new Map(), celleUsate = [];
+const chiaveCella = (ix, iz) => (ix + 1000) * 4000 + (iz + 1000);
+let tempoGioco = 0, raccolti = 0, avviato = false;
+function sveglia(o) { o.dorme = false; o.calma = 0; }
+function svegliaVicini(x, y, z, raggio) {
+  for (const o of oggetti) if (o.stato === 'campo' && o.dorme) {
+    const dx = o.x - x, dy = o.y - y, dz = o.z - z;
+    if (dx * dx + dy * dy + dz * dz < raggio * raggio) sveglia(o);
+  }
+}
+function costruisciGriglia() {
+  for (const a of celleUsate) a.length = 0;
+  celleUsate.length = 0;
+  for (const o of oggetti) {
+    if (o.stato !== 'campo') continue;
+    const k = chiaveCella(Math.floor(o.x / CELLA), Math.floor(o.z / CELLA));
+    let a = griglia.get(k); if (!a) { a = []; griglia.set(k, a); }
+    if (!a.length) celleUsate.push(a);
+    a.push(o);
+  }
+}
+function urto(a, b) {
+  let dx = a.x - b.x, dy = a.y - b.y, dz = a.z - b.z;
+  const rr = a.r + b.r, d2 = dx * dx + dy * dy + dz * dz;
+  if (d2 >= rr * rr) return;
+  let d = Math.sqrt(d2);
+  if (d < 1e-5) { dx = .01; dy = .01; dz = 0; d = Math.hypot(dx, dy); }
+  const nx = dx / d, ny = dy / d, nz = dz / d, pen = rr - d;
+  const rvx = a.vx - b.vx, rvy = a.vy - b.vy, rvz = a.vz - b.vz, vn = rvx * nx + rvy * ny + rvz * nz;
+  if (b.dorme && (vn < -1.6 || pen > .12)) sveglia(b);
+  if (ny > .55) a.appoggio = true;
+  if (ny < -.55) b.appoggio = true;
+  if (b.dorme) {
+    a.x += nx * pen; a.y += ny * pen; a.z += nz * pen;
+    if (vn < 0) { const j = -(1 + RIMBALZO) * vn; a.vx += j * nx; a.vy += j * ny; a.vz += j * nz; }
+    return;
+  }
+  const ia = 1 / a.peso, ib = 1 / b.peso, s = ia + ib, ka = ia / s, kb = ib / s;
+  a.x += nx * pen * ka; a.y += ny * pen * ka; a.z += nz * pen * ka;
+  b.x -= nx * pen * kb; b.y -= ny * pen * kb; b.z -= nz * pen * kb;
+  if (vn < 0) {
+    const j = -(1 + RIMBALZO) * vn / s;
+    a.vx += j * ia * nx; a.vy += j * ia * ny; a.vz += j * ia * nz;
+    b.vx -= j * ib * nx; b.vy -= j * ib * ny; b.vz -= j * ib * nz;
+    const tx = rvx - vn * nx, ty = rvy - vn * ny, tz = rvz - vn * nz, f = .2;
+    a.vx -= tx * f * ka; a.vy -= ty * f * ka; a.vz -= tz * f * ka;
+    b.vx += tx * f * kb; b.vy += ty * f * kb; b.vz += tz * f * kb;
+  }
+}
+function contatti() {
+  for (const a of oggetti) {
+    if (a.stato !== 'campo' || a.dorme) continue;
+    const ix = Math.floor(a.x / CELLA), iz = Math.floor(a.z / CELLA);
+    for (let dx = -1; dx <= 1; dx++) for (let dz = -1; dz <= 1; dz++) {
+      const arr = griglia.get(chiaveCella(ix + dx, iz + dz)); if (!arr) continue;
+      for (let i = 0; i < arr.length; i++) {
+        const b = arr[i];
+        if (b === a || b.zona !== a.zona || b.stato !== 'campo' || (!b.dorme && b.id < a.id)) continue;
+        urto(a, b);
+      }
+    }
+  }
+}
+// sfera contro scatola (pareti di vetro della buca); spinta = dove scivola se resta in bilico sul bordo
+function sferaScatola(o, x0, x1, y0, y1, z0, z1, spX, spZ) {
+  const qx = clamp(o.x, x0, x1), qy = clamp(o.y, y0, y1), qz = clamp(o.z, z0, z1);
+  const dx = o.x - qx, dy = o.y - qy, dz = o.z - qz, d2 = dx * dx + dy * dy + dz * dz;
+  if (d2 >= o.r * o.r || d2 < 1e-10) return;
+  const d = Math.sqrt(d2), nx = dx / d, ny = dy / d, nz = dz / d, pen = o.r - d;
+  o.x += nx * pen; o.y += ny * pen; o.z += nz * pen;
+  const vn = o.vx * nx + o.vy * ny + o.vz * nz;
+  if (vn < 0) { o.vx -= 1.2 * vn * nx; o.vy -= 1.2 * vn * ny; o.vz -= 1.2 * vn * nz; }
+  if (ny > .6) { o.vx += spX * .12; o.vz += spZ * .12; }      // in bilico sul vetro: scivola dentro la buca
+}
+function limiti(o) {
+  const cx = cxZona(o.zona), r = o.r;
+  const inBuca = Math.abs(o.x - cx) < BUCA_MEZZA && o.z > BUCA_Z0;
+  if (!inBuca && o.y < r) { o.y = r; if (o.vy < 0) o.vy = -o.vy * RIMBALZO; o.appoggio = true; }
+  const x0 = cx - ZL / 2 + r, x1 = cx + ZL / 2 - r, z0 = -ZP / 2 + r, z1 = ZP / 2 - r;
+  if (o.x < x0) { o.x = x0; if (o.vx < 0) o.vx *= -.3; } else if (o.x > x1) { o.x = x1; if (o.vx > 0) o.vx *= -.3; }
+  if (o.z < z0) { o.z = z0; if (o.vz < 0) o.vz *= -.3; } else if (o.z > z1) { o.z = z1; if (o.vz > 0) o.vz *= -.3; }
+  if (o.y - r < PARETE_BUCA_H && o.z + r > BUCA_Z0 - .1 && Math.abs(o.x - cx) < BUCA_MEZZA + r + .1) {
+    sferaScatola(o, cx - BUCA_MEZZA - .06, cx - BUCA_MEZZA, -4, PARETE_BUCA_H, BUCA_Z0 - .06, BUCA_Z1, 1, 0);
+    sferaScatola(o, cx + BUCA_MEZZA, cx + BUCA_MEZZA + .06, -4, PARETE_BUCA_H, BUCA_Z0 - .06, BUCA_Z1, -1, 0);
+    sferaScatola(o, cx - BUCA_MEZZA - .06, cx + BUCA_MEZZA + .06, -4, PARETE_BUCA_H, BUCA_Z0 - .06, BUCA_Z0, 0, 1);
+  }
+}
+const _ax = new THREE.Vector3(), _qd = new THREE.Quaternion();
+function ruota(o, dt) {
+  const vh = Math.hypot(o.vx, o.vz);
+  if (vh > .05 && o.appoggio) { _ax.set(o.vz, 0, -o.vx).normalize(); _qd.setFromAxisAngle(_ax, vh * dt / o.r * .6); o.q.premultiply(_qd); }
+  if (o.w) {
+    const w = Math.hypot(o.w[0], o.w[1], o.w[2]);
+    if (w > .05) { _ax.set(o.w[0] / w, o.w[1] / w, o.w[2] / w); _qd.setFromAxisAngle(_ax, w * dt); o.q.premultiply(_qd); }
+    const k = o.appoggio ? .9 : .998; o.w[0] *= k; o.w[1] *= k; o.w[2] *= k;
+    if (w < .05) o.w = null;
+  }
+}
+function passo(dt) {
+  tempoGioco += dt;
+  for (const o of oggetti) {
+    if (o.stato !== 'campo' || o.dorme) continue;
+    o.vy -= GRAV * dt;
+    o.x += o.vx * dt; o.y += o.vy * dt; o.z += o.vz * dt;
+    ruota(o, dt);
+    o.appoggio = false;
+  }
+  costruisciGriglia();
+  for (let it = 0; it < 2; it++) {
+    contatti();
+    for (const o of oggetti) if (o.stato === 'campo' && !o.dorme) limiti(o);
+  }
+  spintaPinza();
+  for (const o of oggetti) {
+    if (o.stato !== 'campo') continue;
+    if (o.y < -1.3) { vinci(o); continue; }
+    if (o.dorme) continue;
+    if (o.appoggio) {                            // attrito: sul pavimento o sopra gli altri si ferma presto
+      const k = Math.max(0, 1 - 7 * dt); o.vx *= k; o.vz *= k;
+      if (o.vx * o.vx + o.vz * o.vz < .1) { o.vx *= .6; o.vz *= .6; }
+    }
+    // modellini lasciati sopra la buca: se dopo un po' sono ancora su, li accompagno giù (mai persi)
+    if (o.dallaPinza && tempoGioco - o.tRil > 2.4) {
+      const cx = cxZona(o.zona);
+      o.x = lerp(o.x, cx, .08); o.z = lerp(o.z, (BUCA_Z0 + BUCA_Z1) / 2, .08); o.vy = Math.min(o.vy, -2); o.dorme = false;
+      if (tempoGioco - o.tRil > 4.5) { vinci(o); continue; }
+    }
+    const v2 = o.vx * o.vx + o.vy * o.vy + o.vz * o.vz;
+    if (v2 < .05 && o.appoggio) { o.calma += dt; if (o.calma > .45) { o.dorme = true; o.vx = o.vy = o.vz = 0; o.w = null; } }
+    else o.calma = 0;
+  }
+  if (oggetti.length > 40 && oggetti.some(o => o.stato === 'via')) oggetti = oggetti.filter(o => o.stato !== 'via');
+}
+function simula(secondi) { const n = Math.round(secondi / PASSO); for (let i = 0; i < n; i++) { passo(PASSO); aggiornaPinza(PASSO); if (avviato) rifornisci(PASSO); } }
+
+// rifornimento: la vasca resta sempre piena, i nuovi cadono dall'alto
+let rifT = 0;
+function rifornisci(dt) {
+  rifT += dt; if (rifT < .3) return; rifT = 0;
+  for (let z = 0; z < ZONE.length; z++) {
+    if (inCampo(z).length >= N_ZONA) continue;
+    const [x, zz] = puntoLibero(z);
+    const o = nuovoOggetto(sceltaModello(z), sceltaGrado(z), z, x, 6.5 + rnd(0, 1.5), zz);
+    o.vy = -2; o.w = [rnd(-4, 4), rnd(-4, 4), rnd(-4, 4)];
+    if (o.g >= 3 && stato.zone[z] && MODO === 'gioco') {
+      const G = GRADI[o.g];
+      avviso(`✨ Un ${MODELLI[o.m].nome.toUpperCase()} ${G.nome} è caduto in ${ZONE[z].nome}!`, 'mag');
+    }
+  }
+}
+
+// ============ IL CARROPONTE ============
+const pinza = { x: cxZona(stato.zona), z: -.5, y: Y_ALTO, tx: cxZona(stato.zona), tz: -.5, fase: 'libera', t: 0, tDrop: 0, tSu: 0, apertura: 1,
+  presi: [], puntoX: 0, puntoZ: 0, vx: 0, vz: 0, oscX: 0, oscZ: 0, voscX: 0, voscZ: 0, prenota: false, catturato: false, zona: stato.zona,
+  nuovoBersaglio: false, costo: 0, altezzaMucchio: 0 };
+const FORZA = { presa: false, scivola: false };    // per le prove automatiche
+function limitiPinza() {
+  let ultima = 0; for (let i = 0; i < ZONE.length; i++) if (stato.zone[i]) ultima = i;
+  return { x0: cxZona(0) - ZL / 2 + .55, x1: cxZona(ultima) + ZL / 2 - .55, z0: -ZP / 2 + .55, z1: ZP / 2 - .55 };
+}
+function bersaglio(x, z, daUtente = true) {
+  const L = limitiPinza();
+  x = clamp(x, L.x0, L.x1);
+  const zz = zonaDi(x);                          // mai sopra i muri fra una zona e l'altra
+  pinza.tx = clamp(x, cxZona(zz) - ZL / 2 + .55, cxZona(zz) + ZL / 2 - .55); pinza.tz = clamp(z, L.z0, L.z1);
+  if (daUtente && pinza.fase !== 'libera') pinza.nuovoBersaglio = true;
+}
+function muoviVerso(x, z, v, dt) {
+  const dx = x - pinza.x, dz = z - pinza.z, d = Math.hypot(dx, dz);
+  if (d < .015) { pinza.x = x; pinza.z = z; pinza.vx = pinza.vz = 0; return true; }
+  const vel = v * Math.min(1, .25 + d / 1.1);
+  const s = Math.min(d, vel * dt);
+  pinza.vx = dx / d * s / dt; pinza.vz = dz / d * s / dt;
+  pinza.x += dx / d * s; pinza.z += dz / d * s;
+  return d - s < .015;
+}
+function cambiaFase(f) { pinza.fase = f; pinza.t = 0; if (f === 'sale') pinza.tSu = 0; }
+function quotaMucchio(x, z, rc) {
+  let top = 0; const zona = zonaDi(x);
+  for (const o of oggetti) {
+    if (o.stato !== 'campo' || o.zona !== zona) continue;
+    const dx = o.x - x, dz = o.z - z, lim = rc + o.r * .6;
+    if (dx * dx + dz * dz < lim * lim) top = Math.max(top, o.y + o.r);
+  }
+  return top;
+}
+function quotaStop() {
+  const T = TESTE[stato.testa];
+  const rc = T.id === 'rete' ? raggioEff(T) * .55 : T.id === 'amo' ? .45 : .5;
+  const top = quotaMucchio(pinza.x, pinza.z, rc);
+  return Math.max(.1, top - (T.id === 'amo' ? .18 : T.id === 'rete' ? .42 : .3));
+}
+// prendi: paga (solo se la presa parte davvero) e cala la pinza sul punto scelto
+function prendi(gratis = false) {
+  if (pinza.fase === 'torna') { pinza.nuovoBersaglio = false; cambiaFase('libera'); }
+  if (pinza.fase !== 'libera' || pinza.prenota) return false;
+  const z = zonaDi(pinza.tx);
+  if (!stato.zone[z]) return false;
+  if (sopraBuca(pinza.tx, pinza.tz, z)) { avviso('Sopra la buca non c\'è niente da prendere: sposta la pinza', 'cia'); suono.errore(); return false; }
+  const costo = costoPresa(z, stato.testa);
+  if (!gratis && stato.lire < costo) {
+    avviso(z > 0 && stato.lire >= costoPresa(0, 'pinza') ? `Ti servono ${lire(costo)}: prova in una zona più economica` : `Ti servono ${lire(costo)} per questa presa`, 'rosso');
+    suono.errore(); scuoti('prendiBtn'); return false;
+  }
+  if (!gratis) { stato.lire -= costo; stato.st.spesi += costo; }
+  stato.st.prese++;
+  pinza.costo = gratis ? 0 : costo; pinza.zona = z; pinza.prenota = true; pinza.nuovoBersaglio = false;
+  suono.moneta(); aggiornaHUD(); daSalvare = true; nascondiHint();
+  return true;
+}
+function scendi() {
+  pinza.prenota = false; pinza.puntoX = pinza.x; pinza.puntoZ = pinza.z; pinza.tDrop = tempoGioco; pinza.catturato = false;
+  pinza.zona = zonaDi(pinza.x);
+  cambiaFase('scende'); suono.scende();
+}
+// la presa: chi sta dentro il raggio e alla quota giusta, dal più vicino, fino alla capienza
+function cattura() {
+  const T = TESTE[stato.testa], R = raggioEff(T), cap = capEff(T);
+  const cand = [];
+  for (const o of oggetti) {
+    if (o.stato !== 'campo' || o.zona !== pinza.zona) continue;
+    const dh = Math.hypot(o.x - pinza.x, o.z - pinza.z);
+    if (dh > R + o.r * .25) continue;
+    if (o.y - o.r > pinza.y + .85 || o.y + o.r < pinza.y - (T.id === 'rete' ? .95 : .3)) continue;   // la rete affonda nel mucchio
+    cand.push({ o, dh });
+  }
+  cand.sort((a, b) => a.dh - b.dh);
+  const pieta = stato.st.diFila >= 3 ? .2 : 0;        // dopo tre prese a vuoto, la pinza si impegna di più
+  let n = 0;
+  for (const c of cand) {
+    if (n >= cap) break;
+    let p = T.id === 'amo' ? presaEff(T) : presaEff(T) * (1.22 - .2 * c.o.peso) * (1 - .35 * Math.pow(c.dh / R, 2));
+    p = clamp(p + pieta, .05, .97);
+    const sicura = stato.primaPresa || FORZA.presa;
+    if (sicura || casuale() < p) { afferra(c.o, n, p, sicura); n++; }
+    else { c.o.vx += (c.o.x - pinza.x) * 2; c.o.vz += (c.o.z - pinza.z) * 2; c.o.vy += 1.5; sveglia(c.o); }
+    if (T.id === 'amo') break;
+  }
+  if (n) stato.primaPresa = false;
+  suono.presa();
+  svegliaVicini(pinza.x, pinza.y, pinza.z, R + 1.2);
+}
+const POSTI = {
+  pinza: [[0, .32, 0], [.3, .14, .1], [-.3, .14, -.1], [.05, .1, .32], [-.05, .1, -.32], [0, -.05, 0]],
+  rete: [[0, .3, 0], [.4, .32, .18], [-.4, .32, -.18], [.18, .38, -.4], [-.2, .4, .4], [0, .72, 0], [.45, .74, -.1], [-.45, .74, .12], [.1, .78, .45], [-.1, .8, -.45], [0, 1.05, 0], [.3, 1.05, .3], [-.3, 1.08, -.3]],
+  amo: [[0, 0, 0]],
+};
+function afferra(o, i, p, sicura) {
+  const T = TESTE[stato.testa], posti = POSTI[T.id], k = T.id === 'rete' ? clamp(raggioEff(T) / 1.55, .8, 1.4) : 1;
+  const pos = posti[i % posti.length];
+  o.stato = 'presa'; o.dorme = false; o.w = null;
+  o.off = T.id === 'amo' ? [0, -o.r * .78, 0] : [pos[0] * k, pos[1] + (i >= posti.length ? .3 : 0), pos[2] * k];
+  const chance = FORZA.scivola ? 1 : clamp(T.scivola * (1 - p) * 1.6, 0, .6);
+  o.scivolaT = (!sicura || FORZA.scivola) && casuale() < chance ? rnd(.12, 1.2) : Infinity;
+  pinza.presi.push(o);
+  svegliaVicini(o.x, o.y, o.z, 1.6);
+}
+function lascia(o, sopraLaBuca) {
+  o.stato = 'campo'; o.dorme = false; o.calma = 0;
+  if (sopraLaBuca) {
+    const cx = cxZona(o.zona), lx = BUCA_MEZZA - o.r - .06;
+    o.x = clamp(o.x, cx - lx, cx + lx); o.z = clamp(o.z, BUCA_Z0 + o.r + .06, BUCA_Z1 - o.r - .02);
+    o.vx = rnd(-.3, .3); o.vy = -1; o.vz = rnd(-.3, .3);
+    o.dallaPinza = true; o.tRil = tempoGioco;
+  } else {
+    o.vx = pinza.vx + rnd(-.6, .6); o.vy = -.5; o.vz = pinza.vz + rnd(-.6, .6);
+  }
+  o.w = [rnd(-3, 3), rnd(-3, 3), rnd(-3, 3)];
+}
+function scivolate() {
+  for (let i = pinza.presi.length - 1; i >= 0; i--) {
+    const o = pinza.presi[i];
+    if (pinza.tSu < o.scivolaT) continue;
+    pinza.presi.splice(i, 1); lascia(o, false);
+    stato.st.scivolati++;
+    testo3D(o.x, o.y + .6, o.z, 'SCIVOLATO!', 'perso'); suono.scivola();
+  }
+}
+function tenutiInPosizione() {
+  const oscX = pinza.oscX, oscZ = pinza.oscZ;
+  for (const o of pinza.presi) {
+    const [ox, oy, oz] = o.off, dondola = TESTE[stato.testa].id === 'amo' ? 1.6 : .6;
+    o.x = pinza.x + ox + oscX * dondola * (1 - oy); o.y = pinza.y + oy; o.z = pinza.z + oz + oscZ * dondola * (1 - oy);
+  }
+}
+function aggiornaPinza(dt) {
+  const T = TESTE[stato.testa], V = velEff() * T.vel;
+  pinza.t += dt;
+  const vx0 = pinza.vx, vz0 = pinza.vz;
+  pinza.vx = pinza.vz = 0;
+  switch (pinza.fase) {
+    case 'libera': {
+      const arrivato = muoviVerso(pinza.tx, pinza.tz, 6 * V, dt);
+      pinza.apertura = Math.min(1, pinza.apertura + dt * 3);
+      pinza.y = Math.min(Y_ALTO, pinza.y + dt * 4);
+      if (pinza.prenota && arrivato && pinza.y >= Y_ALTO - .01) scendi();
+      break;
+    }
+    case 'scende': {
+      const stop = quotaStop();
+      pinza.y -= 5.2 * V * dt;
+      if (pinza.y <= stop || pinza.t > 2.6) { pinza.y = Math.max(stop, Math.min(pinza.y, Y_ALTO)); cambiaFase('chiude'); suono.tocco(); scossa(.06); }
+      break;
+    }
+    case 'chiude': {
+      const durata = T.id === 'amo' ? .22 : .42;
+      pinza.apertura = Math.max(0, 1 - pinza.t / durata);
+      if (!pinza.catturato && pinza.t >= durata * .6) { pinza.catturato = true; cattura(); }
+      if (pinza.t >= durata + .12) { cambiaFase('sale'); suono.sale(); }
+      break;
+    }
+    case 'sale': {
+      pinza.y += 4.4 * V * dt; pinza.tSu += dt;
+      scivolate();
+      if (pinza.y >= Y_ALTO || pinza.t > 3) {
+        pinza.y = Y_ALTO;
+        if (pinza.presi.length) cambiaFase('porta');
+        else { finePresa(0); cambiaFase('libera'); pinza.tx = pinza.x; pinza.tz = pinza.z; }
+      }
+      break;
+    }
+    case 'porta': {
+      pinza.tSu += dt;
+      const b = buca(pinza.zona), arrivato = muoviVerso(b.x, b.z, 7 * V, dt);
+      scivolate();
+      if (!pinza.presi.length) { finePresa(0); cambiaFase('torna'); break; }
+      if (arrivato || pinza.t > 3.2) { pinza.x = b.x; pinza.z = b.z; cambiaFase('apre'); }
+      break;
+    }
+    case 'apre': {
+      pinza.apertura = Math.min(1, pinza.t / .3);
+      if (pinza.presi.length && pinza.t >= .08) {
+        const n = pinza.presi.length;
+        for (const o of pinza.presi) lascia(o, true);
+        pinza.presi = []; suono.rilascio(); finePresa(n);
+      }
+      if (pinza.t >= .45) cambiaFase('torna');
+      break;
+    }
+    case 'torna': {
+      if (pinza.nuovoBersaglio) { pinza.nuovoBersaglio = false; cambiaFase('libera'); break; }
+      const arrivato = muoviVerso(pinza.puntoX, pinza.puntoZ, 7.5 * V, dt);
+      if (arrivato || pinza.t > 2.6) { pinza.tx = pinza.x; pinza.tz = pinza.z; cambiaFase('libera'); }
+      break;
+    }
+  }
+  // rete di sicurezza: nessuna fase può durare all'infinito
+  if (pinza.fase !== 'libera' && pinza.fase !== 'torna' && tempoGioco - pinza.tDrop > 14) {
+    stato.st.sicurezza++;
+    const n = pinza.presi.length;
+    for (const o of pinza.presi) { o.x = buca(o.zona).x; o.z = buca(o.zona).z; lascia(o, true); }
+    pinza.presi = []; if (n) finePresa(n); else finePresa(0);
+    pinza.y = Y_ALTO; cambiaFase('libera'); pinza.tx = pinza.x; pinza.tz = pinza.z;
+  }
+  // oscillazione: la testa dondola quando il carrello accelera
+  const ax = (pinza.vx - vx0) / Math.max(dt, 1e-4), az = (pinza.vz - vz0) / Math.max(dt, 1e-4);
+  pinza.voscX += (-pinza.oscX * 28 - ax * .004 - pinza.voscX * 3.2) * dt;
+  pinza.voscZ += (-pinza.oscZ * 28 - az * .004 - pinza.voscZ * 3.2) * dt;
+  pinza.oscX = clamp(pinza.oscX + pinza.voscX * dt, -.35, .35); pinza.oscZ = clamp(pinza.oscZ + pinza.voscZ * dt, -.35, .35);
+  tenutiInPosizione();
+}
+// la testa spinge i modellini che tocca mentre scende
+function spintaPinza() {
+  if (pinza.fase !== 'scende' && pinza.fase !== 'chiude' && pinza.fase !== 'sale') return;
+  if (pinza.y > 3) return;
+  const T = TESTE[stato.testa], rr = T.id === 'amo' ? .18 : T.id === 'rete' ? .45 : .36, cy = pinza.y + (T.id === 'amo' ? .7 : .55);
+  for (const o of oggetti) {
+    if (o.stato !== 'campo' || o.zona !== pinza.zona) continue;
+    const dx = o.x - pinza.x, dy = o.y - cy, dz = o.z - pinza.z, lim = rr + o.r, d2 = dx * dx + dy * dy + dz * dz;
+    if (d2 >= lim * lim || d2 < 1e-8) continue;
+    const d = Math.sqrt(d2), pen = lim - d;
+    o.x += dx / d * pen; o.y += dy / d * pen; o.z += dz / d * pen; sveglia(o);
+  }
+}
+function finePresa(n) {
+  if (n > 0) { stato.st.diFila = 0; return; }
+  stato.st.diFila++; stato.st.vuote++;
+  testo3D(pinza.x, pinza.y + .6, pinza.z, 'VUOTA… RIPROVA', 'perso'); suono.vuoto();
+}
+
+// ============ VINCITE ============
+function vinci(o) {
+  o.stato = 'via';
+  if (!avviato) return;                          // durante l'assestamento iniziale non si vince niente
+  raccolti++;
+  const M = MODELLI[o.m], G = GRADI[o.g];
+  if (INCORPORATO) { particelle(o.x, 0, o.z, 16, COLORE_GRADO[o.g], 1.3); return; }
+  const regalo = !o.dallaPinza;
+  const rec = stato.coll[M.id] || (stato.coll[M.id] = { g: 0, c: 0 });
+  const nuovo = rec.g === 0, gPrima = rec.g;
+  rec.c += Math.pow(2, o.g - 1);
+  rec.g = Math.max(rec.g, o.g, 1);
+  const premio = Math.round(M.valore * G.mult * moltLire());
+  stato.lire += premio; stato.st.vinti += premio; stato.st.catturati++;
+  // Il premio fa anche punti della partita DaProd; uno shiny e' una cosa grossa.
+  if (window.DaProdLira && MODO === 'gioco') {
+    DaProdLira.punti('claw', premio);
+    DaProdLira.evento('claw', o.g >= 2 ? 'shiny' : 'presa');
+  }
+  if (regalo) stato.st.regali++;
+  if (o.g >= 2) stato.st.shiny++;
+  stato.st.gradoMax = Math.max(stato.st.gradoMax, o.g);
+  ricalcola();
+  const b = buca(o.zona);
+  testo3D(b.x, 1.6, b.z, `+${lire(premio)}<small>${M.em} ${M.nome.toUpperCase()}${o.g > 1 ? ' · ' + G.nome : ''}${regalo ? ' · REGALO' : ''}</small>`, o.g >= 3 ? 'gr' : '');
+  particelle(b.x, .5, b.z, 26 + o.g * 10, COLORE_GRADO[o.g], 1.4 + o.g * .15);
+  brillaSaldo();
+  if (nuovo) { mostraBanner('NUOVO MODELLINO', `${M.em} ${M.nome.toUpperCase()}`, o.g > 1 ? `trovato già ${G.nome}!` : 'aggiunto alla vetrina', o.g); suono.nuovo(); segnaVetrina(); }
+  else if (o.g > gPrima) { mostraBanner(`${M.em} ${M.nome.toUpperCase()}`, G.nome + '!', `sale da solo al grado ${o.g}: potenza ×${G.mult}`, o.g); suono.shiny(o.g); segnaVetrina(); }
+  else if (o.g >= 2) { mostraBanner('SHINY!', G.nome, `${M.em} ${M.nome} · +${Math.pow(2, o.g - 1)} copie`, o.g); suono.shiny(o.g); }
+  else suono.vinci(o.g);
+  if (o.g >= 4) { lampo(.5); scossa(.25); }
+  if (prontoPerSalire(M) && stato.lire >= costoPotenzia(M, rec.g + 1)) segnaVetrina();
+  aggiornaHUD(); daSalvare = true;
+}
+
+// ============ DISEGNO DEI MODELLINI (una InstancedMesh per modellino e grado) ============
+const lotti = new Map();
+const _m4 = new THREE.Matrix4(), _p = new THREE.Vector3(), _s = new THREE.Vector3();
+// un lotto per zona, modellino e grado: le zone fuori inquadratura non si disegnano (frustum culling)
+const chiaveLotto = (o) => o.zona * 1000 + o.m * 10 + o.g;
+function lotto(o) {
+  const k = chiaveLotto(o); let L = lotti.get(k);
+  if (!L) { L = { m: o.m, g: o.g, zona: o.zona, cap: 0, n: 0, i: 0, mesh: null }; lotti.set(k, L); }
+  return L;
+}
+function capienzaLotto(L, n) {
+  if (L.cap >= n) return;
+  const cap = Math.max(8, Math.ceil(n * 1.5));
+  if (L.mesh) { scena.remove(L.mesh); L.mesh.dispose(); }
+  L.mesh = new THREE.InstancedMesh(GEO[L.m], MAT[L.g], cap);
+  L.mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  L.mesh.castShadow = true; L.mesh.receiveShadow = true;
+  L.mesh.boundingSphere = new THREE.Sphere(new THREE.Vector3(cxZona(L.zona), 2.5, 0), 10.5);   // tutta la zona, anche i pezzi in mano alla pinza
+  scena.add(L.mesh); L.cap = cap;
+}
+function disegnaOggetti() {
+  for (const L of lotti.values()) { L.n = 0; L.i = 0; }
+  for (const o of oggetti) if (o.stato !== 'via') lotto(o).n++;
+  for (const L of lotti.values()) capienzaLotto(L, L.n);
+  for (const o of oggetti) {
+    if (o.stato === 'via') continue;
+    const L = lotti.get(chiaveLotto(o));
+    _m4.compose(_p.set(o.x, o.y, o.z), o.q, _s.setScalar(o.r));
+    L.mesh.setMatrixAt(L.i++, _m4);
+  }
+  for (const L of lotti.values()) {
+    if (!L.mesh) continue;
+    L.mesh.count = L.i; L.mesh.visible = L.i > 0;
+    if (L.i) L.mesh.instanceMatrix.needsUpdate = true;
+  }
+}
+
+// ============ EFFETTI ============
+const fx = Math.random;                           // gli effetti non consumano la sequenza delle prove
+const N_PART = 900, nuvola = nuvolaPunti(N_PART, .3); scena.add(nuvola);
+const parti = Array.from({ length: N_PART }, () => ({ vita: 0, durata: 1, x: 0, y: -99, z: 0, vx: 0, vy: 0, vz: 0, r: 1, g: 1, b: 1, grav: 1 }));
+let partI = 0;
+const _col = new THREE.Color();
+function emetti(x, y, z, vx, vy, vz, col, durata, grav) {
+  const p = parti[partI]; partI = (partI + 1) % N_PART;
+  Object.assign(p, { x, y, z, vx, vy, vz, vita: durata, durata, grav });
+  _col.set(col); p.r = _col.r; p.g = _col.g; p.b = _col.b;
+}
+function particelle(x, y, z, n, col, forza = 1) {
+  for (let k = 0; k < n; k++) {
+    const c = k % 3 === 0 ? '#ffffff' : col;
+    emetti(x, y, z, (fx() - .5) * 4 * forza, (1.5 + fx() * 3.5) * forza, (fx() - .5) * 4 * forza, c, .7 + fx() * .7, 1);
+  }
+}
+function aggiornaParticelle(dt) {
+  const P = nuvola.geometry.attributes.position.array, C = nuvola.geometry.attributes.color.array;
+  for (let i = 0; i < N_PART; i++) {
+    const p = parti[i];
+    if (p.vita > 0) {
+      p.vita -= dt; p.vy -= 9 * p.grav * dt;
+      p.x += p.vx * dt; p.y += p.vy * dt; p.z += p.vz * dt;
+      const k = Math.max(0, p.vita / p.durata);
+      P[i * 3] = p.x; P[i * 3 + 1] = p.y; P[i * 3 + 2] = p.z;
+      C[i * 3] = p.r * k * 2; C[i * 3 + 1] = p.g * k * 2; C[i * 3 + 2] = p.b * k * 2;
+    } else { P[i * 3 + 1] = -99; C[i * 3] = C[i * 3 + 1] = C[i * 3 + 2] = 0; }
+  }
+  nuvola.geometry.attributes.position.needsUpdate = true; nuvola.geometry.attributes.color.needsUpdate = true;
+}
+const RITMO_SCINTILLE = [0, 0, 1.2, 2.5, 4, 6, 8, 11, 14];
+function scintilleShiny(dt) {
+  for (const o of oggetti) {
+    if (o.g < 2 || (o.stato !== 'campo' && o.stato !== 'presa')) continue;
+    if (fx() < RITMO_SCINTILLE[o.g] * dt) {
+      const a = fx() * 6.28, b = fx() * 3.14;
+      emetti(o.x + Math.cos(a) * Math.sin(b) * o.r * 1.15, o.y + Math.cos(b) * o.r * 1.15, o.z + Math.sin(a) * Math.sin(b) * o.r * 1.15,
+        0, .35, 0, COLORE_GRADO[o.g], .45 + fx() * .4, 0);
+    }
+  }
+}
+const _v = new THREE.Vector3();
+function schermo(x, y, z) {
+  _v.set(x, y, z).project(camera);
+  return [(_v.x * .5 + .5) * innerWidth, (-_v.y * .5 + .5) * innerHeight, _v.z < 1];
+}
+function testo3D(x, y, z, html, cls = '') {
+  if (INCORPORATO) return;
+  const box = $('fluttuanti');
+  if (box.childElementCount > 14) box.firstElementChild.remove();
+  const [sx, sy, ok] = schermo(x, y, z); if (!ok) return;
+  const d = document.createElement('div'); d.className = 'fluttua ' + cls; d.innerHTML = html;
+  d.style.left = clamp(sx, 60, innerWidth - 60) + 'px'; d.style.top = clamp(sy, 80, innerHeight - 80) + 'px';
+  box.appendChild(d); setTimeout(() => d.remove(), 1600);
+}
+function avviso(txt, cls = '') {
+  if (INCORPORATO) return;
+  const box = $('avvisi');
+  while (box.childElementCount >= 3) box.firstElementChild.remove();
+  const d = document.createElement('div'); d.className = 'avviso ' + cls; d.textContent = txt;
+  box.appendChild(d); setTimeout(() => d.remove(), 3200);
+}
+let bannerT = null;
+function mostraBanner(sopra, grande, sotto, g = 1) {
+  if (INCORPORATO) return;
+  $('bannerSopra').textContent = sopra; $('bannerGrande').textContent = grande; $('bannerSotto').textContent = sotto;
+  $('bannerGrande').className = 'grande gtesto g' + g;
+  $('banner').classList.add('su'); clearTimeout(bannerT);
+  bannerT = setTimeout(() => $('banner').classList.remove('su'), 2300);
+}
+function lampo(k = .6) {
+  const l = $('lampo'); l.style.transition = 'none'; l.style.opacity = k;
+  requestAnimationFrame(() => { l.style.transition = 'opacity .6s'; l.style.opacity = 0; });
+}
+let scossaCam = 0;
+function scossa(k) { scossaCam = Math.max(scossaCam, k); }
+function scuoti(id) { const b = $(id); if (!b) return; b.classList.remove('no'); void b.offsetWidth; b.classList.add('no'); }
+function brillaSaldo() { const b = $('saldoBox'); b.classList.remove('brilla'); void b.offsetWidth; b.classList.add('brilla'); }
+let hintVisto = false;
+function nascondiHint() { if (hintVisto) return; hintVisto = true; setTimeout(() => $('hint').classList.add('via'), 2500); }
+function segnaVetrina() { if (!vetrinaAperta) $('vetrinaBtn').classList.add('nuovo'); }
+
+// ============ HUD ============
+let saldoMostrato = stato.lire;
+function zonaCorrente() { return zonaDi(pinza.tx); }
+function aggiornaHUD() {
+  if (INCORPORATO) return;
+  const z = zonaCorrente(), Z = ZONE[z];
+  $('potenza').textContent = numero(potenzaTotale());
+  $('collez').textContent = quantiPosseduti() + '/' + MODELLI.length;
+  $('rendita').textContent = '+' + lireBrevi(rendita()) + ' al secondo';
+  $('zonaNum').textContent = z + 1; $('zonaNome').textContent = Z.ico + ' ' + Z.nome;
+  $('zonaBox').style.setProperty('--zc', Z.col);
+  $('zonaCosto').textContent = lire(costoPresa(z, stato.testa));
+  $('zonaPrec').disabled = z === 0;
+  const succ = z + 1 < ZONE.length ? z + 1 : -1;
+  $('zonaSucc').disabled = succ < 0;
+  $('zonaSucc').classList.toggle('bloccata', succ > 0 && !stato.zone[succ]);
+  $('zonaSucc').textContent = succ > 0 && !stato.zone[succ] ? '🔒' : '▶';
+  $('costoPresa').textContent = lire(costoPresa(z, stato.testa));
+  const libero = pinza.fase === 'libera' && !pinza.prenota;
+  $('prendiBtn').classList.toggle('occupato', !libero);
+  $('prendiBtn').classList.toggle('pronto', libero && stato.lire >= costoPresa(z, stato.testa));
+  for (const b of document.querySelectorAll('#teste .testa')) {
+    const T = TESTE[b.dataset.t], mia = stato.teste[T.id];
+    b.classList.toggle('sel', stato.testa === T.id); b.classList.toggle('bloccata', !mia);
+    b.querySelector('small').textContent = mia ? lire(costoPresa(z, T.id)) : lireBrevi(T.prezzo);
+  }
+  const puoi = POT.some(p => stato.pot[p.id] < p.max && stato.lire >= costoPot(p, stato.pot[p.id])) ||
+    ORDINE_TESTE.some(t => !stato.teste[t] && stato.lire >= TESTE[t].prezzo);
+  $('officinaBtn').classList.toggle('nuovo', puoi);
+  aggiornaCartelli();
+}
+function aggiornaSaldo(dt) {
+  if (INCORPORATO) return;
+  const d = stato.lire - saldoMostrato;
+  saldoMostrato = Math.abs(d) < 1 ? stato.lire : saldoMostrato + d * Math.min(1, dt * 7);
+  $('saldo').textContent = lireBrevi(saldoMostrato);
+  $('saldo').classList.toggle('giu', stato.lire < costoPresa(zonaCorrente(), stato.testa));
+}
+function rendiTeste() {
+  $('teste').innerHTML = ORDINE_TESTE.map(t => { const T = TESTE[t];
+    return `<button class="testa" data-t="${t}" aria-label="${T.nome}"><span class="ico">${T.ico}</span><b>${T.nome}</b><span class="azione">${T.verbo}</span><small></small></button>`; }).join('');
+  for (const b of document.querySelectorAll('#teste .testa')) b.addEventListener('click', () => scegliTesta(b.dataset.t));
+}
+function scegliTesta(t) {
+  if (!stato.teste[t]) { apriOfficina('teste'); return false; }
+  if (pinza.fase !== 'libera' || pinza.prenota) { avviso('Aspetta che la pinza torni su per cambiare testa', 'cia'); return false; }
+  if (stato.testa !== t) { stato.testa = t; suono.clic(); daSalvare = true; }
+  aggiornaHUD(); return true;
+}
+function vaiZona(z) {
+  if (z < 0 || z >= ZONE.length) return;
+  if (!stato.zone[z]) { apriSblocco(z); return; }
+  const rel = pinza.tx - cxZona(zonaCorrente());
+  bersaglio(cxZona(z) + clamp(rel, -3, 3), pinza.tz);
+  stato.zona = z; daSalvare = true; suono.clic(); aggiornaHUD();
+}
+
+// ============ SBLOCCO DELLE ZONE ============
+let sbloccoZ = 1;
+function apriSblocco(z) {
+  sbloccoZ = z; const Z = ZONE[z];
+  $('sblocco').style.setProperty('--zc', Z.col);
+  $('sblIco').textContent = Z.ico; $('sblNome').textContent = `ZONA ${z + 1} · ${Z.nome}`; $('sblDesc').textContent = Z.desc;
+  const prima = stato.zone[z - 1], okP = potenzaTotale() >= Z.pot, okL = stato.lire >= Z.prezzo;
+  $('reqPot').className = 'requisito ' + (okP ? 'ok' : 'no'); $('reqPot').querySelector('b').textContent = `${numero(potenzaTotale())} / ${numero(Z.pot)}`;
+  $('reqLire').className = 'requisito ' + (okL ? 'ok' : 'no'); $('reqLire').querySelector('b').textContent = lire(Z.prezzo);
+  $('sbloccaBtn').disabled = !(prima && okP && okL);
+  $('sbloccaBtn').textContent = !prima ? `APRI PRIMA LA ZONA ${z}` : okP ? (okL ? 'APRI LA ZONA' : 'LIRE INSUFFICIENTI') : 'POTENZIA LA COLLEZIONE';
+  $('sblocco').classList.remove('chiuso');
+}
+function sblocca(z) {
+  const Z = ZONE[z];
+  if (!Z || stato.zone[z] || !stato.zone[z - 1] || potenzaTotale() < Z.pot || stato.lire < Z.prezzo) return false;
+  stato.lire -= Z.prezzo; stato.zone[z] = true; stato.zona = z;
+  if (window.DaProdLira) DaProdLira.evento('claw', 'zona');
+  $('sblocco').classList.add('chiuso');
+  bersaglio(cxZona(z), -.5);
+  suono.sblocca(); lampo(.7); scossa(.3);
+  mostraBanner('NUOVA ZONA APERTA', `${Z.ico} ${Z.nome}`, `presa da ${lire(Z.costo)} · potere: ${Z.potere.testo}`, 4);
+  for (let k = 0; k < 6; k++) particelle(cxZona(z) + (fx() - .5) * 8, 2, (fx() - .5) * 6, 20, Z.col, 1.6);
+  daSalvare = true; aggiornaHUD(); salva();
+  return true;
+}
+
+// ============ VETRINA: palco 3D, griglia della collezione e potenziamento ============
+const scenaV = new THREE.Scene();
+scenaV.background = new THREE.Color(0x0a0716); scenaV.fog = new THREE.Fog(0x0a0716, 9, 22); scenaV.environment = ENV;
+const camV = new THREE.PerspectiveCamera(32, 1, .1, 60);
+camV.position.set(0, 1.9, 6.4); camV.lookAt(0, 1.15, 0);
+scenaV.add(new THREE.HemisphereLight(0xcfc4ff, 0x1a1026, .9));
+const chiaveV = new THREE.SpotLight(0xffffff, 90, 20, .5, .6, 1.2); chiaveV.position.set(2.5, 6, 5); chiaveV.target.position.set(0, 1, 0);
+chiaveV.castShadow = true; chiaveV.shadow.mapSize.set(1024, 1024); scenaV.add(chiaveV, chiaveV.target);
+const bordoV1 = new THREE.PointLight(0xff3df2, 26, 12, 1.5); bordoV1.position.set(-3, 2.6, -2.5); scenaV.add(bordoV1);
+const bordoV2 = new THREE.PointLight(0x35e8ff, 26, 12, 1.5); bordoV2.position.set(3, 2.2, -2.5); scenaV.add(bordoV2);
+const pavV = new THREE.Mesh(new THREE.CircleGeometry(14, 64), new THREE.MeshStandardMaterial({ color: 0x120c22, roughness: .25, metalness: .5 }));
+pavV.rotation.x = -Math.PI / 2; pavV.receiveShadow = true; scenaV.add(pavV);
+const piedistallo = new THREE.Mesh(new THREE.CylinderGeometry(1.25, 1.4, .36, 48), mLacca(0x2a1850)); piedistallo.position.y = .18; piedistallo.receiveShadow = true; piedistallo.castShadow = true; scenaV.add(piedistallo);
+const bordoPied = new THREE.Mesh(new THREE.TorusGeometry(1.26, .045, 10, 64), M_ORO); bordoPied.rotation.x = Math.PI / 2; bordoPied.position.y = .36; scenaV.add(bordoPied);
+const M_LED_V = new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false });
+const ledPied = new THREE.Mesh(new THREE.TorusGeometry(1.38, .03, 8, 64), M_LED_V); ledPied.rotation.x = Math.PI / 2; ledPied.position.y = .08; scenaV.add(ledPied);
+const modelloV = new THREE.Mesh(GEO[0], MAT[1]); modelloV.position.y = 1.3; modelloV.castShadow = true; scenaV.add(modelloV);
+const auraV = nuvolaPunti(260, .16); scenaV.add(auraV);
+const auraDati = Array.from({ length: 260 }, () => ({ a: fx() * 6.28, h: fx(), r: .9 + fx() * .5, v: .3 + fx() * .8 }));
+let vetrinaAperta = false, selV = 0, rotV = -.4, velRotV = 0, trascinaV = null, animPot = 0, gradoMostrato = 1;
+function gradoVisto(m) { const r = stato.coll[MODELLI[m].id]; return r ? r.g : 0; }
+function mostraSulPalco(m, g, ignoto) {
+  modelloV.geometry = GEO[m]; modelloV.material = ignoto ? MAT_SAGOMA : MAT[g]; gradoMostrato = g;
+  const scala = 1.05; modelloV.scale.setScalar(scala);
+  M_LED_V.color.set(COLORE_GRADO[Math.max(1, g)]).multiplyScalar(2.2);
+  const N = ignoto ? 0 : [0, 20, 40, 70, 100, 140, 180, 220, 260][g];
+  auraV.userData.n = N;
+  $('palcoNome').textContent = ignoto ? '???' : MODELLI[m].em + ' ' + MODELLI[m].nome.toUpperCase();
+  $('palcoNome').className = 'gtesto g' + Math.max(1, g);
+  $('palcoGrado').textContent = ignoto ? 'ANCORA DA TROVARE' : `GRADO ${g} · ${GRADI[g].nome}`;
+  $('didNome').textContent = MODELLI[m].em + ' ' + MODELLI[m].nome.toUpperCase(); $('didNome').className = 'gtesto g' + g;
+  $('didGrado').textContent = `GRADO ${g} · ${GRADI[g].nome}`;
+}
+function aggiornaPalco(dt) {
+  if (!trascinaV) { velRotV = lerp(velRotV, .55, dt * 1.5); rotV += velRotV * dt; }
+  let s = 1.05;
+  if (animPot > 0) {                               // potenziamento: giro veloce, salto e cambio di materiale a metà
+    const t = 1 - animPot; animPot = Math.max(0, animPot - dt / 1.3);
+    rotV += dt * 14 * Math.sin(t * Math.PI);
+    s = 1.05 * (1 + .35 * Math.sin(t * Math.PI));
+    modelloV.position.y = 1.3 + .5 * Math.sin(t * Math.PI);
+    if (t > .5 && modelloV.userData.prossimo) { const [m, g] = modelloV.userData.prossimo; modelloV.userData.prossimo = null; mostraSulPalco(m, g, false); esplosioneV(g); }
+  } else modelloV.position.y = 1.3 + Math.sin(U_TEMPO.value * 1.6) * .06;
+  modelloV.scale.setScalar(s); modelloV.rotation.set(.08, rotV, 0);
+  const P = auraV.geometry.attributes.position.array, C = auraV.geometry.attributes.color.array, n = auraV.userData.n || 0;
+  _col.set(COLORE_GRADO[Math.max(1, gradoMostrato)]);
+  for (let i = 0; i < 260; i++) {
+    const a = auraDati[i];
+    if (i >= n) { P[i * 3 + 1] = -99; continue; }
+    a.a += dt * a.v; a.h = (a.h + dt * .12 * a.v) % 1;
+    P[i * 3] = Math.cos(a.a) * a.r; P[i * 3 + 1] = .45 + a.h * 2.1; P[i * 3 + 2] = Math.sin(a.a) * a.r;
+    const k = Math.sin(a.h * Math.PI) * (.5 + .5 * Math.sin(U_TEMPO.value * 5 + i));
+    C[i * 3] = _col.r * k * 2; C[i * 3 + 1] = _col.g * k * 2; C[i * 3 + 2] = _col.b * k * 2;
+  }
+  auraV.geometry.attributes.position.needsUpdate = true; auraV.geometry.attributes.color.needsUpdate = true;
+  aggiornaParticelleV(dt);
+}
+const N_PV = 300, nuvolaV = nuvolaPunti(N_PV, .22); scenaV.add(nuvolaV);
+const partiV = Array.from({ length: N_PV }, () => ({ vita: 0, durata: 1, x: 0, y: -99, z: 0, vx: 0, vy: 0, vz: 0, r: 1, g: 1, b: 1 }));
+function esplosioneV(g) {
+  _col.set(COLORE_GRADO[g]);
+  for (const p of partiV) {
+    const a = fx() * 6.28, b = fx() * 3.14, v = 2 + fx() * 3.5;
+    Object.assign(p, { x: 0, y: 1.3, z: 0, vx: Math.cos(a) * Math.sin(b) * v, vy: Math.cos(b) * v + 1, vz: Math.sin(a) * Math.sin(b) * v,
+      vita: .8 + fx() * .8, durata: 1.6, r: _col.r, g: _col.g, b: _col.b });
+    if (fx() < .3) { p.r = p.g = p.b = 1; }
+  }
+}
+function aggiornaParticelleV(dt) {
+  const P = nuvolaV.geometry.attributes.position.array, C = nuvolaV.geometry.attributes.color.array;
+  for (let i = 0; i < N_PV; i++) {
+    const p = partiV[i];
+    if (p.vita > 0) {
+      p.vita -= dt; p.vy -= 4 * dt; p.vx *= .98; p.vz *= .98;
+      p.x += p.vx * dt; p.y += p.vy * dt; p.z += p.vz * dt;
+      const k = Math.max(0, p.vita / p.durata) * 2.4;
+      P[i * 3] = p.x; P[i * 3 + 1] = p.y; P[i * 3 + 2] = p.z; C[i * 3] = p.r * k; C[i * 3 + 1] = p.g * k; C[i * 3 + 2] = p.b * k;
+    } else P[i * 3 + 1] = -99;
+  }
+  nuvolaV.geometry.attributes.position.needsUpdate = true; nuvolaV.geometry.attributes.color.needsUpdate = true;
+}
+// miniature della griglia: rese una volta con lo stesso renderer, poi in cache
+const scenaMini = new THREE.Scene(); scenaMini.environment = ENV;
+scenaMini.add(new THREE.HemisphereLight(0xe8e0ff, 0x2a1840, 1.4));
+const luceMini = new THREE.DirectionalLight(0xffffff, 2.6); luceMini.position.set(2, 3, 4); scenaMini.add(luceMini);
+const luceMini2 = new THREE.PointLight(0xff5cf4, 8, 8); luceMini2.position.set(-2.5, 1, -1); scenaMini.add(luceMini2);
+const meshMini = new THREE.Mesh(GEO[0], MAT[1]); meshMini.rotation.set(.15, -.45, 0); scenaMini.add(meshMini);
+const camMini = new THREE.PerspectiveCamera(30, 1, .1, 20); camMini.position.set(0, .35, 4.7); camMini.lookAt(0, 0, 0);
+const cacheMini = new Map();
+const [telaMini, gMini] = tela(128, 128);
+const _vp = new THREE.Vector4();
+function miniatura(m, g, ignoto) {
+  const k = m + '_' + g + (ignoto ? 'x' : '');
+  if (cacheMini.has(k)) return cacheMini.get(k);
+  meshMini.geometry = GEO[m]; meshMini.material = ignoto ? MAT_SAGOMA : MAT[Math.max(1, g)];
+  const pr = renderer.getPixelRatio(), S = 128 / pr, H = renderer.domElement.height;
+  renderer.getViewport(_vp);
+  const sfondo = renderer.getClearAlpha();
+  renderer.setScissorTest(true); renderer.setViewport(0, 0, S, S); renderer.setScissor(0, 0, S, S);
+  renderer.setClearColor(0x000000, 0); renderer.clear();
+  renderer.render(scenaMini, camMini);
+  gMini.clearRect(0, 0, 128, 128);
+  gMini.drawImage(renderer.domElement, 0, H - Math.round(S * pr), Math.round(S * pr), Math.round(S * pr), 0, 0, 128, 128);
+  renderer.setScissorTest(false); renderer.setViewport(_vp); renderer.setClearColor(0x000000, sfondo);
+  const url = telaMini.toDataURL('image/png');
+  cacheMini.set(k, url); return url;
+}
+function apriVetrina(m) {
+  if (MODO !== 'gioco') return;
+  chiudiOfficina();
+  vetrinaAperta = true; $('vetrinaBtn').classList.remove('nuovo'); document.body.classList.add('invetrina');
+  if (typeof m === 'number') selV = m;
+  else { const pronto = MODELLI.findIndex(x => prontoPerSalire(x)); if (pronto >= 0) selV = pronto; }
+  rendiVetrina();
+  $('vetrina').classList.remove('chiuso');
+  impostaCameraVetrina();
+  suono.clic();
+}
+function chiudiVetrina() { vetrinaAperta = false; document.body.classList.remove('invetrina'); $('vetrina').classList.add('chiuso'); camV.clearViewOffset(); }
+function rendiPoteri() {
+  const b = bonus();
+  $('poteri').innerHTML = ZONE.map((Z, i) => {
+    const v = b[Z.potere.chiave] * 100;
+    return `<div class="potere" title="${Z.nome}: ogni grado dei suoi modellini dà +${(Z.potere.k * 100).toFixed(1).replace('.', ',')}% di ${Z.potere.testo}"><i>${Z.potere.ico}</i><b>+${v.toFixed(v < 10 ? 1 : 0).replace('.', ',')}%</b><small>${Z.potere.testo}</small></div>`;
+  }).join('');
+}
+function rendiVetrina() {
+  $('vetrinaSub').textContent = `${quantiPosseduti()}/${MODELLI.length} MODELLINI · POTENZA ${numero(potenzaTotale())} · ${lireBrevi(rendita())}/s`;
+  rendiPoteri();
+  let h = '';
+  ZONE.forEach((Z, z) => {
+    const g = gradiFamiglia(z);
+    h += `<div class="famiglia" style="--zc:${Z.col}">${Z.ico} ${Z.nome}<span>${g}/${4 * MAX_GRADO} gradi · ${Z.potere.ico} ${Z.potere.testo}</span></div><div class="celle">`;
+    MODELLI.forEach((M, m) => {
+      if (M.zona !== z) return;
+      const r = stato.coll[M.id], gr = r ? r.g : 0;
+      const img = miniatura(m, Math.max(1, gr), !r);
+      const pronta = r && prontoPerSalire(M);
+      let st = ''; for (let k = 1; k <= MAX_GRADO; k++) st += `<i class="${k <= gr ? 'on' : ''}"></i>`;
+      h += `<button class="cella g${Math.max(1, gr)} ${r ? '' : 'ignota'} ${m === selV ? 'sel' : ''} ${pronta ? 'pronta' : ''}" data-m="${m}" aria-label="${r ? M.nome : 'modellino da trovare'}">
+        <img alt="" src="${img}" ${r ? '' : 'style="filter:drop-shadow(0 0 1.5px rgba(200,190,255,.55))"'}><b>${r ? M.nome.toUpperCase() : '???'}</b><span class="st">${st}</span></button>`;
+    });
+    h += '</div>';
+  });
+  const scroll = $('griglia').scrollTop;
+  $('griglia').innerHTML = h; $('griglia').scrollTop = scroll;
+  for (const b of document.querySelectorAll('#griglia .cella')) b.addEventListener('click', () => { selV = +b.dataset.m; suono.clic(); rendiVetrina(); });
+  rendiScheda();
+}
+function rendiScheda() {
+  const M = MODELLI[selV], r = stato.coll[M.id], g = r ? r.g : 0, Z = ZONE[M.zona];
+  if (!animPot) mostraSulPalco(selV, Math.max(1, g), !r);
+  if (!r) {
+    $('scheda').innerHTML = `<div class="nome"><b>???</b><span style="color:${Z.col}">${Z.ico} ZONA ${M.zona + 1}</span></div>
+      <div class="desc">Non l'hai ancora preso. Lo trovi in <b style="color:${Z.col}">${Z.nome}</b>${stato.zone[M.zona] ? '' : ' (zona ancora chiusa)'}.</div>
+      <div class="num"><div><span class="etich">PREMIO</span><b>${lire(M.valore)}</b></div><div><span class="etich">POTENZA</span><b>⚡ ${numero(M.pot)}</b></div><div><span class="etich">PESO</span><b>${'●'.repeat(Math.round(M.peso * 2))}</b></div></div>`;
+    return;
+  }
+  const G = GRADI[g], max = g >= MAX_GRADO;
+  const serve = max ? 0 : SOGLIA[g + 1], costo = max ? 0 : costoPotenzia(M, g + 1);
+  const perc = max ? 100 : clamp((r.c - SOGLIA[g]) / Math.max(1, serve - SOGLIA[g]) * 100, 0, 100);
+  const pronto = !max && r.c >= serve, soldi = stato.lire >= costo;
+  $('scheda').innerHTML = `<div class="nome"><b class="gtesto g${g}">${M.em} ${M.nome.toUpperCase()}</b><span class="gtesto g${g}">GRADO ${g} · ${G.nome}</span></div>
+    <div class="desc">${M.desc}</div>
+    <div class="num"><div><span class="etich">POTENZA</span><b>⚡ ${numero(potenzaModello(M))}</b></div>
+      <div><span class="etich">PREMIO</span><b>${lireBrevi(M.valore * G.mult * moltLire())}</b></div>
+      <div><span class="etich">COPIE</span><b>${punti(r.c)}</b></div></div>
+    <div class="barraCopie"><i style="width:${perc}%"></i></div>
+    <div class="copieTxt"><span>${max ? 'grado massimo raggiunto!' : `copie per ${GRADI[g + 1].nome}: ${punti(Math.min(r.c, serve))}/${punti(serve)}`}</span><span>${max ? '✨' : `⚡ ×${GRADI[g + 1].mult}`}</span></div>
+    <button id="potenziaBtn" ${pronto && soldi ? '' : 'disabled'} class="${pronto && soldi ? 'pronto' : ''}">${max ? '🌌 COSMICO: IL MASSIMO' :
+      pronto ? `⬆ POTENZIA A ${GRADI[g + 1].nome}<small>${soldi ? lire(costo) : 'ti servono ' + lire(costo)}</small>` :
+      `🔒 ${GRADI[g + 1].nome}<small>mancano ${punti(serve - r.c)} copie · prendine altri o trova uno shiny</small>`}</button>`;
+  const b = $('potenziaBtn'); if (b) b.addEventListener('click', () => potenzia(selV));
+}
+function potenzia(m) {
+  const M = MODELLI[m], r = stato.coll[M.id];
+  if (!r || r.g >= MAX_GRADO || r.c < SOGLIA[r.g + 1]) return false;
+  const costo = costoPotenzia(M, r.g + 1);
+  if (stato.lire < costo) { suono.errore(); scuoti('potenziaBtn'); return false; }
+  stato.lire -= costo; r.g++; stato.st.potenziamenti++; stato.st.gradoMax = Math.max(stato.st.gradoMax, r.g);
+  ricalcola();
+  if (vetrinaAperta || MODO === 'vetrina') { animPot = 1; modelloV.userData.prossimo = [m, r.g]; }
+  suono.potenzia(r.g); lampo(.45);
+  mostraBanner(`${M.em} ${M.nome.toUpperCase()}`, GRADI[r.g].nome + '!', `potenza ×${GRADI[r.g].mult} · premio ×${GRADI[r.g].mult}`, r.g);
+  daSalvare = true; aggiornaHUD();
+  if (vetrinaAperta) rendiVetrina();
+  return true;
+}
+function impostaCameraVetrina() {
+  const W = innerWidth, H = innerHeight;
+  if (MODO === 'vetrina') {
+    camV.aspect = W / H; camV.clearViewOffset();
+    camV.position.set(0, 1.9, W / H < 1 ? 9.5 : 6.6); camV.lookAt(0, 1.2, 0); camV.updateProjectionMatrix(); return;
+  }
+  const p = $('palco').getBoundingClientRect();
+  camV.aspect = W / H;
+  const cx = p.left + p.width / 2, cy = p.top + p.height / 2;
+  camV.setViewOffset(W, H, -(cx - W / 2), -(cy - H / 2), W, H);
+  const stretto = p.width / Math.max(1, p.height) < .9;
+  camV.position.set(0, 2.1, stretto ? 10.5 : 8.2); camV.lookAt(0, 1.2, 0);
+  camV.updateProjectionMatrix();
+}
+{ // trascina per girare il modellino
+  const palco = $('palco');
+  palco.style.pointerEvents = 'auto';
+  palco.addEventListener('pointerdown', (e) => { trascinaV = { x: e.clientX, t: performance.now() }; palco.setPointerCapture(e.pointerId); });
+  palco.addEventListener('pointermove', (e) => {
+    if (!trascinaV) return;
+    const d = (e.clientX - trascinaV.x) * .012; rotV += d; velRotV = d / Math.max(.016, (performance.now() - trascinaV.t) / 1000);
+    trascinaV.x = e.clientX; trascinaV.t = performance.now();
+  });
+  const fine = () => { trascinaV = null; velRotV = clamp(velRotV, -8, 8); };
+  palco.addEventListener('pointerup', fine); palco.addEventListener('pointercancel', fine);
+}
+
+// ============ OFFICINA ============
+let schedaOff = 'pot';
+function apriOfficina(scheda) {
+  if (MODO !== 'gioco') return;
+  if (vetrinaAperta) chiudiVetrina();
+  if (scheda) schedaOff = scheda;
+  rendiOfficina(); $('officina').classList.remove('chiuso'); suono.clic();
+}
+function chiudiOfficina() { $('officina').classList.add('chiuso'); }
+function pips(n, max) { let s = '<div class="pips">'; for (let i = 0; i < max; i++) s += `<i class="${i < n ? 'on' : ''}"></i>`; return s + '</div>'; }
+function rendiOfficina() {
+  $('saldoOff').textContent = lireBrevi(stato.lire);
+  for (const b of document.querySelectorAll('#schedeOff button')) b.classList.toggle('on', b.dataset.scheda === schedaOff);
+  let h = '';
+  if (schedaOff === 'pot') {
+    h += '<div class="nota">I potenziamenti valgono per tutte le teste e tutte le zone. In più, ogni grado dei modellini in vetrina dà il potere della sua famiglia.</div>';
+    for (const p of POT) {
+      const l = stato.pot[p.id], max = l >= p.max, c = costoPot(p, l), ok = !max && stato.lire >= c;
+      h += `<div class="riga ${max ? 'max' : ok ? 'ok' : ''}"><div class="ico">${p.ico}</div><div class="info"><b>${p.nome} · ${l}/${p.max}</b>
+        <small>${l ? `ora: <em>${p.desc(l)}</em> · ` : ''}${p.passo}</small>${pips(l, p.max)}</div>
+        <button class="compra" data-pot="${p.id}" ${ok ? '' : 'disabled'}>${max ? '✔ MAX' : lireBrevi(c)}<small>${max ? 'completo' : ok ? 'compra' : 'mancano ' + lireBrevi(c - stato.lire).replace('L.', 'L.')}</small></button></div>`;
+    }
+  } else if (schedaOff === 'teste') {
+    h += '<div class="nota">Tre teste per il carroponte: si cambiano dalla barra in basso quando la pinza è libera.</div>';
+    for (const t of ORDINE_TESTE) {
+      const T = TESTE[t], mia = stato.teste[t], uso = stato.testa === t, ok = !mia && stato.lire >= T.prezzo;
+      h += `<div class="riga ${uso ? 'max' : ok ? 'ok' : ''}"><div class="ico">${T.ico}</div><div class="info"><b>${T.nome} · ${T.verbo}</b>
+        <small>${T.desc}<br>raggio <em>${raggioEff(T).toFixed(2).replace('.', ',')}</em> · fino a <em>${capEff(T)}</em> · presa <em>${Math.round(presaEff(T) * 100)}%</em> · costo presa ×${String(T.mult).replace('.', ',')}</small></div>
+        <button class="compra ${uso ? 'inuso' : mia ? 'usa' : ''}" data-testa="${t}" ${uso || (!mia && !ok) ? 'disabled' : ''}>${uso ? 'IN USO' : mia ? 'USA' : lireBrevi(T.prezzo)}<small>${uso ? 'montata' : mia ? 'monta' : ok ? 'compra' : 'da sbloccare'}</small></button></div>`;
+    }
+  } else if (schedaOff === 'opz') {
+    const q = stato.opz.qualita;
+    h += `<div class="sezione">🔊 AUDIO</div><div class="opz"><button data-opz="audio" class="${stato.opz.audio ? 'on' : ''}">${stato.opz.audio ? 'ACCESO' : 'SPENTO'}</button></div>
+      <div class="sezione">🎨 QUALITÀ GRAFICA</div><div class="opz">
+        <button data-opz="alta" class="${q === 'alta' ? 'on' : ''}">ALTA</button><button data-opz="media" class="${q === 'media' ? 'on' : ''}">MEDIA</button><button data-opz="bassa" class="${q === 'bassa' ? 'on' : ''}">BASSA</button>
+        <button data-opz="auto" class="${stato.opz.auto ? 'on' : ''}">AUTOMATICA ${stato.opz.auto ? 'SÌ' : 'NO'}</button><button data-opz="fps" class="${stato.opz.fps ? 'on' : ''}">FPS</button></div>
+      <div class="nota">Alta = bagliori e ombre, media = bagliori, bassa = la più leggera. Con "automatica" se il gioco rallenta scende da sola.</div>
+      <div class="sezione">💾 SALVATAGGIO</div><div class="opz"><button data-opz="azzera" class="rosso">AZZERA TUTTO</button></div>
+      <div class="nota">Il gioco si salva da solo su questo dispositivo. DaProd Claw Machine ${VERSIONE}.</div>`;
+  } else {
+    const S = stato.st;
+    const voci = [['Prese', punti(S.prese)], ['Modellini presi', punti(S.catturati)], ['Shiny presi', punti(S.shiny)], ['Prese a vuoto', punti(S.vuote)],
+      ['Scivolati', punti(S.scivolati)], ['Regali della buca', punti(S.regali)], ['Potenziamenti', punti(S.potenziamenti)], ['Grado più alto', S.gradoMax ? GRADI[S.gradoMax].nome : '—'],
+      ['Lire spese', lireBrevi(S.spesi)], ['Lire vinte', lireBrevi(S.vinti)], ['Rendita', lireBrevi(rendita()) + '/s'], ['Zone aperte', stato.zone.filter(Boolean).length + '/5']];
+    h += '<div class="stats">' + voci.map(([a, b]) => `<div><span class="etich">${a.toUpperCase()}</span><b>${b}</b></div>`).join('') + '</div>';
+  }
+  $('contenutoOff').innerHTML = h;
+  for (const b of document.querySelectorAll('#contenutoOff [data-pot]')) b.addEventListener('click', () => compra(b.dataset.pot));
+  for (const b of document.querySelectorAll('#contenutoOff [data-testa]')) b.addEventListener('click', () => compraTesta(b.dataset.testa));
+  for (const b of document.querySelectorAll('#contenutoOff [data-opz]')) b.addEventListener('click', () => cambiaOpzione(b.dataset.opz, b));
+}
+function compra(id) {
+  const p = POT.find(x => x.id === id); if (!p) return false;
+  const l = stato.pot[id]; if (l >= p.max) return false;
+  const c = costoPot(p, l); if (stato.lire < c) { suono.errore(); return false; }
+  stato.lire -= c; stato.pot[id]++; ricalcola(); suono.potenzia(1);
+  avviso(`${p.ico} ${p.nome} livello ${stato.pot[id]}`, 'verde');
+  daSalvare = true; aggiornaHUD(); if (!$('officina').classList.contains('chiuso')) rendiOfficina(); return true;
+}
+function compraTesta(t) {
+  const T = TESTE[t]; if (!T) return false;
+  if (stato.teste[t]) { const ok = scegliTesta(t); rendiOfficina(); return ok; }
+  if (stato.lire < T.prezzo) { suono.errore(); return false; }
+  stato.lire -= T.prezzo; stato.teste[t] = true;
+  mostraBanner('NUOVA TESTA', `${T.ico} ${T.nome}`, T.verbo + '! ' + T.desc, 4); suono.sblocca();
+  if (pinza.fase === 'libera' && !pinza.prenota) stato.testa = t;
+  daSalvare = true; aggiornaHUD(); rendiOfficina(); return true;
+}
+let confermaAzzera = 0;
+function cambiaOpzione(id, bottone) {
+  if (id === 'audio') { stato.opz.audio = !stato.opz.audio; if (!stato.opz.audio && motoreGain) motoreGain.gain.value = 0; aggiornaAudioBtn(); }
+  else if (['alta', 'media', 'bassa'].includes(id)) { stato.opz.qualita = id; applicaQualita(); }
+  else if (id === 'auto') stato.opz.auto = !stato.opz.auto;
+  else if (id === 'fps') { stato.opz.fps = !stato.opz.fps; $('fps').style.display = stato.opz.fps ? 'block' : 'none'; }
+  else if (id === 'azzera') {
+    if (Date.now() - confermaAzzera > 4000) { confermaAzzera = Date.now(); bottone.textContent = 'SICURO? TOCCA ANCORA'; return; }
+    azzerato = true; try { localStorage.removeItem(SALVA); localStorage.removeItem('daprod_claw_v2'); } catch (e) {}
+    location.reload(); return;
+  }
+  daSalvare = true; suono.clic(); rendiOfficina();
+}
+function aggiornaAudioBtn() { $('audioBtn').textContent = stato.opz.audio ? '🔊' : '🔇'; $('audioBtn').classList.toggle('off', !stato.opz.audio); }
+
+// ============ QUALITÀ, POST-PRODUZIONE, RIDIMENSIONAMENTO ============
+let composer = null, passoRender = null, bagliore = null, postPronto = false;
+async function preparaPost() {
+  try {
+    const [{ EffectComposer }, { RenderPass }, { UnrealBloomPass }, { OutputPass }] = await Promise.all([
+      import('three/addons/postprocessing/EffectComposer.js'), import('three/addons/postprocessing/RenderPass.js'),
+      import('three/addons/postprocessing/UnrealBloomPass.js'), import('three/addons/postprocessing/OutputPass.js')]);
+    composer = new EffectComposer(renderer);
+    passoRender = new RenderPass(scena, camera); composer.addPass(passoRender);
+    bagliore = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), .5, .45, .92); composer.addPass(bagliore);
+    composer.addPass(new OutputPass());
+    postPronto = true; ridimensiona();
+  } catch (e) { console.warn('bagliori non disponibili', e); }
+}
+let scalaAuto = 1;
+function applicaQualita() {
+  const q = stato.opz.qualita, dpr = window.devicePixelRatio || 1;
+  const pr = (q === 'alta' ? Math.min(dpr, 2) : q === 'media' ? Math.min(dpr, 1.5) : Math.min(dpr, 1)) * scalaAuto;
+  renderer.setPixelRatio(Math.max(.6, pr));
+  const ombre = q !== 'bassa';
+  if (renderer.shadowMap.enabled !== ombre) {
+    renderer.shadowMap.enabled = ombre;
+    const aggiorna = (o) => { if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => m.needsUpdate = true); };
+    scena.traverse(aggiorna); scenaV.traverse(aggiorna); MAT.forEach(m => m && (m.needsUpdate = true));
+  }
+  const dim = q === 'alta' ? 2048 : 1024;
+  if (sole.shadow.mapSize.x !== dim) { sole.shadow.mapSize.set(dim, dim); if (sole.shadow.map) { sole.shadow.map.dispose(); sole.shadow.map = null; } }
+  cacheMini.clear();
+  ridimensiona();
+}
+function ridimensiona() {
+  const w = innerWidth, h = innerHeight;
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h; camera.updateProjectionMatrix();
+  if (composer) { composer.setPixelRatio(renderer.getPixelRatio()); composer.setSize(w, h); }
+  if (vetrinaAperta || MODO === 'vetrina') impostaCameraVetrina();
+}
+let ridT = null;
+addEventListener('resize', () => { clearTimeout(ridT); ridT = setTimeout(ridimensiona, 80); });
+let lentoT = 0, medioDt = 1 / 60, fpsT = 0, fpsN = 0;
+function adattaQualita(dt) {
+  medioDt = lerp(medioDt, dt, .05);
+  fpsT += dt; fpsN++;
+  if (fpsT > .5) { if (stato.opz.fps) $('fps').textContent = Math.round(fpsN / fpsT) + ' FPS · ' + stato.opz.qualita; fpsT = 0; fpsN = 0; }
+  if (!stato.opz.auto || MODO !== 'gioco' || document.hidden) return;
+  if (medioDt > 1 / 26) lentoT += dt; else lentoT = Math.max(0, lentoT - dt * .5);
+  if (lentoT > 4) {
+    lentoT = 0;
+    if (stato.opz.qualita === 'alta') { stato.opz.qualita = 'media'; avviso('Grafica: qualità media per restare fluido', 'cia'); }
+    else if (stato.opz.qualita === 'media') { stato.opz.qualita = 'bassa'; avviso('Grafica: qualità bassa per restare fluido', 'cia'); }
+    else if (scalaAuto > .7) scalaAuto -= .15;
+    else return;
+    applicaQualita(); daSalvare = true;
+  }
+}
+
+// ============ CAMERA ============
+const cam = { pos: new THREE.Vector3(cxZona(stato.zona), 14, 26), guarda: new THREE.Vector3(cxZona(stato.zona), 1, 0), zoom: 1, orbita: 0 };
+let zoomUtente = 1;
+const _g = new THREE.Vector3(), _c = new THREE.Vector3();
+function posaCamera(dt, subito = false) {
+  const asp = camera.aspect, vf = camera.fov * Math.PI / 180, hf = 2 * Math.atan(Math.tan(vf / 2) * asp);
+  let dist = clamp((ZL * .5 + .2) / Math.tan(hf / 2), 11, asp < 1 ? 25 : 19);
+  const giu = ['scende', 'chiude', 'sale'].includes(pinza.fase);
+  cam.zoom = lerp(cam.zoom, (giu ? (asp < 1 ? .9 : .82) : 1) * zoomUtente, 1 - Math.exp(-dt * 2.2));
+  dist *= cam.zoom;
+  const zc = cxZona(zonaDi(pinza.x));
+  let gx = lerp(zc, pinza.x, asp < 1 ? .95 : .72), gz = clamp(pinza.z * .4, -2, 1.6) - .9, gy = giu ? Math.max(.8, pinza.y * .5) : 1.3;
+  let alzo = asp < 1 ? .92 : .6;
+  if (asp < 1) gz += 1.6;                         // in verticale la vasca sale sopra i pulsanti
+  if (MODO === 'gioco' && !inGioco) {                 // schermata iniziale: la camera gira lenta sopra la sala
+    cam.orbita += dt * .05;
+    gx = zc + Math.sin(cam.orbita) * 3; gz = -.5; alzo = .5; dist *= 1.15;
+  }
+  _g.set(gx, gy, gz);
+  _c.set(gx + (MODO === 'gioco' && !inGioco ? Math.sin(cam.orbita * .7) * 5 : 0), gy + Math.sin(alzo) * dist, gz + Math.cos(alzo) * dist);
+  const k = subito ? 1 : 1 - Math.exp(-dt * 3.2);
+  cam.pos.lerp(_c, k); cam.guarda.lerp(_g, k);
+  camera.position.copy(cam.pos);
+  if (scossaCam > 0) {
+    scossaCam = Math.max(0, scossaCam - dt * .8);
+    camera.position.x += (fx() - .5) * scossaCam; camera.position.y += (fx() - .5) * scossaCam;
+  }
+  camera.lookAt(cam.guarda);
+  // camera sopra il carroponte (telefono in verticale, zoom indietro): ponte e binario davanti si tolgono di mezzo
+  ponte.visible = binarioDavanti.visible = camera.position.y < Y_CARRELLO - .2;
+  // la luce delle ombre segue la zona
+  sole.position.set(zc + 5, 16, 9); sole.target.position.set(zc, 0, 0);
+}
+
+// ============ DISEGNO DEL CARROPONTE ============
+const _su = new THREE.Vector3(0, 1, 0), _dir = new THREE.Vector3(), _a = new THREE.Vector3(), _b = new THREE.Vector3();
+let mirinoT = 0, altezzaMirino = 1;
+function disegnaPinza(dt) {
+  const T = TESTE[stato.testa];
+  ponte.position.x = pinza.x;
+  carrello.position.set(pinza.x, Y_CARRELLO - .1, pinza.z);
+  for (const t of ORDINE_TESTE) TESTE3D[t].visible = t === stato.testa;
+  const ox = pinza.oscX * 1.4, oz = pinza.oscZ * 1.4;
+  testa3D.position.set(pinza.x + ox, pinza.y, pinza.z + oz);
+  testa3D.rotation.set(oz * .45, 0, -ox * .45);
+  const H = TESTE3D[stato.testa], ap = pinza.apertura, R = raggioEff(T);
+  if (T.id === 'pinza') {
+    const s = clamp(R / .95, 1, 1.5); H.scale.setScalar(s);
+    for (const d of H.userData.dita) { d.perno1.rotation.z = lerp(.12, .72, ap); d.perno2.rotation.z = lerp(-.78, .15, ap); }
+  } else if (T.id === 'rete') {
+    const u = H.userData, k = lerp(.62, 1, ap);
+    u.anello.scale.setScalar(R); u.ledR.scale.setScalar(R);
+    u.rete.scale.set(R * k, lerp(.75, 1, ap), R * k); u.rete.position.y = .95 - .45 * lerp(.75, 1, ap);
+    for (const f of u.fili) {
+      _a.set(0, 1.9, 0); _b.set(Math.cos(f.a) * R, .95, Math.sin(f.a) * R);
+      f.f.position.copy(_a).add(_b).multiplyScalar(.5); _dir.copy(_b).sub(_a);
+      f.f.scale.set(1, _dir.length(), 1); f.f.quaternion.setFromUnitVectors(_su, _dir.normalize());
+    }
+  } else { H.rotation.y += dt * (pinza.fase === 'libera' ? .8 : 3); }
+  // cavo dal carrello alla cima della testa
+  _a.set(pinza.x, Y_CARRELLO - .35, pinza.z);
+  _b.set(0, H.userData.cima * (T.id === 'pinza' ? H.scale.y : 1), 0).applyEuler(testa3D.rotation).add(testa3D.position);
+  cavo.position.copy(_a).add(_b).multiplyScalar(.5); _dir.copy(_a).sub(_b);
+  cavo.scale.set(1, Math.max(.01, _dir.length()), 1); cavo.quaternion.setFromUnitVectors(_su, _dir.normalize());
+  faro.position.set(pinza.x, Y_CARRELLO - .6, pinza.z); faro.target.position.set(pinza.x, 0, pinza.z);
+  // mirino: dove andrà a prendere, con il raggio della testa
+  mirinoT += dt;
+  const libero = pinza.fase === 'libera' || pinza.fase === 'scende';
+  mirino.visible = MODO === 'gioco' && inGioco && libero && !sopraBuca(pinza.tx, pinza.tz, zonaDi(pinza.tx));
+  laser.visible = mirino.visible;
+  if (mirino.visible) {
+    altezzaMirino = lerp(altezzaMirino, quotaMucchio(pinza.tx, pinza.tz, .45) + .04, 1 - Math.exp(-dt * 10));
+    mirino.position.set(pinza.tx, altezzaMirino, pinza.tz);
+    anelloMirino.scale.setScalar(R * (1 + Math.sin(mirinoT * 5) * .03));
+    M_MIRINO.color.set(ZONE[zonaDi(pinza.tx)].col).multiplyScalar(1.6); M_MIRINO.opacity = .65 + Math.sin(mirinoT * 5) * .2;
+    const y0 = pinza.y - .05, y1 = altezzaMirino;
+    laser.position.set(pinza.x, (y0 + y1) / 2, pinza.z); laser.scale.set(1, Math.max(.01, y0 - y1), 1);
+  }
+  motore(Math.hypot(pinza.vx, pinza.vz) + (pinza.fase === 'scende' || pinza.fase === 'sale' ? 4 : 0));
+}
+function animaSala(dt) {
+  for (let i = 0; i < ZONE3D.length; i++) {
+    const Z3 = ZONE3D[i];
+    Z3.tb.offset.y -= dt * .25;
+    Z3.barriera.material.opacity = .55 + Math.sin(U_TEMPO.value * 2 + i) * .15;
+    Z3.cartello.position.y = 3.1 + Math.sin(U_TEMPO.value * 1.4 + i) * .08;
+    Z3.luce.intensity = stato.zone[i] ? 9 : 3;
+  }
+  ledCarrello.material.color.setHSL((U_TEMPO.value * .1) % 1, 1, .6).multiplyScalar(2.5);
+}
+
+// ============ INPUT ============
+const raggio = new THREE.Raycaster(), _nd = new THREE.Vector2(), pianoPresa = new THREE.Plane(new THREE.Vector3(0, 1, 0), -1);
+const _pt = new THREE.Vector3();
+function puntoSulPiano(x, y) {
+  _nd.set(x / innerWidth * 2 - 1, -(y / innerHeight) * 2 + 1);
+  raggio.setFromCamera(_nd, camera);
+  return raggio.ray.intersectPlane(pianoPresa, _pt) ? _pt : null;
+}
+const tocchi = new Map(); let pizzico = null;
+canvas.addEventListener('pointerdown', (e) => {
+  if (MODO !== 'gioco' || !inGioco) return;
+  audio();
+  tocchi.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  try { canvas.setPointerCapture(e.pointerId); } catch (er) {}
+  if (tocchi.size === 2) { const [a, b] = [...tocchi.values()]; pizzico = { d: Math.hypot(a.x - b.x, a.y - b.y), z: zoomUtente }; return; }
+  const p = puntoSulPiano(e.clientX, e.clientY); if (p) bersaglio(p.x, p.z);
+});
+canvas.addEventListener('pointermove', (e) => {
+  if (!tocchi.has(e.pointerId)) return;
+  tocchi.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (pizzico && tocchi.size === 2) {
+    const [a, b] = [...tocchi.values()];
+    zoomUtente = clamp(pizzico.z * pizzico.d / Math.max(20, Math.hypot(a.x - b.x, a.y - b.y)), .7, 1.4); return;
+  }
+  if (tocchi.size === 1) { const p = puntoSulPiano(e.clientX, e.clientY); if (p) bersaglio(p.x, p.z); }
+});
+const fineTocco = (e) => { tocchi.delete(e.pointerId); if (tocchi.size < 2) pizzico = null; };
+canvas.addEventListener('pointerup', fineTocco); canvas.addEventListener('pointercancel', fineTocco);
+canvas.addEventListener('wheel', (e) => { if (MODO !== 'gioco') return; e.preventDefault(); zoomUtente = clamp(zoomUtente * (e.deltaY > 0 ? 1.07 : .935), .7, 1.4); }, { passive: false });
+const tasti = new Set();
+addEventListener('keydown', (e) => {
+  if (MODO !== 'gioco') return;
+  const k = e.key.toLowerCase();
+  if (k === 'escape') { chiudiVetrina(); chiudiOfficina(); $('sblocco').classList.add('chiuso'); return; }
+  if (!inGioco) { if (k === 'enter' || k === ' ') { e.preventDefault(); gioca(); } return; }
+  if (vetrinaAperta || !$('officina').classList.contains('chiuso')) { if (k === 'v' && vetrinaAperta) chiudiVetrina(); if (k === 'o' && vetrinaAperta === false) chiudiOfficina(); return; }
+  if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'w', 'a', 's', 'd'].includes(k)) { tasti.add(k); e.preventDefault(); return; }
+  if (e.repeat) return;
+  audio();
+  if (k === ' ' || k === 'enter') { e.preventDefault(); prendi(); }
+  else if (k === '1' || k === '2' || k === '3') scegliTesta(ORDINE_TESTE[+k - 1]);
+  else if (k === 'q' || k === '[') vaiZona(zonaCorrente() - 1);
+  else if (k === 'e' || k === ']') vaiZona(zonaCorrente() + 1);
+  else if (k === 'v') apriVetrina();
+  else if (k === 'o') apriOfficina();
+  else if (k === 'm') { stato.opz.audio = !stato.opz.audio; aggiornaAudioBtn(); if (!stato.opz.audio && motoreGain) motoreGain.gain.value = 0; daSalvare = true; }
+});
+addEventListener('keyup', (e) => tasti.delete(e.key.toLowerCase()));
+addEventListener('blur', () => tasti.clear());
+function muoviConTasti(dt) {
+  if (!tasti.size) return;
+  let dx = 0, dz = 0;
+  if (tasti.has('arrowleft') || tasti.has('a')) dx--; if (tasti.has('arrowright') || tasti.has('d')) dx++;
+  if (tasti.has('arrowup') || tasti.has('w')) dz--; if (tasti.has('arrowdown') || tasti.has('s')) dz++;
+  if (!dx && !dz) return;
+  const v = 6 * velEff() * TESTE[stato.testa].vel * dt * 1.6, libera = pinza.fase === 'libera';
+  bersaglio((libera ? pinza.x : pinza.tx) + dx * v, (libera ? pinza.z : pinza.tz) + dz * v);
+}
+$('prendiBtn').addEventListener('click', () => { audio(); prendi(); });
+$('vetrinaBtn').addEventListener('click', () => apriVetrina());
+$('officinaBtn').addEventListener('click', () => apriOfficina());
+$('chiudiVet').addEventListener('click', chiudiVetrina);
+$('chiudiOff').addEventListener('click', chiudiOfficina);
+$('chiudiSbl').addEventListener('click', () => $('sblocco').classList.add('chiuso'));
+$('sbloccaBtn').addEventListener('click', () => sblocca(sbloccoZ));
+$('officina').addEventListener('click', (e) => { if (e.target === $('officina')) chiudiOfficina(); });
+$('sblocco').addEventListener('click', (e) => { if (e.target === $('sblocco')) $('sblocco').classList.add('chiuso'); });
+for (const b of document.querySelectorAll('#schedeOff button')) b.addEventListener('click', () => { schedaOff = b.dataset.scheda; suono.clic(); rendiOfficina(); });
+$('zonaPrec').addEventListener('click', () => vaiZona(zonaCorrente() - 1));
+$('zonaSucc').addEventListener('click', () => vaiZona(zonaCorrente() + 1));
+$('audioBtn').addEventListener('click', () => { stato.opz.audio = !stato.opz.audio; aggiornaAudioBtn(); if (!stato.opz.audio && motoreGain) motoreGain.gain.value = 0; else audio(); daSalvare = true; });
+$('giocaBtn').addEventListener('click', () => gioca());
+
+// ============ INIZIO PARTITA, RENDITA, BONUS DI CORTESIA ============
+let inGioco = false;
+function gioca() {
+  if (inGioco) return;
+  inGioco = true; audio(); suono.sblocca();
+  $('intro').classList.add('via');
+  bersaglio(cxZona(stato.zona), -.5, false);
+  aggiornaHUD();
+}
+let cortesiaT = 0;
+function rendimento(dt) {
+  if (MODO !== 'gioco') return;
+  stato.lire += rendita() * dt;
+  if (inGioco && stato.lire < costoPresa(0, 'pinza') && pinza.fase === 'libera' && !pinza.prenota) {
+    cortesiaT += dt;
+    if (cortesiaT > 5) { cortesiaT = 0; stato.lire += 1000; avviso('🎁 BONUS DI CORTESIA DaProd: +L.1.000', 'cia'); suono.cortesia(); brillaSaldo(); aggiornaHUD(); daSalvare = true; }
+  } else cortesiaT = 0;
+}
+
+// ============ MODALITÀ INCORPORATE: la macchina gioca da sola / sfilata dei modellini ============
+const bot = { t: 0, prese: 0, zona: 0 };
+function aggiornaBot(dt) {
+  if (pinza.fase !== 'libera' || pinza.prenota) return;
+  bot.t += dt; if (bot.t < .7) return; bot.t = 0;
+  bot.prese++;
+  if (bot.prese % 3 === 0) bot.zona = (bot.zona + 1) % ZONE.length;
+  const lista = oggetti.filter(o => o.stato === 'campo' && o.zona === bot.zona && o.dorme && !sopraBuca(o.x, o.z, o.zona) && o.y > .3);
+  if (!lista.length) return;
+  lista.sort((a, b) => (b.g - a.g) + (fx() - .5) * 2);
+  const o = lista[Math.floor(fx() * Math.min(4, lista.length))];
+  stato.testa = ['pinza', 'pinza', 'rete', 'amo'][bot.prese % 4];
+  bersaglio(o.x, o.z, false); prendi(true);
+}
+const sfilata = { m: 0, g: 1, t: 0 };
+function aggiornaSfilata(dt) {
+  sfilata.t += dt;
+  if (sfilata.t > (sfilata.g === 1 ? 2.2 : 1.7)) {
+    sfilata.t = 0;
+    if (sfilata.g < MAX_GRADO) { sfilata.g++; animPot = 1; modelloV.userData.prossimo = [sfilata.m, sfilata.g]; }
+    else { sfilata.g = 1; sfilata.m = (sfilata.m + 5) % MODELLI.length; mostraSulPalco(sfilata.m, 1, false); }
+  }
+}
+let inPausa = false;
+addEventListener('message', (e) => {
+  const d = e.data;
+  if (d && d.daprod === 'pausa') { inPausa = !!d.valore; if (!inPausa) ultimo = performance.now(); }
+});
+
+// ============ CICLO PRINCIPALE ============
+let ultimo = performance.now(), accFisica = 0, salvaT = 0, hudT = 0;
+function ciclo(ora) {
+  requestAnimationFrame(ciclo);
+  if (inPausa) return;
+  const dt = Math.min(.05, Math.max(0, (ora - ultimo) / 1000)); ultimo = ora;
+  U_TEMPO.value += dt;
+  if (MODO === 'vetrina') {
+    aggiornaSfilata(dt); aggiornaPalco(dt);
+    if (composer && stato.opz.qualita !== 'bassa') { passoRender.scene = scenaV; passoRender.camera = camV; composer.render(); } else renderer.render(scenaV, camV);
+    return;
+  }
+  accFisica += dt; let n = 0;
+  while (accFisica >= PASSO && n < 6) { passo(PASSO); aggiornaPinza(PASSO); accFisica -= PASSO; n++; }
+  if (n === 6) accFisica = 0;
+  if (MODO === 'demo') aggiornaBot(dt);
+  muoviConTasti(dt);
+  rifornisci(dt);
+  rendimento(dt);
+  if (vetrinaAperta) {
+    aggiornaPalco(dt);
+    if (composer && stato.opz.qualita !== 'bassa') { passoRender.scene = scenaV; passoRender.camera = camV; composer.render(); } else renderer.render(scenaV, camV);
+  } else {
+    disegnaOggetti(); disegnaPinza(dt); scintilleShiny(dt); aggiornaParticelle(dt); animaSala(dt); posaCamera(dt);
+    if (composer && stato.opz.qualita !== 'bassa') { passoRender.scene = scena; passoRender.camera = camera; composer.render(); } else renderer.render(scena, camera);
+  }
+  aggiornaSaldo(dt);
+  hudT += dt; if (hudT > .25) { hudT = 0; aggiornaHUD(); }
+  adattaQualita(dt);
+  salvaT += dt; if (salvaT > 4 && (daSalvare || inGioco)) { salvaT = 0; salva(); }
+}
+addEventListener('pagehide', () => salva());
+document.addEventListener('visibilitychange', () => { if (document.hidden) salva(); else ultimo = performance.now(); });
+
+// ============ AVVIO ============
+$('versione').textContent = VERSIONE; $('versione2').textContent = VERSIONE;
+$('scalaGradi').innerHTML = GRADI.slice(1).map(G => `<span class="g${G.g} gtesto">${G.nome}</span>`).join('');
+{
+  const assente = clamp((Date.now() - stato.ultima) / 1000, 0, 7200), resa = Math.floor(rendita() * assente * .5);
+  if (stato.migrato) $('bentornato').innerHTML = 'Bentornato! I peluche della vecchia macchina sono già in <b>vetrina</b>.';
+  else if (resa >= 1 && MODO === 'gioco') { stato.lire += resa; $('bentornato').innerHTML = `Mentre eri via la collezione ha reso <b>+${lire(resa)}</b>`; }
+  else if (stato.st.prese > 0) $('bentornato').innerHTML = `Bentornato! Potenza della collezione: <b>⚡ ${numero(potenzaTotale())}</b>`;
+}
+if (MODO === 'demo') { stato.pot.presa = 6; stato.pot.apertura = 3; stato.pot.motore = 4; stato.pot.capienza = 2; }
+if (MODO !== 'vetrina' && !ripristinaVasca(stato.vasca)) { for (let z = 0; z < ZONE.length; z++) riempiZona(z, N_ZONA); }
+if (MODO !== 'vetrina') simula(2.2);
+tempoGioco = 0; avviato = true;
+rendiTeste(); aggiornaAudioBtn(); aggiornaHUD();
+$('fps').style.display = stato.opz.fps ? 'block' : 'none';
+applicaQualita();
+if (MODO === 'vetrina') { mostraSulPalco(0, 1, false); impostaCameraVetrina(); }
+if (MODO === 'demo') { inGioco = true; }
+posaCamera(1, true);
+preparaPost();
+requestAnimationFrame((t) => { ultimo = t; requestAnimationFrame(ciclo); $('caricamento').classList.add('via'); });
+
+// Le Lire DaProd: la partita fatta qui si stacca in lire, e le lire si
+// spendono per ricaricare. Dentro la DaProd Suite il conto lo tiene la sala
+// giochi; sul sito il browser, diviso con gli altri giochi DaProd.
+if (window.DaProdLira && MODO === 'gioco') DaProdLira.init({
+  gioco: 'claw',
+  // Nella Claw i bordi sono tutti occupati (vetrina, officina, PRENDI): il
+  // portafoglio e' il tondo sotto al marchio, sul telefono e sul computer.
+  tondo: true,
+  telefono: { top: '70px', left: '10px' },
+  ricarica: { detto: '+L.3.000 per le prese', dai: () => { stato.lire += 3000; aggiornaHUD(); daSalvare = true; avviso('🦾 Ricarica DaProd: +' + lire(3000), 'cia'); } },
+});
+
+// API per le prove automatiche e per chi vuole curiosare dalla console
+window.CLAW = {
+  VERSIONE, MODO, GRADI, ZONE, MODELLI, TESTE, POT, SOGLIA, stato, pinza, FORZA,
+  oggetti: () => oggetti.filter(o => o.stato !== 'via'), tutti: () => oggetti,
+  passo, simula, prendi, gioca, bersaglio, scegliTesta, vaiZona, sblocca, potenzia, compra, compraTesta,
+  apriVetrina, chiudiVetrina, apriOfficina, chiudiOfficina, salva, carica, pulisci, fotografaVasca,
+  potenzaTotale, rendita, costoPresa, presaEff, raggioEff, capEff, bonus, ricalcola, quotaStop, sopraBuca, buca, cxZona, zonaDi,
+  nuovoOggetto: (m, g, z, x, y, zz) => nuovoOggetto(m, g, z, x, y, zz),
+  pulisciZona: (z) => { for (const o of oggetti) if (o.zona === z && o.stato === 'campo') o.stato = 'via'; oggetti = oggetti.filter(o => o.stato !== 'via'); },
+  casuale: (f) => { casuale = f || Math.random; },
+  rendimento, bot: aggiornaBot,
+  tempo: () => tempoGioco, raccolti: () => raccolti, inGioco: () => inGioco, vetrinaAperta: () => vetrinaAperta,
+  postPronto: () => postPronto, lotti: () => [...lotti.values()].filter(L => L.mesh).map(L => ({ m: L.m, g: L.g, n: L.mesh.count })),
+  miniatura, qualita: applicaQualita, triangoli: () => GEO.map(g => g.index.count / 3),
+  camera: () => posaCamera(1, true),
+};
+</script>
+</body>
+</html>

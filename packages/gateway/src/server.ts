@@ -91,8 +91,13 @@ import { copyFileSync, createReadStream, createWriteStream, mkdirSync, rmSync, s
 import { join, normalize } from "node:path";
 import { elencoAzioni, eseguiAzione, type Esecutore } from "./azioni";
 import { paginaConsole } from "./console";
+import { VESTE, VESTE_VERSIONE } from "./veste-generata";
 import {
+  domandaPer,
+  fileDellaSala,
+  NienteDaFare,
   paginaGiochi,
+  segnaGiudizio,
   rispondi as rispondiAiGiochi,
   sguardiDelGioco,
   type Deposito as DepositoGiochi,
@@ -108,6 +113,7 @@ import type {
   FornitoreLibreria,
   FornitoreMacchina,
   FornitorePannello,
+  FornitoreGiudice,
   FornitoreStili,
   StatoRichiesta,
   StatoSuite,
@@ -170,6 +176,11 @@ export interface GatewayOpzioni {
    * sparire, e chi la apre legge una frase invece di un numero.
    */
   giochi?: DepositoGiochi;
+  /**
+   * Il giudice della sala giochi (Jev-Omni), se questa suite ce l'ha. Senza,
+   * il tasto «chiedi al giudice» risponde 501 e la fila funziona come prima.
+   */
+  giudice?: FornitoreGiudice;
   /**
    * L'annunciatore sulla rete locale, se questa suite ce l'ha.
    *
@@ -250,6 +261,7 @@ export class Gateway {
   private macchina: FornitoreMacchina | undefined;
   private chiacchierata: FornitoreChiacchierata | undefined;
   private stili: FornitoreStili | undefined;
+  private giudice: FornitoreGiudice | undefined;
   private giochi: DepositoGiochi | undefined;
   /** Quello che la sala giochi fa guardare, per persona: vedi `sguardoNeiGiochi`. */
   private sguardi = new Map<string, { quando: number; livelli: Map<string, Sguardo> }>();
@@ -267,6 +279,7 @@ export class Gateway {
     this.macchina = opzioni.macchina;
     this.chiacchierata = opzioni.chiacchierata;
     this.stili = opzioni.stili;
+    this.giudice = opzioni.giudice;
     this.giochi = opzioni.giochi;
     this.rete = opzioni.rete;
     this.server = createServer((req, res) => {
@@ -323,7 +336,56 @@ export class Gateway {
       // La console web: una pagina sola, senza dati dentro. Il token se lo
       // procura lei accoppiandosi, come fa il telefono.
       if ((percorso === "/" || percorso === "/console") && req.method === "GET") {
-        this.pagina(res, paginaConsole());
+        this.pagina(res, vestita(paginaConsole()));
+        return;
+      }
+
+      /**
+       * ⚠ **Il vestito DaProd**, dalla 1.4.0: il foglio, il fondo animato e i
+       * font, gli stessi dell'hub e delle schede (`packages/ui/src`). Sono file
+       * che non dicono niente di nessuno, quindi **niente token**: servono prima
+       * ancora che la pagina si sia accoppiata, o la schermata del codice
+       * resterebbe senza font.
+       *
+       * Al contrario della pagina, questi **si tengono in cache per un anno**:
+       * nell'indirizzo c'e' la loro impronta (`?v=`), e quando cambiano cambia
+       * l'indirizzo. Cosi' i 100 KB di font passano dal tunnel una volta sola.
+       */
+      /**
+       * ⚠ **I giochi d'arcade della sala**, dalla 1.4.0 (CONCETTI.md § 18.4):
+       * Coin Dozer, Claw Machine e Neon Partenope, coi loro file e three.js in
+       * casa. Sono file di un gioco e non dicono niente di nessuno, quindi
+       * niente token — il conto non passa da qui: il gioco gira in una cornice
+       * della pagina della sala, e i soldi li chiede a lei (`daprod-lira.js`).
+       */
+      if (percorso.startsWith("/giochi/sala/") && req.method === "GET") {
+        const trovato = fileDellaSala(percorso.slice("/giochi/sala/".length));
+        if (!trovato) return this.errore(res, 404, "Questo gioco non c'e'.");
+        res.writeHead(200, {
+          "Content-Type": trovato.tipo,
+          "Content-Length": statSync(trovato.file).size,
+          "Cache-Control": trovato.tipo.startsWith("text/html") ? "no-store" : "public, max-age=86400",
+          "Content-Security-Policy":
+            "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; " +
+            "img-src 'self' data: blob:; media-src 'self' data: blob:; connect-src 'self'; font-src 'self' data:; " +
+            "frame-ancestors 'self'",
+          "X-Content-Type-Options": "nosniff",
+        });
+        createReadStream(trovato.file).pipe(res);
+        return;
+      }
+
+      if (percorso.startsWith("/daprod/") && req.method === "GET") {
+        const voce = VESTE[percorso.slice("/daprod/".length)];
+        if (!voce) return this.errore(res, 404, "Qui non c'e'.");
+        const corpo = Buffer.from(voce.base64, "base64");
+        res.writeHead(200, {
+          "Content-Type": voce.tipo,
+          "Content-Length": corpo.length,
+          "Cache-Control": "public, max-age=31536000, immutable",
+          "X-Content-Type-Options": "nosniff",
+        });
+        res.end(corpo);
         return;
       }
 
@@ -343,7 +405,7 @@ export class Gateway {
        * chiedendo, passa la domanda, riporta la risposta.
        */
       if (percorso === "/giochi" && req.method === "GET") {
-        this.pagina(res, paginaGiochi("/giochi", "/sessione"));
+        this.pagina(res, vestita(paginaGiochi("/giochi", "/sessione")));
         return;
       }
       /**
@@ -425,6 +487,30 @@ export class Gateway {
         if (!this.giochi) {
           return this.errore(res, 501, "Questa suite non ha la sala giochi accesa.");
         }
+        /**
+         * ⚠ **Il parere del giudice** (1.4.0, CONCETTI.md § 18.7). Sta qui e
+         * non fra le rotte del gioco perche' e' l'unica che aspetta un modello:
+         * le rotte del gioco sono sincrone, e devono restarlo — decidono sul
+         * conto delle persone, e una decisione a meta' mentre si aspetta un
+         * motore e' il modo di perdere lire.
+         */
+        if (percorso === "/giochi/giudica" && req.method === "POST") {
+          if (chiGioca.ruolo !== "admin") return this.errore(res, 403, "Questa parte e' di chi decide.");
+          if (!this.giudice) return this.errore(res, 501, "Questa suite non ha il giudice.");
+          const id = String((corpo as Record<string, unknown> | undefined)?.["id"] ?? "");
+          const c = this.giochi.perId(id);
+          if (!c) return this.errore(res, 404, "Questa non c'e'.");
+          try {
+            const risposta = await this.giudice.giudica(domandaPer(c));
+            this.json(res, 200, segnaGiudizio(this.giochi, id, risposta.probabilita));
+            this.sguardi.clear();
+            this.aggiorna();
+          } catch (e) {
+            const perche = e instanceof Error ? e.message : String(e);
+            this.errore(res, e instanceof NienteDaFare ? 409 : 502, perche);
+          }
+          return;
+        }
         const esito = rispondiAiGiochi(
           this.giochi,
           { id: chiGioca.id, nome: chiGioca.nome, admin: chiGioca.ruolo === "admin" },
@@ -461,6 +547,10 @@ export class Gateway {
              * genera una clip di 60 secondi con ace step turbo strumentale, nel
              * caso dell'immagine genera l'immagine 4:3 con flux 9b».
              *
+             * ⚠ Dalla 1.4.0 il 9B non c'e' piu': FLUX e' uscito dalla suite, e
+             * al suo posto c'e' Qwen-Image 2.1 di serie, che e' il predefinito
+             * delle immagini per la stessa ragione per cui lo era lui.
+             *
              * Strumentale vuol dire **testo vuoto**: e' cosi' che si chiede uno
              * strumentale a `genera.brano`, non con una spunta. E la richiesta
              * passa da `creaRichiesta` come tutte le altre, quindi rispetta la
@@ -477,7 +567,7 @@ export class Gateway {
                       tipo: "genera.immagine",
                       app: "foto",
                       testo: cosa.prompt,
-                      opzioni: { forma: "4:3", modello: "flux2-9b", quante: "1" },
+                      opzioni: { forma: "4:3", modello: "qwen21", quante: "1" },
                       daDispositivo: chiGioca,
                     }
                   : {
@@ -2951,9 +3041,16 @@ export class Gateway {
       // `<audio>` della libreria non partono e non dicono perché. `blob:` serve
       // ai download, che passano da un oggetto in memoria per poter avere il
       // nome giusto del file.
+      //
+      // ⚠ Dalla 1.4.0 `style-src`, `script-src` e `font-src` accettano anche
+      // `'self'`: il vestito DaProd arriva da `/daprod/`, cioe' da questo
+      // stesso computer. Da fuori continua a non entrare niente. E `frame-src
+      // 'self'` e' per i giochi della sala, che girano in una cornice loro
+      // servita da qui (`/giochi/sala/`).
       "Content-Security-Policy":
         "default-src 'none'; connect-src 'self'; img-src 'self' data: blob:; " +
-        "media-src 'self' blob:; style-src 'unsafe-inline'; script-src 'unsafe-inline'",
+        "media-src 'self' blob:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; " +
+        "font-src 'self'; frame-src 'self'",
       "Referrer-Policy": "no-referrer",
       "X-Content-Type-Options": "nosniff",
     });
@@ -2977,6 +3074,20 @@ export class Gateway {
   private errore(res: ServerResponse, codice: number, messaggio: string): void {
     this.json(res, codice, { errore: messaggio });
   }
+}
+
+/**
+ * La pagina col vestito DaProd addosso: il foglio e il fondo, messi **in fondo**
+ * alla testa, cosi' arrivano dopo lo stile della pagina e ne cambiano i colori.
+ * Vedi la rotta `/daprod/`.
+ */
+function vestita(html: string): string {
+  const v = "?v=" + VESTE_VERSIONE;
+  return html.replace(
+    "</head>",
+    '<link rel="stylesheet" href="/daprod/daprod.css' + v + '">\n' +
+      '<script src="/daprod/daprod-sfondo.js' + v + '" data-effetti="pieni" defer></script>\n</head>',
+  );
 }
 
 /** Il dispositivo senza il token: è quel che si può mostrare in giro. */

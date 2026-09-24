@@ -40,10 +40,13 @@ import {
   motorePresente,
   nodiMancanti,
   pesoCartella,
+  pesoDalServer,
   scaricaFile,
   scaricaRepo,
+  scriviRicevuta,
 } from "@daprod/runtime";
 import { EventEmitter } from "node:events";
+import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { appManager } from "./app-manager";
 import { createLogger } from "./logging";
@@ -61,6 +64,9 @@ import {
   cartellaLibreriePrivate,
   fileRequisiti,
   fileRequisitiPrivati,
+  librerieDelMotorePronte,
+  requisitiDelMotore,
+  segnaLibrerieDelMotore,
   segnaLibrerieServizio,
 } from "./librerie-servizio";
 import * as servizi from "./servizi";
@@ -332,6 +338,31 @@ async function installaLibrerieServizio(id: AppId, corsa: Corsa): Promise<void> 
 }
 
 /**
+ * Le librerie di un motore in più, alla prima accensione (1.4.0).
+ *
+ * Stessa strada di `installaLibrerieServizio` — uv, i vincoli comuni, il
+ * segnaposto con l'impronta — ma senza una scheda da far avanzare: chi chiama
+ * è una richiesta che aspetta, e le righe vanno nel log del motore. La seconda
+ * volta non fa niente.
+ */
+export async function librerieDelMotoreInPiu(servizioId: string, scrivi: (riga: string) => void): Promise<void> {
+  const requisiti = requisitiDelMotore(servizioId);
+  if (!requisiti || librerieDelMotorePronte(servizioId)) return;
+  const uv = await ensureUv({ toolsDir: TOOLS_DIR, onLine: scrivi });
+  scrivi(`Librerie del motore da ${requisiti}`);
+  await installaRequisiti({
+    uv,
+    runtimeDir: RUNTIME_DIR,
+    requisiti,
+    vincoli: VINCOLI_REQUIREMENTS,
+    segnale: AbortSignal.timeout(30 * 60_000),
+    onLine: scrivi,
+    timeoutMs: 30 * 60_000,
+  });
+  segnaLibrerieDelMotore(servizioId);
+}
+
+/**
  * Nodi custom e pesi di questi modelli, quelli che mancano e nell'ordine giusto.
  *
  * I nodi prima: durano secondi, e se il motore non riesce ad averli è meglio
@@ -376,26 +407,42 @@ async function portaDentro(ids: string[], corsa: Corsa): Promise<boolean> {
     scrivi(gia > 0 ? `→ ${entry.label} (riprendo)` : `→ ${entry.label}`);
 
     if (entry.kind === "file") {
+      const destinazione = join(MODELS_DIR, entry.dir, entry.file);
+      // Il peso del catalogo, o quello vero se il catalogo ne ha solo una stima
+      // (vedi `packages/runtime/src/peso.ts`). Chiederlo prima costa un byte, e
+      // se l'indirizzo non risponde lo si dice adesso invece che dopo un'ora.
+      let bytes = entry.bytes;
+      if (entry.pesoDaConfermare) {
+        bytes = await pesoDalServer(entry.url, segnale);
+        scrivi(`  peso confermato dal server: ${(bytes / 1024 ** 3).toFixed(2)} GB`);
+      }
       await scaricaFile({
         url: entry.url,
-        destinazione: join(MODELS_DIR, entry.dir, entry.file),
-        bytes: entry.bytes,
+        destinazione,
+        bytes,
         segnale,
         onAvanzamento: ({ fatti }) => dice(fatti),
         onLine: scrivi,
       });
+      if (entry.pesoDaConfermare) await scriviRicevuta(destinazione, bytes);
     } else if (entry.kind === "hf-repo") {
       await scaricaRepo({
         pythonExe: PYTHON_EXE,
         repo: entry.repo,
         destinazione: join(MODELS_DIR, entry.dir),
-        bytes: entry.bytes,
+        // Con un peso stimato il controllo del 95% direbbe il falso: si fida di
+        // `hf download`, che finisce solo quando ha preso tutti i file.
+        bytes: entry.pesoDaConfermare ? 0 : entry.bytes,
         include: entry.include,
         exclude: entry.exclude,
         segnale,
         onAvanzamento: ({ fatti }) => dice(fatti),
         onLine: scrivi,
       });
+      // La ricevuta: vedi `pesoDaConfermare` in models.ts.
+      if (entry.pesoDaConfermare) {
+        await writeFile(join(MODELS_DIR, entry.dir, entry.verifica ?? "", ".daprod-completo"), new Date().toISOString());
+      }
     }
 
     finiti += entry.bytes;

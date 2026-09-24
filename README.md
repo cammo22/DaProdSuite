@@ -10,7 +10,7 @@ Un programma solo per fare musica, immagini, video, voci e parlare con un avatar
 Ogni app la installi quando ti serve e la disinstalli quando non ti serve più.
 Gira sul tuo computer: niente account, niente chiavi API, codice aperto.
 
-[![versione](https://img.shields.io/badge/versione-1.2.2-7c5cff)](https://github.com/cammo22/DaProdSuite/releases/latest)
+[![versione](https://img.shields.io/badge/versione-1.4.0-7c5cff)](https://github.com/cammo22/DaProdSuite/releases/latest)
 [![licenza](https://img.shields.io/badge/licenza-MIT-5cff9d)](LICENSE)
 [![piattaforma](https://img.shields.io/badge/Windows-x64-3ddbff)](#requisiti)
 [![sito](https://img.shields.io/badge/sito-cammo22.github.io-ffa63d)](https://cammo22.github.io/DaProdSuite/)
@@ -68,14 +68,14 @@ Tutto in locale: nessun account, nessuna API, nessun dato che esce dal computer.
 | | App | Cosa fa | Modello | |
 |---|---|---|---|---|
 | 🟣 | **DaProdVisualizer** | Ascolti un file audio e lo vedi: la grafica si muove col suono | — | ✅ disponibile |
-| 🩷 | **DaProdMusica** | Crei canzoni intere, cantate e suonate, da un testo e uno stile | ACE-Step 1.5 | ✅ disponibile |
-| 🟠 | **DaProdFoto** | Crei immagini scrivendo cosa vuoi vedere, poi ne cambi un pezzo | Anima Turbo · FLUX.2 Klein | ✅ disponibile |
+| 🩷 | **DaProdMusica** | Crei canzoni intere, cantate e suonate, da un testo e uno stile | ACE-Step 1.5 · YuE2 3B | ✅ disponibile |
+| 🟠 | **DaProdFoto** | Crei immagini scrivendo cosa vuoi vedere, ne cambi un pezzo, e ne tiri fuori un modellino 3D | Anima Turbo · Qwen-Image 2.1 · TRELLIS.2 | ✅ disponibile |
 | 🩵 | **DaProdDream** | Trasformi un video mentre scorre: webcam, un file, o lo schermo | SD-Turbo · Anima | ✅ disponibile |
 | 🟥 | **DaProdIoDigitale** | Carichi la foto di un volto e ci parli: ti risponde a voce | LeapTalk | ✅ disponibile |
 | 🟪 | **DaProdCinema** | Video con il suono dentro, da una descrizione o da un'immagine | LTX 2.5 | ✅ disponibile |
 | 🟡 | **DaProdVoce** | Scrivi una frase e te la legge, con la voce che scegli tu | Audio8 TTS 0.1B · 0.6B | ✅ disponibile |
 | 🟢 | **DaProdCompanion** | Un assistente sul desktop che si ricorda delle conversazioni di prima | un modello a scelta via LM Studio | ⏳ in arrivo |
-| 🔵 | **DaProdConnessione** | Chi è collegato, cosa sta girando, e la stessa pagina che vedi dal telefono | — | ✅ disponibile |
+| 🔵 | **DaProdConnessione** | Chi è collegato, cosa sta girando, la sala giochi, e la stessa pagina che vedi dal telefono | Jev-Omni (il giudice, a richiesta) | ✅ disponibile |
 
 Questa non è una lista chiusa: continuiamo a testare modelli nuovi e ad
 aggiungere schede. Quello che vedi qui è dove siamo adesso, non dove ci
@@ -93,12 +93,27 @@ della suite e riempirne i campi — e sta in un paio di giga, che su una scheda
 da 8 è quello che conta. Non è obbligatorio, e senza LLM le app funzionano
 tutte lo stesso.
 
+### La sala giochi e la Lira DaProd
+
+Dentro la suite c'è una sala giochi: la slot delle combinazioni, che dà i pezzi
+per fare prompt, e dalla 1.4.0 anche **Coin Dozer, Claw Machine e Neon
+Partenope**, gli altri giochi DaProd. Si fa una partita ogni tanto, i punti si
+sommano, e quando vuoi staccare **la partita diventa Lire DaProd** — una finta
+valuta con una sua Borsa: la quotazione sale quando tutti spendono e scende
+quando tutti incassano. Il giorno dopo rigiochi, magari meglio, e le lire
+accumulate si spendono nei giochi. Le cose grosse (un jackpot, uno shiny, un
+boss) danno una **carta**: un pezzo che giochi nella slot, già bloccato.
+
+Gli stessi tre giochi sul sito dividono lo stesso portafoglio nel browser.
+
 ## A che punto siamo
 
-**Ultima pubblicata: 1.2.4 — «L'app come se l'aspetta chi la scarica».** Il
-blocco 2 della 1.2.3: niente piu' «Chi sei?» a ogni avvio, niente messaggini
-mentre non guardi l'app, le notifiche in un pannello dal proprio nome, e una
-finestra rimasta su uno schermo spento che non si perde piu'.
+**Ultima pubblicata: 1.4.0 — «Il fiore all'occhiello».** La suite rivestita da
+DaProd (vetro scuro, pioggia verde, bottoni aqua), Qwen-Image 2.1 al posto di
+FLUX per creare e modificare, YuE2 in Musica, il 3D da una foto con TRELLIS.2,
+il dado delle idee senza cliché, la sala d'arcade con la Lira DaProd e il
+giudice Jev-Omni per la fila. Il passaggio a Tauri è pianificato in
+[docs/TAURI.md](docs/TAURI.md).
 
 Prima, la 1.2.1 — «Adesso che si arriva al computer, si guarda cosa c'è dentro»: Col tunnel che regge (1.2.0: il computer si fa trovare dalla rete
 di casa, dal tunnel di Cloudflare o da Tailscale, e il telefono tiene quello che
@@ -227,13 +242,14 @@ non vengono mai riscaricati né cancellati**, nemmeno disinstallando.
 |---|---|---|
 | DaProdVisualizer | — | |
 | DaProdDream | 2,6 GB | +5,6 GB per sognare con Anima |
-| DaProdFoto | 5,6 GB | +6,3 GB FLUX.2 Klein 4B · +12,0 GB il 9B |
-| DaProdMusica | 13,7 GB | +9,3 GB ACE-Step XL · +5,6 GB per le copertine con Anima* |
+| DaProdFoto | 5,6 GB | +~19 GB Qwen-Image 2.1 (Q4, con il turbo a 4 passi) · +~6 GB TRELLIS.2 per il 3D** |
+| DaProdMusica | 13,7 GB | +9,3 GB ACE-Step XL · +~4 GB YuE2 3B · +5,6 GB per le copertine con Anima* |
 | DaProdIoDigitale | 10,4 GB | +6,0 GB modello Pro |
 | DaProdCinema | 23,2 GB | — |
 
 <sub>* zero se hai già DaProdFoto o DaProdDream: i pesi di Anima sono gli stessi,
-condivisi.</sub>
+condivisi. ** i pesi nuovi della 1.4.0 hanno un peso stimato: quello vero lo legge la suite al primo
+scaricamento, e `node scripts/conferma-pesi.mjs` lo riscrive nel catalogo.</sub>
 
 **DaProdCinema è l'unica che costa così tanto**, e non c'è un modo onesto di
 farla costare meno: un modello che genera video *con il suono* è un 22B, e i 23
@@ -277,7 +293,7 @@ collegamento e il suo nome — che è unico: se lo scegli già preso te lo dice
 subito.
 
 **Chiedi con il modello che vuoi.** Nel modulo si sceglie fra i modelli veri
-delle schede — Anima, Anima v2, FLUX.2 Klein, ACE-Step, LTX 2.5 — chiamati
+delle schede — Anima, Anima v2, Qwen-Image 2.1, ACE-Step, YuE2, LTX 2.5 — chiamati
 come si chiamano, non con il loro id. E ci sono **i tuoi soliti**: un modo di
 generare salvato con un nome, che sta sul computer e si ritrova ovunque.
 
@@ -326,8 +342,9 @@ minuti: si genera prima l'artwork, così mentre la musica lavora hai già qualco
 davanti.
 
 **Il modello base non è il più grande.** DaProdFoto parte con Anima (5,6 GB,
-veloce) invece di FLUX.2 Klein (12,4 GB, al limite della VRAM). FLUX resta a un
-clic di distanza per quando la qualità conta.
+veloce). Qwen-Image 2.1 in GGUF Q4 è a un clic di distanza per quando la qualità
+conta, e fa **sia le immagini nuove sia le modifiche** con lo stesso modello: con
+il LoRA turbo ci mette 4 passi invece di 25. FLUX è uscito dalla suite nella 1.4.0.
 
 Il ragionamento completo è in
 [docs/MODELLI-E-STRATEGIA.md](docs/MODELLI-E-STRATEGIA.md).
@@ -346,6 +363,7 @@ Il ragionamento completo è in
 | [VERIFICA-AMBIENTE-UNIFICATO.md](docs/VERIFICA-AMBIENTE-UNIFICATO.md) | La prova che i quattro motori girano su un solo torch |
 | [ACCESSO-REMOTO.md](docs/ACCESSO-REMOTO.md) | QR, gateway, DaProdConnessione, tunnel, app Android |
 | [ROADMAP.md](docs/ROADMAP.md) | Dove si sta andando |
+| [TAURI.md](docs/TAURI.md) | Perché la suite resta Electron per ora, e come si passa a Tauri |
 | [RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md) | Stato del lavoro e prossimo passo, fra una sessione e l'altra |
 
 ## Sviluppo
@@ -404,7 +422,10 @@ La suite non addestra nulla: mette insieme il lavoro di altri e lo rende usabile
 | [ComfyUI](https://github.com/comfyanonymous/ComfyUI) | il motore di inferenza di Musica, Foto e Cinema — GPL-3.0, scaricato a parte |
 | [ACE-Step](https://huggingface.co/ACE-Step) | come si fa una canzone |
 | [LTX-2.5](https://huggingface.co/Lightricks/LTX-2.5) | il video di DaProdCinema, con il suono dentro |
-| [Anima](https://huggingface.co/circlestone-labs/Anima) · [FLUX.2 Klein](https://huggingface.co/unsloth/FLUX.2-klein-9B-GGUF) | le immagini |
+| [Anima](https://huggingface.co/circlestone-labs/Anima) · [Qwen-Image 2.1](https://huggingface.co/Qwen/Qwen-Image-2.1) ([GGUF di Unsloth](https://huggingface.co/unsloth/Qwen-Image-2.1-GGUF)) | le immagini, nuove e modificate |
+| [YuE2](https://huggingface.co/m-a-p/YuE2-3B) | canzoni con la voce, anche a partire da una partitura |
+| [TRELLIS.2](https://huggingface.co/microsoft/TRELLIS.2-4B) | da una foto a un modellino 3D con la sua texture |
+| [Jev-Omni](https://huggingface.co/akhilaaa3/Jev-Omni) | il giudice della sala giochi: dà un parere sulle combinazioni |
 | [LeapTalk](https://huggingface.co/z-rx/leaptalk) · [SoulX-FlashHead](https://huggingface.co/Soul-AILab/SoulX-FlashHead-1_3B) | l'avatar parlante: LeapTalk gira sopra SoulX, che è il suo modello di base |
 | [SD-Turbo](https://huggingface.co/stabilityai/sd-turbo) | la trasformazione in tempo reale |
 | [Whisper](https://github.com/SYSTRAN/faster-whisper) · [Piper](https://github.com/rhasspy/piper) | ascoltano e parlano, in locale |

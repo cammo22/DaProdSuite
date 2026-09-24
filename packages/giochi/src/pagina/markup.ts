@@ -36,6 +36,11 @@ export const MARKUP = `<header>
   </button>
   <div class="chi" id="mio-nome"></div>
   <!-- Il saldo si tocca: passa da lire a euro e torna. Il conto resta in lire. -->
+  <!--
+    La partita (1.4.0, CONCETTI.md § 18): i punti fatti da quando si e'
+    staccato, e dove sta la Lira. Si tocca e si va alla Borsa.
+  -->
+  <button class="partita" id="partita" data-va="borsa" title="La partita e la Borsa della Lira">0 pt</button>
   <button class="saldo" id="saldo" title="Tocca per vedere in euro">L. 0</button>
 </header>
 
@@ -52,6 +57,12 @@ export const MARKUP = `<header>
     <div class="fila-scelte epoche" id="epoche"></div>
 
     <div class="rulli" id="rulli"></div>
+
+    <!--
+      La mano (1.4.0, CONCETTI.md § 18.5): le carte pescate dal PC nei giochi
+      d'arcade. Toccata, una carta va sul suo rullo gia' bloccata.
+    -->
+    <div class="mano" id="mano" hidden></div>
 
     <div class="esito" id="esito"></div>
 
@@ -336,6 +347,8 @@ export const MARKUP = `<header>
 <nav>
   <button class="viva" data-va="slot">Slot</button>
   <button data-va="fortuna">Fortuna</button>
+  <button data-va="sala">Sala</button>
+  <button data-va="borsa">Borsa</button>
   <button data-va="mie">Mie</button>
   <button data-va="pacchetti">Pacchetti</button>
   <button data-va="inventario">Inventario</button>

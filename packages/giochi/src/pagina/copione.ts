@@ -2819,6 +2819,44 @@ export const COPIONE = `
     return h;
   }
 
+  /**
+   * **Il parere del giudice** (1.4.0, CONCETTI.md § 18.7).
+   *
+   * Jev-Omni guarda il prompt, e se c'e' la prima cosa gia' tenuta, e dice
+   * quanto e' probabile che sia slop, normale, buona o da vetrina. Consiglia e
+   * basta: le barre stanno sulla card, il tasto «prendi» resta tuo.
+   */
+  var VERDETTI_DETTI = { slop: "slop", normale: "normale", buona: "buona", vetrina: "da vetrina" };
+  function giudizioHtml(c) {
+    var g = c.giudizio;
+    var h = "<div class=\\"giudizio\\" data-giudizio=\\"" + c.id + "\\">";
+    if (g && g.probabilita) {
+      h += "<div class=\\"conto\\">Il giudice dice: <b>" + sicuro(VERDETTI_DETTI[g.meglio] || g.meglio) + "</b></div>";
+      ["slop", "normale", "buona", "vetrina"].forEach(function (k) {
+        var p = Math.round((g.probabilita[k] || 0) * 100);
+        h += "<div class=\\"barra-giudice v-" + k + "\\"><span>" + VERDETTI_DETTI[k] + "</span>" +
+          "<i style=\\"width:" + p + "%\\"></i><b>" + p + "%</b></div>";
+      });
+    }
+    h += "<div class=\\"riga-tasti\\"><button class=\\"btn piano\\" data-giudica=\\"" + c.id + "\\">" +
+      (g ? "Richiedi al giudice" : "Chiedi al giudice") + "</button></div></div>";
+    return h;
+  }
+
+  function giudica(id, tasto) {
+    tasto.disabled = true;
+    tasto.textContent = "il giudice ci pensa…";
+    chiedi("POST", "/giudica", { id: id }).then(function (g) {
+      var dove = document.querySelector("[data-giudizio=\\"" + id + "\\"]");
+      // Solo il riquadro del giudice: accanto c'e' un bonus scritto a mano.
+      if (dove) dove.outerHTML = giudizioHtml({ id: id, giudizio: g });
+    }).catch(function (e) {
+      tasto.disabled = false;
+      tasto.textContent = "Chiedi al giudice";
+      avviso(e.message, "male");
+    });
+  }
+
   function provala(id, tasto) {
     tasto.disabled = true;
     tasto.textContent = "la mando…";
@@ -2915,6 +2953,7 @@ export const COPIONE = `
               // ha la sua targa perche' si aggiorna da solo quando la
               // generazione e' pronta, senza rifare tutta la card.
               "<div class=\\"prove\\" data-prove=\\"" + c.id + "\\">" + proveHtml(c) + "</div>" +
+              giudizioHtml(c) +
               // Anche gli attacchi hanno la loro targa, per lo stesso motivo:
               // togliere una cosa attaccata non deve cancellare il bonus che
               // si sta scrivendo nella casella qui sotto.
@@ -3610,6 +3649,8 @@ export const COPIONE = `
     }
     var prova = b.getAttribute && b.getAttribute("data-prova");
     if (prova) { provala(prova, b); return; }
+    var daGiudicare = b.getAttribute && b.getAttribute("data-giudica");
+    if (daGiudicare) { giudica(daGiudicare, b); return; }
 
     // Il mucchio della galleria: immagini, brani, video, altro.
     var scegliMucchio = chiudi("[data-mucchio]");

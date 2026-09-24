@@ -1212,3 +1212,22 @@ export interface FornitoreStili {
   togli(chi: string, id: string): boolean;
   condividi(chi: string, id: string, condiviso: boolean): boolean;
 }
+
+/**
+ * Chi sa chiedere un parere al giudice (Jev-Omni): lo passa lo shell.
+ *
+ * ⚠ Nuovo nella 1.4.0. Il gateway non sa niente del modello: passa la domanda
+ * come l'ha montata la sala giochi (`domandaPer`) e riporta le probabilita'.
+ * Il motore si accende solo quando qualcuno lo chiede, e la prima volta ci
+ * mette: la promessa puo' durare minuti.
+ */
+export interface FornitoreGiudice {
+  giudica(domanda: {
+    stato: string;
+    domanda: string;
+    opzioni: string[];
+    /** Un id della libreria, mai un percorso: vedi `FornitoreLibreria`. */
+    libreria?: string;
+    tipo?: string;
+  }): Promise<{ probabilita: Record<string, number> }>;
+}

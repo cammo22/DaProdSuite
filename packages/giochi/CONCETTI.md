@@ -1098,6 +1098,179 @@ di piu'» non e' una classifica, e' un contatore.
   presa dalla rete. Una pagina che chiama fuori e' una pagina che non funziona
   quando la linea e' giu'.
 
+## 18. La partita, la Borsa della Lira e la sala d'arcade (1.4.0)
+
+Detto il 24 settembre 2026, ed e' la cosa piu' grossa cambiata da quando la
+sala esiste:
+
+> «Va rivista anche la slot, vanno aggiunti i giochi delle altre repo e
+> unificato il sistema di lire euro. L'idea e' che il giocatore si fa una
+> partita ogni tanto, e alla fine, quando vuole staccare, in base al punteggio
+> riceve una percentuale di una finta valuta generale che cambia in base
+> all'utilizzo di tutti — una finta criptovaluta — e cosi' il giorno dopo
+> rigioca, magari migliora, e man mano accumula le lire che puo' riusare nei
+> giochi. Nella suite si devono rifare e reinventare i giochi per ricevere le
+> combinazioni.»
+
+### 18.1 La moneta resta una: la Lira
+
+**Unificato vuol dire: una moneta sola in tutti i giochi, la Lira DaProd.** La
+Coin Dozer, la Claw Machine e Neon Partenope nascono ognuna con i suoi soldi —
+lire loro, euro a interruttore — e dentro la suite **non sono soldi**: sono i
+**gettoni del tavolo**, quello con cui si gioca quella partita. I soldi veri
+del gioco sono uno: il saldo del conto, in lire (§ 4).
+
+L'euro resta **un modo di leggere**, al cambio storico di sempre (1 € =
+1.936,27 £), e resta lo stesso in tutti i giochi: il tasto € della Coin Dozer e
+il saldo della sala dicono lo stesso numero. Quello che si muove non e' il
+cambio con l'euro (vedi 18.3).
+
+### 18.2 La partita, e lo stacco
+
+Si gioca **una partita**. Ogni gioco della sala fa punti — la slot coi suoi
+gradi (un ottavo dei punti d'esperienza del giro, § 8: interi, un giro da
+dieci lire ne renderebbe ventisei, e la slot deve consumare lire, § 4), la Coin Dozer con quello
+che cade nella vasca, la Claw con quello che prende, Neon con quello che
+guadagna — e i punti **di tutti i giochi si sommano nella stessa partita**. La
+macchinetta resta com'e': paga in lire, subito (§ 11-bis). Si gira tre volte la
+slot, si fa un giro alla Claw, si torna alla slot: la partita e' una.
+
+Quando uno vuole smettere, **stacca**. Lo stacco trasforma il punteggio in
+lire:
+
+> **lire = punti × quotazione × la tua fetta**
+
+- la **quotazione** e' quanto vale un punto in lire *adesso*: la fa la Borsa
+  (18.3), e cambia;
+- la **fetta** e' la percentuale che ti tocca: **10%** a livello 1, un punto in
+  piu' ogni due livelli, fino a **25%**. Chi gioca da tanto porta a casa di
+  piu' dello stesso punteggio, ed e' l'unico posto dove l'esperienza diventa
+  soldi — indirettamente, e poco.
+
+Dopo lo stacco la partita riparte da zero. **Non staccare non perde niente**:
+la partita aperta resta li' anche domani. Ma la quotazione di domani e' un'altra
+— ed e' li' che nasce il gioco: stacco adesso o aspetto che salga?
+
+⚠ **Il tetto del giorno.** Da stacchi si portano a casa al massimo **3.000
+lire al giorno** a testa (1,55 €): il resto dei punti resta nella partita, per
+domani. Senza tetto la sala diventerebbe una macchinetta che stampa lire, e il
+§ 4 lo dice chiaro: le lire per giocare devono finire, e per averne di piu' la
+strada vera resta inventare combinazioni.
+
+### 18.3 La Borsa: la Lira che si muove con l'uso di tutti
+
+La quotazione — quante lire vale un punto — **non e' scritta da nessuna
+parte: si calcola**, ogni volta, da quello che la gente ha fatto nelle ultime
+ventiquattro ore. E' la «finta criptovaluta»: un prezzo che nessuno decide e
+che tutti muovono.
+
+Tre cose la muovono:
+
+1. **Chi spende e chi incassa.** Ogni lira spesa in un gioco (un giro, una
+   puntata, un gettone d'ingresso, un pacchetto, lo shop) e' una lira
+   **bruciata**. Ogni lira che entra in un conto (uno stacco, una combinazione
+   presa, un regalo di chi comanda, una vincita) e' una lira **coniata**. Se si
+   brucia piu' di quanto si conia la Lira **sale**; se si conia di piu',
+   **scende**. E' la cosa vera di ogni moneta: quando ce n'e' troppa vale meno.
+2. **Quanta gente c'e'.** Piu' persone diverse hanno giocato nelle ultime
+   ventiquattro ore, piu' la sala e' viva e la quotazione tira su un poco. Poco
+   apposta: la folla non deve contare piu' di quello che la folla fa.
+3. **L'onda.** Un'oscillazione lenta, di qualche punto percentuale, uguale per
+   tutti e decisa dall'ora: la sera un po' piu' su, la mattina un po' piu' giu'.
+   Non e' casuale — e' calcolata dall'ora — cosi' due telefoni vedono lo stesso
+   numero, e la prova la puo' fissare.
+
+La quotazione parte da **1 lira a punto** e sta sempre fra **0,25** e **4**: un
+recinto largo abbastanza da far vedere il grafico muoversi, stretto abbastanza
+da non rovinare niente.
+
+⚠ **Il grafico e' vero.** La sala tiene le ultime **168 ore** (una settimana),
+un'ora per riga: quanto si e' coniato, quanto bruciato, chi ha giocato, e la
+quotazione di apertura, chiusura, massima e minima. E' quella la candela che si
+vede nella scheda **Borsa**.
+
+⚠ **Chi comanda che azzera un portafoglio non muove la Borsa** (§ 4): e' una
+correzione, non un'operazione di mercato.
+
+### 18.4 La sala d'arcade: gli altri giochi DaProd, dentro
+
+La scheda **Sala** apre i tre giochi delle altre repo — **Coin Dozer**, **Claw
+Machine**, **Neon Partenope** — dentro la suite, serviti dal PC come la pagina
+(niente Internet: three.js e' in casa).
+
+Entrare costa un **gettone d'ingresso** in lire (100 di serie): e' la lira che
+si brucia per giocare. Dentro, il gioco e' quello di sempre, con i suoi
+gettoni. Quello che si vince nel gioco diventa **punti della partita** — con un
+cambio per gioco, perche' i gettoni della Dozer e le lire di Neon (un clicker,
+dove i numeri esplodono) non si somigliano:
+
+| Gioco | Da cosa | Punti |
+|---|---|---|
+| Coin Dozer | lire cadute nella vasca | una ogni 5 |
+| Claw Machine | lire dei premi presi | una ogni 4 |
+| Neon Partenope | lire guadagnate | 60 × log₁₀ del guadagno, a ondate |
+
+⚠ **Qui il PC non puo' essere il banco fino in fondo**, e va detto. La slot
+gira sul PC (§ 3): i pezzi li pesca lui. I giochi d'arcade invece girano nel
+browser — la fisica della Dozer, la pinza della Claw — e il punteggio lo
+racconta la pagina. Quindi il PC fa quello che puo': **mette un tetto** ai punti
+che un gioco puo' mandare al minuto, e al giorno; e le lire vere passano sempre
+dallo stacco, che ha il suo tetto (18.2). Chi imbroglia imbroglia sui punti, e i
+punti valgono poco.
+
+### 18.5 La mano: i giochi che danno i pezzi per le combinazioni
+
+«Nella suite si devono rifare e reinventare i giochi per ricevere le
+combinazioni.» Quindi **i giochi d'arcade danno carte**.
+
+Quando nel gioco succede una cosa grossa — un jackpot della Dozer, una presa
+buona o uno shiny alla Claw, un boss o un'eruzione a Neon — il gioco lo dice al
+PC, e **il PC pesca una carta**: un pezzo vero dei rulli di DaProdSlot, di un
+grado minimo che dipende dall'evento (uno shiny da' almeno un Arcane,
+un'eruzione almeno un Heroic). La pesca la fa il PC, come per la slot: la
+pagina dice solo «e' successo», e il PC decide se e cosa esce, con un tetto di
+una carta al minuto per gioco.
+
+Le carte finiscono nella **mano**: dodici al massimo, quante le caselle. Nella
+slot, toccando una carta la si **gioca**: va sul suo rullo, gia' bloccata. E' il
+modo di mettere in una combinazione un pezzo raro senza aspettare che esca
+girando — cioe' **i giochi d'arcade servono a fare combinazioni migliori**, e le
+combinazioni migliori sono quelle che pagano davvero (§ 9).
+
+Con la mano piena, la carta nuova non si perde: diventa **punti della partita**,
+quanto vale il suo grado.
+
+### 18.6 Fuori dalla suite: lo stesso portafoglio sul sito
+
+I tre giochi stanno anche sul sito, su GitHub Pages, e li' la suite non c'e'.
+Stanno tutti sullo stesso indirizzo (`cammo22.github.io`), quindi possono
+dividersi **lo stesso portafoglio** nel browser: il modulo `daprod-lira.js`,
+uguale nei tre giochi e nella suite, tiene le lire staccate e le rende
+spendibili negli altri due. Li' la Borsa e' **locale** — l'onda e' la stessa,
+calcolata dall'ora, ma chi brucia e chi conia e' solo chi gioca su quel browser —
+e lo dice.
+
+Dentro la suite, lo stesso modulo si accorge di essere in una cornice della
+sala e parla col PC: conto, partita e Borsa sono quelli veri.
+
+### 18.7 Il giudice: un parere, non una decisione
+
+Chi comanda guarda la fila da solo, e alla trentesima riga non vede piu'
+niente. Dalla 1.4.0 accanto a ogni combinazione in fila c'e' **«chiedi al
+giudice»**: il PC accende Jev-Omni (un classificatore di decisioni, vedi
+`services/giudice`) e gli fa una domanda sola, con quattro risposte possibili —
+**slop**, **normale**, **buona**, **da vetrina**. Torna quanto e' probabile
+ognuna, e sulla card compaiono quattro barre.
+
+- Quattro scatole e non dodici gradi: fra Arcane e Heroic nessuno sa dire la
+  differenza guardando una riga, modello o persona.
+- Se la combinazione ha gia' un allegato tenuto, il giudice guarda anche quello.
+- **Il giudice consiglia, non decide.** Non prende, non butta, non mette prezzi:
+  lo scrive sulla figurina (`giudizio`) e basta. Decide sempre una persona (§ 10).
+- Le domande e dove si scrive la risposta sono funzioni pure (`giudice.ts`); il
+  modello lo conosce solo chi ospita. Senza giudice la rotta dice 501 e la fila
+  funziona come prima.
+
 ## 17. Quello che ancora non e' deciso
 
 - ⚠ **Il costo del giro, adesso che il tetto e' tre euro.** Dall'11 settembre

@@ -63,6 +63,7 @@ function scheda(immagine) {
     <div class="sub">${escapeHtml(descrivi(immagine))}</div>
     <div class="acts">
       <button data-ritocca="${escapeHtml(immagine.id)}">ritocca</button>
+      <button data-modellino="${escapeHtml(immagine.id)}" title="Fanne un modellino 3D">3D</button>
       <button data-salva="${escapeHtml(immagine.id)}">salva</button>
       <button data-mostra="${escapeHtml(immagine.id)}">cartella</button>
       <button class="del" data-elimina="${escapeHtml(immagine.id)}">elimina</button>
@@ -93,6 +94,14 @@ function collega() {
     b.onclick = () => {
       const immagine = trova(b.dataset.ritocca);
       if (immagine) annuncia("ritocca", immagine.url);
+    };
+  });
+
+  // Dalla 1.4.0: la stessa immagine, portata nella scheda 3D.
+  el.galleria.querySelectorAll("[data-modellino]").forEach((b) => {
+    b.onclick = () => {
+      const immagine = trova(b.dataset.modellino);
+      if (immagine) annuncia("modellino", immagine.url);
     };
   });
 

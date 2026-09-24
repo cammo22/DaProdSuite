@@ -20,6 +20,7 @@ import { collegaComandiCoda, messaggioDalMotore, riallinea } from "./coda.js";
 import { collegaCrea } from "./crea.js";
 import { collegaBonsaiFoto } from "./bonsai.js";
 import { collegaRitocco } from "./ritocco.js";
+import { aperturaTred, collegaTred } from "./tred.js";
 import { collegaScelta } from "./scelta-modello.js";
 import { aggiornaGalleria, collegaGalleria } from "./galleria.js";
 // I quadratini di cosa occupa la memoria: uguali in tutte le app, quindi
@@ -36,17 +37,19 @@ document.querySelectorAll("nav button").forEach((b) => {
   b.onclick = () => mostraScheda(b.dataset.scheda);
 });
 suApertura("galleria", () => void aggiornaGalleria());
+suApertura("tred", () => void aperturaTred());
 
 collegaLente();
 collegaCrea();
 collegaBonsaiFoto();
 collegaRitocco();
+collegaTred();
 collegaTraduzione();
 // Per ultimo fra questi: la scelta del modello sposta i cursori sul suo punto
 // di lavoro e decide se serve la traduzione, quindi vuole trovare già collegate
 // le etichette dei cursori e la casella della lingua.
 // Adesso è asincrona: prima di disegnare il menu chiede alla suite se questo
-// computer ha una scheda video, perché FLUX.2 Klein senza non si può offrire.
+// computer ha una scheda video, perché Qwen-Image 2.1 senza non si può offrire.
 // Non si aspetta — il resto della pagina non dipende dalla risposta.
 void collegaScelta();
 collegaGalleria();

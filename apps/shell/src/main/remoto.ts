@@ -27,6 +27,7 @@ import {
   type Esecutore,
   type FornitoreAi,
   type FornitoreChiacchierata,
+  type FornitoreGiudice,
   type FornitoreLibreria,
   type FornitoreMacchina,
   type FornitorePannello,
@@ -88,6 +89,9 @@ import {
   togliStile,
 } from "./stili";
 import { turno } from "./turno";
+import { avviaInPiu } from "./servizi";
+import { isModelPresent } from "./models";
+import { librerieDelMotoreInPiu } from "./scaricamenti";
 import { anteprimaDi, puoAvereAnteprima } from "./anteprime";
 import {
   accettaIlPiano,
@@ -1088,6 +1092,37 @@ function nomeScheda(app: string): string {
  * quella persona non c'è più — l'hanno scollegata — il suo stile resta in
  * vetrina senza un nome sopra, e va bene così: lo stile è ancora buono.
  */
+/**
+ * Il giudice della sala giochi: Jev-Omni, dietro al motore «giudice».
+ *
+ * ⚠ Nuovo nella 1.4.0. Si accende **solo alla prima domanda**, come motore in
+ * più di DaProdConnessione: sono GB di pesi, e chi non guarda la fila non deve
+ * pagarli. Se i pesi non ci sono lo si dice subito, invece di far partire un
+ * motore che morirebbe cercandoli.
+ */
+const fornitoreGiudice: FornitoreGiudice = {
+  async giudica(d) {
+    if (!isModelPresent("jev-omni")) {
+      throw new Error("Il giudice non e' installato: scarica Jev-Omni dall'hub, sotto DaProdConnessione.");
+    }
+    // bitsandbytes, la prima volta: il giudice non ha una scheda da installare.
+    const log = createLogger("giudice");
+    await librerieDelMotoreInPiu("giudice", (riga) => log.write(riga + "\n", false));
+    const base = await avviaInPiu("connessione", "giudice");
+    const file = d.libreria ? libreria.trova(d.libreria)?.percorso : undefined;
+    const risposta = await fetch(base + "/api/giudica", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ stato: d.stato, domanda: d.domanda, opzioni: d.opzioni, file, tipo: file ? d.tipo : undefined }),
+      // La prima volta carica il modello: qualche minuto e' normale.
+      signal: AbortSignal.timeout(10 * 60_000),
+    });
+    const dati = (await risposta.json().catch(() => ({}))) as { probabilita?: Record<string, number>; detail?: string };
+    if (!risposta.ok || !dati.probabilita) throw new Error(dati.detail ?? "Il giudice non ha risposto.");
+    return { probabilita: dati.probabilita };
+  },
+};
+
 const fornitoreStili: FornitoreStili = {
   miei: (chi, genere) =>
     stiliDi(chi, undefined, genere === "prompt" || genere === "stile" ? genere : undefined),
@@ -1479,6 +1514,7 @@ async function accendi(): Promise<StatoAccesso> {
     macchina: fornitoreMacchina,
     chiacchierata: fornitoreChiacchierata,
     stili: fornitoreStili,
+    giudice: fornitoreGiudice,
     giochi: bancoDeiGiochi(),
     rete: annunciatore,
   });

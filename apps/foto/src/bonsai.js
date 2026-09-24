@@ -13,7 +13,7 @@
  * - **Proponi** parte da zero, per quando non si sa da dove cominciare.
  *
  * **Sempre in inglese.** Anima capisce solo quello (per questo esiste
- * l'interruttore della traduzione), e FLUX.2 l'inglese lo capisce comunque:
+ * l'interruttore della traduzione), e Qwen-Image l'inglese lo capisce comunque:
  * facendolo scrivere già in inglese, la traduzione non ha più niente da fare e
  * si toglie di mezzo un passaggio che poteva sbagliare.
  *
@@ -27,6 +27,9 @@ import { el, mostraErrore } from "./dom.js";
 // della pagina. Fino al 19 agosto 2026 ce n'erano due copie identiche, una
 // qui e una nell'altra app.
 import { collegaSelettoreLlm, modelloScelto } from "/comune/selettore-llm.js";
+// Il dado delle idee e il filtro delle parole vuote: nuovi nella 1.4.0, comuni
+// a Foto e Musica. Vedi `packages/ui/src/idee.js`.
+import { ANTISLOP, ideaImmagine, pulisci } from "/comune/idee.js";
 
 const suite = window.daprodSuite;
 
@@ -50,11 +53,12 @@ COM'È FATTA UNA BUONA DESCRIZIONE:
 - Poi l'inquadratura (close-up, wide shot, from above) e l'obiettivo.
 - Poi i materiali e le superfici: bagnato, arrugginito, di velluto, di vetro.
 
+SCRITTE:
+- Solo se te le chiedono, e sempre fra virgolette doppie: "TORNO SUBITO". Il modello scrive quello che sta fra virgolette.
+
 VIETATO:
-- Scritte, lettere, numeri, marchi o loghi dentro l'immagine.
 - Nomi di persone vere o di marche.
-- Parole vuote come "beautiful", "amazing", "masterpiece", "4k", "8k".
-- Cambiare il soggetto che ti viene dato: lo allarghi, non lo sostituisci.`;
+- Cambiare il soggetto che ti viene dato: lo allarghi, non lo sostituisci.` + ANTISLOP;
 
 /**
  * La forma della risposta, imposta a LM Studio.
@@ -137,7 +141,9 @@ async function chiedi(bottone, utente, attesa) {
     if (!descrizione) {
       return mostraErrore("Il modello ha risposto in un modo che non riesco a leggere.");
     }
-    el.prompt.value = descrizione;
+    // Il divieto nelle istruzioni non basta: un modello piccolo le parole vuote
+    // le scrive lo stesso. Quello che arriva si ripulisce prima di mostrarlo.
+    el.prompt.value = pulisci(descrizione);
     // La traduzione non ha più niente da fare: quello che c'è nella casella è
     // già inglese, e lasciare in giro la riga di prima confonderebbe.
     if (el.tradotto) el.tradotto.hidden = true;
@@ -173,6 +179,16 @@ export function collegaBonsaiFoto() {
       "ci penso…",
     );
   };
+
+  // Il dado non chiede niente a nessuno: funziona anche senza LM Studio.
+  if (el.bonsaiDado) {
+    el.bonsaiDado.onclick = () => {
+      const { prompt } = ideaImmagine();
+      el.prompt.value = prompt;
+      if (el.tradotto) el.tradotto.hidden = true;
+      el.prompt.dispatchEvent(new Event("input"));
+    };
+  }
 
   // Se LM Studio non c'è i bottoni restano, ma la riga dice perché: toglierli
   // vorrebbe dire lasciare l'utente a chiedersi dove sia finita quella cosa.

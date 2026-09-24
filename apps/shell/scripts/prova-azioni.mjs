@@ -25,9 +25,12 @@
  *   far partire, chi ha chiesto aspetta un lavoro che nessuno farà mai.
  */
 
-import { createRequire } from "node:module";
+import { createRequire, register } from "node:module";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+
+// I `grafi.js` delle schede importano da `/comune/`, come le pagine: vedi il file.
+register("./comune-come-la-pagina.mjs", import.meta.url);
 
 const require = createRequire(import.meta.url);
 const radice = join(import.meta.dirname, "..", "..", "..");

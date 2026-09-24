@@ -24,6 +24,10 @@
 ">
 <title>DaProdFoto</title>
 <link rel="stylesheet" href="stile.css">
+<!-- Il vestito DaProd (1.4.0), dopo il foglio della scheda: ne cambia i
+     colori e i pezzi, non le misure. Vedi packages/ui/src/daprod.css. -->
+<link rel="stylesheet" href="/comune/daprod.css">
+<script src="/comune/daprod-sfondo.js" data-effetti="leggeri" defer></script>
 </head>
 <body>
 
@@ -32,6 +36,7 @@
   <nav>
     <button data-scheda="crea" class="on">Crea</button>
     <button data-scheda="ritocco">Ritocco</button>
+    <button data-scheda="tred">3D</button>
     <button data-scheda="galleria">Galleria <span class="pill" id="navGal">0</span></button>
   </nav>
   <div class="status">
@@ -48,7 +53,7 @@
   <select id="modello"></select>
   <span class="hint" id="rigaModello"></span>
   <!-- Una sola casella per tutta l'app, e compare solo se il modello scelto
-       l'inglese lo pretende: FLUX.2 legge l'italiano da sé. -->
+       l'inglese lo pretende: Qwen-Image legge l'italiano da sé. -->
   <label class="riga-traduci" id="rigaTraduci" hidden>
     <input type="checkbox" id="traduci"> Traduci in inglese prima di generare
   </label>
@@ -76,6 +81,9 @@
       <div class="acts">
         <button id="bonsaiAllarga">Allarga quello che ho scritto</button>
         <button id="bonsaiIdea">Proponi tu una scena</button>
+        <!-- Nuovo nella 1.4.0: un'idea concreta pescata dai mazzi, senza modello
+             di lingua e senza parole vuote. Vedi packages/ui/src/idee.js. -->
+        <button id="bonsaiDado" title="Un soggetto che fa una cosa, un posto vero, una luce fisica, un difetto e un dettaglio fuori posto">&#127922; Tira il dado, niente cliché</button>
       </div>
       <div class="hint">Due parole diventano una descrizione che il modello capisce:
         soggetto, luce, inquadratura, materiali. Scrive <b>il modello scelto qui sopra</b>,
@@ -209,6 +217,44 @@
  </div>
 </section>
 
+<!-- =============================== 3D ================================ -->
+<!-- Nuova nella 1.4.0: dalla foto al modellino, con TRELLIS.2. Il perché e il
+     giro stanno in src/tred.js; il grafo in packages/ui/src/trellis.js. -->
+<section class="tab" id="scheda-tred">
+ <div id="tredAvviso" class="manca" hidden></div>
+ <div class="two">
+  <div class="panel">
+    <h2>La foto da far diventare 3D
+      <span class="right"><button class="mini" id="tredApri">apri un'immagine</button></span>
+    </h2>
+    <div class="recenti" id="tredRecenti"></div>
+    <div class="tred-foto">
+      <div class="vuota" id="tredVuota">
+        Apri una foto, o scegline una fra le ultime qui sopra.<br>
+        Viene meglio con <b>un soggetto solo</b>, intero, su uno sfondo semplice:
+        un oggetto, un pupazzo, un personaggio.
+      </div>
+      <img id="tredAnteprima" alt="" hidden>
+    </div>
+    <label>Quanto fine</label>
+    <div class="chips" id="tredQualita"></div>
+    <div class="hint" id="tredRigaQualita"></div>
+    <label class="switch"><input type="checkbox" id="tredSfondo" checked> Stacca il soggetto dallo sfondo</label>
+    <button class="btn wide" id="tredVai" disabled>Fai il modellino</button>
+    <div id="tredErrore" class="err" hidden></div>
+    <div class="hint">Esce un file <b>.glb</b> con la sua texture: si apre in Blender, si stampa
+      in 3D, e si mette nei giochi della sala. La texture finisce anche in galleria.</div>
+  </div>
+  <div>
+    <div class="panel sticky">
+      <h2>Il modellino <span class="right hint">trascina per girarlo</span></h2>
+      <canvas id="tredTela" class="tred-tela"></canvas>
+      <div id="tredElenco" class="tred-elenco"></div>
+    </div>
+  </div>
+ </div>
+</section>
+
 <!-- ============================= GALLERIA ============================= -->
 <section class="tab" id="scheda-galleria">
   <div class="panel">
@@ -220,6 +266,7 @@
 </section>
 
 <input type="file" id="sceltaFile" accept="image/*" style="display:none">
+<input type="file" id="tredFile" accept="image/*" style="display:none">
 
 <!-- L'immagine a schermo intero. Si chiude cliccando ovunque o con Esc. -->
 <div class="lente" id="lente" hidden>

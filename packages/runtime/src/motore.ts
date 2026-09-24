@@ -21,16 +21,26 @@ import { ensureUv, installaRequisiti } from "./uv";
 import { scaricaEScompatta } from "./zip";
 
 /**
- * Versione provata: 0.33.1, quella su cui girano MiniMax Music 3 e Anima.
+ * Versione provata: **0.37.2**, dalla 1.4.0 della suite.
  *
- * Il salto dalla 0.33.0 è una riga sola del loro `model_prefetch.py`, e quella
- * riga è la nostra: senza, catturare un CUDA graph su un modulo che non ha
- * `_v_block` fa morire la generazione con `'RVQDepthDecoder' object has no
- * attribute '_v_block'` — l'errore che faceva cadere i brani a metà. Capitava
- * solo a noi perché avviamo il motore con `--disable-dynamic-vram`, che è
- * esattamente il caso che si erano persi.
+ * ⚠ **Perché il salto, e perché adesso.** Qwen-Image 2.1 (uscito il 20
+ * settembre 2026), YuE2 e TRELLIS.2 girano su nodi che stanno dentro ComfyUI e
+ * non in un pacco a parte — `TextEncodeQwenImage21`, `YuE2GenerateMusic`, i
+ * `Trellis2*` e i nodi delle mesh — e sono arrivati fra la 0.35 e la 0.37. Con la
+ * 0.33.1 i grafi nuovi morivano alla validazione con «node type not found».
+ *
+ * Provata il 24 settembre 2026 su un motore acceso sul processore, che i grafi
+ * li valida nodo per nodo prima di eseguirli: i grafi di Qwen-Image 2.1
+ * (immagine e modifica, con e senza turbo), di YuE2 e di TRELLIS.2 passano, e
+ * il nostro `daprod_ponte` si carica e risponde a `/health`. La generazione vera
+ * vuole la scheda, e quella si prova sul computer di casa.
+ *
+ * Quello che valeva per la 0.33.1 vale ancora: la riga di `model_prefetch.py`
+ * che teneva in piedi `--disable-dynamic-vram` (l'errore `'RVQDepthDecoder'
+ * object has no attribute '_v_block'`) nella 0.37 c'è, riscritta da loro con
+ * `_v_block_faulted`.
  */
-export const COMFY_VERSION = "0.33.1";
+export const COMFY_VERSION = "0.37.2";
 
 const COMFY_URL = `https://github.com/Comfy-Org/ComfyUI/archive/refs/tags/v${COMFY_VERSION}.zip`;
 

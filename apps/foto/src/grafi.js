@@ -1,22 +1,18 @@
 /**
  * I modelli fra cui si sceglie, e i grafi che si mandano al motore.
  *
- * Tre famiglie, con caratteri diversi. **Anima** è un turbo: CFG 1,0, 5,6 GB, ed
+ * Due famiglie, con caratteri diversi. **Anima** è un turbo: CFG 1,0, 5,6 GB, ed
  * è già sul disco perché Musica la usa per le copertine — si genera subito,
- * senza scaricare niente. **Anima v2** è la stessa cresciuta: 2,9 miliardi di
- * parametri invece di 2, addestrata su un milione e settecentomila immagini in
- * più, e **divide con lei text encoder e VAE** — quindi costa 3,1 GB e basta.
- * **FLUX.2 Klein** è il modello grosso: 11,2 GB fra pesi e text encoder, capisce
- * descrizioni lunghe e articolate. Costa l'attesa dello scaricamento e qualche
- * decina di secondi in più a immagine.
+ * senza scaricare niente. **Anima v2** è la stessa cresciuta, e divide con lei
+ * text encoder e VAE. **Qwen-Image 2.1** è il modello grosso, dalla 1.4.0 al
+ * posto dei due FLUX.2 Klein: capisce descrizioni lunghe, scrive le parole
+ * dentro l'immagine, e soprattutto **modifica a parole** — la foto da cambiare la
+ * guarda, perché legge con un modello che vede.
  *
- * I due non si somigliano nemmeno nei nodi. Anima gira sui nodi di serie del
- * motore; FLUX.2 in GGUF vuole `UnetLoaderGGUF` e `CLIPLoaderGGUF`, cioè il nodo
- * custom ComfyUI-GGUF, e un campionatore montato a pezzi (`CFGGuider` +
- * `SamplerCustomAdvanced` + `Flux2Scheduler`) invece del `KSampler` unico. Per
- * questo ogni modello si porta i propri grafi invece di riempire di "se" un
- * grafo solo: quando ne entrerà un terzo si aggiunge una voce qui sotto e
- * l'interfaccia non cambia di una riga.
+ * Non si somigliano nei nodi, e per questo ogni modello si porta i propri grafi
+ * invece di riempire di "se" un grafo solo. Quelli di Qwen-Image non stanno
+ * nemmeno qui: li usano anche Musica e Dream, e stanno in
+ * `packages/ui/src/qwen-image.js`, serviti a tutte sotto `/comune/`.
  *
  * I nomi dei file dei pesi non sono scelti qui: vengono da `manifest/models.json`,
  * che è l'unico posto dove sta scritto cosa scarica la suite e come si chiama.
@@ -25,6 +21,7 @@
  */
 
 import { ESTETICHE, NEGATIVO } from "./dati/estetiche.js";
+import { PASSI, QWEN21, grafoQwenImmagine, grafoQwenModifica } from "/comune/qwen-image.js";
 
 /* ------------------------------------------------------------------- Anima */
 
@@ -88,83 +85,71 @@ function ritoccoAnima(m, p) {
   };
 }
 
-/* ------------------------------------------------------------ FLUX.2 Klein */
+/* ---------------------------------------------------------- Qwen-Image 2.1 */
 
-/**
- * I nodi comuni della strada FLUX.2, come nel grafo ufficiale del modello.
+/*
+ * ⚠ **Qui c'erano i grafi di FLUX.2 Klein, 4B e 9B. Tolti il 24 settembre 2026.**
  *
- * Klein è distillato: lavora a CFG 1, e a CFG 1 il negativo non viene guardato.
- * Invece di mandargli un testo che verrebbe ignorato si passa un conditioning
- * azzerato (`ConditioningZeroOut`), che è quello che il grafo ufficiale fa e
- * costa un encoding in meno.
+ * > «Per le foto eliminiamo totalmente flux e usiamo Qwen-Image-2.1.»
+ *
+ * Il perché tecnico che vale la pena tenere: FLUX.2 in GGUF voleva un
+ * campionatore montato a pezzi (`CFGGuider` + `SamplerCustomAdvanced` +
+ * `Flux2Scheduler`), due text encoder diversi per le due taglie — scambiarli
+ * dava `mat1 and mat2 shapes cannot be multiplied` — e il ritocco solo col
+ * pennello. Qwen-Image 2.1 torna al `KSampler` unico, ha un lettore solo, e sa
+ * anche la modifica a parole. I grafi di FLUX stanno nella storia di git.
  */
-function comuniFlux(m, p) {
-  return {
-    "1": { class_type: "UnetLoaderGGUF", inputs: { unet_name: m.dit } },
-    "2": { class_type: "CLIPLoaderGGUF", inputs: { clip_name: m.txt, type: "flux2" } },
-    "3": { class_type: "CLIPTextEncode", inputs: { clip: ["2", 0], text: p.prompt } },
-    "4": { class_type: "ConditioningZeroOut", inputs: { conditioning: ["3", 0] } },
-    "5": {
-      class_type: "CFGGuider",
-      inputs: { model: ["1", 0], positive: ["3", 0], negative: ["4", 0], cfg: p.cfg },
-    },
-    "6": { class_type: "RandomNoise", inputs: { noise_seed: p.seed } },
-    "7": { class_type: "KSamplerSelect", inputs: { sampler_name: "euler" } },
-    // Lo scheduler di FLUX.2 vuole anche le misure: il numero di passi utili
-    // dipende da quanti pixel ci sono da fare.
-    "8": {
-      class_type: "Flux2Scheduler",
-      inputs: { steps: p.step, width: p.larghezza, height: p.altezza },
-    },
-    "9": { class_type: "VAELoader", inputs: { vae_name: m.vae } },
-    "10": { class_type: "VAEDecode", inputs: { samples: ["12", 0], vae: ["9", 0] } },
-  };
+
+/** Dal formato di questa scheda a quello del modulo comune. */
+function immagineQwen(m, p) {
+  return grafoQwenImmagine({
+    prompt: p.prompt,
+    seed: p.seed,
+    larghezza: p.larghezza,
+    altezza: p.altezza,
+    passi: p.step,
+    turbo: m.turbo,
+  });
 }
 
-function immagineFlux(m, p) {
-  return {
-    ...comuniFlux(m, p),
-    "11": {
-      class_type: "EmptyFlux2LatentImage",
-      inputs: { width: p.larghezza, height: p.altezza, batch_size: 1 },
-    },
-    "12": {
-      class_type: "SamplerCustomAdvanced",
-      inputs: {
-        noise: ["6", 0], guider: ["5", 0], sampler: ["7", 0],
-        sigmas: ["8", 0], latent_image: ["11", 0],
-      },
-    },
-    "13": { class_type: "SaveImage", inputs: { images: ["10", 0], filename_prefix: "immagini/daprod" } },
-  };
+function ritoccoQwen(m, p) {
+  return grafoQwenModifica({
+    prompt: p.prompt,
+    seed: p.seed,
+    immagine: p.immagine,
+    maschera: p.maschera,
+    zona: p.zona,
+    larghezza: p.larghezza,
+    altezza: p.altezza,
+    passi: p.step,
+    turbo: m.turbo,
+    riferimenti: p.riferimenti,
+  });
 }
 
 /**
- * Il ritocco con FLUX.2.
- *
- * Stessa idea di quello di Anima — maschera sul latente e denoise parziale — ma
- * qui il denoise non è un numero da passare al campionatore: si taglia lo
- * schedule con `SplitSigmasDenoise` e si prende la seconda metà (`low_sigmas`),
- * che è il modo in cui i campionatori a pezzi fanno la stessa cosa.
+ * Quello che le due strade di Qwen-Image hanno in comune: tutto tranne i
+ * passi e la LoRA.
  */
-function ritoccoFlux(m, p) {
-  return {
-    ...comuniFlux(m, p),
-    "14": { class_type: "LoadImage", inputs: { image: p.immagine } },
-    "15": { class_type: "LoadImageMask", inputs: { image: p.maschera, channel: "red" } },
-    "16": { class_type: "VAEEncode", inputs: { pixels: ["14", 0], vae: ["9", 0] } },
-    "17": { class_type: "SetLatentNoiseMask", inputs: { samples: ["16", 0], mask: ["15", 0] } },
-    "18": { class_type: "SplitSigmasDenoise", inputs: { sigmas: ["8", 0], denoise: p.denoise } },
-    "12": {
-      class_type: "SamplerCustomAdvanced",
-      inputs: {
-        noise: ["6", 0], guider: ["5", 0], sampler: ["7", 0],
-        sigmas: ["18", 1], latent_image: ["17", 0],
-      },
-    },
-    "13": { class_type: "SaveImage", inputs: { images: ["10", 0], filename_prefix: "immagini/ritocco" } },
-  };
-}
+const QWEN_COMUNE = {
+  dit: QWEN21.dit,
+  txt: QWEN21.txt,
+  vae: QWEN21.vae,
+  // Legge con Qwen3-VL, che l'italiano lo capisce: tradurre prima non serve, e
+  // toglie di mezzo un passaggio che può solo andare storto.
+  traduce: false,
+  // Distillato: il CFG resta a 1, e a CFG 1 il negativo non si guarda.
+  cfg: { min: 1, max: 1, valore: 1 },
+  usaNegativo: false,
+  // Modifica guardando la foto, non ripartendo dal suo rumore: «quanto
+  // cambiare» per lui non vuol dire niente, e il cursore si spegne.
+  usaDenoise: false,
+  // Sa cambiare una foto intera a parole, senza pennello.
+  aParole: true,
+  immagine: immagineQwen,
+  ritocco: ritoccoQwen,
+  serveScheda: true,
+};
 
 /* ------------------------------------------------------------- LLaDA-Image */
 
@@ -191,35 +176,12 @@ function ritoccoFlux(m, p) {
 /* ------------------------------------------------------------- il catalogo */
 
 /**
- * Quello che i due FLUX.2 hanno in comune.
- *
- * **Non il text encoder**, che è la cosa che sembrava ovvia e non lo era: il 4B
- * vuole Qwen3-4B e il 9B Qwen3-8B. Dandogli quello sbagliato il motore muore con
- * `mat1 and mat2 shapes cannot be multiplied (512x12288 and 7680x3072)` — 7680 è
- * 2560×3 (Qwen3-4B), 12288 è 4096×3 (Qwen3-8B). In comune restano il VAE e tutto
- * il resto del grafo.
- */
-const FLUX_COMUNE = {
-  vae: "flux2-vae.safetensors",
-  // FLUX.2 legge il prompt con un Qwen3, che l'italiano lo capisce: tradurre
-  // prima non serve, e toglie di mezzo un passaggio che può solo andare storto.
-  traduce: false,
-  step: { min: 8, max: 50, valore: 20 },
-  // Klein è distillato: il CFG resta a 1 e non c'è niente da guadagnare ad
-  // alzarlo, quindi il cursore non si muove e il negativo non serve.
-  cfg: { min: 1, max: 1, valore: 1 },
-  usaNegativo: false,
-  immagine: immagineFlux,
-  ritocco: ritoccoFlux,
-};
-
-/**
  * `serveScheda: true` vuol dire **niente scheda video, niente modello**.
  *
- * Non è la stessa cosa di "va più piano": FLUX.2 Klein è un modello da 5,9 o
- * 11,2 GB che sulla CPU non finisce un'immagine in un tempo che abbia senso, e
- * offrirlo lo stesso significa lasciar scaricare undici GB per poi far
- * aspettare qualcuno davanti a una barra che non si muove. Su una macchina
+ * Non è la stessa cosa di "va più piano": Qwen-Image 2.1 sono quasi undici GB
+ * fra pesi e lettore, che sulla CPU non finiscono un'immagine in un tempo che
+ * abbia senso, e offrirlo lo stesso significa lasciar scaricare undici GB per
+ * poi far aspettare qualcuno davanti a una barra che non si muove. Su una macchina
  * senza NVIDIA il menu lo mostra spento, con scritto perché.
  */
 export const MODELLI = {
@@ -300,15 +262,37 @@ export const MODELLI = {
     // Come Anima: sulla CPU ci mette molto, ma arriva in fondo.
     serveScheda: false,
   },
-  "flux2-4b": {
-    ...FLUX_COMUNE,
-    id: "flux2-4b",
-    nome: "FLUX.2 Klein 4B",
-    riga: "Il FLUX leggero: 5,9 GB in tutto, e su 8 GB di VRAM sta comodo.",
-    dit: "flux-2-klein-4b-Q5_K_M.gguf",
-    txt: "Qwen3-4B-Q5_K_M.gguf",
-    catalogo: ["flux2-klein-4b-q5km", "flux2-4b-text-encoder", "flux2-vae"],
-    serveScheda: true,
+  /**
+   * Qwen-Image 2.1, di serie: 25 passi, come nel grafo ufficiale.
+   *
+   * ⚠ È il predefinito dalla 1.4.0, al posto di FLUX.2 Klein 9B, e per la
+   * stessa ragione per cui lo era lui: è quello che capisce meglio le
+   * descrizioni lunghe. In più scrive le parole giuste dentro l'immagine e
+   * sa modificare a parole.
+   */
+  qwen21: {
+    ...QWEN_COMUNE,
+    id: "qwen21",
+    nome: "Qwen-Image 2.1",
+    riga: "Il più bravo: descrizioni lunghe, scritte, e modifiche a parole. 25 passi.",
+    catalogo: QWEN21.catalogo,
+    step: PASSI.standard,
+    turbo: false,
+  },
+  /**
+   * Lo stesso modello con la LoRA turbo: 4 passi invece di 25.
+   *
+   * Si può salire fino a 8 per un po' di dettaglio. Le Lightning a 8 passi di
+   * lightx2v per la 2.1 non ci sono ancora (vedi `manifest/models.json`).
+   */
+  "qwen21-turbo": {
+    ...QWEN_COMUNE,
+    id: "qwen21-turbo",
+    nome: "Qwen-Image 2.1 Turbo",
+    riga: "Lo stesso, in 4 passi: sei volte più veloce, 324 MB in più.",
+    catalogo: QWEN21.catalogoTurbo,
+    step: PASSI.turbo,
+    turbo: true,
   },
   /*
    * ⚠ **Qui c'era LLaDA-Image, ed e' stato tolto il 9 settembre 2026.**
@@ -329,16 +313,6 @@ export const MODELLI = {
    * Se un giorno ComfyUI gestisce meglio quel nodo, si rimette: i grafi stanno
    * nella storia di git, e il perche' e' tutto qui sopra.
    */
-  "flux2-9b": {
-    ...FLUX_COMUNE,
-    id: "flux2-9b",
-    nome: "FLUX.2 Klein 9B",
-    riga: "Il più bravo con le descrizioni lunghe. 11,2 GB, e più lento.",
-    dit: "flux-2-klein-9b-Q4_K_S.gguf",
-    txt: "Qwen3-8B-Q5_K_M.gguf",
-    catalogo: ["flux2-klein-q4ks", "flux2-text-encoder", "flux2-vae"],
-    serveScheda: true,
-  },
 };
 
 /**
@@ -351,8 +325,9 @@ export const MODELLI = {
  * `apps/shell/scripts/prova-azioni.mjs` controlla che i due siano lo stesso.
  *
  * Fino alla 1.2.2 non erano lo stesso: di là partiva Klein 4B, di qua Anima.
+ * Dalla 1.4.0 tutti e due dicono Qwen-Image 2.1.
  */
-export const PREDEFINITO = "flux2-9b";
+export const PREDEFINITO = "qwen21";
 
 /** Il modello con quell'id, o quello di serie se l'id non esiste più. */
 export function modello(id) {

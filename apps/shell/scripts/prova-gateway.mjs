@@ -808,14 +808,14 @@ console.log("\n— il modello si sceglie da fuori —");
   const immagine = r.dati.find((a) => a.id === "genera.immagine");
   const modello = immagine.campi.find((c) => c.nome === "modello");
   dice("c'è il campo del modello", !!modello, "");
-  dice("con le scelte vere", (modello?.scelte || []).includes("flux2-9b"));
-  dice("e come si chiamano per una persona", !!modello?.etichette?.["flux2-9b"]);
+  dice("con le scelte vere", (modello?.scelte || []).includes("qwen21"));
+  dice("e come si chiamano per una persona", !!modello?.etichette?.["qwen21"]);
 }
 {
   const r = await chiama("/azioni/genera.immagine", {
-    metodo: "POST", token: tokenOspite, corpo: { prompt: "un faro", modello: "flux2-9b" },
+    metodo: "POST", token: tokenOspite, corpo: { prompt: "un faro", modello: "qwen21" },
   });
-  dice("il modello scelto viaggia con la richiesta", r.dati?.richiesta?.opzioni?.modello === "flux2-9b", `→ ${r.testo}`);
+  dice("il modello scelto viaggia con la richiesta", r.dati?.richiesta?.opzioni?.modello === "qwen21", `→ ${r.testo}`);
 }
 {
   const r = await chiama("/azioni/genera.immagine", {

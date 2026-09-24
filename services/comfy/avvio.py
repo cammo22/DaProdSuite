@@ -45,6 +45,9 @@ CARTELLE_MODELLI = [
     "upscale_models",
     "embeddings",
     "audio_encoders",
+    # Dalla 1.4.0, per il 3D: BiRefNet stacca il soggetto dallo sfondo prima che
+    # TRELLIS.2 lo guardi. ComfyUI 0.37 ha una cartella apposta.
+    "background_removal",
 ]
 
 
@@ -146,7 +149,7 @@ def flag_dispositivo() -> list[str]:
     """`--cpu` quando non c'è CUDA, niente quando c'è.
 
     Su CPU tutto funziona ma **va molto più piano**: un'immagine con Anima passa
-    da secondi a minuti, e i modelli grossi (MiniMax Music 3, FLUX.2 Klein) sono
+    da secondi a minuti, e i modelli grossi (Qwen-Image 2.1, YuE2, TRELLIS.2) sono
     fuori portata per pazienza prima ancora che per memoria. È comunque meglio
     di un motore che non si accende.
     """

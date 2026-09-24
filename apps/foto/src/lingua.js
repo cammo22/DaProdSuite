@@ -3,7 +3,7 @@
  *
  * **Non a tutti serve.** Anima è addestrata su didascalie inglesi: una
  * descrizione in italiano non dà errore, dà un'immagine che non c'entra niente —
- * il difetto che si vedeva come "genera quello che vuole". FLUX.2 invece legge
+ * il difetto che si vedeva come "genera quello che vuole". Qwen-Image 2.1 invece legge
  * il prompt con un Qwen3, che l'italiano lo capisce, e tradurre prima è solo un
  * passaggio in più che può andare storto. Lo dice il modello, con `traduce`.
  *

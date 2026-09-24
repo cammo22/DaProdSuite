@@ -30,6 +30,9 @@ files:
   - "!node_modules/@daprod/giochi"
   - node_modules/@daprod/giochi/dist/**
   - node_modules/@daprod/giochi/package.json
+  # ⚠ Dalla 1.4.0 i giochi d'arcade della sala (Coin Dozer, Claw, Neon, e
+  # three.js in casa): li serve il gateway sotto /giochi/sala/.
+  - node_modules/@daprod/giochi/sala/**
 
 # Manifest, requirements e servizi Python non entrano nell'asar: devono restare
 # file veri su disco perché uv e il processo Python li leggano ed eseguano.

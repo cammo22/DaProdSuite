@@ -1,0 +1,2665 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#07060d">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="description" content="DaProd Coin Dozer 2 — tre piani di spintori, monete che si fondono nei tagli più grandi, jackpot DaProd. Gioca da telefono o desktop.">
+<meta name="author" content="DaProd">
+<title>DaProd · Coin Dozer</title>
+<style>
+  :root {
+    --oro: #ffd54a; --oro2: #ffab00; --mag: #ff3df2; --cia: #35e8ff; --verde: #5dffb4;
+    --vetro: rgba(14,10,26,.72); --vetro2: rgba(22,16,40,.86);
+    --bordo: rgba(255,213,74,.28); --r: 18px;
+    --num: "Orbitron", "Arial Black", system-ui, sans-serif;
+    --txt: "Rajdhani", -apple-system, "Segoe UI", system-ui, sans-serif;
+    --sal: env(safe-area-inset-bottom, 0px); --sat: env(safe-area-inset-top, 0px);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #07060d; color: #fff;
+    font-family: var(--txt); user-select: none; -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent; overscroll-behavior: none; }
+  button { font-family: inherit; touch-action: manipulation; -webkit-tap-highlight-color: transparent; cursor: pointer; }
+  /* larghezza e altezza esplicite: senza, il canvas si mostra grande quanto i suoi pixel (2-3 volte lo schermo su telefono) */
+  canvas#gioco { display: block; position: fixed; left: 0; top: 0; width: 100%; height: 100%; cursor: crosshair; touch-action: none; }
+  #vignetta { position: fixed; inset: 0; pointer-events: none; z-index: 4;
+    background: radial-gradient(ellipse at 50% 42%, rgba(0,0,0,0) 48%, rgba(0,0,0,.66) 100%); }
+
+  /* ---------- logo DaProd ---------- */
+  .logoDP { display: block; filter: drop-shadow(0 0 10px rgba(255,190,40,.55)); }
+  .logoDP .neon { animation: neon 3.4s ease-in-out infinite; }
+  @keyframes neon { 0%,100% { opacity: 1; } 46% { opacity: 1; } 48% { opacity: .55; } 50% { opacity: 1; } 52% { opacity: .75; } 54% { opacity: 1; } }
+
+  /* ---------- HUD ---------- */
+  #hud { position: fixed; left: 0; right: 0; top: 0; z-index: 10; pointer-events: none;
+    padding: calc(12px + var(--sat)) 16px 0; display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+  .carta { background: var(--vetro); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    border: 1px solid var(--bordo); border-radius: var(--r);
+    box-shadow: 0 12px 34px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.10); }
+  #marchio { padding: 8px 16px 9px 12px; display: flex; flex-direction: column; gap: 2px; }
+  #marchio svg { width: 172px; height: auto; }
+  #marchio .sub { font: 800 9px/1 var(--num); letter-spacing: 3.2px; color: #c7b8ff; padding-left: 50px; margin-top: -3px; }
+  #marchio .sub b { color: var(--cia); font-weight: 800; }
+  #destra { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+  #saldoBox { padding: 9px 18px 10px; min-width: 190px; text-align: right; position: relative; overflow: hidden; }
+  #saldoBox::after { content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(100deg, transparent 30%, rgba(255,230,150,.22) 50%, transparent 70%);
+    transform: translateX(-120%); }
+  #saldoBox.brilla::after { animation: brilla .8s ease-out; }
+  @keyframes brilla { to { transform: translateX(120%); } }
+  .etich { font: 800 9.5px/1 var(--num); letter-spacing: 2.6px; color: #cdbd8e; }
+  #saldo { font: 900 27px/1.05 var(--num); color: var(--oro); letter-spacing: .5px; margin-top: 4px;
+    text-shadow: 0 0 16px rgba(255,180,0,.55); white-space: nowrap; }
+  #saldo.giu { color: #ff8a8a; text-shadow: 0 0 14px rgba(255,80,80,.5); }
+  #mini { display: flex; gap: 8px; }
+  .mini { padding: 7px 12px 8px; min-width: 88px; text-align: right; }
+  .mini b { display: block; font: 800 14px/1.1 var(--num); color: #fff; margin-top: 3px; white-space: nowrap; }
+  .mini b.verde { color: var(--verde); text-shadow: 0 0 10px rgba(90,255,180,.45); }
+  #recordBox b { display: flex; align-items: center; gap: 6px; justify-content: flex-end; }
+  #recordBox img { width: 20px; height: 20px; }
+  #audioBtn { pointer-events: auto; width: 40px; height: 40px; border-radius: 50%; font-size: 17px; color: var(--oro);
+    display: grid; place-items: center; }
+  #audioBtn.off { color: #756d8a; }
+  #fps { position: fixed; left: 16px; top: calc(96px + var(--sat)); z-index: 10; font: 700 11px var(--num); color: #9ff; display: none; }
+
+  /* ---------- avvisi, ondate, catene: su computer stanno ai bordi, lontano dal tavolo ---------- */
+  #avvisi { position: fixed; top: calc(104px + var(--sat)); left: 16px; z-index: 20;
+    display: flex; flex-direction: column; align-items: flex-start; gap: 6px; pointer-events: none; width: min(300px, 26vw); }
+  .avviso { background: var(--vetro2); border: 1px solid var(--bordo); border-radius: 12px; padding: 7px 13px;
+    font: 800 10.5px/1.3 var(--num); letter-spacing: .9px; color: #fff3c4; text-align: left;
+    box-shadow: 0 10px 30px rgba(0,0,0,.5); animation: avvIn .35s cubic-bezier(.2,1.4,.4,1), avvOut .5s ease-in 2.4s forwards; }
+  .avviso.mag { border-color: rgba(255,61,242,.5); color: #ffd1fb; }
+  .avviso.cia { border-color: rgba(53,232,255,.5); color: #d4fbff; }
+  .avviso.rosso { border-color: rgba(255,90,90,.55); color: #ffd0d0; }
+  @keyframes avvIn { from { transform: translateX(-14px) scale(.9); opacity: 0; } }
+  @keyframes avvOut { to { transform: translateX(-10px); opacity: 0; } }
+  #fluttuanti { position: fixed; inset: 0; pointer-events: none; z-index: 9; overflow: hidden; }
+  .fluttua { position: absolute; transform: translate(-50%,-50%); font: 900 13px/1 var(--num); color: var(--oro);
+    text-shadow: 0 0 10px rgba(255,170,0,.8), 0 2px 0 rgba(0,0,0,.6); white-space: nowrap;
+    animation: sale 1.25s cubic-bezier(.2,.8,.3,1) forwards; }
+  .fluttua.fus { color: #fff; font-size: 15px; text-shadow: 0 0 14px var(--mag), 0 0 4px #fff; }
+  .fluttua.gr { font-size: 18px; }
+  .fluttua.casa { color: #ff7a7a; font-size: 11px; text-shadow: 0 0 10px rgba(255,60,60,.7); }
+  .fluttua.chip { color: #e7c6ff; text-shadow: 0 0 12px #b04dff; }
+  .fluttua.pila { color: #e9f6ff; font-size: 11px; text-shadow: 0 0 8px #35e8ff; }
+  @keyframes sale { 0% { opacity: 0; transform: translate(-50%,-30%) scale(.6); } 15% { opacity: 1; transform: translate(-50%,-60%) scale(1.12); }
+    100% { opacity: 0; transform: translate(-50%,-190%) scale(1); } }
+  #ondata, #catena { position: fixed; right: 16px; z-index: 11; pointer-events: none; text-align: right;
+    transform: translateX(20px) scale(.8); transform-origin: right center; opacity: 0; transition: opacity .25s, transform .25s cubic-bezier(.2,1.5,.4,1); }
+  #ondata { top: calc(240px + var(--sat)); font: 900 24px/1 var(--num); color: var(--oro);
+    text-shadow: 0 0 22px rgba(255,170,0,.85), 0 3px 0 rgba(0,0,0,.6); }
+  #ondata small { display: block; font: 800 9px/1 var(--num); letter-spacing: 4px; color: #ffe9a6; margin-bottom: 4px; }
+  #catena { top: calc(150px + var(--sat)); font: 900 28px/1 var(--num); color: #fff; max-width: 30vw;
+    text-shadow: 0 0 18px var(--mag), 0 0 42px var(--mag), 0 3px 0 rgba(0,0,0,.5); }
+  #catena small { display: block; font: 800 10px/1.2 var(--num); letter-spacing: 2.5px; color: #ffc9f8; margin-top: 6px; }
+  #ondata.su, #catena.su { opacity: 1; transform: none; }
+
+  /* ---------- evento DaProd: banner e bande da cinema ---------- */
+  #evento { position: fixed; left: 50%; top: calc(84px + var(--sat)); z-index: 31; pointer-events: none; text-align: center;
+    transform: translateX(-50%) scale(.5); opacity: 0; transition: opacity .3s, transform .45s cubic-bezier(.2,1.6,.4,1);
+    background: var(--vetro2); border: 1px solid rgba(255,61,242,.55); border-radius: 18px; padding: 10px 22px 12px;
+    box-shadow: 0 16px 50px rgba(0,0,0,.6), 0 0 40px rgba(255,61,242,.35); }
+  #evento.su { opacity: 1; transform: translateX(-50%) scale(1); }
+  #evento small { display: block; font: 800 9px/1 var(--num); letter-spacing: 3px; color: #ffc9f8; margin-bottom: 6px; }
+  #evento span { display: block; font: 900 26px/1.05 var(--num); color: #fff; text-shadow: 0 0 16px var(--mag); white-space: nowrap; }
+  #evento em { display: block; font: 700 14px/1.2 var(--txt); font-style: normal; color: #e4dcf5; margin-top: 5px; }
+  #cinema i { position: fixed; left: 0; right: 0; height: 9vh; background: #000; z-index: 8; pointer-events: none;
+    transform: translateY(-100%); transition: transform .6s ease; }
+  #cinema i:last-child { bottom: 0; transform: translateY(100%); }
+  body.cine #cinema i { transform: none; }
+  body.cine #barra, body.cine #hint { opacity: .15; pointer-events: none; }
+  body.cine #barra * { pointer-events: none; }
+  #barra { transition: opacity .5s; }
+
+  /* scritte spente: restano solo gli avvisi importanti (saldo, sblocchi, eventi) */
+  body.senzaScritte #catena, body.senzaScritte #ondata, body.senzaScritte #fluttuanti, body.senzaScritte #hint,
+  body.senzaScritte .avviso:not(.imp) { display: none; }
+  .piccolo { pointer-events: auto; width: 34px; height: 34px; border-radius: 50%; font-size: 15px; color: var(--oro);
+    display: grid; place-items: center; padding: 0; align-self: center; }
+  .piccolo.off { filter: grayscale(1) brightness(.6); }
+  .piccolo[hidden] { display: none; }
+  #valutaBtn { font: 900 15px/1 var(--num); color: var(--verde); }
+
+  /* ---------- barra in basso ---------- */
+  #barra { position: fixed; left: 0; right: 0; bottom: 0; z-index: 12; pointer-events: none;
+    padding: 0 16px calc(14px + var(--sal)); display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
+  .tondo { pointer-events: auto; position: relative; width: 74px; height: 74px; border-radius: 50%;
+    border: 1px solid var(--bordo); background: radial-gradient(circle at 50% 30%, #2d2446, #120e1f 70%);
+    color: var(--oro); display: grid; place-items: center; text-align: center;
+    box-shadow: 0 12px 30px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.14), 0 0 0 4px rgba(0,0,0,.25);
+    transition: transform .12s, filter .2s; }
+  .tondo:hover { transform: translateY(-2px); filter: brightness(1.15); }
+  .tondo:active { transform: scale(.95); }
+  .tondo .ico { font-size: 25px; line-height: 1; }
+  .tondo .lab { font: 800 8.5px/1 var(--num); letter-spacing: 1.3px; margin-top: 3px; }
+  .tondo .anello { position: absolute; inset: -4px; border-radius: 50%; pointer-events: none;
+    background: conic-gradient(var(--cia) calc(var(--p, 1) * 360deg), rgba(255,255,255,.08) 0);
+    -webkit-mask: radial-gradient(circle, transparent 62%, #000 63%); mask: radial-gradient(circle, transparent 62%, #000 63%); }
+  /* abilità: su computer una griglia in basso a sinistra, su telefono una riga sopra le monete */
+  #abilita { pointer-events: auto; display: grid; grid-template-columns: repeat(3, var(--abw)); gap: 8px; --abw: 64px; flex: 0 0 auto; }
+  .ab { position: relative; width: var(--abw); height: var(--abw); border-radius: 50%; border: 1px solid rgba(53,232,255,.35); padding: 0;
+    background: radial-gradient(circle at 50% 30%, #2d2446, #120e1f 70%); color: var(--cia); display: grid; place-items: center; text-align: center;
+    box-shadow: 0 10px 24px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.14); transition: transform .12s, filter .2s, box-shadow .2s; }
+  .ab:hover { transform: translateY(-2px); filter: brightness(1.15); }
+  .ab:active { transform: scale(.94); }
+  .ab .ico { display: block; font-size: calc(var(--abw) * .34); line-height: 1; }
+  .ab .lab { font: 800 7.5px/1 var(--num); letter-spacing: .5px; margin-top: 3px; white-space: nowrap; max-width: calc(var(--abw) - 6px); overflow: hidden; }
+  .ab .anello { position: absolute; inset: -3px; border-radius: 50%; pointer-events: none;
+    background: conic-gradient(var(--cia) calc(var(--p, 1) * 360deg), rgba(255,255,255,.08) 0);
+    -webkit-mask: radial-gradient(circle, transparent 64%, #000 65%); mask: radial-gradient(circle, transparent 64%, #000 65%); }
+  .ab.attesa { filter: grayscale(.6) brightness(.8); color: #9aa; }
+  .ab.attiva { color: #fff; box-shadow: 0 0 0 2px var(--mag), 0 0 22px var(--mag); animation: pulsaAb .8s ease-in-out infinite; }
+  @keyframes pulsaAb { 50% { box-shadow: 0 0 0 4px var(--mag), 0 0 34px var(--mag); } }
+  .ab.off { opacity: .55; }
+  .ab.bloccata { color: #8f86a8; border-color: rgba(255,255,255,.12); }
+  .ab.bloccata .ico { filter: grayscale(1) brightness(.55); }
+  .ab.bloccata .anello { display: none; }
+  .ab.bloccata::after { content: "🔒"; position: absolute; top: 2px; right: 2px; font-size: calc(var(--abw) * .2); }
+  .ab.bloccata.puoi { color: var(--verde); border-color: rgba(93,255,180,.6); box-shadow: 0 0 16px rgba(93,255,180,.35); }
+  .ab.no { animation: no .35s; }
+  .riga .info b .tasto { font-size: 9px; color: #1a1000; background: var(--oro); border-radius: 4px; padding: 1px 5px; margin-left: 4px; }
+  #negozioBtn { color: var(--oro); }
+  #negozioBtn.nuovo::before { content: ""; position: absolute; top: 4px; right: 6px; width: 12px; height: 12px; border-radius: 50%;
+    background: var(--mag); box-shadow: 0 0 10px var(--mag); animation: pulsa 1.2s infinite; }
+  @keyframes pulsa { 50% { transform: scale(1.35); } }
+
+  #selettore { pointer-events: auto; display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 0; flex: 0 1 auto; }
+  #selettore .titolo { font: 800 9px/1 var(--num); letter-spacing: 3px; color: #cdbd8e; }
+  #selettore .titolo b { color: var(--oro); }
+  #monete { display: flex; gap: 6px; padding: 8px 10px; border-radius: 999px; overflow-x: auto; max-width: 100%;
+    scrollbar-width: none; }
+  #monete::-webkit-scrollbar { display: none; }
+  .mon { position: relative; flex: 0 0 auto; width: 62px; padding: 4px 0 5px; border-radius: 16px; border: 1px solid transparent;
+    background: transparent; color: #fff; display: flex; flex-direction: column; align-items: center; gap: 3px;
+    transition: transform .15s, background .2s, border-color .2s; }
+  .mon img { width: 44px; height: 44px; border-radius: 50%; box-shadow: 0 5px 12px rgba(0,0,0,.6); transition: transform .2s; }
+  .mon span { font: 800 9.5px/1 var(--num); letter-spacing: .4px; color: #e9e2ff; white-space: nowrap; }
+  .mon:hover img { transform: translateY(-3px) rotate(-8deg); }
+  .mon.sel { background: linear-gradient(180deg, rgba(255,213,74,.20), rgba(255,213,74,.04)); border-color: rgba(255,213,74,.6); }
+  .mon.sel img { box-shadow: 0 0 0 2px var(--oro), 0 0 20px rgba(255,200,60,.8); animation: gira 3s linear infinite; }
+  @keyframes gira { 0%,100% { transform: rotate(0); } 50% { transform: rotate(10deg) translateY(-2px); } }
+  .mon.bloccata img { filter: grayscale(1) brightness(.35); box-shadow: none; }
+  .mon.bloccata::after { content: "🔒"; position: absolute; top: 15px; left: 50%; transform: translateX(-50%); font-size: 16px; }
+  .mon.bloccata span { color: #8f86a8; }
+  .mon.bloccata.puoi span { color: var(--verde); }
+  .mon.no { animation: no .35s; }
+  @keyframes no { 20%,60% { transform: translateX(-5px); } 40%,80% { transform: translateX(5px); } }
+
+  #hint { position: fixed; left: 16px; top: 46%; z-index: 11;
+    padding: 9px 16px; border-radius: 14px; font: 700 13px/1.3 var(--txt); color: #e4dcf5; pointer-events: none;
+    text-align: left; max-width: min(280px, 24vw); transition: opacity .6s, transform .6s; }
+  #hint b { color: var(--oro); }
+  #hint.via { opacity: 0; transform: translateX(-12px); }
+
+  /* ---------- schermata iniziale ---------- */
+  #intro { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; padding: 18px;
+    background: radial-gradient(ellipse at 50% 30%, rgba(40,14,60,.55), rgba(5,4,10,.88) 70%);
+    backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); transition: opacity .6s, visibility .6s; overflow-y: auto; }
+  #intro.via { opacity: 0; visibility: hidden; pointer-events: none; }
+  #intro .box { width: min(560px, 100%); text-align: center; display: flex; flex-direction: column; align-items: center; gap: 14px; }
+  #intro .logoGrande svg { width: min(420px, 86vw); height: auto; }
+  #intro .titolo2 { font: 900 clamp(15px, 3.6vw, 22px)/1 var(--num); letter-spacing: clamp(5px, 1.6vw, 11px); color: var(--cia);
+    text-shadow: 0 0 14px rgba(53,232,255,.8); margin-top: -6px; }
+  #intro .passi { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 100%; }
+  #intro .passo { padding: 11px 8px; font: 600 13px/1.25 var(--txt); color: #ddd4f0; }
+  #intro .passo i { display: block; font-style: normal; font-size: 22px; margin-bottom: 5px; }
+  #intro .passo b { color: var(--oro); }
+  #intro .scegli { width: 100%; padding: 14px 12px 12px; }
+  #intro .scegli .etich { color: #fff3c4; font-size: 11px; }
+  #sceltaMonete { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 12px; }
+  #sceltaMonete .mon { width: 84px; }
+  #sceltaMonete .mon img { width: 62px; height: 62px; }
+  #sceltaMonete .mon span { font-size: 11px; }
+  #giocaBtn { pointer-events: auto; font: 900 18px/1 var(--num); letter-spacing: 4px; color: #1a1000;
+    padding: 17px 44px; border-radius: 999px; border: 0;
+    background: linear-gradient(180deg, #fff3b8, var(--oro) 45%, var(--oro2));
+    box-shadow: 0 0 0 3px rgba(255,213,74,.25), 0 12px 36px rgba(255,170,0,.45), inset 0 -3px 0 rgba(0,0,0,.2);
+    animation: invito 1.8s ease-in-out infinite; }
+  #giocaBtn:active { transform: scale(.96); }
+  @keyframes invito { 50% { box-shadow: 0 0 0 9px rgba(255,213,74,.10), 0 16px 44px rgba(255,170,0,.65), inset 0 -3px 0 rgba(0,0,0,.2); } }
+  #intro .piede { font: 700 10px/1 var(--num); letter-spacing: 2.5px; color: #7c7299; }
+
+  /* ---------- JACKPOT ---------- */
+  #jackpot { position: fixed; inset: 0; z-index: 30; display: grid; place-items: center; pointer-events: none;
+    opacity: 0; transition: opacity .3s; }
+  #jackpot.su { opacity: 1; }
+  #jackpot .scritta { text-align: center; font: 900 clamp(38px, 11vw, 96px)/1 var(--num); letter-spacing: 4px;
+    background: linear-gradient(180deg, #fff, #ffe27a 40%, #ff9d00 70%, #ff3df2); -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 0 22px rgba(255,160,0,.9)) drop-shadow(0 0 60px rgba(255,61,242,.6));
+    animation: jp 0.6s cubic-bezier(.2,1.6,.4,1); }
+  #jackpot .scritta small { display: block; font-size: .28em; letter-spacing: 8px; margin-top: 10px; }
+  @keyframes jp { from { transform: scale(.2) rotate(-8deg); } }
+
+  /* ---------- NEGOZIO ---------- */
+  #negozio { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 14px;
+    background: rgba(4,3,9,.6); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+    transition: opacity .25s, visibility .25s; }
+  #negozio.chiuso { opacity: 0; visibility: hidden; pointer-events: none; }
+  #negozio .pannello { width: min(640px, 100%); max-height: min(86vh, 760px); display: flex; flex-direction: column;
+    background: linear-gradient(180deg, rgba(30,22,52,.97), rgba(12,9,22,.98)); border: 1px solid var(--bordo);
+    border-radius: 24px; overflow: hidden; box-shadow: 0 30px 80px rgba(0,0,0,.7), 0 0 60px rgba(255,61,242,.12);
+    transform: translateY(0); transition: transform .3s cubic-bezier(.2,1.2,.4,1); }
+  #negozio.chiuso .pannello { transform: translateY(30px) scale(.97); }
+  #negozio .testa { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 16px 10px; }
+  #negozio .testa svg { width: 132px; height: auto; }
+  #negozio .testa .s { text-align: right; }
+  #negozio .testa .s b { font: 900 18px/1.1 var(--num); color: var(--oro); }
+  #chiudi { width: 38px; height: 38px; border-radius: 50%; border: 1px solid rgba(255,255,255,.15); background: rgba(255,255,255,.06);
+    color: #fff; font-size: 16px; flex: 0 0 auto; }
+  .schede { display: flex; gap: 6px; padding: 0 12px 10px; overflow-x: auto; scrollbar-width: none; }
+  .schede button { flex: 1 0 auto; border: 1px solid rgba(255,255,255,.1); background: rgba(255,255,255,.04); color: #bdb3d6;
+    font: 800 10.5px/1 var(--num); letter-spacing: 1.2px; padding: 11px 12px; border-radius: 12px; white-space: nowrap; }
+  .schede button.on { color: #1a1000; background: linear-gradient(180deg, #fff0a8, var(--oro)); border-color: transparent; }
+  #contenuto { overflow-y: auto; padding: 4px 12px 16px; display: flex; flex-direction: column; gap: 8px; }
+  .riga { display: flex; align-items: center; gap: 12px; padding: 11px 12px; border-radius: 16px;
+    background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.07); }
+  .riga.ok { border-color: rgba(93,255,180,.35); background: linear-gradient(90deg, rgba(93,255,180,.08), rgba(255,255,255,.03)); }
+  .riga .ico { width: 46px; height: 46px; flex: 0 0 auto; display: grid; place-items: center; font-size: 26px;
+    border-radius: 14px; background: rgba(0,0,0,.35); border: 1px solid rgba(255,255,255,.08); }
+  .riga .ico img { width: 40px; height: 40px; }
+  .riga .info { flex: 1; min-width: 0; }
+  .riga .info b { display: block; font: 800 12.5px/1.2 var(--num); letter-spacing: .6px; color: #fff; }
+  .riga .info small { display: block; font: 600 13px/1.25 var(--txt); color: #b6acd0; margin-top: 3px; }
+  .riga .info small em { font-style: normal; color: var(--verde); }
+  .pips { display: flex; gap: 3px; margin-top: 6px; }
+  .pips i { width: 14px; height: 5px; border-radius: 3px; background: rgba(255,255,255,.12); }
+  .pips i.on { background: linear-gradient(90deg, var(--oro2), var(--oro)); box-shadow: 0 0 6px rgba(255,190,40,.6); }
+  .compra { flex: 0 0 auto; min-width: 104px; padding: 11px 12px; border-radius: 12px; border: 0;
+    font: 900 11.5px/1 var(--num); letter-spacing: .4px; color: #1a1000;
+    background: linear-gradient(180deg, #fff0a8, var(--oro) 50%, var(--oro2)); box-shadow: 0 6px 16px rgba(255,170,0,.25); }
+  .compra:disabled { background: rgba(255,255,255,.07); color: #7f7798; box-shadow: none; cursor: not-allowed; }
+  .compra.usa { background: linear-gradient(180deg, #b9fff0, #3fe0b4); }
+  .compra.inuso { background: transparent; color: var(--verde); border: 1px solid rgba(93,255,180,.45); }
+  .sezione { font: 800 10px/1 var(--num); letter-spacing: 3px; color: #cdbd8e; margin: 10px 4px 2px; }
+  .fusioni { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 8px; }
+  .fus { padding: 8px 6px; border-radius: 14px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.07); text-align: center; }
+  .fus .r { display: flex; align-items: center; justify-content: center; gap: 2px; font: 800 11px var(--num); color: #9d93b8; }
+  .fus img { width: 26px; height: 26px; }
+  .fus img.gr { width: 34px; height: 34px; }
+  .fus span { display: block; font: 800 9.5px/1.2 var(--num); color: #fff; margin-top: 4px; }
+  .fus.ignota img { filter: brightness(0) drop-shadow(0 0 1px rgba(255,255,255,.4)); }
+  .fus.ignota span { color: #6f6789; }
+  .opz { display: flex; gap: 6px; flex-wrap: wrap; }
+  .opz button { border: 1px solid rgba(255,255,255,.14); background: rgba(255,255,255,.05); color: #cfc7de;
+    font: 800 10.5px/1 var(--num); letter-spacing: 1px; padding: 11px 13px; border-radius: 12px; }
+  .opz button.on { color: #062a1e; background: linear-gradient(180deg, #b9fff0, #3fe0b4); border-color: transparent; }
+  .opz button.rosso { color: #ffd0d0; border-color: rgba(255,90,90,.5); background: rgba(255,60,60,.1); }
+  .stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+  .stats div { padding: 10px 12px; border-radius: 14px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.07); }
+  .stats b { display: block; font: 900 16px/1.2 var(--num); color: var(--oro); margin-top: 4px; }
+
+  #erroreGioco { position: fixed; left: 50%; top: 14px; transform: translateX(-50%); z-index: 99; background: rgba(120,10,20,.95);
+    border: 1px solid #ff6b81; border-radius: 14px; padding: 12px 18px; font: 700 13px/1.5 var(--txt); color: #fff; max-width: 92vw; text-align: center; }
+
+  /* ---------- telefono ---------- */
+  @media (max-width: 720px) {
+    #hud { padding: calc(8px + var(--sat)) 10px 0; }
+    #marchio { padding: 6px 10px 7px 8px; }
+    #marchio svg { width: 118px; }
+    #marchio .sub { font-size: 7px; letter-spacing: 1.6px; padding-left: 30px; white-space: nowrap; }
+    #saldoBox { min-width: 0; padding: 7px 12px 8px; }
+    #saldo { font-size: 19px; }
+    #destra { gap: 6px; }
+    #mini { gap: 5px; }
+    .mini { min-width: 0; padding: 4px 8px 5px; }
+    .mini .etich { font-size: 7px; letter-spacing: 1.5px; }
+    .mini b { font-size: 10.5px; }
+    #vintoBox { display: none; }
+    #recordBox img { width: 15px; height: 15px; }
+    #audioBtn { width: 34px; height: 34px; font-size: 14px; }
+    #barra { flex-wrap: wrap; padding: 0 8px calc(8px + var(--sal)); gap: 6px; justify-content: space-between; }
+    #selettore { order: -1; flex: 1 0 100%; }
+    #selettore .titolo { display: none; }
+    #monete { padding: 5px 6px; gap: 2px; }
+    .mon { width: 50px; }
+    .mon img { width: 36px; height: 36px; }
+    .mon span { font-size: 8px; }
+    .mon.bloccata::after { top: 11px; font-size: 13px; }
+    .tondo { width: 50px; height: 50px; position: fixed; bottom: calc(94px + var(--sal)); }
+    #negozioBtn { right: 8px; }
+    #abilita { position: fixed; left: 8px; bottom: calc(94px + var(--sal)); display: flex; gap: 5px;
+      --abw: min(50px, calc((100vw - 16px - 50px - 6 * 5px) / 6)); }
+    .ab .lab { font-size: 6px; letter-spacing: .2px; }
+    #avvisi { left: 50%; transform: translateX(-50%); top: calc(84px + var(--sat)); width: 94vw; align-items: center; gap: 4px; }
+    .avviso { font-size: 9px; letter-spacing: .5px; padding: 5px 10px; text-align: center; border-radius: 999px; }
+    #avvisi .avviso:nth-last-child(n+3) { display: none; }
+    @keyframes avvIn { from { transform: translateY(-10px) scale(.9); opacity: 0; } }
+    @keyframes avvOut { to { transform: translateY(-8px); opacity: 0; } }
+    #catena, #ondata { right: auto; left: 50%; text-align: center; transform-origin: center; max-width: 92vw;
+      transform: translateX(-50%) scale(.7); }
+    #catena.su, #ondata.su { transform: translateX(-50%); }
+    #catena { top: calc(128px + var(--sat)); font-size: 17px; }
+    #catena small { font-size: 8px; letter-spacing: 1.5px; margin-top: 3px; }
+    #ondata { top: auto; bottom: calc(154px + var(--sal)); font-size: 16px; }
+    #ondata small { font-size: 7px; letter-spacing: 2px; }
+    #evento { top: calc(112px + var(--sat)); padding: 8px 14px 9px; }
+    #evento span { font-size: 18px; }
+    #evento em { font-size: 12px; }
+    .fluttua { font-size: 11px; } .fluttua.fus { font-size: 12px; } .fluttua.gr { font-size: 14px; }
+    .piccolo { width: 28px; height: 28px; font-size: 12px; }
+    #jackpot .scritta { font-size: 34px; }
+    .tondo .ico { font-size: 20px; }
+    .tondo .lab { font-size: 7px; }
+    #hint { left: 8px; right: 8px; margin: 0 auto; width: fit-content; top: auto; bottom: calc(156px + var(--sal)); font-size: 11px; padding: 6px 12px; max-width: none; text-align: center; }
+    #hint.via { transform: translateY(12px); }
+    #intro .passi { grid-template-columns: 1fr; }
+    #intro .passo { display: flex; align-items: center; gap: 10px; text-align: left; padding: 8px 12px; }
+    #intro .passo i { margin: 0; }
+    .compra { min-width: 88px; font-size: 10.5px; }
+    .riga { gap: 9px; padding: 9px; }
+    .riga .ico { width: 40px; height: 40px; font-size: 22px; }
+  }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <linearGradient id="dpOro" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fffbe0"/><stop offset=".45" stop-color="#ffd54a"/><stop offset="1" stop-color="#b87a14"/>
+    </linearGradient>
+    <linearGradient id="dpMag" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ff7bf6"/><stop offset="1" stop-color="#8a2cff"/>
+    </linearGradient>
+    <symbol id="logoDaProd" viewBox="0 0 260 64">
+      <g class="neon">
+        <circle cx="32" cy="32" r="27" fill="#150e24" stroke="url(#dpOro)" stroke-width="4"/>
+        <circle cx="32" cy="32" r="20.5" fill="none" stroke="url(#dpMag)" stroke-width="2" stroke-dasharray="3 3.4"/>
+        <path d="M24 19h9.5c8 0 13 5 13 13s-5 13-13 13H24z M30 25v14h3.2c4.3 0 7-2.6 7-7s-2.7-7-7-7z" fill="url(#dpOro)" fill-rule="evenodd"/>
+        <text x="70" y="44" font-family="Orbitron, 'Arial Black', sans-serif" font-weight="900" font-size="36" letter-spacing="1" fill="#fff6dd">Da<tspan fill="url(#dpOro)">Prod</tspan></text>
+      </g>
+    </symbol>
+  </defs>
+</svg>
+
+<canvas id="gioco"></canvas>
+<div id="vignetta"></div>
+<div id="fluttuanti"></div>
+
+<div id="hud">
+  <div id="marchio" class="carta">
+    <svg class="logoDP" viewBox="0 0 260 64" aria-label="DaProd"><use href="#logoDaProd"/></svg>
+    <div class="sub">COIN DOZER · <b id="versione">v2</b></div>
+  </div>
+  <div id="destra">
+    <div style="display:flex;gap:8px;align-items:flex-start">
+      <div id="saldoBox" class="carta"><div class="etich">SALDO</div><div id="saldo">L.0</div></div>
+      <button id="audioBtn" class="carta" aria-label="audio" style="pointer-events:auto">🔊</button>
+    </div>
+    <div id="mini">
+      <div class="mini carta" id="vintoBox"><div class="etich">VINTO</div><b id="vinto" class="verde">L.0</b></div>
+      <div class="mini carta"><div class="etich">FUSIONI</div><b id="fusioniN">0</b></div>
+      <div class="mini carta" id="recordBox"><div class="etich">RECORD</div><b><img id="recordImg" alt=""><span id="recordTxt">—</span></b></div>
+      <button id="scritteBtn" class="carta piccolo" aria-label="scritte" title="nascondi le scritte">💬</button>
+      <button id="valutaBtn" class="carta piccolo" aria-label="valuta" title="lire / euro" hidden>€</button>
+    </div>
+  </div>
+</div>
+<div id="fps"></div>
+<div id="avvisi"></div>
+<div id="ondata"><small>ONDATA</small><span id="ondataTxt"></span></div>
+<div id="catena"><span id="catenaTxt"></span><small id="catenaSub"></small></div>
+<div id="evento"><small>🎰 EVENTO DaProd</small><span id="eventoTxt"></span><em id="eventoSub"></em></div>
+<div id="cinema"><i></i><i></i></div>
+<div id="hint" class="carta"><b>Tocca</b> il tavolo per scegliere la colonna · monete <b>uguali una sopra l'altra</b> si impilano e diventano il taglio più grande</div>
+
+<div id="barra">
+  <div id="abilita"></div>
+  <div id="selettore">
+    <div class="titolo">MONETA DA LANCIARE · <b id="selNome">L.50</b></div>
+    <div id="monete" class="carta"></div>
+  </div>
+  <button id="negozioBtn" class="tondo" aria-label="negozio"><span><span class="ico">🛒</span><div class="lab">NEGOZIO</div></span></button>
+</div>
+
+<div id="jackpot"><div class="scritta">JACKPOT<small>D a P r o d</small></div></div>
+
+<div id="intro">
+  <div class="box">
+    <div class="logoGrande"><svg class="logoDP" viewBox="0 0 260 64" aria-label="DaProd"><use href="#logoDaProd"/></svg></div>
+    <div class="titolo2">COIN DOZER</div>
+    <div class="passi">
+      <div class="passo carta"><i>👆</i><span><b>Tocca</b> una colonna: la moneta scende sul piano più alto</span></div>
+      <div class="passo carta"><i>🪜</i><span><b>Tre spintori</b> la fanno cadere di piano in piano fino alla vasca</span></div>
+      <div class="passo carta"><i>🧲</i><span>Monete <b>uguali una sopra l'altra</b> fanno una pila: 2 × L.50 = L.100, 10 × L.100 = L.1.000…</span></div>
+    </div>
+    <div class="scegli carta">
+      <div class="etich">SCEGLI LA MONETA CON CUI GIOCARE</div>
+      <div id="sceltaMonete"></div>
+    </div>
+    <button id="giocaBtn">▶ GIOCA</button>
+    <div class="piede">DaProd · SALA SLOT · <span id="versione2"></span></div>
+  </div>
+</div>
+
+<div id="negozio" class="chiuso">
+  <div class="pannello">
+    <div class="testa">
+      <svg class="logoDP" viewBox="0 0 260 64" aria-label="DaProd"><use href="#logoDaProd"/></svg>
+      <div class="s"><div class="etich">SALDO</div><b id="saldoNeg">L.0</b></div>
+      <button id="chiudi" aria-label="chiudi">✕</button>
+    </div>
+    <div class="schede">
+      <button data-scheda="pot" class="on">⚡ POTENZIAMENTI</button>
+      <button data-scheda="monete">🪙 MONETE</button>
+      <button data-scheda="opz">⚙️ OPZIONI</button>
+      <button data-scheda="stat">📊 STATISTICHE</button>
+    </div>
+    <div id="contenuto"></div>
+  </div>
+</div>
+
+<!-- Le Lire DaProd: il portafoglio unico dei giochi DaProd (vedi daprod-lira.js). -->
+<script src="../daprod-lira.js"></script>
+<script type="importmap">
+{
+  "imports": {
+    "three": "../three/build/three.module.js",
+    "three/addons/": "../three/examples/jsm/"
+  }
+}
+</script>
+<script type="module">
+import * as THREE from 'three';
+
+const VERSIONE = 'v2.2.0';
+const $ = (id) => document.getElementById(id);
+const TATTILE = (typeof matchMedia === 'function') &&
+  (matchMedia('(hover: none)').matches || matchMedia('(pointer: coarse)').matches);
+
+// Se qualcosa va storto lo scrivo a schermo invece di lasciare il gioco nero
+function mostraErrore(msg) {
+  try {
+    let box = $('erroreGioco');
+    if (!box) { box = document.createElement('div'); box.id = 'erroreGioco'; document.body.appendChild(box); }
+    box.textContent = '⚠️ ' + msg + ' — ricarica la pagina (Ctrl+Shift+R).';
+  } catch (e) {}
+}
+addEventListener('error', (e) => mostraErrore(e && e.message ? e.message : 'errore sconosciuto'));
+
+// ============ NUMERI ============
+const punti = (n) => String(Math.round(Math.abs(n))).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+const lire = (n) => (n < 0 ? '-' : '') + 'L.' + punti(n);
+const rnd = (a, b) => a + Math.random() * (b - a);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+// ============ SUONO (sintetizzato, nessun file) ============
+let actx = null, master = null;
+function audio() {
+  if (!actx) {
+    try {
+      actx = new (window.AudioContext || window.webkitAudioContext)();
+      master = actx.createGain(); master.gain.value = 0.9;
+      const comp = actx.createDynamicsCompressor();
+      master.connect(comp).connect(actx.destination);
+    } catch (e) { actx = null; }
+  }
+  if (actx && actx.state === 'suspended') actx.resume();
+  return actx;
+}
+function nota(f, dur, tipo = 'sine', vol = 0.1, rit = 0, fine = 0.99) {
+  if (!stato.opz.audio) return; const c = audio(); if (!c) return;
+  const t = c.currentTime + rit, o = c.createOscillator(), g = c.createGain();
+  o.type = tipo; o.frequency.setValueAtTime(f, t);
+  o.frequency.exponentialRampToValueAtTime(Math.max(20, f * fine), t + dur);
+  g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(vol, t + 0.008);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g).connect(master); o.start(t); o.stop(t + dur + 0.05);
+}
+let bufRumore = null;
+function rumore(dur, freq, vol = 0.1, q = 1.2, rit = 0) {
+  if (!stato.opz.audio) return; const c = audio(); if (!c) return;
+  if (!bufRumore) {
+    bufRumore = c.createBuffer(1, c.sampleRate, c.sampleRate);
+    const d = bufRumore.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  }
+  const t = c.currentTime + rit, s = c.createBufferSource(); s.buffer = bufRumore;
+  const f = c.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = freq; f.Q.value = q;
+  const g = c.createGain(); g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  s.connect(f).connect(g).connect(master); s.start(t, Math.random() * 0.5); s.stop(t + dur + 0.02);
+}
+let ultimiClink = 0, clinkT = 0;
+const suono = {
+  lancio() { rumore(0.05, 3200, 0.05, 2); nota(1500, 0.05, 'triangle', 0.025); },
+  clink(v) {
+    const ora = performance.now(); if (ora - clinkT > 1000) { clinkT = ora; ultimiClink = 0; }
+    if (++ultimiClink > 16) return;
+    const k = Math.min(1, v / 7);
+    nota(2300 + Math.random() * 1500, 0.07, 'triangle', 0.015 + k * 0.045);
+    rumore(0.03, 5200, 0.015 + k * 0.035, 4);
+  },
+  fusione(t, catena) {
+    const b = 330 * Math.pow(1.1225, t * 1.6 + catena * 2);
+    [1, 1.26, 1.5, 2].forEach((m, i) => nota(b * m, 0.16, 'triangle', 0.07, i * 0.055));
+    nota(b * 4, 0.35, 'sine', 0.05, 0.2, 1.02);
+    rumore(0.25, 6000, 0.04, 3, 0.05);
+  },
+  vinci(t) { const f = 720 * Math.pow(1.07, Math.min(20, t * 1.5)); nota(f, 0.11, 'square', 0.035); nota(f * 1.5, 0.2, 'sine', 0.07, 0.05); },
+  casa() { nota(210, 0.22, 'sawtooth', 0.035, 0, 0.7); },
+  tick() { nota(1900, 0.018, 'square', 0.018); },
+  rullo(i) { nota(520 + i * 90, 0.09, 'square', 0.05); rumore(0.05, 900, 0.05, 2); },
+  premio() { [784, 988, 1175, 1568].forEach((f, i) => nota(f, 0.2, 'triangle', 0.08, i * 0.08)); },
+  peccato() { nota(392, 0.18, 'triangle', 0.05); nota(330, 0.3, 'triangle', 0.05, 0.16); },
+  jackpot() {
+    const s = [523, 659, 784, 1046, 784, 1046, 1318, 1568];
+    s.forEach((f, i) => { nota(f, 0.24, 'square', 0.05, i * 0.11); nota(f / 2, 0.24, 'triangle', 0.06, i * 0.11); });
+    for (let i = 0; i < 14; i++) nota(2000 + Math.random() * 2500, 0.1, 'sine', 0.03, 0.9 + i * 0.07);
+  },
+  compra() { nota(1180, 0.08, 'square', 0.06); nota(1580, 0.14, 'square', 0.05, 0.07); },
+  errore() { nota(160, 0.2, 'sawtooth', 0.06); },
+  scossa() { rumore(0.6, 110, 0.5, 0.7); nota(55, 0.6, 'sawtooth', 0.12, 0, 0.6); },
+  accensione() { nota(50, 0.9, 'sawtooth', 0.04, 0, 1); rumore(0.08, 4000, 0.08, 1, 0.1); rumore(0.08, 4000, 0.06, 1, 0.35);
+    [262, 330, 392, 523].forEach((f, i) => nota(f, 0.3, 'triangle', 0.05, 0.6 + i * 0.09)); },
+  sblocco() { [523, 659, 784, 1046, 1318].forEach((f, i) => nota(f, 0.34, 'sine', 0.09, i * 0.1)); },
+  pila(k) { nota(900 + k * 900, 0.08, 'triangle', 0.04); rumore(0.03, 5000, 0.03, 4); },
+  battito() { nota(62, 0.16, 'sine', 0.22, 0, 0.7); nota(58, 0.16, 'sine', 0.16, 0.16, 0.7); },
+  evento() { nota(110, 1.4, 'sawtooth', 0.04, 0, 1.6); [392, 466, 523].forEach((f, i) => nota(f, 0.5, 'triangle', 0.05, 0.2 + i * 0.25)); },
+  rivela() { [523, 784, 1046, 1568, 2093].forEach((f, i) => { nota(f, 0.3, 'square', 0.045, i * 0.07); nota(f / 2, 0.4, 'triangle', 0.06, i * 0.07); }); rumore(0.6, 7000, 0.05, 1, 0.3); },
+  turbo() { nota(120, 0.6, 'sawtooth', 0.07, 0, 3); rumore(0.5, 1200, 0.08, 1); },
+  calamita() { nota(220, 0.9, 'sine', 0.08, 0, 1.5); nota(330, 0.9, 'sine', 0.05, 0.1, 1.5); },
+  muro() { rumore(0.25, 300, 0.25, 1); nota(90, 0.4, 'square', 0.06, 0, 0.8); },
+  fischio() { nota(2400, 0.7, 'sine', 0.05, 0, 0.25); },
+  meteora() { rumore(0.9, 90, 0.7, 0.6); nota(45, 0.9, 'sawtooth', 0.14, 0, 0.5); rumore(0.3, 3000, 0.15, 1); },
+};
+
+// ============ TAGLI DI LIRA (si creano fondendo due monete uguali) ============
+// I tagli veri delle lire, fino al miliardo. Monete uguali una sopra l'altra fanno una PILA; quando la
+// pila vale quanto il taglio successivo (2 × L.50 = L.100, 10 × L.100 = L.1.000, 5 × L.1.000 = L.5.000…)
+// si fonde. Il valore non si crea dal nulla: una pila paga nella vasca quanto le monete che contiene.
+const TAGLI = [
+  { v: 50,     nome: 'L.50',          met: 'Acciaio',      a: '#eef1f5', b: '#7b8490' },
+  { v: 100,    nome: 'L.100',         met: 'Nichel',       a: '#f6f2e8', b: '#9a9282' },
+  { v: 1e3,    nome: 'L.1.000',       met: 'Bimetallica',  a: '#eef1f5', b: '#858e9b', c: '#ffd76a', d: '#a9761b' },
+  { v: 5e3,    nome: 'L.5.000',       met: 'Bimetallica',  a: '#ffd76a', b: '#a9761b', c: '#eef1f5', d: '#858e9b' },
+  { v: 5e4,    nome: 'L.50.000',      met: 'Oro rosso',    a: '#ffc9a8', b: '#a8482c' },
+  { v: 1e5,    nome: 'L.100.000',     met: 'Oro',          a: '#fff1a8', b: '#c48a12' },
+  { v: 2.5e5,  nome: 'L.250.000',     met: 'Smeraldo',     a: '#fff1a8', b: '#b98310', gem: '#19e08f' },
+  { v: 5e5,    nome: 'L.500.000',     met: 'Zaffiro',      a: '#f4f6fa', b: '#8792a6', gem: '#3a82ff' },
+  { v: 1e6,    nome: 'L.1 MILIONE',   met: 'Rubino',       a: '#fff1a8', b: '#b98310', gem: '#ff2a55' },
+  { v: 5e6,    nome: 'L.5 MILIONI',   met: 'Ametista',     a: '#f4f6fa', b: '#8792a6', gem: '#b04dff' },
+  { v: 1e7,    nome: 'L.10 MILIONI',  met: 'Topazio',      a: '#fff1a8', b: '#b98310', gem: '#ffb300' },
+  { v: 5e7,    nome: 'L.50 MILIONI',  met: 'Acquamarina',  a: '#f4f6fa', b: '#8792a6', gem: '#35e8ff' },
+  { v: 1e8,    nome: 'L.100 MILIONI', met: 'Tormalina',    a: '#ffc9a8', b: '#a8482c', gem: '#ff5cc8' },
+  { v: 2.5e8,  nome: 'L.250 MILIONI', met: 'Opale',        a: '#ffffff', b: '#9aa8bd', gem: '#9ff5e0' },
+  { v: 5e8,    nome: 'L.500 MILIONI', met: 'Onice',        a: '#fff1a8', b: '#b98310', gem: '#2a2440' },
+  { v: 1e9,    nome: 'L.1 MILIARDO',  met: 'Diamante',     a: '#ffffff', b: '#8ea4bd', gem: '#c9f7ff', diamante: true },
+];
+TAGLI.forEach((T, i) => { T.r = 0.40 + 0.021 * i; T.h = 0.15 + 0.006 * i; T.m = 1 + 0.3 * i; });
+const ULTIMO = TAGLI.length - 1;
+// quante monete di un taglio servono per il successivo (arrotondato in su: 3 × L.100.000 = L.250.000)
+TAGLI.forEach((T, i) => { T.serve = i < ULTIMO ? Math.ceil(TAGLI[i + 1].v / T.v - 1e-9) : Infinity; });
+const CHIP = TAGLI.length;                       // il gettone DaProd: fa girare lo slot
+const INFO_CHIP = { v: 0, nome: 'Gettone DaProd', r: 0.47, h: 0.17, m: 1.5, serve: Infinity };
+const tipo = (t) => (t === CHIP ? INFO_CHIP : TAGLI[t]);
+const MAX_LANCIO = 4;                            // si lanciano al massimo le L.50.000
+const costoSblocco = (t) => TAGLI[t].v * 20;
+const etichetta = (T) => T.v >= 1e9 ? '1 MLD' : T.v >= 1e6 ? (T.v / 1e6) + 'M' : punti(T.v);
+
+// ============ ABILITÀ (i pulsanti accanto alla scossa) ============
+// livello 0 = bloccata. Tutte insieme, al massimo, costano circa L.500.000: il milione resta un miraggio.
+const ABIL = {
+  scossa:   { ico: '🫨', nome: 'Scossa', tasto: 'S', base: 1, max: 4, costo: (n) => 2500 * Math.pow(2, n - 1),
+              ricarica: (n) => [0, 40, 33, 27, 22][n],
+              desc: (n) => `fa saltare tutte le monete · ricarica ${ABIL.scossa.ricarica(n)} s` },
+  raffica:  { ico: '⚡', nome: 'Raffica', tasto: 'R', max: 5, costo: (n) => 1500 * Math.pow(2, n),
+              desc: (n) => `tieni premuto sul tavolo: ${rateRaffica(n)} monete al secondo` },
+  meteora:  { ico: '☄️', nome: 'Meteora', tasto: 'F', max: 4, costo: (n) => 5000 * Math.pow(2, n),
+              ricarica: (n) => [0, 60, 52, 44, 36][n],
+              desc: (n) => `mira dove vuoi: la meteora scaraventa le monete · raggio ${raggioMeteora(n).toFixed(1)} · ricarica ${ABIL.meteora.ricarica(n)} s` },
+  calamita: { ico: '🧲', nome: 'Calamita', tasto: 'C', max: 4, costo: (n) => 8000 * Math.pow(2, n),
+              ricarica: (n) => [0, 90, 82, 74, 66][n], durata: (n) => [0, 8, 10, 12, 14][n],
+              desc: (n) => `per ${ABIL.calamita.durata(n)} s le monete uguali che si toccano si impilano · ricarica ${ABIL.calamita.ricarica(n)} s` },
+  turbo:    { ico: '⏩', nome: 'Turbo', tasto: 'T', max: 4, costo: (n) => 6000 * Math.pow(2, n),
+              ricarica: (n) => [0, 70, 64, 58, 50][n], durata: (n) => [0, 6, 8, 10, 12][n],
+              desc: (n) => `per ${ABIL.turbo.durata(n)} s gli spintori vanno al doppio e spingono più lontano · ricarica ${ABIL.turbo.ricarica(n)} s` },
+  muro:     { ico: '🧱', nome: 'Muro', tasto: 'W', max: 4, costo: (n) => 10000 * Math.pow(2, n),
+              ricarica: (n) => [0, 100, 92, 84, 75][n], durata: (n) => [0, 10, 13, 16, 19][n],
+              desc: (n) => `per ${ABIL.muro.durata(n)} s chiude i buchi della casa · ricarica ${ABIL.muro.ricarica(n)} s` },
+};
+const POT = ABIL;                                // nome vecchio, per chi curiosa dalla console
+const rateRaffica = (n) => [0, 3, 4, 5, 6.5, 8][n] || 0;
+const raggioMeteora = (n) => 1.2 + 0.3 * n;
+const RAGGIO_FUSIONE = 0.6;                      // quanto può essere storta una moneta che si impila (in raggi)
+const PROB_CHIP = 0.025, PAUSA_CHIP = 25;        // gettone DaProd: 2,5% a lancio, al massimo uno ogni 25 s
+
+// ============ STATO E SALVATAGGIO ============
+const CHIAVE = 'daprod_dozer_v4';
+const SALDO_INIZIALE = 5000;
+const EURO_A = 1e6;                              // la valuta in euro si sblocca arrivando a L.1.000.000
+const LIRE_PER_EURO = 1936.27;
+const stato = {
+  saldo: SALDO_INIZIALE, sel: 0, maxLancio: 1, record: 1, euro: false,
+  pot: Object.fromEntries(Object.keys(ABIL).map(k => [k, ABIL[k].base || 0])),
+  pronta: { scossa: 0, meteora: 0, calamita: 0, turbo: 0, muro: 0 },   // quando torna pronta (Date.now)
+  st: { lanci: 0, vinte: 0, perse: 0, fusioni: 0, catenaMax: 0, vinto: 0, speso: 0, jackpot: 0, slot: 0, scosse: 0, eventi: 0, meteore: 0, saldoMax: SALDO_INIZIALE },
+  opz: { audio: true, qualita: TATTILE ? 'media' : 'alta', auto: true, fps: false, scritte: true, valuta: 'lire', raffica: true },
+  tavolo: null,
+};
+// dalla 2.0: il taglio vecchio (indice) → il taglio nuovo col valore più vicino per difetto
+const VALORI_V3 = [50, 100, 200, 500, 1000, 2000, 5000, 10000, 50000, 100000, 1e6];
+const daV3 = (i) => { const v = VALORI_V3[clamp(i | 0, 0, 10)]; let t = 0; TAGLI.forEach((T, k) => { if (T.v <= v) t = k; }); return t; };
+const COSTI_V3 = { multi: [9000, 3.2], raffica: [2500, 2.4], fusione: [4000, 2.6], motore: [5000, 2.5], sponde: [10000, 3], vasca: [12000, 2.3], fortuna: [6000, 2.5] };
+function carica() {
+  const num = (v, d, a = 0, b = Infinity) => (typeof v === 'number' && isFinite(v)) ? clamp(v, a, b) : d;
+  const leggi = (k) => { try { const r = JSON.parse(localStorage.getItem(k) || 'null'); return r && typeof r === 'object' ? r : null; } catch (e) { return null; } };
+  const opzioni = (o) => {
+    if (!o || typeof o !== 'object') return;
+    stato.opz.audio = o.audio !== false;
+    if (['alta', 'media', 'bassa'].includes(o.qualita)) stato.opz.qualita = o.qualita;
+    stato.opz.auto = o.auto !== false; stato.opz.fps = !!o.fps;
+    stato.opz.scritte = o.scritte !== false; stato.opz.raffica = o.raffica !== false;
+    stato.opz.valuta = o.valuta === 'euro' ? 'euro' : 'lire';
+  };
+  const statistiche = (st) => { for (const k in stato.st) stato.st[k] = num(st && st[k], stato.st[k], 0); };
+  let r = leggi(CHIAVE);
+  if (r) {
+    stato.saldo = Math.round(num(r.saldo, SALDO_INIZIALE, 0));
+    stato.maxLancio = Math.round(num(r.maxLancio, 1, 1, MAX_LANCIO));
+    stato.sel = Math.round(num(r.sel, 0, 0, stato.maxLancio));
+    stato.record = Math.round(num(r.record, 1, 0, ULTIMO));
+    for (const k in stato.pot) stato.pot[k] = Math.round(num(r.pot && r.pot[k], ABIL[k].base || 0, ABIL[k].base || 0, ABIL[k].max));
+    for (const k in stato.pronta) stato.pronta[k] = num(r.pronta && r.pronta[k], 0, 0);
+    statistiche(r.st); opzioni(r.opz);
+    stato.euro = !!r.euro || stato.st.saldoMax >= EURO_A;
+    if (!stato.euro) stato.opz.valuta = 'lire';
+    if (Array.isArray(r.tavolo)) stato.tavolo = r.tavolo;
+    return { tipo: 'v4' };
+  }
+  // dalla 2.0: tagli rimappati, potenziamenti vecchi rimborsati (la raffica resta), tavolo nuovo
+  r = leggi('daprod_dozer_v3');
+  if (r) {
+    stato.saldo = Math.round(Math.min(500000, num(r.saldo, SALDO_INIZIALE, 0)));
+    stato.maxLancio = clamp(daV3(num(r.maxLancio, 1, 1, 10)), 1, MAX_LANCIO);
+    stato.sel = clamp(daV3(num(r.sel, 0, 0, 10)), 0, stato.maxLancio);
+    stato.record = Math.max(1, daV3(num(r.record, 1, 0, 10)));
+    let rimborso = 0;
+    for (const k in COSTI_V3) {
+      const n = Math.round(num(r.pot && r.pot[k], 0, 0, 5));
+      if (k === 'raffica') { stato.pot.raffica = Math.min(ABIL.raffica.max, n); continue; }
+      for (let i = 0; i < n; i++) rimborso += Math.round(COSTI_V3[k][0] * Math.pow(COSTI_V3[k][1], i));
+    }
+    rimborso = Math.min(100000, rimborso); stato.saldo += rimborso;
+    statistiche(r.st); opzioni(r.opz); stato.opz.valuta = 'lire';
+    stato.st.saldoMax = Math.max(SALDO_INIZIALE, Math.min(stato.st.saldoMax, stato.saldo));
+    return { tipo: 'v3', rimborso };
+  }
+  // chi arriva dalla versione 1.x: i vecchi premi diventano lire
+  const v = leggi('daprod_dozer_v2');
+  if (v) {
+    const bonus = Math.min(200000, Math.round(Math.max(0, Number(v.premi) || 0) * 20));
+    stato.saldo += bonus; stato.opz.audio = v.audio !== false;
+    return { tipo: 'v2', bonus };
+  }
+  return null;
+}
+const esitoCaricamento = carica();
+let daSalvare = false;
+function salva() {
+  try { stato.tavolo = fotografaTavolo(); localStorage.setItem(CHIAVE, JSON.stringify(stato)); daSalvare = false; } catch (e) {}
+}
+
+// ============ DISEGNO SU CANVAS (texture, icone, marchio) ============
+const FONT_NUM = '"Orbitron", "Arial Black", Arial, sans-serif';
+function tela(w, h) { const c = document.createElement('canvas'); c.width = w; c.height = h; return [c, c.getContext('2d')]; }
+let maxAniso = 4;
+function tex(c, rip) {
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = maxAniso;
+  if (rip) { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(rip[0], rip[1]); }
+  return t;
+}
+function oroGrad(g, y0, y1) {
+  const gr = g.createLinearGradient(0, y0, 0, y1);
+  gr.addColorStop(0, '#fffbe0'); gr.addColorStop(0.45, '#ffd54a'); gr.addColorStop(1, '#b87a14'); return gr;
+}
+// Il marchio DaProd: emblema a moneta con la D + scritta "Da" bianca e "Prod" oro
+function logoDaProd(g, cx, cy, h, o = {}) {
+  const neon = o.neon || 0, col = o.colore || '#ffd54a', bianco = o.bianco || '#fff6dd';
+  g.save();
+  g.font = `900 ${h}px ${FONT_NUM}`; g.textBaseline = 'middle';
+  const wDa = g.measureText('Da').width, wP = g.measureText('Prod').width;
+  const er = h * 0.62, gap = h * 0.28, tot = er * 2 + gap + wDa + wP;
+  let x = (o.allinea === 'sinistra') ? cx : cx - tot / 2;
+  if (neon) { g.shadowColor = o.alone || col; g.shadowBlur = h * 0.45 * neon; }
+  const oro = o.piatto ? col : oroGrad(g, cy - h * 0.6, cy + h * 0.6);
+  g.lineWidth = h * 0.1; g.strokeStyle = oro; g.fillStyle = o.fondo || 'rgba(21,14,36,.9)';
+  g.beginPath(); g.arc(x + er, cy, er * 0.9, 0, Math.PI * 2); g.fill(); g.stroke();
+  g.lineWidth = h * 0.045; g.strokeStyle = o.colore2 || '#ff5cf4'; g.setLineDash([h * 0.07, h * 0.08]);
+  g.beginPath(); g.arc(x + er, cy, er * 0.68, 0, Math.PI * 2); g.stroke(); g.setLineDash([]);
+  g.fillStyle = oro; g.textAlign = 'center'; g.font = `900 ${h * 0.78}px ${FONT_NUM}`;
+  g.fillText('D', x + er, cy + h * 0.04);
+  x += er * 2 + gap;
+  g.textAlign = 'left'; g.font = `900 ${h}px ${FONT_NUM}`;
+  g.fillStyle = bianco; g.fillText('Da', x, cy + h * 0.04);
+  g.fillStyle = oro; g.fillText('Prod', x + wDa, cy + h * 0.04);
+  if (neon > 1) { g.shadowBlur = h * 0.2; g.fillStyle = 'rgba(255,255,255,.5)'; g.fillText('Prod', x + wDa, cy + h * 0.04); }
+  g.restore();
+  return tot;
+}
+
+// --- faccia di una moneta (serve alla texture 3D e alle icone dell'interfaccia) ---
+function disegnaFaccia(g, t, S) {
+  const c = S / 2, T = tipo(t);
+  g.clearRect(0, 0, S, S);
+  const disco = (r, a, b) => {
+    const gr = g.createRadialGradient(c - r * 0.35, c - r * 0.4, r * 0.05, c, c, r);
+    gr.addColorStop(0, '#ffffff'); gr.addColorStop(0.18, a); gr.addColorStop(0.75, b); gr.addColorStop(1, a);
+    g.fillStyle = gr; g.beginPath(); g.arc(c, c, r, 0, Math.PI * 2); g.fill();
+  };
+  const incidi = (txt, x, y, font, col) => {         // scritta "coniata": ombra scura + luce
+    g.font = font; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillStyle = 'rgba(0,0,0,.45)'; g.fillText(txt, x + S * 0.004, y + S * 0.005);
+    g.fillStyle = 'rgba(255,255,255,.7)'; g.fillText(txt, x - S * 0.003, y - S * 0.004);
+    g.fillStyle = col; g.fillText(txt, x, y);
+  };
+  if (t === CHIP) {
+    const gr = g.createRadialGradient(c, c * 0.8, S * 0.05, c, c, c);
+    gr.addColorStop(0, '#5b2a9a'); gr.addColorStop(0.7, '#1c0d36'); gr.addColorStop(1, '#0b0616');
+    g.fillStyle = gr; g.beginPath(); g.arc(c, c, c, 0, Math.PI * 2); g.fill();
+    for (let i = 0; i < 8; i++) {                     // intarsi a spicchi come una fiche
+      g.save(); g.translate(c, c); g.rotate(i * Math.PI / 4);
+      g.fillStyle = i % 2 ? '#ff3df2' : '#ffd54a'; g.fillRect(-S * 0.05, -c, S * 0.1, S * 0.12); g.restore();
+    }
+    g.lineWidth = S * 0.025; g.strokeStyle = '#ffd54a'; g.beginPath(); g.arc(c, c, c * 0.74, 0, Math.PI * 2); g.stroke();
+    logoDaProd(g, c, c * 0.98, S * 0.13, { neon: 1 });
+    g.font = `900 ${S * 0.07}px ${FONT_NUM}`; g.fillStyle = '#35e8ff'; g.textAlign = 'center';
+    g.fillText('★ JACKPOT ★', c, c * 1.3);
+    return;
+  }
+  if (T.c) { disco(c, T.a, T.b); disco(c * 0.64, T.c, T.d); }
+  else disco(c, T.a, T.b);
+  if (T.gem) {                                         // pietra centrale sfaccettata
+    const R = c * 0.5;
+    const gg = g.createRadialGradient(c - R * 0.3, c - R * 0.3, R * 0.05, c, c, R);
+    gg.addColorStop(0, '#ffffff'); gg.addColorStop(0.3, T.gem); gg.addColorStop(1, '#000000');
+    g.fillStyle = gg; g.beginPath();
+    for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4 + Math.PI / 8; g.lineTo(c + Math.cos(a) * R, c + Math.sin(a) * R); }
+    g.closePath(); g.fill();
+    g.strokeStyle = 'rgba(255,255,255,.55)'; g.lineWidth = S * 0.006;
+    for (let i = 0; i < 8; i++) {
+      const a = i * Math.PI / 4 + Math.PI / 8;
+      g.beginPath(); g.moveTo(c, c); g.lineTo(c + Math.cos(a) * R, c + Math.sin(a) * R); g.stroke();
+    }
+    g.beginPath(); g.arc(c, c, R * 0.45, 0, Math.PI * 2); g.stroke();
+    if (T.diamante) {
+      for (let i = 0; i < 12; i++) {
+        const a = Math.random() * Math.PI * 2, d = rnd(0.2, 0.9) * R;
+        g.fillStyle = `hsla(${Math.random() * 360},100%,80%,.9)`;
+        g.beginPath(); g.arc(c + Math.cos(a) * d, c + Math.sin(a) * d, S * 0.008, 0, 7); g.fill();
+      }
+    }
+  }
+  // perline sul bordo
+  g.fillStyle = 'rgba(255,255,255,.55)';
+  for (let i = 0; i < 44; i++) {
+    const a = i / 44 * Math.PI * 2;
+    g.beginPath(); g.arc(c + Math.cos(a) * c * 0.9, c + Math.sin(a) * c * 0.9, S * 0.011, 0, 7); g.fill();
+  }
+  g.strokeStyle = 'rgba(0,0,0,.28)'; g.lineWidth = S * 0.012;
+  g.beginPath(); g.arc(c, c, c * 0.82, 0, Math.PI * 2); g.stroke();
+  const inchiostro = T.gem ? '#3b2a06' : (T.met === 'Oro rosso' ? '#5a1d0c' : '#3a3a44');
+  // scritta ad arco: DaProd · LIRE
+  g.save(); g.translate(c, c);
+  const arco = T.gem ? 'DaProd · ' + T.met.toUpperCase() : 'REPUBBLICA DaProd · LIRE';
+  g.font = `800 ${S * 0.064}px ${FONT_NUM}`; g.textAlign = 'center'; g.textBaseline = 'middle';
+  const giro = Math.PI * 1.25, passo = giro / arco.length;
+  for (let i = 0; i < arco.length; i++) {
+    g.save(); g.rotate(-giro / 2 + i * passo + passo / 2 - Math.PI / 2 * 0);
+    g.translate(0, -c * 0.7); g.fillStyle = 'rgba(0,0,0,.4)'; g.fillText(arco[i], 1, 1);
+    g.fillStyle = inchiostro; g.fillText(arco[i], 0, 0); g.restore();
+  }
+  g.restore();
+  if (!T.gem) {
+    const txt = etichetta(T);
+    let f = S * 0.27; g.font = `900 ${f}px ${FONT_NUM}`;
+    const w = g.measureText(txt).width; if (w > S * 0.62) f *= S * 0.62 / w;   // i numeri lunghi si stringono
+    incidi(txt, c, c * 1.0, `900 ${f}px ${FONT_NUM}`, inchiostro);
+    incidi('LIRE', c, c * 1.36, `800 ${S * 0.075}px ${FONT_NUM}`, inchiostro);
+  } else {
+    let f = S * 0.1; g.font = `900 ${f}px ${FONT_NUM}`;
+    const w = g.measureText(etichetta(T)).width; if (w > S * 0.5) { f *= S * 0.5 / w; g.font = `900 ${f}px ${FONT_NUM}`; }
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillStyle = 'rgba(0,0,0,.6)'; g.fillText(etichetta(T), c + 2, c * 1.68 + 2);
+    g.fillStyle = '#fff'; g.fillText(etichetta(T), c, c * 1.68);
+  }
+}
+// aspetto il font del marchio (al massimo 1,5 s): le texture si disegnano una volta sola
+try {
+  await Promise.race([
+    Promise.all([document.fonts.load(`900 40px Orbitron`), document.fonts.load(`800 40px Orbitron`), document.fonts.load('700 20px Rajdhani')]),
+    new Promise(r => setTimeout(r, 1500))]);
+} catch (e) {}
+const ICONE = [];                                    // dataURL delle monete per l'interfaccia
+for (let t = 0; t <= CHIP; t++) { const [cv, g] = tela(128, 128); disegnaFaccia(g, t, 128); ICONE[t] = cv.toDataURL(); }
+
+// ============ GEOMETRIA DELLA MACCHINA: TRE PIANI A CASCATA ============
+// z cresce verso il giocatore. Ogni piano ha il suo spintore che esce da sotto il piano sopra:
+// quando avanza spinge le monete verso il bordo, dove cadono sul piano sotto. Dal terzo piano si
+// cade nella vasca delle vincite; ai lati del terzo piano ci sono i buchi della casa.
+const HW = 4.2;                 // mezza larghezza del campo
+const SPESS = 0.36;             // spessore dei piani
+// Ogni zona è profonda: 5 unità di panno libero sul piano 1, 6,8 sul piano 2, 8,8 sul piano 3.
+const Z_FONDO = -17;            // parete di fondo della macchina
+const Z_COFANO = -15;           // bordo del cofano sotto cui esce il primo spintore
+const LIV = [
+  { nome: 'PIANO 1', y: 3.2, zBack: Z_FONDO, zEdge: -10.0, led: '#ff3df2', feltro: ['#3b1257', '#1d0a2e'] },
+  { nome: 'PIANO 2', y: 1.6, zBack: Z_FONDO, zEdge: -3.2,  led: '#35e8ff', feltro: ['#12306a', '#081634'] },
+  { nome: 'PIANO 3', y: 0.0, zBack: Z_FONDO, zEdge: 5.6,   led: '#ffc23a', feltro: ['#0d5a3e', '#05281b'] },
+];
+// Spintori calmi: corse corte e lente, il terzo (quello giallo) lentissimo. La corsa si allunga e
+// accelera solo con TURBO o con l'evento FRENESIA.
+const SPINTORI = [
+  { liv: 0, pav: 3.2, top: 4.3,         fMin: Z_COFANO + 0.05, fMax: -13.75, scr: Z_COFANO, scrBot: 4.3,         scrTop: 4.75, per: 4.4, fase: 0,   len: 4.2 },
+  { liv: 1, pav: 1.6, top: 3.2 - SPESS, fMin: -10.55, fMax: -9.35, scr: -10.0, scrBot: 3.2 - SPESS, scrTop: 3.2,  per: 5.6, fase: 2.2, len: 5.6 },
+  { liv: 2, pav: 0.0, top: 1.6 - SPESS, fMin: -3.6,   fMax: -2.65, scr: -3.2,  scrBot: 1.6 - SPESS, scrTop: 1.6,  per: 9.0, fase: 4.1, len: 5.6 },
+];
+SPINTORI.forEach(p => { p.z = p.fMin; p.vz = 0; p.dz = 0; p.fi = p.fase; });
+// il carrello corre più in alto e più in fondo: la moneta cade proprio davanti al cofano
+const Z_LANCIO = -14.45, Y_LANCIO = 6.9, Y_BINARIO = 7.35;
+const VASCA = { y: -2.25, z0: 5.75, z1: 7.2 };
+const LUNGHEZZA_BUCHI = 1.6;
+let chiusuraBuchi = 0;          // 0 = buchi della casa aperti, 1 = chiusi (MURO o FRENESIA)
+const inizioBuchi = () => LIV[2].zEdge - LUNGHEZZA_BUCHI * (1 - chiusuraBuchi);
+
+// ============ RENDERER E SCENA ============
+const canvas = $('gioco');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.08;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+maxAniso = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x07060d);
+scene.fog = new THREE.Fog(0x07060d, 38, 80);
+const camera = new THREE.PerspectiveCamera(40, innerWidth / innerHeight, 0.1, 200);
+
+// Mappa d'ambiente fatta in casa: una stanza buia con pannelli luminosi (oro, magenta, ciano).
+// È quella che fa brillare cromo, ottone e monete.
+{
+  const s = new THREE.Scene();
+  s.add(new THREE.Mesh(new THREE.BoxGeometry(40, 20, 40), new THREE.MeshBasicMaterial({ color: 0x0c0a14, side: THREE.BackSide })));
+  const pannello = (w, h, col, k, x, y, z, rx, ry) => {
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h),
+      new THREE.MeshBasicMaterial({ color: new THREE.Color(col).multiplyScalar(k), side: THREE.DoubleSide }));
+    m.position.set(x, y, z); m.rotation.set(rx, ry, 0); s.add(m);
+  };
+  pannello(16, 8, 0xfff0d8, 4.2, 0, 9.5, 2, Math.PI / 2, 0);
+  pannello(10, 4, 0xffe2b0, 2.2, 0, 5, 14, -0.5, Math.PI);          // luce calda davanti        // soffitto caldo
+  pannello(3, 14, 0xff3df2, 1.1, -16, 3, -4, 0, Math.PI / 2);       // magenta a sinistra
+  pannello(3, 14, 0x35e8ff, 1.1, 16, 3, -4, 0, -Math.PI / 2);       // ciano a destra
+  pannello(20, 3, 0xffb640, 2.0, 0, 4, -19, 0, 0);                   // insegna oro in fondo
+  pannello(18, 6, 0x9a86ff, 0.6, 0, 2, 18, 0, Math.PI);              // riflesso freddo davanti
+  for (let i = 0; i < 12; i++) pannello(0.8, 0.8, i % 2 ? 0xffe7a0 : 0xff7bf6, 4, rnd(-14, 14), rnd(-2, 8), -17.5, 0, 0);
+  const pm = new THREE.PMREMGenerator(renderer);
+  scene.environment = pm.fromScene(s, 0.035).texture;
+  pm.dispose();
+}
+
+// ============ MATERIALI ============
+const MAT = {
+  lacca: new THREE.MeshPhysicalMaterial({ color: 0x0f0a1a, metalness: 0.25, roughness: 0.3, clearcoat: 1, clearcoatRoughness: 0.1, envMapIntensity: 0.5 }),
+  laccaViola: new THREE.MeshPhysicalMaterial({ color: 0x1a0930, metalness: 0.1, roughness: 0.42, clearcoat: 0.5, clearcoatRoughness: 0.2, envMapIntensity: 0.25 }),
+  cromo: new THREE.MeshStandardMaterial({ color: 0xe9eef5, metalness: 1, roughness: 0.13 }),
+  oro: new THREE.MeshStandardMaterial({ color: 0xffc450, metalness: 1, roughness: 0.2 }),
+  buio: new THREE.MeshStandardMaterial({ color: 0x050409, roughness: 0.95 }),
+  vasca: new THREE.MeshStandardMaterial({ color: 0x3a2508, metalness: 0.85, roughness: 0.32 }),
+};
+const LED = [];                                      // led animati: colore base e intensità
+function led(col, k = 2.6, gruppo = 'fisso') {
+  const m = new THREE.MeshBasicMaterial({ color: new THREE.Color(col).multiplyScalar(k), toneMapped: false });
+  LED.push({ m, base: new THREE.Color(col), k, gruppo });
+  return m;
+}
+function scatola(x0, x1, y0, y1, z0, z1, mat, ombre = true) {
+  const m = new THREE.Mesh(new THREE.BoxGeometry(x1 - x0, y1 - y0, z1 - z0), mat);
+  m.position.set((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2);
+  m.castShadow = ombre; m.receiveShadow = true; scene.add(m); return m;
+}
+
+// --- texture della macchina ---
+function texFeltro(L, i) {
+  const [cv, g] = tela(1024, 1024);
+  const gr = g.createRadialGradient(512, 420, 60, 512, 512, 760);
+  gr.addColorStop(0, L.feltro[0]); gr.addColorStop(1, L.feltro[1]);
+  g.fillStyle = gr; g.fillRect(0, 0, 1024, 1024);
+  for (let k = 0; k < 16000; k++) {                  // trama del panno
+    const v = Math.random() * 255 | 0;
+    g.fillStyle = `rgba(${v},${v},${v},.05)`; g.fillRect(Math.random() * 1024, Math.random() * 1024, 2, 2);
+  }
+  g.strokeStyle = 'rgba(255,213,74,.07)'; g.lineWidth = 2;   // rombi dorati
+  for (let k = -1024; k < 2048; k += 64) {
+    g.beginPath(); g.moveTo(k, 0); g.lineTo(k + 1024, 1024); g.stroke();
+    g.beginPath(); g.moveTo(k, 1024); g.lineTo(k + 1024, 0); g.stroke();
+  }
+  g.globalAlpha = 0.16; logoDaProd(g, 512, 560, 120, { piatto: true, colore: '#ffd54a', bianco: '#ffffff', fondo: 'rgba(0,0,0,0)', colore2: L.led });
+  g.globalAlpha = 1;
+  g.strokeStyle = 'rgba(255,213,74,.45)'; g.lineWidth = 6; g.strokeRect(14, 14, 996, 996);
+  g.strokeStyle = L.led; g.globalAlpha = 0.5; g.lineWidth = 2; g.strokeRect(28, 28, 968, 968); g.globalAlpha = 1;
+  g.font = `900 38px ${FONT_NUM}`; g.fillStyle = 'rgba(255,255,255,.14)'; g.textAlign = 'center';
+  g.fillText(`${L.nome}  ·  ${['×1', '×1', 'VINCITE ▼'][i]}`, 512, 980);
+  return tex(cv);
+}
+function texFrontale(testo, col) {                   // fascia luminosa sul bordo dei piani
+  const [cv, g] = tela(1024, 64);
+  g.fillStyle = '#07050c'; g.fillRect(0, 0, 1024, 64);
+  g.fillStyle = col; g.globalAlpha = 0.9;
+  for (let x = 6; x < 1024; x += 16) { g.beginPath(); g.arc(x, 7, 2.2, 0, 7); g.fill(); g.beginPath(); g.arc(x, 57, 2.2, 0, 7); g.fill(); }
+  g.globalAlpha = 1;
+  g.font = `900 30px ${FONT_NUM}`; g.textBaseline = 'middle'; g.textAlign = 'center';
+  g.shadowColor = col; g.shadowBlur = 14; g.fillStyle = '#fff';
+  const pezzi = 4;
+  for (let i = 0; i < pezzi; i++) g.fillText(testo, (i + 0.5) * 1024 / pezzi, 33);
+  return tex(cv);
+}
+function texSpintore(col) {
+  const [cv, g] = tela(1024, 160);
+  const gr = g.createLinearGradient(0, 0, 0, 160);
+  gr.addColorStop(0, '#f4f7fb'); gr.addColorStop(0.18, '#9aa3b0'); gr.addColorStop(0.5, '#dfe5ec'); gr.addColorStop(1, '#6d7480');
+  g.fillStyle = gr; g.fillRect(0, 0, 1024, 160);
+  g.globalAlpha = 0.08; g.fillStyle = '#000';
+  for (let x = 0; x < 1024; x += 3) g.fillRect(x, 0, 1, 160);
+  g.globalAlpha = 1;
+  g.fillStyle = '#0b0812'; g.fillRect(0, 44, 1024, 72);
+  g.strokeStyle = col; g.lineWidth = 3; g.shadowColor = col; g.shadowBlur = 10;
+  g.beginPath(); g.moveTo(0, 46); g.lineTo(1024, 46); g.moveTo(0, 114); g.lineTo(1024, 114); g.stroke();
+  g.shadowBlur = 0;
+  logoDaProd(g, 512, 80, 44, { neon: 1 });
+  g.fillStyle = col; g.font = `900 40px ${FONT_NUM}`; g.textBaseline = 'middle'; g.textAlign = 'center';
+  for (const x of [120, 250, 774, 904]) { g.shadowColor = col; g.shadowBlur = 12; g.fillText('›››', x, 80); }
+  return tex(cv);
+}
+function texEmissivaSpintore(col) {                 // solo le parti che si accendono
+  const [cv, g] = tela(1024, 160);
+  g.fillStyle = '#000'; g.fillRect(0, 0, 1024, 160);
+  g.fillStyle = col; g.fillRect(0, 44, 1024, 3); g.fillRect(0, 113, 1024, 3);
+  g.font = `900 40px ${FONT_NUM}`; g.textBaseline = 'middle'; g.textAlign = 'center';
+  for (const x of [120, 250, 774, 904]) g.fillText('›››', x, 80);
+  logoDaProd(g, 512, 80, 44, { piatto: true, colore: '#ffcf50', bianco: '#b8b0a0', fondo: '#000', colore2: col });
+  return tex(cv);
+}
+function texCromoSpazzolato() {
+  const [cv, g] = tela(256, 256);
+  g.fillStyle = '#c9d0da'; g.fillRect(0, 0, 256, 256);
+  for (let y = 0; y < 256; y++) { g.fillStyle = `rgba(255,255,255,${Math.random() * 0.12})`; g.fillRect(0, y, 256, 1); }
+  return tex(cv, [3, 1]);
+}
+
+// --- i tre piani ---
+const materialePiano = (L, i, frontale) => [MAT.lacca, MAT.lacca,
+  new THREE.MeshStandardMaterial({ map: texFeltro(L, i), roughness: 0.88, metalness: 0.0 }),
+  MAT.lacca, frontale, MAT.lacca];
+LIV.forEach((L, i) => {
+  const t = texFrontale(i < 2 ? `▼ DaProd ▼` : '▼ VINCITE ▼', L.led);
+  const fr = new THREE.MeshStandardMaterial({ map: t, emissiveMap: t, emissive: 0xffffff, emissiveIntensity: 1.1, roughness: 0.3 });
+  const y0 = i === 2 ? -0.6 : L.y - SPESS, zb = i === 2 ? LIV[1].zEdge - 4 : L.zBack;
+  const piano = scatola(-HW, HW, y0, L.y, zb, L.zEdge, materialePiano(L, i, fr));
+  piano.castShadow = false;
+  scatola(-HW, HW, L.y - 0.02, L.y + 0.035, L.zEdge - 0.05, L.zEdge + 0.02, led(L.led, 3, 'bordo'), false);  // filo di luce sul bordo
+});
+
+// --- spintori (cromo + frontale col marchio) ---
+const cromoSpaz = new THREE.MeshStandardMaterial({ map: texCromoSpazzolato(), metalness: 1, roughness: 0.22 });
+SPINTORI.forEach((p) => {
+  const col = LIV[p.liv].led;
+  const tf = texSpintore(col), te = texEmissivaSpintore(col);
+  const fronte = new THREE.MeshStandardMaterial({ map: tf, emissiveMap: te, emissive: 0xffffff, emissiveIntensity: 1.3, metalness: 0.75, roughness: 0.25 });
+  const h = p.top - p.pav - 0.01;
+  const m = new THREE.Mesh(new THREE.BoxGeometry(HW * 2 - 0.02, h, p.len), [cromoSpaz, cromoSpaz, cromoSpaz, MAT.buio, fronte, MAT.buio]);
+  m.castShadow = true; m.receiveShadow = true; scene.add(m);
+  p.mesh = m; p.h = h;
+});
+
+// --- cofano sopra il primo spintore, scocca, fianchi a gradini ---
+{
+  const tc = texFrontale('◆ DaProd ◆ SALA SLOT', '#ff3df2');
+  const frC = new THREE.MeshStandardMaterial({ map: tc, emissiveMap: tc, emissive: 0xffffff, emissiveIntensity: 1.2 });
+  scatola(-HW, HW, 4.3, 4.75, Z_FONDO, Z_COFANO, [MAT.lacca, MAT.lacca, MAT.laccaViola, MAT.lacca, frC, MAT.lacca]);
+  scatola(-HW, HW, 4.72, 4.78, Z_COFANO - 0.04, Z_COFANO + 0.02, led('#ff3df2', 3), false);
+}
+scatola(-HW - 1.3, HW + 1.3, -5.6, -0.6, Z_FONDO - 0.4, 5.6, MAT.lacca, false);          // scocca
+scatola(-HW - 1.3, HW + 1.3, -5.6, 13.2, Z_FONDO - 0.9, Z_FONDO, MAT.lacca, false);      // schienale
+const FIANCHI = [
+  { z0: Z_FONDO,      z1: LIV[0].zEdge, top: 5.15, led: '#ff3df2' },
+  { z0: LIV[0].zEdge, z1: LIV[1].zEdge, top: 3.35, led: '#35e8ff' },
+  { z0: LIV[1].zEdge, z1: 3.2,          top: 1.55, led: '#ffc23a' },
+];
+for (const s of [-1, 1]) {
+  for (const f of FIANCHI) {
+    const xi = s * HW, xe = s * (HW + 1.3);
+    scatola(Math.min(xi, xe), Math.max(xi, xe), -0.6, f.top, f.z0, f.z1, MAT.laccaViola);
+    scatola(Math.min(xi, xe) - 0.02, Math.max(xi, xe) + 0.02, f.top, f.top + 0.08, f.z0, f.z1, MAT.cromo);       // corrimano
+    const xl = s * (HW + 0.03);
+    scatola(xl - 0.03, xl + 0.03, f.top - 0.12, f.top - 0.04, f.z0, f.z1, led(f.led, 3, 'fianchi'), false);        // led interno
+  }
+  // parete esterna dei buchi della casa + fondo rosso dei buchi
+  scatola(Math.min(s * (HW + 0.9), s * (HW + 1.3)), Math.max(s * (HW + 0.9), s * (HW + 1.3)), -0.6, 0.85, 3.2, 5.6, MAT.laccaViola);
+  scatola(Math.min(s * (HW + 0.88), s * (HW + 1.32)), Math.max(s * (HW + 0.88), s * (HW + 1.32)), 0.85, 0.93, 3.2, 5.6, MAT.cromo);
+  scatola(Math.min(s * HW, s * (HW + 0.9)), Math.max(s * HW, s * (HW + 0.9)), -0.62, -0.58, 3.2, 5.6, led('#ff2340', 1.4, 'casa'), false);
+}
+// sponde mobili: il potenziamento "Sponde laterali" le allunga fino a chiudere i buchi
+const SPONDE = [-1, 1].map(s => {
+  const g = new THREE.Group();
+  const corpo = new THREE.Mesh(new THREE.BoxGeometry(0.4, 2.15, 1), MAT.laccaViola); corpo.position.set(s * (HW + 0.2), 0.475, 0.5);
+  const cap = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.08, 1), MAT.cromo); cap.position.set(s * (HW + 0.2), 1.59, 0.5);
+  corpo.castShadow = corpo.receiveShadow = true;
+  g.add(corpo, cap); g.position.z = 3.2; scene.add(g); return g;
+});
+function aggiornaSponde() {
+  const l = Math.max(0.001, inizioBuchi() - 3.2);
+  for (const g of SPONDE) { g.scale.z = l; g.visible = l > 0.01; }
+  for (const c of CARTELLI_CASA) c.visible = chiusuraBuchi < 0.95;
+}
+// cartelli CASA sopra i buchi
+function cartello(testo, col, w, h) {
+  const [cv, g] = tela(256, 64);
+  g.font = `900 34px ${FONT_NUM}`; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.shadowColor = col; g.shadowBlur = 12; g.fillStyle = col; g.fillText(testo, 128, 34);
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: tex(cv), transparent: true, toneMapped: false, depthWrite: false }));
+  scene.add(m); return m;
+}
+const CARTELLI_CASA = [-1, 1].map(s => {
+  const m = cartello('CASA', '#ff4d6a', 0.85, 0.22); m.rotation.x = -Math.PI / 2; m.rotation.z = s * Math.PI / 2;
+  m.position.set(s * (HW + 0.45), -0.55, 4.6); return m;
+});
+
+// --- vasca delle vincite + frontale ---
+scatola(-HW - 1.3, HW + 1.3, -5.6, VASCA.y, 5.6, 7.75, MAT.vasca, false);
+scatola(-HW - 1.3, HW + 1.3, VASCA.y, -1.55, 7.35, 7.75, MAT.oro);                                           // labbro d'oro
+for (const s of [-1, 1]) scatola(Math.min(s * (HW + 0.3), s * (HW + 1.3)), Math.max(s * (HW + 0.3), s * (HW + 1.3)), VASCA.y, -0.6, 5.6, 7.75, MAT.lacca);
+scatola(-HW - 1.3, HW + 1.3, -1.6, -1.52, 7.33, 7.37, led('#ffc23a', 3.2, 'vasca'), false);
+{
+  const [cv, g] = tela(1024, 256);
+  const gr = g.createLinearGradient(0, 0, 0, 256); gr.addColorStop(0, '#1b1030'); gr.addColorStop(1, '#07050c');
+  g.fillStyle = gr; g.fillRect(0, 0, 1024, 256);
+  logoDaProd(g, 512, 110, 96, { neon: 1.5 });
+  g.font = `900 34px ${FONT_NUM}`; g.fillStyle = '#35e8ff'; g.textAlign = 'center'; g.shadowColor = '#35e8ff'; g.shadowBlur = 14;
+  g.fillText('C O I N   D O Z E R', 512, 205);
+  const t = tex(cv);
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(HW * 2 + 2.4, (HW * 2 + 2.4) / 4),
+    new THREE.MeshStandardMaterial({ map: t, emissiveMap: t, emissive: 0xffffff, emissiveIntensity: 1.2, roughness: 0.35 }));
+  m.position.set(0, -3.75, 7.76); scene.add(m);
+  const tv = texFrontale('▼ VINCITE ▼', '#ffc23a');
+  const v = new THREE.Mesh(new THREE.PlaneGeometry(HW * 2, 0.5), new THREE.MeshBasicMaterial({ map: tv, toneMapped: false }));
+  v.position.set(0, -1.0, 5.605); scene.add(v);
+}
+
+// --- insegna neon DaProd, schermo dello slot e lampadine ---
+const Y_SCHERMO = 8.35, W_SCHERMO = 6.6, H_SCHERMO = 3.3, Z_SCHERMO = Z_FONDO + 0.06;
+const [cvSlot, gSlot] = tela(512, 256);
+const texSlot = tex(cvSlot);
+const matSchermo = new THREE.MeshBasicMaterial({ map: texSlot, toneMapped: false, color: new THREE.Color(1.35, 1.35, 1.35) });
+{
+  const scr = new THREE.Mesh(new THREE.PlaneGeometry(W_SCHERMO, H_SCHERMO), matSchermo);
+  scr.position.set(0, Y_SCHERMO, Z_SCHERMO); scene.add(scr);
+  const fw = W_SCHERMO / 2 + 0.12, fh = H_SCHERMO / 2 + 0.12, zc = Z_SCHERMO - 0.02;
+  scatola(-fw, fw, Y_SCHERMO + fh - 0.12, Y_SCHERMO + fh, zc - 0.05, zc + 0.12, MAT.cromo);
+  scatola(-fw, fw, Y_SCHERMO - fh, Y_SCHERMO - fh + 0.12, zc - 0.05, zc + 0.12, MAT.cromo);
+  scatola(-fw, -fw + 0.12, Y_SCHERMO - fh, Y_SCHERMO + fh, zc - 0.05, zc + 0.12, MAT.cromo);
+  scatola(fw - 0.12, fw, Y_SCHERMO - fh, Y_SCHERMO + fh, zc - 0.05, zc + 0.12, MAT.cromo);
+}
+const [cvNeon, gNeon] = tela(1024, 300);
+{
+  const g = gNeon;
+  g.clearRect(0, 0, 1024, 300);
+  g.lineWidth = 7; g.strokeStyle = '#ff5cf4'; g.shadowColor = '#ff3df2'; g.shadowBlur = 26;
+  g.beginPath(); g.roundRect(22, 16, 980, 268, 60); g.stroke();
+  g.lineWidth = 3; g.beginPath(); g.roundRect(38, 32, 948, 236, 48); g.stroke();
+  g.shadowBlur = 0;
+  logoDaProd(g, 512, 128, 128, { neon: 2.2, alone: '#ffb300' });
+  g.font = `900 38px ${FONT_NUM}`; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.shadowColor = '#35e8ff'; g.shadowBlur = 20; g.fillStyle = '#c9fbff';
+  g.fillText('C O I N   D O Z E R   ·   S A L A   S L O T', 512, 238);
+}
+const matNeon = new THREE.MeshBasicMaterial({ map: tex(cvNeon), transparent: true, toneMapped: false, depthWrite: false, color: new THREE.Color(1.8, 1.8, 1.8) });
+const insegna = new THREE.Mesh(new THREE.PlaneGeometry(9.2, 9.2 * 300 / 1024), matNeon);
+insegna.position.set(0, 11.75, Z_FONDO + 0.08); scene.add(insegna);
+scatola(-4.9, 4.9, 10.3, 13.2, Z_FONDO - 0.02, Z_FONDO + 0.04, new THREE.MeshStandardMaterial({ color: 0x0d0818, roughness: 0.6 }), false);
+// colonnine laterali con i led verticali
+for (const s of [-1, 1]) {
+  scatola(s * (HW + 0.75) - 0.35, s * (HW + 0.75) + 0.35, 4.8, 13.1, Z_FONDO - 0.1, Z_FONDO + 0.5, MAT.laccaViola);
+  scatola(s * (HW + 0.75) - 0.06, s * (HW + 0.75) + 0.06, 4.9, 13.0, Z_FONDO + 0.5, Z_FONDO + 0.54, led(s < 0 ? '#ff3df2' : '#35e8ff', 3, 'colonne'), false);
+}
+// lampadine intorno allo schermo: si rincorrono, impazziscono quando si vince
+const LAMP = [];
+{
+  const w = W_SCHERMO / 2 + 0.42, h = H_SCHERMO / 2 + 0.42, passo = 0.42;
+  const lato = (x0, y0, x1, y1) => { const n = Math.round(Math.hypot(x1 - x0, y1 - y0) / passo); for (let i = 0; i < n; i++) LAMP.push([x0 + (x1 - x0) * i / n, y0 + (y1 - y0) * i / n]); };
+  lato(-w, h, w, h); lato(w, h, w, -h); lato(w, -h, -w, -h); lato(-w, -h, -w, h);
+}
+const lampadine = new THREE.InstancedMesh(new THREE.SphereGeometry(0.085, 10, 8), new THREE.MeshBasicMaterial({ toneMapped: false }), LAMP.length);
+{
+  const m4 = new THREE.Matrix4();
+  LAMP.forEach(([x, y], i) => { m4.makeTranslation(x, Y_SCHERMO + y, Z_SCHERMO + 0.06); lampadine.setMatrixAt(i, m4); lampadine.setColorAt(i, new THREE.Color(1, 1, 1)); });
+  scene.add(lampadine);
+}
+
+// --- carrello di lancio sul binario ---
+scatola(-HW - 0.6, HW + 0.6, Y_BINARIO - 0.05, Y_BINARIO + 0.05, Z_LANCIO - 0.05, Z_LANCIO + 0.05, MAT.cromo, false);
+for (const s of [-1, 1]) scatola(s * (HW + 0.55) - 0.07, s * (HW + 0.55) + 0.07, 5.15, Y_BINARIO + 0.05, Z_LANCIO - 0.07, Z_LANCIO + 0.07, MAT.cromo, false);
+const carrello = new THREE.Group();
+{
+  const corpo = new THREE.Mesh(new THREE.BoxGeometry(1.35, 0.42, 0.62), MAT.laccaViola); corpo.castShadow = true;
+  const cap = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.07, 0.66), MAT.oro); cap.position.y = 0.24;
+  const fessura = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.03, 0.2), led('#5dffb4', 3.5, 'carrello')); fessura.position.y = -0.22;
+  const [cv, g] = tela(256, 80); logoDaProd(g, 128, 40, 34, { neon: 1 });
+  const targa = new THREE.Mesh(new THREE.PlaneGeometry(1.25, 0.39), new THREE.MeshBasicMaterial({ map: tex(cv), transparent: true, toneMapped: false, color: new THREE.Color(1.4, 1.4, 1.4) }));
+  targa.position.set(0, 0, 0.315);
+  carrello.add(corpo, cap, fessura, targa);
+  carrello.position.set(0, Y_BINARIO - 0.02, Z_LANCIO); scene.add(carrello);
+}
+// raggio guida e anello d'atterraggio
+const raggio = new THREE.Mesh(new THREE.PlaneGeometry(0.1, 1), new THREE.MeshBasicMaterial({ color: new THREE.Color(0.4, 2.2, 1.4), transparent: true, opacity: 0.45, toneMapped: false, depthWrite: false, blending: THREE.AdditiveBlending }));
+scene.add(raggio);
+const anello = new THREE.Mesh(new THREE.RingGeometry(0.42, 0.52, 40), new THREE.MeshBasicMaterial({ color: new THREE.Color(0.5, 2.4, 1.6), transparent: true, opacity: 0.8, toneMapped: false, depthWrite: false, side: THREE.DoubleSide }));
+anello.rotation.x = -Math.PI / 2; scene.add(anello);
+
+// --- sala: pavimento lucido, luci lontane sfocate, coni di luce ---
+const BOKEH = [];
+{
+  const pav = new THREE.Mesh(new THREE.PlaneGeometry(160, 160), new THREE.MeshStandardMaterial({ color: 0x0b0914, metalness: 0.5, roughness: 0.32 }));
+  pav.rotation.x = -Math.PI / 2; pav.position.y = -5.6; pav.receiveShadow = true; scene.add(pav);
+  const [cv, g] = tela(64, 64);
+  const gr = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+  gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.35, 'rgba(255,255,255,.35)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = gr; g.fillRect(0, 0, 64, 64);
+  const tb = tex(cv);
+  const colori = [0xff3df2, 0x35e8ff, 0xffc23a, 0xff6b3d, 0x9a6bff, 0xfff0c0];
+  for (let i = 0; i < 46; i++) {
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tb, color: colori[i % colori.length], transparent: true, opacity: rnd(0.15, 0.45), blending: THREE.AdditiveBlending, depthWrite: false, fog: false }));
+    const lato = Math.random() < 0.5 ? -1 : 1;
+    sp.position.set(lato * rnd(12, 40), rnd(-4, 16), rnd(-55, -14));
+    const s = rnd(1.5, 5); sp.scale.set(s, s, 1); sp.userData.f = rnd(0.3, 1.4); sp.userData.o = sp.material.opacity;
+    scene.add(sp); BOKEH.push(sp);
+  }
+}
+
+// ============ LUCI ============
+scene.add(new THREE.HemisphereLight(0x9c8cff, 0x120a18, 0.55));
+const sole = new THREE.DirectionalLight(0xfff0dc, 2.8);
+sole.position.set(5, 20, 11); sole.target.position.set(0, 0, -3); scene.add(sole, sole.target);
+sole.shadow.camera.left = -8; sole.shadow.camera.right = 8; sole.shadow.camera.top = 17; sole.shadow.camera.bottom = -12;
+sole.shadow.camera.near = 5; sole.shadow.camera.far = 55; sole.shadow.bias = -0.0004; sole.shadow.normalBias = 0.02;
+const controLuce = new THREE.DirectionalLight(0x8f7bff, 0.7); controLuce.position.set(-6, 10, -22); scene.add(controLuce);
+const LUCI_COLORE = [
+  new THREE.PointLight(0xff3df2, 30, 26, 2), new THREE.PointLight(0x35e8ff, 30, 26, 2),
+  new THREE.PointLight(0xffc23a, 40, 18, 2), new THREE.PointLight(0xff5cf4, 26, 14, 2),
+];
+LUCI_COLORE[0].position.set(-9, 6, -7); LUCI_COLORE[1].position.set(9, 6, -3);
+LUCI_COLORE[2].position.set(0, 0.2, 6.6); LUCI_COLORE[3].position.set(0, 10.5, -14.5);
+LUCI_COLORE.forEach(l => { l.userData.base = l.intensity; scene.add(l); });
+const LAMPI = [0, 1, 2].map(() => { const l = new THREE.PointLight(0xffffff, 0, 7, 2); scene.add(l); return l; });
+let lampoNext = 0;
+function lampo(x, y, z, col, k = 12) {
+  k *= 0.3; const l = LAMPI[lampoNext++ % LAMPI.length]; l.position.set(x, y + 0.8, z); l.color.set(col); l.intensity = k; }
+
+// ============ MONETE: una InstancedMesh per taglio ============
+const CAP = 1400;                                  // istanze per taglio (le pile ne usano una a moneta)
+const MAX_MONETE = TATTILE ? 320 : 440;
+const geoMoneta = new THREE.CylinderGeometry(1, 1, 1, 44, 1, false);
+function texBordo(T) {
+  const [cv, g] = tela(512, 32);
+  const a = T === INFO_CHIP ? '#ffd54a' : (T.c ? T.a : T.a), b = T === INFO_CHIP ? '#6b2bb0' : T.b;
+  for (let x = 0; x < 512; x += 8) { g.fillStyle = a; g.fillRect(x, 0, 4, 32); g.fillStyle = b; g.fillRect(x + 4, 0, 4, 32); }
+  return tex(cv);
+}
+const MESH_TAGLIO = [];
+for (let t = 0; t <= CHIP; t++) {
+  const T = tipo(t);
+  const [cv, g] = tela(512, 512); disegnaFaccia(g, t, 512);
+  const tf = tex(cv), tb = texBordo(T);
+  const gem = !!T.gem || t === CHIP;
+  const faccia = new THREE.MeshStandardMaterial({ map: tf, metalness: t === CHIP ? 0.35 : (gem ? 0.65 : 0.82), roughness: t === CHIP ? 0.35 : 0.3, envMapIntensity: 1.9,
+    emissiveMap: gem ? tf : null, emissive: gem ? 0xffffff : 0x000000, emissiveIntensity: t === CHIP ? 0.55 : (gem ? 0.28 : 0) });
+  const bordo = new THREE.MeshStandardMaterial({ map: tb, metalness: t === CHIP ? 0.5 : 0.9, roughness: 0.3, envMapIntensity: 1.9,
+    emissive: t === CHIP ? 0x7a2cff : 0x000000, emissiveIntensity: t === CHIP ? 0.9 : 0 });
+  const im = new THREE.InstancedMesh(geoMoneta, [bordo, faccia, faccia], CAP);
+  im.frustumCulled = false; im.castShadow = true; im.receiveShadow = true; im.count = 0;
+  scene.add(im); MESH_TAGLIO.push(im);
+}
+// moneta "fantasma" sotto il carrello: mostra il taglio scelto
+const fantasma = new THREE.Mesh(geoMoneta, MESH_TAGLIO[0].material.map(m => { const c = m.clone(); c.transparent = true; c.opacity = 0.75; return c; }));
+scene.add(fantasma);
+function aggiornaFantasma() {
+  const T = TAGLI[stato.sel], mats = MESH_TAGLIO[stato.sel].material;
+  fantasma.material.forEach((m, i) => { m.map = mats[i].map; m.emissiveMap = mats[i].emissiveMap; m.emissive.copy(mats[i].emissive); m.emissiveIntensity = mats[i].emissiveIntensity; m.metalness = mats[i].metalness; m.needsUpdate = true; });
+  fantasma.scale.set(T.r, T.h, T.r);
+}
+
+// ============ FISICA 2,5D ============
+// Le monete stanno sempre piatte quando sono appoggiate (pavimento, spintore o un'altra moneta),
+// si urtano sul piano orizzontale solo se sono alla stessa quota, cadono quando il centro esce dal
+// bordo. Una moneta che si posa su una UGUALE si fonde nel taglio successivo.
+const G = 24, ATTRITO = 8, ATTRITO_MONETA = 14, RIMBALZO = 0.08, EPS = 0.05, PASSO = 1 / 120, ITER = 3;
+let monete = [];
+let idMoneta = 0, tempoFisica = 0, silenzio = false;
+function nuovaMoneta(t, x, y, z, n = 1) {
+  const T = tipo(t);
+  const c = { id: ++idMoneta, t, n, x, y, z, vx: 0, vy: 0, vz: 0, r: T.r, h: T.h * n, m: T.m * n,
+    terra: false, sup: null, supP: null, svx: 0, svz: 0, ddx: 0, ddz: 0, xs: x, zs: z, py: y,
+    rx: 0, rz: 0, wx: 0, wz: 0, yaw: Math.random() * Math.PI * 2, pop: 0, fuori: null, tt: 0, vivo: true,
+    dx: x, dy: y, dz: z, eta: 0 };
+  monete.push(c); return c;
+}
+function togli(c) { c.vivo = false; }
+// una pila è un'unica moneta alta n volte (e pesante n volte): si spinge, cade e paga tutta insieme
+function impostaPila(c, n) { const T = tipo(c.t); c.n = n; c.h = T.h * n; c.m = T.m * n; }
+
+// griglia spaziale riutilizzata (niente spazzatura a ogni passo)
+const CELLA = 1.5, griglia = new Map();
+const chiave = (ix, iz) => (ix + 512) * 4096 + (iz + 512);
+function costruisciGriglia() {
+  for (const a of griglia.values()) a.length = 0;
+  for (const c of monete) {
+    if (!c.vivo || c.fuori) continue;
+    const k = chiave(Math.floor(c.x / CELLA), Math.floor(c.z / CELLA));
+    let a = griglia.get(k); if (!a) { a = []; griglia.set(k, a); } a.push(c);
+  }
+}
+function vicine(c, fn) {
+  const ix = Math.floor(c.x / CELLA), iz = Math.floor(c.z / CELLA);
+  for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) {
+    const a = griglia.get(chiave(ix + i, iz + j)); if (!a) continue;
+    for (let k = 0; k < a.length; k++) if (a[k] !== c) fn(a[k]);
+  }
+}
+const livelloDi = (c) => (c.y > LIV[0].y - 0.2 && c.z < LIV[0].zEdge) ? 0 : (c.y > LIV[1].y - 0.2 && c.z < LIV[1].zEdge) ? 1 : 2;
+
+let salite = 0;
+const atterraggi = { moneta: 0, uguale: 0, spintore: 0, panno: 0 };
+function collisioni(ultimo) {
+  for (const a of monete) {
+    if (!a.vivo || a.fuori) continue;
+    const ix = Math.floor(a.x / CELLA), iz = Math.floor(a.z / CELLA);
+    for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) {
+      const arr = griglia.get(chiave(ix + i, iz + j)); if (!arr) continue;
+      for (let k = 0; k < arr.length; k++) {
+        const b = arr[k];
+        if (b.id <= a.id || !b.vivo || b.fuori) continue;
+        const dx = b.x - a.x, dz = b.z - a.z, rr = a.r + b.r, d2 = dx * dx + dz * dz;
+        if (d2 >= rr * rr) continue;
+        if (Math.abs((a.y + a.h / 2) - (b.y + b.h / 2)) > (a.h + b.h) * 0.45) continue;
+        // chi arriva dall'alto si posa sopra, non viene spinto di lato
+        if (!a.terra && a.py >= b.y + b.h - 0.02) continue;
+        if (!b.terra && b.py >= a.y + a.h - 0.02) continue;
+        let d = Math.sqrt(d2), nx, nz;
+        if (d < 1e-5) { const an = Math.random() * 6.28; nx = Math.cos(an); nz = Math.sin(an); d = 0; }
+        else { nx = dx / d; nz = dz / d; }
+        const ov = rr - d, ia = 1 / a.m, ib = 1 / b.m, s = ia + ib;
+        a.x -= nx * ov * ia / s; a.z -= nz * ov * ia / s;
+        b.x += nx * ov * ib / s; b.z += nz * ov * ib / s;
+        const vn = (b.vx - a.vx) * nx + (b.vz - a.vz) * nz;
+        if (vn < 0) {
+          const j = -(1 + RIMBALZO) * vn / s;
+          a.vx -= j * ia * nx; a.vz -= j * ia * nz; b.vx += j * ib * nx; b.vz += j * ib * nz;
+        }
+        // pila troppo schiacciata: la moneta più leggera sale sopra l'altra (così nascono le fusioni)
+        if (ultimo && ov > rr * 0.3 && a.terra && b.terra && Math.random() < 0.35) sali(a, b);
+        // CALAMITA: due monete (o pile) uguali che si toccano alla stessa quota si impilano
+        else if (ultimo && calamita.t > 0 && a.t === b.t && a.t < ULTIMO && a.terra && b.terra &&
+          Math.abs(a.y - b.y) < 0.08 && Math.random() < 0.12) { if (a.n <= b.n) coda.push(a, b); else coda.push(b, a); }
+      }
+    }
+  }
+}
+function sali(a, b) {
+  const su = a.m < b.m ? a : (b.m < a.m ? b : (Math.random() < 0.5 ? a : b)), giu = su === a ? b : a;
+  if (giu.y - LIV[livelloDi(giu)].y > 0.75) return;     // niente torri infinite
+  su.x = giu.x + (su.x - giu.x) * 0.35; su.z = giu.z + (su.z - giu.z) * 0.35;
+  su.y = su.py = giu.y + giu.h + 0.002; su.vy = 0; su.terra = false; su.sup = su.supP = null;
+  salite++;
+}
+function limiti(c) {
+  const L3 = LIV[2];
+  const nelBuco = (c.z > inizioBuchi() && c.y < L3.y + 1.2) || (c.y < L3.y - 0.05 && c.z > 3.0 && Math.abs(c.x) > HW - c.r);
+  if (!nelBuco) {
+    const lim = HW - c.r;
+    if (c.x > lim) { c.x = lim; if (c.vx > 0) c.vx *= -0.2; }
+    else if (c.x < -lim) { c.x = -lim; if (c.vx < 0) c.vx *= -0.2; }
+  }
+  if (c.z < LIV[0].zBack + c.r) { c.z = LIV[0].zBack + c.r; if (c.vz < 0) c.vz = 0; }
+  for (const p of SPINTORI) {
+    // Faccia dello spintore e bordo del piano sopra valgono solo per chi era GIÀ a quella quota al passo
+    // prima (c.py): una moneta che ci sta solo cadendo attraverso si deve posare, non essere spostata.
+    // (Prima una moneta lanciata che attraversava la quota del piano 1 veniva scambiata per una moneta
+    // sopra lo spintore 2 e spinta davanti al bordo: scavalcava il piano 1 e cadeva lontano dall'anello.)
+    // la faccia dello spintore
+    if (c.y < p.top - 0.02 && c.py < p.top - 0.02 && c.y + c.h > p.pav + 0.005 && c.z - c.r < p.z && c.z > p.z - p.len) {
+      c.z = p.z + c.r; if (c.vz < p.vz) c.vz = p.vz;
+    }
+    // il bordo del piano sopra (o il cofano) raschia via chi sta sopra lo spintore
+    if (c.y < p.scrTop - 0.01 && c.py < p.scrTop - 0.01 && c.y + c.h > p.scrBot + 0.005 && c.z - c.r < p.scr && c.z > p.scr - 4) {
+      c.z = p.scr + c.r; if (c.vz < 0) c.vz = 0;
+    }
+  }
+}
+const coda = [];
+function appoggio(c) {
+  const lim = c.py + EPS;
+  let best = -99, svx = 0, svz = 0, sup = null, supP = null;
+  if (Math.abs(c.x) <= HW) {
+    for (const L of LIV) if (c.z >= L.zBack && c.z <= L.zEdge && L.y <= lim && L.y > best) best = L.y;
+  }
+  for (const p of SPINTORI) {
+    if (c.z <= p.z && c.z >= p.z - p.len && p.top <= lim && p.top > best) { best = p.top; svx = 0; svz = p.vz; supP = p; }
+  }
+  vicine(c, (o) => {
+    if (!o.vivo || o.fuori) return;
+    const top = o.y + o.h;
+    if (top > lim || top <= best) return;
+    const dx = o.x - c.x, dz = o.z - c.z;
+    if (dx * dx + dz * dz < (o.r * 0.9) * (o.r * 0.9)) { best = top; svx = o.vx; svz = o.vz; sup = o; supP = null; }
+  });
+  if (c.y <= best) {
+    const impatto = -c.vy;
+    c.y = best; if (c.vy < 0) c.vy = 0;
+    const eraTerra = c.terra;
+    if (!eraTerra && impatto > 1) { if (sup) { atterraggi.moneta++; if (sup.t === c.t) atterraggi.uguale++; } else if (supP) atterraggi.spintore++; else atterraggi.panno++; }
+    if (!c.terra && impatto > 2.5 && !silenzio) suono.clink(impatto);
+    c.terra = true; c.sup = sup; c.supP = supP; c.svx = svx; c.svz = svz;
+    // FUSIONE: posata sopra una moneta dello stesso taglio
+    if (c.t < ULTIMO && sup && sup.t === c.t && sup.terra) {
+      const dx = sup.x - c.x, dz = sup.z - c.z, rf = sup.r * (calamita.t > 0 ? 1 : RAGGIO_FUSIONE);
+      if (dx * dx + dz * dz < rf * rf) coda.push(c, sup);
+    }
+  } else {
+    if (c.terra && !c.sup && !c.supP) {                  // appena scivolata oltre un bordo: si inclina e cade
+      c.vz += 0.6; c.wx = rnd(4, 8); c.wz = rnd(-3, 3);
+    }
+    c.terra = false; c.sup = null; c.supP = null;
+  }
+}
+
+let catena = 0;
+function eseguiFusioni() {
+  for (let i = 0; i < coda.length; i += 2) {
+    const a = coda[i], b = coda[i + 1];                 // a si è posata (o è stata attirata) su b
+    if (!a.vivo || !b.vivo || a === b || a.t !== b.t) continue;
+    const T = TAGLI[b.t], tot = a.n + b.n;
+    togli(a);
+    if (tot < T.serve) { impostaPila(b, tot); if (!silenzio) dopoPila(b); continue; }
+    // la pila vale quanto il taglio successivo: si fonde; le monete in più restano sotto
+    togli(b);
+    let y = b.y;
+    if (tot > T.serve) {
+      const r = nuovaMoneta(b.t, b.x, b.y, b.z, tot - T.serve);
+      r.terra = true; r.vx = b.vx; r.vz = b.vz; r.dx = b.dx; r.dy = b.dy; r.dz = b.dz; r.py = r.y; r.yaw = b.yaw;
+      y += r.h + 0.002;
+    }
+    const n = nuovaMoneta(b.t + 1, b.x, y, b.z);
+    // catena vera: solo se una delle due era appena nata da un'altra fusione (col saltello)
+    n.cat = 1 + Math.max(a.cat && a.eta < 2.5 ? a.cat : 0, b.cat && b.eta < 2.5 ? b.cat : 0);
+    n.vx = b.vx; n.vz = b.vz; n.vy = 3.6; n.pop = 1; n.dx = b.dx; n.dy = b.dy; n.dz = b.dz; n.py = n.y;
+    n.wx = rnd(-2, 2); n.wz = rnd(-2, 2);
+    if (!silenzio) dopoFusione(n, T.serve);
+  }
+  coda.length = 0;
+}
+
+let vinciteOnda = 0, ondaT = 0;
+function uscite(dt) {
+  const L3 = LIV[2];
+  for (const c of monete) {
+    if (!c.vivo) continue;
+    if (!c.fuori) {
+      if (c.y < L3.y - 0.45 && c.z > L3.zEdge - 0.05 && Math.abs(c.x) < HW + 0.35) vinci(c);
+      else if (c.y < L3.y - 0.3 && Math.abs(c.x) > HW - 0.05 && c.z > 3.0) perdi(c);
+      else if (c.y < -1.5) togli(c);                      // sicurezza: nessuna moneta nel vuoto
+    } else if (c.fuori === 'vinta') {
+      if (c.y <= VASCA.y) { c.y = VASCA.y; c.vy = 0; c.vz *= 0.8; c.vx *= 0.8; c.rx *= 0.8; c.rz *= 0.8; c.wx = c.wz = 0; }
+      c.z = clamp(c.z, VASCA.z0 + c.r, VASCA.z1 - c.r); c.x = clamp(c.x, -HW + c.r, HW - c.r);
+      c.tt += dt; if (c.tt > 2.6) togli(c);
+    } else if (c.y < -0.7) togli(c);
+  }
+}
+
+function passo(dt) {
+  tempoFisica += dt;
+  turbo.t = Math.max(0, turbo.t - dt); calamita.t = Math.max(0, calamita.t - dt); muro.t = Math.max(0, muro.t - dt);
+  chiusuraBuchi = clamp(chiusuraBuchi + (muro.t > 0 ? dt : -dt) * 2.5, 0, 1);
+  // la fase avanza a velocità variabile: TURBO accelera e allunga la corsa senza scatti
+  turboK += ((turbo.t > 0 ? 1 : 0) - turboK) * Math.min(1, dt * 3);
+  for (const p of SPINTORI) {
+    p.fi += dt * 2 * Math.PI / p.per * (1 + 1.3 * turboK);
+    const corsa = (p.fMax - p.fMin) * (1 + 0.6 * turboK);
+    const nz = p.fMin + corsa * (0.5 - 0.5 * Math.cos(p.fi));
+    p.dz = nz - p.z; p.vz = p.dz / dt; p.z = nz;
+  }
+  // chi è appoggiato viene trascinato da ciò che ha sotto (dal basso verso l'alto)
+  monete.sort((a, b) => a.y - b.y);
+  for (const c of monete) {
+    c.xs = c.x; c.zs = c.z;
+    if (!c.vivo || c.fuori || !c.terra) continue;
+    if (c.supP) c.z += c.supP.dz * 0.95;
+    else if (c.sup && c.sup.vivo && !c.sup.fuori) { c.x += c.sup.ddx * 0.92; c.z += c.sup.ddz * 0.92; }
+  }
+  for (const c of monete) {
+    if (!c.vivo) continue;
+    c.py = c.y; c.eta += dt;
+    c.vy -= G * dt;
+    if (c.fuori) { c.x += c.vx * dt; c.y += c.vy * dt; c.z += c.vz * dt; c.rx += c.wx * dt; c.rz += c.wz * dt; continue; }
+    if (c.terra) {
+      const k = 1 - Math.exp(-(c.sup ? ATTRITO_MONETA : ATTRITO) * dt);
+      c.vx += (c.svx - c.vx) * k; c.vz += (c.svz - c.vz) * k;
+      const r = Math.exp(-22 * dt); c.rx *= r; c.rz *= r; c.wx = c.wz = 0;
+    } else { c.rx += c.wx * dt; c.rz += c.wz * dt; }
+    c.x += c.vx * dt; c.y += c.vy * dt; c.z += c.vz * dt;
+  }
+  costruisciGriglia();
+  for (let it = 0; it < ITER; it++) {
+    collisioni(it === ITER - 1);
+    for (const c of monete) if (c.vivo && !c.fuori) limiti(c);
+  }
+  for (const c of monete) if (c.vivo && !c.fuori) appoggio(c);
+  eseguiFusioni();
+  uscite(dt);
+  for (const c of monete) { c.ddx = c.x - c.xs; c.ddz = c.z - c.zs; }
+  if (monete.some(c => !c.vivo)) monete = monete.filter(c => c.vivo);
+}
+function simula(secondi) { const n = Math.round(secondi / PASSO); for (let i = 0; i < n; i++) passo(PASSO); }
+
+// ============ PILA INIZIALE E TAVOLO SALVATO ============
+function taglioPila(liv) {
+  const r = Math.random();
+  if (liv === 0) return r < 0.6 ? 0 : 1;
+  if (liv === 1) return r < 0.5 ? 0 : r < 0.85 ? 1 : 2;
+  return r < 0.4 ? 0 : r < 0.72 ? 1 : r < 0.92 ? 2 : 3;
+}
+function pilaIniziale() {
+  monete = [];
+  const zone = [[0, SPINTORI[0].fMax + 1.1, LIV[0].zEdge - 0.25], [1, SPINTORI[1].fMax + 0.45, LIV[1].zEdge - 0.1], [2, SPINTORI[2].fMax + 0.45, LIV[2].zEdge - 0.1]];
+  for (const [liv, z0, z1] of zone) {
+    let riga = 0;
+    for (let z = z0; z <= z1; z += 0.74, riga++) {
+      for (let x = -HW + 0.46 + (riga % 2) * 0.42; x <= HW - 0.42; x += 0.86) {
+        const t = taglioPila(liv);
+        const c = nuovaMoneta(t, x + rnd(-0.06, 0.06), LIV[liv].y, z + rnd(-0.05, 0.05)); c.terra = true;
+        if (Math.random() < 0.2) {                       // qualche pila da due, mai dello stesso taglio
+          let t2 = taglioPila(liv); if (t2 === t) t2 = (t + 1) % 3;
+          const d = nuovaMoneta(t2, c.x + rnd(-0.1, 0.1), c.y + c.h + 0.01, c.z + rnd(-0.1, 0.1)); d.py = d.y;
+        }
+      }
+    }
+  }
+  silenzio = true; simula(4); silenzio = false;
+  for (const c of monete) { c.dx = c.x; c.dy = c.y; c.dz = c.z; }
+}
+function fotografaTavolo() {
+  const out = [];
+  for (const c of monete) if (c.vivo && !c.fuori) out.push(c.t, +c.x.toFixed(2), +c.y.toFixed(3), +c.z.toFixed(2), c.n);
+  return out;
+}
+function ripristinaTavolo(arr) {
+  if (!Array.isArray(arr) || arr.length < 50 || arr.length % 5) return false;
+  monete = [];
+  for (let i = 0; i < arr.length && monete.length < MAX_MONETE; i += 5) {
+    const [t, x, y, z, n] = arr.slice(i, i + 5);
+    if (![t, x, y, z, n].every(v => typeof v === 'number' && isFinite(v))) continue;
+    if (t < 0 || t > CHIP || t !== Math.round(t) || Math.abs(x) > HW || z < Z_FONDO + 0.1 || z > LIV[2].zEdge || y < -0.1 || y > 6) continue;
+    if (n < 1 || n !== Math.round(n) || n >= tipo(t).serve) continue;
+    const c = nuovaMoneta(t, x, y, z, n); c.py = y;
+  }
+  if (monete.length < 10) return false;
+  silenzio = true; simula(0.4); silenzio = false;
+  for (const c of monete) { c.dx = c.x; c.dy = c.y; c.dz = c.z; }
+  return true;
+}
+function riciclaEccesso() {
+  // il tavolo non si riempie mai: se si esagera, spariscono le monete più piccole del piano 3 in fondo
+  const vive = monete.filter(c => c.vivo && !c.fuori);
+  let extra = vive.length - MAX_MONETE; if (extra <= 0) return 0;
+  // prima le piccole ferme, poi le altre ferme, e solo in ultimo (raffiche esagerate) le più vecchie in volo
+  const candidate = [
+    ...vive.filter(c => c.t < 2 && c.n === 1 && c.terra).sort((a, b) => a.t - b.t || a.z - b.z),
+    ...vive.filter(c => c.t >= 2 && c.t !== CHIP && c.terra).sort((a, b) => a.t - b.t),
+    ...vive.filter(c => !c.terra).sort((a, b) => a.id - b.id)];
+  let n = 0;
+  for (const c of candidate) { if (extra <= 0) break; if (!c.vivo) continue; togli(c); extra--; n++; }
+  if (n) monete = monete.filter(c => c.vivo);
+  return n;
+}
+
+// ============ EFFETTI: particelle luminose, testi volanti ============
+const NP = TATTILE ? 700 : 1500;
+const pPos = new Float32Array(NP * 3), pCol = new Float32Array(NP * 3), pDim = new Float32Array(NP), pAlfa = new Float32Array(NP);
+const pVel = new Float32Array(NP * 3), pVita = new Float32Array(NP), pMax = new Float32Array(NP), pGrav = new Float32Array(NP), pDim0 = new Float32Array(NP);
+const pGeo = new THREE.BufferGeometry();
+pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+pGeo.setAttribute('colore', new THREE.BufferAttribute(pCol, 3));
+pGeo.setAttribute('dim', new THREE.BufferAttribute(pDim, 1));
+pGeo.setAttribute('alfa', new THREE.BufferAttribute(pAlfa, 1));
+const pMat = new THREE.ShaderMaterial({
+  uniforms: { uScala: { value: 500 } },
+  vertexShader: `attribute vec3 colore; attribute float dim; attribute float alfa; varying vec3 vC; varying float vA; uniform float uScala;
+    void main() { vC = colore; vA = alfa; vec4 mv = modelViewMatrix * vec4(position, 1.0);
+      gl_PointSize = dim * uScala / max(0.1, -mv.z); gl_Position = projectionMatrix * mv; }`,
+  fragmentShader: `varying vec3 vC; varying float vA;
+    void main() { float r = length(gl_PointCoord - 0.5) * 2.0; float a = max(0.0, 1.0 - r); a = a * a * (0.5 + 0.5 * a);
+      gl_FragColor = vec4(vC * a * vA, 1.0); }`,
+  blending: THREE.AdditiveBlending, depthWrite: false, transparent: true,
+});
+const particelleMesh = new THREE.Points(pGeo, pMat); particelleMesh.frustumCulled = false; scene.add(particelleMesh);
+let pNext = 0;
+const effetti = () => stato.opz.qualita === 'bassa' ? 0.45 : stato.opz.qualita === 'media' ? 0.75 : 1;
+const colTmp = new THREE.Color();
+function particelle(x, y, z, n, col, forza = 1, o = {}) {
+  n = Math.max(1, Math.round(n * effetti()));
+  colTmp.set(col);
+  for (let k = 0; k < n; k++) {
+    const i = pNext; pNext = (pNext + 1) % NP;
+    pPos[i * 3] = x; pPos[i * 3 + 1] = y; pPos[i * 3 + 2] = z;
+    const a = Math.random() * Math.PI * 2, e = o.su ? rnd(0.6, 1) : rnd(-0.2, 1), v = forza * rnd(1.5, 5);
+    pVel[i * 3] = Math.cos(a) * v * Math.sqrt(1 - e * e); pVel[i * 3 + 1] = e * v * (o.su ? 1.6 : 1); pVel[i * 3 + 2] = Math.sin(a) * v * Math.sqrt(1 - e * e);
+    const vita = rnd(0.5, 1.1) * (o.vita || 1); pVita[i] = pMax[i] = vita; pGrav[i] = o.grav ?? 9;
+    const k2 = o.hdr || 1.05, varia = o.arcobaleno ? new THREE.Color().setHSL(Math.random(), 1, 0.6) : colTmp;
+    pCol[i * 3] = varia.r * k2; pCol[i * 3 + 1] = varia.g * k2; pCol[i * 3 + 2] = varia.b * k2;
+    pDim0[i] = rnd(0.08, 0.22) * (o.dim || 1);
+  }
+}
+function aggiornaParticelle(dt) {
+  for (let i = 0; i < NP; i++) {
+    if (pVita[i] <= 0) { if (pAlfa[i] !== 0) { pAlfa[i] = 0; pDim[i] = 0; } continue; }
+    pVita[i] -= dt;
+    pVel[i * 3 + 1] -= pGrav[i] * dt;
+    const att = Math.exp(-1.6 * dt); pVel[i * 3] *= att; pVel[i * 3 + 2] *= att;
+    pPos[i * 3] += pVel[i * 3] * dt; pPos[i * 3 + 1] += pVel[i * 3 + 1] * dt; pPos[i * 3 + 2] += pVel[i * 3 + 2] * dt;
+    const f = Math.max(0, pVita[i] / pMax[i]); pAlfa[i] = f; pDim[i] = pDim0[i] * (0.4 + 0.6 * f);
+  }
+  pGeo.attributes.position.needsUpdate = true; pGeo.attributes.colore.needsUpdate = true;
+  pGeo.attributes.dim.needsUpdate = true; pGeo.attributes.alfa.needsUpdate = true;
+}
+const v3 = new THREE.Vector3();
+let testiAttivi = 0;
+function testo3D(x, y, z, txt, cls = '') {
+  if (silenzio || !stato.opz.scritte || testiAttivi > 26) return;
+  v3.set(x, y, z).project(camera); if (v3.z > 1) return;
+  const el = document.createElement('div'); el.className = 'fluttua ' + cls; el.textContent = txt;
+  el.style.left = ((v3.x + 1) / 2 * innerWidth) + 'px'; el.style.top = ((1 - v3.y) / 2 * innerHeight) + 'px';
+  $('fluttuanti').appendChild(el); testiAttivi++;
+  setTimeout(() => { el.remove(); testiAttivi--; }, 1300);
+}
+function avviso(txt, cls = '') {
+  const box = $('avvisi'); if (box.children.length > 3) box.firstChild.remove();
+  const el = document.createElement('div'); el.className = 'avviso ' + cls; el.textContent = txt; box.appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+let scossaCam = 0;
+const scuoti = (f) => { scossaCam = Math.max(scossaCam, f); };
+let impulsoLed = 0, festa = 0;
+
+// ============ LANCIO ============
+let colonna = 0, ultimoLancio = 0, tempoGioco = 0, ultimoChip = -99, ultimaAzione = -99;
+const monetePresenti = () => monete.filter(c => c.vivo && !c.fuori).length;
+function lanciaMoneta(x, t, gratis = false) {
+  t = clamp(t | 0, 0, CHIP);
+  const T = tipo(t);
+  if (!gratis && t !== CHIP) {
+    if (stato.saldo < T.v) return null;
+    stato.saldo -= T.v; stato.st.speso += T.v; stato.st.lanci++;
+  }
+  const xx = clamp(x, -HW + T.r + 0.02, HW - T.r - 0.02);
+  const c = nuovaMoneta(t, xx, Y_LANCIO, Z_LANCIO + rnd(-0.08, 0.08));
+  c.py = c.y; c.vy = -1.5; c.vz = rnd(-0.2, 0.2); c.wx = rnd(-6, 6); c.wz = rnd(-6, 6);
+  c.dx = c.x; c.dy = c.y; c.dz = c.z;
+  riciclaEccesso();
+  daSalvare = true;
+  return c;
+}
+function lanciaDalGiocatore() {
+  if (cine.fase) return 0;
+  const T = TAGLI[stato.sel];
+  if (stato.saldo < T.v || !lanciaMoneta(colonna, stato.sel)) { saldoInsufficiente(); return 0; }
+  ultimaAzione = tempoGioco;
+  // ogni tanto, in regalo, scende anche un gettone DaProd (mai più di uno ogni PAUSA_CHIP secondi)
+  const chipSulTavolo = monete.filter(c => c.vivo && !c.fuori && c.t === CHIP).length;
+  if (chipSulTavolo < 2 && tempoGioco - ultimoChip > PAUSA_CHIP && Math.random() < PROB_CHIP) {
+    const g = lanciaMoneta(colonna + rnd(-1, 1), CHIP, true);
+    if (g) { g.y += 0.4; ultimoChip = tempoGioco; avviso('🎰 GETTONE DaProd IN ARRIVO!', 'mag'); }
+  }
+  suono.lancio();
+  kickCarrello = 1;
+  particelle(colonna, Y_LANCIO - 0.2, Z_LANCIO, 5, 0x5dffb4, 0.4, { grav: 2 });
+  nascondiHint();
+  aggiornaHUD();
+  return 1;
+}
+let ultimoAvvisoSaldo = 0;
+function saldoInsufficiente() {
+  suono.errore();
+  const ora = performance.now();
+  if (ora - ultimoAvvisoSaldo > 1500) { ultimoAvvisoSaldo = ora; avviso(`Saldo insufficiente per ${nomeTaglio(stato.sel)}: scegli un taglio più piccolo`, 'rosso imp'); }
+  $('saldo').classList.add('giu'); setTimeout(() => $('saldo').classList.remove('giu'), 500);
+}
+
+// ============ VINCITE, CASA, PILE E FUSIONI ============
+function vinci(c) {
+  c.fuori = 'vinta'; c.tt = 0; c.wx = rnd(-5, 5); c.wz = rnd(-5, 5);
+  if (silenzio) return;
+  if (c.t === CHIP) {
+    testo3D(c.x, 0.2, LIV[2].zEdge + 0.4, '🎰 SLOT!', 'chip');
+    particelle(c.x, -0.5, LIV[2].zEdge + 0.6, 30, 0xb04dff, 1.2, { su: true, arcobaleno: true });
+    avviaSlot(); return;
+  }
+  const T = TAGLI[c.t], val = T.v * c.n;
+  stato.saldo += val; stato.st.vinto += val; stato.st.vinte += c.n;
+  // Quello che cade nella vasca fa anche punti della partita DaProd.
+  if (window.DaProdLira) DaProdLira.punti('dozer', val);
+  vinciteOnda += val; ondaT = 1.4;
+  testo3D(c.x, 0.3, LIV[2].zEdge + 0.3, '+' + soldi(val), c.t >= 3 || c.n >= 4 ? 'gr' : '');
+  particelle(c.x, -0.4, LIV[2].zEdge + 0.5, 8 + c.t * 3 + c.n * 2, T.gem || 0xffd54a, 0.9, { su: true });
+  lampo(c.x, -1.2, 6.4, 0xffc23a, 12 + c.t * 5 + c.n);
+  suono.vinci(c.t + Math.min(4, c.n - 1));
+  impulsoLed = Math.min(1, impulsoLed + 0.25);
+  if (c.t >= 8) megaVincita();
+  $('saldoBox').classList.remove('brilla'); void $('saldoBox').offsetWidth; $('saldoBox').classList.add('brilla');
+  daSalvare = true;
+}
+function perdi(c) {
+  c.fuori = 'casa';
+  if (silenzio) return;
+  stato.st.perse += c.n;
+  if (c.t !== CHIP) testo3D(c.x, 0.3, c.z, 'CASA ' + (c.n > 1 ? c.n + '×' : '') + nomeTaglio(c.t), 'casa');
+  particelle(c.x, -0.3, c.z, 6, 0xff2340, 0.5);
+  suono.casa();
+}
+function dopoPila(b) {                               // una moneta si è aggiunta a una pila uguale
+  const T = TAGLI[b.t];
+  particelle(b.x, b.y + b.h, b.z, 6 + b.n, 0xfff0b0, 0.4, { su: true });
+  suono.pila(b.n / T.serve);
+  if (T.serve > 2) testo3D(b.x, b.y + b.h + 0.4, b.z, `${b.n}/${T.serve}`, 'pila');
+}
+function dopoFusione(n, quante) {
+  const T = TAGLI[n.t];
+  stato.st.fusioni++;
+  catena = n.cat || 1;
+  stato.st.catenaMax = Math.max(stato.st.catenaMax, catena);
+  const col = T.gem || (T.met === 'Oro rosso' ? '#ff9a6b' : n.t >= 2 ? '#ffd54a' : '#e6f3ff');
+  particelle(n.x, n.y + 0.3, n.z, 14 + n.t * 4, col, 1 + n.t * 0.08, { su: true, dim: 1 + n.t * 0.05 });
+  particelle(n.x, n.y + 0.3, n.z, 10, 0xff3df2, 0.6);
+  lampo(n.x, n.y, n.z, col, 18 + n.t * 5);
+  testo3D(n.x, n.y + 0.6, n.z, (catena > 1 ? `×${catena} ` : '') + (quante ? quante + '→' : '') + nomeTaglio(n.t), 'fus' + (n.t >= 3 ? ' gr' : ''));
+  suono.fusione(n.t, Math.min(6, catena - 1));
+  if (catena >= 2) {
+    const bonus = Math.round(T.v * 0.05 * (catena - 1));
+    stato.saldo += bonus; stato.st.vinto += bonus;
+    mostraCatena(`CATENA ×${catena}`, `bonus ${soldi(bonus)}`);
+    scuoti(0.12 + catena * 0.04);
+  }
+  if (n.t > stato.record) {
+    stato.record = n.t;
+    avviso(`✨ NUOVO RECORD: ${nomeTaglio(n.t)} (${T.met})`, 'mag imp');
+    suono.sblocco();
+    const nuovoMax = clamp(n.t - 2, stato.maxLancio, MAX_LANCIO);
+    if (nuovoMax > stato.maxLancio) {
+      stato.maxLancio = nuovoMax;
+      setTimeout(() => avviso(`🔓 ORA PUOI LANCIARE ${nomeTaglio(nuovoMax)}`, 'cia imp'), 700);
+      $('negozioBtn').classList.add('nuovo');
+    }
+    rendiSelettore();
+  }
+  if (n.t >= 8) { mostraCatena(TAGLI[n.t].met.toUpperCase() + ' DaProd', nomeTaglio(n.t) + ' sul tavolo!'); festa = 4; }
+  impulsoLed = 1;
+  aggiornaHUD(); daSalvare = true;
+}
+function megaVincita() {
+  stato.st.jackpot++;
+  festa = 5; scuoti(0.6);
+  if (stato.opz.scritte) { $('jackpot').classList.add('su'); setTimeout(() => $('jackpot').classList.remove('su'), 2600); }
+  suono.jackpot();
+  for (let i = 0; i < 6; i++) setTimeout(() => particelle(rnd(-4, 4), rnd(1, 5), rnd(-12, 5), 40, 0xffffff, 2, { su: true, arcobaleno: true, vita: 1.6 }), i * 180);
+}
+let mostraCatenaT = null;
+function mostraCatena(a, b) {
+  $('catenaTxt').textContent = a; $('catenaSub').textContent = b;
+  $('catena').classList.add('su'); clearTimeout(mostraCatenaT);
+  mostraCatenaT = setTimeout(() => $('catena').classList.remove('su'), 1500);
+}
+
+// ============ PIOGGIA DI MONETE (premi dello slot ed eventi) ============
+// I premi sono in monete piccole e fisse (L.100 e L.1.000), qualunque taglio si stia lanciando:
+// così lanciare monete grosse non moltiplica i regali e il milione resta lontanissimo.
+const pioggiaCoda = [];
+function pioggia(n, tMin, tMax, ritmo = 0.07) {
+  const base = pioggiaCoda.length ? pioggiaCoda[pioggiaCoda.length - 1].quando : 0;
+  for (let i = 0; i < n; i++) pioggiaCoda.push({ quando: base + (i + 1) * ritmo, t: Math.floor(rnd(tMin, tMax + 1)) });
+}
+function aggiornaPioggia(dt) {
+  if (!pioggiaCoda.length) return;
+  for (const p of pioggiaCoda) p.quando -= dt;
+  while (pioggiaCoda.length && pioggiaCoda[0].quando <= 0) {
+    const p = pioggiaCoda.shift();
+    const liv = Math.random() < 0.45 ? 1 : 2;
+    const z = liv === 1 ? rnd(SPINTORI[1].fMax + 1, LIV[1].zEdge - 1.2) : rnd(SPINTORI[2].fMax + 1, LIV[2].zEdge - 1.6);
+    const c = nuovaMoneta(Math.min(p.t, ULTIMO), rnd(-HW + 0.6, HW - 0.6), LIV[liv].y + rnd(3, 4.5), z);
+    c.py = c.y; c.vy = -2; c.wx = rnd(-8, 8); c.wz = rnd(-8, 8); c.dx = c.x; c.dy = c.y; c.dz = c.z;
+    particelle(c.x, c.y, c.z, 4, 0xffd54a, 0.4, { grav: 0 });
+  }
+  riciclaEccesso();
+}
+
+// ============ SLOT DaProd sullo schermo della macchina ============
+const SIMBOLI = ['DP', '7', 'BAR', '★', '♦', '♥', 'CAL'];
+const slot = { pos: [0, 2, 4], fin: [0, 0, 0], gira: false, t: 0, coda: 0, msg: 'FAI CADERE UN GETTONE DaProd PER GIOCARE', msgX: 0, vinto: 0, evento: null, fermi: [true, true, true] };
+const STOP = [1.1, 1.65, 2.2], STOP_EVENTO = [1.5, 2.5, 4.6];
+const PREMI_SLOT = { jackpot: 3000, coppia: 3, tris: 8 };
+function avviaSlot(forza, evento = null) {
+  if (slot.gira) { if (!evento) slot.coda++; return false; }
+  if (!evento) stato.st.slot++;
+  let fin;
+  const r = Math.random(), s = 1 + Math.floor(Math.random() * 5);
+  if (forza) fin = forza.slice();
+  else if (r < 0.06) fin = [0, 0, 0];
+  else if (r < 0.22) fin = [s, s, s];
+  else if (r < 0.62) { fin = [s, s, s]; const k = Math.floor(Math.random() * 3); fin[k] = (s + 1 + Math.floor(Math.random() * 4)) % 6; }
+  else { fin = [0, 1, 2].map(() => Math.floor(Math.random() * 6)); if (fin[0] === fin[1] || fin[1] === fin[2] || fin[0] === fin[2]) fin = [1, 3, 5]; }
+  slot.fin = fin; slot.gira = true; slot.t = 0; slot.fermi = [false, false, false]; slot.evento = evento;
+  slot.msg = evento ? '?  ?  ?   EVENTO DaProd   ?  ?  ?' : '★ GIRA ★ GIRA ★ GIRA ★'; slot.vinto = 0;
+  impulsoLed = 1;
+  return true;
+}
+function aggiornaSlot(dt) {
+  if (!slot.gira) return;
+  slot.t += dt;
+  const stop = slot.evento ? STOP_EVENTO : STOP;
+  for (let i = 0; i < 3; i++) {
+    if (slot.t < stop[i]) {
+      // nell'evento l'ultimo rullo rallenta piano piano: suspense
+      let vel = 16;
+      if (slot.evento && i === 2 && slot.t > stop[1]) vel = 16 * Math.max(0.12, 1 - (slot.t - stop[1]) / (stop[2] - stop[1]));
+      slot.pos[i] = (slot.pos[i] + dt * vel) % SIMBOLI.length;
+      if (Math.random() < dt * (slot.evento && i === 2 && slot.t > stop[1] ? vel * 0.8 : 12)) suono.tick();
+    } else if (!slot.fermi[i]) { slot.fermi[i] = true; slot.pos[i] = slot.fin[i]; suono.rullo(i); scuoti(slot.evento ? 0.12 : 0.05); }
+  }
+  if (slot.t > stop[2] + 0.35) {
+    slot.gira = false;
+    if (slot.evento) esitoEvento(slot.evento); else esitoSlot(slot.fin);
+    if (slot.coda > 0 && !slot.evento) { slot.coda--; setTimeout(() => avviaSlot(), 900); }
+  }
+}
+function esitoSlot(f) {
+  const tris = f[0] === f[1] && f[1] === f[2], coppia = f[0] === f[1] || f[1] === f[2] || f[0] === f[2];
+  if (tris && f[0] === 0) {
+    const bonus = PREMI_SLOT.jackpot;
+    stato.saldo += bonus; stato.st.vinto += bonus;
+    pioggia(10, 1, 1, 0.06); pioggia(2, 2, 2, 0.1);
+    slot.msg = `JACKPOT DaProd!  +${soldi(bonus)}  +  PIOGGIA DI MONETE`; slot.vinto = 2;
+    megaVincita();
+    avviso(`🎰 JACKPOT DaProd! +${soldi(bonus)} e pioggia di monete`, 'mag imp');
+    if (window.DaProdLira) DaProdLira.evento('dozer', 'jackpot');
+  } else if (tris) {
+    pioggia(PREMI_SLOT.tris, 1, 1, 0.08); pioggia(1, 2, 2);
+    slot.msg = `TRIS ${SIMBOLI[f[0]]}!  PIOGGIA DI ${PREMI_SLOT.tris + 1} MONETE`; slot.vinto = 1;
+    suono.premio(); festa = 2.5;
+    avviso(`🎰 TRIS! Piovono ${PREMI_SLOT.tris + 1} monete sul tavolo`, 'cia');
+    if (window.DaProdLira) DaProdLira.evento('dozer', 'tris');
+  } else if (coppia) {
+    pioggia(PREMI_SLOT.coppia, 1, 1, 0.12);
+    slot.msg = `COPPIA!  ${PREMI_SLOT.coppia} × ${nomeTaglio(1)} IN REGALO`; slot.vinto = 1;
+    suono.premio(); festa = 1.2;
+    avviso(`🎰 Coppia: ${PREMI_SLOT.coppia} × ${nomeTaglio(1)} in regalo`);
+  } else {
+    slot.msg = 'PECCATO... RIPROVA!'; suono.peccato();
+  }
+  aggiornaHUD(); daSalvare = true;
+}
+
+// disegno dei simboli
+function simbolo(g, s, x, y, h) {
+  g.save(); g.textAlign = 'center'; g.textBaseline = 'middle';
+  const k = SIMBOLI[s];
+  if (k === 'DP') { g.globalAlpha = 1; logoMiniDP(g, x, y, h * 0.42); }
+  else if (k === '7') { g.font = `900 ${h * 0.8}px ${FONT_NUM}`; g.lineWidth = h * 0.06; g.strokeStyle = '#fff'; g.strokeText('7', x, y); g.fillStyle = '#ff2a4d'; g.fillText('7', x, y); }
+  else if (k === 'BAR') { g.fillStyle = '#111'; g.strokeStyle = '#fff'; g.lineWidth = 3; g.beginPath(); g.roundRect(x - h * 0.42, y - h * 0.2, h * 0.84, h * 0.4, 6); g.fill(); g.stroke(); g.fillStyle = '#fff'; g.font = `900 ${h * 0.26}px ${FONT_NUM}`; g.fillText('BAR', x, y + 1); }
+  else if (k === '★') { g.fillStyle = '#ffd54a'; g.beginPath(); for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, r = i % 2 ? h * 0.17 : h * 0.4; g.lineTo(x + Math.cos(a) * r, y + Math.sin(a) * r); } g.fill(); }
+  else if (k === '♦') { g.fillStyle = '#35e8ff'; g.beginPath(); g.moveTo(x, y - h * 0.4); g.lineTo(x + h * 0.3, y); g.lineTo(x, y + h * 0.4); g.lineTo(x - h * 0.3, y); g.fill(); }
+  else if (k === 'CAL') {                       // calamita a ferro di cavallo
+    g.lineCap = 'butt'; g.lineWidth = h * 0.17; g.strokeStyle = '#ff2a4d';
+    g.beginPath(); g.arc(x, y - h * 0.02, h * 0.22, Math.PI, 0, true); g.stroke();
+    g.beginPath(); g.moveTo(x - h * 0.22, y - h * 0.02); g.lineTo(x - h * 0.22, y - h * 0.2); g.moveTo(x + h * 0.22, y - h * 0.02); g.lineTo(x + h * 0.22, y - h * 0.2); g.stroke();
+    g.strokeStyle = '#e6ecf5'; g.beginPath(); g.moveTo(x - h * 0.22, y - h * 0.2); g.lineTo(x - h * 0.22, y - h * 0.34); g.moveTo(x + h * 0.22, y - h * 0.2); g.lineTo(x + h * 0.22, y - h * 0.34); g.stroke();
+  }
+  else { g.fillStyle = '#ff3df2'; g.beginPath(); const r = h * 0.19; g.arc(x - r, y - r * 0.4, r, Math.PI, 0); g.arc(x + r, y - r * 0.4, r, Math.PI, 0); g.lineTo(x, y + h * 0.36); g.closePath(); g.fill(); }
+  g.restore();
+}
+function logoMiniDP(g, x, y, r) {
+  g.save(); const gr = oroGrad(g, y - r, y + r);
+  g.fillStyle = '#150e24'; g.strokeStyle = gr; g.lineWidth = r * 0.16;
+  g.beginPath(); g.arc(x, y, r, 0, 7); g.fill(); g.stroke();
+  g.fillStyle = gr; g.font = `900 ${r * 1.15}px ${FONT_NUM}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('D', x, y + r * 0.06);
+  g.restore();
+}
+let slotAcc = 0;
+function disegnaSlot(dt) {
+  slotAcc += dt; if (slotAcc < 1 / 24) return; slotAcc = 0;
+  const g = gSlot, W = 512, H = 256, ora = performance.now() / 1000;
+  g.fillStyle = '#06040b'; g.fillRect(0, 0, W, H);
+  // testata
+  const lamp = slot.vinto && Math.floor(ora * 6) % 2;
+  g.fillStyle = lamp ? '#ff3df2' : '#1b0f2c'; g.fillRect(0, 0, W, 44);
+  logoDaProd(g, 170, 23, 22, { neon: 1 });
+  g.font = `900 20px ${FONT_NUM}`; g.textAlign = 'left'; g.textBaseline = 'middle';
+  g.fillStyle = lamp ? '#fff' : '#35e8ff'; g.shadowColor = '#35e8ff'; g.shadowBlur = 8;
+  g.fillText(slot.evento ? 'EVENTO' : 'JACKPOT', 290, 24); g.shadowBlur = 0;
+  // rulli
+  const rw = 138, rh = 140, y0 = 56;
+  for (let i = 0; i < 3; i++) {
+    const x0 = 28 + i * (rw + 22);
+    const gr = g.createLinearGradient(0, y0, 0, y0 + rh); gr.addColorStop(0, '#9a93a8'); gr.addColorStop(0.2, '#fdfcff'); gr.addColorStop(0.8, '#fdfcff'); gr.addColorStop(1, '#9a93a8');
+    g.fillStyle = gr; g.beginPath(); g.roundRect(x0, y0, rw, rh, 12); g.fill();
+    g.save(); g.beginPath(); g.roundRect(x0, y0, rw, rh, 12); g.clip();
+    const p = slot.pos[i], base = Math.floor(p), fr = p - base;
+    for (let k = -1; k <= 1; k++) {
+      const s = ((base + k) % SIMBOLI.length + SIMBOLI.length) % SIMBOLI.length;
+      simbolo(g, s, x0 + rw / 2, y0 + rh / 2 + (k - fr) * -rh * 0.9 * -1, 100);
+    }
+    g.restore();
+    g.strokeStyle = slot.evento && slot.gira && !slot.fermi[i] ? (Math.floor(ora * 10) % 2 ? '#ff3df2' : '#fff') : slot.gira ? '#35e8ff' : '#ffd54a'; g.lineWidth = 4; g.beginPath(); g.roundRect(x0, y0, rw, rh, 12); g.stroke();
+  }
+  // linea di vincita
+  g.strokeStyle = 'rgba(255,61,242,.7)'; g.lineWidth = 2; g.beginPath(); g.moveTo(14, y0 + rh / 2); g.lineTo(W - 14, y0 + rh / 2); g.stroke();
+  // messaggio che scorre
+  g.fillStyle = '#0b0714'; g.fillRect(0, 206, W, 50);
+  g.font = `800 22px ${FONT_NUM}`; g.fillStyle = slot.vinto ? '#ffd54a' : '#5dffb4'; g.textAlign = 'left';
+  const testo = slot.msg + '     ◆     ', larg = g.measureText(testo).width;
+  slot.msgX = (slot.msgX + 70 / 24) % larg;
+  for (let x = -slot.msgX; x < W; x += larg) g.fillText(testo, x, 232);
+  // griglia di pixel LED
+  g.fillStyle = 'rgba(0,0,0,.28)';
+  for (let y = 0; y < H; y += 3) g.fillRect(0, y, W, 1);
+  texSlot.needsUpdate = true;
+}
+
+// ============ EVENTI DaProd: la camera va allo slot, i rulli decidono ============
+const EVENTI = {
+  pioggia:  { sim: 3, nome: '🌧 PIOGGIA DaProd', desc: 'piovono monete su tutti i piani' },
+  frenesia: { sim: 1, nome: '⚙️ FRENESIA', desc: 'spintori scatenati e buchi della casa chiusi per 12 s' },
+  calamita: { sim: 6, nome: '🧲 CALAMITA DaProd', desc: 'per 15 s le monete uguali si impilano da sole' },
+};
+const cine = { fase: null, t: 0, b: 0, evento: null };      // fase: va → gira → mostra → torna
+let prossimoEvento = rnd(60, 90);                            // secondi di gioco attivo
+const DURATA_VA = 1.5, DURATA_MOSTRA = 2.0, DURATA_TORNA = 1.3;
+function avviaEvento(id) {
+  if (cine.fase || slot.gira) return false;
+  if (!EVENTI[id]) { const k = Object.keys(EVENTI); id = k[Math.floor(Math.random() * k.length)]; }
+  cine.fase = 'va'; cine.t = 0; cine.evento = id;
+  premuto = false; mira = false;
+  stato.st.eventi++;
+  if (window.DaProdLira) DaProdLira.evento('dozer', 'evento');
+  document.body.classList.add('cine');
+  $('evento').classList.remove('su');
+  suono.evento();
+  return true;
+}
+function aggiornaEventi(dt) {
+  if (!cine.fase) {
+    if (!inGioco) return;
+    // conta solo il tempo in cui si sta giocando davvero (niente eventi a gioco fermo o nel negozio)
+    if (!negozioAperto() && tempoGioco - ultimaAzione < 25 && !slot.gira && !mira) prossimoEvento -= dt;
+    if (prossimoEvento <= 0) { prossimoEvento = rnd(110, 170); avviaEvento(); }
+    return;
+  }
+  cine.t += dt;
+  const liscia = (x) => x * x * (3 - 2 * x);
+  if (cine.fase === 'va') {
+    cine.b = liscia(Math.min(1, cine.t / DURATA_VA));
+    if (Math.random() < dt * 3) suono.battito();
+    if (cine.t >= DURATA_VA) { cine.fase = 'gira'; cine.t = 0; const s = EVENTI[cine.evento].sim; avviaSlot([s, s, s], cine.evento); }
+  } else if (cine.fase === 'gira') {
+    cine.b = 1;
+    if (!slot.gira) { cine.fase = 'mostra'; cine.t = 0; }
+  } else if (cine.fase === 'mostra') {
+    if (cine.t >= DURATA_MOSTRA) {
+      cine.fase = 'torna'; cine.t = 0;
+      $('evento').classList.remove('su'); document.body.classList.remove('cine');
+      if (cine.evento === 'pioggia') { pioggia(14, 1, 1, 0.07); pioggia(2, 2, 2, 0.12); }
+    }
+  } else if (cine.fase === 'torna') {
+    cine.b = 1 - liscia(Math.min(1, cine.t / DURATA_TORNA));
+    if (cine.t >= DURATA_TORNA) {
+      cine.fase = null; cine.b = 0;
+      if (cine.evento === 'frenesia') { turbo.t = Math.max(turbo.t, 12); muro.t = Math.max(muro.t, 12); }
+      if (cine.evento === 'calamita') calamita.t = Math.max(calamita.t, 15);
+      aggiornaAbilitaUI(true);
+    }
+  }
+}
+function esitoEvento(id) {
+  const E = EVENTI[id];
+  slot.msg = `${E.nome.replace(/^\S+\s/, '')}!  ${E.desc.toUpperCase()}`; slot.vinto = 2;
+  festa = 3; scuoti(0.35); suono.rivela();
+  $('eventoTxt').textContent = E.nome; $('eventoSub').textContent = E.desc;
+  $('evento').classList.add('su');
+  avviso(`🎰 EVENTO DaProd: ${E.nome}`, 'mag imp');
+  daSalvare = true;
+}
+function finisciEvento() {                            // per le prove: porta l'evento fino in fondo
+  let n = 0;
+  while (cine.fase && n++ < 2000) { aggiornaEventi(0.02); aggiornaSlot(0.02); }
+  return !cine.fase;
+}
+
+// ============ ABILITÀ: scossa, raffica, meteora, calamita, turbo, muro ============
+const turbo = { t: 0 }, calamita = { t: 0 }, muro = { t: 0 };
+let turboK = 0, mira = false;
+const prontaTra = (id) => Math.max(0, (stato.pronta[id] || 0) - Date.now());
+function usaAbilita(id) {
+  const A = ABIL[id]; if (!A) return false;
+  const n = stato.pot[id];
+  if (n <= 0) return sbloccaAbilita(id);
+  if (cine.fase) return false;
+  if (id === 'raffica') {
+    stato.opz.raffica = !stato.opz.raffica; suono.tick();
+    avviso(`⚡ Raffica ${stato.opz.raffica ? 'accesa: tieni premuto sul tavolo' : 'spenta'}`, 'cia');
+    aggiornaAbilitaUI(true); daSalvare = true; return true;
+  }
+  const resta = prontaTra(id);
+  if (resta > 0) { suono.errore(); avviso(`${A.ico} ${A.nome}: ancora ${Math.ceil(resta / 1000)} s`); return false; }
+  if (id === 'meteora') {
+    mira = !mira; suono.tick();
+    if (mira) avviso('☄️ Tocca il tavolo dove far cadere la meteora', 'rosso');
+    aggiornaAbilitaUI(true); return true;
+  }
+  stato.pronta[id] = Date.now() + A.ricarica(n) * 1000;
+  if (id === 'scossa') faiScossa();
+  else {
+    const d = A.durata(n);
+    if (id === 'turbo') { turbo.t = d; suono.turbo(); avviso(`⏩ TURBO per ${d} s`, 'cia'); }
+    if (id === 'calamita') { calamita.t = d; suono.calamita(); avviso(`🧲 CALAMITA per ${d} s: le monete uguali si impilano`, 'mag'); }
+    if (id === 'muro') { muro.t = d; suono.muro(); avviso(`🧱 MURO: buchi della casa chiusi per ${d} s`, 'cia'); }
+    impulsoLed = 1;
+  }
+  aggiornaAbilitaUI(true); daSalvare = true;
+  return true;
+}
+function sbloccaAbilita(id) {
+  const A = ABIL[id]; if (!A || stato.pot[id] > 0) return false;
+  const costo = A.costo(0);
+  if (stato.saldo < costo) { suono.errore(); avviso(`${A.ico} ${A.nome}: per sbloccarla servono ${soldi(costo)}`, 'rosso imp'); scuotiAbilita(id); return false; }
+  stato.saldo -= costo; stato.pot[id] = 1;
+  suono.sblocco(); avviso(`🔓 ${A.ico} ${A.nome} sbloccata! ${A.tasto ? '(tasto ' + A.tasto + ')' : ''}`, 'cia imp');
+  aggiornaAbilitaUI(true); aggiornaHUD(); if (negozioAperto()) rendiNegozio(); daSalvare = true;
+  return true;
+}
+function scossa() { return usaAbilita('scossa'); }
+function faiScossa() {
+  stato.st.scosse++;
+  for (const c of monete) {
+    if (!c.vivo || c.fuori || !c.terra) continue;
+    const k = 1 / Math.sqrt(c.n);                  // le pile alte saltano meno
+    c.vy = rnd(2.5, 5) * k; c.vx += rnd(-1.6, 1.6) * k; c.vz += rnd(0.4, 2.2) * k;
+    c.wx = rnd(-7, 7) * k; c.wz = rnd(-7, 7) * k; c.terra = false; c.sup = c.supP = null;
+  }
+  scuoti(0.7); suono.scossa(); impulsoLed = 1;
+  particelle(0, 1, -4, 40, 0x35e8ff, 1.5, { su: true });
+}
+// --- meteora ---
+const meteore = [];
+const meshMeteora = new THREE.Mesh(new THREE.IcosahedronGeometry(0.42, 1),
+  new THREE.MeshBasicMaterial({ color: new THREE.Color(3.2, 1.3, 0.35), toneMapped: false }));
+meshMeteora.visible = false; scene.add(meshMeteora);
+const anelloMeteora = new THREE.Mesh(new THREE.RingGeometry(0.9, 1, 48), new THREE.MeshBasicMaterial({ color: new THREE.Color(2.6, 1.1, 0.3), transparent: true, opacity: 0.85, toneMapped: false, depthWrite: false, side: THREE.DoubleSide }));
+anelloMeteora.rotation.x = -Math.PI / 2; anelloMeteora.visible = false; scene.add(anelloMeteora);
+const quotaPiano = (z) => z < LIV[0].zEdge ? LIV[0].y : z < LIV[1].zEdge ? LIV[1].y : LIV[2].y;
+function lanciaMeteora(x, z) {
+  const n = stato.pot.meteora; if (n <= 0) return false;
+  mira = false;
+  stato.pronta.meteora = Date.now() + ABIL.meteora.ricarica(n) * 1000; stato.st.meteore++;
+  const y = quotaPiano(z);
+  meteore.push({ x, z, yF: y, y: y + 11, vy: -14, raggio: raggioMeteora(n), forza: 1 + 0.18 * n });
+  suono.fischio(); aggiornaAbilitaUI(true); daSalvare = true;
+  return true;
+}
+function aggiornaMeteore(dt) {
+  meshMeteora.visible = meteore.length > 0;
+  for (let i = meteore.length - 1; i >= 0; i--) {
+    const m = meteore[i];
+    m.vy -= 30 * dt; m.y += m.vy * dt;
+    meshMeteora.position.set(m.x, m.y, m.z); meshMeteora.rotation.x += dt * 9; meshMeteora.rotation.y += dt * 7;
+    particelle(m.x, m.y + 0.3, m.z, 3, 0xff8a3d, 0.3, { grav: -2, vita: 0.5, dim: 1.6 });
+    if (m.y <= m.yF + 0.35) { meteore.splice(i, 1); impattoMeteora(m); }
+  }
+}
+function impattoMeteora(m) {
+  const R = m.raggio;
+  for (const c of monete) {
+    if (!c.vivo || c.fuori || Math.abs(c.y - m.yF) > 1.8) continue;
+    const dx = c.x - m.x, dz = c.z - m.z, d = Math.hypot(dx, dz);
+    if (d > R) continue;
+    const f = (1 - d / R) * m.forza / Math.sqrt(c.n), nx = d > 1e-3 ? dx / d : 0, nz = d > 1e-3 ? dz / d : 1;
+    c.vy = 2.5 + 5 * f; c.vx += nx * 5.5 * f; c.vz += nz * 5.5 * f + 2.2 * f;
+    c.wx = rnd(-9, 9); c.wz = rnd(-9, 9); c.terra = false; c.sup = c.supP = null;
+  }
+  particelle(m.x, m.yF + 0.3, m.z, 70, 0xff8a3d, 2.2, { su: true, dim: 1.4 });
+  particelle(m.x, m.yF + 0.3, m.z, 30, 0xfff0b0, 1.4, { su: true });
+  lampo(m.x, m.yF, m.z, 0xff8a3d, 40); scuoti(0.55); suono.meteora(); impulsoLed = 1;
+}
+function scuotiAbilita(id) {
+  const b = document.querySelector(`[data-ab="${id}"]`);
+  if (b) { b.classList.remove('no'); void b.offsetWidth; b.classList.add('no'); }
+}
+
+// ============ HUD ============
+// soldi(): lire o euro a seconda dell'opzione (l'euro si sblocca arrivando a L.1.000.000)
+const fmtEuro = new Intl.NumberFormat('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const inEuro = () => stato.euro && stato.opz.valuta === 'euro';
+const soldi = (n) => inEuro() ? (n < 0 ? '-' : '') + '€' + fmtEuro.format(Math.abs(n) / LIRE_PER_EURO) : lire(n);
+const nomeTaglio = (t) => t === CHIP ? INFO_CHIP.nome : inEuro() ? soldi(TAGLI[t].v) : TAGLI[t].nome;
+let saldoMostrato = stato.saldo;
+function aggiornaHUD() {
+  $('vinto').textContent = soldi(stato.st.vinto);
+  $('fusioniN').textContent = punti(stato.st.fusioni);
+  if ($('recordImg').dataset.t !== String(stato.record)) { $('recordImg').src = ICONE[stato.record]; $('recordImg').dataset.t = stato.record; }
+  $('recordTxt').textContent = inEuro() ? nomeTaglio(stato.record) : 'L.' + etichetta(TAGLI[stato.record]);
+  $('saldoNeg').textContent = soldi(stato.saldo);
+  $('selNome').textContent = nomeTaglio(stato.sel);
+  controllaEuro();
+  aggiornaMonetePuoi();
+  aggiornaAbilitaUI(true);
+}
+function controllaEuro() {
+  if (stato.saldo > stato.st.saldoMax) stato.st.saldoMax = stato.saldo;
+  if (!stato.euro && stato.st.saldoMax >= EURO_A) {
+    stato.euro = true; daSalvare = true;
+    avviso('💶 INCREDIBILE: UN MILIONE DI LIRE! Ora puoi giocare in euro (tasto €)', 'mag imp');
+    suono.sblocco(); festa = 4;
+  }
+  $('valutaBtn').hidden = !stato.euro;
+  $('valutaBtn').textContent = inEuro() ? '₤' : '€';
+}
+function cambiaValuta() {
+  if (!stato.euro) { avviso('💶 La valuta in euro si sblocca arrivando a L.1.000.000', 'rosso imp'); suono.errore(); return false; }
+  stato.opz.valuta = inEuro() ? 'lire' : 'euro'; suono.tick();
+  saldoMostrato = stato.saldo;
+  rendiSelettore(); rendiIntro(); aggiornaHUD(); if (negozioAperto()) rendiNegozio();
+  daSalvare = true; return true;
+}
+function aggiornaSaldo(dt) {
+  const d = stato.saldo - saldoMostrato;
+  saldoMostrato = Math.abs(d) < 1 ? stato.saldo : saldoMostrato + d * Math.min(1, dt * 9);
+  const txt = soldi(saldoMostrato);
+  if ($('saldo').textContent !== txt) $('saldo').textContent = txt;
+}
+let hintVisto = false;
+function nascondiHint() { if (hintVisto) return; hintVisto = true; setTimeout(() => $('hint').classList.add('via'), 2500); }
+function applicaScritte() {
+  document.body.classList.toggle('senzaScritte', !stato.opz.scritte);
+  $('scritteBtn').classList.toggle('off', !stato.opz.scritte);
+  $('scritteBtn').title = stato.opz.scritte ? 'nascondi le scritte' : 'mostra le scritte';
+}
+function cambiaScritte() {
+  stato.opz.scritte = !stato.opz.scritte; applicaScritte(); suono.tick(); daSalvare = true;
+  if (stato.opz.scritte) avviso('💬 Scritte accese');
+  if (negozioAperto()) rendiNegozio();
+}
+
+// ============ BARRA DELLE ABILITÀ (accanto alla scossa, anche quelle ancora bloccate) ============
+function rendiAbilita() {
+  const box = $('abilita'); box.innerHTML = '';
+  for (const id in ABIL) {
+    const A = ABIL[id], b = document.createElement('button');
+    b.className = 'ab'; b.dataset.ab = id; b.id = id === 'scossa' ? 'scossaBtn' : 'ab_' + id;
+    b.setAttribute('aria-label', A.nome);
+    b.innerHTML = `<span class="anello"></span><span><span class="ico">${A.ico}</span><div class="lab"></div></span>`;
+    box.appendChild(b);
+  }
+  aggiornaAbilitaUI(true);
+}
+let abUI = 0;
+function aggiornaAbilitaUI(subito) {
+  if (!subito && (abUI += 1) % 6) return;                 // basta una decina di volte al secondo
+  for (const b of $('abilita').children) {
+    const id = b.dataset.ab, A = ABIL[id], n = stato.pot[id], lab = b.querySelector('.lab');
+    let testo = A.nome.toUpperCase(), p = 1, attesa = false, attiva = false;
+    const bloccata = n <= 0;
+    if (bloccata) testo = soldi(A.costo(0));
+    else if (id === 'raffica') testo = stato.opz.raffica ? 'RAFFICA ON' : 'RAFFICA OFF';
+    else {
+      const resta = prontaTra(id), tot = A.ricarica(n) * 1000;
+      const timer = id === 'turbo' ? turbo.t : id === 'calamita' ? calamita.t : id === 'muro' ? muro.t : 0;
+      if (timer > 0) { attiva = true; testo = Math.ceil(timer) + ' s'; }
+      else if (resta > 0) { attesa = true; p = 1 - resta / tot; testo = Math.ceil(resta / 1000) + ' s'; }
+      if (id === 'meteora' && mira) testo = 'MIRA!';
+    }
+    if (lab.textContent !== testo) lab.textContent = testo;
+    b.style.setProperty('--p', p.toFixed(3));
+    b.classList.toggle('bloccata', bloccata);
+    b.classList.toggle('puoi', bloccata && stato.saldo >= A.costo(0));
+    b.classList.toggle('attesa', attesa);
+    b.classList.toggle('attiva', attiva || (id === 'meteora' && mira));
+    b.classList.toggle('off', id === 'raffica' && !bloccata && !stato.opz.raffica);
+    b.title = bloccata ? `${A.nome} · sblocca per ${soldi(A.costo(0))}` : `${A.nome} (${A.tasto}) · ${A.desc(n)}`;
+  }
+}
+$('abilita').addEventListener('click', (e) => { const b = e.target.closest('.ab'); if (b) { audio(); usaAbilita(b.dataset.ab); } });
+
+// ============ SELETTORE DELLE MONETE ============
+function bottoneMoneta(t) {
+  const b = document.createElement('button');
+  b.className = 'mon'; b.dataset.t = t;
+  b.innerHTML = `<img alt="" src="${ICONE[t]}"><span>${nomeTaglio(t)}</span>`;
+  b.title = `${TAGLI[t].nome} · ${TAGLI[t].met}`;
+  return b;
+}
+function rendiSelettore() {
+  const box = $('monete'); box.innerHTML = '';
+  for (let t = 0; t <= MAX_LANCIO; t++) {
+    const b = bottoneMoneta(t);
+    if (t > stato.maxLancio) { b.classList.add('bloccata'); b.querySelector('span').textContent = soldi(costoSblocco(t)); b.title = `Sblocca ${TAGLI[t].nome}`; }
+    if (t === stato.sel) b.classList.add('sel');
+    box.appendChild(b);
+  }
+  aggiornaMonetePuoi();
+  aggiornaFantasma();
+  $('selNome').textContent = nomeTaglio(stato.sel);
+}
+function aggiornaMonetePuoi() {
+  for (const b of $('monete').children) {
+    const t = +b.dataset.t;
+    b.classList.toggle('puoi', t > stato.maxLancio && stato.saldo >= costoSblocco(t));
+  }
+}
+function scegliMoneta(t) {
+  t = clamp(t | 0, 0, MAX_LANCIO);
+  if (t > stato.maxLancio) return sbloccaTaglio(t);
+  stato.sel = t; rendiSelettore(); daSalvare = true; suono.tick();
+  return true;
+}
+function sbloccaTaglio(t) {
+  if (t > MAX_LANCIO || t <= stato.maxLancio) return false;
+  if (t !== stato.maxLancio + 1) { avviso(`Prima sblocca ${nomeTaglio(stato.maxLancio + 1)}`, 'imp'); suono.errore(); scuotiBottone(t); return false; }
+  const costo = costoSblocco(t);
+  if (stato.saldo < costo) { avviso(`Per sbloccare ${nomeTaglio(t)} servono ${soldi(costo)}`, 'rosso imp'); suono.errore(); scuotiBottone(t); return false; }
+  stato.saldo -= costo; stato.maxLancio = t; stato.sel = t;
+  suono.sblocco(); avviso(`🔓 ${nomeTaglio(t)} sbloccata!`, 'cia imp');
+  rendiSelettore(); aggiornaHUD(); if (negozioAperto()) rendiNegozio(); daSalvare = true;
+  return true;
+}
+function scuotiBottone(t) {
+  const b = $('monete').querySelector(`[data-t="${t}"]`);
+  if (b) { b.classList.remove('no'); void b.offsetWidth; b.classList.add('no'); }
+}
+$('monete').addEventListener('click', (e) => { const b = e.target.closest('.mon'); if (b) scegliMoneta(+b.dataset.t); });
+
+// ============ NEGOZIO ============
+let scheda = 'pot';
+const negozioAperto = () => !$('negozio').classList.contains('chiuso');
+function apriNegozio() { mira = false; rendiNegozio(); $('negozio').classList.remove('chiuso'); $('negozioBtn').classList.remove('nuovo'); }
+function chiudiNegozio() { $('negozio').classList.add('chiuso'); }
+function pips(n, max) { let s = '<div class="pips">'; for (let i = 0; i < max; i++) s += `<i class="${i < n ? 'on' : ''}"></i>`; return s + '</div>'; }
+function rendiNegozio() {
+  $('saldoNeg').textContent = soldi(stato.saldo);
+  document.querySelectorAll('.schede button').forEach(b => b.classList.toggle('on', b.dataset.scheda === scheda));
+  const box = $('contenuto'); let h = '';
+  if (scheda === 'pot') {
+    h += `<div class="sezione">ABILITÀ · I PULSANTI ACCANTO ALLA SCOSSA</div>`;
+    for (const id in ABIL) {
+      const A = ABIL[id], n = stato.pot[id], max = n >= A.max, costo = max ? 0 : A.costo(n);
+      const cosa = n <= 0 ? 'SBLOCCA ' : '';
+      h += `<div class="riga ${stato.saldo >= costo && !max ? 'ok' : ''}"><div class="ico">${A.ico}</div><div class="info">
+        <b>${A.nome.toUpperCase()} · ${n <= 0 ? 'BLOCCATA' : 'LIV. ' + n + '/' + A.max} <span class="tasto">${A.tasto}</span></b>
+        <small>${n <= 0 ? '' : A.desc(n)}${max ? '' : `${n <= 0 ? '' : ' → '}<em>${A.desc(n + 1)}</em>`}</small>${pips(n, A.max)}</div>
+        <button class="compra" data-compra="${id}" ${max || stato.saldo < costo ? 'disabled' : ''}>${max ? 'MAX' : cosa + soldi(costo)}</button></div>`;
+    }
+  } else if (scheda === 'monete') {
+    h += `<div class="sezione">MONETE DA LANCIARE</div>`;
+    for (let t = 0; t <= MAX_LANCIO; t++) {
+      const T = TAGLI[t], ok = t <= stato.maxLancio;
+      let bott;
+      if (ok) bott = t === stato.sel ? `<button class="compra inuso" disabled>IN USO</button>` : `<button class="compra usa" data-usa="${t}">USA</button>`;
+      else bott = `<button class="compra" data-sblocca="${t}" ${t !== stato.maxLancio + 1 || stato.saldo < costoSblocco(t) ? 'disabled' : ''}>🔓 ${soldi(costoSblocco(t))}</button>`;
+      h += `<div class="riga ${ok && t === stato.sel ? 'ok' : ''}"><div class="ico"><img src="${ICONE[t]}" alt=""></div><div class="info">
+        <b>${T.nome}</b><small>${T.met} · costa ${soldi(T.v)} a lancio e vale altrettanto nella vasca${ok ? '' : ' · si sblocca anche da sola creando ' + TAGLI[t + 2].nome}</small></div>${bott}</div>`;
+    }
+    h += `<div class="sezione">TABELLA DELLE FUSIONI · MONETE UGUALI IMPILATE = UNA PIÙ GRANDE</div><div class="fusioni">`;
+    for (let t = 1; t <= ULTIMO; t++) {
+      const vista = t <= stato.record;
+      h += `<div class="fus ${vista ? '' : 'ignota'}"><div class="r">${TAGLI[t - 1].serve}×<img src="${ICONE[t - 1]}" alt="">=</div>
+        <img class="gr" src="${ICONE[t]}" alt=""><span>${vista ? TAGLI[t].nome : '???'}</span></div>`;
+    }
+    h += `</div><div class="sezione">🎰 GETTONE DaProd</div><div class="riga"><div class="ico"><img src="${ICONE[CHIP]}" alt=""></div><div class="info">
+      <b>GETTONE DaProd</b><small>Ogni tanto scende in regalo. Se cade nella vasca gira lo slot sullo schermo: coppia = ${PREMI_SLOT.coppia} monete, tris = pioggia di ${PREMI_SLOT.tris + 1}, tre loghi DaProd = <em>JACKPOT</em>. E ogni tanto lo slot chiama da solo un <em>EVENTO DaProd</em>.</small></div></div>`;
+  } else if (scheda === 'opz') {
+    const q = stato.opz.qualita;
+    h += `<div class="sezione">AUDIO E SCRITTE</div><div class="opz"><button data-opz="audio" class="${stato.opz.audio ? 'on' : ''}">🔊 ${stato.opz.audio ? 'ACCESO' : 'SPENTO'}</button>
+        <button data-opz="scritte" class="${stato.opz.scritte ? 'on' : ''}">💬 SCRITTE ${stato.opz.scritte ? 'ACCESE' : 'SPENTE'}</button></div>
+      <div class="sezione">VALUTA</div><div class="opz">${stato.euro
+        ? `<button data-opz="valuta" class="${inEuro() ? '' : 'on'}">₤ LIRE</button><button data-opz="valuta" class="${inEuro() ? 'on' : ''}">€ EURO</button>`
+        : `<button disabled>🔒 € EURO · si sblocca arrivando a L.1.000.000</button>`}</div>
+      <div class="sezione">GRAFICA</div><div class="opz">
+        <button data-opz="q-alta" class="${q === 'alta' ? 'on' : ''}">ALTA · bagliori + ombre</button>
+        <button data-opz="q-media" class="${q === 'media' ? 'on' : ''}">MEDIA · bagliori</button>
+        <button data-opz="q-bassa" class="${q === 'bassa' ? 'on' : ''}">BASSA · veloce</button></div>
+      <div class="opz" style="margin-top:6px"><button data-opz="auto" class="${stato.opz.auto ? 'on' : ''}">QUALITÀ AUTOMATICA ${stato.opz.auto ? 'ON' : 'OFF'}</button>
+        <button data-opz="fps" class="${stato.opz.fps ? 'on' : ''}">FPS ${stato.opz.fps ? 'ON' : 'OFF'}</button></div>
+      <div class="sezione">PARTITA</div><div class="opz"><button data-opz="reset" class="rosso">🗑 AZZERA TUTTO</button></div>
+      <div class="sezione">TASTIERA</div><div class="riga"><div class="info"><small>1–5 scegli la moneta · Spazio lancia · S scossa · R raffica · F meteora · C calamita · T turbo · W muro · N negozio · M audio · H scritte · V valuta · Esc chiude</small></div></div>`;
+  } else {
+    const s = stato.st;
+    const voci = [['Lanci', punti(s.lanci)], ['Monete vinte', punti(s.vinte)], ['Vinto in totale', soldi(s.vinto)], ['Speso nei lanci', soldi(s.speso)],
+      ['Saldo più alto', soldi(s.saldoMax)], ['Fusioni', punti(s.fusioni)], ['Catena più lunga', '×' + s.catenaMax], ['Taglio record', TAGLI[stato.record].nome],
+      ['Finite alla casa', punti(s.perse)], ['Giri di slot', punti(s.slot)], ['Eventi DaProd', punti(s.eventi)], ['Jackpot', punti(s.jackpot)],
+      ['Scosse', punti(s.scosse)], ['Meteore', punti(s.meteore)], ['Monete sul tavolo', punti(monetePresenti())]];
+    h += `<div class="stats">${voci.map(([a, b]) => `<div><span class="etich">${a.toUpperCase()}</span><b>${b}</b></div>`).join('')}</div>`;
+  }
+  box.innerHTML = h;
+}
+function compra(id) {
+  const A = ABIL[id]; if (!A) return false;
+  const n = stato.pot[id]; if (n >= A.max) return false;
+  if (n <= 0) return sbloccaAbilita(id);
+  const costo = A.costo(n); if (stato.saldo < costo) { suono.errore(); return false; }
+  stato.saldo -= costo; stato.pot[id]++;
+  suono.compra(); avviso(`${A.ico} ${A.nome} → livello ${stato.pot[id]}`, 'cia');
+  aggiornaHUD(); rendiNegozio(); daSalvare = true; return true;
+}
+let resetArmato = false;
+function cambiaOpzione(id) {
+  if (id === 'audio') { stato.opz.audio = !stato.opz.audio; aggiornaAudioBtn(); if (stato.opz.audio) audio(); }
+  else if (id === 'scritte') return cambiaScritte();
+  else if (id === 'valuta') return cambiaValuta();
+  else if (id.startsWith('q-')) { stato.opz.qualita = id.slice(2); applicaQualita(); }
+  else if (id === 'auto') stato.opz.auto = !stato.opz.auto;
+  else if (id === 'fps') { stato.opz.fps = !stato.opz.fps; $('fps').style.display = stato.opz.fps ? 'block' : 'none'; }
+  else if (id === 'reset') {
+    if (!resetArmato) { resetArmato = true; avviso('Tocca di nuovo AZZERA TUTTO per confermare', 'rosso imp'); setTimeout(() => resetArmato = false, 4000); return; }
+    try { localStorage.removeItem(CHIAVE); localStorage.removeItem('daprod_dozer_v3'); } catch (e) {}
+    azzerato = true; location.reload(); return;
+  }
+  daSalvare = true; rendiNegozio();
+}
+let azzerato = false;
+$('negozio').addEventListener('click', (e) => {
+  if (e.target === $('negozio')) return chiudiNegozio();
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.id === 'chiudi') return chiudiNegozio();
+  if (b.dataset.scheda) { scheda = b.dataset.scheda; rendiNegozio(); suono.tick(); return; }
+  if (b.dataset.compra) return compra(b.dataset.compra);
+  if (b.dataset.sblocca) { sbloccaTaglio(+b.dataset.sblocca); return; }
+  if (b.dataset.usa) { scegliMoneta(+b.dataset.usa); rendiNegozio(); return; }
+  if (b.dataset.opz) return cambiaOpzione(b.dataset.opz);
+});
+$('negozioBtn').addEventListener('click', apriNegozio);
+function aggiornaAudioBtn() { $('audioBtn').textContent = stato.opz.audio ? '🔊' : '🔇'; $('audioBtn').classList.toggle('off', !stato.opz.audio); }
+$('audioBtn').addEventListener('click', () => { cambiaOpzione('audio'); });
+$('scritteBtn').addEventListener('click', cambiaScritte);
+$('valutaBtn').addEventListener('click', cambiaValuta);
+
+// ============ SCHERMATA INIZIALE: si sceglie la moneta ============
+let inGioco = false, accensione = 0;
+function rendiIntro() {
+  const box = $('sceltaMonete'); box.innerHTML = '';
+  for (let t = 0; t <= Math.min(MAX_LANCIO, stato.maxLancio + 1); t++) {
+    const b = bottoneMoneta(t);
+    if (t > stato.maxLancio) { b.classList.add('bloccata'); b.querySelector('span').textContent = soldi(costoSblocco(t)); }
+    if (t === stato.sel) b.classList.add('sel');
+    box.appendChild(b);
+  }
+}
+$('sceltaMonete').addEventListener('click', (e) => {
+  const b = e.target.closest('.mon'); if (!b) return;
+  const t = +b.dataset.t;
+  if (t > stato.maxLancio) { if (!sbloccaTaglio(t)) return; }
+  stato.sel = t; rendiIntro(); rendiSelettore(); audio(); suono.tick();
+});
+function gioca(t) {
+  if (typeof t === 'number' && t <= stato.maxLancio) stato.sel = t;
+  if (inGioco) return;
+  inGioco = true; accensione = 0;
+  $('intro').classList.add('via');
+  audio(); suono.accensione();
+  rendiSelettore(); aggiornaHUD();
+  setTimeout(() => avviso(`Giochi con ${nomeTaglio(stato.sel)}: la cambi quando vuoi dalla barra in basso`), 900);
+  if (esitoCaricamento && esitoCaricamento.tipo === 'v2' && esitoCaricamento.bonus > 0)
+    setTimeout(() => avviso(`Bentornato! I premi della 1.x valgono ${soldi(esitoCaricamento.bonus)}`, 'cia imp'), 2200);
+  if (esitoCaricamento && esitoCaricamento.tipo === 'v3')
+    setTimeout(() => avviso(`Novità 2.1: abilità nuove accanto alla scossa${esitoCaricamento.rimborso ? ', i vecchi potenziamenti ti sono stati rimborsati (' + soldi(esitoCaricamento.rimborso) + ')' : ''}`, 'cia imp'), 2200);
+}
+$('giocaBtn').addEventListener('click', () => gioca());
+
+// ============ INPUT ============
+const raycaster = new THREE.Raycaster(), ndc = new THREE.Vector2();
+let colonnaMirata = 0, premuto = false, tempoPremuto = 0, accRaffica = 0;
+const puntatori = new Map(); let pinchDist = 0;
+const puntoMirato = { x: 0, z: 0 };
+// il punto del tavolo sotto il dito: il primo piano che il raggio incontra (serve anche alla meteora)
+function puntoDa(clientX, clientY) {
+  ndc.set(clientX / innerWidth * 2 - 1, -(clientY / innerHeight) * 2 + 1);
+  raycaster.setFromCamera(ndc, camera);
+  const o = raycaster.ray.origin, d = raycaster.ray.direction;
+  const zone = [[LIV[0].y, Z_COFANO, LIV[0].zEdge], [LIV[1].y, LIV[0].zEdge, LIV[1].zEdge], [LIV[2].y, LIV[1].zEdge, LIV[2].zEdge]];
+  let x = null, zz = 0, tMin = Infinity;
+  for (const [y, z0, z1] of zone) {
+    if (Math.abs(d.y) < 1e-4) continue;
+    const t = (y - o.y) / d.y; if (t <= 0 || t > tMin) continue;
+    const z = o.z + d.z * t; if (z < z0 || z > z1) continue;
+    tMin = t; x = o.x + d.x * t; zz = z;
+  }
+  if (x === null) { const t = (0 - o.y) / d.y; x = o.x + d.x * (t > 0 ? t : 20); zz = clamp(o.z + d.z * (t > 0 ? t : 20), Z_COFANO + 0.5, LIV[2].zEdge - 0.5); }
+  puntoMirato.x = clamp(x, -HW + 0.45, HW - 0.45); puntoMirato.z = zz;
+  return puntoMirato;
+}
+const colonnaDa = (cx, cy) => puntoDa(cx, cy).x;
+canvas.addEventListener('pointermove', (e) => {
+  if (puntatori.has(e.pointerId)) puntatori.set(e.pointerId, [e.clientX, e.clientY]);
+  if (puntatori.size >= 2) {
+    const [a, b] = [...puntatori.values()], d = Math.hypot(a[0] - b[0], a[1] - b[1]);
+    if (pinchDist) zoomUtente = clamp(zoomUtente * pinchDist / d, 0.7, 1.35);
+    pinchDist = d; premuto = false; return;
+  }
+  colonnaMirata = colonnaDa(e.clientX, e.clientY);
+  if (premuto) colonna = colonnaMirata;
+});
+canvas.addEventListener('pointerdown', (e) => {
+  puntatori.set(e.pointerId, [e.clientX, e.clientY]);
+  if (puntatori.size >= 2) { pinchDist = 0; premuto = false; return; }
+  if (!inGioco || cine.fase) return;
+  if (e.button !== undefined && e.button !== 0) return;
+  audio();
+  colonna = colonnaMirata = colonnaDa(e.clientX, e.clientY);
+  if (mira) { lanciaMeteora(puntoMirato.x, puntoMirato.z); return; }
+  const ora = performance.now();
+  if (ora - ultimoLancio > 90) { ultimoLancio = ora; lanciaDalGiocatore(); }
+  premuto = true; tempoPremuto = 0; accRaffica = 0;
+  try { canvas.setPointerCapture(e.pointerId); } catch (er) {}
+});
+const fine = (e) => { puntatori.delete(e.pointerId); if (puntatori.size < 2) pinchDist = 0; premuto = false; };
+canvas.addEventListener('pointerup', fine); canvas.addEventListener('pointercancel', fine);
+canvas.addEventListener('wheel', (e) => { e.preventDefault(); zoomUtente = clamp(zoomUtente * (e.deltaY > 0 ? 1.06 : 0.94), 0.7, 1.35); }, { passive: false });
+canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+addEventListener('keydown', (e) => {
+  if (e.repeat && e.code !== 'Space') return;
+  const k = e.key.toLowerCase();
+  if (k === 'escape') { chiudiNegozio(); return; }
+  if (!inGioco) { if (k === 'enter' || e.code === 'Space') { e.preventDefault(); gioca(); } return; }
+  if (e.code === 'Space') { e.preventDefault(); colonna = colonnaMirata; const ora = performance.now(); if (ora - ultimoLancio > 120) { ultimoLancio = ora; lanciaDalGiocatore(); } }
+  else if (k >= '1' && k <= String(MAX_LANCIO + 1)) scegliMoneta(+k - 1);
+  else if (k === 'n' || k === 'b') negozioAperto() ? chiudiNegozio() : apriNegozio();
+  else if (k === 'm') cambiaOpzione('audio');
+  else if (k === 'h') cambiaScritte();
+  else if (k === 'v') cambiaValuta();
+  else { for (const id in ABIL) if (ABIL[id].tasto.toLowerCase() === k) { usaAbilita(id); break; } }
+});
+
+// ============ CAMERA ============
+let zoomUtente = 1, camT = 0;
+const bersaglio = new THREE.Vector3();
+// Inquadratura automatica: cerca distanza e punto di mira perché tutta la macchina (insegna in alto,
+// vasca in basso) stia fra l'HUD e la barra delle monete, su qualsiasi schermo.
+const PUNTI_MACCHINA = [];
+for (const x of [-HW - 1.3, HW + 1.3]) for (const [y, z] of [[-2.3, 7.75], [-1.5, 7.75], [13.2, Z_FONDO], [5.2, Z_FONDO], [1.6, LIV[1].zEdge]]) PUNTI_MACCHINA.push(new THREE.Vector3(x, y, z));
+const camProva = new THREE.PerspectiveCamera();
+let inquadratura = null;
+function calcolaInquadratura() {
+  const asp = innerWidth / innerHeight, verticale = asp < 0.85;
+  const pitch = verticale ? 0.9 : 0.62;
+  // margini in NDC: in alto l'HUD, in basso la barra delle monete
+  const alto = 1 - 2 * (verticale ? 118 : 16) / innerHeight, basso = -1 + 2 * (verticale ? 196 : 100) / innerHeight;
+  camProva.fov = camera.fov; camProva.aspect = asp; camProva.updateProjectionMatrix();
+  const tg = new THREE.Vector3(0, 3, -3), dir = new THREE.Vector3(0, Math.sin(pitch), Math.cos(pitch));
+  let dist = 30;
+  for (let giro = 0; giro < 40; giro++) {
+    camProva.position.copy(tg).addScaledVector(dir, dist); camProva.lookAt(tg); camProva.updateMatrixWorld();
+    let yMin = 9, yMax = -9, xMax = 0;
+    for (const p of PUNTI_MACCHINA) { const v = p.clone().project(camProva); yMin = Math.min(yMin, v.y); yMax = Math.max(yMax, v.y); xMax = Math.max(xMax, Math.abs(v.x)); }
+    // sposto il punto di mira per centrare in verticale, poi la distanza per riempire lo spazio
+    const centro = (yMin + yMax) / 2, voluto = (alto + basso) / 2;
+    tg.y -= (voluto - centro) * dist * 0.35 * Math.cos(pitch); tg.z += (voluto - centro) * dist * 0.35 * Math.sin(pitch);
+    const scala = Math.max((yMax - yMin) / (alto - basso), xMax / 0.97);
+    dist *= 1 + (scala - 1) * 0.6;
+  }
+  inquadratura = { pitch, dist, tg };
+  scene.fog.near = dist + 14; scene.fog.far = dist + 60;
+}
+function posaCamera(dt) {
+  if (!inquadratura) calcolaInquadratura();
+  camT += dt;
+  let dist = inquadratura.dist * zoomUtente, yaw = 0, pp = inquadratura.pitch;
+  if (!inGioco) { yaw = Math.sin(camT * 0.25) * 0.38; pp -= 0.1; dist *= 1.04; }
+  else { yaw = (colonnaMirata / HW) * 0.025; }
+  bersaglio.copy(inquadratura.tg);
+  const k = camStato.pitch === 99 ? 1 : Math.min(1, dt * (inGioco ? 2.4 : 1.2));
+  camStato.yaw += (yaw - camStato.yaw) * k; camStato.pitch += (pp - camStato.pitch) * k; camStato.dist += (dist - camStato.dist) * k;
+  camera.position.set(
+    bersaglio.x + Math.sin(camStato.yaw) * Math.cos(camStato.pitch) * camStato.dist,
+    bersaglio.y + Math.sin(camStato.pitch) * camStato.dist,
+    bersaglio.z + Math.cos(camStato.yaw) * Math.cos(camStato.pitch) * camStato.dist);
+  // EVENTO: la camera vola davanti allo schermo dello slot girandoci intorno, poi torna al tavolo
+  if (cine.b > 0.0001) {
+    const b = cine.b, fovMezzo = Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2);
+    const d = Math.max((W_SCHERMO / 2 + 2.3) / (fovMezzo * camera.aspect), (H_SCHERMO / 2 + 2.6) / fovMezzo);
+    const giro = cine.fase === 'va' ? (1 - b) * 0.9 : cine.fase === 'torna' ? -(1 - b) * 0.5 : Math.sin(cine.t * 0.6) * 0.05;
+    const verso = cine.fase === 'gira' ? 1 - Math.min(1, cine.t / 5) * 0.12 : 1;         // si avvicina piano mentre girano i rulli
+    camSlot.set(Math.sin(giro) * d * verso, Y_SCHERMO + 1.2, Z_SCHERMO + Math.cos(giro) * d * verso);
+    tgSlot.set(0, Y_SCHERMO - 0.1, Z_SCHERMO);
+    camera.position.lerp(camSlot, b); bersaglio.lerp(tgSlot, b);
+  }
+  if (scossaCam > 0) {
+    camera.position.x += rnd(-1, 1) * scossaCam * 0.35; camera.position.y += rnd(-1, 1) * scossaCam * 0.25;
+    scossaCam = Math.max(0, scossaCam - dt * 1.8);
+  }
+  camera.lookAt(bersaglio);
+}
+const camStato = { yaw: 0.4, pitch: 0.4, dist: 40 };
+const camSlot = new THREE.Vector3(), tgSlot = new THREE.Vector3();
+
+// ============ QUALITÀ E POST-PRODUZIONE (bagliori) ============
+let composer = null, bloom = null, postPronto = false;
+async function preparaPost() {
+  try {
+    const [{ EffectComposer }, { RenderPass }, { UnrealBloomPass }, { OutputPass }] = await Promise.all([
+      import('three/addons/postprocessing/EffectComposer.js'), import('three/addons/postprocessing/RenderPass.js'),
+      import('three/addons/postprocessing/UnrealBloomPass.js'), import('three/addons/postprocessing/OutputPass.js')]);
+    composer = new EffectComposer(renderer);
+    composer.addPass(new RenderPass(scene, camera));
+    bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth / 2, innerHeight / 2), 0.5, 0.4, 0.92);
+    composer.addPass(bloom);
+    composer.addPass(new OutputPass());
+    postPronto = true; ridimensiona();
+  } catch (e) { composer = null; }
+}
+function applicaQualita() {
+  const q = stato.opz.qualita, dpr = window.devicePixelRatio || 1;
+  renderer.setPixelRatio(Math.min(dpr, q === 'alta' ? 2 : q === 'media' ? 1.5 : 1));
+  const ombre = q === 'alta';
+  if (renderer.shadowMap.enabled !== ombre) {
+    renderer.shadowMap.enabled = ombre; sole.castShadow = ombre;
+    if (ombre) { sole.shadow.mapSize.set(2048, 2048); }
+    scene.traverse(o => { if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => m.needsUpdate = true); });
+  }
+  LAMPI.forEach(l => l.visible = q !== 'bassa');
+  ridimensiona();
+}
+function ridimensiona() {
+  camera.aspect = innerWidth / innerHeight; camera.fov = camera.aspect < 0.85 ? 46 : 38; camera.updateProjectionMatrix();
+  inquadratura = null;
+  renderer.setSize(innerWidth, innerHeight, false);
+  if (composer) { composer.setPixelRatio(renderer.getPixelRatio()); composer.setSize(innerWidth, innerHeight); }
+  if (bloom) bloom.resolution.set(innerWidth / 2, innerHeight / 2);
+  pMat.uniforms.uScala.value = innerHeight * renderer.getPixelRatio() / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2));
+}
+addEventListener('resize', ridimensiona);
+let fpsAcc = 0, fpsN = 0, fpsLenti = 0;
+function adattaQualita(dt) {
+  fpsAcc += dt; fpsN++;
+  if (fpsAcc < 2) return;
+  const fps = fpsN / fpsAcc; fpsAcc = 0; fpsN = 0;
+  if (stato.opz.fps) $('fps').textContent = Math.round(fps) + ' FPS · ' + monetePresenti() + ' monete';
+  if (!stato.opz.auto || document.hidden) return;
+  fpsLenti = fps < 36 ? fpsLenti + 1 : 0;
+  if (fpsLenti >= 2 && stato.opz.qualita !== 'bassa') {
+    stato.opz.qualita = stato.opz.qualita === 'alta' ? 'media' : 'bassa'; fpsLenti = 0;
+    applicaQualita(); avviso(`Qualità automatica: ${stato.opz.qualita.toUpperCase()}`); daSalvare = true;
+  }
+}
+
+// ============ DISEGNO DI OGNI FOTOGRAMMA ============
+const m4 = new THREE.Matrix4(), q4 = new THREE.Quaternion(), e4 = new THREE.Euler(0, 0, 0, 'YXZ'), p4 = new THREE.Vector3(), s4 = new THREE.Vector3();
+const off4 = new THREE.Vector3(), qk4 = new THREE.Quaternion(), qy4 = new THREE.Quaternion(), ASSE_Y = new THREE.Vector3(0, 1, 0);
+const conteggi = new Array(CHIP + 1).fill(0);
+let kickCarrello = 0, carrelloX = 0;
+function disegnaMonete(dt) {
+  conteggi.fill(0);
+  const k = 1 - Math.exp(-40 * dt);
+  for (const c of monete) {
+    if (!c.vivo) continue;
+    c.dx += (c.x - c.dx) * k; c.dy += (c.y - c.dy) * k; c.dz += (c.z - c.dz) * k;
+    if (c.pop > 0) c.pop = Math.max(0, c.pop - dt * 2.6);
+    const im = MESH_TAGLIO[c.t], T = tipo(c.t), n = c.n || 1;
+    let s = 1 + 0.5 * c.pop * Math.sin((1 - c.pop) * Math.PI * 3);
+    if (c.fuori === 'vinta' && c.tt > 1.9) s *= Math.max(0.01, 1 - (c.tt - 1.9) / 0.7);
+    e4.set(c.rx, c.yaw, c.rz); q4.setFromEuler(e4);
+    s4.set(c.r * s, T.h * s, c.r * s);
+    // una pila si disegna moneta per moneta, un po' storte e girate come quelle vere
+    for (let k = 0; k < n; k++) {
+      const i = conteggi[c.t]++; if (i >= CAP) break;
+      const jx = k ? Math.sin(c.id * 12.9 + k * 78.2) * 0.035 : 0, jz = k ? Math.cos(c.id * 4.1 + k * 37.7) * 0.035 : 0;
+      off4.set(jx, ((k + 0.5) * T.h - c.h / 2) * s, jz).applyQuaternion(q4);
+      p4.set(c.dx, c.dy + c.h / 2, c.dz).add(off4);
+      qk4.copy(q4).multiply(qy4.setFromAxisAngle(ASSE_Y, k * 0.9));
+      m4.compose(p4, qk4, s4); im.setMatrixAt(i, m4);
+    }
+  }
+  for (let t = 0; t <= CHIP; t++) { const im = MESH_TAGLIO[t]; im.count = Math.min(CAP, conteggi[t]); im.instanceMatrix.needsUpdate = true; }
+}
+const colLamp = new THREE.Color();
+function animaLuci(dt, ora) {
+  impulsoLed = Math.max(0, impulsoLed - dt * 1.4); festa = Math.max(0, festa - dt);
+  // accensione della macchina: neon che sfarfalla e poi si accende
+  if (accensione < 1) accensione = Math.min(1, accensione + dt * (inGioco ? 0.55 : 0.8));
+  const sfarfallo = accensione < 1 ? ((Math.sin(ora * 53) > 0.2 || accensione > 0.75) ? accensione : 0.08) : 1;
+  const respiro = 0.92 + 0.08 * Math.sin(ora * 2.2);
+  for (const L of LED) {
+    let k = L.k * sfarfallo * (1 + impulsoLed * 0.6);
+    if (L.gruppo === 'fianchi' || L.gruppo === 'colonne') k *= respiro;
+    if (festa > 0 && L.gruppo !== 'casa') { const hsl = (ora * 0.8 + L.k) % 1; L.m.color.setHSL(hsl, 1, 0.55).multiplyScalar(k); continue; }
+    L.m.color.copy(L.base).multiplyScalar(k);
+  }
+  matSchermo.color.setScalar(1.35 - 0.55 * cine.b);          // da vicino lo schermo abbaglierebbe
+  matNeon.color.setScalar(1.8 * sfarfallo * (0.94 + 0.06 * Math.sin(ora * 7.3)) * (1 + impulsoLed * 0.3));
+  LUCI_COLORE.forEach((l, i) => l.intensity = l.userData.base * (0.35 + 0.65 * sfarfallo) * (1 + impulsoLed * 0.5));
+  LAMPI.forEach(l => { l.intensity *= Math.exp(-dt * 7); });
+  // lampadine che si rincorrono
+  const n = LAMP.length, vel = festa > 0 ? 22 : slot.gira ? 14 : 5;
+  for (let i = 0; i < n; i++) {
+    let on;
+    if (festa > 0) { colLamp.setHSL((i / n + ora * 0.6) % 1, 1, 0.6).multiplyScalar(3); lampadine.setColorAt(i, colLamp); continue; }
+    on = ((i + Math.floor(ora * vel)) % 4) === 0;
+    colLamp.setRGB(1, 0.78, 0.35).multiplyScalar((on ? 3.2 : 0.35) * sfarfallo);
+    lampadine.setColorAt(i, colLamp);
+  }
+  lampadine.instanceColor.needsUpdate = true;
+  for (const sp of BOKEH) sp.material.opacity = sp.userData.o * (0.6 + 0.4 * Math.sin(ora * sp.userData.f + sp.id));
+}
+function animaCarrello(dt, ora) {
+  const obiettivo = cine.fase ? HW - 0.2 : premuto ? colonna : colonnaMirata;     // durante l'evento si fa da parte
+  carrelloX += (obiettivo - carrelloX) * Math.min(1, dt * 14);
+  kickCarrello = Math.max(0, kickCarrello - dt * 5);
+  carrello.position.x = carrelloX; carrello.position.y = Y_BINARIO - 0.02 + kickCarrello * 0.08;
+  const T = TAGLI[stato.sel];
+  fantasma.position.set(carrelloX, Y_LANCIO - 0.1 - kickCarrello * 0.2, Z_LANCIO);
+  fantasma.rotation.set(0.25 + Math.sin(ora * 2) * 0.1, ora * 1.5, 0);
+  const libero = inGioco && !cine.fase && !mira;
+  fantasma.visible = libero && stato.saldo >= T.v;
+  // dove atterra: sopra lo spintore se è avanti, altrimenti sul panno
+  const sp = SPINTORI[0], sopra = Z_LANCIO <= sp.z;
+  const yA = sopra ? sp.top : LIV[0].y;
+  anello.position.set(carrelloX, yA + 0.02, Z_LANCIO); anello.visible = libero;
+  anello.scale.setScalar(T.r / 0.47 * (1 + 0.08 * Math.sin(ora * 6)));
+  raggio.position.set(carrelloX, (Y_LANCIO + yA) / 2, Z_LANCIO); raggio.scale.y = Y_LANCIO - yA; raggio.visible = libero;
+  // mirino della meteora: dove si posa il dito, grande quanto il raggio d'impatto
+  anelloMeteora.visible = mira && inGioco && !cine.fase;
+  if (anelloMeteora.visible) {
+    anelloMeteora.position.set(puntoMirato.x, quotaPiano(puntoMirato.z) + 0.04, puntoMirato.z);
+    anelloMeteora.scale.setScalar(raggioMeteora(stato.pot.meteora) * (1 + 0.06 * Math.sin(ora * 8)));
+  }
+  raggio.lookAt(camera.position.x, raggio.position.y, camera.position.z);
+}
+
+// ============ CICLO PRINCIPALE ============
+let ultimo = performance.now(), accFisica = 0, cortesiaT = 0, salvaT = 0, chiusuraMostrata = -1;
+function ciclo(ora) {
+  requestAnimationFrame(ciclo);
+  const dt = Math.min(0.05, Math.max(0, (ora - ultimo) / 1000)); ultimo = ora;
+  const secondi = ora / 1000;
+  accFisica += dt; let n = 0;
+  while (accFisica >= PASSO && n < 5) { passo(PASSO); accFisica -= PASSO; n++; }
+  if (n === 5) accFisica = 0;
+  if (inGioco) tempoGioco += dt;
+  // raffica: tenendo premuto
+  if (premuto && inGioco && !cine.fase && stato.pot.raffica > 0 && stato.opz.raffica) {
+    tempoPremuto += dt;
+    if (tempoPremuto > 0.25) { accRaffica += dt * rateRaffica(stato.pot.raffica); while (accRaffica >= 1) { accRaffica--; if (!lanciaDalGiocatore()) { premuto = false; break; } } }
+  }
+  aggiornaPioggia(dt);
+  aggiornaSlot(dt); disegnaSlot(dt);
+  aggiornaEventi(dt); aggiornaMeteore(dt);
+  if (ondaT > 0) { ondaT -= dt; if (vinciteOnda >= 2 * TAGLI[0].v) { $('ondataTxt').textContent = '+' + soldi(vinciteOnda); $('ondata').classList.add('su'); } if (ondaT <= 0) { vinciteOnda = 0; $('ondata').classList.remove('su'); } }
+  // bonus di cortesia: non si resta mai a secco
+  if (inGioco && stato.saldo < TAGLI[0].v) {
+    cortesiaT += dt;
+    if (cortesiaT > 6) { cortesiaT = 0; stato.saldo += 1000; avviso(`🎁 BONUS DI CORTESIA DaProd: +${soldi(1000)}`, 'cia imp'); suono.premio(); aggiornaHUD(); }
+  } else cortesiaT = 0;
+  aggiornaAbilitaUI(false);
+  if (Math.abs(chiusuraBuchi - chiusuraMostrata) > 0.001) { chiusuraMostrata = chiusuraBuchi; aggiornaSponde(); }
+  disegnaMonete(dt);
+  for (const s of SPINTORI) s.mesh.position.set(0, s.pav + s.h / 2 + 0.005, s.z - s.len / 2);
+  animaCarrello(dt, secondi);
+  animaLuci(dt, secondi);
+  aggiornaParticelle(dt);
+  aggiornaSaldo(dt);
+  posaCamera(dt);
+  adattaQualita(dt);
+  salvaT += dt; if (salvaT > 4 && daSalvare) { salvaT = 0; salva(); }
+  if (composer && stato.opz.qualita !== 'bassa') composer.render(); else renderer.render(scene, camera);
+}
+addEventListener('pagehide', () => { if (!azzerato) salva(); });
+document.addEventListener('visibilitychange', () => { if (document.hidden && !azzerato) salva(); });
+
+// ============ AVVIO ============
+$('versione').textContent = VERSIONE; $('versione2').textContent = VERSIONE;
+if (!ripristinaTavolo(stato.tavolo)) pilaIniziale();
+aggiornaSponde();
+aggiornaAudioBtn(); applicaScritte(); rendiAbilita();
+$('fps').style.display = stato.opz.fps ? 'block' : 'none';
+rendiSelettore(); rendiIntro(); aggiornaHUD();
+applicaQualita();
+preparaPost();
+posaCamera(1);
+requestAnimationFrame(ciclo);
+
+// Le Lire DaProd: la partita fatta qui si stacca in lire, e le lire si
+// spendono per ricaricare le monete. Dentro la DaProd Suite e' la sala giochi
+// a tenere il conto; sul sito lo tiene il browser, diviso con gli altri giochi.
+if (window.DaProdLira) DaProdLira.init({
+  gioco: 'dozer',
+  posto: 'basso-sinistra',
+  telefono: { top: '118px', left: '8px' },
+  ricarica: { detto: '+L.2.000 di monete', dai: () => { stato.saldo += 2000; aggiornaHUD(); daSalvare = true; avviso('🪙 Ricarica DaProd: +' + soldi(2000), 'cia'); } },
+});
+
+// API per le prove automatiche e per chi vuole curiosare dalla console
+window.DOZER = {
+  VERSIONE, LIV, SPINTORI, TAGLI, CHIP, HW, Z_LANCIO, MAX_LANCIO, POT, ABIL, EVENTI, stato,
+  monete: () => monete.filter(c => c.vivo && !c.fuori),
+  tutte: () => monete,
+  passo, simula, lanciaMoneta, lanciaDalGiocatore, scegliMoneta, sbloccaTaglio, compra, scossa, gioca, avviaSlot,
+  nuovaMoneta: (t, x, y, z, n = 1) => { const c = nuovaMoneta(t, x, y, z, n); c.py = y; c.dx = x; c.dy = y; c.dz = z; return c; },
+  usaAbilita, sbloccaAbilita, lanciaMeteora, impattoMeteora, meteore: () => meteore.length,
+  meteoraSubito: (x, z) => { if (!lanciaMeteora(x, z)) return false; const m = meteore.pop(); impattoMeteora(m); return true; },
+  timer: () => ({ turbo: turbo.t, calamita: calamita.t, muro: muro.t, chiusura: chiusuraBuchi, turboK }),
+  avviaEvento, finisciEvento, cine, prossimoEvento: () => prossimoEvento,
+  cambiaValuta, cambiaScritte, soldi, controllaEuro, aggiornaHUD,
+  pulisci: () => { monete = []; },
+  pilaIniziale, riciclaEccesso, inizioBuchi, salva, carica, fotografaTavolo, slot,
+  finisciSlot: () => { let n = 0; while (slot.gira && n++ < 400) aggiornaSlot(0.02); return !slot.gira; },
+  colonna: (x) => { colonna = colonnaMirata = x; },
+  inGioco: () => inGioco, apriNegozio, chiudiNegozio, rendiNegozio,
+  salite: () => salite, atterraggi, pioggiaInCoda: () => pioggiaCoda.length,
+  postPronto: () => postPronto, qualita: applicaQualita,
+  camera: () => { camStato.yaw = 0; camStato.pitch = 99; camT = 0; posaCamera(10); },
+};
+</script>
+</body>
+</html>

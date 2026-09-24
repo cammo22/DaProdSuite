@@ -23,7 +23,13 @@ import { inInglese } from "./lingua.js";
 import * as ponte from "./ponte.js";
 
 const LATO_MASSIMO = 1536;
-const PASSO = 16;
+/**
+ * Multipli di 32, dalla 1.4.0: Qwen-Image 2.1 comprime 16 volte e guarda a
+ * caselle di 2x2, e con misure che non lo sono il risultato esce di qualche
+ * pixel diverso dalla foto — e l'incollatura della zona cade storta. Anima con
+ * 32 sta benissimo lo stesso: 32 e' multiplo del suo 8.
+ */
+const PASSO = 32;
 
 let sotto = null;
 let sopra = null;
@@ -201,7 +207,12 @@ function mascherata() {
 function raccontaIlTasto() {
   if (!el.rigenera) return;
   const tutta = Boolean(sotto) && !mascherata();
-  el.rigenera.textContent = tutta ? "Rigenera tutta la foto" : "Rigenera la zona";
+  // Con Qwen-Image senza zona non si «rigenera»: si cambia la foto come dice
+  // la casella, e il resto resta com'era. È un altro gesto, e il tasto lo dice.
+  const aParole = modelloCorrente().aParole;
+  el.rigenera.textContent = tutta
+    ? aParole ? "Cambia la foto come scrivi" : "Rigenera tutta la foto"
+    : "Rigenera la zona";
   // `dataset.prima` è quello che `libera()` rimette quando il tasto ha finito di
   // lavorare: se non lo si aggiorna, torna a dire quello che diceva ieri.
   el.rigenera.dataset.prima = el.rigenera.textContent;
@@ -341,8 +352,11 @@ export function collegaRitocco() {
         denoise,
         immagine: base,
         maschera,
-        // Le misure della tela: lo scheduler di FLUX.2 le vuole, e sono quelle
-        // vere perché l'immagine è già stata ridisegnata su misura del VAE.
+        // Qwen-Image lo deve sapere: con una zona la vela di rosso e alla fine
+        // incolla solo lì, senza zona cambia tutta la foto a parole.
+        zona: mascherata(),
+        // Le misure della tela, quelle vere: l'immagine è già stata ridisegnata
+        // su misura (`misure`), e il grafo le usa per non ritagliare niente.
         larghezza: sotto.width,
         altezza: sotto.height,
       };

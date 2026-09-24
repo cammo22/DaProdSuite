@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#07060d">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="description" content="NEON PARTENOPE — il clicker cyberpunk napoletano di DaProd. Napoli 2099: il Vesuvio è diventato un server, la sirena Partenope è in gabbia e tu sei un robot fatto di rottami.">
+<meta name="author" content="DaProd">
+<meta property="og:title" content="DaProd · NEON PARTENOPE">
+<meta property="og:description" content="Il Vesuvio è diventato un server. La sirena è in gabbia. Tu sei fatto di rottami.">
+<meta property="og:image" content="img/anteprima.png">
+<title>DaProd · NEON PARTENOPE</title>
+<link rel="icon" type="image/png" href="img/icona-192.png">
+<link rel="apple-touch-icon" href="img/icona-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<style>html,body{background:#07060d;margin:0}body{opacity:0}</style>
+<!-- Le Lire DaProd: il portafoglio unico dei giochi DaProd (vedi daprod-lira.js). -->
+<script src="../daprod-lira.js"></script>
+<script>
+// ---------------------------------------------------------------------------------------------
+// VERSIONE del gioco: è l'unica da alzare per pubblicare un aggiornamento.
+// Il workflow .github/workflows/app.yml la legge da qui: se non esiste ancora la release
+// corrispondente, compila APK, EXE e DMG e la pubblica con le note del CHANGELOG.
+// La stessa versione finisce in coda a CSS e JS (?v=...), così GitHub Pages non serve file vecchi.
+// ---------------------------------------------------------------------------------------------
+const VERSIONE = 'v2.1.0';
+(function () {
+  const v = "?v=" + VERSIONE.slice(1);
+  const css = ["css/base.css", "css/gioco.css", "css/pannelli.css"];
+  const js = [
+    "js/core/dati.js", "js/core/util.js", "js/core/formule.js", "js/core/stato.js", "js/core/audio.js",
+    "js/grafica/arte.js", "js/grafica/scena.js", "js/grafica/effetti.js",
+    "js/gioco/arena.js", "js/gioco/economia.js", "js/gioco/merceria.js", "js/gioco/minigiochi.js", "js/gioco/borsa.js",
+    "js/ui/interfaccia.js", "js/ui/aggiornamenti.js", "js/main.js"
+  ];
+  for (const f of css) document.write('<link rel="stylesheet" href="' + f + v + '">');
+  for (const f of js) { const s = document.createElement("script"); s.src = f + v; s.async = false; document.head.appendChild(s); }
+})();
+</script>
+</head>
+<body>
+<canvas id="scena" aria-hidden="true"></canvas>
+<div id="vignetta" aria-hidden="true"></div>
+<div id="gocce"></div>
+
+<div id="app">
+  <header id="testa">
+    <div class="marchio">
+      <svg class="emblema" viewBox="0 0 64 64" aria-hidden="true"><use href="#emblemaNP"/></svg>
+      <div>
+        <div class="titolo">NEON <span>PARTENOPE</span></div>
+        <div class="sotto">DaProd · <b class="versione">v2</b></div>
+      </div>
+    </div>
+    <div id="valute">
+      <div class="val lire" id="valLire"><span class="ico">₤</span><div><b id="vLire">0</b><small id="vProd">+0/s</small></div></div>
+      <div class="val" title="Rottami: livelli degli oggetti, pezzi del robot, riparazioni"><span class="ico">⚙️</span><b id="vRott">0</b></div>
+      <div class="val" title="Biglietti rari: pacchi, ruota, minigiochi subito"><span class="ico">🎟️</span><b id="vBig">0</b></div>
+      <div class="val braci" id="valBraci" title="Braci dell'Eruzione" hidden><span class="ico">🔥</span><b id="vBraci">0</b></div>
+    </div>
+    <div id="azioni">
+      <button id="bRadio" title="Diario e Radio Partenope">📻</button>
+      <button id="bMusica" title="Musica">🎵</button>
+      <button id="bSuoni" title="Effetti sonori">🔊</button>
+      <button id="bOpz" title="Opzioni">⚙️</button>
+    </div>
+  </header>
+  <div id="aggiorna" hidden></div>
+  <div id="buffbar"></div>
+
+  <main id="corpo">
+    <section id="colArena">
+      <div id="arena" class="carta">
+        <div id="arenaTesta">
+          <div id="attoChip"><small id="attoNum">ATTO I</small><b id="attoNome">PONTICELLI</b></div>
+          <div id="stanzaBox"><small>STANZA</small><b id="stanzaNum">1</b></div>
+          <div id="ondeBox"><div id="onde"></div><small id="prossimoBoss"></small></div>
+          <div class="arena-btn">
+            <button id="bRiprova" class="chip rosso" hidden>⚔️ RIPROVA</button>
+            <button id="bAuto" class="chip">⏩ AVANZA</button>
+          </div>
+        </div>
+        <div id="bossBarra">
+          <div class="bb-riga"><b id="bbNome">BOSS</b><button id="bbRitirata" class="chip">↩️ ritirati</button></div>
+          <div class="bb-vita"><i id="bbVita"></i><span id="bbVitaTxt"></span></div>
+          <div class="bb-tempo"><i id="bbTempo"></i><span id="bbTempoTxt"></span></div>
+        </div>
+        <div id="palco">
+          <div class="pavimento" aria-hidden="true"></div>
+          <div id="orda"></div>
+          <div id="robotPalco" aria-hidden="true"></div>
+          <canvas id="fx" aria-hidden="true"></canvas>
+          <div id="lampo" aria-hidden="true"></div>
+          <div id="introBoss"></div>
+          <div id="annuncio"></div>
+          <div id="abbattuto">
+            <div class="ab-titolo">💀 SISTEMA ABBATTUTO</div>
+            <p>Riavvio automatico tra <b id="riavvioTxt">5s</b>… oppure:</p>
+            <div class="bottoni"><button class="btn menta" id="bRipara">🔧 Ripara subito</button><button class="btn" id="bRitirata">↩️ Ritirati e potenziati</button></div>
+          </div>
+          <div class="suggerimento">tocca i nemici per colpire</div>
+        </div>
+        <div id="arenaPiede">
+          <div class="barre">
+            <div class="barra energia"><span>❤️</span><div><i id="energiaFill"></i></div><b id="energiaTxt">100</b></div>
+            <div class="barra calore"><span>🔥</span><div><i id="caloreFill"></i></div><b id="caloreTxt">0%</b></div>
+          </div>
+          <div class="piede-riga">
+            <div class="stat-arena"><span title="Danno per colpo">💥 <b id="sDanno">1</b></span><span title="Danno al secondo degli automi">⚡ <b id="sDps">0</b>/s</span><span title="Probabilità di critico">🎯 <b id="sCrit">5%</b></span></div>
+            <div class="arena-btn"><button id="bAutomi" class="chip" hidden>🤖</button><button id="bProto" hidden>☄️</button></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="colPannelli">
+      <nav id="schede" aria-label="Schede"></nav>
+      <div id="pannello" class="carta"></div>
+    </section>
+  </main>
+  <nav id="barraMobile" aria-label="Schede"></nav>
+  <div id="altroMenu"></div>
+</div>
+
+<div id="borsaHud" title="Borsa del Golfo · trascina per spostare, tocca per aprire"></div>
+<div id="toasts"></div>
+
+<div id="radio" role="status" aria-live="polite">
+  <div class="r-testa"><span class="r-onda"><i></i><i></i><i></i></span>📻 RADIO PARTENOPE · 88.0 <b id="radioChi">PARTENOPE</b><em id="radioAltri">✕</em></div>
+  <p id="radioTesto"></p>
+</div>
+
+<div id="modale">
+  <div class="m-box carta">
+    <div class="m-testa"><b id="modTitolo"></b><button id="modChiudi" aria-label="Chiudi">✕</button></div>
+    <div id="modCorpo"></div>
+  </div>
+</div>
+
+<div id="intro">
+  <div class="i-box">
+    <svg class="emblema grande" viewBox="0 0 64 64" aria-hidden="true"><use href="#emblemaNP"/></svg>
+    <div class="i-daprod"><svg class="logoDP" viewBox="0 0 260 64" aria-label="DaProd"><use href="#logoDaProd"/></svg><span>presenta</span></div>
+    <h1 class="i-titolo"><span class="neon1">NEON</span><span class="neon2">PARTENOPE</span></h1>
+    <p class="i-trama">Napoli, 2099. Il Vesuvio è diventato un server.<br>La sirena è in gabbia. <b>Tu sei fatto di rottami.</b></p>
+    <div id="introEredita" class="i-eredita" hidden></div>
+    <button id="introGioca" class="btn oro enorme">▶ INIZIA LA DISCESA</button>
+    <div class="i-piede"><button id="introNovita" class="chip">✨ Novità</button><span>versione <b class="versione">v2</b></span></div>
+  </div>
+</div>
+</body>
+</html>
