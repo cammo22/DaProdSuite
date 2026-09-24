@@ -276,6 +276,7 @@ export const COPIONE_SALA = `
     var riga = $('cornice-tagli');
     if (!riga) return;
     riga.hidden = !(giocoAperto && ricaricaDelGioco);
+    $('cornice').classList.toggle('con-tagli', !riga.hidden);
     if (riga.hidden) return;
     var minimo = ingressoDi(giocoAperto);
     var saldo = io ? io.saldo : 0;
