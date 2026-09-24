@@ -401,14 +401,22 @@ const STORIA = {
 
 // ============================================================ NOVITÀ (mostrate in gioco al primo avvio di una versione)
 const NOVITA = {
+  "v2.1.1": {
+    titolo: "Qui si gioca e basta",
+    punti: [
+      "Sul sito e nelle app Neon Partenope è la sua demo, come sempre: niente barra delle Lire DaProd.",
+      "Le Lire DaProd, la Borsa e le carte per la slot ci sono giocando dalla sala giochi della DaProd Suite.",
+      "Nella suite, se il computer DaProd non risponde, si gioca lo stesso."
+    ]
+  },
   "v2.1.0": {
     titolo: "Le Lire DaProd",
     punti: [
-      "Un portafoglio solo per tutti i giochi DaProd: Neon, Coin Dozer e Claw Machine si dividono le stesse lire.",
+      "Dentro la sala giochi della DaProd Suite, Neon, Coin Dozer e Claw Machine si dividono le stesse lire.",
       "Quello che guadagni fa punti della partita. Quando vuoi smettere premi Stacca: diventano Lire DaProd.",
       "La Borsa della Lira: la quotazione sale quando si spende e scende quando si incassa. Stacca al momento giusto.",
       "Con le Lire ricarichi il quartiere, e dentro la DaProd Suite boss ed eruzioni ti danno carte per la slot.",
-      "Il portafoglio è la barra in basso a destra: sul telefono è il tondo ₤."
+      "Il portafoglio lo mostra la sala giochi della suite, sopra al gioco."
     ]
   },
   "v2.0.0": {

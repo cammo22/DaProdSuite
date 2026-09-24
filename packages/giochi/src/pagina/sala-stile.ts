@@ -65,12 +65,68 @@ export const STILE_SALA = `
 
   .cornice { position: fixed; inset: 0; z-index: 50; display: flex; flex-direction: column; background: #020806; }
   .cornice[hidden] { display: none; }
+  /* La barra della cornice (1.4.4): tasti in una riga, pastiglie sotto. */
   .cornice-barra {
-    display: flex; align-items: center; gap: 8px; padding: 8px 10px; flex-wrap: wrap;
-    background: rgba(3, 12, 10, .92); border-bottom: 1px solid rgba(120, 255, 200, .16);
+    display: grid; grid-template-columns: auto 1fr auto auto; align-items: center; gap: 8px;
+    padding: calc(8px + env(safe-area-inset-top)) 10px 8px;
+    background: linear-gradient(180deg, rgba(4,16,13,.97), rgba(3,10,8,.94));
+    border-bottom: 1px solid rgba(120, 255, 200, .16); box-shadow: 0 8px 24px rgba(0,0,0,.45);
   }
-  .cornice-nome { font: 700 14px/1 "Space Mono", monospace; color: #f2fffb; }
-  .cornice-barra .btn { width: auto; flex: none; min-height: 0; margin: 0; padding: 8px 13px; font-size: 13px; }
-  .cornice-conto { flex: 1; text-align: right; font: 700 12px/1.3 "Space Mono", monospace; color: #3dff8a; }
+  .cornice-nome { font: 700 15px/1.1 "Space Mono", monospace; color: #f2fffb; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  body .cornice-barra .btn { width: auto; flex: none; min-height: 0; margin: 0; padding: 9px 14px; font-size: 13px; white-space: nowrap; }
+  body .cornice-barra .btn.oro { --accent: #e0a100; }
+  body .cornice-barra .btn.cyan { --accent: #1fb8ee; }
+  .tasto-tondo { width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; flex: none; cursor: pointer;
+    font: 700 18px/1 system-ui, sans-serif; color: #eafff4; border: 1px solid rgba(120,255,200,.25);
+    background: linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.02) 50%, rgba(0,0,0,.2) 51%, rgba(255,255,255,.04));
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.2), 0 4px 10px rgba(0,0,0,.4); }
+  .cornice-conto { grid-column: 1 / -1; display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
+  .cornice-conto::-webkit-scrollbar { display: none; }
+  .pastiglia { position: relative; flex: 1 0 auto; display: flex; flex-direction: column; gap: 2px; padding: 6px 12px; border-radius: 12px;
+    background: rgba(1, 8, 6, .6); border: 1px solid rgba(120, 255, 200, .14); }
+  .pastiglia small { font: 700 9.5px/1 "Space Mono", monospace; letter-spacing: .08em; text-transform: uppercase; color: #86a59c; }
+  .pastiglia b { font: 700 14px/1.1 "Space Mono", monospace; color: #f2fffb; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .pastiglia.lire b { color: #ffd166; }
+  .pastiglia.punti b { color: #3dff8a; }
+  .pastiglia.su b { color: #3dff8a; }
+  .pastiglia.giu b { color: #ff5c6c; }
+  .pastiglia.sale { animation: sale-punti .9s ease-out; }
+  .pastiglia.sale::after { content: attr(data-piu); position: absolute; right: 8px; top: -2px; font: 700 11px/1 "Space Mono", monospace;
+    color: #3dff8a; text-shadow: 0 0 8px rgba(0,255,65,.8); animation: vola-su .9s ease-out forwards; }
+  @keyframes sale-punti { 0% { box-shadow: 0 0 0 0 rgba(0,255,65,.7); border-color: #3dff8a; } 100% { box-shadow: 0 0 0 10px rgba(0,255,65,0); } }
+  @keyframes vola-su { to { transform: translateY(-14px); opacity: 0; } }
+  @media (min-width: 760px) {
+    .cornice-barra { grid-template-columns: auto auto 1fr auto auto; }
+    .cornice-conto { grid-column: 3; grid-row: 1; justify-content: flex-end; }
+    .pastiglia { flex: 0 0 auto; }
+  }
   .cornice iframe { flex: 1; width: 100%; border: 0; background: #000; }
+
+  /* Il portafoglio della ricarica (1.4.4): un foglio che sale dal basso. */
+  .portafoglio { position: absolute; inset: 0; z-index: 5; display: flex; align-items: flex-end; justify-content: center;
+    background: rgba(0, 0, 0, .55); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+  .portafoglio[hidden] { display: none; }
+  .portafoglio-foglio { width: min(520px, 100%); display: grid; gap: 12px; padding: 16px 16px calc(18px + env(safe-area-inset-bottom));
+    border-radius: 26px 26px 0 0; border: 1px solid rgba(120, 255, 200, .22); border-bottom: 0;
+    background: radial-gradient(120% 90% at 50% 0%, rgba(0,255,65,.12), transparent 60%), linear-gradient(180deg, #071915, #030a08);
+    box-shadow: 0 -20px 50px rgba(0,0,0,.6); animation: foglio-su .22s ease-out; }
+  @keyframes foglio-su { from { transform: translateY(40px); opacity: 0; } }
+  .portafoglio-testa { display: flex; align-items: center; justify-content: space-between; }
+  .portafoglio-testa b { font: 800 19px/1.1 "M PLUS Rounded 1c", "Nunito", sans-serif; color: #f2fffb; }
+  .portafoglio-saldo { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 12px 14px; border-radius: 16px;
+    background: rgba(255, 209, 102, .07); border: 1px solid rgba(255, 209, 102, .3); }
+  .portafoglio-saldo small { color: #cdbd8e; font-size: 12.5px; }
+  .portafoglio-saldo b { font: 700 22px/1 "Space Mono", monospace; color: #ffd166; }
+  .portafoglio-quanto { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; text-align: center; }
+  .portafoglio-quanto b { display: block; font: 700 32px/1.05 "Space Mono", monospace; color: #f2fffb; text-shadow: 0 0 20px rgba(61,219,255,.3); }
+  .portafoglio-quanto small { display: block; margin-top: 4px; color: #3ddbff; font-size: 13px; }
+  .portafoglio-quanto .tasto-tondo { width: 46px; height: 46px; font-size: 22px; }
+  #portafoglio-scorri { width: 100%; accent-color: #19d64a; height: 28px; }
+  .portafoglio-tagli { display: grid; grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); gap: 8px; }
+  .portafoglio-tagli button { padding: 10px 6px; border-radius: 999px; cursor: pointer; font: 700 13px/1 "Space Mono", monospace; color: #ffe7a3;
+    background: radial-gradient(circle at 50% 30%, #3a2c10, #1a1307); border: 1px solid #6b5220; }
+  .portafoglio-tagli button.scelto { color: #2a1a00; border-color: #ffe08a; background: radial-gradient(circle at 50% 30%, #fff1b8, #ffc933 55%, #d18f00);
+    box-shadow: 0 0 14px rgba(255,201,51,.5); }
+  body .portafoglio-foglio #portafoglio-ok { width: 100%; padding: 15px; font-size: 17px; }
+  .portafoglio-nota { margin: 0; color: #86a59c; font-size: 12.5px; text-align: center; }
 `;

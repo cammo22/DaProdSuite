@@ -16,7 +16,8 @@ export const COPIONE_HOME = `
   var STANZE = {
     home: 'home',
     sala: 'gioca', fortuna: 'gioca', borsa: 'gioca',
-    slot: 'genera', mie: 'genera', fila: 'genera',
+    slot: 'genera', mie: 'genera',
+    fila: 'admin', giocatori: 'admin',
     pacchetti: 'collezione', inventario: 'collezione', shop: 'collezione', casa: 'collezione',
   };
 
@@ -127,11 +128,11 @@ export const COPIONE_HOME = `
     });
   };
 
-  // Il pallino della fila si vede anche sul tasto Genera: chi comanda deve
+  // Il pallino della fila si vede anche sul tasto Admin: chi comanda deve
   // accorgersene da qualunque stanza, non solo da quella giusta.
   (function () {
     var fonte = $('quante-attesa');
-    var copia = $('pallino-genera');
+    var copia = $('pallino-admin');
     if (!fonte || !copia || typeof MutationObserver === 'undefined') return;
     new MutationObserver(function () {
       copia.hidden = fonte.hidden;
@@ -151,6 +152,8 @@ export const COPIONE_HOME = `
   var primaHome = setInterval(function () {
     if (!io) return;
     clearInterval(primaHome);
+    // La stanza Admin c'e' solo per chi comanda.
+    $('tasto-admin').hidden = !io.admin;
     disegnaHome();
   }, 150);
 `;

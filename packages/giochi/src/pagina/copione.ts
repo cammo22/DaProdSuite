@@ -3059,44 +3059,65 @@ export const COPIONE = `
     var quali = cerca
       ? gente.filter(function (g) { return g.nome.toLowerCase().indexOf(cerca) >= 0; })
       : gente;
+    /**
+     * ⚠ **La pagina Giocatori** (1.4.4). Chiesto il 24 settembre 2026: «gli
+     * admin devono poter gestire facilmente i player». Prima era un cassetto in
+     * fondo alla fila, con solo il saldo. Adesso ogni persona e' una scheda coi
+     * numeri che servono per decidere — livello, partita aperta, staccate oggi,
+     * giri, prese, carte in mano — e le azioni chiuse in «Gestisci», cosi' la
+     * pagina si legge a colpo d'occhio anche con venti persone.
+     */
     $("gente").innerHTML = quali.length
       ? quali.map(function (g) {
           var messe = quantoScelto("regalo", g.chi);
+          var numero = function (v, cosa) { return "<span><b>" + v + "</b><small>" + cosa + "</small></span>"; };
           return "<div class=\\"persona\\">" +
-            "<div class=\\"testa\\"><b>" + sicuro(g.nome) + "</b>" +
-            "<small>" + (g.io ? "sei tu · " : "") +
+            "<div class=\\"persona-testa\\"><span class=\\"tondo\\">" + sicuro((g.nome || "?").charAt(0).toUpperCase()) + "</span>" +
+            "<div class=\\"chi-e\\"><b>" + sicuro(g.nome) + "</b><small>" +
             (g.mai ? "non ha mai aperto la sala giochi"
-              : "ha " + soldi(g.saldo) +
+              : "livello " + g.livello + (g.ultimoStacco ? " · ultimo stacco " + quando(g.ultimoStacco) : "") +
                 (g.regali ? " · regalate " + soldi(g.regali) : "")) + "</small></div>" +
+            "<span class=\\"persona-saldo\\">" + soldi(g.saldo) + "</span></div>" +
+            (g.mai ? "" : "<div class=\\"persona-numeri\\">" +
+              numero(String(g.partita || 0), "pt partita") +
+              numero(soldi(g.staccatoOggi || 0), "staccate oggi") +
+              numero(String(g.giri || 0), "giri") +
+              numero(String(g.prese || 0), "prese") +
+              numero(String(g.mano || 0), "carte") + "</div>") +
+            "<details class=\\"persona-azioni\\"><summary>Gestisci</summary>" +
             tastiTaglio("regalo", g.chi) +
             "<div class=\\"riga-tasti\\">" +
             "<span class=\\"conto\\">stai mandando <b data-conta=\\"regalo:" + sicuro(g.chi) +
             "\\">" + (messe ? soldi(messe) : "niente") + "</b></span>" +
-            "<button class=\\"btn piano\\" data-azzera=\\"regalo:" + sicuro(g.chi) +
-            "\\">Azzera</button></div>" +
+            "<button class=\\"btn piano\\" data-azzera=\\"regalo:" + sicuro(g.chi) + "\\">Azzera</button></div>" +
             "<div class=\\"riga-tasti\\">" +
-            "<input type=\\"number\\" min=\\"1\\" placeholder=\\"o scrivi quanto\\" " +
-            "data-regalo=\\"" + sicuro(g.chi) + "\\">" +
-            "<button class=\\"btn oro\\" data-manda-lire=\\"" + sicuro(g.chi) +
-            "\\">Manda</button></div>" +
-            /**
-             * ⚠ **E il tasto che svuota**, chiesto l'11 settembre 2026: «un
-             * admin puo' anche azzerare il portafoglio degli altri, caso mai
-             * problemi: fai un bel tastino per resettare il portafoglio».
-             *
-             * Compare **solo se c'e' qualcosa da svuotare**: un tasto rosso
-             * accanto a un portafoglio gia' vuoto e' un tasto che si preme per
-             * scoprire che non fa niente.
-             */
-            (g.saldo > 0
-              ? "<div class=\\"riga-tasti\\">" +
-                "<button class=\\"btn brutto\\" data-svuota=\\"" + sicuro(g.chi) +
-                "\\">Azzera il portafoglio</button></div>"
-              : "") +
-            "</div>";
+            "<input type=\\"number\\" min=\\"1\\" placeholder=\\"o scrivi quanto\\" data-regalo=\\"" + sicuro(g.chi) + "\\">" +
+            "<button class=\\"btn oro\\" data-manda-lire=\\"" + sicuro(g.chi) + "\\">Manda</button></div>" +
+            "<div class=\\"riga-tasti\\">" +
+            (g.partita > 0 ? "<button class=\\"btn piano\\" data-azzera-partita=\\"" + sicuro(g.chi) + "\\">Chiudi la partita</button>" : "") +
+            // Solo se c'e' qualcosa da svuotare (11 settembre 2026): un tasto
+            // rosso accanto a un portafoglio vuoto non fa niente.
+            (g.saldo > 0 ? "<button class=\\"btn brutto\\" data-svuota=\\"" + sicuro(g.chi) + "\\">Azzera il portafoglio</button>" : "") +
+            "</div></details></div>";
         }).join("")
       : "<div class=\\"niente\\">" +
         (cerca ? "Nessuno si chiama cosi'." : "Non c'e' ancora nessuno.") + "</div>";
+  }
+
+  /** Chiude la partita di qualcuno senza staccarla (1.4.4): i punti vanno via. */
+  function azzeraPartitaDi(chi) {
+    var nome = "";
+    var punti = 0;
+    for (var i = 0; i < gente.length; i++) if (gente[i].chi === chi) { nome = gente[i].nome; punti = gente[i].partita; }
+    chiediQualcosa("Chiudi la partita di " + nome + "?",
+      "Via " + punti + " punti, che non diventano lire. Serve per i casi storti: un gioco che ha dato punti per sbaglio.",
+      { valore: "ok", tastoSi: "Chiudi la partita" }).then(function (r) {
+        if (r === null) return;
+        chiedi("POST", "/gente/partita", { chi: chi }).then(function (e) {
+          avviso("Partita chiusa: via " + e.via + " punti.", "bene");
+          caricaGente();
+        }).catch(function (err) { avviso(err.message, "male"); });
+      });
   }
 
   function mandaLire(chi) {
@@ -3420,6 +3441,7 @@ export const COPIONE = `
     if (dove === "shop") caricaShop();
     if (dove === "casa") caricaClassifica();
     if (dove === "fila") caricaFila();
+    if (dove === "giocatori") caricaGente();
   }
 
   /* ------------------------------------------------------------- i tasti */
@@ -3575,6 +3597,8 @@ export const COPIONE = `
     // una riga.
     var svuota = b.getAttribute && b.getAttribute("data-svuota");
     if (svuota) { svuotaPortafoglio(svuota); return; }
+    var chiudiPartita = b.getAttribute && b.getAttribute("data-azzera-partita");
+    if (chiudiPartita) { azzeraPartitaDi(chiudiPartita); return; }
 
     var attacca = b.getAttribute && b.getAttribute("data-attacca");
     if (attacca) { apriLibreria(attacca, "allegato"); return; }

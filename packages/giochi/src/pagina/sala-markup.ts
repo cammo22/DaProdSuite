@@ -33,14 +33,44 @@ export const MARKUP_SALA = `
   </section>
 
   <!-- ============================================== la cornice di un gioco -->
+  <!--
+    ⚠ La barra in alto rifatta nella 1.4.4: una riga coi tasti (indietro, nome,
+    Ricarica, Stacca) e sotto le tre pastiglie che contano — le lire in tasca,
+    i punti della partita e la Lira — che si accendono quando cambiano. Prima
+    era una riga di testo verde che andava a capo in tre righe sul telefono.
+  -->
   <div class="cornice" id="cornice" hidden>
     <div class="cornice-barra">
-      <button class="btn piano" id="cornice-esci">&#8592; Sala</button>
+      <button class="tasto-tondo" id="cornice-esci" title="Torna alla sala" aria-label="Torna alla sala">&#8592;</button>
       <div class="cornice-nome" id="cornice-nome"></div>
-      <div class="cornice-conto" id="cornice-conto"></div>
-      <button class="btn piano" id="cornice-ricarica" hidden>Ricarica</button>
+      <button class="btn cyan" id="cornice-ricarica" hidden>Ricarica</button>
       <button class="btn oro" id="cornice-stacca">Stacca</button>
+      <div class="cornice-conto" id="cornice-conto"></div>
     </div>
     <iframe id="cornice-gioco" title="Gioco" allow="autoplay; fullscreen"></iframe>
+
+    <!--
+      Il portafoglio (1.4.4): le lire della suite diventano lire del gioco.
+      Chiesto il 24 settembre 2026: «si vede bene il portafoglio con la
+      quantita' selezionabile e alcuni tagli rapidi».
+    -->
+    <div class="portafoglio" id="portafoglio" hidden>
+      <div class="portafoglio-foglio" role="dialog" aria-labelledby="portafoglio-titolo">
+        <div class="portafoglio-testa">
+          <b id="portafoglio-titolo">Ricarica</b>
+          <button class="tasto-tondo" id="portafoglio-chiudi" aria-label="Chiudi">&#10005;</button>
+        </div>
+        <div class="portafoglio-saldo"><small>nel portafoglio della suite</small><b id="portafoglio-saldo">L. 0</b></div>
+        <div class="portafoglio-quanto">
+          <button class="tasto-tondo" id="portafoglio-meno" aria-label="Meno">&#8722;</button>
+          <div><b id="portafoglio-quante">L. 0</b><small id="portafoglio-diventa"></small></div>
+          <button class="tasto-tondo" id="portafoglio-piu" aria-label="Piu">+</button>
+        </div>
+        <input type="range" id="portafoglio-scorri" min="100" max="100" step="50" value="100" aria-label="Quante lire">
+        <div class="portafoglio-tagli" id="portafoglio-tagli"></div>
+        <button class="btn grosso" id="portafoglio-ok">Ricarica</button>
+        <p class="portafoglio-nota" id="portafoglio-nota"></p>
+      </div>
+    </div>
   </div>
 `;

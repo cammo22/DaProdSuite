@@ -32,16 +32,15 @@ function avvio() {
   document.querySelectorAll(".versione").forEach(e => e.textContent = VERSIONE);
   preparaIntro();
   nuovaOnda();
-  // Le Lire DaProd: la partita si stacca in lire, e le lire ricaricano il
-  // quartiere. Dentro la DaProd Suite il conto lo tiene la sala giochi.
+  // Le Lire DaProd: solo dentro la sala giochi della DaProd Suite la partita
+  // si stacca in lire. Qui sul sito e nelle app daprod-lira.js non fa niente.
   if (window.DaProdLira) DaProdLira.init({
     gioco: "neon",
-    posto: "basso-destra",
-    telefono: { bottom: "74px", right: "8px" },
     ricarica: {
-      detto: "un minuto di produzione del quartiere",
-      dai: () => {
-        const l = Math.max(1000, produzione() * 60);
+      // L.100 della suite = un minuto di produzione del quartiere (almeno 1.000 lire).
+      detto: "L.100 della suite = un minuto di produzione del quartiere",
+      dai: (quante) => {
+        const l = Math.max(1000, produzione() * 60) * ((quante || 100) / 100);
         S.lire += l; sporca();
         toast("₤", "Ricarica DaProd", "+" + fmtLire(l), { tipo: "oro" });
       },

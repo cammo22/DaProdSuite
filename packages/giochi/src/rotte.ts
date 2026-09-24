@@ -70,11 +70,13 @@ import {
   TETTO_EURO,
   TETTO_FIGURINE,
   lire,
+  livelloDi,
   tettoDelValore,
   versoIlProssimo,
 } from "./regole";
 import { RULLI, rulliDi } from "./rulli";
-import { entra, evento, giocaCarta, segnaPunti, stacca, statoSala, type StatoSala } from "./sala";
+import { giornoDi as giornoDellaSala } from "./borsa";
+import { azzeraPartita, entra, evento, giocaCarta, ricarica, segnaPunti, stacca, statoSala, type StatoSala } from "./sala";
 import type { Collezionabile, Era, Grado, PezzoInGioco, Tavolo, TipoCollezionabile } from "./tipi";
 
 /** Chi sta chiedendo. Nella suite e' il dispositivo accoppiato. */
@@ -649,6 +651,10 @@ export function rispondi(
       const fatto = entra(deposito, chi.id, String(corpo["gioco"] ?? ""));
       return OK({ ...fatto, saldoScritto: lire(fatto.saldo) });
     }
+    if (metodo === "POST" && percorso === "/sala/ricarica") {
+      const fatto = ricarica(deposito, chi.id, String(corpo["gioco"] ?? ""), Number(corpo["lire"] ?? 0));
+      return OK({ ...fatto, saldoScritto: lire(fatto.saldo) });
+    }
     if (metodo === "POST" && percorso === "/sala/punti") {
       const fatto = segnaPunti(deposito, chi.id, String(corpo["gioco"] ?? ""), Number(corpo["grezzo"] ?? 0));
       return OK(fatto);
@@ -1066,6 +1072,7 @@ export function rispondi(
       percorso === "/gente" ||
       percorso === "/regala" ||
       percorso === "/azzera" ||
+      percorso === "/gente/partita" ||
       percorso === "/prova" ||
       percorso === "/libreria"
     ) {
@@ -1099,10 +1106,24 @@ export function rispondi(
             prese: c?.prese ?? 0,
             /** Non ha mai aperto la sala giochi: il conto si apre da solo. */
             mai: !c,
+            /* 1.4.4: quello che serve per gestire una persona senza aprire altro. */
+            livello: c ? livelloDi(c.esperienza, deposito.impostazioni().perIlLivello) : 1,
+            giri: c?.giri ?? 0,
+            partita: c?.partita?.punti ?? 0,
+            staccatoOggi:
+              c?.staccatoOggi && c.staccatoOggi.giorno === giornoDellaSala(Date.now()) ? c.staccatoOggi.lire : 0,
+            mano: c?.mano?.length ?? 0,
+            ultimoStacco: c?.ultimoStacco?.quando ?? 0,
           };
         })
         .sort((a, b) => a.nome.localeCompare(b.nome));
       return OK({ gente, tagli: TAGLI });
+    }
+
+    if (metodo === "POST" && percorso === "/gente/partita") {
+      const chiQuale = String(corpo["chi"] ?? "");
+      if (!deposito.conti().some((c) => c.chi === chiQuale)) return NO(404, "Questa persona non ha un conto.");
+      return OK(azzeraPartita(deposito, chiQuale));
     }
 
     if (metodo === "POST" && percorso === "/regala") {
