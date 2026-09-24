@@ -212,7 +212,21 @@ export const COPIONE_SALA = `
       $('cornice').hidden = false;
       $('cornice-gioco').src = RADICE + '/sala/' + id + '/?suite=1';
       disegnaCornice();
-    }).catch(function (e) { avviso(e.message, 'male'); });
+    }).catch(function (e) {
+      /*
+       * Il PC non risponde (e non ha detto di no): il gioco si apre lo
+       * stesso, come demo. Chiesto da Cammo il 24 settembre 2026: i giochi
+       * devono essere giocabili anche se il computer DaProd non e' collegato.
+       * Senza ?suite=1 daprod-lira.js non fa niente: niente lire, niente carte.
+       */
+      if (!(e instanceof TypeError)) { avviso(e.message, 'male'); return; }
+      giocoAperto = id;
+      ricaricaDelGioco = false;
+      $('cornice-nome').textContent = (ICONE_SALA[id] || '') + ' demo, senza lire';
+      $('cornice-ricarica').hidden = true;
+      $('cornice').hidden = false;
+      $('cornice-gioco').src = RADICE + '/sala/' + id + '/';
+    });
   }
 
   function chiudiGioco() {

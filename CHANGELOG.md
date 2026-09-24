@@ -10,6 +10,20 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ---
 
+## 1.4.1 — Le lire solo nella suite
+
+> «Le pagine GitHub dei giochi devono rimanere demo giocabili normalmente: solo
+> gli utenti collegati alla DaProd Suite hanno questo sistema di lire, e i
+> giochi devono essere giocabili anche se un computer DaProd non è collegato.»
+
+- **Sul sito i giochi tornano demo.** Coin Dozer, Claw Machine e Neon Partenope
+  non hanno più la barra delle lire fuori dalla suite: le Lire DaProd, la Borsa
+  e le carte sono di chi gioca dalla sala giochi.
+- **Si gioca anche se il PC non risponde.** Se entrando in un gioco il computer
+  non risponde, la sala lo apre lo stesso, come demo senza lire. E se il PC
+  sparisce a partita iniziata, il gioco continua: quei punti non contano, e
+  basta.
+
 ## 1.4.0 — Il fiore all'occhiello
 
 > «La DaProd Suite, che doveva essere il fiore all'occhiello, sembra diventata
@@ -50,7 +64,6 @@ scrive più «ethereal», «tapestry» e compagnia.
   quando la gente spende e scende quando incassa. Tetto: 3.000 lire al giorno.
 - Le cose grosse (jackpot, shiny, boss) danno una **carta**: un pezzo per la
   slot delle combinazioni, che si gioca già bloccato.
-- Sul sito gli stessi giochi dividono lo stesso portafoglio nel browser.
 
 **Il giudice.** Nella fila di chi comanda c'è «Chiedi al giudice»: Jev-Omni
 guarda la combinazione e dice quanto è probabile che sia slop, normale, buona o
