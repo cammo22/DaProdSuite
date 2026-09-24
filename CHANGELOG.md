@@ -10,6 +10,61 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ---
 
+## 1.4.0 — Il fiore all'occhiello
+
+> «La DaProd Suite, che doveva essere il fiore all'occhiello, sembra diventata
+> la più brutta graficamente: facciamo un remake in stile DaProd.»
+
+**Il vestito.** Hub, schede, console e sala giochi hanno lo stesso vestito del
+sito DaProd: fondo scuro, pioggia verde, vetro, bottoni aqua lucidi, Space Mono.
+Un file solo (`/comune/daprod.css`) per tutti, così non si stacca più una
+scheda dall'altra. Le schede che generano hanno lo sfondo fermo, per non
+rubare la scheda video al disegno.
+
+**Le immagini: Qwen-Image 2.1, FLUX esce.**
+
+- Qwen-Image 2.1 in **GGUF Q4** fa sia le immagini nuove sia le **modifiche**
+  (scrivi cosa cambiare, e se colori una zona cambia solo quella).
+- Due modi: **Qwen-Image 2.1** (25 passi) e **Qwen-Image 2.1 Turbo** (il LoRA
+  a 4 passi, fino a 8). Il Lightning a 8 passi per la 2.1 non è ancora uscito:
+  quando esce si aggiunge accanto.
+- Le copertine dei brani si fanno col Turbo.
+- Il motore ComfyUI sale alla 0.37.2, che ha i nodi nuovi.
+
+**La musica: YuE2.** Accanto ad ACE-Step c'è YuE2 3B, che canta; e un secondo
+modo che prima scrive la partitura e poi la suona.
+
+**Il 3D: da una foto a un modellino.** In DaProdFoto c'è la scheda **3D**:
+scegli una foto e TRELLIS.2 fa un modellino con la sua texture, in tre qualità
+(per i giochi, bella, da vetrina). Si gira col dito e si scarica in `.glb`.
+
+**Il dado delle idee, senza cliché.** In Foto e in Musica il dado propone
+un'idea storta ma precisa invece delle solite frasi fatte, e il bonsai non
+scrive più «ethereal», «tapestry» e compagnia.
+
+**La sala d'arcade e la Lira DaProd.**
+
+- Coin Dozer, Claw Machine e Neon Partenope stanno dentro la sala giochi.
+- Si gioca una partita, i punti si sommano, e quando vuoi **stacchi**: la
+  partita diventa lire alla quotazione della **Borsa della Lira**, che sale
+  quando la gente spende e scende quando incassa. Tetto: 3.000 lire al giorno.
+- Le cose grosse (jackpot, shiny, boss) danno una **carta**: un pezzo per la
+  slot delle combinazioni, che si gioca già bloccato.
+- Sul sito gli stessi giochi dividono lo stesso portafoglio nel browser.
+
+**Il giudice.** Nella fila di chi comanda c'è «Chiedi al giudice»: Jev-Omni
+guarda la combinazione e dice quanto è probabile che sia slop, normale, buona o
+da vetrina. Consiglia e basta — decide sempre una persona. Il motore parte solo
+la prima volta che lo chiedi.
+
+**Da sapere.**
+
+- I pesi nuovi (Qwen-Image 2.1, YuE2, TRELLIS.2, Jev-Omni) hanno un peso
+  **stimato**: quello vero lo legge la suite al primo scaricamento.
+- Jev-Omni sono circa 50 GB in FP32; la suite lo carica in 4 bit.
+- Tauri: la suite resta Electron in questa release. Il perché e il piano stanno
+  in [docs/TAURI.md](docs/TAURI.md).
+
 ## 1.3.9 — Le foto si scaricano una volta sola
 
 > «Carica le foto una alla volta e con connessioni lente si deve aspettare che
