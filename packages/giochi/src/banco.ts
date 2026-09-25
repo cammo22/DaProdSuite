@@ -723,10 +723,13 @@ export function regala(
    */
   const lire = Math.round(quanto);
   if (!Number.isFinite(lire) || lire < 1) throw new NienteDaFare("Quanto? Da una lira in su.");
-  // Cinque milioni: piu' o meno duemilacinquecento euro, cinque volte il tasto
-  // piu' grosso. Non e' un permesso, e' una rete contro il tasto premuto venti
-  // volte per sbaglio.
-  if (lire > 5000000) throw new NienteDaFare("Troppe in una volta sola.");
+  /*
+   * ⚠ **Il tetto dei cinque milioni non c'e' piu'** (1.4.9). Erano circa
+   * 2.500 euro: «togliamo il limite di ricarica a 2500 euro, non siamo una
+   * vera banca bro». Resta solo un muro contro i numeri che il conto non sa
+   * piu' contare con precisione.
+   */
+  if (lire > 1e14) throw new NienteDaFare("Troppe anche per DaProd.");
 
   const regalo: Regalo = {
     quanto: lire,

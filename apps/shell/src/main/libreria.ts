@@ -896,6 +896,43 @@ class Libreria extends EventEmitter {
   }
 
   /**
+   * ⚠ **Una foto fatta da una pagina**, in una sottocartella sua. Nuova nella 1.4.9.
+   *
+   * La usa la scheda 3D per il modellino chiesto da fuori: vedi `anteprima` in
+   * contracts.ts. La cartella è un nome solo, pulito: niente `..`, niente
+   * barre, e mai `pezzi` né `originali`, che la fila salta apposta.
+   */
+  salvaAnteprima(
+    app: AppId,
+    dataUrl: string,
+    dati: { titolo: string; cartella: string; meta?: Record<string, unknown> },
+  ): string | null {
+    const virgola = dataUrl.indexOf(",");
+    const base64 = virgola >= 0 ? dataUrl.slice(virgola + 1) : dataUrl;
+    const bytes = Buffer.from(base64, "base64");
+    if (!bytes.length || bytes.length > ORIGINALE_MAX_BYTE) return null;
+    let sotto = dati.cartella.replace(/[^a-z0-9-]/gi, "").slice(0, 30) || "anteprime";
+    if (sotto === CARTELLA_PEZZI || sotto === "originali") sotto = "anteprime";
+    const dove = join(this.cartella(app), sotto);
+    try {
+      mkdirSync(dove, { recursive: true });
+      const titolo = unaRiga(dati.titolo).slice(0, 60) || "anteprima";
+      const quando = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+      const destinazione = join(dove, `${titolo} ${quando}.png`);
+      writeFileSync(destinazione, bytes);
+      writeFileSync(
+        senzaEstensione(destinazione) + ".json",
+        JSON.stringify({ ...(dati.meta ?? {}), titolo }, null, 1),
+        "utf8",
+      );
+      this.segnalaNovita();
+      return this.elenco(true).find((e) => e.percorso === destinazione)?.id ?? null;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
    * Riscrive il `.json` di un elemento cambiando solo quello che serve.
    *
    * Tre gesti diversi scrivevano gli stessi metadati in tre modi diversi — la

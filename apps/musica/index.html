@@ -142,11 +142,12 @@
           <label>Copertina</label>
           <select id="coverStyleNew"></select>
         </div>
-        <!-- Con che modello si disegna la copertina. Il turbo di Qwen-Image,
-             cinque passi, o Anima: subito dopo un brano non si aspetta. -->
+        <!-- Con che modello si disegna la copertina. Dalla 1.4.9 Qwen-Image di
+             serie, senza LoRA; il turbo resta per chi sta al computer. -->
         <div class="field">
           <label>Copertina, con che modello</label>
           <select id="coverModello">
+            <option value="qwen21">Qwen-Image 2.1</option>
             <option value="qwen21-turbo">Qwen-Image 2.1 Turbo</option>
             <option value="anima">Anima — la più veloce</option>
           </select>

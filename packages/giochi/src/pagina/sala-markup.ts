@@ -11,27 +11,15 @@ export const MARKUP_SALA = `
   <!-- =============================================================== sala -->
   <section class="pagina" id="p-sala">
     <h2>La sala d'arcade</h2>
-    <p class="spiega">I giochi DaProd, dentro la suite. Quello che vinci fa punti della
-      <b>partita</b>; le cose grosse ti danno <b>carte</b> per la slot. Si entra con un
-      gettone, e quando vuoi smettere <b>incassi</b>: i punti diventano lire al cambio
-      della Borsa di quel momento.</p>
+    <p class="spiega">Ricarichi quando vuoi, incassi quando vuoi. Il <b>Dozer</b> si mangia le
+      lire; <b>Claw</b> e <b>Neon</b> si finiscono, e chi finisce vince da 20 a 30 euro piu' i bonus.</p>
     <div class="sala-giochi" id="sala-giochi"></div>
-    <div class="sala-partita" id="sala-partita"></div>
+    <!-- 1.4.9: al posto dei quadrati coi numeri, le statistiche che contano. -->
+    <div class="sala-stat" id="sala-stat"></div>
+    <div class="sala-admin" id="sala-admin" hidden></div>
   </section>
 
-  <!-- ============================================================== borsa -->
-  <section class="pagina" id="p-borsa">
-    <h2>La Borsa della Lira</h2>
-    <div class="borsa-testa" id="borsa-testa"></div>
-    <div class="borsa-grafico" id="borsa-grafico"></div>
-    <div class="borsa-numeri" id="borsa-numeri"></div>
-    <p class="spiega">Quanto vale un punto in lire lo decide la sala, non una persona:
-      <b>sale</b> quando si spende (giri, gettoni, pacchetti, shop) e <b>scende</b>
-      quando si incassa (incassi, combinazioni prese, regali). Un po' la tira su anche
-      la gente che gioca, e c'e' un'onda lenta, uguale per tutti. Incassare adesso o
-      aspettare: e' quello il gioco.</p>
-    <div class="riga-tasti"><button class="btn oro" id="stacca-borsa">Incassa</button></div>
-  </section>
+  <!-- La Borsa della Lira sta dentro al Portafoglio dalla 1.4.9: vedi portafoglio-markup.ts. -->
 
   <!-- ============================================== la cornice di un gioco -->
   <!--
@@ -45,7 +33,9 @@ export const MARKUP_SALA = `
       <button class="tasto-tondo" id="cornice-esci" title="Torna alla sala" aria-label="Torna alla sala">&#8592;</button>
       <div class="cornice-nome" id="cornice-nome"></div>
       <button class="btn cyan" id="cornice-ricarica" hidden>Ricarica</button>
-      <button class="btn oro" id="cornice-stacca" title="I punti della partita diventano lire, al cambio della Borsa di adesso">Incassa</button>
+      <!-- 1.4.9: «il pulsante di cambia valuta vicino a incassa», anche per il gioco. -->
+      <button class="btn piano cornice-valuta" id="cornice-valuta" title="Lire o euro, anche nel gioco">L ⇄ €</button>
+      <button class="btn oro" id="cornice-stacca" title="Le lire del gioco tornano nel portafoglio">Incassa</button>
       <div class="cornice-conto" id="cornice-conto"></div>
     </div>
     <!--

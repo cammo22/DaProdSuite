@@ -849,10 +849,10 @@ prova("un regalo senza due parole dentro ne ha comunque", () =>
   }),
 );
 
-prova("non si regalano zero lire, ne' dieci milioni in un colpo", () =>
+prova("non si regalano zero lire, ne' meno di zero; tanti milioni si' (1.4.9)", () =>
   conCartella((file) => {
     const d = new Deposito(file);
-    for (const quanto of [0, -50, 9999999]) {
+    for (const quanto of [0, -50]) {
       let caduta = null;
       try {
         regala(d, "capo", "pino", quanto, "");
@@ -862,6 +862,9 @@ prova("non si regalano zero lire, ne' dieci milioni in un colpo", () =>
       vero(caduta instanceof NienteDaFare, "rifiutato: " + quanto);
     }
     uguale(d.conto("pino").saldo, d.impostazioni().regaloIniziale, "e il saldo non si e' mosso");
+    // «Togliamo il limite di ricarica a 2500 euro, non siamo una vera banca.»
+    regala(d, "capo", "pino", 50_000_000, "per provare");
+    uguale(d.conto("pino").saldo, d.impostazioni().regaloIniziale + 50_000_000);
   }),
 );
 
@@ -887,18 +890,17 @@ prova("i tagli sono euro, contati in lire", () => {
   for (let i = 1; i < TAGLI.length; i++) vero(TAGLI[i] > TAGLI[i - 1], "e vanno in salita");
 });
 
-prova("i tagli si sommano fino al tetto, e oltre no", () =>
+prova("i tagli si sommano senza tetto: solo i numeri impossibili si fermano", () =>
   conCartella((file) => {
     const d = new Deposito(file);
-    // Cinque volte il tasto piu' grosso e' il tetto: si batte sui tasti come su
-    // una cassa, ma venti pressioni per sbaglio non passano.
+    regala(d, "capo", "pino", TAGLI[TAGLI.length - 1] * 6, "sei volte il tasto grosso");
     let caduta = null;
     try {
-      regala(d, "capo", "pino", TAGLI[TAGLI.length - 1] * 6, "ops");
+      regala(d, "capo", "pino", 1e15, "troppe");
     } catch (e) {
       caduta = e;
     }
-    vero(caduta instanceof NienteDaFare, "sopra il tetto si ferma");
+    vero(caduta instanceof NienteDaFare, "un numero che il conto non sa contare si ferma");
   }),
 );
 

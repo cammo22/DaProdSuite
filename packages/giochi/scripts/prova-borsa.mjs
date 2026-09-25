@@ -62,6 +62,9 @@ import {
   portafoglio,
   gradoBanca,
   alzaCassetto,
+  premioFine,
+  corto,
+  andamentoSala,
 } from "../dist/index.js";
 import { conCartella, dado, prova, tirandoLeSomme, uguale, vero } from "./attrezzi.mjs";
 
@@ -203,10 +206,14 @@ prova("la cassa di un gioco: ricarica, incasso, fine partita e ricomincia", () =
     ricarica(d, "pino", "claw", 1936, ADESSO);
     uguale(d.conto("pino").saldo, 10_000 - 1936);
     vero(d.conto("pino").esperienza > xp0, "ricaricare da' esperienza");
+    const riserva = d.statoBanca().riserva;
     const r = incassaGioco(d, "pino", "claw", 3000, { fine: true }, ADESSO + 20 * 60_000);
-    uguale(r.preso, 3000);
-    uguale(r.bonus, 968, "finita in 20 minuti: meta' del messo");
-    uguale(r.fetta, Math.floor((3000 + 968) * 0.1));
+    // 1.4.9: chi finisce prende il premio di fine, 20 euro col punteggio piu' basso.
+    uguale(r.preso, lireDaEuro(20), "il premio di fine, fuori dal tetto");
+    vero(r.montepremi > 0 && r.montepremi <= lireDaEuro(10), "un pezzo del montepremi: " + r.montepremi);
+    uguale(r.bonus, 968 + r.montepremi, "finita in 20 minuti: meta' del messo, piu' il montepremi");
+    uguale(r.fetta, Math.floor((lireDaEuro(20) + 968 + r.montepremi) * 0.1));
+    uguale(d.statoBanca().riserva, riserva - r.montepremi + r.fetta, "il montepremi esce dalla riserva, la fetta ci torna");
     uguale(d.conto("pino").saldo, 10_000 - 1936 + r.netto);
     const cassa = d.conto("pino").giochi.claw;
     uguale(cassa.messo, 0, "la partita si chiude");
@@ -214,6 +221,30 @@ prova("la cassa di un gioco: ricarica, incasso, fine partita e ricomincia", () =
     uguale(cassa.record, 20);
     vero(d.statoBanca().fette === r.fetta, "la fetta va nella Banca");
     uguale(d.conto("pino").movimenti[0].perche, "partita finita a Claw Machine");
+  }),
+);
+
+prova("il premio di fine va da 20 a 30 euro col punteggio, anche senza aver messo niente", () =>
+  conCartella((file) => {
+    const d = new Deposito(file);
+    uguale(premioFine(1e3, [6, 11]), lireDaEuro(20));
+    uguale(premioFine(1e11, [6, 11]), lireDaEuro(30));
+    const mezzo = premioFine(10 ** 8.5, [6, 11]);
+    vero(mezzo > lireDaEuro(24) && mezzo < lireDaEuro(26), String(mezzo));
+    const r = incassaGioco(d, "pino", "neon", 1e30, { fine: true }, ADESSO);
+    uguale(r.preso, lireDaEuro(30), "Neon a trenta cifre: il premio pieno");
+    vero(r.netto > lireDaEuro(27), "vince davvero: " + r.netto);
+  }),
+);
+
+prova("il Dozer si mangia le lire: al massimo il doppio", () =>
+  conCartella((file) => {
+    const d = new Deposito(file);
+    d.conto("pino").saldo = 10_000;
+    ricarica(d, "pino", "dozer", 1000, ADESSO);
+    const r = incassaGioco(d, "pino", "dozer", 50_000, {}, ADESSO);
+    uguale(r.preso, 2000);
+    uguale(r.oltre, 48_000);
   }),
 );
 
@@ -232,8 +263,36 @@ prova("senza aver messo niente non si incassa", () =>
 
 prova("Neon conta gli ordini di grandezza, non le trenta cifre", () => {
   const v = GIOCHI_SALA.neon.valore(1e15, 1000);
-  vero(v > 0 && v < 3000, String(v));
+  vero(v > 0 && v < lireDaEuro(15), String(v));
   uguale(GIOCHI_SALA.neon.valore(1e5, 1000), 0);
+  uguale(GIOCHI_SALA.claw.valore(1e11, 0), lireDaEuro(15), "chi smette prima: al massimo 15 euro");
+});
+
+prova("l'andamento della sala: ricariche e incassi per giorno, e i giochi", () =>
+  conCartella((file) => {
+    const d = new Deposito(file);
+    d.conto("pino").saldo = 20_000;
+    d.conto("gina").saldo = 20_000;
+    const adesso = Date.now();
+    ricarica(d, "pino", "dozer", 5000, adesso);
+    ricarica(d, "gina", "claw", 2000, adesso);
+    incassaGioco(d, "pino", "dozer", 3000, {}, adesso);
+    const a = andamentoSala(d.conti(), adesso);
+    uguale(a.giorni.length, 14);
+    const oggi = a.giorni[13];
+    uguale(oggi.ricariche, 7000);
+    uguale(oggi.incassi, 2700, "l'incasso netto");
+    uguale(oggi.giocatori, 2);
+    uguale(a.totale.attivi7, 2);
+    uguale(a.giochi.find((g) => g.id === "dozer").giocatori, 1);
+  }),
+);
+
+prova("i numeri corti: k, M e mld", () => {
+  uguale(corto(99_999), "99.999");
+  uguale(corto(150_000), "150k");
+  uguale(corto(15_519_187), "15,5M");
+  uguale(corto(6_100_000_000), "6,1 mld");
 });
 
 prova("il portafoglio: andamento, entrate e uscite per cosa, resa dei giochi", () =>
@@ -600,7 +659,7 @@ function contornoStudio() {
     chieste, stati, frutti,
     nomeDi: (id) => id,
     genera: (_chi, tavolo, cosa) => { const id = "r" + (chieste.length + 1); chieste.push({ id, tavolo, ...cosa }); return { id }; },
-    ritocca: (_chi, lib, istruzione, veloce) => (lib === "mia" ? (chieste.push({ id: "t1", lib, istruzione, veloce }), { id: "t1" }) : null),
+    ritocca: (_chi, lib, istruzione, veloce, foto) => (lib === "mia" || foto ? (chieste.push({ id: "t1", lib, istruzione, veloce, foto }), { id: "t1" }) : null),
     statoDi: (id) => stati[id] ?? "in-attesa",
     fruttiDi: (id) => frutti[id] ?? [],
   };
@@ -612,21 +671,34 @@ prova("lo Studio: la scritta va tra virgolette e senza virgolette sue", () => {
   uguale(promptStudio("solo testo", ""), "solo testo");
 });
 
-prova("lo Studio: crea paga il veloce, porta forma e velocita' a chi genera, e la spesa va in Banca", () =>
+prova("lo Studio: si fa solo fine, costa mille lire, porta la forma a chi genera, e la spesa va in Banca", () =>
   conCartella((file) => {
     const d = new Deposito(file);
     d.conto("pino").saldo = 5000;
     const c = contornoStudio();
     const r = rispondi(d, PINO, c, "POST", "/studio/crea", { testo: "una vespa rossa", scritta: "CIAO", forma: "16:9", veloce: true });
     uguale(r.codice, 200, JSON.stringify(r.dati));
-    uguale(d.conto("pino").saldo, 5000 - COSTI_STUDIO.veloce);
+    uguale(COSTI_STUDIO.fine, 1000);
+    uguale(d.conto("pino").saldo, 5000 - COSTI_STUDIO.fine);
     uguale(c.chieste[0].forma, "16:9");
-    uguale(c.chieste[0].veloce, true);
+    uguale(c.chieste[0].veloce, false, "niente turbo, anche se lo chiedi");
     vero(c.chieste[0].prompt.includes('"CIAO"'), "la scritta arriva al modello");
-    uguale(d.statoBanca().entrate, COSTI_STUDIO.veloce, "la spesa e' entrata nella Banca");
-    const fine = rispondi(d, PINO, c, "POST", "/studio/crea", { testo: "un faro", veloce: false });
-    uguale(fine.codice, 200);
-    uguale(d.conto("pino").saldo, 5000 - COSTI_STUDIO.veloce - COSTI_STUDIO.fine);
+    uguale(d.statoBanca().entrate, COSTI_STUDIO.fine, "la spesa e' entrata nella Banca");
+    const g = rispondi(d, PINO, c, "GET", "/studio", {});
+    uguale(g.dati.aspettaOk, true, "chi non comanda aspetta l'ok");
+  }),
+);
+
+prova("lo Studio: si modifica anche una foto del telefono", () =>
+  conCartella((file) => {
+    const d = new Deposito(file);
+    d.conto("pino").saldo = 5000;
+    const c = contornoStudio();
+    const r = rispondi(d, PINO, c, "POST", "/studio/ritocca", { foto: "data:image/jpeg;base64,AAAA", istruzione: "mettimi un cappello" });
+    uguale(r.codice, 200, JSON.stringify(r.dati));
+    uguale(c.chieste[0].foto, "data:image/jpeg;base64,AAAA");
+    uguale(d.conto("pino").saldo, 5000 - COSTI_STUDIO.ritocco);
+    uguale(r.dati.lavoro.dalTelefono, true);
   }),
 );
 
@@ -664,7 +736,7 @@ prova("lo Studio: una richiesta scartata da chi comanda si rimborsa, una volta s
     rispondi(d, PINO, c, "POST", "/studio/crea", { testo: "una vespa rossa" });
     c.stati.r1 = "scartata";
     const g = rispondi(d, PINO, c, "GET", "/studio", {});
-    uguale(g.dati.rimborsate, COSTI_STUDIO.veloce);
+    uguale(g.dati.rimborsate, COSTI_STUDIO.fine);
     uguale(d.conto("pino").saldo, 5000);
     const di_nuovo = rispondi(d, PINO, c, "GET", "/studio", {});
     uguale(di_nuovo.dati.rimborsate, 0, "non due volte");

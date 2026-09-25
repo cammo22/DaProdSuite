@@ -26,7 +26,23 @@ export const COPIONE = `
   var rulli = [];
   var pezzi = [];          // i pezzi usciti, uno per rullo
   var bloccati = [];       // gli id tenuti fermi, uno per rullo (o null)
+  /**
+   * ⚠ **Lire o euro, una scelta sola per tutta la sala.** Dalla 1.4.9.
+   *
+   * Chiesto il 25 settembre 2026: «quando clicco sulle lire o euro in alto deve
+   * switchare la valuta di tutta la pagina, compresi i giochi, cosi' da fare
+   * il cambio euro-lire sempre rapido». La scelta sta nel browser: riguarda
+   * uno schermo, non il conto, che resta in lire.
+   */
   var inEuro = false;
+  try { inEuro = localStorage.getItem("daprod.sala.valuta") === "euro"; } catch (e) {}
+  /** Chi deve ridisegnarsi quando cambia la valuta: ogni pezzo della pagina si iscrive qui. */
+  var allaValuta = [];
+  function cambiaValuta() {
+    inEuro = !inEuro;
+    try { localStorage.setItem("daprod.sala.valuta", inEuro ? "euro" : "lire"); } catch (e) {}
+    for (var i = 0; i < allaValuta.length; i++) { try { allaValuta[i](); } catch (e) {} }
+  }
   /** Il grado scelto per la cosa che si sta prendendo, in fila. */
   var gradoScelto = {};
 
@@ -128,11 +144,47 @@ export const COPIONE = `
       .replace(/"/g, "&quot;");
   }
 
-  /** Le lire all'italiana. La pagina lo rifa' da se' solo per il tasto euro. */
+  /** Un numero intero coi puntini delle migliaia: «15.519.187». */
+  function conPuntini(n) {
+    var t = String(Math.abs(Math.round(n))), fuori = "";
+    while (t.length > 3) { fuori = "." + t.slice(-3) + fuori; t = t.slice(0, -3); }
+    return (n < 0 ? "-" : "") + t + fuori;
+  }
+
+  /**
+   * Un numero corto (1.4.9): «le lire, il numero diventa troppo grande: usiamo
+   * 1k, 1M». Fino a centomila si scrive tutto; sopra, k, M e mld.
+   */
+  function cortoIt(n) {
+    var v = Math.round(Number(n) || 0), a = Math.abs(v);
+    var it = function (x, d) { return x.toFixed(d).replace(".", ",").replace(/,0+$/, ""); };
+    if (a < 100000) return conPuntini(v);
+    if (a < 1000000) return it(v / 1000, 0) + "k";
+    if (a < 1000000000) return it(v / 1000000, a < 10000000 ? 2 : 1) + "M";
+    return it(v / 1000000000, 1) + " mld";
+  }
+
+  /**
+   * Le lire, o gli euro se chi guarda ha scelto gli euro (1.4.9). Corte sopra
+   * i centomila; «soldiPieni» le scrive intere, per quando serve la cifra.
+   */
   function soldi(quanto) {
-    if (inEuro) return "€ " + (quanto / 1936.27).toFixed(2).replace(".", ",");
-    var cifre = String(Math.abs(Math.round(quanto))).replace(/\\B(?=(\\d{3})+(?!\\d))/g, ".");
-    return (quanto < 0 ? "-" : "") + "L. " + cifre;
+    var q = Number(quanto) || 0;
+    if (inEuro) {
+      var e = q / 1936.27;
+      if (Math.abs(e) >= 10000) return (e < 0 ? "-" : "") + "€ " + cortoIt(Math.abs(e));
+      var cent = Math.round(Math.abs(e) * 100);
+      return (e < 0 ? "-" : "") + "€ " + conPuntini(Math.floor(cent / 100)) + "," + String(cent % 100 + 100).slice(1);
+    }
+    return (q < 0 ? "-" : "") + "L. " + cortoIt(Math.abs(q));
+  }
+  function soldiPieni(quanto) {
+    var q = Number(quanto) || 0;
+    if (inEuro) {
+      var cent = Math.round(Math.abs(q / 1936.27) * 100);
+      return (q < 0 ? "-" : "") + "€ " + conPuntini(Math.floor(cent / 100)) + "," + String(cent % 100 + 100).slice(1);
+    }
+    return (q < 0 ? "-" : "") + "L. " + conPuntini(Math.abs(q));
   }
 
   /**
@@ -3797,11 +3849,8 @@ export const COPIONE = `
   $("manda").addEventListener("click", manda);
   $("tira").addEventListener("click", tiraLaMacchinetta);
   $("crea-pacchetto").addEventListener("click", creaIlPacchetto);
-  $("saldo").addEventListener("click", function () {
-    inEuro = !inEuro;
-    disegnaSaldo(false);
-    disegnaRulli();
-  });
+  $("saldo").addEventListener("click", cambiaValuta);
+  allaValuta.push(function () { disegnaSaldo(false); disegnaRulli(); });
   $("copia").addEventListener("click", function () {
     /**
      * ⚠ **Si copia quello che si vede**, cioe' i rulli bloccati.
@@ -3910,7 +3959,11 @@ export const COPIONE = `
     // La macchinetta si prepara subito: se non c'e' nessun pacchetto lo dice
     // aprendo la scheda, senza far premere un tasto per sentirsi dire di no.
     caricaMacchinetta();
-    forseIlRegalo(dati.regalo);
+    // 1.4.9: chi comanda e chi gioca vedono stanze diverse (vedi «.solo-admin»).
+    document.body.classList.toggle("admin", Boolean(dati.admin));
+    // Al posto del pannello «Ti hanno mandato… dalla cassa», il resoconto
+    // dall'ultima volta (portafoglio-copione.ts): dentro c'e' anche il regalo.
+    mostraResoconto();
   }).catch(function (errore) {
     document.querySelector("main").innerHTML =
       "<div class=\\"niente\\">" + sicuro(errore.message) + "</div>";

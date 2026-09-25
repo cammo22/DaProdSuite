@@ -368,7 +368,7 @@ async function creaBrano(p, racconta = () => {}) {
           .filter(Boolean)
           .join(", ")
       : promptCopertina(p.titolo, p.lyrics, el.coverStyleNew.value);
-    // Con che modello: dalla 0.9.1 si sceglie, e di suo è Qwen-Image 2.1 Turbo.
+    // Con che modello: dalla 0.9.1 si sceglie, e dalla 1.4.9 di suo è Qwen-Image 2.1 di serie.
     // Vedi `MODELLI_COPERTINA` in grafi.js per il perché sono due e non quattro.
     idCopertina = await ponte.invia(
       grafoImmagine(prompt, rnd(), { modello: el.coverModello ? el.coverModello.value : "" }),

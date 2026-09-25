@@ -1959,4 +1959,48 @@ export const STILE = `  :root {
   .posta .piedi { border-top: 1px solid rgba(120,255,200,.08); }
   .cuore.mio .simbolo { text-shadow: 0 0 10px rgba(244,114,182,.7); }
 
+  /* ======================================== Produci piu' semplice (1.4.9)
+     «Dobbiamo fare tutto molto piu' semplice e intuitivo.» Quando un modulo e'
+     aperto le tessere si stringono in una riga di pastiglie in cima, le due
+     strade (Crea / Modifica) sono linguette, e quello che non serve a tutti
+     sta chiuso sotto «Altre impostazioni». */
+  #pag-produzione.scelto #elenco-azioni { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px;
+    scrollbar-width: none; grid-template-columns: none; }
+  #pag-produzione.scelto #elenco-azioni::-webkit-scrollbar { display: none; }
+  #pag-produzione.scelto #elenco-azioni .tastone { flex: 0 0 auto; min-height: 0; padding: 9px 14px;
+    flex-direction: row; align-items: center; gap: 8px; border-radius: 999px; }
+  #pag-produzione.scelto #elenco-azioni .tastone small,
+  #pag-produzione.scelto #elenco-azioni .tastone .nome { display: none; }
+  .tastone .corto { display: none; }
+  #pag-produzione.scelto #elenco-azioni .tastone .corto { display: inline; font-weight: 700; font-size: 13.5px; }
+  #avviso-azione:empty { display: none; }
+  #modulo .spiegaAzione { display: none; }
+  #pag-produzione.scelto #elenco-azioni .tastone .segno { font-size: 15px; width: auto; height: auto; margin: 0; }
+  #pag-produzione.scelto #elenco-azioni .tastone .nome { font-size: 13.5px; white-space: nowrap; }
+  #pag-produzione.scelto #elenco-azioni .tastone:not(.on) { opacity: .62; }
+  .strade { display: flex; gap: 4px; margin-top: 16px; padding: 4px; border-radius: 16px;
+    background: rgba(0,0,0,.35); border: 1px solid rgba(120,255,200,.12); }
+  .strade button { flex: 1; min-height: 44px; border: 0; border-radius: 12px; background: transparent;
+    color: var(--dim); font: inherit; font-weight: 600; font-size: 14px; cursor: pointer; }
+  .strade button.on { background: linear-gradient(180deg, #8b5cf6, #6d3fe0); color: #fff;
+    box-shadow: 0 6px 18px rgba(139,92,246,.35), inset 0 1px 0 rgba(255,255,255,.25); }
+  #modulo .campo { margin-top: 14px; }
+  #modulo .campo > label { font-weight: 600; }
+  #modulo textarea[data-principale] { min-height: 96px; font-size: 16px; }
+  .piuOpzioni { margin-top: 18px; border: 1px solid rgba(120,255,200,.12); border-radius: 16px;
+    padding: 4px 14px 14px; background: rgba(0,0,0,.22); }
+  .piuOpzioni > summary { cursor: pointer; padding: 12px 0 6px; color: var(--dim); font-weight: 600; list-style: none; }
+  .piuOpzioni > summary::before { content: "\\25B8  "; }
+  .piuOpzioni[open] > summary::before { content: "\\25BE  "; }
+  #fila-manda #manda { min-width: 60%; font-size: 16px; min-height: 52px; }
+
+  /* Chi non decide vede un'app: niente carico del computer, niente attrezzi
+     da regista. Vedi «document.body.classList.toggle("utente")» in copione-base. */
+  body.utente #semaforo, body.utente #numeri, body.utente #fascia-pausa,
+  body.utente #apri-stili, body.utente #scheda-chiacchiera, body.utente #manda-in-coda,
+  body.utente #modulo .spiegaAzione, body.utente #modulo .campo > .nota,
+  body.utente #modulo .piuOpzioni, body.utente #modulo .righePrompt,
+  body.utente #pag-produzione > .scheda > .sotto { display: none !important; }
+  body.utente #fila-manda #manda { width: 100%; }
+
   [hidden] { display: none !important; }`;

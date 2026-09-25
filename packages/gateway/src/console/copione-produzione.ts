@@ -29,8 +29,8 @@ export const COPIONE_PRODUZIONE = `
    * di ripiego — perché l'elenco vero resta \«/azioni\», non questo.
    */
   var PRODUZIONI = {
-    "genera.immagine": { dentroTitolo: "Da una descrizione", dentroSotto: " \u2014 la scrivi e nasce dal niente", nome: "Produzione Immagini", sotto: "una foto da una descrizione", tinta: "viola", segno: "\\u25C9" },
-    "genera.video": { dentroTitolo: "Una clip", dentroSotto: " \u2014 qualche minuto", nome: "Produzione Video", sotto: "una clip, col suono", tinta: "rosa", segno: "\\u25B6" },
+    "genera.immagine": { corto: "Foto", dentroTitolo: "\u2726 Crea", dentroSotto: " \u2014 la scrivi e nasce dal niente", nome: "Produzione Immagini", sotto: "crea una foto o modifica la tua", tinta: "viola", segno: "\\u25C9" },
+    "genera.video": { corto: "Video", dentroTitolo: "\u25B6 Una clip", dentroSotto: " \u2014 qualche minuto", nome: "Produzione Video", sotto: "una clip, col suono", tinta: "rosa", segno: "\\u25B6" },
     /**
      * ⚠ **La storia non ha piu' una tessera sua.** Cambiato nella 1.0.0.
      *
@@ -51,7 +51,7 @@ export const COPIONE_PRODUZIONE = `
      * L'azione resta nel catalogo e resta separata: e' un'altra cosa per il
      * computer, l'agente MCP la vede come sempre. Cambia solo dove si trova.
      */
-    "genera.storia": { dentroTitolo: "Una storia", dentroSotto: "30 secondi, un minuto, due \u2014 pezzi incatenati, e ci mette mezz\u0027ora", nome: "Storia", sotto: "30 secondi, un minuto, due", tinta: "rosa", segno: "\\u29C9", dentroA: "genera.video" },
+    "genera.storia": { dentroTitolo: "\u29C9 Una storia", dentroSotto: "30 secondi, un minuto, due \u2014 pezzi incatenati, e ci mette mezz\u0027ora", nome: "Storia", sotto: "30 secondi, un minuto, due", tinta: "rosa", segno: "\\u29C9", dentroA: "genera.video" },
     /**
      * ⚠ **La modifica sta dentro la produzione immagini.** Nuova nella 1.0.2.
      *
@@ -73,10 +73,22 @@ export const COPIONE_PRODUZIONE = `
      * **cosa fa** \u2014 una foto nuova, o una che c'e' gia' e va cambiata. La
      * riga sotto continua a dire da dove parte.
      */
-    "modifica.immagine": { dentroTitolo: "Modifica", dentroSotto: "parti da una foto che hai gia' e dici cosa cambiare", nome: "Modifica", sotto: "parti da una foto", tinta: "verde", segno: "\u270E", dentroA: "genera.immagine" },
-    "genera.brano": { nome: "Produzione Musica", sotto: "una canzone, anche cantata", tinta: "ciano", segno: "\\u266B" },
-    "genera.voce": { nome: "Produzione Audio", sotto: "un testo letto ad alta voce", tinta: "ambra", segno: "\\u275E" },
+    "modifica.immagine": { dentroTitolo: "\u270E Modifica", dentroSotto: "parti da una foto che hai gia' e dici cosa cambiare", nome: "Modifica", sotto: "parti da una foto", tinta: "verde", segno: "\u270E", dentroA: "genera.immagine" },
+    "genera.brano": { corto: "Musica", nome: "Produzione Musica", sotto: "una canzone, anche cantata", tinta: "ciano", segno: "\\u266B" },
+    "genera.voce": { corto: "Audio", nome: "Produzione Audio", sotto: "un testo letto ad alta voce", tinta: "ambra", segno: "\\u275E" },
+    // Il 3D (1.4.9), solo per chi decide: il catalogo lo dice, qui solo il nome.
+    "genera.modello": { corto: "3D", nome: "Produzione 3D", sotto: "da una foto a un modellino", tinta: "verde", segno: "\\u25B2" },
   };
+
+  /**
+   * L'ordine delle tessere (1.4.9): prima quello che fanno tutti — foto e
+   * musica — poi quello che fa chi decide. Chi non c'e' qui va in fondo.
+   */
+  var ORDINE = ["genera.immagine", "genera.brano", "genera.video", "genera.voce", "genera.modello"];
+  function inOrdine(elenco) {
+    var posto = function (x) { var i = ORDINE.indexOf(x.id); return i < 0 ? 99 : i; };
+    return elenco.slice().sort(function (a, b) { return posto(a) - posto(b); });
+  }
 
   /** I quattro tastoni, in Casa e in Produzione: gli stessi, disegnati due volte. */
   function disegnaTessere() {
@@ -84,7 +96,7 @@ export const COPIONE_PRODUZIONE = `
     casella.innerHTML = "";
     // Quelle che stanno **dentro** a un'altra non hanno una tessera loro: le
     // si raggiunge da li'. Vedi «dentroA» in PRODUZIONI.
-    for (var a of azioni.filter(function (x) { return x.coda && !(PRODUZIONI[x.id] || {}).dentroA; })) {
+    for (var a of inOrdine(azioni.filter(function (x) { return x.coda && !(PRODUZIONI[x.id] || {}).dentroA; }))) {
       casella.append(tastoneAzione(a));
     }
     casella.append(tastoneGiochi());
@@ -167,7 +179,7 @@ export const COPIONE_PRODUZIONE = `
      * filtro e' identico a quello di «disegnaTessere», e le due schermate
      * tornano a essere gli stessi quattro tastoni disegnati due volte.
      */
-    for (var a of azioni.filter(function (x) { return x.coda && !(PRODUZIONI[x.id] || {}).dentroA; })) {
+    for (var a of inOrdine(azioni.filter(function (x) { return x.coda && !(PRODUZIONI[x.id] || {}).dentroA; }))) {
       casella.append(tastoneAzione(a));
     }
 
@@ -203,41 +215,22 @@ export const COPIONE_PRODUZIONE = `
     n.textContent = come.nome || a.titolo;
     var p = document.createElement("small");
     p.textContent = come.sotto || scheda.che;
-    b.append(s, n, p);
+    // Il nome corto (1.4.9) si vede quando le tessere diventano una riga di pastiglie.
+    var c = document.createElement("span");
+    c.className = "corto";
+    c.textContent = come.corto || come.nome || a.titolo;
+    b.append(s, n, c, p);
     /**
-     * Se qualcosa sta **dentro** a questa, prima si sceglie quale delle due.
+     * ⚠ **Niente piu' foglio che sale dal basso.** Dalla 1.4.9.
      *
-     * Una riga sola dice cosa cambia — una clip corta, o una lunga fatta di
-     * pezzi incatenati — e accanto c'e' scritto **quanto costa**, che e' la
-     * cosa che uno vuole sapere prima di premere e non dopo mezz'ora.
+     * Fino alla 1.4.8 toccare «Produzione Immagini» apriva un foglio con due
+     * voci — «Da una descrizione» e «Modifica» — prima ancora di vedere il
+     * modulo. Il 25 settembre 2026: «non mi piace questa schermata con questo
+     * tipo di menu». Adesso si entra dritti a creare, e la strada si cambia
+     * **dentro** al modulo, con due linguette in cima: vedi «stradeDi».
      */
-    var dentro = azioni.filter(function (x) {
-      return (PRODUZIONI[x.id] || {}).dentroA === a.id;
-    });
-    b.addEventListener("click", function () {
-      if (!dentro.length) { vaiA("produzione"); scegli(a); return; }
-      var carta = apriFoglio(come.nome || a.titolo);
-      voceFoglio(
-        carta,
-        come.segno || scheda.segno,
-        come.dentroTitolo || "Una clip",
-        (come.sotto || scheda.che) + (come.dentroSotto || " \u2014 qualche minuto"),
-        function () { chiudiFoglio(); vaiA("produzione"); scegli(a); },
-      );
-      for (var i = 0; i < dentro.length; i++) {
-        var altra = dentro[i];
-        var suo = PRODUZIONI[altra.id] || {};
-        voceFoglio(
-          carta,
-          suo.segno || "\u29C9",
-          suo.dentroTitolo || suo.nome || "L\u0027altra strada",
-          suo.dentroSotto || suo.sotto || "",
-          (function (quale) {
-            return function () { chiudiFoglio(); vaiA("produzione"); scegli(quale); };
-          })(altra),
-        );
-      }
-    });
+    b.dataset.azione = a.id;
+    b.addEventListener("click", function () { vaiA("produzione"); scegli(a); });
     return b;
   }
 
@@ -338,6 +331,7 @@ export const COPIONE_PRODUZIONE = `
    */
   function rigaPrompt(a) {
     var box = document.createElement("div");
+    box.className = "righePrompt";
     box.style.marginTop = "10px";
 
     var quale = tipoDellaScheda(a);
@@ -473,6 +467,82 @@ export const COPIONE_PRODUZIONE = `
     });
   }
 
+  /**
+   * I campi che si vedono subito, azione per azione (1.4.9). Gli altri stanno
+   * in «Altre impostazioni». Un'azione che non c'e' qui li mostra tutti.
+   */
+  var ESSENZIALI = {
+    "genera.immagine": ["prompt", "forma"],
+    "modifica.immagine": ["immagine", "maschera", "prompt"],
+    "genera.brano": ["titolo", "descrizione", "testo", "voce", "secondi"],
+    "genera.video": ["prompt", "secondi"],
+    "genera.storia": ["prompt", "secondi"],
+    "genera.voce": ["testo", "voce"],
+    "genera.modello": ["immagine", "nome", "qualita"],
+  };
+
+  /**
+   * Come si chiamano i campi per chi non decide (1.4.9): parole da app, non da
+   * catalogo. «_esempio» e' cosa c'e' scritto in grigio nella casella grande,
+   * «_tasto» cosa dice il tasto in fondo.
+   */
+  var ETICHETTE_SEMPLICI = {
+    "genera.immagine": { prompt: "Descrivi la foto", forma: "Forma", _esempio: "un gatto astronauta sulla luna, foto vera, luce calda", _tasto: "\u2726 Crea la foto" },
+    "modifica.immagine": { immagine: "La tua foto", prompt: "Cosa cambio?", _esempio: "fai diventare il cielo un tramonto arancione", _tasto: "\u270E Modifica la foto" },
+    "genera.brano": { titolo: "Titolo", descrizione: "Che genere", testo: "Il testo", voce: "Voce", secondi: "Quanto dura", _tasto: "\u266B Crea il brano" },
+  };
+
+  var SCELTE_CORTE = {
+    forma: { "1:1": "\u25A1 Quadrata", "9:16": "\u25AF Verticale", "16:9": "\u25AD Orizzontale", "4:3": "\u25AD 4:3" },
+  };
+
+  /** Accende la tessera dell'azione aperta, e fa stringere le altre in una riga. */
+  function segnaLaTessera(a) {
+    var capo = (PRODUZIONI[a.id] || {}).dentroA || a.id;
+    var pagina = $("pag-produzione");
+    if (pagina) pagina.classList.add("scelto");
+    for (var t of document.querySelectorAll("#elenco-azioni .tastone")) {
+      t.classList.toggle("on", t.dataset.azione === capo);
+    }
+  }
+
+  /**
+   * ⚠ **Le due strade, come linguette in cima al modulo.** Dalla 1.4.9, al
+   * posto del foglio che saliva dal basso. «Crea» e «Modifica una foto», o «Una
+   * clip» e «Una storia»: si passa dall'una all'altra senza perdere quello che
+   * si e' scritto nella casella grande.
+   */
+  function stradeDi(a) {
+    var capoId = (PRODUZIONI[a.id] || {}).dentroA || a.id;
+    var famiglia = azioni.filter(function (x) {
+      return x.id === capoId || (PRODUZIONI[x.id] || {}).dentroA === capoId;
+    });
+    if (famiglia.length < 2) return null;
+    var fila = document.createElement("div");
+    fila.className = "strade";
+    fila.setAttribute("role", "tablist");
+    famiglia.forEach(function (x) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.setAttribute("role", "tab");
+      b.className = x.id === a.id ? "on" : "";
+      b.textContent = (PRODUZIONI[x.id] || {}).dentroTitolo || x.titolo;
+      b.addEventListener("click", function () {
+        if (x.id === a.id) return;
+        var scritto = document.querySelector('#modulo [data-principale="1"]');
+        var testo = scritto ? scritto.value : "";
+        scegli(x);
+        var nuovo = document.querySelector('#modulo [data-principale="1"]');
+        if (nuovo && testo) {
+          nuovo.value = testo;
+          nuovo.dispatchEvent(new Event("input", { bubbles: true }));
+        }
+      });
+      fila.append(b);
+    });
+    return fila;
+  }
+
   function scegli(a) {
     scelta = a;
     var modulo = $("modulo");
@@ -490,8 +560,12 @@ export const COPIONE_PRODUZIONE = `
     primaDiMandare = [];
     quandoCambiaUnCampo = [];
 
+    segnaLaTessera(a);
+    var strade = stradeDi(a);
+    if (strade) modulo.append(strade);
+
     var spiega = document.createElement("p");
-    spiega.className = "sotto";
+    spiega.className = "sotto spiegaAzione";
     spiega.style.marginTop = "16px";
     spiega.textContent = a.descrizione;
     modulo.append(spiega);
@@ -501,11 +575,39 @@ export const COPIONE_PRODUZIONE = `
     // alla 1.2.2 ce n'erano due, che leggevano due magazzini diversi.
     modulo.append(rigaPrompt(a));
 
+    /**
+     * ⚠ **Prima l'essenziale, il resto sotto «Altre impostazioni».** Dalla 1.4.9.
+     *
+     * Il 25 settembre 2026: «non mi piace come sono le schermate produci …
+     * dobbiamo fare tutto molto piu' semplice e intuitivo». Il modulo della
+     * musica erano quindici campi in fila, con ventiquattro tonalita' in
+     * pastiglie. Adesso in vista ci sono solo quelli di «ESSENZIALI»; gli
+     * altri stanno in una tendina chiusa che vede solo chi decide. Chi non
+     * decide non la vede proprio: i campi ci sono lo stesso, coi valori di
+     * serie, e viaggiano come sempre.
+     */
+    var essenziali = ESSENZIALI[a.id];
+    var altre = null;
+    if (essenziali) {
+      altre = document.createElement("details");
+      altre.className = "piuOpzioni";
+      var titoloAltre = document.createElement("summary");
+      titoloAltre.textContent = "Altre impostazioni";
+      altre.append(titoloAltre);
+    }
+    var semplici = (!decido() && ETICHETTE_SEMPLICI[a.id]) || {};
+
     for (var campo of a.campi) {
+      var box = document.createElement("div");
+      box.className = "campo";
+      box.dataset.nome = campo.nome;
+      var essenziale = !essenziali || essenziali.indexOf(campo.nome) >= 0;
+      (essenziale ? modulo : altre).append(box);
+
       var etichetta = document.createElement("label");
       etichetta.htmlFor = "campo-" + campo.nome;
-      etichetta.textContent = campo.etichetta + (campo.obbligatorio ? " *" : "");
-      modulo.append(etichetta);
+      etichetta.textContent = (semplici[campo.nome] || campo.etichetta) + (campo.obbligatorio && !semplici[campo.nome] ? " *" : "");
+      box.append(etichetta);
 
       var controllo;
       var accanto = null;
@@ -532,6 +634,10 @@ export const COPIONE_PRODUZIONE = `
           continue;
         }
         controllo = riquadroDellaFoto(campo, modulo);
+        // Il riquadro si mette in fondo al modulo da solo: lo si riporta nel suo campo.
+        if (modulo.lastElementChild && modulo.lastElementChild.classList.contains("fotoDaModificare")) {
+          box.append(modulo.lastElementChild);
+        }
       } else if (campo.tipo === "scelta") {
         /**
          * **Pastiglie, non un menu a tendina.**
@@ -560,7 +666,8 @@ export const COPIONE_PRODUZIONE = `
         controllo.value = campo.predefinito !== undefined && campo.predefinito !== null
           ? String(campo.predefinito)
           : campo.obbligatorio ? (campo.scelte || [])[0] || "" : "";
-        accanto = pastiglieDiScelta(campo, controllo);
+        // Le forme con parole corte (1.4.9): «Quadrata» invece di «1:1 — quadrato».
+        accanto = pastiglieDiScelta(SCELTE_CORTE[campo.nome] ? Object.assign({}, campo, { etichette: SCELTE_CORTE[campo.nome] }) : campo, controllo);
       } else if (campo.tipo === "numero") {
         controllo = document.createElement("input");
         controllo.type = "number";
@@ -613,8 +720,9 @@ export const COPIONE_PRODUZIONE = `
       controllo.id = "campo-" + campo.nome;
       controllo.dataset.campo = campo.nome;
       if (campo.principale) controllo.dataset.principale = "1";
-      modulo.append(controllo);
-      if (accanto) modulo.append(accanto);
+      if (campo.principale && semplici._esempio) controllo.placeholder = semplici._esempio;
+      box.append(controllo);
+      if (accanto) box.append(accanto);
 
       /**
        * ⚠ **Il tasto «Usa l'AI» non c'e' piu'.** Tolto nella 1.2.2.
@@ -637,13 +745,14 @@ export const COPIONE_PRODUZIONE = `
         nota.className = "nota";
         nota.style.marginTop = "5px";
         nota.textContent = campo.descrizione;
-        modulo.append(nota);
+        box.append(nota);
       }
     }
+    if (altre && altre.children.length > 1) modulo.append(altre);
 
     modulo.hidden = false;
     $("fila-manda").hidden = false;
-    $("manda").textContent = a.coda ? "Mandalo al computer" : a.titolo;
+    $("manda").textContent = !a.coda ? a.titolo : decido() ? "Mandalo al computer" : (semplici._tasto || "Crea");
     /**
      * «Manda in coda» si vede solo per le azioni che **hanno** una fila.
      *
@@ -950,6 +1059,9 @@ export const COPIONE_PRODUZIONE = `
     primaDiMandare = [];
     quandoCambiaUnCampo = [];
     $("fila-manda").hidden = true;
+    var pagina = $("pag-produzione");
+    if (pagina) pagina.classList.remove("scelto");
+    for (var t of document.querySelectorAll("#elenco-azioni .tastone.on")) t.classList.remove("on");
   }
 
   /* --------------------------------------------- la foto da modificare */

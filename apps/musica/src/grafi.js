@@ -172,6 +172,18 @@ export const MODELLI_COPERTINA = {
     grafo: (prompt, seed, opzioni) => grafoAnima(prompt, seed, opzioni),
     catalogo: [],
   },
+  /**
+   * ⚠ **Dalla 1.4.9 la copertina di serie è Qwen senza LoRA.** Chiesto il 25
+   * settembre 2026: «usiamo il modello standard, togliamo i lora». Ci mette di
+   * più del turbo, ma parte sempre: la LoRA era quella che mancava sul disco.
+   */
+  qwen21: {
+    id: "qwen21",
+    nome: "Qwen-Image 2.1",
+    grafo: (prompt, seed, { larghezza = 1024, altezza = 1024, salva = false } = {}) =>
+      grafoQwenImmagine({ prompt, seed, larghezza, altezza, turbo: false, salva, prefisso: "immagini/daprod" }),
+    catalogo: QWEN21.catalogo,
+  },
   "qwen21-turbo": {
     id: "qwen21-turbo",
     nome: "Qwen-Image 2.1 Turbo",
@@ -353,7 +365,7 @@ function grafoYue2(m, p) {
  * turbo invece di far fallire il lavoro.
  */
 export function grafoImmagine(prompt, seed, opzioni = {}) {
-  const quale = MODELLI_COPERTINA[opzioni.modello] ?? MODELLI_COPERTINA["qwen21-turbo"];
+  const quale = MODELLI_COPERTINA[opzioni.modello] ?? MODELLI_COPERTINA.qwen21;
   return quale.grafo(prompt, seed, opzioni);
 }
 

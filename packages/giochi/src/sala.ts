@@ -27,7 +27,7 @@ import type { Deposito } from "./deposito";
 import { altezza, livelloDi, pescaPesata, scalino, type Caso } from "./regole";
 import { rulliDi } from "./rulli";
 import type { CassaGioco, Conto, Grado, Partita, PezzoInGioco, Stacco, Tavolo } from "./tipi";
-import { FETTA_DAPROD, LIRE_PER_EURO, RICARICA_MIN, TAGLI_EURO, TAGLI_LIRE, bonusFine, euroDaLire, incasso } from "./euro";
+import { FETTA_DAPROD, LIRE_PER_EURO, RICARICA_MIN, TAGLI_EURO, TAGLI_LIRE, bonusFine, euroDaLire, incasso, pezzoDiMontepremi, premioFine } from "./euro";
 
 /** Il gioco, se esiste. Un id che non conosciamo e' un errore di chi chiama. */
 function giocoDi(id: string) {
@@ -151,13 +151,30 @@ export function incassaGioco(
   const cassa = cassaDi(conto, gioco.id, adesso);
   const fine = Boolean(opzioni.fine) && gioco.siFinisce;
   const minuti = Math.max(0, (adesso - cassa.inizio) / 60_000);
-  const conti = incasso({
-    valore: gioco.valore(Number(grezzo) || 0, cassa.messo),
-    messo: cassa.messo,
-    giaPreso: cassa.preso,
-    moltMax: gioco.moltMax,
-    bonus: fine ? bonusFine(cassa.messo, minuti) : 0,
-  });
+  /**
+   * ⚠ **Chi finisce Claw o Neon prende il premio di fine**, fuori dal tetto
+   * (1.4.9, vedi `premioFine` in euro.ts): da 20 a 30 euro col punteggio, piu'
+   * il premio della velocita' e un pezzo del montepremi della Banca.
+   */
+  let premio = 0;
+  let montepremi = 0;
+  let conti: ReturnType<typeof incasso>;
+  if (fine && gioco.scala) {
+    premio = premioFine(Number(grezzo) || 0, gioco.scala);
+    const veloce = bonusFine(cassa.messo, minuti);
+    montepremi = deposito.prelevaMontepremi(pezzoDiMontepremi(deposito.statoBanca().riserva));
+    const lordo = premio + veloce + montepremi;
+    const fetta = Math.floor(lordo * FETTA_DAPROD);
+    conti = { preso: premio, bonus: veloce + montepremi, fetta, netto: lordo - fetta, tetto: 0, oltre: 0 };
+  } else {
+    conti = incasso({
+      valore: gioco.valore(Number(grezzo) || 0, cassa.messo),
+      messo: cassa.messo,
+      giaPreso: cassa.preso,
+      moltMax: gioco.moltMax,
+      bonus: fine ? bonusFine(cassa.messo, minuti) : 0,
+    });
+  }
   if (conti.preso + conti.bonus <= 0 && !fine && !opzioni.chiudi) {
     throw new NienteDaFare(
       cassa.messo <= 0
@@ -186,7 +203,7 @@ export function incassaGioco(
     cassa.inizio = adesso;
   }
   deposito.salva();
-  return { ...conti, finita: fine, minuti: m, saldo: conto.saldo, euro: euroDaLire(conti.netto), cassa };
+  return { ...conti, premio, montepremi, finita: fine, minuti: m, saldo: conto.saldo, euro: euroDaLire(conti.netto), cassa };
 }
 
 /**
@@ -306,7 +323,7 @@ export function stacca(deposito: Deposito, chi: string, adesso = Date.now()): St
   const quota = quotazione(deposito.borsa(), adesso);
   const mia = fetta(livello);
   const conto2 = stacco(p.punti, quota, mia, conto.staccatoOggi.lire);
-  if (conto2.lire > 0) deposito.muovi(chi, conto2.lire);
+  if (conto2.lire > 0) deposito.muovi(chi, conto2.lire, true, "incasso della partita");
   conto.staccatoOggi.lire += conto2.lire;
   const fatto: Stacco = {
     quando: adesso,
@@ -391,6 +408,8 @@ export interface GiocoInSala {
   minuti: number;
   /** Il premio della velocita' se si finisse adesso. */
   bonusSeFinisci: number;
+  /** Il premio di fine partita piu' basso (1.4.9): 20 euro, di piu' col punteggio. */
+  premioFine: number;
   /** Da sempre. */
   messoTot: number;
   presoTot: number;
@@ -417,6 +436,7 @@ function giocoInSala(conto: Conto, g: (typeof GIOCHI_SALA)[IdGiocoSala], adesso:
     tettoRimasto: Math.max(0, Math.floor(messo * g.moltMax) - preso),
     minuti: Math.round(minuti * 10) / 10,
     bonusSeFinisci: g.siFinisce ? bonusFine(messo, minuti) : 0,
+    premioFine: g.scala ? premioFine(0, g.scala) : 0,
     messoTot: c?.messoTot ?? 0,
     presoTot: c?.presoTot ?? 0,
     partite: c?.partite ?? 0,

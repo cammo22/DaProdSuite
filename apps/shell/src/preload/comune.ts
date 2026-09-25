@@ -51,6 +51,11 @@ export function esponiApiApp(io: AppId): void {
         dataUrl: string,
         dati: { titolo: string; risultatoId: string; meta?: Record<string, unknown> },
       ) => ipcRenderer.invoke(CHANNELS.libreriaOriginale, io, dataUrl, dati),
+      // La foto del modellino 3D (1.4.9): come l'originale, l'app la mette il preload.
+      anteprima: (
+        dataUrl: string,
+        dati: { titolo: string; cartella?: string; meta?: Record<string, unknown> },
+      ) => ipcRenderer.invoke(CHANNELS.libreriaAnteprima, io, dataUrl, dati),
       onCambiata: (listener) =>
         subscribe<ElementoLibreria[]>(CHANNELS.libreriaCambiata, listener),
     },

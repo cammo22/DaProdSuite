@@ -87,7 +87,7 @@
 import { createHash } from "node:crypto";
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import type { AddressInfo } from "node:net";
-import { copyFileSync, createReadStream, createWriteStream, mkdirSync, rmSync, statSync } from "node:fs";
+import { copyFileSync, createReadStream, createWriteStream, mkdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { join, normalize } from "node:path";
 import { elencoAzioni, eseguiAzione, type Esecutore } from "./azioni";
 import { paginaConsole } from "./console";
@@ -571,10 +571,15 @@ export class Gateway {
                       // una combinazione resta com'era, 4:3 di serie.
                       opzioni: {
                         forma: cosa.forma || "4:3",
-                        modello: cosa.veloce ? "qwen21-turbo" : "qwen21",
+                        // Dalla 1.4.9 sempre Qwen di serie, 40 passi: «togliamo
+                        // i lora, solo quello standard va bene».
+                        modello: "qwen21",
                         quante: "1",
                       },
                       daDispositivo: chiGioca,
+                      // ⚠ Chi non decide aspetta sempre un si' (1.4.9): «l'immagine
+                      // non deve partire automaticamente, un admin deve dare l'ok».
+                      inCoda: chiGioca.ruolo !== "admin",
                     }
                   : {
                       tipo: "genera.brano",
@@ -603,13 +608,29 @@ export class Gateway {
              * le stesse regole. `file(id, chi)` dice di no se la foto non e'
              * roba che questa persona puo' vedere.
              */
-            ritocca: (_chi, libreriaId, istruzione, veloce) => {
-              const quale = this.libreria?.file ? this.libreria.file(libreriaId, chiGioca.id) : null;
-              if (!quale || !quale.mime.startsWith("image/")) return null;
-              const suDisco = "sorgente-" + Date.now() + (quale.mime === "image/png" ? ".png" : ".jpg");
+            ritocca: (_chi, libreriaId, istruzione, _veloce, foto) => {
+              let suDisco = "";
               try {
                 mkdirSync(this.remoto.inviiDir, { recursive: true });
-                copyFileSync(quale.percorso, join(this.remoto.inviiDir, suDisco));
+                /**
+                 * ⚠ **Una foto dal telefono** (1.4.9): «possono anche caricare
+                 * una loro foto dal telefono». Arriva come data URL, gia'
+                 * rimpicciolita dalla pagina; qui si guarda che sia davvero
+                 * un'immagine e non troppo grossa, e si scrive negli invii.
+                 */
+                if (foto) {
+                  const m = /^data:image\/(png|jpeg|webp);base64,/.exec(foto);
+                  if (!m) return null;
+                  const byte = Buffer.from(foto.slice(m[0].length), "base64");
+                  if (!byte.length || byte.length > 12_000_000) return null;
+                  suDisco = "sorgente-" + Date.now() + (m[1] === "png" ? ".png" : m[1] === "webp" ? ".webp" : ".jpg");
+                  writeFileSync(join(this.remoto.inviiDir, suDisco), byte);
+                } else {
+                  const quale = this.libreria?.file ? this.libreria.file(libreriaId, chiGioca.id) : null;
+                  if (!quale || !quale.mime.startsWith("image/")) return null;
+                  suDisco = "sorgente-" + Date.now() + (quale.mime === "image/png" ? ".png" : ".jpg");
+                  copyFileSync(quale.percorso, join(this.remoto.inviiDir, suDisco));
+                }
               } catch {
                 return null;
               }
@@ -617,8 +638,9 @@ export class Gateway {
                 tipo: "modifica.immagine",
                 app: "foto",
                 testo: istruzione,
-                opzioni: { immagine: suDisco, prompt: istruzione, modello: veloce ? "qwen21-turbo" : "qwen21" },
+                opzioni: { immagine: suDisco, prompt: istruzione, modello: "qwen21" },
                 daDispositivo: chiGioca,
+                inCoda: chiGioca.ruolo !== "admin",
               });
               return { id: richiesta.id };
             },
