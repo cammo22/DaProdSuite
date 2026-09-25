@@ -30,8 +30,8 @@
 
 import { copyFileSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
-import { conMovimento } from "./borsa";
-import { NOMI, apriIScaduti, bancaInRiga, bancaNuova, segnaAttivita, versa, type Apertura, type StatoBanca } from "./banca";
+import { conMovimento, giornoDi as giornoDellaSala } from "./borsa";
+import { NOMI, apriIScaduti, bancaInRiga, bancaNuova, segnaAttivita, versa, versaFetta, type Apertura, type StatoBanca } from "./banca";
 import {
   altezza,
   GRADI,
@@ -82,6 +82,20 @@ function vuoto(): DatiGiochi {
 
 /** Quanto si aspetta prima di scrivere davvero: mezzo secondo. */
 const ATTESA_MS = 500;
+
+/** Quanti movimenti si tengono sul conto (1.4.8). */
+export const MOVIMENTI_TENUTI = 40;
+/** Quanti giorni di saldo si tengono per l'andamento (1.4.8). */
+export const GIORNI_TENUTI = 90;
+
+/** Il saldo di oggi nello storico: l'ultimo del giorno vince. */
+export function segnaNelloStorico(conto: Conto, giorno: string, saldo: number): void {
+  const st = (conto.storico ??= []);
+  const ultimo = st[st.length - 1];
+  if (ultimo && ultimo.giorno === giorno) ultimo.saldo = saldo;
+  else st.push({ giorno, saldo });
+  if (st.length > GIORNI_TENUTI) st.splice(0, st.length - GIORNI_TENUTI);
+}
 
 export class Deposito {
   private dati: DatiGiochi;
@@ -330,12 +344,26 @@ export class Deposito {
    * `mercato: false` e' per le correzioni di chi comanda (azzerare un
    * portafoglio): non sono un'operazione di mercato, e la Borsa non le vede.
    */
-  muovi(chi: string, quanto: number, mercato = true): Conto {
+  muovi(chi: string, quanto: number, mercato = true, perche = ""): Conto {
     const conto = this.conto(chi);
     const prima = conto.saldo;
     conto.saldo = Math.max(0, Math.round(conto.saldo + quanto));
     const mosso = conto.saldo - prima;
     if (mercato && mosso !== 0) this.segnaInBorsa(chi, mosso);
+    /**
+     * ⚠ **Il libro del portafoglio** (1.4.8): «facciamo un portafoglio anche per
+     * i player, per capire bene i loro andamenti». Ogni movimento resta scritto
+     * (gli ultimi quaranta) col suo perche', e il saldo di fine giornata (gli
+     * ultimi novanta giorni) fa la linea dell'andamento. Qui e non nei singoli
+     * giochi per la stessa ragione della Borsa: tutte le lire passano di qui.
+     */
+    if (mosso !== 0) {
+      const adesso = Date.now();
+      const mov = (conto.movimenti ??= []);
+      mov.unshift({ quando: adesso, lire: mosso, perche: perche || (mosso > 0 ? "entrate" : "spese"), saldo: conto.saldo });
+      if (mov.length > MOVIMENTI_TENUTI) mov.length = MOVIMENTI_TENUTI;
+      segnaNelloStorico(conto, giornoDellaSala(adesso), conto.saldo);
+    }
     /**
      * ⚠ **E ogni lira spesa entra nella Banca DaProd** (1.4.5, `banca.ts`).
      * Stesso posto e stessa ragione della Borsa qui sopra: tutte le spese
@@ -359,6 +387,12 @@ export class Deposito {
     return this.dati.banca;
   }
 
+  /** La fetta di DaProd su un incasso di un gioco (1.4.8): nella riserva. */
+  versaFetta(lire: number): void {
+    versaFetta(this.statoBanca(), lire);
+    this.salva();
+  }
+
   /** Punti attivita' per i premi della Banca. Vedi `banca.ts`. */
   attivita(chi: string, punti: number): void {
     segnaAttivita(this.statoBanca(), chi, punti);
@@ -376,7 +410,7 @@ export class Deposito {
     const fatte = apriIScaduti(this.statoBanca(), adesso, caso);
     for (const a of fatte) {
       for (const v of a.vincite) {
-        const conto = this.muovi(v.chi, v.lire);
+        const conto = this.muovi(v.chi, v.lire, true, "premio della Banca DaProd");
         conto.ultimoPremio = { cassetto: a.cassetto, nome: NOMI[a.cassetto], lire: v.lire, quando: adesso, chiave: a.chiave };
       }
     }

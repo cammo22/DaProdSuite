@@ -303,7 +303,7 @@ export function tira(deposito: Deposito, chi: string, puntata: number, caso: Cas
     throw new NienteDaFare("Si gioca a " + PUNTATE.join(", ") + " lire.");
   }
   if (conto.saldo < puntata) throw new NienteDaFare("Non ti bastano le lire per questo giro.");
-  deposito.muovi(chi, -puntata);
+  deposito.muovi(chi, -puntata, true, "Fortuna");
 
   let caselle: SimboloMacchinetta[] = [];
   for (let riga = 0; riga < FILE; riga++) {
@@ -481,7 +481,7 @@ export function rigira(
   }
   if (seiUguali) sbloccaUnaVolta(seiUguali);
 
-  if (vinto > 0) deposito.muovi(chi, vinto);
+  if (vinto > 0) deposito.muovi(chi, vinto, true, "vinto a Fortuna");
   deposito.salva();
   return {
     puntata,

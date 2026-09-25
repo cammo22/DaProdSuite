@@ -526,6 +526,45 @@ export interface Conto {
   ultimoPremio?: { cassetto: string; nome: string; lire: number; quando: number; chiave: string };
   /** Il quaderno dello Studio (1.4.5): le ultime cose create o ritoccate. Vedi `studio.ts`. */
   studio?: import("./studio").LavoroStudio[];
+  /**
+   * La cassa di ogni gioco d'arcade (1.4.8, `euro.ts`): quanto ci hai messo e
+   * quanto ne hai tirato fuori, per la partita di adesso e da sempre. E' da qui
+   * che il portafoglio fa vedere come ti va.
+   */
+  giochi?: Record<string, CassaGioco>;
+  /** Gli ultimi movimenti del conto (1.4.8), dal piu' recente. Quaranta al massimo. */
+  movimenti?: Movimento[];
+  /** Il saldo a fine giornata (1.4.8), per l'andamento del portafoglio. Novanta giorni. */
+  storico?: { giorno: string; saldo: number }[];
+}
+
+/** La cassa di un gioco d'arcade, per una persona (1.4.8). */
+export interface CassaGioco {
+  /** Messo nella partita di adesso (si azzera quando la partita finisce). */
+  messo: number;
+  /** Gia' incassato nella partita di adesso, lordo. */
+  preso: number;
+  /** Quando e' cominciata la partita di adesso (la prima ricarica). */
+  inizio: number;
+  /** Da sempre. */
+  messoTot: number;
+  presoTot: number;
+  /** Quanto e' andato alla fetta di DaProd, da sempre. */
+  fettaTot: number;
+  partite: number;
+  finite: number;
+  /** La partita finita piu' in fretta, in minuti. */
+  record?: number;
+  /** L'ultimo incasso, per dirlo. */
+  ultimo?: { quando: number; netto: number; bonus: number; fetta: number; finita: boolean; minuti: number };
+}
+
+/** Un movimento del conto (1.4.8): quanto, perche', e il saldo dopo. */
+export interface Movimento {
+  quando: number;
+  lire: number;
+  perche: string;
+  saldo: number;
 }
 
 /** La partita aperta di una persona: i punti, e da quali giochi. */

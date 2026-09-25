@@ -15,9 +15,9 @@ export const COPIONE_HOME = `
 
   var STANZE = {
     home: 'home',
-    sala: 'gioca', fortuna: 'gioca', borsa: 'gioca',
+    sala: 'gioca', fortuna: 'gioca', borsa: 'gioca', portafoglio: 'gioca',
     studio: 'genera', slot: 'genera', mie: 'genera',
-    fila: 'admin', giocatori: 'admin',
+    fila: 'admin', giocatori: 'admin', casse: 'admin',
     pacchetti: 'collezione', inventario: 'collezione', shop: 'collezione', casa: 'collezione',
   };
 
@@ -45,7 +45,7 @@ export const COPIONE_HOME = `
       : '<span class="faccia"><img src="' + fotoDelGioco(g.id) + '" alt="" loading="lazy"></span>';
     return '<button class="carta-gioco gioco-' + g.id + '" ' + attr + '>' + faccia +
       '<span class="testo"><b>' + sicuro(g.nome) + '</b><small>' + sicuro(g.riga) + '</small></span>' +
-      '<span class="piede"><span class="costo">' + (fortuna ? 'da ' + soldi(50) + ' a tiro' : 'entri con ' + soldi(g.ingresso)) + '</span>' +
+      '<span class="piede"><span class="costo">' + (fortuna ? 'da ' + soldi(50) + ' a tiro' : (g.ingresso ? 'entri con ' + soldi(g.ingresso) : 'entri gratis · ricarichi da € 0,20')) + '</span>' +
       '<span class="gioca-ora">Gioca</span></span></button>';
   }
 

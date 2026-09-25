@@ -162,10 +162,36 @@ export const STILE_SALA = `
     box-shadow: 0 0 14px rgba(255,201,51,.5); }
   body .portafoglio-foglio #portafoglio-ok { width: 100%; padding: 15px; font-size: 17px; }
   .portafoglio-nota { margin: 0; color: #86a59c; font-size: 12.5px; text-align: center; }
+  /* 1.4.8: i tagli in euro, con le lire sotto; e la scheda della partita. */
+  .portafoglio-tagli button b { display: block; font-size: 15px; }
+  .portafoglio-tagli button small { display: block; margin-top: 3px; font-size: 10.5px; opacity: .75; }
+  .portafoglio-tagli button { border-radius: 16px; padding: 9px 6px; }
+  .portafoglio-tagli button:disabled { filter: grayscale(.9) brightness(.55); cursor: default; }
+  .portafoglio-info { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .portafoglio-info .riga { padding: 9px 11px; border-radius: 14px; background: rgba(255,255,255,.04); border: 1px solid rgba(120,255,200,.14); min-width: 0; }
+  .portafoglio-info .riga small { display: block; color: #86a59c; font-size: 11px; line-height: 1.25; }
+  .portafoglio-info .riga b { display: block; margin-top: 3px; font: 700 15px/1.1 "Space Mono", monospace; color: #f2fffb; overflow: hidden; text-overflow: ellipsis; }
+  .portafoglio-info .riga.oro b { color: #ffd166; }
+  .portafoglio-info .riga.verde b { color: #3dff8a; }
+  .portafoglio-info .riga.largo { grid-column: 1 / -1; }
+  .portafoglio-info .spiega { grid-column: 1 / -1; margin: 0; color: #9fc4b8; font-size: 12.5px; line-height: 1.45; }
+  body .portafoglio-foglio #portafoglio-incassa { width: 100%; padding: 13px; font-size: 16px; }
+  .portafoglio-foglio { max-height: calc(100% - 24px); overflow-y: auto; }
+  .pastiglia.borsellino { cursor: pointer; }
+  .pastiglia.borsellino::after { content: "+"; position: absolute; right: 7px; top: 5px; width: 16px; height: 16px; border-radius: 50%;
+    display: grid; place-items: center; font: 800 12px/1 "Space Mono", monospace; color: #04110b; background: #ffd166; }
   /* In fondo apposta: vince sulle regole del borsellino qui sopra. */
   @media (max-width: 759px) {
     .pastiglia.borsellino { padding-left: 8px; }
     .pastiglia.borsellino::before { display: none; }
     .pastiglia.borsellino b { font-size: 13px; }
   }
+
+  /* 1.4.8: la Borsa detta in parole, e il consiglio. */
+  .borsa-consiglio { flex: 1 0 100%; margin-top: 8px; padding: 10px 12px; border-radius: 14px; font: 700 14px/1.3 "Space Mono", monospace; }
+  .borsa-consiglio.su { color: #3dff8a; background: rgba(61,255,138,.08); border: 1px solid rgba(61,255,138,.35); }
+  .borsa-consiglio.giu { color: #ff8a96; background: rgba(255,92,108,.08); border: 1px solid rgba(255,92,108,.35); }
+  .borsa-consiglio.pari { color: #cfe; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.14); }
+  .borsa-in-parole { flex: 1 0 100%; margin-top: 6px; color: #9fc4b8; font-size: 13px; line-height: 1.45; }
+  .borsa-in-parole b { color: #ffd166; }
 `;

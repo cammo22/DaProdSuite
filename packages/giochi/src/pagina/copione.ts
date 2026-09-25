@@ -3081,12 +3081,12 @@ export const COPIONE = `
       ? quali.map(function (g) {
           var messe = quantoScelto("regalo", g.chi);
           var numero = function (v, cosa) { return "<span><b>" + v + "</b><small>" + cosa + "</small></span>"; };
-          return "<div class=\\"persona\\">" +
+          return "<div class=\\"persona" + (g.io ? " io" : "") + "\\">" +
             // Nome e saldo sulla stessa riga finche' ci stanno, poi il saldo va
             // a capo; la riga lunga dei dettagli sta sotto, larga quanto la
             // scheda (1.4.5: prima spingeva il saldo fuori, sulla scheda accanto).
             "<div class=\\"persona-testa\\"><span class=\\"tondo\\">" + sicuro((g.nome || "?").charAt(0).toUpperCase()) + "</span>" +
-            "<div class=\\"chi-e\\"><b>" + sicuro(g.nome) + "</b>" +
+            "<div class=\\"chi-e\\"><b>" + sicuro(g.nome) + (g.io ? " <em class=\\"sei-tu\\">tu</em>" : "") + "</b>" +
             "<span class=\\"persona-saldo\\">" + soldi(g.saldo) + "</span></div></div>" +
             "<small class=\\"persona-riga\\">" +
             (g.mai ? "non ha mai aperto la sala giochi"
@@ -3097,7 +3097,10 @@ export const COPIONE = `
               numero(soldi(g.staccatoOggi || 0), "incassate oggi") +
               numero(String(g.giri || 0), "giri") +
               numero(String(g.prese || 0), "prese") +
-              numero(String(g.mano || 0), "carte") + "</div>") +
+              numero(String(g.mano || 0), "carte") +
+              // 1.4.8: come va nei giochi d'arcade, messe e tornate.
+              numero(soldi(g.messoGiochi || 0), "messe nei giochi") +
+              numero(soldi(g.presoGiochi || 0), "tornate") + "</div>") +
             "<details class=\\"persona-azioni\\"><summary>Gestisci</summary>" +
             tastiTaglio("regalo", g.chi) +
             "<div class=\\"riga-tasti\\">" +
@@ -3131,10 +3134,11 @@ export const COPIONE = `
     var cassetti = b.cassetti.map(function (c) {
       return "<span><small>" + sicuro(c.nome) + "</small><b>" + soldi(c.lire) + "</b></span>";
     }).join("");
-    dove.innerHTML = "<div class=\\"banca-admin-testa\\"><b>Banca DaProd</b><small>riserva " + soldi(b.riserva) +
+    // 1.4.8: qui il riassunto; i forzieri si gestiscono nella stanza Casse.
+    dove.innerHTML = "<div class=\\"banca-admin-testa\\"><b>" + sicuro(b.grado ? b.grado.nome : "Banca DaProd") + "</b><small>riserva " + soldi(b.riserva) +
       " · entrate " + soldi(b.entrate) + " · tornate " + soldi(b.pagate) + "</small></div>" +
       "<div class=\\"banca-admin-cassetti\\">" + cassetti + "</div>" +
-      "<div class=\\"riga-tasti\\"><button class=\\"btn oro\\" id=\\"versa-riserva\\">Versa nella riserva</button></div>";
+      "<div class=\\"riga-tasti\\"><button class=\\"btn oro\\" data-va=\\"casse\\">Le casse DaProd</button></div>";
   }
 
   function versaNellaRiserva() {
@@ -3146,6 +3150,7 @@ export const COPIONE = `
           if (sala) sala.banca = v;
           avviso("Versate " + soldi(Number(r)) + ". Riserva: " + soldi(v.riserva) + ".", "bene");
           disegnaBancaAdmin();
+          if (typeof disegnaCasse === "function") disegnaCasse();
         }).catch(function (e) { avviso(e.message, "male"); });
       });
   }

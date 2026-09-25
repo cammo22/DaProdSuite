@@ -70,7 +70,7 @@ export const MARKUP = `<header>
   -->
   <div class="sotto" id="sotto">
     <div class="sotto-fila" data-di="gioca">
-      <button data-va="sala">Sala</button><button data-va="fortuna">Fortuna</button><button data-va="borsa">Borsa</button>
+      <button data-va="sala">Sala</button><button data-va="fortuna">Fortuna</button><button data-va="borsa">Borsa</button><button data-va="portafoglio">Portafoglio</button>
     </div>
     <div class="sotto-fila" data-di="genera">
       <button data-va="studio">Studio</button><button data-va="slot">Combinazioni</button><button data-va="mie">Le mie</button>
@@ -78,6 +78,7 @@ export const MARKUP = `<header>
     <div class="sotto-fila" data-di="admin">
       <button data-va="fila" id="tasto-fila" hidden>Fila<span class="pallino" id="quante-attesa" hidden></span></button>
       <button data-va="giocatori">Giocatori</button>
+      <button data-va="casse">Casse</button>
     </div>
     <div class="sotto-fila" data-di="collezione">
       <button data-va="pacchetti">Pacchetti</button><button data-va="inventario">Inventario</button><button data-va="shop">Shop</button><button data-va="casa">Classifica</button>

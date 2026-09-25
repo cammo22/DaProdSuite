@@ -16,8 +16,22 @@
  *       gioco: "dozer",
  *       ricarica: { detto: "+L.2.000 di monete", dai: function () { stato.saldo += 2000; } },
  *     });
- *     DaProdLira.punti("dozer", 350);     // ha vinto 350 dei suoi gettoni
+ *     DaProdLira.init({
+ *       gioco: "claw",
+ *       ricarica: { dai: function (lire) { stato.lire += lire; } },
+ *       cassa: {
+ *         quanto: function () { return stato.lire; },          // cosa si porta a casa
+ *         finita: function () { return collezioneCompleta(); },  // Claw e Neon
+ *         togli: function (r) { ricominciaDaCapo(); },           // dopo l'incasso
+ *       },
+ *     });
  *     DaProdLira.evento("dozer", "jackpot");
+ *     DaProdLira.incassa();   // dal tasto del gioco; la cornice ha il suo
+ *
+ * **Dalla 1.4.8 una lira e' una lira** (`packages/giochi/src/euro.ts`): la
+ * ricarica arriva al gioco in lire della suite, senza cambio, e l'incasso le
+ * riporta indietro, meno il 10% di DaProd. I tagli si ragionano in euro, al
+ * cambio del 2002: `DaProdLira.euro(lire)` li scrive.
  *
  * **Le Lire DaProd esistono solo dentro la suite.** Chiarito da Cammo il 24
  * settembre 2026, dopo una prima versione che le teneva anche sul sito, nel
@@ -94,10 +108,13 @@
       // La sala ha ricaricato: il gioco cambia quelle lire nei suoi gettoni.
       // Dalla 1.4.4 arriva quante (m.lire): prima era sempre un gettone solo.
       if (m.ricarica && ricarica) { try { ricarica.dai(Number(m.lire) || 0); } catch (e) { /* niente */ } }
+      // La cornice chiede di incassare (1.4.8): lo fa il gioco, che sa quanto ha.
+      if (m.incassa && cassa) Lira.incassa().catch(function () {});
     });
   }
 
   var ricarica = null;
+  var cassa = null;
   var gioco = "";
   var daMandare = {};
   var orologio = null;
@@ -120,6 +137,7 @@
       opzioni = opzioni || {};
       gioco = opzioni.gioco || gioco;
       ricarica = opzioni.ricarica || null;
+      cassa = opzioni.cassa || null;
       if (spento) return Lira;
       // Ogni tre secondi (1.4.4): la barra della sala mostra la partita quasi dal
       // vivo. Prima erano quindici, e i punti arrivavano a scatti.
@@ -129,8 +147,10 @@
       allaSala("ciao", {
         gioco: gioco,
         ricarica: ricarica ? ricarica.detto || "" : "",
-        // Quanto vale una lira della suite nel gioco: la sala lo mostra nel portafoglio.
-        cambio: ricarica && ricarica.cambio ? Number(ricarica.cambio) : 0,
+        // Quanto vale una lira della suite nel gioco. Dalla 1.4.8 e' 1 per tutti.
+        cambio: ricarica && ricarica.cambio ? Number(ricarica.cambio) : 1,
+        // Il gioco sa incassare da solo (1.4.8): la cornice lo chiede a lui.
+        cassa: Boolean(cassa),
       }).then(annuncia, function () {});
       return Lira;
     },
@@ -158,6 +178,29 @@
     ricarica: function () {
       if (!ricarica) return Promise.reject(new Error("Questo gioco non si ricarica da qui."));
       return allaSala("ricarica", { gioco: gioco });
+    },
+
+    /**
+     * L'incasso (1.4.8): quello che il gioco ha diventa lire vere, meno la
+     * fetta di DaProd, fino al tetto della partita. `opzioni.fine` chiude la
+     * partita col premio della velocita' (Claw, Neon); `opzioni.chiudi` la
+     * chiude senza premio. Risponde con `preso`: quante lire togliersi.
+     */
+    incassa: function (opzioni) {
+      manda();
+      opzioni = opzioni || {};
+      var grezzo = typeof opzioni.grezzo === "number" ? opzioni.grezzo : (cassa && cassa.quanto ? Number(cassa.quanto()) || 0 : 0);
+      var fine = typeof opzioni.fine === "boolean" ? opzioni.fine : Boolean(cassa && cassa.finita && cassa.finita());
+      return allaSala("incassa", { gioco: gioco, grezzo: grezzo, fine: fine, chiudi: Boolean(opzioni.chiudi) }).then(function (r) {
+        if (cassa && cassa.togli) { try { cassa.togli(r); } catch (e) { /* il gioco si arrangia */ } }
+        return r;
+      });
+    },
+
+    /** Lire in euro, scritte all'italiana: «€ 1,00». Il cambio e' quello del 2002. */
+    euro: function (lire) {
+      var e = (Number(lire) || 0) / 1936.27;
+      return "€ " + e.toFixed(2).replace(".", ",").replace(/\B(?=(\d{3})+(?!\d))/g, ".");
     },
 
     /** Lo stacco: la partita diventa lire, alla quotazione di adesso. Solo nella suite. */

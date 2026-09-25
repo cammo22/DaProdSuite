@@ -154,7 +154,7 @@ export function tira(
   if (conto.saldo < imp.costoGiro) {
     throw new NienteDaFare("Non ti bastano le lire per un giro.");
   }
-  deposito.muovi(chi, -imp.costoGiro);
+  deposito.muovi(chi, -imp.costoGiro, true, "un giro di slot");
 
   const pezzi: PezzoInGioco[] = [];
   for (let i = 0; i < rulli.length; i++) {
@@ -334,7 +334,7 @@ function giaVista(
 
   // Da qui in giu' e' «presa», cioe' verificata da chi comanda.
   if (conto.collezione.includes(gia.id)) {
-    const dopo = deposito.muovi(chi, -imp.penalitaDoppione);
+    const dopo = deposito.muovi(chi, -imp.penalitaDoppione, true, "una combinazione gia' vista");
     return {
       esito: "gia-tua",
       cosa: gia,
@@ -345,7 +345,7 @@ function giaVista(
   }
 
   const premio = gia.prezzo ?? 0;
-  deposito.muovi(chi, premio);
+  deposito.muovi(chi, premio, true, "una combinazione mandata");
   deposito.colleziona(chi, gia.id);
   const dopo = deposito.conto(chi);
   return {
@@ -599,7 +599,7 @@ export function prendi(
   c.daAdmin = admin;
   c.decisa = Date.now();
 
-  deposito.muovi(c.daChi, lire);
+  deposito.muovi(c.daChi, lire, true, "una tua figurina presa");
   const conto = deposito.conto(c.daChi);
   conto.prese += 1;
   deposito.colleziona(c.daChi, c.id);
@@ -734,7 +734,7 @@ export function regala(
     perche: perche.trim() || "Cosi', perche' si.",
     daAdmin: admin,
   };
-  const conto = deposito.muovi(chi, lire);
+  const conto = deposito.muovi(chi, lire, true, "un regalo");
   conto.regali = (conto.regali ?? 0) + lire;
   conto.ultimoRegalo = regalo;
   deposito.salva();
@@ -785,7 +785,7 @@ export function azzeraPortafoglio(
   const togliere = prima.saldo;
   // Una correzione di chi comanda, non un'operazione di mercato: la Borsa non
   // la vede (CONCETTI.md § 18.3).
-  const conto = deposito.muovi(chi, -togliere, false);
+  const conto = deposito.muovi(chi, -togliere, false, "portafoglio azzerato");
   conto.ultimoRegalo = {
     quanto: -togliere,
     quando: Date.now(),
@@ -934,7 +934,7 @@ export function apriPacchetto(
   if (conto.saldo < imp.costoPacchetto) {
     throw new NienteDaFare("Non ti bastano le lire per un pacchetto.");
   }
-  deposito.muovi(chi, -imp.costoPacchetto);
+  deposito.muovi(chi, -imp.costoPacchetto, true, "un pacchetto");
 
   /**
    * ⚠ **Nel mucchio ci sono anche le cinquanta della casa**, dall'11 settembre
@@ -972,7 +972,7 @@ export function apriPacchetto(
     }
   }
 
-  if (vinto > 0) deposito.muovi(chi, vinto);
+  if (vinto > 0) deposito.muovi(chi, vinto, true, "vinto in un pacchetto");
   return {
     serie: numeroSerie,
     costo: imp.costoPacchetto,
@@ -1153,7 +1153,7 @@ export function compra(deposito: Deposito, chi: string, id: string): Acquisto {
   if (conto.saldo < costo) {
     throw new NienteDaFare("Ti mancano " + (costo - conto.saldo) + " lire.");
   }
-  deposito.muovi(chi, -costo);
+  deposito.muovi(chi, -costo, true, "una figurina dallo shop");
   deposito.colleziona(chi, c.id);
   return { cosa: c, costo, saldo: deposito.conto(chi).saldo };
 }
