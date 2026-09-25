@@ -57,6 +57,20 @@ export const QWEN21 = {
   /** Gli id del catalogo, per chiedere alla suite se ci sono gia'. */
   catalogo: ["qwen21-q4km", "qwen21-text-encoder", "qwen21-vae"],
   catalogoTurbo: ["qwen21-q4km", "qwen21-text-encoder", "qwen21-vae", "qwen21-turbo-5step"],
+  /** L'id del catalogo della turbo, per farla scaricare quando manca. */
+  idTurbo: "qwen21-turbo-5step",
+  /**
+   * Le turbo che vanno bene lo stesso se la 5 passi non c'e' ancora, dalla
+   * 1.4.7, coi sigma su cui sono state distillate. Vedi `lora-presenti.js`.
+   *
+   * Sono le 4 passi della v0.1 che la 1.4.4 scaricava: chi aveva gia' la suite
+   * ce l'ha sul disco, e la 1.4.5 chiedeva la 5 passi al motore anche prima che
+   * arrivasse. Il motore rispondeva «value_not_in_list» e la foto non partiva.
+   */
+  riserveTurbo: [
+    { file: "Qwen-Image-2.1-viggle-turbo-4step-r64-comfyui-T8.safetensors", sigmi: "1, 0.75, 0.5, 0.25, 0" },
+    { file: "Qwen-Image-2.1-viggle-turbo-4step-lora-r64.safetensors", sigmi: "1, 0.75, 0.5, 0.25, 0" },
+  ],
 };
 
 /** Quanti passi, per strada: il minimo, il massimo, e quello che parte. */

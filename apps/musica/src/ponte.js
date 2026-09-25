@@ -12,6 +12,8 @@
  * è che i brani li vedono anche le altre app.
  */
 
+import { metteLeLoraCheCi } from "/comune/lora-presenti.js";
+
 const suite = window.daprodSuite;
 
 /** Indirizzo del motore. Riempito da `collega()` prima di ogni altra cosa. */
@@ -49,6 +51,10 @@ function apriSocket(alCambioStato, allArrivo) {
 
 /** Manda un grafo in coda al motore. Torna l'id con cui seguirlo. */
 export async function invia(grafo) {
+  // Le LoRA che mancano: si usa una riserva e si fa scaricare quella giusta
+  // (dalla 1.4.7, come fa WanGP). Vedi packages/ui/src/lora-presenti.js.
+  const { sostituite } = await metteLeLoraCheCi(motore, grafo, { scarica: (ids) => suite.modelli.scarica(ids) });
+  for (const x of sostituite) console.info(`[lora] ${x.da} non c'e' ancora: uso ${x.a}`);
   const risposta = await fetch(`${motore}/prompt`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
