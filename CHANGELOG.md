@@ -10,6 +10,27 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ---
 
+## 1.4.7 — Qwen parte anche senza la LoRA nuova, e l'icona nuova
+
+> «Mi da problemi con qwen… risolvi e basta, vai a vedere come fa WanGP.»
+
+**La foto veloce non si ferma più su «value_not_in_list».** La 1.4.5 ha messo
+la turbo a 5 passi, ma chiedeva il file al motore anche quando non era ancora
+sul disco: c'era solo la 4 passi di prima, e il motore diceva di no. Adesso si
+fa come WanGP: un attimo prima di partire si guarda quali LoRA il motore ha
+davvero. Se manca la 5 passi si usa la 4 passi che c'è, coi suoi tempi, e la
+5 passi si fa scaricare: dalla volta dopo va con lei. Se non c'è nessuna turbo
+lo dice in italiano. Vale per Foto (anche le richieste dallo Studio del
+telefono) e per le copertine di Musica.
+
+**L'icona dell'app Android è nuova**: la D di DaProd dentro l'anello verde e
+ciano, su vetro scuro con la pioggia di codice, come la suite di adesso. Prima
+c'era il tramonto viola della 0.7.7. Lo stesso marchio è il logo del README e
+del sito.
+
+**Le foto del README sono quelle vere di adesso**: l'hub e, dal telefono, la
+casa, la sala giochi, i giochi e lo Studio.
+
 ## 1.4.6 — La sala giochi sta nel telefono
 
 > «Molto brutta la UI su smartphone nella 1.4.5, molto brutta la sala giochi.»

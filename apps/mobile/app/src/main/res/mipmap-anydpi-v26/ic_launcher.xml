@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  L'icona dell'app, dalla 0.7.7: il marchio DaProd Produzioni.
-
-  Il disegno sta in `drawable/logo_daprod.xml`, e li' c'e' scritto anche come
-  sostituirlo con il PNG vero senza toccare una riga di codice.
+  L'icona dell'app: il marchio DaProd, rifatto nella 1.4.7 coi colori della
+  suite (la D nell'anello verde e ciano). Il disegno sta in
+  `drawable/logo_daprod.xml`.
 
   Niente `<background>` separato: il disegno ha il suo cielo dentro, e un fondo
   in piu' sotto lo coprirebbe ai bordi su certi telefoni.

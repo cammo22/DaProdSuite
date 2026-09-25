@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 108 108">
+  <defs>
+    <linearGradient id="cielo" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#07231a"/><stop offset="1" stop-color="#010604"/></linearGradient>
+    <radialGradient id="alone" cx="54" cy="54" r="46" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#00ff41" stop-opacity=".30"/><stop offset="1" stop-color="#00ff41" stop-opacity="0"/></radialGradient>
+    <linearGradient id="goccia" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#00ff41" stop-opacity="0"/><stop offset="1" stop-color="#00ff41" stop-opacity=".55"/></linearGradient>
+    <linearGradient id="anello" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#b8ffd0"/><stop offset=".5" stop-color="#00ff41"/><stop offset="1" stop-color="#3ddbff"/></linearGradient>
+    <linearGradient id="lettera" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#eafff2"/><stop offset=".45" stop-color="#5dff8a"/><stop offset="1" stop-color="#1fc8ff"/></linearGradient>
+    <linearGradient id="lucido" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff" stop-opacity=".38"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/></linearGradient>
+  </defs>
+  <rect width="108" height="108" fill="url(#cielo)"/>
+  <!-- pioggia -->
+  <g fill="url(#goccia)">
+    <rect x="9" y="0" width="3" height="40"/><rect x="21" y="18" width="3" height="46"/><rect x="33" y="-4" width="3" height="30"/>
+    <rect x="72" y="4" width="3" height="34"/><rect x="84" y="24" width="3" height="50"/><rect x="96" y="-2" width="3" height="42"/>
+    <rect x="15" y="62" width="3" height="40"/><rect x="90" y="70" width="3" height="36"/><rect x="60" y="80" width="3" height="30"/>
+  </g>
+  <rect width="108" height="108" fill="url(#alone)"/>
+  <g transform="translate(17.2 17.2) scale(1.15)">
+    <circle cx="32" cy="32" r="27" fill="#03140d" stroke="url(#anello)" stroke-width="3.6"/>
+    <circle cx="32" cy="32" r="21" fill="none" stroke="#3ddbff" stroke-opacity=".35" stroke-width="1.2"/>
+    <path d="M24 19h9.5c8 0 13 5 13 13s-5 13-13 13H24z M30 25v14h3.2c4.3 0 7-2.6 7-7s-2.7-7-7-7z" fill="url(#lettera)" fill-rule="evenodd"/>
+    <path d="M7.5 30 A24.5 24.5 0 0 1 56.5 30 C44 25 20 25 7.5 30z" fill="url(#lucido)"/>
+  </g>
+</svg>

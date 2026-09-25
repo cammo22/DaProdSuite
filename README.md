@@ -10,7 +10,7 @@ Un programma solo per fare musica, immagini, video, voci e parlare con un avatar
 Ogni app la installi quando ti serve e la disinstalli quando non ti serve più.
 Gira sul tuo computer: niente account, niente chiavi API, codice aperto.
 
-[![versione](https://img.shields.io/badge/versione-1.4.4-7c5cff)](https://github.com/cammo22/DaProdSuite/releases/latest)
+[![versione](https://img.shields.io/badge/versione-1.4.7-00ff41)](https://github.com/cammo22/DaProdSuite/releases/latest)
 [![licenza](https://img.shields.io/badge/licenza-MIT-5cff9d)](LICENSE)
 [![piattaforma](https://img.shields.io/badge/Windows-x64-3ddbff)](#requisiti)
 [![sito](https://img.shields.io/badge/sito-cammo22.github.io-ffa63d)](https://cammo22.github.io/DaProdSuite/)
@@ -29,7 +29,7 @@ Gira sul tuo computer: niente account, niente chiavi API, codice aperto.
 ---
 
 <div align="center">
-<img src="docs/media/hub.png" width="780" alt="La home di DaProd Suite: le app, una accanto all'altra">
+<img src="docs/media/hub.webp" width="780" alt="La home di DaProd Suite: le app, una accanto all'altra">
 </div>
 
 ---
@@ -270,6 +270,11 @@ quelli veri — misurati sul file, non stimati.
 ## Dal telefono
 
 <img src="docs/media/logo.svg" width="46" align="right" alt="">
+
+<div align="center">
+<img src="docs/media/telefono.webp" width="780" alt="Dal telefono: la casa, la sala giochi, i giochi e lo Studio">
+</div>
+
 
 Batti un nome e un codice di otto cifre — o inquadri il QR, se preferisci — e la
 suite è nel telefono. Il telefono non calcola niente, **fa tutto il computer**, e

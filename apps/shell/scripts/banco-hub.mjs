@@ -26,6 +26,8 @@ import { pathToFileURL } from "node:url";
 const require = createRequire(import.meta.url);
 const radice = join(import.meta.dirname, "..", "..", "..");
 const { APP_LIST } = require(join(radice, "packages", "ipc", "dist", "index.js"));
+// La versione vera, cosi' le foto per il README non dicono un numero vecchio.
+const VERSIONE = require(join(radice, "package.json")).version;
 
 const dove = process.env.PLAYWRIGHT || "playwright";
 let chromium;
@@ -43,7 +45,7 @@ mkdirSync(uscita, { recursive: true });
  * forma di `packages/ipc/src/contracts.ts`; quello che non serve a disegnare
  * torna niente.
  */
-function finto(catalogo) {
+function finto({ catalogo, versione }) {
   const stati = {
     connessione: { status: "pronta", missingGb: 0 },
     visualizer: { status: "pronta", missingGb: 0 },
@@ -59,7 +61,7 @@ function finto(catalogo) {
   const mai = () => () => {};
   window.daprod = {
     catalog: catalogo,
-    suite: { version: () => Promise.resolve("1.4.0"), revealPath: niente, avvioPronto: niente },
+    suite: { version: () => Promise.resolve(versione), revealPath: niente, avvioPronto: niente },
     risultati: { elenco: () => Promise.resolve([]), mostraNellaCartella: niente, salva: niente, elimina: niente, onCambiata: mai },
     modelli: { catalogo: () => Promise.resolve([]), scarica: niente, annulla: niente, onAvanzamento: mai },
     log: { elenco: () => Promise.resolve([]), leggi: () => Promise.resolve("") },
@@ -80,7 +82,7 @@ function finto(catalogo) {
     spazio: { stato: () => Promise.resolve({ app: [], grandi: [], sistema: [], occupato: 0, libero: 0 }), disinstalla: niente, elimina: niente, reset: niente },
     llm: { stato: () => Promise.resolve({ acceso: true, modelli: ["spark-x2.5-4b"], disponibili: [{ id: "spark-x2.5-4b", caricato: true }], caricati: [] }), carica: niente, scarica: niente },
     update: {
-      state: () => Promise.resolve({ status: "aggiornato", currentVersion: "1.4.0" }),
+      state: () => Promise.resolve({ status: "aggiornato", currentVersion: versione }),
       check: niente, download: niente, installAndRestart: niente, onChanged: mai,
     },
   };
@@ -91,7 +93,7 @@ const pagina = join(radice, "apps", "shell", "out", "renderer", "index.html");
 for (const [nome, w, h] of [["largo", 1280, 860], ["stretto", 820, 900]]) {
   const p = await browser.newPage({ viewport: { width: w, height: h } });
   p.on("pageerror", (e) => console.log("errore nella pagina:", e.message));
-  await p.addInitScript(finto, APP_LIST);
+  await p.addInitScript(finto, { catalogo: APP_LIST, versione: VERSIONE });
   await p.goto(pathToFileURL(pagina).href);
   await p.waitForTimeout(2500);
   await p.screenshot({ path: join(uscita, `hub-${nome}.png`) });

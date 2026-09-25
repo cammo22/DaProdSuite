@@ -6,6 +6,8 @@
  * qui si caricano file *dentro* al motore, cosa che a Musica non serviva mai.
  */
 
+import { metteLeLoraCheCi } from "/comune/lora-presenti.js";
+
 const suite = window.daprodSuite;
 
 let motore = "http://127.0.0.1:8188";
@@ -34,6 +36,10 @@ function apriSocket(alCambioStato, allArrivo) {
 }
 
 export async function invia(grafo) {
+  // Le LoRA che mancano: si usa una riserva e si fa scaricare quella giusta
+  // (dalla 1.4.7, come fa WanGP). Vedi packages/ui/src/lora-presenti.js.
+  const { sostituite } = await metteLeLoraCheCi(motore, grafo, { scarica: (ids) => suite.modelli.scarica(ids) });
+  for (const x of sostituite) console.info(`[lora] ${x.da} non c'e' ancora: uso ${x.a}`);
   const risposta = await fetch(`${motore}/prompt`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

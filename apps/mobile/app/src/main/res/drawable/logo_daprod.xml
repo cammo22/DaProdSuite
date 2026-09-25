@@ -1,110 +1,154 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Il marchio **DaProd Produzioni**: sole al tramonto, griglia, neon.
+  L'icona dell'app (1.4.7): la D di DaProd dentro un anello di neon verde e
+  ciano, su vetro scuro con la pioggia di codice. È lo stesso marchio che sta
+  nei giochi (la D della moneta del Coin Dozer e della Claw), coi colori della
+  suite di adesso: verde #00ff41 e ciano #3ddbff.
 
-  Chiesto il 26 agosto 2026: «usiamo la seconda immagine come logo anche per
-  android e anche per le notifiche android».
-
-  ⚠ **Questo è un disegno, non quell'immagine.** L'immagine vera è un file che
-  sta fuori dal repository, e un disegno vettoriale non la può riprodurre riga
-  per riga: quello che c'è qui sono i suoi pezzi — il sole a fette, l'anello di
-  neon, la griglia in prospettiva, i due colori — messi insieme in modo da
-  riconoscersi sullo schermo di un telefono da 48 px.
-
-  **Per mettere quella vera** bastano due mosse, e non serve toccare il codice:
-  1. salva il PNG (512×512, sfondo compreso) come
-     `apps/mobile/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png`;
-  2. cancella `mipmap-anydpi-v26/ic_launcher.xml`, che è quello che dice ad
-     Android di usare questo disegno al posto del file.
-
-  ## Perché vettoriale e non un PNG, per adesso
-
-  Perché un'icona di Android vive a otto misure diverse — dalla lista delle app
-  al riquadro delle notifiche — e un PNG a una misura sola si vede sgranato in
-  almeno tre di quelle. Un vettore è nitido ovunque e pesa due chili di niente.
+  Chiesto da Cammo il 25 settembre 2026: «aggiorniamo l'icona android». Prima
+  c'era il tramonto viola della 0.7.7, che con la suite verde non c'entrava più.
 
   ## Le proporzioni non sono decorative
 
   Il disegno sta in 108×108 come vuole un'icona adattiva, ma **tutto quello che
   conta sta nei 66 dp centrali**: fuori da lì Android ritaglia, e su certi
-  telefoni ritaglia un cerchio. Il sole e la scritta stanno dentro quel cerchio;
-  la griglia e l'anello possono uscirne, ed è giusto che escano — sono lo sfondo.
+  telefoni ritaglia un cerchio. L'anello ha raggio 31 intorno a (54, 54), quindi
+  resta dentro anche col cerchio. La pioggia può uscire: è lo sfondo.
+
+  Il disegno di partenza, da aprire nel browser, è `docs/media/icona-android.svg`.
 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
 
-    <!-- Il cielo: viola scuro verso il nero, come nel marchio. -->
+    <!-- Il fondo: verde scurissimo che va al nero. -->
     <path android:pathData="M0,0h108v108h-108z">
-        <aapt:attr xmlns:aapt="http://schemas.android.com/aapt" name="android:fillColor">
-            <gradient
-                android:startY="0"
-                android:endY="108"
-                android:type="linear">
-                <item android:offset="0" android:color="#FF1A0B2E" />
-                <item android:offset="1" android:color="#FF0B0616" />
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="linear" android:startX="0" android:startY="0" android:endX="0" android:endY="108">
+                <item android:offset="0" android:color="#FF07231A" />
+                <item android:offset="1" android:color="#FF010604" />
             </gradient>
         </aapt:attr>
     </path>
 
-    <!-- L'anello di neon: ciano, come il cerchio esterno del marchio. -->
-    <path
-        android:pathData="M54,20a34,34 0 1,0 0,68a34,34 0 1,0 0,-68"
-        android:strokeColor="#FF22D3EE"
-        android:strokeWidth="2.2"
-        android:strokeAlpha="0.9" />
-    <path
-        android:pathData="M54,17a37,37 0 1,0 0,74a37,37 0 1,0 0,-74"
-        android:strokeColor="#FFF472B6"
-        android:strokeWidth="1.1"
-        android:strokeAlpha="0.55" />
+    <!-- La pioggia di codice: righe verdi che si accendono verso il basso. -->
+    <path android:pathData="M9,0h3v40h-3z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="linear" android:startX="0" android:startY="0" android:endX="0" android:endY="40">
+                <item android:offset="0" android:color="#0000FF41" />
+                <item android:offset="1" android:color="#8C00FF41" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <path android:pathData="M21,18h3v46h-3z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="linear" android:startX="0" android:startY="18" android:endX="0" android:endY="64">
+                <item android:offset="0" android:color="#0000FF41" />
+                <item android:offset="1" android:color="#8C00FF41" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <path android:pathData="M33,-4h3v30h-3z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="linear" android:startX="0" android:startY="-4" android:endX="0" android:endY="26">
+                <item android:offset="0" android:color="#0000FF41" />
+                <item android:offset="1" android:color="#8C00FF41" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <path android:pathData="M72,4h3v34h-3z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="linear" android:startX="0" android:startY="4" android:endX="0" android:endY="38">
+                <item android:offset="0" android:color="#0000FF41" />
+                <item android:offset="1" android:color="#8C00FF41" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <path android:pathData="M84,24h3v50h-3z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="linear" android:startX="0" android:startY="24" android:endX="0" android:endY="74">
+                <item android:offset="0" android:color="#0000FF41" />
+                <item android:offset="1" android:color="#8C00FF41" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <path android:pathData="M96,-2h3v42h-3z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="linear" android:startX="0" android:startY="-2" android:endX="0" android:endY="40">
+                <item android:offset="0" android:color="#0000FF41" />
+                <item android:offset="1" android:color="#8C00FF41" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <path android:pathData="M15,62h3v40h-3z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="linear" android:startX="0" android:startY="62" android:endX="0" android:endY="102">
+                <item android:offset="0" android:color="#0000FF41" />
+                <item android:offset="1" android:color="#8C00FF41" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <path android:pathData="M90,70h3v36h-3z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="linear" android:startX="0" android:startY="70" android:endX="0" android:endY="106">
+                <item android:offset="0" android:color="#0000FF41" />
+                <item android:offset="1" android:color="#8C00FF41" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <path android:pathData="M60,80h3v30h-3z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="linear" android:startX="0" android:startY="80" android:endX="0" android:endY="110">
+                <item android:offset="0" android:color="#0000FF41" />
+                <item android:offset="1" android:color="#8C00FF41" />
+            </gradient>
+        </aapt:attr>
+    </path>
 
-    <!--
-      Il sole a fette.
+    <!-- L'alone verde dietro il marchio. -->
+    <path android:pathData="M0,0h108v108h-108z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="radial" android:centerX="54" android:centerY="54" android:gradientRadius="46">
+                <item android:offset="0" android:color="#4D00FF41" />
+                <item android:offset="1" android:color="#0000FF41" />
+            </gradient>
+        </aapt:attr>
+    </path>
 
-      Le fette sono quattro e non otto: a 48 px otto fette diventano una
-      sfumatura grigia, e il segno che si riconosce è che il sole **è tagliato**.
-    -->
-    <group>
-        <clip-path android:pathData="M54,30a21,21 0 1,0 0,42a21,21 0 1,0 0,-42" />
-        <path android:pathData="M33,30h42v42h-42z">
-            <aapt:attr xmlns:aapt="http://schemas.android.com/aapt" name="android:fillColor">
-                <gradient
-                    android:startY="30"
-                    android:endY="72"
-                    android:type="linear">
-                    <item android:offset="0" android:color="#FFFFC24D" />
-                    <item android:offset="0.45" android:color="#FFFF6B4A" />
-                    <item android:offset="1" android:color="#FFE0357B" />
-                </gradient>
-            </aapt:attr>
+    <!-- Il marchio, disegnato in 64×64 come nei giochi e ingrandito. -->
+    <group android:translateX="17.2" android:translateY="17.2" android:scaleX="1.15" android:scaleY="1.15">
+        <path android:pathData="M32,5a27,27 0 1,0 0,54a27,27 0 1,0 0,-54z" android:fillColor="#FF03140D" />
+        <path android:pathData="M32,5a27,27 0 1,0 0,54a27,27 0 1,0 0,-54z" android:strokeWidth="3.6">
+        <aapt:attr name="android:strokeColor">
+            <gradient android:type="linear" android:startX="5" android:startY="5" android:endX="59" android:endY="59">
+                <item android:offset="0" android:color="#FFB8FFD0" />
+                <item android:offset="0.5" android:color="#FF00FF41" />
+                <item android:offset="1" android:color="#FF3DDBFF" />
+            </gradient>
+        </aapt:attr>
         </path>
-        <!-- I tagli: righe di cielo dentro al sole. -->
-        <path android:fillColor="#FF120823" android:pathData="M33,53h42v2.4h-42z" />
-        <path android:fillColor="#FF120823" android:pathData="M33,59h42v3h-42z" />
-        <path android:fillColor="#FF120823" android:pathData="M33,66h42v4h-42z" />
+        <path android:pathData="M32,11a21,21 0 1,0 0,42a21,21 0 1,0 0,-42z" android:strokeColor="#593DDBFF" android:strokeWidth="1.2" />
+        <path android:fillType="evenOdd"
+            android:pathData="M24,19h9.5c8,0 13,5 13,13s-5,13 -13,13H24z M30,25v14h3.2c4.3,0 7,-2.6 7,-7s-2.7,-7 -7,-7z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="linear" android:startX="0" android:startY="19" android:endX="0" android:endY="45">
+                <item android:offset="0" android:color="#FFEAFFF2" />
+                <item android:offset="0.45" android:color="#FF5DFF8A" />
+                <item android:offset="1" android:color="#FF1FC8FF" />
+            </gradient>
+        </aapt:attr>
+        </path>
+        <!-- Il lucido del vetro sulla metà di sopra, come i bottoni aqua. -->
+        <path android:pathData="M7.5,30A24.5,24.5 0 0,1 56.5,30C44,25 20,25 7.5,30z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="linear" android:startX="0" android:startY="5.5" android:endX="0" android:endY="30">
+                <item android:offset="0" android:color="#61FFFFFF" />
+                <item android:offset="1" android:color="#00FFFFFF" />
+            </gradient>
+        </aapt:attr>
+        </path>
     </group>
-
-    <!--
-      La griglia in prospettiva, sotto il sole.
-
-      Tre righe che si allargano scendendo: è quel poco che basta a dire «anni
-      ottanta» senza diventare un reticolo illeggibile in miniatura.
-    -->
-    <path android:fillColor="#FF22D3EE" android:fillAlpha="0.5" android:pathData="M30,76h48v1.2h-48z" />
-    <path android:fillColor="#FF22D3EE" android:fillAlpha="0.38" android:pathData="M26,81h56v1.4h-56z" />
-    <path android:fillColor="#FF22D3EE" android:fillAlpha="0.26" android:pathData="M21,87h66v1.6h-66z" />
-
-    <!--
-      La D del marchio, sopra al sole.
-
-      Non c'è la scritta intera: «DAPROD PRODUZIONI» a 48 px è una macchia. Nel
-      riquadro delle app si legge il nome sotto l'icona, e l'icona deve dire una
-      cosa sola — questa.
-    -->
-    <path
-        android:fillColor="#FFFFFFFF"
-        android:pathData="M40,36h13a15,15 0 0,1 0,30h-13zM47,43v16h6a8,8 0 0,0 0,-16z" />
 </vector>
