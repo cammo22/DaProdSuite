@@ -395,8 +395,44 @@ function radio(testo, opz) {
   codaRadio.push({ testo, chi: opz.chi || "PARTENOPE", col: opz.col || "#00ff41" });
   if (!radioOcc) prossimaRadio();
 }
+// ------------------------------------------------ la voce della Radio (2.1.3)
+// «Mettiamo un TTS che parla»: la sintesi vocale del telefono o del computer,
+// in italiano, niente da scaricare. Se il sistema non ce l'ha, la Radio resta
+// scritta come prima. Si spegne nelle Opzioni («Voce della Radio»).
+const Voce = (() => {
+  const ok = typeof window.speechSynthesis !== "undefined" && typeof window.SpeechSynthesisUtterance !== "undefined";
+  let voce = null;
+  function scegli() {
+    if (!ok) return;
+    const tutte = speechSynthesis.getVoices();
+    voce = tutte.find(v => /^it[-_]IT/i.test(v.lang) && /google|natural|neural/i.test(v.name)) ||
+      tutte.find(v => /^it/i.test(v.lang)) || null;
+  }
+  if (ok) { scegli(); speechSynthesis.onvoiceschanged = scegli; }
+  return {
+    parla(testo, chi, fine) {
+      if (!ok || !S.opz.voce) return false;
+      try {
+        speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(testo);
+        u.lang = "it-IT";
+        if (voce) u.voice = voce;
+        // Ogni voce della Radio ha il suo tono: la sirena piu' alta, i boss piu' bassi.
+        u.pitch = chi === "PARTENOPE" ? 1.15 : /BOSS|VESUVIO/i.test(chi) ? 0.75 : 1;
+        u.rate = 1.05;
+        u.volume = Math.max(0.2, Math.min(1, S.opz.volume + 0.3));
+        u.onend = fine;
+        speechSynthesis.speak(u);
+        return true;
+      } catch (e) { return false; }
+    },
+    zitta() { if (ok) try { speechSynthesis.cancel(); } catch (e) { /* niente */ } }
+  };
+})();
+
 function prossimaRadio() {
   clearTimeout(radioTimer); clearInterval(radioScrivi);
+  Voce.zitta();
   const box = $("radio");
   const m = codaRadio.shift();
   if (!m) { radioOcc = false; box.classList.remove("on"); return; }
@@ -415,9 +451,17 @@ function prossimaRadio() {
   }, 22);
   radioTimer = setTimeout(prossimaRadio, 3500 + m.testo.length * 45);
   box.dataset.testo = m.testo;
+  // Con la voce, il messaggio dopo arriva quando ha finito di parlare.
+  const questo = m;
+  if (Voce.parla(m.testo, m.chi, () => { if (box.dataset.testo === questo.testo) { clearTimeout(radioTimer); radioTimer = setTimeout(prossimaRadio, 600); } })) {
+    clearTimeout(radioTimer);
+    radioTimer = setTimeout(prossimaRadio, 6000 + m.testo.length * 90);
+  }
 }
-function tocoRadio() {
-  if (radioScrivi) { clearInterval(radioScrivi); radioScrivi = null; $("radioTesto").textContent = $("radio").dataset.testo; return; }
+// Un tocco sulla Radio la salta (2.1.3): «se le tappi si skippano». Prima si
+// saltava solo dalla piccola ✕ in alto, che sul telefono non si prendeva.
+function tocoRadio(e) {
+  if (e) e.stopPropagation();
   prossimaRadio();
 }
 
@@ -451,7 +495,7 @@ function apriOpzioni() {
     <div class="opzioni-griglia">
       <section><h4>Audio</h4>${sw("suoni", "Effetti sonori")}${sw("musica", "Musica synth dal vivo")}
         <label class="cursore">Volume <input type="range" min="0" max="1" step="0.05" value="${o.volume}" data-opz="volume"></label></section>
-      <section><h4>Schermo</h4>${sw("notifiche", "Notifiche a comparsa")}${sw("borsaHud", "Mini Borsa trascinabile (computer)")}
+      <section><h4>Schermo</h4>${sw("notifiche", "Notifiche a comparsa")}${sw("voce", "Voce della Radio")}${sw("borsaHud", "Mini Borsa trascinabile")}
         <label class="scelta">Qualità grafica <select data-opz="qualita">${["auto", "alta", "media", "bassa"].map(q => `<option ${o.qualita === q ? "selected" : ""}>${q}</option>`).join("")}</select></label>
         <label class="scelta">Numeri grandi <select data-opz="notazione">${["suffissi", "scientifica"].map(q => `<option ${o.notazione === q ? "selected" : ""}>${q}</option>`).join("")}</select></label></section>
       <section><h4>Salvataggio</h4>
@@ -512,25 +556,86 @@ function mostraNovita(forza) {
     <button class="btn oro grande" data-azione="chiudiModale">Jamme!</button></div>`);
 }
 
+// ============================================================ IL TELEFONO (2.1.3)
+// «Su mobile e' troppo diviso in due: ogni zona deve avere la sua versione a
+// schermo intero, e il quadratino dell'avventura spostabile, un PiP
+// trascinabile.» Fino alla 2.1.2 l'arena stava sopra e il pannello sotto, a
+// meta' schermo tutti e due. Adesso sul telefono si vede una zona per volta:
+// l'Arena, o una scheda. Quando c'e' una scheda, l'arena diventa un riquadro
+// che si trascina dove si vuole e si continua a toccare per colpire; un tocco
+// su ⤢ la riporta a tutto schermo.
+const telefono = () => matchMedia("(max-width: 979px)").matches;
+function vista(quale) {
+  const b = document.body;
+  b.classList.toggle("vista-arena", quale === "arena");
+  b.classList.toggle("vista-pannello", quale === "pannello");
+  document.querySelectorAll("#barraMobile [data-vista]").forEach(x => x.classList.toggle("on", quale === "arena"));
+  if (quale === "arena") document.querySelectorAll("#barraMobile [data-scheda]").forEach(x => x.classList.remove("on"));
+  else document.querySelectorAll("#barraMobile [data-scheda]").forEach(x => x.classList.toggle("on", x.dataset.scheda === schedaAttiva));
+  mettiPip();
+  // Chi disegna sul palco si rimisura (effetti, scena).
+  requestAnimationFrame(() => window.dispatchEvent(new Event("resize")));
+}
+const CHIAVE_PIP = "np.pip";
+function mettiPip() {
+  const a = $("colArena");
+  if (!document.body.classList.contains("vista-pannello") || !telefono()) { a.style.left = a.style.top = ""; return; }
+  let p = null;
+  try { p = JSON.parse(localStorage.getItem(CHIAVE_PIP) || "null"); } catch (e) { p = null; }
+  const w = a.offsetWidth || 180, h = a.offsetHeight || 220;
+  // Di partenza in basso a destra, sopra la barra: in alto passa la Radio.
+  const x = p ? p.x : innerWidth - w - 10, y = p ? p.y : innerHeight - h - 84;
+  a.style.left = limita(x, 4, innerWidth - w - 4) + "px";
+  a.style.top = limita(y, 4, innerHeight - h - 70) + "px";
+}
+function legaPip() {
+  const a = $("colArena"), m = $("pipManiglia");
+  let drag = null;
+  m.addEventListener("pointerdown", e => {
+    if (e.target.closest("#pipApri")) return;
+    drag = { x: e.clientX - a.offsetLeft, y: e.clientY - a.offsetTop };
+    m.setPointerCapture(e.pointerId);
+  });
+  m.addEventListener("pointermove", e => {
+    if (!drag) return;
+    a.style.left = limita(e.clientX - drag.x, 4, innerWidth - a.offsetWidth - 4) + "px";
+    a.style.top = limita(e.clientY - drag.y, 4, innerHeight - a.offsetHeight - 70) + "px";
+  });
+  const fine = () => {
+    if (!drag) return; drag = null;
+    try { localStorage.setItem(CHIAVE_PIP, JSON.stringify({ x: a.offsetLeft, y: a.offsetTop })); } catch (e) { /* va bene */ }
+  };
+  m.addEventListener("pointerup", fine);
+  m.addEventListener("pointercancel", fine);
+  $("pipApri").onclick = () => vista("arena");
+  addEventListener("resize", () => { if (document.body.classList.contains("vista-pannello")) mettiPip(); });
+}
+
 // ============================================================ LEGAMI
 function legaInterfaccia() {
   // schede (testata desktop e barra in basso)
   const tab = SCHEDE.map(s => `<button data-scheda="${s.id}"><span>${s.i}</span><em>${s.n}</em></button>`).join("");
   $("schede").innerHTML = tab;
-  const primi = SCHEDE.slice(0, 4);
-  $("barraMobile").innerHTML = primi.map(s => `<button data-scheda="${s.id}"><span>${s.i}</span><em>${s.n}</em></button>`).join("") +
+  // Sul telefono l'Arena e' una scheda come le altre (2.1.3): la prima.
+  const primi = SCHEDE.slice(0, 3);
+  $("barraMobile").innerHTML = `<button data-vista="arena" class="on"><span>⚔️</span><em>Arena</em></button>` +
+    primi.map(s => `<button data-scheda="${s.id}"><span>${s.i}</span><em>${s.n}</em></button>`).join("") +
     `<button id="bAltro"><span>☰</span><em>Altro</em></button>`;
-  $("altroMenu").innerHTML = SCHEDE.slice(4).map(s => `<button data-scheda="${s.id}"><span>${s.i}</span>${s.n}</button>`).join("") +
+  $("altroMenu").innerHTML = SCHEDE.slice(3).map(s => `<button data-scheda="${s.id}"><span>${s.i}</span>${s.n}</button>`).join("") +
     `<button data-azione="opzioni"><span>⚙️</span>Opzioni</button>`;
   document.addEventListener("click", e => {
     const sc = e.target.closest("[data-scheda]");
-    if (sc) { Suono.avvia(); Suono.suona("clic"); apriScheda(sc.dataset.scheda); return; }
+    if (sc) { Suono.avvia(); Suono.suona("clic"); apriScheda(sc.dataset.scheda); vista("pannello"); return; }
+    const vi = e.target.closest("[data-vista]");
+    if (vi) { Suono.avvia(); Suono.suona("clic"); vista(vi.dataset.vista); return; }
     const az = e.target.closest("[data-azione]");
     if (az && !az.disabled) { eseguiAzione(az); return; }
     if (!e.target.closest("#altroMenu") && !e.target.closest("#bAltro")) $("altroMenu").classList.remove("on");
   });
   $("bAltro").onclick = e => { e.stopPropagation(); $("altroMenu").classList.toggle("on"); };
-  $("radioAltri").onclick = tocoRadio;
+  legaPip();
+  vista("arena");
+  $("radio").onclick = tocoRadio;
   $("modChiudi").onclick = chiudiModale;
   $("modale").addEventListener("click", e => { if (e.target === $("modale")) chiudiModale(); });
   $("bOpz").onclick = () => { Suono.avvia(); apriOpzioni(); };

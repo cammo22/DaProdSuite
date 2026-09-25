@@ -76,7 +76,7 @@ import {
 } from "./regole";
 import { RULLI, rulliDi } from "./rulli";
 import { giornoDi as giornoDellaSala } from "./borsa";
-import { versaInRiserva, vetrina as vetrinaBanca } from "./banca";
+import { alzaCassetto, versaInRiserva, vetrina as vetrinaBanca } from "./banca";
 import {
   COSTI_STUDIO,
   FORME_STUDIO,
@@ -89,7 +89,9 @@ import {
   promptStudio,
   type LavoroStudio,
 } from "./studio";
-import { azzeraPartita, entra, evento, giocaCarta, ricarica, segnaPunti, stacca, statoSala, type StatoSala } from "./sala";
+import { azzeraPartita, entra, evento, giocaCarta, incassaGioco, ricarica, segnaPunti, stacca, statoSala, type StatoSala } from "./sala";
+import { portafoglio } from "./portafoglio";
+import { euroDaLire } from "./euro";
 import type { Collezionabile, Era, Grado, PezzoInGioco, Tavolo, TipoCollezionabile } from "./tipi";
 
 /** Chi sta chiedendo. Nella suite e' il dispositivo accoppiato. */
@@ -715,6 +717,35 @@ export function rispondi(
       const fatto = ricarica(deposito, chi.id, String(corpo["gioco"] ?? ""), Number(corpo["lire"] ?? 0));
       return OK({ ...fatto, saldoScritto: lire(fatto.saldo) });
     }
+    /**
+     * L'incasso di un gioco (1.4.8, `euro.ts`): le lire del gioco diventano
+     * lire vere, meno la fetta di DaProd. `fine` chiude la partita col premio
+     * della velocita' (Claw, Neon); `chiudi` la chiude senza premio.
+     */
+    if (metodo === "POST" && percorso === "/sala/incassa") {
+      const fatto = incassaGioco(deposito, chi.id, String(corpo["gioco"] ?? ""), Number(corpo["grezzo"] ?? 0), {
+        fine: corpo["fine"] === true,
+        chiudi: corpo["chiudi"] === true,
+      });
+      return OK({ ...fatto, saldoScritto: lire(fatto.saldo) });
+    }
+    /** Il portafoglio di chi guarda (1.4.8): quanto ha, com'e' andato, dove sono andate le lire. */
+    if (metodo === "GET" && percorso === "/portafoglio") {
+      return OK(portafoglio(deposito.conto(chi.id), deposito.impostazioni().perIlLivello));
+    }
+    /**
+     * Chi comanda alza un cassetto della Banca con le lire della riserva (1.4.8):
+     * il gesto del «stasera il premio lo alzo io».
+     */
+    if (metodo === "POST" && percorso === "/banca/alza") {
+      if (!chi.admin) return NO(403, "La Banca la tiene chi comanda.");
+      const cassetto = String(corpo["cassetto"] ?? "");
+      if (!["giorno", "settimana", "mese"].includes(cassetto)) return NO(400, "Quale cassetto? giorno, settimana o mese.");
+      const spostate = alzaCassetto(deposito.statoBanca(), cassetto as "giorno" | "settimana" | "mese", Math.floor(numero(corpo["lire"], 0)));
+      if (spostate <= 0) return NO(400, "Nella riserva non ci sono lire da spostare.");
+      deposito.salva();
+      return OK({ spostate, banca: vetrinaBanca(deposito.statoBanca(), chi.id, Date.now()) });
+    }
     if (metodo === "POST" && percorso === "/sala/punti") {
       const fatto = segnaPunti(deposito, chi.id, String(corpo["gioco"] ?? ""), Number(corpo["grezzo"] ?? 0));
       return OK(fatto);
@@ -737,7 +768,7 @@ export function rispondi(
       const visti = lavori.map((l) => {
         const stato = contorno.statoDi ? contorno.statoDi(l.richiesta) : null;
         if ((stato === "scartata" || stato === "scaduta") && !l.rimborsato) {
-          deposito.muovi(chi.id, l.costo);
+          deposito.muovi(chi.id, l.costo, true, "Studio, rimborso");
           l.rimborsato = true;
           rimborsate += l.costo;
         }
@@ -782,7 +813,7 @@ export function rispondi(
         ? contorno.ritocca!(chi.id, da!, testo, true)
         : contorno.genera!(chi.id, "immagini", { prompt: promptStudio(testo, scritta), titolo: testo.slice(0, 80), forma, veloce });
       if (!fatto) return NO(ritocco ? 404 : 501, ritocco ? "Questa immagine non e' tua, o non c'e' piu'." : "Non e' partita: qui non si genera.");
-      deposito.muovi(chi.id, -costo);
+      deposito.muovi(chi.id, -costo, true, "Studio");
       const lavoro: LavoroStudio = {
         richiesta: fatto.id,
         quando: Date.now(),
@@ -1229,7 +1260,8 @@ export function rispondi(
       for (const p of contorno.gente ? contorno.gente() : []) id.add(p.id);
       for (const c of deposito.conti()) id.add(c.chi);
       const gente = [...id]
-        .filter((x) => x && x !== chi.id)
+        // Dalla 1.4.8 ci sei anche tu, in cima: «mostriamo anche la card con noi stessi».
+        .filter((x) => Boolean(x))
         .map((x) => {
           const c = deposito.conti().find((y) => y.chi === x);
           return {
@@ -1250,9 +1282,14 @@ export function rispondi(
               c?.staccatoOggi && c.staccatoOggi.giorno === giornoDellaSala(Date.now()) ? c.staccatoOggi.lire : 0,
             mano: c?.mano?.length ?? 0,
             ultimoStacco: c?.ultimoStacco?.quando ?? 0,
+            /* 1.4.8: chi e' la persona che guarda, e com'e' messa nei giochi. */
+            io: x === chi.id,
+            euro: euroDaLire(c?.saldo ?? 0),
+            messoGiochi: Object.values(c?.giochi ?? {}).reduce((t, g) => t + g.messoTot, 0),
+            presoGiochi: Object.values(c?.giochi ?? {}).reduce((t, g) => t + g.presoTot, 0),
           };
         })
-        .sort((a, b) => a.nome.localeCompare(b.nome));
+        .sort((a, b) => (a.io === b.io ? a.nome.localeCompare(b.nome) : a.io ? -1 : 1));
       return OK({ gente, tagli: TAGLI });
     }
 

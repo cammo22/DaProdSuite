@@ -32,17 +32,29 @@ function avvio() {
   document.querySelectorAll(".versione").forEach(e => e.textContent = VERSIONE);
   preparaIntro();
   nuovaOnda();
-  // Le Lire DaProd: solo dentro la sala giochi della DaProd Suite la partita
-  // si stacca in lire. Qui sul sito e nelle app daprod-lira.js non fa niente.
+  // Le Lire DaProd: solo dentro la sala giochi della DaProd Suite. Dalla 2.1.4
+  // una lira e' una lira (la ricarica arriva uguale) e la partita finisce
+  // all'eruzione: si incassa e si ricomincia (vedi erutta in economia.js).
+  // Qui sul sito e nelle app daprod-lira.js non fa niente.
   if (window.DaProdLira) DaProdLira.init({
     gioco: "neon",
     ricarica: {
-      // L.100 della suite = un minuto di produzione del quartiere (almeno 1.000 lire).
-      detto: "L.100 della suite = un minuto di produzione del quartiere",
+      detto: "una lira della suite e' una lira",
+      cambio: 1,
       dai: (quante) => {
-        const l = Math.max(1000, produzione() * 60) * ((quante || 100) / 100);
+        const l = Math.max(0, Math.round(quante || 0));
         S.lire += l; sporca();
         toast("₤", "Ricarica DaProd", "+" + fmtLire(l), { tipo: "oro" });
+      },
+    },
+    cassa: {
+      // Le lire fatte in questo ciclo: la suite le conta a ordini di grandezza.
+      quanto: () => S.lireCiclo,
+      finita: () => false,
+      chiudi: true,
+      togli: (r) => {
+        toast("💰", r.finita ? "Partita finita!" : "Incassato", "+" + r.netto + " lire nel portafoglio DaProd · si ricomincia da capo", { tipo: "oro", dur: 5000 });
+        setTimeout(() => { azzeraTutto(); location.reload(); }, 2500);
       },
     },
   });

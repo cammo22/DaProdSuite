@@ -10,6 +10,56 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ---
 
+## 1.4.8 — Lire ed euro, e i giochi che si vincono
+
+> «Aggiustiamo la valuta delle lire, in ogni gioco sono diverse… io non sono un
+> finanziere ma voglio questo sistema di lire ed euro.»
+
+**Una lira è una lira, e l'euro è il metro.** La lira della suite e quella dei
+giochi sono la stessa moneta. Ricarichi L. 1.936 e nel gioco hai L. 1.936. Si
+ragiona in euro, al cambio del 2002 (1 € = L. 1.936,27). I tagli di ricarica
+sono gli stessi per tutti i giochi: € 0,20, 1, 5, 20, 50, 200 e 500.
+
+**I tagli si vedono toccando il portafoglio.** Nella cornice di un gioco la
+pastiglia del portafoglio ha il «+». Si apre il foglio coi tagli in euro, e
+sotto c'è com'è messa la partita: quanto ci hai messo, quanto puoi portare a
+casa, il premio se la finisci adesso. Si entra gratis: si paga ricaricando.
+
+**Quello che vinci in un gioco torna in lire vere.** «Incassa» chiede al gioco
+quante lire ha. Nel portafoglio arrivano tutte, meno il 10% di DaProd, che va
+nella Banca e torna a tutti coi premi. Al massimo si porta a casa quattro volte
+quello che si è messo nel Dozer, tre nella Claw e a Neon.
+
+- **Coin Dozer 2.2.5**: più giochi, più vale quello che cade (Fortuna DaProd,
+  fino a ×1,5). Se pulisci il tavolo arriva un premio e la pila torna piena.
+- **Claw Machine 1.1.3** e **Neon Partenope 2.1.4** sono partite da finire:
+  tutta la collezione, oppure il Vesuvio che erutta. Alla fine si incassa da
+  soli, col premio della velocità, e il gioco ricomincia da capo.
+
+**Il tuo portafoglio**, in Gioca → Portafoglio, fatto come DaProdFinanza:
+- il patrimonio in lire e in euro, e la linea di come è andato giorno per giorno;
+- entrate e uscite divise per cosa;
+- i giochi come titoli: quanto hai messo, quanto è tornato, la resa;
+- gli ultimi movimenti.
+
+**Giocare fa salire di livello**: ricariche, incassi e partite finite danno
+esperienza.
+
+**La Borsa si capisce.** In cima c'è il consiglio in parole: conviene
+incassare, meglio aspettare, o nella media. Poi quanto valgono adesso mille punti
+della tua partita, in lire e in euro.
+
+**Per chi comanda, le Casse DaProd** (Admin → Casse):
+- la Banca ha un grado che sale con le lire passate di lì, dal Salvadanaio alla
+  Zecca DaProd;
+- ci sono la riserva, le entrate, quanto è tornato ai giocatori e le fette dei
+  giochi;
+- dalla riserva si alza un forziere a un tocco: +€ 5, 20 o 50 sul premio del
+  giorno, della settimana o del mese.
+
+Fra i giocatori adesso ci sei anche tu, in cima, con quanto hai messo e tolto
+nei giochi.
+
 ## 1.4.7 — Qwen parte anche senza la LoRA nuova, e l'icona nuova
 
 > «Mi da problemi con qwen… risolvi e basta, vai a vedere come fa WanGP.»

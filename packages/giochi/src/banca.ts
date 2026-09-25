@@ -150,6 +150,8 @@ export interface StatoBanca {
   pagate: number;
   cassetti: Record<Cassetto, CassettoAperto>;
   storia: Apertura[];
+  /** Le fette di DaProd sugli incassi dei giochi (1.4.8), da sempre. */
+  fette?: number;
 }
 
 export function bancaNuova(adesso: number): StatoBanca {
@@ -186,6 +188,7 @@ export function bancaInRiga(letta: unknown, adesso: number): StatoBanca {
     pagate: num(b.pagate, 0),
     cassetti,
     storia: Array.isArray(b.storia) ? b.storia.slice(-STORIA_TENUTA) : [],
+    fette: num(b.fette, 0),
   };
 }
 
@@ -206,6 +209,53 @@ export function versa(b: StatoBanca, lire: number): void {
   }
   b.riserva += l - messe;
   b.entrate += l;
+}
+
+/**
+ * La fetta di DaProd su un incasso di un gioco (1.4.8, `euro.ts`): va nella
+ * riserva, che garantisce i minimi dei premi. Conta come entrata.
+ */
+export function versaFetta(b: StatoBanca, lire: number): void {
+  const l = Math.floor(Math.max(0, lire));
+  if (l <= 0) return;
+  b.riserva += l;
+  b.entrate += l;
+  b.fette = (b.fette ?? 0) + l;
+}
+
+/**
+ * Chi comanda sposta lire dalla riserva a un cassetto (1.4.8): «gli admin
+ * possono gestire le casse della DaProd in maniera molto gamificata». E' il
+ * gesto del «stasera il premio lo alzo io».
+ */
+export function alzaCassetto(b: StatoBanca, cassetto: Cassetto, lire: number): number {
+  const l = Math.floor(Math.max(0, Math.min(lire, b.riserva)));
+  if (l <= 0) return 0;
+  b.riserva -= l;
+  b.cassetti[cassetto].lire += l;
+  return l;
+}
+
+/**
+ * Il grado della Banca, da quanto e' passato di li' (1.4.8): un gioco per chi
+ * comanda, che vede la sua cassa crescere di nome.
+ */
+export const GRADI_BANCA = [
+  { da: 0, nome: "Salvadanaio" },
+  { da: 50_000, nome: "Cassetta del bar" },
+  { da: 250_000, nome: "Cassa di quartiere" },
+  { da: 1_000_000, nome: "Banco dei Quartieri" },
+  { da: 5_000_000, nome: "Banco di Napoli" },
+  { da: 25_000_000, nome: "Zecca DaProd" },
+] as const;
+
+export function gradoBanca(entrate: number): { livello: number; nome: string; da: number; prossimo: number | null; verso: number } {
+  let i = 0;
+  while (i + 1 < GRADI_BANCA.length && entrate >= GRADI_BANCA[i + 1]!.da) i++;
+  const g = GRADI_BANCA[i]!;
+  const dopo = GRADI_BANCA[i + 1];
+  const verso = dopo ? Math.max(0, Math.min(1, (entrate - g.da) / (dopo.da - g.da))) : 1;
+  return { livello: i + 1, nome: g.nome, da: g.da, prossimo: dopo ? dopo.da : null, verso };
 }
 
 /** Chi comanda mette lire nella riserva, di tasca di DaProd. */
@@ -339,6 +389,10 @@ export interface VetrinaBanca {
   riserva: number;
   entrate: number;
   pagate: number;
+  /** Le fette di DaProd sugli incassi dei giochi, da sempre (1.4.8). */
+  fette: number;
+  /** Il grado della Banca (1.4.8). */
+  grado: ReturnType<typeof gradoBanca>;
   cassetti: VetrinaCassetto[];
   /** Le ultime aperture, dalla piu' nuova. */
   ultime: Apertura[];
@@ -378,6 +432,8 @@ export function vetrina(b: StatoBanca, chi: string, adesso: number): VetrinaBanc
     riserva: b.riserva,
     entrate: b.entrate,
     pagate: b.pagate,
+    fette: b.fette ?? 0,
+    grado: gradoBanca(b.entrate),
     cassetti,
     ultime: [...b.storia].reverse().slice(0, 10),
   };

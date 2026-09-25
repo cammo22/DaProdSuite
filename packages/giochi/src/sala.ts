@@ -26,7 +26,8 @@ import { vetrina, type VetrinaBanca } from "./banca";
 import type { Deposito } from "./deposito";
 import { altezza, livelloDi, pescaPesata, scalino, type Caso } from "./regole";
 import { rulliDi } from "./rulli";
-import type { Conto, Grado, Partita, PezzoInGioco, Stacco, Tavolo } from "./tipi";
+import type { CassaGioco, Conto, Grado, Partita, PezzoInGioco, Stacco, Tavolo } from "./tipi";
+import { FETTA_DAPROD, LIRE_PER_EURO, RICARICA_MIN, TAGLI_EURO, TAGLI_LIRE, bonusFine, euroDaLire, incasso } from "./euro";
 
 /** Il gioco, se esiste. Un id che non conosciamo e' un errore di chi chiama. */
 function giocoDi(id: string) {
@@ -75,7 +76,7 @@ export function entra(deposito: Deposito, chi: string, idGioco: string, adesso =
   if (conto.saldo < gioco.ingresso) {
     throw new NienteDaFare("Per entrare servono " + gioco.ingresso + " lire, e non ci sono.");
   }
-  deposito.muovi(chi, -gioco.ingresso);
+  if (gioco.ingresso > 0) deposito.muovi(chi, -gioco.ingresso, true, "ingresso a " + gioco.nome);
   partitaDi(conto, adesso);
   deposito.salva();
   return { saldo: conto.saldo, ingresso: gioco.ingresso };
@@ -90,15 +91,102 @@ export function entra(deposito: Deposito, chi: string, idGioco: string, adesso =
  * ricarica era un gettone fisso d'ingresso. Il minimo resta il gettone: meno
  * di cosi' non vale il gesto. Quello che si spende brucia lire (Borsa).
  */
-export function ricarica(deposito: Deposito, chi: string, idGioco: string, quante: number) {
+export function ricarica(deposito: Deposito, chi: string, idGioco: string, quante: number, adesso = Date.now()) {
   const gioco = giocoDi(idGioco);
   const conto = deposito.conto(chi);
   const lire = Math.floor(Number(quante) || 0);
-  if (lire < gioco.ingresso) throw new NienteDaFare("Si ricarica almeno con " + gioco.ingresso + " lire.");
+  // 1.4.8: il minimo e' il taglio piu' piccolo, 20 centesimi (`euro.ts`).
+  if (lire < RICARICA_MIN) throw new NienteDaFare("Si ricarica almeno con " + RICARICA_MIN + " lire (20 centesimi).");
   if (lire > conto.saldo) throw new NienteDaFare("In tasca ci sono " + conto.saldo + " lire: non bastano.");
-  deposito.muovi(chi, -lire);
+  deposito.muovi(chi, -lire, true, "ricarica " + gioco.nome);
+  const cassa = cassaDi(conto, gioco.id, adesso);
+  if (cassa.messo === 0 && cassa.preso === 0) {
+    cassa.inizio = adesso;
+    cassa.partite += 1;
+  }
+  cassa.messo += lire;
+  cassa.messoTot += lire;
+  // Giocare fa salire di livello (1.4.8): un punto ogni venti lire messe.
+  conto.esperienza += Math.floor(lire / XP_OGNI_LIRE_MESSE);
   deposito.salva();
-  return { saldo: conto.saldo, lire };
+  return { saldo: conto.saldo, lire, cassa };
+}
+
+/* ------------------------------------------------- la cassa di un gioco -- */
+
+/** Quante lire messe fanno un punto d'esperienza (1.4.8). */
+export const XP_OGNI_LIRE_MESSE = 20;
+/** Quante lire incassate fanno un punto d'esperienza (1.4.8). */
+export const XP_OGNI_LIRE_PRESE = 40;
+/** Quanta esperienza da' una partita finita (Claw, Neon). */
+export const XP_FINE = 150;
+
+function cassaDi(conto: Conto, gioco: string, adesso: number): CassaGioco {
+  const c = (conto.giochi ??= {});
+  return (c[gioco] ??= { messo: 0, preso: 0, inizio: adesso, messoTot: 0, presoTot: 0, fettaTot: 0, partite: 0, finite: 0 });
+}
+
+/**
+ * L'incasso di un gioco d'arcade (1.4.8): le lire che il gioco ha diventano
+ * lire vere nel portafoglio, meno la fetta di DaProd. Vedi `euro.ts`.
+ *
+ * `grezzo` e' quello che il gioco dice di avere; `fine` vuol dire che la
+ * partita e' finita (Claw, Neon): arriva il premio della velocita', la cassa
+ * della partita si chiude e il gioco ricomincia da capo. Senza `fine` (il
+ * Dozer, o chi smette prima) si incassa e basta.
+ *
+ * Torna `preso`: quante lire il gioco deve togliersi. Quello sopra il tetto
+ * resta nel gioco: non si perde, si porta a casa ricaricando ancora.
+ */
+export function incassaGioco(
+  deposito: Deposito,
+  chi: string,
+  idGioco: string,
+  grezzo: number,
+  opzioni: { fine?: boolean; chiudi?: boolean } = {},
+  adesso = Date.now(),
+) {
+  const gioco = giocoDi(idGioco);
+  const conto = deposito.conto(chi);
+  const cassa = cassaDi(conto, gioco.id, adesso);
+  const fine = Boolean(opzioni.fine) && gioco.siFinisce;
+  const minuti = Math.max(0, (adesso - cassa.inizio) / 60_000);
+  const conti = incasso({
+    valore: gioco.valore(Number(grezzo) || 0, cassa.messo),
+    messo: cassa.messo,
+    giaPreso: cassa.preso,
+    moltMax: gioco.moltMax,
+    bonus: fine ? bonusFine(cassa.messo, minuti) : 0,
+  });
+  if (conti.preso + conti.bonus <= 0 && !fine && !opzioni.chiudi) {
+    throw new NienteDaFare(
+      cassa.messo <= 0
+        ? "Prima si ricarica: si porta a casa al massimo " + gioco.moltMax + " volte quello che si mette."
+        : "Non c'e' niente da incassare: il tetto di questa partita e' gia' preso.",
+    );
+  }
+  if (conti.netto > 0) deposito.muovi(chi, conti.netto, true, (fine ? "partita finita a " : "incasso da ") + gioco.nome);
+  // La fetta di DaProd va nella riserva della Banca: torna alla gente coi premi.
+  if (conti.fetta > 0) deposito.versaFetta(conti.fetta);
+  cassa.preso += conti.preso + conti.bonus;
+  cassa.presoTot += conti.netto;
+  cassa.fettaTot += conti.fetta;
+  conto.esperienza += Math.floor(conti.netto / XP_OGNI_LIRE_PRESE) + (fine ? XP_FINE : 0);
+  deposito.attivita(chi, conti.netto / 20 + (fine ? 50 : 0));
+  const m = Math.round(minuti * 10) / 10;
+  cassa.ultimo = { quando: adesso, netto: conti.netto, bonus: conti.bonus, fetta: conti.fetta, finita: fine, minuti: m };
+  if (fine) {
+    cassa.finite += 1;
+    if (!cassa.record || m < cassa.record) cassa.record = m;
+  }
+  // Partita chiusa: la prossima ricarica ne apre una nuova.
+  if (fine || opzioni.chiudi) {
+    cassa.messo = 0;
+    cassa.preso = 0;
+    cassa.inizio = adesso;
+  }
+  deposito.salva();
+  return { ...conti, finita: fine, minuti: m, saldo: conto.saldo, euro: euroDaLire(conti.netto), cassa };
 }
 
 /**
@@ -246,7 +334,9 @@ export interface StatoSala {
   staccando: number;
   borsa: Listino;
   ultimoStacco: Stacco | null;
-  giochi: { id: string; nome: string; riga: string; ingresso: number }[];
+  giochi: GiocoInSala[];
+  /** Lire ed euro (1.4.8): il cambio, i tagli di ricarica, la fetta di DaProd. */
+  euro: { lirePerEuro: number; tagli: { euro: number; lire: number }[]; ricaricaMin: number; fettaDaProd: number };
   /** La Banca DaProd (1.4.5): i tre cassetti, la mia parte, gli ultimi premi. */
   banca: VetrinaBanca;
   /** L'ultimo premio della Banca vinto: la pagina lo dice una volta. */
@@ -271,8 +361,66 @@ export function statoSala(deposito: Deposito, chi: string, adesso = Date.now()):
     staccando: stacco(p.punti, b.quota, mia, gia).lire,
     borsa: b,
     ultimoStacco: conto.ultimoStacco ?? null,
-    giochi: Object.values(GIOCHI_SALA).map((g) => ({ id: g.id, nome: g.nome, riga: g.riga, ingresso: g.ingresso })),
+    giochi: Object.values(GIOCHI_SALA).map((g) => giocoInSala(conto, g, adesso)),
+    euro: {
+      lirePerEuro: LIRE_PER_EURO,
+      tagli: TAGLI_EURO.map((e, i) => ({ euro: e, lire: TAGLI_LIRE[i]! })),
+      ricaricaMin: RICARICA_MIN,
+      fettaDaProd: FETTA_DAPROD,
+    },
     banca: vetrina(deposito.statoBanca(), chi, adesso),
     premio: conto.ultimoPremio ?? null,
+  };
+}
+
+/** Un gioco com'e' messo per chi guarda (1.4.8): le regole e la sua cassa. */
+export interface GiocoInSala {
+  id: string;
+  nome: string;
+  riga: string;
+  ingresso: number;
+  moltMax: number;
+  siFinisce: boolean;
+  fine?: string;
+  /** La partita di adesso in quel gioco. */
+  messo: number;
+  preso: number;
+  /** Quanto si puo' ancora portare a casa in questa partita. */
+  tettoRimasto: number;
+  /** Da quanti minuti e' cominciata. */
+  minuti: number;
+  /** Il premio della velocita' se si finisse adesso. */
+  bonusSeFinisci: number;
+  /** Da sempre. */
+  messoTot: number;
+  presoTot: number;
+  partite: number;
+  finite: number;
+  record: number | null;
+}
+
+function giocoInSala(conto: Conto, g: (typeof GIOCHI_SALA)[IdGiocoSala], adesso: number): GiocoInSala {
+  const c = conto.giochi?.[g.id];
+  const messo = c?.messo ?? 0;
+  const preso = c?.preso ?? 0;
+  const minuti = c && messo > 0 ? Math.max(0, (adesso - c.inizio) / 60_000) : 0;
+  return {
+    id: g.id,
+    nome: g.nome,
+    riga: g.riga,
+    ingresso: g.ingresso,
+    moltMax: g.moltMax,
+    siFinisce: g.siFinisce,
+    fine: g.fine,
+    messo,
+    preso,
+    tettoRimasto: Math.max(0, Math.floor(messo * g.moltMax) - preso),
+    minuti: Math.round(minuti * 10) / 10,
+    bonusSeFinisci: g.siFinisce ? bonusFine(messo, minuti) : 0,
+    messoTot: c?.messoTot ?? 0,
+    presoTot: c?.presoTot ?? 0,
+    partite: c?.partite ?? 0,
+    finite: c?.finite ?? 0,
+    record: c?.record ?? null,
   };
 }

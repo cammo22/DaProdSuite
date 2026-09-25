@@ -229,3 +229,39 @@
   #radio .r-testa { font-size: 9.5px; letter-spacing: 1px; }
   #radio p { font-size: 13px; min-height: 0; }
 }
+
+/* ================================================= il telefono, una zona per volta (2.1.3)
+   «Su mobile e' troppo diviso in due»: l'Arena a tutto schermo, oppure una
+   scheda a tutto schermo con l'arena in un riquadro trascinabile (PiP). */
+#pipManiglia { display: none; }
+@media (max-width: 979px) {
+  body.vista-arena #colPannelli { display: none; }
+  body.vista-arena #colArena { flex: 1; height: auto; min-height: 0; }
+  body.vista-pannello #colPannelli { flex: 1; }
+  body.vista-pannello #colArena { position: fixed; z-index: 44; width: min(46vw, 210px); height: auto; min-height: 0;
+    left: calc(100vw - min(46vw, 210px) - 10px); top: 50vh; border-radius: 16px; overflow: hidden;
+    box-shadow: 0 14px 40px rgba(0,0,0,.7), 0 0 0 1px rgba(255,213,74,.35), 0 0 22px rgba(255,61,242,.25); }
+  body.vista-pannello #arena { height: auto; }
+  body.vista-pannello #arenaTesta, body.vista-pannello #arenaPiede, body.vista-pannello #bossBarra,
+  body.vista-pannello .suggerimento, body.vista-pannello #introBoss { display: none !important; }
+  body.vista-pannello #palco { aspect-ratio: 4 / 5; min-height: 0; flex: none; }
+  body.vista-pannello #pipManiglia { display: flex; align-items: center; justify-content: space-between; gap: 6px;
+    padding: 5px 6px 5px 10px; background: rgba(8,5,18,.92); border-bottom: 1px solid rgba(255,213,74,.25);
+    touch-action: none; cursor: grab; user-select: none; -webkit-user-select: none; }
+  #pipManiglia span { font: 800 10px/1 var(--f-tit, "Orbitron"), sans-serif; letter-spacing: 1.5px; color: var(--oro); }
+  #pipManiglia button { width: 30px; height: 26px; border-radius: 8px; font-size: 15px; line-height: 1; color: #fff;
+    background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.18); }
+  /* La mini borsa sul telefono: patrimonio e danni, niente grafico. */
+  #borsaHud { width: auto; grid-template-columns: 1fr; right: 12px; bottom: calc(190px + var(--sab)); padding: 7px 11px; }
+  /* Con l'arena davanti la scheda aperta resta ricordata, ma non si accende. */
+  body.vista-arena #barraMobile [data-scheda].on { color: var(--txt3); background: none; }
+  #borsaHud canvas, #hudProd, #hudFid { display: none; }
+  #hudPat { font-size: 14px; }
+}
+/* La Radio si tocca per saltarla. Sul telefono tutta (sta in alto, sopra la
+   testata, e non copre tasti); sul computer sta in basso sopra i pannelli, e
+   li' lascia passare i clic come prima: si salta dalla ✕. */
+@media (max-width: 979px) {
+  #radio { cursor: pointer; }
+  #radio.on { pointer-events: auto; }
+}

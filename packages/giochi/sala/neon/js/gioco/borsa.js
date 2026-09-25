@@ -101,7 +101,10 @@ const Borsa = (() => {
   // --- mini widget trascinabile
   function initHud() {
     const h = $("borsaHud");
-    h.innerHTML = `<canvas id="hudTela"></canvas><div class="bh-dati"><b id="hudProd">₤ 0/s</b><small id="hudDps">0 danno/s</small><small id="hudFid">Fiducia 100%</small></div>`;
+    // Patrimonio e danni in cima (2.1.3): «la mini borsa mobile deve mostrare
+    // patrimonio e danni». Sul telefono restano solo loro; sul computer anche
+    // la produzione, la fiducia e il grafico.
+    h.innerHTML = `<canvas id="hudTela"></canvas><div class="bh-dati"><b id="hudPat">₤ 0</b><small id="hudDps">💥 0/s</small><small id="hudProd">+₤ 0/s</small><small id="hudFid">Fiducia 100%</small></div>`;
     let drag = null;
     h.addEventListener("pointerdown", e => { drag = { x: e.clientX - h.offsetLeft, y: e.clientY - h.offsetTop, mosso: false }; h.setPointerCapture(e.pointerId); });
     h.addEventListener("pointermove", e => {
@@ -110,17 +113,24 @@ const Borsa = (() => {
       h.style.top = limita(e.clientY - drag.y, 0, innerHeight - h.offsetHeight) + "px";
       h.style.right = "auto"; h.style.bottom = "auto";
     });
-    h.addEventListener("pointerup", () => { if (drag && !drag.mosso) apriScheda("borsa"); drag = null; });
+    h.addEventListener("pointerup", () => {
+      if (drag && !drag.mosso) { apriScheda("borsa"); if (typeof vista === "function" && telefono()) vista("pannello"); }
+      drag = null;
+    });
   }
   function aggiornaHud() {
     const h = $("borsaHud");
-    const vis = S.opz.borsaHud && innerWidth > 900 && $("intro").classList.contains("via");
+    // Sul telefono si vede quando c'e' l'arena a tutto schermo: sopra una scheda
+    // coprirebbe quello che si sta leggendo, e c'e' gia' il riquadro dell'arena.
+    const vis = S.opz.borsaHud && $("intro").classList.contains("via") &&
+      (innerWidth > 979 || document.body.classList.contains("vista-arena"));
     h.classList.toggle("on", vis);
     if (!vis) return;
     disegna($("hudTela"), D.sec.slice(-90), SERIE.filter(s => s.k === "prod" || s.k === "fid").map(s => Object.assign({}, s, { on: true })), true);
     const u = D.sec[D.sec.length - 1] || { prod: 0, dps: 0, fid: 100 };
-    $("hudProd").textContent = "₤ " + fmt(u.prod) + "/s";
-    $("hudDps").textContent = fmt(u.dps) + " danno/s";
+    $("hudPat").textContent = "₤ " + fmt(u.pat || S.lire);
+    $("hudDps").textContent = "💥 " + fmt(u.dps) + "/s";
+    $("hudProd").textContent = "+₤ " + fmt(u.prod) + "/s";
     $("hudFid").textContent = "Fiducia " + Math.round(u.fid) + "%";
   }
 

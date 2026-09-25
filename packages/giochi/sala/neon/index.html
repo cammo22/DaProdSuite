@@ -26,7 +26,7 @@
 // corrispondente, compila APK, EXE e DMG e la pubblica con le note del CHANGELOG.
 // La stessa versione finisce in coda a CSS e JS (?v=...), così GitHub Pages non serve file vecchi.
 // ---------------------------------------------------------------------------------------------
-const VERSIONE = 'v2.1.2';
+const VERSIONE = 'v2.1.4';
 (function () {
   const v = "?v=" + VERSIONE.slice(1);
   const css = ["css/base.css", "css/gioco.css", "css/pannelli.css"];
@@ -74,6 +74,8 @@ const VERSIONE = 'v2.1.2';
   <main id="corpo">
     <section id="colArena">
       <div id="arena" class="carta">
+        <!-- Il PiP del telefono (2.1.3): da qui si trascina, e ⤢ la riporta a tutto schermo. -->
+        <div id="pipManiglia"><span>⠿ ARENA</span><button id="pipApri" aria-label="Arena a tutto schermo">⤢</button></div>
         <div id="arenaTesta">
           <div id="attoChip"><small id="attoNum">ATTO I</small><b id="attoNome">PONTICELLI</b></div>
           <div id="stanzaBox"><small>STANZA</small><b id="stanzaNum">1</b></div>

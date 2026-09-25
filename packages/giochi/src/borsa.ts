@@ -199,8 +199,27 @@ export interface GiocoSala {
   id: IdGiocoSala;
   nome: string;
   riga: string;
-  /** Il gettone d'ingresso, in lire: la lira che si brucia per giocare. */
+  /**
+   * Il gettone d'ingresso, in lire. Dalla 1.4.8 e' zero per tutti: si entra
+   * gratis e si paga ricaricando (`euro.ts`), come a una sala vera.
+   */
   ingresso: number;
+  /**
+   * Quanto vale in lire quello che il gioco dice di avere, all'incasso (1.4.8).
+   * Dozer e Claw contano in lire vere, uno a uno; Neon e' un clicker coi numeri
+   * che esplodono, e si contano gli ordini di grandezza.
+   */
+  valore: (grezzo: number, messo: number) => number;
+  /** Il tetto dell'incasso: al massimo tante volte quello che si e' messo. */
+  moltMax: number;
+  /**
+   * Il gioco si finisce (Claw: tutta la collezione; Neon: il Vesuvio che
+   * erutta). Finito, si incassa col premio della velocita' e si ricomincia da
+   * capo. Il Dozer non finisce: si incassa quando si vuole e il tavolo resta.
+   */
+  siFinisce: boolean;
+  /** Cosa vuol dire finire, detto a chi gioca. */
+  fine?: string;
   /** Da quello che il gioco racconta (i suoi gettoni vinti) ai punti della partita. */
   punti: (grezzo: number) => number;
   /** I tetti (§ 18.4): al minuto e al giorno. */
@@ -215,7 +234,10 @@ export const GIOCHI_SALA: Record<IdGiocoSala, GiocoSala> = {
     id: "dozer",
     nome: "Coin Dozer",
     riga: "Tre piani, tre spintori, e le pile che si fondono fino al miliardo.",
-    ingresso: 100,
+    ingresso: 0,
+    valore: (g) => Math.floor(Math.max(0, g)),
+    moltMax: 4,
+    siFinisce: false,
     punti: (g) => Math.floor(Math.max(0, g) / 5),
     tettoMinuto: 2_000,
     tettoGiorno: 30_000,
@@ -229,7 +251,11 @@ export const GIOCHI_SALA: Record<IdGiocoSala, GiocoSala> = {
     id: "claw",
     nome: "Claw Machine",
     riga: "La Grande Vasca: pesca, grabba e acchiappa i modellini.",
-    ingresso: 100,
+    ingresso: 0,
+    valore: (g) => Math.floor(Math.max(0, g)),
+    moltMax: 3,
+    siFinisce: true,
+    fine: "tutti e 20 i modellini in collezione",
     punti: (g) => Math.floor(Math.max(0, g) / 4),
     tettoMinuto: 2_000,
     tettoGiorno: 30_000,
@@ -243,7 +269,13 @@ export const GIOCHI_SALA: Record<IdGiocoSala, GiocoSala> = {
     id: "neon",
     nome: "Neon Partenope",
     riga: "Napoli 2099: colpisci le orde, libera la sirena, fai eruttare il Vesuvio.",
-    ingresso: 100,
+    ingresso: 0,
+    // Le lire di Neon arrivano a trenta cifre: ogni ordine di grandezza sopra il
+    // milione vale un decimo di quello che si e' messo.
+    valore: (g, messo) => Math.floor(Math.max(0, Math.log10(1 + Math.max(0, g)) - 6) * 0.1 * Math.max(0, messo)),
+    moltMax: 3,
+    siFinisce: true,
+    fine: "il Vesuvio che erutta",
     // Un clicker: i numeri esplodono. Si contano gli ordini di grandezza.
     punti: (g) => Math.round(60 * Math.log10(1 + Math.max(0, g))),
     tettoMinuto: 1_500,

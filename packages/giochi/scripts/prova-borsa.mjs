@@ -51,6 +51,17 @@ import {
   rispondi,
   COSTI_STUDIO,
   promptStudio,
+  LIRE_PER_EURO,
+  TAGLI_LIRE,
+  RICARICA_MIN,
+  lireDaEuro,
+  euroDaLire,
+  incasso,
+  bonusFine,
+  incassaGioco,
+  portafoglio,
+  gradoBanca,
+  alzaCassetto,
 } from "../dist/index.js";
 import { conCartella, dado, prova, tirandoLeSomme, uguale, vero } from "./attrezzi.mjs";
 
@@ -139,31 +150,131 @@ prova("lo stacco fa il conto, e si ferma al tetto del giorno", () => {
 
 /* ------------------------------------------------------ sul conto vero -- */
 
-prova("entrare costa il gettone, e la Borsa lo vede bruciare", () =>
+prova("1.4.8: entrare e' gratis, si paga ricaricando", () =>
   conCartella((file) => {
     const d = new Deposito(file);
-    d.muovi("pino", 1000);
-    const saldo = d.conto("pino").saldo;
-    const prima = d.borsa().reduce((s, o) => s + o.bruciate, 0);
-    entra(d, "pino", "dozer", ADESSO);
-    uguale(d.conto("pino").saldo, saldo - GIOCHI_SALA.dozer.ingresso);
-    const dopo = d.borsa().reduce((s, o) => s + o.bruciate, 0);
-    vero(dopo - prima === GIOCHI_SALA.dozer.ingresso, "bruciate " + prima + " → " + dopo);
-  }),
-);
-
-prova("senza lire non si entra", () =>
-  conCartella((file) => {
-    const d = new Deposito(file);
-    // Il regalo di benvenuto se ne va: resta un conto vuoto.
     d.muovi("pino", -d.conto("pino").saldo, false);
+    entra(d, "pino", "claw", ADESSO);
+    uguale(d.conto("pino").saldo, 0);
     let caduta = false;
     try {
-      entra(d, "pino", "claw", ADESSO);
+      ricarica(d, "pino", "claw", RICARICA_MIN, ADESSO);
     } catch (e) {
       caduta = e instanceof NienteDaFare;
     }
-    vero(caduta, "doveva dire di no, in italiano");
+    vero(caduta, "senza lire la ricarica deve dire di no, in italiano");
+  }),
+);
+
+/* ---------------------------------------------- lire ed euro (1.4.8) -- */
+
+prova("1 € = L. 1.936,27, e i tagli sono quelli chiesti in euro", () => {
+  uguale(LIRE_PER_EURO, 1936.27);
+  uguale(TAGLI_LIRE.join(","), "387,1936,9681,38725,96814,387254,968135");
+  uguale(lireDaEuro(1), 1936);
+  uguale(euroDaLire(1936.27), 1);
+  uguale(RICARICA_MIN, 387);
+});
+
+prova("l'incasso: la fetta di DaProd e' il 10%, e oltre il tetto resta nel gioco", () => {
+  const a = incasso({ valore: 1000, messo: 1000, giaPreso: 0, moltMax: 4 });
+  uguale(a.preso, 1000);
+  uguale(a.fetta, 100);
+  uguale(a.netto, 900);
+  const b = incasso({ valore: 10_000, messo: 1000, giaPreso: 0, moltMax: 3 });
+  uguale(b.preso, 3000, "al massimo tre volte il messo");
+  uguale(b.oltre, 7000);
+  const c = incasso({ valore: 10_000, messo: 1000, giaPreso: 2500, moltMax: 3 });
+  uguale(c.preso, 500, "il tetto conta quello gia' preso");
+});
+
+prova("il premio della velocita': pieno entro mezz'ora, zero dopo tre ore", () => {
+  uguale(bonusFine(1000, 10), 500);
+  uguale(bonusFine(1000, 30), 500);
+  uguale(bonusFine(1000, 105), 250);
+  uguale(bonusFine(1000, 200), 0);
+});
+
+prova("la cassa di un gioco: ricarica, incasso, fine partita e ricomincia", () =>
+  conCartella((file) => {
+    const d = new Deposito(file);
+    d.conto("pino").saldo = 10_000;
+    const xp0 = d.conto("pino").esperienza;
+    ricarica(d, "pino", "claw", 1936, ADESSO);
+    uguale(d.conto("pino").saldo, 10_000 - 1936);
+    vero(d.conto("pino").esperienza > xp0, "ricaricare da' esperienza");
+    const r = incassaGioco(d, "pino", "claw", 3000, { fine: true }, ADESSO + 20 * 60_000);
+    uguale(r.preso, 3000);
+    uguale(r.bonus, 968, "finita in 20 minuti: meta' del messo");
+    uguale(r.fetta, Math.floor((3000 + 968) * 0.1));
+    uguale(d.conto("pino").saldo, 10_000 - 1936 + r.netto);
+    const cassa = d.conto("pino").giochi.claw;
+    uguale(cassa.messo, 0, "la partita si chiude");
+    uguale(cassa.finite, 1);
+    uguale(cassa.record, 20);
+    vero(d.statoBanca().fette === r.fetta, "la fetta va nella Banca");
+    uguale(d.conto("pino").movimenti[0].perche, "partita finita a Claw Machine");
+  }),
+);
+
+prova("senza aver messo niente non si incassa", () =>
+  conCartella((file) => {
+    const d = new Deposito(file);
+    let caduta = false;
+    try {
+      incassaGioco(d, "pino", "dozer", 5000, {}, ADESSO);
+    } catch (e) {
+      caduta = e instanceof NienteDaFare;
+    }
+    vero(caduta);
+  }),
+);
+
+prova("Neon conta gli ordini di grandezza, non le trenta cifre", () => {
+  const v = GIOCHI_SALA.neon.valore(1e15, 1000);
+  vero(v > 0 && v < 3000, String(v));
+  uguale(GIOCHI_SALA.neon.valore(1e5, 1000), 0);
+});
+
+prova("il portafoglio: andamento, entrate e uscite per cosa, resa dei giochi", () =>
+  conCartella((file) => {
+    const d = new Deposito(file);
+    d.conto("pino").saldo = 10_000;
+    ricarica(d, "pino", "dozer", 1936, ADESSO);
+    incassaGioco(d, "pino", "dozer", 3872, {}, ADESSO);
+    const p = portafoglio(d.conto("pino"), d.impostazioni().perIlLivello);
+    uguale(p.saldo, d.conto("pino").saldo);
+    const dozer = p.giochi.find((g) => g.id === "dozer");
+    uguale(dozer.messo, 1936);
+    uguale(dozer.tornato, 3485);
+    uguale(dozer.resa, 80);
+    vero(p.uscite.some((x) => x.perche === "ricariche nei giochi"), JSON.stringify(p.uscite));
+    vero(p.entrate.some((x) => x.perche === "incassi dai giochi"), JSON.stringify(p.entrate));
+    vero(p.andamento.length === 1, "un giorno di andamento");
+  }),
+);
+
+prova("la Banca ha un grado, e chi comanda alza un cassetto dalla riserva", () => {
+  uguale(gradoBanca(0).nome, "Salvadanaio");
+  uguale(gradoBanca(300_000).nome, "Cassa di quartiere");
+  const b = bancaNuova(ADESSO);
+  const r = b.riserva;
+  uguale(alzaCassetto(b, "giorno", 5000), 5000);
+  uguale(b.riserva, r - 5000);
+  uguale(b.cassetti.giorno.lire, 5000);
+  uguale(alzaCassetto(b, "mese", 10 ** 12), r - 5000, "non piu' della riserva");
+});
+
+prova("chi comanda si vede fra i giocatori, in cima", () =>
+  conCartella((file) => {
+    const d = new Deposito(file);
+    d.conto("pino").saldo = 1000;
+    d.conto("anna").saldo = 1000;
+    const c = { nomeDi: (id) => id, gente: () => [{ id: "anna" }, { id: "pino" }] };
+    const r = rispondi(d, { id: "pino", nome: "pino", admin: true }, c, "GET", "/gente", {});
+    uguale(r.codice, 200);
+    uguale(r.dati.gente[0].chi, "pino");
+    uguale(r.dati.gente[0].io, true);
   }),
 );
 

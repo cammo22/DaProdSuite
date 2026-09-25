@@ -212,7 +212,10 @@ export {
   type IdGiocoSala,
   type Listino,
 } from "./borsa";
-export { azzeraPartita, entra, evento, giocaCarta, pescaCarta, ricarica, segnaPunti, stacca, statoSala, type StatoSala } from "./sala";
+export { azzeraPartita, entra, evento, giocaCarta, incassaGioco, pescaCarta, ricarica, segnaPunti, stacca, statoSala, XP_FINE, XP_OGNI_LIRE_MESSE, XP_OGNI_LIRE_PRESE, type GiocoInSala, type StatoSala } from "./sala";
+// Lire ed euro, la cassa dei giochi e il portafoglio (1.4.8).
+export * from "./euro";
+export { portafoglio, type Portafoglio, type PosizioneGioco } from "./portafoglio";
 export type { Borsa, Giudizio, OraDiBorsa, Partita, Stacco } from "./tipi";
 export { fileDellaSala } from "./sala-file";
 
@@ -237,6 +240,10 @@ export {
   segnaAttivita,
   versa as versaInBanca,
   versaInRiserva,
+  versaFetta,
+  alzaCassetto,
+  gradoBanca,
+  GRADI_BANCA,
   vetrina as vetrinaBanca,
   type Apertura,
   type Cassetto,

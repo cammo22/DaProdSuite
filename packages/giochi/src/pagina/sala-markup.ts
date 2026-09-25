@@ -73,9 +73,13 @@ export const MARKUP_SALA = `
           <div><b id="portafoglio-quante">L. 0</b><small id="portafoglio-diventa"></small></div>
           <button class="tasto-tondo" id="portafoglio-piu" aria-label="Piu">+</button>
         </div>
-        <input type="range" id="portafoglio-scorri" min="100" max="100" step="50" value="100" aria-label="Quante lire">
+        <!-- 1.4.8: i tagli sono in euro, gli stessi per tutti i giochi, e stanno solo qui. -->
         <div class="portafoglio-tagli" id="portafoglio-tagli"></div>
+        <input type="range" id="portafoglio-scorri" min="387" max="387" step="50" value="387" aria-label="Quante lire">
         <button class="btn grosso" id="portafoglio-ok">Ricarica</button>
+        <!-- 1.4.8: com'e' messa la partita in questo gioco, e l'incasso. -->
+        <div class="portafoglio-info" id="portafoglio-info"></div>
+        <button class="btn oro" id="portafoglio-incassa" hidden>Incassa</button>
         <p class="portafoglio-nota" id="portafoglio-nota"></p>
       </div>
     </div>

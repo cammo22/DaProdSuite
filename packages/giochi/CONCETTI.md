@@ -1326,6 +1326,48 @@ decide genera, chi chiede aspetta un si'». Quello che chi comanda scarta si
 rimborsa, una volta sola, la prima volta che chi l'aveva chiesto guarda.
 Le regole in `studio.ts`, le rotte `/studio` in `rotte.ts`.
 
+### 18.10 Lire ed euro, la cassa dei giochi, il portafoglio (1.4.8)
+
+Chiesto da Cammo il 25 settembre 2026: «aggiustiamo la valuta delle lire, in
+ogni gioco sono diverse; i tagli li dico in euro: 20 centesimi, 1, 5, 20, 50,
+200 e 500 euro… nel dozer piano piano si guadagna sempre di piu', ma se pulisco
+devo poter vincere, e una percentuale va alla cassa DaProd; gli altri giochi si
+finiscono il piu' in fretta possibile, le lire diventano lire vere e il gioco
+riparte da capo… io non sono un finanziere ma voglio questo sistema di lire ed
+euro».
+
+- **Una lira e' una lira.** Suite e giochi usano la stessa moneta: niente piu'
+  L.1 = L.20 nel Dozer o L.30 nella Claw. Le regole stanno in `src/euro.ts`.
+- **L'euro e' il metro**: 1 € = L. 1.936,27, il cambio del 2002. I tagli di
+  ricarica sono in euro, uguali per tutti i giochi, e si vedono solo toccando il
+  portafoglio nella cornice, con sotto com'e' messa la partita.
+- **Si entra gratis, si paga ricaricando.** Il gettone d'ingresso e' zero; la
+  ricarica minima e' 20 centesimi (L. 387).
+- **L'incasso lo fa il gioco**, perche' solo lui sa quante lire ha
+  (`cassa` in `daprod-lira.js`). La suite applica la regola del gioco
+  (`valore`: Dozer e Claw uno a uno, Neon a ordini di grandezza), il tetto
+  (al massimo `moltMax` volte il messo: 4 nel Dozer, 3 negli altri), e la
+  **fetta di DaProd del 10%**, che va nella riserva della Banca e torna alla
+  gente coi premi. Quello sopra il tetto resta nel gioco.
+- **Claw e Neon si finiscono** (tutta la collezione; il Vesuvio che erutta):
+  alla fine si incassa da soli col **premio della velocita'** (meta' del messo
+  entro mezz'ora, poi cala fino a zero alle tre ore) e si ricomincia da capo.
+  Anche l'incasso prima della fine fa ricominciare, senza premio.
+- **Il Dozer non finisce**: la Fortuna DaProd fa valere un po' di piu' ogni
+  moneta che cade, e il tavolo pulito paga un premio e rifa' la pila.
+- **I punti della partita restano per la slot** e le carte: i giochi d'arcade
+  non ne mandano piu', perche' le loro lire si incassano come sono.
+- **Giocare fa salire di livello**: un punto d'esperienza ogni venti lire
+  messe, uno ogni quaranta incassate, centocinquanta per una partita finita.
+- **Il portafoglio** (`src/portafoglio.ts`) fa per chi gioca quello che
+  DaProdFinanza fa per i soldi veri: quanto hai e come e' andata (il saldo di
+  fine giornata, novanta giorni), dove sono andate le lire (entrate e uscite per
+  cosa), e i giochi come titoli (messo, tornato, resa). Il libro lo scrive
+  `deposito.muovi`, che adesso vuole un perche'.
+- **Le casse** sono la stessa Banca vista da chi comanda, fatta gioco: la Banca
+  ha un grado che sale con le lire passate (dal Salvadanaio alla Zecca DaProd),
+  e dalla riserva si alza un forziere a un tocco.
+
 ## 17. Quello che ancora non e' deciso
 
 - ⚠ **Il costo del giro, adesso che il tetto e' tre euro.** Dall'11 settembre
