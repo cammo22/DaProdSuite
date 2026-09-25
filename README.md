@@ -10,7 +10,7 @@ Un programma solo per fare musica, immagini, video, voci e parlare con un avatar
 Ogni app la installi quando ti serve e la disinstalli quando non ti serve più.
 Gira sul tuo computer: niente account, niente chiavi API, codice aperto.
 
-[![versione](https://img.shields.io/badge/versione-1.4.7-00ff41)](https://github.com/cammo22/DaProdSuite/releases/latest)
+[![versione](https://img.shields.io/badge/versione-1.4.8-00ff41)](https://github.com/cammo22/DaProdSuite/releases/latest)
 [![licenza](https://img.shields.io/badge/licenza-MIT-5cff9d)](LICENSE)
 [![piattaforma](https://img.shields.io/badge/Windows-x64-3ddbff)](#requisiti)
 [![sito](https://img.shields.io/badge/sito-cammo22.github.io-ffa63d)](https://cammo22.github.io/DaProdSuite/)
@@ -109,12 +109,20 @@ tornano a chi gioca, come premio del giorno, della settimana e super jackpot del
 mese. E la stanza Genera comincia dallo **Studio**: Qwen-Image 2.1 in mano a chi
 gioca, con la scritta dentro l'immagine e il ritocco a parole.
 
+Dalla 1.4.8 **una lira è una lira**, e l'euro è il metro (1 € = L. 1.936,27,
+il cambio del 2002). Nei giochi si ricarica a tagli in euro, gli stessi per
+tutti. Quello che vinci torna in lire vere, meno il 10% di DaProd che va nella
+Banca. Claw e Neon sono partite da finire in fretta, col premio della velocità.
+Ognuno ha il suo **portafoglio**, fatto come DaProdFinanza: com'è andata, dove
+vanno le lire, la resa di ogni gioco. Chi comanda ha le **Casse DaProd**, con
+la Banca che sale di grado e i forzieri da alzare.
+
 Sul sito e nelle loro app i tre giochi restano demo normali: le lire sono di
 chi è collegato alla suite.
 
 ## A che punto siamo
 
-**Ultima pubblicata: 1.4.6** — la sala giochi che sta nel telefono. Prima, la 1.4.5: Qwen-Image 2.1 che parte davvero (40 passi, turbo a 5), la Banca DaProd e lo Studio. **La 1.4.0 — «Il fiore all'occhiello»:** La suite rivestita da
+**Ultima pubblicata: 1.4.8** — lire ed euro, i giochi che si vincono, il portafoglio e le casse. Prima, la 1.4.7: Qwen che parte anche senza la LoRA nuova e l'icona nuova; la 1.4.6: la sala giochi che sta nel telefono; la 1.4.5: Qwen-Image 2.1 che parte davvero (40 passi, turbo a 5), la Banca DaProd e lo Studio. **La 1.4.0 — «Il fiore all'occhiello»:** La suite rivestita da
 DaProd (vetro scuro, pioggia verde, bottoni aqua), Qwen-Image 2.1 al posto di
 FLUX per creare e modificare, YuE2 in Musica, il 3D da una foto con TRELLIS.2,
 il dado delle idee senza cliché, la sala d'arcade con la Lira DaProd e il

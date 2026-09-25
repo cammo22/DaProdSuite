@@ -23,6 +23,7 @@
  *         quanto: function () { return stato.lire; },          // cosa si porta a casa
  *         finita: function () { return collezioneCompleta(); },  // Claw e Neon
  *         togli: function (r) { ricominciaDaCapo(); },           // dopo l'incasso
+ *         chiudi: true,                                          // ogni incasso chiude la partita
  *       },
  *     });
  *     DaProdLira.evento("dozer", "jackpot");
@@ -191,7 +192,9 @@
       opzioni = opzioni || {};
       var grezzo = typeof opzioni.grezzo === "number" ? opzioni.grezzo : (cassa && cassa.quanto ? Number(cassa.quanto()) || 0 : 0);
       var fine = typeof opzioni.fine === "boolean" ? opzioni.fine : Boolean(cassa && cassa.finita && cassa.finita());
-      return allaSala("incassa", { gioco: gioco, grezzo: grezzo, fine: fine, chiudi: Boolean(opzioni.chiudi) }).then(function (r) {
+      // Claw e Neon ricominciano da capo a ogni incasso: la partita si chiude sempre.
+      var chiudi = Boolean(opzioni.chiudi || (cassa && cassa.chiudi));
+      return allaSala("incassa", { gioco: gioco, grezzo: grezzo, fine: fine, chiudi: chiudi }).then(function (r) {
         if (cassa && cassa.togli) { try { cassa.togli(r); } catch (e) { /* il gioco si arrangia */ } }
         return r;
       });

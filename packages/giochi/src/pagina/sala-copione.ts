@@ -33,6 +33,13 @@ export const COPIONE_SALA = `
     var cent = Math.round(e * 100);
     return '€ ' + puntiIt(Math.floor(cent / 100)) + ',' + String(cent % 100 + 100).slice(1);
   }
+  /** Lire corte per le pastiglie strette: «L. 9.681», «L. 38,7 k», «L. 1,2 M». */
+  function soldiCorti(n) {
+    var v = Math.round(Number(n) || 0);
+    if (Math.abs(v) < 10000) return soldi(v);
+    if (Math.abs(v) < 1000000) return 'L. ' + numeroIt(v / 1000, v < 100000 ? 1 : 0) + ' k';
+    return 'L. ' + numeroIt(v / 1000000, 1) + ' M';
+  }
   /** Un taglio in euro detto corto: «€ 0,20», «€ 5». */
   function taglioIt(e) { return '€ ' + (e < 1 ? numeroIt(e, 2) : puntiIt(e)); }
 
@@ -208,10 +215,10 @@ export const COPIONE_SALA = `
      */
     var h = '<span class="pastiglia lire borsellino" id="pastiglia-portafoglio" role="button" tabindex="0" title="Ricarica e incassa"><small>portafoglio</small><b>' + soldi(io ? io.saldo : 0) + '</b></span>';
     if (g && cassaDelGioco) {
-      h += '<span class="pastiglia"><small>messe</small><b>' + soldi(g.messo) + '</b></span>' +
-        '<span class="pastiglia punti"><small>fino a</small><b>' + soldi(g.tettoRimasto) + '</b></span>' +
+      h += '<span class="pastiglia"><small>messe</small><b>' + soldiCorti(g.messo) + '</b></span>' +
+        '<span class="pastiglia punti"><small>fino a</small><b>' + soldiCorti(g.tettoRimasto) + '</b></span>' +
         (g.siFinisce
-          ? '<span class="pastiglia su"><small>premio fine</small><b>+' + soldi(g.bonusSeFinisci) + '</b></span>'
+          ? '<span class="pastiglia su"><small>premio fine</small><b>+' + soldiCorti(g.bonusSeFinisci) + '</b></span>'
           : '<span class="pastiglia"><small>in euro</small><b>' + euroIt(io ? io.saldo : 0) + '</b></span>');
     } else {
       h += '<span class="pastiglia punti" id="pastiglia-punti"><small>partita</small><b>' + puntiIt(pt) + ' pt</b></span>' +

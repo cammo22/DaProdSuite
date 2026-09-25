@@ -244,7 +244,33 @@ function controllaTrofei() {
 
 // ============================================================ ERUZIONE (prestigio)
 function puoEruttare() { return S.visto.liberata && S.maxStanza >= 100 && braciEruzione() > 0; }
+
+/**
+ * ⚠ Nella sala giochi della DaProd Suite l'eruzione e' la fine della partita
+ * (2.1.4). Chiesto da Cammo: «puoi finire il gioco il piu' velocemente
+ * possibile e convertire le lire guadagnate in lire vere DaProd, ma il gioco
+ * si resetta e la prossima volta ricomincia da capo».
+ *
+ * Quindi dentro la suite far eruttare il Vesuvio incassa le lire di questo
+ * ciclo (la suite le conta a ordini di grandezza, col premio della velocita'),
+ * e poi si ricomincia da zero: niente braci da portarsi dietro. Se la sala non
+ * risponde si erutta come sempre. Fuori dalla suite non cambia niente.
+ */
+let incassando = false;
 function erutta() {
+  if (!puoEruttare()) return;
+  if (window.DaProdLira && DaProdLira.modo === "suite" && !incassando) {
+    incassando = true;
+    Suono.suona("eruzione");
+    Scena.eruzione(2);
+    Fx.lampo("rgba(255,200,80,.8)");
+    toast("🌋", "IL VESUVIO ERUTTA!", "Partita finita: incasso le lire in lire vere DaProd", { tipo: "lava", dur: 6000 });
+    DaProdLira.incassa({ fine: true, grezzo: S.lireCiclo }).catch(() => { incassando = false; eruttaDavvero(); });
+    return;
+  }
+  eruttaDavvero();
+}
+function eruttaDavvero() {
   if (!puoEruttare()) return;
   const b = braciEruzione();
   const tieni = {

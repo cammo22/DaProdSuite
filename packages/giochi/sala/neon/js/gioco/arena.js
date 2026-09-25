@@ -130,9 +130,7 @@ function applica(n, d, info) {
 // ============================================================ MORTI E BOTTINO
 function guadagna(l) {
   S.lire += l; S.totLire += l; S.lireCiclo += l;
-  // Quello che si guadagna fa anche punti della partita DaProd (a ordini di
-  // grandezza: e' un clicker, i numeri esplodono).
-  if (window.DaProdLira) DaProdLira.punti("neon", l);
+  // Dalla 2.1.4 niente punti DaProd: nella suite si incassa all'eruzione (economia.js).
 }
 
 function morte(n) {
