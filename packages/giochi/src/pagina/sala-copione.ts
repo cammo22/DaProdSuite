@@ -25,6 +25,14 @@ export const COPIONE_SALA = `
   var ICONE_SALA = { dozer: '🪙', claw: '🦾', neon: '🌋' };
   /** Il gioco sa incassare da solo (1.4.8): ha detto «cassa» nel ciao. */
   var cassaDelGioco = false;
+  /**
+   * Quante lire ha il gioco adesso (1.4.9), come le racconta lui ogni tre
+   * secondi. «Spendo ma l incasso rimane a poco e i punti non salgono»: dalla
+   * 1.4.8 i giochi non mandavano piu' punti, e la barra restava ferma. Adesso
+   * mostra le lire vere del gioco, dal vivo.
+   */
+  var nelGioco = -1;
+  var nelGiocoPrima = -1;
 
   function giocoDellaSala(id) { return (sala && sala.giochi || []).filter(function (x) { return x.id === id; })[0] || null; }
   /** Lire in euro, all'italiana: «€ 1.234,56». Il cambio e' quello del 2002 (euro.ts). */
@@ -34,12 +42,7 @@ export const COPIONE_SALA = `
     return '€ ' + puntiIt(Math.floor(cent / 100)) + ',' + String(cent % 100 + 100).slice(1);
   }
   /** Lire corte per le pastiglie strette: «L. 9.681», «L. 38,7 k», «L. 1,2 M». */
-  function soldiCorti(n) {
-    var v = Math.round(Number(n) || 0);
-    if (Math.abs(v) < 10000) return soldi(v);
-    if (Math.abs(v) < 1000000) return 'L. ' + numeroIt(v / 1000, v < 100000 ? 1 : 0) + ' k';
-    return 'L. ' + numeroIt(v / 1000000, 1) + ' M';
-  }
+  function soldiCorti(n) { return soldi(n); }
   /** Un taglio in euro detto corto: «€ 0,20», «€ 5». */
   function taglioIt(e) { return '€ ' + (e < 1 ? numeroIt(e, 2) : puntiIt(e)); }
 
@@ -51,7 +54,7 @@ export const COPIONE_SALA = `
     if (!sala) return null;
     var g = giocoDellaSala(giocoAperto);
     return {
-      modo: 'suite', saldo: io ? io.saldo : 0, partita: sala.partita.punti, quota: sala.borsa.quota,
+      modo: 'suite', saldo: io ? io.saldo : 0, valuta: inEuro ? 'euro' : 'lire', partita: sala.partita.punti, quota: sala.borsa.quota,
       variazione: sala.borsa.variazione, fetta: sala.fetta, tettoRimasto: sala.tettoRimasto, staccando: sala.staccando,
       // 1.4.8: la cassa del gioco aperto, e il cambio.
       lirePerEuro: sala.euro ? sala.euro.lirePerEuro : 1936.27,
@@ -76,7 +79,7 @@ export const COPIONE_SALA = `
       disegnaPartita();
       disegnaMano();
       if (viva('p-sala')) disegnaSala();
-      if (viva('p-borsa')) disegnaBorsa();
+      if (viva('p-portafoglio') && typeof disegnaPortafoglioGiocatore === 'function' && pf) disegnaPortafoglioGiocatore();
       disegnaCornice();
       mandaAlGioco();
       return s;
@@ -96,6 +99,8 @@ export const COPIONE_SALA = `
   function disegnaPartita() {
     var b = $('partita');
     if (!b || !sala) return;
+    // 1.4.9: i punti restano solo per chi gioca a Fortuna. Senza punti, niente pastiglia.
+    b.hidden = !(sala.partita.punti > 0);
     var su = sala.borsa.variazione >= 0;
     b.innerHTML = puntiIt(sala.partita.punti) + ' pt<span class="q"> · <span class="' + (su ? 'su' : 'giu') + '">' +
       (su ? '▲' : '▼') + ' ' + numeroIt(sala.borsa.quota, 2) + '</span></span>';
@@ -124,7 +129,7 @@ export const COPIONE_SALA = `
     if (!sala) return;
     // La stessa carta della Home (home-copione.ts): la schermata vera del gioco.
     $('sala-giochi').innerHTML = tuttiIGiochi().map(cartaGiocoHtml).join('');
-    $('sala-partita').innerHTML = cifreDellaPartita();
+    if (typeof disegnaStatisticheSala === 'function') disegnaStatisticheSala();
   }
 
   /** Le candele dell'ultima giornata e mezza, in un disegno solo. */
@@ -176,9 +181,6 @@ export const COPIONE_SALA = `
       '<div class="borsa-in-parole">Adesso 1.000 punti della tua partita ti danno <b>' + soldi(mille) + '</b> (' + euroIt(mille) + '). ' +
       'La Lira sale quando la gente spende e scende quando incassa.</div>';
     $('borsa-grafico').innerHTML = candele(b.candele || []);
-    var h = cifra(soldi(b.bruciate24), 'bruciate in 24 ore') + cifra(soldi(b.coniate24), 'coniate in 24 ore') +
-      cifra(String(b.giocatori24), b.giocatori24 === 1 ? 'persona in sala' : 'persone in sala');
-    $('borsa-numeri').innerHTML = h + cifreDellaPartita();
     $('stacca-borsa').disabled = !(sala.partita.punti > 0 && sala.tettoRimasto > 0);
     $('stacca-borsa').textContent = sala.partita.punti > 0 ? 'Incassa ' + soldi(sala.staccando) : 'Niente da incassare';
   }
@@ -215,16 +217,23 @@ export const COPIONE_SALA = `
      */
     var h = '<span class="pastiglia lire borsellino" id="pastiglia-portafoglio" role="button" tabindex="0" title="Ricarica e incassa"><small>portafoglio</small><b>' + soldi(io ? io.saldo : 0) + '</b></span>';
     if (g && cassaDelGioco) {
-      h += '<span class="pastiglia"><small>messe</small><b>' + soldiCorti(g.messo) + '</b></span>' +
-        '<span class="pastiglia punti"><small>fino a</small><b>' + soldiCorti(g.tettoRimasto) + '</b></span>' +
+      // 1.4.9: le lire del gioco dal vivo, e quello che conta per incassare.
+      h += '<span class="pastiglia punti" id="pastiglia-gioco"><small>nel gioco</small><b>' + (nelGioco >= 0 ? soldi(nelGioco) : '…') + '</b></span>' +
+        '<span class="pastiglia"><small>messe</small><b>' + soldi(g.messo) + '</b></span>' +
         (g.siFinisce
-          ? '<span class="pastiglia su"><small>premio fine</small><b>+' + soldiCorti(g.bonusSeFinisci) + '</b></span>'
-          : '<span class="pastiglia"><small>in euro</small><b>' + euroIt(io ? io.saldo : 0) + '</b></span>');
+          ? '<span class="pastiglia su"><small>a finirlo</small><b>' + soldi(g.premioFine || 0) + '+</b></span>'
+          : '<span class="pastiglia"><small>incassi fino a</small><b>' + soldi(g.tettoRimasto) + '</b></span>');
     } else {
-      h += '<span class="pastiglia punti" id="pastiglia-punti"><small>partita</small><b>' + puntiIt(pt) + ' pt</b></span>' +
+      h += '<span class="pastiglia punti" id="pastiglia-punti"><small>partita</small><b>' + cortoIt(pt) + ' pt</b></span>' +
         '<span class="pastiglia"><small>incassi</small><b>' + soldi(sala.staccando) + '</b></span>';
     }
     $('cornice-conto').innerHTML = h;
+    if (nelGiocoPrima >= 0 && nelGioco > nelGiocoPrima) {
+      var pg = $('pastiglia-gioco');
+      if (pg) { pg.classList.add('sale'); pg.setAttribute('data-piu', '+' + soldi(nelGioco - nelGiocoPrima)); }
+    }
+    nelGiocoPrima = nelGioco;
+    $('cornice-valuta').textContent = inEuro ? '€ ⇄ L' : 'L ⇄ €';
     if (ultimaPartita >= 0 && pt > ultimaPartita) {
       var p = $('pastiglia-punti');
       if (p) { p.classList.add('sale'); p.setAttribute('data-piu', '+' + puntiIt(pt - ultimaPartita)); }
@@ -293,13 +302,14 @@ export const COPIONE_SALA = `
       info += '<div class="riga"><small>messe in questa partita</small><b>' + soldi(g.messo) + '</b></div>' +
         '<div class="riga verde"><small>puoi portare a casa ancora</small><b>' + soldi(g.tettoRimasto) + '</b></div>';
       if (g.siFinisce) {
-        info += '<div class="riga oro"><small>premio se finisci adesso</small><b>+' + soldi(g.bonusSeFinisci) + '</b></div>' +
+        info += '<div class="riga oro"><small>premio se lo finisci</small><b>' + soldi(g.premioFine || 0) + ' + ' + soldi(g.bonusSeFinisci) + ' velocità</b></div>' +
           '<div class="riga"><small>record, a finirlo</small><b>' + (g.record ? numeroIt(g.record, 0) + ' min' : 'ancora niente') + '</b></div>';
       }
       info += '<p class="spiega">Una lira è una lira: quello che ricarichi lo ritrovi uguale nel gioco, e quando incassi torna qui. ' +
-        'Si porta a casa fino a ' + g.moltMax + ' volte quello che hai messo; DaProd tiene il ' + Math.round((sala.euro ? sala.euro.fettaDaProd : 0.1) * 100) +
-        '%, che torna a tutti coi premi della Banca.' +
-        (g.siFinisce ? ' Per finire: ' + sicuro(g.fine || '') + '. Più in fretta finisci, più è alto il premio; poi il gioco ricomincia da capo.' : '') + '</p>';
+        (g.siFinisce
+          ? 'Per finire: ' + sicuro(g.fine || '') + '. Chi finisce vince da 20 a 30 euro (di più col punteggio alto), il premio della velocità e un pezzo del montepremi della Banca; poi il gioco ricomincia da capo. Se smetti prima, porti a casa fino a ' + g.moltMax + ' volte quello che hai messo.'
+          : 'Il Dozer si mangia le lire: porti a casa al massimo ' + g.moltMax + ' volte quello che hai messo.') +
+        ' DaProd tiene il ' + Math.round((sala.euro ? sala.euro.fettaDaProd : 0.1) * 100) + '%, che torna a tutti coi premi della Banca.</p>';
     }
     $('portafoglio-info').innerHTML = info;
     $('portafoglio-incassa').hidden = !(g && cassaDelGioco);
@@ -377,9 +387,16 @@ export const COPIONE_SALA = `
     if (io) io.saldo = r.saldo;
     disegnaSaldo(true);
     var g = giocoDellaSala(giocoAperto);
-    avviso((r.finita ? 'Partita finita in ' + numeroIt(r.minuti, 0) + ' min! ' : 'Incassato: ') + soldi(r.netto) + ' (' + euroIt(r.netto) + ')' +
-      (r.bonus ? ', premio velocità +' + soldi(r.bonus) : '') + ' · a DaProd ' + soldi(r.fetta) +
-      (r.oltre > 0 ? ' · ' + soldi(r.oltre) + ' restano nel gioco (tetto)' : ''), 'bene');
+    if (r.finita) {
+      // 1.4.9: il premio di fine si dice grande, come una vincita.
+      grande('Partita finita in ' + numeroIt(r.minuti, 0) + ' min!', '+' + soldiPieni(r.netto),
+        'Premio ' + soldi(r.premio || r.preso) + (r.bonus ? ' + bonus ' + soldi(r.bonus) + (r.montepremi ? ' (montepremi ' + soldi(r.montepremi) + ')' : '') : '') +
+        ' · a DaProd ' + soldi(r.fetta) + '. Il gioco ricomincia da capo.', '#ffd166');
+    } else {
+      avviso('Incassato: ' + soldi(r.netto) + ' (' + euroIt(r.netto) + ')' + ' · a DaProd ' + soldi(r.fetta) +
+        (r.oltre > 0 ? ' · ' + soldi(r.oltre) + ' restano nel gioco (tetto)' : ''), 'bene');
+    }
+    nelGioco = -1; nelGiocoPrima = -1;
     if (typeof coriandoli === 'function') coriandoli(r.finita ? 90 : 40, ['#00ff41', '#3ddbff', '#ffd166']);
     var p = $('pastiglia-portafoglio');
     if (p) { p.classList.remove('cala'); void p.offsetWidth; p.classList.add('cala'); }
@@ -431,6 +448,7 @@ export const COPIONE_SALA = `
       ricaricaDelGioco = false;
       cassaDelGioco = false;
       ultimaPartita = -1;
+      nelGioco = -1; nelGiocoPrima = -1;
       chiudiPortafoglio();
       var g = (sala && sala.giochi || []).filter(function (x) { return x.id === id; })[0];
       $('cornice-nome').textContent = (ICONE_SALA[id] || '') + ' ' + (g ? g.nome : id);
@@ -507,6 +525,11 @@ export const COPIONE_SALA = `
         $('cornice-ricarica').title = d.ricarica + ', per un gettone d ingresso';
       }
       caricaSala().then(function () { rispondi(statoPerIlGioco()); });
+    } else if (m.cosa === 'nelGioco') {
+      // 1.4.9: il gioco racconta quante lire ha, per la pastiglia «nel gioco».
+      nelGioco = Math.max(0, Number(d.lire) || 0);
+      disegnaCornice();
+      rispondi({ ok: true });
     } else if (m.cosa === 'punti') {
       chiedi('POST', '/sala/punti', { gioco: d.gioco, grezzo: d.grezzo }).then(function (r) { rispondi(r); caricaFraPoco(); }, sbaglio);
     } else if (m.cosa === 'evento') {
@@ -541,6 +564,7 @@ export const COPIONE_SALA = `
     var carta = qui('[data-carta]');
     if (carta) { giocaLaCarta(carta.getAttribute('data-carta')); return; }
     if (qui('#cornice-esci')) { chiudiGioco(); return; }
+    if (qui('#cornice-valuta')) { cambiaValuta(); return; }
     if (qui('#cornice-ricarica') || qui('#al-volo-altro') || qui('#pastiglia-portafoglio')) { ricaricaDallaCornice(); return; }
     if (qui('#portafoglio-incassa')) { chiediIncassoAlGioco(); return; }
     var alVolo = qui('[data-al-volo]');
@@ -569,9 +593,21 @@ export const COPIONE_SALA = `
   // slot cambia la partita, quindi dopo un giro si riguarda.
   var vaiAPrima = vaiA;
   vaiA = function (dove) {
+    // 1.4.9: la Borsa sta dentro al Portafoglio.
+    if (dove === 'borsa') dove = 'portafoglio';
+    // Fortuna e Genera sono di chi comanda (1.4.9); lo Studio resta per tutti.
+    if (!(io && io.admin) && (dove === 'fortuna' || dove === 'slot' || dove === 'mie')) dove = 'sala';
     vaiAPrima(dove);
-    if (dove === 'sala' || dove === 'borsa') caricaSala();
+    if (dove === 'sala' || dove === 'portafoglio') caricaSala();
   };
+  allaValuta.push(function () {
+    disegnaPartita();
+    disegnaCornice();
+    if (viva('p-sala')) disegnaSala();
+    if (!$('portafoglio').hidden) disegnaPortafoglio();
+    // Anche il gioco: «deve switchare la valuta di tutta la pagina, compresi i giochi».
+    mandaAlGioco({ valuta: inEuro ? 'euro' : 'lire' });
+  });
   var giraPrima = gira;
   gira = function () {
     giraPrima();

@@ -112,6 +112,9 @@
   #evento small { display: block; font: 800 9px/1 var(--num); letter-spacing: 3px; color: #ffc9f8; margin-bottom: 6px; }
   #evento span { display: block; font: 900 26px/1.05 var(--num); color: #fff; text-shadow: 0 0 16px var(--mag); white-space: nowrap; }
   #evento em { display: block; font: 700 14px/1.2 var(--txt); font-style: normal; color: #e4dcf5; margin-top: 5px; }
+  /* 2.2.6: gli eventi cattivi si vedono rossi */
+  #evento.cattivo small { color: #ffb3bd; }
+  #evento.cattivo span { text-shadow: 0 0 16px #ff2340, 0 0 34px #ff2340; }
   #cinema i { position: fixed; left: 0; right: 0; height: 9vh; background: #000; z-index: 8; pointer-events: none;
     transform: translateY(-100%); transition: transform .6s ease; }
   #cinema i:last-child { bottom: 0; transform: translateY(100%); }
@@ -127,7 +130,6 @@
     display: grid; place-items: center; padding: 0; align-self: center; }
   .piccolo.off { filter: grayscale(1) brightness(.6); }
   .piccolo[hidden] { display: none; }
-  #valutaBtn { font: 900 15px/1 var(--num); color: var(--verde); }
 
   /* ---------- barra in basso ---------- */
   #barra { position: fixed; left: 0; right: 0; bottom: 0; z-index: 12; pointer-events: none;
@@ -447,7 +449,6 @@
       <div class="mini carta" id="fortunaBox" title="Fortuna DaProd: piu' giochi, piu' vale quello che cade"><div class="etich">FORTUNA</div><b id="fortunaN" class="verde">×1,00</b></div>
       <div class="mini carta" id="recordBox"><div class="etich">RECORD</div><b><img id="recordImg" alt=""><span id="recordTxt">—</span></b></div>
       <button id="scritteBtn" class="carta piccolo" aria-label="scritte" title="nascondi le scritte">💬</button>
-      <button id="valutaBtn" class="carta piccolo" aria-label="valuta" title="lire / euro" hidden>€</button>
     </div>
   </div>
 </div>
@@ -520,7 +521,7 @@
 <script type="module">
 import * as THREE from 'three';
 
-const VERSIONE = 'v2.2.5';
+const VERSIONE = 'v2.2.6';
 const $ = (id) => document.getElementById(id);
 const TATTILE = (typeof matchMedia === 'function') &&
   (matchMedia('(hover: none)').matches || matchMedia('(pointer: coarse)').matches);
@@ -537,7 +538,16 @@ addEventListener('error', (e) => mostraErrore(e && e.message ? e.message : 'erro
 
 // ============ NUMERI ============
 const punti = (n) => String(Math.round(Math.abs(n))).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-const lire = (n) => (n < 0 ? '-' : '') + 'L.' + punti(n);
+// 2.2.6: le cifre corte. «Nel coin dozer anche usare k e m»: sotto i centomila
+// si scrive tutto, sopra 150k, 15,5M, 1,2 mld.
+const corto = (n) => {
+  const a = Math.abs(Math.round(n)), it = (x, d) => x.toFixed(d).replace('.', ',').replace(/,0+$/, '');
+  if (a < 1e5) return punti(a);
+  if (a < 1e6) return it(a / 1e3, 0) + 'k';
+  if (a < 1e9) return it(a / 1e6, a < 1e7 ? 2 : 1) + 'M';
+  return it(a / 1e9, 1) + ' mld';
+};
+const lire = (n) => (n < 0 ? '-' : '') + 'L.' + corto(n);
 const rnd = (a, b) => a + Math.random() * (b - a);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
@@ -649,7 +659,10 @@ TAGLI.forEach((T, i) => { T.serve = i < ULTIMO ? Math.ceil(TAGLI[i + 1].v / T.v 
 const CHIP = TAGLI.length;                       // il gettone DaProd: fa girare lo slot
 const INFO_CHIP = { v: 0, nome: 'Gettone DaProd', r: 0.47, h: 0.17, m: 1.5, serve: Infinity };
 const tipo = (t) => (t === CHIP ? INFO_CHIP : TAGLI[t]);
-const MAX_LANCIO = 4;                            // si lanciano al massimo le L.50.000
+// 2.2.6: si lancia fino al milione (prima fino alle L.50.000). «Nel negozio ci
+// sono le lire solo fino a 50k … e' impossibile fare le altre 7 fusioni»: col
+// milione in mano, dal 5 milioni al miliardo le fusioni si fanno davvero.
+const MAX_LANCIO = 8;
 const costoSblocco = (t) => TAGLI[t].v * 20;
 const etichetta = (T) => T.v >= 1e9 ? '1 MLD' : T.v >= 1e6 ? (T.v / 1e6) + 'M' : punti(T.v);
 
@@ -670,9 +683,9 @@ const ABIL = {
   turbo:    { ico: '⏩', nome: 'Turbo', tasto: 'T', max: 4, costo: (n) => 6000 * Math.pow(2, n),
               ricarica: (n) => [0, 70, 64, 58, 50][n], durata: (n) => [0, 6, 8, 10, 12][n],
               desc: (n) => `per ${ABIL.turbo.durata(n)} s gli spintori vanno al doppio e spingono più lontano · ricarica ${ABIL.turbo.ricarica(n)} s` },
-  muro:     { ico: '🧱', nome: 'Muro', tasto: 'W', max: 4, costo: (n) => 10000 * Math.pow(2, n),
-              ricarica: (n) => [0, 100, 92, 84, 75][n], durata: (n) => [0, 10, 13, 16, 19][n],
-              desc: (n) => `per ${ABIL.muro.durata(n)} s chiude i buchi della casa · ricarica ${ABIL.muro.ricarica(n)} s` },
+  // 2.2.6: il MURO non c'e' piu'. «Togliamo il muro»: chiudeva i buchi della
+  // casa a comando, e il Dozer dalla 2.2.6 e' un mangiasoldi. I buchi li chiude
+  // ancora l'evento FRENESIA, per pochi secondi.
 };
 const POT = ABIL;                                // nome vecchio, per chi curiosa dalla console
 const rateRaffica = (n) => [0, 3, 4, 5, 6.5, 8][n] || 0;
@@ -691,7 +704,7 @@ const CORTESIA_MAX = 5, CORTESIA_FINESTRA = 6 * 3600e3;
 const stato = {
   saldo: SALDO_INIZIALE, sel: 0, maxLancio: 1, record: 1, euro: false,
   pot: Object.fromEntries(Object.keys(ABIL).map(k => [k, ABIL[k].base || 0])),
-  pronta: { scossa: 0, meteora: 0, calamita: 0, turbo: 0, muro: 0 },   // quando torna pronta (Date.now)
+  pronta: { scossa: 0, meteora: 0, calamita: 0, turbo: 0 },   // quando torna pronta (Date.now)
   st: { lanci: 0, vinte: 0, perse: 0, fusioni: 0, catenaMax: 0, vinto: 0, speso: 0, jackpot: 0, slot: 0, scosse: 0, eventi: 0, meteore: 0, saldoMax: SALDO_INIZIALE },
   opz: { audio: true, qualita: TATTILE ? 'media' : 'alta', auto: true, fps: false, scritte: true, valuta: 'lire', raffica: true },
   tavolo: null,
@@ -898,7 +911,11 @@ for (let t = 0; t <= CHIP; t++) { const [cv, g] = tela(128, 128); disegnaFaccia(
 // z cresce verso il giocatore. Ogni piano ha il suo spintore che esce da sotto il piano sopra:
 // quando avanza spinge le monete verso il bordo, dove cadono sul piano sotto. Dal terzo piano si
 // cade nella vasca delle vincite; ai lati del terzo piano ci sono i buchi della casa.
-const HW = 4.2;                 // mezza larghezza del campo
+// 2.2.6: «rendiamo il campo da gioco piu' grande, sia verticalmente che
+// orizzontalmente, e piu' profondo». Un metro in piu' per lato, e il terzo piano
+// (quello delle vincite) piu' lungo di 2,2: vedi AVANTI.
+const HW = 5.2;                 // mezza larghezza del campo (era 4,2)
+const AVANTI = 2.2;             // di quanto sono andati avanti il bordo del terzo piano, i buchi e la vasca
 const SPESS = 0.36;             // spessore dei piani
 // Ogni zona è profonda: 5 unità di panno libero sul piano 1, 6,8 sul piano 2, 8,8 sul piano 3.
 const Z_FONDO = -17;            // parete di fondo della macchina
@@ -906,7 +923,7 @@ const Z_COFANO = -15;           // bordo del cofano sotto cui esce il primo spin
 const LIV = [
   { nome: 'PIANO 1', y: 3.2, zBack: Z_FONDO, zEdge: -10.0, led: '#ff3df2', feltro: ['#3b1257', '#1d0a2e'] },
   { nome: 'PIANO 2', y: 1.6, zBack: Z_FONDO, zEdge: -3.2,  led: '#35e8ff', feltro: ['#12306a', '#081634'] },
-  { nome: 'PIANO 3', y: 0.0, zBack: Z_FONDO, zEdge: 5.6,   led: '#ffc23a', feltro: ['#0d5a3e', '#05281b'] },
+  { nome: 'PIANO 3', y: 0.0, zBack: Z_FONDO, zEdge: 5.6 + AVANTI,   led: '#ffc23a', feltro: ['#0d5a3e', '#05281b'] },
 ];
 // Spintori calmi: corse corte e lente, il terzo (quello giallo) lentissimo. La corsa si allunga e
 // accelera solo con TURBO o con l'evento FRENESIA.
@@ -918,10 +935,11 @@ const SPINTORI = [
 SPINTORI.forEach(p => { p.z = p.fMin; p.vz = 0; p.dz = 0; p.fi = p.fase; });
 // il carrello corre più in alto e più in fondo: la moneta cade proprio davanti al cofano
 const Z_LANCIO = -14.45, Y_LANCIO = 6.9, Y_BINARIO = 7.35;
-const VASCA = { y: -2.25, z0: 5.75, z1: 7.2 };
+const VASCA = { y: -2.25, z0: 5.75 + AVANTI, z1: 7.2 + AVANTI };
 const LUNGHEZZA_BUCHI = 1.6;
 let chiusuraBuchi = 0;          // 0 = buchi della casa aperti, 1 = chiusi (MURO o FRENESIA)
-const inizioBuchi = () => LIV[2].zEdge - LUNGHEZZA_BUCHI * (1 - chiusuraBuchi);
+// VORAGINE (2.2.6): per un po' i buchi della casa sono lunghi il triplo.
+const inizioBuchi = () => LIV[2].zEdge - LUNGHEZZA_BUCHI * (voragine.t > 0 ? 3 : 1) * (1 - chiusuraBuchi);
 
 // ============ RENDERER E SCENA ============
 const canvas = $('gioco');
@@ -1079,12 +1097,12 @@ SPINTORI.forEach((p) => {
   scatola(-HW, HW, 4.3, 4.75, Z_FONDO, Z_COFANO, [MAT.lacca, MAT.lacca, MAT.laccaViola, MAT.lacca, frC, MAT.lacca]);
   scatola(-HW, HW, 4.72, 4.78, Z_COFANO - 0.04, Z_COFANO + 0.02, led('#ff3df2', 3), false);
 }
-scatola(-HW - 1.3, HW + 1.3, -5.6, -0.6, Z_FONDO - 0.4, 5.6, MAT.lacca, false);          // scocca
+scatola(-HW - 1.3, HW + 1.3, -5.6, -0.6, Z_FONDO - 0.4, 5.6 + AVANTI, MAT.lacca, false);          // scocca
 scatola(-HW - 1.3, HW + 1.3, -5.6, 13.2, Z_FONDO - 0.9, Z_FONDO, MAT.lacca, false);      // schienale
 const FIANCHI = [
   { z0: Z_FONDO,      z1: LIV[0].zEdge, top: 5.15, led: '#ff3df2' },
   { z0: LIV[0].zEdge, z1: LIV[1].zEdge, top: 3.35, led: '#35e8ff' },
-  { z0: LIV[1].zEdge, z1: 3.2,          top: 1.55, led: '#ffc23a' },
+  { z0: LIV[1].zEdge, z1: 3.2 + AVANTI, top: 1.55, led: '#ffc23a' },
 ];
 for (const s of [-1, 1]) {
   for (const f of FIANCHI) {
@@ -1095,9 +1113,9 @@ for (const s of [-1, 1]) {
     scatola(xl - 0.03, xl + 0.03, f.top - 0.12, f.top - 0.04, f.z0, f.z1, led(f.led, 3, 'fianchi'), false);        // led interno
   }
   // parete esterna dei buchi della casa + fondo rosso dei buchi
-  scatola(Math.min(s * (HW + 0.9), s * (HW + 1.3)), Math.max(s * (HW + 0.9), s * (HW + 1.3)), -0.6, 0.85, 3.2, 5.6, MAT.laccaViola);
-  scatola(Math.min(s * (HW + 0.88), s * (HW + 1.32)), Math.max(s * (HW + 0.88), s * (HW + 1.32)), 0.85, 0.93, 3.2, 5.6, MAT.cromo);
-  scatola(Math.min(s * HW, s * (HW + 0.9)), Math.max(s * HW, s * (HW + 0.9)), -0.62, -0.58, 3.2, 5.6, led('#ff2340', 1.4, 'casa'), false);
+  scatola(Math.min(s * (HW + 0.9), s * (HW + 1.3)), Math.max(s * (HW + 0.9), s * (HW + 1.3)), -0.6, 0.85, 3.2 + AVANTI, 5.6 + AVANTI, MAT.laccaViola);
+  scatola(Math.min(s * (HW + 0.88), s * (HW + 1.32)), Math.max(s * (HW + 0.88), s * (HW + 1.32)), 0.85, 0.93, 3.2 + AVANTI, 5.6 + AVANTI, MAT.cromo);
+  scatola(Math.min(s * HW, s * (HW + 0.9)), Math.max(s * HW, s * (HW + 0.9)), -0.62, -0.58, 3.2 + AVANTI, 5.6 + AVANTI, led('#ff2340', 1.4, 'casa'), false);
 }
 // sponde mobili: il potenziamento "Sponde laterali" le allunga fino a chiudere i buchi
 const SPONDE = [-1, 1].map(s => {
@@ -1105,10 +1123,10 @@ const SPONDE = [-1, 1].map(s => {
   const corpo = new THREE.Mesh(new THREE.BoxGeometry(0.4, 2.15, 1), MAT.laccaViola); corpo.position.set(s * (HW + 0.2), 0.475, 0.5);
   const cap = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.08, 1), MAT.cromo); cap.position.set(s * (HW + 0.2), 1.59, 0.5);
   corpo.castShadow = corpo.receiveShadow = true;
-  g.add(corpo, cap); g.position.z = 3.2; scene.add(g); return g;
+  g.add(corpo, cap); g.position.z = 3.2 + AVANTI; scene.add(g); return g;
 });
 function aggiornaSponde() {
-  const l = Math.max(0.001, inizioBuchi() - 3.2);
+  const l = Math.max(0.001, inizioBuchi() - 3.2 - AVANTI);
   for (const g of SPONDE) { g.scale.z = l; g.visible = l > 0.01; }
   for (const c of CARTELLI_CASA) c.visible = chiusuraBuchi < 0.95;
 }
@@ -1122,14 +1140,14 @@ function cartello(testo, col, w, h) {
 }
 const CARTELLI_CASA = [-1, 1].map(s => {
   const m = cartello('CASA', '#ff4d6a', 0.85, 0.22); m.rotation.x = -Math.PI / 2; m.rotation.z = s * Math.PI / 2;
-  m.position.set(s * (HW + 0.45), -0.55, 4.6); return m;
+  m.position.set(s * (HW + 0.45), -0.55, 4.6 + AVANTI); return m;
 });
 
 // --- vasca delle vincite + frontale ---
-scatola(-HW - 1.3, HW + 1.3, -5.6, VASCA.y, 5.6, 7.75, MAT.vasca, false);
-scatola(-HW - 1.3, HW + 1.3, VASCA.y, -1.55, 7.35, 7.75, MAT.oro);                                           // labbro d'oro
-for (const s of [-1, 1]) scatola(Math.min(s * (HW + 0.3), s * (HW + 1.3)), Math.max(s * (HW + 0.3), s * (HW + 1.3)), VASCA.y, -0.6, 5.6, 7.75, MAT.lacca);
-scatola(-HW - 1.3, HW + 1.3, -1.6, -1.52, 7.33, 7.37, led('#ffc23a', 3.2, 'vasca'), false);
+scatola(-HW - 1.3, HW + 1.3, -5.6, VASCA.y, 5.6 + AVANTI, 7.75 + AVANTI, MAT.vasca, false);
+scatola(-HW - 1.3, HW + 1.3, VASCA.y, -1.55, 7.35 + AVANTI, 7.75 + AVANTI, MAT.oro);                                           // labbro d'oro
+for (const s of [-1, 1]) scatola(Math.min(s * (HW + 0.3), s * (HW + 1.3)), Math.max(s * (HW + 0.3), s * (HW + 1.3)), VASCA.y, -0.6, 5.6 + AVANTI, 7.75 + AVANTI, MAT.lacca);
+scatola(-HW - 1.3, HW + 1.3, -1.6, -1.52, 7.33 + AVANTI, 7.37 + AVANTI, led('#ffc23a', 3.2, 'vasca'), false);
 {
   const [cv, g] = tela(1024, 256);
   const gr = g.createLinearGradient(0, 0, 0, 256); gr.addColorStop(0, '#1b1030'); gr.addColorStop(1, '#07050c');
@@ -1140,10 +1158,10 @@ scatola(-HW - 1.3, HW + 1.3, -1.6, -1.52, 7.33, 7.37, led('#ffc23a', 3.2, 'vasca
   const t = tex(cv);
   const m = new THREE.Mesh(new THREE.PlaneGeometry(HW * 2 + 2.4, (HW * 2 + 2.4) / 4),
     new THREE.MeshStandardMaterial({ map: t, emissiveMap: t, emissive: 0xffffff, emissiveIntensity: 1.2, roughness: 0.35 }));
-  m.position.set(0, -3.75, 7.76); scene.add(m);
+  m.position.set(0, -3.75, 7.76 + AVANTI); scene.add(m);
   const tv = texFrontale('▼ VINCITE ▼', '#ffc23a');
   const v = new THREE.Mesh(new THREE.PlaneGeometry(HW * 2, 0.5), new THREE.MeshBasicMaterial({ map: tv, toneMapped: false }));
-  v.position.set(0, -1.0, 5.605); scene.add(v);
+  v.position.set(0, -1.0, 5.605 + AVANTI); scene.add(v);
 }
 
 // --- insegna neon DaProd, schermo dello slot e lampadine ---
@@ -1257,7 +1275,7 @@ function lampo(x, y, z, col, k = 12) {
 
 // ============ MONETE: una InstancedMesh per taglio ============
 const CAP = 1400;                                  // istanze per taglio (le pile ne usano una a moneta)
-const MAX_MONETE = TATTILE ? 320 : 440;
+const MAX_MONETE = TATTILE ? 420 : 560;          // 2.2.6: il campo e' piu' grande, ci stanno piu' monete
 const geoMoneta = new THREE.CylinderGeometry(1, 1, 1, 44, 1, false);
 function texBordo(T) {
   const [cv, g] = tela(512, 32);
@@ -1373,7 +1391,7 @@ function sali(a, b) {
 }
 function limiti(c) {
   const L3 = LIV[2];
-  const nelBuco = (c.z > inizioBuchi() && c.y < L3.y + 1.2) || (c.y < L3.y - 0.05 && c.z > 3.0 && Math.abs(c.x) > HW - c.r);
+  const nelBuco = (c.z > inizioBuchi() && c.y < L3.y + 1.2) || (c.y < L3.y - 0.05 && c.z > 3.0 + AVANTI && Math.abs(c.x) > HW - c.r);
   if (!nelBuco) {
     const lim = HW - c.r;
     if (c.x > lim) { c.x = lim; if (c.vx > 0) c.vx *= -0.2; }
@@ -1465,7 +1483,7 @@ function uscite(dt) {
     if (!c.vivo) continue;
     if (!c.fuori) {
       if (c.y < L3.y - 0.45 && c.z > L3.zEdge - 0.05 && Math.abs(c.x) < HW + 0.35) vinci(c);
-      else if (c.y < L3.y - 0.3 && Math.abs(c.x) > HW - 0.05 && c.z > 3.0) perdi(c);
+      else if (c.y < L3.y - 0.3 && Math.abs(c.x) > HW - 0.05 && c.z > 3.0 + AVANTI) perdi(c);
       else if (c.y < -1.5) togli(c);                      // sicurezza: nessuna moneta nel vuoto
     } else if (c.fuori === 'vinta') {
       if (c.y <= VASCA.y) { c.y = VASCA.y; c.vy = 0; c.vz *= 0.8; c.vx *= 0.8; c.rx *= 0.8; c.rz *= 0.8; c.wx = c.wz = 0; }
@@ -1478,10 +1496,12 @@ function uscite(dt) {
 function passo(dt) {
   tempoFisica += dt;
   turbo.t = Math.max(0, turbo.t - dt); calamita.t = Math.max(0, calamita.t - dt); muro.t = Math.max(0, muro.t - dt);
+  moltiplica.t = Math.max(0, moltiplica.t - dt); fermo.t = Math.max(0, fermo.t - dt); voragine.t = Math.max(0, voragine.t - dt);
   chiusuraBuchi = clamp(chiusuraBuchi + (muro.t > 0 ? dt : -dt) * 2.5, 0, 1);
   // la fase avanza a velocità variabile: TURBO accelera e allunga la corsa senza scatti
   turboK += ((turbo.t > 0 ? 1 : 0) - turboK) * Math.min(1, dt * 3);
   for (const p of SPINTORI) {
+    if (fermo.t > 0) { p.dz = 0; p.vz = 0; continue; }       // BLACKOUT: gli spintori si fermano
     p.fi += dt * 2 * Math.PI / p.per * (1 + 1.3 * turboK);
     const corsa = (p.fMax - p.fMin) * (1 + 0.6 * turboK);
     const nz = p.fMin + corsa * (0.5 - 0.5 * Math.cos(p.fi));
@@ -1703,13 +1723,13 @@ function vinci(c) {
     avviaSlot(); return;
   }
   // 2.2.5: la Fortuna DaProd — piu' si gioca, piu' vale quello che cade (vedi fortuna()).
-  const T = TAGLI[c.t], val = Math.round(T.v * c.n * fortuna());
+  const T = TAGLI[c.t], val = Math.round(T.v * c.n * fortuna() * (moltiplica.t > 0 ? moltiplica.k : 1));
   stato.saldo += val; stato.st.vinto += val; stato.st.vinte += c.n;
   // Dalla 2.2.5 nella suite non si mandano punti: il saldo si incassa com'e' (vedi DaProdLira.init).
   vinciteOnda += val; ondaT = 1.4;
   testo3D(c.x, 0.3, LIV[2].zEdge + 0.3, '+' + soldi(val), c.t >= 3 || c.n >= 4 ? 'gr' : '');
   particelle(c.x, -0.4, LIV[2].zEdge + 0.5, 8 + c.t * 3 + c.n * 2, T.gem || 0xffd54a, 0.9, { su: true });
-  lampo(c.x, -1.2, 6.4, 0xffc23a, 12 + c.t * 5 + c.n);
+  lampo(c.x, -1.2, 6.4 + AVANTI, 0xffc23a, 12 + c.t * 5 + c.n);
   suono.vinci(c.t + Math.min(4, c.n - 1));
   impulsoLed = Math.min(1, impulsoLed + 0.25);
   if (c.t >= 8) megaVincita();
@@ -1788,7 +1808,7 @@ function guardaLaFortuna() {
  * torna piena. Serve averne lanciate almeno trenta: un tavolo vuoto per altri
  * motivi (una prova, un salvataggio rotto) non paga.
  */
-const PILA_N = 250, PULITO_SOTTO = 0.33, PULITO_LANCI = 30, PULITO_QUOTA = 0.25;
+const PILA_N = 330, PULITO_SOTTO = 0.33, PULITO_LANCI = 30, PULITO_QUOTA = 0.25;
 let spesoAlPulito = null, lanciAlPulito = 0;
 function tavoloPulito(forza = false) {
   // Si conta da quando si apre il gioco: la spesa di ieri non e' di questa pila.
@@ -1974,13 +1994,59 @@ function disegnaSlot(dt) {
 }
 
 // ============ EVENTI DaProd: la camera va allo slot, i rulli decidono ============
+// ⚠ 2.2.6: gli eventi sono tanti, rari e forti. «Gli eventi sono sempre uguali e
+// poco impattanti: rendiamoli che possono essere positivi di molto o negativi di
+// molto, devono essere molti di piu', meno frequenti e molto impattanti.» Dodici,
+// sei buoni e sei cattivi, uno ogni 3-6 minuti di gioco. I premi si misurano sul
+// taglio piu' grosso che lanci: chi gioca col milione vince (e perde) da milione.
 const EVENTI = {
-  pioggia:  { sim: 3, nome: '🌧 PIOGGIA DaProd', desc: 'piovono monete su tutti i piani' },
-  frenesia: { sim: 1, nome: '⚙️ FRENESIA', desc: 'spintori scatenati e buchi della casa chiusi per 12 s' },
-  calamita: { sim: 6, nome: '🧲 CALAMITA DaProd', desc: 'per 15 s le monete uguali si impilano da sole' },
+  pioggia:   { sim: 3, buono: true,  nome: '🌧 PIOGGIA D\'ORO', desc: 'trenta monete del tuo taglio piu\' grosso piovono sul tavolo' },
+  frenesia:  { sim: 1, buono: true,  nome: '⚙️ FRENESIA', desc: 'spintori scatenati e buchi della casa chiusi per 20 s' },
+  calamita:  { sim: 6, buono: true,  nome: '🧲 CALAMITA DaProd', desc: 'per 25 s le monete uguali si impilano da sole' },
+  triplo:    { sim: 0, buono: true,  nome: '✖️3 TRIPLO DaProd', desc: 'per 30 s tutto quello che cade vale il triplo' },
+  bonanza:   { sim: 2, buono: true,  nome: '💰 BONANZA', desc: 'quaranta monete del tuo taglio piu\' grosso, dritte nel saldo' },
+  meteore:   { sim: 4, buono: true,  nome: '☄️ SCIAME DI METEORE', desc: 'cinque meteore sul bordo: si salvi chi puo\'' },
+  terremoto: { sim: 5, buono: false, nome: '🌋 TERREMOTO', desc: 'le monete sui lati del terzo piano finiscono alla casa' },
+  tassa:     { sim: 5, buono: false, nome: '🧾 TASSA DaProd', desc: 'la casa si prende il 20% del saldo' },
+  blackout:  { sim: 5, buono: false, nome: '🔌 BLACKOUT', desc: 'gli spintori si fermano per 25 s' },
+  voragine:  { sim: 5, buono: false, nome: '🕳 VORAGINE', desc: 'per 25 s i buchi della casa sono lunghi il triplo' },
+  gelo:      { sim: 5, buono: false, nome: '🧊 GELO', desc: 'per 30 s quello che cade vale la meta\'' },
+  ladro:     { sim: 5, buono: false, nome: '🦹 IL LADRO', desc: 'si porta via le otto monete piu\' preziose del tavolo' },
 };
+/** Il valore del taglio piu' grosso che si lancia: la misura dei premi e dei danni. */
+const misuraEvento = () => TAGLI[stato.maxLancio].v;
+/** Gli effetti che arrivano subito, appena lo slot li mostra (2.2.6). */
+function effettoEvento(id) {
+  const M = misuraEvento();
+  if (id === 'bonanza') {
+    const v = 40 * M; stato.saldo += v; stato.st.vinto += v;
+    avviso(`💰 BONANZA: +${soldi(v)}`, 'mag imp'); megaVincita(); aggiornaHUD();
+  } else if (id === 'tassa') {
+    const v = Math.floor(stato.saldo * 0.2); stato.saldo -= v;
+    avviso(`🧾 TASSA DaProd: -${soldi(v)}`, 'rosso imp'); scuoti(0.4); suono.casa(); aggiornaHUD();
+  } else if (id === 'terremoto') {
+    let via = 0;
+    for (const c of monete) {
+      if (!c.vivo || c.fuori || c.t === CHIP || livelloDi(c) !== 2) continue;
+      if (Math.abs(c.x) > HW - 1.6) { c.x = Math.sign(c.x) * (HW + 0.5); c.z = Math.max(c.z, inizioBuchi() + 0.3); c.vy = 1; via++; }
+    }
+    scuoti(1.2); faiScossa && faiScossa();
+    avviso(`🌋 TERREMOTO: ${via} monete verso la casa`, 'rosso imp');
+  } else if (id === 'ladro') {
+    const ricche = monete.filter(c => c.vivo && !c.fuori && c.t !== CHIP).sort((a, b) => TAGLI[b.t].v * b.n - TAGLI[a.t].v * a.n).slice(0, 8);
+    let valore = 0;
+    for (const c of ricche) { valore += TAGLI[c.t].v * c.n; particelle(c.x, c.y + 0.3, c.z, 12, 0xff2340, 0.8, { su: true }); c.fuori = 'casa'; c.tt = 0; }
+    avviso(`🦹 IL LADRO: sparite monete per ${soldi(valore)}`, 'rosso imp'); suono.casa();
+  } else if (id === 'meteore') {
+    // Le meteore dell'evento non chiedono l'abilita' e non la scaricano.
+    for (let i = 0; i < 5; i++) setTimeout(() => {
+      const x = rnd(-HW + 1, HW - 1), z = rnd(LIV[2].zEdge - 3.5, LIV[2].zEdge - 0.8), y = quotaPiano(z);
+      meteore.push({ x, z, yF: y, y: y + 11, vy: -14, raggio: 1.9, forza: 1.7 }); suono.fischio();
+    }, 400 + i * 450);
+  }
+}
 const cine = { fase: null, t: 0, b: 0, evento: null };      // fase: va → gira → mostra → torna
-let prossimoEvento = rnd(60, 90);                            // secondi di gioco attivo
+let prossimoEvento = rnd(100, 160);                          // secondi di gioco attivo
 const DURATA_VA = 1.5, DURATA_MOSTRA = 2.0, DURATA_TORNA = 1.3;
 function avviaEvento(id) {
   if (cine.fase || slot.gira) return false;
@@ -1999,7 +2065,8 @@ function aggiornaEventi(dt) {
     if (!inGioco) return;
     // conta solo il tempo in cui si sta giocando davvero (niente eventi a gioco fermo o nel negozio)
     if (!negozioAperto() && tempoGioco - ultimaAzione < 25 && !slot.gira && !mira) prossimoEvento -= dt;
-    if (prossimoEvento <= 0) { prossimoEvento = rnd(110, 170); avviaEvento(); }
+    // 2.2.6: piu' rari (3-6 minuti di gioco) e mezzo e mezzo fra buoni e cattivi.
+    if (prossimoEvento <= 0) { prossimoEvento = rnd(180, 360); avviaEvento(); }
     return;
   }
   cine.t += dt;
@@ -2015,14 +2082,19 @@ function aggiornaEventi(dt) {
     if (cine.t >= DURATA_MOSTRA) {
       cine.fase = 'torna'; cine.t = 0;
       $('evento').classList.remove('su'); document.body.classList.remove('cine');
-      if (cine.evento === 'pioggia') { pioggia(14, 1, 1, 0.07); pioggia(2, 2, 2, 0.12); }
+      if (cine.evento === 'pioggia') { const t = stato.maxLancio; pioggia(24, Math.max(0, t - 1), t, 0.06); pioggia(6, t, Math.min(ULTIMO, t + 1), 0.1); }
+      else effettoEvento(cine.evento);
     }
   } else if (cine.fase === 'torna') {
     cine.b = 1 - liscia(Math.min(1, cine.t / DURATA_TORNA));
     if (cine.t >= DURATA_TORNA) {
       cine.fase = null; cine.b = 0;
-      if (cine.evento === 'frenesia') { turbo.t = Math.max(turbo.t, 12); muro.t = Math.max(muro.t, 12); }
-      if (cine.evento === 'calamita') calamita.t = Math.max(calamita.t, 15);
+      if (cine.evento === 'frenesia') { turbo.t = Math.max(turbo.t, 20); muro.t = Math.max(muro.t, 20); }
+      if (cine.evento === 'calamita') calamita.t = Math.max(calamita.t, 25);
+      if (cine.evento === 'triplo') { moltiplica.t = 30; moltiplica.k = 3; }
+      if (cine.evento === 'gelo') { moltiplica.t = 30; moltiplica.k = 0.5; }
+      if (cine.evento === 'blackout') fermo.t = 25;
+      if (cine.evento === 'voragine') voragine.t = 25;
       aggiornaAbilitaUI(true);
     }
   }
@@ -2032,8 +2104,9 @@ function esitoEvento(id) {
   slot.msg = `${E.nome.replace(/^\S+\s/, '')}!  ${E.desc.toUpperCase()}`; slot.vinto = 2;
   festa = 3; scuoti(0.35); suono.rivela();
   $('eventoTxt').textContent = E.nome; $('eventoSub').textContent = E.desc;
+  $('evento').classList.toggle('cattivo', !E.buono);
   $('evento').classList.add('su');
-  avviso(`🎰 EVENTO DaProd: ${E.nome}`, 'mag imp');
+  avviso(`🎰 EVENTO DaProd: ${E.nome}`, E.buono ? 'mag imp' : 'rosso imp');
   daSalvare = true;
 }
 function finisciEvento() {                            // per le prove: porta l'evento fino in fondo
@@ -2044,6 +2117,8 @@ function finisciEvento() {                            // per le prove: porta l'e
 
 // ============ ABILITÀ: scossa, raffica, meteora, calamita, turbo, muro ============
 const turbo = { t: 0 }, calamita = { t: 0 }, muro = { t: 0 };
+// Gli eventi della 2.2.6: moltiplicatore delle vincite, spintori fermi, buchi larghi.
+const moltiplica = { t: 0, k: 1 }, fermo = { t: 0 }, voragine = { t: 0 };
 let turboK = 0, mira = false;
 const prontaTra = (id) => Math.max(0, (stato.pronta[id] || 0) - Date.now());
 function usaAbilita(id) {
@@ -2143,10 +2218,14 @@ function scuotiAbilita(id) {
 }
 
 // ============ HUD ============
-// soldi(): lire o euro a seconda dell'opzione (l'euro si sblocca arrivando a L.1.000.000)
+// soldi(): lire, o euro se chi gioca nella sala DaProd ha scelto gli euro.
+// ⚠ 2.2.6: il cambio di valuta non sta piu' nel gioco. «Togliamo dal gioco il
+// fatto di cambiare la valuta, e mettiamo il pulsante di cambia valuta vicino a
+// incassa»: lo sceglie la sala, e vale per tutta la pagina. Fuori dalla suite
+// il Dozer e' una demo, e parla in lire.
 const fmtEuro = new Intl.NumberFormat('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const inEuro = () => stato.euro && stato.opz.valuta === 'euro';
-const soldi = (n) => inEuro() ? (n < 0 ? '-' : '') + '€' + fmtEuro.format(Math.abs(n) / LIRE_PER_EURO) : lire(n);
+const inEuro = () => !!(window.DaProdLira && DaProdLira.valuta && DaProdLira.valuta() === 'euro');
+const soldi = (n) => inEuro() ? (n < 0 ? '-' : '') + '€' + (Math.abs(n) / LIRE_PER_EURO >= 1e4 ? corto(Math.abs(n) / LIRE_PER_EURO) : fmtEuro.format(Math.abs(n) / LIRE_PER_EURO)) : lire(n);
 const nomeTaglio = (t) => t === CHIP ? INFO_CHIP.nome : inEuro() ? soldi(TAGLI[t].v) : TAGLI[t].nome;
 let saldoMostrato = stato.saldo;
 function aggiornaFortuna() { $('fortunaN').textContent = '×' + fortuna().toFixed(2).replace('.', ','); }
@@ -2165,19 +2244,17 @@ function controllaEuro() {
   if (stato.saldo > stato.st.saldoMax) stato.st.saldoMax = stato.saldo;
   if (!stato.euro && stato.st.saldoMax >= EURO_A) {
     stato.euro = true; daSalvare = true;
-    avviso('💶 INCREDIBILE: UN MILIONE DI LIRE! Ora puoi giocare in euro (tasto €)', 'mag imp');
+    avviso('💶 INCREDIBILE: UN MILIONE DI LIRE!', 'mag imp');
     suono.sblocco(); festa = 4;
   }
-  $('valutaBtn').hidden = !stato.euro;
-  $('valutaBtn').textContent = inEuro() ? '₤' : '€';
 }
-function cambiaValuta() {
-  if (!stato.euro) { avviso('💶 La valuta in euro si sblocca arrivando a L.1.000.000', 'rosso imp'); suono.errore(); return false; }
-  stato.opz.valuta = inEuro() ? 'lire' : 'euro'; suono.tick();
+// Il gioco non cambia piu' valuta da se' (2.2.6): ridisegna quando la cambia la sala.
+function ridisegnaValuta() {
   saldoMostrato = stato.saldo;
   rendiSelettore(); rendiIntro(); aggiornaHUD(); if (negozioAperto()) rendiNegozio();
-  daSalvare = true; return true;
 }
+function cambiaValuta() { return false; }
+if (window.DaProdLira && DaProdLira.suValuta) DaProdLira.suValuta(ridisegnaValuta);
 function aggiornaSaldo(dt) {
   const d = stato.saldo - saldoMostrato;
   saldoMostrato = Math.abs(d) < 1 ? stato.saldo : saldoMostrato + d * Math.min(1, dt * 9);
@@ -2337,9 +2414,6 @@ function rendiNegozio() {
     const q = stato.opz.qualita;
     h += `<div class="sezione">AUDIO E SCRITTE</div><div class="opz"><button data-opz="audio" class="${stato.opz.audio ? 'on' : ''}">🔊 ${stato.opz.audio ? 'ACCESO' : 'SPENTO'}</button>
         <button data-opz="scritte" class="${stato.opz.scritte ? 'on' : ''}">💬 SCRITTE ${stato.opz.scritte ? 'ACCESE' : 'SPENTE'}</button></div>
-      <div class="sezione">VALUTA</div><div class="opz">${stato.euro
-        ? `<button data-opz="valuta" class="${inEuro() ? '' : 'on'}">₤ LIRE</button><button data-opz="valuta" class="${inEuro() ? 'on' : ''}">€ EURO</button>`
-        : `<button disabled>🔒 € EURO · si sblocca arrivando a L.1.000.000</button>`}</div>
       <div class="sezione">GRAFICA</div><div class="opz">
         <button data-opz="q-alta" class="${q === 'alta' ? 'on' : ''}">ALTA · bagliori + ombre</button>
         <button data-opz="q-media" class="${q === 'media' ? 'on' : ''}">MEDIA · bagliori</button>
@@ -2347,7 +2421,7 @@ function rendiNegozio() {
       <div class="opz" style="margin-top:6px"><button data-opz="auto" class="${stato.opz.auto ? 'on' : ''}">QUALITÀ AUTOMATICA ${stato.opz.auto ? 'ON' : 'OFF'}</button>
         <button data-opz="fps" class="${stato.opz.fps ? 'on' : ''}">FPS ${stato.opz.fps ? 'ON' : 'OFF'}</button></div>
       <div class="sezione">PARTITA</div><div class="opz"><button data-opz="reset" class="rosso">🗑 AZZERA TUTTO</button></div>
-      <div class="sezione">TASTIERA</div><div class="riga"><div class="info"><small>1–5 scegli la moneta · Spazio lancia · S scossa · R raffica · F meteora · C calamita · T turbo · W muro · N negozio · M audio · H scritte · V valuta · Esc chiude</small></div></div>`;
+      <div class="sezione">TASTIERA</div><div class="riga"><div class="info"><small>1–5 scegli la moneta · Spazio lancia · S scossa · R raffica · F meteora · C calamita · T turbo · N negozio · M audio · H scritte · Esc chiude</small></div></div>`;
   } else {
     const s = stato.st;
     const voci = [['Lanci', punti(s.lanci)], ['Monete vinte', punti(s.vinte)], ['Vinto in totale', soldi(s.vinto)], ['Speso nei lanci', soldi(s.speso)],
@@ -2397,7 +2471,6 @@ $('negozioBtn').addEventListener('click', apriNegozio);
 function aggiornaAudioBtn() { $('audioBtn').textContent = stato.opz.audio ? '🔊' : '🔇'; $('audioBtn').classList.toggle('off', !stato.opz.audio); }
 $('audioBtn').addEventListener('click', () => { cambiaOpzione('audio'); });
 $('scritteBtn').addEventListener('click', cambiaScritte);
-$('valutaBtn').addEventListener('click', cambiaValuta);
 
 // ============ SCHERMATA INIZIALE: si sceglie la moneta ============
 let inGioco = false, accensione = 0;
@@ -2491,7 +2564,6 @@ addEventListener('keydown', (e) => {
   else if (k === 'n' || k === 'b') negozioAperto() ? chiudiNegozio() : apriNegozio();
   else if (k === 'm') cambiaOpzione('audio');
   else if (k === 'h') cambiaScritte();
-  else if (k === 'v') cambiaValuta();
   else { for (const id in ABIL) if (ABIL[id].tasto.toLowerCase() === k) { usaAbilita(id); break; } }
 });
 
@@ -2501,7 +2573,7 @@ const bersaglio = new THREE.Vector3();
 // Inquadratura automatica: cerca distanza e punto di mira perché tutta la macchina (insegna in alto,
 // vasca in basso) stia fra l'HUD e la barra delle monete, su qualsiasi schermo.
 const PUNTI_MACCHINA = [];
-for (const x of [-HW - 1.3, HW + 1.3]) for (const [y, z] of [[-2.3, 7.75], [-1.5, 7.75], [13.2, Z_FONDO], [5.2, Z_FONDO], [1.6, LIV[1].zEdge]]) PUNTI_MACCHINA.push(new THREE.Vector3(x, y, z));
+for (const x of [-HW - 1.3, HW + 1.3]) for (const [y, z] of [[-2.3, 7.75 + AVANTI], [-1.5, 7.75 + AVANTI], [13.2, Z_FONDO], [5.2, Z_FONDO], [1.6, LIV[1].zEdge]]) PUNTI_MACCHINA.push(new THREE.Vector3(x, y, z));
 const camProva = new THREE.PerspectiveCamera();
 let inquadratura = null;
 function calcolaInquadratura() {
@@ -2808,7 +2880,8 @@ window.DOZER = {
   nuovaMoneta: (t, x, y, z, n = 1) => { const c = nuovaMoneta(t, x, y, z, n); c.py = y; c.dx = x; c.dy = y; c.dz = z; return c; },
   usaAbilita, sbloccaAbilita, lanciaMeteora, impattoMeteora, meteore: () => meteore.length,
   meteoraSubito: (x, z) => { if (!lanciaMeteora(x, z)) return false; const m = meteore.pop(); impattoMeteora(m); return true; },
-  timer: () => ({ turbo: turbo.t, calamita: calamita.t, muro: muro.t, chiusura: chiusuraBuchi, turboK }),
+  timer: () => ({ turbo: turbo.t, calamita: calamita.t, muro: muro.t, chiusura: chiusuraBuchi, turboK, moltiplica: moltiplica.t, k: moltiplica.k, fermo: fermo.t, voragine: voragine.t }),
+  effettoEvento, misuraEvento, corto, AVANTI,
   avviaEvento, finisciEvento, cine, prossimoEvento: () => prossimoEvento,
   cambiaValuta, cambiaScritte, soldi, controllaEuro, aggiornaHUD,
   pulisci: () => { monete = []; },

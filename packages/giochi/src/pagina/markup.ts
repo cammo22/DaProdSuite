@@ -58,8 +58,9 @@ export const MARKUP = `<header>
     La partita (1.4.0, CONCETTI.md § 18): i punti fatti da quando si e'
     staccato, e dove sta la Lira. Si tocca e si va alla Borsa.
   -->
-  <button class="partita" id="partita" data-va="borsa" title="La partita e la Borsa della Lira">0 pt</button>
-  <button class="saldo" id="saldo" title="Tocca per vedere in euro">L. 0</button>
+  <button class="partita" id="partita" data-va="portafoglio" title="I punti di Fortuna" hidden>0 pt</button>
+  <!-- 1.4.9: si tocca e cambia valuta a tutta la sala, giochi compresi. -->
+  <button class="saldo" id="saldo" title="Tocca: lire o euro, in tutta la sala">L. 0</button>
 </header>
 
 <main>
@@ -70,10 +71,12 @@ export const MARKUP = `<header>
   -->
   <div class="sotto" id="sotto">
     <div class="sotto-fila" data-di="gioca">
-      <button data-va="sala">Sala</button><button data-va="fortuna">Fortuna</button><button data-va="borsa">Borsa</button><button data-va="portafoglio">Portafoglio</button>
+      <!-- 1.4.9: la Borsa sta nel Portafoglio; Fortuna, per ora, e' di chi comanda. -->
+      <button data-va="sala">Sala</button><button data-va="portafoglio">Portafoglio</button><button data-va="fortuna" class="solo-admin">Fortuna</button>
     </div>
     <div class="sotto-fila" data-di="genera">
-      <button data-va="studio">Studio</button><button data-va="slot">Combinazioni</button><button data-va="mie">Le mie</button>
+      <!-- 1.4.9: «il genera lasciamolo solo per admin»; lo Studio resta a tutti, a pagamento e col si' di un admin. -->
+      <button data-va="studio">Studio</button><button data-va="slot" class="solo-admin">Combinazioni</button><button data-va="mie" class="solo-admin">Le mie</button>
     </div>
     <div class="sotto-fila" data-di="admin">
       <button data-va="fila" id="tasto-fila" hidden>Fila<span class="pallino" id="quante-attesa" hidden></span></button>

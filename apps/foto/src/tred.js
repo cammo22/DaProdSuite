@@ -29,6 +29,7 @@ import { QUALITA, TAPPE_MODELLINO, TRELLIS2, avanzamentoModellino, grafoModellin
 import { collegaScaricamento } from "/comune/scaricamento.js";
 
 const $ = (id) => document.getElementById(id);
+const suite = window.daprodSuite;
 const RICORDO = "daprod.foto.modellini";
 const MOTORE = "http://127.0.0.1:8188";
 
@@ -37,6 +38,11 @@ let qualita = "gioco";
 let pronto = false;
 let barra = null;
 let visore = null;
+/**
+ * Chi aspetta questo modellino da fuori (1.4.9): il titolo da dare alla sua
+ * foto. `null` quando lo fa chi sta al computer.
+ */
+let daFuori = null;
 
 /** I modellini fatti, dal più nuovo. Stanno nel browser: sono indirizzi di file. */
 function modellini() {
@@ -112,6 +118,16 @@ async function accendiVisore() {
   });
 
   visore = {
+    /**
+     * Una foto del modellino, com'è adesso nel visore (1.4.9). La si legge
+     * subito dopo aver disegnato: senza `preserveDrawingBuffer` la tela si
+     * svuota al fotogramma dopo, e così non serve tenerla piena per sempre.
+     */
+    fotografa() {
+      comandi.update();
+      renderer.render(scena, camera);
+      return tela.toDataURL("image/png");
+    },
     async mostra(url) {
       const gltf = await caricatore.loadAsync(url);
       if (attuale) scena.remove(attuale);
@@ -267,11 +283,27 @@ async function vai() {
     };
     ricorda(voce);
     disegnaModellini();
-    await (await accendiVisore()).mostra(indirizzo(voce));
+    const v = await accendiVisore();
+    await v.mostra(indirizzo(voce));
+    /**
+     * ⚠ **Chiesto da fuori, torna una foto.** Dalla 1.4.9. La fila della suite
+     * riconosce il lavoro dal primo file nuovo in libreria, e la libreria il
+     * `.glb` non lo conosce: si salva la foto del modellino, con accanto dov'è
+     * il file vero. Vedi «genera.modello» nel catalogo delle azioni.
+     */
+    if (daFuori && suite?.libreria?.anteprima) {
+      await new Promise((r) => setTimeout(r, 600));
+      await suite.libreria.anteprima(v.fotografa(), {
+        titolo: daFuori,
+        cartella: "modellini",
+        meta: { modello3d: { file: glb.filename, cartella: glb.subfolder, url: indirizzo(voce) }, qualita },
+      });
+    }
   } catch (e) {
     $("tredErrore").hidden = false;
     $("tredErrore").textContent = String(e.message || e);
   } finally {
+    daFuori = null;
     if (chiudiBarra) chiudiBarra(false);
     libera(bottone);
     accendiBottone();
@@ -351,4 +383,21 @@ export async function aperturaTred() {
   accendiBottone();
   const primo = modellini()[0];
   if (primo) (await accendiVisore()).mostra(indirizzo(primo)).catch(() => {});
+}
+
+/**
+ * ⚠ **Un modellino chiesto da fuori.** Nuovo nella 1.4.9.
+ *
+ * Come per le foto: si apre la scheda, si mette la foto, si sceglie quanto
+ * fine e si preme lo stesso tasto che premeresti tu. Il resto lo fa `vai`.
+ */
+export async function modellinoDaFuori(richiesta, premi) {
+  mostraScheda("tred");
+  await aperturaTred();
+  await apriFoto(richiesta.opzioni.immagine);
+  const q = richiesta.opzioni.qualita;
+  if (q && QUALITA[q]) $("tredQualita").querySelector(`[data-q="${q}"]`)?.click();
+  const detto = String(richiesta.testo || "").trim();
+  daFuori = detto && detto !== "Fai un modellino 3D" ? detto : `modellino 3D · ${QUALITA[qualita].nome.toLowerCase()}`;
+  await premi($("tredVai"), "TRELLIS.2 non è pronto: apri la scheda 3D sul computer e guarda cosa manca.");
 }

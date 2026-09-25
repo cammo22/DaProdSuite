@@ -44,4 +44,10 @@ body #studio-vai{--accent:#8b5cf6; margin:8px 0 0}
   color:#eafff4; background:rgba(255,255,255,.06); border:1px solid rgba(176,124,255,.35)}
 .studio-lavoro .tasti button:disabled{opacity:.45; cursor:default}
 .studio-vuoto{padding:22px; text-align:center; color:#86a59c; border:1px dashed rgba(176,124,255,.25); border-radius:18px}
+/* 1.4.9: Crea / Modifica una tua foto */
+.studio-strade{display:flex; gap:4px; padding:4px; margin:4px 0 12px; border-radius:16px; background:rgba(0,0,0,.35); border:1px solid rgba(176,124,255,.2)}
+.studio-strade button{flex:1; min-height:44px; border:0; border-radius:12px; background:transparent; color:#86a59c; font:700 13.5px/1.2 inherit; cursor:pointer}
+.studio-strade button.scelto{color:#fff; background:linear-gradient(180deg,#b07cff,#7d4dea); box-shadow:0 6px 18px rgba(176,124,255,.3)}
+.studio-foto{display:grid; gap:10px; margin-bottom:10px}
+.studio-foto img{width:100%; max-height:320px; object-fit:contain; border-radius:16px; background:#000; border:1px solid rgba(176,124,255,.25)}
 `;

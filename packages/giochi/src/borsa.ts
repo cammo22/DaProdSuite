@@ -8,6 +8,7 @@
 
 import type { Caso } from "./regole";
 import type { Grado, OraDiBorsa } from "./tipi";
+import { valorePrimaDellaFine } from "./euro";
 
 /* ------------------------------------------------------------- la borsa -- */
 
@@ -220,6 +221,11 @@ export interface GiocoSala {
   siFinisce: boolean;
   /** Cosa vuol dire finire, detto a chi gioca. */
   fine?: string;
+  /**
+   * Fra quali ordini di grandezza del punteggio va il premio di fine (1.4.9):
+   * al primo sono 20 euro, all'ultimo 30. Vedi `premioFine` in euro.ts.
+   */
+  scala?: readonly [number, number];
   /** Da quello che il gioco racconta (i suoi gettoni vinti) ai punti della partita. */
   punti: (grezzo: number) => number;
   /** I tetti (§ 18.4): al minuto e al giorno. */
@@ -229,6 +235,10 @@ export interface GiocoSala {
   eventi: Record<string, { prob: number; min: Grado; detto: string }>;
 }
 
+/** Gli ordini di grandezza dei premi (1.4.9): la Claw da un milione a cento miliardi, Neon da un milione a 10^30. */
+const SCALA_CLAW = [6, 11] as const;
+const SCALA_NEON = [6, 30] as const;
+
 export const GIOCHI_SALA: Record<IdGiocoSala, GiocoSala> = {
   dozer: {
     id: "dozer",
@@ -236,7 +246,13 @@ export const GIOCHI_SALA: Record<IdGiocoSala, GiocoSala> = {
     riga: "Tre piani, tre spintori, e le pile che si fondono fino al miliardo.",
     ingresso: 0,
     valore: (g) => Math.floor(Math.max(0, g)),
-    moltMax: 4,
+    /**
+     * ⚠ **Il mangiasoldi**, dalla 1.4.9: «il coin dozer deve essere un
+     * mangiatore di soldi». Si porta a casa al massimo il doppio di quello che
+     * si mette, e di solito molto meno: e' la cassa che riempie la Banca da
+     * cui Claw e Neon pagano i loro premi.
+     */
+    moltMax: 2,
     siFinisce: false,
     punti: (g) => Math.floor(Math.max(0, g) / 5),
     tettoMinuto: 2_000,
@@ -252,10 +268,17 @@ export const GIOCHI_SALA: Record<IdGiocoSala, GiocoSala> = {
     nome: "Claw Machine",
     riga: "La Grande Vasca: pesca, grabba e acchiappa i modellini.",
     ingresso: 0,
-    valore: (g) => Math.floor(Math.max(0, g)),
-    moltMax: 3,
+    /**
+     * ⚠ **Le lire della Claw arrivano a miliardi** (1.4.9: «si arriva
+     * tranquillamente a 6,1 miliardi»). Una a una non si potevano portare a
+     * casa: chi smette prima porta a casa fino a 15 euro, sotto il tetto; chi
+     * finisce prende il premio di fine, da 20 a 30 euro (vedi euro.ts).
+     */
+    valore: (g) => valorePrimaDellaFine(g, SCALA_CLAW),
+    moltMax: 10,
     siFinisce: true,
     fine: "tutti e 20 i modellini in collezione",
+    scala: SCALA_CLAW,
     punti: (g) => Math.floor(Math.max(0, g) / 4),
     tettoMinuto: 2_000,
     tettoGiorno: 30_000,
@@ -270,11 +293,12 @@ export const GIOCHI_SALA: Record<IdGiocoSala, GiocoSala> = {
     nome: "Neon Partenope",
     riga: "Napoli 2099: colpisci le orde, libera la sirena, fai eruttare il Vesuvio.",
     ingresso: 0,
-    // Le lire di Neon arrivano a trenta cifre: ogni ordine di grandezza sopra il
-    // milione vale un decimo di quello che si e' messo.
-    valore: (g, messo) => Math.floor(Math.max(0, Math.log10(1 + Math.max(0, g)) - 6) * 0.1 * Math.max(0, messo)),
-    moltMax: 3,
+    // Le lire di Neon arrivano a trenta cifre: come la Claw, contano gli
+    // ordini di grandezza (1.4.9), e chi finisce prende il premio di fine.
+    valore: (g) => valorePrimaDellaFine(g, SCALA_NEON),
+    moltMax: 10,
     siFinisce: true,
+    scala: SCALA_NEON,
     fine: "il Vesuvio che erutta",
     // Un clicker: i numeri esplodono. Si contano gli ordini di grandezza.
     punti: (g) => Math.round(60 * Math.log10(1 + Math.max(0, g))),

@@ -20,7 +20,7 @@ import { collegaComandiCoda, messaggioDalMotore, riallinea } from "./coda.js";
 import { collegaCrea } from "./crea.js";
 import { collegaBonsaiFoto } from "./bonsai.js";
 import { collegaRitocco } from "./ritocco.js";
-import { aperturaTred, collegaTred } from "./tred.js";
+import { aperturaTred, collegaTred, modellinoDaFuori } from "./tred.js";
 import { collegaScelta } from "./scelta-modello.js";
 import { aggiornaGalleria, collegaGalleria } from "./galleria.js";
 // I quadratini di cosa occupa la memoria: uguali in tutte le app, quindi
@@ -113,6 +113,12 @@ collegaLavoriDaFuori(async (richiesta) => {
    * lavora su tutta la foto. Vedi «Niente dipinto non e' piu' un errore» in
    * ritocco.js.
    */
+  // Il modellino 3D (1.4.9): la scheda 3D fa tutto, qui si passa la mano.
+  if (richiesta.azione === "genera.modello") {
+    await modellinoDaFuori(richiesta, premiQuandoPuoi);
+    return;
+  }
+
   if (richiesta.azione === "modifica.immagine") {
     mostraScheda("ritocco");
     await apriImmagine(richiesta.opzioni.immagine);

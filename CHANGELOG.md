@@ -10,6 +10,58 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ---
 
+## 1.4.9 — Un'app per chi crea, una regia per chi decide
+
+> «Ora il progetto ha tutto quello che gli serve, e dobbiamo rendere tutto fatto
+> bene. Gli admin sono i creatori; gli utenti devono vedere un'app per generare
+> e modificare foto, creare musica e giocare nella sala giochi.»
+
+**Per chi usa la suite, tre cose e basta.** Foto, Musica e la Sala giochi. In
+Casa non si vede più se il computer è libero o occupato: quella è roba di chi
+decide. Video, Audio e il 3D restano agli admin.
+
+**Produci è più semplice.** Tocchi «Produzione Immagini» ed entri dritto a
+creare: niente più foglio che sale dal basso. In cima due linguette, «Crea» e
+«Modifica», e passando dall'una all'altra quello che hai scritto resta. Si vede
+solo l'essenziale: la descrizione e la forma per le foto; titolo, genere,
+testo, voce e durata per la musica. Il resto sta sotto «Altre impostazioni»,
+che vede solo chi decide.
+
+**Solo modelli di serie.** Le foto si fanno con Qwen-Image 2.1 di serie, senza
+LoRA, e la musica con ACE-Step XL. Il Turbo non si chiede più da fuori, e anche
+le copertine dei brani si fanno col Qwen di serie.
+
+**Il 3D dal telefono**, per gli admin: «Produzione 3D» manda una foto alla
+scheda 3D di DaProdFoto (TRELLIS.2) e torna la foto del modellino. Il `.glb`
+resta sul computer.
+
+**La sala giochi:**
+- **Lire o euro, un tocco.** Tocchi il saldo in alto e tutta la sala cambia
+  valuta, giochi compresi. Nella cornice di un gioco c'è il tasto «L ⇄ €»
+  accanto a «Incassa».
+- **Numeri corti**: L. 150k, L. 15,5M, 6,1 mld.
+- **Il Portafoglio è la Borsa**, fatto come un'app di banca: il saldo grande,
+  24h, 7g, 1 mese e Tutto, la linea che si tocca col dito, le posizioni nei
+  giochi, entrate e uscite per gruppo e i movimenti. Si aggiorna da solo.
+- **Al posto dei quadrati coi numeri**, sotto ai giochi: la tua settimana in
+  una linea, e per chi decide l'andamento di tutta la sala (ricariche, incassi,
+  giocatori al giorno, quanto resta alla casa gioco per gioco).
+- **Aprendo la sala, il resoconto** di cosa è cambiato dall'ultima volta, al
+  posto del pannello «Ti hanno mandato… dalla cassa».
+- **Nella cornice le lire del gioco dal vivo** («nel gioco»): prima la barra
+  mostrava i punti, che nessun gioco mandava più.
+- **Fortuna e Genera sono di chi decide.** Lo Studio resta a tutti: una foto
+  costa L. 1.000, si fa fine a 40 passi e parte quando un admin dà l'ok. Si può
+  anche modificare una foto caricata dal telefono.
+- **Il Dozer è il mangiasoldi**: si porta a casa al massimo il doppio di quello
+  che si mette. **Claw e Neon pagano**: chi li finisce vince da 20 a 30 euro,
+  di più col punteggio alto, più il premio della velocità e un pezzo del
+  montepremi della Banca.
+- Niente più tetto di L. 5.000.000 per volta ai regali della cassa.
+
+- **Coin Dozer 2.2.6**: campo più grande, si lancia fino al milione, dodici
+  eventi forti (sei buoni, sei cattivi), via il Muro.
+
 ## 1.4.8 — Lire ed euro, e i giochi che si vincono
 
 > «Aggiustiamo la valuta delle lire, in ogni gioco sono diverse… io non sono un

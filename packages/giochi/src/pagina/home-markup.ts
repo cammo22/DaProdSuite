@@ -52,7 +52,8 @@ export const MARKUP_HOME = `
     <div class="home-titolo"><h2>La Banca DaProd</h2><button class="link" id="banca-come">come funziona</button></div>
     <div class="home-banca" id="home-banca"></div>
 
-    <div class="home-titolo"><h2>La Borsa della Lira</h2><button class="link" data-va="borsa">apri &#8594;</button></div>
+    <!-- 1.4.9: al posto della Borsa, il portafoglio della settimana (la Borsa sta li' dentro). -->
+    <div class="home-titolo"><h2>Il tuo portafoglio</h2><button class="link" data-va="portafoglio">apri &#8594;</button></div>
     <div class="home-borsa" id="home-borsa"></div>
   </section>
 `;

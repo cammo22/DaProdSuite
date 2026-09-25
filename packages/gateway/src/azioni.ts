@@ -159,6 +159,23 @@ export async function eseguiAzione(
     return { esito: "errore", errore: controllo.errore, codice: 400 };
   }
 
+  /**
+   * ⚠ **Chi non decide usa i modelli di serie.** Dalla 1.4.9.
+   *
+   * Chiesto il 25 settembre 2026: «le funzioni utente standard sono creazione
+   * immagini con Qwen Image 2.1, il modello standard … e musica con ACE-Step
+   * XL». Da un utente il modello scelto non arriva nemmeno — la pagina non gli
+   * mostra le pastiglie — e qui si mette il predefinito lo stesso: una
+   * richiesta fatta a mano col modello di un altro non deve passare.
+   */
+  if (dispositivo.ruolo !== "admin") {
+    for (const campo of azione.campi) {
+      if (campo.nome !== "modello" && campo.nome !== "modelloCopertina") continue;
+      if (campo.predefinito === undefined) delete controllo.valori[campo.nome];
+      else controllo.valori[campo.nome] = campo.predefinito;
+    }
+  }
+
   if (azione.coda) {
     const opzioni: Record<string, string> = { azione: azione.id, ...opzioniDi(azione, controllo.valori) };
 

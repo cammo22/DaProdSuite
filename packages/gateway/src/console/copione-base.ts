@@ -1122,6 +1122,16 @@ export const COPIONE_BASE = `
      * campanella a colori in mezzo a quattro simboli sottili si vede solo lei.
      */
     if (segno) segno.textContent = decido() ? "\\u2630" : "\\u2299";
+    /**
+     * ⚠ **Chi non decide vede un'app, non una macchina.** Dalla 1.4.9.
+     *
+     * Il 25 settembre 2026: «nella schermata casa gli utenti non dovrebbero
+     * vedere i caricamenti del computer, se e' libero o no». La classe sul
+     * corpo spegne col foglio di stile il semaforo, i numeri della fila, la
+     * fascia «in pausa» e gli attrezzi da regista (stili, chiacchierata, «manda
+     * in coda»). Vedi «body.utente» in stile.ts.
+     */
+    document.body.classList.toggle("utente", !decido());
 
     /**
      * Le due mezze schermate.

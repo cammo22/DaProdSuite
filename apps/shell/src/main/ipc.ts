@@ -316,6 +316,22 @@ export function registerIpc(getHub: () => BrowserWindow | null): void {
       }),
   );
 
+  // La foto del modellino 3D chiesto da fuori. Vedi `anteprima` in contracts.ts.
+  ipcMain.handle(
+    CHANNELS.libreriaAnteprima,
+    (
+      _e,
+      app: AppId,
+      dataUrl: string,
+      dati: { titolo?: string; cartella?: string; meta?: Record<string, unknown> },
+    ) =>
+      libreria.salvaAnteprima(app, String(dataUrl ?? ""), {
+        titolo: String(dati?.titolo ?? "anteprima"),
+        cartella: String(dati?.cartella ?? "anteprime"),
+        meta: dati?.meta && typeof dati.meta === "object" ? dati.meta : {},
+      }),
+  );
+
   ipcMain.handle(
     CHANNELS.appInvia,
     (_e, destinazione: AppId, elementoId: string, intenzione: Intenzione) =>

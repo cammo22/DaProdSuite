@@ -1368,6 +1368,33 @@ euro».
   ha un grado che sale con le lire passate (dal Salvadanaio alla Zecca DaProd),
   e dalla riserva si alza un forziere a un tocco.
 
+### 18.11 Il mangiasoldi, i premi di fine, la valuta di chi guarda (1.4.9)
+
+Il 25 settembre 2026: «il coin dozer deve essere un mangiatore di soldi, e in
+Claw Machine e Neon Partenope puoi guadagnare molto».
+
+- **Il Dozer** porta a casa al massimo **due** volte quello che si mette
+  (`moltMax` 2 in `borsa.ts`). Quello che resta sul tavolo e le fette finiscono
+  nella Banca.
+- **Claw e Neon** hanno un **premio di fine** fuori dal tetto (`premioFine` in
+  `euro.ts`): da 20 a 30 euro, di piu' quanti piu' ordini di grandezza ha fatto
+  il punteggio (`scala`: la Claw da 10^6 a 10^11, Neon da 10^6 a 10^30). Sopra
+  ci vanno il premio della velocita' e un **pezzo del montepremi**: il 2% della
+  riserva della Banca, al massimo 10 euro. Chi smette prima porta a casa fino a
+  15 euro col punteggio, sotto il tetto di 10 volte il messo.
+- La Banca quindi gira: il Dozer la riempie, Claw e Neon la svuotano a chi
+  finisce. `GET /andamento` la fa vedere a chi comanda, giorno per giorno.
+- **Lire o euro lo sceglie chi guarda**, nel browser, e vale per tutta la
+  pagina e per i giochi: la sala lo manda nello stato (`valuta`), e
+  `daprod-lira.js` lo passa al gioco (`DaProdLira.soldi`, `suValuta`). Il
+  conto resta in lire. Sopra le centomila le cifre si scrivono corte.
+- **I giochi raccontano le loro lire dal vivo** (`nelGioco`, ogni tre secondi):
+  la cornice le mostra mentre si gioca. I punti della partita restano solo per
+  Fortuna, che per ora e' di chi comanda.
+- **Lo Studio** costa mille lire, si fa solo fine (40 passi, niente LoRA), e per
+  chi non comanda parte solo col si' di un admin; si puo' partire da una foto del
+  telefono (`POST /studio/ritocca` con `foto`).
+
 ## 17. Quello che ancora non e' deciso
 
 - ⚠ **Il costo del giro, adesso che il tetto e' tre euro.** Dall'11 settembre

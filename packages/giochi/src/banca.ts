@@ -144,6 +144,8 @@ export interface Apertura {
 export interface StatoBanca {
   /** La riserva di DaProd: non si divide, garantisce i minimi. */
   riserva: number;
+  /** Quanto e' uscito dalla riserva come montepremi di fine partita (1.4.9). */
+  premiFine?: number;
   /** Tutto quello che e' entrato, da sempre. */
   entrate: number;
   /** Tutto quello che e' tornato a chi gioca, da sempre. */
@@ -221,6 +223,18 @@ export function versaFetta(b: StatoBanca, lire: number): void {
   b.riserva += l;
   b.entrate += l;
   b.fette = (b.fette ?? 0) + l;
+}
+
+/**
+ * Il pezzo di montepremi di chi finisce Claw o Neon (1.4.9): esce dalla
+ * riserva, finche' ne ha. Torna quanto e' uscito davvero.
+ */
+export function prelevaMontepremi(b: StatoBanca, lire: number): number {
+  const l = Math.floor(Math.max(0, Math.min(lire, b.riserva)));
+  if (l <= 0) return 0;
+  b.riserva -= l;
+  b.premiFine = (b.premiFine ?? 0) + l;
+  return l;
 }
 
 /**

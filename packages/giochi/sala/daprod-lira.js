@@ -28,6 +28,12 @@
  *     });
  *     DaProdLira.evento("dozer", "jackpot");
  *     DaProdLira.incassa();   // dal tasto del gioco; la cornice ha il suo
+ *     DaProdLira.soldi(12345); // «L. 12.345» o «€ 6,38», come ha scelto chi gioca
+ *
+ * **Dalla 1.4.9** il gioco racconta alla sala quante lire ha, ogni tre
+ * secondi, e la sala le mostra dal vivo; e la valuta (lire o euro) la sceglie
+ * chi gioca, in alto nella sala: `DaProdLira.soldi()` la segue, e
+ * `DaProdLira.suValuta(fn)` avvisa il gioco quando cambia.
  *
  * **Dalla 1.4.8 una lira e' una lira** (`packages/giochi/src/euro.ts`): la
  * ricarica arriva al gioco in lire della suite, senza cambio, e l'incasso le
@@ -72,10 +78,18 @@
   var spento = !inSuite;
 
   var ascoltatori = [];
+  var perLaValuta = [];
   var ultimo = null;
+  var valuta = "lire";
   function annuncia(stato) {
     ultimo = stato;
     for (var i = 0; i < ascoltatori.length; i++) { try { ascoltatori[i](stato); } catch (e) { /* un gioco rotto non ferma gli altri */ } }
+    // 1.4.9: la valuta la sceglie chi guarda, nella sala; il gioco la segue.
+    var v = stato && stato.valuta === "euro" ? "euro" : "lire";
+    if (v !== valuta) {
+      valuta = v;
+      for (var k = 0; k < perLaValuta.length; k++) { try { perLaValuta[k](valuta); } catch (e) { /* niente */ } }
+    }
   }
 
   /* -------------------------------------------------- dentro la suite -- */
@@ -120,7 +134,23 @@
   var daMandare = {};
   var orologio = null;
 
+  /**
+   * Le lire del gioco, dal vivo (1.4.9): ogni tre secondi, se sono cambiate,
+   * la sala le mette nella pastiglia «nel gioco». Prima la barra mostrava i
+   * punti, che dalla 1.4.8 nessun gioco mandava piu': restava ferma.
+   */
+  var dettoNelGioco = -1;
+  function raccontaNelGioco() {
+    if (spento || !cassa || !cassa.quanto) return;
+    var n = 0;
+    try { n = Math.max(0, Math.floor(Number(cassa.quanto()) || 0)); } catch (e) { return; }
+    if (n === dettoNelGioco) return;
+    dettoNelGioco = n;
+    allaSala("nelGioco", { gioco: gioco, lire: n }).catch(function () {});
+  }
+
   function manda() {
+    raccontaNelGioco();
     if (spento) { daMandare = {}; return; }
     var chiavi = Object.keys(daMandare);
     for (var i = 0; i < chiavi.length; i++) {
@@ -196,6 +226,8 @@
       var chiudi = Boolean(opzioni.chiudi || (cassa && cassa.chiudi));
       return allaSala("incassa", { gioco: gioco, grezzo: grezzo, fine: fine, chiudi: chiudi }).then(function (r) {
         if (cassa && cassa.togli) { try { cassa.togli(r); } catch (e) { /* il gioco si arrangia */ } }
+        dettoNelGioco = -1;
+        setTimeout(raccontaNelGioco, 300);
         return r;
       });
     },
@@ -205,6 +237,41 @@
       var e = (Number(lire) || 0) / 1936.27;
       return "€ " + e.toFixed(2).replace(".", ",").replace(/\B(?=(\d{3})+(?!\d))/g, ".");
     },
+
+    /**
+     * Un numero corto (1.4.9): «1.234», «38k», «15,5M», «6,1 mld». Sotto i
+     * centomila si scrive tutto.
+     */
+    corto: function (n) {
+      var v = Math.round(Number(n) || 0), a = Math.abs(v);
+      var it = function (x, d) { return x.toFixed(d).replace(".", ",").replace(/,0+$/, ""); };
+      if (a < 100000) return String(v).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+      if (a < 1e6) return it(v / 1000, 0) + "k";
+      if (a < 1e9) return it(v / 1e6, a < 1e7 ? 2 : 1) + "M";
+      if (a < 1e12) return it(v / 1e9, 1) + " mld";
+      return it(v / 1e12, 1) + " bln";
+    },
+
+    /** «lire» o «euro»: quella che chi gioca ha scelto nella sala. Fuori dalla suite, lire. */
+    valuta: function () { return spento ? "lire" : valuta; },
+
+    /**
+     * Soldi scritti nella valuta scelta (1.4.9): «L. 38k» o «€ 20,00». I giochi
+     * lo usano per le loro lire, cosi' il cambio in alto nella sala vale anche
+     * dentro al gioco.
+     */
+    soldi: function (lire) {
+      var n = Number(lire) || 0;
+      if (Lira.valuta() === "euro") {
+        var e = n / 1936.27;
+        if (Math.abs(e) >= 10000) return "€ " + Lira.corto(e);
+        return Lira.euro(n);
+      }
+      return "L. " + Lira.corto(n);
+    },
+
+    /** Chi vuole sapere quando cambia la valuta: il gioco ridisegna i suoi numeri. */
+    suValuta: function (fn) { perLaValuta.push(fn); },
 
     /** Lo stacco: la partita diventa lire, alla quotazione di adesso. Solo nella suite. */
     stacca: function () {

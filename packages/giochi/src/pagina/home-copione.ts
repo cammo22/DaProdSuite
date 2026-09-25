@@ -50,7 +50,8 @@ export const COPIONE_HOME = `
   }
 
   function tuttiIGiochi() {
-    var lista = [{ id: 'fortuna', nome: 'Fortuna', riga: 'Tre file da tre: tieni quelle che ti servono e rigira. Sblocca le figurine.' }];
+    // 1.4.9: «mettiamo il gioco Fortuna solo per admin, al momento».
+    var lista = io && io.admin ? [{ id: 'fortuna', nome: 'Fortuna', riga: 'Tre file da tre: tieni quelle che ti servono e rigira. Sblocca le figurine.' }] : [];
     return lista.concat(sala ? sala.giochi : []);
   }
 
@@ -76,8 +77,9 @@ export const COPIONE_HOME = `
       '<div class="ciao-numeri">' +
       '<span class="num"><b>' + c.livello + '</b><small>livello</small></span>' +
       '<span class="num lire"><b>' + soldiACapo(io.saldo) + '</b><small>in tasca</small></span>' +
-      '<span class="num"><b>' + puntiIt(pt) + '</b><small>punti partita</small></span>' +
-      (b ? '<span class="num ' + (su ? 'su' : 'giu') + '"><b>' + (su ? '▲ ' : '▼ ') + numeroIt(b.quota, 2) + '</b><small>la Lira</small></span>' : '') +
+      // 1.4.9: i punti solo a chi ne ha (Fortuna); la quota della Lira sta nel Portafoglio.
+      (pt > 0 ? '<span class="num"><b>' + cortoIt(pt) + '</b><small>punti Fortuna</small></span>' : '') +
+      '<span class="num"><b>' + (inEuro ? 'L.' : '€') + '</b><small>tocca il saldo</small></span>' +
       '</div>';
 
     $('home-giochi').innerHTML = tuttiIGiochi().map(cartaGiocoHtml).join('');
@@ -100,15 +102,15 @@ export const COPIONE_HOME = `
 
     disegnaBanca();
 
-    if (b) {
-      $('home-borsa').innerHTML =
-        '<div class="borsa-mini">' + candele((b.candele || []).slice(-24)) + '</div>' +
-        '<div class="borsa-lato">' +
-        '<span class="quota">' + numeroIt(b.quota, 3) + '</span><small>lire a punto</small>' + freccia(b.variazione) +
-        '<button class="btn oro" id="stacca-home"' + (sala.partita.punti > 0 && sala.tettoRimasto > 0 ? '' : ' disabled') + '>' +
-        (sala.partita.punti > 0 ? 'Incassa ' + soldi(sala.staccando) : 'Niente da incassare') + '</button></div>';
+    // Il portafoglio della settimana, in piccolo: la stessa linea del Portafoglio.
+    if (typeof pf !== 'undefined' && pf) {
+      var serie = serieDelSaldo(pf, '7g');
+      $('home-borsa').innerHTML = '<div class="borsa-mini">' + graficoLinea(serie.punti, { alto: 120, vuoto: 'Questa settimana non ci sono movimenti.' }) + '</div>' +
+        '<div class="borsa-lato"><span class="quota">' + soldi(pf.saldo) + '</span>' + variazioneDetta(serie.inizio, pf.saldo) + '<small>negli ultimi 7 giorni</small>' +
+        '<button class="btn cyan" data-va="portafoglio">Portafoglio</button></div>';
     } else {
-      $('home-borsa').innerHTML = '<div class="niente">La Borsa si carica…</div>';
+      $('home-borsa').innerHTML = '<div class="niente">Il portafoglio si carica…</div>';
+      if (typeof caricaPortafoglioGiocatore === 'function') caricaPortafoglioGiocatore().then(function (p) { if (p && viva('p-home')) disegnaHome(); });
     }
   }
 

@@ -69,9 +69,16 @@ const PROMPT_MAX = 2000;
  */
 export const PREDEFINITO_IMMAGINI = "qwen21";
 
+/**
+ * ⚠ **Il Turbo non si chiede più da fuori**, dalla 1.4.9. Chiesto il 25
+ * settembre 2026: «usiamo il modello standard, togliamo i lora, solo quello
+ * standard va bene». Il Turbo era Qwen con una LoRA da 5 passi sopra, ed è
+ * quella LoRA che dava l'errore «not in list» quando sul computer ce n'era
+ * un'altra. Sulla scheda del PC resta, per chi ci sta davanti.
+ */
 const MODELLI_FOTO = {
   predefinito: PREDEFINITO_IMMAGINI,
-  scelte: ["anima", "anima2", "qwen21", "qwen21-turbo"],
+  scelte: ["anima", "anima2", "qwen21"],
   /**
    * ⚠ **Solo i nomi.** Chiesto il 7 settembre 2026: «togli la scritta un
    * minuto e mezzo da LLaDA-Image, lascia solo i nomi, anche con gli altri
@@ -86,7 +93,6 @@ const MODELLI_FOTO = {
     anima: "Anima",
     anima2: "Anima v2",
     qwen21: "Qwen-Image 2.1",
-    "qwen21-turbo": "Qwen-Image 2.1 Turbo",
   },
 } as const;
 
@@ -120,7 +126,7 @@ const MODELLI_FOTO = {
  */
 const MODELLI_MODIFICA = {
   predefinito: PREDEFINITO_IMMAGINI,
-  scelte: ["anima", "anima2", "qwen21", "qwen21-turbo"],
+  scelte: ["anima", "anima2", "qwen21"],
   // Solo i nomi, come per la generazione. Chi non sa usare la zona lo dice il
   // modulo quando lo scegli, che è il momento in cui serve saperlo: vedi
   // `senzaZona` qui sotto.
@@ -128,7 +134,6 @@ const MODELLI_MODIFICA = {
     anima: "Anima",
     anima2: "Anima v2",
     qwen21: "Qwen-Image 2.1",
-    "qwen21-turbo": "Qwen-Image 2.1 Turbo",
   },
 } as const;
 
@@ -225,11 +230,12 @@ function campoModelloCopertina() {
     descrizione: "Quello che parte se non tocchi niente è già selezionato.",
     tipo: "scelta",
     obbligatorio: false,
-    predefinito: "qwen21-turbo",
-    scelte: ["anima", "qwen21-turbo"],
+    // Dalla 1.4.9 la copertina si fa col Qwen di serie, senza LoRA: vedi MODELLI_FOTO.
+    predefinito: "qwen21",
+    scelte: ["anima", "qwen21"],
     etichette: {
       anima: "Anima",
-      "qwen21-turbo": "Qwen-Image 2.1 Turbo",
+      qwen21: "Qwen-Image 2.1",
     },
   } as const;
 }
@@ -440,6 +446,63 @@ export const AZIONI: readonly Azione[] = [
     ],
   },
 
+  /**
+   * ⚠ **Il modellino 3D, chiesto da fuori.** Nuovo nella 1.4.9, solo per chi decide.
+   *
+   * Chiesto il 25 settembre 2026: «gli admin sono i creatori … manca la
+   * generazione 3D». La scheda 3D di DaProdFoto c'era dalla 1.4.0, ma solo
+   * sul computer. Qui si manda una foto, e il computer fa il resto come se
+   * l'avessi aperta tu nella scheda 3D: stesso tasto, stessi controlli.
+   *
+   * Il risultato che torna è **un'immagine**: la foto del modellino, girato di
+   * tre quarti, con accanto nel `.json` dov'è il file `.glb`. La libreria non
+   * conosce ancora i modelli 3D come tipo a sé — arriverà con i pacchetti
+   * nuovi — e intanto chi ha chiesto vede cosa è uscito.
+   */
+  {
+    id: "genera.modello",
+    app: "foto",
+    titolo: "Fai un modellino 3D",
+    descrizione:
+      "Da una foto a un modellino 3D con la texture, con TRELLIS.2 nella scheda 3D di DaProdFoto. " +
+      "Torna la foto del modellino; il file .glb resta sul computer. Occupa la scheda video.",
+    produce: "file",
+    risultato: "immagine",
+    permesso: "admin",
+    coda: true,
+    campi: [
+      {
+        nome: "immagine",
+        etichetta: "La foto da cui partire",
+        descrizione: "Un soggetto solo, ben staccato dallo sfondo: un giocattolo, un personaggio, un oggetto.",
+        tipo: "immagine",
+        obbligatorio: true,
+      },
+      {
+        // Il nome del modellino: e' il testo della richiesta, quello che si
+        // legge nella fila e nella notifica. Vuoto, si chiama «modellino 3D».
+        nome: "nome",
+        etichetta: "Come si chiama",
+        principale: true,
+        descrizione: "Il nome del modellino: lo ritrovi cosi' in galleria e nei pacchetti.",
+        tipo: "testo",
+        obbligatorio: false,
+        maxLunghezza: 80,
+        esempio: "il gatto astronauta",
+      },
+      {
+        nome: "qualita",
+        etichetta: "Quanto fine",
+        descrizione: "Da gioco è il più leggero e il più veloce: è quello che va nella Claw Machine.",
+        tipo: "scelta",
+        obbligatorio: false,
+        predefinito: "gioco",
+        scelte: ["gioco", "bella", "vetrina"],
+        etichette: { gioco: "Da gioco", bella: "Bella", vetrina: "Da vetrina" },
+      },
+    ],
+  },
+
   {
     id: "genera.video",
     app: "cinema",
@@ -450,7 +513,7 @@ export const AZIONI: readonly Azione[] = [
       "sola. Per un video più lungo c'è «Fai una storia».",
     produce: "file",
     risultato: "video",
-    permesso: "tutti",
+    permesso: "admin",
     coda: true,
     campi: [
       {
@@ -509,7 +572,7 @@ export const AZIONI: readonly Azione[] = [
       "⚠ Ci mette molto: mezz'ora per un minuto, e anche di più.",
     produce: "file",
     risultato: "video",
-    permesso: "tutti",
+    permesso: "admin",
     coda: true,
     campi: [
       {
@@ -805,7 +868,7 @@ export const AZIONI: readonly Azione[] = [
       "Fa leggere un testo a voce alta con DaProdVoce, e salva il file audio.",
     produce: "file",
     risultato: "audio",
-    permesso: "tutti",
+    permesso: "admin",
     coda: true,
     campi: [
       {

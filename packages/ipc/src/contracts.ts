@@ -844,6 +844,19 @@ export interface ApiApp {
       dati: { titolo: string; risultatoId: string; meta?: Record<string, unknown> },
     ): Promise<string | null>;
 
+    /**
+     * ⚠ **Una foto fatta dalla pagina, che entra in libreria.** Nuova nella 1.4.9.
+     *
+     * Serve alla scheda 3D: il modellino chiesto da fuori torna come foto del
+     * modellino, perché la libreria il `.glb` non lo conosce. Finisce in una
+     * sottocartella sua (`cartella`), con i `meta` nel `.json` accanto.
+     * Torna l'id, o `null`.
+     */
+    anteprima?(
+      dataUrl: string,
+      dati: { titolo: string; cartella?: string; meta?: Record<string, unknown> },
+    ): Promise<string | null>;
+
     /** Notifica quando qualcuno produce o cancella un risultato. */
     onCambiata(listener: (elementi: ElementoLibreria[]) => void): Unsubscribe;
   };
@@ -1098,6 +1111,7 @@ export const CHANNELS = {
   libreriaElimina: "libreria:elimina",
   libreriaSalva: "libreria:salva",
   libreriaOriginale: "libreria:originale",
+  libreriaAnteprima: "libreria:anteprima",
   libreriaCambiata: "libreria:cambiata",
   appInvia: "app:invia",
   appConsegna: "app:consegna",

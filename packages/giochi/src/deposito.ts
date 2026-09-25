@@ -31,7 +31,7 @@
 import { copyFileSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { conMovimento, giornoDi as giornoDellaSala } from "./borsa";
-import { NOMI, apriIScaduti, bancaInRiga, bancaNuova, segnaAttivita, versa, versaFetta, type Apertura, type StatoBanca } from "./banca";
+import { NOMI, apriIScaduti, bancaInRiga, bancaNuova, prelevaMontepremi, segnaAttivita, versa, versaFetta, type Apertura, type StatoBanca } from "./banca";
 import {
   altezza,
   GRADI,
@@ -84,7 +84,8 @@ function vuoto(): DatiGiochi {
 const ATTESA_MS = 500;
 
 /** Quanti movimenti si tengono sul conto (1.4.8). */
-export const MOVIMENTI_TENUTI = 40;
+// 1.4.9: trecento, per disegnare il grafico delle 24 ore e dei 7 giorni.
+export const MOVIMENTI_TENUTI = 300;
 /** Quanti giorni di saldo si tengono per l'andamento (1.4.8). */
 export const GIORNI_TENUTI = 90;
 
@@ -391,6 +392,13 @@ export class Deposito {
   versaFetta(lire: number): void {
     versaFetta(this.statoBanca(), lire);
     this.salva();
+  }
+
+  /** Il montepremi di chi finisce Claw o Neon (1.4.9): dalla riserva. */
+  prelevaMontepremi(lire: number): number {
+    const l = prelevaMontepremi(this.statoBanca(), lire);
+    if (l > 0) this.salva();
+    return l;
   }
 
   /** Punti attivita' per i premi della Banca. Vedi `banca.ts`. */

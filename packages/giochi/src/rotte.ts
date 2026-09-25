@@ -80,6 +80,7 @@ import { alzaCassetto, versaInRiserva, vetrina as vetrinaBanca } from "./banca";
 import {
   COSTI_STUDIO,
   FORME_STUDIO,
+  FOTO_MAX,
   LAVORI_TENUTI,
   SCRITTA_MAX,
   TESTO_MAX,
@@ -90,7 +91,7 @@ import {
   type LavoroStudio,
 } from "./studio";
 import { azzeraPartita, entra, evento, giocaCarta, incassaGioco, ricarica, segnaPunti, stacca, statoSala, type StatoSala } from "./sala";
-import { portafoglio } from "./portafoglio";
+import { andamentoSala, portafoglio } from "./portafoglio";
 import { euroDaLire } from "./euro";
 import type { Collezionabile, Era, Grado, PezzoInGioco, Tavolo, TipoCollezionabile } from "./tipi";
 
@@ -179,7 +180,7 @@ export interface Contorno {
    * essere **sua** — chi ospita lo controlla. Torna la targa della richiesta,
    * o niente se non si puo'.
    */
-  ritocca?(chi: string, libreria: string, istruzione: string, veloce: boolean): { id: string } | null;
+  ritocca?(chi: string, libreria: string, istruzione: string, veloce: boolean, foto?: string): { id: string } | null;
   /**
    * A che punto e' una richiesta: «in-attesa» del si', «accettata», «in-lavoro»,
    * «pronta», «scartata», «scaduta». Serve allo Studio per dire a chi aspetta
@@ -733,6 +734,12 @@ export function rispondi(
     if (metodo === "GET" && percorso === "/portafoglio") {
       return OK(portafoglio(deposito.conto(chi.id), deposito.impostazioni().perIlLivello));
     }
+    /** Come va la sala (1.4.9), per chi comanda: vedi `andamentoSala`. */
+    if (metodo === "GET" && percorso === "/andamento") {
+      if (!chi.admin) return NO(403, "L'andamento della sala lo guarda chi comanda.");
+      const b = deposito.statoBanca();
+      return OK({ ...andamentoSala(deposito.conti()), banca: { riserva: b.riserva, fette: b.fette ?? 0, premiFine: b.premiFine ?? 0, entrate: b.entrate } });
+    }
     /**
      * Chi comanda alza un cassetto della Banca con le lire della riserva (1.4.8):
      * il gesto del «stasera il premio lo alzo io».
@@ -784,6 +791,8 @@ export function rispondi(
         testoMax: TESTO_MAX,
         puoi: Boolean(contorno.genera),
         puoiRitoccare: Boolean(contorno.ritocca),
+        // Chi non decide aspetta l'ok di un admin (1.4.9): la pagina lo dice prima.
+        aspettaOk: !chi.admin,
         rimborsate,
         saldo: conto.saldo,
       });
@@ -800,18 +809,21 @@ export function rispondi(
       const testo = String(corpo[ritocco ? "istruzione" : "testo"] ?? "").trim();
       if (testo.length < TESTO_MIN) return NO(400, ritocco ? "Scrivi cosa deve cambiare." : "Scrivi cosa vuoi vedere.");
       if (testo.length > TESTO_MAX) return NO(400, "Troppo lungo: al massimo " + TESTO_MAX + " caratteri.");
-      const veloce = ritocco ? true : corpo["veloce"] !== false;
-      const costo = ritocco ? COSTI_STUDIO.ritocco : veloce ? COSTI_STUDIO.veloce : COSTI_STUDIO.fine;
+      // Dalla 1.4.9 niente turbo: sempre fine, 40 passi (vedi COSTI_STUDIO).
+      const costo = ritocco ? COSTI_STUDIO.ritocco : COSTI_STUDIO.fine;
       const conto = deposito.conto(chi.id);
       if (conto.saldo < costo) return NO(409, "Servono " + lire(costo) + ": nel portafoglio ce ne sono " + lire(conto.saldo) + ".");
       const forma = formaDi(corpo["forma"]);
       const scritta = ritocco ? "" : String(corpo["scritta"] ?? "").slice(0, SCRITTA_MAX);
       const da = ritocco ? String(corpo["libreria"] ?? "") : undefined;
-      if (ritocco && !da) return NO(400, "Quale immagine?");
+      // Una foto del telefono (1.4.9), al posto di una della libreria.
+      const foto = ritocco && typeof corpo["foto"] === "string" ? String(corpo["foto"]) : "";
+      if (foto.length > FOTO_MAX) return NO(413, "La foto e' troppo grande.");
+      if (ritocco && !da && !foto) return NO(400, "Quale immagine?");
       // Prima si chiede, poi si paga: se la suite dice di no, non si perde una lira.
       const fatto = ritocco
-        ? contorno.ritocca!(chi.id, da!, testo, true)
-        : contorno.genera!(chi.id, "immagini", { prompt: promptStudio(testo, scritta), titolo: testo.slice(0, 80), forma, veloce });
+        ? contorno.ritocca!(chi.id, da ?? "", testo, false, foto || undefined)
+        : contorno.genera!(chi.id, "immagini", { prompt: promptStudio(testo, scritta), titolo: testo.slice(0, 80), forma, veloce: false });
       if (!fatto) return NO(ritocco ? 404 : 501, ritocco ? "Questa immagine non e' tua, o non c'e' piu'." : "Non e' partita: qui non si genera.");
       deposito.muovi(chi.id, -costo, true, "Studio");
       const lavoro: LavoroStudio = {
@@ -821,9 +833,9 @@ export function rispondi(
         testo,
         scritta: scritta || undefined,
         forma,
-        veloce,
         costo,
-        da,
+        da: da || undefined,
+        dalTelefono: foto ? true : undefined,
       };
       conto.studio = [lavoro, ...(conto.studio ?? [])].slice(0, LAVORI_TENUTI);
       deposito.salva();

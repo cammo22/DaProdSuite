@@ -14,14 +14,16 @@ export const COPIONE_STUDIO = `
   var APO = String.fromCharCode(39);
   var studio = null;
   var formaStudio = '1:1';
-  var veloceStudio = true;
+  /** «crea» o «modifica» (1.4.9): la seconda parte da una foto del telefono. */
+  var stradaStudio = 'crea';
+  var fotoStudio = '';
   var orologioStudio = null;
 
   var FORME_DISEGNO = { '1:1': [16, 16], '4:3': [20, 15], '16:9': [22, 12], '9:16': [12, 22] };
 
   function costoStudio() {
     if (!studio) return 0;
-    return veloceStudio ? studio.costi.veloce : studio.costi.fine;
+    return stradaStudio === 'modifica' ? studio.costi.ritocco : studio.costi.fine;
   }
 
   function disegnaScelteStudio() {
@@ -31,9 +33,18 @@ export const COPIONE_STUDIO = `
       return '<button type="button" data-forma-studio="' + f + '"' + (f === formaStudio ? ' class="scelto"' : '') + '>' +
         '<span class="rett" style="width:' + d[0] + 'px;height:' + d[1] + 'px"></span>' + f + '</button>';
     }).join('');
-    $('studio-modi').innerHTML =
-      '<button type="button" data-modo-studio="veloce"' + (veloceStudio ? ' class="scelto"' : '') + '>&#9889; Veloce <small>5 passi · ' + soldi(studio.costi.veloce) + '</small></button>' +
-      '<button type="button" data-modo-studio="fine"' + (!veloceStudio ? ' class="scelto"' : '') + '>&#10024; Fine <small>40 passi · ' + soldi(studio.costi.fine) + '</small></button>';
+    var strade = document.querySelectorAll('[data-strada-studio]');
+    for (var i = 0; i < strade.length; i++) strade[i].classList.toggle('scelto', strade[i].getAttribute('data-strada-studio') === stradaStudio);
+    var modifica = stradaStudio === 'modifica';
+    $('studio-foto').hidden = !modifica || !studio.puoiRitoccare;
+    $('studio-solo-crea').hidden = modifica;
+    $('studio-dado').hidden = modifica;
+    $('studio-testo').placeholder = modifica
+      ? 'cosa cambio? fai diventare il cielo un tramonto arancione, mettimi un cappello rosso…'
+      : 'una vespa rossa davanti a un bar di Napoli, sera, insegne al neon, pioggia sul selciato';
+    $('studio-foto-vista').hidden = !fotoStudio;
+    if (fotoStudio) $('studio-foto-vista').src = fotoStudio;
+    $('studio-foto-scegli').innerHTML = fotoStudio ? '&#128247; Cambia foto' : '&#128247; Scegli una foto dal telefono';
     aggiornaVaiStudio();
   }
 
@@ -49,11 +60,15 @@ export const COPIONE_STUDIO = `
       $('studio-nota').textContent = 'Lo Studio usa la scheda video del computer DaProd: da qui non c' + APO + 'e' + APO + '.';
       return;
     }
-    b.disabled = testo.length < 3 || saldo < costo;
-    b.textContent = saldo < costo ? 'Servono ' + soldi(costo) : 'Crea · ' + soldi(costo);
-    $('studio-nota').textContent = veloceStudio
-      ? 'Veloce: Qwen-Image 2.1 turbo, pronta in pochi secondi quando tocca a te.'
-      : 'Fine: il modello di serie a 40 passi, piu' + APO + ' lento e piu' + APO + ' curato.';
+    var modifica = stradaStudio === 'modifica';
+    b.disabled = testo.length < 3 || saldo < costo || (modifica && !fotoStudio);
+    b.textContent = saldo < costo ? 'Servono ' + soldi(costo)
+      : modifica && !fotoStudio ? 'Prima scegli la foto'
+      : (modifica ? 'Modifica · ' : 'Crea · ') + soldi(costo);
+    $('studio-nota').textContent = (studio.aspettaOk
+      ? 'Parte quando un admin da' + APO + ' l' + APO + 'ok; se la scarta ti tornano le lire. '
+      : 'Parte subito, quando tocca a te in fila. ') +
+      'Qwen-Image 2.1, 40 passi: la qualita' + APO + ' piena.';
   }
 
   function statoDetto(l) {
@@ -88,7 +103,7 @@ export const COPIONE_STUDIO = `
       return '<div class="studio-lavoro">' + quadro +
         '<div class="testo">' + (l.che === 'ritocco' ? '<b>ritocco:</b> ' : '') + sicuro(l.testo) +
         (l.scritta ? ' · <b>«' + sicuro(l.scritta) + '»</b>' : '') + '</div>' +
-        '<div class="dati"><span>' + sicuro(l.forma) + '</span><span>' + (l.veloce ? 'veloce' : 'fine') + '</span><span>' + soldi(l.costo) + '</span><span>' + quando(l.quando) + '</span></div>' +
+        '<div class="dati"><span>' + sicuro(l.forma) + '</span><span>' + (l.veloce ? 'veloce' : l.dalTelefono ? 'dal telefono' : 'fine') + '</span><span>' + soldi(l.costo) + '</span><span>' + quando(l.quando) + '</span></div>' +
         tasti + '</div>';
     }).join('');
   }
@@ -108,14 +123,46 @@ export const COPIONE_STUDIO = `
     }).catch(function (e) { avviso(e.message, 'male'); });
   }
 
+  /**
+   * La foto del telefono, rimpicciolita (1.4.9): il lato lungo a 1024 pixel e
+   * JPEG, cosi' sta sotto al megabyte che il computer accetta in una volta.
+   */
+  function leggiFotoStudio(file) {
+    return new Promise(function (risolvi, rifiuta) {
+      var url = URL.createObjectURL(file);
+      var img = new Image();
+      img.onload = function () {
+        var lato = Math.min(1, 1024 / Math.max(img.naturalWidth, img.naturalHeight));
+        var tela = document.createElement('canvas');
+        tela.width = Math.max(1, Math.round(img.naturalWidth * lato));
+        tela.height = Math.max(1, Math.round(img.naturalHeight * lato));
+        tela.getContext('2d').drawImage(img, 0, 0, tela.width, tela.height);
+        URL.revokeObjectURL(url);
+        risolvi(tela.toDataURL('image/jpeg', 0.84));
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); rifiuta(new Error('Questa foto non si apre.')); };
+      img.src = url;
+    });
+  }
+
   function creaNelloStudio() {
     var b = $('studio-vai');
     b.disabled = true;
+    if (stradaStudio === 'modifica') {
+      chiedi('POST', '/studio/ritocca', { foto: fotoStudio, istruzione: $('studio-testo').value.trim() }).then(function (r) {
+        if (io) io.saldo = r.saldo;
+        disegnaSaldo(true);
+        fotoStudio = '';
+        $('studio-testo').value = '';
+        avviso('Mandata: ' + soldi(r.lavoro.costo) + '. La trovi qui sotto quando e' + APO + ' pronta.', 'bene');
+        caricaStudio();
+      }).catch(function (e) { avviso(e.message, 'male'); aggiornaVaiStudio(); });
+      return;
+    }
     chiedi('POST', '/studio/crea', {
       testo: $('studio-testo').value.trim(),
       scritta: $('studio-scritta').value.trim(),
       forma: formaStudio,
-      veloce: veloceStudio,
     }).then(function (r) {
       if (io) io.saldo = r.saldo;
       disegnaSaldo(true);
@@ -162,8 +209,9 @@ export const COPIONE_STUDIO = `
     var qui = function (che) { return b.closest ? b.closest(che) : null; };
     var f = qui('[data-forma-studio]');
     if (f) { formaStudio = f.getAttribute('data-forma-studio'); disegnaScelteStudio(); return; }
-    var m = qui('[data-modo-studio]');
-    if (m) { veloceStudio = m.getAttribute('data-modo-studio') === 'veloce'; disegnaScelteStudio(); return; }
+    var st = qui('[data-strada-studio]');
+    if (st) { stradaStudio = st.getAttribute('data-strada-studio'); disegnaScelteStudio(); return; }
+    if (qui('#studio-foto-scegli')) { $('studio-foto-file').click(); return; }
     if (qui('#studio-vai')) { creaNelloStudio(); return; }
     if (qui('#studio-aggiorna')) { caricaStudio(); return; }
     if (qui('#studio-dado')) {
@@ -187,6 +235,14 @@ export const COPIONE_STUDIO = `
   });
   document.addEventListener('input', function (ev) {
     if (ev.target && ev.target.id === 'studio-testo') aggiornaVaiStudio();
+  });
+  document.addEventListener('change', function (ev) {
+    if (!ev.target || ev.target.id !== 'studio-foto-file') return;
+    var file = ev.target.files && ev.target.files[0];
+    ev.target.value = '';
+    if (!file) return;
+    leggiFotoStudio(file).then(function (u) { fotoStudio = u; disegnaScelteStudio(); })
+      .catch(function (e) { avviso(e.message, 'male'); });
   });
 
   var vaiAStudio = vaiA;

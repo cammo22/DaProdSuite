@@ -28,6 +28,7 @@ import { STILE_STUDIO } from "./studio-stile";
 import { COPIONE_PORTAFOGLIO } from "./portafoglio-copione";
 import { MARKUP_PORTAFOGLIO } from "./portafoglio-markup";
 import { STILE_PORTAFOGLIO } from "./portafoglio-stile";
+import { COPIONE_GRAFICI } from "./grafici-copione";
 
 /**
  * ⚠ **`sessione` e' la strada per far vedere le immagini.**
@@ -80,6 +81,7 @@ export function paginaGiochi(radice: string = "/giochi", sessione: string = ""):
     `;
 ` +
     COPIONE +
+    COPIONE_GRAFICI +
     COPIONE_SALA +
     COPIONE_HOME +
     COPIONE_STUDIO +

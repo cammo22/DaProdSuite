@@ -33,15 +33,25 @@
 import type { Caso } from "./regole";
 import { PEZZI_IMMAGINI } from "./rulli";
 
-/** Quanto costa, in lire. */
+/**
+ * Quanto costa, in lire.
+ *
+ * ⚠ **Dalla 1.4.9 una cosa sola: fine, 40 passi, mille lire.** Chiesto il 25
+ * settembre 2026: «gli utenti possono pagare per generare l'immagine, ma non
+ * deve partire automaticamente: un admin deve dare l'ok, e si fa solo fine 40
+ * passi e costa 1000 lire». Il «veloce» era Qwen col turbo, cioe' una LoRA, e
+ * le LoRA sono uscite dalle cose che si chiedono da fuori. Il ritocco costa
+ * uguale: e' lo stesso lavoro, parte da una foto invece che dal niente.
+ */
 export const COSTI_STUDIO = {
-  /** Qwen-Image 2.1 turbo, 5 passi. */
-  veloce: 300,
   /** Qwen-Image 2.1 di serie, 40 passi. */
-  fine: 900,
-  /** Un ritocco a parole, turbo. */
-  ritocco: 400,
+  fine: 1000,
+  /** Un ritocco a parole, anche su una foto caricata dal telefono. */
+  ritocco: 1000,
 } as const;
+
+/** Una foto dal telefono, come data URL: al massimo cosi' (la pagina la rimpicciolisce prima). */
+export const FOTO_MAX = 12_000_000;
 
 /** Le forme che la suite sa fare (le stesse di «genera.immagine»). */
 export const FORME_STUDIO = ["1:1", "4:3", "16:9", "9:16"] as const;
@@ -84,8 +94,11 @@ export interface LavoroStudio {
   testo: string;
   scritta?: string;
   forma: FormaStudio;
-  veloce: boolean;
+  /** Fino alla 1.4.8 c'era il turbo: le voci vecchie lo dicono ancora. */
+  veloce?: boolean;
   costo: number;
+  /** Per un ritocco: la foto era del telefono (1.4.9). */
+  dalTelefono?: boolean;
   /** Per un ritocco: da quale cosa della libreria si e' partiti. */
   da?: string;
   /** Rifiutato da chi comanda e gia' rimborsato. */
