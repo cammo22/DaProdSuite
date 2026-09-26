@@ -11,8 +11,9 @@ export const MARKUP_SALA = `
   <!-- =============================================================== sala -->
   <section class="pagina" id="p-sala">
     <h2>La sala d'arcade</h2>
-    <p class="spiega">Ricarichi quando vuoi, incassi quando vuoi. Il <b>Dozer</b> si mangia le
-      lire; <b>Claw</b> e <b>Neon</b> si finiscono, e chi finisce vince da 20 a 30 euro piu' i bonus.</p>
+    <p class="spiega">Metti lire quando vuoi, incassi quando vuoi, e non c'e' tetto. Nel <b>Dozer</b> le monete
+      sono lire, una a una: cinquanta e cinquanta. In <b>Claw</b> e <b>Neon</b> piu' vai avanti piu' rende
+      quello che hai messo, fino a tre volte; chi li finisce prende ancora di piu'.</p>
     <div class="sala-giochi" id="sala-giochi"></div>
     <!-- 1.4.9: al posto dei quadrati coi numeri, le statistiche che contano. -->
     <div class="sala-stat" id="sala-stat"></div>
@@ -71,6 +72,21 @@ export const MARKUP_SALA = `
         <div class="portafoglio-info" id="portafoglio-info"></div>
         <button class="btn oro" id="portafoglio-incassa" hidden>Incassa</button>
         <p class="portafoglio-nota" id="portafoglio-nota"></p>
+      </div>
+    </div>
+  </div>
+
+  <!--
+    ⚠ Le due domande che contano (1.5.1): «ogni volta che usa soldi reali si
+    deve avvisare», e «il pulsante incassa, quando premuto, avvisa di tutto».
+    Un foglio solo per tutte e due: sopra la cornice, sopra tutto.
+  -->
+  <div class="resoconto chiedi" id="chiedi" hidden>
+    <div class="resoconto-foglio" role="dialog" aria-labelledby="chiedi-titolo">
+      <div id="chiedi-dentro"></div>
+      <div class="chiedi-tasti">
+        <button class="btn grosso" id="chiedi-si">Si'</button>
+        <button class="btn piano" id="chiedi-no">No</button>
       </div>
     </div>
   </div>

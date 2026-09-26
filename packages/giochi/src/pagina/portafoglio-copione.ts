@@ -22,6 +22,11 @@ export const COPIONE_PORTAFOGLIO = `
   function categoriaDi(perche) {
     var p = String(perche || '');
     if (p.indexOf('ricarica') === 0) return { nome: 'Ricariche nei giochi', ico: '🎮' };
+    // 1.5.1: i potenziamenti coi soldi veri, i premi dei livelli, e i gesti della Banca.
+    if (p.indexOf('potenziamento') === 0) return { nome: 'Potenziamenti nei giochi', ico: '⚡' };
+    if (p.indexOf('premio del livello') === 0 || p.indexOf('premi dei livelli') === 0) return { nome: 'Premi dei livelli', ico: '⭐' };
+    if (p.indexOf('Banca DaProd:') === 0 || p.indexOf('annullato:') === 0) return { nome: 'Correzioni della Banca', ico: '🏦' };
+    if (p.indexOf('rimborso') === 0) return { nome: 'Rimborsi', ico: '↩️' };
     if (p.indexOf('incasso da') === 0 || p.indexOf('incasso della') === 0) return { nome: 'Incassi dai giochi', ico: '💰' };
     if (p.indexOf('partita finita') === 0) return { nome: 'Premi di fine partita', ico: '🏆' };
     if (p.indexOf('premio della Banca') === 0) return { nome: 'Premi della Banca', ico: '🎁' };
@@ -78,7 +83,8 @@ export const COPIONE_PORTAFOGLIO = `
       '<div class="wl-sotto">' + variazioneDetta(serie.inizio, pf.saldo) + '<small>' + NOMI_PERIODO[periodoPf] + '</small></div>' +
       '<div class="wl-altra">' + sicuro(altra) + '</div>' +
       '<div class="pf-livello"><span class="liv">liv. ' + pf.livello + '</span><div class="barra"><i style="width:' + Math.round(pf.versoIlProssimo * 100) + '%"></i></div>' +
-      '<small>' + Math.round(pf.versoIlProssimo * 100) + '% al ' + (pf.livello + 1) + '</small></div>';
+      '<small>' + Math.round(pf.versoIlProssimo * 100) + '% al ' + (pf.livello + 1) + '</small></div>' +
+      cosePerTe();
     var bottoni = document.querySelectorAll('[data-periodo]');
     for (var i = 0; i < bottoni.length; i++) bottoni[i].classList.toggle('scelto', bottoni[i].getAttribute('data-periodo') === periodoPf);
     $('wl-grafico').innerHTML = graficoLinea(serie.punti, { vuoto: 'Nessun movimento ' + NOMI_PERIODO[periodoPf] + '.' });
@@ -140,6 +146,28 @@ export const COPIONE_PORTAFOGLIO = `
     if (borsaViva) disegnaBorsa();
   }
 
+  /**
+   * Le cose che ti aspettano (1.5.1), sotto al saldo: il premio del livello da
+   * prendere, le partite aperte con dentro dei soldi, gli incassi fermi in
+   * controllo. Ognuna si tocca e porta dove serve.
+   */
+  function cosePerTe() {
+    if (!sala) return '';
+    var h = '';
+    if (sala.livelli && sala.livelli.daPrendere > 0) {
+      h += '<button class="wl-cosa oro tocca-livello">⭐ <b>Premio livello</b><small>+' + soldi(sala.livelli.daPrendere) + ' da prendere</small></button>';
+    }
+    (sala.giochi || []).filter(function (g) { return g.messo > 0; }).forEach(function (g) {
+      h += '<button class="wl-cosa" data-apri-gioco="' + sicuro(g.id) + '">' + (ICONE_SALA[g.id] || '🎮') + ' <b>' + sicuro(g.nome) + '</b><small>partita aperta · ' + soldi(g.messo) + ' messe</small></button>';
+    });
+    var fermi = sala.inControllo || [];
+    if (fermi.length) {
+      var tot = fermi.reduce(function (t, f) { return t + f.netto; }, 0);
+      h += '<div class="wl-cosa blu">⏳ <b>In controllo</b><small>' + soldi(tot) + ' aspettano un admin</small></div>';
+    }
+    return h ? '<div class="wl-cose">' + h + '</div>' : '';
+  }
+
   function caricaPortafoglioGiocatore() {
     return chiedi('GET', '/portafoglio').then(function (p) {
       pf = p;
@@ -166,7 +194,7 @@ export const COPIONE_PORTAFOGLIO = `
     var messe = 0, tornate = 0;
     settimana.forEach(function (m) {
       var c = categoriaDi(m.perche).nome;
-      if (c === 'Ricariche nei giochi') messe -= m.lire;
+      if (c === 'Ricariche nei giochi' || c === 'Potenziamenti nei giochi') messe -= m.lire;
       if (c === 'Incassi dai giochi' || c === 'Premi di fine partita') tornate += m.lire;
     });
     var migliore = pf.giochi.filter(function (g) { return g.messo > 0 || g.tornato > 0; })

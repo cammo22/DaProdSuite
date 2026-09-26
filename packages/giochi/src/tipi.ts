@@ -532,6 +532,17 @@ export interface Conto {
    * che il portafoglio fa vedere come ti va.
    */
   giochi?: Record<string, CassaGioco>;
+  /**
+   * Fino a che livello ha gia' preso il premio (1.5.1). «I livelli giocatore,
+   * se ci clicco, devo poter guadagnare qualcosa»: ogni livello nuovo ha il
+   * suo premio in lire, e si prende toccando il livello. Manca = 1.
+   */
+  livelloPagato?: number;
+  /**
+   * Gli incassi grossi che aspettano un admin (1.5.1): vedi `daControllare`
+   * in euro.ts. Non sono negati: sono fermi finche' qualcuno li guarda.
+   */
+  inControllo?: IncassoInControllo[];
   /** Gli ultimi movimenti del conto (1.4.8), dal piu' recente. Quaranta al massimo. */
   movimenti?: Movimento[];
   /** Il saldo a fine giornata (1.4.8), per l'andamento del portafoglio. Novanta giorni. */
@@ -557,6 +568,33 @@ export interface CassaGioco {
   record?: number;
   /** L'ultimo incasso, per dirlo. */
   ultimo?: { quando: number; netto: number; bonus: number; fetta: number; finita: boolean; minuti: number };
+  /** Quanto e' andato in potenziamenti pagati coi soldi veri (1.5.1), da sempre. */
+  potenziamentiTot?: number;
+}
+
+/** Un incasso fermo in attesa di un admin (1.5.1). */
+export interface IncassoInControllo {
+  id: string;
+  gioco: string;
+  quando: number;
+  /** Quanto arriverebbe nel portafoglio, e la fetta di DaProd. */
+  netto: number;
+  fetta: number;
+  /** Quanto era stato messo nella partita, e cosa diceva il gioco. */
+  messo: number;
+  grezzo: number;
+  finita: boolean;
+}
+
+/** Una riga del registro della Banca (1.5.1): chi comanda ha toccato i soldi. */
+export interface VoceRegistro {
+  quando: number;
+  /** Chi l'ha fatto (id dell'admin). */
+  da: string;
+  /** Su chi, se c'entra una persona. */
+  chi?: string;
+  cosa: string;
+  lire?: number;
 }
 
 /** Un movimento del conto (1.4.8): quanto, perche', e il saldo dopo. */
@@ -767,6 +805,10 @@ export interface DatiGiochi {
    * tornano in premi. La forma sta in `banca.ts`; facoltativa come la Borsa.
    */
   banca?: import("./banca").StatoBanca;
+  /** Le regole dei soldi dei giochi (1.5.1), se chi comanda le ha cambiate. Vedi `RegoleSoldi`. */
+  soldi?: Partial<import("./euro").RegoleSoldi>;
+  /** Il registro della Banca (1.5.1): le correzioni di chi comanda, le ultime duecento. */
+  registro?: VoceRegistro[];
 }
 
 /**

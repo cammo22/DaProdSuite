@@ -129,6 +129,8 @@ function applica(n, d, info) {
 
 // ============================================================ MORTI E BOTTINO
 function guadagna(l) {
+  // 2.1.6: LIRE ×10, il potenziamento DaProd coi soldi veri.
+  l *= buffAttivo("dpLire") || 1;
   S.lire += l; S.totLire += l; S.lireCiclo += l;
   // Dalla 2.1.4 niente punti DaProd: nella suite si incassa all'eruzione (economia.js).
 }

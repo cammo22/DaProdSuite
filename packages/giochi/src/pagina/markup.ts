@@ -80,6 +80,8 @@ export const MARKUP = `<header>
     </div>
     <div class="sotto-fila" data-di="admin">
       <button data-va="fila" id="tasto-fila" hidden>Fila<span class="pallino" id="quante-attesa" hidden></span></button>
+      <!-- 1.5.1: la Banca DaProd, dove si vedono e si riparano tutti i soldi della sala. -->
+      <button data-va="banca">Banca</button>
       <button data-va="giocatori">Giocatori</button>
       <button data-va="casse">Casse</button>
     </div>

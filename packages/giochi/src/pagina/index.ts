@@ -29,6 +29,9 @@ import { COPIONE_PORTAFOGLIO } from "./portafoglio-copione";
 import { MARKUP_PORTAFOGLIO } from "./portafoglio-markup";
 import { STILE_PORTAFOGLIO } from "./portafoglio-stile";
 import { COPIONE_GRAFICI } from "./grafici-copione";
+import { COPIONE_BANCA } from "./banca-copione";
+import { MARKUP_BANCA } from "./banca-markup";
+import { STILE_BANCA } from "./banca-stile";
 
 /**
  * ⚠ **`sessione` e' la strada per far vedere le immagini.**
@@ -62,13 +65,14 @@ export function paginaGiochi(radice: string = "/giochi", sessione: string = ""):
     STILE_HOME +
     STILE_STUDIO +
     STILE_PORTAFOGLIO +
+    STILE_BANCA +
     `
 </style>
 </head>
 <body>
 ` +
     // Le schede della 1.4.0 (Sala e Borsa) stanno dentro «main» con le altre.
-    MARKUP.replace("</main>", MARKUP_SALA + MARKUP_STUDIO + MARKUP_PORTAFOGLIO + "</main>").replace('<div class="sotto" id="sotto">', MARKUP_HOME + '<div class="sotto" id="sotto">') +
+    MARKUP.replace("</main>", MARKUP_SALA + MARKUP_STUDIO + MARKUP_PORTAFOGLIO + MARKUP_BANCA + "</main>").replace('<div class="sotto" id="sotto">', MARKUP_HOME + '<div class="sotto" id="sotto">') +
     `
 <script>
 (() => {
@@ -86,6 +90,7 @@ export function paginaGiochi(radice: string = "/giochi", sessione: string = ""):
     COPIONE_HOME +
     COPIONE_STUDIO +
     COPIONE_PORTAFOGLIO +
+    COPIONE_BANCA +
     `
 })();
 </script>

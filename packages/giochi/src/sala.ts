@@ -27,7 +27,21 @@ import type { Deposito } from "./deposito";
 import { altezza, livelloDi, pescaPesata, scalino, type Caso } from "./regole";
 import { rulliDi } from "./rulli";
 import type { CassaGioco, Conto, Grado, Partita, PezzoInGioco, Stacco, Tavolo } from "./tipi";
-import { FETTA_DAPROD, LIRE_PER_EURO, RICARICA_MIN, TAGLI_EURO, TAGLI_LIRE, bonusFine, euroDaLire, incasso, pezzoDiMontepremi, premioFine } from "./euro";
+import {
+  FETTA_DAPROD,
+  LIRE_PER_EURO,
+  RICARICA_MIN,
+  TAGLI_EURO,
+  TAGLI_LIRE,
+  bonusFine,
+  daControllare,
+  euroDaLire,
+  pezzoDiMontepremi,
+  premioDelLivello,
+  stimaIncasso,
+  type RegoleSoldi,
+  type Stima,
+} from "./euro";
 
 /** Il gioco, se esiste. Un id che non conosciamo e' un errore di chi chiama. */
 function giocoDi(id: string) {
@@ -127,16 +141,61 @@ function cassaDi(conto: Conto, gioco: string, adesso: number): CassaGioco {
 }
 
 /**
- * L'incasso di un gioco d'arcade (1.4.8): le lire che il gioco ha diventano
- * lire vere nel portafoglio, meno la fetta di DaProd. Vedi `euro.ts`.
+ * Quanto porteresti a casa adesso (1.5.1): il contatore dell'incasso.
  *
- * `grezzo` e' quello che il gioco dice di avere; `fine` vuol dire che la
- * partita e' finita (Claw, Neon): arriva il premio della velocita', la cassa
- * della partita si chiude e il gioco ricomincia da capo. Senza `fine` (il
- * Dozer, o chi smette prima) si incassa e basta.
+ * Chiesto il 26 settembre 2026: «il tasto incassa deve funzionare bene, con un
+ * counter di quanto si sta guadagnando e quanti punti si stanno facendo». Il
+ * gioco racconta quello che ha ogni tre secondi (daprod-lira.js), la sala
+ * chiede qui, e il numero si vede sia sopra il gioco sia dentro.
+ */
+export interface StimaGioco extends Stima {
+  gioco: string;
+  messo: number;
+  /** Il punteggio della partita, detto come lo conta la sala. */
+  punti: number;
+  minuti: number;
+  /** Quanto verrebbe se lo finissi adesso (Claw, Neon), velocita' compresa. */
+  finendo: number | null;
+}
+
+export function stimaGioco(deposito: Deposito, chi: string, idGioco: string, grezzo: number, adesso = Date.now()): StimaGioco {
+  const gioco = giocoDi(idGioco);
+  const conto = deposito.conto(chi);
+  const cassa = conto.giochi?.[gioco.id];
+  const messo = cassa?.messo ?? 0;
+  const minuti = cassa && messo > 0 ? Math.max(0, (adesso - cassa.inizio) / 60_000) : 0;
+  const regole = deposito.regoleSoldi();
+  const g = Math.max(0, Number(grezzo) || 0);
+  const s = stimaIncasso({ grezzo: g, messo, scala: gioco.scala, regole });
+  let finendo: number | null = null;
+  if (gioco.siFinisce && gioco.scala) {
+    const f = stimaIncasso({ grezzo: g, messo, scala: gioco.scala, fine: true, regole });
+    const veloce = bonusFine(messo, minuti);
+    finendo = f.netto + veloce - Math.floor(veloce * FETTA_DAPROD);
+  }
+  return { ...s, gioco: gioco.id, messo, punti: gioco.punti(g), minuti: Math.round(minuti * 10) / 10, finendo };
+}
+
+/**
+ * L'incasso di un gioco d'arcade: quello che hai nel gioco diventa lire vere
+ * nel portafoglio, meno la fetta di DaProd. Vedi `stimaIncasso` in euro.ts.
  *
- * Torna `preso`: quante lire il gioco deve togliersi. Quello sopra il tetto
- * resta nel gioco: non si perde, si porta a casa ricaricando ancora.
+ * ⚠ **Dalla 1.5.1 ogni incasso chiude la partita**, in tutti e tre i giochi, e
+ * **non c'e' piu' tetto**. Chiesto il 26 settembre 2026: «facciamo che il
+ * pulsante incassa resetta bene il gioco; quando premuto avvisa di tutto».
+ * Fino alla 1.5.0 il Dozer incassava a pezzi sotto un tetto, e Claw e Neon
+ * pagavano un premio fisso: chi aveva messo trentamila euro in Neon li ha
+ * visti sparire alla fine.
+ *
+ * `fine` vuol dire che il gioco e' stato finito (Claw: la collezione; Neon:
+ * il Vesuvio): tutto moltiplicato per `moltFine`, piu' il premio della
+ * velocita' e un pezzo del montepremi della Banca.
+ *
+ * Un incasso troppo grosso rispetto a quello messo non si paga subito: resta
+ * **in controllo** finche' un admin lo guarda nella Banca DaProd (vedi
+ * `daControllare`). Non e' un no: e' il campanello contro i difetti.
+ *
+ * Torna `preso`: quanto il gioco deve togliersi (tutto quello che ha).
  */
 export function incassaGioco(
   deposito: Deposito,
@@ -151,59 +210,140 @@ export function incassaGioco(
   const cassa = cassaDi(conto, gioco.id, adesso);
   const fine = Boolean(opzioni.fine) && gioco.siFinisce;
   const minuti = Math.max(0, (adesso - cassa.inizio) / 60_000);
-  /**
-   * ⚠ **Chi finisce Claw o Neon prende il premio di fine**, fuori dal tetto
-   * (1.4.9, vedi `premioFine` in euro.ts): da 20 a 30 euro col punteggio, piu'
-   * il premio della velocita' e un pezzo del montepremi della Banca.
-   */
-  let premio = 0;
+  const regole = deposito.regoleSoldi();
+  const g = Math.max(0, Number(grezzo) || 0);
+  const messo = cassa.messo;
+  const s = stimaIncasso({ grezzo: g, messo, scala: gioco.scala, fine, regole });
+  let veloce = 0;
   let montepremi = 0;
-  let conti: ReturnType<typeof incasso>;
-  if (fine && gioco.scala) {
-    premio = premioFine(Number(grezzo) || 0, gioco.scala);
-    const veloce = bonusFine(cassa.messo, minuti);
+  if (fine) {
+    veloce = bonusFine(messo, minuti);
     montepremi = deposito.prelevaMontepremi(pezzoDiMontepremi(deposito.statoBanca().riserva));
-    const lordo = premio + veloce + montepremi;
-    const fetta = Math.floor(lordo * FETTA_DAPROD);
-    conti = { preso: premio, bonus: veloce + montepremi, fetta, netto: lordo - fetta, tetto: 0, oltre: 0 };
-  } else {
-    conti = incasso({
-      valore: gioco.valore(Number(grezzo) || 0, cassa.messo),
-      messo: cassa.messo,
-      giaPreso: cassa.preso,
-      moltMax: gioco.moltMax,
-      bonus: fine ? bonusFine(cassa.messo, minuti) : 0,
-    });
   }
-  if (conti.preso + conti.bonus <= 0 && !fine && !opzioni.chiudi) {
+  const lordo = s.valore + veloce + montepremi;
+  if (lordo <= 0 && !fine && !opzioni.chiudi) {
     throw new NienteDaFare(
-      cassa.messo <= 0
-        ? "Prima si ricarica: si porta a casa al massimo " + gioco.moltMax + " volte quello che si mette."
-        : "Non c'e' niente da incassare: il tetto di questa partita e' gia' preso.",
+      messo <= 0 ? "Non c'e' niente da incassare: prima si ricarica, o si gioca un po'." : "Non c'e' niente da incassare.",
     );
   }
-  if (conti.netto > 0) deposito.muovi(chi, conti.netto, true, (fine ? "partita finita a " : "incasso da ") + gioco.nome);
-  // La fetta di DaProd va nella riserva della Banca: torna alla gente coi premi.
-  if (conti.fetta > 0) deposito.versaFetta(conti.fetta);
-  cassa.preso += conti.preso + conti.bonus;
-  cassa.presoTot += conti.netto;
-  cassa.fettaTot += conti.fetta;
-  conto.esperienza += Math.floor(conti.netto / XP_OGNI_LIRE_PRESE) + (fine ? XP_FINE : 0);
-  deposito.attivita(chi, conti.netto / 20 + (fine ? 50 : 0));
+  const fetta = Math.floor(lordo * FETTA_DAPROD);
+  const netto = lordo - fetta;
+  const controllo = netto > 0 && daControllare(netto, messo, regole);
+  if (controllo) {
+    const fermo = {
+      id: "c" + adesso.toString(36) + Math.floor(Math.random() * 1e6).toString(36),
+      gioco: gioco.id,
+      quando: adesso,
+      netto,
+      fetta,
+      messo,
+      grezzo: g,
+      finita: fine,
+    };
+    (conto.inControllo ??= []).push(fermo);
+  } else {
+    if (netto > 0) deposito.muovi(chi, netto, true, (fine ? "partita finita a " : "incasso da ") + gioco.nome);
+    // La fetta di DaProd va nella riserva della Banca: torna alla gente coi premi.
+    if (fetta > 0) deposito.versaFetta(fetta);
+    cassa.presoTot += netto;
+    cassa.fettaTot += fetta;
+    conto.esperienza += Math.floor(netto / XP_OGNI_LIRE_PRESE) + (fine ? XP_FINE : 0);
+    deposito.attivita(chi, netto / 20 + (fine ? 50 : 0));
+  }
+  cassa.preso += lordo;
   const m = Math.round(minuti * 10) / 10;
-  cassa.ultimo = { quando: adesso, netto: conti.netto, bonus: conti.bonus, fetta: conti.fetta, finita: fine, minuti: m };
+  cassa.ultimo = { quando: adesso, netto, bonus: veloce + montepremi, fetta, finita: fine, minuti: m };
   if (fine) {
     cassa.finite += 1;
     if (!cassa.record || m < cassa.record) cassa.record = m;
   }
-  // Partita chiusa: la prossima ricarica ne apre una nuova.
-  if (fine || opzioni.chiudi) {
-    cassa.messo = 0;
-    cassa.preso = 0;
-    cassa.inizio = adesso;
-  }
+  // Ogni incasso chiude la partita: la prossima ricarica ne apre una nuova.
+  cassa.messo = 0;
+  cassa.preso = 0;
+  cassa.inizio = adesso;
   deposito.salva();
-  return { ...conti, premio, montepremi, finita: fine, minuti: m, saldo: conto.saldo, euro: euroDaLire(conti.netto), cassa };
+  return {
+    ...s,
+    lordo,
+    fetta,
+    netto,
+    /** Quanto il gioco deve togliersi: tutto quello che ha. */
+    preso: g,
+    velocita: veloce,
+    montepremi,
+    bonus: veloce + montepremi,
+    messo,
+    finita: fine,
+    minuti: m,
+    inControllo: controllo,
+    saldo: conto.saldo,
+    euro: euroDaLire(netto),
+    cassa,
+  };
+}
+
+/**
+ * ⚠ **I potenziamenti coi soldi veri** (1.5.1). Chiesto il 26 settembre 2026:
+ * «i giocatori devono spendere soldi reali per i potenziamenti dei giochi;
+ * ogni volta che usa soldi reali si deve avvisare, e poi puo' fare piu' punti
+ * possibili».
+ *
+ * Il gioco chiede (`DaProdLira.paga`), la sala fa vedere l'avviso con quanto
+ * costa in lire e in euro, e solo se chi gioca dice si' si arriva qui. Le lire
+ * escono dal portafoglio e contano come **messe** nella partita: la resa le
+ * moltiplica all'incasso come una ricarica.
+ */
+export function pagaPotenziamento(deposito: Deposito, chi: string, idGioco: string, quante: number, cosa: string, adesso = Date.now()) {
+  const gioco = giocoDi(idGioco);
+  const conto = deposito.conto(chi);
+  const lire = Math.floor(Number(quante) || 0);
+  if (!(lire > 0)) throw new NienteDaFare("Quanto costa? Il gioco non l'ha detto.");
+  if (lire > conto.saldo) throw new NienteDaFare("Nel portafoglio ci sono " + conto.saldo + " lire: non bastano.");
+  const detto = String(cosa || "potenziamento").slice(0, 60);
+  deposito.muovi(chi, -lire, true, "potenziamento " + gioco.nome + ": " + detto);
+  const cassa = cassaDi(conto, gioco.id, adesso);
+  if (cassa.messo === 0 && cassa.preso === 0) {
+    cassa.inizio = adesso;
+    cassa.partite += 1;
+  }
+  cassa.messo += lire;
+  cassa.messoTot += lire;
+  cassa.potenziamentiTot = (cassa.potenziamentiTot ?? 0) + lire;
+  conto.esperienza += Math.floor(lire / XP_OGNI_LIRE_MESSE);
+  deposito.salva();
+  return { saldo: conto.saldo, lire, cosa: detto, cassa };
+}
+
+/* -------------------------------------------------- i premi dei livelli */
+
+/** I premi dei livelli ancora da prendere (1.5.1). */
+export function premiDeiLivelli(conto: Conto, perIlLivello: number, r: RegoleSoldi) {
+  const livello = livelloDi(conto.esperienza, perIlLivello);
+  const pagato = Math.max(1, Math.floor(conto.livelloPagato ?? 1));
+  const livelli: { livello: number; lire: number }[] = [];
+  for (let n = pagato + 1; n <= livello; n++) livelli.push({ livello: n, lire: premioDelLivello(n, r) });
+  const prossimo = premioDelLivello(livello + 1, r);
+  return { livello, pagato, livelli, daPrendere: livelli.reduce((t, x) => t + x.lire, 0), prossimo };
+}
+
+/** Toccare il livello: si prendono tutti i premi maturati. */
+export function riscuotiLivelli(deposito: Deposito, chi: string) {
+  const conto = deposito.conto(chi);
+  const p = premiDeiLivelli(conto, deposito.impostazioni().perIlLivello, deposito.regoleSoldi());
+  if (p.livelli.length === 0) {
+    throw new NienteDaFare("Niente da prendere: il prossimo premio arriva al livello " + (p.livello + 1) + ".");
+  }
+  if (p.daPrendere > 0) {
+    deposito.muovi(
+      chi,
+      p.daPrendere,
+      true,
+      p.livelli.length === 1 ? "premio del livello " + p.livello : "premi dei livelli " + (p.pagato + 1) + "-" + p.livello,
+    );
+  }
+  conto.livelloPagato = p.livello;
+  deposito.salva();
+  return { ...p, saldo: conto.saldo };
 }
 
 /**
@@ -358,6 +498,12 @@ export interface StatoSala {
   banca: VetrinaBanca;
   /** L'ultimo premio della Banca vinto: la pagina lo dice una volta. */
   premio: Conto["ultimoPremio"] | null;
+  /** Le regole dei soldi di adesso (1.5.1): la resa, la paga, il campanello. */
+  soldi: RegoleSoldi;
+  /** I premi dei livelli (1.5.1). */
+  livelli: ReturnType<typeof premiDeiLivelli>;
+  /** Gli incassi fermi in attesa di un admin (1.5.1). */
+  inControllo: NonNullable<Conto["inControllo"]>;
 }
 
 export function statoSala(deposito: Deposito, chi: string, adesso = Date.now()): StatoSala {
@@ -387,6 +533,9 @@ export function statoSala(deposito: Deposito, chi: string, adesso = Date.now()):
     },
     banca: vetrina(deposito.statoBanca(), chi, adesso),
     premio: conto.ultimoPremio ?? null,
+    soldi: deposito.regoleSoldi(),
+    livelli: premiDeiLivelli(conto, imp.perIlLivello, deposito.regoleSoldi()),
+    inControllo: conto.inControllo ?? [],
   };
 }
 
@@ -396,23 +545,23 @@ export interface GiocoInSala {
   nome: string;
   riga: string;
   ingresso: number;
-  moltMax: number;
   siFinisce: boolean;
   fine?: string;
+  /** Cosa succede al gioco quando si incassa. */
+  ricomincia: string;
+  /** Si conta a ordini di grandezza (Claw, Neon) o uno a uno (Dozer). */
+  aResa: boolean;
   /** La partita di adesso in quel gioco. */
   messo: number;
   preso: number;
-  /** Quanto si puo' ancora portare a casa in questa partita. */
-  tettoRimasto: number;
   /** Da quanti minuti e' cominciata. */
   minuti: number;
   /** Il premio della velocita' se si finisse adesso. */
   bonusSeFinisci: number;
-  /** Il premio di fine partita piu' basso (1.4.9): 20 euro, di piu' col punteggio. */
-  premioFine: number;
   /** Da sempre. */
   messoTot: number;
   presoTot: number;
+  potenziamentiTot: number;
   partite: number;
   finite: number;
   record: number | null;
@@ -428,17 +577,17 @@ function giocoInSala(conto: Conto, g: (typeof GIOCHI_SALA)[IdGiocoSala], adesso:
     nome: g.nome,
     riga: g.riga,
     ingresso: g.ingresso,
-    moltMax: g.moltMax,
     siFinisce: g.siFinisce,
     fine: g.fine,
+    ricomincia: g.ricomincia,
+    aResa: Boolean(g.scala),
     messo,
     preso,
-    tettoRimasto: Math.max(0, Math.floor(messo * g.moltMax) - preso),
     minuti: Math.round(minuti * 10) / 10,
     bonusSeFinisci: g.siFinisce ? bonusFine(messo, minuti) : 0,
-    premioFine: g.scala ? premioFine(0, g.scala) : 0,
     messoTot: c?.messoTot ?? 0,
     presoTot: c?.presoTot ?? 0,
+    potenziamentiTot: c?.potenziamentiTot ?? 0,
     partite: c?.partite ?? 0,
     finite: c?.finite ?? 0,
     record: c?.record ?? null,

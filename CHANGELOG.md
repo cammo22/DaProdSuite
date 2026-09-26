@@ -10,6 +10,69 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ---
 
+## 1.5.1 — I soldi della sala, rifatti
+
+> «Voglio una migliore gestione dei soldi, miglior portafoglio personale e una
+> banca DaProd dove poter gestire tutta la sala giochi.»
+
+**Niente più tetto, la vincita è dinamica.** Il motivo: «a Partenope ho messo
+30k euro e quando ho finito ho perso tutto». Fino alla 1.5.0 Claw e Neon
+pagavano un premio fisso da 20 a 30 euro, qualunque cosa ci avessi messo
+dentro. Adesso quello che metti (ricariche e potenziamenti) **rende di più
+quanto più vai avanti**: se smetti subito ti riprendi la metà, andando fino in
+fondo col punteggio arriva a tre volte. In più fino a 30 € solo per aver
+giocato, e finire il gioco moltiplica tutto per 1,25, più velocità e
+montepremi. Nel Dozer le monete sono lire, una a una, senza tetto.
+
+**L'incasso ha il suo contatore e dice tutto prima.** Sopra al gioco c'è
+«incassi adesso», con la percentuale su quello che hai messo e i punti che stai
+facendo, e il tasto Incassa porta la cifra. Toccandolo si apre un foglio che
+dice tutto: quanto hai messo, la resa, la fetta di DaProd, quanto arriva e cosa
+riparte da zero. **Ogni incasso chiude la partita** e il gioco ricomincia pulito.
+
+**I potenziamenti si pagano coi soldi veri, e si avvisa ogni volta.** Nel
+Dozer abilità e monete da sbloccare escono dal portafoglio; Claw e Neon hanno i
+loro «⚡ Potenziamenti DaProd» a tempo (prese gratis, lire ×10, pugno ×10, il
+SUPER…). Ogni volta si apre l'avviso «Soldi veri» con quanto costa e cosa resta.
+Contano come messi nella partita, quindi la resa li moltiplica.
+
+**I livelli pagano.** Tocchi il livello (in alto, o in Home) e prendi il premio
+di ogni livello nuovo: il livello per un euro, di serie. Quando ce n'è uno da
+prendere, il livello brilla.
+
+**La Banca DaProd, per chi comanda.** Una scheda nuova fra Fila e Giocatori:
+quante lire ci sono nei portafogli e dentro i giochi, la riserva, e quattro
+parti.
+
+- **Da controllare**: gli incassi enormi (più di 25 volte quello messo e sopra i
+  500 €) non si pagano da soli, aspettano qui. Si pagano, si rimborsa solo il
+  messo, o si rifiutano. È il campanello contro i difetti, non un tetto.
+- **Conti**: per ogni persona puoi mettere il saldo a una cifra, aggiungere o
+  togliere, rimborsare o chiudere una partita rimasta aperta, rimettere i premi
+  dei livelli, e annullare un movimento dal libro.
+- **Regole**: la resa, la paga di chi gioca, il moltiplicatore di fine, il
+  campanello e i premi dei livelli, con l'esempio di cosa vuol dire.
+- **Registro**: ogni gesto resta scritto, con chi l'ha fatto.
+
+In più c'è **Ripara tutto**, che rimette dritti i numeri storti.
+
+**Il portafoglio ti dice cosa ti aspetta**: il premio del livello da prendere, le
+partite aperte con dentro dei soldi (si toccano e si riapre il gioco), gli
+incassi in controllo. I movimenti hanno le voci nuove: potenziamenti, premi dei
+livelli, correzioni della Banca, rimborsi.
+
+**I giochi:**
+
+- **Coin Dozer 2.2.7**: cinquanta e cinquanta, gli eventi a testa o croce e più
+  forti. Gli effetti durano 30 secondi o 2 minuti e **si vedono ai lati dello
+  schermo** (verde a sinistra i buoni, rosso a destra i cattivi, col conto alla
+  rovescia); **negli ultimi dieci secondi lampeggiano**. L'incasso rifà il tavolo.
+- **Claw Machine 1.1.5**: il premio della fine segue la resa, e c'è ⚡ DaProd
+  con sei potenziamenti a tempo.
+- **Neon Partenope 2.1.6**: 🏁 porta la cifra dal vivo e riparte davvero da capo.
+  Ci sono cinque potenziamenti DaProd. Se all'eruzione non rispondi, il Vesuvio
+  aspetta invece di bruciare il ciclo.
+
 ## 1.5.0 — La Claw che paga e Neon che parla
 
 > «In Claw Machine e Neon Partenope puoi guadagnare molto.»

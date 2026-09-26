@@ -265,7 +265,14 @@ function erutta() {
     Scena.eruzione(2);
     Fx.lampo("rgba(255,200,80,.8)");
     toast("🌋", "IL VESUVIO ERUTTA!", "Partita finita: incasso le lire in lire vere DaProd", { tipo: "lava", dur: 6000 });
-    DaProdLira.incassa({ fine: true, grezzo: S.lireCiclo }).catch(() => { incassando = false; eruttaDavvero(); });
+    // 2.1.6: la sala dice tutto prima di incassare. Se chi gioca non risponde,
+    // l'eruzione aspetta (il Vesuvio resta pronto); se la sala non c'e', si
+    // erutta come sempre.
+    DaProdLira.incassa({ fine: true, grezzo: S.lireCiclo }).catch((e) => {
+      incassando = false;
+      if (e && e.message === "Annullato") { toast("🌋", "Eruzione rimandata", "Il Vesuvio resta pronto: tocca di nuovo per incassare", { tipo: "lava" }); return; }
+      eruttaDavvero();
+    });
     return;
   }
   eruttaDavvero();

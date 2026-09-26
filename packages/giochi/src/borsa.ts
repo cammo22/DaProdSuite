@@ -8,7 +8,6 @@
 
 import type { Caso } from "./regole";
 import type { Grado, OraDiBorsa } from "./tipi";
-import { valorePrimaDellaFine } from "./euro";
 
 /* ------------------------------------------------------------- la borsa -- */
 
@@ -206,14 +205,6 @@ export interface GiocoSala {
    */
   ingresso: number;
   /**
-   * Quanto vale in lire quello che il gioco dice di avere, all'incasso (1.4.8).
-   * Dozer e Claw contano in lire vere, uno a uno; Neon e' un clicker coi numeri
-   * che esplodono, e si contano gli ordini di grandezza.
-   */
-  valore: (grezzo: number, messo: number) => number;
-  /** Il tetto dell'incasso: al massimo tante volte quello che si e' messo. */
-  moltMax: number;
-  /**
    * Il gioco si finisce (Claw: tutta la collezione; Neon: il Vesuvio che
    * erutta). Finito, si incassa col premio della velocita' e si ricomincia da
    * capo. Il Dozer non finisce: si incassa quando si vuole e il tavolo resta.
@@ -221,14 +212,21 @@ export interface GiocoSala {
   siFinisce: boolean;
   /** Cosa vuol dire finire, detto a chi gioca. */
   fine?: string;
+  /** Cosa succede al gioco quando si incassa (1.5.1): la sala lo dice prima. */
+  ricomincia: string;
   /**
-   * Fra quali ordini di grandezza del punteggio va il premio di fine (1.4.9):
-   * al primo sono 20 euro, all'ultimo 30. Vedi `premioFine` in euro.ts.
+   * Fra quali ordini di grandezza del punteggio si va avanti (1.4.9): al primo
+   * la resa e' la piu' bassa, all'ultimo la piu' alta. Vedi `stimaIncasso` in
+   * euro.ts. Senza scala (il Dozer) il gioco conta uno a uno.
    */
   scala?: readonly [number, number];
   /** Da quello che il gioco racconta (i suoi gettoni vinti) ai punti della partita. */
   punti: (grezzo: number) => number;
-  /** I tetti (§ 18.4): al minuto e al giorno. */
+  /**
+   * I tetti dei punti (§ 18.4): al minuto e al giorno. ⚠ Dalla 1.5.1 non ci
+   * sono piu' («poi puo' fare piu' punti possibili»): restano i campi, a
+   * infinito, perche' chi comanda possa rimetterli se un gioco si rompe.
+   */
   tettoMinuto: number;
   tettoGiorno: number;
   /** Le cose grosse che danno una carta, con quanto spesso e da che grado. */
@@ -245,18 +243,17 @@ export const GIOCHI_SALA: Record<IdGiocoSala, GiocoSala> = {
     nome: "Coin Dozer",
     riga: "Tre piani, tre spintori, e le pile che si fondono fino al miliardo.",
     ingresso: 0,
-    valore: (g) => Math.floor(Math.max(0, g)),
-    /**
-     * ⚠ **Il mangiasoldi**, dalla 1.4.9: «il coin dozer deve essere un
-     * mangiatore di soldi». Si porta a casa al massimo il doppio di quello che
-     * si mette, e di solito molto meno: e' la cassa che riempie la Banca da
-     * cui Claw e Neon pagano i loro premi.
+    /*
+     * ⚠ **Cinquanta e cinquanta**, dalla 1.5.1: «il dozer ha 50 e 50 di poter
+     * vincere molto o perdere molto». Le monete che hai sono lire, uno a uno,
+     * senza tetto: quello che il tavolo si mangia e' andato, quello che fai
+     * cadere e' tuo.
      */
-    moltMax: 2,
     siFinisce: false,
+    ricomincia: "Il tavolo riparte pulito: le monete ancora sul tavolo vanno alla casa. Abilita' e monete sbloccate restano tue.",
     punti: (g) => Math.floor(Math.max(0, g) / 5),
-    tettoMinuto: 2_000,
-    tettoGiorno: 30_000,
+    tettoMinuto: Infinity,
+    tettoGiorno: Infinity,
     eventi: {
       jackpot: { prob: 1, min: "rare", detto: "il jackpot dello schermo" },
       tris: { prob: 0.5, min: "grand", detto: "un tris al gettone DaProd" },
@@ -270,18 +267,17 @@ export const GIOCHI_SALA: Record<IdGiocoSala, GiocoSala> = {
     ingresso: 0,
     /**
      * ⚠ **Le lire della Claw arrivano a miliardi** (1.4.9: «si arriva
-     * tranquillamente a 6,1 miliardi»). Una a una non si potevano portare a
-     * casa: chi smette prima porta a casa fino a 15 euro, sotto il tetto; chi
-     * finisce prende il premio di fine, da 20 a 30 euro (vedi euro.ts).
+     * tranquillamente a 6,1 miliardi»). Una a una non si possono portare a
+     * casa: contano gli ordini di grandezza, e fanno salire la resa su quello
+     * che hai messo (vedi `stimaIncasso` in euro.ts).
      */
-    valore: (g) => valorePrimaDellaFine(g, SCALA_CLAW),
-    moltMax: 10,
     siFinisce: true,
     fine: "tutti e 20 i modellini in collezione",
+    ricomincia: "Il gioco ricomincia da capo: collezione, officina e lire della Claw ripartono da zero.",
     scala: SCALA_CLAW,
     punti: (g) => Math.floor(Math.max(0, g) / 4),
-    tettoMinuto: 2_000,
-    tettoGiorno: 30_000,
+    tettoMinuto: Infinity,
+    tettoGiorno: Infinity,
     eventi: {
       presa: { prob: 0.25, min: "basic", detto: "un modellino preso" },
       shiny: { prob: 1, min: "arcane", detto: "un modellino shiny" },
@@ -294,16 +290,15 @@ export const GIOCHI_SALA: Record<IdGiocoSala, GiocoSala> = {
     riga: "Napoli 2099: colpisci le orde, libera la sirena, fai eruttare il Vesuvio.",
     ingresso: 0,
     // Le lire di Neon arrivano a trenta cifre: come la Claw, contano gli
-    // ordini di grandezza (1.4.9), e chi finisce prende il premio di fine.
-    valore: (g) => valorePrimaDellaFine(g, SCALA_NEON),
-    moltMax: 10,
+    // ordini di grandezza, e fanno salire la resa (1.5.1).
     siFinisce: true,
     scala: SCALA_NEON,
     fine: "il Vesuvio che erutta",
+    ricomincia: "Il gioco ricomincia da capo: quartiere, robot, oggetti e lire di Neon ripartono da zero.",
     // Un clicker: i numeri esplodono. Si contano gli ordini di grandezza.
     punti: (g) => Math.round(60 * Math.log10(1 + Math.max(0, g))),
-    tettoMinuto: 1_500,
-    tettoGiorno: 30_000,
+    tettoMinuto: Infinity,
+    tettoGiorno: Infinity,
     eventi: {
       boss: { prob: 0.6, min: "grand", detto: "un boss battuto" },
       eruzione: { prob: 1, min: "heroic", detto: "il Vesuvio che erutta" },

@@ -109,6 +109,8 @@ function moltTemporaneo() {
   }
   if (protoAttivo()) m *= PROTOCOLLO.danno;
   const b = buffAttivo("dan"); if (b) m *= b;
+  // 2.1.6: i potenziamenti DaProd coi soldi veri (main.js).
+  const dp = buffAttivo("dpDan"); if (dp) m *= dp;
   return m;
 }
 function dannoColpo() { return dannoBase() * moltTemporaneo(); }
@@ -120,7 +122,7 @@ function probCrit() {
     c += livInf("crit") * INFINITI.crit.per;
     c += 0.02 * livCirc("occhio");
     return Math.min(0.9, c);
-  }) + (buffAttivo("crit") || 0);
+  }) + (buffAttivo("crit") || 0) + (buffAttivo("dpCrit") || 0);
 }
 function probMulti() {
   const r = S.stat.multi || 0;
@@ -169,7 +171,7 @@ function moltProdGlobale() {
     if (set.frutiger >= 2) m *= 3;
     if (set.partenope >= 2) m *= 1.5;
     return m;
-  }) * (buffAttivo("prod") || 1);
+  }) * (buffAttivo("prod") || 1) * (buffAttivo("dpProd") || 1);
 }
 function prodGen(g) { return g.prod * moltGen(g.id) * moltProdGlobale(); }
 function produzione() {
