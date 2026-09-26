@@ -15,9 +15,10 @@ export const STILE_BANCA = `
 .bk-num.oro b{color:#ffd166} .bk-num.allarme{border-color:rgba(255,92,108,.55); background:rgba(255,92,108,.1)} .bk-num.allarme b{color:#ff8a96}
 .bk-schede{display:flex; gap:6px; overflow-x:auto; scrollbar-width:none; margin-bottom:12px}
 .bk-schede::-webkit-scrollbar{display:none}
-.bk-schede button{flex:1 0 auto; padding:10px 14px; border-radius:999px; border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.04);
-  color:#cfe7df; font:700 13px/1 "Nunito", sans-serif; cursor:pointer}
-.bk-schede button.scelto{background:linear-gradient(180deg, #fff1b8, #ffd166); color:#1a1300; border-color:transparent}
+.bk-schede{border-bottom:1px solid rgba(255,255,255,.1); gap:2px}
+.bk-schede button{flex:1 0 auto; padding:11px 14px; border:0; border-bottom:2px solid transparent; background:transparent;
+  color:#9fc4b8; font:700 13.5px/1 "Nunito", sans-serif; cursor:pointer}
+.bk-schede button.scelto{color:#ffe7a3; border-bottom-color:#ffd166}
 .bk-schede button .pallino{position:static; display:inline-block; margin-left:6px; min-width:18px; padding:2px 5px; border-radius:999px; background:#ff5c6c; color:#fff; font-size:11px}
 .bk-lista{display:grid; gap:10px}
 .bk-carta{display:grid; gap:10px; padding:14px; border-radius:20px; background:rgba(6,14,18,.88); border:1px solid rgba(255,255,255,.09)}
@@ -33,7 +34,34 @@ export const STILE_BANCA = `
   border:1px solid rgba(61,219,255,.3); color:#cdefff; font-size:12.5px}
 .bk-chip span.rosso{background:rgba(255,92,108,.1); border-color:rgba(255,92,108,.45); color:#ffc2c9}
 .bk-tasti{display:flex; flex-wrap:wrap; gap:6px}
-.bk-tasti .btn{padding:8px 12px; font-size:12.5px}
+/* 1.6.0: tasti normali. «togliamo questi pulsanti frutiger, mettiamo dei pulsanti normali». */
+.bk-b{display:inline-flex; align-items:center; justify-content:center; gap:6px; padding:8px 12px; border-radius:10px;
+  border:1px solid rgba(255,255,255,.16); background:#0d1a17; color:#dff5ee; font:700 12.5px/1.1 "Nunito", sans-serif;
+  cursor:pointer; box-shadow:none; text-shadow:none; white-space:nowrap}
+.bk-b:hover{background:#13241f; border-color:rgba(255,255,255,.28)}
+.bk-b:active{transform:translateY(1px)}
+.bk-b:disabled{opacity:.4; cursor:default}
+.bk-b.oro{border-color:rgba(255,209,102,.6); color:#ffd166}
+.bk-b.oro:not(:disabled):hover{background:rgba(255,209,102,.12)}
+.bk-b.rosso{border-color:rgba(255,92,108,.45); color:#ff9aa4}
+.bk-attrezzi{display:flex; gap:6px}
+.bk-rapidi{display:flex; flex-wrap:wrap; align-items:center; gap:6px}
+.bk-rapidi small{color:#86a59c; font:700 10px/1 "Space Mono", monospace; text-transform:uppercase; letter-spacing:.06em; margin-right:2px}
+.bk-rapidi .bk-b{padding:6px 10px; font:700 12px/1 "Space Mono", monospace}
+/* i selettori a segmenti */
+.bk-seg{display:inline-flex; padding:3px; gap:2px; border-radius:10px; background:rgba(0,0,0,.35); border:1px solid rgba(255,255,255,.08); flex-wrap:wrap}
+.bk-seg button{padding:6px 10px; border:0; border-radius:7px; background:transparent; color:#9fc4b8; font:700 12px/1 "Nunito", sans-serif; cursor:pointer}
+.bk-seg button.scelto{background:#1d3a32; color:#f2fffb}
+.bk-seg.piccolo button{padding:6px 9px; font:700 11.5px/1 "Space Mono", monospace}
+/* la linea della Banca */
+.bk-linea{display:grid; gap:8px}
+.bk-linea-testa{display:flex; flex-wrap:wrap; justify-content:space-between; gap:6px}
+.bk-linea-dice{display:flex; align-items:baseline; flex-wrap:wrap; gap:4px 10px}
+.bk-linea-dice b{font:700 20px/1 "Space Mono", monospace; color:#f2fffb}
+.bk-linea-dice span{font:700 13px/1 "Space Mono", monospace}
+.bk-linea-dice span.su{color:#3dff8a} .bk-linea-dice span.giu{color:#ff8a96}
+.bk-linea-dice small{color:#86a59c; font-size:12px}
+.bk-linea .stat-grafico{margin-bottom:0}
 .bk-mov{display:grid; grid-template-columns:minmax(0,1fr) auto auto; gap:8px; align-items:center; padding:7px 10px; border-radius:12px; background:rgba(255,255,255,.03)}
 .bk-mov .cosa{font-size:12.5px; color:#dfe; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
 .bk-mov .cosa small{display:block; color:#86a59c; font-size:10.5px}
@@ -42,8 +70,19 @@ export const STILE_BANCA = `
 .bk-mov button{padding:5px 8px; border-radius:10px; border:1px solid rgba(255,255,255,.14); background:transparent; color:#cfe7df; font-size:11px; cursor:pointer}
 .bk-mov.annullato{opacity:.45}
 .bk-regole{display:grid; gap:10px}
-.bk-regola{display:grid; grid-template-columns:minmax(0,1fr) 120px; gap:10px; align-items:center; padding:12px; border-radius:16px;
+.bk-modi{display:flex; flex-wrap:wrap; gap:6px}
+.bk-regola{display:grid; grid-template-columns:minmax(0,1fr) auto; gap:8px 10px; align-items:center; padding:12px; border-radius:14px;
   background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.08)}
+.bk-regola.cambiata{border-color:rgba(255,209,102,.55)}
+.bk-regola .bk-seg{grid-column:1 / -1; justify-self:start}
+.bk-passo{display:flex; align-items:center; gap:6px}
+.bk-passo b{min-width:58px; text-align:center; font:700 15px/1 "Space Mono", monospace; color:#f2fffb}
+.bk-passo .bk-b{width:34px; height:34px; padding:0; font-size:17px}
+.bk-salva{display:flex; flex-wrap:wrap; align-items:center; gap:8px; padding:10px 12px; border-radius:14px;
+  background:#07110e; border:1px solid rgba(255,255,255,.1)}
+.bk-salva span{flex:1 1 200px; color:#9fc4b8; font-size:12.5px}
+.bk-salva.acceso{border-color:rgba(255,209,102,.6)}
+.bk-salva.acceso span{color:#ffe7a3}
 .bk-regola b{display:block; color:#f2fffb; font-size:14px}
 .bk-regola small{display:block; color:#86a59c; font-size:12px; margin-top:3px; line-height:1.4}
 .bk-regola input{width:100%; padding:10px; border-radius:12px; border:1px solid rgba(120,255,220,.25); background:#020806; color:#f2fffb;

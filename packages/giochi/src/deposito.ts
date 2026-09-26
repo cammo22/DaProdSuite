@@ -52,6 +52,7 @@ import type {
   OraDiBorsa,
   Pacchetto,
   Pezzo,
+  PuntoBanca,
 } from "./tipi";
 
 /**
@@ -90,6 +91,9 @@ const ATTESA_MS = 500;
 export const MOVIMENTI_TENUTI = 300;
 /** Quanti giorni di saldo si tengono per l'andamento (1.4.8). */
 export const GIORNI_TENUTI = 90;
+
+/** Quanti punti ha la linea della Banca (1.6.0): uno all'ora per trenta giorni. */
+export const PUNTI_BANCA = 24 * 30;
 
 /** Il saldo di oggi nello storico: l'ultimo del giorno vince. */
 export function segnaNelloStorico(conto: Conto, giorno: string, saldo: number): void {
@@ -197,6 +201,7 @@ export class Deposito {
       // 1.5.1: le regole dei soldi e il registro della Banca; un file di prima non li ha.
       ...(lette.soldi && typeof lette.soldi === "object" ? { soldi: lette.soldi } : {}),
       ...(Array.isArray(lette.registro) ? { registro: lette.registro } : {}),
+      ...(Array.isArray(lette.andamentoBanca) ? { andamentoBanca: lette.andamentoBanca.slice(-PUNTI_BANCA) } : {}),
       pacchetti: Array.isArray(lette.pacchetti)
         ? lette.pacchetti
         : /**
@@ -381,8 +386,35 @@ export class Deposito {
       versa(b, -mosso);
       segnaAttivita(b, chi, -mosso / 10);
     }
+    if (mosso !== 0) this.segnaAndamento();
     this.salva();
     return conto;
+  }
+
+  /**
+   * Un punto sulla linea della Banca (1.6.0): uno per ora, l'ultimo vince.
+   * Costa una somma sui conti, che sono le persone di casa: poche.
+   */
+  segnaAndamento(adesso: number = Date.now()): void {
+    const t = Math.floor(adesso / 3_600_000) * 3_600_000;
+    const conti = this.dati.conti;
+    const punto: PuntoBanca = {
+      t,
+      riserva: this.statoBanca().riserva,
+      circolante: conti.reduce((s, c) => s + (Number.isFinite(c.saldo) ? c.saldo : 0), 0),
+      neiGiochi: conti.reduce(
+        (s, c) => s + Object.values(c.giochi ?? {}).reduce((x, g) => x + (Number.isFinite(g.messo) ? g.messo : 0), 0),
+        0,
+      ),
+    };
+    const a = (this.dati.andamentoBanca ??= []);
+    if (a.length && a[a.length - 1]!.t === t) a[a.length - 1] = punto;
+    else a.push(punto);
+    if (a.length > PUNTI_BANCA) a.splice(0, a.length - PUNTI_BANCA);
+  }
+
+  andamentoBanca(): PuntoBanca[] {
+    return this.dati.andamentoBanca ?? [];
   }
 
   /* ------------------------------------------------------ la Banca DaProd */
@@ -391,6 +423,16 @@ export class Deposito {
   statoBanca(): StatoBanca {
     if (!this.dati.banca) this.dati.banca = bancaNuova(Date.now());
     return this.dati.banca;
+  }
+
+  /** Lire che escono dalla riserva (1.6.0, il regalo della prima partita). Torna quante ne sono uscite. */
+  dallaRiserva(lire: number): number {
+    const b = this.statoBanca();
+    const x = Math.max(0, Math.min(b.riserva, Math.floor(lire)));
+    b.riserva -= x;
+    b.pagate += x;
+    this.salva();
+    return x;
   }
 
   /** La fetta di DaProd su un incasso di un gioco (1.4.8): nella riserva. */

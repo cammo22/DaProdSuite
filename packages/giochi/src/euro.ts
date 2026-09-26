@@ -29,7 +29,9 @@
 export const LIRE_PER_EURO = 1936.27;
 
 /** I tagli di ricarica, in euro: gli stessi per tutti i giochi. */
-export const TAGLI_EURO = [0.2, 1, 5, 20, 50, 200, 500] as const;
+// 1.6.0: «si consiglia 5 euro o 20, 50, 100, 200 e 500». Si carica comunque
+// quello che si vuole, dai 20 centesimi in su (RICARICA_MIN).
+export const TAGLI_EURO = [5, 20, 50, 100, 200, 500] as const;
 
 /** Da euro a lire, arrotondato alla lira. */
 export function lireDaEuro(euro: number): number {
@@ -41,11 +43,11 @@ export function euroDaLire(lire: number): number {
   return Math.round(((Number(lire) || 0) / LIRE_PER_EURO) * 100) / 100;
 }
 
-/** I tagli in lire: L. 387, 1.936, 9.681, 38.725, 96.814, 387.254, 968.135. */
+/** I tagli in lire: L. 9.681, 38.725, 96.814, 193.627, 387.254, 968.135. */
 export const TAGLI_LIRE: readonly number[] = TAGLI_EURO.map(lireDaEuro);
 
 /** La ricarica piu' piccola: 20 centesimi. */
-export const RICARICA_MIN = TAGLI_LIRE[0]!;
+export const RICARICA_MIN = lireDaEuro(0.2);
 
 /** La fetta di DaProd su quello che si incassa da un gioco. */
 export const FETTA_DAPROD = 0.1;

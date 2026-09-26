@@ -20,9 +20,9 @@
 import { NienteDaFare } from "./banco";
 import { GIOCHI_SALA } from "./borsa";
 import type { Deposito } from "./deposito";
-import { euroDaLire, type RegoleSoldi } from "./euro";
+import { REGOLE_SOLDI, euroDaLire, type RegoleSoldi } from "./euro";
 import { livelloDi } from "./regole";
-import type { Conto, IncassoInControllo, Movimento, VoceRegistro } from "./tipi";
+import type { Conto, IncassoInControllo, Movimento, VoceRegistro, PuntoBanca } from "./tipi";
 
 /** Com'e' messa una persona, per chi comanda. */
 export interface ContoInBanca {
@@ -53,6 +53,10 @@ export interface Gestione {
   conti: ContoInBanca[];
   regole: RegoleSoldi;
   registro: VoceRegistro[];
+  /** La linea della Banca (1.6.0): un punto all'ora. */
+  andamento: PuntoBanca[];
+  /** Le regole di partenza (1.6.0), per il tasto «di partenza» delle regole rapide. */
+  regolePartenza: RegoleSoldi;
 }
 
 /** I numeri di un conto che non tornano: saldo storto, partite coi numeri rotti. */
@@ -94,6 +98,8 @@ export function gestione(deposito: Deposito): Gestione {
     };
   });
   const b = deposito.statoBanca();
+  // L'ora di adesso c'e' sempre, anche se nessuno ha mosso una lira.
+  deposito.segnaAndamento();
   const fermi = conti.flatMap((c) => c.inControllo);
   return {
     circolante: conti.reduce((t, c) => t + (Number.isFinite(c.saldo) ? c.saldo : 0), 0),
@@ -110,6 +116,8 @@ export function gestione(deposito: Deposito): Gestione {
     conti,
     regole: deposito.regoleSoldi(),
     registro: deposito.registro().slice(0, 60),
+    andamento: deposito.andamentoBanca(),
+    regolePartenza: { ...REGOLE_SOLDI },
   };
 }
 

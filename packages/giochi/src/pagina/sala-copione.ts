@@ -373,9 +373,11 @@ export const COPIONE_SALA = `
       ricaricaInCorso = false;
       if (io) io.saldo = r.saldo;
       disegnaSaldo(true);
-      mandaAlGioco({ ricarica: true, lire: r.lire });
+      // 1.6.0: la prima partita di un gioco puo' portare un regalo della Banca.
+      mandaAlGioco({ ricarica: true, lire: r.lire + (r.bonus || 0) });
       chiudiPortafoglio();
-      avviso('Ricaricato: ' + soldi(r.lire) + ' (' + euroIt(r.lire) + ')' + (cambioDelGioco && cambioDelGioco !== 1 ? ', nel gioco ' + soldi(r.lire * cambioDelGioco) : ''), 'bene');
+      avviso('Ricaricato: ' + soldi(r.lire) + ' (' + euroIt(r.lire) + ')' + (cambioDelGioco && cambioDelGioco !== 1 ? ', nel gioco ' + soldi(r.lire * cambioDelGioco) : '') +
+        (r.bonus ? ' · 🎁 regalo della prima partita: +' + soldi(r.bonus) : ''), 'bene');
       disegnaCornice();
       var p = $('pastiglia-portafoglio');
       if (p) { p.classList.remove('cala'); void p.offsetWidth; p.classList.add('cala'); }

@@ -276,6 +276,18 @@ export const COPIONE_PORTAFOGLIO = `
     resocontoFatto = true;
     var prima = null;
     try { prima = JSON.parse(localStorage.getItem(CHIAVE_VISITA) || 'null'); } catch (e) {}
+    /**
+     * ⚠ **Una volta per apertura dell'app, non a ogni pagina** (1.6.0).
+     * Chiesto il 26 settembre 2026: «il bentornato si vede ogni volta che
+     * faccio avanti e indietro … è fastidioso su telefono». Andare dalla
+     * suite alla sala e tornare ricarica la pagina, e il resoconto ripartiva.
+     * Adesso esce solo se questa apertura non l'ha ancora mostrato
+     * (sessionStorage muore quando si chiude l'app) e se l'ultima visita è di
+     * più di venti minuti fa. Il primo benvenuto resta.
+     */
+    var giaVisto = false;
+    try { giaVisto = sessionStorage.getItem('daprod-resoconto') === '1'; sessionStorage.setItem('daprod-resoconto', '1'); } catch (e) {}
+    if (prima && (giaVisto || Date.now() - (prima.quando || 0) < 20 * 60000)) return;
     var livello = io.conto ? conteggioLivello(io.conto.esperienza).livello : 1;
     // L'ora si prende adesso, insieme al saldo: il prossimo resoconto parte da qui.
     var adesso = Date.now(), saldoAdesso = io.saldo;

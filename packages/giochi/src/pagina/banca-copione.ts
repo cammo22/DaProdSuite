@@ -68,14 +68,15 @@ export const COPIONE_BANCA = `
     var guasti = bk.conti.filter(function (c) { return c.guasti.length; }).length;
     $('bk-testa').innerHTML =
       '<div class="bk-titolo"><div><b>🏦 Banca DaProd</b><small>Tutti i soldi della sala, e i gesti per rimetterli a posto.</small></div>' +
-        '<button class="btn piano" id="bk-ripara" title="Rimette dritti i numeri storti">🔧 Ripara tutto</button></div>' +
+        '<div class="bk-attrezzi"><button class="bk-b" id="bk-aggiorna" title="Rileggi i numeri">↻</button>' +
+        '<button class="bk-b" id="bk-ripara" title="Rimette dritti i numeri storti">🔧 Ripara tutto</button></div></div>' +
       '<div class="bk-numeri">' +
         '<div class="bk-num oro"><small>nei portafogli</small><b>' + soldi(bk.circolante) + '</b></div>' +
         '<div class="bk-num"><small>dentro i giochi</small><b>' + soldi(bk.neiGiochi) + '</b></div>' +
         '<div class="bk-num"><small>riserva DaProd</small><b>' + soldi(bk.banca.riserva) + '</b></div>' +
         '<div class="bk-num' + (fermi ? ' allarme' : '') + '"><small>da controllare</small><b>' + (fermi ? fermi + ' · ' + soldi(bk.daControllareLire) : 'niente') + '</b></div>' +
         (guasti ? '<div class="bk-num allarme"><small>conti con numeri storti</small><b>' + guasti + '</b></div>' : '') +
-      '</div>';
+      '</div>' + htmlLinea();
     var schede = document.querySelectorAll('[data-bk]');
     for (var i = 0; i < schede.length; i++) {
       var s = schede[i].getAttribute('data-bk');
@@ -88,6 +89,35 @@ export const COPIONE_BANCA = `
     else if (bkScheda === 'regole') h = htmlRegole();
     else h = htmlRegistro();
     $('bk-dentro').innerHTML = h;
+  }
+
+  /* ---- la linea della Banca (1.6.0): «una linea dell'andamento della banca» */
+
+  var bkSerie = 'totale';
+  var bkPeriodo = '7g';
+  var SERIE_BANCA = [
+    ['totale', 'Tutto', function (p) { return p.riserva + p.circolante + p.neiGiochi; }],
+    ['riserva', 'Riserva', function (p) { return p.riserva; }],
+    ['circolante', 'Portafogli', function (p) { return p.circolante; }],
+    ['neiGiochi', 'Nei giochi', function (p) { return p.neiGiochi; }],
+  ];
+  var PERIODI_BANCA = [['24h', '24h', 86400000], ['7g', '7g', 7 * 86400000], ['30g', '30g', 30 * 86400000]];
+
+  function htmlLinea() {
+    var serie = SERIE_BANCA.filter(function (x) { return x[0] === bkSerie; })[0] || SERIE_BANCA[0];
+    var periodo = PERIODI_BANCA.filter(function (x) { return x[0] === bkPeriodo; })[0] || PERIODI_BANCA[1];
+    var da = Date.now() - periodo[2];
+    var punti = (bk.andamento || []).filter(function (p) { return p.t >= da; }).map(function (p) { return { t: p.t, v: serie[2](p) }; });
+    var primo = punti.length ? punti[0].v : 0, ultimo = punti.length ? punti[punti.length - 1].v : 0;
+    var diff = ultimo - primo;
+    return '<div class="bk-linea">' +
+      '<div class="bk-linea-testa">' +
+        '<div class="bk-seg">' + SERIE_BANCA.map(function (x) { return '<button data-bk-serie="' + x[0] + '"' + (x[0] === bkSerie ? ' class="scelto"' : '') + '>' + x[1] + '</button>'; }).join('') + '</div>' +
+        '<div class="bk-seg">' + PERIODI_BANCA.map(function (x) { return '<button data-bk-periodo="' + x[0] + '"' + (x[0] === bkPeriodo ? ' class="scelto"' : '') + '>' + x[1] + '</button>'; }).join('') + '</div>' +
+      '</div>' +
+      '<div class="bk-linea-dice"><b>' + soldi(ultimo) + '</b><span class="' + (diff >= 0 ? 'su' : 'giu') + '">' + (diff >= 0 ? '▲ +' : '▼ ') + soldi(diff) + '</span><small>' + serie[1].toLowerCase() + ', ultimi ' + periodo[1] + '</small></div>' +
+      '<div class="stat-grafico">' + graficoLinea(punti, { alto: 130, vuoto: 'Un punto all ora: la linea parte col prossimo movimento.' }) + '</div>' +
+    '</div>';
   }
 
   function nomeDiConto(chi) {
@@ -112,9 +142,9 @@ export const COPIONE_BANCA = `
         '<div class="conti-righe">' + rigaConto('aveva messo', soldiPieni(f.messo)) + rigaConto('il gioco diceva', cortoIt(f.grezzo)) +
           rigaConto('incasso', soldiPieni(f.netto) + volte, 'tot') + '</div>' +
         '<div class="bk-tasti">' +
-          '<button class="btn oro" data-bk-controllo="paga" data-chi="' + sicuro(x.c.chi) + '" data-id="' + sicuro(f.id) + '">Paga tutto</button>' +
-          '<button class="btn cyan" data-bk-controllo="rimborsa" data-chi="' + sicuro(x.c.chi) + '" data-id="' + sicuro(f.id) + '">Rimborsa il messo</button>' +
-          '<button class="btn piano" data-bk-controllo="rifiuta" data-chi="' + sicuro(x.c.chi) + '" data-id="' + sicuro(f.id) + '">Rifiuta</button>' +
+          '<button class="bk-b oro" data-bk-controllo="paga" data-chi="' + sicuro(x.c.chi) + '" data-id="' + sicuro(f.id) + '">Paga tutto</button>' +
+          '<button class="bk-b" data-bk-controllo="rimborsa" data-chi="' + sicuro(x.c.chi) + '" data-id="' + sicuro(f.id) + '">Rimborsa il messo</button>' +
+          '<button class="bk-b rosso" data-bk-controllo="rifiuta" data-chi="' + sicuro(x.c.chi) + '" data-id="' + sicuro(f.id) + '">Rifiuta</button>' +
         '</div></div>';
     }).join('') + '</div>';
   }
@@ -136,15 +166,18 @@ export const COPIONE_BANCA = `
             ' · giochi: messe ' + soldi(c.messoGiochi) + ', prese ' + soldi(c.presoGiochi) + '</small></div>' +
           '<div class="bk-saldo">' + soldi(c.saldo) + '<small>' + euroIt(c.saldo) + '</small></div></div>' +
         (chip ? '<div class="bk-chip">' + chip + '</div>' : '') +
+        '<div class="bk-rapidi"><small>al volo</small>' + RAPIDI().map(function (r) {
+          return '<button class="bk-b' + (r < 0 ? ' rosso' : '') + '" data-bk-rapido="' + r + '" data-chi="' + sicuro(c.chi) + '">' + (r > 0 ? '+' : '−') + soldi(Math.abs(r)) + '</button>';
+        }).join('') + '</div>' +
         '<div class="bk-tasti">' +
-          '<button class="btn oro" data-bk-saldo="imposta" data-chi="' + sicuro(c.chi) + '">Metti il saldo a…</button>' +
-          '<button class="btn cyan" data-bk-saldo="muovi" data-chi="' + sicuro(c.chi) + '">Aggiungi o togli</button>' +
+          '<button class="bk-b oro" data-bk-saldo="imposta" data-chi="' + sicuro(c.chi) + '">Metti il saldo a…</button>' +
+          '<button class="bk-b" data-bk-saldo="muovi" data-chi="' + sicuro(c.chi) + '">Aggiungi o togli…</button>' +
           c.aperte.map(function (a) {
-            return '<button class="btn" data-bk-partita="rimborsa" data-chi="' + sicuro(c.chi) + '" data-gioco="' + sicuro(a.gioco) + '">Rimborsa ' + sicuro(a.nome) + '</button>' +
-              '<button class="btn piano" data-bk-partita="chiudi" data-chi="' + sicuro(c.chi) + '" data-gioco="' + sicuro(a.gioco) + '">Chiudi ' + sicuro(a.nome) + '</button>';
+            return '<button class="bk-b" data-bk-partita="rimborsa" data-chi="' + sicuro(c.chi) + '" data-gioco="' + sicuro(a.gioco) + '">↩ Rimborsa ' + sicuro(a.nome) + '</button>' +
+              '<button class="bk-b" data-bk-partita="chiudi" data-chi="' + sicuro(c.chi) + '" data-gioco="' + sicuro(a.gioco) + '">⏹ Chiudi ' + sicuro(a.nome) + '</button>';
           }).join('') +
-          '<button class="btn piano" data-bk-livelli="' + sicuro(c.chi) + '">Premi livelli</button>' +
-          '<button class="btn piano" data-bk-apri="' + sicuro(c.chi) + '">' + (aperto ? 'Chiudi i movimenti' : 'Movimenti') + '</button>' +
+          '<button class="bk-b" data-bk-livelli="' + sicuro(c.chi) + '">⭐ Premi livelli</button>' +
+          '<button class="bk-b" data-bk-apri="' + sicuro(c.chi) + '">' + (aperto ? 'Chiudi i movimenti' : '☰ Movimenti') + '</button>' +
         '</div>';
       if (aperto) {
         h2 += '<div class="bk-lista">' + (c.movimenti.length ? c.movimenti.map(function (m) {
@@ -168,17 +201,70 @@ export const COPIONE_BANCA = `
     ['premioLivelloEuro', 'Premio dei livelli (€ per livello)', 'Il livello 5 dà 5 volte questo, il 10 dieci volte.'],
   ];
 
+  /**
+   * Le regole (1.6.0): «molti più selettori rapidi delle regole con tool
+   * rapidi». Ogni regola ha le sue cifre pronte e un più e meno; in cima i
+   * tre modi di tenere la sala. Si cambia una bozza, e si salva una volta.
+   */
+  var SCELTE_REGOLE = {
+    resaMin: [[0.25, 0.25], [0.5, 0.5], [0.75, 0.75], [1, 1], [1.5, 1.5]],
+    resaMax: [[1.5, 1.5], [2, 2], [3, 3], [5, 5], [8, 8]],
+    baseEuro: [[0, 0], [10, 10], [30, 30], [60, 60], [100, 100]],
+    moltFine: [[1, 1], [1.1, 1.1], [1.25, 1.25], [1.5, 1.5], [2, 2]],
+    controllaVolte: [[0, 'mai'], [10, 10], [25, 25], [50, 50], [100, 100]],
+    controllaMinEuro: [[100, 100], [250, 250], [500, 500], [1000, '1k'], [5000, '5k']],
+    premioLivelloEuro: [[0, 0], [0.5, 0.5], [1, 1], [2, 2], [5, 5]],
+  };
+  var PASSI_REGOLE = { resaMin: 0.05, resaMax: 0.25, baseEuro: 5, moltFine: 0.05, controllaVolte: 5, controllaMinEuro: 50, premioLivelloEuro: 0.5 };
+  var MODI_SALA = [
+    ['partenza', '↺ Di partenza', 'Le regole con cui è nata la sala.'],
+    ['generosa', '🎁 Generosa', 'Chi gioca si porta a casa di più.'],
+    ['tirchia', '🪙 Tirchia', 'La sala si tiene di più.'],
+    ['spento', '🔕 Campanello spento', 'Nessun incasso aspetta il controllo.'],
+  ];
+  var bkBozza = null;
+
+  function bozza() {
+    if (!bkBozza) bkBozza = JSON.parse(JSON.stringify(bk.regole));
+    return bkBozza;
+  }
+  function bozzaCambiata() {
+    if (!bkBozza) return false;
+    for (var k in bkBozza) if (Number(bkBozza[k]) !== Number(bk.regole[k])) return true;
+    return false;
+  }
+  function modoSala(id) {
+    var p = bk.regolePartenza || bk.regole;
+    var r = bozza();
+    if (id === 'partenza') for (var k in p) r[k] = p[k];
+    else if (id === 'generosa') { r.resaMin = 1; r.resaMax = 5; r.baseEuro = 60; r.moltFine = 1.5; r.premioLivelloEuro = 2; }
+    else if (id === 'tirchia') { r.resaMin = 0.25; r.resaMax = 1.5; r.baseEuro = 10; r.moltFine = 1.1; r.premioLivelloEuro = 0.5; }
+    else if (id === 'spento') r.controllaVolte = 0;
+  }
+  function numeroRegola(v) { return String(Math.round(Number(v) * 100) / 100).replace('.', ','); }
+
   function htmlRegole() {
-    var r = bk.regole;
+    var r = bozza();
     var prova = function (messo, prog) { return messo * (r.resaMin + (r.resaMax - r.resaMin) * prog) + r.baseEuro * prog; };
-    return '<div class="bk-regole">' + REGOLE_DETTE.map(function (x) {
-      return '<label class="bk-regola"><span><b>' + sicuro(x[1]) + '</b><small>' + sicuro(x[2]) + '</small></span>' +
-        '<input type="number" step="any" min="0" data-bk-regola="' + x[0] + '" value="' + r[x[0]] + '"></label>';
-    }).join('') +
+    var cambiata = bozzaCambiata();
+    return '<div class="bk-regole">' +
+      '<div class="bk-modi">' + MODI_SALA.map(function (m) {
+        return '<button class="bk-b" data-bk-modo="' + m[0] + '" title="' + sicuro(m[2]) + '">' + m[1] + '</button>';
+      }).join('') + '</div>' +
+      '<div class="bk-salva' + (cambiata ? ' acceso' : '') + '"><span>' + (cambiata ? 'Hai cambiato delle regole: valgono dal prossimo incasso.' : 'Nessuna modifica.') + '</span>' +
+        '<button class="bk-b" id="bk-regole-annulla"' + (cambiata ? '' : ' disabled') + '>Lascia com erano</button>' +
+        '<button class="bk-b oro" id="bk-regole-salva"' + (cambiata ? '' : ' disabled') + '>Salva le regole</button></div>' +
+      REGOLE_DETTE.map(function (x) {
+        var k = x[0], v = Number(r[k]), cambiataQui = v !== Number(bk.regole[k]);
+        return '<div class="bk-regola' + (cambiataQui ? ' cambiata' : '') + '"><span><b>' + sicuro(x[1]) + '</b><small>' + sicuro(x[2]) + '</small></span>' +
+          '<div class="bk-passo"><button class="bk-b" data-bk-passo="' + k + '" data-verso="-1">−</button><b>' + numeroRegola(v) + '</b><button class="bk-b" data-bk-passo="' + k + '" data-verso="1">+</button></div>' +
+          '<div class="bk-seg piccolo">' + (SCELTE_REGOLE[k] || []).map(function (sc) {
+            return '<button data-bk-scelta="' + k + '" data-valore="' + sc[0] + '"' + (Number(sc[0]) === v ? ' class="scelto"' : '') + '>' + sicuro(String(sc[1]).replace('.', ',')) + '</button>';
+          }).join('') + '</div></div>';
+      }).join('') +
       '<div class="bk-prova">Con queste regole, chi mette <b>€ 100</b> in Neon e incassa: subito ≈ <b>€ ' + puntiIt(prova(100, 0)) + '</b>, a metà ≈ <b>€ ' +
         puntiIt(prova(100, 0.5)) + '</b>, a punteggio pieno ≈ <b>€ ' + puntiIt(prova(100, 1)) + '</b>, finendolo ≈ <b>€ ' + puntiIt(prova(100, 1) * r.moltFine) +
-        '</b>. Prima della fetta di DaProd (10%).</div>' +
-      '<div class="riga-tasti"><button class="btn oro grosso" id="bk-regole-salva">Salva le regole</button></div></div>';
+        '</b>. Prima della fetta di DaProd (10%).</div></div>';
   }
 
   function htmlRegistro() {
@@ -278,10 +364,17 @@ export const COPIONE_BANCA = `
   }
 
   function salvaRegole() {
-    var campi = document.querySelectorAll('[data-bk-regola]');
-    var corpo = {};
-    for (var i = 0; i < campi.length; i++) corpo[campi[i].getAttribute('data-bk-regola')] = Number(String(campi[i].value).replace(',', '.'));
-    chiedi('POST', '/banca/regole', corpo).then(function () { dopoGesto('Regole salvate: valgono dal prossimo incasso.'); })
+    chiedi('POST', '/banca/regole', bozza()).then(function () { bkBozza = null; dopoGesto('Regole salvate: valgono dal prossimo incasso.'); })
+      .catch(function (e) { avviso(e.message, 'male'); });
+  }
+
+  /** I ritocchi al volo sui conti: tagli tondi nella valuta che si sta guardando. */
+  function RAPIDI() {
+    return inEuro ? [5, 20, 100, -5, -20].map(function (e) { return Math.round(e * 1936.27); }) : [10000, 50000, 200000, -10000, -50000];
+  }
+  function gestoRapido(chi, lire) {
+    chiedi('POST', '/banca/saldo', { chi: chi, muovi: lire, perche: 'ritocco al volo dalla Banca' })
+      .then(function (r) { dopoGesto((lire > 0 ? '+' : '−') + soldiPieni(Math.abs(lire)) + ' a ' + nomeDiConto(chi) + ': adesso ha ' + soldiPieni(r.saldo) + '. Si annulla dai movimenti.'); })
       .catch(function (e) { avviso(e.message, 'male'); });
   }
 
@@ -291,7 +384,25 @@ export const COPIONE_BANCA = `
     var s = qui('[data-bk]');
     if (s) { bkScheda = s.getAttribute('data-bk'); disegnaBanca(); return; }
     if (qui('#bk-ripara')) { gestoRipara(); return; }
+    if (qui('#bk-aggiorna')) { caricaBanca(); return; }
     if (qui('#bk-regole-salva')) { salvaRegole(); return; }
+    if (qui('#bk-regole-annulla')) { bkBozza = null; disegnaBanca(); return; }
+    var y = qui('[data-bk-serie]');
+    if (y) { bkSerie = y.getAttribute('data-bk-serie'); disegnaBanca(); return; }
+    y = qui('[data-bk-periodo]');
+    if (y) { bkPeriodo = y.getAttribute('data-bk-periodo'); disegnaBanca(); return; }
+    y = qui('[data-bk-modo]');
+    if (y) { modoSala(y.getAttribute('data-bk-modo')); disegnaBanca(); return; }
+    y = qui('[data-bk-scelta]');
+    if (y) { bozza()[y.getAttribute('data-bk-scelta')] = Number(y.getAttribute('data-valore')); disegnaBanca(); return; }
+    y = qui('[data-bk-passo]');
+    if (y) {
+      var kk = y.getAttribute('data-bk-passo'), r = bozza();
+      r[kk] = Math.max(0, Math.round((Number(r[kk]) + PASSI_REGOLE[kk] * Number(y.getAttribute('data-verso'))) * 100) / 100);
+      disegnaBanca(); return;
+    }
+    y = qui('[data-bk-rapido]');
+    if (y) { gestoRapido(y.getAttribute('data-chi'), Number(y.getAttribute('data-bk-rapido'))); return; }
     var x = qui('[data-bk-saldo]');
     if (x) { gestoSaldo(x.getAttribute('data-chi'), x.getAttribute('data-bk-saldo')); return; }
     x = qui('[data-bk-partita]');

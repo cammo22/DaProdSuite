@@ -10,6 +10,48 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ---
 
+## 1.6.0 — La Banca coi tasti normali, e i giochi che si pagano
+
+> «Alziamo questa schermata qua, inguardabile: togliamo questi pulsanti
+> frutiger, mettiamo dei pulsanti normali e molti più selettori rapidi delle
+> regole, con tool rapidi e una linea dell'andamento della banca.»
+
+Una release sola con dentro tutto il giro di ritocchi, e i giochi nuovi insieme:
+Dozer 2.3.0, Claw 1.1.6, Neon 2.2.0.
+
+- **La Banca DaProd rifatta**: tasti normali al posto di quelli lucidi, schede
+  piatte. In cima c'è **la linea della Banca**: tutto, riserva, portafogli o
+  dentro i giochi, nelle ultime 24 ore, 7 giorni o 30 giorni. Un punto all'ora,
+  scritto a ogni movimento, anche quando la Banca non è aperta.
+- **Ritocchi al volo sui conti**: +5, +20, +100, −5, −20 € (o i tagli in lire)
+  con un tocco, scritti nel registro e annullabili dai movimenti.
+- **Le regole rapide**: ogni regola ha le sue cifre pronte e il più e meno, e in
+  cima i modi di tenere la sala: *di partenza*, *generosa*, *tirchia*,
+  *campanello spento*. Si cambia una bozza e si salva una volta; quello cambiato
+  si vede.
+- **Il «bentornato» si vede una volta per apertura dell'app**, non a ogni avanti
+  e indietro fra la suite e la sala, e solo se l'ultima visita è di più di venti
+  minuti fa.
+- **Si ricarica da 5 € in su, con tagli fino a 500**: 5, 20, 50, 100, 200, 500 €,
+  o quello che vuoi dai 20 centesimi.
+- **Il regalo della prima partita del Coin Dozer**: 100 € dalla riserva della
+  Banca, una volta sola per persona. Lo decide la sala, così non si può avere
+  due volte svuotando il gioco.
+- **I giochi nuovi**, portati nella sala:
+  - Dozer 2.3.0: la partita si paga caricando dal portafoglio, il tavolo di ogni
+    partita è tirato a sorte (ricco o magro), all'incasso i potenziamenti si
+    azzerano e i record restano, la slot dell'evento gira sulle icone vere, i
+    bonus escono a sinistra e i malus a destra spiegati e detti a voce, e gli
+    effetti ai lati non rallentano più.
+  - Claw 1.1.6: gli avvisi dei potenziamenti in alto a sinistra sotto il marchio;
+    all'incasso si riparte da capo ma i record restano.
+  - Neon 2.2.0: la Merceria dei set (pacchi che puntano ai set, doppioni che si
+    potenziano da soli, set da indossare con un tocco, il resto diventa rottame),
+    lire o euro anche nel gioco, la scheda ⚡ DaProd in cima, e gli avvisi di
+    tempo, bonus e malus che si possono spegnere.
+- Il conto dei montepremi di fine partita pagati non si azzera più a ogni riapertura
+  (si perdeva leggendo il file).
+
 ## 1.5.3 — La Casa nuova e i modellini che si girano
 
 > «Questa schermata: togliamo il Matrix dietro, lasciamo la topbar così, ma

@@ -36,6 +36,7 @@ import {
   bonusFine,
   daControllare,
   euroDaLire,
+  lireDaEuro,
   pezzoDiMontepremi,
   premioDelLivello,
   stimaIncasso,
@@ -105,6 +106,15 @@ export function entra(deposito: Deposito, chi: string, idGioco: string, adesso =
  * ricarica era un gettone fisso d'ingresso. Il minimo resta il gettone: meno
  * di cosi' non vale il gesto. Quello che si spende brucia lire (Borsa).
  */
+/**
+ * Il regalo della prima partita (1.6.0), in euro, per gioco. Chiesto il 26
+ * settembre 2026 per il Coin Dozer: «al primo avvio della macchina … 100 euro
+ * bonus all'inizio». Lo decide la sala e non il gioco, e una volta sola per
+ * persona: se lo decidesse il gioco, basterebbe svuotargli la memoria per
+ * averne un altro. Esce dalla riserva della Banca, come i premi.
+ */
+export const BENVENUTO_EURO: Readonly<Record<string, number>> = { dozer: 100 };
+
 export function ricarica(deposito: Deposito, chi: string, idGioco: string, quante: number, adesso = Date.now()) {
   const gioco = giocoDi(idGioco);
   const conto = deposito.conto(chi);
@@ -122,8 +132,15 @@ export function ricarica(deposito: Deposito, chi: string, idGioco: string, quant
   cassa.messoTot += lire;
   // Giocare fa salire di livello (1.4.8): un punto ogni venti lire messe.
   conto.esperienza += Math.floor(lire / XP_OGNI_LIRE_MESSE);
+  // Il regalo della prima partita (1.6.0): non conta come messo, e' della Banca.
+  let bonus = 0;
+  const benvenuto = BENVENUTO_EURO[gioco.id];
+  if (benvenuto && !(conto.benvenuti ?? []).includes(gioco.id)) {
+    bonus = deposito.dallaRiserva(lireDaEuro(benvenuto));
+    (conto.benvenuti ??= []).push(gioco.id);
+  }
   deposito.salva();
-  return { saldo: conto.saldo, lire, cassa };
+  return { saldo: conto.saldo, lire, cassa, bonus };
 }
 
 /* ------------------------------------------------- la cassa di un gioco -- */
