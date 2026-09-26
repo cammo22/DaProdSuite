@@ -76,6 +76,9 @@ const FASI = {
   LoraLoaderModelOnly: "carico il modello",
   CLIPTextEncode: "leggo la descrizione",
   TextEncodeQwenImage21: "leggo la descrizione e guardo la foto",
+  // 1.6.1: il riscrittore guarda la foto e decide com'e' la modifica.
+  TextGenerate: "guardo la foto e decido la modifica",
+  BatchImagesNode: "preparo la foto",
   GrowMask: "preparo la zona",
   EmptyImage: "preparo la zona",
   ImageBlend: "preparo la zona",

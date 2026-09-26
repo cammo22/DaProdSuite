@@ -229,6 +229,16 @@
       "pesoDaConfermare": true,
       "bytes": 1300000000
     },
+    "qwen21-pe-i2i": {
+      "label": "Qwen-Image 2.1 — il riscrittore delle modifiche (Prompt Enhancer I2I)",
+      "kind": "file",
+      "$comment": "Il passaggio dell'LLM che decide, dalla 1.6.1: «le immagini non vengono modificate bene, non mi sembra ci sia il passaggio dell'LLM che decide». E' il Prompt Enhancer ufficiale di Qwen per le modifiche (Qwen-Image-2.1-PE-I2I), un Qwen3.5-VL 9B istruito apposta: guarda la foto e riscrive la richiesta in un'istruzione precisa prima che arrivi al lettore. Lo usa il grafo ufficiale della modifica di ComfyUI (TextGenerate), e WanGP. Lo carica CLIPLoader con tipo 'qwen_image'. Facoltativo: se manca la modifica parte lo stesso con la frase com'era (vedi lora-presenti.js), e intanto si scarica.",
+      "dir": "text_encoders",
+      "file": "qwen3.5_9b_qwen_image_2.1_pe_i2i.int8_convrot.safetensors",
+      "url": "https://huggingface.co/Comfy-Org/Qwen-Image-2.1/resolve/main/text_encoders/qwen3.5_9b_qwen_image_2.1_pe_i2i.int8_convrot.safetensors",
+      "pesoDaConfermare": true,
+      "bytes": 9470000000
+    },
     "qwen21-turbo-5step": {
       "label": "Qwen-Image 2.1 Turbo — LoRA a 5 passi (Viggle v0.2), riserva della v0.2.1",
       "kind": "file",

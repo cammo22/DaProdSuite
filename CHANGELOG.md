@@ -10,6 +10,24 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ---
 
+## 1.6.1 — La modifica delle foto passa dall'LLM che decide
+
+> «Le immagini non vengono modificate bene. Guardiamo gli ultimi aggiornamenti
+> di WanGP per Qwen Image 2.1: non mi sembra ci sia il passaggio dell'LLM che
+> decide.»
+
+- **Prima di modificare, un LLM guarda la foto e decide com'è la modifica.** È
+  il passaggio del grafo ufficiale di ComfyUI per Qwen-Image 2.1 (e di WanGP), e
+  da noi mancava: la frase («mettigli un cappello») andava dritta al modello.
+  Adesso la legge il **riscrittore ufficiale di Qwen** (Qwen-Image-2.1-PE-I2I, un
+  Qwen3.5-VL 9B istruito apposta): guarda la foto, e con la zona anche la foto
+  col velo rosso, ragiona, e la riscrive in un'istruzione precisa, cioè cosa cambia,
+  dove, come e cosa resta uguale. Stessi numeri del grafo ufficiale.
+- **Il riscrittore si scarica da solo** (9,5 GB) la prima volta che si modifica.
+  Finché non c'è, la modifica parte lo stesso con la frase com'era; lo stesso se
+  ComfyUI non conosce ancora il nodo.
+- Nella fila, il passaggio si vede: «guardo la foto e decido la modifica».
+
 ## 1.6.0 — La Banca coi tasti normali, e i giochi che si pagano
 
 > «Alziamo questa schermata qua, inguardabile: togliamo questi pulsanti
