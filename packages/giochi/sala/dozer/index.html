@@ -123,6 +123,29 @@
   body.cine #barra * { pointer-events: none; }
   #barra { transition: opacity .5s; }
 
+  /* ---------- 2.2.7: gli effetti accesi, ai lati dello schermo ---------- */
+  .bordo { position: fixed; top: 0; bottom: 0; width: 22px; z-index: 9; pointer-events: none; opacity: 0; transition: opacity .4s; }
+  #bordoSx { left: 0; background: linear-gradient(90deg, rgba(93,255,180,.55), transparent); }
+  #bordoDx { right: 0; background: linear-gradient(270deg, rgba(255,35,64,.6), transparent); }
+  .bordo.su { opacity: 1; }
+  .bordo.finisce { animation: lampeggia .5s steps(2, jump-none) infinite; }
+  #effetti { position: fixed; right: 10px; top: 50%; transform: translateY(-50%); z-index: 13; pointer-events: none;
+    display: flex; flex-direction: column; gap: 6px; align-items: flex-end; max-height: 60vh; }
+  .eff { display: grid; grid-template-columns: auto auto; align-items: center; column-gap: 7px; row-gap: 3px; padding: 6px 9px 7px;
+    border-radius: 14px; background: var(--vetro2); min-width: 108px;
+    box-shadow: 0 8px 20px rgba(0,0,0,.5); border: 1px solid rgba(93,255,180,.6); }
+  .eff.cattivo { border-color: rgba(255,35,64,.7); }
+  .eff i { font-style: normal; font-size: 18px; line-height: 1; grid-row: span 2; }
+  .eff b { font: 900 16px/1 var(--num); color: #fff; font-variant-numeric: tabular-nums; }
+  .eff small { font: 800 8.5px/1 var(--num); letter-spacing: .8px; color: #bfffe0; white-space: nowrap; }
+  .eff.cattivo small { color: #ffb3bd; }
+  .eff u { grid-column: 1 / -1; display: block; height: 4px; border-radius: 99px; background: rgba(255,255,255,.12); overflow: hidden; text-decoration: none; }
+  .eff u::before { content: ""; display: block; height: 100%; width: var(--p, 100%); background: var(--verde); border-radius: 99px; }
+  .eff.cattivo u::before { background: #ff2340; }
+  .eff.finisce { animation: lampeggia .5s steps(2, jump-none) infinite; }
+  @keyframes lampeggia { 50% { opacity: .25; } }
+  @media (max-width: 700px) { #effetti { right: 6px; top: 36%; } .eff { min-width: 92px; padding: 5px 7px 6px; } .eff b { font-size: 14px; } }
+
   /* scritte spente: restano solo gli avvisi importanti (saldo, sblocchi, eventi) */
   body.senzaScritte #catena, body.senzaScritte #ondata, body.senzaScritte #fluttuanti, body.senzaScritte #hint,
   body.senzaScritte .avviso:not(.imp) { display: none; }
@@ -283,6 +306,7 @@
   .riga { display: flex; align-items: center; gap: 12px; padding: 11px 12px; border-radius: 16px;
     background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.07); }
   .riga.ok { border-color: rgba(93,255,180,.35); background: linear-gradient(90deg, rgba(93,255,180,.08), rgba(255,255,255,.03)); }
+  .riga.soldiVeri { border-color: rgba(255,213,74,.55); background: linear-gradient(90deg, rgba(255,213,74,.14), rgba(255,255,255,.03)); }
   .riga .ico { width: 46px; height: 46px; flex: 0 0 auto; display: grid; place-items: center; font-size: 26px;
     border-radius: 14px; background: rgba(0,0,0,.35); border: 1px solid rgba(255,255,255,.08); }
   .riga .ico img { width: 40px; height: 40px; }
@@ -458,6 +482,10 @@
 <div id="catena"><span id="catenaTxt"></span><small id="catenaSub"></small></div>
 <div id="evento"><small>🎰 EVENTO DaProd</small><span id="eventoTxt"></span><em id="eventoSub"></em></div>
 <div id="cinema"><i></i><i></i></div>
+<!-- 2.2.7: gli effetti accesi, ai lati. A sinistra si illumina di verde se ce n'e' uno buono,
+     a destra di rosso se ce n'e' uno cattivo; le pastiglie dicono quale e quanto manca. -->
+<div id="bordoSx" class="bordo"></div><div id="bordoDx" class="bordo"></div>
+<div id="effetti"></div>
 <div id="hint" class="carta"><b>Tocca</b> il tavolo per scegliere la colonna · monete <b>uguali una sopra l'altra</b> si impilano e diventano il taglio più grande</div>
 
 <div id="barra">
@@ -521,7 +549,7 @@
 <script type="module">
 import * as THREE from 'three';
 
-const VERSIONE = 'v2.2.6';
+const VERSIONE = 'v2.2.7';
 const $ = (id) => document.getElementById(id);
 const TATTILE = (typeof matchMedia === 'function') &&
   (matchMedia('(hover: none)').matches || matchMedia('(pointer: coarse)').matches);
@@ -1999,30 +2027,41 @@ function disegnaSlot(dt) {
 // molto, devono essere molti di piu', meno frequenti e molto impattanti.» Dodici,
 // sei buoni e sei cattivi, uno ogni 3-6 minuti di gioco. I premi si misurano sul
 // taglio piu' grosso che lanci: chi gioca col milione vince (e perde) da milione.
+// ⚠ 2.2.7: cinquanta e cinquanta. «Il dozer ha 50 e 50 di poter vincere molto o
+// perdere molto; gli effetti, mentre sono attivi, devono essere visibili ai lati
+// dello schermo e durare 2 minuti o 30 secondi; quando sta per finire lampeggia
+// gli ultimi 10 secondi.» Si tira prima a testa o croce (buono o cattivo), poi
+// quale: e quelli a tempo durano 30 s o 2 minuti, e si vedono ai lati.
 const EVENTI = {
-  pioggia:   { sim: 3, buono: true,  nome: '🌧 PIOGGIA D\'ORO', desc: 'trenta monete del tuo taglio piu\' grosso piovono sul tavolo' },
-  frenesia:  { sim: 1, buono: true,  nome: '⚙️ FRENESIA', desc: 'spintori scatenati e buchi della casa chiusi per 20 s' },
-  calamita:  { sim: 6, buono: true,  nome: '🧲 CALAMITA DaProd', desc: 'per 25 s le monete uguali si impilano da sole' },
-  triplo:    { sim: 0, buono: true,  nome: '✖️3 TRIPLO DaProd', desc: 'per 30 s tutto quello che cade vale il triplo' },
-  bonanza:   { sim: 2, buono: true,  nome: '💰 BONANZA', desc: 'quaranta monete del tuo taglio piu\' grosso, dritte nel saldo' },
+  pioggia:   { sim: 3, buono: true,  nome: '🌧 PIOGGIA D\'ORO', desc: 'quaranta monete del tuo taglio piu\' grosso piovono sul tavolo' },
+  frenesia:  { sim: 1, buono: true,  nome: '⚙️ FRENESIA', desc: 'spintori scatenati e buchi della casa chiusi per 30 s', durata: 30 },
+  calamita:  { sim: 6, buono: true,  nome: '🧲 CALAMITA DaProd', desc: 'per 2 minuti le monete uguali si impilano da sole', durata: 120 },
+  triplo:    { sim: 0, buono: true,  nome: '✖️3 TRIPLO DaProd', desc: 'per 2 minuti tutto quello che cade vale il triplo', durata: 120 },
+  bonanza:   { sim: 2, buono: true,  nome: '💰 BONANZA', desc: 'sessanta monete del tuo taglio piu\' grosso, dritte nel saldo' },
   meteore:   { sim: 4, buono: true,  nome: '☄️ SCIAME DI METEORE', desc: 'cinque meteore sul bordo: si salvi chi puo\'' },
   terremoto: { sim: 5, buono: false, nome: '🌋 TERREMOTO', desc: 'le monete sui lati del terzo piano finiscono alla casa' },
-  tassa:     { sim: 5, buono: false, nome: '🧾 TASSA DaProd', desc: 'la casa si prende il 20% del saldo' },
-  blackout:  { sim: 5, buono: false, nome: '🔌 BLACKOUT', desc: 'gli spintori si fermano per 25 s' },
-  voragine:  { sim: 5, buono: false, nome: '🕳 VORAGINE', desc: 'per 25 s i buchi della casa sono lunghi il triplo' },
-  gelo:      { sim: 5, buono: false, nome: '🧊 GELO', desc: 'per 30 s quello che cade vale la meta\'' },
-  ladro:     { sim: 5, buono: false, nome: '🦹 IL LADRO', desc: 'si porta via le otto monete piu\' preziose del tavolo' },
+  tassa:     { sim: 5, buono: false, nome: '🧾 TASSA DaProd', desc: 'la casa si prende il 30% del saldo' },
+  blackout:  { sim: 5, buono: false, nome: '🔌 BLACKOUT', desc: 'gli spintori si fermano per 30 s', durata: 30 },
+  voragine:  { sim: 5, buono: false, nome: '🕳 VORAGINE', desc: 'per 2 minuti i buchi della casa sono lunghi il triplo', durata: 120 },
+  gelo:      { sim: 5, buono: false, nome: '🧊 GELO', desc: 'per 2 minuti quello che cade vale la meta\'', durata: 120 },
+  ladro:     { sim: 5, buono: false, nome: '🦹 IL LADRO', desc: 'si porta via le dodici monete piu\' preziose del tavolo' },
 };
+/** Testa o croce, poi quale (2.2.7): meta' delle volte buono, meta' cattivo. */
+function eventoACaso() {
+  const buono = Math.random() < 0.5;
+  const k = Object.keys(EVENTI).filter(id => EVENTI[id].buono === buono);
+  return k[Math.floor(Math.random() * k.length)];
+}
 /** Il valore del taglio piu' grosso che si lancia: la misura dei premi e dei danni. */
 const misuraEvento = () => TAGLI[stato.maxLancio].v;
 /** Gli effetti che arrivano subito, appena lo slot li mostra (2.2.6). */
 function effettoEvento(id) {
   const M = misuraEvento();
   if (id === 'bonanza') {
-    const v = 40 * M; stato.saldo += v; stato.st.vinto += v;
+    const v = 60 * M; stato.saldo += v; stato.st.vinto += v;
     avviso(`💰 BONANZA: +${soldi(v)}`, 'mag imp'); megaVincita(); aggiornaHUD();
   } else if (id === 'tassa') {
-    const v = Math.floor(stato.saldo * 0.2); stato.saldo -= v;
+    const v = Math.floor(stato.saldo * 0.3); stato.saldo -= v;
     avviso(`🧾 TASSA DaProd: -${soldi(v)}`, 'rosso imp'); scuoti(0.4); suono.casa(); aggiornaHUD();
   } else if (id === 'terremoto') {
     let via = 0;
@@ -2033,7 +2072,7 @@ function effettoEvento(id) {
     scuoti(1.2); faiScossa && faiScossa();
     avviso(`🌋 TERREMOTO: ${via} monete verso la casa`, 'rosso imp');
   } else if (id === 'ladro') {
-    const ricche = monete.filter(c => c.vivo && !c.fuori && c.t !== CHIP).sort((a, b) => TAGLI[b.t].v * b.n - TAGLI[a.t].v * a.n).slice(0, 8);
+    const ricche = monete.filter(c => c.vivo && !c.fuori && c.t !== CHIP).sort((a, b) => TAGLI[b.t].v * b.n - TAGLI[a.t].v * a.n).slice(0, 12);
     let valore = 0;
     for (const c of ricche) { valore += TAGLI[c.t].v * c.n; particelle(c.x, c.y + 0.3, c.z, 12, 0xff2340, 0.8, { su: true }); c.fuori = 'casa'; c.tt = 0; }
     avviso(`🦹 IL LADRO: sparite monete per ${soldi(valore)}`, 'rosso imp'); suono.casa();
@@ -2050,7 +2089,7 @@ let prossimoEvento = rnd(100, 160);                          // secondi di gioco
 const DURATA_VA = 1.5, DURATA_MOSTRA = 2.0, DURATA_TORNA = 1.3;
 function avviaEvento(id) {
   if (cine.fase || slot.gira) return false;
-  if (!EVENTI[id]) { const k = Object.keys(EVENTI); id = k[Math.floor(Math.random() * k.length)]; }
+  if (!EVENTI[id]) id = eventoACaso();
   cine.fase = 'va'; cine.t = 0; cine.evento = id;
   premuto = false; mira = false;
   stato.st.eventi++;
@@ -2082,19 +2121,20 @@ function aggiornaEventi(dt) {
     if (cine.t >= DURATA_MOSTRA) {
       cine.fase = 'torna'; cine.t = 0;
       $('evento').classList.remove('su'); document.body.classList.remove('cine');
-      if (cine.evento === 'pioggia') { const t = stato.maxLancio; pioggia(24, Math.max(0, t - 1), t, 0.06); pioggia(6, t, Math.min(ULTIMO, t + 1), 0.1); }
+      if (cine.evento === 'pioggia') { const t = stato.maxLancio; pioggia(32, Math.max(0, t - 1), t, 0.06); pioggia(8, t, Math.min(ULTIMO, t + 1), 0.1); }
       else effettoEvento(cine.evento);
     }
   } else if (cine.fase === 'torna') {
     cine.b = 1 - liscia(Math.min(1, cine.t / DURATA_TORNA));
     if (cine.t >= DURATA_TORNA) {
       cine.fase = null; cine.b = 0;
-      if (cine.evento === 'frenesia') { turbo.t = Math.max(turbo.t, 20); muro.t = Math.max(muro.t, 20); }
-      if (cine.evento === 'calamita') calamita.t = Math.max(calamita.t, 25);
-      if (cine.evento === 'triplo') { moltiplica.t = 30; moltiplica.k = 3; }
-      if (cine.evento === 'gelo') { moltiplica.t = 30; moltiplica.k = 0.5; }
-      if (cine.evento === 'blackout') fermo.t = 25;
-      if (cine.evento === 'voragine') voragine.t = 25;
+      const D = EVENTI[cine.evento].durata || 0;
+      if (cine.evento === 'frenesia') { accendi(turbo, D); accendi(muro, D); }
+      if (cine.evento === 'calamita') accendi(calamita, D);
+      if (cine.evento === 'triplo') { accendi(moltiplica, D); moltiplica.k = 3; }
+      if (cine.evento === 'gelo') { accendi(moltiplica, D); moltiplica.k = 0.5; }
+      if (cine.evento === 'blackout') accendi(fermo, D);
+      if (cine.evento === 'voragine') accendi(voragine, D);
       aggiornaAbilitaUI(true);
     }
   }
@@ -2116,9 +2156,11 @@ function finisciEvento() {                            // per le prove: porta l'e
 }
 
 // ============ ABILITÀ: scossa, raffica, meteora, calamita, turbo, muro ============
-const turbo = { t: 0 }, calamita = { t: 0 }, muro = { t: 0 };
+const turbo = { t: 0, d: 0 }, calamita = { t: 0, d: 0 }, muro = { t: 0, d: 0 };
 // Gli eventi della 2.2.6: moltiplicatore delle vincite, spintori fermi, buchi larghi.
-const moltiplica = { t: 0, k: 1 }, fermo = { t: 0 }, voragine = { t: 0 };
+const moltiplica = { t: 0, d: 0, k: 1 }, fermo = { t: 0, d: 0 }, voragine = { t: 0, d: 0 };
+/** Accende un effetto a tempo e si ricorda quanto durava, per la barra ai lati (2.2.7). */
+function accendi(e, secondi) { if (secondi > e.t) { e.t = secondi; e.d = secondi; } }
 let turboK = 0, mira = false;
 const prontaTra = (id) => Math.max(0, (stato.pronta[id] || 0) - Date.now());
 function usaAbilita(id) {
@@ -2142,22 +2184,41 @@ function usaAbilita(id) {
   if (id === 'scossa') faiScossa();
   else {
     const d = A.durata(n);
-    if (id === 'turbo') { turbo.t = d; suono.turbo(); avviso(`⏩ TURBO per ${d} s`, 'cia'); }
-    if (id === 'calamita') { calamita.t = d; suono.calamita(); avviso(`🧲 CALAMITA per ${d} s: le monete uguali si impilano`, 'mag'); }
-    if (id === 'muro') { muro.t = d; suono.muro(); avviso(`🧱 MURO: buchi della casa chiusi per ${d} s`, 'cia'); }
+    if (id === 'turbo') { accendi(turbo, d); suono.turbo(); avviso(`⏩ TURBO per ${d} s`, 'cia'); }
+    if (id === 'calamita') { accendi(calamita, d); suono.calamita(); avviso(`🧲 CALAMITA per ${d} s: le monete uguali si impilano`, 'mag'); }
+    if (id === 'muro') { accendi(muro, d); suono.muro(); avviso(`🧱 MURO: buchi della casa chiusi per ${d} s`, 'cia'); }
     impulsoLed = 1;
   }
   aggiornaAbilitaUI(true); daSalvare = true;
   return true;
 }
+/**
+ * ⚠ 2.2.7: nella sala DaProd i potenziamenti si pagano coi soldi veri. «I
+ * giocatori devono spendere soldi reali per i potenziamenti dei giochi, ogni
+ * volta che usa soldi reali si deve avvisare.» Dentro la suite il costo esce
+ * dal portafoglio DaProd, e la sala fa vedere l'avviso ogni volta: solo col si'
+ * il potenziamento arriva. Fuori dalla suite (la demo) si paga col saldo, come
+ * sempre.
+ */
+const inSuite = () => !!(window.DaProdLira && DaProdLira.modo === 'suite');
+function pagaPotenziamento(costo, cosa, fatto) {
+  if (inSuite()) {
+    DaProdLira.paga(costo, cosa).then(() => { fatto(); daSalvare = true; salva(); })
+      .catch((e) => { if (e && e.message !== 'Annullato') { suono.errore(); avviso('💶 ' + e.message, 'rosso imp'); } });
+    return true;
+  }
+  if (stato.saldo < costo) return false;
+  stato.saldo -= costo; fatto(); return true;
+}
 function sbloccaAbilita(id) {
   const A = ABIL[id]; if (!A || stato.pot[id] > 0) return false;
   const costo = A.costo(0);
-  if (stato.saldo < costo) { suono.errore(); avviso(`${A.ico} ${A.nome}: per sbloccarla servono ${soldi(costo)}`, 'rosso imp'); scuotiAbilita(id); return false; }
-  stato.saldo -= costo; stato.pot[id] = 1;
-  suono.sblocco(); avviso(`🔓 ${A.ico} ${A.nome} sbloccata! ${A.tasto ? '(tasto ' + A.tasto + ')' : ''}`, 'cia imp');
-  aggiornaAbilitaUI(true); aggiornaHUD(); if (negozioAperto()) rendiNegozio(); daSalvare = true;
-  return true;
+  if (!inSuite() && stato.saldo < costo) { suono.errore(); avviso(`${A.ico} ${A.nome}: per sbloccarla servono ${soldi(costo)}`, 'rosso imp'); scuotiAbilita(id); return false; }
+  return pagaPotenziamento(costo, 'sblocca ' + A.nome, () => {
+    stato.pot[id] = 1;
+    suono.sblocco(); avviso(`🔓 ${A.ico} ${A.nome} sbloccata! ${A.tasto ? '(tasto ' + A.tasto + ')' : ''}`, 'cia imp');
+    aggiornaAbilitaUI(true); aggiornaHUD(); if (negozioAperto()) rendiNegozio(); daSalvare = true;
+  });
 }
 function scossa() { return usaAbilita('scossa'); }
 function faiScossa() {
@@ -2215,6 +2276,34 @@ function impattoMeteora(m) {
 function scuotiAbilita(id) {
   const b = document.querySelector(`[data-ab="${id}"]`);
   if (b) { b.classList.remove('no'); void b.offsetWidth; b.classList.add('no'); }
+}
+
+// ============ GLI EFFETTI AI LATI (2.2.7) ============
+const EFFETTI_UI = [
+  { e: turbo, ico: '⏩', nome: 'TURBO', buono: true },
+  { e: calamita, ico: '🧲', nome: 'CALAMITA', buono: true },
+  { e: muro, ico: '🧱', nome: 'BUCHI CHIUSI', buono: true },
+  { e: moltiplica, ico: '✖️', nome: 'VINCITE', buono: () => moltiplica.k >= 1, nomeF: () => moltiplica.k >= 1 ? '×' + moltiplica.k + ' VINCITE' : '×' + String(moltiplica.k).replace('.', ',') + ' GELO', icoF: () => moltiplica.k >= 1 ? '✖️' : '🧊' },
+  { e: fermo, ico: '🔌', nome: 'BLACKOUT', buono: false },
+  { e: voragine, ico: '🕳', nome: 'VORAGINE', buono: false },
+];
+let effettiT = 0, effettiDetti = '';
+const mmss = (t) => { const x = Math.ceil(t); return x >= 60 ? Math.floor(x / 60) + ':' + String(x % 60).padStart(2, '0') : x + ' s'; };
+function aggiornaEffettiUI(dt) {
+  effettiT += dt; if (effettiT < 0.2) return; effettiT = 0;
+  let h = '', buoni = 0, cattivi = 0, finisceB = false, finisceC = false;
+  for (const x of EFFETTI_UI) {
+    if (!(x.e.t > 0)) continue;
+    const buono = typeof x.buono === 'function' ? x.buono() : x.buono;
+    const fin = x.e.t <= 10;
+    if (buono) { buoni++; finisceB = finisceB || fin; } else { cattivi++; finisceC = finisceC || fin; }
+    const p = x.e.d > 0 ? Math.max(0, Math.min(1, x.e.t / x.e.d)) : 1;
+    h += `<div class="eff ${buono ? 'buono' : 'cattivo'}${fin ? ' finisce' : ''}" style="--p:${(p * 100).toFixed(1)}%"><i>${x.icoF ? x.icoF() : x.ico}</i>` +
+      `<b>${mmss(x.e.t)}</b><small>${x.nomeF ? x.nomeF() : x.nome}</small><u></u></div>`;
+  }
+  if (h !== effettiDetti) { effettiDetti = h; $('effetti').innerHTML = h; }
+  $('bordoSx').classList.toggle('su', buoni > 0); $('bordoSx').classList.toggle('finisce', buoni > 0 && finisceB);
+  $('bordoDx').classList.toggle('su', cattivi > 0); $('bordoDx').classList.toggle('finisce', cattivi > 0 && finisceC);
 }
 
 // ============ HUD ============
@@ -2357,11 +2446,13 @@ function sbloccaTaglio(t) {
   if (t > MAX_LANCIO || t <= stato.maxLancio) return false;
   if (t !== stato.maxLancio + 1) { avviso(`Prima sblocca ${nomeTaglio(stato.maxLancio + 1)}`, 'imp'); suono.errore(); scuotiBottone(t); return false; }
   const costo = costoSblocco(t);
-  if (stato.saldo < costo) { avviso(`Per sbloccare ${nomeTaglio(t)} servono ${soldi(costo)}`, 'rosso imp'); suono.errore(); scuotiBottone(t); return false; }
-  stato.saldo -= costo; stato.maxLancio = t; stato.sel = t;
-  suono.sblocco(); avviso(`🔓 ${nomeTaglio(t)} sbloccata!`, 'cia imp');
-  rendiSelettore(); aggiornaHUD(); if (negozioAperto()) rendiNegozio(); daSalvare = true;
-  return true;
+  if (!inSuite() && stato.saldo < costo) { avviso(`Per sbloccare ${nomeTaglio(t)} servono ${soldi(costo)}`, 'rosso imp'); suono.errore(); scuotiBottone(t); return false; }
+  return pagaPotenziamento(costo, 'sblocca la moneta ' + nomeTaglio(t), () => {
+    if (t !== stato.maxLancio + 1) return;
+    stato.maxLancio = t; stato.sel = t;
+    suono.sblocco(); avviso(`🔓 ${nomeTaglio(t)} sbloccata!`, 'cia imp');
+    rendiSelettore(); aggiornaHUD(); if (negozioAperto()) rendiNegozio(); daSalvare = true;
+  });
 }
 function scuotiBottone(t) {
   const b = $('monete').querySelector(`[data-t="${t}"]`);
@@ -2383,14 +2474,16 @@ function rendiNegozio() {
   document.querySelectorAll('.schede button').forEach(b => b.classList.toggle('on', b.dataset.scheda === scheda));
   const box = $('contenuto'); let h = '';
   if (scheda === 'pot') {
+    const veri = inSuite();
     h += `<div class="sezione">ABILITÀ · I PULSANTI ACCANTO ALLA SCOSSA</div>`;
+    if (veri) h += `<div class="riga soldiVeri"><div class="ico">💶</div><div class="info"><b>SI PAGANO COI SOLDI VERI</b><small>Nella sala DaProd i potenziamenti escono dal tuo portafoglio della suite: ogni volta ti chiedo conferma. Restano tuoi anche dopo l'incasso.</small></div></div>`;
     for (const id in ABIL) {
       const A = ABIL[id], n = stato.pot[id], max = n >= A.max, costo = max ? 0 : A.costo(n);
-      const cosa = n <= 0 ? 'SBLOCCA ' : '';
-      h += `<div class="riga ${stato.saldo >= costo && !max ? 'ok' : ''}"><div class="ico">${A.ico}</div><div class="info">
+      const cosa = (veri ? '💶 ' : '') + (n <= 0 ? 'SBLOCCA ' : '');
+      h += `<div class="riga ${(veri || stato.saldo >= costo) && !max ? 'ok' : ''}"><div class="ico">${A.ico}</div><div class="info">
         <b>${A.nome.toUpperCase()} · ${n <= 0 ? 'BLOCCATA' : 'LIV. ' + n + '/' + A.max} <span class="tasto">${A.tasto}</span></b>
         <small>${n <= 0 ? '' : A.desc(n)}${max ? '' : `${n <= 0 ? '' : ' → '}<em>${A.desc(n + 1)}</em>`}</small>${pips(n, A.max)}</div>
-        <button class="compra" data-compra="${id}" ${max || stato.saldo < costo ? 'disabled' : ''}>${max ? 'MAX' : cosa + soldi(costo)}</button></div>`;
+        <button class="compra" data-compra="${id}" ${max || (!veri && stato.saldo < costo) ? 'disabled' : ''}>${max ? 'MAX' : cosa + soldi(costo)}</button></div>`;
     }
   } else if (scheda === 'monete') {
     h += `<div class="sezione">MONETE DA LANCIARE</div>`;
@@ -2398,7 +2491,7 @@ function rendiNegozio() {
       const T = TAGLI[t], ok = t <= stato.maxLancio;
       let bott;
       if (ok) bott = t === stato.sel ? `<button class="compra inuso" disabled>IN USO</button>` : `<button class="compra usa" data-usa="${t}">USA</button>`;
-      else bott = `<button class="compra" data-sblocca="${t}" ${t !== stato.maxLancio + 1 || stato.saldo < costoSblocco(t) ? 'disabled' : ''}>🔓 ${soldi(costoSblocco(t))}</button>`;
+      else bott = `<button class="compra" data-sblocca="${t}" ${t !== stato.maxLancio + 1 || (!inSuite() && stato.saldo < costoSblocco(t)) ? 'disabled' : ''}>${inSuite() ? '💶' : '🔓'} ${soldi(costoSblocco(t))}</button>`;
       h += `<div class="riga ${ok && t === stato.sel ? 'ok' : ''}"><div class="ico"><img src="${ICONE[t]}" alt=""></div><div class="info">
         <b>${T.nome}</b><small>${T.met} · costa ${soldi(T.v)} a lancio e vale altrettanto nella vasca${ok ? '' : ' · si sblocca anche da sola creando ' + TAGLI[t + 2].nome}</small></div>${bott}</div>`;
     }
@@ -2436,10 +2529,13 @@ function compra(id) {
   const A = ABIL[id]; if (!A) return false;
   const n = stato.pot[id]; if (n >= A.max) return false;
   if (n <= 0) return sbloccaAbilita(id);
-  const costo = A.costo(n); if (stato.saldo < costo) { suono.errore(); return false; }
-  stato.saldo -= costo; stato.pot[id]++;
-  suono.compra(); avviso(`${A.ico} ${A.nome} → livello ${stato.pot[id]}`, 'cia');
-  aggiornaHUD(); rendiNegozio(); daSalvare = true; return true;
+  const costo = A.costo(n); if (!inSuite() && stato.saldo < costo) { suono.errore(); return false; }
+  return pagaPotenziamento(costo, A.nome + ' livello ' + (n + 1), () => {
+    if (stato.pot[id] !== n) return;
+    stato.pot[id]++;
+    suono.compra(); avviso(`${A.ico} ${A.nome} → livello ${stato.pot[id]}`, 'cia');
+    aggiornaHUD(); if (negozioAperto()) rendiNegozio(); daSalvare = true;
+  });
 }
 let resetArmato = false;
 function cambiaOpzione(id) {
@@ -2828,6 +2924,7 @@ function ciclo(ora) {
     if (cortesiaT > 6) { cortesiaT = 0; bonusDiCortesia(); }
   } else cortesiaT = 0;
   aggiornaAbilitaUI(false);
+  aggiornaEffettiUI(dt);
   controlloT += dt; if (controlloT > 1) { controlloT = 0; guardaLaFortuna(); tavoloPulito(); aggiornaFortuna(); }
   if (Math.abs(chiusuraBuchi - chiusuraMostrata) > 0.001) { chiusuraMostrata = chiusuraBuchi; aggiornaSponde(); }
   disegnaMonete(dt);
@@ -2866,8 +2963,21 @@ if (window.DaProdLira) DaProdLira.init({
   ricarica: { detto: 'una lira della suite e\' una lira di monete', cambio: 1, dai: (lire) => { const m = Math.max(0, Math.round(lire || 0)); stato.saldo += m; aggiornaHUD(); daSalvare = true; avviso('🪙 Ricarica DaProd: +' + soldi(m), 'cia imp'); } },
   cassa: {
     quanto: () => Math.floor(stato.saldo),
-    togli: (r) => { stato.saldo = Math.max(0, stato.saldo - (r.preso || 0)); aggiornaHUD(); daSalvare = true; salva();
-      avviso('💰 Incassato: ' + soldi(r.netto) + ' nel portafoglio DaProd' + (r.oltre > 0 ? ' · ' + soldi(r.oltre) + ' restano qui' : ''), 'cia imp'); },
+    /*
+     * ⚠ 2.2.7: l'incasso chiude la partita e il tavolo riparte pulito. «Il
+     * tasto incassa resetta bene il gioco.» Il saldo va tutto nel portafoglio
+     * (niente tetto), le monete ancora sul tavolo tornano alla casa, e si
+     * riparte dalla pila di sempre. Le abilita' e le monete sbloccate restano:
+     * sono state pagate coi soldi veri.
+     */
+    togli: (r) => {
+      stato.saldo = 0;
+      for (const e of [turbo, calamita, muro, moltiplica, fermo, voragine]) e.t = 0;
+      moltiplica.k = 1;
+      pilaIniziale();
+      aggiornaHUD(); daSalvare = true; salva();
+      avviso(r.inControllo ? '⏳ Incasso in controllo: lo guarda un admin' : '💰 Incassato: ' + soldi(r.netto) + ' nel portafoglio DaProd · il tavolo riparte', 'cia imp');
+    },
   },
 });
 
@@ -2881,6 +2991,7 @@ window.DOZER = {
   usaAbilita, sbloccaAbilita, lanciaMeteora, impattoMeteora, meteore: () => meteore.length,
   meteoraSubito: (x, z) => { if (!lanciaMeteora(x, z)) return false; const m = meteore.pop(); impattoMeteora(m); return true; },
   timer: () => ({ turbo: turbo.t, calamita: calamita.t, muro: muro.t, chiusura: chiusuraBuchi, turboK, moltiplica: moltiplica.t, k: moltiplica.k, fermo: fermo.t, voragine: voragine.t }),
+  eventoACaso, aggiornaEffettiUI,
   effettoEvento, misuraEvento, corto, AVANTI,
   avviaEvento, finisciEvento, cine, prossimoEvento: () => prossimoEvento,
   cambiaValuta, cambiaScritte, soldi, controllaEuro, aggiornaHUD,

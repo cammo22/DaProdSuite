@@ -212,7 +212,9 @@ export {
   type IdGiocoSala,
   type Listino,
 } from "./borsa";
-export { azzeraPartita, entra, evento, giocaCarta, incassaGioco, pescaCarta, ricarica, segnaPunti, stacca, statoSala, XP_FINE, XP_OGNI_LIRE_MESSE, XP_OGNI_LIRE_PRESE, type GiocoInSala, type StatoSala } from "./sala";
+export { azzeraPartita, entra, evento, giocaCarta, incassaGioco, pagaPotenziamento, premiDeiLivelli, riscuotiLivelli, stimaGioco, type StimaGioco, pescaCarta, ricarica, segnaPunti, stacca, statoSala, XP_FINE, XP_OGNI_LIRE_MESSE, XP_OGNI_LIRE_PRESE, type GiocoInSala, type StatoSala } from "./sala";
+// La Banca DaProd di chi comanda (1.5.1): vedere e riparare i soldi della sala.
+export * from "./gestione";
 // Lire ed euro, la cassa dei giochi e il portafoglio (1.4.8).
 export * from "./euro";
 export { andamentoSala, portafoglio, type AndamentoSala, type Portafoglio, type PosizioneGioco } from "./portafoglio";

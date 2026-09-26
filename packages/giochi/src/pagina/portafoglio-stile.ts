@@ -168,4 +168,16 @@ export const STILE_PORTAFOGLIO = `
 /* =========================================== chi comanda e chi gioca 1.4.9 */
 body:not(.admin) .solo-admin{display:none !important}
 .cornice-valuta{min-width:0; padding:8px 11px; font:700 12px/1 "Space Mono", monospace}
+
+/* =========================================== le cose che ti aspettano 1.5.1 */
+.wl-cose{display:flex; gap:8px; overflow-x:auto; scrollbar-width:none; margin-top:4px}
+.wl-cose::-webkit-scrollbar{display:none}
+.wl-cosa{flex:0 0 auto; display:grid; gap:2px; text-align:left; padding:9px 12px; border-radius:16px; cursor:pointer;
+  background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.14); color:#e9fff6; font:600 13px/1.2 "Nunito", sans-serif}
+.wl-cosa b{font-weight:800}
+.wl-cosa small{color:#9fc4b8; font-size:11.5px}
+.wl-cosa.oro{background:linear-gradient(180deg, rgba(255,209,102,.24), rgba(255,209,102,.08)); border-color:rgba(255,209,102,.6);
+  animation:premio-livello 1.6s ease-in-out infinite}
+.wl-cosa.oro small{color:#ffe7a3}
+.wl-cosa.blu{background:rgba(61,219,255,.08); border-color:rgba(61,219,255,.4); cursor:default}
 `;

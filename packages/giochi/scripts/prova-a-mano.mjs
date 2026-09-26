@@ -23,11 +23,11 @@
  */
 
 import { createServer } from "node:http";
-import { mkdirSync } from "node:fs";
+import { createReadStream, mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { deflateSync } from "node:zlib";
-import { Deposito, paginaGiochi, rispondi } from "../dist/index.js";
+import { Deposito, fileDellaSala, paginaGiochi, rispondi } from "../dist/index.js";
 
 const QUI = dirname(fileURLToPath(import.meta.url));
 const CARTELLA = join(QUI, "..", ".prova");
@@ -318,6 +318,16 @@ const server = createServer(async (req, res) => {
   if (percorso === "/" || percorso === "/giochi") {
     res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
     res.end(paginaGiochi("/giochi"));
+    return;
+  }
+
+  // I giochi d'arcade, come li serve il gateway (1.5.1): senza, la cornice
+  // della sala restava vuota e i soldi dei giochi non si potevano provare qui.
+  if (percorso.startsWith("/giochi/sala/") && req.method === "GET") {
+    const trovato = fileDellaSala(percorso.slice("/giochi/sala/".length));
+    if (!trovato) { res.writeHead(404); res.end(); return; }
+    res.writeHead(200, { "content-type": trovato.tipo });
+    createReadStream(trovato.file).pipe(res);
     return;
   }
 

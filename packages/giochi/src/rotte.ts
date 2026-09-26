@@ -90,7 +90,32 @@ import {
   promptStudio,
   type LavoroStudio,
 } from "./studio";
-import { azzeraPartita, entra, evento, giocaCarta, incassaGioco, ricarica, segnaPunti, stacca, statoSala, type StatoSala } from "./sala";
+import {
+  azzeraPartita,
+  entra,
+  evento,
+  giocaCarta,
+  incassaGioco,
+  pagaPotenziamento,
+  premiDeiLivelli,
+  ricarica,
+  riscuotiLivelli,
+  segnaPunti,
+  stacca,
+  statoSala,
+  stimaGioco,
+  type StatoSala,
+} from "./sala";
+import {
+  annullaMovimento,
+  cambiaRegole,
+  chiudiPartitaDi,
+  correggiSaldo,
+  decidiControllo,
+  gestione,
+  riparaTutto,
+  rimettiPremiLivelli,
+} from "./gestione";
 import { andamentoSala, portafoglio } from "./portafoglio";
 import { euroDaLire } from "./euro";
 import type { Collezionabile, Era, Grado, PezzoInGioco, Tavolo, TipoCollezionabile } from "./tipi";
@@ -613,6 +638,8 @@ export function rispondi(
           esperienza: conto.esperienza,
           ...versoIlProssimo(conto.esperienza, imp.perIlLivello),
         },
+        /** I premi dei livelli (1.5.1): toccando il livello si prendono. */
+        livelli: premiDeiLivelli(conto, imp.perIlLivello, deposito.regoleSoldi()),
         // I numeri che si vedono: quanto costa una cosa, non come si pesca.
         costi: {
           giro: imp.costoGiro,
@@ -729,6 +756,82 @@ export function rispondi(
         chiudi: corpo["chiudi"] === true,
       });
       return OK({ ...fatto, saldoScritto: lire(fatto.saldo) });
+    }
+    /**
+     * Il contatore dell'incasso (1.5.1): quanto porteresti a casa adesso, coi
+     * punti. Lo chiede la cornice ogni volta che il gioco racconta qualcosa.
+     */
+    if (metodo === "POST" && percorso === "/sala/stima") {
+      return OK(stimaGioco(deposito, chi.id, String(corpo["gioco"] ?? ""), Number(corpo["grezzo"] ?? 0)));
+    }
+    /**
+     * Un potenziamento coi soldi veri (1.5.1): arriva qui solo dopo che chi
+     * gioca ha detto si' all'avviso della cornice.
+     */
+    if (metodo === "POST" && percorso === "/sala/paga") {
+      const fatto = pagaPotenziamento(
+        deposito,
+        chi.id,
+        String(corpo["gioco"] ?? ""),
+        Number(corpo["lire"] ?? 0),
+        String(corpo["cosa"] ?? ""),
+      );
+      return OK({ ...fatto, saldoScritto: lire(fatto.saldo) });
+    }
+    /** I premi dei livelli (1.5.1): si prendono tutti quelli maturati. */
+    if (metodo === "POST" && percorso === "/livello/riscuoti") {
+      const fatto = riscuotiLivelli(deposito, chi.id);
+      return OK({ ...fatto, saldoScritto: lire(fatto.saldo) });
+    }
+    /* ------------------------------------ la Banca di chi comanda (1.5.1) */
+    /**
+     * ⚠ **Tutti i gesti che riparano i soldi**, in un posto solo e solo per chi
+     * comanda. Vedi `gestione.ts`: ognuno resta nel registro.
+     */
+    if (percorso === "/banca/gestione" || percorso.startsWith("/banca/ripara") || percorso === "/banca/saldo" ||
+        percorso === "/banca/partita" || percorso === "/banca/annulla" || percorso === "/banca/controllo" ||
+        percorso === "/banca/livelli" || percorso === "/banca/regole") {
+      if (!chi.admin) return NO(403, "La Banca la gestisce chi comanda.");
+    }
+    if (metodo === "GET" && percorso === "/banca/gestione") {
+      const g = gestione(deposito);
+      return OK({
+        ...g,
+        conti: g.conti
+          .map((c) => ({ ...c, nome: contorno.nomeDi(c.chi), faccia: contorno.facciaDi ? contorno.facciaDi(c.chi) : undefined, io: c.chi === chi.id }))
+          .sort((a, b) => (a.io === b.io ? b.saldo - a.saldo : a.io ? -1 : 1)),
+        registro: g.registro.map((r) => ({ ...r, nomeDa: contorno.nomeDi(r.da), nomeChi: r.chi ? contorno.nomeDi(r.chi) : "" })),
+      });
+    }
+    if (metodo === "POST" && percorso === "/banca/saldo") {
+      const imposta = corpo["imposta"];
+      const c = correggiSaldo(deposito, chi.id, String(corpo["chi"] ?? ""), {
+        ...(imposta !== undefined && imposta !== null && imposta !== "" ? { imposta: Number(imposta) } : { muovi: Number(corpo["muovi"] ?? 0) }),
+        perche: String(corpo["perche"] ?? ""),
+      });
+      return OK({ chi: c.chi, saldo: c.saldo, saldoScritto: lire(c.saldo) });
+    }
+    if (metodo === "POST" && percorso === "/banca/partita") {
+      return OK(chiudiPartitaDi(deposito, chi.id, String(corpo["chi"] ?? ""), String(corpo["gioco"] ?? ""), corpo["rimborsa"] === true));
+    }
+    if (metodo === "POST" && percorso === "/banca/annulla") {
+      return OK(annullaMovimento(deposito, chi.id, String(corpo["chi"] ?? ""), Number(corpo["quando"] ?? 0), Number(corpo["lire"] ?? 0)));
+    }
+    if (metodo === "POST" && percorso === "/banca/controllo") {
+      const esito = String(corpo["esito"] ?? "");
+      if (esito !== "paga" && esito !== "rimborsa" && esito !== "rifiuta") return NO(400, "Paga, rimborsa o rifiuta?");
+      return OK(decidiControllo(deposito, chi.id, String(corpo["chi"] ?? ""), String(corpo["id"] ?? ""), esito));
+    }
+    if (metodo === "POST" && percorso === "/banca/livelli") {
+      return OK(rimettiPremiLivelli(deposito, chi.id, String(corpo["chi"] ?? ""), Number(corpo["livello"] ?? 1)));
+    }
+    if (metodo === "POST" && percorso === "/banca/ripara") {
+      return OK(riparaTutto(deposito, chi.id));
+    }
+    if (metodo === "POST" && percorso === "/banca/regole") {
+      const cambi: Record<string, number> = {};
+      for (const [k, v] of Object.entries(corpo)) if (typeof v === "number" || (typeof v === "string" && v.trim() !== "")) cambi[k] = Number(v);
+      return OK({ regole: cambiaRegole(deposito, chi.id, cambi) });
     }
     /** Il portafoglio di chi guarda (1.4.8): quanto ha, com'e' andato, dove sono andate le lire. */
     if (metodo === "GET" && percorso === "/portafoglio") {

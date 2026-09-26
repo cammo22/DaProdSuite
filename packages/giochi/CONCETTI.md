@@ -1373,15 +1373,9 @@ euro».
 Il 25 settembre 2026: «il coin dozer deve essere un mangiatore di soldi, e in
 Claw Machine e Neon Partenope puoi guadagnare molto».
 
-- **Il Dozer** porta a casa al massimo **due** volte quello che si mette
-  (`moltMax` 2 in `borsa.ts`). Quello che resta sul tavolo e le fette finiscono
-  nella Banca.
-- **Claw e Neon** hanno un **premio di fine** fuori dal tetto (`premioFine` in
-  `euro.ts`): da 20 a 30 euro, di piu' quanti piu' ordini di grandezza ha fatto
-  il punteggio (`scala`: la Claw da 10^6 a 10^11, Neon da 10^6 a 10^30). Sopra
-  ci vanno il premio della velocita' e un **pezzo del montepremi**: il 2% della
-  riserva della Banca, al massimo 10 euro. Chi smette prima porta a casa fino a
-  15 euro col punteggio, sotto il tetto di 10 volte il messo.
+- ⚠ **Il tetto del Dozer e il premio fisso di Claw e Neon non ci sono piu'**
+  dalla 1.5.1: vedi § 18.12. Resta il **pezzo del montepremi** per chi finisce:
+  il 2% della riserva della Banca, al massimo 10 euro.
 - La Banca quindi gira: il Dozer la riempie, Claw e Neon la svuotano a chi
   finisce. `GET /andamento` la fa vedere a chi comanda, giorno per giorno.
 - **Lire o euro lo sceglie chi guarda**, nel browser, e vale per tutta la
@@ -1394,6 +1388,41 @@ Claw Machine e Neon Partenope puoi guadagnare molto».
 - **Lo Studio** costa mille lire, si fa solo fine (40 passi, niente LoRA), e per
   chi non comanda parte solo col si' di un admin; si puo' partire da una foto del
   telefono (`POST /studio/ritocca` con `foto`).
+
+### 18.12 La resa, i soldi veri e la Banca di chi comanda (1.5.1)
+
+Il 26 settembre 2026: «ho messo 30k euro in Partenope e quando ho finito ho perso
+tutto … togliamo il max dei 20 euro, la vincita e' sempre dinamica … i giocatori
+devono spendere soldi reali per i potenziamenti, e ogni volta si deve avvisare …
+una banca DaProd dove risolvere tutti i problemi della moneta».
+
+- **La resa** (`stimaIncasso` in `euro.ts`). Claw e Neon: `messo × resa + paga`.
+  La resa va da `resaMin` (0,5) a `resaMax` (3) coi progressi del punteggio
+  (gli ordini di grandezza della `scala`), la paga di chi gioca arriva a
+  `baseEuro` (30 €). Finire moltiplica tutto per `moltFine` (1,25), e sopra ci
+  vanno velocita' (un quarto del messo entro mezz'ora) e montepremi. Il Dozer
+  conta uno a uno. **Nessun tetto.** I numeri sono `RegoleSoldi`, e li cambia
+  chi comanda.
+- **Il campanello, non il tetto** (`daControllare`). Un incasso piu' grosso di
+  `controllaVolte` volte il messo e sopra `controllaMinEuro` non si paga da solo:
+  resta in `inControllo` sul conto, e un admin lo paga, lo rimborsa (solo il
+  messo) o lo rifiuta. Serve contro i giochi che si rompono.
+- **Ogni incasso chiude la partita**, in tutti e tre i giochi: `preso` e' tutto
+  quello che il gioco ha, e il gioco riparte (il Dozer rifa' il tavolo; Claw e
+  Neon da capo). La sala dice prima tutto, con la frase `ricomincia` del gioco.
+- **Il contatore**: il gioco racconta ogni tre secondi, la sala chiede
+  `POST /sala/stima` e rimanda la stima al gioco (`DaProdLira.suStima`).
+- **I soldi veri** (`POST /sala/paga`, `DaProdLira.paga`): la sala fa vedere
+  l'avviso ogni volta, e solo col si' le lire escono dal portafoglio. Contano
+  come messo della partita. Il Dozer li usa per abilita' e monete; Claw e Neon
+  per i loro «⚡ Potenziamenti DaProd» a tempo.
+- **I premi dei livelli** (`premiDeiLivelli`, `POST /livello/riscuoti`): il
+  livello n paga `premioLivelloEuro × n` euro, una volta. `livelloPagato` sul
+  conto dice fin dove sono stati presi.
+- **La Banca di chi comanda** (`gestione.ts`, rotte `/banca/…`): vedere, e
+  correggere saldo, partite aperte, movimenti, incassi in controllo, premi dei
+  livelli, regole; «Ripara tutto» rimette dritti i numeri storti. Ogni gesto va
+  nel **registro** (le ultime duecento righe) e non muove la Borsa.
 
 ## 17. Quello che ancora non e' deciso
 

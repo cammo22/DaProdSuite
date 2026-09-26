@@ -372,7 +372,8 @@ function aggiornaTesta() {
   document.querySelectorAll('[data-scheda="giochi"]').forEach(b => b.classList.toggle("avviso", commPronta));
   // buff attivi
   const bb = $("buffbar");
-  const html = Object.entries(S.buff).filter(([, b]) => b && b.fino > Date.now())
+  // 2.1.6: quelli DaProd (dp…) stanno ai lati, col loro conto alla rovescia.
+  const html = Object.entries(S.buff).filter(([k, b]) => b && b.fino > Date.now() && k.indexOf("dp") !== 0)
     .map(([k, b]) => `<span class="buff">${{ dan: "💥", prod: "💰", crit: "🎯" }[k]} ${esc(b.nome)} ${k === "crit" ? "+" + perc(b.val) : "×" + b.val} · ${Math.ceil((b.fino - Date.now()) / 1000)}s</span>`).join("");
   if (bb._h !== html) { bb._h = html; bb.innerHTML = html; }
 }

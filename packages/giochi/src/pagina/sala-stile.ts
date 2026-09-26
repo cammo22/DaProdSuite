@@ -194,4 +194,33 @@ export const STILE_SALA = `
   .borsa-consiglio.pari { color: #cfe; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.14); }
   .borsa-in-parole { flex: 1 0 100%; margin-top: 6px; color: #9fc4b8; font-size: 13px; line-height: 1.45; }
   .borsa-in-parole b { color: #ffd166; }
+
+  /* ============================ le domande dei soldi veri e dell'incasso (1.5.1) */
+  .resoconto.chiedi { z-index: 200; }
+  .chiedi[hidden] { display: none; }
+  .chiedi-tasti { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+  .chiedi-tasti .btn.piano[hidden] { display: none; }
+  .chiedi-icona { font-size: 34px; line-height: 1; }
+  .conti-righe { display: grid; gap: 4px; padding: 10px 12px; border-radius: 16px; background: rgba(255,255,255,.04);
+    border: 1px solid rgba(120,255,220,.14); }
+  .conti-righe .riga { display: flex; justify-content: space-between; gap: 10px; font-size: 14px; color: #cfe7df; }
+  .conti-righe .riga b { font: 700 14px/1.3 "Space Mono", monospace; color: #f2fffb; font-variant-numeric: tabular-nums; }
+  .conti-righe .riga.tot { border-top: 1px solid rgba(255,255,255,.12); margin-top: 4px; padding-top: 6px; }
+  .conti-righe .riga.tot b { color: #ffd166; font-size: 17px; }
+  .conti-righe .su { color: #3dff8a !important; }
+  .conti-righe .giu { color: #ff5c6c !important; }
+  .chiedi-nota { margin: 0; color: #9fc4b8; font-size: 13px; line-height: 1.45; }
+  .chiedi-nota.forte { color: #ffe7a3; }
+  /* Il contatore dell'incasso sopra il gioco: verde se guadagni, rosso se perdi. */
+  .pastiglia.incasso b { color: #ffd166; }
+  .pastiglia.incasso.su b { color: #3dff8a; }
+  .pastiglia.incasso.giu b { color: #ff8a96; }
+  .pastiglia.incasso small i { font-style: normal; color: #ffd166; }
+  .pastiglia.incasso.su small i { color: #3dff8a; }
+  .pastiglia.incasso.giu small i { color: #ff8a96; }
+  /* Il livello con un premio da prendere (1.5.1): si accende e dice quanto. */
+  .livello.con-premio { position: relative; box-shadow: 0 0 0 2px #ffd166, 0 0 18px rgba(255,209,102,.55); animation: premio-livello 1.6s ease-in-out infinite; }
+  .livello.con-premio::after { content: attr(data-premio); position: absolute; right: -6px; bottom: -9px; padding: 2px 6px; border-radius: 999px;
+    background: #ffd166; color: #1a1300; font: 800 9.5px/1.2 "Space Mono", monospace; white-space: nowrap; pointer-events: none; }
+  @keyframes premio-livello { 50% { box-shadow: 0 0 0 2px #ffd166, 0 0 30px rgba(255,209,102,.85); } }
 `;

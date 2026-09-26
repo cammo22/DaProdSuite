@@ -33,6 +33,13 @@ export const COPIONE_SALA = `
    */
   var nelGioco = -1;
   var nelGiocoPrima = -1;
+  /**
+   * La stima dell'incasso (1.5.1): quanto porteresti a casa adesso e con che
+   * punti. La chiede la cornice ogni volta che il gioco racconta qualcosa.
+   */
+  var stimaAdesso = null;
+  var stimaInCorso = false;
+  var stimaDaRifare = false;
 
   function giocoDellaSala(id) { return (sala && sala.giochi || []).filter(function (x) { return x.id === id; })[0] || null; }
   /** Lire in euro, all'italiana: «€ 1.234,56». Il cambio e' quello del 2002 (euro.ts). */
@@ -59,8 +66,9 @@ export const COPIONE_SALA = `
       // 1.4.8: la cassa del gioco aperto, e il cambio.
       lirePerEuro: sala.euro ? sala.euro.lirePerEuro : 1936.27,
       fettaDaProd: sala.euro ? sala.euro.fettaDaProd : 0.1,
-      cassa: g ? { messo: g.messo, preso: g.preso, tetto: g.tettoRimasto, moltMax: g.moltMax, siFinisce: g.siFinisce,
+      cassa: g ? { messo: g.messo, preso: g.preso, siFinisce: g.siFinisce, aResa: g.aResa,
         fine: g.fine || '', bonus: g.bonusSeFinisci, minuti: g.minuti, record: g.record } : null,
+      stima: stimaAdesso,
     };
   }
 
@@ -76,6 +84,7 @@ export const COPIONE_SALA = `
   function caricaSala() {
     return chiedi('GET', '/sala').then(function (s) {
       sala = s;
+      disegnaPremioLivello();
       disegnaPartita();
       disegnaMano();
       if (viva('p-sala')) disegnaSala();
@@ -217,22 +226,29 @@ export const COPIONE_SALA = `
      */
     var h = '<span class="pastiglia lire borsellino" id="pastiglia-portafoglio" role="button" tabindex="0" title="Ricarica e incassa"><small>portafoglio</small><b>' + soldi(io ? io.saldo : 0) + '</b></span>';
     if (g && cassaDelGioco) {
-      // 1.4.9: le lire del gioco dal vivo, e quello che conta per incassare.
-      h += '<span class="pastiglia punti" id="pastiglia-gioco"><small>nel gioco</small><b>' + (nelGioco >= 0 ? soldi(nelGioco) : '…') + '</b></span>' +
-        '<span class="pastiglia"><small>messe</small><b>' + soldi(g.messo) + '</b></span>' +
-        (g.siFinisce
-          ? '<span class="pastiglia su"><small>a finirlo</small><b>' + soldi(g.premioFine || 0) + '+</b></span>'
-          : '<span class="pastiglia"><small>incassi fino a</small><b>' + soldi(g.tettoRimasto) + '</b></span>');
+      /*
+       * 1.5.1: il contatore. «Il tasto incassa deve funzionare bene, con un
+       * counter di quanto si sta guadagnando e quanti punti si stanno
+       * facendo.» Quanto porti a casa adesso (verde se guadagni), i punti, e
+       * quanto hai messo.
+       */
+      var st = stimaAdesso;
+      var verso = st && g.messo > 0 ? (st.netto >= g.messo ? ' su' : ' giu') : '';
+      h += '<span class="pastiglia incasso' + verso + '" id="pastiglia-gioco"><small>incassi adesso' +
+        (st && g.messo > 0 ? ' <i>' + (st.guadagno >= 0 ? '+' : '') + numeroIt(st.guadagno, 0) + '%</i>' : '') + '</small><b>' + (st ? soldi(st.netto) : '…') + '</b></span>' +
+        '<span class="pastiglia punti"><small>punti</small><b>' + (st ? cortoIt(st.punti) : '…') + '</b></span>' +
+        '<span class="pastiglia"><small>messe</small><b>' + soldi(g.messo) + '</b></span>';
     } else {
       h += '<span class="pastiglia punti" id="pastiglia-punti"><small>partita</small><b>' + cortoIt(pt) + ' pt</b></span>' +
         '<span class="pastiglia"><small>incassi</small><b>' + soldi(sala.staccando) + '</b></span>';
     }
     $('cornice-conto').innerHTML = h;
-    if (nelGiocoPrima >= 0 && nelGioco > nelGiocoPrima) {
+    var nettoOra = stimaAdesso ? stimaAdesso.netto : -1;
+    if (nelGiocoPrima >= 0 && nettoOra > nelGiocoPrima) {
       var pg = $('pastiglia-gioco');
-      if (pg) { pg.classList.add('sale'); pg.setAttribute('data-piu', '+' + soldi(nelGioco - nelGiocoPrima)); }
+      if (pg) { pg.classList.add('sale'); pg.setAttribute('data-piu', '+' + soldi(nettoOra - nelGiocoPrima)); }
     }
-    nelGiocoPrima = nelGioco;
+    nelGiocoPrima = nettoOra;
     $('cornice-valuta').textContent = inEuro ? '€ ⇄ L' : 'L ⇄ €';
     if (ultimaPartita >= 0 && pt > ultimaPartita) {
       var p = $('pastiglia-punti');
@@ -242,7 +258,7 @@ export const COPIONE_SALA = `
     disegnaTagliAlVolo();
     if (cassaDelGioco) {
       $('cornice-stacca').disabled = false;
-      $('cornice-stacca').textContent = 'Incassa';
+      $('cornice-stacca').textContent = stimaAdesso && stimaAdesso.netto > 0 ? 'Incassa ' + soldi(stimaAdesso.netto) : 'Incassa';
     } else {
       $('cornice-stacca').disabled = !(pt > 0);
       $('cornice-stacca').textContent = pt > 0 ? 'Incassa ' + soldi(sala.staccando) : 'Incassa';
@@ -299,17 +315,14 @@ export const COPIONE_SALA = `
     var g = giocoDellaSala(giocoAperto);
     var info = '';
     if (g && cassaDelGioco) {
+      var sti = stimaAdesso;
       info += '<div class="riga"><small>messe in questa partita</small><b>' + soldi(g.messo) + '</b></div>' +
-        '<div class="riga verde"><small>puoi portare a casa ancora</small><b>' + soldi(g.tettoRimasto) + '</b></div>';
-      if (g.siFinisce) {
-        info += '<div class="riga oro"><small>premio se lo finisci</small><b>' + soldi(g.premioFine || 0) + ' + ' + soldi(g.bonusSeFinisci) + ' velocità</b></div>' +
+        '<div class="riga verde"><small>se incassi adesso</small><b>' + (sti ? soldi(sti.netto) : '…') + '</b></div>';
+      if (g.siFinisce && sti && sti.finendo !== null) {
+        info += '<div class="riga oro"><small>se lo finisci adesso</small><b>' + soldi(sti.finendo) + ' + montepremi</b></div>' +
           '<div class="riga"><small>record, a finirlo</small><b>' + (g.record ? numeroIt(g.record, 0) + ' min' : 'ancora niente') + '</b></div>';
       }
-      info += '<p class="spiega">Una lira è una lira: quello che ricarichi lo ritrovi uguale nel gioco, e quando incassi torna qui. ' +
-        (g.siFinisce
-          ? 'Per finire: ' + sicuro(g.fine || '') + '. Chi finisce vince da 20 a 30 euro (di più col punteggio alto), il premio della velocità e un pezzo del montepremi della Banca; poi il gioco ricomincia da capo. Se smetti prima, porti a casa fino a ' + g.moltMax + ' volte quello che hai messo.'
-          : 'Il Dozer si mangia le lire: porti a casa al massimo ' + g.moltMax + ' volte quello che hai messo.') +
-        ' DaProd tiene il ' + Math.round((sala.euro ? sala.euro.fettaDaProd : 0.1) * 100) + '%, che torna a tutti coi premi della Banca.</p>';
+      info += '<p class="spiega">' + comeRendeIlGioco(g) + '</p>';
     }
     $('portafoglio-info').innerHTML = info;
     $('portafoglio-incassa').hidden = !(g && cassaDelGioco);
@@ -317,6 +330,21 @@ export const COPIONE_SALA = `
     $('portafoglio-nota').textContent = saldo < minimo
       ? 'Servono almeno ' + soldi(minimo) + ' (20 centesimi). Incassa o gioca alla slot per farne.'
       : '1 € = L. 1.936,27, il cambio del 2002. Le lire spese vanno nella Banca DaProd.';
+  }
+
+  /** Com'e' che un gioco rende, detto a chi gioca (1.5.1). */
+  function comeRendeIlGioco(g) {
+    var r = sala && sala.soldi ? sala.soldi : { resaMin: 0.5, resaMax: 3, baseEuro: 30, moltFine: 1.25 };
+    var fettaP = Math.round((sala && sala.euro ? sala.euro.fettaDaProd : 0.1) * 100);
+    if (!g.aResa) {
+      return 'Una lira è una lira: le monete che hai nel Dozer sono lire vere, e quando incassi tornano qui tutte, senza tetto. ' +
+        'Quelle che il tavolo si mangia sono andate: cinquanta e cinquanta. DaProd tiene il ' + fettaP + '%, che torna a tutti coi premi della Banca.';
+    }
+    return 'Quello che metti (ricariche e potenziamenti) rende di più quanto più vai avanti: se smetti subito ti riprendi ' +
+      Math.round(r.resaMin * 100) + '%, andando fino in fondo col punteggio arriva a ' + numeroIt(r.resaMax, 1).replace(',0', '') + ' volte. ' +
+      'In più fino a € ' + puntiIt(r.baseEuro) + ' solo per aver giocato. ' +
+      (g.siFinisce ? 'Se lo finisci (' + sicuro(g.fine || '') + ') tutto vale ' + numeroIt(r.moltFine, 2).replace(/,?0+$/, '') + ' volte, più il premio della velocità e un pezzo del montepremi. ' : '') +
+      'Incassare chiude la partita: il gioco ricomincia da capo. DaProd tiene il ' + fettaP + '%.';
   }
 
   function segnaQuante(n) {
@@ -386,21 +414,179 @@ export const COPIONE_SALA = `
   function dopoLIncasso(r) {
     if (io) io.saldo = r.saldo;
     disegnaSaldo(true);
-    var g = giocoDellaSala(giocoAperto);
-    if (r.finita) {
-      // 1.4.9: il premio di fine si dice grande, come una vincita.
+    if (r.inControllo) {
+      // 1.5.1: il campanello. Non e' un no: aspetta un admin nella Banca.
+      grande('Incasso in controllo', soldiPieni(r.netto),
+        'È tanto rispetto a quello che avevi messo: lo guarda un admin nella Banca DaProd, poi arriva nel portafoglio. Il gioco ricomincia da capo.', '#3ddbff');
+    } else if (r.finita) {
+      // Il premio di fine si dice grande, come una vincita.
       grande('Partita finita in ' + numeroIt(r.minuti, 0) + ' min!', '+' + soldiPieni(r.netto),
-        'Premio ' + soldi(r.premio || r.preso) + (r.bonus ? ' + bonus ' + soldi(r.bonus) + (r.montepremi ? ' (montepremi ' + soldi(r.montepremi) + ')' : '') : '') +
+        'Avevi messo ' + soldi(r.messo) + ', resa ×' + numeroIt(r.resa, 2) + (r.bonus ? ' + bonus ' + soldi(r.bonus) + (r.montepremi ? ' (montepremi ' + soldi(r.montepremi) + ')' : '') : '') +
         ' · a DaProd ' + soldi(r.fetta) + '. Il gioco ricomincia da capo.', '#ffd166');
     } else {
-      avviso('Incassato: ' + soldi(r.netto) + ' (' + euroIt(r.netto) + ')' + ' · a DaProd ' + soldi(r.fetta) +
-        (r.oltre > 0 ? ' · ' + soldi(r.oltre) + ' restano nel gioco (tetto)' : ''), 'bene');
+      var diff = r.netto - (r.messo || 0);
+      avviso('Incassato: ' + soldi(r.netto) + ' (' + euroIt(r.netto) + ')' + (r.messo ? ', ' + (diff >= 0 ? '+' : '−') + soldi(Math.abs(diff)) + ' su quello messo' : '') +
+        ' · a DaProd ' + soldi(r.fetta) + '. Il gioco ricomincia.', diff >= 0 ? 'bene' : 'male');
     }
-    nelGioco = -1; nelGiocoPrima = -1;
+    nelGioco = -1; nelGiocoPrima = -1; stimaAdesso = null;
     if (typeof coriandoli === 'function') coriandoli(r.finita ? 90 : 40, ['#00ff41', '#3ddbff', '#ffd166']);
     var p = $('pastiglia-portafoglio');
     if (p) { p.classList.remove('cala'); void p.offsetWidth; p.classList.add('cala'); }
     caricaSala();
+  }
+
+  /* --------------------------------- la stima e le due domande (1.5.1) */
+
+  /** Chiede al PC quanto vale adesso quello che c'e' nel gioco. Una per volta. */
+  function chiediLaStima() {
+    if (!giocoAperto || nelGioco < 0) return;
+    if (stimaInCorso) { stimaDaRifare = true; return; }
+    stimaInCorso = true;
+    var gioco = giocoAperto;
+    chiedi('POST', '/sala/stima', { gioco: gioco, grezzo: nelGioco }).then(function (r) {
+      stimaInCorso = false;
+      if (gioco !== giocoAperto) return;
+      stimaAdesso = r;
+      disegnaCornice();
+      mandaAlGioco({ stima: r });
+      if (stimaDaRifare) { stimaDaRifare = false; chiediLaStima(); }
+    }).catch(function () { stimaInCorso = false; });
+  }
+
+  /**
+   * Il foglio delle domande: un titolo, dentro quello che serve sapere, due
+   * tasti. Torna una promessa col si' o col no. Con «soloSi» il no non c'e'.
+   */
+  var rispostaChiedi = null;
+  function domanda(html, si, no, soloSi) {
+    if (rispostaChiedi) rispostaChiedi(false);
+    $('chiedi-dentro').innerHTML = html;
+    $('chiedi-si').textContent = si;
+    $('chiedi-no').textContent = no || 'No';
+    $('chiedi-no').hidden = Boolean(soloSi);
+    $('chiedi').hidden = false;
+    return new Promise(function (risolvi) { rispostaChiedi = risolvi; });
+  }
+  function rispondiChiedi(si) {
+    $('chiedi').hidden = true;
+    var r = rispostaChiedi;
+    rispostaChiedi = null;
+    if (r) r(si);
+  }
+  function rigaConto(nome, valore, classe) {
+    return '<div class="riga' + (classe ? ' ' + classe : '') + '"><span>' + sicuro(nome) + '</span><b>' + valore + '</b></div>';
+  }
+
+  /**
+   * ⚠ **I soldi veri** (1.5.1): «ogni volta che usa soldi reali si deve
+   * avvisare». Quanto costa, in lire e in euro, e cosa resta nel portafoglio.
+   */
+  function chiediSoldiVeri(d) {
+    var lire = Math.floor(Number(d.lire) || 0);
+    var saldo = io ? io.saldo : 0;
+    var g = giocoDellaSala(giocoAperto);
+    var nome = g ? g.nome : giocoAperto;
+    if (lire > saldo) {
+      return domanda('<div class="chiedi-icona">💶</div><h2 id="chiedi-titolo">Non bastano</h2>' +
+        '<p class="chiedi-nota">' + sicuro(d.cosa || 'Questo potenziamento') + ' costa ' + soldiPieni(lire) + ', nel portafoglio ci sono ' + soldiPieni(saldo) + '.</p>',
+        'Va bene', '', true).then(function () { throw new Error('Nel portafoglio non bastano le lire.'); });
+    }
+    return domanda('<div class="chiedi-icona">💶</div><h2 id="chiedi-titolo">Soldi veri</h2>' +
+      '<p class="chiedi-nota forte">Stai pagando <b>' + sicuro(d.cosa || 'un potenziamento') + '</b> in ' + sicuro(nome) + ' col tuo portafoglio della suite.</p>' +
+      '<div class="conti-righe">' +
+        rigaConto('costa', soldiPieni(lire) + ' · ' + euroIt(lire)) +
+        rigaConto('nel portafoglio adesso', soldiPieni(saldo)) +
+        rigaConto('dopo', soldiPieni(saldo - lire), 'tot') +
+      '</div>' +
+      '<p class="chiedi-nota">Conta come messo nella partita: quando incassi, la resa lo moltiplica come una ricarica.</p>',
+      'Paga ' + soldi(lire), 'No').then(function (si) {
+      if (!si) return { annullato: true };
+      return chiedi('POST', '/sala/paga', { gioco: giocoAperto, lire: lire, cosa: d.cosa || '' }).then(function (r) {
+        if (io) io.saldo = r.saldo;
+        disegnaSaldo(true);
+        avviso('Pagato ' + soldi(r.lire) + ': ' + r.cosa, 'bene');
+        var p = $('pastiglia-portafoglio');
+        if (p) { p.classList.remove('cala'); void p.offsetWidth; p.classList.add('cala'); }
+        caricaSala().then(chiediLaStima);
+        return r;
+      }).catch(function (e) { avviso(e.message, 'male'); throw e; });
+    });
+  }
+
+  /**
+   * ⚠ **L'incasso dice tutto prima** (1.5.1). Chiesto dopo i trentamila euro
+   * spariti in Neon: «il pulsante incassa resetta bene il gioco, e quando
+   * premuto avvisa di tutto». Quanto hai messo, quanto porti a casa, la fetta,
+   * e che il gioco ricomincia da capo.
+   */
+  function confermaIncasso(d) {
+    var g = giocoDellaSala(giocoAperto);
+    var grezzo = Number(d.grezzo) || 0;
+    return chiedi('POST', '/sala/stima', { gioco: giocoAperto, grezzo: grezzo }).catch(function () { return stimaAdesso; }).then(function (st) {
+      var fine = d.fine === true;
+      var messo = g ? g.messo : 0;
+      var netto = st ? (fine && st.finendo !== null ? st.finendo : st.netto) : 0;
+      var diff = netto - messo;
+      var h = '<div class="chiedi-icona">' + (fine ? '🏆' : '🏁') + '</div>' +
+        '<h2 id="chiedi-titolo">' + (fine ? 'Hai finito ' + sicuro(g ? g.nome : '') + '!' : 'Incassi e ricominci?') + '</h2>' +
+        '<div class="conti-righe">' +
+          rigaConto('hai messo in questa partita', soldiPieni(messo)) +
+          (st && st.resa !== 1 ? rigaConto('resa a questo punto', '×' + numeroIt(st.resa, 2) + (fine ? ' ×' + numeroIt(sala && sala.soldi ? sala.soldi.moltFine : 1.25, 2) : '')) : '') +
+          (st ? rigaConto('punti', cortoIt(st.punti)) : '') +
+          (st ? rigaConto('a DaProd (' + Math.round((sala && sala.euro ? sala.euro.fettaDaProd : 0.1) * 100) + '%)', '−' + soldi(st.fetta)) : '') +
+          rigaConto('arriva nel portafoglio' + (fine ? ' (più il montepremi)' : ''), soldiPieni(netto) + ' · ' + euroIt(netto), 'tot') +
+          (messo > 0 ? rigaConto(diff >= 0 ? 'ci guadagni' : 'ci perdi', (diff >= 0 ? '+' : '−') + soldiPieni(Math.abs(diff)), diff >= 0 ? 'su' : 'giu') : '') +
+        '</div>' +
+        '<p class="chiedi-nota forte">' + sicuro(g && g.ricomincia ? g.ricomincia : 'Il gioco ricomincia da capo.') + '</p>' +
+        (g && g.aResa && !fine ? '<p class="chiedi-nota">Più vai avanti più rende: a finirlo adesso sarebbero ' + (st && st.finendo !== null ? soldiPieni(st.finendo) : '…') + ' più il montepremi.</p>' : '');
+      return domanda(h, fine ? 'Incassa ' + soldi(netto) : 'Incassa ' + soldi(netto) + ' e ricomincia', 'Continuo a giocare', fine);
+    });
+  }
+
+  /* ------------------------------------------ i premi dei livelli (1.5.1) */
+
+  /**
+   * «I livelli giocatore, se ci clicco, devo poter guadagnare qualcosa.» Ogni
+   * livello nuovo ha un premio in lire (il livello per un euro, di serie): il
+   * livello in alto si accende quando ce n'e' uno da prendere, e toccandolo
+   * si prendono.
+   */
+  function disegnaPremioLivello() {
+    var b = $('livello');
+    if (!b || !sala || !sala.livelli) return;
+    var c = sala.livelli.daPrendere > 0;
+    b.classList.toggle('con-premio', c);
+    b.setAttribute('data-premio', c ? '+' + soldi(sala.livelli.daPrendere) : '');
+  }
+
+  function apriLivelli() {
+    if (!sala || !sala.livelli) return;
+    var l = sala.livelli;
+    var c = typeof conteggioLivello === 'function' && io ? conteggioLivello(io.conto.esperienza) : { dentro: 0, serve: 1 };
+    var h = '<div class="chiedi-icona">⭐</div><h2 id="chiedi-titolo">Livello ' + l.livello + '</h2>' +
+      '<div class="conti-righe">' +
+        rigaConto('verso il livello ' + (l.livello + 1), puntiIt(c.dentro) + ' di ' + puntiIt(c.serve) + ' punti') +
+        rigaConto('premio del livello ' + (l.livello + 1), soldiPieni(l.prossimo)) +
+      '</div>';
+    if (l.livelli.length) {
+      h += '<div class="conti-righe">' + l.livelli.slice(-8).map(function (x) { return rigaConto('livello ' + x.livello, '+' + soldiPieni(x.lire), 'su'); }).join('') +
+        (l.livelli.length > 8 ? rigaConto('e altri ' + (l.livelli.length - 8) + ' livelli', '') : '') +
+        rigaConto('in tutto', '+' + soldiPieni(l.daPrendere), 'tot') + '</div>';
+      h += '<p class="chiedi-nota">Si sale giocando: le lire messe e incassate nei giochi, la slot, lo Studio.</p>';
+      domanda(h, 'Prendi ' + soldi(l.daPrendere), 'Dopo').then(function (si) {
+        if (!si) return;
+        chiedi('POST', '/livello/riscuoti').then(function (r) {
+          if (io) io.saldo = r.saldo;
+          disegnaSaldo(true);
+          grande('Premio del livello!', '+' + soldiPieni(r.daPrendere), r.livelli.length === 1 ? 'Livello ' + r.livello + ' preso.' : 'Dal livello ' + (r.pagato + 1) + ' al ' + r.livello + '.', '#ffd166');
+          if (typeof coriandoli === 'function') coriandoli(60, ['#ffd166', '#00ff41', '#3ddbff']);
+          caricaSala();
+        }).catch(function (e) { avviso(e.message, 'male'); });
+      });
+    } else {
+      h += '<p class="chiedi-nota">I premi di questo livello li hai già presi. Il prossimo arriva al livello ' + (l.livello + 1) + '.</p>';
+      domanda(h, 'Ok', '', true);
+    }
   }
 
   /* ---------------------------------------------------------- i gesti */
@@ -448,7 +634,7 @@ export const COPIONE_SALA = `
       ricaricaDelGioco = false;
       cassaDelGioco = false;
       ultimaPartita = -1;
-      nelGioco = -1; nelGiocoPrima = -1;
+      nelGioco = -1; nelGiocoPrima = -1; stimaAdesso = null;
       chiudiPortafoglio();
       var g = (sala && sala.giochi || []).filter(function (x) { return x.id === id; })[0];
       $('cornice-nome').textContent = (ICONE_SALA[id] || '') + ' ' + (g ? g.nome : id);
@@ -499,6 +685,8 @@ export const COPIONE_SALA = `
     $('cornice').hidden = true;
     giocoAperto = null;
     cassaDelGioco = false;
+    stimaAdesso = null;
+    if (rispostaChiedi) rispondiChiedi(false);
     caricaSala();
   }
 
@@ -526,10 +714,13 @@ export const COPIONE_SALA = `
       }
       caricaSala().then(function () { rispondi(statoPerIlGioco()); });
     } else if (m.cosa === 'nelGioco') {
-      // 1.4.9: il gioco racconta quante lire ha, per la pastiglia «nel gioco».
+      // Il gioco racconta quello che ha: la sala chiede quanto vale (1.5.1).
       nelGioco = Math.max(0, Number(d.lire) || 0);
-      disegnaCornice();
+      chiediLaStima();
       rispondi({ ok: true });
+    } else if (m.cosa === 'paga') {
+      // 1.5.1: i soldi veri. L'avviso ogni volta, e si paga solo col si'.
+      chiediSoldiVeri(d).then(function (r) { rispondi(r); }, sbaglio);
     } else if (m.cosa === 'punti') {
       chiedi('POST', '/sala/punti', { gioco: d.gioco, grezzo: d.grezzo }).then(function (r) { rispondi(r); caricaFraPoco(); }, sbaglio);
     } else if (m.cosa === 'evento') {
@@ -551,8 +742,12 @@ export const COPIONE_SALA = `
     } else if (m.cosa === 'stacca') {
       staccaAdesso().then(rispondi, sbaglio);
     } else if (m.cosa === 'incassa') {
-      chiedi('POST', '/sala/incassa', { gioco: d.gioco || giocoAperto, grezzo: d.grezzo, fine: d.fine === true, chiudi: d.chiudi === true })
-        .then(function (r) { rispondi(r); dopoLIncasso(r); }, function (e) { avviso(e.message, 'male'); sbaglio(e); });
+      // 1.5.1: «quando premuto avvisa di tutto». Prima si dice, poi si incassa.
+      confermaIncasso(d).then(function (si) {
+        if (!si) { rispondi({ annullato: true }); return; }
+        chiedi('POST', '/sala/incassa', { gioco: d.gioco || giocoAperto, grezzo: d.grezzo, fine: d.fine === true, chiudi: d.chiudi === true })
+          .then(function (r) { rispondi(r); dopoLIncasso(r); }, function (e) { avviso(e.message, 'male'); sbaglio(e); });
+      });
     }
   });
 
@@ -563,6 +758,9 @@ export const COPIONE_SALA = `
     if (gioco) { apriGioco(gioco.getAttribute('data-apri-gioco')); return; }
     var carta = qui('[data-carta]');
     if (carta) { giocaLaCarta(carta.getAttribute('data-carta')); return; }
+    if (qui('#chiedi-si')) { rispondiChiedi(true); return; }
+    if (qui('#livello') || qui('.tocca-livello')) { apriLivelli(); return; }
+    if (qui('#chiedi-no') || b.id === 'chiedi') { rispondiChiedi(false); return; }
     if (qui('#cornice-esci')) { chiudiGioco(); return; }
     if (qui('#cornice-valuta')) { cambiaValuta(); return; }
     if (qui('#cornice-ricarica') || qui('#al-volo-altro') || qui('#pastiglia-portafoglio')) { ricaricaDallaCornice(); return; }

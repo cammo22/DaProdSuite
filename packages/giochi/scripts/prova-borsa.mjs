@@ -56,13 +56,27 @@ import {
   RICARICA_MIN,
   lireDaEuro,
   euroDaLire,
-  incasso,
+  stimaIncasso,
+  regoleSoldi,
+  REGOLE_SOLDI,
+  daControllare,
+  premioDelLivello,
   bonusFine,
   incassaGioco,
+  pagaPotenziamento,
+  riscuotiLivelli,
+  premiDeiLivelli,
+  stimaGioco,
+  gestione,
+  correggiSaldo,
+  chiudiPartitaDi,
+  annullaMovimento,
+  decidiControllo,
+  riparaTutto,
+  cambiaRegole,
   portafoglio,
   gradoBanca,
   alzaCassetto,
-  premioFine,
   corto,
   andamentoSala,
 } from "../dist/index.js";
@@ -179,22 +193,48 @@ prova("1 € = L. 1.936,27, e i tagli sono quelli chiesti in euro", () => {
   uguale(RICARICA_MIN, 387);
 });
 
-prova("l'incasso: la fetta di DaProd e' il 10%, e oltre il tetto resta nel gioco", () => {
-  const a = incasso({ valore: 1000, messo: 1000, giaPreso: 0, moltMax: 4 });
-  uguale(a.preso, 1000);
-  uguale(a.fetta, 100);
-  uguale(a.netto, 900);
-  const b = incasso({ valore: 10_000, messo: 1000, giaPreso: 0, moltMax: 3 });
-  uguale(b.preso, 3000, "al massimo tre volte il messo");
-  uguale(b.oltre, 7000);
-  const c = incasso({ valore: 10_000, messo: 1000, giaPreso: 2500, moltMax: 3 });
-  uguale(c.preso, 500, "il tetto conta quello gia' preso");
+prova("la resa: meta' a smettere subito, tre volte a punteggio pieno, niente tetto", () => {
+  const subito = stimaIncasso({ grezzo: 0, messo: 10_000, scala: [6, 11] });
+  uguale(subito.resa, 0.5);
+  uguale(subito.valore, 5000, "smetti subito: la meta'");
+  uguale(subito.fetta, 500);
+  uguale(subito.netto, 4500);
+  const pieno = stimaIncasso({ grezzo: 1e11, messo: 10_000, scala: [6, 11] });
+  uguale(pieno.resa, 3);
+  uguale(pieno.valore, 30_000 + lireDaEuro(30), "tre volte il messo, piu' la paga di chi gioca");
+  const finito = stimaIncasso({ grezzo: 1e11, messo: 10_000, scala: [6, 11], fine: true });
+  uguale(finito.valore, Math.floor(30_000 * 1.25) + Math.floor(lireDaEuro(30) * 1.25), "finire moltiplica tutto");
+  // I trentamila euro di Neon (26 settembre 2026): non spariscono piu'.
+  const trentamila = stimaIncasso({ grezzo: 1e22, messo: lireDaEuro(30_000), scala: [6, 30], fine: true });
+  vero(trentamila.netto > lireDaEuro(60_000), "chi mette 30k euro e finisce Neon ne porta a casa di piu': " + euroDaLire(trentamila.netto));
 });
 
-prova("il premio della velocita': pieno entro mezz'ora, zero dopo tre ore", () => {
-  uguale(bonusFine(1000, 10), 500);
-  uguale(bonusFine(1000, 30), 500);
-  uguale(bonusFine(1000, 105), 250);
+prova("il Dozer conta uno a uno, senza tetto", () => {
+  const s = stimaIncasso({ grezzo: 50_000, messo: 1000 });
+  uguale(s.valore, 50_000);
+  uguale(s.netto, 45_000);
+  uguale(s.guadagno, 4400);
+});
+
+prova("le regole si cambiano, ma dentro i recinti", () => {
+  const r = regoleSoldi({ resaMin: 9, resaMax: 1, baseEuro: -5, moltFine: "x" });
+  uguale(r.resaMin, 5);
+  uguale(r.resaMax, 5, "il massimo non sta sotto il minimo");
+  uguale(r.baseEuro, 0);
+  uguale(r.moltFine, REGOLE_SOLDI.moltFine, "un numero storto torna quello di partenza");
+});
+
+prova("il campanello suona per gli incassi enormi, non per chi vince", () => {
+  vero(!daControllare(lireDaEuro(80), lireDaEuro(30)), "tre volte il messo: si paga");
+  vero(!daControllare(lireDaEuro(400), 0), "sotto i 500 euro: si paga sempre");
+  vero(daControllare(lireDaEuro(50_000), lireDaEuro(10)), "cinquemila volte il messo: aspetta");
+  vero(!daControllare(lireDaEuro(50_000), lireDaEuro(10), regoleSoldi({ controllaVolte: 0 })), "a zero non suona");
+});
+
+prova("il premio della velocita': un quarto entro mezz'ora, zero dopo tre ore", () => {
+  uguale(bonusFine(1000, 10), 250);
+  uguale(bonusFine(1000, 30), 250);
+  uguale(bonusFine(1000, 105), 125);
   uguale(bonusFine(1000, 200), 0);
 });
 
@@ -208,11 +248,11 @@ prova("la cassa di un gioco: ricarica, incasso, fine partita e ricomincia", () =
     vero(d.conto("pino").esperienza > xp0, "ricaricare da' esperienza");
     const riserva = d.statoBanca().riserva;
     const r = incassaGioco(d, "pino", "claw", 3000, { fine: true }, ADESSO + 20 * 60_000);
-    // 1.4.9: chi finisce prende il premio di fine, 20 euro col punteggio piu' basso.
-    uguale(r.preso, lireDaEuro(20), "il premio di fine, fuori dal tetto");
+    // Punteggio basso, finita: la resa minima per il moltiplicatore di fine.
+    uguale(r.valore, Math.floor(1936 * 0.5 * 1.25), "meta' del messo, per chi finisce");
     vero(r.montepremi > 0 && r.montepremi <= lireDaEuro(10), "un pezzo del montepremi: " + r.montepremi);
-    uguale(r.bonus, 968 + r.montepremi, "finita in 20 minuti: meta' del messo, piu' il montepremi");
-    uguale(r.fetta, Math.floor((lireDaEuro(20) + 968 + r.montepremi) * 0.1));
+    uguale(r.velocita, 484, "finita in 20 minuti: un quarto del messo");
+    uguale(r.fetta, Math.floor((r.valore + 484 + r.montepremi) * 0.1));
     uguale(d.statoBanca().riserva, riserva - r.montepremi + r.fetta, "il montepremi esce dalla riserva, la fetta ci torna");
     uguale(d.conto("pino").saldo, 10_000 - 1936 + r.netto);
     const cassa = d.conto("pino").giochi.claw;
@@ -224,36 +264,24 @@ prova("la cassa di un gioco: ricarica, incasso, fine partita e ricomincia", () =
   }),
 );
 
-prova("il premio di fine va da 20 a 30 euro col punteggio, anche senza aver messo niente", () =>
-  conCartella((file) => {
-    const d = new Deposito(file);
-    uguale(premioFine(1e3, [6, 11]), lireDaEuro(20));
-    uguale(premioFine(1e11, [6, 11]), lireDaEuro(30));
-    const mezzo = premioFine(10 ** 8.5, [6, 11]);
-    vero(mezzo > lireDaEuro(24) && mezzo < lireDaEuro(26), String(mezzo));
-    const r = incassaGioco(d, "pino", "neon", 1e30, { fine: true }, ADESSO);
-    uguale(r.preso, lireDaEuro(30), "Neon a trenta cifre: il premio pieno");
-    vero(r.netto > lireDaEuro(27), "vince davvero: " + r.netto);
-  }),
-);
-
-prova("il Dozer si mangia le lire: al massimo il doppio", () =>
+prova("ogni incasso chiude la partita, anche nel Dozer", () =>
   conCartella((file) => {
     const d = new Deposito(file);
     d.conto("pino").saldo = 10_000;
     ricarica(d, "pino", "dozer", 1000, ADESSO);
     const r = incassaGioco(d, "pino", "dozer", 50_000, {}, ADESSO);
-    uguale(r.preso, 2000);
-    uguale(r.oltre, 48_000);
+    uguale(r.netto, 45_000, "niente tetto: cinquantamila meno la fetta");
+    uguale(r.preso, 50_000, "il gioco si toglie tutto");
+    uguale(d.conto("pino").giochi.dozer.messo, 0);
   }),
 );
 
-prova("senza aver messo niente non si incassa", () =>
+prova("senza niente nel gioco non si incassa", () =>
   conCartella((file) => {
     const d = new Deposito(file);
     let caduta = false;
     try {
-      incassaGioco(d, "pino", "dozer", 5000, {}, ADESSO);
+      incassaGioco(d, "pino", "dozer", 0, {}, ADESSO);
     } catch (e) {
       caduta = e instanceof NienteDaFare;
     }
@@ -261,12 +289,90 @@ prova("senza aver messo niente non si incassa", () =>
   }),
 );
 
-prova("Neon conta gli ordini di grandezza, non le trenta cifre", () => {
-  const v = GIOCHI_SALA.neon.valore(1e15, 1000);
-  vero(v > 0 && v < lireDaEuro(15), String(v));
-  uguale(GIOCHI_SALA.neon.valore(1e5, 1000), 0);
-  uguale(GIOCHI_SALA.claw.valore(1e11, 0), lireDaEuro(15), "chi smette prima: al massimo 15 euro");
-});
+prova("un incasso enorme resta in controllo, e l'admin decide", () =>
+  conCartella((file) => {
+    const d = new Deposito(file);
+    d.conto("pino").saldo = 10_000;
+    ricarica(d, "pino", "dozer", 387, ADESSO);
+    const prima = d.conto("pino").saldo;
+    const r = incassaGioco(d, "pino", "dozer", 1e10, {}, ADESSO);
+    vero(r.inControllo, "dieci miliardi da venti centesimi: si ferma");
+    uguale(d.conto("pino").saldo, prima, "non arriva niente, per ora");
+    uguale(d.conto("pino").inControllo.length, 1);
+    const g = gestione(d);
+    uguale(g.daControllare, 1);
+    const f = d.conto("pino").inControllo[0];
+    const esito = decidiControllo(d, "admin", "pino", f.id, "rimborsa");
+    uguale(esito.lire, 387, "si rimborsa solo il messo");
+    uguale(d.conto("pino").saldo, prima + 387);
+    uguale(d.conto("pino").inControllo.length, 0);
+    vero(d.registro()[0].cosa.indexOf("rimborsato") === 0, d.registro()[0].cosa);
+  }),
+);
+
+prova("i potenziamenti coi soldi veri contano come messi", () =>
+  conCartella((file) => {
+    const d = new Deposito(file);
+    d.conto("pino").saldo = 10_000;
+    const r = pagaPotenziamento(d, "pino", "neon", 1936, "Turbo del reattore", ADESSO);
+    uguale(r.saldo, 10_000 - 1936);
+    uguale(d.conto("pino").giochi.neon.messo, 1936);
+    uguale(d.conto("pino").giochi.neon.potenziamentiTot, 1936);
+    uguale(d.conto("pino").movimenti[0].perche, "potenziamento Neon Partenope: Turbo del reattore");
+    let caduta = false;
+    try { pagaPotenziamento(d, "pino", "neon", 1e9, "troppo", ADESSO); } catch (e) { caduta = e instanceof NienteDaFare; }
+    vero(caduta, "senza lire non si paga");
+    const s = stimaGioco(d, "pino", "neon", 0, ADESSO);
+    uguale(s.messo, 1936);
+    uguale(s.valore, 968, "smettere subito rende la meta'");
+    vero(s.finendo > s.netto, "finirlo rende di piu'");
+  }),
+);
+
+prova("i premi dei livelli si prendono toccando il livello", () =>
+  conCartella((file) => {
+    const d = new Deposito(file);
+    d.conto("pino").saldo = 0;
+    d.conto("pino").esperienza = 1500; // livello 3
+    const p = premiDeiLivelli(d.conto("pino"), d.impostazioni().perIlLivello, d.regoleSoldi());
+    uguale(p.livello, 3);
+    uguale(p.daPrendere, premioDelLivello(2) + premioDelLivello(3));
+    const r = riscuotiLivelli(d, "pino");
+    uguale(r.saldo, lireDaEuro(2) + lireDaEuro(3));
+    let caduta = false;
+    try { riscuotiLivelli(d, "pino"); } catch (e) { caduta = e instanceof NienteDaFare; }
+    vero(caduta, "due volte no");
+  }),
+);
+
+prova("la Banca ripara: saldo, partita aperta, movimento annullato, numeri storti", () =>
+  conCartella((file) => {
+    const d = new Deposito(file);
+    d.conto("pino").saldo = 10_000;
+    ricarica(d, "pino", "claw", 5000, ADESSO);
+    uguale(gestione(d).neiGiochi, 5000);
+    chiudiPartitaDi(d, "admin", "pino", "claw", true);
+    uguale(d.conto("pino").saldo, 10_000, "rimborsata");
+    correggiSaldo(d, "admin", "pino", { imposta: 1234, perche: "prova" });
+    uguale(d.conto("pino").saldo, 1234);
+    correggiSaldo(d, "admin", "pino", { muovi: -234 });
+    uguale(d.conto("pino").saldo, 1000);
+    const m = d.conto("pino").movimenti[0];
+    annullaMovimento(d, "admin", "pino", m.quando, m.lire);
+    uguale(d.conto("pino").saldo, 1234, "annullato il -234");
+    let caduta = false;
+    try { annullaMovimento(d, "admin", "pino", m.quando, m.lire); } catch (e) { caduta = e instanceof NienteDaFare; }
+    vero(caduta, "non si annulla due volte");
+    d.conto("gina").saldo = NaN;
+    d.conto("gina").giochi = { dozer: { messo: -5, preso: 0, inizio: ADESSO, messoTot: 0, presoTot: 0, fettaTot: 0, partite: 0, finite: 0 } };
+    uguale(gestione(d).conti.find((c) => c.chi === "gina").guasti.length, 2);
+    const fatti = riparaTutto(d, "admin").fatti;
+    uguale(fatti.length, 2, fatti.join(" | "));
+    uguale(d.conto("gina").saldo, 0);
+    uguale(cambiaRegole(d, "admin", { resaMax: 4 }).resaMax, 4);
+    vero(d.registro().length >= 6, "tutto scritto nel registro");
+  }),
+);
 
 prova("l'andamento della sala: ricariche e incassi per giorno, e i giochi", () =>
   conCartella((file) => {
@@ -347,16 +453,14 @@ prova("azzerare un portafoglio non muove la Borsa", () =>
   }),
 );
 
-prova("i punti d'arcade passano dal cambio e dai tetti", () =>
+prova("i punti d'arcade passano dal cambio, e dalla 1.5.1 senza tetti", () =>
   conCartella((file) => {
     const d = new Deposito(file);
     const uno = segnaPunti(d, "pino", "dozer", 500, ADESSO);
     uguale(uno.entrati, 100, "500 gettoni della Dozer sono 100 punti");
-    const troppi = segnaPunti(d, "pino", "dozer", 1e9, ADESSO);
-    uguale(troppi.entrati, GIOCHI_SALA.dozer.tettoMinuto - 100, "nel minuto non si passa il tetto");
-    const dopo = segnaPunti(d, "pino", "dozer", 500, ADESSO + 61_000);
-    uguale(dopo.entrati, 100, "il minuto dopo si riparte");
-    uguale(d.conto("pino").partita.punti, GIOCHI_SALA.dozer.tettoMinuto + 100);
+    const tanti = segnaPunti(d, "pino", "dozer", 1e9, ADESSO);
+    uguale(tanti.entrati, 2e8, "piu' punti possibili");
+    uguale(d.conto("pino").partita.punti, 2e8 + 100);
   }),
 );
 

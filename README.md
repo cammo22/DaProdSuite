@@ -120,16 +120,30 @@ la Banca che sale di grado e i forzieri da alzare.
 Dalla 1.4.9 **lire o euro è un tocco** sul saldo, e vale per tutta la sala,
 giochi compresi. Il **Portafoglio** è fatto come un'app di banca (24h, 7g, 1
 mese), e sotto ai giochi ci sono le statistiche: la tua settimana, e per chi
-decide l'andamento della sala. Il **Dozer** è il mangiasoldi; **Claw e Neon**,
-a finirli, pagano da 20 a 30 euro più i bonus. Fortuna e le combinazioni sono
-di chi decide; lo Studio resta a tutti, a L. 1.000 e con l'ok di un admin.
+decide l'andamento della sala. Fortuna e le combinazioni sono di chi decide;
+lo Studio resta a tutti, a L. 1.000 e con l'ok di un admin.
+
+Dalla 1.5.1 **la vincita non ha tetto**: quello che metti in Claw e Neon
+(ricariche e potenziamenti) rende di più quanto più vai avanti, da metà fino a
+tre volte, e finire il gioco lo moltiplica ancora. Il **Dozer** è cinquanta e
+cinquanta, una lira per moneta. Sopra al gioco c'è il contatore di quanto
+incasseresti adesso, e l'incasso dice tutto prima e fa ripartire il gioco da
+capo. I **potenziamenti si pagano coi soldi veri**, con l'avviso ogni volta. I
+**livelli pagano** un premio quando li tocchi. Chi comanda ha la **Banca
+DaProd**, che serve a:
+
+- guardare gli incassi enormi prima di pagarli;
+- correggere un saldo, rimborsare una partita rimasta aperta, annullare un
+  movimento;
+- cambiare le regole dei soldi;
+- rileggere il registro di chi ha fatto cosa.
 
 Sul sito e nelle loro app i tre giochi restano demo normali: le lire sono di
 chi è collegato alla suite.
 
 ## A che punto siamo
 
-**Ultima pubblicata: 1.5.0** — la Claw che paga a fine partita, Neon col tasto per riscattare e la Radio che parla anche sul telefono. Prima, la 1.4.9: un'app semplice per chi crea (foto e musica), la regia agli admin (video, audio, 3D dal telefono), la sala con lire/euro a un tocco, il portafoglio da banca e le statistiche. Prima, la 1.4.8: lire ed euro, i giochi che si vincono, il portafoglio e le casse; la 1.4.7: Qwen che parte anche senza la LoRA nuova e l'icona nuova; la 1.4.6: la sala giochi che sta nel telefono; la 1.4.5: Qwen-Image 2.1 che parte davvero (40 passi, turbo a 5), la Banca DaProd e lo Studio. **La 1.4.0 — «Il fiore all'occhiello»:** La suite rivestita da
+**Ultima pubblicata: 1.5.1** — i soldi della sala rifatti: la vincita senza tetto che cresce con quello che metti, il contatore dell'incasso, i potenziamenti coi soldi veri, i premi dei livelli e la Banca DaProd per chi comanda; Dozer cinquanta e cinquanta con gli effetti ai lati. Prima, la 1.5.0: la Claw che paga a fine partita, Neon col tasto per riscattare e la Radio che parla anche sul telefono. Prima, la 1.4.9: un'app semplice per chi crea (foto e musica), la regia agli admin (video, audio, 3D dal telefono), la sala con lire/euro a un tocco, il portafoglio da banca e le statistiche. Prima, la 1.4.8: lire ed euro, i giochi che si vincono, il portafoglio e le casse; la 1.4.7: Qwen che parte anche senza la LoRA nuova e l'icona nuova; la 1.4.6: la sala giochi che sta nel telefono; la 1.4.5: Qwen-Image 2.1 che parte davvero (40 passi, turbo a 5), la Banca DaProd e lo Studio. **La 1.4.0 — «Il fiore all'occhiello»:** La suite rivestita da
 DaProd (vetro scuro, pioggia verde, bottoni aqua), Qwen-Image 2.1 al posto di
 FLUX per creare e modificare, YuE2 in Musica, il 3D da una foto con TRELLIS.2,
 il dado delle idee senza cliché, la sala d'arcade con la Lira DaProd e il

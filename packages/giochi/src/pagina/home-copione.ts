@@ -17,7 +17,7 @@ export const COPIONE_HOME = `
     home: 'home',
     sala: 'gioca', fortuna: 'gioca', borsa: 'gioca', portafoglio: 'gioca',
     studio: 'genera', slot: 'genera', mie: 'genera',
-    fila: 'admin', giocatori: 'admin', casse: 'admin',
+    fila: 'admin', banca: 'admin', giocatori: 'admin', casse: 'admin',
     pacchetti: 'collezione', inventario: 'collezione', shop: 'collezione', casa: 'collezione',
   };
 
@@ -45,7 +45,10 @@ export const COPIONE_HOME = `
       : '<span class="faccia"><img src="' + fotoDelGioco(g.id) + '" alt="" loading="lazy"></span>';
     return '<button class="carta-gioco gioco-' + g.id + '" ' + attr + '>' + faccia +
       '<span class="testo"><b>' + sicuro(g.nome) + '</b><small>' + sicuro(g.riga) + '</small></span>' +
-      '<span class="piede"><span class="costo">' + (fortuna ? 'da ' + soldi(50) + ' a tiro' : (g.ingresso ? 'entri con ' + soldi(g.ingresso) : 'entri gratis · ricarichi da € 0,20')) + '</span>' +
+      '<span class="piede"><span class="costo">' + (fortuna ? 'da ' + soldi(50) + ' a tiro'
+        // 1.5.1: una partita aperta si vede da fuori, con quanto c'e' dentro.
+        : g.messo > 0 ? 'in corso · ' + soldi(g.messo) + ' messe'
+        : 'entri gratis · ricarichi da € 0,20') + '</span>' +
       '<span class="gioca-ora">Gioca</span></span></button>';
   }
 
@@ -75,7 +78,9 @@ export const COPIONE_HOME = `
     $('home-ciao').innerHTML =
       '<div class="ciao-testo"><small>Bentornato</small><b>' + sicuro(io.nome || 'giocatore') + '</b></div>' +
       '<div class="ciao-numeri">' +
-      '<span class="num"><b>' + c.livello + '</b><small>livello</small></span>' +
+      // 1.5.1: il livello si tocca e da' il suo premio.
+      '<span class="num tocca-livello" role="button" tabindex="0"><b>' + c.livello + '</b><small>' +
+        (sala && sala.livelli && sala.livelli.daPrendere > 0 ? '⭐ premio!' : 'livello') + '</small></span>' +
       '<span class="num lire"><b>' + soldiACapo(io.saldo) + '</b><small>in tasca</small></span>' +
       // 1.4.9: i punti solo a chi ne ha (Fortuna); la quota della Lira sta nel Portafoglio.
       (pt > 0 ? '<span class="num"><b>' + cortoIt(pt) + '</b><small>punti Fortuna</small></span>' : '') +

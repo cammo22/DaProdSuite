@@ -401,6 +401,15 @@ const STORIA = {
 
 // ============================================================ NOVITÀ (mostrate in gioco al primo avvio di una versione)
 const NOVITA = {
+  "v2.1.6": {
+    titolo: "Niente più premio fisso: quello che metti rende",
+    punti: [
+      "Nella sala DaProd la vincita non ha più tetto: quello che metti (ricariche e potenziamenti) rende di più quanto più vai avanti, fino a tre volte, e far eruttare il Vesuvio lo moltiplica ancora.",
+      "Il tasto 🏁 porta la cifra dal vivo: toccalo, la sala ti dice tutto (quanto hai messo, quanto porti a casa) e dopo il sì il gioco riparte da capo.",
+      "⚡ Potenziamenti DaProd coi soldi veri: pugno ×10, critico, quartiere ×10, lire ×10 e il SUPER. Ogni volta la sala chiede conferma.",
+      "Gli effetti DaProd accesi si vedono ai lati, col conto alla rovescia, e lampeggiano negli ultimi dieci secondi."
+    ]
+  },
   "v2.1.5": {
     titolo: "Finisci quando vuoi, e la Radio parla anche sul telefono",
     punti: [

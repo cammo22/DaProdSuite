@@ -209,6 +209,45 @@
     box-shadow: 0 12px 30px rgba(255,160,0,.45); }
   #fineBtn:disabled { filter: grayscale(.6) brightness(.7); }
 
+  /* ---------- 1.1.5: i potenziamenti DaProd e gli effetti ai lati ---------- */
+  #turboBtn { grid-area: dx; justify-self: end; color: #1a1000; background: radial-gradient(circle at 50% 28%, #fff6c8, var(--oro) 48%, var(--oro2) 100%); }
+  #turboBtn[hidden] { display: none; }
+  #turbo { position: fixed; inset: 0; z-index: 44; display: grid; place-items: end center; padding: 12px; background: rgba(0,0,0,.55); }
+  #turbo.chiuso { display: none; }
+  #turbo .pannello { width: min(520px, 100%); max-height: 82vh; overflow: auto; padding: 16px; border-radius: 24px; display: grid; gap: 10px; }
+  #turbo .testa { display: flex; justify-content: space-between; align-items: center; font: 900 15px/1 var(--num); color: var(--oro); }
+  #turbo .testa button { border: 0; background: transparent; color: #fff; font-size: 20px; cursor: pointer; }
+  #turbo .spiega { margin: 0; font: 600 12.5px/1.45 var(--txt); color: #cfc6e6; }
+  .incassoVivo { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .incassoVivo:empty { display: none; }
+  .incassoVivo div { padding: 8px 10px; border-radius: 14px; background: rgba(0,0,0,.35); }
+  .incassoVivo small { display: block; font: 800 8.5px/1 var(--num); letter-spacing: 1px; color: #b9aed6; }
+  .incassoVivo b { display: block; margin-top: 4px; font: 900 16px/1 var(--num); color: var(--oro); }
+  .incassoVivo b.su { color: var(--verde); } .incassoVivo b.giu { color: #ff6b7d; }
+  .tb { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; padding: 10px; border-radius: 16px;
+    background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.1); }
+  .tb.acceso { border-color: rgba(93,255,180,.6); background: rgba(93,255,180,.08); }
+  .tb .i { font-size: 24px; }
+  .tb b { display: block; font: 900 12px/1.1 var(--num); color: #fff; }
+  .tb small { display: block; font: 600 11.5px/1.3 var(--txt); color: #b9aed6; margin-top: 3px; }
+  .tb button { border: 0; border-radius: 999px; padding: 10px 12px; cursor: pointer; font: 900 11.5px/1 var(--num); color: #1a1000;
+    background: radial-gradient(circle at 50% 28%, #fff6c8, var(--oro) 48%, var(--oro2) 100%); white-space: nowrap; }
+  .bordo { position: fixed; top: 0; bottom: 0; left: 0; width: 22px; z-index: 9; pointer-events: none; opacity: 0; transition: opacity .4s;
+    background: linear-gradient(90deg, rgba(93,255,180,.55), transparent); }
+  .bordo.su { opacity: 1; }
+  .bordo.finisce, .eff.finisce { animation: lampeggia .5s steps(2, jump-none) infinite; }
+  @keyframes lampeggia { 50% { opacity: .25; } }
+  #effetti { position: fixed; right: 10px; top: 50%; transform: translateY(-50%); z-index: 13; pointer-events: none;
+    display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
+  @media (max-width: 700px) { #effetti { top: 36%; right: 6px; } }
+  .eff { display: grid; grid-template-columns: auto auto; align-items: center; column-gap: 7px; row-gap: 3px; padding: 6px 9px 7px;
+    border-radius: 14px; background: rgba(12,10,24,.82); min-width: 104px; box-shadow: 0 8px 20px rgba(0,0,0,.5); border: 1px solid rgba(93,255,180,.6); }
+  .eff i { font-style: normal; font-size: 18px; line-height: 1; grid-row: span 2; }
+  .eff b { font: 900 15px/1 var(--num); color: #fff; font-variant-numeric: tabular-nums; }
+  .eff small { font: 800 8.5px/1 var(--num); letter-spacing: .8px; color: #bfffe0; white-space: nowrap; }
+  .eff u { grid-column: 1 / -1; display: block; height: 4px; border-radius: 99px; background: rgba(255,255,255,.12); overflow: hidden; text-decoration: none; }
+  .eff u::before { content: ""; display: block; height: 100%; width: var(--p, 100%); background: var(--verde); border-radius: 99px; }
+
   /* ---------- la barra in basso, rifatta (1.1.4) ----------
      «Vorrei selettori pinza, amo e rete piu' piccoli e sotto, e il pulsante per
      acchiappare bello al centro.» Tre colonne: vetrina e officina a sinistra,
@@ -563,6 +602,19 @@
   </div>
   <div id="teste" class="carta"></div>
   <button id="prendiBtn" class="tondo pronto" aria-label="prendi"><span><span class="ico">⬇</span><span class="lab">PRENDI</span><span class="costo" id="costoPresa">L.100</span></span></button>
+  <!-- 1.1.5: i potenziamenti DaProd coi soldi veri, solo nella sala della suite. -->
+  <button id="turboBtn" class="tondo" aria-label="potenziamenti DaProd" hidden><span><span class="ico">⚡</span><span class="lab">DaProd</span></span></button>
+</div>
+<!-- 1.1.5: gli effetti accesi, ai lati, e quanto manca. -->
+<div id="bordoSx" class="bordo"></div>
+<div id="effetti"></div>
+<div id="turbo" class="chiuso">
+  <div class="pannello carta">
+    <div class="testa"><b>⚡ POTENZIAMENTI DaProd</b><button id="turboChiudi" aria-label="chiudi">✕</button></div>
+    <p class="spiega">Si pagano coi <b>soldi veri</b> del tuo portafoglio DaProd: ogni volta ti chiedo conferma. Contano come messi nella partita, e piu' vai avanti piu' rendono quando incassi.</p>
+    <div id="incassoVivo" class="incassoVivo"></div>
+    <div id="turboLista"></div>
+  </div>
 </div>
 
 <!-- 1.1.4: la fine della partita. «Quando arrivi alla fine puoi resettare, in modo da
@@ -666,7 +718,7 @@
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
-const VERSIONE = 'v1.1.4';
+const VERSIONE = 'v1.1.5';
 const $ = (id) => document.getElementById(id);
 const PARAMETRI = new URLSearchParams(location.search);
 // gioco = la partita vera; demo = la macchina gioca da sola (sfondo della home); vetrina = sfilata dei modellini
@@ -896,7 +948,7 @@ function statoNuovo() {
     zone: [true, false, false, false, false], zona: 0, primaPresa: true,
     opz: { audio: true, qualita: TELEFONO ? 'media' : 'alta', auto: true, fps: false, scritte: true },
     st: { prese: 0, vuote: 0, diFila: 0, catturati: 0, shiny: 0, spesi: 0, vinti: 0, potenziamenti: 0, gradoMax: 0, scivolati: 0, sicurezza: 0, regali: 0 },
-    ultima: Date.now(), vasca: null,
+    ultima: Date.now(), vasca: null, turbo: {},
   };
 }
 const numOk = (v, def, min = -Infinity, max = Infinity) => (typeof v === 'number' && Number.isFinite(v)) ? clamp(v, min, max) : def;
@@ -928,6 +980,7 @@ function pulisci(d) {                           // accetta solo valori validi: u
   s.ultima = numOk(d.ultima, Date.now(), 0, Date.now());
   if (Array.isArray(d.vasca)) s.vasca = d.vasca;
   if (Array.isArray(d.cortesie)) s.cortesie = d.cortesie.filter(t => typeof t === 'number' && isFinite(t)).slice(-5);
+  if (d.turbo && typeof d.turbo === 'object') for (const k in d.turbo) if (typeof d.turbo[k] === 'object' && d.turbo[k] && isFinite(d.turbo[k].fino)) s.turbo[k] = { fino: d.turbo[k].fino, d: numOk(d.turbo[k].d, 60, 1, 3600) };
   if (s.st.catturati > 0) s.primaPresa = false;
   return s;
 }
@@ -983,17 +1036,17 @@ function bonus() {
   ZONE.forEach((z, i) => { b[z.potere.chiave] += z.potere.k * gradiFamiglia(i); });
   return (bonusCache = b);
 }
-const presaEff = (T) => Math.min(.97, T.presa + .035 * stato.pot.presa + bonus().presa);
-const raggioEff = (T) => T.raggio * (1 + .06 * stato.pot.apertura + bonus().apertura);
+const presaEff = (T) => Math.min(.97, T.presa + .035 * stato.pot.presa + bonus().presa + (turboAttivo('presa') ? .25 : 0));
+const raggioEff = (T) => T.raggio * (1 + .06 * stato.pot.apertura + bonus().apertura) * (turboAttivo('larga') ? 1.4 : 1);
 const capEff = (T) => T.cap + (T.id === 'amo' ? 0 : stato.pot.capienza * (T.id === 'rete' ? 2 : 1));
 const velEff = () => 1 + .12 * stato.pot.motore + bonus().motore;
-const chanceShiny = () => Math.min(.4, .07 * (1 + .2 * stato.pot.fortuna + bonus().fortuna));
+const chanceShiny = () => turboAttivo('shiny') ? Math.min(.8, .28 * (1 + .2 * stato.pot.fortuna + bonus().fortuna)) : Math.min(.4, .07 * (1 + .2 * stato.pot.fortuna + bonus().fortuna));
 const passoShiny = () => Math.min(.45, .28 + .015 * stato.pot.fortuna);
-const moltLire = () => 1 + bonus().lire;
+const moltLire = () => (1 + bonus().lire) * (turboAttivo('lire') ? 10 : 1);
 const potenzaModello = (m) => { const r = stato.coll[m.id]; return r ? m.pot * GRADI[r.g].mult : 0; };
 let potenzaCache = -1;
 function potenzaTotale() { if (potenzaCache < 0) potenzaCache = MODELLI.reduce((s, m) => s + potenzaModello(m), 0); return potenzaCache; }
-const rendita = () => potenzaTotale() * .3 * (1 + .15 * stato.pot.magnate) * moltLire();   // 1.1.4: era .5
+const rendita = () => potenzaTotale() * .3 * (1 + .15 * stato.pot.magnate) * moltLire() * (turboAttivo('rendita') ? 5 : 1);   // 1.1.4: era .5
 const costoPresa = (z, t) => Math.round(ZONE[z].costo * TESTE[t].mult);
 const costoPotenzia = (m, g) => Math.round(m.valore * COSTO_GRADO[g]);
 const quantiPosseduti = () => MODELLI.filter(m => stato.coll[m.id]).length;
@@ -1971,6 +2024,7 @@ function quotaStop() {
 }
 // prendi: paga (solo se la presa parte davvero) e cala la pinza sul punto scelto
 function prendi(gratis = false) {
+  if (turboAttivo('gratis')) gratis = true;
   if (pinza.fase === 'torna') { pinza.nuovoBersaglio = false; cambiaFase('libera'); }
   if (pinza.fase !== 'libera' || pinza.prenota) return false;
   const z = zonaDi(pinza.tx);
@@ -2332,7 +2386,7 @@ function aggiornaHUD() {
   $('zonaSucc').disabled = succ < 0;
   $('zonaSucc').classList.toggle('bloccata', succ > 0 && !stato.zone[succ]);
   $('zonaSucc').textContent = succ > 0 && !stato.zone[succ] ? '🔒' : '▶';
-  $('costoPresa').textContent = lire(costoPresa(z, stato.testa));
+  $('costoPresa').textContent = turboAttivo('gratis') ? 'GRATIS' : lire(costoPresa(z, stato.testa));
   const libero = pinza.fase === 'libera' && !pinza.prenota;
   $('prendiBtn').classList.toggle('occupato', !libero);
   $('prendiBtn').classList.toggle('pronto', libero && stato.lire >= costoPresa(z, stato.testa));
@@ -3099,6 +3153,76 @@ requestAnimationFrame((t) => { ultimo = t; requestAnimationFrame(ciclo); $('cari
  *
  * Fuori dalla suite (sito, app) daprod-lira.js non fa niente: e' la demo.
  */
+/* ============ POTENZIAMENTI DaProd, coi soldi veri (1.1.5) ============
+ * «I giocatori devono spendere soldi reali per i potenziamenti dei giochi; ogni
+ * volta che usa soldi reali si deve avvisare, e poi puo' fare piu' punti
+ * possibili.» Sei potenziamenti a tempo, forti, che si pagano dal portafoglio
+ * della suite: la sala fa vedere l'avviso ogni volta, e solo col si' si
+ * accendono. Durano 2, 5 o 10 minuti e si vedono ai lati, col conto alla
+ * rovescia; negli ultimi 10 secondi lampeggiano. Fuori dalla suite non ci sono.
+ */
+const LIRE_EURO = 1936.27;
+const TURBO = [
+  { id: 'presa',   ico: '💪', nome: 'SUPER PRESA',   desc: '+25% di presa, con ogni testa',      min: 5,  euro: 1 },
+  { id: 'larga',   ico: '📐', nome: 'PINZA LARGA',   desc: 'raggio della presa +40%',            min: 5,  euro: 1 },
+  { id: 'gratis',  ico: '🎁', nome: 'PRESE GRATIS',  desc: 'ogni presa non costa niente',        min: 2,  euro: 2 },
+  { id: 'shiny',   ico: '🍀', nome: 'PIOGGIA SHINY', desc: 'quattro volte gli shiny nella vasca', min: 5,  euro: 5 },
+  { id: 'rendita', ico: '💰', nome: 'RENDITA ×5',    desc: 'la collezione rende cinque volte',   min: 10, euro: 5 },
+  { id: 'lire',    ico: '🚀', nome: 'LIRE ×10',      desc: 'ogni modellino e la rendita ×10',    min: 10, euro: 20 },
+];
+function turboAttivo(id) { const t = stato.turbo && stato.turbo[id]; return !!t && t.fino > Date.now(); }
+function accendiTurbo(id) {
+  const T = TURBO.find(x => x.id === id); if (!T) return false;
+  const ora = Date.now(), prima = stato.turbo[id], resta = prima && prima.fino > ora ? prima.fino - ora : 0;
+  stato.turbo[id] = { fino: ora + resta + T.min * 60000, d: (resta / 1000) + T.min * 60 };
+  ricalcola(); aggiornaHUD(); daSalvare = true; salva();
+  suono.potenzia(3); lampo(.5);
+  mostraBanner('POTENZIAMENTO DaProd', T.ico + ' ' + T.nome, T.desc + ' per ' + T.min + ' minuti', 5);
+  rendiTurbo(); return true;
+}
+function compraTurbo(id) {
+  const T = TURBO.find(x => x.id === id); if (!T || !inSala()) return false;
+  const costo = Math.round(T.euro * LIRE_EURO);
+  DaProdLira.paga(costo, T.nome + ' (' + T.min + ' min)').then(() => accendiTurbo(id))
+    .catch((e) => { if (e && e.message !== 'Annullato') { suono.errore(); avviso('💶 ' + e.message, 'rosso imp'); } });
+  return true;
+}
+let stimaViva = null;
+function rendiTurbo() {
+  const ora = Date.now();
+  $('turboLista').innerHTML = TURBO.map(T => {
+    const t = stato.turbo[T.id], acceso = t && t.fino > ora;
+    return `<div class="tb ${acceso ? 'acceso' : ''}"><span class="i">${T.ico}</span><span><b>${T.nome} · ${T.min} MIN</b><small>${T.desc}${acceso ? ' · acceso ancora ' + mmss((t.fino - ora) / 1000) : ''}</small></span>` +
+      `<button data-turbo="${T.id}">💶 ${inSala() ? DaProdLira.soldi(Math.round(T.euro * LIRE_EURO)) : '€ ' + T.euro}${acceso ? ' +' + T.min + "'" : ''}</button></div>`;
+  }).join('');
+  const s = stimaViva;
+  $('incassoVivo').innerHTML = s ? `<div><small>SE INCASSI ADESSO</small><b class="${s.messo > 0 ? (s.netto >= s.messo ? 'su' : 'giu') : ''}">${DaProdLira.soldi(s.netto)}</b></div>` +
+    `<div><small>A FINIRLA ADESSO</small><b>${s.finendo != null ? DaProdLira.soldi(s.finendo) : '—'}</b></div>` : '';
+}
+$('turboBtn').addEventListener('click', () => { rendiTurbo(); $('turbo').classList.remove('chiuso'); });
+$('turboChiudi').addEventListener('click', () => $('turbo').classList.add('chiuso'));
+$('turbo').addEventListener('click', (e) => {
+  if (e.target === $('turbo')) { $('turbo').classList.add('chiuso'); return; }
+  const b = e.target.closest('[data-turbo]'); if (b) compraTurbo(b.dataset.turbo);
+});
+const mmss = (sec) => { const x = Math.max(0, Math.ceil(sec)); return x >= 60 ? Math.floor(x / 60) + ':' + String(x % 60).padStart(2, '0') : x + ' s'; };
+let effettiDetti = '';
+function aggiornaEffetti() {
+  const ora = Date.now();
+  let h = '', finisce = false, n = 0;
+  for (const T of TURBO) {
+    const t = stato.turbo && stato.turbo[T.id];
+    if (!t || t.fino <= ora) continue;
+    const resta = (t.fino - ora) / 1000, fin = resta <= 10; n++; finisce = finisce || fin;
+    const p = Math.max(0, Math.min(1, resta / Math.max(1, t.d)));
+    h += `<div class="eff${fin ? ' finisce' : ''}" style="--p:${(p * 100).toFixed(1)}%"><i>${T.ico}</i><b>${mmss(resta)}</b><small>${T.nome}</small><u></u></div>`;
+  }
+  if (h !== effettiDetti) { effettiDetti = h; $('effetti').innerHTML = h; ricalcola(); }
+  $('bordoSx').classList.toggle('su', n > 0); $('bordoSx').classList.toggle('finisce', n > 0 && finisce);
+  if (!$('turbo').classList.contains('chiuso')) rendiTurbo();
+}
+setInterval(aggiornaEffetti, 250);
+
 const finita = () => quantiPosseduti() >= MODELLI.length;
 let fineDetta = false;
 function guardaLaFine() {
@@ -3109,13 +3233,18 @@ function guardaLaFine() {
   setTimeout(mostraLaFine, 1800);
 }
 /**
- * Il pannello della fine (1.1.4): le lire di gioco, e quanto diventano in euro.
- * Il premio lo decide la sala (da 20 a 30 euro, di piu' col punteggio alto: vedi
- * `premioFine` nella suite); qui si fa vedere la stessa stima, contando in su.
+ * Il pannello della fine: le lire di gioco, e quanto diventano in euro.
+ *
+ * ⚠ 1.1.5: niente piu' premio fisso da 20-30 euro. «Togliamo il max dei 20 euro
+ * di vincita, la vincita e' sempre dinamica.» Il premio lo fa la sala: quello
+ * che hai messo per la resa (fino a tre volte, per 1,25 a finirla) piu' la
+ * paga di chi gioca; qui si fa vedere la sua stima (`suStima`), contando in su.
+ * Fuori dalla suite si stima la sola paga di chi gioca.
  */
 function premioStimato(n) {
+  if (stimaViva && stimaViva.finendo != null) return stimaViva.finendo / LIRE_EURO;
   const o = Math.log10(1 + Math.max(0, n));
-  return 20 + 10 * clamp((o - 6) / 5, 0, 1);
+  return 30 * 1.25 * clamp((o - 6) / 5, 0, 1);
 }
 function mostraLaFine() {
   const n = Math.floor(stato.lire), euro = premioStimato(n), suite = inSala();
@@ -3146,6 +3275,9 @@ function ricominciaDaCapo() {
   try { localStorage.removeItem(SALVA); localStorage.removeItem('daprod_claw_v2'); } catch (e) {}
   setTimeout(() => location.reload(), 2200);
 }
+// 1.1.5: la sala manda quanto porteresti a casa adesso; il tasto DaProd e il pannello lo dicono.
+if (window.DaProdLira && DaProdLira.suStima) DaProdLira.suStima((s) => { stimaViva = s; if (!$('turbo').classList.contains('chiuso')) rendiTurbo(); });
+if (window.DaProdLira && MODO === 'gioco' && DaProdLira.modo === 'suite') $('turboBtn').hidden = false;
 if (window.DaProdLira && MODO === 'gioco') DaProdLira.init({
   gioco: 'claw',
   ricarica: { detto: 'una lira della suite e\' una lira per le prese', cambio: 1, dai: (quante) => { const l = Math.max(0, Math.round(quante || 0)); stato.lire += l; aggiornaHUD(); daSalvare = true; avviso('🦾 Ricarica DaProd: +' + lire(l), 'cia imp'); } },
@@ -3154,6 +3286,8 @@ if (window.DaProdLira && MODO === 'gioco') DaProdLira.init({
     finita,
     chiudi: true,
     togli: (r) => {
+      $('turbo').classList.add('chiuso');
+      if (r.inControllo) { avviso('⏳ Incasso grosso: lo controlla un admin, poi arriva nel portafoglio · si ricomincia', 'cia imp'); ricominciaDaCapo(); return; }
       avviso((r.finita ? '🏆 Finita in ' + Math.round(r.minuti) + ' min! ' : '💰 ') + 'Incassato ' + lire(r.netto) + ' nel portafoglio DaProd · si ricomincia', 'cia imp');
       mostraBanner(r.finita ? 'PARTITA FINITA' : 'INCASSATO', '+' + lire(r.netto), 'si ricomincia da capo', 7);
       if (r.finita) $('finePremio').textContent = '+' + DaProdLira.euro(r.netto);
@@ -3171,6 +3305,7 @@ if (MODO === 'gioco' && finita()) setTimeout(() => { if (!fineDetta) { fineDetta
 window.CLAW = {
   VERSIONE, MODO, GRADI, ZONE, MODELLI, TESTE, POT, SOGLIA, stato, pinza, FORZA, bonusDiCortesia, avviso, cambiaScritte, finita,
   guardaLaFine, mostraLaFine, premioStimato, corto, lire, costoPot,
+  TURBO, turboAttivo, accendiTurbo, compraTurbo, aggiornaEffetti,
   luciAccese: () => { let n = 0; scena.traverse(o => { if (o.isPointLight && o.visible) n++; }); return n; }, MAT,
   oggetti: () => oggetti.filter(o => o.stato !== 'via'), tutti: () => oggetti,
   passo, simula, prendi, gioca, bersaglio, scegliTesta, vaiZona, sblocca, potenzia, compra, compraTesta,

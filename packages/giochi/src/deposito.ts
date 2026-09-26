@@ -40,7 +40,9 @@ import {
   SOGLIE_DI_PRIMA,
   tettoDelValore,
 } from "./regole";
+import { regoleSoldi, type RegoleSoldi } from "./euro";
 import type {
+  VoceRegistro,
   Collezionabile,
   Conto,
   DatiGiochi,
@@ -192,6 +194,9 @@ export class Deposito {
         lette.borsa && Array.isArray(lette.borsa.ore) ? { ore: lette.borsa.ore } : { ore: [] },
       // La Banca (1.4.5): un file di prima non ce l'ha, e parte col fondo di DaProd.
       banca: bancaInRiga(lette.banca, Date.now()),
+      // 1.5.1: le regole dei soldi e il registro della Banca; un file di prima non li ha.
+      ...(lette.soldi && typeof lette.soldi === "object" ? { soldi: lette.soldi } : {}),
+      ...(Array.isArray(lette.registro) ? { registro: lette.registro } : {}),
       pacchetti: Array.isArray(lette.pacchetti)
         ? lette.pacchetti
         : /**
@@ -561,6 +566,31 @@ export class Deposito {
   togliFormazione(id: string): void {
     this.dati.formazioni = this.dati.formazioni.filter((f) => f.id !== id);
     this.salva();
+  }
+
+  /* ---------------------------------------------- le regole dei soldi (1.5.1) */
+
+  /** Le regole dei soldi di adesso: quelle di partenza, con sopra quelle cambiate. */
+  regoleSoldi(): RegoleSoldi {
+    return regoleSoldi(this.dati.soldi);
+  }
+
+  cambiaRegoleSoldi(cambi: Partial<RegoleSoldi>): RegoleSoldi {
+    this.dati.soldi = { ...regoleSoldi({ ...(this.dati.soldi ?? {}), ...cambi }) };
+    this.salva();
+    return this.regoleSoldi();
+  }
+
+  /** Scrive nel registro della Banca: chi comanda ha toccato i soldi di qualcuno. */
+  segnaNelRegistro(voce: VoceRegistro): void {
+    const r = (this.dati.registro ??= []);
+    r.unshift(voce);
+    if (r.length > 200) r.length = 200;
+    this.salva();
+  }
+
+  registro(): VoceRegistro[] {
+    return this.dati.registro ?? [];
   }
 
   cambiaImpostazioni(cambi: Partial<Impostazioni>): Impostazioni {

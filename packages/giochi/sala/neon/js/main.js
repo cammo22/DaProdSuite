@@ -37,43 +37,119 @@ function avvio() {
   // all'eruzione: si incassa e si ricomincia (vedi erutta in economia.js).
   // Qui sul sito e nelle app daprod-lira.js non fa niente.
   /*
-   * ⚠ «Finisci e riscatta» (2.1.5). Chiesto il 25 settembre 2026: «mettere un
-   * pulsante per dire: quando vuoi finire il gioco premi qua e riscatta il
-   * punteggio, come sulla Claw Machine». Chi smette prima porta a casa fino a
-   * 15 euro, contando gli ordini di grandezza del ciclo e sotto il tetto di
-   * quello che ha ricaricato; chi fa eruttare il Vesuvio prende da 20 a 30 euro
-   * piu' i bonus. I numeri veri li fa la sala: qui c'e' la stima.
+   * ⚠ «Incassa e ricomincia» (2.1.6, era «Finisci e riscatta» nella 2.1.5).
+   *
+   * Chiesto il 26 settembre 2026, dopo i trentamila euro spariti a fine
+   * partita: «facciamo che il pulsante incassa resetta bene il gioco; quando
+   * premuto avvisa di tutto». Il premio non e' piu' fisso: la sala fa il conto
+   * (quello che hai messo per la resa, che cresce coi progressi, piu' la paga
+   * di chi gioca) e lo dice tutto prima di incassare, in un foglio suo. Qui il
+   * tasto porta la cifra dal vivo (`suStima`), e dopo il si' il gioco riparte
+   * da capo.
    */
-  function stimaRiscatto() {
-    const o = Math.log10(1 + Math.max(0, S.lireCiclo || 0));
-    const prog = Math.max(0, Math.min(1, (o - 6) / 24));
-    const st = window.DaProdLira && DaProdLira.stato && DaProdLira.stato();
-    const messo = st && st.cassa ? st.cassa.messo || 0 : 0;
-    const tetto = messo * 10 / 1936.27;
-    return { prima: Math.min(15 * prog, tetto), tetto, fine: 20 + 10 * prog };
-  }
-  const euro = (e) => "€ " + e.toFixed(2).replace(".", ",");
+  let stimaViva = null;
+  const soldiDP = (l) => window.DaProdLira && DaProdLira.soldi ? DaProdLira.soldi(l) : fmtLire(l);
   function chiediRiscatto() {
-    const st = stimaRiscatto();
-    apriModale("🏁 Finisci e riscatta",
-      `<p>Le lire di questo ciclo: <b class="oro">${fmtLire(S.lireCiclo || 0)}</b>.</p>
-       <p>Se smetti adesso, nel portafoglio DaProd arrivano circa <b class="oro">${euro(st.prima)}</b>
-       <small>(fino a 15 € col punteggio, e al massimo 10 volte quello che hai ricaricato: ${euro(st.tetto)})</small>.</p>
-       <p>Se fai eruttare il Vesuvio vinci da <b>€ 20</b> a <b>€ 30</b> — col tuo punteggio <b class="oro">${euro(st.fine)}</b> — più il premio della velocità e un pezzo del montepremi.</p>
-       <p>Poi la partita ricomincia da capo, da zero: nella sala DaProd ogni partita e' una partita.</p>
-       <div class="azioni-mod"><button class="btn oro" id="riscattaSi">🏁 Riscatta e ricomincia</button><button class="btn" id="riscattaNo">Continuo a giocare</button></div>`);
-    $("riscattaNo").onclick = () => chiudiModale();
-    $("riscattaSi").onclick = () => {
-      $("riscattaSi").disabled = true;
-      DaProdLira.incassa({ fine: false, grezzo: S.lireCiclo || 0, chiudi: true })
-        .then(() => chiudiModale())
-        .catch((e) => { $("riscattaSi").disabled = false; toast("⚠️", "Non riscattato", (e && e.message) || "riprova", { tipo: "rosso" }); });
-    };
+    $("bRiscatta").disabled = true;
+    DaProdLira.incassa({ fine: false, grezzo: S.lireCiclo || 0, chiudi: true })
+      .catch((e) => { if (e && e.message !== "Annullato") toast("⚠️", "Non incassato", (e && e.message) || "riprova", { tipo: "rosso" }); })
+      .then(() => { $("bRiscatta").disabled = false; });
   }
+  function disegnaRiscatto() {
+    const b = $("bRiscatta"); if (!b || b.hidden) return;
+    const s = stimaViva;
+    b.textContent = s && s.netto > 0 ? "🏁 " + soldiDP(s.netto) : "🏁";
+    b.classList.toggle("con-cifra", !!(s && s.netto > 0));
+    b.title = s ? "Incassa e ricomincia: " + soldiDP(s.netto) + (s.finendo != null ? " · a far eruttare il Vesuvio " + soldiDP(s.finendo) : "") : "Incassa e ricomincia";
+  }
+
+  /*
+   * ⚠ I potenziamenti DaProd coi soldi veri (2.1.6). «I giocatori devono
+   * spendere soldi reali per i potenziamenti dei giochi; ogni volta che usa
+   * soldi reali si deve avvisare, e poi puo' fare piu' punti possibili.»
+   * Cinque buff forti a tempo, pagati dal portafoglio della suite: la sala
+   * avvisa ogni volta, e solo col si' si accendono. Contano come messi nella
+   * partita. Si vedono ai lati col conto alla rovescia, e lampeggiano negli
+   * ultimi dieci secondi.
+   */
+  const LIRE_EURO = 1936.27;
+  const DP = [
+    { id: "pugno",  ico: "💥", nome: "PUGNO DaProd",   desc: "danno ×10",                     min: 5,  euro: 1,  buff: { dpDan: 10 } },
+    { id: "occhio", ico: "🎯", nome: "OCCHIO DaProd",  desc: "+50% di critico",               min: 5,  euro: 1,  buff: { dpCrit: 0.5 } },
+    { id: "quart",  ico: "🏙️", nome: "QUARTIERE ×10", desc: "produzione ×10",                min: 10, euro: 2,  buff: { dpProd: 10 } },
+    { id: "lire",   ico: "💰", nome: "LIRE ×10",       desc: "ogni lira guadagnata vale dieci", min: 10, euro: 5,  buff: { dpLire: 10 } },
+    { id: "super",  ico: "🌋", nome: "SUPER DaProd",   desc: "danno, produzione e lire ×25",  min: 10, euro: 20, buff: { dpDan: 25, dpProd: 25, dpLire: 25 } },
+  ];
+  function accendiDP(id) {
+    const x = DP.find((d) => d.id === id); if (!x) return false;
+    const ora = Date.now();
+    for (const k in x.buff) {
+      const prima = S.buff[k], resta = prima && prima.fino > ora ? prima.fino - ora : 0;
+      const val = Math.max(x.buff[k], prima && prima.fino > ora ? prima.val : 0);
+      S.buff[k] = { val, fino: ora + resta + x.min * 60000, nome: x.nome, d: resta / 1000 + x.min * 60, ico: x.ico };
+    }
+    sporca(); salva();
+    Suono.suona("trofeo");
+    Fx.lampo("rgba(255,210,80,.55)");
+    toast(x.ico, x.nome, x.desc + " per " + x.min + " minuti", { tipo: "oro", dur: 4000 });
+    disegnaDP(); richiediRender();
+    return true;
+  }
+  function compraDP(id) {
+    const x = DP.find((d) => d.id === id);
+    if (!x || !(window.DaProdLira && DaProdLira.modo === "suite")) return false;
+    DaProdLira.paga(Math.round(x.euro * LIRE_EURO), x.nome + " (" + x.min + " min)").then(() => accendiDP(id))
+      .catch((e) => { if (e && e.message !== "Annullato") toast("💶", "Non pagato", e.message, { tipo: "rosso" }); });
+    return true;
+  }
+  const mmss = (sec) => { const t = Math.max(0, Math.ceil(sec)); return t >= 60 ? Math.floor(t / 60) + ":" + String(t % 60).padStart(2, "0") : t + " s"; };
+  function htmlDP() {
+    const ora = Date.now(), s = stimaViva;
+    return `<p class="dp-spiega">Si pagano coi <b>soldi veri</b> del tuo portafoglio DaProd: ogni volta la sala ti chiede conferma.
+      Contano come messi nella partita, e più vai avanti più rendono quando incassi.</p>` +
+      (s ? `<div class="dp-conti"><div><small>SE INCASSI ADESSO</small><b class="${s.messo > 0 ? (s.netto >= s.messo ? "su" : "giu") : ""}">${soldiDP(s.netto)}</b></div>` +
+        `<div><small>A FAR ERUTTARE IL VESUVIO</small><b>${s.finendo != null ? soldiDP(s.finendo) : "—"}</b></div></div>` : "") +
+      DP.map((x) => {
+        const k = Object.keys(x.buff)[0], b = S.buff[k], acceso = b && b.fino > ora && b.nome === x.nome;
+        return `<div class="dp-riga${acceso ? " acceso" : ""}"><span class="i">${x.ico}</span><span><b>${x.nome} · ${x.min} MIN</b>` +
+          `<small>${x.desc}${acceso ? " · ancora " + mmss((b.fino - ora) / 1000) : ""}</small></span>` +
+          `<button class="btn oro" data-dp="${x.id}">💶 ${soldiDP(Math.round(x.euro * LIRE_EURO))}</button></div>`;
+      }).join("");
+  }
+  let dpAperto = false;
+  function apriDP() {
+    dpAperto = true;
+    apriModale("⚡ Potenziamenti DaProd", `<div id="dpLista">${htmlDP()}</div>`, () => { dpAperto = false; });
+    $("dpLista").addEventListener("click", (e) => { const b = e.target.closest("[data-dp]"); if (b) compraDP(b.dataset.dp); });
+  }
+  let dpDetti = "";
+  function disegnaDP() {
+    const ora = Date.now();
+    let h = "", n = 0, finisce = false;
+    for (const k of ["dpDan", "dpCrit", "dpProd", "dpLire"]) {
+      const b = S.buff[k];
+      if (!b || b.fino <= ora) continue;
+      const resta = (b.fino - ora) / 1000, fin = resta <= 10;
+      n++; finisce = finisce || fin;
+      const p = Math.max(0, Math.min(1, resta / Math.max(1, b.d || 60)));
+      const nome = { dpDan: "DANNO ×" + b.val, dpCrit: "CRITICO +" + Math.round(b.val * 100) + "%", dpProd: "PRODUZIONE ×" + b.val, dpLire: "LIRE ×" + b.val }[k];
+      h += `<div class="dp-eff${fin ? " finisce" : ""}" style="--p:${(p * 100).toFixed(1)}%"><i>${b.ico || "⚡"}</i><b>${mmss(resta)}</b><small>${nome}</small><u></u></div>`;
+    }
+    if (h !== dpDetti) { dpDetti = h; $("dpEffetti").innerHTML = h; sporca(); }
+    $("dpBordo").classList.toggle("su", n > 0);
+    $("dpBordo").classList.toggle("finisce", n > 0 && finisce);
+    if (dpAperto && $("dpLista")) { const l = $("dpLista"); const nuovo = htmlDP(); if (l._h !== nuovo) { l._h = nuovo; l.innerHTML = nuovo; } }
+  }
+  setInterval(disegnaDP, 250);
+  window.NP_DP = { DP, accendiDP, compraDP, disegnaDP };
+
   if (window.DaProdLira && DaProdLira.modo === "suite") {
     $("bRiscatta").hidden = false;
     $("bRiscatta").onclick = chiediRiscatto;
+    $("bDaProd").hidden = false;
+    $("bDaProd").onclick = apriDP;
   }
+  if (window.DaProdLira && DaProdLira.suStima) DaProdLira.suStima((st) => { stimaViva = st; disegnaRiscatto(); });
   if (window.DaProdLira) DaProdLira.init({
     gioco: "neon",
     ricarica: {
@@ -91,7 +167,9 @@ function avvio() {
       finita: () => false,
       chiudi: true,
       togli: (r) => {
-        toast("💰", r.finita ? "Partita finita!" : "Incassato", "+" + r.netto + " lire nel portafoglio DaProd · si ricomincia da capo", { tipo: "oro", dur: 5000 });
+        toast("💰", r.inControllo ? "Incasso in controllo" : r.finita ? "Partita finita!" : "Incassato",
+          r.inControllo ? "È grosso: lo guarda un admin, poi arriva nel portafoglio · si ricomincia da capo"
+            : "+" + soldiDP(r.netto) + " nel portafoglio DaProd · si ricomincia da capo", { tipo: "oro", dur: 5000 });
         setTimeout(() => { azzeraTutto(); location.reload(); }, 2500);
       },
     },

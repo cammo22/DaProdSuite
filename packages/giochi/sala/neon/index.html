@@ -26,7 +26,7 @@
 // corrispondente, compila APK, EXE e DMG e la pubblica con le note del CHANGELOG.
 // La stessa versione finisce in coda a CSS e JS (?v=...), così GitHub Pages non serve file vecchi.
 // ---------------------------------------------------------------------------------------------
-const VERSIONE = 'v2.1.5';
+const VERSIONE = 'v2.1.6';
 (function () {
   const v = "?v=" + VERSIONE.slice(1);
   const css = ["css/base.css", "css/gioco.css", "css/pannelli.css"];
@@ -63,7 +63,9 @@ const VERSIONE = 'v2.1.5';
     </div>
     <div id="azioni">
       <!-- 2.1.5: nella sala DaProd, finisci quando vuoi e riscatti (come nella Claw). -->
-      <button id="bRiscatta" title="Finisci e riscatta" hidden>🏁</button>
+      <button id="bRiscatta" title="Incassa e ricomincia" hidden>🏁</button>
+      <!-- 2.1.6: i potenziamenti DaProd coi soldi veri, solo nella sala della suite. -->
+      <button id="bDaProd" title="Potenziamenti DaProd, coi soldi veri" hidden>⚡</button>
       <button id="bRadio" title="Diario e Radio Partenope">📻</button>
       <button id="bMusica" title="Musica">🎵</button>
       <button id="bSuoni" title="Effetti sonori">🔊</button>
@@ -72,6 +74,9 @@ const VERSIONE = 'v2.1.5';
   </header>
   <div id="aggiorna" hidden></div>
   <div id="buffbar"></div>
+  <!-- 2.1.6: gli effetti DaProd accesi, ai lati, col conto alla rovescia. -->
+  <div id="dpBordo" aria-hidden="true"></div>
+  <div id="dpEffetti" aria-hidden="true"></div>
 
   <button id="pipSu" aria-label="Rialza l'arena">⚔️ ARENA ▴</button>
   <main id="corpo">

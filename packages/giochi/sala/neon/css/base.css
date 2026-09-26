@@ -204,3 +204,35 @@ b, strong { font-weight: 700; }
   *, *::before, *::after { animation-duration: .01s !important; animation-iteration-count: 1 !important; transition-duration: .01s !important; }
   .goccia { animation: cade 9s linear forwards !important; }
 }
+
+/* ============================ 2.1.6: incasso dal vivo, potenziamenti DaProd, effetti ai lati */
+#azioni #bRiscatta.con-cifra { width: auto; padding: 0 10px; font: 700 13px/1 var(--f-num); color: #2a1600;
+  background: linear-gradient(180deg, #ffe27a, #ffb300); border-color: #ffe9a0; white-space: nowrap; }
+#azioni #bDaProd { background: linear-gradient(180deg, rgba(255,226,122,.25), rgba(255,179,0,.12)); border-color: rgba(255,226,122,.6); }
+.dp-spiega { margin: 0 0 10px; font-size: 14px; line-height: 1.45; color: var(--txt2); }
+.dp-conti { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 10px; }
+.dp-conti div { padding: 8px 10px; border-radius: 12px; background: rgba(0,0,0,.35); border: 1px solid var(--linea); }
+.dp-conti small { display: block; font: 700 9px/1.1 var(--f-num); letter-spacing: 1px; color: var(--txt2); }
+.dp-conti b { display: block; margin-top: 4px; font: 700 16px/1 var(--f-num); color: #ffe27a; }
+.dp-conti b.su { color: #5dffb4; } .dp-conti b.giu { color: #ff6b7d; }
+.dp-riga { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; padding: 10px; margin-bottom: 6px;
+  border-radius: 14px; background: rgba(255,255,255,.04); border: 1px solid var(--linea); }
+.dp-riga.acceso { border-color: rgba(93,255,180,.6); background: rgba(93,255,180,.08); }
+.dp-riga .i { font-size: 24px; }
+.dp-riga b { display: block; font: 700 12.5px/1.1 var(--f-num); }
+.dp-riga small { display: block; margin-top: 3px; font-size: 12.5px; color: var(--txt2); }
+.dp-riga .btn { white-space: nowrap; }
+#dpBordo { position: fixed; top: 0; bottom: 0; left: 0; width: 20px; z-index: 40; pointer-events: none; opacity: 0; transition: opacity .4s;
+  background: linear-gradient(90deg, rgba(255,210,80,.55), transparent); }
+#dpBordo.su { opacity: 1; }
+#dpEffetti { position: fixed; right: 8px; top: 50%; transform: translateY(-50%); z-index: 41; pointer-events: none;
+  display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
+.dp-eff { display: grid; grid-template-columns: auto auto; align-items: center; column-gap: 7px; row-gap: 3px; padding: 6px 9px 7px; min-width: 104px;
+  border-radius: 13px; background: rgba(10,6,20,.86); border: 1px solid rgba(255,210,80,.65); box-shadow: 0 8px 20px rgba(0,0,0,.5); }
+.dp-eff i { font-style: normal; font-size: 18px; line-height: 1; grid-row: span 2; }
+.dp-eff b { font: 700 15px/1 var(--f-num); color: #fff; font-variant-numeric: tabular-nums; }
+.dp-eff small { font: 700 8.5px/1 var(--f-num); letter-spacing: .6px; color: #ffe9a0; white-space: nowrap; }
+.dp-eff u { grid-column: 1 / -1; display: block; height: 4px; border-radius: 99px; background: rgba(255,255,255,.12); overflow: hidden; text-decoration: none; }
+.dp-eff u::before { content: ""; display: block; height: 100%; width: var(--p, 100%); background: #ffc93a; border-radius: 99px; }
+#dpBordo.finisce, .dp-eff.finisce { animation: dpLampeggia .5s steps(2, jump-none) infinite; }
+@keyframes dpLampeggia { 50% { opacity: .25; } }

@@ -29,6 +29,14 @@
  *     DaProdLira.evento("dozer", "jackpot");
  *     DaProdLira.incassa();   // dal tasto del gioco; la cornice ha il suo
  *     DaProdLira.soldi(12345); // «L. 12.345» o «€ 6,38», come ha scelto chi gioca
+ *     DaProdLira.paga(9681, "Pioggia d'oro").then(function () { attiva(); });
+ *     DaProdLira.suStima(function (s) { tasto.textContent = "Incassa " + DaProdLira.soldi(s.netto); });
+ *
+ * **Dalla 1.5.1** i potenziamenti si pagano coi soldi veri del portafoglio
+ * (`paga`): la sala fa vedere l'avviso ogni volta, e solo se chi gioca dice si'
+ * la promessa si risolve. E la sala manda al gioco **la stima dell'incasso**
+ * (`suStima`): quanto porteresti a casa adesso, e con che punti. L'incasso
+ * chiede sempre conferma, dicendo tutto, e chiude la partita.
  *
  * **Dalla 1.4.9** il gioco racconta alla sala quante lire ha, ogni tre
  * secondi, e la sala le mostra dal vivo; e la valuta (lire o euro) la sceglie
@@ -79,6 +87,8 @@
 
   var ascoltatori = [];
   var perLaValuta = [];
+  var perLaStima = [];
+  var ultimaStima = null;
   var ultimo = null;
   var valuta = "lire";
   function annuncia(stato) {
@@ -96,8 +106,16 @@
 
   var numero = 0;
   var attese = {};
+  /**
+   * ⚠ Le domande che aspettano una persona (1.5.1): l'avviso dei soldi veri e
+   * la conferma dell'incasso restano aperti finche' chi gioca non tocca un
+   * tasto. Per quelle si aspetta dieci minuti, e il silenzio non spegne il
+   * modulo: chi ci pensa su non e' una sala che non risponde.
+   */
+  var ASPETTANO_UNA_PERSONA = { paga: true, incassa: true };
   function allaSala(cosa, dati) {
     if (spento) return Promise.reject(new Error("Fuori dalla sala giochi della DaProd Suite le lire non ci sono."));
+    var persona = Boolean(ASPETTANO_UNA_PERSONA[cosa]);
     return new Promise(function (risolvi, rifiuta) {
       var n = ++numero;
       attese[n] = { risolvi: risolvi, rifiuta: rifiuta };
@@ -106,9 +124,10 @@
       setTimeout(function () {
         if (!attese[n]) return;
         delete attese[n];
+        if (persona) { rifiuta(new Error("Annullato")); return; }
         spento = true;
         rifiuta(new Error("La sala non risponde: si gioca lo stesso, ma senza lire."));
-      }, 15000);
+      }, persona ? 600000 : 15000);
     });
   }
   if (inSuite) {
@@ -116,6 +135,11 @@
       var m = ev.data;
       if (!m || m.daprod !== "lira" || ev.source !== window.parent) return;
       if (m.stato) annuncia(m.stato);
+      // 1.5.1: quanto porteresti a casa adesso, e con che punti.
+      if (m.stima) {
+        ultimaStima = m.stima;
+        for (var k = 0; k < perLaStima.length; k++) { try { perLaStima[k](m.stima); } catch (e) { /* niente */ } }
+      }
       if (m.n && attese[m.n]) {
         var a = attese[m.n]; delete attese[m.n];
         if (m.errore) a.rifiuta(new Error(m.errore)); else a.risolvi(m.esito);
@@ -212,10 +236,12 @@
     },
 
     /**
-     * L'incasso (1.4.8): quello che il gioco ha diventa lire vere, meno la
-     * fetta di DaProd, fino al tetto della partita. `opzioni.fine` chiude la
-     * partita col premio della velocita' (Claw, Neon); `opzioni.chiudi` la
-     * chiude senza premio. Risponde con `preso`: quante lire togliersi.
+     * L'incasso: quello che il gioco ha diventa lire vere, meno la fetta di
+     * DaProd. Dalla 1.5.1 senza tetto, e **la sala chiede sempre conferma**
+     * dicendo tutto (quanto hai messo, quanto porti a casa, che il gioco
+     * ricomincia da capo): se chi gioca dice no, la promessa si rifiuta con
+     * «Annullato» e `togli` non si chiama. `opzioni.fine` vuol dire che il
+     * gioco e' stato finito (Claw, Neon). Ogni incasso chiude la partita.
      */
     incassa: function (opzioni) {
       manda();
@@ -225,12 +251,34 @@
       // Claw e Neon ricominciano da capo a ogni incasso: la partita si chiude sempre.
       var chiudi = Boolean(opzioni.chiudi || (cassa && cassa.chiudi));
       return allaSala("incassa", { gioco: gioco, grezzo: grezzo, fine: fine, chiudi: chiudi }).then(function (r) {
+        if (!r || r.annullato) throw new Error("Annullato");
         if (cassa && cassa.togli) { try { cassa.togli(r); } catch (e) { /* il gioco si arrangia */ } }
         dettoNelGioco = -1;
         setTimeout(raccontaNelGioco, 300);
         return r;
       });
     },
+
+    /**
+     * ⚠ **Un potenziamento coi soldi veri** (1.5.1). La sala fa vedere
+     * l'avviso — quanto costa in lire e in euro, e da dove escono — e la
+     * promessa si risolve solo se chi gioca dice si' e le lire sono uscite
+     * davvero dal portafoglio. Se dice no, o non bastano, si rifiuta: il gioco
+     * non da' niente. Fuori dalla suite si rifiuta sempre.
+     */
+    paga: function (lire, cosa) {
+      var n = Math.floor(Number(lire) || 0);
+      if (n <= 0) return Promise.reject(new Error("Quanto costa?"));
+      return allaSala("paga", { gioco: gioco, lire: n, cosa: String(cosa || "potenziamento") }).then(function (r) {
+        if (!r || r.annullato) throw new Error("Annullato");
+        return r;
+      });
+    },
+
+    /** L'ultima stima dell'incasso (1.5.1), o null. */
+    stima: function () { return spento ? null : ultimaStima; },
+    /** Chi vuole sapere quanto vale la partita adesso: arriva ogni volta che cambia. */
+    suStima: function (fn) { perLaStima.push(fn); if (ultimaStima) { try { fn(ultimaStima); } catch (e) { /* niente */ } } },
 
     /** Lire in euro, scritte all'italiana: «€ 1,00». Il cambio e' quello del 2002. */
     euro: function (lire) {
