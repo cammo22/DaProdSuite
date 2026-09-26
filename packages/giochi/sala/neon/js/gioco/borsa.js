@@ -128,9 +128,9 @@ const Borsa = (() => {
     if (!vis) return;
     disegna($("hudTela"), D.sec.slice(-90), SERIE.filter(s => s.k === "prod" || s.k === "fid").map(s => Object.assign({}, s, { on: true })), true);
     const u = D.sec[D.sec.length - 1] || { prod: 0, dps: 0, fid: 100 };
-    $("hudPat").textContent = "₤ " + fmt(u.pat || S.lire);
+    $("hudPat").textContent = fmtLire(u.pat || S.lire);
     $("hudDps").textContent = "💥 " + fmt(u.dps) + "/s";
-    $("hudProd").textContent = "+₤ " + fmt(u.prod) + "/s";
+    $("hudProd").textContent = "+" + fmtLire(u.prod) + "/s";
     $("hudFid").textContent = "Fiducia " + Math.round(u.fid) + "%";
   }
 

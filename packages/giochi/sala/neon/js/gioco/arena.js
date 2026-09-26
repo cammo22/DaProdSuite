@@ -142,7 +142,7 @@ function morte(n) {
   S.kills++;
   const l = lireNemico(s, n.m, n.elite);
   guadagna(l);
-  let testo = "+" + fmt(l);
+  let testo = "+" + numLire(l);
   if (Math.random() < 0.3) {
     const r = casoInt(1, 3) + attoDi(s).n; S.rottami += r; testo += " · ⚙️" + r;
   }
@@ -302,7 +302,7 @@ function attivaSovra() {
   Suono.suona("sovra");
   Fx.lampo("rgba(255,90,31,.25)");
   $("palco").classList.add("sovra");
-  toast("🔥", "SOVRACCARICO TERMICO!", `Danno ${fmtMolt(2.5 * (1 + 0.25 * S.stat.sovra))} per ${dur} secondi`, { tipo: "lava", chiave: "sovra" });
+  toast("🔥", "SOVRACCARICO TERMICO!", `Danno ${fmtMolt(2.5 * (1 + 0.25 * S.stat.sovra))} per ${dur} secondi`, { tipo: "lava", chiave: "sovra", effetto: true });
   if (!S.visto.primoSovra) { S.visto.primoSovra = true; radio(STORIA.eventi.primoSovra); }
 }
 
@@ -319,7 +319,7 @@ function attivaProtocollo() {
   Suono.suona("proto");
   Fx.lampo("rgba(53,232,255,.3)");
   scuoti(2);
-  toast("☄️", "PROTOCOLLO VESUVIO!", `Danno ×${PROTOCOLLO.danno} per ${PROTOCOLLO.durata} s: gli automi sparano a raffica`, { tipo: "ciano" });
+  toast("☄️", "PROTOCOLLO VESUVIO!", `Danno ×${PROTOCOLLO.danno} per ${PROTOCOLLO.durata} s: gli automi sparano a raffica`, { tipo: "ciano", effetto: true });
 }
 
 // ============================================================ TICK (ogni fotogramma)

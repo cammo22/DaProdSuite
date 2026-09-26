@@ -237,9 +237,11 @@
   .bordo.su { opacity: 1; }
   .bordo.finisce, .eff.finisce { animation: lampeggia .5s steps(2, jump-none) infinite; }
   @keyframes lampeggia { 50% { opacity: .25; } }
-  #effetti { position: fixed; right: 10px; top: 50%; transform: translateY(-50%); z-index: 13; pointer-events: none;
-    display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
-  @media (max-width: 700px) { #effetti { top: 36%; right: 6px; } }
+  /* 1.1.6: «spostiamo gli avvisi dei potenziamenti più in alto, tutti a sinistra sotto DaProd e la versione». */
+  #effetti { position: fixed; left: 16px; top: calc(88px + var(--sat)); z-index: 13; pointer-events: none;
+    display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+  @media (max-width: 700px) { #effetti { top: calc(58px + var(--sat)); left: 8px; } }
+  .eff { will-change: opacity; }
   .eff { display: grid; grid-template-columns: auto auto; align-items: center; column-gap: 7px; row-gap: 3px; padding: 6px 9px 7px;
     border-radius: 14px; background: rgba(12,10,24,.82); min-width: 104px; box-shadow: 0 8px 20px rgba(0,0,0,.5); border: 1px solid rgba(93,255,180,.6); }
   .eff i { font-style: normal; font-size: 18px; line-height: 1; grid-row: span 2; }
@@ -718,7 +720,7 @@
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
-const VERSIONE = 'v1.1.5';
+const VERSIONE = 'v1.1.6';
 const $ = (id) => document.getElementById(id);
 const PARAMETRI = new URLSearchParams(location.search);
 // gioco = la partita vera; demo = la macchina gioca da sola (sfondo della home); vetrina = sfilata dei modellini
@@ -941,6 +943,8 @@ const suono = {
 
 // ============ STATO E SALVATAGGIO ============
 const SALVA = 'daprod_claw_v3';
+// 1.1.6: i record, che sopravvivono all'incasso (vedi ricominciaDaCapo).
+const RECORD = 'daprod_claw_record';
 function statoNuovo() {
   return {
     v: 3, lire: 2000, coll: {}, pot: Object.fromEntries(POT.map(p => [p.id, 0])),
@@ -1012,7 +1016,13 @@ function carica() {
     const v2 = localStorage.getItem('daprod_claw_v2');
     if (v2) return migraV2(JSON.parse(v2));
   } catch (e) { console.warn('salvataggio illeggibile, si riparte', e); }
-  return statoNuovo();
+  const s = statoNuovo();
+  // 1.1.6: i record della partita incassata tornano nella nuova.
+  try {
+    const r = JSON.parse(localStorage.getItem(RECORD) || 'null');
+    if (r && typeof r === 'object') for (const k in s.st) if (typeof r[k] === 'number' && isFinite(r[k])) s.st[k] = r[k];
+  } catch (e) { /* niente */ }
+  return s;
 }
 const stato = carica();
 let daSalvare = false, azzerato = false;
@@ -3206,19 +3216,33 @@ $('turbo').addEventListener('click', (e) => {
   const b = e.target.closest('[data-turbo]'); if (b) compraTurbo(b.dataset.turbo);
 });
 const mmss = (sec) => { const x = Math.max(0, Math.ceil(sec)); return x >= 60 ? Math.floor(x / 60) + ':' + String(x % 60).padStart(2, '0') : x + ' s'; };
-let effettiDetti = '';
+/**
+ * 1.1.6: le pastiglie nascono una volta e poi cambiano solo numero e barretta.
+ * Prima si riscrivevano da capo quattro volte al secondo, e il lampeggio
+ * ripartiva ogni volta.
+ */
+const pastiglie = {};
 function aggiornaEffetti() {
   const ora = Date.now();
-  let h = '', finisce = false, n = 0;
+  let finisce = false, n = 0, cambiate = false;
   for (const T of TURBO) {
     const t = stato.turbo && stato.turbo[T.id];
-    if (!t || t.fino <= ora) continue;
+    let d = pastiglie[T.id];
+    if (!t || t.fino <= ora) { if (d && d.parentNode) { d.remove(); cambiate = true; } continue; }
+    if (!d) { d = pastiglie[T.id] = document.createElement('div'); d.innerHTML = '<i></i><b></b><small></small><u></u>'; d.children[0].textContent = T.ico; d.children[2].textContent = T.nome; }
+    if (d.parentNode !== $('effetti')) { $('effetti').appendChild(d); cambiate = true; }
     const resta = (t.fino - ora) / 1000, fin = resta <= 10; n++; finisce = finisce || fin;
-    const p = Math.max(0, Math.min(1, resta / Math.max(1, t.d)));
-    h += `<div class="eff${fin ? ' finisce' : ''}" style="--p:${(p * 100).toFixed(1)}%"><i>${T.ico}</i><b>${mmss(resta)}</b><small>${T.nome}</small><u></u></div>`;
+    const classe = 'eff' + (fin ? ' finisce' : '');
+    if (d.className !== classe) d.className = classe;
+    const testo = mmss(resta);
+    if (d.children[1].textContent !== testo) d.children[1].textContent = testo;
+    const p = Math.round(Math.max(0, Math.min(1, resta / Math.max(1, t.d))) * 50) * 2 + '%';
+    if (d.style.getPropertyValue('--p') !== p) d.style.setProperty('--p', p);
   }
-  if (h !== effettiDetti) { effettiDetti = h; $('effetti').innerHTML = h; ricalcola(); }
-  $('bordoSx').classList.toggle('su', n > 0); $('bordoSx').classList.toggle('finisce', n > 0 && finisce);
+  if (cambiate) ricalcola();
+  const b = $('bordoSx');
+  if (b.classList.contains('su') !== n > 0) b.classList.toggle('su', n > 0);
+  if (b.classList.contains('finisce') !== (n > 0 && finisce)) b.classList.toggle('finisce', n > 0 && finisce);
   if (!$('turbo').classList.contains('chiuso')) rendiTurbo();
 }
 setInterval(aggiornaEffetti, 250);
@@ -3270,8 +3294,14 @@ $('fineBtn').addEventListener('click', () => {
   $('fineBtn').disabled = true;
   DaProdLira.incassa().catch((e) => { $('fineBtn').disabled = false; avviso('Non incassato: ' + (e && e.message || 'riprova'), 'rosso imp'); });
 });
+/**
+ * 1.1.6: «quando si incassa i potenziamenti si azzerano e vanno ricomprati coi
+ * soldi del portafoglio; i record rimangono». La partita riparte da capo, ma le
+ * statistiche (i record) si tengono da parte e tornano nella partita nuova.
+ */
 function ricominciaDaCapo() {
   azzerato = true;
+  try { localStorage.setItem(RECORD, JSON.stringify(stato.st)); } catch (e) {}
   try { localStorage.removeItem(SALVA); localStorage.removeItem('daprod_claw_v2'); } catch (e) {}
   setTimeout(() => location.reload(), 2200);
 }

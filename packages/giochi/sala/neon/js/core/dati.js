@@ -401,6 +401,16 @@ const STORIA = {
 
 // ============================================================ NOVITÀ (mostrate in gioco al primo avvio di una versione)
 const NOVITA = {
+  "v2.2.0": {
+    titolo: "La Merceria dei set, e lire o euro come vuoi",
+    punti: [
+      "La Merceria parte dai set: vedi i pezzi che hai e quelli che mancano, il livello di ogni set, e lo indossi tutto con un tocco. Cambiare set è un gesto solo.",
+      "I pacchi puntano ai set che hai cominciato. Un doppione potenzia da solo il pezzo che hai; se è già al massimo diventa rottame. Un pezzo che non ti serve si rottama.",
+      "Nella sala DaProd i ⚡ potenziamenti a soldi veri hanno la loro scheda, la prima in alto. All'incasso si azzerano; trofei e statistiche restano.",
+      "Lire o euro: quando la sala cambia valuta, cambiano anche i numeri del gioco.",
+      "Nelle opzioni puoi spegnere gli avvisi di tempo, bonus e malus: restano solo i bagliori ai lati."
+    ]
+  },
   "v2.1.6": {
     titolo: "Niente più premio fisso: quello che metti rende",
     punti: [

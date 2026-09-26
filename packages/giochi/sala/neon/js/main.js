@@ -91,7 +91,7 @@ function avvio() {
     sporca(); salva();
     Suono.suona("trofeo");
     Fx.lampo("rgba(255,210,80,.55)");
-    toast(x.ico, x.nome, x.desc + " per " + x.min + " minuti", { tipo: "oro", dur: 4000 });
+    toast(x.ico, x.nome, x.desc + " per " + x.min + " minuti", { tipo: "oro", dur: 4000, effetto: true });
     disegnaDP(); richiediRender();
     return true;
   }
@@ -103,7 +103,7 @@ function avvio() {
     return true;
   }
   const mmss = (sec) => { const t = Math.max(0, Math.ceil(sec)); return t >= 60 ? Math.floor(t / 60) + ":" + String(t % 60).padStart(2, "0") : t + " s"; };
-  function htmlDP() {
+  function htmlDP(inScheda) {
     const ora = Date.now(), s = stimaViva;
     return `<p class="dp-spiega">Si pagano coi <b>soldi veri</b> del tuo portafoglio DaProd: ogni volta la sala ti chiede conferma.
       Contano come messi nella partita, e più vai avanti più rendono quando incassi.</p>` +
@@ -113,7 +113,7 @@ function avvio() {
         const k = Object.keys(x.buff)[0], b = S.buff[k], acceso = b && b.fino > ora && b.nome === x.nome;
         return `<div class="dp-riga${acceso ? " acceso" : ""}"><span class="i">${x.ico}</span><span><b>${x.nome} · ${x.min} MIN</b>` +
           `<small>${x.desc}${acceso ? " · ancora " + mmss((b.fino - ora) / 1000) : ""}</small></span>` +
-          `<button class="btn oro" data-dp="${x.id}">💶 ${soldiDP(Math.round(x.euro * LIRE_EURO))}</button></div>`;
+          `<button class="btn oro" ${inScheda ? `data-azione="dp" data-id="${x.id}"` : `data-dp="${x.id}"`}>💶 ${soldiDP(Math.round(x.euro * LIRE_EURO))}</button></div>`;
       }).join("");
   }
   let dpAperto = false;
@@ -122,26 +122,40 @@ function avvio() {
     apriModale("⚡ Potenziamenti DaProd", `<div id="dpLista">${htmlDP()}</div>`, () => { dpAperto = false; });
     $("dpLista").addEventListener("click", (e) => { const b = e.target.closest("[data-dp]"); if (b) compraDP(b.dataset.dp); });
   }
-  let dpDetti = "";
+  /*
+   * ⚠ 2.2.0: le pastiglie nascono una volta e poi cambiano solo numero e
+   * barretta. Prima si riscrivevano da capo quattro volte al secondo, e ogni
+   * volta si ridisegnava tutto il pannello (sporca): lampeggi che rallentano.
+   */
+  const pastiglieDP = {};
   function disegnaDP() {
     const ora = Date.now();
-    let h = "", n = 0, finisce = false;
+    let n = 0, finisce = false;
     for (const k of ["dpDan", "dpCrit", "dpProd", "dpLire"]) {
       const b = S.buff[k];
-      if (!b || b.fino <= ora) continue;
+      let d = pastiglieDP[k];
+      if (!b || b.fino <= ora) { if (d && d.parentNode) d.remove(); continue; }
       const resta = (b.fino - ora) / 1000, fin = resta <= 10;
       n++; finisce = finisce || fin;
-      const p = Math.max(0, Math.min(1, resta / Math.max(1, b.d || 60)));
+      if (!d) { d = pastiglieDP[k] = document.createElement("div"); d.innerHTML = "<i></i><b></b><small></small><u></u>"; }
+      if (d.parentNode !== $("dpEffetti")) $("dpEffetti").appendChild(d);
+      const classe = "dp-eff" + (fin ? " finisce" : "");
+      if (d.className !== classe) d.className = classe;
       const nome = { dpDan: "DANNO ×" + b.val, dpCrit: "CRITICO +" + Math.round(b.val * 100) + "%", dpProd: "PRODUZIONE ×" + b.val, dpLire: "LIRE ×" + b.val }[k];
-      h += `<div class="dp-eff${fin ? " finisce" : ""}" style="--p:${(p * 100).toFixed(1)}%"><i>${b.ico || "⚡"}</i><b>${mmss(resta)}</b><small>${nome}</small><u></u></div>`;
+      const v = [b.ico || "⚡", mmss(resta), nome];
+      for (let i = 0; i < 3; i++) if (d.children[i].textContent !== v[i]) d.children[i].textContent = v[i];
+      const p = Math.round(Math.max(0, Math.min(1, resta / Math.max(1, b.d || 60))) * 50) * 2 + "%";
+      if (d.style.getPropertyValue("--p") !== p) d.style.setProperty("--p", p);
     }
-    if (h !== dpDetti) { dpDetti = h; $("dpEffetti").innerHTML = h; sporca(); }
-    $("dpBordo").classList.toggle("su", n > 0);
-    $("dpBordo").classList.toggle("finisce", n > 0 && finisce);
+    const bordo = $("dpBordo");
+    if (bordo.classList.contains("su") !== n > 0) bordo.classList.toggle("su", n > 0);
+    if (bordo.classList.contains("finisce") !== (n > 0 && finisce)) bordo.classList.toggle("finisce", n > 0 && finisce);
     if (dpAperto && $("dpLista")) { const l = $("dpLista"); const nuovo = htmlDP(); if (l._h !== nuovo) { l._h = nuovo; l.innerHTML = nuovo; } }
   }
   setInterval(disegnaDP, 250);
-  window.NP_DP = { DP, accendiDP, compraDP, disegnaDP };
+  const htmlScheda = () => titolo("⚡", "Potenziamenti DaProd", "Forti e a tempo, coi soldi veri del portafoglio. All'incasso si azzerano: la partita dopo si ricomprano.") +
+    `<div class="dp-scheda">${htmlDP(true)}</div>`;
+  window.NP_DP = { DP, accendiDP, compraDP, disegnaDP, htmlScheda };
 
   if (window.DaProdLira && DaProdLira.modo === "suite") {
     $("bRiscatta").hidden = false;
@@ -170,11 +184,20 @@ function avvio() {
         toast("💰", r.inControllo ? "Incasso in controllo" : r.finita ? "Partita finita!" : "Incassato",
           r.inControllo ? "È grosso: lo guarda un admin, poi arriva nel portafoglio · si ricomincia da capo"
             : "+" + soldiDP(r.netto) + " nel portafoglio DaProd · si ricomincia da capo", { tipo: "oro", dur: 5000 });
-        setTimeout(() => { azzeraTutto(); location.reload(); }, 2500);
+        // 2.2.0: «i record rimangono». Si riparte da capo, ma trofei, statistiche e opzioni restano.
+        setTimeout(() => {
+          const tieni = { trofei: S.trofei, stats: S.stats, opz: S.opz, kills: S.kills, bossVinti: S.bossVinti };
+          azzeraTutto();
+          Object.assign(S, tieni);
+          salva();
+          location.reload();
+        }, 2500);
       },
     },
   });
-  apriScheda("quartiere");
+  // 2.2.0: la valuta la sceglie la sala; quando cambia, il gioco ridisegna i suoi numeri.
+  if (window.DaProdLira && DaProdLira.suValuta) DaProdLira.suValuta(() => { sporca(); aggiornaTesta(); richiediRender(); });
+  apriScheda(window.DaProdLira && DaProdLira.modo === "suite" ? "daprod" : "quartiere");
   aggiornaTesta();
   aggiornaPiedeArena(true);
 
@@ -231,7 +254,7 @@ function entra() {
   if (assenza && assenza.lire > 0) {
     apriModale("🌙 Bentornato, Ferro Vecchio", `
       <div class="bentornato"><p>Sei stato via <b>${fmtTempo(assenza.sec)}</b>. Il quartiere non si è fermato:</p>
-      <div class="mg-premi"><div><b>₤ ${fmt(assenza.lire)}</b><small>lire</small></div>${assenza.big ? `<div><b>🎟️ ${assenza.big}</b><small>biglietti</small></div>` : ""}</div>
+      <div class="mg-premi"><div><b>${fmtLire(assenza.lire)}</b><small>${inEuro() ? "euro" : "lire"}</small></div>${assenza.big ? `<div><b>🎟️ ${assenza.big}</b><small>biglietti</small></div>` : ""}</div>
       <p class="nota">Si guadagna il ${perc(BIL.offlineBase * moltOffline())} della produzione, per un massimo di ${oreOffline()} ore. L'Officina (Assenza) alza entrambi.</p>
       <button class="btn oro grande" data-azione="chiudiModale">Jamme!</button></div>`);
   } else if (!primaVolta && S.versione && S.versione !== VERSIONE && NOVITA[VERSIONE]) {
@@ -279,7 +302,7 @@ function ciclo(ora) {
 window.NP = {
   get S() { return S; }, W, BIL, ATTI, BOSS, QUARTIERE, AUTOMI, STAT, OGGETTI, TROFEI, CIRCUITI,
   entra, nuovaOnda, colpoManuale, colpisci, tickArena, cambiaStanza, riprovaBoss, ritirata, attivaSovra, attivaProtocollo,
-  compraGen, compraBraccio, compraUp, compraAutoma, compraStat, compraLab, compraOggetto, equipaggia, apriPacco,
+  compraGen, compraBraccio, compraUp, compraAutoma, compraStat, compraLab, compraOggetto, equipaggia, apriPacco, indossaSet, rottamaOggetto, livelloSet, numLire,
   erutta, puoEruttare, braciEruzione, produzione, dannoColpo, dannoBase, hpBoss, hpNemico, costoGen, energiaMax,
   salva, carica, esportaCodice, importaCodice, apriScheda, avviaMini, fermaMini, chiudiModale, controllaTrofei,
   creaGoccia, raccogliGoccia, guadagniAssenza, sporca, VERSIONE, pronto: false
