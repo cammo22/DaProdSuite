@@ -85,6 +85,8 @@ export const COPIONE_PRODUZIONE = `
    * musica — poi quello che fa chi decide. Chi non c'e' qui va in fondo.
    */
   var ORDINE = ["genera.immagine", "genera.brano", "genera.video", "genera.voce", "genera.modello"];
+  /** Le azioni che si fanno in Crea (1.5.2), e con che scheda si apre. */
+  var IN_CREA = { "genera.immagine": "immagine", "modifica.immagine": "immagine", "genera.brano": "canzone" };
   function inOrdine(elenco) {
     var posto = function (x) { var i = ORDINE.indexOf(x.id); return i < 0 ? 99 : i; };
     return elenco.slice().sort(function (a, b) { return posto(a) - posto(b); });
@@ -179,9 +181,14 @@ export const COPIONE_PRODUZIONE = `
      * filtro e' identico a quello di «disegnaTessere», e le due schermate
      * tornano a essere gli stessi quattro tastoni disegnati due volte.
      */
-    for (var a of inOrdine(azioni.filter(function (x) { return x.coda && !(PRODUZIONI[x.id] || {}).dentroA; }))) {
-      casella.append(tastoneAzione(a));
-    }
+    // 1.5.2: foto e musica stanno in Crea (copione-crea.ts); qui restano le
+    // produzioni di chi decide, col modulo di sempre.
+    var diChiDecide = inOrdine(azioni.filter(function (x) {
+      return x.coda && !(PRODUZIONI[x.id] || {}).dentroA && !IN_CREA[x.id];
+    }));
+    for (var a of diChiDecide) casella.append(tastoneAzione(a));
+    document.querySelectorAll(".crea-altro").forEach(function (h) { h.hidden = !diChiDecide.length; });
+    if (typeof disegnaCrea === "function") disegnaCrea();
 
     var altre = $("altre-azioni");
     altre.innerHTML = "";
@@ -230,7 +237,12 @@ export const COPIONE_PRODUZIONE = `
      * **dentro** al modulo, con due linguette in cima: vedi «stradeDi».
      */
     b.dataset.azione = a.id;
-    b.addEventListener("click", function () { vaiA("produzione"); scegli(a); });
+    b.addEventListener("click", function () {
+      // 1.5.2: immagine e canzone si fanno in Crea, il resto col modulo.
+      if (IN_CREA[a.id]) { apriCrea(IN_CREA[a.id]); return; }
+      vaiA("produzione");
+      scegli(a);
+    });
     return b;
   }
 

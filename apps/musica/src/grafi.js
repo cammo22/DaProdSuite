@@ -186,7 +186,7 @@ export const MODELLI_COPERTINA = {
   },
   "qwen21-turbo": {
     id: "qwen21-turbo",
-    nome: "Qwen-Image 2.1 Turbo",
+    nome: "Qwen-Image 2.1 Veloce",
     grafo: (prompt, seed, { larghezza = 1024, altezza = 1024, salva = false } = {}) =>
       grafoQwenImmagine({ prompt, seed, larghezza, altezza, turbo: true, salva, prefisso: "immagini/daprod" }),
     catalogo: QWEN21.catalogoTurbo,

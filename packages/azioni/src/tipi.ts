@@ -128,6 +128,11 @@ export interface Campo {
    * prima: è una cosa in più, non un obbligo.
    */
   senzaZona?: readonly string[];
+  /**
+   * Le scelte che puo' fare anche chi non comanda (1.5.2): le altre, da un
+   * utente, tornano al predefinito. Manca = solo il predefinito.
+   */
+  perTutti?: readonly string[];
   /** Un esempio vero, che aiuta chi compila più di qualunque descrizione. */
   esempio?: string;
   /**

@@ -60,6 +60,7 @@
  */
 
 import { STILE } from "./stile";
+import { STILE_CREA } from "./stile-crea";
 import { PAGINE } from "./pagine";
 import { COPIONE } from "./copione";
 
@@ -76,6 +77,7 @@ export function paginaConsole(): string {
 <style>
 ` +
     STILE +
+    STILE_CREA +
     `
 </style>
 </head>

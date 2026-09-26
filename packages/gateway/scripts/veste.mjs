@@ -21,7 +21,8 @@ const ui = join(import.meta.dirname, "..", "..", "ui", "src");
 const TIPI = { ".css": "text/css; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".woff2": "font/woff2" };
 
 const file = {};
-for (const nome of ["daprod.css", "daprod-sfondo.js"]) file[nome] = readFileSync(join(ui, nome));
+// 1.5.2: anche il dado delle idee, per Crea della console (vedi copione-crea.ts).
+for (const nome of ["daprod.css", "daprod-sfondo.js", "idee.js"]) file[nome] = readFileSync(join(ui, nome));
 for (const nome of readdirSync(join(ui, "fonts"))) {
   if (extname(nome) === ".woff2") file["fonts/" + nome] = readFileSync(join(ui, "fonts", nome));
 }

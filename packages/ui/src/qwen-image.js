@@ -31,18 +31,19 @@
  * il modello e' stato provato dai suoi autori, e quello che Cammo si aspetta
  * («lo standard e' a 40 step»). Fino alla 1.4.4 erano 25.
  *
- * Con la LoRA turbo bastano **5 passi** (dalla 1.4.5): la Viggle Turbo v0.2,
- * distillata sul programma a 5 passi e convertita per ComfyUI, attaccata da
- * `LoraLoaderModelOnly` a forza 1. Prima c'era la v0.1 a 4 passi, e Cammo ha
- * chiesto questa: la v0.2 e' molto piu' pulita, al costo di un passo. Si puo'
- * salire fino a 10 per un po' di dettaglio in piu'.
+ * **La strada veloce e' a 8 passi** (dalla 1.5.2): «rimettiamo anche qwen
+ * 8step, ma usiamo viggle la versione nuova … comunque 8 e 40 step». E' la
+ * Viggle Turbo v0.2.1, distillata sul programma a 6 passi (1 / 0,9375 /
+ * 0,875 / 0,75 / 0,5 / 0,25), attaccata da `LoraLoaderModelOnly` a forza 1.
+ * La storia: la 1.4.4 aveva la v0.1 a 4 passi, la 1.4.5 la v0.2 a 5, la 1.4.9
+ * l'aveva tolta dal telefono, e la 1.5.2 la rimette con la versione nuova.
  *
- * **Il turbo si campiona coi sigma suoi**, non con il programma «simple»: la
- * LoRA e' stata distillata su 1 / 0,875 / 0,75 / 0,5 / 0,25, e con altri punti
- * sporca. Quindi nel turbo niente KSampler: `ManualSigmas` coi punti esatti e
- * `SamplerCustomAdvanced` (euler, senza CFG). Con piu' di 5 passi la stessa
- * curva si ricampiona piu' fitta (`sigmiTurbo`). Le barre di avanzamento
- * leggono anche lui: manda gli stessi «progress» del KSampler.
+ * **Il turbo si campiona coi sigma suoi**, non con il programma «simple»: con
+ * altri punti sporca. Quindi nel turbo niente KSampler: `ManualSigmas` e
+ * `SamplerCustomAdvanced` (euler, senza CFG). A 8 passi la stessa curva a 6
+ * punti si ricampiona piu' fitta (`sigmiTurbo`): i punti della distillazione
+ * restano gli estremi, e i due in piu' cadono fra quelli. Le barre di
+ * avanzamento leggono anche lui: manda gli stessi «progress» del KSampler.
  *
  * ⚠ **Niente backtick in questo file**: e' servito com'e' alle pagine, e le
  * pagine della console lo leggono anche come testo.
@@ -53,21 +54,22 @@ export const QWEN21 = {
   dit: "qwen-image-2.1-Q4_K_M.gguf",
   txt: "qwen3vl_8b_w4a8.safetensors",
   vae: "qwen_image_2.1_vae_bf16.safetensors",
-  turbo: "Qwen-Image-2.1-viggle-turbo-v0.2-5step-lora-r256_comfy.safetensors",
+  turbo: "Qwen-Image-2.1-viggle-turbo-v0.2.1-6step-lora-r256.safetensors",
   /** Gli id del catalogo, per chiedere alla suite se ci sono gia'. */
   catalogo: ["qwen21-q4km", "qwen21-text-encoder", "qwen21-vae"],
-  catalogoTurbo: ["qwen21-q4km", "qwen21-text-encoder", "qwen21-vae", "qwen21-turbo-5step"],
+  catalogoTurbo: ["qwen21-q4km", "qwen21-text-encoder", "qwen21-vae", "qwen21-turbo-v021"],
   /** L'id del catalogo della turbo, per farla scaricare quando manca. */
-  idTurbo: "qwen21-turbo-5step",
+  idTurbo: "qwen21-turbo-v021",
   /**
-   * Le turbo che vanno bene lo stesso se la 5 passi non c'e' ancora, dalla
-   * 1.4.7, coi sigma su cui sono state distillate. Vedi `lora-presenti.js`.
+   * Le turbo che vanno bene lo stesso se la v0.2.1 non c'e' ancora, coi sigma
+   * su cui sono state distillate. Vedi `lora-presenti.js`.
    *
-   * Sono le 4 passi della v0.1 che la 1.4.4 scaricava: chi aveva gia' la suite
-   * ce l'ha sul disco, e la 1.4.5 chiedeva la 5 passi al motore anche prima che
-   * arrivasse. Il motore rispondeva «value_not_in_list» e la foto non partiva.
+   * Prima la v0.2 a 5 passi (la 1.4.5-1.4.8 la scaricava), poi le 4 passi della
+   * v0.1 che scaricava la 1.4.4: chi aveva gia' la suite ne ha una sul disco,
+   * e la foto parte mentre la nuova arriva.
    */
   riserveTurbo: [
+    { file: "Qwen-Image-2.1-viggle-turbo-v0.2-5step-lora-r256_comfy.safetensors", sigmi: "1, 0.875, 0.75, 0.5, 0.25, 0" },
     { file: "Qwen-Image-2.1-viggle-turbo-4step-r64-comfyui-T8.safetensors", sigmi: "1, 0.75, 0.5, 0.25, 0" },
     { file: "Qwen-Image-2.1-viggle-turbo-4step-lora-r64.safetensors", sigmi: "1, 0.75, 0.5, 0.25, 0" },
   ],
@@ -76,7 +78,7 @@ export const QWEN21 = {
 /** Quanti passi, per strada: il minimo, il massimo, e quello che parte. */
 export const PASSI = {
   standard: { min: 20, max: 50, valore: 40 },
-  turbo: { min: 5, max: 10, valore: 5 },
+  turbo: { min: 6, max: 12, valore: 8 },
 };
 
 /** Qwen-Image 2.1 vuole misure multiple di 32: 16 di compressione, 2x2 per casella. */
@@ -109,11 +111,11 @@ function caricatori(turbo) {
 /** Il modello da dare al campionatore: quello nudo, o quello con la turbo. */
 const modello = (turbo) => (turbo ? ["20", 0] : ["1", 0]);
 
-/** I punti del turbo, quelli su cui e' stata distillata la LoRA di Viggle. */
-const SIGMI_TURBO = [1, 0.875, 0.75, 0.5, 0.25];
+/** I punti della v0.2.1, quelli su cui Viggle l'ha distillata (6 passi). */
+const SIGMI_TURBO = [1, 0.9375, 0.875, 0.75, 0.5, 0.25];
 
 /**
- * I sigma per `passi` passi, sulla curva del turbo: a 5 sono esattamente i
+ * I sigma per `passi` passi, sulla curva del turbo: a 6 sono esattamente i
  * suoi, con piu' passi si prendono piu' punti sulla stessa spezzata. Lo zero in
  * fondo e' la fine del campionamento, e non conta come passo.
  */

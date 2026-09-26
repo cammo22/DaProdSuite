@@ -280,16 +280,18 @@ export const MODELLI = {
     turbo: false,
   },
   /**
-   * Lo stesso modello con la LoRA turbo: 5 passi invece di 40.
+   * Lo stesso modello con la LoRA veloce: 8 passi invece di 40.
    *
-   * Si può salire fino a 10 per un po' di dettaglio. Dalla 1.4.5 è la Viggle
-   * Turbo v0.2 a 5 passi, al posto della v0.1 a 4 (vedi `manifest/models.json`).
+   * Dalla 1.5.2 è la Viggle Turbo v0.2.1 (distillata a 6 passi, campionata a
+   * 8): «rimettiamo anche qwen 8step, ma usiamo viggle la versione nuova».
+   * Prima la v0.2 a 5 passi, e prima ancora la v0.1 a 4 (vedi
+   * `manifest/models.json`). Si va da 6 a 12 passi.
    */
   "qwen21-turbo": {
     ...QWEN_COMUNE,
     id: "qwen21-turbo",
-    nome: "Qwen-Image 2.1 Turbo",
-    riga: "Lo stesso, in 5 passi: otto volte più veloce, 1,3 GB in più.",
+    nome: "Qwen-Image 2.1 Veloce",
+    riga: "Lo stesso, in 8 passi: cinque volte più veloce, 1,3 GB in più.",
     catalogo: QWEN21.catalogoTurbo,
     step: PASSI.turbo,
     turbo: true,

@@ -70,15 +70,19 @@ const PROMPT_MAX = 2000;
 export const PREDEFINITO_IMMAGINI = "qwen21";
 
 /**
- * ⚠ **Il Turbo non si chiede più da fuori**, dalla 1.4.9. Chiesto il 25
- * settembre 2026: «usiamo il modello standard, togliamo i lora, solo quello
- * standard va bene». Il Turbo era Qwen con una LoRA da 5 passi sopra, ed è
- * quella LoRA che dava l'errore «not in list» quando sul computer ce n'era
- * un'altra. Sulla scheda del PC resta, per chi ci sta davanti.
+ * ⚠ **Il veloce torna, dalla 1.5.2**: «rimettiamo anche qwen 8step, ma usiamo
+ * viggle la versione nuova … comunque 8 e 40 step». Era uscito nella 1.4.9
+ * («togliamo i lora») perché la LoRA mancava sul disco e dava «not in list»;
+ * adesso se manca si usa una riserva e la nuova si scarica (lora-presenti.js),
+ * e se manca il resto lo si dice in italiano prima di partire.
+ *
+ * `perTutti` (1.5.2): i modelli che può scegliere anche chi non comanda. Gli
+ * altri, da un utente, tornano al predefinito (vedi `eseguiAzione`).
  */
 const MODELLI_FOTO = {
   predefinito: PREDEFINITO_IMMAGINI,
-  scelte: ["anima", "anima2", "qwen21"],
+  scelte: ["qwen21", "qwen21-turbo", "anima", "anima2"],
+  perTutti: ["qwen21", "qwen21-turbo"],
   /**
    * ⚠ **Solo i nomi.** Chiesto il 7 settembre 2026: «togli la scritta un
    * minuto e mezzo da LLaDA-Image, lascia solo i nomi, anche con gli altri
@@ -90,9 +94,10 @@ const MODELLI_FOTO = {
    * fare si impara usandolo; il nome serve a ritrovarlo.
    */
   etichette: {
+    qwen21: "Qwen-Image 2.1 · Fine (40 passi)",
+    "qwen21-turbo": "Qwen-Image 2.1 · Veloce (8 passi)",
     anima: "Anima",
     anima2: "Anima v2",
-    qwen21: "Qwen-Image 2.1",
   },
 } as const;
 
@@ -126,14 +131,16 @@ const MODELLI_FOTO = {
  */
 const MODELLI_MODIFICA = {
   predefinito: PREDEFINITO_IMMAGINI,
-  scelte: ["anima", "anima2", "qwen21"],
+  scelte: ["qwen21", "qwen21-turbo", "anima", "anima2"],
+  perTutti: ["qwen21", "qwen21-turbo"],
   // Solo i nomi, come per la generazione. Chi non sa usare la zona lo dice il
   // modulo quando lo scegli, che è il momento in cui serve saperlo: vedi
   // `senzaZona` qui sotto.
   etichette: {
+    qwen21: "Qwen-Image 2.1 · Fine (40 passi)",
+    "qwen21-turbo": "Qwen-Image 2.1 · Veloce (8 passi)",
     anima: "Anima",
     anima2: "Anima v2",
-    qwen21: "Qwen-Image 2.1",
   },
 } as const;
 
@@ -173,6 +180,14 @@ const MODELLI_MUSICA = {
    * YuE2 è la seconda voce, non quella che parte da sola.
    */
   scelte: ["ace-turbo", "ace-xl-turbo", "yue2", "yue2-partitura"],
+  /**
+   * ⚠ **YuE2 per tutti, dalla 1.5.2.** «Ridisegniamola pensando solo che deve
+   * funzionare bene col nuovo Qwen Image 2.1 e YuE». In Crea il motore lo
+   * sceglie la pagina: col testo scritto YuE2 (canta le tue parole), senza
+   * ACE-Step XL (il testo se lo inventa). Il predefinito resta ACE-Step XL,
+   * che parte anche senza testo.
+   */
+  perTutti: ["ace-xl-turbo", "yue2"],
   etichette: {
     "ace-turbo": "ACE-Step Turbo",
     "ace-xl-turbo": "ACE-Step XL",
@@ -201,6 +216,8 @@ function campoModello(quali: {
   readonly predefinito: string;
   /** Chi, fra questi, non sa usare una zona dipinta. Vedi `senzaZona` in tipi.ts. */
   readonly senzaZona?: readonly string[];
+  /** Quelli che puo' scegliere anche chi non comanda (1.5.2). */
+  readonly perTutti?: readonly string[];
 }) {
   return {
     nome: "modello",
@@ -212,6 +229,7 @@ function campoModello(quali: {
     etichette: quali.etichette,
     predefinito: quali.predefinito,
     ...(quali.senzaZona ? { senzaZona: quali.senzaZona } : {}),
+    ...(quali.perTutti ? { perTutti: quali.perTutti } : {}),
   } as const;
 }
 
