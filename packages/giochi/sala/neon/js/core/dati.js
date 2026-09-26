@@ -401,6 +401,15 @@ const STORIA = {
 
 // ============================================================ NOVITÀ (mostrate in gioco al primo avvio di una versione)
 const NOVITA = {
+  "v2.1.5": {
+    titolo: "Finisci quando vuoi, e la Radio parla anche sul telefono",
+    punti: [
+      "Nella sala DaProd c'è il tasto 🏁: finisci la partita quando vuoi e riscatti il punteggio. Fino a 15 € se smetti prima, da 20 a 30 € se fai eruttare il Vesuvio.",
+      "Il riquadro dell'arena sul telefono si abbassa del tutto con ▾, e si rialza dalla linguetta ⚔️ da qualunque scheda.",
+      "In Merceria vedi subito cosa indossi, slot per slot; nel Ferro Vecchio i pezzi montati hanno la spunta.",
+      "La Radio chiusa non lascia più un pezzo in alto, e nell'app DaProd Suite per Android parla con la voce del telefono."
+    ]
+  },
   "v2.1.4": {
     titolo: "Nella sala DaProd, l'eruzione chiude la partita",
     punti: [

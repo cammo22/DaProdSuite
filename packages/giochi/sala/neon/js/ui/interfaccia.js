@@ -185,21 +185,30 @@ function htmlMerceria() {
     return `<div class="oggetto" style="--c:${r.col}" data-k="o${id}">
       <div class="o-ico">${o.i}</div><div class="o-rar">${r.n}</div><b>${esc(o.n)}</b>
       <small>${SET[o.set].i} ${SET[o.set].n} · ${NOME_SLOT[o.slot]}</small><p>${esc(o.d)}</p>
-      ${p ? `<span class="r-fatto">✓ nella borsa (liv. ${p.lv})</span>` : btnCosto("compraOgg", { id }, costoOggetto(o))}
+      ${p ? `<span class="r-fatto">${p.eq ? "✓ INDOSSATO" : "✓ nella borsa"} (liv. ${p.lv})</span>` : btnCosto("compraOgg", { id }, costoOggetto(o))}
     </div>`;
   }).join("");
-  const borsa = S.inv.length ? S.inv.map(it => {
+  // 2.1.5: «non si capisce bene cosa si ha equipaggiato e cosa no». Gli
+  // indossati stanno in cima, con l'etichetta; sopra la borsa, uno slot per riga.
+  const ordinati = S.inv.slice().sort((a, b) => (b.eq ? 1 : 0) - (a.eq ? 1 : 0));
+  const indossati = Object.keys(NOME_SLOT).map(sl => {
+    const it = S.inv.find(x => x.eq && oggetto(x.id).slot === sl), o = it && oggetto(it.id);
+    return `<div class="slot-eq ${o ? "pieno" : ""}" ${o ? `style="--c:${RARITA[o.rar].col}"` : ""}><small>${NOME_SLOT[sl]}</small>` +
+      (o ? `<span>${o.i}</span><b>${esc(o.n)}</b>` : `<span>·</span><b>vuoto</b>`) + `</div>`;
+  }).join("");
+  const borsa = S.inv.length ? ordinati.map(it => {
     const o = oggetto(it.id), r = RARITA[o.rar], c = costoLivOggetto(o, it.lv);
     return `<div class="riga ${it.eq ? "eq" : ""}" data-k="inv${it.id}" style="--c:${r.col}">
       <div class="r-ico">${o.i}</div>
-      <div class="r-info"><b>${esc(o.n)} <em>liv. ${it.lv}</em></b><small>${SET[o.set].n} · ${NOME_SLOT[o.slot]} · +${(it.lv - 1) * 10}% danno se indossato</small></div>
+      <div class="r-info"><b>${it.eq ? `<span class="indossato">✓ INDOSSATO</span> ` : ""}${esc(o.n)} <em>liv. ${it.lv}</em></b><small>${SET[o.set].n} · ${NOME_SLOT[o.slot]} · +${(it.lv - 1) * 10}% danno se indossato</small></div>
       <button class="btn ${it.eq ? "" : "menta"}" data-azione="equip" data-id="${it.id}">${it.eq ? "Togli" : "Indossa"}</button>
       ${btnCosto("livOgg", { id: it.id }, c, "rottami", "liv. " + (it.lv + 1))}
     </div>`;
   }).join("") : `<div class="nota">La borsa è vuota: compra qualcosa in vetrina o apri un pacco misterioso.</div>`;
   const lab = S.lab.lv ? `Stampa un Biglietto ogni <b>${fmtTempo(1 / velocitaLab())}</b>` : "Non ancora costruito";
   return titolo("🛍️", "La Merceria di Pacco", "Oggetti con le lire, livelli con i rottami. Due pezzi dello stesso set accendono una sinergia, tre la potenziano.") +
-    `<div class="lab carta2" data-k="lab"><div class="b-ico">🏭</div><div class="b-info"><b>Laboratorio Biglietti <em>liv. ${S.lab.lv}</em></b><small>${lab}</small><div class="barretta"><i style="width:${(S.lab.prog * 100).toFixed(1)}%"></i></div></div>${btnCosto("lab", {}, costoLab(), "lire", S.lab.lv ? "potenzia" : "costruisci")}</div>
+    `<h3>Indossi adesso</h3><div class="slot-griglia">${indossati}</div>
+    <div class="lab carta2" data-k="lab"><div class="b-ico">🏭</div><div class="b-info"><b>Laboratorio Biglietti <em>liv. ${S.lab.lv}</em></b><small>${lab}</small><div class="barretta"><i style="width:${(S.lab.prog * 100).toFixed(1)}%"></i></div></div>${btnCosto("lab", {}, costoLab(), "lire", S.lab.lv ? "potenzia" : "costruisci")}</div>
     <div class="merc-azioni">
       ${btnCosto("rinnova", {}, costoRinnovo(), "lire", "🎲 rinnova vetrina")}
       ${btnCosto("pacco", {}, 3, "biglietti", "🎁 pacco misterioso")}
@@ -235,9 +244,11 @@ function htmlGiochi() {
 
 // ------------------------------------------------ ROBOT
 function htmlRobot() {
-  const gruppo = (campo, tit) => `<div class="pezzi"><h4>${tit}</h4><div class="opzioni">${listaPezzi(campo).map(p => {
+  // 2.1.5: accanto al titolo, quello che e' montato adesso.
+  const montato = (campo) => { const p = listaPezzi(campo).find(x => x.id === S.rob[campo]); return p ? p.n : "niente"; };
+  const gruppo = (campo, tit) => `<div class="pezzi"><h4>${tit} <em class="montato">montato: ${esc(montato(campo))}</em></h4><div class="opzioni">${listaPezzi(campo).map(p => {
     const sb = pezzoSbloccato(campo, p.id), sel = S.rob[campo] === p.id;
-    return `<button class="chip ${sel ? "on" : ""} ${sb ? "" : "lucchetto"}" data-azione="pezzo" data-campo="${campo}" data-v="${p.id}">${sb ? "" : "🔒 "}${esc(p.n)}${sb || !p.costo ? "" : ` · ${p.costo} ⚙️`}</button>`;
+    return `<button class="chip ${sel ? "on" : ""} ${sb ? "" : "lucchetto"}" data-azione="pezzo" data-campo="${campo}" data-v="${p.id}">${sel ? "✓ " : sb ? "" : "🔒 "}${esc(p.n)}${sb || !p.costo ? "" : ` · ${p.costo} ⚙️`}</button>`;
   }).join("")}</div></div>`;
   const tinte = (campo, tit) => `<div class="pezzi"><h4>${tit}</h4><div class="tinte">${TINTE.map(h => `<button class="tinta ${S.rob[campo] === "#" + h ? "on" : ""}" style="background:#${h}" data-azione="tinta" data-campo="${campo}" data-v="#${h}" aria-label="#${h}"></button>`).join("")}</div></div>`;
   const tel = TELAI.find(x => x.id === S.rob.telaio) || TELAI[0];
@@ -399,6 +410,15 @@ function radio(testo, opz) {
 // «Mettiamo un TTS che parla»: la sintesi vocale del telefono o del computer,
 // in italiano, niente da scaricare. Se il sistema non ce l'ha, la Radio resta
 // scritta come prima. Si spegne nelle Opzioni («Voce della Radio»).
+// ⚠ 2.1.5: dentro l'app Android della DaProd Suite la sintesi del browser non
+// c'e' (la WebView non ce l'ha): «sulla suite non sento i dialoghi con il TTS».
+// L'app da' la voce di Android col ponte DaProdApp.parla, che arriva anche qui
+// dentro la cornice della sala. Si usa quella quando il browser non ne ha una.
+function ponteApp() {
+  try { if (window.DaProdApp && window.DaProdApp.parla) return window.DaProdApp; } catch (e) { /* niente */ }
+  try { if (window.top && window.top.DaProdApp && window.top.DaProdApp.parla) return window.top.DaProdApp; } catch (e) { /* niente */ }
+  return null;
+}
 const Voce = (() => {
   const ok = typeof window.speechSynthesis !== "undefined" && typeof window.SpeechSynthesisUtterance !== "undefined";
   let voce = null;
@@ -411,7 +431,13 @@ const Voce = (() => {
   if (ok) { scegli(); speechSynthesis.onvoiceschanged = scegli; }
   return {
     parla(testo, chi, fine) {
-      if (!ok || !S.opz.voce) return false;
+      if (!S.opz.voce) return false;
+      const tono = chi === "PARTENOPE" ? 1.15 : /BOSS|VESUVIO/i.test(chi) ? 0.75 : 1;
+      if (!ok || !voce) {
+        const app = ponteApp();
+        if (app) { try { app.parla(String(testo), tono, 1.05); return true; } catch (e) { /* niente */ } }
+      }
+      if (!ok) return false;
       try {
         speechSynthesis.cancel();
         const u = new SpeechSynthesisUtterance(testo);
@@ -426,7 +452,10 @@ const Voce = (() => {
         return true;
       } catch (e) { return false; }
     },
-    zitta() { if (ok) try { speechSynthesis.cancel(); } catch (e) { /* niente */ } }
+    zitta() {
+      if (ok) try { speechSynthesis.cancel(); } catch (e) { /* niente */ }
+      const app = ponteApp(); if (app && app.zitta) try { app.zitta(); } catch (e) { /* niente */ }
+    }
   };
 })();
 
@@ -588,11 +617,15 @@ function mettiPip() {
   a.style.left = limita(x, 4, innerWidth - w - 4) + "px";
   a.style.top = limita(y, 4, innerHeight - h - 70) + "px";
 }
+function abbassaPip(giu) {
+  document.body.classList.toggle("pip-giu", !!giu);
+  try { localStorage.setItem("np.pipGiu", giu ? "1" : "0"); } catch (e) { /* va bene */ }
+}
 function legaPip() {
   const a = $("colArena"), m = $("pipManiglia");
   let drag = null;
   m.addEventListener("pointerdown", e => {
-    if (e.target.closest("#pipApri")) return;
+    if (e.target.closest("#pipApri") || e.target.closest("#pipGiu")) return;
     drag = { x: e.clientX - a.offsetLeft, y: e.clientY - a.offsetTop };
     m.setPointerCapture(e.pointerId);
   });
@@ -607,7 +640,11 @@ function legaPip() {
   };
   m.addEventListener("pointerup", fine);
   m.addEventListener("pointercancel", fine);
-  $("pipApri").onclick = () => vista("arena");
+  $("pipApri").onclick = () => { abbassaPip(false); vista("arena"); };
+  // 2.1.5: giu' del tutto, e su al volo dalla linguetta. Si ricorda.
+  $("pipGiu").onclick = (e) => { e.stopPropagation(); abbassaPip(true); };
+  $("pipSu").onclick = () => abbassaPip(false);
+  try { if (localStorage.getItem("np.pipGiu") === "1") document.body.classList.add("pip-giu"); } catch (e) { /* va bene */ }
   addEventListener("resize", () => { if (document.body.classList.contains("vista-pannello")) mettiPip(); });
 }
 
