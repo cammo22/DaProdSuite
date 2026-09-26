@@ -193,6 +193,13 @@ export const PAGINE = `<header>
 
     <div class="quadrati" id="numeri"></div>
 
+    <!--
+      1.5.2: la sala giochi in Casa. Per chi gioca: il suo conto, il livello
+      col premio, le partite aperte, i premi della Banca. Per chi decide, sotto
+      allo stato del computer: la sala dall'alto. Vedi copione-casa.ts.
+    -->
+    <div id="casa-sala"></div>
+
     <h3 id="titolo-tessere">Cosa vuoi fare</h3>
     <div class="tastoni" id="tessere"></div>
 

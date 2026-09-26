@@ -107,13 +107,16 @@ export const COPIONE = `
    * Referer. Letto una volta, si cancella dall'indirizzo.
    */
   var token = "";
+  /** 1.5.2: la pagina da aprire subito («va=banca»), quando arriva dalla Casa della console. */
+  var vaSubito = "";
   (function dallIndirizzo() {
     try {
       var f = new URLSearchParams((location.hash || "").replace(/^#/, ""));
+      vaSubito = f.get("va") || "";
       var t = f.get("t");
       if (t) { token = t; localStorage.setItem("daprod.token", t); }
       else { token = localStorage.getItem("daprod.token") || ""; }
-      if (t) history.replaceState(null, "", location.pathname + location.search);
+      if (t || vaSubito) history.replaceState(null, "", location.pathname + location.search);
     } catch (e) { token = ""; }
   })();
 
@@ -3964,6 +3967,7 @@ export const COPIONE = `
     // Al posto del pannello «Ti hanno mandato… dalla cassa», il resoconto
     // dall'ultima volta (portafoglio-copione.ts): dentro c'e' anche il regalo.
     mostraResoconto();
+    if (vaSubito) vaiA(vaSubito);
   }).catch(function (errore) {
     document.querySelector("main").innerHTML =
       "<div class=\\"niente\\">" + sicuro(errore.message) + "</div>";
