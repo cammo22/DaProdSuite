@@ -101,7 +101,9 @@ export const COPIONE_PRODUZIONE = `
     for (var a of inOrdine(azioni.filter(function (x) { return x.coda && !(PRODUZIONI[x.id] || {}).dentroA; }))) {
       casella.append(tastoneAzione(a));
     }
-    casella.append(tastoneGiochi());
+    // 1.5.2: la sala giochi in Casa ha la sua carta (copione-casa.ts), col
+    // conto, il livello e i giochi: la tessera sarebbe un doppione.
+    if (!$("casa-sala")) casella.append(tastoneGiochi());
   }
 
   /**

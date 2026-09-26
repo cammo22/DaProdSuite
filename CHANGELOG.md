@@ -10,6 +10,34 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ---
 
+## 1.5.3 — La Casa nuova e i modellini che si girano
+
+> «Questa schermata: togliamo il Matrix dietro, lasciamo la topbar così, ma
+> rivediamo tutto da zero. Per gli utenti deve tenere traccia della sala
+> giochi; per gli admin dev'essere la postazione di gestione del PC e della
+> sala insieme, più deve poter usare la suite per creare i contenuti.»
+
+- **Via la pioggia Matrix dalla console.** La topbar resta com'è. La sala
+  giochi la sua pioggia la tiene.
+- **In Casa c'è la tua sala giochi.** Si vedono:
+  - quanto hai in tasca, in lire e in euro;
+  - il livello, col premio che si prende da lì con un tocco;
+  - le partite aperte con dentro dei soldi;
+  - i premi della Banca che stanno per aprirsi;
+  - le facce dei giochi, che si toccano per entrare.
+- **Chi decide ha la postazione.** Sotto allo stato del computer c'è la sala
+  dall'alto: quante lire ci sono nei portafogli e dentro i giochi, la riserva,
+  gli incassi da controllare, e i tasti per la Banca, i giocatori e la fila
+  della sala. Sotto ancora c'è Crea, con video, voce e 3D.
+- **I modellini 3D si girano col dito.** In galleria un modellino ha il
+  bollino ▲ 3D. Toccandolo si apre il visore: gira da solo, si gira col dito e
+  ci si avvicina con due dita.
+- **Via le anteprime rotte.** Il quadrato di macchie grigie era la texture che
+  TRELLIS.2 salva accanto al modellino, e la galleria la prendeva per una foto.
+  Adesso non entra più in libreria, e la faccia del modellino è la sua foto
+  vera, fatta dal visore della scheda 3D (anche per i modellini fatti sul
+  computer).
+
 ## 1.5.2 — Crea, rifatto da zero
 
 > «Vorrei una cosa facile da capire, più intuitiva; togliamo anche i prompt e

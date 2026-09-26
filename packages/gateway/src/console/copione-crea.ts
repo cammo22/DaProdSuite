@@ -73,7 +73,7 @@ export const COPIONE_CREA = `
 
   /**
    * I generi a pastiglie: il nome che si legge, e quello che capisce il
-   * modello (in inglese, piccolo e preciso: il genere largo e' il primo slop
+   * modello (in inglese, piccolo e preciso: il genere largo è il primo slop
    * della musica, vedi idee.js).
    */
   var GENERI = [
@@ -103,7 +103,7 @@ export const COPIONE_CREA = `
   }
 
   function sicuroC(x) {
-    return String(x == null ? "" : x).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    return String(x == null ? "" : x).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").split(String.fromCharCode(34)).join("&quot;");
   }
 
   function htmlImmagine() {
@@ -243,7 +243,7 @@ export const COPIONE_CREA = `
     } catch (e) {
       crea.foto = null;
       disegnaCrea();
-      avvisa("La foto non e' arrivata: " + (e.message || e), "male");
+      avvisa("La foto non è arrivata: " + (e.message || e), "male");
     }
   }
 

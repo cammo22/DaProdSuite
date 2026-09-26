@@ -61,7 +61,13 @@ try {
   process.exit(1);
 }
 rmSync(join(SALA, "three"), { recursive: true, force: true });
-for (const d of ["build/three.module.js", "examples/jsm/postprocessing", "examples/jsm/shaders", "examples/jsm/environments", "LICENSE"]) {
+// 1.5.2: anche il caricatore dei .glb e i comandi per girarli, per il visore
+// 3D della galleria della console (copione-galleria.ts).
+for (const d of [
+  "build/three.module.js", "examples/jsm/postprocessing", "examples/jsm/shaders", "examples/jsm/environments",
+  "examples/jsm/loaders/GLTFLoader.js", "examples/jsm/controls/OrbitControls.js", "examples/jsm/utils/BufferGeometryUtils.js",
+  "LICENSE",
+]) {
   cpSync(join(three, d), join(SALA, "three", d), { recursive: true });
 }
 console.log("  three ← " + three);

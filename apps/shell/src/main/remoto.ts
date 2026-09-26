@@ -675,7 +675,19 @@ const fornitoreLibreria: FornitoreLibreria = {
         // chiederlo: chiedere un'anteprima che non esiste vuol dire dodici 404
         // a ogni schermata.
         anteprima: puoAvereAnteprima(e),
+        // 1.5.3: la foto di un modellino 3D porta con se' il suo .glb, che la
+        // galleria apre in un visore che si gira col dito.
+        modello3d: libreria.modello3dDi(e) !== null,
       }));
+  },
+
+  /** Il .glb di un modellino, con lo stesso permesso della sua foto (1.5.3). */
+  modello3d(id, chi) {
+    const elemento = libreria.trova(id);
+    if (!elemento) return null;
+    const suo = libreria.padrone(elemento) === chi || chi === PADRONE_DI_CASA || decide(chi);
+    if (!suo && !libreria.inBacheca(elemento)) return null;
+    return libreria.modello3dDi(elemento);
   },
 
   /**

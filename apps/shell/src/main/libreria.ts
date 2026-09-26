@@ -955,6 +955,30 @@ class Libreria extends EventEmitter {
     this.segnalaNovita();
   }
 
+  /**
+   * Il file .glb del modellino di cui questa foto e' la faccia (1.5.3), o
+   * null. La foto lo dice nei suoi metadati (`modello3d`: nome e sottocartella
+   * scritti dalla scheda 3D); il file sta nei risultati di chi ha acceso il
+   * motore, che puo' essere Foto o Musica, quindi si cerca in tutti.
+   */
+  modello3dDi(elemento: ElementoLibreria): { percorso: string; bytes: number } | null {
+    const m = elemento.meta?.["modello3d"] as { file?: unknown; cartella?: unknown } | undefined;
+    if (!m || typeof m.file !== "string") return null;
+    const file = basename(m.file);
+    const cartella = typeof m.cartella === "string" ? m.cartella.replace(/\.\./g, "") : "";
+    if (!/\.glb$/i.test(file)) return null;
+    for (const app of APP_IDS) {
+      const percorso = join(OUTPUT_DIR, app, cartella, file);
+      try {
+        const st = statSync(percorso);
+        if (st.isFile()) return { percorso, bytes: st.size };
+      } catch {
+        /* non e' qui */
+      }
+    }
+    return null;
+  }
+
   /** Cancella un elemento con i suoi metadati e la sua copertina. */
   elimina(id: string): boolean {
     const elemento = this.trova(id);
@@ -1065,6 +1089,15 @@ function raccogli(
     // brano che accompagnano: né gli uni né le altre sono elementi a sé.
     if (voce.name.endsWith(".json")) continue;
     if (voce.name.endsWith(SUFFISSO_COPERTINA)) continue;
+    /**
+     * ⚠ **La texture di un modellino 3D non e' una foto** (1.5.3). TRELLIS.2 la
+     * salva accanto al .glb («…_colore_00001_.png»): un quadrato di macchie
+     * grigie da 15 MB che la galleria mostrava come se fosse il risultato
+     * («i modelli 3D si vedono buggati»), e che la fila consegnava a chi aveva
+     * chiesto il modellino. La faccia vera e' la foto del modellino, fatta dal
+     * visore (vedi `salvaAnteprima`).
+     */
+    if (/_colore_\d+_?\.(png|jpe?g|webp)$/i.test(voce.name)) continue;
 
     const tipo = TIPI[extname(voce.name).toLowerCase()];
     if (!tipo) continue;

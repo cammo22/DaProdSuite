@@ -674,6 +674,8 @@ export const COPIONE_BASE = `
     }
     window.scrollTo({ top: 0 });
     if (quale === "galleria") leggiGalleria();
+    // 1.5.2: la sala giochi in Casa (copione-casa.ts).
+    if (quale === "casa" && typeof leggiCasaSala === "function") void leggiCasaSala();
     if (quale === "daprod") leggiBacheca();
     if (quale === "stili") leggiStili();
     // Entrando nella scheda si guarda se e' arrivato qualcosa: e' il momento in

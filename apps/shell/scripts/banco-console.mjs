@@ -109,6 +109,16 @@ const voci = [
       "Con che modello": "Qwen-Image 2.1",
     },
   },
+  /**
+   * Un modellino 3D (1.5.2): la sua foto, e accanto il .glb che la galleria
+   * apre nel visore. Il .glb lo si da' con `BANCO_GLB` (un file qualunque);
+   * senza, la voce c'e' lo stesso e il visore dice che il file non c'e'.
+   */
+  {
+    id: "foto/modellino.png", nome: "modellino 3D · la vespa",
+    tipo: "immagine", app: "foto", file: "quadro.png", mime: "image/png", modello3d: true,
+    fatta: { "Il prompt": "una vespa rossa" },
+  },
   {
     id: "cinema/clip.mp4", nome: "una barca che entra in porto",
     tipo: "video", app: "cinema", file: "clip.mp4", mime: "video/mp4",
@@ -163,6 +173,7 @@ const comeEsce = (v, chi) => ({
   quantiCommenti: (parole.get(v.id) ?? []).length,
   tenuta: false,
   anteprima: v.tipo === "immagine",
+  modello3d: Boolean(v.modello3d),
   didascalia: v.nome,
   /**
    * Com'e' stata fatta: quello che era stato chiesto, campo per campo.
@@ -189,6 +200,11 @@ const libreria = {
   anteprima: async (id) => {
     const v = voci.find((x) => x.id === id);
     return v && v.tipo === "immagine" ? join(cartella, v.file) : null;
+  },
+  modello3d: (id) => {
+    const v = voci.find((x) => x.id === id);
+    if (!v || !v.modello3d || !process.env.BANCO_GLB) return null;
+    return { percorso: process.env.BANCO_GLB, bytes: statSync(process.env.BANCO_GLB).size };
   },
   pubblica: (id, chi, si) => {
     if (si) inBacheca.add(id);

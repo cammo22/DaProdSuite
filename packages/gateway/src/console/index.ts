@@ -74,6 +74,8 @@ export function paginaConsole(): string {
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#08090d">
 <title>DaProd Suite</title>
+<!-- 1.5.2: three.js per il visore 3D della galleria, quello della sala giochi. -->
+<script type="importmap">{"imports":{"three":"/giochi/sala/three/build/three.module.js","three/addons/":"/giochi/sala/three/examples/jsm/"}}</script>
 <style>
 ` +
     STILE +

@@ -408,6 +408,8 @@ export interface VoceLibreria {
    * è esattamente quello che è stato chiesto di togliere.
    */
   anteprima?: boolean;
+  /** 1.5.2: questa foto e' la faccia di un modellino 3D, e il .glb c'e'. */
+  modello3d?: boolean;
   /** Un file caricato a mano da una persona, non generato dalla suite. */
   caricata?: boolean;
   /**
@@ -578,6 +580,8 @@ export interface FornitoreLibreria {
    * posto delle foto generate da chi comanda.
    */
   fileConcesso?(id: string): { percorso: string; nome: string; mime: string; bytes: number } | null;
+  /** Il .glb del modellino di cui la voce e' la foto (1.5.2), con lo stesso permesso del file. */
+  modello3d?(id: string, chi: string): { percorso: string; bytes: number } | null;
   anteprimaConcessa?(id: string): Promise<string | null>;
   /** Mette o toglie il mi piace di questa persona. Torna quanti sono adesso. */
   miPiace?(id: string, chi: string, mi: boolean): number | null;

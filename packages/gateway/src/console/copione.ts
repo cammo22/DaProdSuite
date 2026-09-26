@@ -16,6 +16,7 @@
 import { COPIONE_BASE } from "./copione-base";
 import { COPIONE_PRODUZIONE } from "./copione-produzione";
 import { COPIONE_CREA } from "./copione-crea";
+import { COPIONE_CASA } from "./copione-casa";
 import { COPIONE_LAVORI } from "./copione-lavori";
 import { COPIONE_GALLERIA } from "./copione-galleria";
 import { COPIONE_VISUAL } from "./copione-visual";
@@ -30,6 +31,7 @@ export const COPIONE = [
   COPIONE_BASE,
   COPIONE_PRODUZIONE,
   COPIONE_CREA,
+  COPIONE_CASA,
   COPIONE_LAVORI,
   COPIONE_GALLERIA,
   COPIONE_VISUAL,

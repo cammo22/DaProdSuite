@@ -336,7 +336,9 @@ export class Gateway {
       // La console web: una pagina sola, senza dati dentro. Il token se lo
       // procura lei accoppiandosi, come fa il telefono.
       if ((percorso === "/" || percorso === "/console") && req.method === "GET") {
-        this.pagina(res, vestita(paginaConsole()));
+        // 1.5.3: la console senza la pioggia Matrix dietro («togliamolo il
+        // matrix dietro, lasciamo la topbar così»). La sala giochi la tiene.
+        this.pagina(res, vestita(paginaConsole(), false));
         return;
       }
 
@@ -1482,6 +1484,15 @@ export class Gateway {
          * Visto in un browser vero il 26 agosto 2026, non leggendo il codice.
          */
         this.mandaConPezzi(req, res, percorsoFile, mimeDiUnImmagine(percorsoFile), 0);
+        return;
+      }
+
+      // 1.5.3: il .glb di un modellino, per il visore 3D della galleria.
+      const unModello = percorso.match(/^\/libreria\/modello\/(.+)$/);
+      if (unModello && (req.method === "GET" || req.method === "HEAD")) {
+        const m = this.libreria?.modello3d?.(decodeURIComponent(unModello[1] ?? ""), dispositivo.id) ?? null;
+        if (!m) return this.errore(res, 404, "Questo modellino non c'e'.");
+        this.mandaConPezzi(req, res, m.percorso, "model/gltf-binary", m.bytes);
         return;
       }
 
@@ -3141,12 +3152,13 @@ export class Gateway {
  * alla testa, cosi' arrivano dopo lo stile della pagina e ne cambiano i colori.
  * Vedi la rotta `/daprod/`.
  */
-function vestita(html: string): string {
+function vestita(html: string, conFondo = true): string {
   const v = "?v=" + VESTE_VERSIONE;
   return html.replace(
     "</head>",
     '<link rel="stylesheet" href="/daprod/daprod.css' + v + '">\n' +
-      '<script src="/daprod/daprod-sfondo.js' + v + '" data-effetti="pieni" defer></script>\n</head>',
+      (conFondo ? '<script src="/daprod/daprod-sfondo.js' + v + '" data-effetti="pieni" defer></script>\n' : "") +
+      "</head>",
   );
 }
 

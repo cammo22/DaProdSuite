@@ -577,6 +577,95 @@ export const COPIONE_GALLERIA = `
     });
   }
 
+  /**
+   * ⚠ **Il visore 3D** (1.5.3). Chiesto il 26 settembre 2026: «i modelli 3D
+   * non sono interagibili e si vedono buggati». In galleria c'era la texture
+   * del modellino (un quadrato di macchie) o la sua foto ferma. Adesso il .glb
+   * si apre qui: si gira col dito, si avvicina con due dita, e gira da solo
+   * finche' non lo si tocca.
+   *
+   * three.js e' quello della sala giochi (sotto /giochi/sala/three, vedi la
+   * «importmap» in index.ts): niente da scaricare da fuori, e funziona anche
+   * senza linea. Quando la lente si chiude il disegno si ferma e la memoria
+   * della scheda video si libera.
+   */
+  function apriVisore3D(palco, v) {
+    var box = document.createElement("div");
+    box.className = "visore3d";
+    var dice = document.createElement("div");
+    dice.className = "visore3d-dice";
+    dice.textContent = "Carico il modellino…";
+    box.append(dice);
+    palco.append(box);
+    Promise.all([
+      import("three"),
+      import("three/addons/loaders/GLTFLoader.js"),
+      import("three/addons/controls/OrbitControls.js"),
+      import("three/addons/environments/RoomEnvironment.js"),
+    ]).then(function (m) {
+      var THREE = m[0];
+      var renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      box.prepend(renderer.domElement);
+      var scena = new THREE.Scene();
+      var pmrem = new THREE.PMREMGenerator(renderer);
+      scena.environment = pmrem.fromScene(new m[3].RoomEnvironment(), 0.04).texture;
+      var camera = new THREE.PerspectiveCamera(35, 1, 0.01, 100);
+      var comandi = new m[2].OrbitControls(camera, renderer.domElement);
+      comandi.enableDamping = true;
+      comandi.autoRotate = true;
+      comandi.autoRotateSpeed = 1.6;
+      renderer.domElement.addEventListener("pointerdown", function () { comandi.autoRotate = false; });
+      function misura() {
+        var w = box.clientWidth || 320, h = box.clientHeight || 320;
+        renderer.setSize(w, h, false);
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
+      }
+      misura();
+      var ro = window.ResizeObserver ? new ResizeObserver(misura) : null;
+      if (ro) ro.observe(box);
+      new m[1].GLTFLoader().load("/libreria/modello/" + encodeURIComponent(v.id), function (gltf) {
+        var modello = gltf.scene;
+        var scatola = new THREE.Box3().setFromObject(modello);
+        var centro = scatola.getCenter(new THREE.Vector3());
+        var lato = scatola.getSize(new THREE.Vector3()).length() || 1;
+        modello.position.sub(centro);
+        scena.add(modello);
+        // Inquadrato intero, con un po' d'aria: la diagonale della scatola sta
+        // nel campo della camera, da tre quarti e un po' dall'alto.
+        var distanza = (lato / 2) / Math.tan((camera.fov * Math.PI) / 360) * 1.15;
+        camera.position.set(0.5, 0.32, 0.8).normalize().multiplyScalar(distanza);
+        camera.near = lato / 100;
+        camera.far = lato * 20;
+        camera.updateProjectionMatrix();
+        comandi.target.set(0, 0, 0);
+        comandi.minDistance = lato * 0.3;
+        comandi.maxDistance = lato * 4;
+        dice.textContent = "Giralo col dito, avvicinati con due";
+        setTimeout(function () { dice.classList.add("via"); }, 2500);
+      }, undefined, function () {
+        dice.textContent = "Il modellino non si apre: il file .glb non e' piu' sul computer.";
+      });
+      (function gira() {
+        if (!box.isConnected) {
+          if (ro) ro.disconnect();
+          comandi.dispose();
+          pmrem.dispose();
+          renderer.dispose();
+          return;
+        }
+        comandi.update();
+        renderer.render(scena, camera);
+        requestAnimationFrame(gira);
+      })();
+    }).catch(function (e) {
+      dice.textContent = "Il visore 3D non parte qui: " + (e && e.message ? e.message : e);
+    });
+  }
+
   /** L'indirizzo del file vero, e quello dell'anteprima. */
   function indirizzoDi(v) { return "/libreria/file/" + encodeURIComponent(v.id); }
   function anteprimaDi(v) { return "/libreria/anteprima/" + encodeURIComponent(v.id); }
@@ -652,7 +741,13 @@ export const COPIONE_GALLERIA = `
       vetro.append(senza);
     }
 
-    if (v.tipo === "video") {
+    if (v.modello3d) {
+      // 1.5.3: la foto di un modellino 3D; toccandola si gira.
+      var tred = document.createElement("span");
+      tred.className = "bollino tred";
+      tred.textContent = "\\u25B2 3D";
+      vetro.append(tred);
+    } else if (v.tipo === "video") {
       var play = document.createElement("span");
       play.className = "play";
       play.textContent = "\\u25B6";
@@ -899,7 +994,10 @@ export const COPIONE_GALLERIA = `
     var palco = document.createElement("div");
     palco.className = "palco";
 
-    if (v.tipo === "immagine") {
+    if (v.modello3d) {
+      // 1.5.3: «i modelli 3D non sono interagibili»: adesso si girano col dito.
+      apriVisore3D(palco, v);
+    } else if (v.tipo === "immagine") {
       var img = document.createElement("img");
       img.src = indirizzoDi(v);
       img.alt = v.nome;

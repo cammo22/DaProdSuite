@@ -291,10 +291,16 @@ async function vai() {
      * `.glb` non lo conosce: si salva la foto del modellino, con accanto dov'è
      * il file vero. Vedi «genera.modello» nel catalogo delle azioni.
      */
-    if (daFuori && suite?.libreria?.anteprima) {
+    /*
+     * ⚠ Dalla 1.5.3 la foto si salva **sempre**, anche per i modellini fatti
+     * qui sul computer: e' la faccia del modellino in galleria, e da li' il
+     * visore apre il .glb e lo fa girare col dito. Prima in galleria finiva
+     * solo la texture, un quadrato di macchie grigie.
+     */
+    if (suite?.libreria?.anteprima) {
       await new Promise((r) => setTimeout(r, 600));
       await suite.libreria.anteprima(v.fotografa(), {
-        titolo: daFuori,
+        titolo: daFuori || `modellino 3D · ${QUALITA[qualita].nome.toLowerCase()}`,
         cartella: "modellini",
         meta: { modello3d: { file: glb.filename, cartella: glb.subfolder, url: indirizzo(voce) }, qualita },
       });
