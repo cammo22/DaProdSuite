@@ -11,7 +11,7 @@ import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 
 const ui = join(import.meta.dirname, "..", "..", "..", "packages", "ui", "src");
-const { QWEN21, grafoQwenImmagine } = await import(pathToFileURL(join(ui, "qwen-image.js")).href);
+const { QWEN21, grafoQwenImmagine, grafoQwenModifica } = await import(pathToFileURL(join(ui, "qwen-image.js")).href);
 const { metteLeLoraCheCi, dimenticaLeLora, spiegaIlNo } = await import(pathToFileURL(join(ui, "lora-presenti.js")).href);
 
 let ok = 0;
@@ -110,6 +110,51 @@ console.log("\n== GLI ALTRI FILE (1.5.2) ==");
   prova("e si fa scaricare", scaricate.includes("qwen21-q4km"), JSON.stringify(scaricate));
   const no = spiegaIlNo({ node_errors: { "1": { errors: [{ type: "value_not_in_list", details: "unet_name: 'x.gguf' not in []" }] } } });
   prova("il no del motore in italiano", /manca un file del modello \(unet_name\)/.test(no.message), no.message);
+}
+
+console.log("\n== IL PASSAGGIO DELL'LLM NELLA MODIFICA (1.6.1) ==");
+
+/** Un motore finto che ha questi lettori, e sa (o no) cos'e' TextGenerate. */
+function motoreConLettori(lettori, textGenerate = true) {
+  dimenticaLeLora();
+  globalThis.fetch = async (url) => {
+    const u = String(url);
+    if (u.endsWith("/object_info/CLIPLoader")) return { ok: true, json: async () => ({ CLIPLoader: { input: { required: { clip_name: [lettori, {}] } } } }) };
+    if (u.endsWith("/object_info/TextGenerate")) return { ok: true, json: async () => (textGenerate ? { TextGenerate: {} } : {}) };
+    return { ok: true, json: async () => ({}) };
+  };
+}
+const modifica = (extra = {}) => grafoQwenModifica({ prompt: "mettigli un cappello rosso", seed: 7, immagine: "foto.png", larghezza: 1024, altezza: 768, ...extra });
+
+{
+  const g = modifica();
+  prova("la modifica passa dal riscrittore: la frase va all'LLM, e l'LLM al lettore",
+    g["51"]?.class_type === "TextGenerate" && g["51"].inputs.prompt === "mettigli un cappello rosso" && JSON.stringify(g["3"].inputs.prompt) === '["51",0]');
+  prova("l'LLM guarda la foto, col ragionamento acceso e i numeri del grafo ufficiale",
+    JSON.stringify(g["52"].inputs["images.image0"]) === '["11",0]' && g["51"].inputs.thinking === true && g["51"].inputs["sampling_mode.top_k"] === 20 && g["51"].inputs["sampling_mode.seed"] === 7);
+  prova("il riscrittore si carica come lettore qwen_image", g["50"].inputs.clip_name === QWEN21.riscrittore && g["50"].inputs.type === "qwen_image");
+  const z = modifica({ zona: true, maschera: "zona.png" });
+  prova("con la zona l'LLM vede anche la foto col velo rosso", JSON.stringify(z["52"].inputs["images.image1"]) === '["16",0]');
+  prova("senza riscrivi: false il grafo e' quello di prima", !modifica({ riscrivi: false })["51"]);
+}
+
+motoreConLettori([QWEN21.txt, QWEN21.riscrittore]);
+{
+  const scaricate = [];
+  const g = modifica();
+  const esito = await metteLeLoraCheCi("http://motore", g, { scarica: (ids) => scaricate.push(...ids) });
+  prova("col riscrittore sul disco resta tutto", g["51"] && !esito.senzaRiscrittore && scaricate.length === 0);
+}
+
+motoreConLettori([QWEN21.txt]);
+{
+  const scaricate = [];
+  const g = modifica();
+  const esito = await metteLeLoraCheCi("http://motore", g, { scarica: (ids) => scaricate.push(...ids) });
+  await new Promise((r) => setTimeout(r, 10));
+  prova("senza il riscrittore la modifica parte lo stesso con la frase com'era",
+    !g["50"] && !g["51"] && !g["52"] && g["3"].inputs.prompt === "mettigli un cappello rosso" && esito.senzaRiscrittore);
+  prova("e il riscrittore si fa scaricare", scaricate.includes(QWEN21.idRiscrittore), JSON.stringify(scaricate));
 }
 
 console.log(`\n${ok} OK, ${ko} KO`);

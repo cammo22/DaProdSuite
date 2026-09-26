@@ -55,6 +55,13 @@ export const QWEN21 = {
   txt: "qwen3vl_8b_w4a8.safetensors",
   vae: "qwen_image_2.1_vae_bf16.safetensors",
   turbo: "Qwen-Image-2.1-viggle-turbo-v0.2.1-6step-lora-r256.safetensors",
+  /**
+   * Il riscrittore delle modifiche (1.6.1): il Prompt Enhancer ufficiale di
+   * Qwen per le modifiche, un Qwen3.5-VL 9B istruito apposta. Vedi
+   * `grafoQwenModifica`, «Il passaggio dell'LLM».
+   */
+  riscrittore: "qwen3.5_9b_qwen_image_2.1_pe_i2i.int8_convrot.safetensors",
+  idRiscrittore: "qwen21-pe-i2i",
   /** Gli id del catalogo, per chiedere alla suite se ci sono gia'. */
   catalogo: ["qwen21-q4km", "qwen21-text-encoder", "qwen21-vae"],
   catalogoTurbo: ["qwen21-q4km", "qwen21-text-encoder", "qwen21-vae", "qwen21-turbo-v021"],
@@ -200,6 +207,69 @@ export function grafoQwenImmagine(opzioni) {
 }
 
 /**
+ * ⚠ **Il passaggio dell'LLM** (1.6.1). Detto il 26 settembre 2026: «le
+ * immagini non vengono modificate bene … non mi sembra ci sia il passaggio
+ * dell'LLM che decide».
+ *
+ * Aveva ragione. Il grafo ufficiale della modifica di ComfyUI
+ * (`image_qwen_image_2_1_image_edit`, workflow_templates) prima di tutto fa
+ * leggere la richiesta a un **Prompt Enhancer**: un Qwen3.5-VL 9B istruito da
+ * Qwen apposta (Qwen-Image-2.1-PE-I2I), che **guarda le foto** e riscrive
+ * «mettigli un cappello» in un'istruzione precisa: cosa cambia, dove, come, e
+ * cosa deve restare uguale. Solo dopo il testo va al lettore. Anche WanGP lo fa
+ * (models/qwen21/enhancer.py). Noi davamo al modello la frase cosi' com'era.
+ *
+ * Qui e' lo stesso identico passaggio del grafo ufficiale, coi suoi numeri:
+ * `TextGenerate` nativo (ComfyUI 0.37.2), il riscrittore caricato da
+ * `CLIPLoader` come lettore `qwen_image`, tutte le foto in un lotto
+ * (`BatchImagesNode`), il ragionamento acceso, niente template di sistema (il
+ * modello e' istruito per farne a meno), campionamento 1 / 20 / 0,95 / 0,05 /
+ * 1,05. Il testo che esce va al posto della frase.
+ *
+ * Se il file non c'e' ancora (9,5 GB) o ComfyUI e' vecchio, `lora-presenti.js`
+ * toglie questi tre nodi con `senzaRiscrittore` e la modifica parte lo stesso
+ * con la frase com'era, mentre il file si scarica.
+ */
+function riscrittore(grafo, testo, immagini, seed) {
+  grafo["50"] = { class_type: "CLIPLoader", inputs: { clip_name: QWEN21.riscrittore, type: "qwen_image", device: "default" } };
+  const lotto = {};
+  Object.values(immagini).forEach((da, i) => { lotto["images.image" + i] = da; });
+  grafo["52"] = { class_type: "BatchImagesNode", inputs: lotto };
+  grafo["51"] = {
+    class_type: "TextGenerate",
+    inputs: {
+      clip: ["50", 0],
+      prompt: testo,
+      image: ["52", 0],
+      max_length: 16256,
+      sampling_mode: "on",
+      "sampling_mode.temperature": 1,
+      "sampling_mode.top_k": 20,
+      "sampling_mode.top_p": 0.95,
+      "sampling_mode.min_p": 0.05,
+      "sampling_mode.repetition_penalty": 1.05,
+      "sampling_mode.seed": seed,
+      "sampling_mode.presence_penalty": 0,
+      thinking: true,
+      use_default_template: false,
+      mtp: "auto",
+    },
+  };
+  grafo["3"].inputs.prompt = ["51", 0];
+}
+
+/** Toglie il passaggio dell'LLM e rimette la frase com'era (vedi `riscrittore`). */
+export function senzaRiscrittore(grafo) {
+  const r = grafo["51"];
+  if (!r || r.class_type !== "TextGenerate") return false;
+  if (grafo["3"]) grafo["3"].inputs.prompt = r.inputs.prompt;
+  delete grafo["50"];
+  delete grafo["51"];
+  delete grafo["52"];
+  return true;
+}
+
+/**
  * La modifica: a parole su tutta la foto, o solo dove si e' dipinto.
  *
  * `opzioni`: prompt, seed, immagine (il nome caricato nel motore), larghezza e
@@ -283,6 +353,7 @@ export function grafoQwenModifica(opzioni) {
     class_type: "TextEncodeQwenImage21",
     inputs: { clip: ["2", 0], prompt: testo, negative_prompt: "", resolution: 0, vae: ["7", 0], ...immagini },
   };
+  if (opzioni.riscrivi !== false) riscrittore(grafo, testo, immagini, opzioni.seed);
   if (turbo) campionatoreTurbo(grafo, ["3", 2], opzioni.seed, passi);
   else grafo["6"] = campionatore(turbo, ["3", 2], opzioni.seed, passi);
   grafo["8"] = { class_type: "VAEDecode", inputs: { samples: ["6", 0], vae: ["7", 0] } };

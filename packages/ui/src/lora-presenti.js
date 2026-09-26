@@ -28,7 +28,7 @@
  * due: una cosa sola, uguale ovunque.
  */
 
-import { QWEN21 } from "./qwen-image.js";
+import { QWEN21, senzaRiscrittore } from "./qwen-image.js";
 
 /**
  * ⚠ **Non solo le LoRA, dalla 1.5.2: tutti i file che il grafo chiede.**
@@ -143,6 +143,41 @@ async function controllaIFile(motore, grafo, scarica, fatto) {
 }
 
 /**
+ * ⚠ **Il riscrittore delle modifiche e' facoltativo** (1.6.1, vedi
+ * `riscrittore` in qwen-image.js). Pesa 9,5 GB: se non c'e' ancora, la
+ * modifica non si ferma ad aspettarlo. Si fa scaricare e, intanto, il grafo
+ * perde il passaggio dell'LLM e parte con la frase com'era. Lo stesso se
+ * ComfyUI non conosce `TextGenerate` (un motore vecchio).
+ */
+let conosceTextGenerate = null;
+async function controllaIlRiscrittore(motore, grafo, scarica, fatto) {
+  const nodo = Object.values(grafo).find((n) => n?.class_type === "CLIPLoader" && n.inputs?.clip_name === QWEN21.riscrittore);
+  if (!nodo) return;
+  let presenti = null;
+  try {
+    presenti = await fileDelMotore(motore, "CLIPLoader", "clip_name");
+  } catch {
+    presenti = null;
+  }
+  if (conosceTextGenerate === null) {
+    try {
+      const r = await fetch(`${motore}/object_info/TextGenerate`, { cache: "no-store" });
+      conosceTextGenerate = r.ok && Boolean((await r.json())?.TextGenerate);
+    } catch {
+      conosceTextGenerate = null;
+    }
+  }
+  const manca = presenti && !presenti.has(QWEN21.riscrittore);
+  if (manca && scarica && !fatto.scaricate.includes(QWEN21.idRiscrittore)) {
+    fatto.scaricate.push(QWEN21.idRiscrittore);
+    Promise.resolve()
+      .then(() => scarica([QWEN21.idRiscrittore]))
+      .then(dimenticaLeLora, () => {});
+  }
+  if (manca || conosceTextGenerate === false) fatto.senzaRiscrittore = senzaRiscrittore(grafo);
+}
+
+/**
  * Il no del motore, detto in italiano (1.5.2). ComfyUI risponde con
  * `node_errors`: per ogni nodo, cosa non va. Qui si tiene la prima cosa che
  * una persona puo' capire — un file che manca, un nodo che non c'e' (ComfyUI
@@ -179,7 +214,8 @@ export function spiegaIlNo(esito) {
  * la riserva.
  */
 export async function metteLeLoraCheCi(motore, grafo, { scarica } = {}) {
-  const fatto = { sostituite: [], scaricate: [] };
+  const fatto = { sostituite: [], scaricate: [], senzaRiscrittore: false };
+  await controllaIlRiscrittore(motore, grafo, scarica, fatto);
   await controllaIFile(motore, grafo, scarica, fatto);
   const nodi = Object.entries(grafo).filter(([, n]) => TIPI_LORA.includes(n?.class_type));
   if (!nodi.length) return { grafo, ...fatto };
