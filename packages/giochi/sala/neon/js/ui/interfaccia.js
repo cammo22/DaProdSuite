@@ -60,6 +60,7 @@ function apriScheda(id) {
 }
 function renderScheda() {
   const f = {
+    daprod: () => (window.NP_DP ? NP_DP.htmlScheda() : ""),
     quartiere: htmlQuartiere, officina: htmlOfficina, merceria: htmlMerceria, giochi: htmlGiochi,
     borsa: Borsa.htmlPannello, robot: htmlRobot, diario: htmlDiario, trofei: htmlTrofei
   }[schedaAttiva];
@@ -73,9 +74,9 @@ function renderScheda() {
 const puoi = (valuta, c) => (S[valuta] >= c ? "puoi" : "nonpuoi");
 function btnCosto(azione, dati, costo, valuta, etichetta) {
   valuta = valuta || "lire";
-  const sim = { lire: "₤", rottami: "⚙️", biglietti: "🎟️", braci: "🔥" }[valuta];
+  const sim = { lire: simLire(), rottami: "⚙️", biglietti: "🎟️", braci: "🔥" }[valuta];
   const d = Object.entries(dati || {}).map(([k, v]) => ` data-${k}="${esc(v)}"`).join("");
-  return `<button class="btn costo ${puoi(valuta, costo)}" data-azione="${azione}"${d}>${etichetta ? `<small>${etichetta}</small>` : ""}<b>${sim} ${fmt(costo)}</b></button>`;
+  return `<button class="btn costo ${puoi(valuta, costo)}" data-azione="${azione}"${d}>${etichetta ? `<small>${etichetta}</small>` : ""}<b>${sim} ${valuta === "lire" ? numLire(costo) : fmt(costo)}</b></button>`;
 }
 function titolo(i, t, sotto) { return `<div class="p-testa"><h2><span>${i}</span>${t}</h2>${sotto ? `<p>${sotto}</p>` : ""}</div>`; }
 function selettoreQuantita() {
@@ -176,10 +177,24 @@ function htmlOfficina() {
 function htmlMerceria() {
   riempiVetrina(false);
   const set = setAttivi();
-  const sinergie = Object.entries(SET).filter(([k]) => k !== "partenope" || S.ciclo >= 2).map(([k, x]) => `
-    <div class="sinergia ${set[k] >= 2 ? "on" : ""} ${set[k] >= 3 ? "piena" : ""}" style="--c:${x.col}" data-k="set${k}">
-      <b>${x.i} ${x.n} <em>${set[k]}/3</em></b><small>2 pezzi: ${x.b2}<br>3 pezzi: ${x.b3}</small>
-    </div>`).join("");
+  // 2.2.0: i set per primi. Ogni set: i suoi pezzi (quelli che mancano col lucchetto),
+  // il livello, la sinergia, e un tocco per indossarlo tutto.
+  const carteSet = Object.entries(SET).filter(([k]) => k !== "partenope" || S.ciclo >= 2).map(([k, x]) => {
+    const pezzi = pezziDelSet(k), hai = pezzi.filter(o => posseduto(o.id)).length, addosso = set[k] || 0;
+    const chip = pezzi.map(o => {
+      const p = posseduto(o.id);
+      return p ? `<span class="sp ${p.eq ? "eq" : ""}" style="--r:${RARITA[o.rar].col}" title="${esc(o.n)}">${o.i}<b>${p.lv}</b></span>`
+        : `<span class="sp manca" title="${esc(o.n)} · ${RARITA[o.rar].n}">🔒</span>`;
+    }).join("");
+    const stato = addosso >= 3 ? "SET COMPLETO ADDOSSO" : addosso >= 2 ? "SINERGIA ACCESA" : addosso === 1 ? "1 pezzo addosso" : hai ? "nella borsa" : "da trovare";
+    return `<div class="set-carta ${addosso >= 2 ? "on" : ""} ${addosso >= 3 ? "piena" : ""}" style="--c:${x.col}" data-k="sc${k}">
+      <div class="sc-testa"><b>${x.i} ${esc(x.n)}</b><em>liv. ${livelloSet(k)}</em></div>
+      <div class="sc-pezzi">${chip}</div>
+      <small class="sc-stato">${hai}/${pezzi.length} pezzi · ${stato}</small>
+      <small>2 pezzi: ${x.b2}<br>3 pezzi: ${x.b3}</small>
+      ${hai ? (addosso >= hai ? `<span class="r-fatto">✓ indossato</span>` : `<button class="btn menta" data-azione="indossaSet" data-k="${k}">Indossa il set</button>`) : ""}
+    </div>`;
+  }).join("");
   const vetrina = S.vetrina.map(id => {
     const o = oggetto(id), p = posseduto(id), r = RARITA[o.rar];
     return `<div class="oggetto" style="--c:${r.col}" data-k="o${id}">
@@ -203,11 +218,13 @@ function htmlMerceria() {
       <div class="r-info"><b>${it.eq ? `<span class="indossato">✓ INDOSSATO</span> ` : ""}${esc(o.n)} <em>liv. ${it.lv}</em></b><small>${SET[o.set].n} · ${NOME_SLOT[o.slot]} · +${(it.lv - 1) * 10}% danno se indossato</small></div>
       <button class="btn ${it.eq ? "" : "menta"}" data-azione="equip" data-id="${it.id}">${it.eq ? "Togli" : "Indossa"}</button>
       ${btnCosto("livOgg", { id: it.id }, c, "rottami", "liv. " + (it.lv + 1))}
+      ${it.eq ? "" : `<button class="btn" data-azione="rottama" data-id="${it.id}" title="Non ti serve? Diventa rottame">♻️ ${valoreRottame(o, it.lv)} ⚙️</button>`}
     </div>`;
   }).join("") : `<div class="nota">La borsa è vuota: compra qualcosa in vetrina o apri un pacco misterioso.</div>`;
   const lab = S.lab.lv ? `Stampa un Biglietto ogni <b>${fmtTempo(1 / velocitaLab())}</b>` : "Non ancora costruito";
-  return titolo("🛍️", "La Merceria di Pacco", "Oggetti con le lire, livelli con i rottami. Due pezzi dello stesso set accendono una sinergia, tre la potenziano.") +
-    `<h3>Indossi adesso</h3><div class="slot-griglia">${indossati}</div>
+  return titolo("🛍️", "La Merceria di Pacco", "Tutto gira intorno ai set: due pezzi dello stesso set accendono una sinergia, tre la potenziano. I doppioni dei pacchi potenziano da soli il pezzo che hai.") +
+    `<h3>I tuoi set</h3><div class="set-griglia">${carteSet}</div>
+    <h3>Indossi adesso</h3><div class="slot-griglia">${indossati}</div>
     <div class="lab carta2" data-k="lab"><div class="b-ico">🏭</div><div class="b-info"><b>Laboratorio Biglietti <em>liv. ${S.lab.lv}</em></b><small>${lab}</small><div class="barretta"><i style="width:${(S.lab.prog * 100).toFixed(1)}%"></i></div></div>${btnCosto("lab", {}, costoLab(), "lire", S.lab.lv ? "potenzia" : "costruisci")}</div>
     <div class="merc-azioni">
       ${btnCosto("rinnova", {}, costoRinnovo(), "lire", "🎲 rinnova vetrina")}
@@ -215,7 +232,6 @@ function htmlMerceria() {
       <button class="btn oro" data-azione="mini" data-id="ruota">🎡 Ruota del Mercante</button>
     </div>
     <h3>Vetrina</h3><div class="griglia-ogg">${vetrina}</div>
-    <h3>Sinergie di set</h3><div class="sinergie">${sinergie}</div>
     <h3>La tua borsa · ${S.inv.length} / ${OGGETTI.length}</h3><div class="lista">${borsa}</div>`;
 }
 
@@ -323,6 +339,9 @@ function eseguiAzione(el) {
     case "compraOgg": compraOggetto(d.id); break;
     case "equip": equipaggia(d.id); break;
     case "livOgg": potenziaOggetto(d.id); break;
+    case "indossaSet": indossaSet(d.k); break;
+    case "rottama": rottamaOggetto(d.id); break;
+    case "dp": if (window.NP_DP) NP_DP.compraDP(d.id); break;
     case "mini": avviaMini(d.id); break;
     case "miniSubito": avviaMini(d.id, true); break;
     case "riscuoti": riscuotiComm(Number(d.i)); break;
@@ -360,8 +379,9 @@ function chiediEruzione() {
 let _testa = {};
 function imposta(id, v) { if (_testa[id] !== v) { _testa[id] = v; const e = $(id); if (e) e.textContent = v; } }
 function aggiornaTesta() {
-  imposta("vLire", fmt(S.lire));
-  imposta("vProd", "+" + fmt(produzione()) + "/s");
+  imposta("vLire", numLire(S.lire));
+  imposta("vProd", "+" + numLire(produzione()) + "/s");
+  imposta("icoLire", simLire());
   imposta("vRott", fmt(S.rottami));
   imposta("vBig", fmt(S.biglietti));
   imposta("vBraci", fmt(S.braci));
@@ -383,6 +403,8 @@ const _toastUltimo = {};
 function toast(ico, tit, testo, opz) {
   opz = opz || {};
   if (!S.opz.notifiche && !opz.sempre) return;
+  // 2.2.0: «mettiamo un modo per togliere le notifiche popup del tempo e i bonus e malus».
+  if (opz.effetto && S.opz.popupEffetti === false) return;
   const chiave = opz.chiave || tit;
   const t = Date.now();
   if (_toastUltimo[chiave] && t - _toastUltimo[chiave] < 2500) return;
@@ -525,7 +547,7 @@ function apriOpzioni() {
     <div class="opzioni-griglia">
       <section><h4>Audio</h4>${sw("suoni", "Effetti sonori")}${sw("musica", "Musica synth dal vivo")}
         <label class="cursore">Volume <input type="range" min="0" max="1" step="0.05" value="${o.volume}" data-opz="volume"></label></section>
-      <section><h4>Schermo</h4>${sw("notifiche", "Notifiche a comparsa")}${sw("voce", "Voce della Radio")}${sw("borsaHud", "Mini Borsa trascinabile")}
+      <section><h4>Schermo</h4>${sw("notifiche", "Notifiche a comparsa")}${sw("popupEffetti", "Avvisi di tempo, bonus e malus")}${sw("voce", "Voce della Radio")}${sw("borsaHud", "Mini Borsa trascinabile")}
         <label class="scelta">Qualità grafica <select data-opz="qualita">${["auto", "alta", "media", "bassa"].map(q => `<option ${o.qualita === q ? "selected" : ""}>${q}</option>`).join("")}</select></label>
         <label class="scelta">Numeri grandi <select data-opz="notazione">${["suffissi", "scientifica"].map(q => `<option ${o.notazione === q ? "selected" : ""}>${q}</option>`).join("")}</select></label></section>
       <section><h4>Salvataggio</h4>
@@ -572,6 +594,8 @@ function applicaOpzioni() {
   Suono.musica();
   const q = S.opz.qualita === "auto" ? (innerWidth < 760 || matchMedia("(pointer:coarse)").matches ? "media" : "alta") : S.opz.qualita;
   document.documentElement.dataset.qualita = q;
+  // 2.2.0: senza avvisi di tempo restano solo i bagliori ai lati.
+  document.body.classList.toggle("senza-effetti", S.opz.popupEffetti === false);
   Scena.impostaQualita(q);
   $("bMusica").classList.toggle("off", !S.opz.musica);
   $("bSuoni").classList.toggle("off", !S.opz.suoni);
@@ -651,6 +675,9 @@ function legaPip() {
 
 // ============================================================ LEGAMI
 function legaInterfaccia() {
+  // 2.2.0: «i potenziamenti a pagamento non sono ben visibili: mettiamo bene la
+  // categoria in alto». Nella sala la prima scheda e' quella dei potenziamenti DaProd.
+  if (window.DaProdLira && DaProdLira.modo === "suite" && !SCHEDE.some(s => s.id === "daprod")) SCHEDE.unshift({ id: "daprod", i: "⚡", n: "DaProd" });
   // schede (testata desktop e barra in basso)
   const tab = SCHEDE.map(s => `<button data-scheda="${s.id}"><span>${s.i}</span><em>${s.n}</em></button>`).join("");
   $("schede").innerHTML = tab;

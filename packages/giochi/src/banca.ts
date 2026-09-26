@@ -191,6 +191,8 @@ export function bancaInRiga(letta: unknown, adesso: number): StatoBanca {
     cassetti,
     storia: Array.isArray(b.storia) ? b.storia.slice(-STORIA_TENUTA) : [],
     fette: num(b.fette, 0),
+    // 1.6.0: si perdeva a ogni riapertura, e il conto dei montepremi ripartiva da zero.
+    premiFine: num(b.premiFine, 0),
   };
 }
 

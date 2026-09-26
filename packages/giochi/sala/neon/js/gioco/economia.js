@@ -174,7 +174,7 @@ function raccogliGoccia(g) {
   } else {
     S.biglietti += 2; titolo = "Biglietti nella lava!"; testo = "+2 🎟️";
   }
-  toast("💧", titolo, testo, { tipo: "lava" });
+  toast("💧", titolo, testo, { tipo: "lava", effetto: true });
   Fx.testoSchermo(r.left + r.width / 2, r.top, testo);
   richiediRender();
 }

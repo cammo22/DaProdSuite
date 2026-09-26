@@ -47,7 +47,7 @@ function risultatoMini(id, titolo, riga, punteggio01) {
       <div class="mg-titolo">${esc(titolo)}</div>
       <div class="mg-riga">${riga}</div>
       <div class="mg-premi">
-        <div><b>₤ ${fmt(lire)}</b><small>lire</small></div>
+        <div><b>${fmtLire(lire)}</b><small>${inEuro() ? "euro" : "lire"}</small></div>
         <div><b>⚙️ ${fmt(rott)}</b><small>rottami</small></div>
         ${big ? "<div><b>🎟️ 1</b><small>biglietto</small></div>" : ""}
       </div>

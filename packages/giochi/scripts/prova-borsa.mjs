@@ -187,7 +187,8 @@ prova("1.4.8: entrare e' gratis, si paga ricaricando", () =>
 
 prova("1 € = L. 1.936,27, e i tagli sono quelli chiesti in euro", () => {
   uguale(LIRE_PER_EURO, 1936.27);
-  uguale(TAGLI_LIRE.join(","), "387,1936,9681,38725,96814,387254,968135");
+  uguale(TAGLI_LIRE.join(","), "9681,38725,96814,193627,387254,968135");
+  uguale(RICARICA_MIN, 387, "si carica comunque da 20 centesimi");
   uguale(lireDaEuro(1), 1936);
   uguale(euroDaLire(1936.27), 1);
   uguale(RICARICA_MIN, 387);
@@ -273,6 +274,23 @@ prova("ogni incasso chiude la partita, anche nel Dozer", () =>
     uguale(r.netto, 45_000, "niente tetto: cinquantamila meno la fetta");
     uguale(r.preso, 50_000, "il gioco si toglie tutto");
     uguale(d.conto("pino").giochi.dozer.messo, 0);
+  }),
+);
+
+prova("il regalo della prima partita del Dozer: una volta sola, dalla riserva", () =>
+  conCartella((file) => {
+    const d = new Deposito(file);
+    d.conto("pino").saldo = 100_000;
+    d.statoBanca().riserva = 1_000_000;
+    const pagate = d.statoBanca().pagate;
+    const r1 = ricarica(d, "pino", "dozer", 9681, ADESSO);
+    uguale(r1.bonus, 193_627, "cento euro");
+    uguale(d.statoBanca().pagate, pagate + 193_627, "li paga la Banca");
+    uguale(d.conto("pino").giochi.dozer.messo, 9681, "il regalo non conta come messo");
+    const r2 = ricarica(d, "pino", "dozer", 9681, ADESSO);
+    uguale(r2.bonus, 0, "la seconda volta niente");
+    const r3 = ricarica(d, "pino", "claw", 9681, ADESSO);
+    uguale(r3.bonus, 0, "la Claw non ce l ha");
   }),
 );
 

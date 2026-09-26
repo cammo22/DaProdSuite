@@ -24,7 +24,20 @@ function fmt(n, dec) {
   const d = v < 10 ? 2 : (v < 100 ? 1 : 0);
   return v.toFixed(d).replace(".", ",") + SUFFISSI[tier - 1];
 }
-function fmtLire(n) { return "₤ " + fmt(n); }
+/**
+ * ⚠ 2.2.0: «Neon Partenope continua a non fare lo switch lire/euro
+ * nell'interfaccia». La sala sceglie la valuta (daprod-lira.js), e da qui
+ * tutti i numeri delle lire la seguono: la testata, i prezzi, la Borsa. Una
+ * lira del gioco e' una lira della sala, quindi basta il cambio fisso.
+ */
+function inEuro() { try { return !!(window.DaProdLira && DaProdLira.valuta && DaProdLira.valuta() === "euro"); } catch (e) { return false; } }
+function simLire() { return inEuro() ? "€" : "₤"; }
+function numLire(n) {
+  if (!inEuro()) return fmt(n);
+  const e = n / LIRE_PER_EURO;
+  return Math.abs(e) < 1000 ? e.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : fmt(e);
+}
+function fmtLire(n) { return simLire() + " " + numLire(n); }
 function fmtEuro(lire) {
   const e = lire / LIRE_PER_EURO;
   if (e < 1000) return e.toLocaleString("it-IT", { maximumFractionDigits: 2 }) + " €";

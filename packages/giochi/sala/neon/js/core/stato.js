@@ -39,7 +39,7 @@ function statoNuovo() {
     commissioni: [], commGiorno: "",
     mini: {},          // ricariche dei minigiochi: { sfera: timestamp, ... }
     diario: [], visto: {},
-    opz: { suoni: true, musica: true, volume: 0.6, notifiche: true, qualita: "auto", borsaHud: true, notazione: "suffissi", voce: true }
+    opz: { suoni: true, musica: true, volume: 0.6, notifiche: true, qualita: "auto", borsaHud: true, notazione: "suffissi", voce: true, popupEffetti: true }
   };
 }
 

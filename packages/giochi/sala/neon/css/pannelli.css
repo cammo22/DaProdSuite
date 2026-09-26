@@ -198,3 +198,30 @@
   box-shadow: 0 0 12px color-mix(in srgb, var(--c) 30%, transparent); }
 .indossato { font-size: 9.5px; letter-spacing: 1px; padding: 2px 6px; border-radius: 999px; color: #0a0614; background: var(--c, #00ff41); vertical-align: 1px; }
 .pezzi h4 .montato { font-style: normal; font-weight: 400; font-size: 11px; opacity: .7; margin-left: 6px; }
+
+/* ------------------------------------------------ 2.2.0: la Merceria a set */
+.set-griglia { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 8px; margin-bottom: 14px; }
+.set-carta { display: grid; gap: 6px; padding: 10px 12px; border-radius: 14px; background: rgba(255,255,255,.03); border: 1px solid var(--linea); }
+.set-carta.on { border-color: var(--c); background: color-mix(in srgb, var(--c) 10%, transparent); box-shadow: 0 0 16px color-mix(in srgb, var(--c) 28%, transparent); }
+.set-carta.piena { box-shadow: 0 0 26px color-mix(in srgb, var(--c) 45%, transparent); }
+.sc-testa { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.sc-testa b { font: 700 14px/1.2 var(--f-txt); color: var(--txt); }
+.set-carta.on .sc-testa b { color: var(--c); }
+.sc-testa em { font: 800 12px/1 var(--f-num); font-style: normal; color: var(--c); }
+.sc-pezzi { display: flex; gap: 6px; }
+.sp { position: relative; display: grid; place-items: center; width: 42px; height: 42px; border-radius: 12px; font-size: 22px;
+  background: rgba(0,0,0,.3); border: 1px solid var(--r, var(--linea)); }
+.sp.eq { box-shadow: 0 0 0 2px var(--c) inset; }
+.sp b { position: absolute; right: -4px; bottom: -4px; min-width: 18px; padding: 2px 4px; border-radius: 8px; background: var(--r); color: #0a0612;
+  font: 900 10px/1 var(--f-num); text-align: center; }
+.sp.manca { opacity: .45; font-size: 16px; border-style: dashed; }
+.set-carta small { font: 600 12px/1.35 var(--f-txt); color: var(--txt3); }
+.set-carta .sc-stato { color: var(--txt2); font-weight: 800; }
+.pacco-esce { display: grid; justify-items: center; gap: 6px; text-align: center; padding: 6px 4px 2px; }
+.pe-ico { font-size: 58px; line-height: 1; filter: drop-shadow(0 0 18px var(--c)); }
+.pe-rar { font: 800 11px/1 var(--f-num); letter-spacing: 2px; text-transform: uppercase; color: var(--c); }
+.pacco-esce h3 { margin: 0; }
+.pacco-esce p { margin: 0; color: var(--txt2); }
+.pe-set { padding: 6px 10px; border-radius: 10px; border: 1px solid var(--s); color: var(--s); font: 700 12.5px/1.3 var(--f-txt); }
+.dp-scheda .dp-riga { margin-bottom: 6px; }
+body.senza-effetti #dpEffetti { display: none; }

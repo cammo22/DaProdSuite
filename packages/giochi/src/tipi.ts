@@ -458,6 +458,8 @@ export interface Conto {
    * chi manda di piu' premierebbe chi tira la leva a caso.
    */
   prese: number;
+  /** I giochi di cui ha gia' preso il regalo della prima partita (1.6.0). */
+  benvenuti?: string[];
   /** Gli id delle figurine che ha sbloccato. */
   collezione: string[];
   /** Il grado piu' alto che gli sia mai uscito: e' il suo trofeo. */
@@ -809,6 +811,22 @@ export interface DatiGiochi {
   soldi?: Partial<import("./euro").RegoleSoldi>;
   /** Il registro della Banca (1.5.1): le correzioni di chi comanda, le ultime duecento. */
   registro?: VoceRegistro[];
+  /** La linea della Banca (1.6.0): un punto all'ora, gli ultimi trenta giorni. */
+  andamentoBanca?: PuntoBanca[];
+}
+
+/**
+ * Un punto della linea della Banca (1.6.0): com'erano i soldi della sala in
+ * quell'ora. Chiesto il 26 settembre 2026: «una linea dell'andamento della
+ * banca». Si scrive dal deposito a ogni movimento, uno per ora (l'ultimo
+ * dell'ora vince), cosi' la linea c'e' anche quando nessuno apre la Banca.
+ */
+export interface PuntoBanca {
+  /** L'inizio dell'ora, in millisecondi. */
+  t: number;
+  riserva: number;
+  circolante: number;
+  neiGiochi: number;
 }
 
 /**

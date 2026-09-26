@@ -26,7 +26,7 @@
 // corrispondente, compila APK, EXE e DMG e la pubblica con le note del CHANGELOG.
 // La stessa versione finisce in coda a CSS e JS (?v=...), così GitHub Pages non serve file vecchi.
 // ---------------------------------------------------------------------------------------------
-const VERSIONE = 'v2.1.6';
+const VERSIONE = 'v2.2.0';
 (function () {
   const v = "?v=" + VERSIONE.slice(1);
   const css = ["css/base.css", "css/gioco.css", "css/pannelli.css"];
@@ -56,7 +56,7 @@ const VERSIONE = 'v2.1.6';
       </div>
     </div>
     <div id="valute">
-      <div class="val lire" id="valLire"><span class="ico">₤</span><div><b id="vLire">0</b><small id="vProd">+0/s</small></div></div>
+      <div class="val lire" id="valLire"><span class="ico" id="icoLire">₤</span><div><b id="vLire">0</b><small id="vProd">+0/s</small></div></div>
       <div class="val" title="Rottami: livelli degli oggetti, pezzi del robot, riparazioni"><span class="ico">⚙️</span><b id="vRott">0</b></div>
       <div class="val" title="Biglietti rari: pacchi, ruota, minigiochi subito"><span class="ico">🎟️</span><b id="vBig">0</b></div>
       <div class="val braci" id="valBraci" title="Braci dell'Eruzione" hidden><span class="ico">🔥</span><b id="vBraci">0</b></div>

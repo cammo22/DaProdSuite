@@ -104,13 +104,20 @@
   #ondata.su, #catena.su { opacity: 1; transform: none; }
 
   /* ---------- evento DaProd: banner e bande da cinema ---------- */
-  #evento { position: fixed; left: 50%; top: calc(84px + var(--sat)); z-index: 31; pointer-events: none; text-align: center;
-    transform: translateX(-50%) scale(.5); opacity: 0; transition: opacity .3s, transform .45s cubic-bezier(.2,1.6,.4,1);
-    background: var(--vetro2); border: 1px solid rgba(255,61,242,.55); border-radius: 18px; padding: 10px 22px 12px;
-    box-shadow: 0 16px 50px rgba(0,0,0,.6), 0 0 40px rgba(255,61,242,.35); }
-  #evento.su { opacity: 1; transform: translateX(-50%) scale(1); }
+  /* 2.3.0: «bello il popup: se è buono a sinistra, cattivo a destra». */
+  #evento { position: fixed; left: 12px; top: calc(84px + var(--sat)); z-index: 31; pointer-events: none; text-align: left;
+    transform: translateX(-40px) scale(.85); opacity: 0; transition: opacity .3s, transform .45s cubic-bezier(.2,1.6,.4,1);
+    background: rgba(10,30,22,.94); border: 1px solid rgba(93,255,180,.7); border-radius: 18px; padding: 11px 18px 13px;
+    box-shadow: 0 16px 50px rgba(0,0,0,.6), 0 0 40px rgba(93,255,180,.3); max-width: min(380px, 72vw); }
+  #evento.su { opacity: 1; transform: none; }
+  #evento.cattivo { left: auto; right: 12px; text-align: right; transform: translateX(40px) scale(.85);
+    background: rgba(36,8,14,.94); border-color: rgba(255,35,64,.75); box-shadow: 0 16px 50px rgba(0,0,0,.6), 0 0 40px rgba(255,35,64,.3); }
+  #evento.cattivo.su { transform: none; }
+  #evento i { display: block; font: 800 12px/1.3 var(--num); font-style: normal; color: #bfffe0; margin-top: 7px; }
+  #evento.cattivo i { color: #ffb3bd; }
+  #evento b { display: block; font: 700 12.5px/1.3 var(--txt); color: #fff7d6; margin-top: 4px; }
   #evento small { display: block; font: 800 9px/1 var(--num); letter-spacing: 3px; color: #ffc9f8; margin-bottom: 6px; }
-  #evento span { display: block; font: 900 26px/1.05 var(--num); color: #fff; text-shadow: 0 0 16px var(--mag); white-space: nowrap; }
+  #evento span { display: block; font: 900 24px/1.05 var(--num); color: #fff; text-shadow: 0 0 16px var(--verde); }
   #evento em { display: block; font: 700 14px/1.2 var(--txt); font-style: normal; color: #e4dcf5; margin-top: 5px; }
   /* 2.2.6: gli eventi cattivi si vedono rossi */
   #evento.cattivo small { color: #ffb3bd; }
@@ -124,15 +131,20 @@
   #barra { transition: opacity .5s; }
 
   /* ---------- 2.2.7: gli effetti accesi, ai lati dello schermo ---------- */
-  .bordo { position: fixed; top: 0; bottom: 0; width: 22px; z-index: 9; pointer-events: none; opacity: 0; transition: opacity .4s; }
+  /* 2.3.0: «aggiustiamo i lampeggi ai lati, che si rallenta tutto». Solo opacita', su un livello suo:
+     niente ridisegni della pagina mentre lampeggia. */
+  .bordo { position: fixed; top: 0; bottom: 0; width: 22px; z-index: 9; pointer-events: none; opacity: 0; transition: opacity .4s;
+    will-change: opacity; contain: strict; }
   #bordoSx { left: 0; background: linear-gradient(90deg, rgba(93,255,180,.55), transparent); }
   #bordoDx { right: 0; background: linear-gradient(270deg, rgba(255,35,64,.6), transparent); }
   .bordo.su { opacity: 1; }
   .bordo.finisce { animation: lampeggia .5s steps(2, jump-none) infinite; }
-  #effetti { position: fixed; right: 10px; top: 50%; transform: translateY(-50%); z-index: 13; pointer-events: none;
-    display: flex; flex-direction: column; gap: 6px; align-items: flex-end; max-height: 60vh; }
+  .effetti { position: fixed; top: 50%; transform: translateY(-50%); z-index: 13; pointer-events: none;
+    display: flex; flex-direction: column; gap: 6px; max-height: 60vh; }
+  #effettiSx { left: 10px; align-items: flex-start; }
+  #effettiDx { right: 10px; align-items: flex-end; }
   .eff { display: grid; grid-template-columns: auto auto; align-items: center; column-gap: 7px; row-gap: 3px; padding: 6px 9px 7px;
-    border-radius: 14px; background: var(--vetro2); min-width: 108px;
+    border-radius: 14px; background: rgba(22,16,40,.94); min-width: 108px; will-change: opacity;
     box-shadow: 0 8px 20px rgba(0,0,0,.5); border: 1px solid rgba(93,255,180,.6); }
   .eff.cattivo { border-color: rgba(255,35,64,.7); }
   .eff i { font-style: normal; font-size: 18px; line-height: 1; grid-row: span 2; }
@@ -144,7 +156,16 @@
   .eff.cattivo u::before { background: #ff2340; }
   .eff.finisce { animation: lampeggia .5s steps(2, jump-none) infinite; }
   @keyframes lampeggia { 50% { opacity: .25; } }
-  @media (max-width: 700px) { #effetti { right: 6px; top: 36%; } .eff { min-width: 92px; padding: 5px 7px 6px; } .eff b { font-size: 14px; } }
+  @media (max-width: 700px) { .effetti { top: 36%; } #effettiSx { left: 6px; } #effettiDx { right: 6px; } .eff { min-width: 92px; padding: 5px 7px 6px; } .eff b { font-size: 14px; } }
+  /* 2.3.0: la partita nuova si paga. «Puoi caricare quello che vuoi: si consiglia 5, 20, 50, 100, 200, 500». */
+  #nuova { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; background: rgba(4,3,9,.62); padding: 16px; }
+  #nuova[hidden] { display: none; }
+  #nuova .carta { max-width: 400px; width: 100%; padding: 20px 20px 18px; border-radius: 22px; text-align: center; }
+  #nuova h2 { margin: 0 0 6px; font: 900 22px/1.1 var(--num); color: #fff; }
+  #nuova p { margin: 0 0 12px; color: #d9d2ea; font: 600 14px/1.4 var(--txt); }
+  #nuova .tagli { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-bottom: 14px; }
+  #nuova .tagli span { padding: 6px 10px; border-radius: 10px; border: 1px solid rgba(255,213,74,.45); color: #ffd54a; font: 800 13px/1 var(--num); }
+  #nuova button { width: 100%; padding: 13px; border-radius: 14px; border: 0; background: #ffd54a; color: #1a1200; font: 900 16px/1 var(--num); cursor: pointer; }
 
   /* scritte spente: restano solo gli avvisi importanti (saldo, sblocchi, eventi) */
   body.senzaScritte #catena, body.senzaScritte #ondata, body.senzaScritte #fluttuanti, body.senzaScritte #hint,
@@ -480,12 +501,16 @@
 <div id="avvisi"></div>
 <div id="ondata"><small>ONDATA</small><span id="ondataTxt"></span></div>
 <div id="catena"><span id="catenaTxt"></span><small id="catenaSub"></small></div>
-<div id="evento"><small>🎰 EVENTO DaProd</small><span id="eventoTxt"></span><em id="eventoSub"></em></div>
+<div id="evento"><small id="eventoSu">🎰 EVENTO DaProd</small><span id="eventoTxt"></span><em id="eventoSub"></em><i id="eventoDurata"></i><b id="eventoConsiglio"></b></div>
 <div id="cinema"><i></i><i></i></div>
 <!-- 2.2.7: gli effetti accesi, ai lati. A sinistra si illumina di verde se ce n'e' uno buono,
      a destra di rosso se ce n'e' uno cattivo; le pastiglie dicono quale e quanto manca. -->
 <div id="bordoSx" class="bordo"></div><div id="bordoDx" class="bordo"></div>
-<div id="effetti"></div>
+<div id="effettiSx" class="effetti"></div><div id="effettiDx" class="effetti"></div>
+<div id="nuova" hidden><div class="carta"><h2>🪙 Partita nuova</h2>
+  <p>Per giocare si carica il gioco dal portafoglio DaProd: metti quanto vuoi. Quello che incassi torna nel portafoglio.</p>
+  <div class="tagli"><span>€ 5</span><span>€ 20</span><span>€ 50</span><span>€ 100</span><span>€ 200</span><span>€ 500</span></div>
+  <button id="nuovaCarica">Carica e gioca</button></div></div>
 <div id="hint" class="carta"><b>Tocca</b> il tavolo per scegliere la colonna · monete <b>uguali una sopra l'altra</b> si impilano e diventano il taglio più grande</div>
 
 <div id="barra">
@@ -549,7 +574,7 @@
 <script type="module">
 import * as THREE from 'three';
 
-const VERSIONE = 'v2.2.7';
+const VERSIONE = 'v2.3.0';
 const $ = (id) => document.getElementById(id);
 const TATTILE = (typeof matchMedia === 'function') &&
   (matchMedia('(hover: none)').matches || matchMedia('(pointer: coarse)').matches);
@@ -723,7 +748,9 @@ const PROB_CHIP = 0.025, PAUSA_CHIP = 25;        // gettone DaProd: 2,5% a lanci
 
 // ============ STATO E SALVATAGGIO ============
 const CHIAVE = 'daprod_dozer_v4';
-const SALDO_INIZIALE = 5000;
+// 2.3.0: nella sala DaProd la macchina nuova parte vuota: «la partita nuova deve
+// costare». Il saldo arriva solo caricando dal portafoglio. Fuori, la demo resta con le sue 5000.
+const SALDO_INIZIALE = (window.DaProdLira && DaProdLira.modo === 'suite') ? 0 : 5000;
 const EURO_A = 1e6;                              // la valuta in euro si sblocca arrivando a L.1.000.000
 const LIRE_PER_EURO = 1936.27;
 // Il bonus di cortesia (2.2.2): non si resta mai a secco, ma non e' un rubinetto.
@@ -734,7 +761,7 @@ const stato = {
   pot: Object.fromEntries(Object.keys(ABIL).map(k => [k, ABIL[k].base || 0])),
   pronta: { scossa: 0, meteora: 0, calamita: 0, turbo: 0 },   // quando torna pronta (Date.now)
   st: { lanci: 0, vinte: 0, perse: 0, fusioni: 0, catenaMax: 0, vinto: 0, speso: 0, jackpot: 0, slot: 0, scosse: 0, eventi: 0, meteore: 0, saldoMax: SALDO_INIZIALE },
-  opz: { audio: true, qualita: TATTILE ? 'media' : 'alta', auto: true, fps: false, scritte: true, valuta: 'lire', raffica: true },
+  opz: { audio: true, qualita: TATTILE ? 'media' : 'alta', auto: true, fps: false, scritte: true, valuta: 'lire', raffica: true, voce: true },
   tavolo: null,
   cortesie: [],   // quando e' arrivato il bonus di cortesia: al massimo 5 ogni 6 ore
 };
@@ -750,6 +777,7 @@ function carica() {
     stato.opz.audio = o.audio !== false;
     if (['alta', 'media', 'bassa'].includes(o.qualita)) stato.opz.qualita = o.qualita;
     stato.opz.auto = o.auto !== false; stato.opz.fps = !!o.fps;
+    stato.opz.voce = o.voce !== false;
     stato.opz.scritte = o.scritte !== false; stato.opz.raffica = o.raffica !== false;
     stato.opz.valuta = o.valuta === 'euro' ? 'euro' : 'lire';
   };
@@ -1569,23 +1597,34 @@ function passo(dt) {
 function simula(secondi) { const n = Math.round(secondi / PASSO); for (let i = 0; i < n; i++) passo(PASSO); }
 
 // ============ PILA INIZIALE E TAVOLO SALVATO ============
-function taglioPila(liv) {
+function taglioPila(liv, umore) {
   const r = Math.random();
-  if (liv === 0) return r < 0.6 ? 0 : 1;
-  if (liv === 1) return r < 0.5 ? 0 : r < 0.85 ? 1 : 2;
-  return r < 0.4 ? 0 : r < 0.72 ? 1 : r < 0.92 ? 2 : 3;
+  let t = liv === 0 ? (r < 0.6 ? 0 : 1) : liv === 1 ? (r < 0.5 ? 0 : r < 0.85 ? 1 : 2) : (r < 0.4 ? 0 : r < 0.72 ? 1 : r < 0.92 ? 2 : 3);
+  // 2.3.0: il tavolo ricco ha monete piu' grosse, quello magro piu' piccole.
+  if (umore === 'ricco' && Math.random() < 0.55) t = Math.min(liv + 3, t + 1 + (Math.random() < 0.3 ? 1 : 0));
+  if (umore === 'magro') t = Math.random() < 0.75 ? 0 : Math.min(t, 1);
+  return t;
 }
-function pilaIniziale() {
+/**
+ * ⚠ 2.3.0: «al primo avvio della macchina mettere un piano di monete randomico
+ * che puo' essere molto positivo o molto negativo». A ogni partita nuova si
+ * tira testa o croce: il tavolo ricco e' pieno, alto e di monete grosse (il
+ * bordo sta per cadere), quello magro e' mezzo vuoto e di spiccioli.
+ * `normale` e' la pila di sempre (il premio del tavolo pulito).
+ */
+const umoreACaso = () => Math.random() < 0.5 ? 'ricco' : 'magro';
+function pilaIniziale(umore = 'normale') {
   monete = [];
   const zone = [[0, SPINTORI[0].fMax + 1.1, LIV[0].zEdge - 0.25], [1, SPINTORI[1].fMax + 0.45, LIV[1].zEdge - 0.1], [2, SPINTORI[2].fMax + 0.45, LIV[2].zEdge - 0.1]];
   for (const [liv, z0, z1] of zone) {
     let riga = 0;
     for (let z = z0; z <= z1; z += 0.74, riga++) {
       for (let x = -HW + 0.46 + (riga % 2) * 0.42; x <= HW - 0.42; x += 0.86) {
-        const t = taglioPila(liv);
+        if (umore === 'magro' && Math.random() < 0.45) continue;
+        const t = taglioPila(liv, umore);
         const c = nuovaMoneta(t, x + rnd(-0.06, 0.06), LIV[liv].y, z + rnd(-0.05, 0.05)); c.terra = true;
-        if (Math.random() < 0.2) {                       // qualche pila da due, mai dello stesso taglio
-          let t2 = taglioPila(liv); if (t2 === t) t2 = (t + 1) % 3;
+        if (Math.random() < (umore === 'ricco' ? 0.45 : umore === 'magro' ? 0.05 : 0.2)) {   // qualche pila da due, mai dello stesso taglio
+          let t2 = taglioPila(liv, umore); if (t2 === t) t2 = (t + 1) % 3;
           const d = nuovaMoneta(t2, c.x + rnd(-0.1, 0.1), c.y + c.h + 0.01, c.z + rnd(-0.1, 0.1)); d.py = d.y;
         }
       }
@@ -1593,6 +1632,12 @@ function pilaIniziale() {
   }
   silenzio = true; simula(4); silenzio = false;
   for (const c of monete) { c.dx = c.x; c.dy = c.y; c.dz = c.z; }
+  if (umore !== 'normale') {
+    const valore = monete.filter(c => c.vivo && !c.fuori).reduce((v, c) => v + TAGLI[c.t].v * c.n, 0);
+    const testo = umore === 'ricco' ? `🍀 TAVOLO RICCO: sulla pila ci sono ${soldi(valore)} di monete grosse` : `🥶 TAVOLO MAGRO: sulla pila solo ${soldi(valore)} di spiccioli`;
+    setTimeout(() => { avviso(testo, umore === 'ricco' ? 'mag imp' : 'rosso imp'); Voce.parla(umore === 'ricco' ? 'Tavolo ricco! La pila è piena di monete grosse.' : 'Tavolo magro. Poche monete, e piccole.'); }, 600);
+  }
+  return umore;
 }
 function fotografaTavolo() {
   const out = [];
@@ -1918,7 +1963,7 @@ function aggiornaSlot(dt) {
       // nell'evento l'ultimo rullo rallenta piano piano: suspense
       let vel = 16;
       if (slot.evento && i === 2 && slot.t > stop[1]) vel = 16 * Math.max(0.12, 1 - (slot.t - stop[1]) / (stop[2] - stop[1]));
-      slot.pos[i] = (slot.pos[i] + dt * vel) % SIMBOLI.length;
+      slot.pos[i] = (slot.pos[i] + dt * vel) % (slot.evento ? EV_IDS.length : SIMBOLI.length);
       if (Math.random() < dt * (slot.evento && i === 2 && slot.t > stop[1] ? vel * 0.8 : 12)) suono.tick();
     } else if (!slot.fermi[i]) { slot.fermi[i] = true; slot.pos[i] = slot.fin[i]; suono.rullo(i); scuoti(slot.evento ? 0.12 : 0.05); }
   }
@@ -1973,6 +2018,18 @@ function simbolo(g, s, x, y, h) {
   else { g.fillStyle = '#ff3df2'; g.beginPath(); const r = h * 0.19; g.arc(x - r, y - r * 0.4, r, Math.PI, 0); g.arc(x + r, y - r * 0.4, r, Math.PI, 0); g.lineTo(x, y + h * 0.36); g.closePath(); g.fill(); }
   g.restore();
 }
+/** Un'icona di evento sul rullo (2.3.0): verde se buono, rossa se cattivo. */
+function simboloEvento(g, id, x, y, h) {
+  const E = EVENTI[id];
+  g.save();
+  g.fillStyle = E.buono ? '#0f5a3a' : '#6a0f1e';
+  g.beginPath(); g.arc(x, y, h * 0.4, 0, 7); g.fill();
+  g.lineWidth = 3; g.strokeStyle = E.buono ? '#5dffb4' : '#ff5c6c'; g.stroke();
+  g.font = `${h * 0.46}px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif`;
+  g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillText(iconaEvento(id).replace('3', ''), x, y + 2);
+  g.restore();
+}
 function logoMiniDP(g, x, y, r) {
   g.save(); const gr = oroGrad(g, y - r, y + r);
   g.fillStyle = '#150e24'; g.strokeStyle = gr; g.lineWidth = r * 0.16;
@@ -2000,9 +2057,11 @@ function disegnaSlot(dt) {
     g.fillStyle = gr; g.beginPath(); g.roundRect(x0, y0, rw, rh, 12); g.fill();
     g.save(); g.beginPath(); g.roundRect(x0, y0, rw, rh, 12); g.clip();
     const p = slot.pos[i], base = Math.floor(p), fr = p - base;
+    const N = slot.evento ? EV_IDS.length : SIMBOLI.length;
     for (let k = -1; k <= 1; k++) {
-      const s = ((base + k) % SIMBOLI.length + SIMBOLI.length) % SIMBOLI.length;
-      simbolo(g, s, x0 + rw / 2, y0 + rh / 2 + (k - fr) * -rh * 0.9 * -1, 100);
+      const s = ((base + k) % N + N) % N;
+      if (slot.evento) simboloEvento(g, EV_IDS[s], x0 + rw / 2, y0 + rh / 2 + (k - fr) * -rh * 0.9 * -1, 100);
+      else simbolo(g, s, x0 + rw / 2, y0 + rh / 2 + (k - fr) * -rh * 0.9 * -1, 100);
     }
     g.restore();
     g.strokeStyle = slot.evento && slot.gira && !slot.fermi[i] ? (Math.floor(ora * 10) % 2 ? '#ff3df2' : '#fff') : slot.gira ? '#35e8ff' : '#ffd54a'; g.lineWidth = 4; g.beginPath(); g.roundRect(x0, y0, rw, rh, 12); g.stroke();
@@ -2032,20 +2091,30 @@ function disegnaSlot(dt) {
 // dello schermo e durare 2 minuti o 30 secondi; quando sta per finire lampeggia
 // gli ultimi 10 secondi.» Si tira prima a testa o croce (buono o cattivo), poi
 // quale: e quelli a tempo durano 30 s o 2 minuti, e si vedono ai lati.
+// ⚠ 2.3.0: «deve funzionare la slot dietro: quella fa tutto». Prima i rulli
+// mostravano sempre lo stesso simbolo per tutti e sei gli eventi cattivi, e la
+// slot non diceva niente. Adesso i rulli dell'evento girano sulle dodici icone
+// degli eventi (verdi le buone, rosse le cattive) e si fermano su quella che
+// succede. E ogni evento spiega cosa fa, quanto dura e cosa conviene fare.
 const EVENTI = {
-  pioggia:   { sim: 3, buono: true,  nome: '🌧 PIOGGIA D\'ORO', desc: 'quaranta monete del tuo taglio piu\' grosso piovono sul tavolo' },
-  frenesia:  { sim: 1, buono: true,  nome: '⚙️ FRENESIA', desc: 'spintori scatenati e buchi della casa chiusi per 30 s', durata: 30 },
-  calamita:  { sim: 6, buono: true,  nome: '🧲 CALAMITA DaProd', desc: 'per 2 minuti le monete uguali si impilano da sole', durata: 120 },
-  triplo:    { sim: 0, buono: true,  nome: '✖️3 TRIPLO DaProd', desc: 'per 2 minuti tutto quello che cade vale il triplo', durata: 120 },
-  bonanza:   { sim: 2, buono: true,  nome: '💰 BONANZA', desc: 'sessanta monete del tuo taglio piu\' grosso, dritte nel saldo' },
-  meteore:   { sim: 4, buono: true,  nome: '☄️ SCIAME DI METEORE', desc: 'cinque meteore sul bordo: si salvi chi puo\'' },
-  terremoto: { sim: 5, buono: false, nome: '🌋 TERREMOTO', desc: 'le monete sui lati del terzo piano finiscono alla casa' },
-  tassa:     { sim: 5, buono: false, nome: '🧾 TASSA DaProd', desc: 'la casa si prende il 30% del saldo' },
-  blackout:  { sim: 5, buono: false, nome: '🔌 BLACKOUT', desc: 'gli spintori si fermano per 30 s', durata: 30 },
-  voragine:  { sim: 5, buono: false, nome: '🕳 VORAGINE', desc: 'per 2 minuti i buchi della casa sono lunghi il triplo', durata: 120 },
-  gelo:      { sim: 5, buono: false, nome: '🧊 GELO', desc: 'per 2 minuti quello che cade vale la meta\'', durata: 120 },
-  ladro:     { sim: 5, buono: false, nome: '🦹 IL LADRO', desc: 'si porta via le dodici monete piu\' preziose del tavolo' },
+  pioggia:   { sim: 3, buono: true,  nome: '🌧 PIOGGIA D\'ORO', desc: 'quaranta monete del tuo taglio piu\' grosso piovono sul tavolo', consiglio: 'Lancia al centro: la pila si alza e spinge giu\' il bordo.' },
+  frenesia:  { sim: 1, buono: true,  nome: '⚙️ FRENESIA', desc: 'spintori scatenati e buchi della casa chiusi per 30 s', durata: 30, consiglio: 'Lancia tanto adesso: ai lati non si perde niente.' },
+  calamita:  { sim: 6, buono: true,  nome: '🧲 CALAMITA DaProd', desc: 'per 2 minuti le monete uguali si impilano da sole', durata: 120, consiglio: 'Lancia sempre lo stesso taglio: le pile diventano monete grosse.' },
+  triplo:    { sim: 0, buono: true,  nome: '✖️3 TRIPLO DaProd', desc: 'per 2 minuti tutto quello che cade vale il triplo', durata: 120, consiglio: 'E\' il momento delle monete grosse e delle abilita\'.' },
+  bonanza:   { sim: 2, buono: true,  nome: '💰 BONANZA', desc: 'sessanta monete del tuo taglio piu\' grosso, dritte nel saldo', consiglio: 'Gia\' nel saldo: puoi anche incassare.' },
+  meteore:   { sim: 4, buono: true,  nome: '☄️ SCIAME DI METEORE', desc: 'cinque meteore sul bordo: si salvi chi puo\'', consiglio: 'Guarda il bordo: le monete cadono verso di te.' },
+  terremoto: { sim: 5, buono: false, nome: '🌋 TERREMOTO', desc: 'le monete sui lati del terzo piano finiscono alla casa', consiglio: 'Il centro regge: ricostruisci da li\'.' },
+  tassa:     { sim: 5, buono: false, nome: '🧾 TASSA DaProd', desc: 'la casa si prende il 30% del saldo', consiglio: 'Il saldo in tasca si tassa: quello incassato no.' },
+  blackout:  { sim: 5, buono: false, nome: '🔌 BLACKOUT', desc: 'gli spintori si fermano per 30 s', durata: 30, consiglio: 'Non lanciare: le monete restano ferme e le perdi ai lati.' },
+  voragine:  { sim: 5, buono: false, nome: '🕳 VORAGINE', desc: 'per 2 minuti i buchi della casa sono lunghi il triplo', durata: 120, consiglio: 'Lancia al centro, lontano dai lati.' },
+  gelo:      { sim: 5, buono: false, nome: '🧊 GELO', desc: 'per 2 minuti quello che cade vale la meta\'', durata: 120, consiglio: 'Lancia monete piccole finche\' non passa.' },
+  ladro:     { sim: 5, buono: false, nome: '🦹 IL LADRO', desc: 'si porta via le dodici monete piu\' preziose del tavolo', consiglio: 'Le pile alte sono le prime a sparire: falle cadere presto.' },
 };
+/** I rulli dell'evento: le dodici icone, nell'ordine di EVENTI (2.3.0). */
+const EV_IDS = Object.keys(EVENTI);
+const iconaEvento = (id) => EVENTI[id].nome.split(' ')[0];
+/** Detto a voce e sul cartello: quanto dura. */
+const durataDetta = (E) => E.durata ? (E.durata >= 60 ? 'per ' + (E.durata / 60) + (E.durata === 60 ? ' minuto' : ' minuti') : 'per ' + E.durata + ' secondi') : 'subito, una volta';
 /** Testa o croce, poi quale (2.2.7): meta' delle volte buono, meta' cattivo. */
 function eventoACaso() {
   const buono = Math.random() < 0.5;
@@ -2086,7 +2155,8 @@ function effettoEvento(id) {
 }
 const cine = { fase: null, t: 0, b: 0, evento: null };      // fase: va → gira → mostra → torna
 let prossimoEvento = rnd(100, 160);                          // secondi di gioco attivo
-const DURATA_VA = 1.5, DURATA_MOSTRA = 2.0, DURATA_TORNA = 1.3;
+// 2.3.0: il cartello resta un secondo in piu', per leggerlo tutto.
+const DURATA_VA = 1.5, DURATA_MOSTRA = 3.2, DURATA_TORNA = 1.3;
 function avviaEvento(id) {
   if (cine.fase || slot.gira) return false;
   if (!EVENTI[id]) id = eventoACaso();
@@ -2113,7 +2183,7 @@ function aggiornaEventi(dt) {
   if (cine.fase === 'va') {
     cine.b = liscia(Math.min(1, cine.t / DURATA_VA));
     if (Math.random() < dt * 3) suono.battito();
-    if (cine.t >= DURATA_VA) { cine.fase = 'gira'; cine.t = 0; const s = EVENTI[cine.evento].sim; avviaSlot([s, s, s], cine.evento); }
+    if (cine.t >= DURATA_VA) { cine.fase = 'gira'; cine.t = 0; const s = EV_IDS.indexOf(cine.evento); avviaSlot([s, s, s], cine.evento); }
   } else if (cine.fase === 'gira') {
     cine.b = 1;
     if (!slot.gira) { cine.fase = 'mostra'; cine.t = 0; }
@@ -2143,9 +2213,13 @@ function esitoEvento(id) {
   const E = EVENTI[id];
   slot.msg = `${E.nome.replace(/^\S+\s/, '')}!  ${E.desc.toUpperCase()}`; slot.vinto = 2;
   festa = 3; scuoti(0.35); suono.rivela();
+  $('eventoSu').textContent = E.buono ? '🎰 BONUS DaProd' : '🎰 MALUS DaProd';
   $('eventoTxt').textContent = E.nome; $('eventoSub').textContent = E.desc;
+  $('eventoDurata').textContent = (E.durata ? '⏱ dura ' : '⚡ ') + durataDetta(E) + (E.durata ? ': lo vedi ' + (E.buono ? 'a sinistra' : 'a destra') : '');
+  $('eventoConsiglio').textContent = '💡 ' + (E.consiglio || '');
   $('evento').classList.toggle('cattivo', !E.buono);
   $('evento').classList.add('su');
+  Voce.parla((E.buono ? 'Bonus! ' : 'Malus! ') + E.nome.replace(/^\S+\s/, '').toLowerCase() + '. ' + E.desc + '. ' + (E.durata ? 'Dura ' + durataDetta(E).replace('per ', '') + '.' : ''));
   avviso(`🎰 EVENTO DaProd: ${E.nome}`, E.buono ? 'mag imp' : 'rosso imp');
   daSalvare = true;
 }
@@ -2287,24 +2361,88 @@ const EFFETTI_UI = [
   { e: fermo, ico: '🔌', nome: 'BLACKOUT', buono: false },
   { e: voragine, ico: '🕳', nome: 'VORAGINE', buono: false },
 ];
-let effettiT = 0, effettiDetti = '';
+let effettiT = 0;
 const mmss = (t) => { const x = Math.ceil(t); return x >= 60 ? Math.floor(x / 60) + ':' + String(x % 60).padStart(2, '0') : x + ' s'; };
+/**
+ * ⚠ 2.3.0: «si rallenta tutto quando succede». Prima ogni due decimi di secondo
+ * le pastiglie si riscrivevano da capo (innerHTML), e ogni volta ripartiva il
+ * lampeggio e si ricalcolava la pagina sopra la scena 3D. Adesso ogni pastiglia
+ * nasce una volta e poi cambiano solo il numero e la barretta, e solo se sono
+ * cambiati. Le buone stanno a sinistra, le cattive a destra, come i cartelli.
+ */
+function pastigliaDi(x) {
+  if (x.nodo) return x.nodo;
+  const d = document.createElement('div');
+  d.innerHTML = '<i></i><b></b><small></small><u></u>';
+  x.nodo = d; x.detto = {};
+  return d;
+}
 function aggiornaEffettiUI(dt) {
   effettiT += dt; if (effettiT < 0.2) return; effettiT = 0;
-  let h = '', buoni = 0, cattivi = 0, finisceB = false, finisceC = false;
+  let buoni = 0, cattivi = 0, finisceB = false, finisceC = false;
   for (const x of EFFETTI_UI) {
-    if (!(x.e.t > 0)) continue;
+    const acceso = x.e.t > 0;
+    if (!acceso) { if (x.nodo && x.nodo.parentNode) x.nodo.remove(); continue; }
     const buono = typeof x.buono === 'function' ? x.buono() : x.buono;
     const fin = x.e.t <= 10;
     if (buono) { buoni++; finisceB = finisceB || fin; } else { cattivi++; finisceC = finisceC || fin; }
+    const d = pastigliaDi(x), dove = $(buono ? 'effettiSx' : 'effettiDx');
+    if (d.parentNode !== dove) dove.appendChild(d);
+    const classe = 'eff ' + (buono ? 'buono' : 'cattivo') + (fin ? ' finisce' : '');
+    if (d.className !== classe) d.className = classe;
     const p = x.e.d > 0 ? Math.max(0, Math.min(1, x.e.t / x.e.d)) : 1;
-    h += `<div class="eff ${buono ? 'buono' : 'cattivo'}${fin ? ' finisce' : ''}" style="--p:${(p * 100).toFixed(1)}%"><i>${x.icoF ? x.icoF() : x.ico}</i>` +
-      `<b>${mmss(x.e.t)}</b><small>${x.nomeF ? x.nomeF() : x.nome}</small><u></u></div>`;
+    const v = { i: x.icoF ? x.icoF() : x.ico, b: mmss(x.e.t), s: x.nomeF ? x.nomeF() : x.nome, p: Math.round(p * 50) * 2 };
+    if (v.i !== x.detto.i) d.children[0].textContent = x.detto.i = v.i;
+    if (v.b !== x.detto.b) d.children[1].textContent = x.detto.b = v.b;
+    if (v.s !== x.detto.s) d.children[2].textContent = x.detto.s = v.s;
+    if (v.p !== x.detto.p) { x.detto.p = v.p; d.style.setProperty('--p', v.p + '%'); }
   }
-  if (h !== effettiDetti) { effettiDetti = h; $('effetti').innerHTML = h; }
-  $('bordoSx').classList.toggle('su', buoni > 0); $('bordoSx').classList.toggle('finisce', buoni > 0 && finisceB);
-  $('bordoDx').classList.toggle('su', cattivi > 0); $('bordoDx').classList.toggle('finisce', cattivi > 0 && finisceC);
+  const sx = $('bordoSx'), dx = $('bordoDx');
+  if (sx.classList.contains('su') !== buoni > 0) sx.classList.toggle('su', buoni > 0);
+  if (sx.classList.contains('finisce') !== (buoni > 0 && finisceB)) sx.classList.toggle('finisce', buoni > 0 && finisceB);
+  if (dx.classList.contains('su') !== cattivi > 0) dx.classList.toggle('su', cattivi > 0);
+  if (dx.classList.contains('finisce') !== (cattivi > 0 && finisceC)) dx.classList.toggle('finisce', cattivi > 0 && finisceC);
 }
+
+// ============ LA VOCE (2.3.0) ============
+// «Delle voci TTS spiegano che malus o bonus è uscito e cosa succede.» Come in
+// Neon: la voce del browser se c'e', se no quella di Android dal ponte dell'app.
+function ponteApp() {
+  try { if (window.DaProdApp && window.DaProdApp.parla) return window.DaProdApp; } catch (e) { /* niente */ }
+  try { if (window.top && window.top.DaProdApp && window.top.DaProdApp.parla) return window.top.DaProdApp; } catch (e) { /* niente */ }
+  return null;
+}
+const Voce = (() => {
+  const ok = typeof window.speechSynthesis !== 'undefined' && typeof window.SpeechSynthesisUtterance !== 'undefined';
+  let voce = null;
+  function scegli() {
+    if (!ok) return;
+    const tutte = speechSynthesis.getVoices();
+    voce = tutte.find(v => /^it[-_]IT/i.test(v.lang) && /google|natural|neural/i.test(v.name)) || tutte.find(v => /^it/i.test(v.lang)) || null;
+  }
+  if (ok) { scegli(); speechSynthesis.onvoiceschanged = scegli; }
+  return {
+    parla(testo) {
+      if (!stato.opz.voce || !stato.opz.audio) return false;
+      if (!ok || !voce) {
+        const app = ponteApp();
+        if (app) { try { app.parla(String(testo), 1, 1.05); return true; } catch (e) { /* niente */ } }
+      }
+      if (!ok) return false;
+      try {
+        speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(testo);
+        u.lang = 'it-IT'; if (voce) u.voice = voce; u.rate = 1.05;
+        speechSynthesis.speak(u);
+        return true;
+      } catch (e) { return false; }
+    },
+    zitta() {
+      if (ok) try { speechSynthesis.cancel(); } catch (e) { /* niente */ }
+      const app = ponteApp(); if (app && app.zitta) try { app.zitta(); } catch (e) { /* niente */ }
+    },
+  };
+})();
 
 // ============ HUD ============
 // soldi(): lire, o euro se chi gioca nella sala DaProd ha scelto gli euro.
@@ -2506,7 +2644,8 @@ function rendiNegozio() {
   } else if (scheda === 'opz') {
     const q = stato.opz.qualita;
     h += `<div class="sezione">AUDIO E SCRITTE</div><div class="opz"><button data-opz="audio" class="${stato.opz.audio ? 'on' : ''}">🔊 ${stato.opz.audio ? 'ACCESO' : 'SPENTO'}</button>
-        <button data-opz="scritte" class="${stato.opz.scritte ? 'on' : ''}">💬 SCRITTE ${stato.opz.scritte ? 'ACCESE' : 'SPENTE'}</button></div>
+        <button data-opz="scritte" class="${stato.opz.scritte ? 'on' : ''}">💬 SCRITTE ${stato.opz.scritte ? 'ACCESE' : 'SPENTE'}</button>
+        <button data-opz="voce" class="${stato.opz.voce ? 'on' : ''}">🗣 VOCE ${stato.opz.voce ? 'ACCESA' : 'SPENTA'}</button></div>
       <div class="sezione">GRAFICA</div><div class="opz">
         <button data-opz="q-alta" class="${q === 'alta' ? 'on' : ''}">ALTA · bagliori + ombre</button>
         <button data-opz="q-media" class="${q === 'media' ? 'on' : ''}">MEDIA · bagliori</button>
@@ -2541,6 +2680,7 @@ let resetArmato = false;
 function cambiaOpzione(id) {
   if (id === 'audio') { stato.opz.audio = !stato.opz.audio; aggiornaAudioBtn(); if (stato.opz.audio) audio(); }
   else if (id === 'scritte') return cambiaScritte();
+  else if (id === 'voce') { stato.opz.voce = !stato.opz.voce; if (!stato.opz.voce) Voce.zitta(); }
   else if (id === 'valuta') return cambiaValuta();
   else if (id.startsWith('q-')) { stato.opz.qualita = id.slice(2); applicaQualita(); }
   else if (id === 'auto') stato.opz.auto = !stato.opz.auto;
@@ -2919,9 +3059,11 @@ function ciclo(ora) {
   aggiornaEventi(dt); aggiornaMeteore(dt);
   if (ondaT > 0) { ondaT -= dt; if (vinciteOnda >= 2 * TAGLI[0].v) { $('ondataTxt').textContent = '+' + soldi(vinciteOnda); $('ondata').classList.add('su'); } if (ondaT <= 0) { vinciteOnda = 0; $('ondata').classList.remove('su'); } }
   // bonus di cortesia: al massimo 5 ogni 6 ore (vedi CORTESIA_MAX)
+  // 2.3.0: nella suite la partita si paga («la partita nuova deve costare»):
+  // niente monete regalate, si apre il cartello per caricare. Fuori, la demo resta com'era.
   if (inGioco && stato.saldo < TAGLI[0].v) {
     cortesiaT += dt;
-    if (cortesiaT > 6) { cortesiaT = 0; bonusDiCortesia(); }
+    if (cortesiaT > 6) { cortesiaT = 0; if (inSuite()) chiediPartitaNuova(); else bonusDiCortesia(); }
   } else cortesiaT = 0;
   aggiornaAbilitaUI(false);
   aggiornaEffettiUI(dt);
@@ -2943,7 +3085,7 @@ document.addEventListener('visibilitychange', () => { if (document.hidden && !az
 
 // ============ AVVIO ============
 $('versione').textContent = VERSIONE; $('versione2').textContent = VERSIONE;
-if (!ripristinaTavolo(stato.tavolo)) pilaIniziale();
+if (!ripristinaTavolo(stato.tavolo)) pilaIniziale(umoreACaso());
 aggiornaSponde();
 aggiornaAudioBtn(); applicaScritte(); rendiAbilita();
 $('fps').style.display = stato.opz.fps ? 'block' : 'none';
@@ -2953,6 +3095,17 @@ preparaPost();
 posaCamera(1);
 requestAnimationFrame(ciclo);
 
+/** Il cartello della partita nuova (2.3.0): solo nella suite, solo a saldo vuoto. */
+function chiediPartitaNuova() {
+  if (!inSuite() || stato.saldo >= TAGLI[0].v) return false;
+  $('nuova').hidden = false;
+  return true;
+}
+$('nuovaCarica').addEventListener('click', () => {
+  if (window.DaProdLira) DaProdLira.ricarica().catch((e) => avviso('💶 ' + e.message, 'rosso imp'));
+  $('nuova').hidden = true;
+});
+
 // Le Lire DaProd: solo dentro la sala giochi della DaProd Suite la partita
 // fatta qui si stacca in lire. Qui sul sito e nelle app daprod-lira.js non fa
 // niente, e il gioco e' la sua demo.
@@ -2960,7 +3113,7 @@ requestAnimationFrame(ciclo);
 // saldo qui, e l'incasso riporta il saldo nella suite, meno il 10% di DaProd.
 if (window.DaProdLira) DaProdLira.init({
   gioco: 'dozer',
-  ricarica: { detto: 'una lira della suite e\' una lira di monete', cambio: 1, dai: (lire) => { const m = Math.max(0, Math.round(lire || 0)); stato.saldo += m; aggiornaHUD(); daSalvare = true; avviso('🪙 Ricarica DaProd: +' + soldi(m), 'cia imp'); } },
+  ricarica: { detto: 'una lira della suite e\' una lira di monete', cambio: 1, dai: (lire) => { const m = Math.max(0, Math.round(lire || 0)); stato.saldo += m; $('nuova').hidden = true; aggiornaHUD(); daSalvare = true; avviso('🪙 Ricarica DaProd: +' + soldi(m), 'cia imp'); } },
   cassa: {
     quanto: () => Math.floor(stato.saldo),
     /*
@@ -2970,16 +3123,30 @@ if (window.DaProdLira) DaProdLira.init({
      * riparte dalla pila di sempre. Le abilita' e le monete sbloccate restano:
      * sono state pagate coi soldi veri.
      */
+    /*
+     * ⚠ 2.3.0: «quando si incassa si devono resettare i powerup, che devono
+     * essere ricomprati con soldi del portafoglio; i record rimangono». Quindi
+     * le abilita' tornano come in partenza e le monete sbloccate pure; restano
+     * il taglio record e le statistiche. Il tavolo nuovo si tira a sorte, e la
+     * partita dopo si paga caricando dal portafoglio.
+     */
     togli: (r) => {
       stato.saldo = 0;
       for (const e of [turbo, calamita, muro, moltiplica, fermo, voragine]) e.t = 0;
       moltiplica.k = 1;
-      pilaIniziale();
-      aggiornaHUD(); daSalvare = true; salva();
-      avviso(r.inControllo ? '⏳ Incasso in controllo: lo guarda un admin' : '💰 Incassato: ' + soldi(r.netto) + ' nel portafoglio DaProd · il tavolo riparte', 'cia imp');
+      for (const k in stato.pot) stato.pot[k] = ABIL[k].base || 0;
+      stato.maxLancio = 1; stato.sel = Math.min(stato.sel, 1);
+      pilaIniziale(umoreACaso());
+      rendiSelettore(); aggiornaAbilitaUI(true); aggiornaHUD(); if (negozioAperto()) rendiNegozio();
+      daSalvare = true; salva();
+      avviso(r.inControllo ? '⏳ Incasso in controllo: lo guarda un admin' : '💰 Incassato: ' + soldi(r.netto) + ' nel portafoglio DaProd · potenziamenti azzerati, i record restano', 'cia imp');
+      setTimeout(chiediPartitaNuova, 1200);
     },
   },
 });
+
+// Nella suite, a saldo vuoto, il cartello si apre subito: la partita si paga.
+setTimeout(chiediPartitaNuova, 2500);
 
 // API per le prove automatiche e per chi vuole curiosare dalla console
 window.DOZER = {
@@ -2996,7 +3163,7 @@ window.DOZER = {
   avviaEvento, finisciEvento, cine, prossimoEvento: () => prossimoEvento,
   cambiaValuta, cambiaScritte, soldi, controllaEuro, aggiornaHUD,
   pulisci: () => { monete = []; },
-  fortuna, tavoloPulito, PILA_N,
+  fortuna, tavoloPulito, PILA_N, umoreACaso, chiediPartitaNuova, Voce, EV_IDS,
   pilaIniziale, riciclaEccesso, inizioBuchi, salva, carica, fotografaTavolo, slot,
   finisciSlot: () => { let n = 0; while (slot.gira && n++ < 400) aggiornaSlot(0.02); return !slot.gira; },
   colonna: (x) => { colonna = colonnaMirata = x; },
