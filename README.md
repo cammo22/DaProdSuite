@@ -143,7 +143,7 @@ chi è collegato alla suite.
 
 ## A che punto siamo
 
-**Ultima pubblicata: 1.5.1** — i soldi della sala rifatti: la vincita senza tetto che cresce con quello che metti, il contatore dell'incasso, i potenziamenti coi soldi veri, i premi dei livelli e la Banca DaProd per chi comanda; Dozer cinquanta e cinquanta con gli effetti ai lati. Prima, la 1.5.0: la Claw che paga a fine partita, Neon col tasto per riscattare e la Radio che parla anche sul telefono. Prima, la 1.4.9: un'app semplice per chi crea (foto e musica), la regia agli admin (video, audio, 3D dal telefono), la sala con lire/euro a un tocco, il portafoglio da banca e le statistiche. Prima, la 1.4.8: lire ed euro, i giochi che si vincono, il portafoglio e le casse; la 1.4.7: Qwen che parte anche senza la LoRA nuova e l'icona nuova; la 1.4.6: la sala giochi che sta nel telefono; la 1.4.5: Qwen-Image 2.1 che parte davvero (40 passi, turbo a 5), la Banca DaProd e lo Studio. **La 1.4.0 — «Il fiore all'occhiello»:** La suite rivestita da
+**Ultima pubblicata: 1.5.2** — Crea rifatto da zero (immagine e canzone con le domande che servono, Qwen Veloce a 8 passi con la Viggle v0.2.1 o Fine a 40, la canzone cantata da YuE2 quando scrivi il testo), e ComfyUI più robusto su NVIDIA. Prima, la 1.5.1: i soldi della sala rifatti: la vincita senza tetto che cresce con quello che metti, il contatore dell'incasso, i potenziamenti coi soldi veri, i premi dei livelli e la Banca DaProd per chi comanda; Dozer cinquanta e cinquanta con gli effetti ai lati. Prima, la 1.5.0: la Claw che paga a fine partita, Neon col tasto per riscattare e la Radio che parla anche sul telefono. Prima, la 1.4.9: un'app semplice per chi crea (foto e musica), la regia agli admin (video, audio, 3D dal telefono), la sala con lire/euro a un tocco, il portafoglio da banca e le statistiche. Prima, la 1.4.8: lire ed euro, i giochi che si vincono, il portafoglio e le casse; la 1.4.7: Qwen che parte anche senza la LoRA nuova e l'icona nuova; la 1.4.6: la sala giochi che sta nel telefono; la 1.4.5: Qwen-Image 2.1 che parte davvero (40 passi, turbo a 5), la Banca DaProd e lo Studio. **La 1.4.0 — «Il fiore all'occhiello»:** La suite rivestita da
 DaProd (vetro scuro, pioggia verde, bottoni aqua), Qwen-Image 2.1 al posto di
 FLUX per creare e modificare, YuE2 in Musica, il 3D da una foto con TRELLIS.2,
 il dado delle idee senza cliché, la sala d'arcade con la Lira DaProd e il
@@ -314,9 +314,10 @@ la suite impara qualcosa il telefono ce l'ha al collegamento dopo.
 guardando. Dal telefono, da utente, vedi quello che serve a **fare una cosa**:
 
 - **Casa** — funziona? e cos'è venuto fuori mentre non guardavi;
-- **Produzione** — quattro tasti grossi e colorati: immagini, video, musica,
-  audio. E, sotto, dieci minuti di chiacchierata con un modello che può
-  proporti un piano di lavori;
+- **Crea** (era Produzione) — Immagine e Canzone, con le domande che servono:
+  cosa vuoi vedere (o cosa cambiare in una foto), Veloce o Fine; i generi, il
+  testo e la durata di una canzone. Chi decide ha anche video, voce e 3D, e
+  dieci minuti di chiacchierata con un modello che propone un piano di lavori;
 - **Riepilogo** — quattro numeri e cosa sta girando adesso, con il tuo posto in
   fila;
 - **Galleria** — *Le mie Produzioni* e *Pensieri* (le cose che ti hanno

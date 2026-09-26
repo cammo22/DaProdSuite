@@ -160,7 +160,8 @@ export async function eseguiAzione(
   }
 
   /**
-   * ⚠ **Chi non decide usa i modelli di serie.** Dalla 1.4.9.
+   * ⚠ **Chi non decide usa i modelli di serie** (dalla 1.4.9), o quelli
+   * segnati `perTutti` nel catalogo (dalla 1.5.2: Qwen fine o veloce).
    *
    * Chiesto il 25 settembre 2026: «le funzioni utente standard sono creazione
    * immagini con Qwen Image 2.1, il modello standard … e musica con ACE-Step
@@ -171,6 +172,10 @@ export async function eseguiAzione(
   if (dispositivo.ruolo !== "admin") {
     for (const campo of azione.campi) {
       if (campo.nome !== "modello" && campo.nome !== "modelloCopertina") continue;
+      // 1.5.2: «8 e 40 step» per tutti. Quelli in `perTutti` si possono
+      // scegliere; gli altri tornano al predefinito.
+      const scelto = controllo.valori[campo.nome];
+      if (typeof scelto === "string" && campo.perTutti?.includes(scelto)) continue;
       if (campo.predefinito === undefined) delete controllo.valori[campo.nome];
       else controllo.valori[campo.nome] = campo.predefinito;
     }

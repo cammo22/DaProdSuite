@@ -10,6 +10,43 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ---
 
+## 1.5.2 — Crea, rifatto da zero
+
+> «Vorrei una cosa facile da capire, più intuitiva; togliamo anche i prompt e
+> tutto quanto, ridisegniamola da zero pensando solo che deve funzionare bene
+> con il nuovo Qwen Image 2.1 e YuE.»
+
+**Produci diventa Crea.** Due tasti grandi, Immagine e Canzone, e sotto solo le
+domande che servono. Niente più «I tuoi prompt», stili e spiegazioni lunghe.
+
+- **Immagine**: Nuova o Modifica di una foto. Per la modifica la foto la prendi
+  fra le tue, dalla galleria o la scatti. Poi scrivi cosa vuoi vedere, o cosa
+  deve cambiare; c'è il 🎲 per un'idea vera, senza le parole vuote. Scegli la
+  forma (quadrata, alta, larga, foto) e **Veloce (8 passi) o Fine (40
+  passi)**, e quante.
+- **Canzone**: il titolo, fino a tre generi a pastiglie (col 🎲), cantata o
+  strumentale, il testo con i tasti delle sezioni, e la durata. Il motore lo
+  sceglie la pagina: se scrivi il testo lo canta **YuE2**, se non lo scrivi
+  ACE-Step XL se lo inventa.
+- Video, voce e 3D restano a chi decide, sotto «Per chi decide», col modulo di
+  sempre. E «Gestione stili e prompt» non c'è più.
+
+**Qwen veloce, con la Viggle nuova.** La strada veloce torna per tutti ed è la
+**Viggle Turbo v0.2.1**, campionata a 8 passi. Se sul computer non c'è
+ancora, la foto parte con la v0.2 (o la v0.1) che c'è, e la nuova si scarica
+da sola.
+
+**ComfyUI più robusto e più veloce su NVIDIA.**
+
+- Prima di mandare un lavoro la suite controlla che ci siano modello, lettore
+  del testo e VAE. Quello che manca lo fa scaricare e lo dice in italiano, e
+  anche il no del motore arriva in italiano invece che in JSON.
+- All'avvio si accendono da sole le ottimizzazioni che quel ComfyUI conosce:
+  - SageAttention (o FlashAttention) se è installata;
+  - l'offload asincrono dei pesi quando la RAM è tanta, dai 24 GB in su;
+  - mezzo GB di margine sulle schede fino a 16 GB, per non finire la memoria
+    nel VAE.
+
 ## 1.5.1 — I soldi della sala, rifatti
 
 > «Voglio una migliore gestione dei soldi, miglior portafoglio personale e una

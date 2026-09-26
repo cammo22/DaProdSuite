@@ -219,8 +219,8 @@ export const PAGINE = `<header>
   -->
   <section class="pagina" id="pag-produzione">
     <div class="scheda">
-      <h2>Produzione</h2>
-      <p class="sotto">Lo fa il computer. Tu scegli cosa, e lui lo mette in lavorazione.</p>
+      <h2>Crea</h2>
+      <p class="sotto">Scegli cosa, dici com'è, e il computer lo fa.</p>
 
       <!--
         ⚠ **Qui c'era «dillo e basta», ed e' durata una versione.**
@@ -241,6 +241,21 @@ export const PAGINE = `<header>
         gateway e «needle.ts» nello shell ci sono ancora, e li usa la
         chiacchierata.
       -->
+      <!--
+        ⚠ **Crea, dalla 1.5.2**: immagine e canzone con le domande fatte a mano,
+        al posto del modulo generico coi prompt salvati in cima. Chiesto il 26
+        settembre 2026: «facile da capire, più intuitiva; togliamo i prompt e
+        tutto quanto, ridisegniamola da zero». Vedi copione-crea.ts.
+      -->
+      <div class="crea" id="crea">
+        <div class="crea-cosa">
+          <button type="button" data-crea-cosa="immagine"><i>🖼</i><b>Immagine</b><small>crea o modifica</small></button>
+          <button type="button" data-crea-cosa="canzone"><i>♫</i><b>Canzone</b><small>cantata o strumentale</small></button>
+        </div>
+        <div id="crea-dentro"></div>
+      </div>
+      <!-- Le altre produzioni (video, voce, 3D) sono di chi decide: col modulo di sempre. -->
+      <h3 class="crea-altro solo-chi-decide">Per chi decide</h3>
       <div class="tastoni" id="elenco-azioni"></div>
       <div class="filtri" id="altre-azioni" style="margin-top:12px"></div>
 
@@ -253,9 +268,7 @@ export const PAGINE = `<header>
         cerca **mentre si produce**, non come cosa a se'. In fondo restano
         cinque schede, e cinque su un telefono si leggono meglio di sei.
       -->
-      <div class="fila" style="margin-top:6px">
-        <button class="piano largo" id="apri-stili">&#9776; Gestione stili e prompt</button>
-      </div>
+      <!-- 1.5.2: «Gestione stili e prompt» non c'e' piu': «togliamo anche i prompt e tutto quanto». -->
       <form id="modulo" hidden onsubmit="return false"></form>
       <!--
         ⚠ **«Lascia stare» se n'e' andato, e al posto suo c'e' «Manda in

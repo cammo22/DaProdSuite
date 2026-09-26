@@ -6,7 +6,7 @@
  * qui si caricano file *dentro* al motore, cosa che a Musica non serviva mai.
  */
 
-import { metteLeLoraCheCi } from "/comune/lora-presenti.js";
+import { metteLeLoraCheCi, spiegaIlNo } from "/comune/lora-presenti.js";
 
 const suite = window.daprodSuite;
 
@@ -46,7 +46,8 @@ export async function invia(grafo) {
     body: JSON.stringify({ prompt: grafo, client_id: CLIENTE }),
   });
   const esito = await risposta.json();
-  if (!risposta.ok) throw new Error(JSON.stringify(esito.node_errors ?? esito.error ?? esito, null, 1));
+  // 1.5.2: il no del motore in italiano, non il suo JSON.
+  if (!risposta.ok) throw spiegaIlNo(esito);
   return esito.prompt_id;
 }
 

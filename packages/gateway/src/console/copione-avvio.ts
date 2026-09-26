@@ -292,7 +292,7 @@ export const COPIONE_AVVIO = `
   $("nome").addEventListener("keydown", function (ev) { if (ev.key === "Enter") $("codice").focus(); });
   $("manda").addEventListener("click", function () { void manda(false); });
   $("manda-in-coda").addEventListener("click", function () { void manda(true); });
-  $("apri-stili").addEventListener("click", function () { vaiA("stili"); });
+  // 1.5.2: il tasto «Gestione stili e prompt» non c'e' piu' (vedi pagine.ts).
   /*
    * ⚠ Qui c'era «annulla», cioe' «Lascia stare». Tolto il 9 settembre 2026: il
    * modulo si chiude toccando un'altra azione, cambiando scheda o tornando

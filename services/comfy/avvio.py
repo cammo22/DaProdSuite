@@ -96,6 +96,8 @@ def nodi_di_terzi(motore: Path) -> Path:
 
 # La risposta di `con_cuda()`, calcolata una volta sola.
 _cuda: "bool | None" = None
+# La memoria video della scheda, in GB (0 se non si sa), con la stessa domanda.
+_vram: float = 0.0
 
 
 def con_cuda() -> bool:
@@ -126,18 +128,30 @@ def con_cuda() -> bool:
     La risposta si tiene da parte: il sottoprocesso costa qualche secondo e la
     domanda arriva tre volte.
     """
-    global _cuda
+    global _cuda, _vram
     if _cuda is not None:
         return _cuda
 
     try:
+        # 1.5.2: nella stessa domanda anche quanta memoria ha la scheda, per
+        # scegliere da soli come spingere il motore (vedi `flag_nvidia`).
         esito = subprocess.run(
-            [sys.executable, "-c", "import torch; print(int(torch.cuda.is_available()))"],
+            [
+                sys.executable,
+                "-c",
+                "import torch; ok = torch.cuda.is_available(); "
+                "print(round(torch.cuda.get_device_properties(0).total_memory / 2**30, 1) if ok else 0); print(int(ok))",
+            ],
             capture_output=True,
             text=True,
             timeout=120,
         )
-        _cuda = esito.stdout.strip().endswith("1")
+        righe = esito.stdout.strip().splitlines()
+        _cuda = bool(righe) and righe[-1].strip() == "1"
+        try:
+            _vram = float(righe[-2]) if len(righe) >= 2 else 0.0
+        except ValueError:
+            _vram = 0.0
     except Exception:
         # Senza torch il motore non parte comunque: qui si sceglie solo la
         # strada meno rumorosa, l'errore vero lo darà ComfyUI un attimo dopo.
@@ -190,12 +204,96 @@ def flag_velocita(scelta: str) -> list[str]:
         return flag
 
     flag.append("--fast")
-    try:
-        import flash_attn  # noqa: F401
+    # L'attenzione veloce (sage o flash) la mette `flag_nvidia`, sempre: qui
+    # resta solo quello che cambia davvero fra normale e spinta.
+    return flag
 
-        flag.append("--use-flash-attention")
+
+def ram_gb() -> float:
+    """La memoria del computer, in GB. Zero se non si riesce a leggerla."""
+    try:
+        if sys.platform == "win32":
+            import ctypes
+
+            class Stato(ctypes.Structure):
+                _fields_ = [
+                    ("dwLength", ctypes.c_ulong),
+                    ("dwMemoryLoad", ctypes.c_ulong),
+                    ("ullTotalPhys", ctypes.c_ulonglong),
+                    ("ullAvailPhys", ctypes.c_ulonglong),
+                    ("ullTotalPageFile", ctypes.c_ulonglong),
+                    ("ullAvailPageFile", ctypes.c_ulonglong),
+                    ("ullTotalVirtual", ctypes.c_ulonglong),
+                    ("ullAvailVirtual", ctypes.c_ulonglong),
+                    ("ullAvailExtendedVirtual", ctypes.c_ulonglong),
+                ]
+
+            st = Stato()
+            st.dwLength = ctypes.sizeof(Stato)
+            ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(st))
+            return st.ullTotalPhys / 2**30
+        return os.sysconf("SC_PAGE_SIZE") * os.sysconf("SC_PHYS_PAGES") / 2**30
     except Exception:
-        pass
+        return 0.0
+
+
+def conosce(motore: Path, flag: str) -> bool:
+    """Questo ComfyUI conosce il flag? Si guarda nel suo `cli_args.py`.
+
+    ⚠ **Un flag che ComfyUI non conosce lo fa uscire in avvio** (argparse), e il
+    motore non si accende piu'. I flag nuovi — l'offload asincrono, la sage
+    attention — cambiano da una versione all'altra: prima di passarli si
+    controlla che ci siano, cosi' un ComfyUI vecchio parte lo stesso.
+    """
+    try:
+        testo = (motore / "comfy" / "cli_args.py").read_text(encoding="utf-8", errors="ignore")
+    except OSError:
+        return False
+    return ('"' + flag + '"') in testo or ("'" + flag + "'") in testo
+
+
+def c_e_il_modulo(nome: str) -> bool:
+    """Il modulo Python c'e', senza importarlo (niente torch prima di ComfyUI)."""
+    try:
+        import importlib.util
+
+        return importlib.util.find_spec(nome) is not None
+    except Exception:
+        return False
+
+
+def flag_nvidia(motore: Path) -> list[str]:
+    """⚠ **Le ottimizzazioni NVIDIA, dalla 1.5.2, sempre accese quando si puo'.**
+
+    Chiesto il 26 settembre 2026: «pensa al codice robusto e ottimizzato per
+    NVIDIA e tanta RAM di offload». Qwen-Image 2.1 in Q4 sono 12 GB di pesi piu'
+    5,6 del lettore, YuE2 e TRELLIS.2 altrettanti: sulle schede di casa non ci
+    stanno tutti insieme, e il tempo lo decide **come si spostano fra scheda e
+    RAM**, non la scheda.
+
+    - **L'attenzione piu' veloce che c'e'**: SageAttention se e' installata
+      (su Qwen-Image e' la differenza piu' grossa), se no FlashAttention.
+    - **L'offload asincrono** (`--async-offload`), quando la RAM e' tanta (dai
+      24 GB in su): i pesi che non stanno in scheda si caricano mentre la
+      scheda lavora, invece che uno dopo l'altro. Con la RAM corta si lascia
+      stare: la memoria bloccata che serve per farlo toglierebbe spazio al
+      resto del computer.
+    - **Un margine piccolo in scheda** (`--reserve-vram`) se nessun profilo ne
+      ha gia' scelto uno: il desktop di Windows e il browser usano la scheda
+      anche loro, e senza margine l'ultimo passo del VAE va fuori memoria.
+
+    Ogni flag passa solo se questo ComfyUI lo conosce (`conosce`), e i moduli
+    si cercano senza importarli: un motore vecchio parte comunque.
+    """
+    if not con_cuda():
+        return []
+    flag: list[str] = []
+    if c_e_il_modulo("sageattention") and conosce(motore, "--use-sage-attention"):
+        flag.append("--use-sage-attention")
+    elif c_e_il_modulo("flash_attn") and conosce(motore, "--use-flash-attention"):
+        flag.append("--use-flash-attention")
+    if ram_gb() >= 24 and conosce(motore, "--async-offload"):
+        flag.append("--async-offload")
     return flag
 
 
@@ -230,6 +328,10 @@ def flag_memoria(scelta: str) -> list[str]:
         return ["--lowvram", "--reserve-vram", "1.5"]
     if scelta == "qualita":
         return ["--highvram", "--reserve-vram", "0.3"]
+    # 1.5.2: bilanciato lascia comunque mezzo GB al desktop, se la scheda e'
+    # piccola: con 8-12 GB e' quello che salva il VAE dell'ultimo passo.
+    if 0 < _vram <= 16:
+        return ["--reserve-vram", "0.6"]
     return []
 
 
@@ -266,8 +368,16 @@ def main() -> None:
         "--temp-directory", str(temporanei),
         *flag_dispositivo(),
         *flag_velocita(os.environ.get("DAPROD_VELOCITA", "normale")),
+        *flag_nvidia(motore),
         *flag_memoria(os.environ.get("DAPROD_PROFILO", "bilanciato")),
     ]
+
+    if con_cuda():
+        print(
+            f"[daprod] NVIDIA con {_vram:g} GB, RAM {ram_gb():.0f} GB. Flag: "
+            + " ".join(x for x in sys.argv[1:] if x.startswith("--use") or x in ("--fast", "--async-offload", "--lowvram", "--highvram")),
+            flush=True,
+        )
 
     if not con_cuda():
         print(
