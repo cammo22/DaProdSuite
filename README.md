@@ -10,7 +10,7 @@ Un programma solo per fare musica, immagini, video, voci e parlare con un avatar
 Ogni app la installi quando ti serve e la disinstalli quando non ti serve più.
 Gira sul tuo computer: niente account, niente chiavi API, codice aperto.
 
-[![versione](https://img.shields.io/badge/versione-1.4.9-00ff41)](https://github.com/cammo22/DaProdSuite/releases/latest)
+[![versione](https://img.shields.io/badge/versione-1.5.0-00ff41)](https://github.com/cammo22/DaProdSuite/releases/latest)
 [![licenza](https://img.shields.io/badge/licenza-MIT-5cff9d)](LICENSE)
 [![piattaforma](https://img.shields.io/badge/Windows-x64-3ddbff)](#requisiti)
 [![sito](https://img.shields.io/badge/sito-cammo22.github.io-ffa63d)](https://cammo22.github.io/DaProdSuite/)
@@ -129,7 +129,7 @@ chi è collegato alla suite.
 
 ## A che punto siamo
 
-**Ultima pubblicata: 1.4.9** — un'app semplice per chi crea (foto e musica), la regia agli admin (video, audio, 3D dal telefono), la sala con lire/euro a un tocco, il portafoglio da banca e le statistiche. Prima, la 1.4.8: lire ed euro, i giochi che si vincono, il portafoglio e le casse; la 1.4.7: Qwen che parte anche senza la LoRA nuova e l'icona nuova; la 1.4.6: la sala giochi che sta nel telefono; la 1.4.5: Qwen-Image 2.1 che parte davvero (40 passi, turbo a 5), la Banca DaProd e lo Studio. **La 1.4.0 — «Il fiore all'occhiello»:** La suite rivestita da
+**Ultima pubblicata: 1.5.0** — la Claw che paga a fine partita, Neon col tasto per riscattare e la Radio che parla anche sul telefono. Prima, la 1.4.9: un'app semplice per chi crea (foto e musica), la regia agli admin (video, audio, 3D dal telefono), la sala con lire/euro a un tocco, il portafoglio da banca e le statistiche. Prima, la 1.4.8: lire ed euro, i giochi che si vincono, il portafoglio e le casse; la 1.4.7: Qwen che parte anche senza la LoRA nuova e l'icona nuova; la 1.4.6: la sala giochi che sta nel telefono; la 1.4.5: Qwen-Image 2.1 che parte davvero (40 passi, turbo a 5), la Banca DaProd e lo Studio. **La 1.4.0 — «Il fiore all'occhiello»:** La suite rivestita da
 DaProd (vetro scuro, pioggia verde, bottoni aqua), Qwen-Image 2.1 al posto di
 FLUX per creare e modificare, YuE2 in Musica, il 3D da una foto con TRELLIS.2,
 il dado delle idee senza cliché, la sala d'arcade con la Lira DaProd e il

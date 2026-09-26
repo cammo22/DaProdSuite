@@ -224,7 +224,7 @@
 #arenaTesta, #arenaPiede { background: rgba(8,5,18,.55); }
 @media (min-width: 980px) { #pannello { padding-bottom: 96px; } }
 @media (max-width: 979px) {
-  #radio { top: calc(var(--testa) + 10px + var(--sat)); bottom: auto; transform: translate(-50%, -160%); }
+  #radio { top: calc(var(--testa) + 10px + var(--sat)); bottom: auto; transform: translate(-50%, calc(-100% - var(--testa) - 30px - var(--sat))); }
   #radio.on { transform: translate(-50%, 0); }
   #radio .r-testa { font-size: 9.5px; letter-spacing: 1px; }
   #radio p { font-size: 13px; min-height: 0; }
@@ -234,6 +234,9 @@
    «Su mobile e' troppo diviso in due»: l'Arena a tutto schermo, oppure una
    scheda a tutto schermo con l'arena in un riquadro trascinabile (PiP). */
 #pipManiglia { display: none; }
+#pipSu { display: none; position: fixed; z-index: 45; right: 10px; bottom: calc(76px + var(--sab)); padding: 9px 14px;
+  border-radius: 999px; font: 800 11px/1 var(--f-tit, "Orbitron"), sans-serif; letter-spacing: 1.2px; color: #1a1000;
+  background: linear-gradient(180deg, #fff1a8, #ffd54a); border: 0; box-shadow: 0 8px 22px rgba(0,0,0,.55), 0 0 18px rgba(255,213,74,.45); }
 @media (max-width: 979px) {
   body.vista-arena #colPannelli { display: none; }
   body.vista-arena #colArena { flex: 1; height: auto; min-height: 0; }
@@ -251,6 +254,13 @@
   #pipManiglia span { font: 800 10px/1 var(--f-tit, "Orbitron"), sans-serif; letter-spacing: 1.5px; color: var(--oro); }
   #pipManiglia button { width: 30px; height: 26px; border-radius: 8px; font-size: 15px; line-height: 1; color: #fff;
     background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.18); }
+  /* 2.1.5: «bello il miniplayer, ma mettiamo che si puo' abbassare completamente e
+     alzare al volo in qualsiasi pagina, per leggere bene la pagina». ▾ lo fa
+     scendere fuori dallo schermo; la linguetta in basso a destra lo rialza. */
+  .pip-tasti { display: flex; gap: 5px; font-style: normal; }
+  body.vista-pannello.pip-giu #colArena { transform: translateY(120vh); pointer-events: none; }
+  body.vista-pannello #colArena { transition: transform .3s ease; }
+  body.vista-pannello.pip-giu #pipSu { display: block; }
   /* La mini borsa sul telefono: patrimonio e danni, niente grafico. */
   #borsaHud { width: auto; grid-template-columns: 1fr; right: 12px; bottom: calc(190px + var(--sab)); padding: 7px 11px; }
   /* Con l'arena davanti la scheda aperta resta ricordata, ma non si accende. */

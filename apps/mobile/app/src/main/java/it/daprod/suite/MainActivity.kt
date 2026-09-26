@@ -2084,6 +2084,20 @@ class MainActivity : AppCompatActivity() {
                         else Lettore.basta(this@MainActivity)
                     }
                 }
+
+                /**
+                 * La voce del telefono (1.5.0), per le pagine che parlano: la
+                 * Radio di Neon Partenope. Vedi [Voce].
+                 */
+                @JavascriptInterface
+                fun parla(testo: String, tono: Float, velocita: Float) {
+                    runOnUiThread { Voce.parla(this@MainActivity, testo, tono, velocita) }
+                }
+
+                @JavascriptInterface
+                fun zitta() {
+                    runOnUiThread { Voce.zitta() }
+                }
             },
             "DaProdApp",
         )
@@ -3032,6 +3046,7 @@ class MainActivity : AppCompatActivity() {
         // premuto nella tendina non fa niente invece di far cadere l'app.
         Lettore.comandi = null
         Lettore.basta(this)
+        Voce.spegni()
         smettiDiGuardareLaRete()
         super.onDestroy()
         polling?.cancel()

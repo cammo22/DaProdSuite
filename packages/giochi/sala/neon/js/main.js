@@ -36,6 +36,44 @@ function avvio() {
   // una lira e' una lira (la ricarica arriva uguale) e la partita finisce
   // all'eruzione: si incassa e si ricomincia (vedi erutta in economia.js).
   // Qui sul sito e nelle app daprod-lira.js non fa niente.
+  /*
+   * ⚠ «Finisci e riscatta» (2.1.5). Chiesto il 25 settembre 2026: «mettere un
+   * pulsante per dire: quando vuoi finire il gioco premi qua e riscatta il
+   * punteggio, come sulla Claw Machine». Chi smette prima porta a casa fino a
+   * 15 euro, contando gli ordini di grandezza del ciclo e sotto il tetto di
+   * quello che ha ricaricato; chi fa eruttare il Vesuvio prende da 20 a 30 euro
+   * piu' i bonus. I numeri veri li fa la sala: qui c'e' la stima.
+   */
+  function stimaRiscatto() {
+    const o = Math.log10(1 + Math.max(0, S.lireCiclo || 0));
+    const prog = Math.max(0, Math.min(1, (o - 6) / 24));
+    const st = window.DaProdLira && DaProdLira.stato && DaProdLira.stato();
+    const messo = st && st.cassa ? st.cassa.messo || 0 : 0;
+    const tetto = messo * 10 / 1936.27;
+    return { prima: Math.min(15 * prog, tetto), tetto, fine: 20 + 10 * prog };
+  }
+  const euro = (e) => "€ " + e.toFixed(2).replace(".", ",");
+  function chiediRiscatto() {
+    const st = stimaRiscatto();
+    apriModale("🏁 Finisci e riscatta",
+      `<p>Le lire di questo ciclo: <b class="oro">${fmtLire(S.lireCiclo || 0)}</b>.</p>
+       <p>Se smetti adesso, nel portafoglio DaProd arrivano circa <b class="oro">${euro(st.prima)}</b>
+       <small>(fino a 15 € col punteggio, e al massimo 10 volte quello che hai ricaricato: ${euro(st.tetto)})</small>.</p>
+       <p>Se fai eruttare il Vesuvio vinci da <b>€ 20</b> a <b>€ 30</b> — col tuo punteggio <b class="oro">${euro(st.fine)}</b> — più il premio della velocità e un pezzo del montepremi.</p>
+       <p>Poi la partita ricomincia da capo, da zero: nella sala DaProd ogni partita e' una partita.</p>
+       <div class="azioni-mod"><button class="btn oro" id="riscattaSi">🏁 Riscatta e ricomincia</button><button class="btn" id="riscattaNo">Continuo a giocare</button></div>`);
+    $("riscattaNo").onclick = () => chiudiModale();
+    $("riscattaSi").onclick = () => {
+      $("riscattaSi").disabled = true;
+      DaProdLira.incassa({ fine: false, grezzo: S.lireCiclo || 0, chiudi: true })
+        .then(() => chiudiModale())
+        .catch((e) => { $("riscattaSi").disabled = false; toast("⚠️", "Non riscattato", (e && e.message) || "riprova", { tipo: "rosso" }); });
+    };
+  }
+  if (window.DaProdLira && DaProdLira.modo === "suite") {
+    $("bRiscatta").hidden = false;
+    $("bRiscatta").onclick = chiediRiscatto;
+  }
   if (window.DaProdLira) DaProdLira.init({
     gioco: "neon",
     ricarica: {

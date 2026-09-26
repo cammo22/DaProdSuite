@@ -10,6 +10,23 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ---
 
+## 1.5.0 — La Claw che paga e Neon che parla
+
+> «In Claw Machine e Neon Partenope puoi guadagnare molto.»
+
+- **Claw Machine 1.1.4**: alla fine della collezione c'è il pannello che fa
+  vedere le tue lire di gioco (anche miliardi) diventare euro, e il tasto
+  «Riscatta e ricomincia»: da 20 a 30 euro più i bonus. PRENDI sta al centro,
+  pinza, amo e rete sono piccoli sotto. L'amo costa metà presa e pesca i due
+  più preziosi. Arrivare alla fine chiede di più: senza ricariche da mezz'ora a
+  due ore.
+- **Neon Partenope 2.1.5**: il tasto 🏁 per finire quando vuoi e riscattare; il
+  riquadro dell'arena si abbassa del tutto e si rialza al volo; in Merceria si
+  vede cosa indossi; la Radio chiusa non lascia più un pezzo in alto.
+- **La Radio di Neon parla anche sul telefono.** Nell'app Android la sintesi
+  vocale del browser non c'è, e i dialoghi restavano muti: adesso l'app presta
+  la voce di Android (`DaProdApp.parla`) a chi gioca nella sala.
+
 ## 1.4.9 — Un'app per chi crea, una regia per chi decide
 
 > «Ora il progetto ha tutto quello che gli serve, e dobbiamo rendere tutto fatto
