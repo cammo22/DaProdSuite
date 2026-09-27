@@ -138,7 +138,7 @@ function avvio() {
       const resta = (b.fino - ora) / 1000, fin = resta <= 10;
       n++; finisce = finisce || fin;
       if (!d) { d = pastiglieDP[k] = document.createElement("div"); d.innerHTML = "<i></i><b></b><small></small><u></u>"; }
-      if (d.parentNode !== $("dpEffetti")) $("dpEffetti").appendChild(d);
+      if (d.parentNode !== $("dpLista2")) $("dpLista2").appendChild(d);
       const classe = "dp-eff" + (fin ? " finisce" : "");
       if (d.className !== classe) d.className = classe;
       const nome = { dpDan: "DANNO ×" + b.val, dpCrit: "CRITICO +" + Math.round(b.val * 100) + "%", dpProd: "PRODUZIONE ×" + b.val, dpLire: "LIRE ×" + b.val }[k];
@@ -147,12 +147,20 @@ function avvio() {
       const p = Math.round(Math.max(0, Math.min(1, resta / Math.max(1, b.d || 60))) * 50) * 2 + "%";
       if (d.style.getPropertyValue("--p") !== p) d.style.setProperty("--p", p);
     }
+    // 2.2.1: «minimizzare i potenziamenti acquistati e attivi». Il tasto li
+    // riduce a icona e tempo, e se lo ricorda nelle opzioni.
+    const mini = $("dpMini");
+    if (mini.hidden !== (n === 0)) mini.hidden = n === 0;
+    const detto = S.opz.effettiMini ? "⚡ " + n + " +" : "⚡ −";
+    if (mini.textContent !== detto) mini.textContent = detto;
+    if (document.body.classList.contains("dp-mini") !== !!S.opz.effettiMini) document.body.classList.toggle("dp-mini", !!S.opz.effettiMini);
     const bordo = $("dpBordo");
     if (bordo.classList.contains("su") !== n > 0) bordo.classList.toggle("su", n > 0);
     if (bordo.classList.contains("finisce") !== (n > 0 && finisce)) bordo.classList.toggle("finisce", n > 0 && finisce);
     if (dpAperto && $("dpLista")) { const l = $("dpLista"); const nuovo = htmlDP(); if (l._h !== nuovo) { l._h = nuovo; l.innerHTML = nuovo; } }
   }
   setInterval(disegnaDP, 250);
+  $("dpMini").addEventListener("click", () => { S.opz.effettiMini = !S.opz.effettiMini; salva(); disegnaDP(); });
   const htmlScheda = () => titolo("⚡", "Potenziamenti DaProd", "Forti e a tempo, coi soldi veri del portafoglio. All'incasso si azzerano: la partita dopo si ricomprano.") +
     `<div class="dp-scheda">${htmlDP(true)}</div>`;
   window.NP_DP = { DP, accendiDP, compraDP, disegnaDP, htmlScheda };

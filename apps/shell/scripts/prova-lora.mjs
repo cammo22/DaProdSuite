@@ -112,7 +112,7 @@ console.log("\n== GLI ALTRI FILE (1.5.2) ==");
   prova("il no del motore in italiano", /manca un file del modello \(unet_name\)/.test(no.message), no.message);
 }
 
-console.log("\n== IL PASSAGGIO DELL'LLM NELLA MODIFICA (1.6.1) ==");
+console.log("\n== IL PASSAGGIO DELL'LLM E I MODI DELLA MODIFICA (1.6.1, 1.7.0) ==");
 
 /** Un motore finto che ha questi lettori, e sa (o no) cos'e' TextGenerate. */
 function motoreConLettori(lettori, textGenerate = true) {
@@ -121,6 +121,8 @@ function motoreConLettori(lettori, textGenerate = true) {
     const u = String(url);
     if (u.endsWith("/object_info/CLIPLoader")) return { ok: true, json: async () => ({ CLIPLoader: { input: { required: { clip_name: [lettori, {}] } } } }) };
     if (u.endsWith("/object_info/TextGenerate")) return { ok: true, json: async () => (textGenerate ? { TextGenerate: {} } : {}) };
+    if (u.endsWith("/object_info/QwenImage21Cache")) return { ok: true, json: async () => ({ QwenImage21Cache: {} }) };
+    if (u.endsWith("/object_info/RegexReplace")) return { ok: true, json: async () => ({ RegexReplace: {} }) };
     return { ok: true, json: async () => ({}) };
   };
 }
@@ -129,12 +131,26 @@ const modifica = (extra = {}) => grafoQwenModifica({ prompt: "mettigli un cappel
 {
   const g = modifica();
   prova("la modifica passa dal riscrittore: la frase va all'LLM, e l'LLM al lettore",
-    g["51"]?.class_type === "TextGenerate" && g["51"].inputs.prompt === "mettigli un cappello rosso" && JSON.stringify(g["3"].inputs.prompt) === '["51",0]');
-  prova("l'LLM guarda la foto, col ragionamento acceso e i numeri del grafo ufficiale",
-    JSON.stringify(g["52"].inputs["images.image0"]) === '["11",0]' && g["51"].inputs.thinking === true && g["51"].inputs["sampling_mode.top_k"] === 20 && g["51"].inputs["sampling_mode.seed"] === 7);
+    g["51"]?.class_type === "TextGenerate" && g["51"].inputs.prompt === "mettigli un cappello rosso" &&
+    JSON.stringify(g["53"].inputs.string) === '["51",0]' && JSON.stringify(g["3"].inputs.prompt) === '["53",0]');
+  prova("l'LLM guarda la foto coi numeri del grafo ufficiale, e di serie non ragiona (1.7.0)",
+    JSON.stringify(g["52"].inputs["images.image0"]) === '["11",0]' && g["51"].inputs.thinking === false && g["51"].inputs.max_length === 1024 &&
+    g["51"].inputs["sampling_mode.top_k"] === 20 && g["51"].inputs["sampling_mode.seed"] === 7);
+  const r = modifica({ ragiona: true });
+  prova("con ragiona: true il ragionamento torna, coi 16256 token del grafo ufficiale", r["51"].inputs.thinking === true && r["51"].inputs.max_length === 16256);
   prova("il riscrittore si carica come lettore qwen_image", g["50"].inputs.clip_name === QWEN21.riscrittore && g["50"].inputs.type === "qwen_image");
   const z = modifica({ zona: true, maschera: "zona.png" });
-  prova("con la zona l'LLM vede anche la foto col velo rosso", JSON.stringify(z["52"].inputs["images.image1"]) === '["16",0]');
+  prova("con la zona la maschera va come immagine a parte, anche all'LLM", JSON.stringify(z["52"].inputs["images.image1"]) === '["18",0]' && z["18"].class_type === "MaskToImage");
+  prova("con la zona c'e' il Masked Denoising: latente della foto con la maschera", z["22"].class_type === "SetLatentNoiseMask" && JSON.stringify(z["6"].inputs.latent_image) === '["22",0]');
+  prova("il campionatore passa dalla cache KV in int8", z["21"].class_type === "QwenImage21Cache" && z["21"].inputs.dtype === "int8" && JSON.stringify(z["6"].inputs.model) === '["21",0]');
+  const a = modifica({ modo: "allarga", margini: { sinistra: 250, destra: 256 } });
+  prova("allarga: margini a multipli di 32, tela rossa, rumore solo nei margini",
+    a["60"].inputs.left === 256 && a["60"].inputs.right === 256 && a["61"].inputs.width === 1024 + 512 && JSON.stringify(a["64"].inputs.mask) === '["60",1]');
+  const piu = modifica({ riferimenti: ["a.png", "b.png"], prompt: "la giacca dell'immagine 2" });
+  prova("le immagini in piu' vanno in ordine, e «immagine 2» diventa <image2>",
+    JSON.stringify(piu["3"].inputs["images.image_2"]) === '["30",0]' && JSON.stringify(piu["3"].inputs["images.image_3"]) === '["31",0]' && piu["51"].inputs.prompt.includes("<image2>"));
+  const gd = modifica({ modo: "guida", guida: "contorni", riferimenti: ["g.png"] });
+  prova("guida contorni: la prima in piu' passa da Canny", gd["70"].class_type === "Canny" && JSON.stringify(gd["3"].inputs["images.image_2"]) === '["70",0]');
   prova("senza riscrivi: false il grafo e' quello di prima", !modifica({ riscrivi: false })["51"]);
 }
 
@@ -153,7 +169,7 @@ motoreConLettori([QWEN21.txt]);
   const esito = await metteLeLoraCheCi("http://motore", g, { scarica: (ids) => scaricate.push(...ids) });
   await new Promise((r) => setTimeout(r, 10));
   prova("senza il riscrittore la modifica parte lo stesso con la frase com'era",
-    !g["50"] && !g["51"] && !g["52"] && g["3"].inputs.prompt === "mettigli un cappello rosso" && esito.senzaRiscrittore);
+    !g["50"] && !g["51"] && !g["52"] && !g["53"] && g["3"].inputs.prompt === "mettigli un cappello rosso" && esito.senzaRiscrittore);
   prova("e il riscrittore si fa scaricare", scaricate.includes(QWEN21.idRiscrittore), JSON.stringify(scaricate));
 }
 

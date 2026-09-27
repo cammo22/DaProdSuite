@@ -135,11 +135,11 @@ export const COPIONE_PORTAFOGLIO = `
         '<b class="' + (netto >= 0 ? 'su' : 'giu') + '">' + (netto >= 0 ? '+' : '−') + soldi(Math.abs(netto)) + '</b></div>';
     }).join('') : '<div class="pf-vuoto">Niente ' + NOMI_PERIODO[periodoPf] + '.</div>';
 
-    $('wl-movimenti').innerHTML = dentroMov.length ? dentroMov.slice(0, 60).map(function (m) {
+    $('wl-movimenti').innerHTML = dentroMov.length ? movimentiPerGiorno(dentroMov.slice(0, 200), function (m) {
       var piu = m.lire > 0, c = categoriaDi(m.perche);
       return '<div class="wl-mov"><span class="ico">' + c.ico + '</span><div class="chi"><b>' + sicuro(m.perche || c.nome) + '</b><small>' + sicuro(oraCorta(m.quando)) + ' · saldo ' + soldi(m.saldo) + '</small></div>' +
         '<b class="' + (piu ? 'su' : 'giu') + '">' + (piu ? '+' : '−') + soldi(Math.abs(m.lire)) + '</b></div>';
-    }).join('') : '<div class="pf-vuoto">Nessun movimento ' + NOMI_PERIODO[periodoPf] + '.</div>';
+    }, 'pf') : '<div class="pf-vuoto">Nessun movimento ' + NOMI_PERIODO[periodoPf] + '.</div>';
 
     var borsaViva = Boolean(sala && sala.partita && (sala.partita.punti > 0 || (io && io.admin)));
     $('wl-borsa').hidden = !borsaViva;

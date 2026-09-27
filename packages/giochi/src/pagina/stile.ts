@@ -1310,4 +1310,17 @@ nav .pallino{display:inline-block; min-width:16px; padding:0 4px; margin-left:4p
   *{animation-duration:.01ms!important; animation-iteration-count:1!important;
     transition-duration:.01ms!important}
 }
+
+/* 1.7.0: i movimenti per giorno, chiudibili, e mai piu alti di mezza pagina */
+.mov-giorno{border:1px solid rgba(255,255,255,.08); border-radius:12px; background:rgba(0,0,0,.2); overflow:hidden}
+.mov-giorno + .mov-giorno{margin-top:6px}
+.mov-giorno summary{display:flex; align-items:baseline; gap:8px; padding:9px 12px; cursor:pointer; list-style:none}
+.mov-giorno summary::-webkit-details-marker{display:none}
+.mov-giorno summary::before{content:"▸"; color:#86a59c; transition:transform .15s}
+.mov-giorno[open] summary::before{transform:rotate(90deg)}
+.mov-giorno summary b{font-size:13.5px}
+.mov-giorno summary small{color:var(--spento); font-size:11.5px}
+.mov-giorno summary span{margin-left:auto; font:700 13px/1 "Space Mono", monospace}
+.mov-giorno summary span.su{color:#3dff8a} .mov-giorno summary span.giu{color:#ff8a96}
+.mov-dentro{display:grid; gap:6px; padding:0 8px 8px; max-height:45vh; overflow:auto}
 `;

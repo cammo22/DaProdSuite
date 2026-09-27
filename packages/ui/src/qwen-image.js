@@ -94,11 +94,22 @@ export function multiplo32(v) {
 }
 
 /**
- * I nodi che non cambiano mai: modello (con o senza turbo), lettore, VAE.
+ * I nodi che non cambiano mai: modello (con o senza turbo), lettore, VAE, e
+ * la cache.
  *
  * Numerati come gli altri grafi della suite — 1 il modello, 2 il testo, 7 il
  * VAE — perche' le barre di avanzamento leggono il tipo del nodo, e tenere lo
  * stesso ordine vuol dire che funzionano senza sapere che modello e'.
+ *
+ * ⚠ **La cache KV (1.7.0), il «KV Cache Acceleration» di WanGP.** Qwen-Image
+ * 2.1 legge il testo e le foto di riferimento **una volta sola** e le tiene da
+ * parte per tutti i passi (e' il «prefix KV cache» del loro README: la parte
+ * che fa volare le modifiche con tante foto). ComfyUI la accende da se', ma in
+ * automatico la mette in scheda solo se avanza quattro volte lo spazio, e su 8
+ * GB quasi mai avanza: finiva in RAM. Il nodo ufficiale `QwenImage21Cache` la
+ * tiene **in int8**, meta' spazio «alla precisione del bf16» (parole loro), e
+ * cosi' in scheda ci sta. Se il motore e' vecchio e il nodo non lo conosce,
+ * `lora-presenti.js` lo toglie (`senzaCache`) e si va come prima.
  */
 function caricatori(turbo) {
   const nodi = {
@@ -112,11 +123,29 @@ function caricatori(turbo) {
       inputs: { model: ["1", 0], lora_name: QWEN21.turbo, strength_model: 1 },
     };
   }
+  nodi["21"] = {
+    class_type: "QwenImage21Cache",
+    inputs: { model: turbo ? ["20", 0] : ["1", 0], device: "auto", dtype: "int8" },
+  };
   return nodi;
 }
 
-/** Il modello da dare al campionatore: quello nudo, o quello con la turbo. */
-const modello = (turbo) => (turbo ? ["20", 0] : ["1", 0]);
+/** Il modello da dare al campionatore: passa sempre dalla cache. */
+const modello = () => ["21", 0];
+
+/** Toglie la cache e ricollega il campionatore al modello (motore vecchio). */
+export function senzaCache(grafo) {
+  const c = grafo["21"];
+  if (!c || c.class_type !== "QwenImage21Cache") return false;
+  const da = c.inputs.model;
+  delete grafo["21"];
+  for (const nodo of Object.values(grafo)) {
+    for (const [k, v] of Object.entries(nodo.inputs || {})) {
+      if (Array.isArray(v) && v[0] === "21") nodo.inputs[k] = da;
+    }
+  }
+  return true;
+}
 
 /** I punti della v0.2.1, quelli su cui Viggle l'ha distillata (6 passi). */
 const SIGMI_TURBO = [1, 0.9375, 0.875, 0.75, 0.5, 0.25];
@@ -206,31 +235,40 @@ export function grafoQwenImmagine(opzioni) {
   return grafo;
 }
 
+
 /**
- * ⚠ **Il passaggio dell'LLM** (1.6.1). Detto il 26 settembre 2026: «le
- * immagini non vengono modificate bene … non mi sembra ci sia il passaggio
- * dell'LLM che decide».
+ * ⚠ **Il passaggio dell'LLM**, cioe' il riscrittore. Nato nella 1.6.1 («non mi
+ * sembra ci sia il passaggio dell'LLM che decide»), rifatto nella 1.7.0.
  *
- * Aveva ragione. Il grafo ufficiale della modifica di ComfyUI
- * (`image_qwen_image_2_1_image_edit`, workflow_templates) prima di tutto fa
- * leggere la richiesta a un **Prompt Enhancer**: un Qwen3.5-VL 9B istruito da
- * Qwen apposta (Qwen-Image-2.1-PE-I2I), che **guarda le foto** e riscrive
- * «mettigli un cappello» in un'istruzione precisa: cosa cambia, dove, come, e
- * cosa deve restare uguale. Solo dopo il testo va al lettore. Anche WanGP lo fa
- * (models/qwen21/enhancer.py). Noi davamo al modello la frase cosi' com'era.
+ * E' il passaggio del grafo ufficiale di ComfyUI per la modifica
+ * (`image_qwen_image_2_1_image_edit`, workflow_templates 0.1.96): prima di
+ * disegnare, **Qwen-Image-2.1-PE-I2I** (un Qwen3.5 9B istruito da Qwen
+ * apposta) guarda le foto e riscrive «mettigli un cappello» in un'istruzione
+ * precisa — cosa cambia, dove, e cosa resta uguale. Stessi numeri del loro
+ * grafo: `TextGenerate` nativo, `CLIPLoader` tipo `qwen_image`, tutte le foto
+ * in un lotto (`BatchImagesNode`), niente template di sistema,
+ * campionamento 1 / 20 / 0,95 / 0,05 / 1,05.
  *
- * Qui e' lo stesso identico passaggio del grafo ufficiale, coi suoi numeri:
- * `TextGenerate` nativo (ComfyUI 0.37.2), il riscrittore caricato da
- * `CLIPLoader` come lettore `qwen_image`, tutte le foto in un lotto
- * (`BatchImagesNode`), il ragionamento acceso, niente template di sistema (il
- * modello e' istruito per farne a meno), campionamento 1 / 20 / 0,95 / 0,05 /
- * 1,05. Il testo che esce va al posto della frase.
+ * **Cosa e' cambiato nella 1.7.0, e perche'.** Cammo: «il modello qwen e'
+ * lentissimo». Il colpevole era qui: il riscrittore pesa 9,5 GB e la scheda
+ * ne ha 8, e col **ragionamento acceso** scrive centinaia di parole di
+ * pensiero prima della risposta — una alla volta, coi pesi che fanno avanti e
+ * indietro. Minuti. Adesso:
  *
- * Se il file non c'e' ancora (9,5 GB) o ComfyUI e' vecchio, `lora-presenti.js`
- * toglie questi tre nodi con `senzaRiscrittore` e la modifica parte lo stesso
- * con la frase com'era, mentre il file si scarica.
+ * - il ragionamento e' **spento di serie** (`ragiona: true` lo riaccende, e
+ *   nella scheda c'e' la spunta): la risposta resta quella del modello
+ *   istruito, senza il pensiero davanti;
+ * - la risposta si ferma a 1024 token se non ragiona (una modifica ne usa
+ *   150-300), e il ragionamento resta coi 16256 del loro grafo;
+ * - se il modello risponde nel formato del suo repo — un JSON con
+ *   `rewritten_prompt`, `wh_ratio`, `ratio_follow` (README di Qwen-Image-2.1,
+ *   «Prompt Rewriting») — `RegexReplace` tiene solo la frase: al lettore deve
+ *   arrivare l'istruzione, non le parentesi.
+ *
+ * Se il file non c'e' ancora o il motore e' vecchio, `lora-presenti.js` toglie
+ * questi nodi con `senzaRiscrittore` e la modifica parte con la frase com'era.
  */
-function riscrittore(grafo, testo, immagini, seed) {
+function riscrittore(grafo, testo, immagini, seed, ragiona) {
   grafo["50"] = { class_type: "CLIPLoader", inputs: { clip_name: QWEN21.riscrittore, type: "qwen_image", device: "default" } };
   const lotto = {};
   Object.values(immagini).forEach((da, i) => { lotto["images.image" + i] = da; });
@@ -241,7 +279,7 @@ function riscrittore(grafo, testo, immagini, seed) {
       clip: ["50", 0],
       prompt: testo,
       image: ["52", 0],
-      max_length: 16256,
+      max_length: ragiona ? 16256 : 1024,
       sampling_mode: "on",
       "sampling_mode.temperature": 1,
       "sampling_mode.top_k": 20,
@@ -250,12 +288,24 @@ function riscrittore(grafo, testo, immagini, seed) {
       "sampling_mode.repetition_penalty": 1.05,
       "sampling_mode.seed": seed,
       "sampling_mode.presence_penalty": 0,
-      thinking: true,
+      thinking: Boolean(ragiona),
       use_default_template: false,
       mtp: "auto",
     },
   };
-  grafo["3"].inputs.prompt = ["51", 0];
+  grafo["53"] = {
+    class_type: "RegexReplace",
+    inputs: {
+      string: ["51", 0],
+      regex_pattern: '^[\\s\\S]*?"rewrit+en_prompt"\\s*:\\s*"|"\\s*,\\s*"(wh_ratio|ratio_follow)"[\\s\\S]*$|"\\s*\\}\\s*$',
+      replace: "",
+      case_insensitive: true,
+      multiline: false,
+      dotall: false,
+      count: 0,
+    },
+  };
+  grafo["3"].inputs.prompt = ["53", 0];
 }
 
 /** Toglie il passaggio dell'LLM e rimette la frase com'era (vedi `riscrittore`). */
@@ -266,35 +316,61 @@ export function senzaRiscrittore(grafo) {
   delete grafo["50"];
   delete grafo["51"];
   delete grafo["52"];
+  delete grafo["53"];
   return true;
 }
 
+/** Quante immagini guarda Qwen-Image 2.1 insieme: dieci (README ufficiale). */
+export const MAX_IMMAGINI = 10;
+
 /**
- * La modifica: a parole su tutta la foto, o solo dove si e' dipinto.
+ * «immagine 2» scritto in italiano diventa `<image2>`, il nome con cui il
+ * modello chiama le foto nell'ordine in cui le riceve (README: «refer to
+ * ordered references as <image1>, <image2>»). Cosi' si scrive come si parla.
+ */
+export function nomiImmagini(testo) {
+  return String(testo || "").replace(/\b(?:immagine|foto|img|image)\s*n?[.°]?\s*(\d{1,2})\b/gi, "<image$1>");
+}
+
+/** Le frasi che dicono al modello cosa sono le immagini in piu', per modo. */
+const GUIDE = {
+  posa: "Keep the subject of <image1>, but give it exactly the pose and body position shown in <image2>. <image2> is only a pose reference: do not copy its person, clothes or background.",
+  profondita: "Keep the subject and style of <image1>, but rebuild the scene with the same depth, layout and camera position as <image2>. <image2> is only a depth and layout reference.",
+  contorni: "Redraw <image1> so that it follows exactly the outlines of the line drawing <image2>: same shapes, same positions. <image2> is only an edge map.",
+};
+
+/**
+ * La modifica, come dicono le guide di Qwen, di ComfyUI e di WanGP (1.7.0).
+ *
+ * Detto il 27 settembre 2026: «qwen image lascia stare il nostro metodo, usa
+ * come dicono le guide huggingface e comfy, dovrebbe supportare anche piu'
+ * immagini contemporaneamente». Il nostro metodo era il velo rosso sulla zona
+ * piu' l'incollatura: via. Quello che c'e' adesso, modo per modo:
+ *
+ * - **modifica** — la foto piu' fino a nove immagini in piu', in ordine
+ *   (`images.image_1` … `image_10`), e la frase. E' esattamente il grafo
+ *   ufficiale: `TextEncodeQwenImage21` con `resolution: 0` (le misure della
+ *   foto, come nel loro template), KSampler euler/simple a CFG 1.
+ * - **zona** — la foto, e la **maschera come immagine a parte** (README: «local
+ *   edits via circles, painted annotations, or separate masks»), piu' il
+ *   **Masked Denoising** di WanGP: il latente della foto con
+ *   `SetLatentNoiseMask`, cosi' fuori dalla zona il campionatore non tocca
+ *   niente. Alla fine la zona si posa sulla foto vera, al pixel.
+ * - **allarga** (outpainting) — come in WanGP: la tela piu' grande coi
+ *   **margini rossi** («outpainting replaces red margins with a continuation
+ *   of the scene») e la frase che chiede di allargare; il rumore solo nei
+ *   margini, e il centro resta quello di prima.
+ * - **guida** (Pose/Depth/Edge Transfer) — la prima immagine in piu' fa da
+ *   guida: **contorni** passa da `Canny` (nativo) e il modello riceve la mappa
+ *   delle linee, come la «Control Image» di WanGP; **posa** e **profondita'**
+ *   la danno a Qwen cosi' com'e', perche' Qwen3-VL la posa e la profondita' le
+ *   legge da solo, e i preprocessori di WanGP in ComfyUI sono nodi a parte.
  *
  * `opzioni`: prompt, seed, immagine (il nome caricato nel motore), larghezza e
- * altezza della tela, passi, turbo, e — se si e' dipinto — `maschera` (fondo
- * nero, zona rossa, come la fa il ritocco) con `zona: true`. Piu' `riferimenti`,
- * altri nomi di immagini caricate, che il modello guarda insieme: «mettigli la
- * giacca della seconda foto».
- *
- * **Come si tiene ferma la parte non dipinta.** Qwen-Image 2.1 modifica
- * guardando: la foto entra come riferimento e il modello la ridisegna cambiata.
- * Di suo e' bravo a lasciare stare il resto, ma «bravo» non e' «identico», e il
- * ritocco della suite promette identico da sempre. Quindi, quando c'e' una
- * zona:
- *
- * 1. il modello vede la foto e, come seconda immagine, la stessa foto con la
- *    zona velata di rosso — e il prompt gli dice di cambiare solo quella;
- * 2. a lavoro finito, il risultato si incolla sopra l'originale **solo dentro
- *    la zona** (allargata di qualche pixel, per non lasciare una cucitura).
- *
- * Senza zona niente velo e niente incollatura: e' la modifica a parole su tutta
- * la foto, quella che se n'era andata con LLaDA nella 1.2.4 e che torna qui.
- *
- * Le misure della tela sono gia' multiple di 32 (`ritocco.js`), e
- * `resolution: 0` dice al nodo di non ridimensionare: cosi' il latente e'
- * grande esattamente quanto la foto, e l'incollatura cade al pixel.
+ * altezza della tela (gia' multiple di 32), passi, turbo, `riferimenti` (altri
+ * nomi caricati, in ordine), `modo`, `maschera` + `zona` per la zona,
+ * `margini` {sinistra, sopra, destra, sotto} per allargare, `guida` (posa,
+ * profondita, contorni), `riscrivi` (di serie si'), `ragiona` (di serie no).
  */
 export function grafoQwenModifica(opzioni) {
   const turbo = Boolean(opzioni.turbo);
@@ -302,15 +378,17 @@ export function grafoQwenModifica(opzioni) {
   const passi = opzioni.passi || strada.valore;
   const larghezza = multiplo32(opzioni.larghezza || 1024);
   const altezza = multiplo32(opzioni.altezza || 1024);
-  const zona = Boolean(opzioni.zona && opzioni.maschera);
-  const riferimenti = (opzioni.riferimenti || []).slice(0, zona ? 8 : 9);
+  let modo = opzioni.modo || (opzioni.zona && opzioni.maschera ? "zona" : "modifica");
+  if (modo === "zona" && !opzioni.maschera) modo = "modifica";
+  const riferimenti = (opzioni.riferimenti || []).filter(Boolean);
+  if (modo === "guida" && !riferimenti.length) modo = "modifica";
 
   const grafo = {
     ...caricatori(turbo),
     "10": { class_type: "LoadImage", inputs: { image: opzioni.immagine } },
     // Una scala che quasi sempre non fa niente: la tela e' gia' della misura
-    // giusta. Sta qui perche' se un giorno non lo fosse, l'incollatura finale
-    // cadrebbe storta senza dirlo.
+    // giusta. Sta qui perche' se un giorno non lo fosse, la zona posata alla
+    // fine cadrebbe storta senza dirlo.
     "11": {
       class_type: "ImageScale",
       inputs: { image: ["10", 0], upscale_method: "lanczos", width: larghezza, height: altezza, crop: "disabled" },
@@ -318,53 +396,88 @@ export function grafoQwenModifica(opzioni) {
   };
 
   const immagini = { "images.image_1": ["11", 0] };
-  let testo = opzioni.prompt;
+  const aggiungi = (da) => {
+    const n = Object.keys(immagini).length + 1;
+    if (n <= MAX_IMMAGINI) immagini["images.image_" + n] = da;
+  };
+  let davanti = "";
+  let latente = null;
+  let finale = null;
 
-  if (zona) {
+  if (modo === "zona") {
     grafo["12"] = { class_type: "LoadImageMask", inputs: { image: opzioni.maschera, channel: "red" } };
     grafo["13"] = { class_type: "GrowMask", inputs: { mask: ["12", 0], expand: 6, tapered_corners: true } };
-    // Il velo rosso: la foto con la zona colorata, mescolata a meta' con quella
-    // vera, cosi' il modello vede dove e anche cosa c'era sotto.
-    grafo["14"] = { class_type: "EmptyImage", inputs: { width: larghezza, height: altezza, batch_size: 1, color: 16711680 } };
-    grafo["15"] = {
-      class_type: "ImageCompositeMasked",
-      inputs: { destination: ["11", 0], source: ["14", 0], x: 0, y: 0, resize_source: false, mask: ["12", 0] },
-    };
-    grafo["16"] = {
-      class_type: "ImageBlend",
-      inputs: { image1: ["11", 0], image2: ["15", 0], blend_factor: 0.55, blend_mode: "normal" },
-    };
-    immagini["images.image_2"] = ["16", 0];
-    testo =
-      "<image1> is the photo to edit. <image2> is the same photo with the area to change tinted red. " +
-      "Change only that area: " + opzioni.prompt + ". " +
-      "Everything outside the red area stays exactly as in <image1>, and the result has no red tint.";
+    grafo["18"] = { class_type: "MaskToImage", inputs: { mask: ["12", 0] } };
+    aggiungi(["18", 0]);
+    grafo["19"] = { class_type: "VAEEncode", inputs: { pixels: ["11", 0], vae: ["7", 0] } };
+    grafo["22"] = { class_type: "SetLatentNoiseMask", inputs: { samples: ["19", 0], mask: ["13", 0] } };
+    latente = ["22", 0];
+    davanti = "<image1> is the photo to edit and <image2> is its mask. Change only the white area of the mask; everything else stays exactly as in <image1>. ";
   }
 
-  // Le immagini di riferimento in piu' vengono dopo: la prima resta sempre la
-  // foto da modificare, perche' e' lei che decide la misura del latente.
+  if (modo === "allarga") {
+    const m = opzioni.margini || {};
+    const mis = (v) => Math.max(0, Math.round((Number(v) || 0) / 32) * 32);
+    const sx = mis(m.sinistra), su = mis(m.sopra), dx = mis(m.destra), giu = mis(m.sotto);
+    const lw = larghezza + sx + dx;
+    const lh = altezza + su + giu;
+    grafo["60"] = {
+      class_type: "ImagePadForOutpaint",
+      inputs: { image: ["11", 0], left: sx, top: su, right: dx, bottom: giu, feathering: 24 },
+    };
+    grafo["61"] = { class_type: "EmptyImage", inputs: { width: lw, height: lh, batch_size: 1, color: 16711680 } };
+    grafo["62"] = {
+      class_type: "ImageCompositeMasked",
+      inputs: { destination: ["61", 0], source: ["11", 0], x: sx, y: su, resize_source: false },
+    };
+    immagini["images.image_1"] = ["62", 0];
+    grafo["63"] = { class_type: "VAEEncode", inputs: { pixels: ["62", 0], vae: ["7", 0] } };
+    grafo["64"] = { class_type: "SetLatentNoiseMask", inputs: { samples: ["63", 0], mask: ["60", 1] } };
+    latente = ["64", 0];
+    davanti = "Extend the canvas of <image1>: replace the red margins with a natural continuation of the scene beyond its border, with the same perspective, light and style. ";
+  }
+
+  // Le immagini in piu', nell'ordine in cui le ha messe chi scrive. Nella
+  // guida la prima e' la guida, e per i contorni passa prima da Canny.
   riferimenti.forEach((nome, i) => {
     const id = String(30 + i);
     grafo[id] = { class_type: "LoadImage", inputs: { image: nome } };
-    immagini["images.image_" + (Object.keys(immagini).length + 1)] = [id, 0];
+    if (modo === "guida" && i === 0 && opzioni.guida === "contorni") {
+      grafo["70"] = { class_type: "Canny", inputs: { image: [id, 0], low_threshold: 0.4, high_threshold: 0.8 } };
+      aggiungi(["70", 0]);
+    } else {
+      aggiungi([id, 0]);
+    }
   });
+  if (modo === "guida") davanti = (GUIDE[opzioni.guida] || GUIDE.posa) + " ";
 
+  const testo = davanti + nomiImmagini(opzioni.prompt);
   grafo["3"] = {
     class_type: "TextEncodeQwenImage21",
     inputs: { clip: ["2", 0], prompt: testo, negative_prompt: "", resolution: 0, vae: ["7", 0], ...immagini },
   };
-  if (opzioni.riscrivi !== false) riscrittore(grafo, testo, immagini, opzioni.seed);
-  if (turbo) campionatoreTurbo(grafo, ["3", 2], opzioni.seed, passi);
-  else grafo["6"] = campionatore(turbo, ["3", 2], opzioni.seed, passi);
+  if (!latente) latente = ["3", 2];
+  if (opzioni.riscrivi !== false) riscrittore(grafo, testo, immagini, opzioni.seed, opzioni.ragiona);
+  if (turbo) campionatoreTurbo(grafo, latente, opzioni.seed, passi);
+  else grafo["6"] = campionatore(turbo, latente, opzioni.seed, passi);
   grafo["8"] = { class_type: "VAEDecode", inputs: { samples: ["6", 0], vae: ["7", 0] } };
 
-  let finale = ["8", 0];
-  if (zona) {
+  if (modo === "zona") {
     grafo["17"] = {
       class_type: "ImageCompositeMasked",
       inputs: { destination: ["11", 0], source: ["8", 0], x: 0, y: 0, resize_source: true, mask: ["13", 0] },
     };
     finale = ["17", 0];
+  } else if (modo === "allarga") {
+    // I margini dal modello, il centro dalla foto: la maschera sfumata del
+    // pad fa da cucitura.
+    grafo["65"] = {
+      class_type: "ImageCompositeMasked",
+      inputs: { destination: ["60", 0], source: ["8", 0], x: 0, y: 0, resize_source: true, mask: ["60", 1] },
+    };
+    finale = ["65", 0];
+  } else {
+    finale = ["8", 0];
   }
   grafo["9"] = salvataggio(finale, opzioni.salva, opzioni.prefisso || "immagini/ritocco");
   return grafo;

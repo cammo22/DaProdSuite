@@ -92,6 +92,11 @@ export class Remoto {
     this.regola = regola;
   }
 
+  /** Le scelte che lo shell aveva agganciato (dalla 1.7.0 solo da leggere). */
+  scelteDellaFila(): ReturnType<RegolaFila> | null {
+    return this.regola ? this.regola() : null;
+  }
+
   constructor(
     private archivio: Archivio,
     rootRisultati: string,
@@ -878,6 +883,7 @@ export class Remoto {
     if (!ferme.length) return [];
 
     const partite: Richiesta[] = [];
+    let cambiate = false;
     // Le più vecchie per prime: chi aspetta da più tempo passa prima.
     for (const richiesta of [...ferme].sort((a, b) => a.quando - b.quando)) {
       const chi = dati.dispositivi.find((d) => d.id === richiesta.daDispositivo);
@@ -886,14 +892,17 @@ export class Remoto {
       if (!verdetto.subito) {
         // Il motivo può essere cambiato («la fila è piena» → «ne hai già due»):
         // vale la pena riscriverlo, chi guarda legge quello.
-        richiesta.trattenuta = verdetto.trattenuta ?? richiesta.trattenuta;
+        // 1.7.0: senza tetti, una richiesta d'utente ferma per i tetti di
+        // prima torna una richiesta normale che aspetta il sì di un admin.
+        richiesta.trattenuta = verdetto.trattenuta;
+        cambiate = true;
         continue;
       }
       richiesta.stato = "accettata";
       richiesta.trattenuta = undefined;
       partite.push(richiesta);
     }
-    if (partite.length) this.archivio.salva();
+    if (partite.length || cambiate) this.archivio.salva();
     for (const r of partite) {
       for (const fn of this.accettatori) fn(r);
       this.notifica({
@@ -909,50 +918,24 @@ export class Remoto {
   /**
    * Questa richiesta parte da sola, o aspetta un sì?
    *
-   * Tre domande in fila, e la prima che dice di no vince: chi è chi lo decide
-   * il computer, e i tetti valgono **anche per chi decide** — «limitare anche
-   * gli admin», che era il punto.
+   * ⚠ **Dalla 1.7.0 la regola è una sola.** Detto il 27 settembre 2026: «la
+   * coda non funziona bene, se ne mando a generare più di una si bugga; gli
+   * admin non hanno limiti e nemmeno gli utenti; quelle degli utenti finiscono
+   * tutte in coda da approvare da un admin».
+   *
+   * Il «bug» erano i tetti: la seconda richiesta di fila restava ferma con
+   * scritto «hai già due lavori in fila», e da fuori sembrava una fila rotta.
+   * Adesso:
+   *
+   * - **admin**: parte, sempre, quante ne vuole;
+   * - **utente**: nessun tetto, ma ogni richiesta aspetta il sì di un admin.
+   *
+   * Le scelte salvate di prima (chi passa subito, i tetti) restano
+   * nell'archivio ma non contano più: la regola non si sceglie.
    */
   private decidiSubito(chi: Dispositivo): { subito: boolean; trattenuta?: string } {
-    const regola = this.regola;
-    if (!regola) return { subito: chi.ruolo === "admin" };
-
-    const scelte = regola();
-    if (scelte.chiPassaSubito === "mai") {
-      return {
-        subito: false,
-        trattenuta:
-          "Sul computer è stato scelto che ogni lavoro passa da un sì. La tua è in attesa.",
-      };
-    }
-    if (scelte.chiPassaSubito === "admin" && chi.ruolo !== "admin") {
-      return { subito: false };
-    }
-
-    const dati = this.archivio.datiCorrenti;
-    const inFila = dati.richieste.filter(
-      (r) => r.stato === "accettata" || r.stato === "in-lavoro",
-    );
-    if (scelte.limiteFila > 0 && inFila.length >= scelte.limiteFila) {
-      return {
-        subito: false,
-        trattenuta: `Il computer ha già ${inFila.length} lavori in corso: la tua aspetta che si liberi.`,
-      };
-    }
-    const suoi = inFila.filter((r) => r.daDispositivo === chi.id).length;
-    if (scelte.limitePersona > 0 && suoi >= scelte.limitePersona) {
-      return {
-        subito: false,
-        trattenuta: `Hai già ${suoi} lavori in fila: questo parte quando ne finisce uno.`,
-      };
-    }
-    if (scelte.inPausa) {
-      return {
-        subito: false,
-        trattenuta: "Chi sta al computer lo sta usando adesso. La tua richiesta è in attesa.",
-      };
-    }
-    return { subito: true };
+    if (chi.ruolo === "admin") return { subito: true };
+    return { subito: false };
   }
 
   /**

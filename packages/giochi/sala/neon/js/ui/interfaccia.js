@@ -547,7 +547,7 @@ function apriOpzioni() {
     <div class="opzioni-griglia">
       <section><h4>Audio</h4>${sw("suoni", "Effetti sonori")}${sw("musica", "Musica synth dal vivo")}
         <label class="cursore">Volume <input type="range" min="0" max="1" step="0.05" value="${o.volume}" data-opz="volume"></label></section>
-      <section><h4>Schermo</h4>${sw("notifiche", "Notifiche a comparsa")}${sw("popupEffetti", "Avvisi di tempo, bonus e malus")}${sw("voce", "Voce della Radio")}${sw("borsaHud", "Mini Borsa trascinabile")}
+      <section><h4>Schermo</h4>${sw("notifiche", "Notifiche a comparsa")}${sw("popupEffetti", "Avvisi di tempo, bonus e malus")}${sw("effettiMini", "Potenziamenti attivi in piccolo")}${sw("voce", "Voce della Radio")}${sw("borsaHud", "Mini Borsa trascinabile")}
         <label class="scelta">Qualità grafica <select data-opz="qualita">${["auto", "alta", "media", "bassa"].map(q => `<option ${o.qualita === q ? "selected" : ""}>${q}</option>`).join("")}</select></label>
         <label class="scelta">Numeri grandi <select data-opz="notazione">${["suffissi", "scientifica"].map(q => `<option ${o.notazione === q ? "selected" : ""}>${q}</option>`).join("")}</select></label></section>
       <section><h4>Salvataggio</h4>

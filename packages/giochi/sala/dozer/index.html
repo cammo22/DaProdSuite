@@ -156,6 +156,15 @@
   .eff.cattivo u::before { background: #ff2340; }
   .eff.finisce { animation: lampeggia .5s steps(2, jump-none) infinite; }
   @keyframes lampeggia { 50% { opacity: .25; } }
+  /* 2.3.1: gli effetti rimpiccioliti: solo icona e tempo */
+  #effettiMini { position: fixed; left: 50%; transform: translateX(-50%); top: calc(15% + var(--sat, 0px)); z-index: 14;
+    font: 900 11px/1 var(--num); color: #bfffe0; background: rgba(22,16,40,.9); border: 1px solid rgba(93,255,180,.5);
+    border-radius: 999px; padding: 6px 11px; cursor: pointer; }
+  #effettiMini[hidden] { display: none; }
+  body.effettiMini .eff { min-width: 0; padding: 4px 7px; grid-template-columns: auto auto; }
+  body.effettiMini .eff small, body.effettiMini .eff u { display: none; }
+  body.effettiMini .eff i { grid-row: auto; font-size: 15px; }
+  body.effettiMini .eff b { font-size: 12px; }
   @media (max-width: 700px) { .effetti { top: 36%; } #effettiSx { left: 6px; } #effettiDx { right: 6px; } .eff { min-width: 92px; padding: 5px 7px 6px; } .eff b { font-size: 14px; } }
   /* 2.3.0: la partita nuova si paga. «Puoi caricare quello che vuoi: si consiglia 5, 20, 50, 100, 200, 500». */
   #nuova { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; background: rgba(4,3,9,.62); padding: 16px; }
@@ -507,6 +516,7 @@
      a destra di rosso se ce n'e' uno cattivo; le pastiglie dicono quale e quanto manca. -->
 <div id="bordoSx" class="bordo"></div><div id="bordoDx" class="bordo"></div>
 <div id="effettiSx" class="effetti"></div><div id="effettiDx" class="effetti"></div>
+<button id="effettiMini" type="button" hidden title="rimpicciolisci o allarga gli effetti">⚡ −</button>
 <div id="nuova" hidden><div class="carta"><h2>🪙 Partita nuova</h2>
   <p>Per giocare si carica il gioco dal portafoglio DaProd: metti quanto vuoi. Quello che incassi torna nel portafoglio.</p>
   <div class="tagli"><span>€ 5</span><span>€ 20</span><span>€ 50</span><span>€ 100</span><span>€ 200</span><span>€ 500</span></div>
@@ -574,7 +584,7 @@
 <script type="module">
 import * as THREE from 'three';
 
-const VERSIONE = 'v2.3.0';
+const VERSIONE = 'v2.3.1';
 const $ = (id) => document.getElementById(id);
 const TATTILE = (typeof matchMedia === 'function') &&
   (matchMedia('(hover: none)').matches || matchMedia('(pointer: coarse)').matches);
@@ -761,7 +771,7 @@ const stato = {
   pot: Object.fromEntries(Object.keys(ABIL).map(k => [k, ABIL[k].base || 0])),
   pronta: { scossa: 0, meteora: 0, calamita: 0, turbo: 0 },   // quando torna pronta (Date.now)
   st: { lanci: 0, vinte: 0, perse: 0, fusioni: 0, catenaMax: 0, vinto: 0, speso: 0, jackpot: 0, slot: 0, scosse: 0, eventi: 0, meteore: 0, saldoMax: SALDO_INIZIALE },
-  opz: { audio: true, qualita: TATTILE ? 'media' : 'alta', auto: true, fps: false, scritte: true, valuta: 'lire', raffica: true, voce: true },
+  opz: { audio: true, qualita: TATTILE ? 'media' : 'alta', auto: true, fps: false, scritte: true, valuta: 'lire', raffica: true, voce: true, effettiMini: false, avvisiMini: false },
   tavolo: null,
   cortesie: [],   // quando e' arrivato il bonus di cortesia: al massimo 5 ogni 6 ore
 };
@@ -778,6 +788,7 @@ function carica() {
     if (['alta', 'media', 'bassa'].includes(o.qualita)) stato.opz.qualita = o.qualita;
     stato.opz.auto = o.auto !== false; stato.opz.fps = !!o.fps;
     stato.opz.voce = o.voce !== false;
+    stato.opz.effettiMini = o.effettiMini === true; stato.opz.avvisiMini = o.avvisiMini === true;
     stato.opz.scritte = o.scritte !== false; stato.opz.raffica = o.raffica !== false;
     stato.opz.valuta = o.valuta === 'euro' ? 'euro' : 'lire';
   };
@@ -1734,6 +1745,8 @@ function testo3D(x, y, z, txt, cls = '') {
   setTimeout(() => { el.remove(); testiAttivi--; }, 1300);
 }
 function avviso(txt, cls = '') {
+  // 2.3.1: con le notifiche ridotte passano solo quelle importanti (soldi, sblocchi).
+  if (stato.opz.avvisiMini && !/\bimp\b/.test(cls)) return;
   const box = $('avvisi'); if (box.children.length > 3) box.firstChild.remove();
   const el = document.createElement('div'); el.className = 'avviso ' + cls; el.textContent = txt; box.appendChild(el);
   setTimeout(() => el.remove(), 3000);
@@ -2362,6 +2375,7 @@ const EFFETTI_UI = [
   { e: voragine, ico: '🕳', nome: 'VORAGINE', buono: false },
 ];
 let effettiT = 0;
+document.getElementById('effettiMini').addEventListener('click', () => { stato.opz.effettiMini = !stato.opz.effettiMini; daSalvare = true; effettiT = 1; aggiornaEffettiUI(0); });
 const mmss = (t) => { const x = Math.ceil(t); return x >= 60 ? Math.floor(x / 60) + ':' + String(x % 60).padStart(2, '0') : x + ' s'; };
 /**
  * ⚠ 2.3.0: «si rallenta tutto quando succede». Prima ogni due decimi di secondo
@@ -2397,6 +2411,13 @@ function aggiornaEffettiUI(dt) {
     if (v.s !== x.detto.s) d.children[2].textContent = x.detto.s = v.s;
     if (v.p !== x.detto.p) { x.detto.p = v.p; d.style.setProperty('--p', v.p + '%'); }
   }
+  // 2.3.1: «minimizzare i potenziamenti attivi». Un tasto li riduce a icona e
+  // tempo, e lo ricorda.
+  const mini = $('effettiMini'), ci = buoni + cattivi > 0;
+  if (mini.hidden !== !ci) mini.hidden = !ci;
+  const detto = stato.opz.effettiMini ? '⚡ ' + (buoni + cattivi) + ' +' : '⚡ −';
+  if (mini.textContent !== detto) mini.textContent = detto;
+  if (document.body.classList.contains('effettiMini') !== stato.opz.effettiMini) document.body.classList.toggle('effettiMini', stato.opz.effettiMini);
   const sx = $('bordoSx'), dx = $('bordoDx');
   if (sx.classList.contains('su') !== buoni > 0) sx.classList.toggle('su', buoni > 0);
   if (sx.classList.contains('finisce') !== (buoni > 0 && finisceB)) sx.classList.toggle('finisce', buoni > 0 && finisceB);
@@ -2646,6 +2667,9 @@ function rendiNegozio() {
     h += `<div class="sezione">AUDIO E SCRITTE</div><div class="opz"><button data-opz="audio" class="${stato.opz.audio ? 'on' : ''}">🔊 ${stato.opz.audio ? 'ACCESO' : 'SPENTO'}</button>
         <button data-opz="scritte" class="${stato.opz.scritte ? 'on' : ''}">💬 SCRITTE ${stato.opz.scritte ? 'ACCESE' : 'SPENTE'}</button>
         <button data-opz="voce" class="${stato.opz.voce ? 'on' : ''}">🗣 VOCE ${stato.opz.voce ? 'ACCESA' : 'SPENTA'}</button></div>
+      <div class="sezione">NOTIFICHE E EFFETTI</div><div class="opz">
+        <button data-opz="avvisi" class="${stato.opz.avvisiMini ? '' : 'on'}">🔔 ${stato.opz.avvisiMini ? 'SOLO IMPORTANTI' : 'TUTTE'}</button>
+        <button data-opz="effettiMini" class="${stato.opz.effettiMini ? '' : 'on'}">⚡ EFFETTI ${stato.opz.effettiMini ? 'PICCOLI' : 'GRANDI'}</button></div>
       <div class="sezione">GRAFICA</div><div class="opz">
         <button data-opz="q-alta" class="${q === 'alta' ? 'on' : ''}">ALTA · bagliori + ombre</button>
         <button data-opz="q-media" class="${q === 'media' ? 'on' : ''}">MEDIA · bagliori</button>
@@ -2681,6 +2705,8 @@ function cambiaOpzione(id) {
   if (id === 'audio') { stato.opz.audio = !stato.opz.audio; aggiornaAudioBtn(); if (stato.opz.audio) audio(); }
   else if (id === 'scritte') return cambiaScritte();
   else if (id === 'voce') { stato.opz.voce = !stato.opz.voce; if (!stato.opz.voce) Voce.zitta(); }
+  else if (id === 'avvisi') stato.opz.avvisiMini = !stato.opz.avvisiMini;
+  else if (id === 'effettiMini') { stato.opz.effettiMini = !stato.opz.effettiMini; effettiT = 1; aggiornaEffettiUI(0); }
   else if (id === 'valuta') return cambiaValuta();
   else if (id.startsWith('q-')) { stato.opz.qualita = id.slice(2); applicaQualita(); }
   else if (id === 'auto') stato.opz.auto = !stato.opz.auto;

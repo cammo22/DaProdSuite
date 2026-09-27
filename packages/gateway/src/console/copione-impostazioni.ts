@@ -827,65 +827,20 @@ export const COPIONE_IMPOSTAZIONI = `
       "vorrebbe dire buttarlo via \\u2014 ma non ne parte altro finch\\u00e9 non riprendi.";
     carta.append(spiega);
 
-    var eChi = document.createElement("label");
-    eChi.textContent = "Chi genera senza aspettare il tuo s\\u00ec";
-    carta.append(eChi);
-
-    var scelte = [
-      { id: "mai", nome: "Nessuno", sotto: "ogni lavoro passa da te" },
-      { id: "admin", nome: "Chi \\u00e8 admin", sotto: "gli utenti aspettano il tuo s\\u00ec" },
-      { id: "tutti", nome: "Tutti", sotto: "chiunque sia collegato" },
-    ];
-    var fila = document.createElement("div");
-    fila.className = "filtri";
-    for (var s of scelte) {
-      var b = document.createElement("button");
-      b.type = "button";
-      b.className = "mini" + (s.id === macchina.regole.chiPassaSubito ? " on" : "");
-      b.textContent = s.nome;
-      b.title = s.sotto;
-      b.addEventListener("click", (function (quale) {
-        return function () { void cambiaRegole({ chiPassaSubito: quale }); };
-      })(s.id));
-      fila.append(b);
-    }
-    carta.append(fila);
-
-    var eFila = document.createElement("label");
-    eFila.textContent = "Quanti lavori possono aspettare in fila, in tutto";
-    var campoFila = document.createElement("input");
-    campoFila.type = "number";
-    campoFila.min = 0;
-    campoFila.max = 100;
-    campoFila.value = macchina.regole.limiteFila;
-
-    var ePersona = document.createElement("label");
-    ePersona.textContent = "Quanti ne pu\\u00f2 avere in fila una persona sola";
-    var campoPersona = document.createElement("input");
-    campoPersona.type = "number";
-    campoPersona.min = 0;
-    campoPersona.max = 100;
-    campoPersona.value = macchina.regole.limitePersona;
-
-    var salva = document.createElement("div");
-    salva.className = "fila";
-    var b2 = document.createElement("button");
-    b2.textContent = "Salva i tetti";
-    b2.addEventListener("click", function () {
-      void cambiaRegole({
-        limiteFila: Number(campoFila.value) || 0,
-        limitePersona: Number(campoPersona.value) || 0,
-      });
-    });
-    salva.append(b2);
-
-    var nota = document.createElement("p");
-    nota.className = "nota";
-    nota.textContent =
-      "Zero vuol dire senza tetto. Sopra il tetto la richiesta non si perde: resta in " +
-      "attesa con scritto perch\\u00e9, e parte da sola quando la fila si sgombra.";
-
-    carta.append(eFila, campoFila, ePersona, campoPersona, salva, nota);
+    /*
+     * 1.7.0: le regole della fila sono una sola, e non si scelgono piu'.
+     * Chiesto il 27 settembre 2026: «gli admin non hanno limiti e nemmeno gli
+     * utenti, quelle degli utenti finiscono tutte in coda da approvare da un
+     * admin». I tetti di prima facevano restare ferma la seconda richiesta
+     * («ne hai gia' due in fila»), e da fuori sembrava una fila rotta.
+     */
+    var regola = document.createElement("p");
+    regola.className = "nota";
+    regola.textContent =
+      "Gli admin generano subito, quante cose vogliono. Le richieste degli utenti non hanno " +
+      "tetti ma aspettano tutte il s\u00ec di un admin: le trovi nella fila, e le accetti " +
+      "una per una.";
+    carta.append(regola);
 
     /**
      * **Con quanto contesto caricare il modello che scrive.**

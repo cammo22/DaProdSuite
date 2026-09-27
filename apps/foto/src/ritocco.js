@@ -33,6 +33,18 @@ const PASSO = 32;
 
 let sotto = null;
 let sopra = null;
+
+/**
+ * 1.7.0: il modo (modifica, allarga, guida), cosa prendere dalla guida, e le
+ * immagini in piu' — gia' rimpicciolite, pronte da caricare nel motore.
+ * Il perche' di ognuno sta in packages/ui/src/qwen-image.js.
+ */
+let modo = "modifica";
+let guida = "posa";
+const riferimenti = [];
+const MAX_IN_PIU = 9;
+/** Il lato lungo di un'immagine in piu': come la «resolution» 1024 ufficiale. */
+const LATO_RIFERIMENTO = 1024;
 let pennello = 60;
 let disegnando = false;
 
@@ -206,6 +218,11 @@ function mascherata() {
  */
 function raccontaIlTasto() {
   if (!el.rigenera) return;
+  if (modo === "allarga" || modo === "guida") {
+    el.rigenera.textContent = modo === "allarga" ? "Allarga la foto" : "Rifai con la guida";
+    el.rigenera.dataset.prima = el.rigenera.textContent;
+    return;
+  }
   const tutta = Boolean(sotto) && !mascherata();
   // Con Qwen-Image senza zona non si «rigenera»: si cambia la foto come dice
   // la casella, e il resto resta com'era. È un altro gesto, e il tasto lo dice.
@@ -282,7 +299,94 @@ const inBlob = (tela) => new Promise((risolvi) => tela.toBlob(risolvi, "image/pn
 
 /* ------------------------------------------------------------ collegamenti */
 
+/** Un'immagine in piu', rimpicciolita a 1024 di lato lungo e fatta PNG. */
+async function rimpicciolisci(file) {
+  const bmp = await createImageBitmap(file);
+  const scala = Math.min(1, LATO_RIFERIMENTO / Math.max(bmp.width, bmp.height));
+  const c = document.createElement("canvas");
+  c.width = Math.max(32, Math.round((bmp.width * scala) / 32) * 32);
+  c.height = Math.max(32, Math.round((bmp.height * scala) / 32) * 32);
+  c.getContext("2d").drawImage(bmp, 0, 0, c.width, c.height);
+  bmp.close();
+  const blob = await inBlob(c);
+  return { blob, url: URL.createObjectURL(blob) };
+}
+
+function disegnaRiferimenti() {
+  el.contaRiferimenti.textContent = riferimenti.length + " / " + MAX_IN_PIU;
+  el.riferimentiRitocco.innerHTML = riferimenti
+    .map(
+      (r, i) =>
+        `<div class="rif${modo === "guida" && i === 0 ? " guida" : ""}">
+          <img src="${escapeHtml(r.url)}" alt="">
+          <b>${modo === "guida" && i === 0 ? "guida" : i + 2}</b>
+          <button type="button" data-via="${i}" title="togli">&#10005;</button>
+        </div>`,
+    )
+    .join("");
+  el.riferimentiRitocco.querySelectorAll("[data-via]").forEach((b) => {
+    b.onclick = () => {
+      const [via] = riferimenti.splice(Number(b.dataset.via), 1);
+      if (via) URL.revokeObjectURL(via.url);
+      disegnaRiferimenti();
+    };
+  });
+  el.aggiungiRiferimento.disabled = riferimenti.length >= MAX_IN_PIU;
+}
+
+function scegliModo(nuovo) {
+  modo = nuovo;
+  el.modiRitocco.querySelectorAll("[data-modo]").forEach((b) => b.classList.toggle("on", b.dataset.modo === modo));
+  el.campoAllarga.hidden = modo !== "allarga";
+  el.campoGuida.hidden = modo !== "guida";
+  disegnaRiferimenti();
+  raccontaIlTasto();
+}
+
+function collegaModi() {
+  el.modiRitocco.querySelectorAll("[data-modo]").forEach((b) => {
+    b.onclick = () => scegliModo(b.dataset.modo);
+  });
+  el.tipiGuida.querySelectorAll("[data-guida]").forEach((b) => {
+    b.onclick = () => {
+      guida = b.dataset.guida;
+      el.tipiGuida.querySelectorAll("[data-guida]").forEach((x) => x.classList.toggle("on", x === b));
+    };
+  });
+  el.campoAllarga.querySelectorAll("[data-margini]").forEach((b) => {
+    b.onclick = () => {
+      const [sx, su, dx, giu] = b.dataset.margini.split(",");
+      el.margineSx.value = sx;
+      el.margineSu.value = su;
+      el.margineDx.value = dx;
+      el.margineGiu.value = giu;
+    };
+  });
+  el.aggiungiRiferimento.onclick = () => el.fileRiferimento.click();
+  el.fileRiferimento.onchange = async () => {
+    const file = [...(el.fileRiferimento.files || [])];
+    el.fileRiferimento.value = "";
+    for (const f of file) {
+      if (riferimenti.length >= MAX_IN_PIU) break;
+      try {
+        riferimenti.push(await rimpicciolisci(f));
+      } catch {
+        mostraErrore(`Non riesco ad aprire ${f.name}.`, "erroreRitocco");
+      }
+    }
+    disegnaRiferimenti();
+  };
+  disegnaRiferimenti();
+}
+
+/** I margini dell'allarga, multipli di 32 e con un tetto: la tela intera resta sotto i 2048. */
+function margini() {
+  const v = (x) => Math.max(0, Math.min(1024, Math.round((Number(x.value) || 0) / 32) * 32));
+  return { sinistra: v(el.margineSx), sopra: v(el.margineSu), destra: v(el.margineDx), sotto: v(el.margineGiu) };
+}
+
 export function collegaRitocco() {
+  collegaModi();
   legaValore("pennello", "pennelloVal", (v) => `${v} px`);
   legaValore("denoise", "denoiseVal", (v) => Number(v).toFixed(2));
   el.pennello.addEventListener("input", () => (pennello = parseInt(el.pennello.value)));
@@ -325,17 +429,32 @@ export function collegaRitocco() {
     // pennellare, che è l'unica cosa che si può fare quando si vuole cambiare
     // la luce di un'immagine intera.
     const testo = el.promptRitocco.value.trim();
-    if (!testo) return mostraErrore("Scrivi cosa deve diventare quella zona.", "erroreRitocco");
+    if (!testo && modo !== "allarga") return mostraErrore("Scrivi cosa deve diventare quella zona.", "erroreRitocco");
+    if (modo === "guida" && !riferimenti.length) {
+      return mostraErrore("Per la guida aggiungi un'immagine in più: è da lì che prendo posa, profondità o contorni.", "erroreRitocco");
+    }
+    const m0 = margini();
+    if (modo === "allarga" && !(m0.sinistra + m0.sopra + m0.destra + m0.sotto)) {
+      return mostraErrore("Dimmi di quanto allargare: almeno un margine sopra lo zero.", "erroreRitocco");
+    }
 
     // Come in Crea: il ritocco comincia con due caricamenti e una traduzione,
     // ed erano altri secondi in cui il tasto non diceva niente.
     occupa(el.rigenera, "preparo…");
     try {
-      const base = await ponte.carica(await inBlob(sotto), "base.png");
-      const maschera = await ponte.carica(await inBlob(mascheraPiena()), "maschera.png");
+      // ⚠ 1.7.0: un nome per lavoro. Con «base.png» per tutti, il secondo
+      // ritocco messo in fila sovrascriveva la foto del primo prima che il
+      // motore la leggesse: il primo usciva fatto sulla foto del secondo.
+      const marca = Date.now().toString(36) + rnd().toString(36).slice(0, 4);
+      const base = await ponte.carica(await inBlob(sotto), `base-${marca}.png`);
+      const maschera = await ponte.carica(await inBlob(mascheraPiena()), `maschera-${marca}.png`);
+      const nomiInPiu = [];
+      for (const [i, r] of riferimenti.entries()) {
+        nomiInPiu.push(await ponte.carica(r.blob, `in-piu-${marca}-${i + 2}.png`));
+      }
 
       const m = modelloCorrente();
-      const inglese = await inInglese(testo, m);
+      const inglese = testo ? await inInglese(testo, m) : "";
 
       // Come in Crea, e per la stessa ragione: la scheda video se la contendono
       // il modello che scrive e quello che disegna, e qui si genera lo stesso.
@@ -354,7 +473,15 @@ export function collegaRitocco() {
         maschera,
         // Qwen-Image lo deve sapere: con una zona la vela di rosso e alla fine
         // incolla solo lì, senza zona cambia tutta la foto a parole.
-        zona: mascherata(),
+        zona: modo === "modifica" && mascherata(),
+        // 1.7.0: il modo, le immagini in piu', i margini, la guida, e il
+        // riscrittore (vedi qwen-image.js).
+        modo: modo === "modifica" ? undefined : modo,
+        riferimenti: nomiInPiu,
+        margini: margini(),
+        guida,
+        riscrivi: el.riscriviRitocco.checked,
+        ragiona: el.ragionaRitocco.checked,
         // Le misure della tela, quelle vere: l'immagine è già stata ridisegnata
         // su misura (`misure`), e il grafo le usa per non ritagliare niente.
         larghezza: sotto.width,

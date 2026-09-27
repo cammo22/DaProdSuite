@@ -79,6 +79,12 @@ const FASI = {
   // 1.6.1: il riscrittore guarda la foto e decide com'e' la modifica.
   TextGenerate: "guardo la foto e decido la modifica",
   BatchImagesNode: "preparo la foto",
+  // 1.7.0: la cache, la risposta ripulita, la maschera, i margini, i contorni.
+  QwenImage21Cache: "carico il modello",
+  RegexReplace: "guardo la foto e decido la modifica",
+  MaskToImage: "preparo la zona",
+  ImagePadForOutpaint: "allargo la tela",
+  Canny: "leggo i contorni della guida",
   GrowMask: "preparo la zona",
   EmptyImage: "preparo la zona",
   ImageBlend: "preparo la zona",
@@ -438,7 +444,15 @@ async function tieniIlPrima(l, risultatoId) {
  * Adesso, prima di buttarlo, si chiede la cronologia al motore: se quel lavoro
  * ha prodotto qualcosa lo si conclude come se il messaggio fosse arrivato.
  */
+let riallineando = false;
+
 export async function riallinea() {
+  // 1.7.0: un giro alla volta. Parte ogni secondo, ma con tanti lavori in fila
+  // un giro dura di piu' (una domanda al motore per lavoro), e due giri
+  // sovrapposti chiudevano due volte lo stesso lavoro o toglievano quello
+  // appena mandato: era uno dei modi in cui «se ne mando piu' di una si bugga».
+  if (riallineando) return;
+  riallineando = true;
   try {
     const vivi = await ponte.lavoriVivi();
 
@@ -446,6 +460,8 @@ export async function riallinea() {
       if (vivi.has(id)) continue;
       const l = lavoro(id);
       if (!l || l.concluso) continue;
+      // Appena mandato: il motore puo' non averlo ancora messo in fila.
+      if (Date.now() - l.chiesto < 3000) continue;
 
       const uscite = await ponte.risultati(id);
       const prodotte = Object.values(uscite).flatMap((o) => o.images || []);
@@ -454,6 +470,8 @@ export async function riallinea() {
     }
   } catch {
     // Motore spento: se ne riparla al prossimo giro.
+  } finally {
+    riallineando = false;
   }
 }
 

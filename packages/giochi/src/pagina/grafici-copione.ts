@@ -21,6 +21,49 @@ export const COPIONE_GRAFICI = `
   var graficiNati = 0;
 
   /** «14:05», «ieri 21:10», «12 set»: l'ora di un punto, detta corta. */
+  /*
+   * I movimenti per giorno (1.7.0): «i movimenti mettiamoli per data e che non
+   * occupino tutta la pagina, collassabili». Un blocco per giorno, col netto
+   * del giorno sulla riga: aperto solo il piu recente, gli altri si aprono a
+   * mano, e restano aperti anche quando la pagina si ridisegna da sola.
+   */
+  var giorniAperti = {};
+  document.addEventListener('toggle', function (e) {
+    var d = e.target;
+    if (!d || !d.getAttribute || !d.getAttribute('data-giorno')) return;
+    giorniAperti[d.getAttribute('data-giorno')] = d.open;
+  }, true);
+
+  function nomeGiorno(t) {
+    var oggi = new Date(); oggi.setHours(0, 0, 0, 0);
+    var d = new Date(t); d.setHours(0, 0, 0, 0);
+    var diff = Math.round((oggi.getTime() - d.getTime()) / 86400000);
+    if (diff === 0) return 'Oggi';
+    if (diff === 1) return 'Ieri';
+    var giorni = ['dom', 'lun', 'mar', 'mer', 'gio', 'ven', 'sab'];
+    var mesi = ['gen', 'feb', 'mar', 'apr', 'mag', 'giu', 'lug', 'ago', 'set', 'ott', 'nov', 'dic'];
+    return giorni[d.getDay()] + ' ' + d.getDate() + ' ' + mesi[d.getMonth()] + (d.getFullYear() !== oggi.getFullYear() ? ' ' + d.getFullYear() : '');
+  }
+
+  function movimentiPerGiorno(lista, riga, dove) {
+    var gruppi = [], ultimo = null;
+    lista.forEach(function (m) {
+      var d = new Date(m.quando);
+      var k = d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
+      if (!ultimo || ultimo.k !== k) { ultimo = { k: k, t: m.quando, voci: [], netto: 0 }; gruppi.push(ultimo); }
+      ultimo.voci.push(m);
+      if (!m.annullato) ultimo.netto += Number(m.lire) || 0;
+    });
+    return gruppi.map(function (g, i) {
+      var chiave = (dove || 'mov') + ':' + g.k;
+      var aperto = chiave in giorniAperti ? giorniAperti[chiave] : i === 0;
+      return '<details class="mov-giorno" data-giorno="' + chiave + '"' + (aperto ? ' open' : '') + '>' +
+        '<summary><b>' + nomeGiorno(g.t) + '</b><small>' + g.voci.length + (g.voci.length === 1 ? ' movimento' : ' movimenti') + '</small>' +
+        '<span class="' + (g.netto >= 0 ? 'su' : 'giu') + '">' + (g.netto >= 0 ? '+' : '−') + soldi(Math.abs(g.netto)) + '</span></summary>' +
+        '<div class="mov-dentro">' + g.voci.map(riga).join('') + '</div></details>';
+    }).join('');
+  }
+
   function oraCorta(t) {
     var d = new Date(t), oggi = new Date();
     var hh = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');

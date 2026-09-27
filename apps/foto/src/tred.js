@@ -259,7 +259,7 @@ async function vai() {
   occupa(bottone, "preparo…");
   let chiudiBarra = null;
   try {
-    const nome = await ponte.carica(foto, "modellino.png");
+    const nome = await ponte.carica(foto, `modellino-${Date.now().toString(36)}.png`);
     const m = { id: "trellis2", nome: "TRELLIS.2", serveScheda: true, catalogo: TRELLIS2.catalogo };
     await faiSpazio(m, (detto) => occupa(bottone, detto));
     const grafo = grafoModellino({
