@@ -11,7 +11,9 @@ for (const chiave of [
   "sessione", "stop", "svuota", "mods", "dot", "statusTxt", "navGal",
   "areaTela", "nessunaImmagine", "comandiPennello", "pennello", "pennelloVal",
   "scegliFile", "pulisciMaschera", "invertiMaschera", "sceltaFile", "promptRitocco", "denoise", "recentiRitocco",
-  "denoiseVal", "rigenera", "erroreRitocco", "galleria", "conteggio", "aggiorna", "lente", "lenteImg", "lenteInfo",
+  "denoiseVal", "rigenera", "erroreRitocco",
+  "modiRitocco", "campoAllarga", "margineSx", "margineSu", "margineDx", "margineGiu", "campoGuida", "tipiGuida",
+  "contaRiferimenti", "riferimentiRitocco", "aggiungiRiferimento", "fileRiferimento", "riscriviRitocco", "ragionaRitocco", "galleria", "conteggio", "aggiorna", "lente", "lenteImg", "lenteInfo",
 ]) {
   el[chiave] = $(chiave);
 }

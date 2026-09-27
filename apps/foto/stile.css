@@ -400,3 +400,18 @@ legend{font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var
 .tred-avanza .riga span{color:var(--dim); font-variant-numeric:tabular-nums}
 .tred-avanza .bar{height:8px}
 .tred-avanza .hint{margin-top:8px}
+
+/* 1.7.0: i modi del ritocco, le immagini in piu', i margini dell'allarga. */
+.modi-ritocco,.filtri{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px}
+.margini{display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin-bottom:8px}
+.margini label{display:flex; flex-direction:column; gap:3px; font-size:11px; margin:0; text-transform:none; letter-spacing:0}
+.margini input{width:100%; padding:6px 7px}
+.riferimenti{display:flex; gap:8px; flex-wrap:wrap; margin:6px 0 8px}
+.riferimenti .rif{position:relative; width:64px; height:64px}
+.riferimenti .rif img{width:64px; height:64px; object-fit:cover; border-radius:9px; border:1px solid var(--line)}
+.riferimenti .rif b{position:absolute; left:4px; top:3px; font-size:11px; background:#000a; padding:1px 5px; border-radius:6px}
+.riferimenti .rif button{position:absolute; right:-6px; top:-6px; width:20px; height:20px; border-radius:50%;
+  border:1px solid var(--line); background:#0b0d13; color:var(--dim); font-size:11px; line-height:1; cursor:pointer; padding:0}
+.riferimenti .rif.guida img{border-color:var(--accent)}
+.spunta{display:flex; gap:8px; align-items:flex-start; font-size:13px; margin:8px 0 0; text-transform:none; letter-spacing:0; cursor:pointer}
+.spunta input{width:auto; margin-top:2px}

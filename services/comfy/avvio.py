@@ -199,7 +199,11 @@ def flag_velocita(scelta: str) -> list[str]:
     if not con_cuda():
         return []
 
-    flag = ["--disable-dynamic-vram"]
+    # 1.7.0: la memoria dinamica si spegne solo per la musica (vedi
+    # `memoria_dinamica`). Per le immagini e' il modo in cui ComfyUI spreme
+    # la scheda: i pesi che non ci stanno arrivano in streaming dietro al
+    # calcolo, come fa WanGP con mmgp.
+    flag = [] if memoria_dinamica() else ["--disable-dynamic-vram"]
     if scelta != "spinta":
         return flag
 
@@ -297,6 +301,23 @@ def flag_nvidia(motore: Path) -> list[str]:
     return flag
 
 
+def memoria_dinamica() -> bool:
+    """La suite chiede la memoria video dinamica? (`DAPROD_MEMORIA`, dalla 1.7.0)
+
+    La decide lo shell per app (`servizi.ts`, `memoriaPer`): **dinamica** per
+    foto, video e sogno, **fissa** per la musica, dove con la dinamica le
+    generazioni andavano in errore (docs/VELOCITA-MUSICA.md). Se la variabile
+    manca si resta fissi, come prima: un motore avviato da una suite vecchia
+    si comporta come sempre.
+    """
+    return os.environ.get("DAPROD_MEMORIA", "fissa") == "dinamica" and conosce_dinamica()
+
+
+def conosce_dinamica() -> bool:
+    motore = os.environ.get("DAPROD_MOTORE")
+    return bool(motore) and conosce(Path(motore), "--disable-dynamic-vram")
+
+
 def flag_memoria(scelta: str) -> list[str]:
     """Quanta memoria video lasciar prendere al motore.
 
@@ -323,6 +344,16 @@ def flag_memoria(scelta: str) -> list[str]:
     """
     if not con_cuda():
         return []
+
+    if memoria_dinamica():
+        # Con la memoria dinamica `--lowvram` non fa niente e `--highvram` la
+        # spegnerebbe: la manopola resta solo il margine lasciato al desktop.
+        # Quello che non entra in scheda lo sposta ComfyUI mentre lavora.
+        if scelta == "leggero":
+            return ["--reserve-vram", "1.5"]
+        if scelta == "qualita":
+            return ["--reserve-vram", "0.3"]
+        return ["--reserve-vram", "0.5"] if 0 < _vram <= 16 else []
 
     if scelta == "leggero":
         return ["--lowvram", "--reserve-vram", "1.5"]
@@ -374,7 +405,8 @@ def main() -> None:
 
     if con_cuda():
         print(
-            f"[daprod] NVIDIA con {_vram:g} GB, RAM {ram_gb():.0f} GB. Flag: "
+            f"[daprod] NVIDIA con {_vram:g} GB, RAM {ram_gb():.0f} GB, memoria "
+            + ("dinamica" if memoria_dinamica() else "fissa") + ". Flag: "
             + " ".join(x for x in sys.argv[1:] if x.startswith("--use") or x in ("--fast", "--async-offload", "--lowvram", "--highvram")),
             flush=True,
         )

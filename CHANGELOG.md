@@ -10,6 +10,62 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ---
 
+## 1.7.0 — La versione da usare a lungo
+
+> «Voglio una release da testare a lungo termine … così posso fare un test di
+> una settimana o un mese con vari giocatori, e poi riprendiamo con la roadmap
+> per il big update.»
+
+Cosa viene dopo sta scritto in [docs/ROADMAP-2.0.md](docs/ROADMAP-2.0.md): la
+moneta DaProd, la Zecca dei pezzi da collezione, il mercato. E c'è la tabella di
+cosa guardare durante il test.
+
+**Qwen-Image 2.1, come dicono le guide**
+
+- **Tutto in scheda, come WanGP.** ComfyUI spreme una scheda piccola con la sua
+  memoria dinamica: i pesi che non ci stanno arrivano mentre la scheda lavora.
+  La suite la spegneva sempre, per un vecchio difetto della musica. Adesso la
+  spegne solo per la musica. Passando da Musica a Foto il motore si riaccende
+  da solo nel modo giusto (una ventina di secondi).
+- **Il riscrittore non ragiona più a vuoto.** Era lui a rendere lentissima la
+  modifica: 9,5 GB in una scheda da 8, e centinaia di parole di ragionamento
+  prima della risposta. Di serie adesso risponde e basta, e la risposta si
+  pulisce da sola. Chi vuole il ragionamento lo riaccende con una spunta.
+- **La cache KV in int8** (il «KV Cache Acceleration» di WanGP): il testo e le
+  foto di riferimento si leggono una volta sola e restano in scheda per tutti i
+  passi.
+- **Fino a dieci immagini insieme.** Nel Ritocco ci sono le «immagini in più»:
+  la foto sulla tela è l'immagine 1, le altre sono la 2, la 3… e nel testo si
+  chiamano così («mettile il cappello dell'immagine 2»).
+- **Zona, Allarga e Guida.** La zona dipinta passa come maschera a parte (come
+  dice il README di Qwen) col Masked Denoising di WanGP: fuori dalla zona non
+  cambia un pixel. **Allarga** fa l'outpainting coi margini che scegli. **Guida**
+  prende posa, profondità o contorni da un'altra immagine (i contorni passano da
+  Canny). Il velo rosso di prima non c'è più.
+
+**La fila**
+
+- **Gli admin non hanno tetti**, e partono subito. **Gli utenti non hanno tetti**,
+  ma ogni loro richiesta aspetta il sì di un admin. Era il «bug» con più
+  richieste: la seconda restava ferma con «ne hai già due in fila».
+- **Due ritocchi in fila non si pestano più i piedi.** La foto si caricava nel
+  motore sempre col nome «base.png», e il secondo lavoro sovrascriveva quella del
+  primo. Adesso ogni lavoro ha i suoi nomi.
+
+**La sala**
+
+- **La Banca dice se incassa o regala**, in un riquadro verde o rosso in cima: la
+  riserva nelle ultime 24 ore e 7 giorni, e quanto i giocatori hanno messo e
+  ripreso dai giochi da sempre.
+- **I movimenti per giorno**, nel portafoglio e nei conti della Banca: un blocco
+  per giorno col netto del giorno, aperto solo l'ultimo, mai più alto di mezzo
+  schermo.
+- **Claw 1.2.0**: finita la collezione si resta quanto si vuole e si riscatta dalla
+  pillola in alto; bagliore leggero; camera più dall'alto; potenziamenti che si
+  chiudono; notifiche «solo importanti».
+- **Dozer 2.3.1** ed **Neon 2.2.1**: i potenziamenti attivi si rimpiccioliscono, e
+  nel Dozer le notifiche possono essere solo quelle importanti.
+
 ## 1.6.1 — La modifica delle foto passa dall'LLM che decide
 
 > «Le immagini non vengono modificate bene. Guardiamo gli ultimi aggiornamenti

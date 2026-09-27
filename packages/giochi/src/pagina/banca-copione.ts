@@ -76,7 +76,7 @@ export const COPIONE_BANCA = `
         '<div class="bk-num"><small>riserva DaProd</small><b>' + soldi(bk.banca.riserva) + '</b></div>' +
         '<div class="bk-num' + (fermi ? ' allarme' : '') + '"><small>da controllare</small><b>' + (fermi ? fermi + ' · ' + soldi(bk.daControllareLire) : 'niente') + '</b></div>' +
         (guasti ? '<div class="bk-num allarme"><small>conti con numeri storti</small><b>' + guasti + '</b></div>' : '') +
-      '</div>' + htmlLinea();
+      '</div>' + htmlVerdetto() + htmlLinea();
     var schede = document.querySelectorAll('[data-bk]');
     for (var i = 0; i < schede.length; i++) {
       var s = schede[i].getAttribute('data-bk');
@@ -89,6 +89,47 @@ export const COPIONE_BANCA = `
     else if (bkScheda === 'regole') h = htmlRegole();
     else h = htmlRegistro();
     $('bk-dentro').innerHTML = h;
+  }
+
+  /* ---- il verdetto (1.7.0): «da admin continuo a non capire se sta
+   * incassando o se sta regalando soldi». Due conti, detti in chiaro: quanto
+   * e' salita o scesa la riserva, e quanto i giocatori hanno ripreso dai giochi
+   * rispetto a quanto ci hanno messo. Riserva che sale = la banca incassa. */
+
+  function variazioneRiserva(ms) {
+    var punti = bk.andamento || [];
+    if (!punti.length) return null;
+    var da = Date.now() - ms;
+    var primo = null;
+    for (var i = 0; i < punti.length; i++) { if (punti[i].t >= da) { primo = punti[i]; break; } }
+    if (!primo) primo = punti[0];
+    return bk.banca.riserva - primo.riserva;
+  }
+
+  function htmlVerdetto() {
+    var messo = 0, preso = 0;
+    bk.conti.forEach(function (c) { messo += c.messoGiochi || 0; preso += c.presoGiochi || 0; });
+    var daiGiochi = messo - preso;
+    var g1 = variazioneRiserva(86400000), g7 = variazioneRiserva(7 * 86400000);
+    var metro = g7 !== null && g7 !== 0 ? g7 : daiGiochi;
+    var incassa = metro >= 0;
+    var segno = function (v) { return v === null ? 'n.d.' : (v >= 0 ? '+' : '−') + soldi(Math.abs(v)); };
+    var cl = function (v) { return v === null || v === 0 ? '' : (v > 0 ? 'su' : 'giu'); };
+    return '<div class="bk-verdetto ' + (incassa ? 'incassa' : 'regala') + '">' +
+      '<div class="bk-verdetto-testa"><span class="bk-verdetto-ico">' + (incassa ? '🟢' : '🔴') + '</span>' +
+        '<div><b>La banca sta ' + (incassa ? 'incassando' : 'regalando') + '</b>' +
+        '<small>' + (incassa
+          ? 'In questi giorni alla riserva DaProd entra più di quanto esce: i giochi si tengono qualcosa.'
+          : 'In questi giorni dalla riserva esce più di quanto entra: i giocatori si portano a casa più di quello che mettono.') +
+        '</small></div></div>' +
+      '<div class="bk-verdetto-cifre">' +
+        '<div><small>riserva, 24 ore</small><b class="' + cl(g1) + '">' + segno(g1) + '</b></div>' +
+        '<div><small>riserva, 7 giorni</small><b class="' + cl(g7) + '">' + segno(g7) + '</b></div>' +
+        '<div><small>dai giochi, da sempre</small><b class="' + cl(daiGiochi) + '">' + segno(daiGiochi) + '</b></div>' +
+      '</div>' +
+      '<div class="bk-verdetto-nota">Nei giochi i giocatori hanno messo <b>' + soldi(messo) + '</b> e ripreso <b>' + soldi(preso) + '</b>. ' +
+        (incassa ? 'Se vuoi dare di più: regole → 🎁 Generosa.' : 'Se vuoi dare di meno: regole → 🪙 Tirchia.') + '</div>' +
+    '</div>';
   }
 
   /* ---- la linea della Banca (1.6.0): «una linea dell'andamento della banca» */
@@ -180,12 +221,12 @@ export const COPIONE_BANCA = `
           '<button class="bk-b" data-bk-apri="' + sicuro(c.chi) + '">' + (aperto ? 'Chiudi i movimenti' : '☰ Movimenti') + '</button>' +
         '</div>';
       if (aperto) {
-        h2 += '<div class="bk-lista">' + (c.movimenti.length ? c.movimenti.map(function (m) {
+        h2 += '<div class="bk-lista">' + (c.movimenti.length ? movimentiPerGiorno(c.movimenti, function (m) {
           var annullabile = !m.annullato && m.perche.indexOf('annullato:') !== 0;
           return '<div class="bk-mov' + (m.annullato ? ' annullato' : '') + '"><span class="cosa">' + sicuro(m.perche) + '<small>' + quando(m.quando) + ' · saldo ' + soldi(m.saldo) + '</small></span>' +
             '<span class="quanto ' + (m.lire >= 0 ? 'su' : 'giu') + '">' + (m.lire >= 0 ? '+' : '') + soldi(m.lire) + '</span>' +
             (annullabile ? '<button data-bk-annulla="' + sicuro(c.chi) + '" data-quando="' + m.quando + '" data-lire="' + m.lire + '">annulla</button>' : '<span></span>') + '</div>';
-        }).join('') : '<div class="pf-vuoto">Nessun movimento.</div>') + '</div>';
+        }, 'bk-' + c.chi) : '<div class="pf-vuoto">Nessun movimento.</div>') + '</div>';
       }
       return h2 + '</div>';
     }).join('') + '</div>';

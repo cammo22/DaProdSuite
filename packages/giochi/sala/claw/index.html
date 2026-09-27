@@ -192,6 +192,8 @@
   #fine { position: fixed; inset: 0; z-index: 45; display: grid; place-items: center; padding: 18px;
     background: radial-gradient(ellipse at 50% 30%, rgba(80,50,0,.55), rgba(5,4,10,.92) 70%); }
   #fine[hidden] { display: none; }
+  #fineResta { pointer-events: auto; border-radius: 999px; padding: 12px 18px; cursor: pointer; font: 800 13px/1 var(--num); letter-spacing: 1px;
+    background: rgba(255,255,255,.08); color: #e8e3ff; border: 1px solid rgba(255,255,255,.2); }
   #fine .box { width: min(420px, 100%); padding: 22px 18px; border-radius: 26px; text-align: center; display: grid; gap: 10px;
     border: 1px solid rgba(255,213,74,.5); box-shadow: 0 20px 60px rgba(0,0,0,.6), 0 0 40px rgba(255,213,74,.2); }
   #fine .coppa { font-size: 60px; line-height: 1; filter: drop-shadow(0 0 18px rgba(255,213,74,.7)); animation: pulsa 1.6s infinite; }
@@ -242,6 +244,15 @@
     display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
   @media (max-width: 700px) { #effetti { top: calc(58px + var(--sat)); left: 8px; } }
   .eff { will-change: opacity; }
+  #effettiTesta { pointer-events: auto; font: 900 11px/1 var(--num); letter-spacing: .6px; color: #bfffe0; cursor: pointer;
+    background: rgba(12,10,24,.82); border: 1px solid rgba(93,255,180,.6); border-radius: 999px; padding: 6px 10px; }
+  #effettiTesta.finisce { animation: lampeggia .5s steps(2, jump-none) infinite; }
+  #effettiLista { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+  #effetti.mini #effettiLista { display: none; }
+  #continua { position: fixed; left: 50%; transform: translateX(-50%); top: calc(12px + var(--sat)); z-index: 14; }
+  #continua[hidden] { display: none; }
+  #continuaBtn { font: 800 12px/1 var(--num); letter-spacing: .5px; color: #ffe9a8; padding: 9px 14px; border-radius: 999px; cursor: pointer;
+    background: rgba(30,22,6,.88); border: 1px solid rgba(255,213,74,.7); box-shadow: 0 6px 18px rgba(0,0,0,.45); }
   .eff { display: grid; grid-template-columns: auto auto; align-items: center; column-gap: 7px; row-gap: 3px; padding: 6px 9px 7px;
     border-radius: 14px; background: rgba(12,10,24,.82); min-width: 104px; box-shadow: 0 8px 20px rgba(0,0,0,.5); border: 1px solid rgba(93,255,180,.6); }
   .eff i { font-style: normal; font-size: 18px; line-height: 1; grid-row: span 2; }
@@ -609,7 +620,8 @@
 </div>
 <!-- 1.1.5: gli effetti accesi, ai lati, e quanto manca. -->
 <div id="bordoSx" class="bordo"></div>
-<div id="effetti"></div>
+<div id="effetti"><button id="effettiTesta" type="button" hidden title="apri o chiudi i potenziamenti"></button><div id="effettiLista"></div></div>
+<div id="continua" hidden><button id="continuaBtn" type="button">🏆 Collezione completa · <b>RISCATTA</b> quando vuoi</button></div>
 <div id="turbo" class="chiuso">
   <div class="pannello carta">
     <div class="testa"><b>⚡ POTENZIAMENTI DaProd</b><button id="turboChiudi" aria-label="chiudi">✕</button></div>
@@ -635,6 +647,7 @@
       <small id="fineBonus">+ premio della velocità e un pezzo del montepremi della Banca</small>
     </div>
     <button id="fineBtn" class="grosso">💰 RISCATTA E RICOMINCIA</button>
+    <button id="fineResta" class="grosso secondario" type="button">🎮 CONTINUA A GIOCARE</button>
   </div>
 </div>
 
@@ -720,7 +733,7 @@
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
-const VERSIONE = 'v1.1.6';
+const VERSIONE = 'v1.2.0';
 const $ = (id) => document.getElementById(id);
 const PARAMETRI = new URLSearchParams(location.search);
 // gioco = la partita vera; demo = la macchina gioca da sola (sfondo della home); vetrina = sfilata dei modellini
@@ -950,7 +963,7 @@ function statoNuovo() {
     v: 3, lire: 2000, coll: {}, pot: Object.fromEntries(POT.map(p => [p.id, 0])),
     teste: { pinza: true, amo: false, rete: false }, testa: 'pinza',
     zone: [true, false, false, false, false], zona: 0, primaPresa: true,
-    opz: { audio: true, qualita: TELEFONO ? 'media' : 'alta', auto: true, fps: false, scritte: true },
+    opz: { audio: true, qualita: TELEFONO ? 'media' : 'alta', auto: true, fps: false, scritte: true, effettiMini: false, avvisiMini: false },
     st: { prese: 0, vuote: 0, diFila: 0, catturati: 0, shiny: 0, spesi: 0, vinti: 0, potenziamenti: 0, gradoMax: 0, scivolati: 0, sicurezza: 0, regali: 0 },
     ultima: Date.now(), vasca: null, turbo: {},
   };
@@ -979,6 +992,7 @@ function pulisci(d) {                           // accetta solo valori validi: u
     s.opz.audio = d.opz.audio !== false;
     if (['alta', 'media', 'bassa'].includes(d.opz.qualita)) s.opz.qualita = d.opz.qualita;
     s.opz.auto = d.opz.auto !== false; s.opz.fps = d.opz.fps === true; s.opz.scritte = d.opz.scritte !== false;
+    s.opz.effettiMini = d.opz.effettiMini === true; s.opz.avvisiMini = d.opz.avvisiMini === true;
   }
   if (d.st && typeof d.st === 'object') for (const k in s.st) s.st[k] = numOk(d.st[k], 0, 0, 1e15);
   s.ultima = numOk(d.ultima, Date.now(), 0, Date.now());
@@ -1083,7 +1097,7 @@ const canvas = $('gioco');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: !TELEFONO, alpha: true, powerPreference: 'high-performance' });
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = .9;
+renderer.toneMappingExposure = .86;
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 const scena = new THREE.Scene();
@@ -2354,6 +2368,8 @@ function testo3D(x, y, z, html, cls = '') {
 }
 function avviso(txt, cls = '') {
   if (INCORPORATO) return;
+  // 1.2.0: con le notifiche ridotte passano solo quelle importanti (soldi, incassi).
+  if (stato.opz.avvisiMini && !/\bimp\b/.test(cls)) return;
   const box = $('avvisi');
   while (box.childElementCount > 3) box.firstElementChild.remove();
   const d = document.createElement('div'); d.className = 'avviso ' + cls; d.textContent = txt;
@@ -2725,10 +2741,12 @@ function rendiOfficina() {
   } else if (schedaOff === 'opz') {
     const q = stato.opz.qualita;
     h += `<div class="sezione">🔊 AUDIO</div><div class="opz"><button data-opz="audio" class="${stato.opz.audio ? 'on' : ''}">${stato.opz.audio ? 'ACCESO' : 'SPENTO'}</button></div>
+      <div class="sezione">🔔 NOTIFICHE</div><div class="opz"><button data-opz="avvisi" class="${stato.opz.avvisiMini ? '' : 'on'}">${stato.opz.avvisiMini ? 'SOLO IMPORTANTI' : 'TUTTE'}</button><button data-opz="effetti" class="${stato.opz.effettiMini ? '' : 'on'}">POTENZIAMENTI ${stato.opz.effettiMini ? 'CHIUSI' : 'APERTI'}</button></div>
+      <div class="nota">Solo importanti: restano gli avvisi dei soldi e degli incassi. I potenziamenti chiusi si vedono come una pillola in alto a sinistra.</div>
       <div class="sezione">🎨 QUALITÀ GRAFICA</div><div class="opz">
         <button data-opz="alta" class="${q === 'alta' ? 'on' : ''}">ALTA</button><button data-opz="media" class="${q === 'media' ? 'on' : ''}">MEDIA</button><button data-opz="bassa" class="${q === 'bassa' ? 'on' : ''}">BASSA</button>
         <button data-opz="auto" class="${stato.opz.auto ? 'on' : ''}">AUTOMATICA ${stato.opz.auto ? 'SÌ' : 'NO'}</button><button data-opz="fps" class="${stato.opz.fps ? 'on' : ''}">FPS</button></div>
-      <div class="nota">Alta = bagliori e ombre, media = bagliori, bassa = la più leggera. Con "automatica" se il gioco rallenta scende da sola.</div>
+      <div class="nota">Alta = un filo di bagliore e ombre, media = bagliori, bassa = la più leggera. Con "automatica" se il gioco rallenta scende da sola.</div>
       <div class="sezione">💾 SALVATAGGIO</div><div class="opz"><button data-opz="azzera" class="rosso">AZZERA TUTTO</button></div>
       <div class="nota">Il gioco si salva da solo su questo dispositivo. DaProd Claw Machine ${VERSIONE}.</div>`;
   } else {
@@ -2765,6 +2783,8 @@ function cambiaOpzione(id, bottone) {
   if (id === 'audio') { stato.opz.audio = !stato.opz.audio; if (!stato.opz.audio && motoreGain) motoreGain.gain.value = 0; aggiornaAudioBtn(); }
   else if (['alta', 'media', 'bassa'].includes(id)) { stato.opz.qualita = id; applicaQualita(); }
   else if (id === 'auto') stato.opz.auto = !stato.opz.auto;
+  else if (id === 'avvisi') stato.opz.avvisiMini = !stato.opz.avvisiMini;
+  else if (id === 'effetti') { stato.opz.effettiMini = !stato.opz.effettiMini; aggiornaEffetti(); }
   else if (id === 'fps') { stato.opz.fps = !stato.opz.fps; $('fps').style.display = stato.opz.fps ? 'block' : 'none'; }
   else if (id === 'azzera') {
     if (Date.now() - confermaAzzera > 4000) { confermaAzzera = Date.now(); bottone.textContent = 'SICURO? TOCCA ANCORA'; return; }
@@ -2793,7 +2813,9 @@ async function preparaPost() {
       import('three/addons/postprocessing/UnrealBloomPass.js'), import('three/addons/postprocessing/OutputPass.js')]);
     composer = new EffectComposer(renderer);
     passoRender = new RenderPass(scena, camera); composer.addPass(passoRender);
-    bagliore = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), .5, .45, .92); composer.addPass(bagliore);
+    // 1.2.0: «togliamo quel bagliore pesante». Da .5/.45/.92 a un filo: si accendono
+    // solo le luci vere (soglia alta), e l'alone resta corto.
+    bagliore = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), .16, .22, .97); composer.addPass(bagliore);
     composer.addPass(new OutputPass());
     postPronto = true; ridimensiona();
   } catch (e) { console.warn('bagliori non disponibili', e); }
@@ -2862,7 +2884,9 @@ function posaCamera(dt, subito = false) {
   dist *= cam.zoom;
   const zc = cxZona(zonaDi(pinza.x));
   let gx = lerp(zc, pinza.x, asp < 1 ? .95 : .72), gz = clamp(pinza.z * .4, -2, 1.6) - .9, gy = giu ? Math.max(.8, pinza.y * .5) : 1.3;
-  let alzo = asp < 1 ? .92 : .6;
+  // 1.2.0: «facciamo una camera più dall'alto». Da 53/34 gradi a 66/52: la vasca
+  // si legge dall'alto e la pinza non copre quello che sta sotto.
+  let alzo = asp < 1 ? 1.15 : .9;
   if (asp < 1) gz += 1.6;                         // in verticale la vasca sale sopra i pulsanti
   if (MODO === 'gioco' && !inGioco) {                 // schermata iniziale: la camera gira lenta sopra la sala
     cam.orbita += dt * .05;
@@ -3230,7 +3254,7 @@ function aggiornaEffetti() {
     let d = pastiglie[T.id];
     if (!t || t.fino <= ora) { if (d && d.parentNode) { d.remove(); cambiate = true; } continue; }
     if (!d) { d = pastiglie[T.id] = document.createElement('div'); d.innerHTML = '<i></i><b></b><small></small><u></u>'; d.children[0].textContent = T.ico; d.children[2].textContent = T.nome; }
-    if (d.parentNode !== $('effetti')) { $('effetti').appendChild(d); cambiate = true; }
+    if (d.parentNode !== $('effettiLista')) { $('effettiLista').appendChild(d); cambiate = true; }
     const resta = (t.fino - ora) / 1000, fin = resta <= 10; n++; finisce = finisce || fin;
     const classe = 'eff' + (fin ? ' finisce' : '');
     if (d.className !== classe) d.className = classe;
@@ -3240,22 +3264,42 @@ function aggiornaEffetti() {
     if (d.style.getPropertyValue('--p') !== p) d.style.setProperty('--p', p);
   }
   if (cambiate) ricalcola();
+  // 1.2.0: «minimizzare i potenziamenti acquistati e attivi». Una testata col
+  // conto: toccata, la lista si chiude in una pillola e resta chiusa.
+  const testa = $('effettiTesta');
+  if (testa.hidden !== (n === 0)) testa.hidden = n === 0;
+  if (n) {
+    let meno = Infinity;
+    for (const T of TURBO) { const t = stato.turbo && stato.turbo[T.id]; if (t && t.fino > ora) meno = Math.min(meno, (t.fino - ora) / 1000); }
+    const detto = (stato.opz.effettiMini ? '▸ ' : '▾ ') + '⚡ ' + n + (n === 1 ? ' attivo' : ' attivi') + (stato.opz.effettiMini ? ' · ' + mmss(meno) : '');
+    if (testa.textContent !== detto) testa.textContent = detto;
+    testa.classList.toggle('finisce', stato.opz.effettiMini && finisce);
+  }
+  $('effetti').classList.toggle('mini', stato.opz.effettiMini);
   const b = $('bordoSx');
   if (b.classList.contains('su') !== n > 0) b.classList.toggle('su', n > 0);
   if (b.classList.contains('finisce') !== (n > 0 && finisce)) b.classList.toggle('finisce', n > 0 && finisce);
   if (!$('turbo').classList.contains('chiuso')) rendiTurbo();
 }
 setInterval(aggiornaEffetti, 250);
+$('effettiTesta').addEventListener('click', () => { stato.opz.effettiMini = !stato.opz.effettiMini; daSalvare = true; aggiornaEffetti(); });
 
 const finita = () => quantiPosseduti() >= MODELLI.length;
 let fineDetta = false;
 function guardaLaFine() {
   if (fineDetta || !finita()) return;
   fineDetta = true;
-  mostraBanner('COLLEZIONE COMPLETA', 'FINITA!', 'tutti e 20 i modellini', 7);
+  mostraBanner('COLLEZIONE COMPLETA', 'FINITA!', 'tutti e 20 · resta quanto vuoi', 7);
   if (typeof suono.jackpot === 'function') suono.jackpot();
-  setTimeout(mostraLaFine, 1800);
+  // 1.2.0: «quando raggiungi l'ultima stanza non deve finire subito, puoi
+  // rimanere quanto vuoi». Niente pannello che copre la vasca: una pillola in
+  // alto, e il riscatto si apre quando lo decidi tu. Le lire continuano a
+  // salire, e il premio di chi finisce resta valido.
+  $('continua').hidden = false;
+  avviso('🏆 Collezione completa! Continua a giocare: riscatti quando vuoi, dalla pillola in alto', 'cia imp');
 }
+$('continuaBtn').addEventListener('click', mostraLaFine);
+$('fineResta').addEventListener('click', () => { $('fine').hidden = true; $('continua').hidden = false; });
 /**
  * Il pannello della fine: le lire di gioco, e quanto diventano in euro.
  *
@@ -3280,6 +3324,7 @@ function mostraLaFine() {
   $('fineBonus').hidden = !suite;
   $('fineBtn').textContent = suite ? '💰 RISCATTA E RICOMINCIA' : '🔄 RICOMINCIA DA CAPO';
   $('fineBtn').disabled = false;
+  $('continua').hidden = true;
   $('fine').hidden = false;
   const t0 = performance.now();
   const conta = (t) => {
@@ -3329,7 +3374,7 @@ if (window.DaProdLira && MODO === 'gioco') DaProdLira.init({
 // 1.1.4: la valuta la cambia la sala; il gioco ridisegna i suoi numeri.
 if (window.DaProdLira && DaProdLira.suValuta) DaProdLira.suValuta(() => { aggiornaHUD(); if (typeof rendiTeste === 'function') rendiTeste(); });
 // Chi aveva gia' finito la collezione (da una versione di prima) trova subito il pannello.
-if (MODO === 'gioco' && finita()) setTimeout(() => { if (!fineDetta) { fineDetta = true; mostraLaFine(); } }, 1500);
+if (MODO === 'gioco' && finita()) setTimeout(() => { if (!fineDetta) { fineDetta = true; $('continua').hidden = false; } }, 1500);
 
 // API per le prove automatiche e per chi vuole curiosare dalla console
 window.CLAW = {

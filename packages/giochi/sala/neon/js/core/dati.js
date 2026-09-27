@@ -401,6 +401,13 @@ const STORIA = {
 
 // ============================================================ NOVITÀ (mostrate in gioco al primo avvio di una versione)
 const NOVITA = {
+  "v2.2.1": {
+    titolo: "I potenziamenti in piccolo",
+    punti: [
+      "I ⚡ potenziamenti DaProd accesi si rimpiccioliscono col tasto sopra di loro: restano icona e tempo, e il gioco se lo ricorda.",
+      "Lo stesso interruttore sta nelle opzioni, accanto agli avvisi di tempo, bonus e malus."
+    ]
+  },
   "v2.2.0": {
     titolo: "La Merceria dei set, e lire o euro come vuoi",
     punti: [

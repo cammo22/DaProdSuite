@@ -32,6 +32,40 @@ interface Acceso {
   avvio: Promise<void>;
   /** Tenuto da parte per poterlo ridare a un supervisore nuovo dopo un riavvio. */
   onFatal: (motivo: string) => void;
+  /** Come tiene i pesi in scheda: vedi `memoriaPer`. */
+  memoria: Memoria;
+}
+
+/**
+ * ⚠ **Come il motore tiene i pesi nella scheda, per app** (1.7.0).
+ *
+ * Detto il 27 settembre 2026: «il modello qwen è lentissimo … facciamo andare
+ * tutto nella memoria della gpu», e poi «fai caricare tutto in gpu, spremila
+ * il più possibile, come fa WanGP».
+ *
+ * WanGP spreme una scheda da 8 GB tenendo i pesi in RAM bloccata e passandoli
+ * alla scheda **mentre lei lavora** (mmgp). ComfyUI fa la stessa cosa da sé,
+ * con la sua memoria video dinamica: è il motivo per cui sul loro README c'è
+ * scritto che gira anche con 4 GB «saturando la GPU». Noi lo spegnevamo sempre
+ * con `--disable-dynamic-vram`, per un difetto della **musica** (il depth
+ * decoder di MiniMax, vedi docs/VELOCITA-MUSICA.md): e così anche Qwen girava
+ * col caricamento vecchio, a stima, che su 8 GB vuol dire pesi che vanno e
+ * vengono a ogni passo.
+ *
+ * Quindi adesso dipende da chi accende il motore:
+ *
+ * - **dinamica** per le immagini, il video e il sogno: tutto il possibile in
+ *   scheda, il resto che arriva in streaming dietro al calcolo;
+ * - **fissa** per la musica, com'era, perché lì la dinamica dava errore.
+ *
+ * Il motore è uno solo e i flag stanno nella riga di comando: se un'app chiede
+ * il modo che il motore acceso non ha, si riaccende (una ventina di secondi,
+ * solo quando si passa dalla musica alle foto e viceversa).
+ */
+type Memoria = "dinamica" | "fissa";
+
+function memoriaPer(id: AppId): Memoria {
+  return id === "musica" ? "fissa" : "dinamica";
 }
 
 const accesi = new Map<string, Acceso>();
@@ -110,6 +144,14 @@ export async function avvia(id: AppId, onFatal: (motivo: string) => void): Promi
     gia.utenti.add(id);
     // Se un'altra app lo sta ancora avviando si aspetta quello, invece di
     // lanciarne un secondo sulla stessa porta.
+    await gia.avvio.catch(() => {});
+    if (gia.memoria !== memoriaPer(id) && accesi.get(servizio.id) === gia) {
+      // Acceso da un'altra app nell'altro modo: si riaccende nel suo.
+      accesi.delete(servizio.id);
+      await gia.supervisore.stop();
+      await accendi(id, servizio, join(SERVICES_DIR, servizio.id), new Set(gia.utenti), gia.onFatal);
+      return;
+    }
     return gia.avvio;
   }
 
@@ -176,7 +218,7 @@ async function accendi(
     cwd: cartella,
     healthUrl: `http://127.0.0.1:${servizio.port}/health`,
     shutdownUrl: `http://127.0.0.1:${servizio.port}/shutdown`,
-    env: ambiente(id, servizio),
+    env: { ...ambiente(id, servizio), DAPROD_MEMORIA: memoriaPer(id) },
     logger: createLogger(servizio.id),
     healthTimeoutMs: servizio.healthTimeoutMs,
     onFatal,
@@ -187,6 +229,7 @@ async function accendi(
     utenti,
     avvio: supervisore.start(),
     onFatal,
+    memoria: memoriaPer(id),
   };
   accesi.set(servizio.id, voce);
 

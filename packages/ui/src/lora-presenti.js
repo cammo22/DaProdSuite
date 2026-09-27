@@ -28,7 +28,7 @@
  * due: una cosa sola, uguale ovunque.
  */
 
-import { QWEN21, senzaRiscrittore } from "./qwen-image.js";
+import { QWEN21, senzaCache, senzaRiscrittore } from "./qwen-image.js";
 
 /**
  * ⚠ **Non solo le LoRA, dalla 1.5.2: tutti i file che il grafo chiede.**
@@ -178,6 +178,38 @@ async function controllaIlRiscrittore(motore, grafo, scarica, fatto) {
 }
 
 /**
+ * I nodi che il grafo usa e un motore vecchio potrebbe non conoscere (1.7.0).
+ * Si chiede una volta sola per nodo e si ricorda la risposta.
+ */
+const conosciuti = new Map();
+async function conosce(motore, tipo) {
+  if (conosciuti.has(tipo)) return conosciuti.get(tipo);
+  try {
+    const r = await fetch(`${motore}/object_info/${tipo}`, { cache: "no-store" });
+    const si = r.ok && Boolean((await r.json())?.[tipo]);
+    conosciuti.set(tipo, si);
+    return si;
+  } catch {
+    return true; // non risponde: si manda com'e', dira' lui
+  }
+}
+
+/**
+ * ⚠ **La cache KV e' un di piu'** (1.7.0, vedi `caricatori` in
+ * qwen-image.js): se il motore non conosce `QwenImage21Cache` si toglie, e il
+ * campionatore torna a prendere il modello nudo. Lo stesso per `RegexReplace`,
+ * che ripulisce la risposta del riscrittore: senza, il riscrittore si toglie.
+ */
+async function controllaINodiInPiu(motore, grafo, fatto) {
+  if (Object.values(grafo).some((n) => n?.class_type === "QwenImage21Cache")) {
+    if (!(await conosce(motore, "QwenImage21Cache"))) fatto.senzaCache = senzaCache(grafo);
+  }
+  if (Object.values(grafo).some((n) => n?.class_type === "RegexReplace")) {
+    if (!(await conosce(motore, "RegexReplace"))) fatto.senzaRiscrittore = senzaRiscrittore(grafo);
+  }
+}
+
+/**
  * Il no del motore, detto in italiano (1.5.2). ComfyUI risponde con
  * `node_errors`: per ogni nodo, cosa non va. Qui si tiene la prima cosa che
  * una persona puo' capire — un file che manca, un nodo che non c'e' (ComfyUI
@@ -214,8 +246,9 @@ export function spiegaIlNo(esito) {
  * la riserva.
  */
 export async function metteLeLoraCheCi(motore, grafo, { scarica } = {}) {
-  const fatto = { sostituite: [], scaricate: [], senzaRiscrittore: false };
+  const fatto = { sostituite: [], scaricate: [], senzaRiscrittore: false, senzaCache: false };
   await controllaIlRiscrittore(motore, grafo, scarica, fatto);
+  await controllaINodiInPiu(motore, grafo, fatto);
   await controllaIFile(motore, grafo, scarica, fatto);
   const nodi = Object.entries(grafo).filter(([, n]) => TIPI_LORA.includes(n?.class_type));
   if (!nodi.length) return { grafo, ...fatto };

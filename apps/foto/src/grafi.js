@@ -124,6 +124,11 @@ function ritoccoQwen(m, p) {
     passi: p.step,
     turbo: m.turbo,
     riferimenti: p.riferimenti,
+    modo: p.modo,
+    margini: p.margini,
+    guida: p.guida,
+    riscrivi: p.riscrivi,
+    ragiona: p.ragiona,
   });
 }
 

@@ -53,6 +53,20 @@ export const STILE_BANCA = `
 .bk-seg button{padding:6px 10px; border:0; border-radius:7px; background:transparent; color:#9fc4b8; font:700 12px/1 "Nunito", sans-serif; cursor:pointer}
 .bk-seg button.scelto{background:#1d3a32; color:#f2fffb}
 .bk-seg.piccolo button{padding:6px 9px; font:700 11.5px/1 "Space Mono", monospace}
+/* il verdetto (1.7.0): incassa o regala, a colpo d'occhio */
+.bk-verdetto{display:grid; gap:10px; padding:14px; border-radius:16px; border:1px solid; margin:2px 0 4px}
+.bk-verdetto.incassa{background:linear-gradient(180deg,rgba(61,255,138,.10),rgba(61,255,138,.03)); border-color:rgba(61,255,138,.35)}
+.bk-verdetto.regala{background:linear-gradient(180deg,rgba(255,92,110,.12),rgba(255,92,110,.03)); border-color:rgba(255,92,110,.4)}
+.bk-verdetto-testa{display:flex; gap:10px; align-items:flex-start}
+.bk-verdetto-ico{font-size:26px; line-height:1}
+.bk-verdetto-testa b{display:block; font:800 19px/1.15 "Nunito", sans-serif; color:#f2fffb}
+.bk-verdetto-testa small{display:block; color:#a9c2ba; font-size:12.5px; margin-top:3px}
+.bk-verdetto-cifre{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px}
+.bk-verdetto-cifre div{background:rgba(0,0,0,.28); border-radius:10px; padding:8px}
+.bk-verdetto-cifre small{display:block; color:#86a59c; font-size:11px}
+.bk-verdetto-cifre b{font:700 14px/1.2 "Space Mono", monospace; color:#dfe}
+.bk-verdetto-cifre b.su{color:#3dff8a} .bk-verdetto-cifre b.giu{color:#ff8a96}
+.bk-verdetto-nota{font-size:12.5px; color:#bcd3cc}
 /* la linea della Banca */
 .bk-linea{display:grid; gap:8px}
 .bk-linea-testa{display:flex; flex-wrap:wrap; justify-content:space-between; gap:6px}
