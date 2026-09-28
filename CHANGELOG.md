@@ -10,6 +10,43 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ---
 
+## 1.7.5 — La Regia
+
+> «togliamo daprod foto cinema e voce e le uniamo in un unica DaProdProduzioni
+> … usare dalla suite wangp direttamente e anche da telefono poter richiedere
+> dei lavori»
+
+Il numero salta da 1.7.0 a 1.7.5 perché l'ha chiesto Cammo: è la release più
+importante finora.
+
+- **Nuova scheda DaProdProduzioni.** Immagini, video, voce e musica si fanno con
+  WanGP. Aprendo la scheda, la suite trova WanGP acceso (porta 7861 del
+  launcher o 7860); se è spento lo accende con **Wan2GP Desktop Launcher**
+  (il programma Tauri di GKartist75) e aspetta che risponda. Poi mostra
+  **Deepy**, l'agente di WanGP. Se il launcher non è installato, la scheda dice
+  dove scaricarlo.
+- **Foto, Cinema e Voce non si vedono più nell'hub.** Il loro lavoro passa a
+  DaProdProduzioni. Il codice resta ancora qualche settimana, finché la nuova
+  strada non ha retto al lavoro vero; poi si toglie. Musica, Dream, Companion,
+  IoDigitale, Visualizer e Connessione restano come sono.
+- **Lavori dal telefono: azione `produzioni.chiedi`.** Si scrive l'idea e si
+  sceglie la ricetta (MiniMax H3 o LTX-2.5 MSR, per 8 GB o per hardware
+  potente). La suite passa a Deepy la ricetta di
+  [deepy-prompt-lab](https://github.com/cammo22/deepy-prompt-lab) più l'idea,
+  e Deepy pianifica, mette in coda e genera. Vale per telefono, console web e
+  agenti MCP, perché passa dal catalogo delle azioni come tutto il resto.
+- **WanGP resta un programma a parte, e si dice.** La sua licenza (WanGP
+  Community License 2.0) non permette di incorporarlo in un prodotto e chiede
+  di dichiararne l'uso: la suite lo usa come usa LM Studio e lo scrive nella
+  scheda.
+
+**Provato:** `pnpm run prova` e `pnpm -r typecheck` verdi; con il launcher
+acceso la suite trova WanGP su 7861 e il launcher installato, e Deepy accetta
+un messaggio mandato dalla suite (risposta 202). **Da provare:** la scheda
+aperta nell'hub e una richiesta vera dal telefono.
+
+---
+
 ## 1.7.0 — La versione da usare a lungo
 
 > «Voglio una release da testare a lungo termine … così posso fare un test di
