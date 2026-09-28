@@ -1032,6 +1032,44 @@ export const AZIONI: readonly Azione[] = [
   },
 
   {
+    id: "produzioni.chiedi",
+    app: "produzioni",
+    titolo: "Chiedi un video a DaProdProduzioni",
+    descrizione:
+      "Passa un'idea a Deepy, l'agente di WanGP sul PC, insieme alla ricetta scelta (le regole di deepy-prompt-lab). Deepy pianifica, mette tutto in coda e genera: i file finiscono nella galleria di WanGP. Se WanGP è spento, la suite lo accende con il launcher.",
+    produce: "niente",
+    permesso: "admin",
+    coda: false,
+    campi: [
+      {
+        nome: "idea",
+        etichetta: "Cosa vuoi",
+        principale: true,
+        descrizione: "Il video da fare, con le tue parole: storia, stile, durata, cosa deve esserci.",
+        tipo: "testo",
+        obbligatorio: true,
+        maxLunghezza: 4000,
+        esempio: "Un documentario di 3 minuti sulla pizza napoletana, dal grano al forno a legna.",
+      },
+      {
+        nome: "ricetta",
+        etichetta: "Ricetta",
+        descrizione: "Quali regole dare a Deepy: modello e hardware.",
+        tipo: "scelta",
+        obbligatorio: false,
+        scelte: ["minimax-leggero", "ltx-leggero", "minimax-potente", "ltx-potente"],
+        etichette: {
+          "minimax-leggero": "MiniMax H3, 8 GB",
+          "ltx-leggero": "LTX-2.5 MSR, 8 GB",
+          "minimax-potente": "MiniMax H3, hardware potente",
+          "ltx-potente": "LTX-2.5 MSR, hardware potente",
+        },
+        predefinito: "minimax-leggero",
+      },
+    ],
+  },
+
+  {
     id: "app.apri",
     app: null,
     titolo: "Apri un'app sul PC",
@@ -1048,6 +1086,7 @@ export const AZIONI: readonly Azione[] = [
         tipo: "scelta",
         obbligatorio: true,
         scelte: [
+          "produzioni",
           "visualizer",
           "musica",
           "foto",

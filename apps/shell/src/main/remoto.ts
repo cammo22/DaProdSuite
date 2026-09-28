@@ -12,6 +12,8 @@
  * l'unico pezzo che deve conoscerli tutti e due.
  */
 
+import { RICETTE, RICETTA_PREDEFINITA } from "./apps/produzioni/ricette";
+import { scriviADeepy } from "./apps/produzioni/wangp";
 import { app } from "electron";
 import { randomBytes } from "node:crypto";
 import { join } from "node:path";
@@ -503,6 +505,18 @@ const esegui: Esecutore = async (id, valori, dispositivo) => {
       if (errore) throw new Error(errore);
       sveglia();
       return { fatto: true };
+    }
+
+    case "produzioni.chiedi": {
+      const idea = String(valori.idea ?? "").trim();
+      if (!idea) throw new Error("Scrivi cosa vuoi che faccia.");
+      const scelta = String(valori.ricetta ?? RICETTA_PREDEFINITA);
+      const ricetta = RICETTE.find((r) => r.id === scelta);
+      if (!ricetta) throw new Error(`Non conosco la ricetta "${scelta}".`);
+      const id = await scriviADeepy(`${ricetta.testo}
+
+Il video da fare: ${idea}`);
+      return { mandato: true, richiesta: id, ricetta: ricetta.nome };
     }
 
     case "app.apri": {

@@ -67,13 +67,14 @@ Tutto in locale: nessun account, nessuna API, nessun dato che esce dal computer.
 
 | | App | Cosa fa | Modello | |
 |---|---|---|---|---|
+| 🎬 | **DaProdProduzioni** | Foto, video, voce e musica con [WanGP](https://github.com/deepbeepmeep/Wan2GP) e il suo agente Deepy, acceso da [Wan2GP Desktop Launcher](https://github.com/GKartist75/Wan2GP-Desktop-Tauri). I lavori si chiedono anche dal telefono | quelli di WanGP (Qwen Image 2.1, MiniMax H3, LTX-2.5…) | 🆕 1.7.5 |
 | 🟣 | **DaProdVisualizer** | Ascolti un file audio e lo vedi: la grafica si muove col suono | — | ✅ disponibile |
 | 🩷 | **DaProdMusica** | Crei canzoni intere, cantate e suonate, da un testo e uno stile | ACE-Step 1.5 · YuE2 3B | ✅ disponibile |
-| 🟠 | **DaProdFoto** | Crei immagini scrivendo cosa vuoi vedere, ne cambi un pezzo, e ne tiri fuori un modellino 3D | Anima Turbo · Qwen-Image 2.1 · TRELLIS.2 | ✅ disponibile |
+| 🟠 | **DaProdFoto** | Crei immagini scrivendo cosa vuoi vedere, ne cambi un pezzo, e ne tiri fuori un modellino 3D | Anima Turbo · Qwen-Image 2.1 · TRELLIS.2 | ↪ dalla 1.7.5 in DaProdProduzioni |
 | 🩵 | **DaProdDream** | Trasformi un video mentre scorre: webcam, un file, o lo schermo | SD-Turbo · Anima | ✅ disponibile |
 | 🟥 | **DaProdIoDigitale** | Carichi la foto di un volto e ci parli: ti risponde a voce | LeapTalk | ✅ disponibile |
-| 🟪 | **DaProdCinema** | Video con il suono dentro, da una descrizione o da un'immagine | LTX 2.5 | ✅ disponibile |
-| 🟡 | **DaProdVoce** | Scrivi una frase e te la legge, con la voce che scegli tu | Audio8 TTS 0.1B · 0.6B | ✅ disponibile |
+| 🟪 | **DaProdCinema** | Video con il suono dentro, da una descrizione o da un'immagine | LTX 2.5 | ↪ dalla 1.7.5 in DaProdProduzioni |
+| 🟡 | **DaProdVoce** | Scrivi una frase e te la legge, con la voce che scegli tu | Audio8 TTS 0.1B · 0.6B | ↪ dalla 1.7.5 in DaProdProduzioni |
 | 🟢 | **DaProdCompanion** | Un assistente sul desktop che si ricorda delle conversazioni di prima | un modello a scelta via LM Studio | ⏳ in arrivo |
 | 🔵 | **DaProdConnessione** | Chi è collegato, cosa sta girando, la sala giochi, e la stessa pagina che vedi dal telefono | Needle 3 (il giudice) | ✅ disponibile |
 

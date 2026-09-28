@@ -30,6 +30,7 @@ import { missingModelsGb } from "./models";
 import { ENGINES_DIR } from "./paths";
 import * as servizi from "./servizi";
 import * as connessione from "./apps/connessione";
+import * as produzioni from "./apps/produzioni";
 import * as visualizer from "./apps/visualizer";
 import * as musica from "./apps/musica";
 import * as foto from "./apps/foto";
@@ -47,6 +48,7 @@ import * as companion from "./apps/companion";
  */
 const MIGRATED = new Set<AppId>([
   "connessione",
+  "produzioni",
   "visualizer",
   "musica",
   "foto",
@@ -70,6 +72,11 @@ const FINESTRE: Partial<Record<AppId, Finestra>> = {
     apri: connessione.apri,
     chiudi: connessione.chiudi,
     laFinestra: connessione.laFinestra,
+  },
+  produzioni: {
+    apri: produzioni.apri,
+    chiudi: produzioni.chiudi,
+    laFinestra: produzioni.laFinestra,
   },
   visualizer: {
     apri: visualizer.apri,

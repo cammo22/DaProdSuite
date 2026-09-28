@@ -31,7 +31,7 @@ function subscribe<T>(channel: string, listener: (payload: T) => void): Unsubscr
 }
 
 const api: SuiteApi = {
-  catalog: APP_LIST,
+  catalog: APP_LIST.filter((a) => !a.nascosta),
 
   suite: {
     version: () => ipcRenderer.invoke(CHANNELS.suiteVersion),

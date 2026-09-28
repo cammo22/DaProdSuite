@@ -79,6 +79,14 @@ export interface AppDescriptor {
    * quella macchina non sarebbe partita comunque.
    */
   schedaVideo: RichiestaSchedaVideo;
+  /**
+   * true per le app che restano nel codice ma non si mostrano più nell'hub.
+   *
+   * Dalla 1.7.5 Foto, Cinema e Voce sono confluite in DaProdProduzioni, che fa
+   * tutto con WanGP: le loro schede spariscono, il loro codice resta finché la
+   * nuova strada non ha retto qualche settimana di lavoro vero.
+   */
+  nascosta?: boolean;
 }
 
 export type RichiestaSchedaVideo =
@@ -100,6 +108,7 @@ export type RichiestaSchedaVideo =
 
 export const APP_IDS = [
   "connessione",
+  "produzioni",
   "visualizer",
   "musica",
   "foto",
@@ -130,6 +139,29 @@ export const APPS: Record<AppId, AppDescriptor> = {
     models: [],
     gpuHeavy: false,
     schedaVideo: "non-serve",
+  },
+  /**
+   * DaProdProduzioni: foto, video, voce e musica con WanGP.
+   *
+   * **Non ha un motore suo.** Usa WanGP attraverso Wan2GP Desktop Launcher
+   * (Tauri), il programma che Cammo ha già installato: la suite lo accende se è
+   * spento e apre Deepy, l'agente di WanGP. La licenza di WanGP non permette di
+   * incorporarlo in un prodotto: per questo sta fuori e la suite ci parla, come
+   * si parla a LM Studio. Dal telefono si chiede un lavoro con l'azione
+   * `produzioni.chiedi`, che lo passa a Deepy insieme alle regole di
+   * deepy-prompt-lab.
+   */
+  produzioni: {
+    id: "produzioni",
+    name: "DaProdProduzioni",
+    tagline: "Foto, video, voce e musica con WanGP: anche dal telefono.",
+    kind: "renderer",
+    accent: "#f59e0b",
+    models: [],
+    // La scheda video la occupa WanGP, che è un programma a parte e se la
+    // gestisce da solo: l'arbitro della suite non deve spegnergli niente.
+    gpuHeavy: false,
+    schedaVideo: "molto-meglio",
   },
   visualizer: {
     id: "visualizer",
@@ -207,6 +239,7 @@ export const APPS: Record<AppId, AppDescriptor> = {
   },
   foto: {
     id: "foto",
+    nascosta: true,
     name: "DaProdFoto",
     tagline: "Immagini da un'idea, modifiche a parole, e dalla foto al modellino 3D.",
     kind: "service",
@@ -261,6 +294,7 @@ export const APPS: Record<AppId, AppDescriptor> = {
   },
   cinema: {
     id: "cinema",
+    nascosta: true,
     name: "DaProdCinema",
     tagline: "Video con il suono dentro, da una descrizione o da un'immagine.",
     kind: "service",
@@ -300,6 +334,7 @@ export const APPS: Record<AppId, AppDescriptor> = {
   },
   voce: {
     id: "voce",
+    nascosta: true,
     name: "DaProdVoce",
     tagline: "Scrivi una frase e te la legge, con la voce che scegli tu.",
     kind: "service",
