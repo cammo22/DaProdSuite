@@ -10,6 +10,26 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ---
 
+## 1.7.6 — La Regia apre il launcher intero
+
+> «l'app ha funzionato ma si apre deepy si deve aprire proprio l'installazione
+> del launcher completo … in modo da poter usare tutto»
+
+- **DaProdProduzioni apre Wan2GP Desktop Launcher**, con tutta l'interfaccia di
+  WanGP, non più la sola pagina di Deepy. Se il launcher è già acceso lo porta
+  davanti invece di accenderne un secondo.
+- La scheda resta «attiva» finché il launcher è acceso e torna pronta quando lo
+  chiudi. Chiudere la suite **non** spegne WanGP: potrebbe star generando.
+- Se il launcher non è installato, la scheda apre una finestrella che dice dove
+  scaricarlo.
+- Le richieste dal telefono (`produzioni.chiedi`) non cambiano: vanno a Deepy.
+
+**Provato:** prove e controllo dei tipi verdi; il codice della suite accende il
+launcher e lo riconosce acceso (pid). **Da provare:** il clic sulla scheda
+nell'hub, e il «porta davanti» a launcher già aperto.
+
+---
+
 ## 1.7.5 — La Regia
 
 > «togliamo daprod foto cinema e voce e le uniamo in un unica DaProdProduzioni

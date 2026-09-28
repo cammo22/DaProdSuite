@@ -11,9 +11,9 @@
  * `POST /deepy/deepy_api/messages`, lo stesso che usa la sua pagina.
  */
 
-import { spawn } from "node:child_process";
+import { execFile, spawn } from "node:child_process";
 import { existsSync, readdirSync } from "node:fs";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import { randomUUID } from "node:crypto";
 
 /** Le porte dove il launcher (7861) o un avvio a mano (7860) mettono WanGP. */
@@ -91,4 +91,42 @@ export async function scriviADeepy(testo: string): Promise<string> {
     throw new Error(`Deepy ha rifiutato la richiesta (${risposta.status}). ${dettaglio}`.trim());
   }
   return id;
+}
+
+/** Il pid del launcher acceso, se c'è. */
+export function pidLauncher(exe: string): Promise<number | null> {
+  return new Promise((risolvi) => {
+    execFile(
+      "tasklist",
+      ["/FI", `IMAGENAME eq ${basename(exe)}`, "/FO", "CSV", "/NH"],
+      { windowsHide: true },
+      (errore, uscita) => {
+        if (errore) return risolvi(null);
+        const riga = uscita.split(String.fromCharCode(10)).find((r) => r.toLowerCase().includes(basename(exe).toLowerCase()));
+        const pid = riga ? Number(riga.split('","')[1]) : NaN;
+        risolvi(Number.isFinite(pid) ? pid : null);
+      },
+    );
+  });
+}
+
+/** Porta davanti la finestra di un processo già acceso. */
+export function portaDavanti(pid: number): void {
+  execFile(
+    "powershell",
+    ["-NoProfile", "-Command", `(New-Object -ComObject WScript.Shell).AppActivate(${pid}) | Out-Null`],
+    { windowsHide: true },
+    () => {},
+  );
+}
+
+/** Apre il launcher completo: lo accende, o lo porta davanti se è già acceso. */
+export async function apriLauncher(exe: string): Promise<void> {
+  const pid = await pidLauncher(exe);
+  if (pid !== null) {
+    portaDavanti(pid);
+    return;
+  }
+  const figlio = spawn(exe, [], { detached: true, stdio: "ignore" });
+  figlio.unref();
 }
