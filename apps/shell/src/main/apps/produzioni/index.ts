@@ -4,21 +4,26 @@
  * Dalla 1.7.5 prende il posto di Foto, Cinema e Voce: immagini, video, voce e
  * musica li fa WanGP, acceso da Wan2GP Desktop Launcher (vedi `wangp.ts`).
  *
- * La finestra mostra Deepy, l'agente di WanGP, cioè la sua app web su
- * `/deepy/`. Mentre WanGP si accende, una pagina d'attesa dice cosa succede;
- * se il launcher non c'è, dice dove prenderlo. Come per DaProdConnessione:
- * niente preload e nessun ponte, perché la pagina viene da un altro programma.
+ * **Apre il launcher completo**, non una pagina: chiesto da Cammo dopo la
+ * prima prova della 1.7.5, dove la scheda mostrava solo Deepy — «si deve
+ * aprire proprio l'installazione del launcher completo … in modo da poter
+ * usare tutto». Se il launcher è già acceso lo si porta davanti, altrimenti lo
+ * si accende. La scheda resta «attiva» finché il launcher è vivo.
+ *
+ * Una finestra nostra si apre solo se il launcher non è installato, per dire
+ * dove prenderlo. Chiudere la scheda non spegne WanGP: potrebbe star generando.
  */
 
 import { BrowserWindow, shell } from "electron";
 import { readBounds, writeState } from "../../app-state";
 import { appari, mostraDavvero, registraConsole } from "../../finestre";
 import { iconaApp } from "../../paths";
-import { PAGINA_LAUNCHER, accendiWanGP } from "./wangp";
+import { PAGINA_LAUNCHER, apriLauncher, pidLauncher, trovaLauncher } from "./wangp";
 
 const PREDEFINITI = { width: 1280, height: 900, maximized: false };
 
 let finestra: BrowserWindow | null = null;
+let sorveglianza: NodeJS.Timeout | null = null;
 
 function paginaDiTesto(titolo: string, riga: string): string {
   const html = `<!doctype html><meta charset="utf-8"><title>DaProdProduzioni</title>
@@ -31,6 +36,31 @@ function paginaDiTesto(titolo: string, riga: string): string {
 }
 
 export function apri(onClose: () => void): void {
+  const exe = trovaLauncher();
+  if (exe) {
+    void apriLauncher(exe);
+    // La scheda torna «pronta» quando il launcher si chiude.
+    if (sorveglianza) clearInterval(sorveglianza);
+    let visto = false;
+    const inizio = Date.now();
+    sorveglianza = setInterval(() => {
+      void pidLauncher(exe).then((pid) => {
+        if (pid !== null) visto = true;
+        // Prima di averlo visto acceso si aspetta: parte in qualche secondo.
+        if (pid === null && (visto || Date.now() - inizio > 60_000)) {
+          if (sorveglianza) clearInterval(sorveglianza);
+          sorveglianza = null;
+          onClose();
+        }
+      });
+    }, 5000);
+    return;
+  }
+  apriAvviso(onClose);
+}
+
+/** La finestra che dice dove prendere il launcher. */
+function apriAvviso(onClose: () => void): void {
   if (finestra && !finestra.isDestroyed()) {
     mostraDavvero(finestra);
     return;
@@ -54,46 +84,31 @@ export function apri(onClose: () => void): void {
 
   const win = finestra;
   registraConsole(win, "produzioni");
-  if (bounds.maximized) win.maximize();
   win.once("ready-to-show", () => appari(win));
-
   win.webContents.setWindowOpenHandler(({ url }) => {
     if (/^https?:/.test(url)) void shell.openExternal(url);
     return { action: "deny" };
   });
-
-  const salvaBounds = () => {
-    if (win.isDestroyed()) return;
-    writeState("produzioni", "window", { ...win.getNormalBounds(), maximized: win.isMaximized() });
-  };
-  win.on("resized", salvaBounds);
-  win.on("moved", salvaBounds);
-  win.on("maximize", salvaBounds);
-  win.on("unmaximize", salvaBounds);
-  win.on("close", salvaBounds);
+  win.on("close", () => {
+    if (!win.isDestroyed()) writeState("produzioni", "window", { ...win.getNormalBounds(), maximized: win.isMaximized() });
+  });
   win.on("closed", () => {
     finestra = null;
     onClose();
   });
 
   void win.loadURL(
-    paginaDiTesto("Accendo WanGP…", "Il launcher sta avviando WanGP. La prima volta può metterci un paio di minuti."),
+    paginaDiTesto(
+      "Manca Wan2GP Desktop Launcher",
+      `Scaricalo da <a href="${PAGINA_LAUNCHER}" target="_blank" style="color:#f59e0b">GitHub</a>, installalo, poi riapri questa scheda.`,
+    ),
   );
-
-  accendiWanGP()
-    .then((base) => {
-      if (!win.isDestroyed()) void win.loadURL(`${base}/deepy/`);
-    })
-    .catch((errore: Error) => {
-      if (win.isDestroyed()) return;
-      const riga = errore.message.includes(PAGINA_LAUNCHER)
-        ? `Non trovo Wan2GP Desktop Launcher. Scaricalo da <a href="${PAGINA_LAUNCHER}" target="_blank" style="color:#f59e0b">GitHub</a>, installalo, poi riapri questa scheda.`
-        : errore.message;
-      void win.loadURL(paginaDiTesto("WanGP non è pronto", riga));
-    });
 }
 
 export function chiudi(): void {
+  // Il launcher non si spegne: può star generando. Si smette solo di guardarlo.
+  if (sorveglianza) clearInterval(sorveglianza);
+  sorveglianza = null;
   if (finestra && !finestra.isDestroyed()) finestra.close();
   finestra = null;
 }
