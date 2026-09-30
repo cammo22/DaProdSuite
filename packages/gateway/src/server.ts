@@ -104,6 +104,15 @@ import {
   type Sguardo,
 } from "@daprod/giochi";
 import { Remoto } from "./remoto";
+import {
+  BISCOTTO_WANGP,
+  PREFISSO_WANGP,
+  destinazioneDa,
+  eDiWanGP,
+  inoltra,
+  inoltraUpgrade,
+  paginaWanGPSpento,
+} from "./wangp";
 import type { Rete } from "./rete";
 import type {
   Dispositivo,
@@ -115,6 +124,7 @@ import type {
   FornitorePannello,
   FornitoreGiudice,
   FornitoreStili,
+  FornitoreWanGP,
   StatoRichiesta,
   StatoSuite,
 } from "./types";
@@ -189,6 +199,12 @@ export interface GatewayOpzioni {
    * quello che si faceva fino alla 0.8.2.
    */
   rete?: Rete;
+  /**
+   * WanGP, il motore di DaProdProduzioni, se questa suite ce l'ha.
+   *
+   * Solo per chi decide: gli altri non ne vedono né il pulsante né le rotte.
+   */
+  wangp?: FornitoreWanGP;
 }
 
 /** Ogni quanto il gateway manda un segno di vita a chi è in ascolto. */
@@ -266,6 +282,7 @@ export class Gateway {
   /** Quello che la sala giochi fa guardare, per persona: vedi `sguardoNeiGiochi`. */
   private sguardi = new Map<string, { quando: number; livelli: Map<string, Sguardo> }>();
   private rete: Rete | undefined;
+  private wangp: FornitoreWanGP | undefined;
 
   constructor(opzioni: GatewayOpzioni) {
     this.remoto = opzioni.remoto;
@@ -282,9 +299,12 @@ export class Gateway {
     this.giudice = opzioni.giudice;
     this.giochi = opzioni.giochi;
     this.rete = opzioni.rete;
+    this.wangp = opzioni.wangp;
     this.server = createServer((req, res) => {
       void this.maneggia(req, res);
     });
+    // WanGP parla anche WebSocket (Deepy): senza questo il server li butterebbe.
+    this.server.on("upgrade", (req, socket, testa) => this.upgradeWanGP(req, socket as never, testa));
   }
 
   /**
@@ -481,6 +501,16 @@ export class Gateway {
         return;
       }
 
+      /**
+       * ⚠ **WanGP intero, solo per chi decide.** Dalla 1.7.7.
+       *
+       * Sta **prima** di `leggiCorpo` — il corpo va passato a WanGP
+       * com'e' (un upload di mezzo giga non si tiene in memoria) — e prima del
+       * controllo del token di sempre perche' ha il suo biscotto (vedi `adminDiWanGP`): la pagina di WanGP fa richieste che
+       * scrivono, e il biscotto normale vale solo per le GET.
+       */
+      if (this.wangp && (await this.richiestaWanGP(req, res, url))) return;
+
       const corpo = await leggiCorpo(req);
 
       if (percorso.startsWith("/giochi/")) {
@@ -567,7 +597,7 @@ export class Gateway {
                 tavolo === "immagini"
                   ? {
                       tipo: "genera.immagine",
-                      app: "foto",
+                      app: "produzioni",
                       testo: cosa.prompt,
                       // Lo Studio (1.4.5) sceglie forma e velocita'; la prova di
                       // una combinazione resta com'era, 4:3 di serie.
@@ -585,7 +615,7 @@ export class Gateway {
                     }
                   : {
                       tipo: "genera.brano",
-                      app: "musica",
+                      app: "produzioni",
                       testo: cosa.prompt,
                       opzioni: {
                         titolo: cosa.titolo.slice(0, 80),
@@ -638,7 +668,7 @@ export class Gateway {
               }
               const richiesta = this.remoto.creaRichiesta({
                 tipo: "modifica.immagine",
-                app: "foto",
+                app: "produzioni",
                 testo: istruzione,
                 opzioni: { immagine: suDisco, prompt: istruzione, modello: "qwen21" },
                 daDispositivo: chiGioca,
@@ -987,7 +1017,7 @@ export class Gateway {
           const partenza = ((corpo ?? {}) as { testo?: string }).testo?.trim() || richiesta.testo;
           let scritto: { testo: string; parole?: string };
           try {
-            scritto = await this.ai.migliora({ testo: partenza, app: richiesta.app });
+            scritto = await this.ai.migliora({ testo: partenza, app: appPerLAi(richiesta.app, richiesta.tipo) });
           } catch (err) {
             return this.errore(res, 502, err instanceof Error ? err.message : "Il modello non ha risposto.");
           }
@@ -1242,6 +1272,8 @@ export class Gateway {
           // in DaProd uno è una stringa di testo fra altre stringhe di testo.
           foto: indirizzoDellaFoto(dispositivo),
           motto: dispositivo.motto,
+          // Il tasto di WanGP: solo chi decide lo scopre, e solo se la suite ce l'ha.
+          wangp: dispositivo.ruolo === "admin" && this.wangp !== undefined,
         });
         return;
       }
@@ -1585,7 +1617,7 @@ export class Gateway {
         const dati = (corpo ?? {}) as { prompt?: string };
         const richiesta = this.remoto.creaRichiesta({
           tipo: "immagine",
-          app: "foto",
+          app: "produzioni",
           // Vuoto va bene: il titolo del brano da solo e' gia' una richiesta
           // sensata, e il resto lo mette `copertinaConIlTitolo`.
           testo: String(dati.prompt ?? "").trim() || "copertina",
@@ -2469,6 +2501,122 @@ export class Gateway {
       versione: this.versione,
     });
     this.aggiorna();
+  }
+
+  /* ------------------------------------------------------------- WanGP */
+
+  /**
+   * L'admin dietro una richiesta a WanGP, se c'e'.
+   *
+   * Due modi per dimostrarlo: l'`Authorization` del dispositivo (lo fa la
+   * console per piantare il biscotto) o il biscotto di WanGP, che ha lo stesso
+   * valore del token ma **un nome suo e vale anche per le POST** — la pagina di
+   * WanGP ne fa a decine. Il rischio dei biscotti sulle POST e' il CSRF, e qui
+   * si chiude in due modi: `SameSite=Strict` (un altro sito non lo manda) e il
+   * controllo dell'`Origin`, che per una richiesta che scrive deve essere la
+   * stessa casa di `Host`.
+   *
+   * Chi non e' admin **non passa mai**, neanche con un token buono.
+   */
+  private adminDiWanGP(req: IncomingMessage): Dispositivo | undefined {
+    const testa = req.headers.authorization ?? "";
+    let token = testa.startsWith("Bearer ") ? testa.slice(7) : "";
+    if (!token) {
+      const soloLettura = req.method === "GET" || req.method === "HEAD";
+      if (!soloLettura && !stessaCasa(req)) return undefined;
+      token = biscotto(req, BISCOTTO_WANGP);
+    }
+    const d = token ? this.remoto.daToken(token) : undefined;
+    return d && d.ruolo === "admin" ? d : undefined;
+  }
+
+  /** WebSocket verso WanGP: gli stessi controlli delle altre richieste. */
+  private upgradeWanGP(req: IncomingMessage, socket: import("node:net").Socket, testa: Buffer): void {
+    const percorso = (req.url ?? "/").split("?")[0]!;
+    const dove = this.wangp ? destinazioneDa(this.wangp.base() ?? "") : null;
+    if (!this.wangp || !dove || !eDiWanGP(percorso) || !stessaCasa(req) || !this.adminDiWanGP({ ...req, method: "GET", headers: req.headers } as IncomingMessage)) {
+      socket.write("HTTP/1.1 404 Not Found" + String.fromCharCode(13, 10) + "Connection: close" + String.fromCharCode(13, 10, 13, 10));
+      socket.destroy();
+      return;
+    }
+    inoltraUpgrade(req, socket, testa, dove);
+  }
+
+  /**
+   * Le rotte di WanGP. Torna vero se ha risposto lei.
+   *
+   * - `POST /wangp/sessione` pianta il biscotto (solo admin, col token);
+   * - `GET /wangp/stato`, `POST /wangp/accendi`, `POST /wangp/spegni`;
+   * - `/wangp/…` e i percorsi che la pagina chiede alla radice: passano a WanGP.
+   *
+   * Senza un admin, `/wangp/…` risponde 404 come se non ci fosse, e i percorsi
+   * alla radice restano al gateway di sempre.
+   */
+  private async richiestaWanGP(req: IncomingMessage, res: ServerResponse, url: URL): Promise<boolean> {
+    const percorso = url.pathname;
+    if (!eDiWanGP(percorso)) return false;
+    const sulPrefisso = percorso === PREFISSO_WANGP || percorso.startsWith(PREFISSO_WANGP + "/");
+    const admin = this.adminDiWanGP(req);
+    if (!admin) {
+      if (!sulPrefisso) return false; // un percorso della radice, e non e' per WanGP
+      this.errore(res, 404, "Qui non c'e'.");
+      return true;
+    }
+    const wangp = this.wangp!;
+
+    if (percorso === PREFISSO_WANGP + "/sessione" && req.method === "POST") {
+      const secure = String(req.headers["x-forwarded-proto"] ?? "").startsWith("https") ? "; Secure" : "";
+      res.setHeader(
+        "Set-Cookie",
+        `${BISCOTTO_WANGP}=${encodeURIComponent(admin.token)}; Path=/; Max-Age=43200; SameSite=Strict; HttpOnly${secure}`,
+      );
+      this.json(res, 200, { ok: true, ...(await wangp.stato()) });
+      return true;
+    }
+    if (percorso === PREFISSO_WANGP + "/stato" && req.method === "GET") {
+      this.json(res, 200, await wangp.stato());
+      return true;
+    }
+    if (percorso === PREFISSO_WANGP + "/accendi" && req.method === "POST") {
+      try {
+        await wangp.accendi();
+        this.json(res, 200, { ok: true, ...(await wangp.stato()) });
+      } catch (errore) {
+        this.json(res, 200, { ok: false, errore: errore instanceof Error ? errore.message : String(errore) });
+      }
+      return true;
+    }
+    if (percorso === PREFISSO_WANGP + "/spegni" && req.method === "POST") {
+      await wangp.spegni();
+      this.json(res, 200, { ok: true, ...(await wangp.stato()) });
+      return true;
+    }
+
+    const dove = destinazioneDa(wangp.base() ?? "");
+    const paginaChiesta = (req.method === "GET" || req.method === "HEAD") && (percorso === PREFISSO_WANGP || percorso === PREFISSO_WANGP + "/");
+    if (percorso === PREFISSO_WANGP) {
+      // Senza la barra finale gli indirizzi relativi della pagina si romperebbero.
+      res.writeHead(308, { Location: PREFISSO_WANGP + "/" + url.search });
+      res.end();
+      return true;
+    }
+    if (!dove) {
+      if (paginaChiesta) {
+        const st = await wangp.stato();
+        this.pagina(res, paginaWanGPSpento(st.installato, st.errore));
+      } else {
+        this.errore(res, 503, "WanGP e' spento.");
+      }
+      return true;
+    }
+    inoltra(req, res, dove, () => {
+      if (paginaChiesta) {
+        void wangp.stato().then((st) => this.pagina(res, paginaWanGPSpento(st.installato, st.errore)));
+      } else {
+        this.errore(res, 502, "WanGP non risponde.");
+      }
+    });
+    return true;
   }
 
   /**
@@ -3419,6 +3567,35 @@ function leggiCorpo(req: IncomingMessage): Promise<unknown> {
     });
     req.on("error", () => resolve({}));
   });
+}
+
+/**
+ * La richiesta viene dalla stessa casa a cui e' arrivata?
+ *
+ * Il browser mette `Origin` sulle richieste che scrivono e sui WebSocket: se c'e'
+ * e non e' lo stesso host dell'`Host`, la pagina che l'ha fatta non e' la nostra.
+ * Se non c'e' (un programma, non un browser) si lascia passare: non porta il
+ * biscotto di nessuno.
+ */
+function stessaCasa(req: IncomingMessage): boolean {
+  const origine = req.headers.origin;
+  if (!origine) return true;
+  try {
+    return new URL(String(origine)).host === String(req.headers.host ?? "");
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Per il modello che riscrive, «produzioni» non dice niente: conta **cosa** si sta
+ * facendo. Dalla 1.7.7 immagini e brani stanno tutti in DaProdProduzioni, e il
+ * riscrittore vuole ancora sapere se scrive per un'immagine, per un brano o per
+ * un video (con le parole da cantare, solo per il brano).
+ */
+function appPerLAi(app: string, tipo: string): string {
+  if (app !== "produzioni") return app;
+  return tipo === "audio" ? "musica" : tipo === "video" ? "cinema" : "foto";
 }
 
 /** Il valore di un biscotto nella richiesta, o stringa vuota. */

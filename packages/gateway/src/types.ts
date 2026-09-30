@@ -937,6 +937,36 @@ export interface StatoMacchina {
   sonoLaCasa: boolean;
 }
 
+/** Com'è messo WanGP sul computer: lo racconta lo shell. */
+export interface StatoWanGP {
+  /** WanGP è installato su questo computer? */
+  installato: boolean;
+  /** Risponde adesso? */
+  acceso: boolean;
+  /** Lo si sta accendendo: ci vuole un paio di minuti la prima volta. */
+  inAvvio: boolean;
+  /** Il ponte per i lavori degli utenti è pronto? */
+  ponte: boolean;
+  /** Perché non parte, se non parte. */
+  errore?: string;
+}
+
+/**
+ * Chi sa governare WanGP, il motore di DaProdProduzioni. Lo passa lo shell.
+ *
+ * Il gateway non sa dove sta WanGP né come si accende: gli chiede l'indirizzo e
+ * gli fa portare la pagina intera a chi ha il permesso di decidere.
+ */
+export interface FornitoreWanGP {
+  /** Dove risponde adesso (es. `http://127.0.0.1:7861`), o null se è spento. */
+  base(): string | null;
+  stato(): Promise<StatoWanGP>;
+  /** Lo accende e aspetta che risponda. Torna l'indirizzo, o solleva col motivo. */
+  accendi(): Promise<string>;
+  /** Lo spegne. */
+  spegni(): Promise<void>;
+}
+
 /** Chi sa rispondere sulla macchina: lo passa lo shell. */
 export interface FornitoreMacchina {
   stato(dispositivo: Dispositivo): StatoMacchina;

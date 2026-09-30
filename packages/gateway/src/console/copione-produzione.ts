@@ -326,7 +326,8 @@ export const COPIONE_PRODUZIONE = `
    */
   function tipoDellaScheda(a) {
     for (var t of TIPI_STILE) if (t.azione === a.id) return t.id;
-    return { foto: "immagine", cinema: "video", musica: "musica" }[a.app] || null;
+    return { foto: "immagine", cinema: "video", musica: "musica" }[a.app]
+      || { immagine: "immagine", video: "video", audio: "musica" }[a.risultato] || null;
   }
 
   /**

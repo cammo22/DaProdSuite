@@ -24,6 +24,7 @@ import { sorvegliaProcessi } from "@daprod/runtime";
 import { registra, ripulisciAvanzi, uccidiTutti } from "./processi";
 import { turno } from "./turno";
 import { motoreOccupato } from "./vram";
+import { occupato as wangpOccupato } from "./wangp";
 import { travasaIPresetNegliStili } from "./travaso-preset";
 
 // Gli schemi privilegiati vanno dichiarati prima che l'app sia pronta: dopo,
@@ -90,7 +91,9 @@ async function start(): Promise<void> {
    * poi il turno lo sa: prima di caricare il modello che scrive, chiede al
    * motore se ha qualcosa in mano, e se ce l'ha aspetta.
    */
-  turno.metteGuardia(motoreOccupato);
+  // Occupata è anche la scheda di WanGP: chi ha la sua interfaccia aperta genera
+  // senza passare dalla fila, e il modello che scrive non deve caricarsi sopra.
+  turno.metteGuardia(async () => (await motoreOccupato()) || (await wangpOccupato()));
   // Lo schema serve anche all'hub, non solo alle app: il pannello Risultati
   // mostra le anteprime dei file, e quelle stanno su `daprod://file/...`.
   // Prima lo accendeva la prima app che si apriva, quindi l'hub appena avviato

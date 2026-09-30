@@ -4,7 +4,26 @@ Ogni scheda dell'hub è un'esperienza completa: il modello, un'interfaccia
 fatta apposta per lui, e i suoi trucchi già pronti. La installi, la usi, e se
 non ti serve più la disinstalli dal pannello Spazio.
 
-## 🎵 DaProdMusica — *disponibile*
+## 🎬 DaProdProduzioni — *l'app principale, dalla 1.7.7*
+
+Immagini, video, voce e musica con **[WanGP](https://github.com/deepbeepmeep/Wan2GP)**,
+che la suite accende da sé e mostra **intero**: tutti i modelli e tutte le
+impostazioni di WanGP, nella finestra della suite. Chi decide la apre anche
+**dal telefono** (dalla Casa, il tasto «WanGP completo»); gli altri non lo
+vedono.
+
+Gli altri usano **Crea**: un'immagine (Qwen-Image 2.1, Veloce o Fine) o una
+canzone (ACE-Step XL, cantata o strumentale). Il modello lo sceglie la suite,
+la richiesta aspetta il sì di chi decide, e a lavoro finito il file è in
+galleria. I lavori di tutti finiscono nella **stessa coda di WanGP**.
+
+*La suite usa WanGP di DeepBeepMeep come motore (WanGP Community License 2.0):
+non lo incorpora, lo trova sul computer e lo accende.*
+
+## 🎵 DaProdMusica — *dalla 1.7.7 è dentro DaProdProduzioni*
+
+*Non compare più nell'hub: la musica si fa con ACE-Step XL in DaProdProduzioni.
+Quello che segue è com'era.*
 
 Canzoni complete e cantate, da una descrizione e un testo. Scrivi lo stile in
 poche parole vaghe (2-3 generi, non un elenco di strumenti — è quello che dà i

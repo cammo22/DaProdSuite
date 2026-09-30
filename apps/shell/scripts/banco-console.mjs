@@ -416,6 +416,19 @@ const gateway = new G.Gateway({
       return { probabilita: Object.fromEntries(d.opzioni.map((o, i) => [o, p[i] ?? 0])) };
     },
   },
+  /**
+   * WanGP **vero**, se lo si indica: `BANCO_WANGP=http://127.0.0.1:7999`. Serve a
+   * guardare in un browser la pagina intera di WanGP passata dal gateway
+   * (1.7.7). Senza, il banco non ha WanGP e le rotte `/wangp` rispondono 404.
+   */
+  wangp: process.env.BANCO_WANGP
+    ? {
+        base: () => process.env.BANCO_WANGP,
+        stato: async () => ({ installato: true, acceso: true, inAvvio: false, ponte: false }),
+        accendi: async () => process.env.BANCO_WANGP,
+        spegni: async () => {},
+      }
+    : undefined,
   macchina: {
     stato: macchina.stato,
     pausa: macchina.pausa,

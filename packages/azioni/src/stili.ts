@@ -317,6 +317,21 @@ export const STILE_PER_APP: Readonly<Record<string, TipoStile>> = {
   musica: "musica",
 };
 
+/**
+ * Il tipo di stile che vuole un'azione.
+ *
+ * ⚠ **Dalla 1.7.7 «produzioni» non basta a dirlo**: immagini, brani e video
+ * stanno tutti in DaProdProduzioni, e la tabella per app non sa se un'azione
+ * vuole gli stili delle foto o quelli della musica. Per quella scheda si guarda
+ * **cosa produce** l'azione.
+ */
+export function tipoStileDiUnAzione(a: { app?: string | null; risultato?: string }): TipoStile {
+  if (a.app === "produzioni") {
+    return a.risultato === "audio" ? "musica" : a.risultato === "video" ? "video" : "immagine";
+  }
+  return STILE_PER_APP[a.app ?? ""] ?? "musica";
+}
+
 /** Gli stili immagine di partenza: modi di fotografare, o di disegnare. */
 export const STILI_IMMAGINE_DI_PARTENZA: Readonly<Record<string, string>> = {
   "Fotografia vera": "photorealistic, 35mm photography, natural light, sharp focus",

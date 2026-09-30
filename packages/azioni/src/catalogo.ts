@@ -24,7 +24,7 @@ import {
 } from "./stili";
 
 /** Le app che possono ricevere un lavoro da fuori, oggi. */
-export const APP_REMOTE = ["foto", "cinema", "musica", "voce"] as const;
+export const APP_REMOTE = ["produzioni", "foto", "cinema", "musica", "voce"] as const;
 
 /** Quanto può essere lungo un prompt che arriva da fuori. */
 const PROMPT_MAX = 2000;
@@ -81,7 +81,12 @@ export const PREDEFINITO_IMMAGINI = "qwen21";
  */
 const MODELLI_FOTO = {
   predefinito: PREDEFINITO_IMMAGINI,
-  scelte: ["qwen21", "qwen21-turbo", "anima", "anima2"],
+  /**
+   * ⚠ **Solo Qwen-Image 2.1, dalla 1.7.7**: le immagini si fanno con WanGP
+   * (DaProdProduzioni) e chi non decide sceglie fra questi due. Chi decide, per
+   * tutti gli altri modelli, apre WanGP intero.
+   */
+  scelte: ["qwen21", "qwen21-turbo"],
   perTutti: ["qwen21", "qwen21-turbo"],
   /**
    * ⚠ **Solo i nomi.** Chiesto il 7 settembre 2026: «togli la scritta un
@@ -95,9 +100,7 @@ const MODELLI_FOTO = {
    */
   etichette: {
     qwen21: "Qwen-Image 2.1 · Fine (40 passi)",
-    "qwen21-turbo": "Qwen-Image 2.1 · Veloce (8 passi)",
-    anima: "Anima",
-    anima2: "Anima v2",
+    "qwen21-turbo": "Qwen-Image 2.1 · Veloce (6 passi)",
   },
 } as const;
 
@@ -131,16 +134,14 @@ const MODELLI_FOTO = {
  */
 const MODELLI_MODIFICA = {
   predefinito: PREDEFINITO_IMMAGINI,
-  scelte: ["qwen21", "qwen21-turbo", "anima", "anima2"],
+  scelte: ["qwen21", "qwen21-turbo"],
   perTutti: ["qwen21", "qwen21-turbo"],
   // Solo i nomi, come per la generazione. Chi non sa usare la zona lo dice il
   // modulo quando lo scegli, che è il momento in cui serve saperlo: vedi
   // `senzaZona` qui sotto.
   etichette: {
     qwen21: "Qwen-Image 2.1 · Fine (40 passi)",
-    "qwen21-turbo": "Qwen-Image 2.1 · Veloce (8 passi)",
-    anima: "Anima",
-    anima2: "Anima v2",
+    "qwen21-turbo": "Qwen-Image 2.1 · Veloce (6 passi)",
   },
 } as const;
 
@@ -179,7 +180,7 @@ const MODELLI_MUSICA = {
    * o passando prima dalla partitura scritta. Il predefinito resta ACE-Step XL:
    * YuE2 è la seconda voce, non quella che parte da sola.
    */
-  scelte: ["ace-turbo", "ace-xl-turbo", "yue2", "yue2-partitura"],
+  scelte: ["ace-xl-turbo"],
   /**
    * ⚠ **YuE2 per tutti, dalla 1.5.2.** «Ridisegniamola pensando solo che deve
    * funzionare bene col nuovo Qwen Image 2.1 e YuE». In Crea il motore lo
@@ -187,12 +188,9 @@ const MODELLI_MUSICA = {
    * ACE-Step XL (il testo se lo inventa). Il predefinito resta ACE-Step XL,
    * che parte anche senza testo.
    */
-  perTutti: ["ace-xl-turbo", "yue2"],
+  perTutti: ["ace-xl-turbo"],
   etichette: {
-    "ace-turbo": "ACE-Step Turbo",
     "ace-xl-turbo": "ACE-Step XL",
-    yue2: "YuE2",
-    "yue2-partitura": "YuE2 con la partitura",
   },
 } as const;
 
@@ -250,9 +248,8 @@ function campoModelloCopertina() {
     obbligatorio: false,
     // Dalla 1.4.9 la copertina si fa col Qwen di serie, senza LoRA: vedi MODELLI_FOTO.
     predefinito: "qwen21",
-    scelte: ["anima", "qwen21"],
+    scelte: ["qwen21"],
     etichette: {
-      anima: "Anima",
       qwen21: "Qwen-Image 2.1",
     },
   } as const;
@@ -287,10 +284,10 @@ export const AZIONI: readonly Azione[] = [
 
   {
     id: "genera.immagine",
-    app: "foto",
+    app: "produzioni",
     titolo: "Fai un'immagine",
     descrizione:
-      "Genera un'immagine da una descrizione, con DaProdFoto. Occupa la scheda video, quindi entra in coda.",
+      "Genera un'immagine da una descrizione, con Qwen-Image 2.1 dentro WanGP (DaProdProduzioni). Occupa la scheda video, quindi entra in coda.",
     produce: "file",
     risultato: "immagine",
     permesso: "tutti",
@@ -400,11 +397,11 @@ export const AZIONI: readonly Azione[] = [
    */
   {
     id: "modifica.immagine",
-    app: "foto",
+    app: "produzioni",
     titolo: "Modifica una foto",
     descrizione:
-      "Cambia una foto che hai già, con DaProdFoto. Si può dipingere col dito la zona da rifare, " +
-      "e senza dipingere niente lavora su tutta l'immagine. Occupa la scheda video, quindi entra in coda.",
+      "Cambia una foto che hai già, con Qwen-Image 2.1 dentro WanGP (DaProdProduzioni). Si può dipingere col dito " +
+      "la zona da rifare, e senza dipingere niente lavora su tutta l'immagine. Occupa la scheda video, quindi entra in coda.",
     produce: "file",
     risultato: "immagine",
     permesso: "tutti",
@@ -623,10 +620,10 @@ export const AZIONI: readonly Azione[] = [
 
   {
     id: "genera.brano",
-    app: "musica",
+    app: "produzioni",
     titolo: "Fai un brano",
     descrizione:
-      "Genera una canzone da una descrizione, con DaProdMusica. Se dai anche il testo, lo canta. " +
+      "Genera una canzone da una descrizione, con ACE-Step XL dentro WanGP (DaProdProduzioni). Se dai anche il testo, lo canta. " +
       "La descrizione vuole SOLO generi (tre o quattro): strumenti, mood e BPM restringono il " +
       "modello e fanno uscire sempre la stessa cosa.",
     produce: "file",
@@ -1032,44 +1029,6 @@ export const AZIONI: readonly Azione[] = [
   },
 
   {
-    id: "produzioni.chiedi",
-    app: "produzioni",
-    titolo: "Chiedi un video a DaProdProduzioni",
-    descrizione:
-      "Passa un'idea a Deepy, l'agente di WanGP sul PC, insieme alla ricetta scelta (le regole di deepy-prompt-lab). Deepy pianifica, mette tutto in coda e genera: i file finiscono nella galleria di WanGP. Se WanGP è spento, la suite lo accende con il launcher.",
-    produce: "niente",
-    permesso: "admin",
-    coda: false,
-    campi: [
-      {
-        nome: "idea",
-        etichetta: "Cosa vuoi",
-        principale: true,
-        descrizione: "Il video da fare, con le tue parole: storia, stile, durata, cosa deve esserci.",
-        tipo: "testo",
-        obbligatorio: true,
-        maxLunghezza: 4000,
-        esempio: "Un documentario di 3 minuti sulla pizza napoletana, dal grano al forno a legna.",
-      },
-      {
-        nome: "ricetta",
-        etichetta: "Ricetta",
-        descrizione: "Quali regole dare a Deepy: modello e hardware.",
-        tipo: "scelta",
-        obbligatorio: false,
-        scelte: ["minimax-leggero", "ltx-leggero", "minimax-potente", "ltx-potente"],
-        etichette: {
-          "minimax-leggero": "MiniMax H3, 8 GB",
-          "ltx-leggero": "LTX-2.5 MSR, 8 GB",
-          "minimax-potente": "MiniMax H3, hardware potente",
-          "ltx-potente": "LTX-2.5 MSR, hardware potente",
-        },
-        predefinito: "minimax-leggero",
-      },
-    ],
-  },
-
-  {
     id: "app.apri",
     app: null,
     titolo: "Apri un'app sul PC",
@@ -1088,7 +1047,6 @@ export const AZIONI: readonly Azione[] = [
         scelte: [
           "produzioni",
           "visualizer",
-          "musica",
           "foto",
           "cinema",
           "voce",

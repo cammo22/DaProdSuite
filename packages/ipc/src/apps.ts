@@ -107,8 +107,9 @@ export type RichiestaSchedaVideo =
   | "non-serve";
 
 export const APP_IDS = [
-  "connessione",
+  // Dalla 1.7.7 la prima scheda dell'hub è DaProdProduzioni: è l'app principale.
   "produzioni",
+  "connessione",
   "visualizer",
   "musica",
   "foto",
@@ -141,25 +142,28 @@ export const APPS: Record<AppId, AppDescriptor> = {
     schedaVideo: "non-serve",
   },
   /**
-   * DaProdProduzioni: foto, video, voce e musica con WanGP.
+   * DaProdProduzioni: l'app principale, dalla 1.7.7. Immagini, video, voce e
+   * musica con WanGP.
    *
-   * **Non ha un motore suo.** Usa WanGP attraverso Wan2GP Desktop Launcher
-   * (Tauri), il programma che Cammo ha già installato: la suite lo accende se è
-   * spento e apre Deepy, l'agente di WanGP. La licenza di WanGP non permette di
-   * incorporarlo in un prodotto: per questo sta fuori e la suite ci parla, come
-   * si parla a LM Studio. Dal telefono si chiede un lavoro con l'azione
-   * `produzioni.chiedi`, che lo passa a Deepy insieme alle regole di
-   * deepy-prompt-lab.
+   * **Il motore è WanGP, fuso con la suite.** Non ha un servizio Python suo come
+   * ComfyUI (WanGP resta installato dov'è: la sua licenza non permette di
+   * incorporarlo, e la suite lo dichiara), ma lo accende la suite — `wangp.ts`
+   * nello shell — con una configurazione sua, ne mostra l'interfaccia intera in
+   * una finestra e, per chi decide, dal telefono. I lavori degli utenti
+   * (immagini con Qwen-Image 2.1, brani con ACE-Step XL) vanno nella stessa
+   * coda di WanGP attraverso un plugin nostro. Fino alla 1.7.6 c'erano il
+   * launcher e Deepy in mezzo: non ci sono più.
    */
   produzioni: {
     id: "produzioni",
     name: "DaProdProduzioni",
-    tagline: "Foto, video, voce e musica con WanGP: anche dal telefono.",
+    tagline: "Immagini, video, voce e musica con WanGP. Chi decide la apre anche dal telefono.",
     kind: "renderer",
     accent: "#f59e0b",
     models: [],
-    // La scheda video la occupa WanGP, che è un programma a parte e se la
-    // gestisce da solo: l'arbitro della suite non deve spegnergli niente.
+    // La scheda video la occupa WanGP, che si tiene i suoi modelli: l'arbitro
+    // della suite non deve spegnergli niente (la guardia del turno sa quando
+    // sta generando: vedi `occupato` in `wangp.ts`).
     gpuHeavy: false,
     schedaVideo: "molto-meglio",
   },
@@ -176,6 +180,9 @@ export const APPS: Record<AppId, AppDescriptor> = {
   },
   musica: {
     id: "musica",
+    // Dalla 1.7.7 la musica si fa con ACE-Step XL dentro WanGP, cioè in
+    // DaProdProduzioni. Il codice resta finché la nuova strada non regge.
+    nascosta: true,
     name: "DaProdMusica",
     tagline: "Canzoni complete, cantate, da una descrizione e un testo.",
     kind: "service",

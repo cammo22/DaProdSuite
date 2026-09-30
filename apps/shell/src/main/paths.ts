@@ -11,8 +11,16 @@ import { app } from "electron";
 import { existsSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 
-/** Radice dei dati utente: %LOCALAPPDATA%\DaProdSuite */
-export const DATA_ROOT = join(app.getPath("appData"), "..", "Local", "DaProdSuite");
+/**
+ * Radice dei dati utente: %LOCALAPPDATA%\DaProdSuite
+ *
+ * `DAPROD_DATI` la sposta altrove: serve a chi **prova** la suite mentre quella
+ * vera è aperta (una seconda istanza con i suoi dati, e non con i tuoi: la
+ * pulizia all'avvio spegne i motori che trova nel libro dei processi, e i
+ * motori sono quelli della suite di tutti i giorni). Vedi anche `DAPROD_PORTA`.
+ */
+export const DATA_ROOT =
+  process.env.DAPROD_DATI || join(app.getPath("appData"), "..", "Local", "DaProdSuite");
 
 /** Ambiente Python condiviso da tutti i servizi. */
 export const RUNTIME_DIR = join(DATA_ROOT, "runtime");
