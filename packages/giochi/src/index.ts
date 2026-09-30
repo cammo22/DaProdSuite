@@ -19,6 +19,23 @@
  */
 
 export { Deposito } from "./deposito";
+export {
+  ORE_TENUTE,
+  REGOLE_MONETA,
+  moneteDeiLivelli,
+  monetaInRiga,
+  monetaNuova,
+  monetePerIncasso,
+  monetePerLire,
+  quotaMoneta,
+  regoleMoneta,
+  restaInSettimana,
+  segnaOra,
+  serieMoneta,
+  type RegoleMoneta,
+  type StatoMoneta,
+} from "./moneta";
+export { MONETE_GESTO_MAX, bruciaMonete, cambiaRegoleMoneta, coniaMonete, monetaDi, monetaInBanca } from "./gestione-moneta";
 export { VERDETTI, domandaPer, segnaGiudizio, type DomandaAlGiudice, type Verdetto } from "./giudice";
 export { paginaGiochi } from "./pagina";
 export {

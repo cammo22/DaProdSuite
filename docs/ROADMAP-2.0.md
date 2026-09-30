@@ -77,7 +77,7 @@ quanto vale una moneta DaProd, ogni quanto esce un pezzo raro.
 
 ---
 
-## Fase 1: la moneta DaProd 🪙
+## Fase 1: la moneta DaProd 🪙 — fatta nella 1.7.8
 
 Il gettone grande, tipo crypto, che si guadagna solo giocando.
 

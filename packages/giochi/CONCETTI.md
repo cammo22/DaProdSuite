@@ -1424,6 +1424,48 @@ una banca DaProd dove risolvere tutti i problemi della moneta».
   livelli, regole; «Ripara tutto» rimette dritti i numeri storti. Ogni gesto va
   nel **registro** (le ultime duecento righe) e non muove la Borsa.
 
+### 18.13 La moneta DaProd (1.7.8)
+
+Il 30 settembre 2026, finito il lavoro su WanGP: «finiamo il big update con la
+sala giochi con l'economia vera». Quell'«economia vera» e' **finta ma seria** —
+deciso con lui: niente denaro reale, mai (vedi `docs/ROADMAP-2.0.md`). La prima
+meta' e' il gettone grande, `src/moneta.ts`.
+
+- **Cos'e'.** Una seconda moneta, rara, accanto alle lire. Le lire si mettono e
+  si perdono; le monete sono il trofeo. **Non si comprano, non si cambiano in
+  lire e non escono dalla sala.**
+- **Come si guadagna**, tutto in `RegoleMoneta` e cambiabile da chi comanda:
+  una partita finita a Claw o a Neon (1); un incasso con un guadagno netto da 20
+  euro in su (1, e una in piu' ogni 25 euro, al massimo 10 per volta);
+  un livello ogni cinque, toccando il premio; un Ethernal in slot; il primo
+  della settimana della Banca; il jackpot del mese (5). Il guadagno e' **netto**:
+  un incasso che pareggia non e' una vincita.
+- **Il tetto**: 25 a settimana per persona, contate sulla settimana della Banca.
+  Non e' un freno all'ansia — niente conti alla rovescia, niente «ultima
+  occasione» — e' la rete contro chi trova come ripetere una cosa cento volte.
+  Quello che eccede non si perde: non entra.
+- **Un posto solo**, `Deposito.muoviMonete`, come `muovi` per le lire: il libro
+  (gli ultimi cento movimenti), il conto delle nate e bruciate, da dove vengono
+  (`origini`) e la quotazione passano tutti da li'. `guadagnaMonete` e' la
+  strada di chi gioca (conta nel trofeo e nel tetto); chi comanda, con
+  `coniaMonete` e `bruciaMonete`, non passa dal tetto e **deve scrivere il
+  perche'**, come per i regali.
+- **La quotazione**: `base × (1 + scarsita') × (1 + meta' dell'attivita')`, cioe'
+  fra mille lire e tremila. Sale quando ci sono poche monete in giro e quando la
+  sala e' piena di gente (quanti hanno giocato nelle ultime 24 ore, dalla
+  Borsa); scende quando ce ne sono tante. Una quotazione all'ora, trenta giorni,
+  per la linea di 24 ore, 7 giorni e un mese. **Serve a dare il prezzo in
+  monete** ai pezzi della Zecca e del mercato (`monetePerLire`): non e' un
+  cambio.
+- **Dove si vede.** Il gettone accanto al saldo, sempre; la carta nel
+  Portafoglio (quante ne hai, quanto vale, la linea, il libro, come si
+  guadagnano); una riga e i coriandoli d'oro quando ne arriva una; per chi
+  comanda, nelle Casse: quante ce ne sono, chi le ha, da dove vengono, coniare e
+  bruciare, le regole.
+- **Da decidere dopo il test lungo**: quante ne escono a settimana davvero, e se
+  il tetto e' troppo largo o troppo stretto. I numeri di partenza sono prudenti
+  apposta.
+
 ## 17. Quello che ancora non e' deciso
 
 - ⚠ **Il costo del giro, adesso che il tetto e' tre euro.** Dall'11 settembre

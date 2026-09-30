@@ -117,6 +117,7 @@ import {
   rimettiPremiLivelli,
 } from "./gestione";
 import { andamentoSala, portafoglio } from "./portafoglio";
+import { bruciaMonete, cambiaRegoleMoneta, coniaMonete, monetaDi, monetaInBanca } from "./gestione-moneta";
 import { euroDaLire } from "./euro";
 import type { Collezionabile, Era, Grado, PezzoInGioco, Tavolo, TipoCollezionabile } from "./tipi";
 
@@ -628,6 +629,9 @@ export function rispondi(
         admin: chi.admin,
         saldo: conto.saldo,
         saldoScritto: lire(conto.saldo),
+        // 1.7.8: le monete DaProd, per il gettone accanto al saldo.
+        monete: Math.max(0, Math.floor(conto.monete ?? 0)),
+        ultimaMoneta: conto.ultimaMoneta ?? null,
         conto: {
           giri: conto.giri,
           mandate: conto.mandate,
@@ -832,6 +836,38 @@ export function rispondi(
       const cambi: Record<string, number> = {};
       for (const [k, v] of Object.entries(corpo)) if (typeof v === "number" || (typeof v === "string" && v.trim() !== "")) cambi[k] = Number(v);
       return OK({ regole: cambiaRegole(deposito, chi.id, cambi) });
+    }
+    /* ---------------------------------------- la moneta DaProd (1.7.8) */
+
+    /** La moneta di chi guarda: quante ne ha, la quotazione e la sua linea, il libro. */
+    if (metodo === "GET" && percorso === "/moneta") {
+      return OK(monetaDi(deposito, chi.id));
+    }
+    if (percorso.startsWith("/moneta/") && !chi.admin) return NO(403, "La moneta la gestisce chi comanda.");
+    /** Il quadro per chi comanda: chi ne ha, da dove vengono, le regole. */
+    if (metodo === "GET" && percorso === "/moneta/admin") {
+      const m = monetaInBanca(deposito);
+      return OK({
+        ...m,
+        titolari: m.titolari.map((t) => ({ ...t, nome: contorno.nomeDi(t.chi), faccia: contorno.facciaDi ? contorno.facciaDi(t.chi) : undefined })),
+        conti: deposito.conti().map((c) => ({ chi: c.chi, nome: contorno.nomeDi(c.chi) })),
+        registro: deposito
+          .registro()
+          .filter((r) => /moneta|monete/.test(r.cosa))
+          .slice(0, 30)
+          .map((r) => ({ ...r, nomeDa: contorno.nomeDi(r.da), nomeChi: r.chi ? contorno.nomeDi(r.chi) : "" })),
+      });
+    }
+    if (metodo === "POST" && percorso === "/moneta/conia") {
+      return OK(coniaMonete(deposito, chi.id, String(corpo["chi"] ?? ""), Number(corpo["quante"] ?? 0), corpo["perche"]));
+    }
+    if (metodo === "POST" && percorso === "/moneta/brucia") {
+      return OK(bruciaMonete(deposito, chi.id, String(corpo["chi"] ?? ""), Number(corpo["quante"] ?? 0), corpo["perche"]));
+    }
+    if (metodo === "POST" && percorso === "/moneta/regole") {
+      const cambi: Record<string, number> = {};
+      for (const [k, v] of Object.entries(corpo)) if (typeof v === "number" || (typeof v === "string" && v.trim() !== "")) cambi[k] = Number(v);
+      return OK({ regole: cambiaRegoleMoneta(deposito, chi.id, cambi) });
     }
     /** Il portafoglio di chi guarda (1.4.8): quanto ha, com'e' andato, dove sono andate le lire. */
     if (metodo === "GET" && percorso === "/portafoglio") {

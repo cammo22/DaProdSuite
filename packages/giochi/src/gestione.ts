@@ -22,6 +22,7 @@ import { GIOCHI_SALA } from "./borsa";
 import type { Deposito } from "./deposito";
 import { REGOLE_SOLDI, euroDaLire, type RegoleSoldi } from "./euro";
 import { livelloDi } from "./regole";
+import { monetePerIncasso } from "./moneta";
 import type { Conto, IncassoInControllo, Movimento, VoceRegistro, PuntoBanca } from "./tipi";
 
 /** Com'e' messa una persona, per chi comanda. */
@@ -225,6 +226,13 @@ export function decidiControllo(deposito: Deposito, admin: string, chi: string, 
   if (esito === "paga") {
     lire = f.netto;
     deposito.muovi(chi, f.netto, true, "incasso da " + nome + " (controllato)");
+    // 1.7.8: pagato adesso, le monete che avrebbe dato subito le da' adesso.
+    deposito.guadagnaMonete(
+      chi,
+      monetePerIncasso(euroDaLire(Math.max(0, f.netto - f.messo)), f.finita, deposito.regoleMoneta()),
+      f.finita ? "partita finita a " + nome : "incasso grosso da " + nome,
+      f.finita ? "fine" : "incasso",
+    );
     if (f.fetta > 0) deposito.versaFetta(f.fetta);
     const cassa = c.giochi?.[f.gioco];
     if (cassa) {

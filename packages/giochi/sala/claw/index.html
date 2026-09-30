@@ -733,7 +733,7 @@
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
-const VERSIONE = 'v1.2.0';
+const VERSIONE = 'v1.2.1';
 const $ = (id) => document.getElementById(id);
 const PARAMETRI = new URLSearchParams(location.search);
 // gioco = la partita vera; demo = la macchina gioca da sola (sfondo della home); vetrina = sfilata dei modellini
@@ -2886,7 +2886,11 @@ function posaCamera(dt, subito = false) {
   let gx = lerp(zc, pinza.x, asp < 1 ? .95 : .72), gz = clamp(pinza.z * .4, -2, 1.6) - .9, gy = giu ? Math.max(.8, pinza.y * .5) : 1.3;
   // 1.2.0: «facciamo una camera più dall'alto». Da 53/34 gradi a 66/52: la vasca
   // si legge dall'alto e la pinza non copre quello che sta sotto.
-  let alzo = asp < 1 ? 1.15 : .9;
+  // 1.2.1 (30 settembre 2026): «troppo dall'alto, non per l'altezza ma per
+  // l'inclinazione: la voglio inclinata più bassa». L'angolo scende a 52/36
+  // gradi (prima 66/52): la vasca si vede di prospettiva, non da sopra.
+  // Sotto i 34 il binario davanti comincia a coprirla.
+  let alzo = asp < 1 ? .9 : .62;
   if (asp < 1) gz += 1.6;                         // in verticale la vasca sale sopra i pulsanti
   if (MODO === 'gioco' && !inGioco) {                 // schermata iniziale: la camera gira lenta sopra la sala
     cam.orbita += dt * .05;
