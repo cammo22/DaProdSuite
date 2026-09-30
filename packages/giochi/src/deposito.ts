@@ -41,6 +41,7 @@ import {
   tettoDelValore,
 } from "./regole";
 import { regoleSoldi, type RegoleSoldi } from "./euro";
+import { zeccaInRiga, zeccaNuova, type StatoZecca } from "./zecca";
 import {
   monetaInRiga,
   monetaNuova,
@@ -215,6 +216,8 @@ export class Deposito {
       ...(Array.isArray(lette.andamentoBanca) ? { andamentoBanca: lette.andamentoBanca.slice(-PUNTI_BANCA) } : {}),
       // 1.7.8: la moneta DaProd; un file di prima non ce l'ha e parte da zero.
       ...(lette.moneta ? { moneta: monetaInRiga(lette.moneta) } : {}),
+      // 1.7.9: la Zecca; un file di prima non ce l'ha e parte vuota.
+      ...(lette.zecca ? { zecca: zeccaInRiga(lette.zecca) } : {}),
       pacchetti: Array.isArray(lette.pacchetti)
         ? lette.pacchetti
         : /**
@@ -428,6 +431,12 @@ export class Deposito {
 
   andamentoBanca(): PuntoBanca[] {
     return this.dati.andamentoBanca ?? [];
+  }
+
+  /** Lo stato della Zecca (1.7.9), senza toccare niente. Si crea al primo uso. */
+  statoZecca(): StatoZecca {
+    if (!this.dati.zecca) this.dati.zecca = zeccaNuova();
+    return this.dati.zecca;
   }
 
   /* ------------------------------------------------- la moneta DaProd (1.7.8) */

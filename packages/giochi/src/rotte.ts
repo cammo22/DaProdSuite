@@ -118,6 +118,7 @@ import {
 } from "./gestione";
 import { andamentoSala, portafoglio } from "./portafoglio";
 import { bruciaMonete, cambiaRegoleMoneta, coniaMonete, monetaDi, monetaInBanca } from "./gestione-moneta";
+import { rispondiZecca } from "./zecca-rotte";
 import { euroDaLire } from "./euro";
 import type { Collezionabile, Era, Grado, PezzoInGioco, Tavolo, TipoCollezionabile } from "./tipi";
 
@@ -618,6 +619,10 @@ export function rispondi(
   corpo: Record<string, unknown>,
 ): Risposta {
   try {
+    // La Zecca (1.7.9) ha le sue rotte, in un file a parte: se il percorso e' suo, risponde lei.
+    const zecca = rispondiZecca(deposito, chi, contorno, metodo, percorso, corpo);
+    if (zecca) return zecca;
+
     /* ------------------------------------------------------------- chi sono */
 
     if (metodo === "GET" && (percorso === "/io" || percorso === "/")) {

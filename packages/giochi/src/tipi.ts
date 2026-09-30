@@ -842,6 +842,11 @@ export interface DatiGiochi {
    * la quotazione ora per ora e le regole cambiate. La forma sta in `moneta.ts`.
    */
   moneta?: import("./moneta").StatoMoneta;
+  /**
+   * La Zecca (1.7.9): i pezzi unici numerati, le proposte, i pacchetti in
+   * vendita a monete e le collezioni a tema. La forma sta in `zecca.ts`.
+   */
+  zecca?: import("./zecca").StatoZecca;
 }
 
 /**

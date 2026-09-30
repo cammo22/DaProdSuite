@@ -88,7 +88,7 @@ export const MARKUP = `<header>
       <button data-va="casse">Casse</button>
     </div>
     <div class="sotto-fila" data-di="collezione">
-      <button data-va="pacchetti">Pacchetti</button><button data-va="inventario">Inventario</button><button data-va="shop">Shop</button><button data-va="casa">Classifica</button>
+      <button data-va="pacchetti">Pacchetti</button><button data-va="inventario">Inventario</button><button data-va="shop">Shop</button><button data-va="casa">Classifica</button><button data-va="zecca">Zecca</button>
     </div>
   </div>
 

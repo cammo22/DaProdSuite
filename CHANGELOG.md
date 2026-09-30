@@ -10,6 +10,36 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ---
 
+## 1.7.9 — La Zecca
+
+> «finiamo il big update con la sala giochi … tutte le cose dette nel big update»
+
+La **Fase 2** di [docs/ROADMAP-2.0.md](docs/ROADMAP-2.0.md): i contenuti che la
+suite crea diventano **pezzi unici numerati**, tipo NFT ma finti e dentro la sala.
+Niente soldi veri, mai: i pacchetti si aprono con le monete DaProd.
+
+- **Nuova scheda Zecca** (Collezione → Zecca). Ogni pezzo ha un **numero di
+  serie** che non si riusa, una **rarità** (da comune a mitico), **chi l'ha
+  creato** e **tutta la sua storia** dei passaggi.
+- **Pacchetti**: chi comanda li prepara con dei pezzi e un prezzo in monete; si
+  vede quanti ne restano e di che rarità, non quali. Aprirne uno fa uscire i
+  pezzi a sorte, col peso della rarità, e diventano tuoi.
+- **Proponi una cosa tua**: scegli una cosa che hai creato e dalle un nome; chi
+  comanda la conia (col tuo nome come creatore) o la rifiuta dicendo perché.
+- **Collezioni a tema**: chi le completa prende un premio in monete, una volta sola.
+- **Regali**: un pezzo si può regalare a un'altra persona; la storia lo ricorda.
+- Chi non comanda **non vede** la scheda «Chi comanda», e se ci prova il server
+  dice di no.
+
+**Provato:** `pnpm run prova` (con la nuova `prova-zecca.mjs`: 21 controlli su
+conio, pacchetti, sorte col dado truccato, regali, collezioni, disco e rotte) e
+la pagina guardata in un browser vero: vetrina, apertura di un pacchetto con
+collezione completata, scheda di chi comanda.
+**Da provare:** coniare pezzi veri dalla libreria e aprire un pacchetto col
+telefono.
+
+---
+
 ## 1.7.8 — La moneta DaProd
 
 > «finiamo il big update con la sala giochi con l'economia vera» · «un fix alla
