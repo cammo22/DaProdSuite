@@ -34,6 +34,9 @@ import { MARKUP_BANCA } from "./banca-markup";
 import { STILE_BANCA } from "./banca-stile";
 import { COPIONE_MONETA } from "./moneta-copione";
 import { STILE_MONETA } from "./moneta-stile";
+import { COPIONE_ZECCA } from "./zecca-copione";
+import { MARKUP_ZECCA } from "./zecca-markup";
+import { STILE_ZECCA } from "./zecca-stile";
 
 /**
  * ⚠ **`sessione` e' la strada per far vedere le immagini.**
@@ -69,13 +72,14 @@ export function paginaGiochi(radice: string = "/giochi", sessione: string = ""):
     STILE_PORTAFOGLIO +
     STILE_BANCA +
     STILE_MONETA +
+    STILE_ZECCA +
     `
 </style>
 </head>
 <body>
 ` +
     // Le schede della 1.4.0 (Sala e Borsa) stanno dentro «main» con le altre.
-    MARKUP.replace("</main>", MARKUP_SALA + MARKUP_STUDIO + MARKUP_PORTAFOGLIO + MARKUP_BANCA + "</main>").replace('<div class="sotto" id="sotto">', MARKUP_HOME + '<div class="sotto" id="sotto">') +
+    MARKUP.replace("</main>", MARKUP_SALA + MARKUP_STUDIO + MARKUP_PORTAFOGLIO + MARKUP_BANCA + MARKUP_ZECCA + "</main>").replace('<div class="sotto" id="sotto">', MARKUP_HOME + '<div class="sotto" id="sotto">') +
     `
 <script>
 (() => {
@@ -95,6 +99,7 @@ export function paginaGiochi(radice: string = "/giochi", sessione: string = ""):
     COPIONE_PORTAFOGLIO +
     COPIONE_BANCA +
     COPIONE_MONETA +
+    COPIONE_ZECCA +
     `
 })();
 </script>

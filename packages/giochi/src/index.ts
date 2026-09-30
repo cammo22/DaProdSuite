@@ -35,6 +35,30 @@ export {
   type RegoleMoneta,
   type StatoMoneta,
 } from "./moneta";
+export {
+  RARITA,
+  apriPacchettoZecca,
+  approvaProposta,
+  contiZecca,
+  controllaCollezioni,
+  coniaPezzo,
+  creaCollezione,
+  creaPacchettoZecca,
+  numeroZecca,
+  pezziDi,
+  proponi,
+  raritaDi,
+  regalaPezzo,
+  rifiutaProposta,
+  tipoDaMime,
+  tiraRarita,
+  trasferisciPezzo,
+  zeccaInRiga,
+  zeccaNuova,
+  type PezzoZecca,
+  type StatoZecca,
+} from "./zecca";
+export { rispondiZecca } from "./zecca-rotte";
 export { MONETE_GESTO_MAX, bruciaMonete, cambiaRegoleMoneta, coniaMonete, monetaDi, monetaInBanca } from "./gestione-moneta";
 export { VERDETTI, domandaPer, segnaGiudizio, type DomandaAlGiudice, type Verdetto } from "./giudice";
 export { paginaGiochi } from "./pagina";

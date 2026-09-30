@@ -95,7 +95,7 @@ Il gettone grande, tipo crypto, che si guadagna solo giocando.
 - **Da decidere nel test.** Quante ne escono a settimana e quanto vale il cambio
   lire → moneta, se c'è (probabilmente no: si guadagnano e basta).
 
-## Fase 2: la Zecca, i pezzi da collezione 🎴
+## Fase 2: la Zecca, i pezzi da collezione 🎴 — fatta nella 1.7.9
 
 I contenuti che la suite crea (immagini Qwen, brani, modellini 3D) diventano
 **pezzi unici numerati**, tipo NFT ma finti e dentro l'app.

@@ -18,7 +18,7 @@ export const COPIONE_HOME = `
     sala: 'gioca', fortuna: 'gioca', borsa: 'gioca', portafoglio: 'gioca',
     studio: 'genera', slot: 'genera', mie: 'genera',
     fila: 'admin', banca: 'admin', giocatori: 'admin', casse: 'admin',
-    pacchetti: 'collezione', inventario: 'collezione', shop: 'collezione', casa: 'collezione',
+    pacchetti: 'collezione', inventario: 'collezione', shop: 'collezione', casa: 'collezione', zecca: 'collezione',
   };
 
   /** La faccia di un gioco d'arcade: la schermata vera, servita dalla sala. */

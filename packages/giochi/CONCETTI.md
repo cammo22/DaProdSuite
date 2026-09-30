@@ -1466,6 +1466,35 @@ meta' e' il gettone grande, `src/moneta.ts`.
   il tetto e' troppo largo o troppo stretto. I numeri di partenza sono prudenti
   apposta.
 
+### 18.14 La Zecca (1.7.9)
+
+Fase 2 del Big Update. Tipo NFT, ma **finti e dentro la sala**: niente blockchain
+e niente denaro, mai. Un **pezzo** e' una cosa della libreria della suite
+(immagine, brano, video) che qualcuno ha proposto e chi comanda ha **coniato**.
+Sta in `zecca.ts` (regole, con il caso e l'ora da fuori come nel resto) e
+`zecca-rotte.ts` (le rotte `/zecca*`, chiamate per prime da `rispondi`).
+
+- **Numero di serie** a quattro cifre che **non si riusa mai**: `ultimoNumero`
+  sale e basta, e `zeccaInRiga` lo rimette al massimo visto se il file e' storto.
+- **Sei rarita'** (comune, non comune, raro, epico, leggendario, mitico) con un
+  peso: e' il peso con cui un pezzo *esce da un pacchetto*. Il conio puo' essere
+  a sorte o scelto.
+- **Chi l'ha creato, chi l'ha avuto prima**: ogni passaggio (conio, pacchetto,
+  regalo, e dal 1.8.0 mercato) resta scritto in `storia`. Un pezzo e' di nessuno
+  finche' sta in un pacchetto.
+- **Scarsita' vera**: un pezzo sta in un pacchetto solo e non se ne fanno altri.
+  La vetrina dice *quanti e di che rarita'* restano dentro, non quali.
+- **Si apre con le monete DaProd** (`muoviMonete`, bruciate): si paga prima, si
+  assegna dopo. Il file intero lo vede solo chi ha il pezzo (o chi comanda);
+  l'anteprima la vede chiunque.
+- **Collezioni a tema**: chi le completa prende il premio **una volta sola**, in
+  monete che contano nel trofeo ma non passano dal tetto della settimana (non si
+  ripete). Regalare un pezzo e riaverlo non ripaga il premio.
+- **Chi gioca propone, chi comanda decide.** Conia, pacchetti, collezioni e
+  proposte da decidere rispondono 403, e nella pagina la scheda «Chi comanda» non
+  si vede (`.solo-admin`) e i suoi dati non si chiedono.
+- Prove: `scripts/prova-zecca.mjs`.
+
 ## 17. Quello che ancora non e' deciso
 
 - ⚠ **Il costo del giro, adesso che il tetto e' tre euro.** Dall'11 settembre
