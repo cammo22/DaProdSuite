@@ -28,8 +28,9 @@ questa è la sua **Fase A**.
   una configurazione sua (in `%LOCALAPPDATA%\DaProdSuite\wangp`) che prende
   da dove il launcher li tiene i modelli e le LoRA: non si riscarica niente. Ne
   mostra l'**interfaccia intera** — tutti i modelli, tutte le impostazioni — in
-  una finestra della suite. Si spegne da solo dopo venti minuti che nessuno lo
-  usa, per liberare la scheda video.
+  una finestra della suite. **Si spegne da solo** per liberare la scheda video:
+  a fila vuota, se l'ha acceso un lavoro da telefono e nessuno lo sta guardando;
+  altrimenti dopo venti minuti che nessuno lo usa.
 - Se il launcher ha già un WanGP acceso, la suite lo dice e chiede di chiuderlo:
   due WanGP insieme si contendono la scheda.
 
@@ -69,7 +70,9 @@ gateway con un WanGP finto e traduttore, più i 22 del ponte in Python) e `pnpm 
 **Contro un WanGP vero (13.14):** la pagina intera passa dal gateway in un browser
 (tab, SSE, upload, WebSocket); un brano ACE-Step XL da 20 secondi è uscito
 dal ponte e dalla coda di WanGP, e — con la suite che accende WanGP da sé — è
-arrivato in libreria col suo titolo.
+arrivato in libreria col suo titolo, dopodiché WanGP si è spento da solo. La
+finestra della suite (Electron) mostra WanGP intero, con la galleria; e in una
+pagina «Crea» il tasto di WanGP c'è per un admin e non c'è per un ospite.
 **Da provare:** la scheda aperta nell'hub, dal telefono vero, e **qualunque cosa con
 Qwen-Image 2.1**: sul computer di prova il text encoder di Qwen
 (`Qwen3-VL-8B-Instruct_int8_convrot.safetensors`) ha i permessi rotti — nemmeno
