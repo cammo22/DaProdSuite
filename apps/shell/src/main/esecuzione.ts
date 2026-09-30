@@ -51,7 +51,7 @@ import { libreria } from "./libreria";
 import { createLogger } from "./logging";
 import { REMOTO_DIR } from "./paths";
 import { turno, type Corsia } from "./turno";
-import { annullaLavoro, mandaLavoro, statoLavoro } from "./wangp";
+import { annullaLavoro, finitaLaFila, mandaLavoro, statoLavoro } from "./wangp";
 import { traduci } from "./wangp-lavori";
 
 const log = createLogger("fila");
@@ -467,6 +467,10 @@ async function giraLaFila(): Promise<void> {
  * ricaricare i pesi due volte.
  */
 async function chiudiQuelloCheAbbiamoAperto(): Promise<void> {
+  // WanGP, se l'ha acceso la fila e nessuno lo guarda, si spegne come le schede.
+  await finitaLaFila().catch((err: unknown) => {
+    annota(`non sono riuscito a spegnere WanGP: ${err instanceof Error ? err.message : String(err)}`);
+  });
   if (!aperteDaNoi.size) return;
   const quali = [...aperteDaNoi];
   aperteDaNoi.clear();

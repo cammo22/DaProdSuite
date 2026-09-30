@@ -1526,7 +1526,11 @@ const fornitoreWanGP: FornitoreWanGP = {
     return b;
   },
   stato: () => wangp.stato(),
-  accendi: () => wangp.accendi(),
+  accendi: () => {
+    // Lo accende una persona (il pulsante nella pagina di WanGP): lo sta usando.
+    wangp.segnaUso();
+    return wangp.accendi();
+  },
   spegni: () => wangp.spegni(),
 };
 

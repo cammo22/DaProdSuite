@@ -219,6 +219,16 @@ let ultimoErrore: string | undefined;
 let tokenPonte = "";
 let ultimoUso = Date.now();
 let finestraAperta = false;
+/**
+ * WanGP l'ha acceso la fila per un lavoro, e nessuno lo sta guardando.
+ *
+ * Chiesto il 23 agosto 2026, e detto «importantissimo»: «quando i programmi
+ * terminano un lavoro devono anche chiudersi così da liberare la vram». Vale
+ * anche per WanGP: se l'ha acceso un lavoro da telefono, a fila vuota si
+ * spegne. Se invece lo sta usando qualcuno (una finestra aperta, un admin dal
+ * telefono) si tiene, e ci pensa la guardia dell'inattività.
+ */
+let avviatoPerLavoro = false;
 let guardia: NodeJS.Timeout | null = null;
 
 /** Le ultime righe di quello che WanGP ha detto: servono a spiegare perché non parte. */
@@ -263,9 +273,14 @@ export function base(): string | null {
   return figlioVivo() ? baseWanGP() : null;
 }
 
-/** Segna che qualcuno sta usando WanGP: rimanda lo spegnimento per inattività. */
+/**
+ * Segna che **una persona** sta usando WanGP (una finestra, un admin dal
+ * telefono): rimanda lo spegnimento per inattività e toglie a WanGP l'etichetta
+ * «acceso solo per un lavoro».
+ */
 export function segnaUso(): void {
   ultimoUso = Date.now();
+  avviatoPerLavoro = false;
 }
 
 /** La finestra della suite aperta su WanGP tiene WanGP acceso. */
@@ -288,7 +303,7 @@ export async function stato(): Promise<StatoWanGP> {
  * Una accensione alla volta: chi arriva mentre si sta alzando aspetta la stessa.
  */
 export function accendi(): Promise<string> {
-  segnaUso();
+  ultimoUso = Date.now();
   if (figlioVivo()) {
     return risponde(baseWanGP()).then((ok) => (ok ? baseWanGP() : inAvvio ?? partenza()));
   }
@@ -429,6 +444,22 @@ function avviaLaGuardia(): void {
   guardia.unref();
 }
 
+/**
+ * La fila ha finito. Se WanGP l'aveva acceso lei, e nessuno lo sta usando, lo
+ * spegne: la scheda video torna libera, come per le altre schede.
+ */
+export async function finitaLaFila(): Promise<void> {
+  if (!avviatoPerLavoro || finestraAperta || !figlioVivo()) return;
+  // Chi ha l'interfaccia aperta da un browser potrebbe star generando: non si tocca.
+  if (await occupato()) {
+    avviatoPerLavoro = false;
+    return;
+  }
+  avviatoPerLavoro = false;
+  annota("la fila ha finito e nessuno usa WanGP: lo spengo, la scheda video torna libera");
+  await spegni();
+}
+
 /** WanGP sta generando adesso — per la fila o per chi ha la sua interfaccia aperta? */
 export async function occupato(): Promise<boolean> {
   const p = await ponteStato();
@@ -477,7 +508,10 @@ async function ponteStato(): Promise<StatoPonte | null> {
 
 /** Mette un lavoro nella coda di WanGP. Torna l'id del lavoro. */
 export async function mandaLavoro(settings: Record<string, unknown>): Promise<string> {
+  const eraAcceso = figlioVivo();
   await accendi();
+  // Acceso apposta per questo lavoro, e senza nessuno davanti: a fila vuota si spegne.
+  if (!eraAcceso && !finestraAperta) avviatoPerLavoro = true;
   // Il plugin si alza dopo l'interfaccia: si aspetta che risponda.
   const fine = Date.now() + 90_000;
   while (Date.now() < fine) {
@@ -493,7 +527,7 @@ export async function mandaLavoro(settings: Record<string, unknown>): Promise<st
         "Riavvia la suite; se resta così, guarda il log (wangp.log).",
     );
   }
-  segnaUso();
+  ultimoUso = Date.now();
   const { id } = await chiamaIlPonte<{ id: string }>("POST", "/lavori", { settings }, 20_000);
   return id;
 }
