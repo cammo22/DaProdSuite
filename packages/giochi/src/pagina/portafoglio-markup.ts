@@ -24,6 +24,8 @@ export const MARKUP_PORTAFOGLIO = `
     </div>
     <div class="wl-grafico" id="wl-grafico"></div>
     <div class="wl-riassunto" id="wl-riassunto"></div>
+    <!-- 1.7.8: la moneta DaProd, il gettone grande che si guadagna solo giocando. -->
+    <div class="mn-blocco" id="mn-blocco"></div>
     <div class="home-titolo"><h2>Le tue posizioni</h2></div>
     <div class="wl-posizioni" id="wl-posizioni"></div>
     <div class="home-titolo"><h2>Entrate e uscite</h2></div>
@@ -62,5 +64,7 @@ export const MARKUP_PORTAFOGLIO = `
     <div class="riga-tasti"><button class="btn oro" id="cs-versa">Versa nella riserva</button></div>
     <div class="home-titolo"><h2>Gli ultimi premi</h2></div>
     <div class="pf-movimenti" id="cs-premi"></div>
+    <!-- 1.7.8: la moneta DaProd vista da chi comanda. Si scopre solo se si comanda. -->
+    <div class="mn-admin" id="mn-admin" hidden></div>
   </section>
 `;

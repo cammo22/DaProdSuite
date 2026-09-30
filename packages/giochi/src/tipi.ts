@@ -199,6 +199,8 @@ export interface Vincita {
 
 /** Cosa e' successo tirando la leva. */
 export interface Giro {
+  /** Le monete DaProd guadagnate con questo giro (1.7.8). Quasi sempre zero. */
+  monete?: number;
   tavolo: Tavolo;
   era: Era;
   /** Un pezzo per rullo, nell'ordine dei rulli. */
@@ -545,10 +547,32 @@ export interface Conto {
    * in euro.ts. Non sono negati: sono fermi finche' qualcuno li guarda.
    */
   inControllo?: IncassoInControllo[];
+  /**
+   * ⚠ **Le monete DaProd** (1.7.8, `moneta.ts`): il gettone grande, che si
+   * guadagna solo giocando. Intero, mai negativo. Manca = zero.
+   */
+  monete?: number;
+  /** Le monete guadagnate da sempre (non quelle comprate o tolte): e' il trofeo. */
+  moneteTot?: number;
+  /** Il libro delle monete: gli ultimi cento movimenti, dal piu' recente. */
+  libroMonete?: MovimentoMoneta[];
+  /** Quante ne ha guadagnate giocando nella settimana `chiave`: il tetto. */
+  moneteSettimana?: { chiave: string; n: number };
+  /** L'ultima moneta guadagnata: la pagina lo dice a chi la vince, una volta. */
+  ultimaMoneta?: { quanto: number; perche: string; quando: number };
   /** Gli ultimi movimenti del conto (1.4.8), dal piu' recente. Quaranta al massimo. */
   movimenti?: Movimento[];
   /** Il saldo a fine giornata (1.4.8), per l'andamento del portafoglio. Novanta giorni. */
   storico?: { giorno: string; saldo: number }[];
+}
+
+/** Un movimento del libro delle monete (1.7.8): quante, perche', e quante ne restano. */
+export interface MovimentoMoneta {
+  quando: number;
+  monete: number;
+  perche: string;
+  /** Quante ne aveva dopo questo movimento. */
+  saldo: number;
 }
 
 /** La cassa di un gioco d'arcade, per una persona (1.4.8). */
@@ -813,6 +837,11 @@ export interface DatiGiochi {
   registro?: VoceRegistro[];
   /** La linea della Banca (1.6.0): un punto all'ora, gli ultimi trenta giorni. */
   andamentoBanca?: PuntoBanca[];
+  /**
+   * La moneta DaProd (1.7.8): quante ne sono nate e bruciate, da dove vengono,
+   * la quotazione ora per ora e le regole cambiate. La forma sta in `moneta.ts`.
+   */
+  moneta?: import("./moneta").StatoMoneta;
 }
 
 /**

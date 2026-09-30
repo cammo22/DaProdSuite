@@ -32,6 +32,8 @@ import { COPIONE_GRAFICI } from "./grafici-copione";
 import { COPIONE_BANCA } from "./banca-copione";
 import { MARKUP_BANCA } from "./banca-markup";
 import { STILE_BANCA } from "./banca-stile";
+import { COPIONE_MONETA } from "./moneta-copione";
+import { STILE_MONETA } from "./moneta-stile";
 
 /**
  * ⚠ **`sessione` e' la strada per far vedere le immagini.**
@@ -66,6 +68,7 @@ export function paginaGiochi(radice: string = "/giochi", sessione: string = ""):
     STILE_STUDIO +
     STILE_PORTAFOGLIO +
     STILE_BANCA +
+    STILE_MONETA +
     `
 </style>
 </head>
@@ -91,6 +94,7 @@ export function paginaGiochi(radice: string = "/giochi", sessione: string = ""):
     COPIONE_STUDIO +
     COPIONE_PORTAFOGLIO +
     COPIONE_BANCA +
+    COPIONE_MONETA +
     `
 })();
 </script>

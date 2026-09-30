@@ -176,6 +176,11 @@ export function tira(
   const meglio = meglioDi(pezzi);
   const prima = livelloDi(conto.esperienza, imp.perIlLivello);
   const aggiornato = deposito.segnaGiro(chi, punti, meglio);
+  // 1.7.8: un Ethernal, una volta ogni duecento giri circa, da' una moneta DaProd.
+  const monete =
+    meglio === "ethernal"
+      ? deposito.guadagnaMonete(chi, deposito.regoleMoneta().moneteEthernal, "Ethernal in slot", "slot")
+      : 0;
   const livello = livelloDi(aggiornato.esperienza, imp.perIlLivello);
   // ⚠ Dalla 1.4.0 i punti del giro entrano anche nella partita (CONCETTI.md
   // § 18.2), **un ottavo**: un giro fa in media 262 punti d'esperienza, e
@@ -205,6 +210,8 @@ export function tira(
     prompt: montaPrompt(pezzi),
     regalo: regalaOgniTanto(deposito, chi, caso) ?? undefined,
     saldo: aggiornato.saldo,
+    /** Le monete DaProd guadagnate con questo giro (1.7.8). */
+    monete,
     quando: Date.now(),
   };
 }

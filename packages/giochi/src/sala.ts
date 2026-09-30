@@ -23,6 +23,7 @@ import {
   type Listino,
 } from "./borsa";
 import { vetrina, type VetrinaBanca } from "./banca";
+import { moneteDeiLivelli, monetePerIncasso } from "./moneta";
 import type { Deposito } from "./deposito";
 import { altezza, livelloDi, pescaPesata, scalino, type Caso } from "./regole";
 import { rulliDi } from "./rulli";
@@ -246,6 +247,7 @@ export function incassaGioco(
   const fetta = Math.floor(lordo * FETTA_DAPROD);
   const netto = lordo - fetta;
   const controllo = netto > 0 && daControllare(netto, messo, regole);
+  let monete = 0;
   if (controllo) {
     const fermo = {
       id: "c" + adesso.toString(36) + Math.floor(Math.random() * 1e6).toString(36),
@@ -260,6 +262,14 @@ export function incassaGioco(
     (conto.inControllo ??= []).push(fermo);
   } else {
     if (netto > 0) deposito.muovi(chi, netto, true, (fine ? "partita finita a " : "incasso da ") + gioco.nome);
+    // 1.7.8: una partita finita o un incasso grosso danno monete DaProd.
+    monete = deposito.guadagnaMonete(
+      chi,
+      monetePerIncasso(euroDaLire(Math.max(0, netto - messo)), fine, deposito.regoleMoneta()),
+      fine ? "partita finita a " + gioco.nome : "incasso grosso da " + gioco.nome,
+      fine ? "fine" : "incasso",
+      adesso,
+    );
     // La fetta di DaProd va nella riserva della Banca: torna alla gente coi premi.
     if (fetta > 0) deposito.versaFetta(fetta);
     cassa.presoTot += netto;
@@ -295,6 +305,8 @@ export function incassaGioco(
     inControllo: controllo,
     saldo: conto.saldo,
     euro: euroDaLire(netto),
+    /** Le monete DaProd guadagnate con questo incasso (1.7.8). */
+    monete,
     cassa,
   };
 }
@@ -358,9 +370,16 @@ export function riscuotiLivelli(deposito: Deposito, chi: string) {
       p.livelli.length === 1 ? "premio del livello " + p.livello : "premi dei livelli " + (p.pagato + 1) + "-" + p.livello,
     );
   }
+  // 1.7.8: ogni cinque livelli un premio in monete DaProd.
+  const monete = deposito.guadagnaMonete(
+    chi,
+    moneteDeiLivelli(p.pagato, p.livello, deposito.regoleMoneta()),
+    "traguardo di livello " + p.livello,
+    "livello",
+  );
   conto.livelloPagato = p.livello;
   deposito.salva();
-  return { ...p, saldo: conto.saldo };
+  return { ...p, saldo: conto.saldo, monete };
 }
 
 /**

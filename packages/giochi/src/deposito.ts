@@ -41,6 +41,17 @@ import {
   tettoDelValore,
 } from "./regole";
 import { regoleSoldi, type RegoleSoldi } from "./euro";
+import {
+  monetaInRiga,
+  monetaNuova,
+  quotaMoneta,
+  regoleMoneta,
+  restaInSettimana,
+  segnaOra,
+  chiaveSettimanaMoneta,
+  type RegoleMoneta,
+  type StatoMoneta,
+} from "./moneta";
 import type {
   VoceRegistro,
   Collezionabile,
@@ -202,6 +213,8 @@ export class Deposito {
       ...(lette.soldi && typeof lette.soldi === "object" ? { soldi: lette.soldi } : {}),
       ...(Array.isArray(lette.registro) ? { registro: lette.registro } : {}),
       ...(Array.isArray(lette.andamentoBanca) ? { andamentoBanca: lette.andamentoBanca.slice(-PUNTI_BANCA) } : {}),
+      // 1.7.8: la moneta DaProd; un file di prima non ce l'ha e parte da zero.
+      ...(lette.moneta ? { moneta: monetaInRiga(lette.moneta) } : {}),
       pacchetti: Array.isArray(lette.pacchetti)
         ? lette.pacchetti
         : /**
@@ -417,6 +430,111 @@ export class Deposito {
     return this.dati.andamentoBanca ?? [];
   }
 
+  /* ------------------------------------------------- la moneta DaProd (1.7.8) */
+
+  /** Lo stato della moneta (senza toccare niente). Si crea al primo uso. */
+  statoMoneta(): StatoMoneta {
+    if (!this.dati.moneta) this.dati.moneta = monetaNuova();
+    return this.dati.moneta;
+  }
+
+  /** Le regole della moneta di adesso: quelle di partenza, con sopra quelle cambiate. */
+  regoleMoneta(): RegoleMoneta {
+    return regoleMoneta(this.dati.moneta?.regole);
+  }
+
+  cambiaRegoleMoneta(cambi: Partial<RegoleMoneta>): RegoleMoneta {
+    const s = this.statoMoneta();
+    s.regole = { ...regoleMoneta({ ...(s.regole ?? {}), ...cambi }) };
+    this.salva();
+    return this.regoleMoneta();
+  }
+
+  /** Quante monete ha una persona. */
+  monete(chi: string): number {
+    return Math.max(0, Math.floor(this.conto(chi).monete ?? 0));
+  }
+
+  /** Le monete in giro: la somma dei portafogli. */
+  moneteInGiro(): number {
+    return this.dati.conti.reduce((s, c) => s + Math.max(0, Math.floor(c.monete ?? 0)), 0);
+  }
+
+  /**
+   * Quante persone hanno giocato nelle ultime 24 ore: le vede la Borsa, che
+   * segna chi c'era ora per ora. Serve alla quotazione (piu' gente, piu' vale).
+   */
+  giocatoriRecenti(adesso: number = Date.now()): number {
+    const da = adesso - 24 * 3_600_000;
+    const chi = new Set<string>();
+    for (const o of this.borsa()) if (o.ora >= da) for (const g of o.giocatori) chi.add(g);
+    return chi.size;
+  }
+
+  /** La quotazione di adesso, in lire per moneta. */
+  quotaMoneta(adesso: number = Date.now()): number {
+    return quotaMoneta(this.moneteInGiro(), this.giocatoriRecenti(adesso), this.regoleMoneta());
+  }
+
+  /** Scrive la quotazione dell'ora (l'ultima dell'ora vince). Si chiama a ogni movimento e a ogni sguardo. */
+  segnaQuotaMoneta(adesso: number = Date.now()): void {
+    segnaOra(this.statoMoneta(), adesso, this.quotaMoneta(adesso), this.moneteInGiro());
+  }
+
+  /**
+   * ⚠ **L'unico posto da cui passano le monete**, come `muovi` per le lire:
+   * cosi' nessuna strada se ne dimentica il libro, il conto delle nate e
+   * bruciate, e la quotazione.
+   *
+   * `quanto` positivo conia, negativo brucia. Non si scende sotto zero: se ne
+   * tolgono quante ce n'e'. Torna quanto si e' mosso davvero.
+   *
+   * `origine` dice da dove vengono (per i conti della Banca); `guadagnata`
+   * dice che e' una vincita giocando — conta nel trofeo e rispetta il tetto
+   * della settimana (vedi `guadagnaMonete`).
+   */
+  muoviMonete(chi: string, quanto: number, perche: string, origine = "altro", guadagnata = false, adesso: number = Date.now()): number {
+    const conto = this.conto(chi);
+    const prima = Math.max(0, Math.floor(conto.monete ?? 0));
+    const dopo = Math.max(0, prima + Math.round(quanto));
+    const mosso = dopo - prima;
+    if (mosso === 0) return 0;
+    conto.monete = dopo;
+    const s = this.statoMoneta();
+    if (mosso > 0) {
+      s.coniate += mosso;
+      s.origini[origine] = (s.origini[origine] ?? 0) + mosso;
+      if (guadagnata) {
+        conto.moneteTot = (conto.moneteTot ?? 0) + mosso;
+        const chiave = chiaveSettimanaMoneta(adesso);
+        const w = conto.moneteSettimana && conto.moneteSettimana.chiave === chiave ? conto.moneteSettimana : { chiave, n: 0 };
+        w.n += mosso;
+        conto.moneteSettimana = w;
+        conto.ultimaMoneta = { quanto: mosso, perche, quando: adesso };
+      }
+    } else {
+      s.bruciate += -mosso;
+    }
+    const libro = (conto.libroMonete ??= []);
+    libro.unshift({ quando: adesso, monete: mosso, perche, saldo: dopo });
+    if (libro.length > 100) libro.length = 100;
+    this.segnaQuotaMoneta(adesso);
+    this.salva();
+    return mosso;
+  }
+
+  /**
+   * Una vincita giocando: entra **dentro il tetto della settimana**. Torna
+   * quante monete sono entrate davvero (puo' essere meno di `quante`, o zero).
+   */
+  guadagnaMonete(chi: string, quante: number, perche: string, origine: string, adesso: number = Date.now()): number {
+    const conto = this.conto(chi);
+    const resta = restaInSettimana(conto.moneteSettimana, adesso, this.regoleMoneta());
+    const n = Math.min(Math.max(0, Math.floor(quante)), resta);
+    if (n <= 0) return 0;
+    return this.muoviMonete(chi, n, perche, origine, true, adesso);
+  }
+
   /* ------------------------------------------------------ la Banca DaProd */
 
   /** Lo stato della Banca, cosi' com'e' (senza aprire niente). */
@@ -463,11 +581,15 @@ export class Deposito {
    */
   apriLaBanca(adesso: number = Date.now(), caso: () => number = Math.random): Apertura[] {
     const fatte = apriIScaduti(this.statoBanca(), adesso, caso);
+    const r = this.regoleMoneta();
     for (const a of fatte) {
-      for (const v of a.vincite) {
+      a.vincite.forEach((v, i) => {
         const conto = this.muovi(v.chi, v.lire, true, "premio della Banca DaProd");
         conto.ultimoPremio = { cassetto: a.cassetto, nome: NOMI[a.cassetto], lire: v.lire, quando: adesso, chiave: a.chiave };
-      }
+        // 1.7.8: il jackpot del mese e il primo della settimana danno anche monete DaProd.
+        if (a.cassetto === "mese") this.guadagnaMonete(v.chi, r.moneteMese, "jackpot del mese", "banca", adesso);
+        else if (a.cassetto === "settimana" && i === 0) this.guadagnaMonete(v.chi, r.moneteSettimana, "primo della settimana", "banca", adesso);
+      });
     }
     if (fatte.length) this.salva();
     return fatte;

@@ -322,6 +322,12 @@ export const COPIONE_PORTAFOGLIO = `
           }).join('') + '</div>' : '<p class="spiega">' + (differenza ? '' : 'Tutto com era: nessun movimento.') + '</p>') +
           (livello > (prima.livello || livello) ? '<div class="resoconto-livello">⭐ Sei salito al livello ' + livello + '</div>' : '');
       }
+      // Una moneta DaProd guadagnata da allora (1.7.8).
+      var um = io.ultimaMoneta;
+      if (um && um.quanto && (!prima || um.quando > prima.quando)) {
+        h += '<div class="resoconto-regalo"><span>🪙</span><div><b>' + (um.quanto === 1 ? 'Una moneta DaProd' : um.quanto + ' monete DaProd') + '</b>' +
+          '<small>' + sicuro(um.perche) + '</small></div></div>';
+      }
       // Il regalo della cassa, se e' arrivato da allora: con il suo perche'.
       var r = io.regalo;
       if (r && r.quanto && (!prima || r.quando > prima.quando)) {

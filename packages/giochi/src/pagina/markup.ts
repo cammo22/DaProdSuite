@@ -61,6 +61,8 @@ export const MARKUP = `<header>
   <button class="partita" id="partita" data-va="portafoglio" title="I punti di Fortuna" hidden>0 pt</button>
   <!-- 1.4.9: si tocca e cambia valuta a tutta la sala, giochi compresi. -->
   <button class="saldo" id="saldo" title="Tocca: lire o euro, in tutta la sala">L. 0</button>
+  <!-- 1.7.8: le monete DaProd. Si tocca e si va al Portafoglio. -->
+  <button class="moneta-chip" id="mn-chip" title="Le tue monete DaProd" hidden>0</button>
 </header>
 
 <main>

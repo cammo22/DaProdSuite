@@ -10,6 +10,43 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ---
 
+## 1.7.8 — La moneta DaProd
+
+> «finiamo il big update con la sala giochi con l'economia vera» · «un fix alla
+> camera della Claw: troppo dall'alto, non per l'altezza ma per l'inclinazione»
+
+La **Fase 1** di [docs/ROADMAP-2.0.md](docs/ROADMAP-2.0.md). «Economia vera» vuol
+dire finta ma seria: **niente soldi veri, mai** — le monete non si comprano, non
+si cambiano in lire e non escono dalla sala.
+
+- **Il gettone.** Accanto al saldo c'è la **moneta DaProd** 🪙, rara, che si
+  guadagna solo giocando: una partita finita a Claw o a Neon, un incasso con
+  almeno 20 euro di guadagno netto (una moneta, e una in più ogni 25 euro), un
+  livello ogni cinque, un Ethernal in slot, il primo della settimana della Banca
+  e il jackpot del mese. Un incasso che pareggia non conta.
+- **Un tetto a settimana** (25 a persona), contro chi trova come ripetere una
+  cosa cento volte. Niente conti alla rovescia: quello che eccede non entra, e
+  non si perde niente di quello che hai.
+- **La carta nel Portafoglio**: quante ne hai, **quanto vale** (la quotazione
+  sale quando ce ne sono poche e la sala è piena, scende quando ce ne sono
+  tante), la linea di 24 ore, 7 giorni e un mese, il libro dei movimenti e
+  «come si guadagnano» scritto coi numeri di adesso. Quando ne arriva una, una
+  riga lo dice e i coriandoli sono d'oro.
+- **Per chi comanda, nelle Casse**: quante monete ci sono, chi le ha, da dove
+  vengono; **conia e brucia** (il perché si scrive sempre) e cambia le regole, e
+  ogni gesto va nel registro della Banca.
+- **Claw Machine 1.2.1**: la camera è inclinata più bassa (da 66/52 a 52/36
+  gradi, verticale/orizzontale): la vasca si vede di prospettiva, non da sopra.
+
+**Provato:** `pnpm run prova` (con la nuova `prova-moneta.mjs`: 25 controlli sulle
+regole, il tetto, i giochi, la Banca, chi comanda e le rotte) e
+`pnpm -r typecheck` verdi. La carta, il pannello per chi comanda e la camera
+della Claw si sono guardati in un browser vero contro un banco.
+**Da provare:** giocare davvero per una settimana e vedere se i numeri di
+partenza (soglia, tetto, quotazione) stanno in piedi: sono prudenti apposta.
+
+---
+
 ## 1.7.7 — Un WanGP solo
 
 > «non dobbiamo usare deepy dobbiamo rendere wangp motore della nostra app,
