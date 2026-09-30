@@ -625,7 +625,7 @@ console.log("\n— decidere —");
 let idRichiesta;
 {
   const tutte = await chiama("/richieste", { token: tokenAdmin });
-  idRichiesta = tutte.dati.find((r) => r.app === "musica").id;
+  idRichiesta = tutte.dati.find((r) => r.tipo === "audio").id;
   const r = await chiama(`/richieste/${idRichiesta}/stato`, {
     metodo: "POST", token: tokenOspite, corpo: { stato: "accettata" },
   });

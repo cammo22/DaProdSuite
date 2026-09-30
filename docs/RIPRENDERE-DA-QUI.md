@@ -3,6 +3,32 @@
 Documento di passaggio fra una sessione e l'altra. Aggiornato il **7 settembre
 2026**, con la **1.2.1** appena pubblicata.
 
+> ⚠ **Le lezioni della 1.7.7: WanGP fuso con la suite.** Tre cose sono venute
+> fuori **provando contro un WanGP vero**, e nessuna si vedeva leggendo il codice:
+>
+> 1. **Un programma che cade sul file di un altro.** WanGP, se gli dai
+>    `--config <cartella>` e li dentro non c'è niente, **cade sulla
+>    configurazione del launcher** — che è a metà — e muore con un `KeyError`
+>    (`attention_mode`, poi `clear_file_list`, una chiave per volta). La
+>    configurazione della suite non la lascia mai vuota: la scrive lei, prima.
+> 2. **Il corpo di una richiesta si legge una volta sola.** Il proxy di WanGP
+>    faceva tutto giusto e gli upload restavano appesi: `leggiCorpo` era già
+>    passato e il proxy aspettava dati che non sarebbero arrivati. Il blocco di
+>    WanGP sta **prima** di `leggiCorpo`, e c'è una prova con 30 MB.
+> 3. **Un `startup.lock` lasciato da un WanGP morto a metà avvio** lo fa
+>    riaccendere in *safe mode*, che **spegne i plugin**: il ponte sparirebbe
+>    senza una parola. La suite lo toglie prima di ogni accensione.
+>
+> E una cosa che **non** è stata risolta e va saputa: sul PC di Cammo il file
+> `Qwen3-VL-8B-Instruct_int8_convrot.safetensors` (il text encoder di Qwen-Image
+> 2.1) ha i **permessi rotti** — nemmeno `icacls` lo apre — e senza quel file
+> Qwen-Image 2.1 non parte, né dalla suite né da WanGP. Non è un difetto del
+> codice: va rifatto il download o rimessi i permessi.
+>
+> Come si prova WanGP senza toccare quello dell'utente: `apps/shell/scripts/prova-wangp.mjs`
+> (gateway + traduttore + ponte, senza WanGP) e — a mano — accendere WanGP dalla
+> suite con `DAPROD_DATI` e `DAPROD_PORTA` su una cartella e una porta di prova.
+
 > ⚠ **MiniMax H3 e MiniMax Music 3 sono usciti dalla suite nella 1.3.2**, l'11
 > settembre 2026: «togliamo i modelli minimax h3 e minimax musica, che sono
 > modelli che al momento non mi piacciono, e alleggeriamo molto». Fra i due erano

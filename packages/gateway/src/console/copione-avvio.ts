@@ -186,6 +186,7 @@ export const COPIONE_AVVIO = `
       // Da qui si sa se questa persona decide: cambia la scheda in fondo e cosa
       // c'e' dentro. Vedi «disegnaLaSchedaFila».
       ioRuolo = io.ruolo || "";
+      ioWanGP = io.wangp === true;
       localStorage.setItem(CHIAVE_NOME, ioNome);
       // 1.5.2: adesso si sa chi decide, e la Casa mostra la sua parte.
       if (pagina === "casa" && typeof leggiCasaSala === "function") void leggiCasaSala();

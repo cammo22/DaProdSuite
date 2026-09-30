@@ -26,6 +26,40 @@ Da qui vengono tre divieti che nessuna voce di questa roadmap può aggirare:
 
 ---
 
+## Fase A: DaProdProduzioni diventa l'app principale (30 settembre 2026)
+
+Aggiunta dopo la 1.7.6, prima di tutto il resto. **Fatta nella 1.7.7**, tranne dove
+è scritto «da provare». Chiesta così: «togliere
+DaProdMusica e rendere DaProdProduzioni l'app principale per la creazione di
+contenuti; in DaProdProduzioni gira WanGP. Voglio poter usare la full UI di WanGP
+da telefono, solo admin; gli utenti scelgono solo alcuni modelli, tra cui Qwen 2.1
+per le immagini e ACE-Step XL per la musica. Un admin deve poter aprire l'app
+completa di WanGP e comandarla da remoto.»
+
+| Pezzo | Cosa vuol dire | Come si prova |
+|---|---|---|
+| **A1. Musica esce dalla suite** ✅ | Via dall'hub, da «apri un'app» e dalle richieste da telefono. La musica si fa con ACE-Step XL da WanGP. Il codice di Musica resta finché la nuova strada non regge (come è successo a Foto, Cinema e Voce). | L'hub mostra Produzioni per prima e non mostra Musica; dal telefono nessuna richiesta finisce più in ComfyUI. |
+| **A2. La full UI di WanGP dal telefono, solo admin** ✅ | Il gateway porta l'interfaccia intera di WanGP (Gradio e Deepy) a chi ha il permesso di decidere, dallo stesso indirizzo della console. **Un ospite non vede nemmeno il pulsante** (le rotte gli rispondono 404 come se non ci fossero). | Da un telefono admin si apre WanGP, si preme Genera, e il lavoro parte sul PC. Da un telefono ospite: 403. |
+| **A3. Gli utenti scelgono fra pochi modelli** ✅ (Qwen da provare: vedi il CHANGELOG) | Le richieste degli ospiti (immagine, musica) passano da WanGP con modelli fissi: **Qwen-Image 2.1** e **ACE-Step XL**. L'elenco lo decide l'admin. Ogni richiesta aspetta il sì, come oggi. | Un ospite chiede un'immagine e un brano: nel form non c'è altro modello, e a lavoro finito il file è in galleria. |
+| **A4. Il PC comanda WanGP** ✅ | Da admin: accendi WanGP e spegnilo (dalla pagina di WanGP, o dalle rotte `/wangp/accendi` e `/wangp/spegni`), e la suite lo spegne da sola quando nessuno lo usa. | Dal telefono admin si accende un WanGP spento. |
+
+Vincoli che vengono dalla licenza e dal codice di WanGP (letti in `C:\Wan2GP`):
+
+- WanGP resta un programma a parte (WanGP Community License 2.0): la suite non lo
+  incorpora, lo raggiunge su `127.0.0.1`.
+- WanGP è pensato per stare **alla radice di un indirizzo** (`--public-url`, controllo
+  dell'origine sulle richieste che scrivono): non ha un prefisso di percorso. Il
+  proxy del gateway deve tenerne conto.
+- Il modello scelto da un ospite viene imposto dalla suite, non chiesto a un agente.
+  **Niente Deepy** (chiesto il 30 settembre): la suite accende WanGP da sé, e i lavori
+  degli utenti passano da un plugin nostro (`services/wangp/daprod_ponte`) nella
+  stessa coda dell'interfaccia intera — un WanGP solo, una scheda video sola.
+
+Il numero di release lo decide il conteggio: la Fase A esce a pezzi (1.7.7, 1.7.8…)
+e la moneta DaProd (fase 1) parte dopo.
+
+---
+
 ## Fase 0: il test lungo della 1.7.0 (adesso)
 
 Cosa guardare in una settimana o un mese di gioco vero:

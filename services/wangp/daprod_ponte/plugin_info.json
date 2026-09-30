@@ -1,0 +1,9 @@
+{
+  "name": "DaProd Ponte",
+  "author": "DaProdProduzioni",
+  "version": "1.0.0",
+  "description": "Riceve i lavori di DaProd Suite e li mette nella coda di WanGP. Installato dalla suite.",
+  "date": "",
+  "wan2gp_version": "",
+  "uninstallable": true
+}

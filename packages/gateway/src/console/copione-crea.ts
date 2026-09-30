@@ -16,9 +16,9 @@
  * - **Immagine**: nuova o modifica di una foto; cosa vuoi vedere (col dado
  *   delle idee); la forma; **Veloce (8 passi) o Fine (40 passi)**; quante.
  * - **Canzone**: il titolo, i generi a pastiglie, cantata o strumentale, il
- *   testo, la durata. **Il motore lo sceglie la pagina**: col testo scritto
- *   canta YuE2 (che canta le parole che gli dai), senza testo ACE-Step XL
- *   (che il testo se lo inventa).
+ *   testo, la durata. **Il motore è ACE-Step XL, dentro WanGP** (dalla 1.7.7):
+ *   canta le parole che gli dai, o se le inventa se non ce ne sono. Fino alla
+ *   1.7.6 col testo scritto cantava YuE2.
  *
  * Quello che si manda passa dalla stessa strada di sempre (`/azioni/…`): il
  * catalogo resta l'unico a dire cosa si può chiedere e a controllarlo. Il
@@ -136,14 +136,14 @@ export const COPIONE_CREA = `
         }).join("") + '</div></div>';
     }
     h += '<div class="crea-riga"><span class="crea-etichetta">Come la faccio</span><div class="crea-qualita">' +
-      '<button type="button" data-crea-qualita="veloce" class="' + (crea.qualita === "veloce" ? "scelto" : "") + '"><i>⚡</i><b>Veloce</b><small>8 passi · pochi secondi</small></button>' +
+      '<button type="button" data-crea-qualita="veloce" class="' + (crea.qualita === "veloce" ? "scelto" : "") + '"><i>⚡</i><b>Veloce</b><small>6 passi · pochi secondi</small></button>' +
       '<button type="button" data-crea-qualita="fine" class="' + (crea.qualita === "fine" ? "scelto" : "") + '"><i>💎</i><b>Fine</b><small>40 passi · più dettaglio</small></button>' +
       '</div></div>';
     h += '<div class="crea-riga"><span class="crea-etichetta">Quante</span><div class="crea-quante">' +
       '<button type="button" data-crea-quante="-1" aria-label="Meno">−</button><b>' + crea.quante + '</b><button type="button" data-crea-quante="1" aria-label="Più">+</button></div></div>';
     h += '<button type="button" class="crea-vai" id="crea-vai">' + (mod ? "✎ Cambia la foto" : "✦ Crea " + (crea.quante > 1 ? crea.quante + " immagini" : "l’immagine")) + '</button>' +
       (decido() ? '<button type="button" class="crea-coda" id="crea-coda">o mettila in fila come tutti</button>' : '') +
-      '<p class="crea-nota" id="crea-nota">Qwen-Image 2.1 · ' + (crea.qualita === "veloce" ? "Veloce: la LoRA Viggle, 8 passi" : "Fine: il modello di serie, 40 passi") + '.</p>';
+      '<p class="crea-nota" id="crea-nota">Qwen-Image 2.1 · ' + (crea.qualita === "veloce" ? "Veloce: la LoRA Viggle, 6 passi" : "Fine: il modello di serie, 40 passi") + '.</p>';
     return h;
   }
 
@@ -175,9 +175,14 @@ export const COPIONE_CREA = `
     return h;
   }
 
-  /** Il motore della canzone: col testo YuE2 lo canta, senza ACE-Step se lo inventa. */
+  /**
+   * Il motore della canzone: ACE-Step XL, sempre (dalla 1.7.7).
+   *
+   * Prima col testo scritto cantava YuE2. Adesso la musica si fa con WanGP e
+   * ACE-Step XL canta anche le parole che gli si danno, nella lingua scelta.
+   */
   function motoreCanzone() {
-    return crea.voce !== "no" && crea.parole.trim() ? "yue2" : "ace-xl-turbo";
+    return "ace-xl-turbo";
   }
 
   function segnaIlTasto() {
@@ -192,9 +197,9 @@ export const COPIONE_CREA = `
     } else {
       if (!crea.generi.length) manca = "Scegli almeno un genere.";
       if (nota) {
-        nota.textContent = motoreCanzone() === "yue2"
-          ? "La canta YuE2, con le tue parole, nella lingua in cui le scrivi."
-          : crea.voce === "no" ? "Strumentale, con ACE-Step XL." : "Senza testo il testo se lo inventa ACE-Step XL. Se lo scrivi, la canta YuE2.";
+        nota.textContent = crea.voce === "no"
+          ? "Strumentale, con ACE-Step XL."
+          : crea.parole.trim() ? "La canta ACE-Step XL, con le tue parole." : "Senza testo il testo se lo inventa ACE-Step XL.";
       }
     }
     vai.disabled = Boolean(manca);
@@ -202,7 +207,7 @@ export const COPIONE_CREA = `
     var coda = $("crea-coda");
     if (coda) coda.disabled = Boolean(manca);
     if (nota && crea.cosa === "immagine") {
-      nota.textContent = manca || "Qwen-Image 2.1 · " + (crea.qualita === "veloce" ? "Veloce: la LoRA Viggle, 8 passi" : "Fine: il modello di serie, 40 passi") + ".";
+      nota.textContent = manca || "Qwen-Image 2.1 · " + (crea.qualita === "veloce" ? "Veloce: la LoRA Viggle, 6 passi" : "Fine: il modello di serie, 40 passi") + ".";
     }
   }
 
@@ -368,6 +373,30 @@ export const COPIONE_CREA = `
     if (t.id === "crea-titolo") crea.titolo = t.value;
     segnaIlTasto();
   });
+
+  /**
+   * **WanGP intero** (solo chi decide, 1.7.7). Si pianta il biscotto di WanGP
+   * (che dimostra che chi apre e' admin: la pagina di WanGP fa richieste che
+   * scrivono, e il biscotto normale vale solo per le GET) e si va alla sua pagina.
+   * Se WanGP e' spento la pagina ha il tasto per accenderlo.
+   */
+  var tastoWanGP = $("apri-wangp");
+  if (tastoWanGP) {
+    tastoWanGP.addEventListener("click", async function () {
+      var sotto = $("wangp-sotto");
+      var prima = sotto ? sotto.textContent : "";
+      tastoWanGP.disabled = true;
+      if (sotto) sotto.textContent = "Lo apro…";
+      try {
+        await chiama("/wangp/sessione", { method: "POST", body: "{}" });
+        location.href = "/wangp/";
+      } catch (e) {
+        avvisa(e.message, "male");
+        tastoWanGP.disabled = false;
+        if (sotto) sotto.textContent = prima;
+      }
+    });
+  }
 
   /** Da fuori (una tessera della Casa): si entra in Crea sulla cosa giusta. */
   function apriCrea(cosa, strada) {

@@ -12,8 +12,7 @@
  * l'unico pezzo che deve conoscerli tutti e due.
  */
 
-import { RICETTE, RICETTA_PREDEFINITA } from "./apps/produzioni/ricette";
-import { scriviADeepy } from "./apps/produzioni/wangp";
+import * as wangp from "./wangp";
 import { app } from "electron";
 import { randomBytes } from "node:crypto";
 import { join } from "node:path";
@@ -32,6 +31,7 @@ import {
   type FornitoreGiudice,
   type FornitoreLibreria,
   type FornitoreMacchina,
+  type FornitoreWanGP,
   type FornitorePannello,
   type FornitoreStili,
   type InvitoQr,
@@ -110,8 +110,8 @@ import { accendiFunnel, comeStaFunnel, spegniFunnel, type StatoFunnel } from "./
 import { salvaIndirizzoStabile } from "./impostazioni";
 import { apriLaPorta, statoFirewall, type StatoFirewall } from "./firewall";
 
-/** Su quale porta ascolta il gateway. */
-const PORTA = 8790;
+/** Su quale porta ascolta il gateway. `DAPROD_PORTA` la cambia, per chi prova una seconda istanza (vedi `DAPROD_DATI`). */
+const PORTA = Number(process.env.DAPROD_PORTA) || 8790;
 
 /** Un solo archivio per tutta la vita della suite: i dati non si perdono. */
 const archivio = new Archivio(REMOTO_ARCHIVIO);
@@ -505,18 +505,6 @@ const esegui: Esecutore = async (id, valori, dispositivo) => {
       if (errore) throw new Error(errore);
       sveglia();
       return { fatto: true };
-    }
-
-    case "produzioni.chiedi": {
-      const idea = String(valori.idea ?? "").trim();
-      if (!idea) throw new Error("Scrivi cosa vuoi che faccia.");
-      const scelta = String(valori.ricetta ?? RICETTA_PREDEFINITA);
-      const ricetta = RICETTE.find((r) => r.id === scelta);
-      if (!ricetta) throw new Error(`Non conosco la ricetta "${scelta}".`);
-      const id = await scriviADeepy(`${ricetta.testo}
-
-Il video da fare: ${idea}`);
-      return { mandato: true, richiesta: id, ricetta: ricetta.nome };
     }
 
     case "app.apri": {
@@ -1524,6 +1512,24 @@ function bancoDeiGiochi(): DepositoGiochi | undefined {
   return banco;
 }
 
+/**
+ * WanGP per il gateway: chi decide ne vede la pagina intera dal telefono.
+ *
+ * Il gateway non sa dove sta WanGP né come si accende: gli passiamo l'indirizzo
+ * e i tre gesti (stato, accendi, spegni). Ogni richiesta passata segna che
+ * qualcuno lo sta usando, cosi' non si spegne da solo sotto le mani di un admin.
+ */
+const fornitoreWanGP: FornitoreWanGP = {
+  base: () => {
+    const b = wangp.base();
+    if (b) wangp.segnaUso();
+    return b;
+  },
+  stato: () => wangp.stato(),
+  accendi: () => wangp.accendi(),
+  spegni: () => wangp.spegni(),
+};
+
 async function accendi(): Promise<StatoAccesso> {
   if (gateway) return statoPannello();
   const nuovo = new Gateway({
@@ -1541,6 +1547,7 @@ async function accendi(): Promise<StatoAccesso> {
     giudice: fornitoreGiudice,
     giochi: bancoDeiGiochi(),
     rete: annunciatore,
+    wangp: fornitoreWanGP,
   });
   // Chi può arrivare: tutta la rete se la connessione è accesa, solo questo
   // computer se è spenta. In tutti e due i casi il gateway **c'è**, perché è

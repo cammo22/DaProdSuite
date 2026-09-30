@@ -15,7 +15,7 @@
  */
 
 import {
-  STILE_PER_APP,
+  tipoStileDiUnAzione,
   azione as trovaAzione,
   azioniPer,
   opzioni as opzioniDi,
@@ -70,7 +70,7 @@ export function elencoAzioni(
   const tutti = stiliDi ? stiliDi(dispositivo.id) : [];
 
   return azioniPer(dispositivo.ruolo).map((a) => {
-    const voluto = STILE_PER_APP[a.app ?? ""] ?? "musica";
+    const voluto = tipoStileDiUnAzione(a);
     // Chi ha stili salvati prima della 0.7.8 non ha il tipo: sono musica.
     const stili = tutti.filter((x) => (x.tipo ?? "musica") === voluto);
     /**
@@ -104,6 +104,7 @@ export function elencoAzioni(
       titolo: a.titolo,
       descrizione: a.descrizione,
       produce: a.produce,
+      risultato: a.risultato,
       coda: a.coda,
       campi,
       schema: schemaDi(a),

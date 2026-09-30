@@ -43,7 +43,7 @@
 
 import { copyFile, mkdir, readFile } from "node:fs/promises";
 import { statSync } from "node:fs";
-import { basename, extname, join } from "node:path";
+import { basename, extname, join, resolve } from "node:path";
 import type { AppId, ElementoLibreria, RichiestaDaFuori } from "@daprod/ipc";
 import { CHANNELS } from "@daprod/ipc";
 import { appManager } from "./app-manager";
@@ -51,6 +51,8 @@ import { libreria } from "./libreria";
 import { createLogger } from "./logging";
 import { REMOTO_DIR } from "./paths";
 import { turno, type Corsia } from "./turno";
+import { annullaLavoro, mandaLavoro, statoLavoro } from "./wangp";
+import { traduci } from "./wangp-lavori";
 
 const log = createLogger("fila");
 const annota = (riga: string): void => log.write(`${riga}\n`, false);
@@ -114,7 +116,7 @@ const ATTESA_FILE_FERMO_MS = 5 * 60_000;
 const ATTESA_FINESTRA_MS = 90_000;
 
 /** Le app che sanno eseguire un lavoro chiesto da fuori. */
-const SANNO_FARLO: readonly AppId[] = ["foto", "cinema", "musica", "voce"];
+const SANNO_FARLO: readonly AppId[] = ["produzioni", "foto", "cinema", "musica", "voce"];
 
 /** Cosa serve sapere di una richiesta per eseguirla. */
 export interface DaEseguire {
@@ -361,6 +363,11 @@ export async function fermaQuelloInCorso(): Promise<string | null> {
    * quarto d'ora. Se non risponde, pazienza: il lavoro risulta annullato
    * comunque e la fila non resta ferma.
    */
+  if (lavoroWanGP && lavoroWanGP.richiesta === adesso.id) {
+    // WanGP: si dice al suo ponte di annullare; la fila se ne accorge da sola.
+    await annullaLavoro(lavoroWanGP.id).catch(() => undefined);
+    return null;
+  }
   await Promise.all([
     fetch("http://127.0.0.1:8188/interrupt", { method: "POST", signal: AbortSignal.timeout(4000) })
       .catch(() => {}),
@@ -485,38 +492,6 @@ async function esegui(richiesta: DaEseguire): Promise<void> {
   const da = Date.now();
 
   /**
-   * ⚠ **Prima si apre la scheda, poi si guarda se il motore c'e'.**
-   *
-   * L'ordine era rovesciato, ed e' la causa di «molti lavori falliscono prima
-   * di partire; se poi apro io manualmente l'app allora funziona» — detto il 7
-   * settembre 2026, con in mano una fila di richieste tutte con scritto «Il
-   * motore delle immagini non risponde».
-   *
-   * Il motore **lo accende l'apertura della scheda** (`appManager.open` chiama
-   * `servizi.avvia`, che aspetta il suo `/health`). Chiedere se risponde
-   * *prima* di aprirla vuol dire chiederlo a un programma che non e' ancora
-   * stato avviato: a computer appena acceso, o dopo che la fila si e' svuotata
-   * e le schede aperte da noi si sono richiuse per liberare la scheda video
-   * (vedi `chiudiQuelloCheAbbiamoAperto`), la risposta e' sempre no. Aprendo la
-   * scheda a mano il difetto spariva perche' il motore era gia' acceso, ed e'
-   * esattamente cosi' che si e' visto.
-   *
-   * Adesso: si apre, e **poi** si aspetta il motore. La domanda resta — un
-   * lavoro che parte senza motore resterebbe ad aspettare un file per tre
-   * quarti d'ora — ma si fa dopo, e con pazienza, perche' ComfyUI ci mette
-   * decine di secondi ad alzarsi.
-   */
-  const finestra = await apriEAspetta(app);
-  if (!finestra) throw new Error(`Non riesco ad aprire DaProd${maiuscola(app)}.`);
-
-  if (VOGLIONO_IL_MOTORE.has(app) && !(await aspettaIlMotore())) {
-    throw new Error(
-      "Il motore delle immagini non si accende. Apri la suite sul computer e " +
-        "guarda la scheda: se dice che manca qualcosa, c'e' il tasto per rimetterlo a posto.",
-    );
-  }
-
-  /**
    * **Se e' una copertina, il titolo entra nel prompt qui.**
    *
    * Chiesto il 6 settembre 2026: «fai che in automatico, quando viene mandata
@@ -534,45 +509,93 @@ async function esegui(richiesta: DaEseguire): Promise<void> {
     ? promptDiCopertina(richiesta.testo, richiesta.opzioni["titoloBrano"] ?? "")
     : richiesta.testo;
 
-  const carico: RichiestaDaFuori = {
-    id: richiesta.id,
-    azione: richiesta.azione,
-    testo: testoDaMandare,
-    opzioni: daIdAIndirizzi(richiesta.opzioni),
-    da: richiesta.da,
-  };
+  let usciti: ElementoLibreria[];
+  if (app === "produzioni") {
+    /**
+     * ⚠ **La strada di WanGP, dalla 1.7.7.** Immagini e brani non passano piu'
+     * dalle schede: il lavoro va nella coda di WanGP, che li fa col modello
+     * scelto dalla suite, e **dice lui quali file sono usciti** — non c'e' piu'
+     * il «primo file nuovo della libreria» che poteva essere di un altro.
+     */
+    usciti = await eseguiConWanGP(richiesta, testoDaMandare);
+    if (daFermare === richiesta.id) {
+      daFermare = "";
+      throw new Error("Fermato da chi sta al computer.");
+    }
+    if (!usciti.length) throw new Error("Il lavoro è finito ma non ne è uscito niente.");
+  } else {
+    /**
+     * ⚠ **Prima si apre la scheda, poi si guarda se il motore c'e'.**
+     *
+     * L'ordine era rovesciato, ed e' la causa di «molti lavori falliscono prima
+     * di partire; se poi apro io manualmente l'app allora funziona» — detto il 7
+     * settembre 2026, con in mano una fila di richieste tutte con scritto «Il
+     * motore delle immagini non risponde».
+     *
+     * Il motore **lo accende l'apertura della scheda** (`appManager.open` chiama
+     * `servizi.avvia`, che aspetta il suo `/health`). Chiedere se risponde
+     * *prima* di aprirla vuol dire chiederlo a un programma che non e' ancora
+     * stato avviato: a computer appena acceso, o dopo che la fila si e' svuotata
+     * e le schede aperte da noi si sono richiuse per liberare la scheda video
+     * (vedi `chiudiQuelloCheAbbiamoAperto`), la risposta e' sempre no. Aprendo la
+     * scheda a mano il difetto spariva perche' il motore era gia' acceso, ed e'
+     * esattamente cosi' che si e' visto.
+     *
+     * Adesso: si apre, e **poi** si aspetta il motore. La domanda resta — un
+     * lavoro che parte senza motore resterebbe ad aspettare un file per tre
+     * quarti d'ora — ma si fa dopo, e con pazienza, perche' ComfyUI ci mette
+     * decine di secondi ad alzarsi.
+     */
+    const finestra = await apriEAspetta(app);
+    if (!finestra) throw new Error(`Non riesco ad aprire DaProd${maiuscola(app)}.`);
 
-  const partita = attendiRisposta(richiesta.id);
-  finestra.webContents.send(CHANNELS.appRichiestaDaFuori, carico);
-  const errore = await partita;
-  if (errore) throw new Error(errore);
+    if (VOGLIONO_IL_MOTORE.has(app) && !(await aspettaIlMotore())) {
+      throw new Error(
+        "Il motore delle immagini non si accende. Apri la suite sul computer e " +
+          "guarda la scheda: se dice che manca qualcosa, c'e' il tasto per rimetterlo a posto.",
+      );
+    }
 
-  /**
-   * ⚠ **Quanti file aspettare, e non «uno».**
-   *
-   * Chiesto il 5 settembre 2026: «se mando due canzoni contemporaneamente non
-   * funziona, ne fa solo una».
-   *
-   * Ed era vero, e la causa non stava nella scheda: DaProdMusica il ciclo lo
-   * faceva — `quante` finisce nel campo «batch» e la scheda genera due brani
-   * uno dopo l'altro. Il difetto stava **qui**: si aspettava *il* file, al
-   * singolare. Appena usciva il primo, questo lavoro risultava finito, la fila
-   * passava al prossimo e — quando la fila si svuota — la suite **chiude le
-   * schede che ha aperto per liberare la scheda video**. Cioe' ammazzava la
-   * seconda canzone mentre la stava generando.
-   *
-   * Quindi il difetto era una consegna incompleta che diventava una
-   * generazione uccisa, ed e' il motivo per cui si vedeva come «ne fa solo
-   * una» invece che come «me ne consegna una sola».
-   */
-  const quanti = quantiNeAspetto(richiesta);
-  annota(`partita ${richiesta.id} su ${app}, aspetto ${quanti} file`);
-  const usciti = await aspettaIFile(app, da, richiesta.id, quanti);
-  if (daFermare === richiesta.id) {
-    daFermare = "";
-    throw new Error("Fermato da chi sta al computer.");
+    const carico: RichiestaDaFuori = {
+      id: richiesta.id,
+      azione: richiesta.azione,
+      testo: testoDaMandare,
+      opzioni: daIdAIndirizzi(richiesta.opzioni),
+      da: richiesta.da,
+    };
+
+    const partita = attendiRisposta(richiesta.id);
+    finestra.webContents.send(CHANNELS.appRichiestaDaFuori, carico);
+    const errore = await partita;
+    if (errore) throw new Error(errore);
+
+    /**
+     * ⚠ **Quanti file aspettare, e non «uno».**
+     *
+     * Chiesto il 5 settembre 2026: «se mando due canzoni contemporaneamente non
+     * funziona, ne fa solo una».
+     *
+     * Ed era vero, e la causa non stava nella scheda: DaProdMusica il ciclo lo
+     * faceva — `quante` finisce nel campo «batch» e la scheda genera due brani
+     * uno dopo l'altro. Il difetto stava **qui**: si aspettava *il* file, al
+     * singolare. Appena usciva il primo, questo lavoro risultava finito, la fila
+     * passava al prossimo e — quando la fila si svuota — la suite **chiude le
+     * schede che ha aperto per liberare la scheda video**. Cioe' ammazzava la
+     * seconda canzone mentre la stava generando.
+     *
+     * Quindi il difetto era una consegna incompleta che diventava una
+     * generazione uccisa, ed e' il motivo per cui si vedeva come «ne fa solo
+     * una» invece che come «me ne consegna una sola».
+     */
+    const quanti = quantiNeAspetto(richiesta);
+    annota(`partita ${richiesta.id} su ${app}, aspetto ${quanti} file`);
+    usciti = await aspettaIFile(app, da, richiesta.id, quanti);
+    if (daFermare === richiesta.id) {
+      daFermare = "";
+      throw new Error("Fermato da chi sta al computer.");
+    }
+    if (!usciti.length) throw new Error("Il lavoro è partito ma non ne è uscito niente.");
   }
-  if (!usciti.length) throw new Error("Il lavoro è partito ma non ne è uscito niente.");
   const uscito = usciti[0]!;
 
   /**
@@ -680,10 +703,11 @@ async function esegui(richiesta: DaEseguire): Promise<void> {
    * altri prendono nome e padrone come lui, cosi' in galleria compaiono tutti e
    * quattro con il titolo giusto invece che come `daprod_00042_.png`.
    */
+  const battezzati: ElementoLibreria[] = [battezzato];
   for (let i = 1; i < usciti.length; i++) {
     const altro = usciti[i]!;
     try {
-      await libreria.intitola(altro.id, {
+      const fatto = await libreria.intitola(altro.id, {
         titolo: comeSiChiama,
         chi: richiesta.daId,
         chiNome: richiesta.da,
@@ -694,11 +718,128 @@ async function esegui(richiesta: DaEseguire): Promise<void> {
           prompt: richiesta.opzioni["prompt"] ?? richiesta.testo,
         },
       });
+      if (fatto) battezzati.push(fatto);
     } catch (err) {
       annota(`il numero ${i + 1} di ${richiesta.id} resta senza nome: ${err instanceof Error ? err.message : String(err)}`);
     }
   }
   if (usciti.length > 1) annota(`e con lei altre ${usciti.length - 1} in galleria`);
+
+  // Un brano senza faccia in galleria e' un quadrato con una nota dentro: dopo
+  // averlo consegnato gli si fa la copertina, sempre con WanGP.
+  if (app === "produzioni" && richiesta.azione === "genera.brano") {
+    for (const brano of battezzati) await faLaCopertinaDelBrano(richiesta, brano, comeSiChiama);
+  }
+}
+
+/**
+ * La copertina di un brano fatto con WanGP.
+ *
+ * Il brano e' gia' consegnato: se la copertina non riesce si scrive perche' e si
+ * va avanti — un brano senza faccia e' meglio di un brano fallito.
+ * Il testo e' quello che chi ha chiesto ha scritto in «la copertina»; se e'
+ * vuoto si ricava dai generi e dal titolo. Si fa quadrata e Veloce: e' una
+ * miniatura in una lista, non una stampa.
+ */
+async function faLaCopertinaDelBrano(richiesta: DaEseguire, brano: ElementoLibreria, titolo: string): Promise<void> {
+  try {
+    const idea = (richiesta.opzioni["copertina"] ?? "").trim() || richiesta.testo;
+    const testo = promptDiCopertina(idea, titolo);
+    const { settings } = traduci(
+      { azione: "genera.immagine", testo, opzioni: { modello: "qwen21-turbo", forma: "1:1", risoluzione: "720" } },
+      testo,
+    );
+    const immagini = await eseguiUnLavoroWanGP(richiesta.id, settings);
+    const immagine = immagini[0];
+    if (!immagine) return;
+    const attaccata = await attaccaLaCopertina(brano.id, immagine);
+    if (attaccata) {
+      try { libreria.elimina(immagine.id); } catch { /* resta in galleria: pazienza */ }
+      annota(`copertina fatta con WanGP per ${brano.id}`);
+    }
+  } catch (err) {
+    annota(`la copertina di ${brano.id} non e' riuscita: ${err instanceof Error ? err.message : String(err)}`);
+  }
+}
+
+/* ---------------------------------------------------------------- WanGP */
+
+/** Il lavoro che WanGP sta facendo per la richiesta in corso: serve a fermarlo. */
+let lavoroWanGP: { richiesta: string; id: string } | null = null;
+
+/** Quante volte di fila il ponte puo' non rispondere prima di dire che WanGP e' morto. */
+const PONTE_MUTO_MAX = 8;
+
+/**
+ * Mette un lavoro nella coda di WanGP e aspetta che finisca.
+ *
+ * Torna i file usciti **come li dice WanGP**: dal momento che WanGP li indica
+ * uno per uno, non serve piu' indovinarli guardando cosa e' comparso in
+ * libreria (era il difetto aperto in cima a questo file, per le altre schede).
+ */
+async function eseguiUnLavoroWanGP(richiestaId: string, settings: Record<string, unknown>): Promise<ElementoLibreria[]> {
+  const id = await mandaLavoro(settings);
+  lavoroWanGP = { richiesta: richiestaId, id };
+  annota(`in coda a WanGP: ${richiestaId} -> ${id}`);
+  const scaduta = Date.now() + ATTESA_FILE_MS;
+  let muto = 0;
+  try {
+    for (;;) {
+      if (daFermare === richiestaId) {
+        await annullaLavoro(id).catch(() => undefined);
+        throw new Error("Fermato da chi sta al computer.");
+      }
+      let st;
+      try {
+        st = await statoLavoro(id);
+        muto = 0;
+      } catch (err) {
+        if (++muto >= PONTE_MUTO_MAX) {
+          throw new Error("WanGP non risponde piu': " + (err instanceof Error ? err.message : String(err)));
+        }
+        await pausa(2000);
+        continue;
+      }
+      segnaAvanzamento(st.progresso, st.fase);
+      if (st.stato === "finito") return await elementiDaiPercorsi(st.files);
+      if (st.stato === "errore") throw new Error(st.errore || "WanGP non e' riuscito a fare il lavoro.");
+      if (st.stato === "annullato") throw new Error("Fermato da chi sta al computer.");
+      if (Date.now() > scaduta) {
+        await annullaLavoro(id).catch(() => undefined);
+        throw new Error("WanGP ci sta mettendo troppo: l'ho fermato.");
+      }
+      await pausa(1000);
+    }
+  } finally {
+    lavoroWanGP = null;
+  }
+}
+
+/** Il lavoro chiesto da fuori, fatto da WanGP. */
+async function eseguiConWanGP(richiesta: DaEseguire, testo: string): Promise<ElementoLibreria[]> {
+  const { settings, quanti } = traduci(richiesta, testo, join(REMOTO_DIR, "invii"));
+  annota(`WanGP: ${richiesta.id} (${richiesta.azione}), aspetto ${quanti} file`);
+  return eseguiUnLavoroWanGP(richiesta.id, settings);
+}
+
+/**
+ * I percorsi che dice WanGP -> le voci della libreria.
+ *
+ * La libreria riguarda la cartella dei risultati (WanGP scrive li', vedi
+ * `wangp.ts`) e si rilegge al massimo una volta al secondo: si riprova per un
+ * po', perche' il file e' appena stato chiuso.
+ */
+async function elementiDaiPercorsi(percorsi: string[]): Promise<ElementoLibreria[]> {
+  const chiave = (p: string): string => resolve(p).toLowerCase();
+  const cercati = percorsi.map(chiave);
+  const fine = Date.now() + 20_000;
+  for (;;) {
+    const trovati = cercati
+      .map((c) => libreria.elenco(true).find((e) => chiave(e.percorso) === c))
+      .filter((e): e is ElementoLibreria => !!e);
+    if (trovati.length === cercati.length || Date.now() > fine) return trovati;
+    await pausa(800);
+  }
 }
 
 /**

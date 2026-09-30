@@ -112,9 +112,10 @@ for (const azione of A.AZIONI) {
 
 console.log("\n— quello che va in fila lo sa fare qualcuno —");
 {
-  // Le stesse quattro di `esecuzione.ts`. Scritte qui a mano di proposito: se
-  // un giorno cambiano, questa riga deve far notare che è cambiato qualcosa.
-  const sannoFarlo = ["foto", "cinema", "musica", "voce"];
+  // Le stesse di `esecuzione.ts` (dalla 1.7.7 c'è anche «produzioni»: WanGP).
+  // Scritte qui a mano di proposito: se un giorno cambiano, questa riga deve
+  // far notare che è cambiato qualcosa.
+  const sannoFarlo = ["produzioni", "foto", "cinema", "musica", "voce"];
   for (const azione of A.AZIONI.filter((a) => a.coda)) {
     dice(`${azione.id} va a una scheda che sa eseguire`, sannoFarlo.includes(azione.app), `→ ${azione.app}`);
   }

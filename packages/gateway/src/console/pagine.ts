@@ -263,6 +263,18 @@ export const PAGINE = `<header>
       </div>
       <!-- Le altre produzioni (video, voce, 3D) sono di chi decide: col modulo di sempre. -->
       <h3 class="crea-altro solo-chi-decide">Per chi decide</h3>
+      <!--
+        ⚠ **WanGP completo, solo per chi decide** (1.7.7). Il tasto **non c'e'**
+        per gli altri: nasce nascosto e lo scopre solo chi ha il permesso di
+        decidere (vedi «wangp-riga» nel copione). Le rotte dietro, comunque,
+        rispondono 404 a chi non e' admin.
+      -->
+      <div class="tastoni solo-chi-decide" id="wangp-riga" hidden>
+        <button type="button" class="tastone ambra" id="apri-wangp">
+          <span class="segno">&#10022;</span><span class="nome">WanGP completo</span><span class="corto">WanGP</span>
+          <small id="wangp-sotto">Tutti i modelli e tutte le impostazioni, come sul computer.</small>
+        </button>
+      </div>
       <div class="tastoni" id="elenco-azioni"></div>
       <div class="filtri" id="altre-azioni" style="margin-top:12px"></div>
 

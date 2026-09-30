@@ -67,9 +67,9 @@ Tutto in locale: nessun account, nessuna API, nessun dato che esce dal computer.
 
 | | App | Cosa fa | Modello | |
 |---|---|---|---|---|
-| 🎬 | **DaProdProduzioni** | Foto, video, voce e musica con [WanGP](https://github.com/deepbeepmeep/Wan2GP) e il suo agente Deepy, acceso da [Wan2GP Desktop Launcher](https://github.com/GKartist75/Wan2GP-Desktop-Tauri). I lavori si chiedono anche dal telefono | quelli di WanGP (Qwen Image 2.1, MiniMax H3, LTX-2.5…) | 🆕 1.7.5 |
+| 🎬 | **DaProdProduzioni** · l'app principale | Immagini, video, voce e musica con [WanGP](https://github.com/deepbeepmeep/Wan2GP), **il suo motore**: la suite lo accende da sé e ne mostra l'interfaccia intera. Chi decide la apre anche dal telefono; gli altri chiedono immagini (Qwen-Image 2.1) e brani (ACE-Step XL) e aspettano il sì | tutti quelli di WanGP (Qwen Image 2.1, ACE-Step XL, LTX-2.5, MiniMax H3…) | 🆕 1.7.7 |
 | 🟣 | **DaProdVisualizer** | Ascolti un file audio e lo vedi: la grafica si muove col suono | — | ✅ disponibile |
-| 🩷 | **DaProdMusica** | Crei canzoni intere, cantate e suonate, da un testo e uno stile | ACE-Step 1.5 · YuE2 3B | ✅ disponibile |
+| 🩷 | **DaProdMusica** | Crei canzoni intere, cantate e suonate, da un testo e uno stile | ACE-Step XL | ↪ dalla 1.7.7 in DaProdProduzioni |
 | 🟠 | **DaProdFoto** | Crei immagini scrivendo cosa vuoi vedere, ne cambi un pezzo, e ne tiri fuori un modellino 3D | Anima Turbo · Qwen-Image 2.1 · TRELLIS.2 | ↪ dalla 1.7.5 in DaProdProduzioni |
 | 🩵 | **DaProdDream** | Trasformi un video mentre scorre: webcam, un file, o lo schermo | SD-Turbo · Anima | ✅ disponibile |
 | 🟥 | **DaProdIoDigitale** | Carichi la foto di un volto e ci parli: ti risponde a voce | LeapTalk | ✅ disponibile |
@@ -143,6 +143,8 @@ Sul sito e nelle loro app i tre giochi restano demo normali: le lire sono di
 chi è collegato alla suite.
 
 ## A che punto siamo
+
+**In corso, la 1.7.7 — «Un WanGP solo»:** DaProdProduzioni diventa l'app principale e il suo motore è WanGP, fuso con la suite: la suite lo accende da sé (senza launcher, senza Deepy), ne mostra l'interfaccia intera in una sua finestra e — solo a chi decide — dal telefono. Gli utenti scelgono fra pochi modelli (Qwen-Image 2.1 per le immagini, ACE-Step XL per la musica) e i loro lavori finiscono nella stessa coda di WanGP. DaProdMusica esce dall'hub. Il dettaglio sta nel [CHANGELOG](CHANGELOG.md).
 
 **Ultima pubblicata: 1.7.0**, la versione da usare a lungo: Qwen-Image 2.1 fatto come dicono le guide (fino a 10 immagini insieme, zona con la maschera, allarga, guida di posa, profondità e contorni, cache KV, memoria dinamica di ComfyUI per spremere la scheda); la fila senza tetti (admin subito, utenti col sì di un admin); la Banca che dice chiaro se incassa o regala; i movimenti per giorno; Claw 1.2.0, Dozer 2.3.1, Neon 2.2.1. Cosa viene dopo: [la roadmap del Big Update](docs/ROADMAP-2.0.md). Prima, la 1.6.1: la modifica delle foto passa dall'LLM che guarda la foto e decide (il riscrittore ufficiale di Qwen-Image 2.1). Prima, la 1.6.0: la Banca DaProd coi tasti normali, le regole rapide e la linea della banca; il bentornato una volta per apertura; i giochi che si pagano (Dozer 2.3.0 col tavolo a sorte e la slot che decide, Claw 1.1.6, Neon 2.2.0 con la Merceria dei set). Prima, la 1.5.3: la Casa nuova senza pioggia Matrix (la tua sala giochi per chi gioca, la postazione PC + sala per chi decide) e i modellini 3D che si girano col dito in galleria. Prima, la 1.5.2: Crea rifatto da zero (immagine e canzone con le domande che servono, Qwen Veloce a 8 passi con la Viggle v0.2.1 o Fine a 40, la canzone cantata da YuE2 quando scrivi il testo), e ComfyUI più robusto su NVIDIA. Prima, la 1.5.1: i soldi della sala rifatti: la vincita senza tetto che cresce con quello che metti, il contatore dell'incasso, i potenziamenti coi soldi veri, i premi dei livelli e la Banca DaProd per chi comanda; Dozer cinquanta e cinquanta con gli effetti ai lati. Prima, la 1.5.0: la Claw che paga a fine partita, Neon col tasto per riscattare e la Radio che parla anche sul telefono. Prima, la 1.4.9: un'app semplice per chi crea (foto e musica), la regia agli admin (video, audio, 3D dal telefono), la sala con lire/euro a un tocco, il portafoglio da banca e le statistiche. Prima, la 1.4.8: lire ed euro, i giochi che si vincono, il portafoglio e le casse; la 1.4.7: Qwen che parte anche senza la LoRA nuova e l'icona nuova; la 1.4.6: la sala giochi che sta nel telefono; la 1.4.5: Qwen-Image 2.1 che parte davvero (40 passi, turbo a 5), la Banca DaProd e lo Studio. **La 1.4.0 — «Il fiore all'occhiello»:** La suite rivestita da
 DaProd (vetro scuro, pioggia verde, bottoni aqua), Qwen-Image 2.1 al posto di
@@ -475,7 +477,7 @@ La suite non addestra nulla: mette insieme il lavoro di altri e lo rende usabile
 | [Whisper](https://github.com/SYSTRAN/faster-whisper) · [Piper](https://github.com/rhasspy/piper) | ascoltano e parlano, in locale |
 | [opus-mt](https://huggingface.co/Helsinki-NLP/opus-mt-tc-big-it-en) | traduce le descrizioni in inglese prima di generare |
 | [LM Studio](https://lmstudio.ai) | tiene acceso l'LLM che scrive testi e descrizioni |
-| [WanGP](https://github.com/deepbeepmeep/Wan2GP) | non è usato dalla suite, ma le sue tecniche di memoria sono state la scuola |
+| [WanGP](https://github.com/deepbeepmeep/Wan2GP) di DeepBeepMeep | **il motore di DaProdProduzioni** (dalla 1.7.7): immagini, video, voce e musica. La suite lo usa com'è e lo dichiara, come chiede la sua licenza (WanGP Community License 2.0): non lo incorpora né lo ridistribuisce, lo trova sul computer e lo accende. Le sue tecniche di memoria sono anche state la scuola di tutto il resto |
 
 I modelli mantengono ognuno la propria licenza: si scaricano dalle loro fonti, non
 sono ridistribuiti qui.

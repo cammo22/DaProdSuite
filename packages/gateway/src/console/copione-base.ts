@@ -32,6 +32,7 @@ export const COPIONE_BASE = `
    * dire utente — la strada stretta, che e' quella giusta finche' non si sa.
    */
   var ioRuolo = "";
+  var ioWanGP = false;
   var ioFoto = "";
   var ioMotto = "";
   var puoiDecidere = false;
@@ -1060,6 +1061,7 @@ export const COPIONE_BASE = `
    * ed è esattamente quello che compariva accanto a «Leggi un testo».
    */
   var SCHEDE = {
+    produzioni: { nome: "DaProdProduzioni", segno: "\\u2726", che: "immagini, canzoni e video con WanGP", tinta: "ambra" },
     foto: { nome: "DaProdFoto", segno: "\\u25C9", che: "un'immagine da una descrizione", tinta: "viola" },
     cinema: { nome: "DaProdCinema", segno: "\\u25B6", che: "una clip video, col suono", tinta: "rosa" },
     musica: { nome: "DaProdMusica", segno: "\\u266B", che: "una canzone, anche cantata", tinta: "ciano" },
@@ -1134,6 +1136,9 @@ export const COPIONE_BASE = `
      * in coda»). Vedi «body.utente» in stile.ts.
      */
     document.body.classList.toggle("utente", !decido());
+    // Il tasto di WanGP lo vede solo chi decide, e solo se questa suite ce l'ha.
+    var wangpRiga = $("wangp-riga");
+    if (wangpRiga) wangpRiga.hidden = !(decido() && ioWanGP);
 
     /**
      * Le due mezze schermate.

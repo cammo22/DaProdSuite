@@ -10,6 +10,74 @@ stanno in [docs/RIPRENDERE-DA-QUI.md](docs/RIPRENDERE-DA-QUI.md).
 
 ---
 
+## 1.7.7 — Un WanGP solo
+
+> «non dobbiamo usare deepy dobbiamo rendere wangp motore della nostra app,
+> devo poter usare tutti i modelli e settaggi di wangp … dobbiamo fondere i due
+> software» · «gli utenti non devono proprio vedere il pulsante, solo gli admin»
+
+Il piano di tutto il Big Update sta in [docs/ROADMAP-2.0.md](docs/ROADMAP-2.0.md);
+questa è la sua **Fase A**.
+
+**DaProdProduzioni è l'app principale**
+
+- È la prima scheda dell'hub. **DaProdMusica esce dall'hub** e dalle richieste
+  da telefono: la musica si fa con ACE-Step XL dentro WanGP. Il suo codice resta
+  ancora qualche settimana, come è stato per Foto, Cinema e Voce.
+- **Niente più launcher e niente più Deepy.** La suite accende WanGP da sé, con
+  una configurazione sua (in `%LOCALAPPDATA%\DaProdSuite\wangp`) che prende
+  da dove il launcher li tiene i modelli e le LoRA: non si riscarica niente. Ne
+  mostra l'**interfaccia intera** — tutti i modelli, tutte le impostazioni — in
+  una finestra della suite. Si spegne da solo dopo venti minuti che nessuno lo
+  usa, per liberare la scheda video.
+- Se il launcher ha già un WanGP acceso, la suite lo dice e chiede di chiuderlo:
+  due WanGP insieme si contendono la scheda.
+
+**Dal telefono, solo chi decide**
+
+- Nella Casa, «Per chi decide», c'è **WanGP completo**: apre la pagina intera di
+  WanGP sul telefono, la stessa del computer, e ci si lavora (modelli, impostazioni,
+  coda, galleria). C'è il tasto «◀ DaProd» per tornare, e se WanGP è spento la
+  pagina ha il pulsante per accenderlo.
+- **Gli altri non vedono il pulsante**, e le rotte dietro rispondono 404 come se
+  non esistessero. Il permesso si dimostra con un biscotto che si pianta solo dopo
+  aver dimostrato di essere admin, e che vale solo per questo.
+
+**Gli utenti scelgono fra pochi modelli**
+
+- **Immagini: Qwen-Image 2.1**, «Fine» (40 passi) o «Veloce» (6 passi, col profilo
+  Viggle Turbo v0.2.1 che WanGP stesso consiglia). **Musica: ACE-Step XL**, cantata
+  o strumentale, con bpm, tonalità, ritmo e lingua. Il modello lo sceglie la suite,
+  non chi chiede: un ospite non può farsi girare altro.
+- I loro lavori entrano **nella stessa coda di WanGP** che vede chi ha l'interfaccia
+  aperta: un motore, una scheda video. Ci pensa un piccolo plugin nostro
+  (`daprod_ponte`) che la suite installa dentro WanGP; senza le sue variabili
+  resta spento, quindi chi usa WanGP da solo non se ne accorge.
+- **Ogni lavoro dice da sé quali file sono usciti**: non si indovina più «il primo
+  file nuovo della libreria», che poteva essere di un altro.
+- La copertina di un brano si fa con Qwen Veloce dopo il brano; se non riesce, il
+  brano c'è lo stesso.
+- Tutto quello che WanGP produce (anche dall'interfaccia intera) finisce nella
+  libreria della suite, dove lo vede la galleria del telefono.
+
+**Cosa non c'è più:** l'azione `produzioni.chiedi` (il video passato a Deepy con
+le ricette) — per un video si apre WanGP intero. Anima e Anima v2 non sono più
+fra i modelli che si chiedono da fuori.
+
+**Provato:** `pnpm run prova` (con la nuova `prova-wangp.mjs`: 54 controlli fra
+gateway con un WanGP finto e traduttore, più i 22 del ponte in Python) e `pnpm -r typecheck` verdi.
+**Contro un WanGP vero (13.14):** la pagina intera passa dal gateway in un browser
+(tab, SSE, upload, WebSocket); un brano ACE-Step XL da 20 secondi è uscito
+dal ponte e dalla coda di WanGP, e — con la suite che accende WanGP da sé — è
+arrivato in libreria col suo titolo.
+**Da provare:** la scheda aperta nell'hub, dal telefono vero, e **qualunque cosa con
+Qwen-Image 2.1**: sul computer di prova il text encoder di Qwen
+(`Qwen3-VL-8B-Instruct_int8_convrot.safetensors`) ha i permessi rotti — nemmeno
+`icacls` lo apre — e senza quel file Qwen non parte. La modifica delle foto con la
+zona dipinta, poi, è scritta come dice la guida di Qwen ma **mai vista girare**.
+
+---
+
 ## 1.7.6 — La Regia apre il launcher intero
 
 > «l'app ha funzionato ma si apre deepy si deve aprire proprio l'installazione

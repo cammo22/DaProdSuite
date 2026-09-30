@@ -127,6 +127,19 @@ for (const [nome, porta] of servono) {
   if (!cE) guai.push(nome);
 }
 
+/**
+ * Il ponte per WanGP (1.7.7): un file Python che la suite copia dentro WanGP.
+ * Non e' nell'asar, sta accanto (`resources/services`, da `extraResources`): se
+ * manca, l'interfaccia di WanGP funziona ma i lavori degli utenti non passano, e
+ * da fuori si vede solo «il ponte non risponde».
+ */
+{
+  const ponte = join(RADICE, "installer", "win-unpacked", "resources", "services", "wangp", "daprod_ponte", "plugin.py");
+  const cE = existsSync(ponte);
+  console.log("  " + (cE ? "ok  " : " x  ") + "il ponte per WanGP  (services/wangp/daprod_ponte/plugin.py)");
+  if (!cE) guai.push("il ponte per WanGP");
+}
+
 console.log("");
 if (guai.length) {
   console.log("  " + guai.length + (guai.length === 1 ? " pacchetto manca" : " pacchetti mancano") +
