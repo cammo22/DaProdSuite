@@ -1,33 +1,13 @@
+target/
 node_modules/
-dist/
-out/
-*.tsbuildinfo
-
-# Prodotti della compilazione. Anteposta la barra: senza, `installer/` escluderebbe
-# anche una futura cartella `apps/qualcosa/installer`.
-/installer/
-
-# Ambiente Python, motori di terze parti e modelli. In esecuzione stanno in
-# %LOCALAPPDATA%\DaProdSuite; questi pattern sono una rete di sicurezza per
-# quando si lavora nella cartella del progetto.
-#
-# Tutti ancorati alla radice: `runtime/` senza barra iniziale escluderebbe anche
-# `packages/runtime/`, che è codice nostro e deve stare nel repo.
-/runtime/
-/engines/
-/models/
-/output/
-/logs/
-/tools/
-.venv/
-__pycache__/
-*.safetensors
-*.gguf
-*.ckpt
-*.pth
-
+apps/mobile/.gradle/
+apps/mobile/local.properties
+apps/mobile/app/build/
+apps/mobile/build/
 *.log
-.DS_Store
-Thumbs.db
+*.sqlite3*
+*.key
 .env
-.env.local
+.DS_Store
+test-output/
+apps/desktop/gen/

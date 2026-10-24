@@ -2,9 +2,8 @@ package it.daprod.suite
 
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
+import android.content.pm.PackageManager
 import android.os.Build
-import android.provider.Settings
 import androidx.core.content.FileProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -12,204 +11,70 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONObject
 import java.io.File
+import java.security.MessageDigest
 import java.util.concurrent.TimeUnit
 
-/**
- * L'app che si aggiorna da sola.
- *
- * La suite sul PC lo fa già (electron-updater legge `latest.yml` dalle Release);
- * qui si fa la stessa cosa a mano, perché un'app fuori dal Play Store nessuno
- * la aggiorna al posto tuo, e un telefono con una versione vecchia che parla a
- * un PC aggiornato è il modo più silenzioso di non funzionare.
- *
- * **È l'unica cosa che questa app manda fuori dalla tua rete**, ed è una GET
- * senza niente dentro: chiede a GitHub qual è l'ultima Release. Nessun dato tuo
- * la accompagna. Tutto il resto — richieste, risultati, notifiche — resta fra
- * il telefono e il tuo computer.
- *
- * Perché possa funzionare davvero servono due cose che non si vedono:
- *
- * - **la firma dell'APK non deve cambiare** fra una versione e l'altra, o
- *   Android rifiuta l'aggiornamento con un generico «App non installata». Per
- *   questo la release è firmata con una chiave stabile tenuta nel repository
- *   (vedi `app/build.gradle.kts`) e non con quella di debug, che ogni computer
- *   si genera per conto suo;
- * - **il permesso di installare** app da questa app, che su Android 8 e oltre
- *   si concede una volta sola nelle impostazioni. Qui si controlla prima di
- *   scaricare, invece di scoprirlo a scaricamento finito.
- */
 object Aggiornamenti {
-
-    /** Dove si chiede qual è l'ultima. */
-    private const val ULTIMA =
-        "https://api.github.com/repos/cammo22/DaProdSuite/releases/latest"
-
-    private val rete = OkHttpClient.Builder()
-        .connectTimeout(10, TimeUnit.SECONDS)
-        .readTimeout(120, TimeUnit.SECONDS)
-        .build()
-
-    /** Cosa si è trovato guardando le Release. */
-    sealed interface Esito {
-        /** Siamo già all'ultima. */
-        data class GiaAggiornata(val versione: String) : Esito
-
-        /** Ce n'è una nuova, ed ecco dove sta. */
-        data class CeNeUnaNuova(
-            val versione: String,
-            val url: String,
-            val bytes: Long,
-            /** Le note della Release, per far vedere cosa cambia. */
-            val note: String,
-        ) : Esito
-
-        /** Non si è potuto sapere: niente linea, GitHub giù, o una Release senza APK. */
-        data class NonSiSa(val perche: String) : Esito
+    private const val RELEASE="https://api.github.com/repos/cammo22/DaProdSuite/releases/latest"
+    private val client=OkHttpClient.Builder().connectTimeout(10,TimeUnit.SECONDS).readTimeout(90,TimeUnit.SECONDS).build()
+    data class Nuova(val versione:String,val url:String,val bytes:Long,val digest:String?)
+    suspend fun cerca(c:Context):Nuova? = withContext(Dispatchers.IO) {
+        client.newCall(Request.Builder().url(RELEASE).build()).execute().use { r ->
+            check(r.isSuccessful){"Controllo aggiornamenti non disponibile (${r.code})"}
+            val release=JSONObject(r.body?.string() ?: error("Release vuota"))
+            val version=release.getString("tag_name").removePrefix("v")
+            if(codice(version)<=installedCode(c))return@withContext null
+            val assets=release.getJSONArray("assets")
+            for(i in 0 until assets.length()) {
+                val a=assets.getJSONObject(i);val name=a.getString("name")
+                if(name.endsWith(".apk") && (name.startsWith("DaProdGiochi-") || name.startsWith("DaProdSuite-"))) {
+                    val url=a.getString("browser_download_url")
+                    require(url.startsWith("https://github.com/cammo22/DaProdSuite/releases/download/") || url.startsWith("https://github.com/cammo22/DaProdGiochi/releases/download/"))
+                    val size=a.getLong("size");require(size in 1..150L*1024*1024)
+                    return@withContext Nuova(version,url,size,a.optString("digest").takeIf { it.matches(Regex("sha256:[a-fA-F0-9]{64}")) })
+                }
+            }
+            error("La release non contiene ancora l'APK")
+        }
     }
-
-    /** Guarda se c'è una versione nuova. Non scarica niente. */
-    suspend fun cerca(context: Context): Esito = withContext(Dispatchers.IO) {
-        val mia = versioneInstallata(context)
+    internal fun codice(v:String):Long {
+        val m=Regex("^(\\d+)\\.(\\d+)\\.(\\d+)$").matchEntire(v) ?: return 0
+        val p=m.groupValues.drop(1).map { it.toLong() };require(p[0]<10000 && p[1]<100 && p[2]<100)
+        return p[0]*10000+p[1]*100+p[2]
+    }
+    @Suppress("DEPRECATION")
+    private fun installedCode(c:Context):Long=c.packageManager.getPackageInfo(c.packageName,0).let { if(Build.VERSION.SDK_INT>=28)it.longVersionCode else it.versionCode.toLong() }
+    @Suppress("DEPRECATION")
+    suspend fun scarica(c:Context,n:Nuova,progress:(Int)->Unit):File=withContext(Dispatchers.IO) {
+        val dir=File(c.cacheDir,"aggiornamenti").apply { mkdirs() }
+        val partial=File(dir,"aggiornamento.part");val ready=File(dir,"DaProdGiochi.apk")
         try {
-            val req = Request.Builder()
-                .url(ULTIMA)
-                .header("Accept", "application/vnd.github+json")
-                .build()
-            rete.newCall(req).execute().use { res ->
-                if (!res.isSuccessful) {
-                    return@withContext Esito.NonSiSa("GitHub ha risposto ${res.code}.")
-                }
-                val corpo = JSONObject(res.body?.string().orEmpty())
-                val tag = corpo.optString("tag_name").removePrefix("v")
-                if (tag.isBlank()) return@withContext Esito.NonSiSa("Release senza numero di versione.")
-
-                val apk = trovaApk(corpo)
-                    ?: return@withContext Esito.NonSiSa(
-                        "La versione $tag non ha ancora un APK da scaricare.",
-                    )
-
-                if (confronta(tag, mia) <= 0) return@withContext Esito.GiaAggiornata(mia)
-
-                Esito.CeNeUnaNuova(
-                    versione = tag,
-                    url = apk.first,
-                    bytes = apk.second,
-                    note = corpo.optString("body").take(1500),
-                )
+            val digest=MessageDigest.getInstance("SHA-256")
+            client.newCall(Request.Builder().url(n.url).build()).execute().use { r ->
+                check(r.isSuccessful){"Scaricamento non riuscito (${r.code})"}
+                (r.body ?: error("APK vuoto")).byteStream().use { input ->partial.outputStream().use { output ->
+                    val buffer=ByteArray(65536);var total=0L
+                    while(true){val count=input.read(buffer);if(count<0)break;total+=count;check(total<=n.bytes){"APK troppo grande"};digest.update(buffer,0,count);output.write(buffer,0,count);progress((total*100/n.bytes).toInt())}
+                    check(total==n.bytes){"Scaricamento incompleto"}
+                } }
             }
-        } catch (e: Exception) {
-            Esito.NonSiSa("Non riesco a raggiungere GitHub. C'è linea?")
-        }
+            val sha=digest.digest().joinToString(""){"%02x".format(it)}
+            if(n.digest!=null)check("sha256:$sha".equals(n.digest,true)){"Verifica del file non riuscita"}
+            val pm=c.packageManager
+            val archive=pm.getPackageArchiveInfo(partial.absolutePath,PackageManager.GET_SIGNATURES) ?: error("APK non valido")
+            val current=pm.getPackageInfo(c.packageName,PackageManager.GET_SIGNATURES)
+            check(archive.packageName==c.packageName){"L'APK appartiene a un'altra app"}
+            val code=if(Build.VERSION.SDK_INT>=28)archive.longVersionCode else archive.versionCode.toLong()
+            check(code>installedCode(c) && code==codice(n.versione)){"Versione APK non valida"}
+            val before=current.signatures?.map { it.toCharsString() }?.toSet()
+            val after=archive.signatures?.map { it.toCharsString() }?.toSet()
+            check(!before.isNullOrEmpty() && before==after){"Firma diversa: installazione interrotta, profili conservati"}
+            if(ready.exists())check(ready.delete());check(partial.renameTo(ready));ready
+        }catch(e:Exception){partial.delete();throw e}
     }
-
-    /** L'APK fra gli allegati della Release, con quanto pesa. */
-    private fun trovaApk(release: JSONObject): Pair<String, Long>? {
-        val allegati = release.optJSONArray("assets") ?: return null
-        for (i in 0 until allegati.length()) {
-            val a = allegati.getJSONObject(i)
-            val nome = a.optString("name")
-            if (nome.endsWith(".apk", ignoreCase = true)) {
-                return a.optString("browser_download_url") to a.optLong("size")
-            }
-        }
-        return null
-    }
-
-    /**
-     * Confronta due versioni tipo `0.5.1`. Torna >0 se `a` è più recente.
-     *
-     * Numero per numero, non come stringhe: `0.10.0` viene **dopo** `0.9.0`, e
-     * confrontandole come testo verrebbe prima.
-     */
-    private fun confronta(a: String, b: String): Int {
-        val pa = a.split(".").map { it.filter(Char::isDigit).toIntOrNull() ?: 0 }
-        val pb = b.split(".").map { it.filter(Char::isDigit).toIntOrNull() ?: 0 }
-        for (i in 0 until maxOf(pa.size, pb.size)) {
-            val d = (pa.getOrNull(i) ?: 0) - (pb.getOrNull(i) ?: 0)
-            if (d != 0) return d
-        }
-        return 0
-    }
-
-    fun versioneInstallata(context: Context): String = try {
-        context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "0"
-    } catch (_: Exception) {
-        "0"
-    }
-
-    /** Il telefono ci lascia installare app? Su Android 8+ va concesso una volta. */
-    fun puoInstallare(context: Context): Boolean =
-        Build.VERSION.SDK_INT < Build.VERSION_CODES.O ||
-            context.packageManager.canRequestPackageInstalls()
-
-    /** Porta alle impostazioni dove si concede quel permesso. */
-    fun chiediDiPoterInstallare(context: Context) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
-        context.startActivity(
-            Intent(
-                Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
-                Uri.parse("package:${context.packageName}"),
-            ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
-        )
-    }
-
-    /**
-     * Scarica l'APK e lo consegna all'installatore di Android.
-     *
-     * `avanzamento` viene chiamato con la percentuale, per non lasciare fermo
-     * uno schermo mentre arrivano sei megabyte.
-     */
-    suspend fun scaricaEInstalla(
-        context: Context,
-        nuova: Esito.CeNeUnaNuova,
-        avanzamento: (Int) -> Unit,
-    ) {
-        val file = withContext(Dispatchers.IO) {
-            // Nella cache: se l'installazione va a buon fine il file non serve
-            // più, e il telefono può buttarlo quando gli pare.
-            val cartella = File(context.cacheDir, "aggiornamenti").apply { mkdirs() }
-            // Uno solo per volta: un tentativo andato male non deve lasciare
-            // dietro di sé mezzo APK che poi qualcuno prova a installare.
-            cartella.listFiles()?.forEach { it.delete() }
-            val destinazione = File(cartella, "DaProdSuite-${nuova.versione}.apk")
-
-            val req = Request.Builder().url(nuova.url).build()
-            rete.newCall(req).execute().use { res ->
-                if (!res.isSuccessful) throw IllegalStateException("Scaricamento fallito (${res.code}).")
-                val corpo = res.body ?: throw IllegalStateException("Il file è arrivato vuoto.")
-                val totale = if (nuova.bytes > 0) nuova.bytes else corpo.contentLength()
-                corpo.byteStream().use { dentro ->
-                    destinazione.outputStream().use { fuori ->
-                        val buffer = ByteArray(64 * 1024)
-                        var fatti = 0L
-                        var letti = dentro.read(buffer)
-                        var ultimaPercentuale = -1
-                        while (letti >= 0) {
-                            fuori.write(buffer, 0, letti)
-                            fatti += letti
-                            if (totale > 0) {
-                                val p = (fatti * 100 / totale).toInt()
-                                if (p != ultimaPercentuale) {
-                                    ultimaPercentuale = p
-                                    avanzamento(p)
-                                }
-                            }
-                            letti = dentro.read(buffer)
-                        }
-                    }
-                }
-            }
-            destinazione
-        }
-
-        // Da Android 7 un file non si passa come percorso: serve un URI che
-        // valga anche per l'altra app, ed è quello che fa il FileProvider.
-        val uri = FileProvider.getUriForFile(context, "${context.packageName}.file", file)
-        context.startActivity(
-            Intent(Intent.ACTION_VIEW).apply {
-                setDataAndType(uri, "application/vnd.android.package-archive")
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
-            },
-        )
+    /** Chiamata solo dal pulsante Installa: non concede alcun permesso. */
+    fun installa(c:Context,file:File){
+        val uri=FileProvider.getUriForFile(c,"${c.packageName}.file",file)
+        c.startActivity(Intent(Intent.ACTION_VIEW).setDataAndType(uri,"application/vnd.android.package-archive").addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION))
     }
 }

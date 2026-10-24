@@ -1,0 +1,9 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "DaProdGiochi",
+  "version": "2.0.0",
+  "identifier": "it.daprod.giochi",
+  "build": { "frontendDist": "../../web" },
+  "app": { "windows": [], "security": { "capabilities": [] } },
+  "bundle": { "active": true, "targets": ["nsis"], "icon": ["icons/icon.ico"], "shortDescription": "La tua sala giochi privata" }
+}

@@ -1,27 +1,2 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-  Cosa questa app è disposta a passare a un'altra app.
-
-  Due cartelle, e nessuna delle due contiene niente di segreto.
-
-  1. **aggiornamenti**: dove finisce l'APK che l'app si scarica da sola, e che
-     va consegnato all'installatore di Android — da Android 7 un file non si
-     passa più come percorso.
-  2. **condivisi**: la copia temporanea di una cosa che si sta condividendo con
-     un'altra app. Chiesto il 26 agosto 2026 («un pulsante condividi»): per
-     mandare una foto su WhatsApp bisogna dargliela, e per dargliela bisogna
-     avere un posto da cui gliela si può passare.
-
-  Niente altro — il token che apre il PC di casa sta nelle preferenze, e da qui
-  non si raggiunge.
--->
-<paths>
-    <cache-path name="aggiornamenti" path="aggiornamenti/" />
-    <cache-path name="condivisi" path="condivisi/" />
-    <!--
-      3. **scatti**: la foto appena scattata dalla fotocamera. Da Android 7 la
-         fotocamera e' un'altra app e non puo' scrivere in un percorso nostro:
-         le si passa un indirizzo `content://`, e questo e' il posto che apre.
-    -->
-    <cache-path name="scatti" path="scatti/" />
-</paths>
+<paths><cache-path name="aggiornamenti" path="aggiornamenti/" /></paths>

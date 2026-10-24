@@ -13,5 +13,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "DaProdSuiteMobile"
+rootProject.name = "DaProdGiochiMobile"
 include(":app")

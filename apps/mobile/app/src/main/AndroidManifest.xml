@@ -1,117 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools">
-
-    <!-- Rete locale: il gateway della suite sta nella LAN di casa. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET" />
-    <!-- Per vedere se il PC di casa è raggiungibile quando si è fuori. -->
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <!--
-      Trovare i computer di casa senza sapere il loro indirizzo.
-
-      Il wifi, per far durare la batteria, butta via i pacchetti che non sono
-      indirizzati al telefono: `MulticastLock` gli dice di tenerli finché la
-      schermata «a quale ti colleghi?» è aperta. Senza questi due permessi
-      l'elenco resterebbe vuoto anche con tre computer accesi in casa.
-      Vedi net/Scoperta.kt.
-    -->
-    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
-    <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
-    <!-- Le notifiche quando un lavoro finisce. -->
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <!--
-      La sentinella: resta sveglia mentre il computer sta finendo un tuo lavoro,
-      e si spegne da sola appena ha finito. Serve perché il lavoro periodico di
-      Android non scende sotto il quarto d'ora, e dentro Doze diventa un'ora:
-      per «il video è pronto» è troppo tardi. Vedi Sentinella.kt.
-    -->
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
-    <!--
-      La musica che continua quando l\'app va in tasca.
-
-      Il suono lo fa la pagina dentro la WebView; questo permesso serve al
-      servizio che tiene il processo in primo piano — senza, Android è libero di
-      spegnerlo dopo un minuto e la canzone finisce a metà. Vedi Lettore.kt.
-    -->
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
-    <!-- Per installare l'aggiornamento dell'app che si scarica da sola.
-         Su Android 8 e oltre va comunque concesso a mano una volta sola. -->
+    <!-- Già presente nella 1.7.10: consente solo di CHIEDERE l'installazione.
+         Nessuna impostazione di sistema viene attivata dall'app. Ogni APK
+         passa dall'installatore Android dopo un tocco esplicito dell'utente. -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
-    <!-- Camera per inquadrare il QR. -->
     <uses-permission android:name="android.permission.CAMERA" />
-    <uses-feature android:name="android.hardware.camera" android:required="true" />
-
-    <application
-        android:label="DaProd Suite"
-        android:icon="@mipmap/ic_launcher"
-        android:theme="@style/ThemeDaProdSuite"
-        android:usesCleartextTraffic="true"
-        android:allowBackup="false"
-        android:supportsRtl="true">
-
-        <activity
-            android:name=".MainActivity"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <application android:label="DaProdGiochi" android:icon="@mipmap/ic_launcher"
+        android:theme="@style/ThemeDaProdSuite" android:usesCleartextTraffic="false"
+        android:allowBackup="false" android:supportsRtl="true">
+        <activity android:name=".MainActivity" android:exported="true">
+            <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
         </activity>
-
-        <!-- Il modo di passare l'APK scaricato all'installatore di Android:
-             da Android 7 un file non si consegna più come percorso. Espone una
-             cartella sola, quella degli aggiornamenti. -->
-        <provider
-            android:name="androidx.core.content.FileProvider"
-            android:authorities="${applicationId}.file"
-            android:exported="false"
-            android:grantUriPermissions="true">
-            <meta-data
-                android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/percorsi_file" />
+        <provider android:name="androidx.core.content.FileProvider" android:authorities="${applicationId}.file" android:exported="false" android:grantUriPermissions="true">
+            <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/percorsi_file" />
         </provider>
-
-        <!--
-          La sentinella. `exported="false"`: la fa partire solo l'app stessa,
-          quando va in secondo piano con qualcosa in ballo sul computer.
-        -->
-        <service
-            android:name=".Sentinella"
-            android:exported="false"
-            android:foregroundServiceType="dataSync" />
-
-        <!--
-          Il lettore. Non suona niente: tiene vivo il processo mentre la pagina
-          suona, e mette i comandi nella tendina e sulla schermata di blocco.
-        -->
-        <service
-            android:name=".Lettore"
-            android:exported="false"
-            android:foregroundServiceType="mediaPlayback" />
-
-        <!--
-          Il tasto «Rimanda» dentro la notifica di un lavoro andato storto.
-
-          `exported="false"`: lo chiama solo la nostra notifica, e un receiver
-          che rifa' richieste al computer non e' una cosa da lasciare aperta
-          alle altre app del telefono.
-        -->
-        <receiver
-            android:name=".Rimanda"
-            android:exported="false">
-            <intent-filter>
-                <action android:name="it.daprod.suite.RIMANDA" />
-                <data android:scheme="daprod" />
-            </intent-filter>
-        </receiver>
-
-        <!-- Lo scanner del QR: un'activity della libreria zxing. -->
-        <activity
-            android:name="com.journeyapps.barcodescanner.CaptureActivity"
-            android:screenOrientation="portrait"
-            android:theme="@style/ThemeDaProdSuite.Camera"
-            tools:replace="android:theme,android:screenOrientation"
-            android:exported="false" />
     </application>
 </manifest>
